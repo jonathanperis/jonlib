@@ -1,5 +1,17 @@
 {
-  "bend": {"version": "2.0.27", "revision": "ac0ddb7bf9b3255b23126886698b43a176eed8ca"},
+  "bend": {
+    "version": "2.0.27+jonlib-metal.1",
+    "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+    "patch": {
+      "path": "patches/bend-metal-dispatch.patch",
+      "sha256": "d4fbe3723f78bbcd456d4937b8f52f48454e7748d86799b22a95165a04cd9879",
+      "files": {
+        ".gitignore": "8915b2338d9a3dd712510d95efbec55daa5f2d5a50f825f7cffbb791f3883024",
+        "bend2/comp.ts": "0095ff214fdf353b3644923a46050507cd2caf09e0da212e446d9fb3dab531a6",
+        "tests/run/metal_inline_budget.bend": "13a2696795e014f55d3d196cc3a4c3691e4e44d2e71f2fed55e04fe6fd4c87f7"
+      }
+    }
+  },
   "raylib": {"version": "6.0", "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"},
   "bun": {"version": "1.3.12"},
   "profile": "rgba8-cpu-images-v1"

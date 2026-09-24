@@ -25,12 +25,27 @@ def run(command, cwd=ROOT):
     return result.stdout
 
 
-def checkout(path, revision):
+def checkout(path, revision, overlay=None):
     actual = run(["git", "rev-parse", "HEAD"], path).strip()
     if actual != revision:
         raise ValueError(f"{path}: expected {revision}, found {actual}")
-    if run(["git", "status", "--porcelain", "--untracked-files=no"], path).strip():
-        raise ValueError(f"{path}: tracked changes invalidate the pinned reference")
+    if overlay is None:
+        if run(["git", "status", "--porcelain", "--untracked-files=no"], path).strip():
+            raise ValueError(f"{path}: tracked changes invalidate the pinned reference")
+        return
+    patch = ROOT / overlay['path']
+    if hashlib.sha256(patch.read_bytes()).hexdigest() != overlay['sha256']:
+        raise ValueError('Declared compiler patch hash mismatch')
+    files = overlay['files']
+    if not files:
+        raise ValueError('A compiler overlay must declare its resulting source files')
+    changed = set(run(['git', 'diff', 'HEAD', '--name-only'], path).splitlines())
+    if changed - set(files):
+        raise ValueError(f'{path}: unexpected tracked changes outside the compiler overlay')
+    for filename, expected in files.items():
+        source = path / filename
+        if not source.is_file() or hashlib.sha256(source.read_bytes()).hexdigest() != expected:
+            raise ValueError(f'{path}: compiler overlay mismatch in {filename}; apply the declared patch')
 
 
 def integer(value, minimum, maximum):
@@ -247,7 +262,7 @@ def main():
     report_path.write_text(json.dumps(report, indent=2) + '\n')
     started = time.monotonic()
     lock = json.loads((ROOT / 'toolchain.json').read_text())
-    checkout(args.bend_source, lock['bend']['revision'])
+    checkout(args.bend_source, lock['bend']['revision'], lock['bend'].get('patch'))
     checkout(args.raylib_source, lock['raylib']['revision'])
     report['toolchain'] = lock
     report['host'] = dict(system=platform.system(), machine=platform.machine(),

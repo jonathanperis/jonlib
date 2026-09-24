@@ -1,7 +1,8 @@
 # Initial public API
 
 Import `jonlib.bend` under an alias, for example `import ./jonlib.bend as J`.
-This is a source library for Bend 2.0.27. Helpers with further dotted suffixes
+This is a source library for the Bend 2.0.27 base plus the compiler overlay in
+`toolchain.json`. Helpers with further dotted suffixes
 are implementation details; only operations listed here form this initial API.
 
 ## Color

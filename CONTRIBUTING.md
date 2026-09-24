@@ -7,22 +7,24 @@ Jonlib is working toward raylib parity with library algorithms written in Bend
 ## Local setup
 
 Provide Python 3.12+, Bun as pinned in `toolchain.json`, CMake 3.25+, clang 14+,
-and clean checkouts of the pinned Bend and raylib revisions. The harness accepts
-explicit `--bend-source` and `--raylib-source` paths; it does not install tools.
+and checkouts of the pinned Bend and raylib revisions. Apply the exact
+[Bend compiler overlay](patches/README.md); keep raylib unmodified. The harness
+accepts explicit `--bend-source` and `--raylib-source` paths; it does not install
+tools or repair source files.
 
 ```sh
 python3 tools/check_project.py
 python3 -m unittest discover -s tests -v
 python3 tools/conformance.py --bend-source /path/to/bend --raylib-source /path/to/raylib
+python3 tools/verify_bend.py --bend-source /path/to/bend
 ```
 
 Native Metal verification requires a real supported Mac/GPU and a suitable Apple
 clang version. `--gpu` forces device execution; it must fail rather than silently
-use CPU results. The [complete Metal gate is currently blocked](docs/METAL-INVESTIGATION.md).
-For the current inlining investigation, `python3 tools/metal_probe.py --counts 26
---outline-circle` compares an unmodified program with an explicitly experimental
-generated-C qualifier change. Its baseline failure still produces a failing exit
-status; the experiment is not part of the library or normal conformance gate.
+use CPU results. The complete Metal gate passes on the tested M1 with the overlay.
+Run both `tools/conformance.py --gpu` and `tools/verify_bend.py --gpu` for changes
+affecting the device path. See [the investigation](docs/METAL-INVESTIGATION.md)
+for the historical failure, rejected candidates and remaining verification limits.
 
 ## Changes and evidence
 
@@ -42,7 +44,8 @@ becomes a conformance test. Consult asset-specific licenses before adding files.
 
 - **Checks** validates the test harness, fixtures, source boundary and metadata.
 - **Conformance** builds and tests CPU/JavaScript on Ubuntu 24.04 and macOS 15,
-  checks the law/contracts/example, and uploads JSON/PPM evidence for 14 days.
+  explicitly applies the hash-checked compiler patch, checks the law/contracts/
+  example and 16 upstream compiler regressions, and uploads evidence for 14 days.
 - Actions are pinned to immutable commits; dependency revisions come from
   `toolchain.json`. Workflows use read-only repository permissions.
 - Hosted conformance does not claim Metal/CUDA or live window/audio validation.

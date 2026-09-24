@@ -21,6 +21,7 @@ differential test reference.
 - P3 PPM encoding and file export through Base IO.
 - Exact full-pixel differential testing, deterministic seeded scenarios, a
   dimension-preservation law, and ownership/adapter contract checks.
+- Verified native CPU, JavaScript and Metal execution with the declared compiler overlay.
 
 See the [API](docs/API.md), [compatibility ledger](docs/COMPATIBILITY.md),
 [verification record](docs/VERIFICATION.md), and [roadmap](docs/ROADMAP.md).
@@ -33,17 +34,27 @@ Use existing installations of Python 3.12+, Bun 1.3.12, CMake (3.25+), and clang
 The local verification commands below do not install tools or download dependencies.
 GitHub Actions provisions its own pinned dependencies on hosted runners.
 
-The harness requires clean local checkouts at these pinned revisions:
+The harness requires these base revisions. Bend additionally needs the exact
+[declared compiler overlay](patches/README.md); raylib remains unmodified:
 
 | Dependency | Revision |
 |---|---|
-| Bend 2.0.27 | `ac0ddb7bf9b3255b23126886698b43a176eed8ca` |
+| Bend 2.0.27 + Jonlib Metal overlay | `b7ebee9217c8813067e200b0c0c9153a3be31c5e` |
 | raylib 6.0 | `dbc56a87da87d973a9c5baa4e7438a9d20121d28` |
 
 Defaults are `~/Projetos/bendlang/bend` and `~/Projetos/raysan5/raylib`; override
-them with `--bend-source` and `--raylib-source`. The toolchain is recorded in
-[`toolchain.json`](toolchain.json). A locally installed compatible `bend` can be
-used for manual examples; the reproducible harness uses Bun and the pinned source.
+them with `--bend-source` and `--raylib-source`. [`toolchain.json`](toolchain.json)
+records the base commits, patch hash and exact resulting compiler-file hashes.
+Apply the overlay once to a checkout already at that Bend revision:
+
+```sh
+BEND_SOURCE="$HOME/Projetos/bendlang/bend"
+git -C "$BEND_SOURCE" apply --check "$PWD/patches/bend-metal-dispatch.patch"
+git -C "$BEND_SOURCE" apply "$PWD/patches/bend-metal-dispatch.patch"
+```
+
+Verification never patches or updates the checkout itself. An unmodified
+installed Bend 2.0.27 is not equivalent to this declared source toolchain.
 
 ## Verify
 
@@ -65,10 +76,17 @@ python3 tools/conformance.py --gpu
 ```
 
 The optional GPU command forces device execution and fails if the device or
-results are unavailable. **The complete Metal suite currently exposes an
-unresolved failure on the tested M1/toolchain combination.** See
-[the investigation](docs/METAL-INVESTIGATION.md). Successful smaller GPU probes
-do not count as a passing complete GPU gate.
+results are unavailable. **All 26 scenarios pass on the tested M1 with the
+declared overlay**, including every RGBA pixel. Stock Bend's failure and the
+compiler fix are documented in [the investigation](docs/METAL-INVESTIGATION.md).
+Hosted CI validates CPU/JavaScript; it does not claim GPU validation.
+
+The compiler overlay also has a focused upstream regression runner:
+
+```sh
+python3 tools/verify_bend.py
+python3 tools/verify_bend.py --gpu
+```
 
 Evidence is written to `.build/conformance.json`, with source/input hashes,
 toolchain, host and per-lane results. Generated programs and complete reference/
@@ -106,6 +124,8 @@ performance parity, platform parity, or full raylib compatibility.
 Jonlib's original code uses the [zlib license](LICENSE). Adapted raylib algorithms
 retain their notices in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) and
 [LICENSES/raylib.txt](LICENSES/raylib.txt).
+The separately identified Bend compiler patch is Apache-2.0, with the original
+license retained in [LICENSES/bend.txt](LICENSES/bend.txt).
 
 Inspired by raylib, created by Ramon Santamaria and contributors. Uses Bend 2,
 created by HigherOrderCO and contributors. Jonlib is not affiliated with or

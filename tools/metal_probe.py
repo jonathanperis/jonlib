@@ -34,7 +34,7 @@ def main():
     if platform.system() != 'Darwin':
         raise ValueError('This diagnostic requires macOS and a real Metal device')
     lock = json.loads((ROOT / 'toolchain.json').read_text())
-    checkout(args.bend_source, lock['bend']['revision'])
+    checkout(args.bend_source, lock['bend']['revision'], lock['bend'].get('patch'))
     cases = cases_from(json.loads((ROOT / 'tests/fixtures/images.json').read_text()))
     if any(count < 1 or count > len(cases) for count in args.counts):
         raise ValueError(f'Prefix counts must be 1..{len(cases)}')

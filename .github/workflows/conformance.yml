@@ -63,11 +63,29 @@ jobs:
           ref: ${{ steps.pins.outputs.raylib }}
           path: .build/dependencies/raylib
           persist-credentials: false
+      - name: Apply the declared Bend compiler overlay
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, subprocess
+          from pathlib import Path
+          overlay = json.loads(Path('toolchain.json').read_text())['bend']['patch']
+          patch = Path(overlay['path']).resolve()
+          if hashlib.sha256(patch.read_bytes()).hexdigest() != overlay['sha256']:
+              raise SystemExit('Compiler patch hash mismatch')
+          source = Path('.build/dependencies/bend').resolve()
+          subprocess.run(['git', '-C', str(source), 'apply', '--check', str(patch)], check=True)
+          subprocess.run(['git', '-C', str(source), 'apply', str(patch)], check=True)
+          PY
       - name: Build and compare every pixel
         run: >-
           python3 tools/conformance.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Check the compiler overlay against upstream regressions
+        run: >-
+          python3 tools/verify_bend.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
       - name: Upload scoped conformance evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -85,3 +103,4 @@ jobs:
             .build/cpu-2.jsonl
             .build/javascript.jsonl
             .build/headless.ppm
+            .build/bend-regressions/results.json

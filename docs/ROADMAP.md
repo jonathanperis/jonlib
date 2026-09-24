@@ -6,16 +6,17 @@ The first milestone supplies an owned RGBA8 image API and a repeatable
 differential harness, using raylib 6.0 CPU image operations as the reference.
 Track exact verified capabilities in [COMPATIBILITY.md](COMPATIBILITY.md).
 
-## Next: resolve the complete Metal gate
+## Metal compiler boundary: resolved for the declared profile
 
-Investigate the scaling-sensitive failure documented in
-[METAL-INVESTIGATION.md](METAL-INVESTIGATION.md). Smaller valid programs pass,
-while the complete generated suite fails. Isolate the compiler/runtime cause
-before claiming a GPU-compatible release. Preserve the failing suite.
+The complete 26-scenario Metal gate now passes with the explicit compiler overlay
+in `toolchain.json`. [METAL-INVESTIGATION.md](METAL-INVESTIGATION.md) records the
+failure, a rejected broader outlining policy and the adopted dispatcher-only
+boundaries. No source-specific rule or altered expected output is used.
 
-If a Bend change is required, develop it in Bend's canonical checkout on an
-appropriate branch, with a minimal upstream-level regression and the relevant
-CPU/Metal tests. Update the pin only after a deliberate compatibility decision.
+The change is maintained as a checked-in Apache-2.0 patch while upstream
+integration remains future work. Continue broader hardware/workload validation
+and retain the exact-source checks when updating Bend. CUDA and the upstream
+cluster/site gates remain unverified.
 
 ## 2D library growth
 

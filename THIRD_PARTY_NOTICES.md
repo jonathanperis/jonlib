@@ -19,7 +19,17 @@ It is not affiliated with or endorsed by raylib or Bend's maintainers.
 ## Bend
 
 Jonlib uses the Bend language and Base library, provided by HigherOrderCO and
-contributors under Apache-2.0. The toolchain is an external development/runtime
-dependency. No Bend3D implementation or demo assets are vendored here.
-Distributions containing Bend runtime artifacts must carry its applicable
-license/notices: <https://github.com/bendlang/bend/blob/ac0ddb7bf9b3255b23126886698b43a176eed8ca/LICENSE>.
+contributors under Apache-2.0. No Bend3D implementation or demo assets are vendored.
+
+The compiler overlay in `patches/bend-metal-dispatch.patch` adapts Bend's
+`bend2/comp.ts` and includes an original regression test and local-spec ignore
+entry. It is based on `b7ebee9217c8813067e200b0c0c9153a3be31c5e` and is distributed
+under **Apache-2.0**, including its modifications. The original copyright is
+2026 HigherOrderCO; the modifications were authored for Jonathan Peris's Jonlib
+project in 2026. The modified compiler carries a change notice.
+
+The upstream license is retained verbatim in [LICENSES/bend.txt](LICENSES/bend.txt).
+No upstream NOTICE file was present at the base revision. This overlay is not
+an upstream-approved Bend release. See [patches/README.md](patches/README.md) for
+provenance and application instructions. Distributions containing Bend runtime
+artifacts must also retain their applicable Apache-2.0 notices.

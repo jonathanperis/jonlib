@@ -1,8 +1,12 @@
 import copy
 import json
+import hashlib
+from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 
-from tools.conformance import cases_from, compare, parse_output
+from tools.conformance import BUILD, cases_from, checkout, compare, parse_output
 
 
 class HarnessTests(unittest.TestCase):
@@ -31,6 +35,39 @@ class HarnessTests(unittest.TestCase):
                     dict(case, operations=[dict(op='unknown', color=[0, 0, 0, 255])])]:
             with self.assertRaises(ValueError):
                 cases_from(dict(schema=1, cases=[bad]))
+
+    def test_compiler_overlay_requires_exact_declared_sources(self):
+        BUILD.mkdir(exist_ok=True)
+        revision = 'a' * 40
+        with tempfile.TemporaryDirectory(dir=BUILD, prefix='provenance-') as directory:
+            root = Path(directory)
+            dependency = root / 'bend'
+            source = dependency / 'bend2/comp.ts'
+            source.parent.mkdir(parents=True)
+            source.write_text('reviewed compiler')
+            manifest_patch = root / 'compiler.patch'
+            manifest_patch.write_text('reviewed patch')
+            overlay = dict(path='compiler.patch',
+                           sha256=hashlib.sha256(manifest_patch.read_bytes()).hexdigest(),
+                           files={'bend2/comp.ts': hashlib.sha256(source.read_bytes()).hexdigest()})
+            with patch('tools.conformance.ROOT', root):
+                with patch('tools.conformance.run', side_effect=[revision, 'bend2/comp.ts\n']):
+                    checkout(dependency, revision, overlay)
+                source.write_text('unreviewed compiler')
+                with patch('tools.conformance.run', side_effect=[revision, 'bend2/comp.ts\n']):
+                    with self.assertRaisesRegex(ValueError, 'overlay mismatch'):
+                        checkout(dependency, revision, overlay)
+                source.write_text('reviewed compiler')
+                with patch('tools.conformance.run', side_effect=[revision, 'bend2/main.ts\n']):
+                    with self.assertRaisesRegex(ValueError, 'unexpected tracked changes'):
+                        checkout(dependency, revision, overlay)
+                manifest_patch.write_text('unreviewed patch')
+                with patch('tools.conformance.run', return_value=revision):
+                    with self.assertRaisesRegex(ValueError, 'patch hash mismatch'):
+                        checkout(dependency, revision, overlay)
+                with patch('tools.conformance.run', side_effect=[revision, ' M bend2/comp.ts\n']):
+                    with self.assertRaisesRegex(ValueError, 'tracked changes invalidate'):
+                        checkout(dependency, revision)
 
 
 if __name__ == '__main__':

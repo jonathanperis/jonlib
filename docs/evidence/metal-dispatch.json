@@ -1,0 +1,357 @@
+{
+  "date": "2026-09-24",
+  "toolchain": {
+    "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+        "path": "patches/bend-metal-dispatch.patch",
+        "sha256": "d4fbe3723f78bbcd456d4937b8f52f48454e7748d86799b22a95165a04cd9879",
+        "files": {
+          ".gitignore": "8915b2338d9a3dd712510d95efbec55daa5f2d5a50f825f7cffbb791f3883024",
+          "bend2/comp.ts": "0095ff214fdf353b3644923a46050507cd2caf09e0da212e446d9fb3dab531a6",
+          "tests/run/metal_inline_budget.bend": "13a2696795e014f55d3d196cc3a4c3691e4e44d2e71f2fed55e04fe6fd4c87f7"
+        }
+      }
+    },
+    "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+    },
+    "bun": {
+      "version": "1.3.12"
+    },
+    "profile": "rgba8-cpu-images-v1"
+  },
+  "host": {
+    "model": "Apple M1",
+    "macos": "27.0",
+    "bun": "1.3.12",
+    "clang": "Apple clang 21.0.0"
+  },
+  "conformance": {
+    "scenarios": 26,
+    "pixels_per_lane": 6682,
+    "lanes": {
+      "cpu-1": {
+        "passed": true,
+        "scenarios": 26,
+        "pixels": 6682
+      },
+      "cpu-2": {
+        "passed": true,
+        "scenarios": 26,
+        "pixels": 6682
+      },
+      "javascript": {
+        "passed": true,
+        "scenarios": 26,
+        "pixels": 6682
+      },
+      "gpu-forced": {
+        "passed": true,
+        "scenarios": 26,
+        "pixels": 6682
+      }
+    },
+    "fixture_hash": "4cf331343218d9aeb3e1557a735c2ff2ec70f747ea0b1edc4add0c5e65258bef"
+  },
+  "compiler_regressions": [
+    {
+      "test": "run/metal_inline_budget",
+      "lanes": [
+        "cpu",
+        "javascript",
+        "gpu-forced"
+      ],
+      "passed": true
+    },
+    {
+      "test": "run/array_map_loop",
+      "lanes": [
+        "cpu",
+        "javascript"
+      ],
+      "passed": true
+    },
+    {
+      "test": "run/matrix_multiply_array",
+      "lanes": [
+        "cpu",
+        "javascript"
+      ],
+      "passed": true
+    },
+    {
+      "test": "run/array_poly_elem",
+      "lanes": [
+        "cpu",
+        "javascript"
+      ],
+      "passed": true
+    },
+    {
+      "test": "run/stencil3d",
+      "lanes": [
+        "cpu",
+        "javascript",
+        "gpu-forced"
+      ],
+      "passed": true
+    },
+    {
+      "test": "run/array_fork",
+      "lanes": [
+        "cpu",
+        "javascript",
+        "gpu-forced"
+      ],
+      "passed": true
+    },
+    {
+      "test": "run/array_atomic_fadd",
+      "lanes": [
+        "cpu",
+        "javascript",
+        "gpu-forced"
+      ],
+      "passed": true
+    },
+    {
+      "test": "run/fork_leaf_result_loop",
+      "lanes": [
+        "cpu",
+        "javascript",
+        "gpu-forced"
+      ],
+      "passed": true
+    },
+    {
+      "test": "run/fork_shared_flat",
+      "lanes": [
+        "cpu",
+        "javascript"
+      ],
+      "passed": true
+    },
+    {
+      "test": "reg/spin_refs_dead_seg",
+      "lanes": [
+        "cpu",
+        "javascript"
+      ],
+      "passed": true
+    },
+    {
+      "test": "reg/brw_spin_lent",
+      "lanes": [
+        "cpu",
+        "javascript"
+      ],
+      "passed": true
+    },
+    {
+      "test": "reg/borrow_nested_flat",
+      "lanes": [
+        "cpu",
+        "javascript"
+      ],
+      "passed": true
+    },
+    {
+      "test": "reg/brw_arrays",
+      "lanes": [
+        "cpu",
+        "javascript"
+      ],
+      "passed": true
+    },
+    {
+      "test": "compile/array_dynamic_closure",
+      "lanes": [
+        "cpu",
+        "javascript"
+      ],
+      "passed": true
+    },
+    {
+      "test": "compile/fork_leaf_budget",
+      "lanes": [
+        "cpu",
+        "javascript",
+        "gpu-forced"
+      ],
+      "passed": true
+    },
+    {
+      "test": "compile/fork_leaf_handoff",
+      "lanes": [
+        "cpu",
+        "javascript",
+        "gpu-forced"
+      ],
+      "passed": true
+    }
+  ],
+  "code_comparison": [
+    {
+      "workload": "raytrace",
+      "metal_boundaries": 1,
+      "cpu_cuda_identical": true
+    },
+    {
+      "workload": "mandelbrot",
+      "metal_boundaries": 2,
+      "cpu_cuda_identical": true
+    },
+    {
+      "workload": "symreg",
+      "metal_boundaries": 0,
+      "cpu_cuda_identical": true
+    }
+  ],
+  "performance": {
+    "compiler_sha256": "0095ff214fdf353b3644923a46050507cd2caf09e0da212e446d9fb3dab531a6",
+    "measurement": "process wall seconds, warmed shader archives; includes startup",
+    "results": [
+      {
+        "workload": "raytrace",
+        "lane": "cpu",
+        "output": "31932226",
+        "samples": {
+          "baseline": [
+            0.17854991598869674,
+            0.1792651249852497,
+            0.173961375025101
+          ],
+          "candidate": [
+            0.17878254101378843,
+            0.17800370897748508,
+            0.16779404200497083
+          ]
+        },
+        "medians": {
+          "baseline": 0.17854991598869674,
+          "candidate": 0.17800370897748508
+        },
+        "candidate_over_baseline": 0.9969408722026717
+      },
+      {
+        "workload": "raytrace",
+        "lane": "metal",
+        "output": "31932226",
+        "samples": {
+          "baseline": [
+            0.26026750000892207,
+            0.2061991670052521,
+            0.20334641600493342
+          ],
+          "candidate": [
+            0.203839916997822,
+            0.21803133300272748,
+            0.20749591698404402
+          ]
+        },
+        "medians": {
+          "baseline": 0.2061991670052521,
+          "candidate": 0.20749591698404402
+        },
+        "candidate_over_baseline": 1.0062888225865572
+      },
+      {
+        "workload": "mandelbrot",
+        "lane": "cpu",
+        "output": "3705391854",
+        "samples": {
+          "baseline": [
+            0.4180807500088122,
+            0.41941612501977943,
+            0.4178256250161212
+          ],
+          "candidate": [
+            0.41779274999862537,
+            0.4172439999820199,
+            0.4172702920041047
+          ]
+        },
+        "medians": {
+          "baseline": 0.4180807500088122,
+          "candidate": 0.4172702920041047
+        },
+        "candidate_over_baseline": 0.9980614797388055
+      },
+      {
+        "workload": "mandelbrot",
+        "lane": "metal",
+        "output": "3705391854",
+        "samples": {
+          "baseline": [
+            0.13531312500708736,
+            0.13666045799618587,
+            0.13383570799487643
+          ],
+          "candidate": [
+            0.1356609170034062,
+            0.13692774999071844,
+            0.13639291701838374
+          ]
+        },
+        "medians": {
+          "baseline": 0.13531312500708736,
+          "candidate": 0.13639291701838374
+        },
+        "candidate_over_baseline": 1.0079799502911475
+      },
+      {
+        "workload": "symreg",
+        "lane": "cpu",
+        "output": "541657266",
+        "samples": {
+          "baseline": [
+            0.05646004099980928,
+            0.056181374995503575,
+            0.05636220800806768
+          ],
+          "candidate": [
+            0.05615166699863039,
+            0.05608879201463424,
+            0.0566499590058811
+          ]
+        },
+        "medians": {
+          "baseline": 0.05636220800806768,
+          "candidate": 0.05615166699863039
+        },
+        "candidate_over_baseline": 0.9962645003295976
+      },
+      {
+        "workload": "symreg",
+        "lane": "metal",
+        "output": "541657266",
+        "samples": {
+          "baseline": [
+            0.5249330829828978,
+            0.5144298340019304,
+            0.5232237500022165
+          ],
+          "candidate": [
+            0.5182968330045696,
+            0.523762708005961,
+            0.5198879159870557
+          ]
+        },
+        "medians": {
+          "baseline": 0.5232237500022165,
+          "candidate": 0.5198879159870557
+        },
+        "candidate_over_baseline": 0.9936244598698996
+      }
+    ]
+  },
+  "unrun": [
+    "CUDA hardware",
+    "upstream cluster/site gates",
+    "repository token-cap gate (ttok unavailable)",
+    "other GPU models"
+  ]
+}

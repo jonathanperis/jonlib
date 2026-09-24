@@ -1,19 +1,22 @@
 # Verification record
 
 Date: 2026-09-24. Host: Apple M1 / macOS 27.0. Bun 1.3.12 and Apple clang 21.0.0.
-Revisions are pinned in `toolchain.json`.
+The current base revision and exact compiler overlay are pinned in `toolchain.json`.
 
 ## Executed checks
 
 ```sh
 python3 -m unittest discover -s tests -v
-python3 tools/conformance.py
+python3 tools/conformance.py --gpu
+python3 tools/verify_bend.py --gpu
 ```
 
-- Both harness test groups pass, including changed pixels, empty/missing results,
-  invalid fixtures, and Boolean/floating-point dimensions masquerading as integers.
+- Three harness test groups pass, including changed pixels, empty/missing results,
+  invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
+  and compiler source/patch tampering or unexpected tracked changes.
 - 26 scenarios / 6,682 complete RGBA pixels match pinned raylib exactly on each
-  of native CPU one-thread, native CPU two-thread, and emitted JavaScript.
+  of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
+  Metal with the declared compiler overlay.
 - The owned-copy, out-of-bounds read, color packing/channel and Base.Image
   pixel/padding contracts pass on native CPU and JS.
 - `PROOF.bend` checks: `All terms check.` The theorem is dimension preservation
@@ -25,10 +28,18 @@ python3 tools/conformance.py
 - Library source passes the no-unsafe/no-custom-foreign-import gate.
 - Relative documentation links resolve, raylib's license is retained verbatim,
   and `.specs/` is ignored. No specification files were previously tracked.
-- Both upstream dependency checkouts remain clean.
+- Raylib remains clean. Bend has exactly the declared compiler-overlay files;
+  their hashes match the lockfile. Verification does not modify either checkout.
+- 16 selected Bend regressions pass on CPU/JS; 7 also execute successfully on
+  forced Metal. The new generic test exercises the added dispatch boundary.
+- Three representative CPU/Metal workloads retain their checksums; their warmed
+  process-time medians remain within about 1% of baseline. See the investigation
+  for parameters, measurements and the rejected broader outlining policy.
 
 Exact source/input hashes, host, lane outcomes and generated full pixel arrays
 are retained under `.build/`. The latest default run is `.build/conformance.json`.
+The recorded compiler adoption evidence is also checked in at
+[evidence/metal-dispatch.json](evidence/metal-dispatch.json).
 
 ## Acceptance status
 
@@ -38,22 +49,27 @@ are retained under `.build/`. The latest default run is `.build/conformance.json
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
-| A5: complete forced-on Metal gate | **Blocked** | Full suite fails; detailed reduction in METAL-INVESTIGATION.md |
+| A5: complete forced-on Metal gate | Pass on local M1 with overlay | Full exact-pixel suite; detailed history in METAL-INVESTIGATION.md |
 | A6: API, commands, licensing and limitations | Pass | Documentation/source review |
 | A7: corrupted output and empty suite rejected | Pass | Harness negative controls |
 | A8: real headless export and Base.Image adapter | Pass | Native PPM comparison and CPU/JS adapter contract |
+| A12: compiler fix and broader verification | Pass in recorded scope | 16 upstream cases, three workload comparisons, full Jonlib GPU corpus |
+| A13: exact compiler provenance | Pass locally | Base/patch/file hashes and negative controls; hosted clean-base application is enforced by CI |
 
 ## Limitations
 
-The complete GPU run failed and remains failed; the reduced successful probes
-do not supersede it. `docs/METAL-INVESTIGATION.md` contains the reproduction,
-observed failure messages and reduction evidence. No Bend runtime fix has been
-made or claimed.
+The unmodified stock-compiler failure is retained as historical evidence. The
+complete normal GPU gate passes with the explicit compiler overlay; no emitted-C
+rewriting or source-specific workaround is part of that gate. The patch has not
+been accepted upstream. The original underlying Metal optimizer/resource defect
+has not been isolated independently of Bend's generated code.
 
 No live desktop window, audio device, browser UI, CUDA, Windows, Android,
 performance comparison, long-run resource soak, or complete raylib conformance
 was verified. The image tests are finite, not exhaustive over the documented
 input domain. The public Surface constructor must retain the API's invariant.
+The full upstream mini-cluster/site gates were not run, and the local repository
+token-cap gate could not be run because `ttok` is unavailable. No tool was installed.
 
 ## Regression review
 
@@ -82,3 +98,19 @@ was arm64 with Apple clang 17.0.0. Both used Bun 1.3.12.
 Hosted jobs do not execute the Metal gate or claim GPU compatibility. Actions
 and dependency revisions are pinned; scoped JSON/PPM artifacts are retained
 for 14 days, while workflow logs/results follow repository retention settings.
+
+## Compiler overlay regression review
+
+The overlay review checked 21 direct caller sites for the changed compiler
+helpers and checkout verifier, plus cache metadata, wrapper liveness, generated
+CPU/CUDA aliases, CI patch application and its consumers. It inspected 34
+upstream exact-output expectations and 10 harness negative-control assertion
+sites. Additional evidence covers full-pixel comparison, the original-FAR plus
+new-wrapper interaction, normalized generated code and workload checksums.
+
+The scan corrected stale documentation that still required an entirely
+unmodified Bend checkout. The contract now consistently requires the exact
+declared overlay and rejects other tracked changes. The earlier, unsafe global
+outlining candidate was rejected during implementation and never adopted.
+
+Regression scan: 21 callers checked, 44 assertions checked, 1 flagged/fixed.
