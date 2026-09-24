@@ -11,5 +11,10 @@
   "ImageCopy": {"jonlib":"Surface.copy","status":"contract-checked"},
   "GetColor": {"jonlib":"Color.red/green/blue/alpha","status":"contract-checked"},
   "ColorToInt": {"jonlib":"Color.rgba","status":"contract-checked"},
-  "ColorAlphaBlend": {"jonlib":"Color.alpha_blend","status":"profile-covered"}
+  "ColorAlphaBlend": {"jonlib":"Color.alpha_blend","status":"profile-covered"},
+  "ImageDrawLine": {"jonlib":"Surface.draw_line","status":"profile-covered","scope":"RGBA8; integral coordinates; pinned 16.16 stepping and excluded endpoint"},
+  "ImageDrawLineV": {"jonlib":"Surface.draw_line_v","status":"profile-covered","scope":"RGBA8; bounded finite Vector2 inputs and raylib add-half/truncate rounding"},
+  "ImageDrawTriangle": {"jonlib":"Surface.draw_triangle","status":"profile-covered","scope":"RGBA8; integral vertices; defined reference signed-edge arithmetic"},
+  "ImageDrawTriangleLines": {"jonlib":"Surface.draw_triangle_lines","status":"profile-covered","scope":"RGBA8; bounded finite vertices truncated before line rasterization"},
+  "ImageDraw": {"jonlib":"Surface.draw_image","status":"profile-covered","scope":"RGBA8; full source; no scaling; one mip level; integer destination placement","gaps":["source subrectangles","resizing filters","other pixel formats","mipmaps","fractional rectangles"]}
 }

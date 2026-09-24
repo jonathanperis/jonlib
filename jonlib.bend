@@ -1,7 +1,23 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Rectangle/circle/alpha algorithms adapted from raylib 6.0 rtextures.c.
+# Image rasterization/composition algorithms adapted from raylib 6.0 rtextures.c.
 # Altered Bend implementations; see THIRD_PARTY_NOTICES.md and LICENSES/raylib.txt.
 import Base
+
+type Vector2 is Data:
+  Vector2{x: F32, y: F32}
+
+# Internal signed-word operations for raylib's integer raster stepping.
+def Signed.word(+x: F32) -> U32:
+  +magnitude = F32.to_u32(F32.abs(x))
+  Bool.pick(U32, (x < 0.0 : F32), (0 - magnitude : U32), magnitude)
+
+def Signed.high16(+word: U32) -> F32:
+  (U32.to_f32((word >> 16n : U32))
+    - Bool.pick(F32, (word >= 2147483648 : U32), 65536.0, 0.0) : F32)
+
+def Signed.trunc(+x: F32) -> F32:
+  +magnitude = F32.floor(F32.abs(x))
+  Bool.pick(F32, (x < 0.0 : F32), (0.0 - magnitude : F32), magnitude)
 
 # A color is packed RRGGBBAA. Channel conversion follows C unsigned-byte casts.
 def Color.rgba(r: U32, g: U32, b: U32, a: U32) -> U32:
@@ -158,6 +174,150 @@ def Surface.circle.loop(fuel: Nat, on: Bool, +cx: F32, +cy: F32, +x: F32, +y: F3
 def Surface.draw_circle(surface: Surface, cx: F32, cy: F32, +radius: U32, color: U32) -> Surface:
   +r = U32.to_f32(radius)
   Surface.circle.loop(1n+U32.to_nat(radius), True{}, cx, cy, 0.0, r, (3.0 - 2.0 * r : F32), color, surface)
+
+def Surface.line.loop(n: Nat, +vertical: Bool, +x: F32, +y: F32, +direction: F32, +major: F32, +minor: U32, +step: U32, +color: U32, surface: Surface) -> Surface:
+  match n:
+    case 0n:
+      surface
+    case 1n+k:
+      +offset = Signed.high16(minor)
+      px = (x + Bool.pick(F32, vertical, offset, major) : F32)
+      py = (y + Bool.pick(F32, vertical, major, offset) : F32)
+      Surface.line.loop(k, vertical, x, y, direction, (major + direction : F32),
+        (minor + step : U32), step, color, Surface.draw_pixel(surface, px, py, color))
+
+# The 16.16 short-axis accumulator and excluded final endpoint match ImageDrawLine.
+def Surface.draw_line(surface: Surface, +x0: F32, +y0: F32, x1: F32, y1: F32, color: U32) -> Surface:
+  +dx = (x1 - x0 : F32)
+  +dy = (y1 - y0 : F32)
+  +vertical = (F32.abs(dy) > F32.abs(dx) : F32)
+  +long = Bool.pick(F32, vertical, dy, dx)
+  +short = Bool.pick(F32, vertical, dx, dy)
+  +count = F32.to_u32(F32.abs(long))
+  +magnitude = ((F32.to_u32(F32.abs(short)) << 16n) / U32.max(1, count) : U32)
+  step = Bool.pick(U32, (short < 0.0 : F32), (0 - magnitude : U32), magnitude)
+  Surface.line.loop(U32.to_nat(count), vertical, x0, y0,
+    Bool.pick(F32, (long < 0.0 : F32), (0.0 - 1.0 : F32), 1.0), 0.0, 0, step, color, surface)
+
+def Surface.draw_line_v(surface: Surface, start: Vector2, end: Vector2, color: U32) -> Surface:
+  Vector2{x0, y0} = start
+  Vector2{x1, y1} = end
+  Surface.draw_line(surface, Signed.trunc((x0 + 0.5 : F32)), Signed.trunc((y0 + 0.5 : F32)),
+    Signed.trunc((x1 + 0.5 : F32)), Signed.trunc((y1 + 0.5 : F32)), color)
+
+type Raster.Edge is Data:
+  Edge{value: U32, dx: U32, dy: U32}
+
+def Raster.edge(x: F32, y: F32, vx: F32, vy: F32, +dx: F32, +dy: F32) -> Raster.Edge:
+  Edge{Signed.word(((x - vx) * dx + dy * (y - vy) : F32)), Signed.word(dx), Signed.word(dy)}
+
+def Surface.triangle.pixel(inside: Bool, pixels: Array<U32>, at: U32, color: U32) -> Array<U32>:
+  match inside:
+    case False{}:
+      pixels
+    case True{}:
+      Array.set(U32, pixels, at, color)
+
+def Surface.triangle.row(n: Nat, +at: U32, +a: U32, +b: U32, +c: U32, +ax: U32, +bx: U32, +cx: U32, +color: U32, pixels: Array<U32>) -> Array<U32>:
+  match n:
+    case 0n:
+      pixels
+    case 1n+k:
+      inside = U32.is_eq(((a .|. b .|. c) .&. 2147483648 : U32), 0)
+      Surface.triangle.row(k, (at + 1 : U32), (a + ax : U32), (b + bx : U32), (c + cx : U32),
+        ax, bx, cx, color, Surface.triangle.pixel(inside, pixels, at, color))
+
+def Surface.triangle.rows(n: Nat, +at: U32, +stride: U32, +cols: Nat, ea: Raster.Edge, eb: Raster.Edge, ec: Raster.Edge, +color: U32, pixels: Array<U32>) -> Array<U32>:
+  match n:
+    case 0n:
+      pixels
+    case 1n+k:
+      Edge{+a, +ax, +ay} = ea
+      Edge{+b, +bx, +by} = eb
+      Edge{+c, +cx, +cy} = ec
+      Surface.triangle.rows(k, (at + stride : U32), stride, cols,
+        Edge{(a + ay : U32), ax, ay}, Edge{(b + by : U32), bx, by}, Edge{(c + cy : U32), cx, cy}, color,
+        Surface.triangle.row(cols, at, a, b, c, ax, bx, cx, color, pixels))
+
+def Surface.triangle.fill(visible: Bool, +w: U32, h: U32, pixels: Array<U32>, +x0: F32, +y0: F32, x1: F32, y1: F32, a: Raster.Edge, b: Raster.Edge, c: Raster.Edge, color: U32) -> Surface:
+  match visible:
+    case False{}:
+      Surface{w, h, pixels}
+    case True{}:
+      cols = U32.to_nat(F32.to_u32((x1 - x0 + 1.0 : F32)))
+      rows = U32.to_nat(F32.to_u32((y1 - y0 + 1.0 : F32)))
+      Surface{w, h, Surface.triangle.rows(rows, (F32.to_u32(y0) * w + F32.to_u32(x0) : U32), w,
+        cols, a, b, c, color, pixels)}
+
+def Surface.draw_triangle(surface: Surface, v1: Vector2, v2: Vector2, v3: Vector2, color: U32) -> Surface:
+  Surface{+w, +h, pixels} = surface
+  Vector2{+ax, +ay} = v1
+  Vector2{+bx, +by} = v2
+  Vector2{+cx, +cy} = v3
+  +x0 = F32.max(0.0, F32.min(ax, F32.min(bx, cx)))
+  +y0 = F32.max(0.0, F32.min(ay, F32.min(by, cy)))
+  +x1 = F32.min(U32.to_f32((w - 1 : U32)), F32.max(ax, F32.max(bx, cx)))
+  +y1 = F32.min(U32.to_f32((h - 1 : U32)), F32.max(ay, F32.max(by, cy)))
+  +sign = Bool.pick(F32, ((bx - ax) * (cy - ay) - (cx - ax) * (by - ay) > 0.0 : F32), (0.0 - 1.0 : F32), 1.0)
+  Surface.triangle.fill(((x0 <= x1) && (y0 <= y1) : F32), w, h, pixels, x0, y0, x1, y1,
+    Raster.edge(x0, y0, bx, by, ((cy - by) * sign : F32), ((bx - cx) * sign : F32)),
+    Raster.edge(x0, y0, cx, cy, ((ay - cy) * sign : F32), ((cx - ax) * sign : F32)),
+    Raster.edge(x0, y0, ax, ay, ((by - ay) * sign : F32), ((ax - bx) * sign : F32)), color)
+
+def Surface.draw_triangle_lines(surface: Surface, v1: Vector2, v2: Vector2, v3: Vector2, +color: U32) -> Surface:
+  Vector2{ax, ay} = v1
+  Vector2{bx, by} = v2
+  Vector2{cx, cy} = v3
+  +x0 = Signed.trunc(ax)
+  +y0 = Signed.trunc(ay)
+  +x1 = Signed.trunc(bx)
+  +y1 = Signed.trunc(by)
+  +x2 = Signed.trunc(cx)
+  +y2 = Signed.trunc(cy)
+  a = Surface.draw_line(surface, x0, y0, x1, y1, color)
+  b = Surface.draw_line(a, x1, y1, x2, y2, color)
+  Surface.draw_line(b, x2, y2, x0, y0, color)
+
+def Surface.blit.pixel(source: Array<U32> & U32, destination: Array<U32> & U32, at: U32, tint: U32) -> Array<U32> & Array<U32>:
+  (src, sc) = source
+  (dst, dc) = destination
+  (src, Array.set(U32, dst, at, Color.alpha_blend(dc, sc, tint)))
+
+def Surface.blit.row(n: Nat, +si: U32, +di: U32, +tint: U32, buffers: Array<U32> & Array<U32>) -> Array<U32> & Array<U32>:
+  match n:
+    case 0n:
+      buffers
+    case 1n+k:
+      (src, dst) = buffers
+      Surface.blit.row(k, (si + 1 : U32), (di + 1 : U32), tint,
+        Surface.blit.pixel(Array.get(U32, src, si), Array.get(U32, dst, di), di, tint))
+
+def Surface.blit.rows(n: Nat, +cols: Nat, +si: U32, +di: U32, +sw: U32, +dw: U32, +tint: U32, buffers: Array<U32> & Array<U32>) -> Array<U32> & Array<U32>:
+  match n:
+    case 0n:
+      buffers
+    case 1n+k:
+      Surface.blit.rows(k, cols, (si + sw : U32), (di + dw : U32), sw, dw, tint,
+        Surface.blit.row(cols, si, di, tint, buffers))
+
+def Surface.blit.finish(dw: U32, dh: U32, sw: U32, sh: U32, buffers: Array<U32> & Array<U32>) -> Surface & Surface:
+  (src, dst) = buffers
+  (Surface{dw, dh, dst}, Surface{sw, sh, src})
+
+# Initial ImageDraw profile: full source, equal-size destination rectangle,
+# RGBA8, one mip level. Both image owners are returned, destination first.
+def Surface.draw_image(destination: Surface, source: Surface, +x: F32, +y: F32, tint: U32) -> Surface & Surface:
+  Surface{+dw, +dh, dst} = destination
+  Surface{+sw, +sh, src} = source
+  +sx = F32.max(0.0, (0.0 - x : F32))
+  +sy = F32.max(0.0, (0.0 - y : F32))
+  +dx = F32.max(0.0, x)
+  +dy = F32.max(0.0, y)
+  cols = F32.to_u32(F32.max(0.0, F32.min((U32.to_f32(sw) - sx : F32), (U32.to_f32(dw) - dx : F32))))
+  rows = F32.to_u32(F32.max(0.0, F32.min((U32.to_f32(sh) - sy : F32), (U32.to_f32(dh) - dy : F32))))
+  Surface.blit.finish(dw, dh, sw, sh, Surface.blit.rows(U32.to_nat(rows), U32.to_nat(cols),
+    (F32.to_u32(sy) * sw + F32.to_u32(sx) : U32), (F32.to_u32(dy) * dw + F32.to_u32(dx) : U32),
+    sw, dw, tint, (src, dst)))
 
 # Export consumes the surface and excludes power-of-two storage padding.
 def Surface.colors(surface: Surface) -> List<U32>:

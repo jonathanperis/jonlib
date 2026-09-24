@@ -1,11 +1,13 @@
 # Metal dispatch failure: resolved with the declared compiler overlay
 
-## Current result
+## Compiler adoption result
 
-Jonlib's normal `python3 tools/conformance.py --gpu` now passes all **26
-scenarios / 6,682 RGBA pixels** with the compiler overlay in `toolchain.json`.
+The compiler fix was accepted after Jonlib's normal `python3 tools/conformance.py --gpu`
+passed the then-current **26 scenarios / 6,682 RGBA pixels** with the overlay in `toolchain.json`.
 The library source, fixtures and expected results were not changed to obtain
 this result. CPU and JavaScript still pass.
+The image suite has since expanded; [VERIFICATION.md](VERIFICATION.md) records
+its current size and results. This document preserves the original compiler investigation.
 
 The compiler change budgets transitive helper expansion and repeated source
 call sites at the **device dispatcher boundary**. Oversized calls receive a

@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Full-pixel differential tests. Requires existing pinned checkouts; installs nothing."""
 import argparse
+from decimal import Decimal
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 import random
@@ -58,6 +60,12 @@ def rgba(value):
     return sum(c << shift for c, shift in zip(value, (24, 16, 8, 0)))
 
 
+def coordinate(value, fractional=False):
+    if not fractional:
+        return integer(value, -32767, 32767)
+    return type(value) in (int, float) and math.isfinite(value) and -32767 <= value <= 32767
+
+
 def cases_from(document):
     if document.get("schema") != 1 or not isinstance(document.get("cases"), list):
         raise ValueError("Expected fixture schema 1 and a cases array")
@@ -101,21 +109,53 @@ def cases_from(document):
             raise ValueError(f"{name}: operations must be an array")
         for op in case["operations"]:
             kind = op.get("op")
-            if kind not in ("pixel", "rectangle", "circle", "clear", "flip_horizontal", "flip_vertical", "blend_color"):
+            if kind not in ("pixel", "rectangle", "circle", "clear", "flip_horizontal", "flip_vertical", "blend_color",
+                            "line", "line_v", "triangle", "triangle_lines", "blit"):
                 raise ValueError(f"{name}: unknown operation {kind!r}")
-            if not kind.startswith('flip_'):
+            if kind == 'blit':
+                rgba(op['tint'])
+                source = op['source']
+                if not all(integer(source.get(k), 1, 4096) for k in ('width', 'height')):
+                    raise ValueError(f'{name}: invalid source dimensions')
+                if not isinstance(source.get('pixels'), list) or len(source['pixels']) != source['width'] * source['height']:
+                    raise ValueError(f'{name}: source pixel count must match its dimensions')
+                for pixel in source['pixels']:
+                    rgba(pixel)
+                if type(op.get('observe_source', False)) is not bool:
+                    raise ValueError(f'{name}: observe_source must be Boolean')
+            elif not kind.startswith('flip_'):
                 rgba(op["color"])
             if kind == 'blend_color':
                 rgba(op['destination'])
                 rgba(op['tint'])
             fields = [] if kind == "clear" or kind.startswith('flip_') else ["x", "y"]
+            if kind in ('line', 'line_v', 'triangle', 'triangle_lines'):
+                fields = ['x0', 'y0', 'x1', 'y1']
+                if kind.startswith('triangle'):
+                    fields += ['x2', 'y2']
             if kind == "rectangle":
                 fields += ["width", "height"]
-            if any(not integer(op.get(k), -32767, 32767) for k in fields):
-                raise ValueError(f"{name}: coordinates must be integral and in -32767..32767")
+            if any(not coordinate(op.get(k), kind in ('line_v', 'triangle_lines')) for k in fields):
+                raise ValueError(f"{name}: invalid coordinates for {kind}")
+            if kind in ('line', 'line_v', 'triangle_lines'):
+                points = [(op['x0'], op['y0']), (op['x1'], op['y1'])]
+                if kind == 'triangle_lines':
+                    points += [(op['x2'], op['y2']), points[0]]
+                rounded = [(math.trunc(x + (0.5 if kind == 'line_v' else 0)),
+                            math.trunc(y + (0.5 if kind == 'line_v' else 0))) for x, y in points]
+                if any(min(abs(x1-x0), abs(y1-y0)) > 32767 for (x0, y0), (x1, y1) in zip(rounded, rounded[1:])):
+                    raise ValueError(f'{name}: fixed-point short-axis delta exceeds the supported line profile')
             if kind == "circle" and not integer(op.get("radius"), 0, 32767):
                 raise ValueError(f"{name}: radius must be 0..32767")
     return cases
+
+
+def result_size(case):
+    width, height = case['width'], case['height']
+    for op in case['operations']:
+        if op['op'] == 'blit' and op.get('observe_source'):
+            width, height = op['source']['width'], op['source']['height']
+    return width, height
 
 
 def c_source(cases):
@@ -126,6 +166,20 @@ def c_source(cases):
         lines += ['{', f'Image image = GenImageColor({w}, {h}, GetColor({rgba(case["background"])}u));']
         for op in case["operations"]:
             kind = op["op"]
+            if kind == 'blit':
+                source = op['source']
+                sw, sh = source['width'], source['height']
+                lines += ['{', f'Image source = GenImageColor({sw}, {sh}, BLANK);']
+                for i, pixel in enumerate(source['pixels']):
+                    lines += [f'ImageDrawPixel(&source, {i % sw}, {i // sw}, GetColor({rgba(pixel)}u));']
+                lines += [f'ImageDraw(&image, source, (Rectangle){{0, 0, {sw}, {sh}}}, '
+                          f'(Rectangle){{{op["x"]}, {op["y"]}, {sw}, {sh}}}, GetColor({rgba(op["tint"])}u));']
+                if op.get('observe_source'):
+                    lines += ['UnloadImage(image);', 'image = source;']
+                else:
+                    lines += ['UnloadImage(source);']
+                lines += ['}']
+                continue
             if kind.startswith('flip_'):
                 function = 'ImageFlipHorizontal' if kind == 'flip_horizontal' else 'ImageFlipVertical'
                 lines += [f'{function}(&image);']
@@ -141,6 +195,13 @@ def c_source(cases):
                 lines += [f'ImageDrawCircle(&image, {op["x"]}, {op["y"]}, {op["radius"]}, {color});']
             elif kind == "blend_color":
                 lines += [f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, ColorAlphaBlend(GetColor({rgba(op["destination"])}u), {color}, GetColor({rgba(op["tint"])}u)));']
+            elif kind == 'line':
+                lines += [f'ImageDrawLine(&image, {op["x0"]}, {op["y0"]}, {op["x1"]}, {op["y1"]}, {color});']
+            elif kind in ('line_v', 'triangle', 'triangle_lines'):
+                count = 2 if kind == 'line_v' else 3
+                vectors = ', '.join(f'(Vector2){{{op["x"+str(i)]}, {op["y"+str(i)]}}}' for i in range(count))
+                function = {'line_v':'ImageDrawLineV', 'triangle':'ImageDrawTriangle', 'triangle_lines':'ImageDrawTriangleLines'}[kind]
+                lines += [f'{function}(&image, {vectors}, {color});']
         prefix = '{"id":"' + case["id"] + '","width":%d,"height":%d,"pixels":['
         lines += [f'printf({json.dumps(prefix)}, image.width, image.height);',
                   'for (int y = 0; y < image.height; y++) for (int x = 0; x < image.width; x++) {',
@@ -151,7 +212,10 @@ def c_source(cases):
 
 
 def f32(value):
-    return f"{value}.0" if value >= 0 else f"(0.0 - {-value}.0 : F32)"
+    literal = format(Decimal(str(abs(value))), 'f')
+    if '.' not in literal:
+        literal += '.0'
+    return literal if value >= 0 else f'(0.0 - {literal} : F32)'
 
 
 def bend_source(cases, gpu=False):
@@ -162,12 +226,32 @@ def bend_source(cases, gpu=False):
              '    ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"pixels\\":"',
              '    ++ List.show(~&1, ~U32, ~U32.show, J.Surface.colors(J.Surface{w, h, pixels})) ++ "}")', '']
     for i, case in enumerate(cases):
+        for j, op in enumerate(case['operations']):
+            if op['op'] != 'blit':
+                continue
+            source = op['source']
+            depth = (source['width'] * source['height'] - 1).bit_length()
+            lines += [f'def source_{i}_{j}() -> J.Surface:', f'  p0 = Array.new(U32, {depth}n, 0)']
+            for k, pixel in enumerate(source['pixels']):
+                lines += [f'  p{k+1} = Array.set(U32, p{k}, {k}, {rgba(pixel)})']
+            lines += [f'  J.Surface{{{source["width"]}, {source["height"]}, p{len(source["pixels"])}}}', '']
         lines += [f'def draw_{i}(surface: J.Surface) -> J.Surface:']
         previous = 'surface'
         for j, op in enumerate(case["operations"]):
             kind = op["op"]
+            if kind == 'blit':
+                draw = f'J.Surface.draw_image({previous}, source_{i}_{j}(), {f32(op["x"])}, {f32(op["y"])}, {rgba(op["tint"])})'
+                pick = 'snd' if op.get('observe_source') else 'fst'
+                previous = f's{j}'
+                lines += [f'  {previous} = Pair.{pick}(J.Surface, J.Surface, {draw})']
+                continue
             args = [previous]
-            if kind not in ('clear', 'flip_horizontal', 'flip_vertical'):
+            if kind in ('line', 'line_v', 'triangle', 'triangle_lines'):
+                count = 2 if kind.startswith('line') else 3
+                for point in range(count):
+                    x, y = f32(op['x'+str(point)]), f32(op['y'+str(point)])
+                    args += [x, y] if kind == 'line' else [f'J.Vector2{{{x}, {y}}}']
+            elif kind not in ('clear', 'flip_horizontal', 'flip_vertical'):
                 args += [f32(op['x']), f32(op['y'])]
             if kind == 'rectangle':
                 args += [f32(op['width']), f32(op['height'])]
@@ -198,11 +282,12 @@ def parse_output(output, cases):
     if len(rows) != len(cases):
         raise ValueError(f"Expected {len(cases)} result rows, received {len(rows)}")
     for row, case in zip(rows, cases):
+        width, height = result_size(case)
         if not all(integer(row[k], 1, 4096) for k in ('width', 'height')):
             raise ValueError(f"Invalid output dimensions: {row['id']}")
-        if (row['id'], row['width'], row['height']) != (case['id'], case['width'], case['height']):
+        if (row['id'], row['width'], row['height']) != (case['id'], width, height):
             raise ValueError(f"Wrong scenario identity/dimensions: {row['id']}")
-        if len(row['pixels']) != case['width'] * case['height']:
+        if len(row['pixels']) != width * height:
             raise ValueError(f"Wrong pixel count: {row['id']}")
         if not all(integer(p, 0, 2**32 - 1) for p in row['pixels']):
             raise ValueError(f"Invalid RGBA word: {row['id']}")
@@ -275,7 +360,7 @@ def main():
     report['verification_sources'] = {
         str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in (ROOT / 'tools/conformance.py', ROOT / 'tests/contracts.bend',
-                     ROOT / 'LAWS.bend', ROOT / 'PROOF.bend', ROOT / 'examples/headless.bend',
+                     ROOT / 'LAWS.bend', ROOT / 'PROOF.bend', ROOT / 'examples/headless.bend', ROOT / 'examples/composite.bend',
                      ROOT / 'docs/api-map.json')
     }
     cases = cases_from(json.loads(args.fixtures.read_text()))
@@ -283,7 +368,7 @@ def main():
     (BUILD / 'scenarios.json').write_text(expanded + '\n')
     report['fixtures_sha256'] = hashlib.sha256(expanded.encode()).hexdigest()
     report['scenarios'] = [c['id'] for c in cases]
-    report['pixels_per_lane'] = sum(c['width'] * c['height'] for c in cases)
+    report['pixels_per_lane'] = sum(width * height for width, height in map(result_size, cases))
     cli = ['bun', args.bend_source / 'bend2/main.ts']
     library_verdict = run([*cli, ROOT / 'jonlib.bend', '--check-only'])
     if library_verdict.strip() != 'All terms check.':
@@ -330,19 +415,21 @@ def main():
             raise ValueError(f'{lane}: ownership/color/adapter contract failed')
     report['contracts'] = ['cpu', 'javascript']
     print('Ownership, bounds, color and Base.Image contracts: CPU/JS passed', flush=True)
-    example_reference = next((row for row in reference if row['id'] == 'radius-12-regression'), None)
-    if example_reference is None:
-        raise ValueError('Fixtures must include radius-12-regression for the headless example comparison')
-    run([*cli, ROOT / 'examples/headless.bend', '-o', BUILD / 'headless'])
-    run([BUILD / 'headless'])
-    ppm = (BUILD / 'headless.ppm').read_text().split()
-    if ppm[:4] != ['P3', str(example_reference['width']), str(example_reference['height']), '255']:
-        raise ValueError('Headless example PPM header mismatch')
-    expected_rgb = [str((p >> shift) & 255) for p in example_reference['pixels'] for shift in (24, 16, 8)]
-    if ppm[4:] != expected_rgb:
-        raise ValueError('Headless example RGB pixels differ from raylib')
-    report['example'] = dict(path='.build/headless.ppm', pixels=len(example_reference['pixels']), passed=True)
-    print('Headless PPM export: every RGB pixel matches raylib', flush=True)
+    for name, scenario, key in [('headless', 'radius-12-regression', 'example'),
+                                ('composite', 'composite-example', 'composite_example')]:
+        example_reference = next((row for row in reference if row['id'] == scenario), None)
+        if example_reference is None:
+            raise ValueError(f'Fixtures must include {scenario} for the {name} example comparison')
+        run([*cli, ROOT / f'examples/{name}.bend', '-o', BUILD / name])
+        run([BUILD / name])
+        ppm = (BUILD / f'{name}.ppm').read_text().split()
+        if ppm[:4] != ['P3', str(example_reference['width']), str(example_reference['height']), '255']:
+            raise ValueError(f'{name}: PPM header mismatch')
+        expected_rgb = [str((p >> shift) & 255) for p in example_reference['pixels'] for shift in (24, 16, 8)]
+        if ppm[4:] != expected_rgb:
+            raise ValueError(f'{name}: RGB pixels differ from raylib')
+        report[key] = dict(path=f'.build/{name}.ppm', pixels=len(example_reference['pixels']), passed=True)
+        print(f'{name} PPM export: every RGB pixel matches raylib', flush=True)
     report['passed'] = True
     report['elapsed_seconds'] = round(time.monotonic() - started, 3)
     report_path.write_text(json.dumps(report, indent=2) + '\n')

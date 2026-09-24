@@ -1,8 +1,12 @@
 # Roadmap toward raylib parity
 
+The authoritative destination, phase gates and progress rules are in the
+[100% parity master plan](MASTER-PLAN.md). This page tracks the near-term sequence.
+
 ## Current milestone: headless image foundations
 
-The first milestone supplies an owned RGBA8 image API and a repeatable
+The working milestone supplies an owned RGBA8 image API, fixed-point lines,
+filled/outlined triangles, unscaled tinted composition and a repeatable
 differential harness, using raylib 6.0 CPU image operations as the reference.
 Track exact verified capabilities in [COMPATIBILITY.md](COMPATIBILITY.md).
 
@@ -20,8 +24,9 @@ cluster/site gates remain unverified.
 
 ## 2D library growth
 
-1. Vector/rectangle math, collision helpers, lines and triangles.
-2. Source/destination image drawing, sampling, tint and compositing.
+1. Complete the remaining primitive families, vector/rectangle math and collision helpers.
+2. Extend full-source unscaled composition to source rectangles, resizing/filter
+   semantics, additional pixel formats and mipmaps. Current ImageDraw coverage is partial.
 3. Efficient command buffers and tiled rendering, measured against equivalent
    raylib scenes; avoid using the current correctness-oriented image loops as
    an assumed high-performance architecture.

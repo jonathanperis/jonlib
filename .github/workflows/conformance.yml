@@ -103,4 +103,5 @@ jobs:
             .build/cpu-2.jsonl
             .build/javascript.jsonl
             .build/headless.ppm
+            .build/composite.ppm
             .build/bend-regressions/results.json

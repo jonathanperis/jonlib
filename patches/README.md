@@ -40,7 +40,8 @@ carries a prominent modification notice. The language parser/checker is untouche
 
 ## Evidence and scope
 
-- Unchanged Jonlib corpus: 26 scenarios / 6,682 pixels match on CPU/JS/Metal.
+- Compiler-adoption corpus: 26 scenarios / 6,682 pixels matched on CPU/JS/Metal.
+  The expanded image suite is recorded in [VERIFICATION.md](../docs/VERIFICATION.md).
 - 16 selected Bend regressions pass; 7 include forced Metal execution.
 - CPU/CUDA generated code matches baseline after resolving Metal-only wrappers.
 - Raytrace, Mandelbrot and symbolic regression retain their checksums on CPU
