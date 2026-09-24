@@ -27,5 +27,7 @@ jobs:
           python-version: '3.12'
       - name: Test failure detection and fixture validation
         run: python3 -m unittest discover -s tests -v
+      - name: Check Python tool syntax
+        run: python3 -m compileall -q tools tests
       - name: Check project metadata and library source boundary
         run: python3 tools/check_project.py

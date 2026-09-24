@@ -50,7 +50,7 @@ do not supersede it. `docs/METAL-INVESTIGATION.md` contains the reproduction,
 observed failure messages and reduction evidence. No Bend runtime fix has been
 made or claimed.
 
-No live desktop window, audio device, browser UI, CUDA, Linux, Windows, Android,
+No live desktop window, audio device, browser UI, CUDA, Windows, Android,
 performance comparison, long-run resource soak, or complete raylib conformance
 was verified. The image tests are finite, not exhaustive over the documented
 input domain. The public Surface constructor must retain the API's invariant.
@@ -65,3 +65,20 @@ Boolean/float values through Python numeric equality. The parser now rejects
 them; negative controls and the affected full conformance run pass after the fix.
 
 Regression scan: 46 callers checked, 20 assertions checked, 1 flagged/fixed.
+
+## GitHub Actions
+
+The public repository is <https://github.com/jonathanperis/jonlib>.
+The first published commit, `c5418fb4cb309a233dde8cfec39fea5b07011f67`, passed:
+
+- [Checks — harness and project validation](https://github.com/jonathanperis/jonlib/actions/runs/36033674066).
+- [Conformance — Ubuntu 24.04 and macOS 15](https://github.com/jonathanperis/jonlib/actions/runs/36033674161).
+
+Downloaded evidence confirmed each operating system ran all 26 scenarios and
+6,682 pixels per CPU-1/CPU-2/JavaScript lane, plus the ownership/adapter contracts,
+proof and PPM example. The Linux host was x86_64 with clang 18.1.3; the macOS host
+was arm64 with Apple clang 17.0.0. Both used Bun 1.3.12.
+
+Hosted jobs do not execute the Metal gate or claim GPU compatibility. Actions
+and dependency revisions are pinned; scoped JSON/PPM artifacts are retained
+for 14 days, while workflow logs/results follow repository retention settings.

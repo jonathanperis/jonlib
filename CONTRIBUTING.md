@@ -19,6 +19,10 @@ python3 tools/conformance.py --bend-source /path/to/bend --raylib-source /path/t
 Native Metal verification requires a real supported Mac/GPU and a suitable Apple
 clang version. `--gpu` forces device execution; it must fail rather than silently
 use CPU results. The [complete Metal gate is currently blocked](docs/METAL-INVESTIGATION.md).
+For the current inlining investigation, `python3 tools/metal_probe.py --counts 26
+--outline-circle` compares an unmodified program with an explicitly experimental
+generated-C qualifier change. Its baseline failure still produces a failing exit
+status; the experiment is not part of the library or normal conformance gate.
 
 ## Changes and evidence
 

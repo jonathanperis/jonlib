@@ -6,11 +6,13 @@ Profile: **rgba8-cpu-images-v1**, with domains defined in [API.md](API.md).
 
 ## Verified evidence
 
-On the tested Apple M1/macOS host, **26 deterministic scenarios / 6,682 pixels
-per lane** match exactly on native CPU (one and two threads) and emitted
-JavaScript. Ownership, bounds, color and Base.Image adapter contracts also pass
-on CPU/JS. Every RGB pixel in the 64×64 PPM example matches the raylib reference.
-The dimension-preservation proof checks with `All terms check.`
+On the local Apple M1/macOS host and GitHub-hosted **Ubuntu 24.04 (x86_64)** and
+**macOS 15 (arm64)**, **26 deterministic scenarios / 6,682 pixels per lane**
+match exactly on native CPU (one and two threads) and emitted JavaScript.
+Ownership, bounds, color and Base.Image adapter contracts also pass on CPU/JS.
+Every RGB pixel in the 64×64 PPM example matches the raylib reference.
+The dimension-preservation proof checks with `All terms check.` See the
+[hosted verification record](VERIFICATION.md#github-actions).
 
 The complete **Metal gate is blocked by an unresolved failure**; see
 [METAL-INVESTIGATION.md](METAL-INVESTIGATION.md). Isolated successes and a passing
@@ -41,8 +43,8 @@ not implemented. This count is an inventory, not a percentage of full parity.
 
 No performance parity is claimed. The array-based image algorithms are an
 initial correctness foundation, not the production tiled rendering pipeline.
-Linux, CUDA, Windows, browser graphics, live windows and live audio were not
-verified in this milestone. Source and fixture domains are finite and explicitly
+CUDA, Windows, browser graphics, live windows and live audio were not verified
+in this milestone. Source and fixture domains are finite and explicitly
 bounded; passing fixtures is not exhaustive proof of every supported input.
 
 ## Comparison policy
