@@ -21,6 +21,7 @@ differential test reference.
 - Clipped pixel/rectangle drawing and raylib-compatible midpoint circles.
 - Fixed-point lines, vector-line rounding, filled triangles and triangle outlines.
 - Unscaled image composition with clipping, tint, alpha and source preservation.
+- Checked region extraction/cropping, source-rectangle drawing and exact fixed-point nearest-neighbor resizing.
 - Horizontal and vertical flips.
 - Conversion to Bend's `Base.Image` quadtree.
 - P3 PPM encoding and file export through Base IO.
@@ -74,14 +75,14 @@ The harness builds raylib's headless Memory backend under `.build/`, generates
 both runners from [`tests/fixtures/images.json`](tests/fixtures/images.json),
 and compares every packed RGBA pixel on native CPU (one/two threads) and JS.
 It also checks the proof, owned copies, bounds, Base.Image conversion, and the
-two headless PPM examples. Empty suites, missing outputs and mismatches fail.
+three headless PPM examples. Empty suites, missing outputs and mismatches fail.
 
 ```sh
 python3 tools/conformance.py --gpu
 ```
 
 The optional GPU command forces device execution and fails if the device or
-results are unavailable. **All 40 scenarios pass on the tested M1 with the
+results are unavailable. **All 53 scenarios pass on the tested M1 with the
 declared overlay**, including every RGBA pixel. Stock Bend's failure and the
 compiler fix are documented in [the investigation](docs/METAL-INVESTIGATION.md).
 Hosted CI validates CPU/JavaScript; it does not claim GPU validation.
@@ -126,6 +127,20 @@ It writes `.build/composite.ppm`; all 3,072 RGB pixels are compared with raylib.
 ![Composite example output](docs/images/composite.png)
 
 The PNG above is a documentation preview converted from the verified PPM output.
+
+The transformation example crops and enlarges pixel art with `ImageResizeNN` semantics:
+
+```sh
+BEND_NO_TELEMETRY=1 bun ~/Projetos/bendlang/bend/bend2/main.ts examples/transforms.bend -o .build/transforms
+./.build/transforms
+```
+
+It writes `.build/transforms.ppm`. Default filtered resize is separate and remains
+open: [resampling status and precision evidence](docs/RESAMPLING.md).
+
+![Crop and nearest-neighbor example](docs/images/transforms.png)
+
+This is a documentation PNG preview of the verified PPM output.
 
 ## Ownership and compatibility
 

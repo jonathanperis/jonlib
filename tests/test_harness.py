@@ -38,9 +38,15 @@ class HarnessTests(unittest.TestCase):
                     dict(case, operations=[dict(op='unknown', color=[0, 0, 0, 255])]),
                     dict(case, operations=[dict(blit, source=dict(width=1, height=1, pixels=[]))]),
                     dict(case, operations=[dict(blit, observe_source=1)]),
+                    dict(case, operations=[dict(op='resize_nn', width=0, height=1)]),
+                    dict(case, operations=[dict(op='crop', x=1, y=0, width=1, height=1)]),
+                    dict(case, operations=[dict(op='extract', x=0, y=0, width=2, height=1)]),
                     dict(case, operations=[dict(op='line_v', x0=float('nan'), y0=0, x1=1, y1=1, color=[0, 0, 0, 255])])]:
             with self.assertRaises(ValueError):
                 cases_from(dict(schema=1, cases=[bad]))
+        unsafe = dict(case, width=2, operations=[dict(op='resize_nn', width=512, height=1)])
+        with self.assertRaisesRegex(ValueError, 'reads outside'):
+            cases_from(dict(schema=1, cases=[unsafe]))
 
     def test_compiler_overlay_requires_exact_declared_sources(self):
         BUILD.mkdir(exist_ok=True)

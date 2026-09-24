@@ -11,7 +11,8 @@ It is not affiliated with or endorsed by raylib or Bend's maintainers.
 - License: zlib; retained verbatim in [LICENSES/raylib.txt](LICENSES/raylib.txt).
 - Adaptations: the rectangle clipping/degenerate behavior, midpoint-circle,
   fixed-point line and edge-stepped triangle rasterization, and image
-  compositing/integer alpha-blending algorithms in `jonlib.bend` are
+  compositing/integer alpha-blending, crop/extraction and fixed-point nearest
+  resize algorithms in `jonlib.bend` are
   translated/adapted from `src/rtextures.c`, with Bend ownership and bounded
   recursion. These are modified implementations, not original raylib source.
 - Reference testing: `tools/conformance.py` builds a separate raylib executable

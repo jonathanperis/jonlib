@@ -86,6 +86,10 @@ jobs:
         run: >-
           python3 tools/verify_bend.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+      - name: Record default-filter precision diagnostics
+        run: >-
+          python3 tools/filter_probe.py
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Upload scoped conformance evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -104,4 +108,6 @@ jobs:
             .build/javascript.jsonl
             .build/headless.ppm
             .build/composite.ppm
+            .build/transforms.ppm
             .build/bend-regressions/results.json
+            .build/filter-probe/results.json

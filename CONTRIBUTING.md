@@ -45,7 +45,9 @@ becomes a conformance test. Consult asset-specific licenses before adding files.
 - **Checks** validates the test harness, fixtures, source boundary and metadata.
 - **Conformance** builds and tests CPU/JavaScript on Ubuntu 24.04 and macOS 15,
   explicitly applies the hash-checked compiler patch, checks the law/contracts/
-  example and 16 upstream compiler regressions, and uploads evidence for 14 days.
+  examples and 16 upstream compiler regressions, records the default-filter
+  precision diagnostic, and uploads evidence for 14 days. Diagnostic variants
+  are not treated as passing Bend implementations.
 - Actions are pinned to immutable commits; dependency revisions come from
   `toolchain.json`. Workflows use read-only repository permissions.
 - Hosted conformance does not claim Metal/CUDA or live window/audio validation.

@@ -80,8 +80,11 @@ small part of a later phase forward when needed by an example or a runtime gap.
    numerical-precision gaps. F32-only convenience signatures are not a reason
    to discard required signed/wider-number behavior.
 
-The active batch is **lines, filled/outlined triangles, and unscaled tinted
-image drawing**, verified with the same fixtures in raylib and Bend.
+The current verified batch adds **crop/extraction, source-rectangle drawing and
+fixed-point nearest-neighbor resizing**. Default filtered resizing remains open:
+the [precision probe](RESAMPLING.md) demonstrates why replacing the reference's
+double normalization with F32 arithmetic is insufficient. The next dependency
+is precision-correct coefficient/filter evaluation before closing scaled ImageDraw.
 
 ## Compiler and runtime workstream
 

@@ -14,19 +14,22 @@ python3 tools/verify_bend.py --gpu
 - Three harness test groups pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 40 scenarios / 13,813 complete RGBA pixels match pinned raylib exactly on each
+- 53 scenarios / 15,733 complete RGBA pixels match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
 - The owned-copy, out-of-bounds read, color packing/channel and Base.Image
   pixel/padding contracts pass on native CPU and JS.
 - `PROOF.bend` checks: `All terms check.` The theorem is dimension preservation
   by clear; it is not a general proof of graphics correctness.
-- The actual 64×64 PPM exported by `examples/headless.bend` and the 64×48 PPM
-  from `examples/composite.bend` match every RGB component of their raylib scenes.
+- The primitive, composite and crop/resize PPM examples match every RGB component
+  of their raylib scenes.
 - New fixtures cover line octants/reversal/degeneracy/clipping, vector rounding,
   triangle windings/degenerate edges, and image composition with source preservation,
   including different-sized source and destination owners.
-- The pinned header inventory contains 600 unique public functions; 18 have
+- Crop, extraction, nearest-neighbor and region-compositing fixtures track changing
+  result dimensions; transform failures retain their original owners on CPU,
+  JavaScript and forced Metal.
+- The pinned header inventory contains 600 unique public functions; 21 have
   explicitly scoped Jonlib mappings. Remaining entries are not implemented.
 - Library source passes the no-unsafe/no-custom-foreign-import gate.
 - Relative documentation links resolve, raylib's license is retained verbatim,
@@ -47,12 +50,16 @@ The recorded compiler adoption evidence is also checked in at
 The current primitive/compositing batch is recorded separately at
 [evidence/image-primitives.json](evidence/image-primitives.json), including final
 source hashes and the different-sized source-preservation observation.
+The subsequent crop/resize batch is recorded in
+[evidence/image-transforms.json](evidence/image-transforms.json). The default-filter
+precision experiment and its retained inputs are in
+[evidence/filter-normalization.json](evidence/filter-normalization.json).
 
 ## Acceptance status
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 40 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 53 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -65,6 +72,9 @@ source hashes and the different-sized source-preservation observation.
 | A14: line/triangle raster semantics | Pass within declared profiles | Exact primitive fixtures on CPU/JS/Metal |
 | A15: unscaled image composition | Pass within declared profile | Clipping, mixed alpha/tint, and full source-image observation |
 | A16: full-parity plan and honest coverage | Pass | MASTER-PLAN.md and explicitly partial API mappings |
+| A17: crop/extract/nearest and failure ownership | Pass within declared profiles | Exact dimensions/pixels plus typed-error owner checks |
+| A18: source-region composition | Pass within declared profile | In-bounds integral source regions with clipping/tint/alpha |
+| A19: default-filter evidence | Investigation complete; implementation open | Stock control 512/512 matches; float normalization differs in 4 cases / 7 channels on M1 |
 
 ## Limitations
 
@@ -136,3 +146,18 @@ with the expanded 40-case library corpus. The final four-lane run passed after
 those changes.
 
 Regression scan: 21 callers checked, 18 assertions checked, 2 flagged/fixed.
+
+## Crop/resampling regression review
+
+Reviewed 23 caller contexts across the new image operations, generated Result
+pipelines, validation and diagnostics. The 21 reviewed assertion groups include
+eleven harness negative controls, four transform-owner outcomes, dimension/count/
+pixel comparisons, PPM checks and the stock-filter control. Both CPU/JS and forced
+GPU execution prove that rejected transforms retain their original owners.
+
+The review separated contract-test executable paths from example executable
+paths so their artifacts cannot overwrite one another. All affected checks passed
+after the naming correction. The default-filter precision mismatch remains an
+explicit open implementation requirement, not a relaxed image comparison.
+
+Regression scan: 23 callers checked, 21 assertions checked, 1 flagged/fixed.

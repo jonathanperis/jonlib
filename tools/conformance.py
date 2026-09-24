@@ -66,6 +66,17 @@ def coordinate(value, fractional=False):
     return type(value) in (int, float) and math.isfinite(value) and -32767 <= value <= 32767
 
 
+def crop_rectangle(width, height, op):
+    x, y, w, h = (op[k] for k in ('x', 'y', 'width', 'height'))
+    if x > width or y > height:
+        return 0, 0, width, height
+    if x < 0:
+        w, x = w + x, 0
+    if y < 0:
+        h, y = h + y, 0
+    return x, y, min(w, width - x), min(h, height - y)
+
+
 def cases_from(document):
     if document.get("schema") != 1 or not isinstance(document.get("cases"), list):
         raise ValueError("Expected fixture schema 1 and a cases array")
@@ -107,12 +118,13 @@ def cases_from(document):
         rgba(case["background"])
         if not isinstance(case.get("operations"), list):
             raise ValueError(f"{name}: operations must be an array")
+        current_w, current_h = case['width'], case['height']
         for op in case["operations"]:
             kind = op.get("op")
             if kind not in ("pixel", "rectangle", "circle", "clear", "flip_horizontal", "flip_vertical", "blend_color",
-                            "line", "line_v", "triangle", "triangle_lines", "blit"):
+                            "line", "line_v", "triangle", "triangle_lines", "blit", "blit_region", "crop", "extract", "resize_nn"):
                 raise ValueError(f"{name}: unknown operation {kind!r}")
-            if kind == 'blit':
+            if kind in ('blit', 'blit_region'):
                 rgba(op['tint'])
                 source = op['source']
                 if not all(integer(source.get(k), 1, 4096) for k in ('width', 'height')):
@@ -123,17 +135,26 @@ def cases_from(document):
                     rgba(pixel)
                 if type(op.get('observe_source', False)) is not bool:
                     raise ValueError(f'{name}: observe_source must be Boolean')
-            elif not kind.startswith('flip_'):
+                if kind == 'blit_region':
+                    rect = op['source_rect']
+                    if not all(coordinate(rect.get(k)) for k in ('x', 'y', 'width', 'height')):
+                        raise ValueError(f'{name}: invalid integral source rectangle')
+                    if not (rect['x'] >= 0 and rect['y'] >= 0 and rect['width'] > 0 and rect['height'] > 0
+                            and rect['x'] + rect['width'] <= source['width'] and rect['y'] + rect['height'] <= source['height']):
+                        raise ValueError(f'{name}: region must fit its source without implicit resizing')
+                if op.get('observe_source'):
+                    current_w, current_h = source['width'], source['height']
+            elif kind not in ('crop', 'extract', 'resize_nn') and not kind.startswith('flip_'):
                 rgba(op["color"])
             if kind == 'blend_color':
                 rgba(op['destination'])
                 rgba(op['tint'])
-            fields = [] if kind == "clear" or kind.startswith('flip_') else ["x", "y"]
+            fields = [] if kind in ('clear', 'resize_nn') or kind.startswith('flip_') else ["x", "y"]
             if kind in ('line', 'line_v', 'triangle', 'triangle_lines'):
                 fields = ['x0', 'y0', 'x1', 'y1']
                 if kind.startswith('triangle'):
                     fields += ['x2', 'y2']
-            if kind == "rectangle":
+            if kind in ('rectangle', 'crop', 'extract'):
                 fields += ["width", "height"]
             if any(not coordinate(op.get(k), kind in ('line_v', 'triangle_lines')) for k in fields):
                 raise ValueError(f"{name}: invalid coordinates for {kind}")
@@ -147,14 +168,39 @@ def cases_from(document):
                     raise ValueError(f'{name}: fixed-point short-axis delta exceeds the supported line profile')
             if kind == "circle" and not integer(op.get("radius"), 0, 32767):
                 raise ValueError(f"{name}: radius must be 0..32767")
+            if kind == 'crop':
+                _, _, current_w, current_h = crop_rectangle(current_w, current_h, op)
+                if current_w < 1 or current_h < 1:
+                    raise ValueError(f'{name}: empty/invalid crop belongs in error-contract tests')
+            elif kind == 'extract':
+                if not (op['x'] >= 0 and op['y'] >= 0 and op['width'] > 0 and op['height'] > 0
+                        and op['x'] + op['width'] <= current_w and op['y'] + op['height'] <= current_h):
+                    raise ValueError(f'{name}: extraction must fit the current image')
+                if type(op.get('observe_source', False)) is not bool:
+                    raise ValueError(f'{name}: observe_source must be Boolean')
+                if not op.get('observe_source'):
+                    current_w, current_h = op['width'], op['height']
+            elif kind == 'resize_nn':
+                w, h = op.get('width'), op.get('height')
+                if not integer(w, 1, 4096) or not integer(h, 1, 4096):
+                    raise ValueError(f'{name}: invalid resize dimensions')
+                xr, yr = ((current_w << 16) // w) + 1, ((current_h << 16) // h) + 1
+                last = (((h-1)*yr) >> 16) * current_w + (((w-1)*xr) >> 16)
+                if last >= current_w * current_h:
+                    raise ValueError(f'{name}: reference nearest mapping reads outside the image')
+                current_w, current_h = w, h
     return cases
 
 
 def result_size(case):
     width, height = case['width'], case['height']
     for op in case['operations']:
-        if op['op'] == 'blit' and op.get('observe_source'):
+        if op['op'] in ('blit', 'blit_region') and op.get('observe_source'):
             width, height = op['source']['width'], op['source']['height']
+        elif op['op'] == 'crop':
+            _, _, width, height = crop_rectangle(width, height, op)
+        elif op['op'] == 'resize_nn' or (op['op'] == 'extract' and not op.get('observe_source')):
+            width, height = op['width'], op['height']
     return width, height
 
 
@@ -166,19 +212,32 @@ def c_source(cases):
         lines += ['{', f'Image image = GenImageColor({w}, {h}, GetColor({rgba(case["background"])}u));']
         for op in case["operations"]:
             kind = op["op"]
-            if kind == 'blit':
+            if kind in ('blit', 'blit_region'):
                 source = op['source']
                 sw, sh = source['width'], source['height']
                 lines += ['{', f'Image source = GenImageColor({sw}, {sh}, BLANK);']
                 for i, pixel in enumerate(source['pixels']):
                     lines += [f'ImageDrawPixel(&source, {i % sw}, {i // sw}, GetColor({rgba(pixel)}u));']
-                lines += [f'ImageDraw(&image, source, (Rectangle){{0, 0, {sw}, {sh}}}, '
-                          f'(Rectangle){{{op["x"]}, {op["y"]}, {sw}, {sh}}}, GetColor({rgba(op["tint"])}u));']
+                rect = op.get('source_rect', dict(x=0, y=0, width=sw, height=sh))
+                lines += [f'ImageDraw(&image, source, (Rectangle){{{rect["x"]}, {rect["y"]}, {rect["width"]}, {rect["height"]}}}, '
+                          f'(Rectangle){{{op["x"]}, {op["y"]}, {rect["width"]}, {rect["height"]}}}, GetColor({rgba(op["tint"])}u));']
                 if op.get('observe_source'):
                     lines += ['UnloadImage(image);', 'image = source;']
                 else:
                     lines += ['UnloadImage(source);']
                 lines += ['}']
+                continue
+            if kind in ('crop', 'extract', 'resize_nn'):
+                if kind == 'resize_nn':
+                    lines += [f'ImageResizeNN(&image, {op["width"]}, {op["height"]});']
+                else:
+                    rect = f'(Rectangle){{{op["x"]}, {op["y"]}, {op["width"]}, {op["height"]}}}'
+                    if kind == 'crop':
+                        lines += [f'ImageCrop(&image, {rect});']
+                    else:
+                        lines += ['{', f'Image extracted = ImageFromImage(image, {rect});']
+                        lines += ['UnloadImage(extracted);'] if op.get('observe_source') else ['UnloadImage(image);', 'image = extracted;']
+                        lines += ['}']
                 continue
             if kind.startswith('flip_'):
                 function = 'ImageFlipHorizontal' if kind == 'flip_horizontal' else 'ImageFlipVertical'
@@ -225,9 +284,24 @@ def bend_source(cases, gpu=False):
              '  IO.print("{\\"id\\":\\"" ++ name ++ "\\",\\"width\\":" ++ U32.show(w)',
              '    ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"pixels\\":"',
              '    ++ List.show(~&1, ~U32, ~U32.show, J.Surface.colors(J.Surface{w, h, pixels})) ++ "}")', '']
+    lines += [
+        'def emit_result(name: String, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):',
+        '  match result:', '    case Fail{_}:',
+        '      IO.die(Unit, 1, "valid transform fixture was rejected")',
+        '    case Done{surface}:', '      emit(name, surface)', '',
+        'def extracted(keep: Bool, pair: J.Surface & Maybe<J.Surface>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:',
+        '  match pair:', '    case Tuple{source, None{}}:',
+        '      Fail{(source, J.InvalidRectangle{})}', '    case Tuple{source, Some{region}}:',
+        '      Done{Bool.pick(J.Surface, keep, source, region)}', '',
+        'def composed(keep: Bool, result: Result<&1, &1, (J.Surface & J.Surface) & J.Surface.Error, J.Surface & J.Surface>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:',
+        '  match result:', '    case Fail{Tuple{Tuple{destination, source}, error}}:',
+        '      Fail{(Bool.pick(J.Surface, keep, source, destination), error)}',
+        '    case Done{Tuple{destination, source}}:',
+        '      Done{Bool.pick(J.Surface, keep, source, destination)}', '',
+    ]
     for i, case in enumerate(cases):
         for j, op in enumerate(case['operations']):
-            if op['op'] != 'blit':
+            if op['op'] not in ('blit', 'blit_region'):
                 continue
             source = op['source']
             depth = (source['width'] * source['height'] - 1).bit_length()
@@ -235,15 +309,35 @@ def bend_source(cases, gpu=False):
             for k, pixel in enumerate(source['pixels']):
                 lines += [f'  p{k+1} = Array.set(U32, p{k}, {k}, {rgba(pixel)})']
             lines += [f'  J.Surface{{{source["width"]}, {source["height"]}, p{len(source["pixels"])}}}', '']
-        lines += [f'def draw_{i}(surface: J.Surface) -> J.Surface:']
+        lines += [f'def draw_{i}(surface: J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:',
+                  '  do Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:']
         previous = 'surface'
         for j, op in enumerate(case["operations"]):
             kind = op["op"]
-            if kind == 'blit':
-                draw = f'J.Surface.draw_image({previous}, source_{i}_{j}(), {f32(op["x"])}, {f32(op["y"])}, {rgba(op["tint"])})'
+            if kind in ('blit', 'blit_region'):
+                args = f'{previous}, source_{i}_{j}(), '
+                if kind == 'blit_region':
+                    rect = op['source_rect']
+                    args += 'J.Rectangle{' + ', '.join(f32(rect[k]) for k in ('x', 'y', 'width', 'height')) + '}, '
+                args += f'{f32(op["x"])}, {f32(op["y"])}, {rgba(op["tint"])}'
+                draw = f'J.Surface.{"draw_image_region" if kind == "blit_region" else "draw_image"}({args})'
                 pick = 'snd' if op.get('observe_source') else 'fst'
                 previous = f's{j}'
-                lines += [f'  {previous} = Pair.{pick}(J.Surface, J.Surface, {draw})']
+                if kind == 'blit_region':
+                    lines += [f'    {previous} : J.Surface <- composed({"True{}" if op.get("observe_source") else "False{}"}, {draw})']
+                else:
+                    lines += [f'    {previous} : J.Surface = Pair.{pick}(J.Surface, J.Surface, {draw})']
+                continue
+            if kind in ('crop', 'extract', 'resize_nn'):
+                if kind == 'resize_nn':
+                    draw = f'J.Surface.resize_nn({previous}, {op["width"]}, {op["height"]})'
+                else:
+                    rect = 'J.Rectangle{' + ', '.join(f32(op[k]) for k in ('x', 'y', 'width', 'height')) + '}'
+                    draw = f'J.Surface.{kind}({previous}, {rect})'
+                    if kind == 'extract':
+                        draw = f'extracted({"True{}" if op.get("observe_source") else "False{}"}, {draw})'
+                previous = f's{j}'
+                lines += [f'    {previous} : J.Surface <- {draw}']
                 continue
             args = [previous]
             if kind in ('line', 'line_v', 'triangle', 'triangle_lines'):
@@ -265,12 +359,12 @@ def bend_source(cases, gpu=False):
             if kind == 'blend_color':
                 function = 'draw_pixel'
             previous = f's{j}'
-            lines += [f'  {previous} = J.Surface.{function}({", ".join(args)})']
-        lines += [f'  {previous}', '', f'def case_{i}(created: Maybe<J.Surface>) -> IO(Unit):',
+            lines += [f'    {previous} : J.Surface = J.Surface.{function}({", ".join(args)})']
+        lines += [f'    return {previous}', '', f'def case_{i}(created: Maybe<J.Surface>) -> IO(Unit):',
                   '  match created:', '    case None{}:',
                   '      IO.die(Unit, 1, "valid fixture image creation failed")',
                   '    case Some{surface}:',
-                  f'      emit("{case["id"]}", draw_{i}{"!" if gpu else ""}(surface))', '']
+                  f'      emit_result("{case["id"]}", draw_{i}{"!" if gpu else ""}(surface))', '']
     lines += ['def main() -> IO(Unit):', '  do IO<Unit>:']
     for i, case in enumerate(cases):
         lines += [f'    case_{i}(J.Surface.create({case["width"]}, {case["height"]}, {rgba(case["background"])}))']
@@ -360,6 +454,7 @@ def main():
     report['verification_sources'] = {
         str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in (ROOT / 'tools/conformance.py', ROOT / 'tests/contracts.bend',
+                     ROOT / 'tests/transforms.bend', ROOT / 'tests/transforms_gpu.bend', ROOT / 'examples/transforms.bend',
                      ROOT / 'LAWS.bend', ROOT / 'PROOF.bend', ROOT / 'examples/headless.bend', ROOT / 'examples/composite.bend',
                      ROOT / 'docs/api-map.json')
     }
@@ -409,14 +504,25 @@ def main():
         report['lanes'][lane] = dict(passed=True, scenarios=len(cases), pixels=report['pixels_per_lane'])
         report_path.write_text(json.dumps(report, indent=2) + '\n')
         print(f'{lane}: {len(cases)} scenarios, {report["pixels_per_lane"]} pixels match exactly', flush=True)
-    run([*cli, ROOT / 'tests/contracts.bend', '-o', BUILD / 'contracts', '-o', BUILD / 'contracts.js'])
-    for lane, command in [('cpu', [BUILD / 'contracts']), ('javascript', ['bun', BUILD / 'contracts.js'])]:
-        if run(command).strip() != 'contracts ok':
-            raise ValueError(f'{lane}: ownership/color/adapter contract failed')
-    report['contracts'] = ['cpu', 'javascript']
-    print('Ownership, bounds, color and Base.Image contracts: CPU/JS passed', flush=True)
+    for name, expected, key in [('contracts', 'contracts ok', 'contracts'),
+                                ('transforms', 'transform contracts ok', 'transform_contracts')]:
+        binary = BUILD / f'verify-{name}'
+        run([*cli, ROOT / f'tests/{name}.bend', '-o', binary, '-o', str(binary) + '.js'])
+        for lane, command in [('cpu', [binary]), ('javascript', ['bun', str(binary) + '.js'])]:
+            if run(command).strip() != expected:
+                raise ValueError(f'{lane}: {name} contract failed')
+        report[key] = ['cpu', 'javascript']
+        print(f'{name}: CPU/JS passed', flush=True)
+    if args.gpu:
+        binary = BUILD / 'verify-transforms-gpu'
+        run([*cli, ROOT / 'tests/transforms_gpu.bend', '-o', binary])
+        if run([binary, '--gpu', 'on']).strip() != 'transform contracts ok':
+            raise ValueError('GPU transform error-ownership contract failed')
+        report['transform_contracts'].append('gpu-forced')
+        print('transforms: forced GPU error-ownership contracts passed', flush=True)
     for name, scenario, key in [('headless', 'radius-12-regression', 'example'),
-                                ('composite', 'composite-example', 'composite_example')]:
+                                ('composite', 'composite-example', 'composite_example'),
+                                ('transforms', 'transform-example', 'transform_example')]:
         example_reference = next((row for row in reference if row['id'] == scenario), None)
         if example_reference is None:
             raise ValueError(f'Fixtures must include {scenario} for the {name} example comparison')

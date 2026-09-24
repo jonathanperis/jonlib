@@ -6,7 +6,8 @@ The authoritative destination, phase gates and progress rules are in the
 ## Current milestone: headless image foundations
 
 The working milestone supplies an owned RGBA8 image API, fixed-point lines,
-filled/outlined triangles, unscaled tinted composition and a repeatable
+filled/outlined triangles, unscaled source-region composition, cropping/extraction,
+exact nearest-neighbor resizing and a repeatable
 differential harness, using raylib 6.0 CPU image operations as the reference.
 Track exact verified capabilities in [COMPATIBILITY.md](COMPATIBILITY.md).
 
@@ -25,8 +26,9 @@ cluster/site gates remain unverified.
 ## 2D library growth
 
 1. Complete the remaining primitive families, vector/rectangle math and collision helpers.
-2. Extend full-source unscaled composition to source rectangles, resizing/filter
-   semantics, additional pixel formats and mipmaps. Current ImageDraw coverage is partial.
+2. Complete precision-correct default resampling, then source-clipping/scaling
+   ImageDraw behavior, additional formats and mipmaps. In-bounds unscaled source
+   rectangles and ImageResizeNN are now available; [default filtering remains open](RESAMPLING.md).
 3. Efficient command buffers and tiled rendering, measured against equivalent
    raylib scenes; avoid using the current correctness-oriented image loops as
    an assumed high-performance architecture.

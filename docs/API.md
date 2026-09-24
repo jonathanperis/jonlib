@@ -21,6 +21,8 @@ the unsigned bit pattern returned by `ColorToInt`.
 `Vector2` is immutable `Data`, constructed as `J.Vector2{x, y}` with F32 fields.
 Reusable local constructor bindings need a type annotation, for example
 `+point = {J.Vector2{1.0, 2.0} : J.Vector2}`.
+`Rectangle` is `Data` with F32 `x`, `y`, `width`, `height` fields. The current
+crop/extraction/region-drawing profile requires integral rectangle values.
 
 `Surface` owns its row-major pixel array. Always start with `Surface.create`:
 the underlying constructor is visible because Bend does not provide the needed
@@ -41,6 +43,10 @@ is outside this API's contract.
 | `Surface.draw_triangle(surface, v1, v2, v3, color) -> Surface` | Integral Vector2 vertices; matches `ImageDrawTriangle` winding, inclusive edge tests, clipping and degenerate behavior. |
 | `Surface.draw_triangle_lines(surface, v1, v2, v3, color) -> Surface` | Vector2 vertices truncated toward zero, then three reference-compatible line segments. |
 | `Surface.draw_image(destination, source, x, y, tint) -> Surface & Surface` | Full-source, unscaled RGBA8 drawing; clips destination placement, applies integer tint/alpha blending, returns destination then unchanged source. |
+| `Surface.extract(surface, rectangle) -> Surface & Maybe<Surface>` | Retains the original; returns an independent region for positive integral in-bounds rectangles, otherwise `None`. |
+| `Surface.crop(surface, rectangle) -> Result<&1, &1, Surface & Surface.Error, Surface>` | Clips an integral rectangle as raylib does; returns the cropped surface or the original with an error. An origin strictly beyond the right/bottom edge is the reference no-op. |
+| `Surface.resize_nn(surface, width, height) -> Result<&1, &1, Surface & Surface.Error, Surface>` | Exact fixed-point nearest mapping; positive dimensions up to 4096; refuses out-of-allocation reference mappings. |
+| `Surface.draw_image_region(destination, source, rectangle, x, y, tint)` | Returns `Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>`; valid unscaled source subrectangles with integer placement, preserving both owners. |
 | `Surface.colors(surface) -> List<U32>` | Consumes the image and exports exactly width × height packed pixels, row-major. |
 | `Surface.copy(surface) -> Surface & Surface` | Returns the original and an independently owned pixel copy. |
 | `Surface.flip_horizontal/flip_vertical(surface) -> Surface` | Reorders whole RGBA pixels; dimensions and alpha bytes are preserved. |
@@ -96,11 +102,24 @@ source must be separately owned surfaces. Both are returned; the source's pixels
 are unchanged and can be used for another draw. Use `Surface.copy` when a distinct
 copy is needed.
 
-This is a **partial ImageDraw profile**: complete source rectangle, matching
-destination size, one mip level, RGBA8 and integer placement. Source subrectangles,
-resizing filters, other formats, mipmaps and fractional rectangle semantics remain
-tracked gaps. Nearest-neighbor scaling must not be substituted for raylib's
-different default `ImageResize` filtering behavior.
+This is a **partial ImageDraw profile**: full source or a positive in-bounds
+source rectangle, matching destination size, one mip level, RGBA8 and integer
+placement. Automatic source clipping that requires rescaling, default resizing
+filters, other formats, mipmaps and fractional rectangle semantics remain gaps.
+Nearest-neighbor scaling is a separate API and is not substituted for raylib's
+default `ImageResize` filtering behavior. See [RESAMPLING.md](RESAMPLING.md).
+
+### Transform failures
+
+`Surface.Error` has `InvalidSize`, `InvalidRectangle` and `UnsafeNearestMapping`
+constructors. A failed crop/resize returns `(original, error)` in `Fail`; failed
+region drawing returns `((destination, source), error)`. Callers can recover and
+reuse these owners. `Done` carries the resulting surface or pair.
+
+The current Surface invariant excludes zero-sized images. Empty crop results
+therefore return an error. `ImageFromImage` has no clipping in raylib; extraction
+requires an in-bounds rectangle here. Region drawing rejects out-of-bounds source
+rectangles rather than silently invoking an unimplemented default resizer.
 
 ### Ownership and proof boundary
 

@@ -8,25 +8,25 @@ Profile: **rgba8-cpu-images-v1**, with domains defined in [API.md](API.md).
 
 ## Verified evidence
 
-The current local Apple M1/macOS corpus contains **40 deterministic scenarios /
-13,813 pixels per lane**, matching native CPU (one and two threads), JavaScript
+The current local Apple M1/macOS corpus contains **53 deterministic scenarios /
+15,733 pixels per lane**, matching native CPU (one and two threads), JavaScript
 and forced Metal. GitHub Actions runs this same corpus on **Ubuntu 24.04
 (x86_64)** and **macOS 15 (arm64)** for CPU/JavaScript; use the current workflow
 result for the exact published commit's hosted evidence.
 Ownership, bounds, color and Base.Image adapter contracts also pass on CPU/JS.
-Every RGB pixel in the 64×64 primitive and 64×48 composite PPM examples matches
+Every RGB pixel in the primitive, composite and crop/resize PPM examples matches
 the corresponding raylib reference scene.
 The dimension-preservation proof checks with `All terms check.` See the
 [hosted verification record](VERIFICATION.md#github-actions).
 
-The complete **forced Metal gate passes all 40 scenarios / 13,813 pixels** on the
+The complete **forced Metal gate passes all 53 scenarios / 15,733 pixels** on the
 local Apple M1 with the declared compiler overlay. Stock Bend's failure and
 rejected intermediate fixes remain documented in
 [METAL-INVESTIGATION.md](METAL-INVESTIGATION.md). The hosted results linked below
 originally established the CPU/JS baseline; current CI applies the declared overlay.
 
 A current run's precise inputs, source hashes and lane outcomes are in
-`.build/conformance.json`. The 600-entry `.build/api-inventory.json` maps 18
+`.build/conformance.json`. The 600-entry `.build/api-inventory.json` maps 21
 reference APIs to these scoped operations/contracts; all other entries remain
 not implemented. This count is an inventory, not a percentage of full parity.
 Both `profile-covered` and `contract-checked` are partial-coverage statuses.
@@ -43,7 +43,11 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | `ImageDrawLineV` | `Surface.draw_line_v` | Reference add-half/truncate conversion, including negative/fractional inputs |
 | `ImageDrawTriangle` | `Surface.draw_triangle` | Integral-vertex winding, clipping, degeneracy and signed edge stepping |
 | `ImageDrawTriangleLines` | `Surface.draw_triangle_lines` | Truncated vertices and three reference-compatible segments |
-| `ImageDraw` | `Surface.draw_image` | Partial: unscaled full-source RGBA8, integer placement, tint/alpha, clipping and source preservation |
+| `ImageDraw` | `Surface.draw_image / draw_image_region` | Partial: unscaled full source or in-bounds integral source rectangle, RGBA8 tint/alpha/clipping, both owners preserved |
+| `ImageFromImage` | `Surface.extract` | Positive integral in-bounds region; independent output; original retained |
+| `ImageCrop` | `Surface.crop` | Integral clipping with positive result and outside-origin no-op; typed failure preserves original |
+| `ImageResizeNN` | `Surface.resize_nn` | Exact +1 fixed-point ratios; valid flat source mappings; invalid/unsafe requests preserve original |
+| `ImageResize` / scaled `ImageDraw` | Future precision-correct resampler | Not implemented; default-filter precision counterexamples retained |
 | `LoadImageColors` / `GetImageColor` | `Surface.colors` / `Surface.get` | Full export passing; direct reads/ownership/out-of-bounds behavior contract-checked |
 | `ImageCopy` | `Surface.copy` | Independent mutation and original-pixel preservation contract-checked |
 | `GetColor` / `ColorToInt` | `Color.rgba` / channel extractors | Channel/packing contracts checked, including unsigned-byte truncation |
@@ -60,9 +64,11 @@ initial correctness foundation, not the production tiled rendering pipeline.
 CUDA, Windows, browser graphics, live windows and live audio were not verified
 in this milestone. Source and fixture domains are finite and explicitly
 bounded; passing fixtures is not exhaustive proof of every supported input.
-Filled-triangle fractional vertices, cropped/scaled image drawing, other pixel
-formats and mipmap behavior remain open requirements. The 18 mapped APIs must
-not be reported as 18 fully completed raylib APIs.
+Filled-triangle fractional vertices, default filtered scaling, automatic
+source-rectangle clipping with resampling, other pixel formats and mipmaps remain
+open requirements. The 21 mapped APIs must not be reported as 21 fully completed
+raylib APIs. See [RESAMPLING.md](RESAMPLING.md) for the distinction between
+nearest-neighbor and default-filter coverage.
 
 ## Comparison policy
 

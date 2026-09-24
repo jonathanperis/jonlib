@@ -6,6 +6,9 @@ import Base
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
 
+type Rectangle is Data:
+  Rectangle{x: F32, y: F32, width: F32, height: F32}
+
 # Internal signed-word operations for raylib's integer raster stepping.
 def Signed.word(+x: F32) -> U32:
   +magnitude = F32.to_u32(F32.abs(x))
@@ -68,6 +71,11 @@ def Color.alpha_blend(dst: U32, src: U32, tint: U32) -> U32:
 # Construct through Surface.create; preserve its dimensions/storage invariant.
 type Surface is Type:
   Surface{width: U32, height: U32, pixels: Array<U32>}
+
+type Surface.Error is Data:
+  InvalidSize{}
+  InvalidRectangle{}
+  UnsafeNearestMapping{}
 
 def Surface.dimensions(surface: Surface) -> U32 & U32:
   Surface{w, h, _} = surface
@@ -304,20 +312,143 @@ def Surface.blit.finish(dw: U32, dh: U32, sw: U32, sh: U32, buffers: Array<U32> 
   (src, dst) = buffers
   (Surface{dw, dh, dst}, Surface{sw, sh, src})
 
+type Raster.Mapping is Data:
+  Region{stride: U32, columns: U32, x: U32, y: U32}
+  Nearest{stride: U32, columns: U32, xr: U32, yr: U32}
+
+def Raster.index(mapping: Raster.Mapping, +i: U32) -> U32:
+  match mapping:
+    case Region{stride, +columns, x, y}:
+      ((y + i / columns) * stride + x + i % columns : U32)
+    case Nearest{stride, +columns, xr, yr}:
+      ((((i / columns) * yr) >> 16n) * stride + (((i % columns) * xr) >> 16n) : U32)
+
+def Surface.sample.loop(more: Nat, +i: U32, +mapping: Raster.Mapping, output: Array<U32>, got: Array<U32> & U32) -> Array<U32> & Array<U32>:
+  match more got:
+    case 0n Tuple{source, color}:
+      (source, Array.set(U32, output, i, color))
+    case 1n+k Tuple{source, color}:
+      +next = (i + 1 : U32)
+      Surface.sample.loop(k, next, mapping, Array.set(U32, output, i, color),
+        Array.get(U32, source, Raster.index(mapping, next)))
+
+def Surface.sample(+count: U32, +mapping: Raster.Mapping, source: Array<U32>) -> Array<U32> & Array<U32>:
+  Surface.sample.loop(U32.to_nat((count - 1 : U32)), 0, mapping,
+    Array.new(U32, Surface.capacity(count), 0), Array.get(U32, source, Raster.index(mapping, 0)))
+
+def Surface.extract.finish(sw: U32, sh: U32, w: U32, h: U32, buffers: Array<U32> & Array<U32>) -> Surface & Maybe<Surface>:
+  (source, region) = buffers
+  (Surface{sw, sh, source}, Some{Surface{w, h, region}})
+
+def Surface.extract.checked(valid: Bool, +sw: U32, sh: U32, pixels: Array<U32>, x: F32, y: F32, width: F32, height: F32) -> Surface & Maybe<Surface>:
+  match valid:
+    case False{}:
+      (Surface{sw, sh, pixels}, None{})
+    case True{}:
+      +w = F32.to_u32(width)
+      +h = F32.to_u32(height)
+      Surface.extract.finish(sw, sh, w, h, Surface.sample((w * h : U32),
+        Region{sw, w, F32.to_u32(x), F32.to_u32(y)}, pixels))
+
+def Rectangle.integral(rect: Rectangle) -> Bool:
+  Rectangle{+x, +y, +w, +h} = rect
+  F32.is_eq(F32.floor(x), x) && F32.is_eq(F32.floor(y), y)
+    && F32.is_eq(F32.floor(w), w) && F32.is_eq(F32.floor(h), h)
+
+def Rectangle.inside(rect: Rectangle, sw: U32, sh: U32) -> Bool:
+  Rectangle{+x, +y, +w, +h} = rect
+  ((x >= 0.0) && (y >= 0.0) && (w >= 1.0) && (h >= 1.0)
+    && (x + w <= U32.to_f32(sw)) && (y + h <= U32.to_f32(sh)) : F32)
+
+# ImageFromImage profile: positive integral in-bounds rectangle; source retained.
+def Surface.extract(surface: Surface, +rect: Rectangle) -> Surface & Maybe<Surface>:
+  Surface{+w, +h, pixels} = surface
+  Rectangle{x, y, rw, rh} = rect
+  Surface.extract.checked(Rectangle.integral(rect) && Rectangle.inside(rect, w, h), w, h, pixels, x, y, rw, rh)
+
+def Surface.crop.result(result: Surface & Maybe<Surface>) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match result:
+    case Tuple{original, None{}}:
+      Fail{(original, InvalidRectangle{})}
+    case Tuple{_, Some{region}}:
+      Done{region}
+
+def Surface.crop.route(integral: Bool, outside: Bool, original: Surface, rect: Rectangle) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match integral outside:
+    case False{} _:
+      Fail{(original, InvalidRectangle{})}
+    case True{} True{}:
+      Done{original}
+    case True{} False{}:
+      Surface.crop.result(Surface.extract(original, rect))
+
+def Surface.crop(surface: Surface, +rect: Rectangle) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface{+w, +h, pixels} = surface
+  Rectangle{+x, +y, width, height} = rect
+  +sx = F32.max(0.0, x)
+  +sy = F32.max(0.0, y)
+  cw = F32.min((width + F32.min(0.0, x) : F32), (U32.to_f32(w) - sx : F32))
+  ch = F32.min((height + F32.min(0.0, y) : F32), (U32.to_f32(h) - sy : F32))
+  Surface.crop.route(Rectangle.integral(rect), ((x > U32.to_f32(w)) || (y > U32.to_f32(h)) : F32),
+    Surface{w, h, pixels}, Rectangle{sx, sy, cw, ch})
+
+def Surface.resize.finish(w: U32, h: U32, buffers: Array<U32> & Array<U32>) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  (old, pixels) = buffers
+  Done{Surface{w, h, pixels}}
+
+def Surface.nearest.mapping(safe: Bool, sw: U32, sh: U32, pixels: Array<U32>, +w: U32, +h: U32, xr: U32, yr: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match safe:
+    case False{}:
+      Fail{(Surface{sw, sh, pixels}, UnsafeNearestMapping{})}
+    case True{}:
+      Surface.resize.finish(w, h, Surface.sample((w * h : U32), Nearest{sw, w, xr, yr}, pixels))
+
+def Surface.nearest.checked(valid: Bool, +sw: U32, +sh: U32, pixels: Array<U32>, +w: U32, +h: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match valid:
+    case False{}:
+      Fail{(Surface{sw, sh, pixels}, InvalidSize{})}
+    case True{}:
+      +xr = (((sw << 16n) / w) + 1 : U32)
+      +yr = (((sh << 16n) / h) + 1 : U32)
+      last = (((((h - 1) * yr) >> 16n) * sw) + (((w - 1) * xr) >> 16n) : U32)
+      Surface.nearest.mapping((last < sw * sh : U32), sw, sh, pixels, w, h, xr, yr)
+
+# Preserve raylib's +1 fixed-point ratios. Refuse mappings beyond logical storage.
+def Surface.resize_nn(surface: Surface, +w: U32, +h: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface{sw, sh, pixels} = surface
+  Surface.nearest.checked(((w > 0) && (h > 0) && (w <= 4096) && (h <= 4096) : U32), sw, sh, pixels, w, h)
+
+def Surface.blit.region(destination: Surface, source: Surface, rect: Rectangle, +x: F32, +y: F32, tint: U32) -> Surface & Surface:
+  Surface{+dw, +dh, dst} = destination
+  Surface{+sw, +sh, src} = source
+  Rectangle{rx, ry, rw, rh} = rect
+  +skipx = F32.max(0.0, (0.0 - x : F32))
+  +skipy = F32.max(0.0, (0.0 - y : F32))
+  +dx = F32.max(0.0, x)
+  +dy = F32.max(0.0, y)
+  cols = F32.to_u32(F32.max(0.0, F32.min((rw - skipx : F32), (U32.to_f32(dw) - dx : F32))))
+  rows = F32.to_u32(F32.max(0.0, F32.min((rh - skipy : F32), (U32.to_f32(dh) - dy : F32))))
+  Surface.blit.finish(dw, dh, sw, sh, Surface.blit.rows(U32.to_nat(rows), U32.to_nat(cols),
+    (F32.to_u32((ry + skipy : F32)) * sw + F32.to_u32((rx + skipx : F32)) : U32),
+    (F32.to_u32(dy) * dw + F32.to_u32(dx) : U32), sw, dw, tint, (src, dst)))
+
+def Surface.region.checked(valid: Bool, destination: Surface, source: Surface, rect: Rectangle, x: F32, y: F32, tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match valid:
+    case False{}:
+      Fail{((destination, source), InvalidRectangle{})}
+    case True{}:
+      Done{Surface.blit.region(destination, source, rect, x, y, tint)}
+
+def Surface.draw_image_region(destination: Surface, source: Surface, +rect: Rectangle, +x: F32, +y: F32, tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  Surface{+w, +h, pixels} = source
+  Surface.region.checked(Rectangle.integral(rect) && Rectangle.inside(rect, w, h)
+    && F32.is_eq(F32.floor(x), x) && F32.is_eq(F32.floor(y), y), destination, Surface{w, h, pixels}, rect, x, y, tint)
+
 # Initial ImageDraw profile: full source, equal-size destination rectangle,
 # RGBA8, one mip level. Both image owners are returned, destination first.
 def Surface.draw_image(destination: Surface, source: Surface, +x: F32, +y: F32, tint: U32) -> Surface & Surface:
-  Surface{+dw, +dh, dst} = destination
-  Surface{+sw, +sh, src} = source
-  +sx = F32.max(0.0, (0.0 - x : F32))
-  +sy = F32.max(0.0, (0.0 - y : F32))
-  +dx = F32.max(0.0, x)
-  +dy = F32.max(0.0, y)
-  cols = F32.to_u32(F32.max(0.0, F32.min((U32.to_f32(sw) - sx : F32), (U32.to_f32(dw) - dx : F32))))
-  rows = F32.to_u32(F32.max(0.0, F32.min((U32.to_f32(sh) - sy : F32), (U32.to_f32(dh) - dy : F32))))
-  Surface.blit.finish(dw, dh, sw, sh, Surface.blit.rows(U32.to_nat(rows), U32.to_nat(cols),
-    (F32.to_u32(sy) * sw + F32.to_u32(sx) : U32), (F32.to_u32(dy) * dw + F32.to_u32(dx) : U32),
-    sw, dw, tint, (src, dst)))
+  Surface{+w, +h, pixels} = source
+  Surface.blit.region(destination, Surface{w, h, pixels}, Rectangle{0.0, 0.0, U32.to_f32(w), U32.to_f32(h)}, x, y, tint)
 
 # Export consumes the surface and excludes power-of-two storage padding.
 def Surface.colors(surface: Surface) -> List<U32>:

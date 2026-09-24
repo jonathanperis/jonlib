@@ -1,0 +1,299 @@
+{
+  "reference": {
+    "version": "6.0",
+    "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+  },
+  "seed": 20260925,
+  "cases": 512,
+  "variants": {
+    "stock-control": {
+      "mismatching_cases": 0,
+      "different_channels": 0,
+      "first_mismatches": []
+    },
+    "float-normalization": {
+      "mismatching_cases": 4,
+      "different_channels": 7,
+      "first_mismatches": [
+        {
+          "id": 31,
+          "different_channels": 1,
+          "first_index": 19,
+          "reference": 124,
+          "candidate": 125
+        },
+        {
+          "id": 136,
+          "different_channels": 1,
+          "first_index": 51,
+          "reference": 192,
+          "candidate": 191
+        },
+        {
+          "id": 200,
+          "different_channels": 4,
+          "first_index": 159,
+          "reference": 50,
+          "candidate": 49
+        },
+        {
+          "id": 386,
+          "different_channels": 1,
+          "first_index": 99,
+          "reference": 192,
+          "candidate": 191
+        }
+      ]
+    }
+  },
+  "header_sha256": "173e654634f6ccaad98f603e686ea212eec1fe8ea6d2a5e5e8056efa10ae3880",
+  "inputs_sha256": "ffe7723113267baf24e619b006265caca99c987f041746236bfb1a35b7cf6e48",
+  "counterexamples": [
+    {
+      "input": {
+        "id": 31,
+        "width": 2,
+        "height": 9,
+        "output_width": 9,
+        "output_height": 15,
+        "pixels": [
+          [
+            11,
+            144,
+            190,
+            2
+          ],
+          [
+            215,
+            158,
+            48,
+            255
+          ],
+          [
+            89,
+            9,
+            172,
+            254
+          ],
+          [
+            104,
+            172,
+            203,
+            128
+          ],
+          [
+            146,
+            133,
+            157,
+            2
+          ],
+          [
+            100,
+            228,
+            213,
+            255
+          ],
+          [
+            175,
+            110,
+            95,
+            1
+          ],
+          [
+            124,
+            102,
+            177,
+            254
+          ],
+          [
+            25,
+            72,
+            170,
+            254
+          ],
+          [
+            4,
+            96,
+            243,
+            1
+          ],
+          [
+            119,
+            41,
+            179,
+            64
+          ],
+          [
+            192,
+            60,
+            200,
+            64
+          ],
+          [
+            25,
+            185,
+            80,
+            0
+          ],
+          [
+            24,
+            11,
+            135,
+            128
+          ],
+          [
+            107,
+            163,
+            246,
+            254
+          ],
+          [
+            252,
+            162,
+            7,
+            0
+          ],
+          [
+            167,
+            221,
+            87,
+            64
+          ],
+          [
+            61,
+            254,
+            232,
+            1
+          ]
+        ]
+      },
+      "mismatch": {
+        "id": 31,
+        "different_channels": 1,
+        "first_index": 19,
+        "reference": 124,
+        "candidate": 125
+      }
+    },
+    {
+      "input": {
+        "id": 136,
+        "width": 1,
+        "height": 6,
+        "output_width": 6,
+        "output_height": 15,
+        "pixels": [
+          [
+            155,
+            37,
+            125,
+            255
+          ],
+          [
+            9,
+            161,
+            147,
+            128
+          ],
+          [
+            1,
+            178,
+            78,
+            128
+          ],
+          [
+            66,
+            252,
+            131,
+            2
+          ],
+          [
+            61,
+            233,
+            132,
+            255
+          ],
+          [
+            43,
+            193,
+            145,
+            2
+          ]
+        ]
+      },
+      "mismatch": {
+        "id": 136,
+        "different_channels": 1,
+        "first_index": 51,
+        "reference": 192,
+        "candidate": 191
+      }
+    },
+    {
+      "input": {
+        "id": 200,
+        "width": 1,
+        "height": 3,
+        "output_width": 15,
+        "output_height": 10,
+        "pixels": [
+          [
+            193,
+            246,
+            47,
+            64
+          ],
+          [
+            78,
+            11,
+            136,
+            0
+          ],
+          [
+            223,
+            247,
+            140,
+            64
+          ]
+        ]
+      },
+      "mismatch": {
+        "id": 200,
+        "different_channels": 4,
+        "first_index": 159,
+        "reference": 50,
+        "candidate": 49
+      }
+    },
+    {
+      "input": {
+        "id": 386,
+        "width": 1,
+        "height": 2,
+        "output_width": 6,
+        "output_height": 9,
+        "pixels": [
+          [
+            177,
+            138,
+            167,
+            128
+          ],
+          [
+            2,
+            50,
+            184,
+            255
+          ]
+        ]
+      },
+      "mismatch": {
+        "id": 386,
+        "different_channels": 1,
+        "first_index": 99,
+        "reference": 192,
+        "candidate": 191
+      }
+    }
+  ]
+}

@@ -1,0 +1,156 @@
+{
+  "passed": true,
+  "profile": "rgba8-cpu-images-v1",
+  "toolchain": {
+    "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+        "path": "patches/bend-metal-dispatch.patch",
+        "sha256": "d4fbe3723f78bbcd456d4937b8f52f48454e7748d86799b22a95165a04cd9879",
+        "files": {
+          ".gitignore": "8915b2338d9a3dd712510d95efbec55daa5f2d5a50f825f7cffbb791f3883024",
+          "bend2/comp.ts": "0095ff214fdf353b3644923a46050507cd2caf09e0da212e446d9fb3dab531a6",
+          "tests/run/metal_inline_budget.bend": "13a2696795e014f55d3d196cc3a4c3691e4e44d2e71f2fed55e04fe6fd4c87f7"
+        }
+      }
+    },
+    "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+    },
+    "bun": {
+      "version": "1.3.12"
+    },
+    "profile": "rgba8-cpu-images-v1"
+  },
+  "host": {
+    "system": "Darwin",
+    "machine": "arm64",
+    "bun": "1.3.12",
+    "clang": "Apple clang version 21.0.0 (clang-2100.3.34.2)"
+  },
+  "sources": {
+    "jonlib.bend": "b56c5ca2f388e5488f13bd3d16a1dadf9d91f9920edaaf830008f8c4d5482b3f"
+  },
+  "verification_sources": {
+    "tools/conformance.py": "d4fa5081d9f59e35a92e38a846b8e87951e28fcd942198485a3d3443b4dcb82c",
+    "tests/contracts.bend": "b7c70776272d3ce1f7f24332deb32f02a745d46cca03d815e32d017be46e68ca",
+    "tests/transforms.bend": "dcb0f0e8fa4ce82664ef5708633907e13ddef2032e0698b8628a3ea1e6642da5",
+    "tests/transforms_gpu.bend": "6405ddc8d321c376ca38d61b40329d0654cb7a41bb00a1fb868d49f71c53d669",
+    "examples/transforms.bend": "4aaded25a5090e5d7e46d1cd9041f4f73433f0226ad586e075b6435bd12568af",
+    "LAWS.bend": "32e241ff75ddf6d54dab7bf00a3e9d94d72becb87f821a26d7e5d73e0bf2ebf3",
+    "PROOF.bend": "c239cd33e04d3be6987a44c54e773a74d64b8a0d10cd9e6c1713ec6f5d97020a",
+    "examples/headless.bend": "6a312b25df47bdc6a8c37dcc4abbb652d7f708f3be9fedbdb99774eb57be5163",
+    "examples/composite.bend": "cfe82e8f00d74879448d99052667a12cb81db675970a968aec491eae90fd152f",
+    "docs/api-map.json": "4e53a1fd6be03babee655537e821f2a8785167762bb5c5e0c2fe40935a41cc35"
+  },
+  "fixtures_sha256": "de01b4b1c4e89905f156c9552132c942ce510719c90c3217d1b8f897dfec188b",
+  "scenarios": [
+    "radius-12-regression",
+    "clipping-non-square",
+    "degenerate-rectangles",
+    "small-circles-and-corners",
+    "one-pixel-clear",
+    "empty-command-buffer",
+    "flip-row-and-column-order",
+    "integer-alpha-blend",
+    "line-octants",
+    "line-reversal-and-degenerate",
+    "line-clipping",
+    "vector-line-rounding",
+    "triangle-windings",
+    "triangle-degenerate-and-outside",
+    "triangle-clipping",
+    "triangle-large-integer-edges",
+    "triangle-outline-truncation",
+    "blit-mixed-alpha",
+    "blit-negative-placement-tint",
+    "blit-right-bottom-and-outside",
+    "blit-preserves-source",
+    "composite-example",
+    "crop-interior",
+    "crop-clipped-rectangle",
+    "crop-outside-noop",
+    "extract-region",
+    "extract-preserves-owner",
+    "nearest-noninteger-upscale",
+    "nearest-downscale",
+    "nearest-identity-hidden-rgb",
+    "nearest-rounding-row-cross",
+    "resize-crop-resize-sequence",
+    "source-region-clipped-placement",
+    "source-region-preserves-owner",
+    "transform-example",
+    "seeded-000",
+    "seeded-001",
+    "seeded-002",
+    "seeded-003",
+    "seeded-004",
+    "seeded-005",
+    "seeded-006",
+    "seeded-007",
+    "seeded-008",
+    "seeded-009",
+    "seeded-010",
+    "seeded-011",
+    "seeded-012",
+    "seeded-013",
+    "seeded-014",
+    "seeded-015",
+    "seeded-016",
+    "seeded-017"
+  ],
+  "pixels_per_lane": 15733,
+  "lanes": {
+    "cpu-1": {
+      "passed": true,
+      "scenarios": 53,
+      "pixels": 15733
+    },
+    "cpu-2": {
+      "passed": true,
+      "scenarios": 53,
+      "pixels": 15733
+    },
+    "javascript": {
+      "passed": true,
+      "scenarios": 53,
+      "pixels": 15733
+    },
+    "gpu-forced": {
+      "passed": true,
+      "scenarios": 53,
+      "pixels": 15733
+    }
+  },
+  "contracts": [
+    "cpu",
+    "javascript"
+  ],
+  "transform_contracts": [
+    "cpu",
+    "javascript",
+    "gpu-forced"
+  ],
+  "example": {
+    "path": ".build/headless.ppm",
+    "pixels": 4096,
+    "passed": true
+  },
+  "composite_example": {
+    "path": ".build/composite.ppm",
+    "pixels": 3072,
+    "passed": true
+  },
+  "transform_example": {
+    "path": ".build/transforms.ppm",
+    "pixels": 1280,
+    "passed": true
+  },
+  "api_inventory": {
+    "total": 600,
+    "mapped": 21
+  },
+  "scope": "Partial RGBA8 crop/extraction/source-region and nearest-neighbor profiles; default filtered resize remains unimplemented"
+}
