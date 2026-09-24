@@ -1,0 +1,87 @@
+name: Conformance
+
+on:
+  push:
+    branches: [main, 'feature/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: conformance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  conformance:
+    name: CPU and JavaScript (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      BEND_NO_TELEMETRY: '1'
+      CC: clang
+      CXX: clang++
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Read pinned dependencies
+        id: pins
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          pins = json.loads(Path('toolchain.json').read_text())
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              print('bend=' + pins['bend']['revision'], file=output)
+              print('raylib=' + pins['raylib']['revision'], file=output)
+              print('bun=' + pins['bun']['version'], file=output)
+          PY
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: ${{ steps.pins.outputs.bun }}
+      - name: Check out pinned Bend
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: bendlang/bend
+          ref: ${{ steps.pins.outputs.bend }}
+          path: .build/dependencies/bend
+          persist-credentials: false
+      - name: Check out pinned raylib
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: raysan5/raylib
+          ref: ${{ steps.pins.outputs.raylib }}
+          path: .build/dependencies/raylib
+          persist-credentials: false
+      - name: Build and compare every pixel
+        run: >-
+          python3 tools/conformance.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Upload scoped conformance evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: conformance-${{ matrix.os }}
+          retention-days: 14
+          include-hidden-files: true
+          if-no-files-found: warn
+          path: |
+            .build/conformance.json
+            .build/api-inventory.json
+            .build/scenarios.json
+            .build/reference.jsonl
+            .build/cpu-1.jsonl
+            .build/cpu-2.jsonl
+            .build/javascript.jsonl
+            .build/headless.ppm

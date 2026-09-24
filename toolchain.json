@@ -1,0 +1,6 @@
+{
+  "bend": {"version": "2.0.27", "revision": "ac0ddb7bf9b3255b23126886698b43a176eed8ca"},
+  "raylib": {"version": "6.0", "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"},
+  "bun": {"version": "1.3.12"},
+  "profile": "rgba8-cpu-images-v1"
+}

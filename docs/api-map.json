@@ -1,0 +1,15 @@
+{
+  "GenImageColor": {"jonlib":"Surface.create","status":"profile-covered"},
+  "ImageClearBackground": {"jonlib":"Surface.clear","status":"profile-covered"},
+  "ImageDrawPixel": {"jonlib":"Surface.draw_pixel","status":"profile-covered"},
+  "ImageDrawRectangle": {"jonlib":"Surface.draw_rectangle","status":"profile-covered"},
+  "ImageDrawCircle": {"jonlib":"Surface.draw_circle","status":"profile-covered"},
+  "ImageFlipHorizontal": {"jonlib":"Surface.flip_horizontal","status":"profile-covered"},
+  "ImageFlipVertical": {"jonlib":"Surface.flip_vertical","status":"profile-covered"},
+  "LoadImageColors": {"jonlib":"Surface.colors","status":"profile-covered"},
+  "GetImageColor": {"jonlib":"Surface.get","status":"contract-checked"},
+  "ImageCopy": {"jonlib":"Surface.copy","status":"contract-checked"},
+  "GetColor": {"jonlib":"Color.red/green/blue/alpha","status":"contract-checked"},
+  "ColorToInt": {"jonlib":"Color.rgba","status":"contract-checked"},
+  "ColorAlphaBlend": {"jonlib":"Color.alpha_blend","status":"profile-covered"}
+}
