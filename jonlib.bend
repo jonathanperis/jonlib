@@ -13,6 +13,15 @@ type Vector2 is Data:
 type Rectangle is Data:
   Rectangle{x: F32, y: F32, width: F32, height: F32}
 
+type Gradient.Reference is Data:
+  AccurateGradient{}
+  GnuGradient{}
+
+def Gradient.gnu(reference: Gradient.Reference) -> Bool:
+  match reference:
+    case AccurateGradient{}: False{}
+    case GnuGradient{}: True{}
+
 def Math.clamp(+value: F32, +lower: F32, +upper: F32) -> F32:
   +first = Bool.pick(F32, (value < lower : F32), lower, value)
   Bool.pick(F32, (first > upper : F32), upper, first)
@@ -406,16 +415,19 @@ def Surface.linear.trigonometry(+width: U32, +height: U32, inner: U32, outer: U3
   +extent = F32.abs(Bool.pick(F32, same_sign, start, (start + U32.to_f32(width) * cosine : F32)))
   Surface.linear.ready((extent > 0.0 : F32), width, height, cosine, sine, start, extent, inner, outer)
 
-def Surface.linear.checked(valid: Bool, +width: U32, +height: U32, direction: F32, inner: U32, outer: U32) -> Maybe<Surface>:
+def Surface.linear.checked(valid: Bool, reference: Gradient.Reference, +width: U32, +height: U32, direction: F32, inner: U32, outer: U32) -> Maybe<Surface>:
   match valid:
     case False{}: None{}
     case True{}:
       radians = ((90.0 - direction) / 180.0 * 3.14159 : F32)
-      Surface.linear.trigonometry(width, height, inner, outer, Trig.sincos(radians))
+      Surface.linear.trigonometry(width, height, inner, outer, Trig.sincos_for(Gradient.gnu(reference), radians))
 
-def Surface.create_gradient_linear(+width: U32, +height: U32, +direction: F32, inner: U32, outer: U32) -> Maybe<Surface>:
+def Surface.create_gradient_linear_for(reference: Gradient.Reference, +width: U32, +height: U32, +direction: F32, inner: U32, outer: U32) -> Maybe<Surface>:
   Surface.linear.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
-    && (F32.abs(direction) <= 360.0 : F32) && F32.is_eq(F32.floor(direction), direction), width, height, direction, inner, outer)
+    && (F32.abs(direction) <= 360.0 : F32) && F32.is_eq(F32.floor(direction), direction), reference, width, height, direction, inner, outer)
+
+def Surface.create_gradient_linear(width: U32, height: U32, direction: F32, inner: U32, outer: U32) -> Maybe<Surface>:
+  Surface.create_gradient_linear_for(AccurateGradient{}, width, height, direction, inner, outer)
 
 def Surface.clear(surface: Surface, color: U32) -> Surface:
   Surface{+w, +h, _} = surface

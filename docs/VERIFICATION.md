@@ -54,7 +54,10 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
   explicitly scoped Jonlib mappings. The raymath ledger additionally maps 28
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
-  on CPU, JS and Metal. A wider 65,535-direction diagnostic retains 52 Apple
+  on CPU, JS and Metal for its declared reference profile. Ubuntu's subsequent
+  native-libm mismatch required the explicit GNU/Arm polynomial profile; the
+  original portable-only CI failure is preserved in the run history.
+  A wider 65,535-direction diagnostic retains 52 Apple
   float-libm mismatches as an explicit open domain, not a passing gate.
 - Serial and balanced gradient generation retain the reference checksum on a
   512×512 workload. CPU process-time improvement and device setup costs are

@@ -49,6 +49,7 @@ is outside this API's contract.
 | `Surface.create_gradient_square(width, height, density, inner, outer) -> Maybe<Surface>` | Square gradient with dimensions 1..4096 and finite density 0..1. Invalid requests return `None`; density one produces the inner color, matching the reference clamp behavior. |
 | `Surface.create_gradient_radial(width, height, density, inner, outer)` | Same Maybe result, dimensions 1..4096 and density 0..1; reference radial RGBA interpolation with balanced generation. |
 | `Surface.create_gradient_linear(width, height, direction, start, end)` | Same Maybe result; integral directions -360..360. Rejects invalid sizes/directions and a zero reference normalization extent. Wider-angle libm parity remains open; see [GRADIENTS.md](GRADIENTS.md). |
+| `Surface.create_gradient_linear_for(reference, width, height, direction, start, end)` | Explicit `Gradient.Reference`: `AccurateGradient{}` or `GnuGradient{}`. Selects the required reference's numerical behavior without hidden OS calls; see [GRADIENTS.md](GRADIENTS.md). |
 | `Surface.dimensions(surface) -> U32 & U32` | Consumes a surface and returns its dimensions. |
 | `Surface.clear(surface, color) -> Surface` | Replaces all pixels; preserves dimensions. |
 | `Surface.get(surface, x, y) -> Surface & Maybe<&2, U32>` | Returns ownership and the pixel; out-of-bounds U32 coordinates return `None`, never wrap. |

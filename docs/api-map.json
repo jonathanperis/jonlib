@@ -48,11 +48,12 @@
     "milestone": "images"
   },
   "GenImageGradientLinear": {
-    "jonlib": "Surface.create_gradient_linear",
+    "jonlib": "Surface.create_gradient_linear_for / Surface.create_gradient_linear",
     "status": "profile-covered",
-    "scope": "RGBA8; dimensions 1..4096; integral directions -360..360 and nonzero reference normalization extent; software extended-precision trigonometry and balanced owned-array generation.",
+    "scope": "RGBA8; dimensions 1..4096; integral directions -360..360 and nonzero reference extent; explicit AccurateGradient or GnuGradient numerical profile; balanced owned-array generation.",
     "gaps": [
       "Wider-angle platform libm rounding differences",
+      "Other libm/reference profiles",
       "Zero normalization extents",
       "Full numerical/target/performance matrix"
     ],

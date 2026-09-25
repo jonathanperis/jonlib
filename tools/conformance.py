@@ -362,6 +362,14 @@ def result_size(case):
     return width, height
 
 
+def gradient_reference():
+    if platform.system() == 'Darwin':
+        return 'AccurateGradient'
+    if platform.system() == 'Linux' and platform.libc_ver()[0] == 'glibc':
+        return 'GnuGradient'
+    raise ValueError('Declare a verified gradient math reference for this host')
+
+
 def vector_arguments(signature, values, bend=False):
     result, at = [], 0
     literal = f32 if bend else lambda value: f'{float(value)!r}f'
@@ -730,7 +738,9 @@ def bend_source(cases, gpu=False):
             if kind in case:
                 gradient = case[kind]
                 parameter = gradient['direction'] if kind=='gradient_linear' else gradient['density']
-                creation = f'J.Surface.create_{kind}{"!" if gpu else ""}({case["width"]}, {case["height"]}, {f32(parameter)}, {rgba(case["background"])}, {rgba(gradient["outer"])})'
+                function = 'create_gradient_linear_for' if kind=='gradient_linear' else 'create_'+kind
+                profile = f'J.{gradient_reference()}{{}}, ' if kind=='gradient_linear' else ''
+                creation = f'J.Surface.{function}{"!" if gpu else ""}({profile}{case["width"]}, {case["height"]}, {f32(parameter)}, {rgba(case["background"])}, {rgba(gradient["outer"])})'
         lines += [f'    case_{i}({creation})']
     return '\n'.join(lines) + '\n'
 

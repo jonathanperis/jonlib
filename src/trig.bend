@@ -1,6 +1,8 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
 # Bounded trigonometry for image-generation angles. Range reduction and Taylor
 # evaluation use software extended precision; only the final result becomes F32.
+# GNU-profile coefficients/evaluation adapted from Arm optimized-routines,
+# Copyright (c) 2018-2024 Arm Limited; MIT alternative, see LICENSES/arm-math.txt.
 import Base
 import ./resize_numeric.bend as N
 
@@ -68,20 +70,47 @@ def signed(negative: Bool, values: F32 & F32) -> F32 & F32:
   (cosine, +sine) = values
   (cosine, Bool.pick(F32, negative, F32.neg(sine), sine))
 
-def reduced(index: U32, negative: Bool, +value: N.Double) -> F32 & F32:
-  +square = multiply(value, value)
-  sine = N.Double.to_f32(multiply(value, polynomial(sine_coefficients(), square, N.Double.zero())))
-  cosine = N.Double.to_f32(polynomial(cosine_coefficients(), square, N.Double.zero()))
+def arm_polynomial(+value: N.Double, +square: N.Double) -> F32 & F32:
+  +x3 = multiply(value, square)
+  +x4 = multiply(square, square)
+  x5 = multiply(x3, square)
+  x6 = multiply(x4, square)
+  c2 = N.Double.add(N.Double{True{}, F32.neg(10.0), N.Wide{1491079, 3902420381}},
+    multiply(square, N.Double{False{}, F32.neg(16.0), N.Wide{1676099, 41679043}}))
+  s1 = N.Double.add(N.Double{False{}, F32.neg(7.0), N.Wide{1118326, 86182852}},
+    multiply(square, N.Double{True{}, F32.neg(13.0), N.Wide{1676523, 930402084}}))
+  c1 = N.Double.add(N.Double.from_f32(1.0), multiply(square, N.Double{True{}, F32.neg(2.0), N.Wide{2097151, 4245447196}}))
+  s = N.Double.add(value, multiply(x3, N.Double{True{}, F32.neg(3.0), N.Wide{1398100, 1502979587}}))
+  c = N.Double.add(c1, multiply(x4, N.Double{False{}, F32.neg(5.0), N.Wide{1398099, 3775303449}}))
+  (N.Double.to_f32(N.Double.add(c, multiply(x6, c2))), N.Double.to_f32(N.Double.add(s, multiply(x5, s1))))
+
+def evaluate_polynomial(gnu: Bool, +value: N.Double, +square: N.Double) -> F32 & F32:
+  match gnu:
+    case True{}: arm_polynomial(value, square)
+    case False{}:
+      sine = N.Double.to_f32(multiply(value, polynomial(sine_coefficients(), square, N.Double.zero())))
+      cosine = N.Double.to_f32(polynomial(cosine_coefficients(), square, N.Double.zero()))
+      (cosine, sine)
+
+def reduced_values(index: U32, negative: Bool, values: F32 & F32) -> F32 & F32:
+  (cosine, sine) = values
   signed(negative, quadrant((index .&. 3 : U32), cosine, sine))
 
-def evaluate(zero: Bool, +radians: F32) -> F32 & F32:
+def reduced(gnu: Bool, index: U32, negative: Bool, +value: N.Double) -> F32 & F32:
+  +square = multiply(value, value)
+  reduced_values(index, negative, evaluate_polynomial(gnu, value, square))
+
+def evaluate(zero: Bool, gnu: Bool, +radians: F32) -> F32 & F32:
   match zero:
     case True{}: (1.0, radians)
     case False{}:
       +magnitude = F32.abs(radians)
       +index = F32.to_u32(F32.floor((magnitude * 0.6366197723675814 + 0.5 : F32)))
       half_pi = {N.Double{False{}, 0.0, N.Wide{1647099, 1413754136}} : N.Double}
-      reduced(index, (radians < 0.0 : F32), N.Double.add(N.Double.from_f32(magnitude), negate(N.Double.mul_f32(U32.to_f32(index), half_pi))))
+      reduced(gnu, index, (radians < 0.0 : F32), N.Double.add(N.Double.from_f32(magnitude), negate(N.Double.mul_f32(U32.to_f32(index), half_pi))))
+
+def sincos_for(gnu: Bool, +radians: F32) -> F32 & F32:
+  evaluate(F32.is_eq(radians, 0.0), gnu, radians)
 
 def sincos(+radians: F32) -> F32 & F32:
-  evaluate(F32.is_eq(radians, 0.0), radians)
+  sincos_for(False{}, radians)

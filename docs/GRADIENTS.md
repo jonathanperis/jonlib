@@ -5,6 +5,13 @@ current 1..4096 size domain. Radial/square densities are 0..1. Linear directions
 are integral F32 values in **-360..360**, with a nonzero reference normalization
 extent. Invalid requests return `None`.
 
+`Surface.create_gradient_linear_for(reference, width, height, direction, start, end)`
+requires an explicit `Gradient.Reference`: `AccurateGradient{}` for the verified
+macOS/double-rounded profile, or `GnuGradient{}` for the verified GNU/Arm polynomial
+profile. `create_gradient_linear` remains the accurate-profile convenience API.
+The conformance harness selects the matching declared profile for Darwin or
+Linux/glibc; other host families need their own verified declaration.
+
 ## Exact arithmetic and remaining gap
 
 The formulas follow the pinned `rtextures.c`, including its `3.14159f` constant
@@ -15,7 +22,14 @@ rounding only the final sine/cosine values to F32. It is an internal helper, not
 a general-purpose replacement for platform math libraries.
 
 The normal trigonometry probe compares every direction in -360..360 against
-actual host `sinf`/`cosf` bits. A separate full-range diagnostic found **52 of
+actual host `sinf`/`cosf` bits. Ubuntu CI demonstrated that its GNU float-libm
+rounding differs from Apple's even within this range. A dedicated Bend
+implementation of the MIT-licensed Arm polynomial reproduces that profile;
+reference selection is explicit instead of replacing expected values or adding
+a tolerance. `trig_probe.py --gnu-control` also checks it against an independent
+C implementation of the same upstream polynomial on any host.
+
+A separate full-range diagnostic found **52 of
 65,535 directions** differing from Apple float-libm by one result bit. The
 candidate values also match double-libm rounded to F32 for the retained examples;
 that still fails the exact compatibility contract. The wider range remains

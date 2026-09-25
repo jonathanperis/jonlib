@@ -53,6 +53,15 @@ to RGBA8, implements reference QOI encoding and reports malformed streams explic
 are retained in [LICENSES/qoi.txt](LICENSES/qoi.txt). The standalone C implementation
 is used only by reference tooling; it is not linked into Jonlib's implementation.
 
+## Arm numerical routines
+
+The GNU-reference polynomial in `src/trig.bend` and its independent C control
+in `tools/trig_probe.py` adapt `math/sincosf.h` and `math/sincosf_data.c` from
+[Arm optimized-routines at 47597821aaa52e9c055caf1ecf8f3aecfd751cd9](https://github.com/ARM-software/optimized-routines/tree/47597821aaa52e9c055caf1ecf8f3aecfd751cd9).
+These are altered Bend/tooling implementations, limited to the documented
+gradient profile. Jonlib selects the upstream MIT alternative; source copyright
+notices and the selected license are retained in [LICENSES/arm-math.txt](LICENSES/arm-math.txt).
+
 ## Bend
 
 Jonlib uses the Bend language and Base library, provided by HigherOrderCO and
