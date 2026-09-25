@@ -18,14 +18,15 @@ approach passes that workload and the selected upstream regressions.
 
 ## Applying and verifying
 
-Start with a checkout already at the locked Bend base revision. From Jonlib's
-root, explicitly apply the overlay once:
+Start with checkouts at the locked Bend/raylib revisions. From Jonlib's root,
+set the absolute paths to your dependency checkouts and apply the overlay once:
 
 ```sh
-BEND_SOURCE="$HOME/Projetos/bendlang/bend"
+export BEND_SOURCE="/path/to/bend"
+export RAYLIB_SOURCE="/path/to/raylib"
 git -C "$BEND_SOURCE" apply --check "$PWD/patches/bend-metal-dispatch.patch"
 git -C "$BEND_SOURCE" apply "$PWD/patches/bend-metal-dispatch.patch"
-python3 tools/conformance.py --bend-source "$BEND_SOURCE" --gpu
+python3 tools/conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 ```
 
 The verifier does not apply patches, repair files, or update a checkout. It

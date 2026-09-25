@@ -12,12 +12,15 @@ and checkouts of the pinned Bend and raylib revisions. Apply the exact
 accepts explicit `--bend-source` and `--raylib-source` paths; it does not install
 tools or repair source files.
 
+Set `BEND_SOURCE` and `RAYLIB_SOURCE` to your checkout locations as shown in the
+[README setup instructions](README.md#requirements), then run:
+
 ```sh
 python3 tools/check_project.py
 python3 -m unittest discover -s tests -v
-python3 tools/conformance.py --bend-source /path/to/bend --raylib-source /path/to/raylib
-python3 tools/verify_bend.py --bend-source /path/to/bend
-python3 tools/resize_conformance.py --bend-source /path/to/bend --raylib-source /path/to/raylib
+python3 tools/conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+python3 tools/verify_bend.py --bend-source "$BEND_SOURCE"
+python3 tools/resize_conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
 ```
 
 Native Metal verification requires a real supported Mac/GPU and a suitable Apple

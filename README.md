@@ -59,13 +59,19 @@ The harness requires these base revisions. Bend additionally needs the exact
 | Bend 2.0.27 + Jonlib Metal overlay | `b7ebee9217c8813067e200b0c0c9153a3be31c5e` |
 | raylib 6.0 | `dbc56a87da87d973a9c5baa4e7438a9d20121d28` |
 
-Defaults are `~/Projetos/bendlang/bend` and `~/Projetos/raysan5/raylib`; override
-them with `--bend-source` and `--raylib-source`. [`toolchain.json`](toolchain.json)
-records the base commits, patch hash and exact resulting compiler-file hashes.
-Apply the overlay once to a checkout already at that Bend revision:
+Keep the dependency checkouts wherever you prefer. From Jonlib's repository root,
+set these variables to their absolute paths (replace the example values):
 
 ```sh
-BEND_SOURCE="$HOME/Projetos/bendlang/bend"
+export BEND_SOURCE="/path/to/bend"
+export RAYLIB_SOURCE="/path/to/raylib"
+```
+
+The commands below pass these paths explicitly. [`toolchain.json`](toolchain.json)
+records the base commits, patch hash and exact resulting compiler-file hashes.
+Apply the overlay once to a checkout already at the pinned Bend revision:
+
+```sh
 git -C "$BEND_SOURCE" apply --check "$PWD/patches/bend-metal-dispatch.patch"
 git -C "$BEND_SOURCE" apply "$PWD/patches/bend-metal-dispatch.patch"
 ```
@@ -79,7 +85,7 @@ From the repository root:
 
 ```sh
 python3 -m unittest discover -s tests -v
-python3 tools/conformance.py
+python3 tools/conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
 ```
 
 The harness builds raylib's headless Memory backend under `.build/`, generates
@@ -89,7 +95,7 @@ It also checks the proof, owned copies, bounds, Base.Image conversion, and the
 three headless PPM examples. Empty suites, missing outputs and mismatches fail.
 
 ```sh
-python3 tools/conformance.py --gpu
+python3 tools/conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 ```
 
 The optional GPU command forces device execution and fails if the device or
@@ -101,7 +107,7 @@ Hosted CI validates CPU/JavaScript; it does not claim GPU validation.
 Default filtered resizing also has a dedicated exact-bit/pixel gate:
 
 ```sh
-python3 tools/resize_conformance.py --gpu
+python3 tools/resize_conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 ```
 
 It checks normalization, complete filter kernels, all four retained precision
@@ -111,8 +117,8 @@ See [resampling status and evidence](docs/RESAMPLING.md).
 The compiler overlay also has a focused upstream regression runner:
 
 ```sh
-python3 tools/verify_bend.py
-python3 tools/verify_bend.py --gpu
+python3 tools/verify_bend.py --bend-source "$BEND_SOURCE"
+python3 tools/verify_bend.py --bend-source "$BEND_SOURCE" --gpu
 ```
 
 Evidence is written to `.build/conformance.json`, with source/input hashes,
@@ -141,7 +147,7 @@ python3 tools/api_plan.py show raylib:function:ImageResize
 
 ```sh
 mkdir -p .build
-BEND_NO_TELEMETRY=1 bun ~/Projetos/bendlang/bend/bend2/main.ts examples/headless.bend -o .build/headless
+BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" examples/headless.bend -o .build/headless
 ./.build/headless
 ```
 
@@ -152,7 +158,7 @@ against raylib's actual image output.
 The second example combines filled/outlined triangles, a line and a tinted image:
 
 ```sh
-BEND_NO_TELEMETRY=1 bun ~/Projetos/bendlang/bend/bend2/main.ts examples/composite.bend -o .build/composite
+BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" examples/composite.bend -o .build/composite
 ./.build/composite
 ```
 
@@ -165,7 +171,7 @@ The PNG above is a documentation preview converted from the verified PPM output.
 The transformation example crops and enlarges pixel art with `ImageResizeNN` semantics:
 
 ```sh
-BEND_NO_TELEMETRY=1 bun ~/Projetos/bendlang/bend/bend2/main.ts examples/transforms.bend -o .build/transforms
+BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" examples/transforms.bend -o .build/transforms
 ./.build/transforms
 ```
 
@@ -179,7 +185,7 @@ This is a documentation PNG preview of the verified PPM output.
 The QOI example performs a real file export/load round trip:
 
 ```sh
-BEND_NO_TELEMETRY=1 bun ~/Projetos/bendlang/bend/bend2/main.ts examples/qoi_roundtrip.bend -o .build/qoi-roundtrip
+BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" examples/qoi_roundtrip.bend -o .build/qoi-roundtrip
 ./.build/qoi-roundtrip
 ```
 

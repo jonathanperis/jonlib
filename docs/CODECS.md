@@ -45,9 +45,11 @@ case/byte totals are recorded in [VERIFICATION.md](VERIFICATION.md). Malformed
 byte-stream contracts run on CPU, JavaScript and forced Metal.
 The real file example and missing/malformed/oversized-file checks run on CPU/JS.
 
+With the checkout variables from [README.md](../README.md#requirements) set:
+
 ```sh
-python3 tools/conformance.py --gpu
-BEND_NO_TELEMETRY=1 bun ~/Projetos/bendlang/bend/bend2/main.ts examples/qoi_roundtrip.bend -o .build/qoi-roundtrip
+python3 tools/conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" examples/qoi_roundtrip.bend -o .build/qoi-roundtrip
 ./.build/qoi-roundtrip
 ```
 

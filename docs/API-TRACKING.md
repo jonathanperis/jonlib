@@ -122,11 +122,12 @@ the complete target matrix.
 ## Drift and extraction verification
 
 `tools/check_project.py` runs the offline generated-file/evidence gate.
-Conformance additionally re-extracts all six headers from the pinned checkout:
+Conformance additionally re-extracts all six headers from the pinned checkout.
+Use the checkout variables defined in [README.md](../README.md#requirements):
 
 ```sh
 python3 tools/api_plan.py check --clang-audit \
-  --raylib-source "$HOME/Projetos/raysan5/raylib"
+  --raylib-source "$RAYLIB_SOURCE"
 ```
 
 The extractor retains conditional source alternatives. An independent Clang AST

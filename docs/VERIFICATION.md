@@ -5,11 +5,14 @@ The current base revision and exact compiler overlay are pinned in `toolchain.js
 
 ## Executed checks
 
+Reproduce the checks using the checkout variables from
+[README.md](../README.md#requirements):
+
 ```sh
 python3 -m unittest discover -s tests -v
-python3 tools/conformance.py --gpu
-python3 tools/resize_conformance.py --images-only
-python3 tools/resize_conformance.py --images-only --gpu --lane metal
+python3 tools/conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+python3 tools/resize_conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --images-only
+python3 tools/resize_conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --images-only --gpu --lane metal
 ```
 
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
@@ -132,6 +135,19 @@ Regression scan: 46 callers checked, 20 assertions checked, 1 flagged/fixed.
 ## GitHub Actions
 
 The public repository is <https://github.com/jonathanperis/jonlib>.
+Commit `b73c97aee2de38a2f90f22648f9925f8574ee8b2`, published to `main`, passed:
+
+- [Checks — harness and project validation](https://github.com/jonathanperis/jonlib/actions/runs/36147174640).
+- [Conformance — Ubuntu 24.04 and macOS 15](https://github.com/jonathanperis/jonlib/actions/runs/36147174605).
+
+Downloaded artifacts confirm both hosts ran all 125 scenarios / 22,285 words
+per CPU-1/CPU-2/JS lane, five alpha-border observations, seven exact QOI exports,
+the 529-image resize corpus and all 16 selected compiler regressions. Source and
+fixture hashes match the local verified implementation. See the
+[hosted evidence record](evidence/hosted-b73c97a.json).
+
+### Historical baseline
+
 The first published commit, `c5418fb4cb309a233dde8cfec39fea5b07011f67`, passed:
 
 - [Checks — harness and project validation](https://github.com/jonathanperis/jonlib/actions/runs/36033674066).
@@ -229,8 +245,9 @@ exact-comparison invariants hold in the recorded evidence. Hosted validation
 remains a publication gap rather than an assumed pass.
 
 The full compiler regression suite and historical manual Metal outlining probe
-were not rerun; compiler sources remain unchanged. Hosted CI for these local
-changes, CUDA, live window/audio integration and performance parity remain unrun.
+were not rerun locally; compiler sources remain unchanged. The selected compiler
+suite later passed on both hosted runners. CUDA, live window/audio integration
+and performance parity remain unrun.
 
 ## Alpha bounds, canvas, gradients and metric review
 

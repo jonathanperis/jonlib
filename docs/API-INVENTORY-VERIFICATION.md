@@ -68,10 +68,11 @@ offset issue above. Generated consumers and documentation links were also checke
 | Preserve existing 21 partial mappings and explicit remaining work | Pass |
 | Reject stale outputs, invalid dependencies and unsupported completion | Pass |
 | Derive progression dashboard, deltas and conformance summaries from the ledger | Pass locally |
-| Hosted execution of the new inventory gates | Pending publication of this increment |
+| Hosted execution of the new inventory gates | Pass on both hosts for [b73c97a](evidence/hosted-b73c97a.json) |
 
 The workflow changes add the source/Clang audit to both hosted conformance
-jobs. No new hosted CI result is claimed by this record. GPU/compiler regression
+jobs; their subsequent successful execution is recorded in the linked hosted evidence.
+GPU/compiler regression
 suites were not rerun for this metadata/tooling increment; earlier library and
 compiler evidence remains in [VERIFICATION.md](VERIFICATION.md). This inventory
 audit establishes declaration accounting, not runtime parity, exhaustive semantic

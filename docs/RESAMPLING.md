@@ -52,9 +52,11 @@ coefficient packing, seven-channel RGBA pipeline and reference operation order.
 
 ## Exact verification
 
+Set the checkout variables described in [README.md](../README.md#requirements).
+
 ```sh
-python3 tools/resize_conformance.py
-python3 tools/resize_conformance.py --gpu
+python3 tools/resize_conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+python3 tools/resize_conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 ```
 
 The gate compares 1,059 normalization vectors / 6,470 coefficient bit patterns,
@@ -81,8 +83,8 @@ profile, other GPU models and complete platform integration remain unverified.
 ## Reproducible precision experiment
 
 ```sh
-python3 tools/conformance.py
-python3 tools/filter_probe.py
+python3 tools/conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+python3 tools/filter_probe.py --raylib-source "$RAYLIB_SOURCE"
 ```
 
 The probe uses 512 deterministic raw RGBA inputs. For each one it compares the
