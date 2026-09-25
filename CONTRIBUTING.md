@@ -17,6 +17,7 @@ python3 tools/check_project.py
 python3 -m unittest discover -s tests -v
 python3 tools/conformance.py --bend-source /path/to/bend --raylib-source /path/to/raylib
 python3 tools/verify_bend.py --bend-source /path/to/bend
+python3 tools/resize_conformance.py --bend-source /path/to/bend --raylib-source /path/to/raylib
 ```
 
 Native Metal verification requires a real supported Mac/GPU and a suitable Apple
@@ -27,6 +28,12 @@ affecting the device path. See [the investigation](docs/METAL-INVESTIGATION.md)
 for the historical failure, rejected candidates and remaining verification limits.
 
 ## Changes and evidence
+
+Select stable API IDs from the [progress dashboard](docs/PROGRESS.md). Update
+`api/progress.json` with scope, gaps and evidence, then run
+`python3 tools/api_plan.py build`. Generated ledgers/checklists must not be
+edited directly. Use [the tracking procedure](docs/API-TRACKING.md) for gate
+requirements and `report --since BASE_COMMIT` for a delivery's actual delta.
 
 - Add the smallest fixture or contract check that demonstrates the behavior.
 - Compare identical inputs with pinned raylib; preserve full-pixel assertions.
@@ -42,12 +49,18 @@ becomes a conformance test. Consult asset-specific licenses before adding files.
 
 ## GitHub Actions
 
-- **Checks** validates the test harness, fixtures, source boundary and metadata.
+- **Checks** validates the test harness, fixtures, source boundary, metadata and
+  generated API progression files/dependencies/completion claims.
 - **Conformance** builds and tests CPU/JavaScript on Ubuntu 24.04 and macOS 15,
   explicitly applies the hash-checked compiler patch, checks the law/contracts/
   examples and 16 upstream compiler regressions, records the default-filter
   precision diagnostic, and uploads evidence for 14 days. Diagnostic variants
-  are not treated as passing Bend implementations.
+  are not treated as passing Bend implementations. Both jobs re-extract the
+  complete API catalog and independently audit C functions/C++ overloads with Clang.
+  The filtered-resize gate also checks exact normalization/kernel bits and
+  529 real raylib image outputs, including the retained precision counterexamples.
+  The main corpus also checks QOI export bytes, codec failures, real byte-file IO
+  and exact scalar/Vector2 results under the declared uncontracted-F32 profile.
 - Actions are pinned to immutable commits; dependency revisions come from
   `toolchain.json`. Workflows use read-only repository permissions.
 - Hosted conformance does not claim Metal/CUDA or live window/audio validation.

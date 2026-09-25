@@ -82,6 +82,10 @@ jobs:
           python3 tools/conformance.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Independently audit the public API catalog
+        run: >-
+          python3 tools/api_plan.py check --clang-audit
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Check the compiler overlay against upstream regressions
         run: >-
           python3 tools/verify_bend.py
@@ -89,6 +93,11 @@ jobs:
       - name: Record default-filter precision diagnostics
         run: >-
           python3 tools/filter_probe.py
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify default filtered resizing and coefficient bits
+        run: >-
+          python3 tools/resize_conformance.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Upload scoped conformance evidence
         if: always()
@@ -109,5 +118,8 @@ jobs:
             .build/headless.ppm
             .build/composite.ppm
             .build/transforms.ppm
+            .build/qoi-roundtrip.qoi
             .build/bend-regressions/results.json
             .build/filter-probe/results.json
+            .build/resize/results.json
+            .build/resize/images-results.json

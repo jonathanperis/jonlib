@@ -1,0 +1,810 @@
+{
+  "schema": 1,
+  "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "declaration_inventory": {
+    "total": 1884,
+    "blocked": 0,
+    "complete": 0,
+    "in-progress": 0,
+    "not-started": 1793,
+    "partial": 91
+  },
+  "core_functions": {
+    "total": 600,
+    "blocked": 0,
+    "complete": 0,
+    "in-progress": 0,
+    "not-started": 542,
+    "partial": 58
+  },
+  "function_declarations": {
+    "total": 931,
+    "blocked": 0,
+    "complete": 0,
+    "in-progress": 0,
+    "not-started": 847,
+    "partial": 84
+  },
+  "unique_c_function_names": 923,
+  "kinds": {
+    "alias": 8,
+    "callback": 6,
+    "configuration": 115,
+    "constant": 19,
+    "enum": 39,
+    "enumerator": 449,
+    "function": 931,
+    "macro": 179,
+    "opaque": 2,
+    "operator": 60,
+    "switch": 25,
+    "type": 51
+  },
+  "headers": {
+    "raylib.h": {
+      "total": 1037,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 975,
+      "partial": 62
+    },
+    "raymath.h": {
+      "total": 254,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 227,
+      "partial": 27
+    },
+    "rlgl.h": {
+      "total": 403,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 403,
+      "partial": 0
+    },
+    "rcamera.h": {
+      "total": 35,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 34,
+      "partial": 1
+    },
+    "rgestures.h": {
+      "total": 39,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 38,
+      "partial": 1
+    },
+    "config.h": {
+      "total": 116,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 116,
+      "partial": 0
+    }
+  },
+  "milestones": [
+    {
+      "id": "types",
+      "title": "Types, constants and language mappings",
+      "phase": 0,
+      "depends_on": [],
+      "total": 549,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 542,
+      "partial": 7
+    },
+    {
+      "id": "numerics",
+      "title": "Numeric fidelity and scalar contracts",
+      "phase": 1,
+      "depends_on": [
+        "types"
+      ],
+      "total": 14,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 8,
+      "partial": 6
+    },
+    {
+      "id": "raymath",
+      "title": "Vectors, matrices and quaternions",
+      "phase": 1,
+      "depends_on": [
+        "numerics"
+      ],
+      "total": 221,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 201,
+      "partial": 20
+    },
+    {
+      "id": "memory",
+      "title": "Buffers, memory and callback contracts",
+      "phase": 1,
+      "depends_on": [
+        "types"
+      ],
+      "total": 12,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 12,
+      "partial": 0
+    },
+    {
+      "id": "files",
+      "title": "Files, paths, compression and data utilities",
+      "phase": 1,
+      "depends_on": [
+        "memory"
+      ],
+      "total": 49,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 49,
+      "partial": 0
+    },
+    {
+      "id": "random",
+      "title": "Random-number and sequence contracts",
+      "phase": 1,
+      "depends_on": [
+        "numerics",
+        "memory"
+      ],
+      "total": 4,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 4,
+      "partial": 0
+    },
+    {
+      "id": "pixels",
+      "title": "Colors and pixel formats",
+      "phase": 1,
+      "depends_on": [
+        "numerics",
+        "memory"
+      ],
+      "total": 46,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 35,
+      "partial": 11
+    },
+    {
+      "id": "images",
+      "title": "Image creation, primitives and transformations",
+      "phase": 1,
+      "depends_on": [
+        "pixels",
+        "memory"
+      ],
+      "total": 54,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 16,
+      "partial": 38
+    },
+    {
+      "id": "resampling",
+      "title": "Precision-correct crop, resize and composition",
+      "phase": 1,
+      "depends_on": [
+        "images",
+        "numerics"
+      ],
+      "total": 7,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 1,
+      "partial": 6
+    },
+    {
+      "id": "image-codecs",
+      "title": "Image codecs and export",
+      "phase": 1,
+      "depends_on": [
+        "files",
+        "pixels",
+        "images"
+      ],
+      "total": 8,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 5,
+      "partial": 3
+    },
+    {
+      "id": "collision",
+      "title": "2D/3D collision and ray queries",
+      "phase": 1,
+      "depends_on": [
+        "raymath"
+      ],
+      "total": 21,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 21,
+      "partial": 0
+    },
+    {
+      "id": "window",
+      "title": "Window, monitor, clipboard and cursor runtime",
+      "phase": 2,
+      "depends_on": [
+        "types",
+        "memory"
+      ],
+      "total": 57,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 57,
+      "partial": 0
+    },
+    {
+      "id": "input",
+      "title": "Keyboard, mouse, gamepad, touch and gestures",
+      "phase": 2,
+      "depends_on": [
+        "window",
+        "numerics"
+      ],
+      "total": 57,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 57,
+      "partial": 0
+    },
+    {
+      "id": "frame",
+      "title": "Timing, frame control and automation",
+      "phase": 2,
+      "depends_on": [
+        "window",
+        "input"
+      ],
+      "total": 17,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 17,
+      "partial": 0
+    },
+    {
+      "id": "rlgl-core",
+      "title": "rlgl state, matrices and immediate drawing",
+      "phase": 6,
+      "depends_on": [
+        "window",
+        "raymath",
+        "memory"
+      ],
+      "total": 187,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 187,
+      "partial": 0
+    },
+    {
+      "id": "shapes",
+      "title": "2D drawing and splines",
+      "phase": 2,
+      "depends_on": [
+        "frame",
+        "rlgl-core",
+        "raymath",
+        "pixels"
+      ],
+      "total": 62,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 62,
+      "partial": 0
+    },
+    {
+      "id": "textures",
+      "title": "Textures, render targets and sampling",
+      "phase": 2,
+      "depends_on": [
+        "rlgl-core",
+        "pixels",
+        "image-codecs"
+      ],
+      "total": 27,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 27,
+      "partial": 0
+    },
+    {
+      "id": "text-utils",
+      "title": "Byte strings and Unicode/codepoint utilities",
+      "phase": 3,
+      "depends_on": [
+        "memory",
+        "files"
+      ],
+      "total": 35,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 35,
+      "partial": 0
+    },
+    {
+      "id": "fonts",
+      "title": "Fonts, glyphs and text drawing",
+      "phase": 3,
+      "depends_on": [
+        "text-utils",
+        "textures",
+        "image-codecs"
+      ],
+      "total": 29,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 29,
+      "partial": 0
+    },
+    {
+      "id": "audio-codecs",
+      "title": "Wave and music formats",
+      "phase": 4,
+      "depends_on": [
+        "files",
+        "memory",
+        "numerics"
+      ],
+      "total": 11,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 11,
+      "partial": 0
+    },
+    {
+      "id": "audio-device",
+      "title": "Audio devices and sound playback",
+      "phase": 4,
+      "depends_on": [
+        "audio-codecs",
+        "memory"
+      ],
+      "total": 20,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 20,
+      "partial": 0
+    },
+    {
+      "id": "audio-stream",
+      "title": "Music streams and audio callbacks",
+      "phase": 4,
+      "depends_on": [
+        "audio-device"
+      ],
+      "total": 35,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 35,
+      "partial": 0
+    },
+    {
+      "id": "shaders",
+      "title": "Shaders, uniforms and programmable effects",
+      "phase": 6,
+      "depends_on": [
+        "textures",
+        "rlgl-core"
+      ],
+      "total": 12,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 12,
+      "partial": 0
+    },
+    {
+      "id": "models",
+      "title": "Meshes, model loading and 3D drawing",
+      "phase": 5,
+      "depends_on": [
+        "raymath",
+        "textures",
+        "files",
+        "shaders"
+      ],
+      "total": 54,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 54,
+      "partial": 0
+    },
+    {
+      "id": "materials",
+      "title": "Materials and texture maps",
+      "phase": 5,
+      "depends_on": [
+        "models",
+        "shaders"
+      ],
+      "total": 6,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 6,
+      "partial": 0
+    },
+    {
+      "id": "animation",
+      "title": "Model animation and skinning",
+      "phase": 5,
+      "depends_on": [
+        "models",
+        "materials"
+      ],
+      "total": 5,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 5,
+      "partial": 0
+    },
+    {
+      "id": "camera",
+      "title": "Camera controls and projection",
+      "phase": 5,
+      "depends_on": [
+        "raymath",
+        "input",
+        "frame"
+      ],
+      "total": 22,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 22,
+      "partial": 0
+    },
+    {
+      "id": "vr",
+      "title": "VR stereo configuration and rendering",
+      "phase": 5,
+      "depends_on": [
+        "camera",
+        "shaders"
+      ],
+      "total": 4,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 4,
+      "partial": 0
+    },
+    {
+      "id": "rlgl-advanced",
+      "title": "rlgl buffers, compute and low-level interop",
+      "phase": 6,
+      "depends_on": [
+        "rlgl-core",
+        "shaders",
+        "textures"
+      ],
+      "total": 52,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 52,
+      "partial": 0
+    },
+    {
+      "id": "configuration",
+      "title": "Build switches, limits and source-package compatibility",
+      "phase": 7,
+      "depends_on": [
+        "types"
+      ],
+      "total": 207,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 207,
+      "partial": 0
+    },
+    {
+      "id": "platforms",
+      "title": "Complete platform/backend validation",
+      "phase": 7,
+      "depends_on": [
+        "window",
+        "input",
+        "frame",
+        "audio-stream",
+        "rlgl-advanced"
+      ],
+      "total": 0,
+      "blocked": 0,
+      "complete": 0,
+      "in-progress": 0,
+      "not-started": 0,
+      "partial": 0
+    }
+  ],
+  "next_work": [
+    {
+      "id": "raylib:function:GenImageGradientRadial",
+      "name": "GenImageGradientRadial",
+      "milestone": "images",
+      "status": "not-started",
+      "jonlib": "Surface.gen_image_gradient_radial",
+      "next_step": "Derive GenImageGradientRadial semantics from the linked source, add a reference fixture, then implement Surface.gen_image_gradient_radial.",
+      "milestone_dependencies": [
+        "pixels",
+        "memory"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:GenImageGradientLinear",
+      "name": "GenImageGradientLinear",
+      "milestone": "images",
+      "status": "not-started",
+      "jonlib": "Surface.gen_image_gradient_linear",
+      "next_step": "Derive GenImageGradientLinear semantics from the linked source, add a reference fixture, then implement Surface.gen_image_gradient_linear.",
+      "milestone_dependencies": [
+        "pixels",
+        "memory"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:ImageRotate",
+      "name": "ImageRotate",
+      "milestone": "images",
+      "status": "not-started",
+      "jonlib": "Surface.image_rotate",
+      "next_step": "Derive ImageRotate semantics from the linked source, add a reference fixture, then implement Surface.image_rotate.",
+      "milestone_dependencies": [
+        "pixels",
+        "memory"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2Distance",
+      "name": "Vector2Distance",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Vector2.distance",
+      "next_step": "Derive Vector2Distance semantics from the linked source, add a reference fixture, then implement Vector2.distance.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2MoveTowards",
+      "name": "Vector2MoveTowards",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Vector2.move_towards",
+      "next_step": "Derive Vector2MoveTowards semantics from the linked source, add a reference fixture, then implement Vector2.move_towards.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:ImageToPOT",
+      "name": "ImageToPOT",
+      "milestone": "images",
+      "status": "not-started",
+      "jonlib": "Surface.image_to_pot",
+      "next_step": "Derive ImageToPOT semantics from the linked source, add a reference fixture, then implement Surface.image_to_pot.",
+      "milestone_dependencies": [
+        "pixels",
+        "memory"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Clamp",
+      "name": "Clamp",
+      "milestone": "numerics",
+      "status": "partial",
+      "jonlib": "Math.clamp",
+      "next_step": "Close documented gaps and unverified gates for Clamp.",
+      "milestone_dependencies": [
+        "types"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Lerp",
+      "name": "Lerp",
+      "milestone": "numerics",
+      "status": "partial",
+      "jonlib": "Math.lerp",
+      "next_step": "Close documented gaps and unverified gates for Lerp.",
+      "milestone_dependencies": [
+        "types"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Normalize",
+      "name": "Normalize",
+      "milestone": "numerics",
+      "status": "partial",
+      "jonlib": "Math.normalize",
+      "next_step": "Close documented gaps and unverified gates for Normalize.",
+      "milestone_dependencies": [
+        "types"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Remap",
+      "name": "Remap",
+      "milestone": "numerics",
+      "status": "partial",
+      "jonlib": "Math.remap",
+      "next_step": "Close documented gaps and unverified gates for Remap.",
+      "milestone_dependencies": [
+        "types"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Wrap",
+      "name": "Wrap",
+      "milestone": "numerics",
+      "status": "partial",
+      "jonlib": "Math.wrap",
+      "next_step": "Close documented gaps and unverified gates for Wrap.",
+      "milestone_dependencies": [
+        "types"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:FloatEquals",
+      "name": "FloatEquals",
+      "milestone": "numerics",
+      "status": "partial",
+      "jonlib": "Math.float_equals",
+      "next_step": "Close documented gaps and unverified gates for FloatEquals.",
+      "milestone_dependencies": [
+        "types"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2Zero",
+      "name": "Vector2Zero",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.zero",
+      "next_step": "Close documented gaps and unverified gates for Vector2Zero.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2One",
+      "name": "Vector2One",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.one",
+      "next_step": "Close documented gaps and unverified gates for Vector2One.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2Add",
+      "name": "Vector2Add",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.add",
+      "next_step": "Close documented gaps and unverified gates for Vector2Add.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2AddValue",
+      "name": "Vector2AddValue",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.add_value",
+      "next_step": "Close documented gaps and unverified gates for Vector2AddValue.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2Subtract",
+      "name": "Vector2Subtract",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.subtract",
+      "next_step": "Close documented gaps and unverified gates for Vector2Subtract.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2SubtractValue",
+      "name": "Vector2SubtractValue",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.subtract_value",
+      "next_step": "Close documented gaps and unverified gates for Vector2SubtractValue.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2Length",
+      "name": "Vector2Length",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.length",
+      "next_step": "Close documented gaps and unverified gates for Vector2Length.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2LengthSqr",
+      "name": "Vector2LengthSqr",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.length_sqr",
+      "next_step": "Close documented gaps and unverified gates for Vector2LengthSqr.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    }
+  ]
+}

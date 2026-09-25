@@ -2,6 +2,8 @@
 
 The authoritative destination, phase gates and progress rules are in the
 [100% parity master plan](MASTER-PLAN.md). This page tracks the near-term sequence.
+The [generated API dashboard](PROGRESS.md) assigns every reference declaration
+to work packages and provides the current API-level queue.
 
 ## Current milestone: headless image foundations
 
@@ -13,7 +15,7 @@ Track exact verified capabilities in [COMPATIBILITY.md](COMPATIBILITY.md).
 
 ## Metal compiler boundary: resolved for the declared profile
 
-The complete 26-scenario Metal gate now passes with the explicit compiler overlay
+The complete current Metal gate passes with the explicit compiler overlay
 in `toolchain.json`. [METAL-INVESTIGATION.md](METAL-INVESTIGATION.md) records the
 failure, a rejected broader outlining policy and the adopted dispatcher-only
 boundaries. No source-specific rule or altered expected output is used.
@@ -26,13 +28,14 @@ cluster/site gates remain unverified.
 ## 2D library growth
 
 1. Complete the remaining primitive families, vector/rectangle math and collision helpers.
-2. Complete precision-correct default resampling, then source-clipping/scaling
-   ImageDraw behavior, additional formats and mipmaps. In-bounds unscaled source
-   rectangles and ImageResizeNN are now available; [default filtering remains open](RESAMPLING.md).
+2. Broaden the now-implemented source-clipping/scaling ImageDraw profile to more
+   formats and mipmaps. Bounded fractional rectangles, ImageResizeNN and
+   [default RGBA8 filtering](RESAMPLING.md) are available.
 3. Efficient command buffers and tiled rendering, measured against equivalent
    raylib scenes; avoid using the current correctness-oriented image loops as
    an assumed high-performance architecture.
-4. Bitmap/stroke text, QOI/BMP and PCM WAV before more demanding formats.
+4. Extend the [working QOI codec](CODECS.md) to BMP/PNG and subsequent formats;
+   build text/fonts and PCM WAV support with their own reference gates.
 5. Port selected upstream examples to Bend and compare deterministic outputs.
 
 ## Interactive platform foundation

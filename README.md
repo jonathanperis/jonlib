@@ -8,7 +8,10 @@
 working toward 100% raylib 6.0 parity.**
 
 The [master plan](docs/MASTER-PLAN.md) defines the full target, implementation
-phases and completion gates. Current limited profiles remain explicitly partial.
+phases and completion gates. The [API progression dashboard](docs/PROGRESS.md)
+maps every public release-header API and supporting declaration to a work
+package, Bend target, dependencies and verification status. Current limited
+profiles remain explicitly partial.
 
 The first implementation is a headless, owned RGBA8 image library. Its drawing
 algorithms are Bend source. A separate C executable runs pinned raylib as a
@@ -22,6 +25,14 @@ differential test reference.
 - Fixed-point lines, vector-line rounding, filled triangles and triangle outlines.
 - Unscaled image composition with clipping, tint, alpha and source preservation.
 - Checked region extraction/cropping, source-rectangle drawing and exact fixed-point nearest-neighbor resizing.
+- Default filtered RGBA8 resize with precision-correct coefficient normalization
+  and alpha-aware Catmull-Rom/Mitchell filtering.
+- Scaled/source-clipped image composition, including bounded fractional rectangles.
+- Vector drawing variants, outlines, thick lines, fans/strips and vertex-colored triangles.
+- RGBA8 color/alpha transforms, checkerboards and quarter-turn rotations.
+- Alpha bounds/cropping, raw canvas resizing and square gradients.
+- QOI decoding/encoding and real byte-file loading/export, with typed failures.
+- Initial scalar and Vector2 math under an explicit uncontracted-F32 profile.
 - Horizontal and vertical flips.
 - Conversion to Bend's `Base.Image` quadtree.
 - P3 PPM encoding and file export through Base IO.
@@ -32,7 +43,7 @@ differential test reference.
 See the [master plan](docs/MASTER-PLAN.md), [API](docs/API.md), [compatibility ledger](docs/COMPATIBILITY.md),
 [verification record](docs/VERIFICATION.md), and [roadmap](docs/ROADMAP.md).
 This is an early library: desktop interaction,
-textures/fonts/codecs, audio, 3D, and broader platform support remain future work.
+textures/fonts, additional codecs, audio, 3D, and broader platform support remain future work.
 
 ## Requirements
 
@@ -82,10 +93,20 @@ python3 tools/conformance.py --gpu
 ```
 
 The optional GPU command forces device execution and fails if the device or
-results are unavailable. **All 53 scenarios pass on the tested M1 with the
+results are unavailable. **The full current corpus passes on the tested M1 with the
 declared overlay**, including every RGBA pixel. Stock Bend's failure and the
 compiler fix are documented in [the investigation](docs/METAL-INVESTIGATION.md).
 Hosted CI validates CPU/JavaScript; it does not claim GPU validation.
+
+Default filtered resizing also has a dedicated exact-bit/pixel gate:
+
+```sh
+python3 tools/resize_conformance.py --gpu
+```
+
+It checks normalization, complete filter kernels, all four retained precision
+counterexamples and a 529-image corpus including 4096-pixel axis boundaries.
+See [resampling status and evidence](docs/RESAMPLING.md).
 
 The compiler overlay also has a focused upstream regression runner:
 
@@ -98,10 +119,23 @@ Evidence is written to `.build/conformance.json`, with source/input hashes,
 toolchain, host and per-lane results. Generated programs and complete reference/
 candidate pixel outputs remain beside it. Each run initially marks the report
 failed, so an unsuccessful rerun cannot leave an old success as its result.
-The run also inventories all **600 public raylib.h functions** into
-`.build/api-inventory.json`, combining their pinned signatures with
-[`docs/api-map.json`](docs/api-map.json). Mapped image operations cover only the
-declared profile; the remaining APIs are explicitly marked not implemented.
+The run checks the complete [API ledger](api/ledger.json) against the pinned
+headers and exports its **600 public raylib.h functions** into
+`.build/api-inventory.json`. Its progress summary comes from the same ledger.
+Mapped image operations cover only the declared profile.
+
+## Follow the full parity plan
+
+- [Progress dashboard and next steps](docs/PROGRESS.md)
+- [Every core API](docs/api/raylib.md), [raymath](docs/api/raymath.md),
+  [rlgl](docs/api/rlgl.md), [camera](docs/api/rcamera.md),
+  [gestures](docs/api/rgestures.md), [configuration](docs/api/config.md)
+- [How to update and verify progress](docs/API-TRACKING.md)
+
+```sh
+python3 tools/api_plan.py report
+python3 tools/api_plan.py show raylib:function:ImageResize
+```
 
 ## Run the headless example
 
@@ -135,12 +169,23 @@ BEND_NO_TELEMETRY=1 bun ~/Projetos/bendlang/bend/bend2/main.ts examples/transfor
 ./.build/transforms
 ```
 
-It writes `.build/transforms.ppm`. Default filtered resize is separate and remains
-open: [resampling status and precision evidence](docs/RESAMPLING.md).
+It writes `.build/transforms.ppm`. Default filtered resize is available separately
+as `Surface.resize`: [resampling status and precision evidence](docs/RESAMPLING.md).
 
 ![Crop and nearest-neighbor example](docs/images/transforms.png)
 
 This is a documentation PNG preview of the verified PPM output.
+
+The QOI example performs a real file export/load round trip:
+
+```sh
+BEND_NO_TELEMETRY=1 bun ~/Projetos/bendlang/bend/bend2/main.ts examples/qoi_roundtrip.bend -o .build/qoi-roundtrip
+./.build/qoi-roundtrip
+```
+
+It writes `.build/qoi-roundtrip.qoi` and prints the loaded dimensions/pixels.
+The harness checks its exact bytes against actual raylib `ExportImage` and runs
+file/decode error checks. See [CODECS.md](docs/CODECS.md) and [MATH.md](docs/MATH.md).
 
 ## Ownership and compatibility
 

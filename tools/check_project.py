@@ -5,11 +5,13 @@ import hashlib
 from pathlib import Path
 import re
 import subprocess
+import sys
 
 from conformance import ROOT, cases_from, source_gate
 
 
 def main():
+    subprocess.run([sys.executable, ROOT / 'tools/api_plan.py', 'check'], cwd=ROOT, check=True)
     pins = json.loads((ROOT / 'toolchain.json').read_text())
     for dependency in ('bend', 'raylib'):
         if not re.fullmatch(r'[0-9a-f]{40}', pins[dependency]['revision']):
@@ -24,7 +26,7 @@ def main():
             raise ValueError('Compiler overlay requires exact resulting file hashes')
     cases = cases_from(json.loads((ROOT / 'tests/fixtures/images.json').read_text()))
     source_gate()
-    documents = [*ROOT.glob('*.md'), *(ROOT / 'docs').glob('*.md'),
+    documents = [*ROOT.glob('*.md'), *(ROOT / 'docs').rglob('*.md'),
                  ROOT / 'tests/fixtures/README.md']
     for document in documents:
         for target in re.findall(r'\]\(([^)]+)\)', document.read_text()):

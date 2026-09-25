@@ -1,0 +1,25 @@
+{
+  "date": "2026-09-25",
+  "host": "Apple M1 / Darwin arm64 / Apple clang 21.0.0 / Bun 1.3.12",
+  "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bend_revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "source_sha256": {
+    "jonlib.bend": "7881428e4dac2d4e6bde8f374e4fd8b01ed167bdd76598df062261fb54f43e59",
+    "src/qoi.bend": "e7ee91bcb6a568d43a60edd14ea40acbb2caa8c094b5b6615d2e44ba5a28673a",
+    "src/resample.bend": "0facfc8ac5e973de6594feb713517b4e20bce5bbc0c187eb2e165671c600bdf2",
+    "src/resize_numeric.bend": "e638e55a005a86ebb9c9e839ae3cfc378ac2289c1005c13a54842988f54ac5be"
+  },
+  "fixtures_sha256": "b2b92a028811cee9b0ac817cabd662affa651b70f7b1ec620d8366f8424eba37",
+  "scenarios": 125,
+  "output_words_per_lane": 22285,
+  "numeric_probe_cells": 65,
+  "alpha_border_observations": 5,
+  "qoi_export_scenarios": 7,
+  "qoi_export_bytes_per_lane": 299,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "passed": true,
+  "negative_control": "A deliberately incorrect data-dependent crop-size hint is rejected by the actual C oracle with exit code 4 before candidate execution.",
+  "progress": {"core_functions_partial":58,"raymath_functions_partial":26,"complete":0},
+  "scope": ["RGBA8 alpha bounds and empty-safe alpha cropping", "Raw canvas copy/fill with checked overlap and preserved failure owner", "Square gradients for density 0..1", "Uncontracted Vector2 length and normalization"],
+  "limits": ["No-overlap/unsafe canvas copy domains", "Other image formats/mipmaps", "Gradient density outside 0..1", "Exceptional/subnormal/contracted math variants", "Other devices/platforms and performance parity"]
+}

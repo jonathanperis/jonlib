@@ -8,6 +8,10 @@
 - Run `python3 -m unittest discover -s tests -v` for harness changes and
   `python3 tools/conformance.py` for affected library/fixture changes.
 - Run `python3 tools/check_project.py` for project metadata/documentation changes.
+- Select parity work by stable IDs in `docs/PROGRESS.md`. Update
+  `api/progress.json` with scope, gaps and evidence, then regenerate with
+  `python3 tools/api_plan.py build`. Base delivery updates on ledger deltas;
+  proposed mappings and partial profiles never count as completed APIs.
 - GPU evidence requires `python3 tools/conformance.py --gpu`; a CPU fallback
   does not establish GPU correctness or performance.
 - Do not change expected results or loosen tolerances to hide a mismatch.

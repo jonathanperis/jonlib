@@ -1,6 +1,6 @@
 # Verification record
 
-Date: 2026-09-24. Host: Apple M1 / macOS 27.0. Bun 1.3.12 and Apple clang 21.0.0.
+Latest expansion: 2026-09-25. Host: Apple M1 / macOS 27.0. Bun 1.3.12 and Apple clang 21.0.0.
 The current base revision and exact compiler overlay are pinned in `toolchain.json`.
 
 ## Executed checks
@@ -8,15 +8,24 @@ The current base revision and exact compiler overlay are pinned in `toolchain.js
 ```sh
 python3 -m unittest discover -s tests -v
 python3 tools/conformance.py --gpu
-python3 tools/verify_bend.py --gpu
+python3 tools/resize_conformance.py --images-only
+python3 tools/resize_conformance.py --images-only --gpu --lane metal
 ```
 
-- Three harness test groups pass, including changed pixels, empty/missing results,
+- Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 53 scenarios / 15,733 complete RGBA pixels match pinned raylib exactly on each
+- 125 scenarios / 22,285 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
+- The word count includes 65 exact scalar/Vector2 result-bit probe cells.
+  The math reference explicitly uses uncontracted F32; no comparison tolerance
+  is applied. Both components of each vector output are checked.
+- Seven QOI export scenarios compare all 299 encoded bytes per lane. Real CPU/JS
+  file export/load round trips match actual raylib file bytes and decoded pixels.
+  Missing, malformed and oversized file errors are checked separately.
+- Typed QOI byte-stream failures, mask-size failures, invalid checker sizes and
+  invalid image-rectangle failures pass, including forced Metal for the pure APIs.
 - The owned-copy, out-of-bounds read, color packing/channel and Base.Image
   pixel/padding contracts pass on native CPU and JS.
 - `PROOF.bend` checks: `All terms check.` The theorem is dimension preservation
@@ -29,8 +38,15 @@ python3 tools/verify_bend.py --gpu
 - Crop, extraction, nearest-neighbor and region-compositing fixtures track changing
   result dimensions; transform failures retain their original owners on CPU,
   JavaScript and forced Metal.
-- The pinned header inventory contains 600 unique public functions; 21 have
-  explicitly scoped Jonlib mappings. Remaining entries are not implemented.
+- Default filtered resize retains its independent coefficient/kernel evidence
+  for the unchanged resampling modules. The expanded harness also reruns the
+  529-image / 46,474-pixel resize corpus; see the scoped records under `.build/resize/`.
+- Five alpha-border observations compare exact rectangles and preserve the
+  observed pixels. Alpha-crop post-size hints are checked against the actual C
+  oracle; a deliberately wrong hint is rejected before candidate execution.
+- The pinned core header inventory contains 600 unique public functions; 58 have
+  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 26
+  functions. Every mapping remains partial; all six completion gates are still required.
 - Library source passes the no-unsafe/no-custom-foreign-import gate.
 - Relative documentation links resolve, raylib's license is retained verbatim,
   and `.specs/` is ignored. No specification files were previously tracked.
@@ -54,12 +70,18 @@ The subsequent crop/resize batch is recorded in
 [evidence/image-transforms.json](evidence/image-transforms.json). The default-filter
 precision experiment and its retained inputs are in
 [evidence/filter-normalization.json](evidence/filter-normalization.json).
+The precision-correct Bend implementation and final four-lane library gate are
+recorded in [evidence/default-resize.json](evidence/default-resize.json).
+The current expansion is recorded in
+[evidence/image-parity-expansion.json](evidence/image-parity-expansion.json).
+The following alpha/canvas/gradient/metric batch is recorded in
+[evidence/alpha-bounds-canvas.json](evidence/alpha-bounds-canvas.json).
 
 ## Acceptance status
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 53 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 125 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -74,7 +96,12 @@ precision experiment and its retained inputs are in
 | A16: full-parity plan and honest coverage | Pass | MASTER-PLAN.md and explicitly partial API mappings |
 | A17: crop/extract/nearest and failure ownership | Pass within declared profiles | Exact dimensions/pixels plus typed-error owner checks |
 | A18: source-region composition | Pass within declared profile | In-bounds integral source regions with clipping/tint/alpha |
-| A19: default-filter evidence | Investigation complete; implementation open | Stock control 512/512 matches; float normalization differs in 4 cases / 7 channels on M1 |
+| A19: default-filter evidence | Pass; RGBA8 implementation verified | Original float-only negative control retained; exact Bend normalization and filtered outputs pass |
+| A24: default RGBA8 resize and owner failures | Pass within declared profile | Coefficient-bit oracle, 529 images including all four retained counterexamples, and CPU/JS/forced-Metal owner checks |
+| A25: scaled/fractional source-clipped composition | Pass within declared profile | Exact source/destination clipping, size-decision order, output pixels and original-owner tests |
+| A26: additional drawing, color/alpha, rotations and math | Pass within declared profiles | Exact pixel/bit comparisons, signed-zero and rounding boundaries, vertex winding and alpha semantics |
+| A27: QOI decoding and malformed-input handling | Pass within declared profile | All six opcodes, RGB normalization, cache/run boundaries, 4096-pixel traversal and typed failures |
+| A28: exact QOI export and file IO | Pass within declared profile | Actual raylib ExportImage bytes, real CPU/JS round trip and file-error cases |
 
 ## Limitations
 
@@ -118,6 +145,8 @@ was arm64 with Apple clang 17.0.0. Both used Bun 1.3.12.
 Hosted jobs do not execute the Metal gate or claim GPU compatibility. Actions
 and dependency revisions are pinned; scoped JSON/PPM artifacts are retained
 for 14 days, while workflow logs/results follow repository retention settings.
+Hosted status must be established from the exact published commit's Actions
+results; local evidence alone does not establish a hosted pass.
 
 ## Compiler overlay regression review
 
@@ -157,7 +186,62 @@ GPU execution prove that rejected transforms retain their original owners.
 
 The review separated contract-test executable paths from example executable
 paths so their artifacts cannot overwrite one another. All affected checks passed
-after the naming correction. The default-filter precision mismatch remains an
-explicit open implementation requirement, not a relaxed image comparison.
+after the naming correction. At that point, the default-filter precision mismatch
+remained an explicit implementation requirement. The subsequent default RGBA8
+resizer closes that dependency without relaxing the comparison.
 
 Regression scan: 23 callers checked, 21 assertions checked, 1 flagged/fixed.
+
+## Default filtered resize regression review
+
+Reviewed the new finite binary64 helpers, kernel generation/folding/packing,
+seven-channel filtering, public Result/ownership boundary, fixture validators,
+both code generators, oracle reports, mappings and CI consumers. Review found
+and fixed three failure classes: approximate power-of-two reconstruction on
+Metal, depth-proportional list traversal on JS/device VM, and stale success
+evidence when an image probe failed before execution. Fixtures/negative controls
+cover the observed boundaries; the full normal and dedicated resize gates pass.
+
+Regression scan: 137 callers checked, 47 assertions checked, 3 flagged/fixed.
+
+The compiler overlay was not edited. Its previous selected regression evidence
+remains applicable; the compiler suite was not rerun for this library-only change.
+
+## Image, codec and math expansion regression review
+
+The current review inspected 209 caller contexts across the new library APIs,
+QOI state machines, existing raster callers, fixture validators, both generators,
+output comparators, examples and diagnostic consumers. It inspected 55 assertion
+contexts across Python, transform/decoder contracts and file-error checks.
+
+Five findings were addressed: a private/public name collision in GPU identifier
+mangling, Base.File's `r`/`w` mode contract, QOI's absence from the pinned PNG-only
+`ExportImageToMemory`, loss of signed zero in generated F32 literals, and
+non-string operation names reaching dictionary dispatch. A reference byte fixture
+also exercises wrapping QOI encoder deltas. Exact comparisons remain unchanged.
+
+Regression scan: 209 callers checked, 55 assertions checked, 5 flagged/fixed.
+
+The scoped specification audit matches the new public interfaces in [API.md](API.md),
+the codec adaptations in [CODECS.md](CODECS.md) and the explicit floating-point
+profile in [MATH.md](MATH.md). Source boundaries, pinned revisions, ownership and
+exact-comparison invariants hold in the recorded evidence. Hosted validation
+remains a publication gap rather than an assumed pass.
+
+The full compiler regression suite and historical manual Metal outlining probe
+were not rerun; compiler sources remain unchanged. Hosted CI for these local
+changes, CUDA, live window/audio integration and performance parity remain unrun.
+
+## Alpha bounds, canvas, gradients and metric review
+
+Reviewed 59 caller contexts and 29 assertion contexts: 18 Python harness assertion
+sites, five new rejected-input/owner checks, five reference crop-size postconditions
+and the deliberately wrong-size negative control. Raw copying is distinct from
+alpha blending; empty alpha crops retain the original; unchanged-size canvas
+requests remain no-ops. The scoped interfaces and acceptance remain aligned.
+
+Regression scan: 59 callers checked, 29 assertions checked, 0 flagged/fixed.
+
+The full local CPU-1/CPU-2/JS/forced-Metal corpus, ownership/codec contracts and
+file examples pass. The compiler and resampler algorithms were not changed in
+this batch; their previous focused regression evidence remains applicable.

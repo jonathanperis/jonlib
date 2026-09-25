@@ -1,0 +1,32 @@
+{
+  "date": "2026-09-25",
+  "host": "Apple M1 / Darwin arm64 / Apple clang 21.0.0 / Bun 1.3.12",
+  "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bend_revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "bend_overlay_sha256": "d4fbe3723f78bbcd456d4937b8f52f48454e7748d86799b22a95165a04cd9879",
+  "source_sha256": {
+    "jonlib.bend": "5318c312221b0849fe83c34d121775033ad5af952507d2ac45761308c300b7bf",
+    "src/qoi.bend": "e7ee91bcb6a568d43a60edd14ea40acbb2caa8c094b5b6615d2e44ba5a28673a",
+    "src/resample.bend": "0facfc8ac5e973de6594feb713517b4e20bce5bbc0c187eb2e165671c600bdf2",
+    "src/resize_numeric.bend": "e638e55a005a86ebb9c9e839ae3cfc378ac2289c1005c13a54842988f54ac5be"
+  },
+  "fixtures_sha256": "160e754cba68ccb5a6480700dd8984f430354f2b4404a54ea050c2b3a270074c",
+  "scenarios": 111,
+  "output_words_per_lane": 22144,
+  "numeric_probe_cells": 53,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "passed": true,
+  "qoi": {
+    "reference_header_sha256": "7de6fca1a285b1c20d38f2723dec8b774eb9f144edb9710800a95feeea09375a",
+    "exact_export_scenarios": 6,
+    "export_bytes_per_lane": 251,
+    "decode_errors": "CPU, JavaScript and forced Metal passed",
+    "file_roundtrip": "CPU/JS file bytes and decoded pixels match actual raylib ExportImage",
+    "file_error_cases": ["missing-file", "malformed-file", "oversized-file"]
+  },
+  "math_profile": "raymath-f32-uncontracted-v1; exact returned bits/Boolean results",
+  "resize_recheck": {"scenarios":529,"pixels_per_lane":46474,"lanes":["cpu","javascript","metal-forced"],"fixtures_sha256":"5c3043c7867ebff5e33139abcd23d356c0a40fbed88384085b900f97e0ee8d49","passed":true},
+  "progress": {"core_functions_partial":54,"raymath_functions_partial":24,"complete":0},
+  "scope": ["Scaled/fractional RGBA8 composition with both owners", "Vector/outline/thick-line/fan/strip/vertex-color drawing", "Color and alpha operations", "Quarter turns and checkerboards", "QOI memory/file codec", "Scalar and Vector2 math"],
+  "limits": ["Other formats/mipmaps/codecs", "Exceptional/subnormal and contracted math variants", "Other platforms/devices", "Interactive graphics/audio", "Performance/memory parity", "Hosted CI for these local changes not run"]
+}

@@ -10,8 +10,33 @@ from pathlib import Path
 import random
 import re
 import subprocess
+import sys
 import platform
 import time
+import struct
+
+UNARY_IMAGE_APIS = {'flip_horizontal':'ImageFlipHorizontal', 'flip_vertical':'ImageFlipVertical',
+                    'rotate_cw':'ImageRotateCW', 'rotate_ccw':'ImageRotateCCW', 'color_invert':'ImageColorInvert',
+                    'alpha_premultiply':'ImageAlphaPremultiply'}
+COLOR_IMAGE_APIS = {'color_tint':'ImageColorTint', 'color_contrast':'ImageColorContrast',
+                   'color_brightness':'ImageColorBrightness', 'color_replace':'ImageColorReplace'}
+COLOR_VALUE_APIS = {'alpha':('ColorAlpha','with_alpha'), 'fade':('Fade','with_alpha'),
+                   'tint':('ColorTint','multiply'), 'brightness':('ColorBrightness','brightness'),
+                   'contrast':('ColorContrast','contrast'), 'lerp':('ColorLerp','lerp'), 'equal':('ColorIsEqual','is_equal')}
+MATH_APIS = {'clamp':('Clamp',3), 'lerp':('Lerp',3), 'normalize':('Normalize',3),
+             'remap':('Remap',5), 'wrap':('Wrap',3), 'float_equals':('FloatEquals',2)}
+VECTOR2_APIS = {
+    'zero':('Vector2Zero','','vector'), 'one':('Vector2One','','vector'),
+    'add':('Vector2Add','vv','vector'), 'add_value':('Vector2AddValue','vs','vector'),
+    'subtract':('Vector2Subtract','vv','vector'), 'subtract_value':('Vector2SubtractValue','vs','vector'),
+    'scale':('Vector2Scale','vs','vector'), 'multiply':('Vector2Multiply','vv','vector'),
+    'negate':('Vector2Negate','v','vector'), 'divide':('Vector2Divide','vv','vector'),
+    'invert':('Vector2Invert','v','vector'), 'lerp':('Vector2Lerp','vvs','vector'),
+    'reflect':('Vector2Reflect','vv','vector'), 'length_sqr':('Vector2LengthSqr','v','float'),
+    'distance_sqr':('Vector2DistanceSqr','vv','float'), 'dot_product':('Vector2DotProduct','vv','float'),
+    'cross_product':('Vector2CrossProduct','vv','float'), 'equals':('Vector2Equals','vv','bool'),
+    'length':('Vector2Length','v','float'), 'normalize':('Vector2Normalize','v','vector'),
+}
 
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / ".build"
@@ -77,6 +102,30 @@ def crop_rectangle(width, height, op):
     return x, y, min(w, width - x), min(h, height - y)
 
 
+def gradient_contract(width, height, op):
+    """Keep gradient fixtures inside defined reference signed/F32 arithmetic."""
+    def fp(value):
+        return struct.unpack('f', struct.pack('f', value))[0]
+    points = [(op['x'+str(i)], op['y'+str(i)]) for i in range(3)]
+    (ax,ay),(bx,by),(cx,cy) = points
+    sign = -1 if fp(fp((bx-ax)*(cy-ay))-fp((cx-ax)*(by-ay))) > 0 else 1
+    x0, y0 = max(0,min(p[0] for p in points)), max(0,min(p[1] for p in points))
+    x1, y1 = min(width,max(p[0] for p in points)), min(height,max(p[1] for p in points))
+    edges = [(bx,by,(cy-by)*sign,(bx-cx)*sign), (cx,cy,(ay-cy)*sign,(cx-ax)*sign), (ax,ay,(by-ay)*sign,(ax-bx)*sign)]
+    weights = []
+    for vx,vy,dx,dy in edges:
+        value = fp(fp((x0-vx)*dx) + fp((y0-vy)*dy))
+        if not -2**31 <= value < 2**31:
+            return False
+        value = math.trunc(value)
+        weights.append(value)
+        for x in (x0,max(x0,x1+1)):
+            for y in (y0,max(y0,y1+1)):
+                if not -2**31 <= value+(x-x0)*dx+(y-y0)*dy < 2**31:
+                    return False
+    return -2**31 <= weights[0]+weights[1] < 2**31 and 0 < sum(weights) < 2**31
+
+
 def cases_from(document):
     if document.get("schema") != 1 or not isinstance(document.get("cases"), list):
         raise ValueError("Expected fixture schema 1 and a cases array")
@@ -116,16 +165,43 @@ def cases_from(document):
         if not all(integer(case.get(k), 1, 4096) for k in ("width", "height")):
             raise ValueError(f"{name}: dimensions must be 1..4096")
         rgba(case["background"])
+        if type(case.get('export_qoi', False)) is not bool:
+            raise ValueError(f'{name}: export_qoi must be Boolean')
+        if 'alpha_border' in case and (not coordinate(case['alpha_border'], True) or not 0 <= case['alpha_border'] <= 1):
+            raise ValueError(f'{name}: alpha border threshold must be in 0..1')
+        if sum(key in case for key in ('qoi','checked','gradient_square')) > 1:
+            raise ValueError(f'{name}: only one image source may be selected')
+        if 'gradient_square' in case:
+            gradient = case['gradient_square']
+            if not isinstance(gradient, dict) or not coordinate(gradient.get('density'), True) or not 0 <= gradient['density'] <= 1:
+                raise ValueError(f'{name}: gradient density must be in 0..1')
+            rgba(gradient['outer'])
+        if 'checked' in case:
+            checked = case['checked']
+            if 'qoi' in case or not isinstance(checked, dict) or not all(integer(checked.get(k), 1, 2147483647) for k in ('tile_width','tile_height')):
+                raise ValueError(f'{name}: invalid checkerboard source')
+            rgba(checked['color'])
+        if 'qoi' in case:
+            data = case['qoi']
+            if not isinstance(data, list) or len(data) < 22 or not all(integer(v, 0, 255) for v in data):
+                raise ValueError(f'{name}: invalid QOI fixture bytes')
+            if data[:4] != [113,111,105,102] or data[12] not in (3,4) or data[13] not in (0,1) or data[-8:] != [0,0,0,0,0,0,0,1]:
+                raise ValueError(f'{name}: invalid QOI fixture header/end marker')
+            if int.from_bytes(bytes(data[4:8]), 'big') != case['width'] or int.from_bytes(bytes(data[8:12]), 'big') != case['height']:
+                raise ValueError(f'{name}: QOI dimensions differ from the fixture')
         if not isinstance(case.get("operations"), list):
             raise ValueError(f"{name}: operations must be an array")
         current_w, current_h = case['width'], case['height']
         for op in case["operations"]:
             kind = op.get("op")
-            if kind not in ("pixel", "rectangle", "circle", "clear", "flip_horizontal", "flip_vertical", "blend_color",
-                            "line", "line_v", "triangle", "triangle_lines", "blit", "blit_region", "crop", "extract", "resize_nn"):
+            if not isinstance(kind, str) or kind not in ("pixel", "rectangle", "circle", "clear", "flip_horizontal", "flip_vertical", "blend_color",
+                             "line", "line_v", "triangle", "triangle_lines", "blit", "blit_region", "blit_rect", "crop", "extract", "resize_nn", "resize",
+                             "pixel_v", "circle_v", "circle_lines", "circle_lines_v", "rectangle_v", "rectangle_rec", "rectangle_lines",
+                             "line_ex", "triangle_fan", "triangle_strip", "triangle_ex", "color_value", "number_value", "vector_value", "alpha_clear", "alpha_mask", "alpha_crop", "resize_canvas") and kind not in UNARY_IMAGE_APIS and kind not in COLOR_IMAGE_APIS:
                 raise ValueError(f"{name}: unknown operation {kind!r}")
-            if kind in ('blit', 'blit_region'):
-                rgba(op['tint'])
+            if kind in ('blit', 'blit_region', 'blit_rect', 'alpha_mask'):
+                if kind != 'alpha_mask':
+                    rgba(op['tint'])
                 source = op['source']
                 if not all(integer(source.get(k), 1, 4096) for k in ('width', 'height')):
                     raise ValueError(f'{name}: invalid source dimensions')
@@ -135,38 +211,94 @@ def cases_from(document):
                     rgba(pixel)
                 if type(op.get('observe_source', False)) is not bool:
                     raise ValueError(f'{name}: observe_source must be Boolean')
-                if kind == 'blit_region':
+                if kind == 'alpha_mask' and (source['width'],source['height']) != (current_w,current_h):
+                    raise ValueError(f'{name}: alpha mask dimensions must match the image')
+                if kind in ('blit_region', 'blit_rect'):
                     rect = op['source_rect']
-                    if not all(coordinate(rect.get(k)) for k in ('x', 'y', 'width', 'height')):
-                        raise ValueError(f'{name}: invalid integral source rectangle')
-                    if not (rect['x'] >= 0 and rect['y'] >= 0 and rect['width'] > 0 and rect['height'] > 0
-                            and rect['x'] + rect['width'] <= source['width'] and rect['y'] + rect['height'] <= source['height']):
-                        raise ValueError(f'{name}: region must fit its source without implicit resizing')
+                    if not all(coordinate(rect.get(k), kind == 'blit_rect') for k in ('x', 'y', 'width', 'height')):
+                        raise ValueError(f'{name}: invalid source rectangle')
+                    if kind == 'blit_region':
+                        if not (rect['x'] >= 0 and rect['y'] >= 0 and rect['width'] > 0 and rect['height'] > 0
+                                and rect['x'] + rect['width'] <= source['width'] and rect['y'] + rect['height'] <= source['height']):
+                            raise ValueError(f'{name}: region must fit its source without implicit resizing')
+                    else:
+                        cw = min(rect['width'] + min(0, rect['x']), source['width'] - max(0, rect['x']))
+                        ch = min(rect['height'] + min(0, rect['y']), source['height'] - max(0, rect['y']))
+                        target = op['dest_rect']
+                        if cw < 1 or ch < 1:
+                            raise ValueError(f'{name}: clipped image source must remain nonempty')
+                        if not all(coordinate(target.get(k), True) for k in ('x', 'y', 'width', 'height')) or not all(1 <= math.trunc(target[k]) <= 4096 for k in ('width', 'height')):
+                            raise ValueError(f'{name}: invalid destination rectangle')
                 if op.get('observe_source'):
                     current_w, current_h = source['width'], source['height']
-            elif kind not in ('crop', 'extract', 'resize_nn') and not kind.startswith('flip_'):
+            elif kind not in ('crop', 'extract', 'resize_nn', 'resize', 'color_contrast', 'color_brightness', 'number_value', 'vector_value', 'alpha_crop') and kind not in UNARY_IMAGE_APIS:
                 rgba(op["color"])
+            if kind == 'color_replace':
+                rgba(op['replacement'])
+            if kind == 'triangle_ex':
+                rgba(op['color2'])
+                rgba(op['color3'])
+            if kind == 'color_value':
+                function = op.get('function')
+                if not isinstance(function, str) or function not in COLOR_VALUE_APIS:
+                    raise ValueError(f'{name}: unknown color function')
+                if function in ('tint', 'lerp', 'equal'):
+                    rgba(op['other'])
+                if function not in ('tint', 'equal') and not coordinate(op.get('factor'), True):
+                    raise ValueError(f'{name}: expected finite color factor')
+            if kind == 'number_value':
+                function, values = op.get('function'), op.get('args')
+                if not isinstance(function, str) or function not in MATH_APIS or not isinstance(values, list) or len(values) != MATH_APIS[function][1] or not all(coordinate(v, True) for v in values):
+                    raise ValueError(f'{name}: invalid scalar math arguments')
+                inputs = [struct.unpack('f',struct.pack('f',v))[0] for v in values]
+                if function in ('normalize','remap','wrap') and inputs[1] == inputs[2]:
+                    raise ValueError(f'{name}: scalar range must remain nonzero in F32')
+            if kind == 'vector_value':
+                function, values = op.get('function'), op.get('args')
+                if not isinstance(function, str) or function not in VECTOR2_APIS or not isinstance(values, list):
+                    raise ValueError(f'{name}: invalid Vector2 function/arguments')
+                _, signature, result = VECTOR2_APIS[function]
+                if len(values) != sum(2 if p=='v' else 1 for p in signature) or not all(coordinate(v, True) for v in values):
+                    raise ValueError(f'{name}: invalid Vector2 argument arity/domain')
+                divisors = values[2:] if function=='divide' else values if function=='invert' else []
+                if any(struct.unpack('f',struct.pack('f',v))[0] == 0 for v in divisors):
+                    raise ValueError(f'{name}: Vector2 divisors must remain nonzero in F32')
+                if result == 'vector' and (not integer(op.get('x'),0,current_w-2) or not integer(op.get('y'),0,current_h-1)):
+                    raise ValueError(f'{name}: both vector output components must fit the image')
+            if kind in ('color_contrast', 'color_brightness') and not coordinate(op.get('amount'), kind == 'color_contrast'):
+                raise ValueError(f'{name}: invalid color adjustment amount')
+            if kind in ('alpha_clear','alpha_crop') and (not coordinate(op.get('threshold'), True) or not 0 <= op['threshold'] <= 1):
+                raise ValueError(f'{name}: alpha threshold must be finite in 0..1')
             if kind == 'blend_color':
                 rgba(op['destination'])
                 rgba(op['tint'])
-            fields = [] if kind in ('clear', 'resize_nn') or kind.startswith('flip_') else ["x", "y"]
-            if kind in ('line', 'line_v', 'triangle', 'triangle_lines'):
+            fields = [] if kind in ('clear', 'resize_nn', 'resize', 'blit_rect', 'triangle_fan', 'triangle_strip', 'alpha_clear', 'alpha_mask', 'alpha_crop') or kind in UNARY_IMAGE_APIS or kind in COLOR_IMAGE_APIS else ["x", "y"]
+            if kind in ('line', 'line_v', 'line_ex', 'triangle', 'triangle_lines', 'triangle_ex'):
                 fields = ['x0', 'y0', 'x1', 'y1']
                 if kind.startswith('triangle'):
                     fields += ['x2', 'y2']
-            if kind in ('rectangle', 'crop', 'extract'):
+            if kind in ('rectangle', 'rectangle_v', 'rectangle_rec', 'rectangle_lines', 'crop', 'extract'):
                 fields += ["width", "height"]
-            if any(not coordinate(op.get(k), kind in ('line_v', 'triangle_lines')) for k in fields):
+            fractional = kind in ('line_v', 'line_ex', 'triangle_lines', 'pixel_v', 'circle_v', 'circle_lines_v', 'rectangle_v', 'rectangle_rec', 'rectangle_lines')
+            if any(not coordinate(op.get(k), fractional) for k in fields):
                 raise ValueError(f"{name}: invalid coordinates for {kind}")
-            if kind in ('line', 'line_v', 'triangle_lines'):
+            if kind == 'triangle_ex' and not gradient_contract(current_w, current_h, op):
+                raise ValueError(f'{name}: gradient requires defined arithmetic and a nonzero weight sum')
+            if kind in ('triangle_fan', 'triangle_strip'):
+                points = op.get('points')
+                if not isinstance(points, list) or any(not isinstance(p, list) or len(p)!=2 or any(not coordinate(v) for v in p) for p in points):
+                    raise ValueError(f'{name}: expected integral triangle points')
+            if kind in ('line_ex', 'rectangle_lines') and not integer(op.get('thickness'), 0, 32767):
+                raise ValueError(f'{name}: thickness must be 0..32767')
+            if kind in ('line', 'line_v', 'line_ex', 'triangle_lines'):
                 points = [(op['x0'], op['y0']), (op['x1'], op['y1'])]
                 if kind == 'triangle_lines':
                     points += [(op['x2'], op['y2']), points[0]]
-                rounded = [(math.trunc(x + (0.5 if kind == 'line_v' else 0)),
-                            math.trunc(y + (0.5 if kind == 'line_v' else 0))) for x, y in points]
+                rounded = [(math.trunc(x + (0.5 if kind in ('line_v', 'line_ex') else 0)),
+                             math.trunc(y + (0.5 if kind in ('line_v', 'line_ex') else 0))) for x, y in points]
                 if any(min(abs(x1-x0), abs(y1-y0)) > 32767 for (x0, y0), (x1, y1) in zip(rounded, rounded[1:])):
                     raise ValueError(f'{name}: fixed-point short-axis delta exceeds the supported line profile')
-            if kind == "circle" and not integer(op.get("radius"), 0, 32767):
+            if kind in ('circle', 'circle_v', 'circle_lines', 'circle_lines_v') and not integer(op.get("radius"), 0, 32767):
                 raise ValueError(f"{name}: radius must be 0..32767")
             if kind == 'crop':
                 _, _, current_w, current_h = crop_rectangle(current_w, current_h, op)
@@ -180,56 +312,114 @@ def cases_from(document):
                     raise ValueError(f'{name}: observe_source must be Boolean')
                 if not op.get('observe_source'):
                     current_w, current_h = op['width'], op['height']
-            elif kind == 'resize_nn':
+            elif kind == 'alpha_crop':
+                if not all(integer(op.get(key),1,4096) for key in ('result_width','result_height')):
+                    raise ValueError(f'{name}: alpha crop requires checked post-size hints')
+                if op['result_width'] > current_w or op['result_height'] > current_h:
+                    raise ValueError(f'{name}: alpha crop cannot increase dimensions')
+                current_w, current_h = op['result_width'], op['result_height']
+            elif kind in ('resize_nn', 'resize', 'resize_canvas'):
                 w, h = op.get('width'), op.get('height')
                 if not integer(w, 1, 4096) or not integer(h, 1, 4096):
                     raise ValueError(f'{name}: invalid resize dimensions')
-                xr, yr = ((current_w << 16) // w) + 1, ((current_h << 16) // h) + 1
-                last = (((h-1)*yr) >> 16) * current_w + (((w-1)*xr) >> 16)
-                if last >= current_w * current_h:
-                    raise ValueError(f'{name}: reference nearest mapping reads outside the image')
+                if kind == 'resize_nn':
+                    xr, yr = ((current_w << 16) // w) + 1, ((current_h << 16) // h) + 1
+                    last = (((h-1)*yr) >> 16) * current_w + (((w-1)*xr) >> 16)
+                    if last >= current_w * current_h:
+                        raise ValueError(f'{name}: reference nearest mapping reads outside the image')
+                if kind == 'resize_canvas' and (w,h) != (current_w,current_h):
+                    cols = min(current_w-max(0,-op['x']), w-max(0,op['x']))
+                    rows = min(current_h-max(0,-op['y']), h-max(0,op['y']))
+                    if cols < 1 or rows < 1:
+                        raise ValueError(f'{name}: canvas fixtures require positive source overlap')
                 current_w, current_h = w, h
+            elif kind in ('rotate_cw', 'rotate_ccw'):
+                current_w, current_h = current_h, current_w
     return cases
 
 
 def result_size(case):
     width, height = case['width'], case['height']
     for op in case['operations']:
-        if op['op'] in ('blit', 'blit_region') and op.get('observe_source'):
+        if op['op'] in ('blit', 'blit_region', 'blit_rect', 'alpha_mask') and op.get('observe_source'):
             width, height = op['source']['width'], op['source']['height']
         elif op['op'] == 'crop':
             _, _, width, height = crop_rectangle(width, height, op)
-        elif op['op'] == 'resize_nn' or (op['op'] == 'extract' and not op.get('observe_source')):
+        elif op['op'] in ('resize_nn', 'resize', 'resize_canvas') or (op['op'] == 'extract' and not op.get('observe_source')):
             width, height = op['width'], op['height']
+        elif op['op'] == 'alpha_crop':
+            width, height = op['result_width'], op['result_height']
+        elif op['op'] in ('rotate_cw', 'rotate_ccw'):
+            width, height = height, width
     return width, height
 
 
+def vector_arguments(signature, values, bend=False):
+    result, at = [], 0
+    literal = f32 if bend else lambda value: f'{float(value)!r}f'
+    for parameter in signature:
+        if parameter == 'v':
+            vector = ', '.join(literal(v) for v in values[at:at+2])
+            result.append(('J.Vector2{' if bend else '(Vector2){') + vector + '}')
+            at += 2
+        else:
+            result.append(literal(values[at]))
+            at += 1
+    return ', '.join(result)
+
+
 def c_source(cases):
-    lines = ['#include "raylib.h"', '#include <stdio.h>', 'int main(void) {',
+    lines = ['#include "raylib.h"', '#include <stdio.h>', '#include <string.h>',
+             '#pragma STDC FP_CONTRACT OFF', '#define RAYMATH_STATIC_INLINE', '#include "raymath.h"',
+             'static Color float_bits(float value) { unsigned int bits; memcpy(&bits, &value, 4); return GetColor(bits); }',
+             'int main(void) {',
              'SetTraceLogLevel(LOG_NONE);']
     for case in cases:
         w, h = case["width"], case["height"]
-        lines += ['{', f'Image image = GenImageColor({w}, {h}, GetColor({rgba(case["background"])}u));']
+        if 'qoi' in case:
+            lines += ['{', 'unsigned char encoded[] = {' + ','.join(map(str,case['qoi'])) + '};',
+                      'Image image = LoadImageFromMemory(".qoi", encoded, sizeof(encoded));',
+                      'if (!image.data) return 2;', 'ImageFormat(&image, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);']
+        elif 'checked' in case:
+            checked = case['checked']
+            lines += ['{', f'Image image = GenImageChecked({w}, {h}, {checked["tile_width"]}, {checked["tile_height"]}, GetColor({rgba(case["background"])}u), GetColor({rgba(checked["color"])}u));']
+        elif 'gradient_square' in case:
+            gradient = case['gradient_square']
+            lines += ['{', f'Image image = GenImageGradientSquare({w}, {h}, {gradient["density"]}, GetColor({rgba(case["background"])}u), GetColor({rgba(gradient["outer"])}u));']
+        else:
+            lines += ['{', f'Image image = GenImageColor({w}, {h}, GetColor({rgba(case["background"])}u));']
         for op in case["operations"]:
             kind = op["op"]
-            if kind in ('blit', 'blit_region'):
+            if kind == 'alpha_crop':
+                lines += [f'ImageAlphaCrop(&image, {op["threshold"]});',
+                          f'if (image.width != {op["result_width"]} || image.height != {op["result_height"]}) {{ fprintf(stderr, "alpha crop size hint mismatch\\n"); return 4; }}']
+                continue
+            if kind == 'resize_canvas':
+                lines += [f'ImageResizeCanvas(&image, {op["width"]}, {op["height"]}, {op["x"]}, {op["y"]}, GetColor({rgba(op["color"])}u));']
+                continue
+            if kind in ('blit', 'blit_region', 'blit_rect', 'alpha_mask'):
                 source = op['source']
                 sw, sh = source['width'], source['height']
                 lines += ['{', f'Image source = GenImageColor({sw}, {sh}, BLANK);']
                 for i, pixel in enumerate(source['pixels']):
                     lines += [f'ImageDrawPixel(&source, {i % sw}, {i // sw}, GetColor({rgba(pixel)}u));']
-                rect = op.get('source_rect', dict(x=0, y=0, width=sw, height=sh))
-                lines += [f'ImageDraw(&image, source, (Rectangle){{{rect["x"]}, {rect["y"]}, {rect["width"]}, {rect["height"]}}}, '
-                          f'(Rectangle){{{op["x"]}, {op["y"]}, {rect["width"]}, {rect["height"]}}}, GetColor({rgba(op["tint"])}u));']
+                if kind == 'alpha_mask':
+                    lines += ['ImageAlphaMask(&image, source);']
+                else:
+                    rect = op.get('source_rect', dict(x=0, y=0, width=sw, height=sh))
+                    target = op['dest_rect'] if kind == 'blit_rect' else dict(x=op['x'], y=op['y'], width=rect['width'], height=rect['height'])
+                    lines += [f'ImageDraw(&image, source, (Rectangle){{{rect["x"]}, {rect["y"]}, {rect["width"]}, {rect["height"]}}}, '
+                              f'(Rectangle){{{target["x"]}, {target["y"]}, {target["width"]}, {target["height"]}}}, GetColor({rgba(op["tint"])}u));']
                 if op.get('observe_source'):
                     lines += ['UnloadImage(image);', 'image = source;']
                 else:
                     lines += ['UnloadImage(source);']
                 lines += ['}']
                 continue
-            if kind in ('crop', 'extract', 'resize_nn'):
-                if kind == 'resize_nn':
-                    lines += [f'ImageResizeNN(&image, {op["width"]}, {op["height"]});']
+            if kind in ('crop', 'extract', 'resize_nn', 'resize'):
+                if kind in ('resize_nn', 'resize'):
+                    function = 'ImageResizeNN' if kind == 'resize_nn' else 'ImageResize'
+                    lines += [f'{function}(&image, {op["width"]}, {op["height"]});']
                 else:
                     rect = f'(Rectangle){{{op["x"]}, {op["y"]}, {op["width"]}, {op["height"]}}}'
                     if kind == 'crop':
@@ -239,34 +429,100 @@ def c_source(cases):
                         lines += ['UnloadImage(extracted);'] if op.get('observe_source') else ['UnloadImage(image);', 'image = extracted;']
                         lines += ['}']
                 continue
-            if kind.startswith('flip_'):
-                function = 'ImageFlipHorizontal' if kind == 'flip_horizontal' else 'ImageFlipVertical'
+            if kind in UNARY_IMAGE_APIS:
+                function = UNARY_IMAGE_APIS[kind]
                 lines += [f'{function}(&image);']
+                continue
+            if kind in COLOR_IMAGE_APIS:
+                values = str(op['amount']) if kind in ('color_contrast', 'color_brightness') else f'GetColor({rgba(op["color"])}u)'
+                if kind == 'color_replace':
+                    values += f', GetColor({rgba(op["replacement"])}u)'
+                lines += [f'{COLOR_IMAGE_APIS[kind]}(&image, {values});']
+                continue
+            if kind == 'number_value':
+                function = op['function']
+                values = ', '.join(f'{float(v)!r}f' for v in op['args'])
+                expression = f'{MATH_APIS[function][0]}({values})'
+                color = f'GetColor((unsigned int){expression})' if function == 'float_equals' else f'float_bits({expression})'
+                lines += [f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, {color});']
+                continue
+            if kind == 'vector_value':
+                function, signature, result = VECTOR2_APIS[op['function']]
+                expression = f'{function}({vector_arguments(signature,op["args"])})'
+                if result == 'vector':
+                    lines += ['{', f'Vector2 v = {expression};',
+                              f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, float_bits(v.x));',
+                              f'ImageDrawPixel(&image, {op["x"]+1}, {op["y"]}, float_bits(v.y));', '}']
+                else:
+                    color = f'GetColor((unsigned int){expression})' if result=='bool' else f'float_bits({expression})'
+                    lines += [f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, {color});']
                 continue
             color = f'GetColor({rgba(op["color"])}u)'
             if kind == "clear":
                 lines += [f'ImageClearBackground(&image, {color});']
+            elif kind == 'alpha_clear':
+                lines += [f'ImageAlphaClear(&image, {color}, {op["threshold"]});']
             elif kind == "pixel":
                 lines += [f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, {color});']
+            elif kind == 'pixel_v':
+                lines += [f'ImageDrawPixelV(&image, (Vector2){{{op["x"]}, {op["y"]}}}, {color});']
             elif kind == "rectangle":
                 lines += [f'ImageDrawRectangle(&image, {op["x"]}, {op["y"]}, {op["width"]}, {op["height"]}, {color});']
-            elif kind == "circle":
-                lines += [f'ImageDrawCircle(&image, {op["x"]}, {op["y"]}, {op["radius"]}, {color});']
+            elif kind == 'rectangle_v':
+                lines += [f'ImageDrawRectangleV(&image, (Vector2){{{op["x"]}, {op["y"]}}}, (Vector2){{{op["width"]}, {op["height"]}}}, {color});']
+            elif kind in ('rectangle_rec', 'rectangle_lines'):
+                rect = f'(Rectangle){{{op["x"]}, {op["y"]}, {op["width"]}, {op["height"]}}}'
+                function = 'ImageDrawRectangleRec' if kind == 'rectangle_rec' else 'ImageDrawRectangleLines'
+                thick = f'{op["thickness"]}, ' if kind == 'rectangle_lines' else ''
+                lines += [f'{function}(&image, {rect}, {thick}{color});']
+            elif kind in ('circle', 'circle_v', 'circle_lines', 'circle_lines_v'):
+                function = {'circle':'ImageDrawCircle','circle_v':'ImageDrawCircleV','circle_lines':'ImageDrawCircleLines','circle_lines_v':'ImageDrawCircleLinesV'}[kind]
+                position = f'(Vector2){{{op["x"]}, {op["y"]}}}' if kind.endswith('_v') else f'{op["x"]}, {op["y"]}'
+                lines += [f'{function}(&image, {position}, {op["radius"]}, {color});']
             elif kind == "blend_color":
                 lines += [f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, ColorAlphaBlend(GetColor({rgba(op["destination"])}u), {color}, GetColor({rgba(op["tint"])}u)));']
+            elif kind == 'color_value':
+                function = op['function']
+                args = [color]
+                if function in ('tint', 'lerp', 'equal'):
+                    args += [f'GetColor({rgba(op["other"])}u)']
+                if function not in ('tint', 'equal'):
+                    args += [str(op['factor'])]
+                value = f'{COLOR_VALUE_APIS[function][0]}({", ".join(args)})'
+                if function == 'equal':
+                    value = f'GetColor((unsigned int){value})'
+                lines += [f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, {value});']
             elif kind == 'line':
                 lines += [f'ImageDrawLine(&image, {op["x0"]}, {op["y0"]}, {op["x1"]}, {op["y1"]}, {color});']
-            elif kind in ('line_v', 'triangle', 'triangle_lines'):
-                count = 2 if kind == 'line_v' else 3
+            elif kind in ('line_v', 'line_ex', 'triangle', 'triangle_lines', 'triangle_ex'):
+                count = 2 if kind in ('line_v', 'line_ex') else 3
                 vectors = ', '.join(f'(Vector2){{{op["x"+str(i)]}, {op["y"+str(i)]}}}' for i in range(count))
-                function = {'line_v':'ImageDrawLineV', 'triangle':'ImageDrawTriangle', 'triangle_lines':'ImageDrawTriangleLines'}[kind]
-                lines += [f'{function}(&image, {vectors}, {color});']
+                function = {'line_v':'ImageDrawLineV', 'line_ex':'ImageDrawLineEx', 'triangle':'ImageDrawTriangle', 'triangle_lines':'ImageDrawTriangleLines', 'triangle_ex':'ImageDrawTriangleEx'}[kind]
+                thick = f'{op["thickness"]}, ' if kind == 'line_ex' else ''
+                colors = f'{color}, GetColor({rgba(op["color2"])}u), GetColor({rgba(op["color3"])}u)' if kind == 'triangle_ex' else color
+                lines += [f'{function}(&image, {vectors}, {thick}{colors});']
+            elif kind in ('triangle_fan', 'triangle_strip'):
+                points = '(Vector2[]){' + ','.join(f'{{{x},{y}}}' for x,y in op['points']) + '}' if op['points'] else 'NULL'
+                function = 'ImageDrawTriangleFan' if kind == 'triangle_fan' else 'ImageDrawTriangleStrip'
+                lines += [f'{function}(&image, {points}, {len(op["points"])}, {color});']
         prefix = '{"id":"' + case["id"] + '","width":%d,"height":%d,"pixels":['
         lines += [f'printf({json.dumps(prefix)}, image.width, image.height);',
                   'for (int y = 0; y < image.height; y++) for (int x = 0; x < image.width; x++) {',
                   'if (x || y) putchar(\',\');',
                   'printf("%u", (unsigned int)ColorToInt(GetImageColor(image, x, y)));',
-                  '}', 'puts("]}");', 'UnloadImage(image);', '}']
+                  '}', 'printf("]");']
+        if 'alpha_border' in case:
+            lines += [f'Rectangle border = GetImageAlphaBorder(image, {case["alpha_border"]});',
+                      'printf(",\\"alpha_border\\":[%d,%d,%d,%d]", (int)border.x, (int)border.y, (int)border.width, (int)border.height);']
+        if case.get('export_qoi'):
+            export_path = json.dumps(f'.build/reference-{case["id"]}.qoi')
+            lines += ['printf(",\\"qoi\\":[");', 'int qoi_size = 0;',
+                      f'if (!ExportImage(image, {export_path})) return 3;',
+                      f'unsigned char *qoi_data = LoadFileData({export_path}, &qoi_size);',
+                      'if (!qoi_data || qoi_size < 22) return 3;',
+                      'for (int i=0;i<qoi_size;i++) printf("%s%u", i?",":"", qoi_data[i]);',
+                      'printf("]");', 'UnloadFileData(qoi_data);']
+        lines += ['puts("}");', 'UnloadImage(image);', '}']
     return '\n'.join(lines + ['return 0;', '}']) + '\n'
 
 
@@ -274,21 +530,43 @@ def f32(value):
     literal = format(Decimal(str(abs(value))), 'f')
     if '.' not in literal:
         literal += '.0'
-    return literal if value >= 0 else f'(0.0 - {literal} : F32)'
+    return f'F32.neg({literal})' if math.copysign(1.0, value) < 0 else literal
 
 
 def bend_source(cases, gpu=False):
     lines = ['import Base', 'import ../jonlib.bend as J', '',
-             'def emit(name: String, image: J.Surface) -> IO(Unit):',
+             'def emit(name: String, image: J.Surface, extra: String) -> IO(Unit):',
              '  J.Surface{+w, +h, pixels} = image',
              '  IO.print("{\\"id\\":\\"" ++ name ++ "\\",\\"width\\":" ++ U32.show(w)',
              '    ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"pixels\\":"',
-             '    ++ List.show(~&1, ~U32, ~U32.show, J.Surface.colors(J.Surface{w, h, pixels})) ++ "}")', '']
+             '    ++ List.show(~&1, ~U32, ~U32.show, J.Surface.colors(J.Surface{w, h, pixels})) ++ extra ++ "}")', '']
     lines += [
-        'def emit_result(name: String, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):',
+        'def write_vector(surface: J.Surface, +x: F32, +y: F32, vector: J.Vector2) -> J.Surface:',
+        '  J.Vector2{u, v} = vector',
+        '  first = J.Surface.draw_pixel(surface, x, y, F32.bits(u))',
+        '  J.Surface.draw_pixel(first, (x + 1.0 : F32), y, F32.bits(v))',
+        'def emit_qoi_data(name: String, image: J.Surface, bytes: +List<U32>, extra: String) -> IO(Unit):',
+        '  J.Surface{+w, +h, pixels} = image',
+        '  IO.print("{\\"id\\":\\"" ++ name ++ "\\",\\"width\\":" ++ U32.show(w)',
+        '    ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"pixels\\":"',
+        '    ++ List.show(~&1, ~U32, ~U32.show, J.Surface.colors(J.Surface{w, h, pixels}))',
+        '    ++ ",\\"qoi\\":" ++ List.show(~&2, ~U32, ~U32.show, bytes) ++ extra ++ "}")',
+        'def emit_qoi(name: String, pair: J.Surface & J.Surface, extra: String) -> IO(Unit):',
+        '  (original, copy) = pair',
+        f'  emit_qoi_data(name, original, J.Surface.to_qoi{"!" if gpu else ""}(copy), extra)',
+        'def emit_choice(encoded: Bool, name: String, image: J.Surface, extra: String) -> IO(Unit):',
+        '  match encoded:', '    case False{}: emit(name, image, extra)',
+        '    case True{}: emit_qoi(name, J.Surface.copy(image), extra)',
+        'def emit_bordered(name: String, encoded: Bool, observed: J.Surface & J.Rectangle) -> IO(Unit):',
+        '  match observed:', '    case Tuple{surface, J.Rectangle{x, y, w, h}}:',
+        '      emit_choice(encoded, name, surface, ",\\"alpha_border\\":[" ++ U32.show(F32.to_u32(x)) ++ "," ++ U32.show(F32.to_u32(y)) ++ "," ++ U32.show(F32.to_u32(w)) ++ "," ++ U32.show(F32.to_u32(h)) ++ "]")',
+        'def emit_observed(border: Maybe<&2, F32>, name: String, encoded: Bool, image: J.Surface) -> IO(Unit):',
+        '  match border:', '    case None{}: emit_choice(encoded, name, image, "")',
+        f'    case Some{{threshold}}: emit_bordered(name, encoded, J.Surface.alpha_border{"!" if gpu else ""}(image, threshold))',
+        'def emit_result(name: String, encoded: Bool, border: Maybe<&2, F32>, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):',
         '  match result:', '    case Fail{_}:',
         '      IO.die(Unit, 1, "valid transform fixture was rejected")',
-        '    case Done{surface}:', '      emit(name, surface)', '',
+        '    case Done{surface}:', '      emit_observed(border, name, encoded, surface)', '',
         'def extracted(keep: Bool, pair: J.Surface & Maybe<J.Surface>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:',
         '  match pair:', '    case Tuple{source, None{}}:',
         '      Fail{(source, J.InvalidRectangle{})}', '    case Tuple{source, Some{region}}:',
@@ -301,7 +579,7 @@ def bend_source(cases, gpu=False):
     ]
     for i, case in enumerate(cases):
         for j, op in enumerate(case['operations']):
-            if op['op'] not in ('blit', 'blit_region'):
+            if op['op'] not in ('blit', 'blit_region', 'blit_rect', 'alpha_mask'):
                 continue
             source = op['source']
             depth = (source['width'] * source['height'] - 1).bit_length()
@@ -314,23 +592,42 @@ def bend_source(cases, gpu=False):
         previous = 'surface'
         for j, op in enumerate(case["operations"]):
             kind = op["op"]
-            if kind in ('blit', 'blit_region'):
+            if kind in ('alpha_crop','resize_canvas'):
+                if kind == 'alpha_crop':
+                    draw = f'J.Surface.alpha_crop({previous}, {f32(op["threshold"])})'
+                else:
+                    draw = f'J.Surface.resize_canvas({previous}, {op["width"]}, {op["height"]}, {f32(op["x"])}, {f32(op["y"])}, {rgba(op["color"])})'
+                previous = f's{j}'
+                lines += [f'    {previous} : J.Surface {"=" if kind == "alpha_crop" else "<-"} {draw}']
+                continue
+            if kind == 'alpha_mask':
+                draw = f'J.Surface.alpha_mask({previous}, source_{i}_{j}())'
+                previous = f's{j}'
+                lines += [f'    {previous} : J.Surface <- composed({"True{}" if op.get("observe_source") else "False{}"}, {draw})']
+                continue
+            if kind in ('blit', 'blit_region', 'blit_rect'):
                 args = f'{previous}, source_{i}_{j}(), '
-                if kind == 'blit_region':
+                if kind in ('blit_region', 'blit_rect'):
                     rect = op['source_rect']
                     args += 'J.Rectangle{' + ', '.join(f32(rect[k]) for k in ('x', 'y', 'width', 'height')) + '}, '
-                args += f'{f32(op["x"])}, {f32(op["y"])}, {rgba(op["tint"])}'
-                draw = f'J.Surface.{"draw_image_region" if kind == "blit_region" else "draw_image"}({args})'
+                if kind == 'blit_rect':
+                    target = op['dest_rect']
+                    args += 'J.Rectangle{' + ', '.join(f32(target[k]) for k in ('x', 'y', 'width', 'height')) + '}, '
+                else:
+                    args += f'{f32(op["x"])}, {f32(op["y"])}, '
+                args += str(rgba(op['tint']))
+                function = {'blit':'draw_image', 'blit_region':'draw_image_region', 'blit_rect':'draw_image_rect'}[kind]
+                draw = f'J.Surface.{function}({args})'
                 pick = 'snd' if op.get('observe_source') else 'fst'
                 previous = f's{j}'
-                if kind == 'blit_region':
+                if kind in ('blit_region', 'blit_rect'):
                     lines += [f'    {previous} : J.Surface <- composed({"True{}" if op.get("observe_source") else "False{}"}, {draw})']
                 else:
                     lines += [f'    {previous} : J.Surface = Pair.{pick}(J.Surface, J.Surface, {draw})']
                 continue
-            if kind in ('crop', 'extract', 'resize_nn'):
-                if kind == 'resize_nn':
-                    draw = f'J.Surface.resize_nn({previous}, {op["width"]}, {op["height"]})'
+            if kind in ('crop', 'extract', 'resize_nn', 'resize'):
+                if kind in ('resize_nn', 'resize'):
+                    draw = f'J.Surface.{kind}({previous}, {op["width"]}, {op["height"]})'
                 else:
                     rect = 'J.Rectangle{' + ', '.join(f32(op[k]) for k in ('x', 'y', 'width', 'height')) + '}'
                     draw = f'J.Surface.{kind}({previous}, {rect})'
@@ -340,34 +637,88 @@ def bend_source(cases, gpu=False):
                 lines += [f'    {previous} : J.Surface <- {draw}']
                 continue
             args = [previous]
-            if kind in ('line', 'line_v', 'triangle', 'triangle_lines'):
+            if kind == 'vector_value':
+                _, signature, result = VECTOR2_APIS[op['function']]
+                expression = f'J.Vector2.{op["function"]}({vector_arguments(signature,op["args"],bend=True)})'
+                function = 'write_vector' if result=='vector' else 'J.Surface.draw_pixel'
+                value = expression if result=='vector' else f'Bool.to_u32({expression})' if result=='bool' else f'F32.bits({expression})'
+                previous = f's{j}'
+                lines += [f'    {previous} : J.Surface = {function}({args[0]}, {f32(op["x"])}, {f32(op["y"])}, {value})']
+                continue
+            if kind == 'alpha_clear':
+                previous = f's{j}'
+                lines += [f'    {previous} : J.Surface = J.Surface.alpha_clear({args[0]}, {rgba(op["color"])}, {f32(op["threshold"])})']
+                continue
+            if kind in COLOR_IMAGE_APIS:
+                args += [f32(op['amount'])] if kind in ('color_contrast', 'color_brightness') else [str(rgba(op['color']))]
+                if kind == 'color_replace':
+                    args += [str(rgba(op['replacement']))]
+                previous = f's{j}'
+                lines += [f'    {previous} : J.Surface = J.Surface.{kind}({", ".join(args)})']
+                continue
+            if kind in ('line', 'line_v', 'line_ex', 'triangle', 'triangle_lines', 'triangle_ex'):
                 count = 2 if kind.startswith('line') else 3
                 for point in range(count):
                     x, y = f32(op['x'+str(point)]), f32(op['y'+str(point)])
                     args += [x, y] if kind == 'line' else [f'J.Vector2{{{x}, {y}}}']
-            elif kind not in ('clear', 'flip_horizontal', 'flip_vertical'):
+            elif kind in ('pixel_v', 'circle_v', 'circle_lines_v'):
+                args += [f'J.Vector2{{{f32(op["x"])}, {f32(op["y"])}}}']
+            elif kind == 'rectangle_v':
+                args += [f'J.Vector2{{{f32(op["x"])}, {f32(op["y"])}}}', f'J.Vector2{{{f32(op["width"])}, {f32(op["height"])}}}']
+            elif kind in ('rectangle_rec', 'rectangle_lines'):
+                args += ['J.Rectangle{' + ', '.join(f32(op[k]) for k in ('x','y','width','height')) + '}']
+            elif kind in ('triangle_fan', 'triangle_strip'):
+                args += ['[' + ', '.join(f'J.Vector2{{{f32(x)}, {f32(y)}}}' for x,y in op['points']) + ']']
+            elif kind != 'clear' and kind not in UNARY_IMAGE_APIS:
                 args += [f32(op['x']), f32(op['y'])]
             if kind == 'rectangle':
                 args += [f32(op['width']), f32(op['height'])]
-            if kind == 'circle':
+            if kind in ('circle', 'circle_v', 'circle_lines', 'circle_lines_v'):
                 args += [str(op['radius'])]
+            if kind in ('line_ex', 'rectangle_lines'):
+                args += [str(op['thickness'])]
             if kind == 'blend_color':
                 args += [f'J.Color.alpha_blend({rgba(op["destination"])}, {rgba(op["color"])}, {rgba(op["tint"])})']
-            elif not kind.startswith('flip_'):
+            elif kind == 'color_value':
+                function = op['function']
+                values = [str(rgba(op['color']))]
+                if function in ('tint', 'lerp', 'equal'):
+                    values += [str(rgba(op['other']))]
+                if function not in ('tint', 'equal'):
+                    values += [f32(op['factor'])]
+                value = f'J.Color.{COLOR_VALUE_APIS[function][1]}({", ".join(values)})'
+                args += [f'Bool.to_u32({value})' if function == 'equal' else value]
+            elif kind == 'number_value':
+                value = f'J.Math.{op["function"]}(' + ', '.join(f32(v) for v in op['args']) + ')'
+                args += [f'Bool.to_u32({value})' if op['function'] == 'float_equals' else f'F32.bits({value})']
+            elif kind not in UNARY_IMAGE_APIS:
                 args += [str(rgba(op['color']))]
-            function = kind if kind == 'clear' or kind.startswith('flip_') else 'draw_' + kind
-            if kind == 'blend_color':
+            if kind == 'triangle_ex':
+                args += [str(rgba(op['color2'])), str(rgba(op['color3']))]
+            function = kind if kind == 'clear' or kind in UNARY_IMAGE_APIS else 'draw_' + kind
+            if kind in ('blend_color', 'color_value', 'number_value'):
                 function = 'draw_pixel'
             previous = f's{j}'
             lines += [f'    {previous} : J.Surface = J.Surface.{function}({", ".join(args)})']
-        lines += [f'    return {previous}', '', f'def case_{i}(created: Maybe<J.Surface>) -> IO(Unit):',
-                  '  match created:', '    case None{}:',
+        created_type = 'Result<&1, &1, J.Image.DecodeError, J.Surface>' if 'qoi' in case else 'Maybe<J.Surface>'
+        failure = 'Fail{_}' if 'qoi' in case else 'None{}'
+        success = 'Done{surface}' if 'qoi' in case else 'Some{surface}'
+        border = 'Some{' + f32(case['alpha_border']) + '}' if 'alpha_border' in case else 'None{}'
+        lines += [f'    return {previous}', '', f'def case_{i}(created: {created_type}) -> IO(Unit):',
+                  '  match created:', f'    case {failure}:',
                   '      IO.die(Unit, 1, "valid fixture image creation failed")',
-                  '    case Some{surface}:',
-                  f'      emit_result("{case["id"]}", draw_{i}{"!" if gpu else ""}(surface))', '']
+                  f'    case {success}:',
+                  f'      emit_result("{case["id"]}", {"True{}" if case.get("export_qoi") else "False{}"}, {border}, draw_{i}{"!" if gpu else ""}(surface))', '']
     lines += ['def main() -> IO(Unit):', '  do IO<Unit>:']
     for i, case in enumerate(cases):
-        lines += [f'    case_{i}(J.Surface.create({case["width"]}, {case["height"]}, {rgba(case["background"])}))']
+        creation = f'J.Surface.decode_qoi{"!" if gpu else ""}([' + ','.join(map(str,case['qoi'])) + '])' if 'qoi' in case else f'J.Surface.create({case["width"]}, {case["height"]}, {rgba(case["background"])})'
+        if 'checked' in case:
+            checked = case['checked']
+            creation = f'J.Surface.create_checked{"!" if gpu else ""}({case["width"]}, {case["height"]}, {checked["tile_width"]}, {checked["tile_height"]}, {rgba(case["background"])}, {rgba(checked["color"])})'
+        if 'gradient_square' in case:
+            gradient = case['gradient_square']
+            creation = f'J.Surface.create_gradient_square{"!" if gpu else ""}({case["width"]}, {case["height"]}, {f32(gradient["density"])}, {rgba(case["background"])}, {rgba(gradient["outer"])})'
+        lines += [f'    case_{i}({creation})']
     return '\n'.join(lines) + '\n'
 
 
@@ -385,6 +736,17 @@ def parse_output(output, cases):
             raise ValueError(f"Wrong pixel count: {row['id']}")
         if not all(integer(p, 0, 2**32 - 1) for p in row['pixels']):
             raise ValueError(f"Invalid RGBA word: {row['id']}")
+        if case.get('export_qoi'):
+            encoded = row.get('qoi')
+            if not isinstance(encoded, list) or not encoded or not all(integer(v, 0, 255) for v in encoded):
+                raise ValueError(f"Invalid QOI bytes: {row['id']}")
+        if 'alpha_border' in case:
+            border = row.get('alpha_border')
+            if not isinstance(border, list) or len(border)!=4 or not all(integer(v,0,4096) for v in border):
+                raise ValueError(f"Invalid alpha border: {row['id']}")
+            x,y,w,h = border
+            if x+w > width or y+h > height:
+                raise ValueError(f"Alpha border exceeds image: {row['id']}")
     return rows
 
 
@@ -400,6 +762,10 @@ def compare(expected, actual):
             if a != b:
                 x, y = i % reference['width'], i // reference['width']
                 raise ValueError(f"{reference['id']}: pixel ({x}, {y}): raylib={a:08x}, Jonlib={b:08x}")
+        if reference.get('qoi') != candidate.get('qoi'):
+            raise ValueError(f"{reference['id']}: QOI export bytes differ")
+        if reference.get('alpha_border') != candidate.get('alpha_border'):
+            raise ValueError(f"{reference['id']}: alpha border differs")
 
 
 def source_gate():
@@ -416,16 +782,17 @@ def source_gate():
 
 
 def inventory(header):
-    declarations = re.findall(r'^RLAPI\s+(.+?\b([A-Za-z_]\w*)\s*\([^;]*\));', header, re.M)
-    names = [name for _, name in declarations]
-    if len(names) != 600 or len(set(names)) != 600:
-        raise ValueError('The pinned raylib 6.0 API inventory must contain 600 unique declarations')
+    reference = json.loads((ROOT / 'api/reference.json').read_text())
+    if hashlib.sha256(header.encode()).hexdigest() != reference['headers']['raylib.h']['sha256']:
+        raise ValueError('raylib.h differs from the committed API reference')
+    declarations = [entry for entry in reference['entries'] if entry['header'] == 'raylib.h' and entry['kind'] == 'function']
+    names = {entry['name'] for entry in declarations}
     mapping = json.loads((ROOT / 'docs/api-map.json').read_text())
-    if set(mapping) - set(names):
+    if set(mapping) - names:
         raise ValueError('Compatibility map contains unknown raylib APIs')
-    return [dict(raylib=name, signature=signature,
-                 **mapping.get(name, dict(jonlib=None, status='not-implemented')))
-            for signature, name in declarations]
+    return [dict(raylib=entry['name'], signature=entry['signature'],
+                 **mapping.get(entry['name'], dict(jonlib=None, status='not-implemented')))
+            for entry in declarations]
 
 
 def main():
@@ -443,6 +810,7 @@ def main():
     lock = json.loads((ROOT / 'toolchain.json').read_text())
     checkout(args.bend_source, lock['bend']['revision'], lock['bend'].get('patch'))
     checkout(args.raylib_source, lock['raylib']['revision'])
+    run([sys.executable, ROOT / 'tools/api_plan.py', 'check', '--raylib-source', args.raylib_source])
     report['toolchain'] = lock
     report['host'] = dict(system=platform.system(), machine=platform.machine(),
                           bun=run(['bun', '--version']).strip(),
@@ -451,12 +819,18 @@ def main():
     api = inventory((args.raylib_source / 'src/raylib.h').read_text())
     (BUILD / 'api-inventory.json').write_text(json.dumps(api, indent=2) + '\n')
     report['api_inventory'] = dict(total=len(api), mapped=sum(row['jonlib'] is not None for row in api))
+    report['progression'] = json.loads((ROOT / 'api/summary.json').read_text())['core_functions']
     report['verification_sources'] = {
         str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
         for path in (ROOT / 'tools/conformance.py', ROOT / 'tests/contracts.bend',
                      ROOT / 'tests/transforms.bend', ROOT / 'tests/transforms_gpu.bend', ROOT / 'examples/transforms.bend',
+                     ROOT / 'tests/decoding.bend', ROOT / 'tests/decoding_gpu.bend',
+                     ROOT / 'tests/io_decoding.bend',
+                     ROOT / 'examples/qoi_roundtrip.bend',
                      ROOT / 'LAWS.bend', ROOT / 'PROOF.bend', ROOT / 'examples/headless.bend', ROOT / 'examples/composite.bend',
-                     ROOT / 'docs/api-map.json')
+                     ROOT / 'docs/api-map.json', ROOT / 'tools/api_catalog.py', ROOT / 'tools/api_plan.py',
+                     ROOT / 'api/reference.json', ROOT / 'api/milestones.json', ROOT / 'api/progress.json',
+                     ROOT / 'api/summary.json')
     }
     cases = cases_from(json.loads(args.fixtures.read_text()))
     expanded = json.dumps(cases, sort_keys=True)
@@ -464,6 +838,9 @@ def main():
     report['fixtures_sha256'] = hashlib.sha256(expanded.encode()).hexdigest()
     report['scenarios'] = [c['id'] for c in cases]
     report['pixels_per_lane'] = sum(width * height for width, height in map(result_size, cases))
+    report['numeric_probe_cells'] = sum(1 if op['op']=='number_value' or VECTOR2_APIS[op['function']][2]!='vector' else 2
+                                        for case in cases for op in case['operations'] if op['op'] in ('number_value','vector_value'))
+    report['alpha_border_observations'] = sum('alpha_border' in case for case in cases)
     cli = ['bun', args.bend_source / 'bend2/main.ts']
     library_verdict = run([*cli, ROOT / 'jonlib.bend', '--check-only'])
     if library_verdict.strip() != 'All terms check.':
@@ -472,6 +849,7 @@ def main():
     if proof_verdict.strip() != 'All terms check.':
         raise ValueError(f"Unexpected proof verdict: {proof_verdict}")
     report['proof'] = proof_verdict.strip()
+    report['scalar_profile'] = 'raymath-f32-uncontracted-v1'
     cmake = BUILD / 'raylib'
     print('Building pinned raylib reference...', flush=True)
     run(['cmake', '-S', args.raylib_source, '-B', cmake, '-DPLATFORM=Memory',
@@ -484,6 +862,8 @@ def main():
     reference_text = run([BUILD / 'reference'])
     (BUILD / 'reference.jsonl').write_text(reference_text)
     reference = parse_output(reference_text, cases)
+    exports = [row for row in reference if 'qoi' in row]
+    report['qoi_exports'] = dict(scenarios=len(exports), bytes=sum(len(row['qoi']) for row in exports))
     source = BUILD / 'candidate.bend'
     source.write_text(bend_source(cases))
     print('Building Bend CPU and JavaScript runners...', flush=True)
@@ -505,7 +885,8 @@ def main():
         report_path.write_text(json.dumps(report, indent=2) + '\n')
         print(f'{lane}: {len(cases)} scenarios, {report["pixels_per_lane"]} pixels match exactly', flush=True)
     for name, expected, key in [('contracts', 'contracts ok', 'contracts'),
-                                ('transforms', 'transform contracts ok', 'transform_contracts')]:
+                                ('transforms', 'transform contracts ok', 'transform_contracts'),
+                                ('decoding', 'decode contracts ok', 'decode_contracts')]:
         binary = BUILD / f'verify-{name}'
         run([*cli, ROOT / f'tests/{name}.bend', '-o', binary, '-o', str(binary) + '.js'])
         for lane, command in [('cpu', [binary]), ('javascript', ['bun', str(binary) + '.js'])]:
@@ -514,12 +895,14 @@ def main():
         report[key] = ['cpu', 'javascript']
         print(f'{name}: CPU/JS passed', flush=True)
     if args.gpu:
-        binary = BUILD / 'verify-transforms-gpu'
-        run([*cli, ROOT / 'tests/transforms_gpu.bend', '-o', binary])
-        if run([binary, '--gpu', 'on']).strip() != 'transform contracts ok':
-            raise ValueError('GPU transform error-ownership contract failed')
-        report['transform_contracts'].append('gpu-forced')
-        print('transforms: forced GPU error-ownership contracts passed', flush=True)
+        for name, expected, key in [('transforms','transform contracts ok','transform_contracts'),
+                                    ('decoding','decode contracts ok','decode_contracts')]:
+            binary = BUILD / f'verify-{name}-gpu'
+            run([*cli, ROOT / f'tests/{name}_gpu.bend', '-o', binary])
+            if run([binary, '--gpu', 'on']).strip() != expected:
+                raise ValueError(f'GPU {name} contract failed')
+            report[key].append('gpu-forced')
+            print(f'{name}: forced GPU contracts passed', flush=True)
     for name, scenario, key in [('headless', 'radius-12-regression', 'example'),
                                 ('composite', 'composite-example', 'composite_example'),
                                 ('transforms', 'transform-example', 'transform_example')]:
@@ -536,6 +919,30 @@ def main():
             raise ValueError(f'{name}: RGB pixels differ from raylib')
         report[key] = dict(path=f'.build/{name}.ppm', pixels=len(example_reference['pixels']), passed=True)
         print(f'{name} PPM export: every RGB pixel matches raylib', flush=True)
+    qoi_reference = next((row for row in reference if row['id'] == 'qoi-all-opcodes'), None)
+    if qoi_reference is None or 'qoi' not in qoi_reference:
+        raise ValueError('Fixtures must include qoi-all-opcodes with export_qoi for the file round trip')
+    qoi_binary = BUILD / 'qoi-roundtrip'
+    if (BUILD / 'qoi-roundtrip.missing').exists():
+        raise ValueError('The missing-file QOI test path already exists')
+    (BUILD / 'qoi-roundtrip.bad').write_bytes(b'bad')
+    with (BUILD / 'qoi-roundtrip.large').open('wb') as oversized:
+        oversized.truncate(83886103)
+    run([*cli, ROOT / 'examples/qoi_roundtrip.bend', '-o', qoi_binary, '-o', str(qoi_binary)+'.js'])
+    expected = {key:qoi_reference[key] for key in ('id','width','height','pixels')}
+    fixture = dict(id=expected['id'], width=expected['width'], height=expected['height'], operations=[])
+    for lane, command in [('cpu',[qoi_binary]), ('javascript',['bun',str(qoi_binary)+'.js'])]:
+        loaded = parse_output(run(command), [fixture])
+        compare([expected], loaded)
+        if (BUILD / 'qoi-roundtrip.qoi').read_bytes() != bytes(qoi_reference['qoi']):
+            raise ValueError(f'{lane}: QOI file bytes differ from actual raylib ExportImage')
+    io_binary = BUILD / 'verify-io-decoding'
+    run([*cli, ROOT / 'tests/io_decoding.bend', '-o', io_binary, '-o', str(io_binary)+'.js'])
+    for command in ([io_binary], ['bun',str(io_binary)+'.js']):
+        if run(command).strip() != 'qoi file errors ok':
+            raise ValueError('QOI file error contract failed')
+    report['qoi_file_roundtrip'] = dict(passed=True, lanes=['cpu','javascript'], path='.build/qoi-roundtrip.qoi', error_cases=['missing-file','malformed-file','oversized-file'])
+    print('QOI file export/load: CPU/JS bytes and decoded pixels match raylib', flush=True)
     report['passed'] = True
     report['elapsed_seconds'] = round(time.monotonic() - started, 3)
     report_path.write_text(json.dumps(report, indent=2) + '\n')

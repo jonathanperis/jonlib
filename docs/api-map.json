@@ -1,23 +1,601 @@
 {
-  "GenImageColor": {"jonlib":"Surface.create","status":"profile-covered"},
-  "ImageClearBackground": {"jonlib":"Surface.clear","status":"profile-covered"},
-  "ImageDrawPixel": {"jonlib":"Surface.draw_pixel","status":"profile-covered"},
-  "ImageDrawRectangle": {"jonlib":"Surface.draw_rectangle","status":"profile-covered"},
-  "ImageDrawCircle": {"jonlib":"Surface.draw_circle","status":"profile-covered"},
-  "ImageFlipHorizontal": {"jonlib":"Surface.flip_horizontal","status":"profile-covered"},
-  "ImageFlipVertical": {"jonlib":"Surface.flip_vertical","status":"profile-covered"},
-  "LoadImageColors": {"jonlib":"Surface.colors","status":"profile-covered"},
-  "GetImageColor": {"jonlib":"Surface.get","status":"contract-checked"},
-  "ImageCopy": {"jonlib":"Surface.copy","status":"contract-checked"},
-  "GetColor": {"jonlib":"Color.red/green/blue/alpha","status":"contract-checked"},
-  "ColorToInt": {"jonlib":"Color.rgba","status":"contract-checked"},
-  "ColorAlphaBlend": {"jonlib":"Color.alpha_blend","status":"profile-covered"},
-  "ImageDrawLine": {"jonlib":"Surface.draw_line","status":"profile-covered","scope":"RGBA8; integral coordinates; pinned 16.16 stepping and excluded endpoint"},
-  "ImageDrawLineV": {"jonlib":"Surface.draw_line_v","status":"profile-covered","scope":"RGBA8; bounded finite Vector2 inputs and raylib add-half/truncate rounding"},
-  "ImageDrawTriangle": {"jonlib":"Surface.draw_triangle","status":"profile-covered","scope":"RGBA8; integral vertices; defined reference signed-edge arithmetic"},
-  "ImageDrawTriangleLines": {"jonlib":"Surface.draw_triangle_lines","status":"profile-covered","scope":"RGBA8; bounded finite vertices truncated before line rasterization"},
-  "ImageDraw": {"jonlib":"Surface.draw_image / Surface.draw_image_region","status":"profile-covered","scope":"RGBA8; valid in-bounds integral source rectangles; no scaling; one mip level; integer placement","gaps":["automatic source clipping with resizing","default resizing filters","other pixel formats","mipmaps","fractional rectangles"]},
-  "ImageFromImage": {"jonlib":"Surface.extract","status":"profile-covered","scope":"RGBA8; positive integral in-bounds rectangle; original owner retained"},
-  "ImageCrop": {"jonlib":"Surface.crop","status":"profile-covered","scope":"RGBA8; integral crop; positive clipped result or reference out-of-bounds no-op; errors preserve original"},
-  "ImageResizeNN": {"jonlib":"Surface.resize_nn","status":"profile-covered","scope":"RGBA8; 1..4096 dimensions; exact fixed-point mapping where every flat source index is in bounds"}
+  "LoadImage": {
+    "jonlib": "Surface.load_qoi",
+    "status": "profile-covered",
+    "scope": "Explicit QOI file loading through Base byte IO, with RGBA8 normalization, closed file ownership and file/decode errors.",
+    "gaps": [
+      "Other codecs and format dispatch",
+      "Original pixel formats",
+      "Reference callbacks",
+      "Complete targets/integration/performance"
+    ],
+    "api_id": "raylib:function:LoadImage",
+    "milestone": "image-codecs"
+  },
+  "LoadImageFromMemory": {
+    "jonlib": "Surface.decode_qoi",
+    "status": "profile-covered",
+    "scope": "Valid QOI RGB/RGBA streams decoded to owned RGBA8; dimensions 1..4096; typed rejection of malformed streams.",
+    "gaps": [
+      "Other codecs",
+      "Original pixel-format metadata",
+      "Reference permissive malformed-stream recovery",
+      "Complete targets/integration/performance"
+    ],
+    "api_id": "raylib:function:LoadImageFromMemory",
+    "milestone": "image-codecs"
+  },
+  "ExportImage": {
+    "jonlib": "Surface.write_qoi / Surface.to_qoi",
+    "status": "profile-covered",
+    "scope": "QOI export from owned RGBA8; exact reference bytes; fixed channels=4/colorspace=0; Base byte-file writing.",
+    "gaps": [
+      "Other export formats and source pixel formats",
+      "Format dispatch",
+      "Complete targets/integration/performance"
+    ],
+    "api_id": "raylib:function:ExportImage",
+    "milestone": "image-codecs"
+  },
+  "GenImageColor": {
+    "jonlib": "Surface.create",
+    "status": "profile-covered",
+    "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:GenImageColor",
+    "milestone": "images"
+  },
+  "GenImageGradientSquare": {
+    "jonlib": "Surface.create_gradient_square",
+    "status": "profile-covered",
+    "scope": "RGBA8; dimensions 1..4096; density 0..1 with exact reference interpolation and density-one behavior.",
+    "gaps": [
+      "Density values outside 0..1",
+      "Full size/platform/performance coverage"
+    ],
+    "api_id": "raylib:function:GenImageGradientSquare",
+    "milestone": "images"
+  },
+  "GenImageChecked": {
+    "jonlib": "Surface.create_checked",
+    "status": "profile-covered",
+    "scope": "RGBA8; Surface dimensions 1..4096; positive signed-int checker sizes; invalid dimensions/checker sizes return None.",
+    "gaps": [
+      "Full size/domain and target/performance gates"
+    ],
+    "api_id": "raylib:function:GenImageChecked",
+    "milestone": "images"
+  },
+  "ImageCopy": {
+    "jonlib": "Surface.copy",
+    "status": "contract-checked",
+    "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:ImageCopy",
+    "milestone": "images"
+  },
+  "ImageFromImage": {
+    "jonlib": "Surface.extract",
+    "status": "profile-covered",
+    "scope": "RGBA8; positive integral in-bounds rectangle; original owner retained",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:ImageFromImage",
+    "milestone": "resampling"
+  },
+  "ImageCrop": {
+    "jonlib": "Surface.crop",
+    "status": "profile-covered",
+    "scope": "RGBA8; integral crop; positive clipped result or reference out-of-bounds no-op; errors preserve original",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:ImageCrop",
+    "milestone": "resampling"
+  },
+  "ImageAlphaCrop": {
+    "jonlib": "Surface.alpha_crop",
+    "status": "profile-covered",
+    "scope": "Owned RGBA8; reference alpha bounds/cropping for threshold 0..1; empty selections preserve the original image unchanged.",
+    "gaps": [
+      "Other formats/mipmaps and complete platform/performance gates"
+    ],
+    "api_id": "raylib:function:ImageAlphaCrop",
+    "milestone": "images"
+  },
+  "ImageAlphaClear": {
+    "jonlib": "Surface.alpha_clear",
+    "status": "profile-covered",
+    "scope": "RGBA8; finite threshold 0..1 converted to an inclusive byte cutoff; replaces all four channels.",
+    "gaps": [
+      "Other formats/mipmaps and full target/performance gates"
+    ],
+    "api_id": "raylib:function:ImageAlphaClear",
+    "milestone": "images"
+  },
+  "ImageAlphaMask": {
+    "jonlib": "Surface.alpha_mask",
+    "status": "profile-covered",
+    "scope": "Same-size RGBA8 surfaces; reference normalized grayscale mask values replace destination alpha; original mask retained; mismatched dimensions return both owners with InvalidSize.",
+    "gaps": [
+      "Grayscale/other image formats",
+      "Reference warning/no-op adaptation on mismatched sizes",
+      "Full target/performance gates"
+    ],
+    "api_id": "raylib:function:ImageAlphaMask",
+    "milestone": "images"
+  },
+  "ImageAlphaPremultiply": {
+    "jonlib": "Surface.alpha_premultiply",
+    "status": "profile-covered",
+    "scope": "RGBA8; reference F32 alpha division and RGB multiplication with byte truncation; alpha retained.",
+    "gaps": [
+      "Other formats/mipmaps and full target/performance gates"
+    ],
+    "api_id": "raylib:function:ImageAlphaPremultiply",
+    "milestone": "images"
+  },
+  "ImageResize": {
+    "jonlib": "Surface.resize",
+    "status": "profile-covered",
+    "scope": "Owned RGBA8; one mip level; dimensions 1..4096; default Catmull-Rom/Mitchell filters, binary64 normalization, clamp folding and reference alpha/pass/accumulation order; invalid-size errors preserve the original owner.",
+    "gaps": [
+      "Other image formats and mipmap chains",
+      "Dimensions beyond the initial Surface domain",
+      "Complete platform, application-integration and performance validation"
+    ],
+    "api_id": "raylib:function:ImageResize",
+    "milestone": "resampling"
+  },
+  "ImageResizeNN": {
+    "jonlib": "Surface.resize_nn",
+    "status": "profile-covered",
+    "scope": "RGBA8; 1..4096 dimensions; exact fixed-point mapping where every flat source index is in bounds",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:ImageResizeNN",
+    "milestone": "resampling"
+  },
+  "ImageResizeCanvas": {
+    "jonlib": "Surface.resize_canvas",
+    "status": "profile-covered",
+    "scope": "RGBA8; dimensions 1..4096; bounded integral offsets with positive overlap for changed sizes; exact raw copying/fill and same-size no-op; invalid requests retain the original owner.",
+    "gaps": [
+      "No-overlap/unsafe reference copy domains",
+      "Other formats/mipmaps and complete platform/performance gates"
+    ],
+    "api_id": "raylib:function:ImageResizeCanvas",
+    "milestone": "resampling"
+  },
+  "ImageFlipVertical": {
+    "jonlib": "Surface.flip_vertical",
+    "status": "profile-covered",
+    "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:ImageFlipVertical",
+    "milestone": "images"
+  },
+  "ImageFlipHorizontal": {
+    "jonlib": "Surface.flip_horizontal",
+    "status": "profile-covered",
+    "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:ImageFlipHorizontal",
+    "milestone": "images"
+  },
+  "ImageRotateCW": {
+    "jonlib": "Surface.rotate_cw",
+    "status": "profile-covered",
+    "scope": "Owned RGBA8; 90-degree clockwise rotation; swapped dimensions and exact RGBA bytes.",
+    "gaps": [
+      "Other formats/mipmaps and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageRotateCW",
+    "milestone": "images"
+  },
+  "ImageRotateCCW": {
+    "jonlib": "Surface.rotate_ccw",
+    "status": "profile-covered",
+    "scope": "Owned RGBA8; 90-degree counterclockwise rotation; swapped dimensions and exact RGBA bytes.",
+    "gaps": [
+      "Other formats/mipmaps and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageRotateCCW",
+    "milestone": "images"
+  },
+  "ImageColorTint": {
+    "jonlib": "Surface.color_tint",
+    "status": "profile-covered",
+    "scope": "RGBA8; integer channel multiplication divided by 255, including alpha.",
+    "gaps": [
+      "Other formats/mipmaps and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageColorTint",
+    "milestone": "images"
+  },
+  "ImageColorInvert": {
+    "jonlib": "Surface.color_invert",
+    "status": "profile-covered",
+    "scope": "RGBA8; invert RGB bytes and preserve alpha.",
+    "gaps": [
+      "Other formats/mipmaps and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageColorInvert",
+    "milestone": "images"
+  },
+  "ImageColorContrast": {
+    "jonlib": "Surface.color_contrast",
+    "status": "profile-covered",
+    "scope": "RGBA8; finite contrast clamped to -100..100; reference F32 operation order and byte truncation; alpha preserved.",
+    "gaps": [
+      "Other formats/mipmaps and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageColorContrast",
+    "milestone": "images"
+  },
+  "ImageColorBrightness": {
+    "jonlib": "Surface.color_brightness",
+    "status": "profile-covered",
+    "scope": "RGBA8; finite integral adjustment clamped to -255..255; negative channel underflow becomes 1; alpha preserved.",
+    "gaps": [
+      "Full signed input domain, other formats/mipmaps and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageColorBrightness",
+    "milestone": "images"
+  },
+  "ImageColorReplace": {
+    "jonlib": "Surface.color_replace",
+    "status": "profile-covered",
+    "scope": "RGBA8; exact four-channel color match and replacement.",
+    "gaps": [
+      "Other formats/mipmaps and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageColorReplace",
+    "milestone": "images"
+  },
+  "LoadImageColors": {
+    "jonlib": "Surface.colors",
+    "status": "profile-covered",
+    "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:LoadImageColors",
+    "milestone": "pixels"
+  },
+  "GetImageAlphaBorder": {
+    "jonlib": "Surface.alpha_border",
+    "status": "profile-covered",
+    "scope": "Owned RGBA8; threshold 0..1; strict alpha-byte comparison and exact zero rectangle for empty selections; original owner returned.",
+    "gaps": [
+      "Other formats/mipmaps and complete platform/performance gates"
+    ],
+    "api_id": "raylib:function:GetImageAlphaBorder",
+    "milestone": "images"
+  },
+  "GetImageColor": {
+    "jonlib": "Surface.get",
+    "status": "contract-checked",
+    "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:GetImageColor",
+    "milestone": "images"
+  },
+  "ImageClearBackground": {
+    "jonlib": "Surface.clear",
+    "status": "profile-covered",
+    "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:ImageClearBackground",
+    "milestone": "images"
+  },
+  "ImageDrawPixel": {
+    "jonlib": "Surface.draw_pixel",
+    "status": "profile-covered",
+    "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:ImageDrawPixel",
+    "milestone": "images"
+  },
+  "ImageDrawPixelV": {
+    "jonlib": "Surface.draw_pixel_v",
+    "status": "profile-covered",
+    "scope": "RGBA8; bounded finite Vector2 coordinates truncated before pixel clipping.",
+    "gaps": [
+      "Other formats and complete target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageDrawPixelV",
+    "milestone": "images"
+  },
+  "ImageDrawLine": {
+    "jonlib": "Surface.draw_line",
+    "status": "profile-covered",
+    "scope": "RGBA8; integral coordinates; pinned 16.16 stepping and excluded endpoint",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:ImageDrawLine",
+    "milestone": "images"
+  },
+  "ImageDrawLineV": {
+    "jonlib": "Surface.draw_line_v",
+    "status": "profile-covered",
+    "scope": "RGBA8; bounded finite Vector2 inputs and raylib add-half/truncate rounding",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:ImageDrawLineV",
+    "milestone": "images"
+  },
+  "ImageDrawLineEx": {
+    "jonlib": "Surface.draw_line_ex",
+    "status": "profile-covered",
+    "scope": "RGBA8; bounded finite endpoints; add-half/truncate rounding; safe signed 16.16 deltas; thickness 0..32767.",
+    "gaps": [
+      "Negative thickness, full formats/domains and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageDrawLineEx",
+    "milestone": "images"
+  },
+  "ImageDrawCircle": {
+    "jonlib": "Surface.draw_circle",
+    "status": "profile-covered",
+    "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:ImageDrawCircle",
+    "milestone": "images"
+  },
+  "ImageDrawCircleV": {
+    "jonlib": "Surface.draw_circle_v",
+    "status": "profile-covered",
+    "scope": "RGBA8; finite bounded center truncated to integers; radius 0..32767.",
+    "gaps": [
+      "Full format/numeric domain and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageDrawCircleV",
+    "milestone": "images"
+  },
+  "ImageDrawCircleLines": {
+    "jonlib": "Surface.draw_circle_lines",
+    "status": "profile-covered",
+    "scope": "RGBA8; integral bounded center; radius 0..32767; reference midpoint outline.",
+    "gaps": [
+      "Full format/numeric domain and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageDrawCircleLines",
+    "milestone": "images"
+  },
+  "ImageDrawCircleLinesV": {
+    "jonlib": "Surface.draw_circle_lines_v",
+    "status": "profile-covered",
+    "scope": "RGBA8; bounded finite center truncated before midpoint outline; radius 0..32767.",
+    "gaps": [
+      "Full format/numeric domain and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageDrawCircleLinesV",
+    "milestone": "images"
+  },
+  "ImageDrawRectangle": {
+    "jonlib": "Surface.draw_rectangle",
+    "status": "profile-covered",
+    "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:ImageDrawRectangle",
+    "milestone": "images"
+  },
+  "ImageDrawRectangleV": {
+    "jonlib": "Surface.draw_rectangle_v",
+    "status": "profile-covered",
+    "scope": "RGBA8; bounded finite position and size truncated before reference rectangle drawing.",
+    "gaps": [
+      "Full format/numeric domain and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageDrawRectangleV",
+    "milestone": "images"
+  },
+  "ImageDrawRectangleRec": {
+    "jonlib": "Surface.draw_rectangle_rec",
+    "status": "profile-covered",
+    "scope": "RGBA8; bounded finite rectangle; clipping precedes coordinate/extent truncation.",
+    "gaps": [
+      "Full format/numeric domain and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageDrawRectangleRec",
+    "milestone": "images"
+  },
+  "ImageDrawRectangleLines": {
+    "jonlib": "Surface.draw_rectangle_lines",
+    "status": "profile-covered",
+    "scope": "RGBA8; bounded finite rectangle; thickness 0..32767; reference four-edge truncation and degenerate behavior.",
+    "gaps": [
+      "Negative thickness, full formats/domains and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageDrawRectangleLines",
+    "milestone": "images"
+  },
+  "ImageDrawTriangle": {
+    "jonlib": "Surface.draw_triangle",
+    "status": "profile-covered",
+    "scope": "RGBA8; integral vertices; defined reference signed-edge arithmetic",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:ImageDrawTriangle",
+    "milestone": "images"
+  },
+  "ImageDrawTriangleEx": {
+    "jonlib": "Surface.draw_triangle_ex",
+    "status": "profile-covered",
+    "scope": "RGBA8; integral bounded vertices; defined signed arithmetic and nonzero reference weight sum; reference byte-quantized barycentric color interpolation.",
+    "gaps": [
+      "Fractional vertices and wider domains",
+      "Degenerate/undefined reference gradients",
+      "Other formats and full target/performance gates"
+    ],
+    "api_id": "raylib:function:ImageDrawTriangleEx",
+    "milestone": "images"
+  },
+  "ImageDrawTriangleLines": {
+    "jonlib": "Surface.draw_triangle_lines",
+    "status": "profile-covered",
+    "scope": "RGBA8; bounded finite vertices truncated before line rasterization",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:ImageDrawTriangleLines",
+    "milestone": "images"
+  },
+  "ImageDrawTriangleFan": {
+    "jonlib": "Surface.draw_triangle_fan",
+    "status": "profile-covered",
+    "scope": "RGBA8; List<Vector2> with bounded integral vertices; reference fan order; fewer than three points is a no-op.",
+    "gaps": [
+      "Fractional vertices, full formats/domains and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageDrawTriangleFan",
+    "milestone": "images"
+  },
+  "ImageDrawTriangleStrip": {
+    "jonlib": "Surface.draw_triangle_strip",
+    "status": "profile-covered",
+    "scope": "RGBA8; bounded integral vertices; alternating reference winding; fewer than three points is a no-op.",
+    "gaps": [
+      "Fractional vertices, full formats/domains and target/performance evidence"
+    ],
+    "api_id": "raylib:function:ImageDrawTriangleStrip",
+    "milestone": "images"
+  },
+  "ImageDraw": {
+    "jonlib": "Surface.draw_image / Surface.draw_image_region / Surface.draw_image_rect",
+    "status": "profile-covered",
+    "scope": "RGBA8; bounded finite source/destination rectangles, including fractional fields; source clipping precedes truncated-size scaling decisions; destination clipping precedes pixel truncation; both owners preserved; one mip level",
+    "gaps": [
+      "empty or undefined source rectangles",
+      "other pixel formats",
+      "mipmaps",
+      "full platform/integration/performance validation"
+    ],
+    "api_id": "raylib:function:ImageDraw",
+    "milestone": "resampling"
+  },
+  "ColorIsEqual": {
+    "jonlib": "Color.is_equal",
+    "status": "profile-covered",
+    "scope": "Exact packed RGBA equality, including alpha.",
+    "gaps": [
+      "Complete platform/integration/performance gates"
+    ],
+    "api_id": "raylib:function:ColorIsEqual",
+    "milestone": "pixels"
+  },
+  "Fade": {
+    "jonlib": "Color.with_alpha",
+    "status": "profile-covered",
+    "scope": "Same finite-factor alpha replacement as ColorAlpha; reference Fade exercised separately.",
+    "gaps": [
+      "Complete platform/integration/performance gates"
+    ],
+    "api_id": "raylib:function:Fade",
+    "milestone": "pixels"
+  },
+  "ColorToInt": {
+    "jonlib": "Color.rgba",
+    "status": "contract-checked",
+    "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:ColorToInt",
+    "milestone": "pixels"
+  },
+  "ColorTint": {
+    "jonlib": "Color.multiply",
+    "status": "profile-covered",
+    "scope": "Integer RGBA channel multiplication divided by 255; distinct from alpha-blending's internal tint.",
+    "gaps": [
+      "Complete platform/integration/performance gates"
+    ],
+    "api_id": "raylib:function:ColorTint",
+    "milestone": "pixels"
+  },
+  "ColorBrightness": {
+    "jonlib": "Color.brightness",
+    "status": "profile-covered",
+    "scope": "Finite factor clamped to -1..1; reference darkening/lightening formulas and byte truncation; alpha retained.",
+    "gaps": [
+      "Complete platform/integration/performance gates"
+    ],
+    "api_id": "raylib:function:ColorBrightness",
+    "milestone": "pixels"
+  },
+  "ColorContrast": {
+    "jonlib": "Color.contrast",
+    "status": "profile-covered",
+    "scope": "Finite factor clamped to -1..1; reference F32 arithmetic and byte truncation; alpha retained.",
+    "gaps": [
+      "Complete platform/integration/performance gates"
+    ],
+    "api_id": "raylib:function:ColorContrast",
+    "milestone": "pixels"
+  },
+  "ColorAlpha": {
+    "jonlib": "Color.with_alpha",
+    "status": "profile-covered",
+    "scope": "Packed RGBA; finite F32 alpha clamped to 0..1 and truncated after multiplying by 255.",
+    "gaps": [
+      "Complete platform/integration/performance gates"
+    ],
+    "api_id": "raylib:function:ColorAlpha",
+    "milestone": "pixels"
+  },
+  "ColorAlphaBlend": {
+    "jonlib": "Color.alpha_blend",
+    "status": "profile-covered",
+    "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:ColorAlphaBlend",
+    "milestone": "pixels"
+  },
+  "ColorLerp": {
+    "jonlib": "Color.lerp",
+    "status": "profile-covered",
+    "scope": "Finite factor clamped to 0..1; independent straight RGBA interpolation and byte truncation.",
+    "gaps": [
+      "Complete platform/integration/performance gates"
+    ],
+    "api_id": "raylib:function:ColorLerp",
+    "milestone": "pixels"
+  },
+  "GetColor": {
+    "jonlib": "Color.red/green/blue/alpha",
+    "status": "contract-checked",
+    "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+    "gaps": [
+      "Full input/format domain and all applicable platform/performance gates remain open."
+    ],
+    "api_id": "raylib:function:GetColor",
+    "milestone": "pixels"
+  }
 }

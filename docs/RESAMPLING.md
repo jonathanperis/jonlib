@@ -8,6 +8,8 @@
   when the resulting image remains nonempty (`ImageCrop` profile).
 - `Surface.resize_nn`: raylib's **16.16 ratios with the +1 correction**, preserving
   every RGBA byte (`ImageResizeNN` profile).
+- `Surface.resize`: default filtered RGBA8 resizing with Catmull-Rom upsampling,
+  Mitchell downsampling and alpha-aware filtering (`ImageResize` profile).
 - `Surface.draw_image_region`: unscaled, in-bounds integral source rectangles,
   destination clipping, tint and alpha, returning both image owners.
 
@@ -23,7 +25,7 @@ still inside the flat source allocation, and the fixture preserves that result.
 A 2×1 source resized to 512×1 would read outside its allocation. Jonlib rejects
 that request with `UnsafeNearestMapping` and returns the original image.
 
-## Default filtered resize is still open
+## Default filtered RGBA8 resize
 
 `ImageResize` and the scaling path of `ImageDraw` use **stb_image_resize2**:
 
@@ -35,8 +37,46 @@ that request with `UnsafeNearestMapping` and returns the original image.
   RGB, so fully transparent colors are handled deliberately.
 - Output clamping/rounding and architecture-dependent SIMD execution details.
 
-`ImageResizeNN` is not a replacement for this path. No `Surface.resize` default
-filtered API or scaled `ImageDraw` is currently claimed as reference-compatible.
+`Surface.resize` implements this path in Bend for owned RGBA8 images with one
+mip level and dimensions 1..4096. Invalid sizes preserve the original surface
+with `InvalidSize`. `ImageResizeNN` remains a separate operation.
+`Surface.draw_image_rect` integrates the default resizer into source-clipped,
+scaled `ImageDraw`, including bounded fractional rectangle fields and both owners.
+
+`src/resize_numeric.bend` uses integer limbs for the finite-normal binary64
+addition, reciprocal and multiplication required by coefficient normalization,
+including nearest/even rounding before conversion back to F32. It is an
+internal, bounded numerical contract rather than a general IEEE-754 API.
+`src/resample.bend` implements the filters, phase reuse, clamp folding, horizontal
+coefficient packing, seven-channel RGBA pipeline and reference operation order.
+
+## Exact verification
+
+```sh
+python3 tools/resize_conformance.py
+python3 tools/resize_conformance.py --gpu
+```
+
+The gate compares 1,059 normalization vectors / 6,470 coefficient bit patterns,
+2,601 packed horizontal kernels (first index and every coefficient bit), and 529 images /
+46,474 output pixels per lane. The image corpus includes the original 512 seeded
+cases and 17 boundary cases: transparent/opaque colors, identity, anisotropic
+scales, large filter supports and both 4096-to-1 and 1-to-4096 axes.
+The four retained counterexamples also run in the normal conformance corpus,
+alongside a filtered-resize/crop sequence and invalid-size ownership checks.
+
+Results are in `.build/resize/results.json` and `images-results.json`, including
+scope, source hashes, toolchain, host and exact image-input hashes. `--images-only`,
+`--lane` and `--case-prefix` permit focused diagnosis; a selected subset is
+reported with its own case/lane counts. The whole-image reference is unmodified
+raylib; coefficient observation logging affects only a task-local diagnostic
+copy of the pinned stb header. No tolerance is applied to pixels or coefficients.
+The final local CPU/JavaScript/forced-Metal runs pass all three stages; the
+durable summary is [evidence/default-resize.json](evidence/default-resize.json).
+
+The implementation retains a full seven-channel intermediate buffer. Memory
+and speed parity, additional formats/mipmaps, dimensions beyond the Surface
+profile, other GPU models and complete platform integration remain unverified.
 
 ## Reproducible precision experiment
 
@@ -68,12 +108,17 @@ The local reference record is retained in
 The diagnostic command succeeds when its stock control is valid; a diagnostic
 variant's mismatch is reported, not mistaken for passing Bend conformance.
 
-## Next implementation dependency
+## Precision findings and next step
 
-Implement the reference's precision-sensitive coefficient operations in Bend
-(with suitable wider-number support where necessary), then complete the filter
-and alpha pipeline against the retained counterexamples and broader fixtures.
-Only after that passes can cropped/scaled `ImageDraw` use the default resizer.
+The original F32-only normalization experiment remains a negative control.
+During implementation, Metal's approximate `pow(2, exponent)` changed coefficient
+bits; exact power-of-two scaling resolved that discrepancy. Large support widths
+also exposed non-tail list construction/counting limits on JS and the device VM;
+bounded-stack traversals preserve the same coefficient and accumulation order.
+
+The cropped/scaled integration now passes the shared reference fixtures.
+Further work includes formats/mipmaps, additional numerical domains and
+performance/resource parity. The current queue is in [PROGRESS.md](PROGRESS.md).
 
 Source: [raylib 6.0 resizer core](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/external/stb_image_resize2.h).
 The probe compiles that external header as reference tooling; no stb implementation

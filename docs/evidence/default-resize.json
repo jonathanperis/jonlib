@@ -1,0 +1,18 @@
+{
+  "date": "2026-09-24",
+  "host": "Apple M1 / macOS 27.0 / Apple clang 21.0.0",
+  "reference": {"version":"6.0","revision":"dbc56a87da87d973a9c5baa4e7438a9d20121d28"},
+  "bend": {"version":"2.0.27+jonlib-metal.1","revision":"b7ebee9217c8813067e200b0c0c9153a3be31c5e","overlay_sha256":"d4fbe3723f78bbcd456d4937b8f52f48454e7748d86799b22a95165a04cd9879"},
+  "source_sha256": {
+    "jonlib.bend": "d413f58cf9ae0458f01f213514967463483750d64a381c1cd33195478d516960",
+    "src/resample.bend": "0facfc8ac5e973de6594feb713517b4e20bce5bbc0c187eb2e165671c600bdf2",
+    "src/resize_numeric.bend": "e638e55a005a86ebb9c9e839ae3cfc378ac2289c1005c13a54842988f54ac5be"
+  },
+  "normalization": {"vectors":1059,"coefficient_bits":6470,"inputs_sha256":"9f2e92a09e29bec9355fdfe7e6a5f9f5842a37e630ced5e2d764962ac929006d","lanes":["cpu","javascript","metal-forced"],"passed":true},
+  "packed_horizontal_kernels": {"kernels":2601,"axis_sizes":"1..17 to 1..17","comparison":"exact first index and all coefficient bits","lanes":["cpu","javascript","metal-forced"],"passed":true},
+  "filtered_images": {"scenarios":529,"pixels_per_lane":46474,"lanes":["cpu","javascript","metal-forced"],"retained_counterexamples":[31,136,200,386],"fixtures_sha256":"5c3043c7867ebff5e33139abcd23d356c0a40fbed88384085b900f97e0ee8d49","passed":true},
+  "full_library": {"scenarios":58,"pixels_per_lane":16166,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"],"fixtures_sha256":"7dd87e40da9e904536dfc6d76d674dad5466b453a3ce66ad4202c1de2883c3f9","passed":true},
+  "failure_ownership": {"invalid_sizes":[[0,1],[1,4097]],"lanes":["cpu","javascript","gpu-forced"],"passed":true},
+  "scope": "Owned RGBA8, one mip level, dimensions 1..4096; partial ImageResize API mapping",
+  "limits": ["Other formats/mipmap chains", "Scaled ImageDraw integration", "Other devices/platforms", "Performance and memory parity", "Hosted CI for this increment not run"]
+}

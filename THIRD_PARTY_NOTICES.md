@@ -15,8 +15,43 @@ It is not affiliated with or endorsed by raylib or Bend's maintainers.
   resize algorithms in `jonlib.bend` are
   translated/adapted from `src/rtextures.c`, with Bend ownership and bounded
   recursion. These are modified implementations, not original raylib source.
+- Subsequent adaptations include scaled/fractional image composition, vector
+  drawing wrappers, outlines, thick lines, fan/strip and vertex-colored triangles,
+  color/alpha transforms, checkerboards and quarter-turn rotations from
+  `rtextures.c`, plus the documented scalar/Vector2 operations from `raymath.h`.
+  Their scoped contracts and reference evidence are recorded in `docs/`.
 - Reference testing: `tools/conformance.py` builds a separate raylib executable
   from a locally supplied checkout. Raylib is not linked into the Jonlib runner.
+- API documentation: `api/reference.json`, generated `api/ledger.json` and
+  `docs/api/` contain extracted/adapted declarations, fields and constant values
+  from the pinned `raylib.h`, `raymath.h`, `rlgl.h`, `rcamera.h`, `rgestures.h`
+  and `config.h`. These are Jonlib planning documents, not original upstream
+  headers. Upstream authorship and the zlib notice above apply to those excerpts.
+
+## stb_image_resize2
+
+- Version 2.18, as vendored by the pinned raylib commit above; header authors
+  Jeff Roberts (v2) and Jorge L Rodriguez; MIT notice copyright Sean Barrett.
+- Source: <https://github.com/nothings/stb> and raylib's
+  `src/external/stb_image_resize2.h` at the pinned revision.
+- Jonlib selects the MIT alternative. The complete upstream dual-license notice
+  is retained in [LICENSES/stb_image_resize2.txt](LICENSES/stb_image_resize2.txt).
+- `src/resample.bend` adapts the default filters, rational phases, coefficient
+  normalization/folding/packing, alpha pipeline, operation order and pass-cost
+  table to owned Bend values. These are altered implementations. Original
+  Jonlib code, including `src/resize_numeric.bend`, remains under zlib.
+- `tools/resize_conformance.py` inserts observation-only logging into a local
+  diagnostic copy of the pinned header. Kernel and whole-image reference probes
+  additionally execute the unmodified upstream header and raylib library.
+
+## QOI
+
+`src/qoi.bend` is an altered Bend adaptation of the codec in raylib's pinned
+`src/external/qoi.h`, by Dominic Szablewski. It uses owned arrays and immutable
+input bytes, bounds allocations to the Surface profile, normalizes RGB output
+to RGBA8, implements reference QOI encoding and reports malformed streams explicitly. QOI's MIT notice and license
+are retained in [LICENSES/qoi.txt](LICENSES/qoi.txt). The standalone C implementation
+is used only by reference tooling; it is not linked into Jonlib's implementation.
 
 ## Bend
 

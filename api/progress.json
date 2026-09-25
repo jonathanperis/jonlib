@@ -1,0 +1,539 @@
+{
+  "schema": 1,
+  "entries": {
+    "raylib:function:GetImageAlphaBorder": {"status":"partial","jonlib":"Surface.alpha_border","scope":"Owned RGBA8; threshold 0..1; strict alpha-byte comparison and exact zero rectangle for empty selections; original owner returned.","gaps":["Other formats/mipmaps and complete platform/performance gates"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","ownership":"partial","targets":"partial"}},
+    "raylib:function:ImageAlphaCrop": {"status":"partial","jonlib":"Surface.alpha_crop","scope":"Owned RGBA8; reference alpha bounds/cropping for threshold 0..1; empty selections preserve the original image unchanged.","gaps":["Other formats/mipmaps and complete platform/performance gates"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","ownership":"partial","targets":"partial"}},
+    "raylib:function:ImageResizeCanvas": {"status":"partial","jonlib":"Surface.resize_canvas","scope":"RGBA8; dimensions 1..4096; bounded integral offsets with positive overlap for changed sizes; exact raw copying/fill and same-size no-op; invalid requests retain the original owner.","gaps":["No-overlap/unsafe reference copy domains","Other formats/mipmaps and complete platform/performance gates"],"evidence":["tests/fixtures/images.json","tests/transforms.bend","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","ownership":"partial","targets":"partial"}},
+    "raylib:function:GenImageGradientSquare": {"status":"partial","jonlib":"Surface.create_gradient_square","scope":"RGBA8; dimensions 1..4096; density 0..1 with exact reference interpolation and density-one behavior.","gaps":["Density values outside 0..1","Full size/platform/performance coverage"],"evidence":["tests/fixtures/images.json","tests/transforms.bend","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2Length": {"status":"partial","jonlib":"Vector2.length","scope":"Uncontracted finite F32 length; exact result-bit comparisons on exercised CPU/JS/Metal targets.","gaps":["Exceptional/subnormal and contracted variants","Full platform/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2Normalize": {"status":"partial","jonlib":"Vector2.normalize","scope":"Uncontracted finite F32 normalization; zero-length vectors return positive zero components.","gaps":["Exceptional/subnormal and contracted variants","Full platform/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageAlphaClear": {"status":"partial","jonlib":"Surface.alpha_clear","scope":"RGBA8; finite threshold 0..1 converted to an inclusive byte cutoff; replaces all four channels.","gaps":["Other formats/mipmaps and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageAlphaPremultiply": {"status":"partial","jonlib":"Surface.alpha_premultiply","scope":"RGBA8; reference F32 alpha division and RGB multiplication with byte truncation; alpha retained.","gaps":["Other formats/mipmaps and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageAlphaMask": {"status":"partial","jonlib":"Surface.alpha_mask","scope":"Same-size RGBA8 surfaces; reference normalized grayscale mask values replace destination alpha; original mask retained; mismatched dimensions return both owners with InvalidSize.","gaps":["Grayscale/other image formats","Reference warning/no-op adaptation on mismatched sizes","Full target/performance gates"],"evidence":["tests/fixtures/images.json","tests/transforms.bend","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","ownership":"partial","targets":"partial"}},
+    "raylib:function:GenImageChecked": {"status":"partial","jonlib":"Surface.create_checked","scope":"RGBA8; Surface dimensions 1..4096; positive signed-int checker sizes; invalid dimensions/checker sizes return None.","gaps":["Full size/domain and target/performance gates"],"evidence":["tests/fixtures/images.json","tests/transforms.bend","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageDrawTriangleEx": {"status":"partial","jonlib":"Surface.draw_triangle_ex","scope":"RGBA8; integral bounded vertices; defined signed arithmetic and nonzero reference weight sum; reference byte-quantized barycentric color interpolation.","gaps":["Fractional vertices and wider domains","Degenerate/undefined reference gradients","Other formats and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Clamp": {"status":"partial","jonlib":"Math.clamp","scope":"Finite F32 scalar profile with explicit operation order, reversed bounds and signed zero.","gaps":["Exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Lerp": {"status":"partial","jonlib":"Math.lerp","scope":"Uncontracted finite F32 interpolation, including extrapolation.","gaps":["Contracted builds, exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Normalize": {"status":"partial","jonlib":"Math.normalize","scope":"Uncontracted finite F32 values and nonzero ranges.","gaps":["Degenerate ranges, exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Remap": {"status":"partial","jonlib":"Math.remap","scope":"Uncontracted finite F32 remapping with nonzero input ranges.","gaps":["Contracted builds, degenerate ranges, exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Wrap": {"status":"partial","jonlib":"Math.wrap","scope":"Finite F32 wrapping with reference floor semantics and nonzero ranges.","gaps":["Contracted builds, degenerate ranges, exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:FloatEquals": {"status":"partial","jonlib":"Math.float_equals","scope":"Reference relative epsilon 0.000001 for finite F32 values.","gaps":["Exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2Zero": {"status":"partial","jonlib":"Vector2.zero","scope":"Two positive F32 zeros.","gaps":["Full target/integration/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2One": {"status":"partial","jonlib":"Vector2.one","scope":"Two F32 ones.","gaps":["Full target/integration/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2Add": {"status":"partial","jonlib":"Vector2.add","scope":"Finite uncontracted F32 component addition.","gaps":["Exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2AddValue": {"status":"partial","jonlib":"Vector2.add_value","scope":"Finite uncontracted F32 scalar addition to both components.","gaps":["Exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2Subtract": {"status":"partial","jonlib":"Vector2.subtract","scope":"Finite uncontracted F32 component subtraction.","gaps":["Exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2SubtractValue": {"status":"partial","jonlib":"Vector2.subtract_value","scope":"Finite uncontracted F32 scalar subtraction from both components.","gaps":["Exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2Scale": {"status":"partial","jonlib":"Vector2.scale","scope":"Finite F32 scalar multiplication of both components.","gaps":["Exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2Multiply": {"status":"partial","jonlib":"Vector2.multiply","scope":"Finite F32 component multiplication.","gaps":["Exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2Negate": {"status":"partial","jonlib":"Vector2.negate","scope":"Finite F32 component negation, preserving signed-zero semantics.","gaps":["Exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2Divide": {"status":"partial","jonlib":"Vector2.divide","scope":"Finite F32 component division with nonzero divisors.","gaps":["Zero divisors, exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2Invert": {"status":"partial","jonlib":"Vector2.invert","scope":"Finite F32 component reciprocals with nonzero divisors.","gaps":["Zero divisors, exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2LengthSqr": {"status":"partial","jonlib":"Vector2.length_sqr","scope":"Uncontracted finite F32 squared length.","gaps":["Contracted builds, exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2DistanceSqr": {"status":"partial","jonlib":"Vector2.distance_sqr","scope":"Uncontracted finite F32 squared distance.","gaps":["Contracted builds, exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2DotProduct": {"status":"partial","jonlib":"Vector2.dot_product","scope":"Uncontracted finite F32 dot product.","gaps":["Contracted builds, exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2CrossProduct": {"status":"partial","jonlib":"Vector2.cross_product","scope":"Uncontracted finite F32 two-dimensional cross product.","gaps":["Contracted builds, exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2Lerp": {"status":"partial","jonlib":"Vector2.lerp","scope":"Uncontracted finite F32 component interpolation, including extrapolation.","gaps":["Contracted builds, exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2Reflect": {"status":"partial","jonlib":"Vector2.reflect","scope":"Uncontracted finite F32 reflection with the supplied normal.","gaps":["Contracted builds, exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raymath:function:Vector2Equals": {"status":"partial","jonlib":"Vector2.equals","scope":"Reference relative epsilon comparison on both finite F32 components.","gaps":["Exceptional/subnormal values and full target/performance gates"],"evidence":["tests/fixtures/images.json","docs/MATH.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ColorIsEqual": {"status":"partial","jonlib":"Color.is_equal","scope":"Exact packed RGBA equality, including alpha.","gaps":["Complete platform/integration/performance gates"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ColorAlpha": {"status":"partial","jonlib":"Color.with_alpha","scope":"Packed RGBA; finite F32 alpha clamped to 0..1 and truncated after multiplying by 255.","gaps":["Complete platform/integration/performance gates"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:Fade": {"status":"partial","jonlib":"Color.with_alpha","scope":"Same finite-factor alpha replacement as ColorAlpha; reference Fade exercised separately.","gaps":["Complete platform/integration/performance gates"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ColorTint": {"status":"partial","jonlib":"Color.multiply","scope":"Integer RGBA channel multiplication divided by 255; distinct from alpha-blending's internal tint.","gaps":["Complete platform/integration/performance gates"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ColorBrightness": {"status":"partial","jonlib":"Color.brightness","scope":"Finite factor clamped to -1..1; reference darkening/lightening formulas and byte truncation; alpha retained.","gaps":["Complete platform/integration/performance gates"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ColorContrast": {"status":"partial","jonlib":"Color.contrast","scope":"Finite factor clamped to -1..1; reference F32 arithmetic and byte truncation; alpha retained.","gaps":["Complete platform/integration/performance gates"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ColorLerp": {"status":"partial","jonlib":"Color.lerp","scope":"Finite factor clamped to 0..1; independent straight RGBA interpolation and byte truncation.","gaps":["Complete platform/integration/performance gates"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:LoadImageFromMemory": {"status":"partial","jonlib":"Surface.decode_qoi","scope":"Valid QOI RGB/RGBA streams decoded to owned RGBA8; dimensions 1..4096; typed rejection of malformed streams.","gaps":["Other codecs","Original pixel-format metadata","Reference permissive malformed-stream recovery","Complete targets/integration/performance"],"evidence":["tests/fixtures/images.json","tests/decoding.bend","docs/CODECS.md"],"gates":{"availability":"partial","behavior":"partial","ownership":"partial","targets":"partial"}},
+    "raylib:function:LoadImage": {"status":"partial","jonlib":"Surface.load_qoi","scope":"Explicit QOI file loading through Base byte IO, with RGBA8 normalization, closed file ownership and file/decode errors.","gaps":["Other codecs and format dispatch","Original pixel formats","Reference callbacks","Complete targets/integration/performance"],"evidence":["examples/qoi_roundtrip.bend","tests/io_decoding.bend","docs/CODECS.md"],"gates":{"availability":"partial","behavior":"partial","ownership":"partial","integration":"partial","targets":"partial"}},
+    "raylib:function:ExportImage": {"status":"partial","jonlib":"Surface.write_qoi / Surface.to_qoi","scope":"QOI export from owned RGBA8; exact reference bytes; fixed channels=4/colorspace=0; Base byte-file writing.","gaps":["Other export formats and source pixel formats","Format dispatch","Complete targets/integration/performance"],"evidence":["tests/fixtures/images.json","examples/qoi_roundtrip.bend","docs/CODECS.md"],"gates":{"availability":"partial","behavior":"partial","ownership":"partial","integration":"partial","targets":"partial"}},
+    "raylib:function:ExportImageToMemory": {"status":"not-started","scope":"The pinned implementation supports PNG memory export only; QOI is supported by ExportImage, not this API.","gaps":["PNG memory encoding"],"evidence":["docs/CODECS.md"]},
+    "raylib:function:ImageDrawPixelV": {"status":"partial","jonlib":"Surface.draw_pixel_v","scope":"RGBA8; bounded finite Vector2 coordinates truncated before pixel clipping.","gaps":["Other formats and complete target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageDrawCircleV": {"status":"partial","jonlib":"Surface.draw_circle_v","scope":"RGBA8; finite bounded center truncated to integers; radius 0..32767.","gaps":["Full format/numeric domain and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageDrawCircleLines": {"status":"partial","jonlib":"Surface.draw_circle_lines","scope":"RGBA8; integral bounded center; radius 0..32767; reference midpoint outline.","gaps":["Full format/numeric domain and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageDrawCircleLinesV": {"status":"partial","jonlib":"Surface.draw_circle_lines_v","scope":"RGBA8; bounded finite center truncated before midpoint outline; radius 0..32767.","gaps":["Full format/numeric domain and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageDrawRectangleV": {"status":"partial","jonlib":"Surface.draw_rectangle_v","scope":"RGBA8; bounded finite position and size truncated before reference rectangle drawing.","gaps":["Full format/numeric domain and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageDrawRectangleRec": {"status":"partial","jonlib":"Surface.draw_rectangle_rec","scope":"RGBA8; bounded finite rectangle; clipping precedes coordinate/extent truncation.","gaps":["Full format/numeric domain and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageDrawRectangleLines": {"status":"partial","jonlib":"Surface.draw_rectangle_lines","scope":"RGBA8; bounded finite rectangle; thickness 0..32767; reference four-edge truncation and degenerate behavior.","gaps":["Negative thickness, full formats/domains and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageDrawLineEx": {"status":"partial","jonlib":"Surface.draw_line_ex","scope":"RGBA8; bounded finite endpoints; add-half/truncate rounding; safe signed 16.16 deltas; thickness 0..32767.","gaps":["Negative thickness, full formats/domains and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageDrawTriangleFan": {"status":"partial","jonlib":"Surface.draw_triangle_fan","scope":"RGBA8; List<Vector2> with bounded integral vertices; reference fan order; fewer than three points is a no-op.","gaps":["Fractional vertices, full formats/domains and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageDrawTriangleStrip": {"status":"partial","jonlib":"Surface.draw_triangle_strip","scope":"RGBA8; bounded integral vertices; alternating reference winding; fewer than three points is a no-op.","gaps":["Fractional vertices, full formats/domains and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageRotateCW": {"status":"partial","jonlib":"Surface.rotate_cw","scope":"Owned RGBA8; 90-degree clockwise rotation; swapped dimensions and exact RGBA bytes.","gaps":["Other formats/mipmaps and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","ownership":"partial","targets":"partial"}},
+    "raylib:function:ImageRotateCCW": {"status":"partial","jonlib":"Surface.rotate_ccw","scope":"Owned RGBA8; 90-degree counterclockwise rotation; swapped dimensions and exact RGBA bytes.","gaps":["Other formats/mipmaps and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","ownership":"partial","targets":"partial"}},
+    "raylib:function:ImageColorTint": {"status":"partial","jonlib":"Surface.color_tint","scope":"RGBA8; integer channel multiplication divided by 255, including alpha.","gaps":["Other formats/mipmaps and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageColorInvert": {"status":"partial","jonlib":"Surface.color_invert","scope":"RGBA8; invert RGB bytes and preserve alpha.","gaps":["Other formats/mipmaps and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageColorContrast": {"status":"partial","jonlib":"Surface.color_contrast","scope":"RGBA8; finite contrast clamped to -100..100; reference F32 operation order and byte truncation; alpha preserved.","gaps":["Other formats/mipmaps and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageColorBrightness": {"status":"partial","jonlib":"Surface.color_brightness","scope":"RGBA8; finite integral adjustment clamped to -255..255; negative channel underflow becomes 1; alpha preserved.","gaps":["Full signed input domain, other formats/mipmaps and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:function:ImageColorReplace": {"status":"partial","jonlib":"Surface.color_replace","scope":"RGBA8; exact four-channel color match and replacement.","gaps":["Other formats/mipmaps and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
+    "raylib:type:Vector2": {"status":"partial","jonlib":"Vector2","scope":"Two F32 components; bounded finite fixture domains.","gaps":["Complete numeric domain and integration/target/performance evidence"],"evidence":["docs/API.md","tests/contracts.bend"],"gates":{"availability":"partial","behavior":"partial"}},
+    "raylib:type:Rectangle": {"status":"partial","jonlib":"Rectangle","scope":"Four F32 fields; current transforms require integral rectangles.","gaps":["Fractional rectangle semantics and complete integration/target/performance evidence"],"evidence":["docs/API.md","tests/transforms.bend"],"gates":{"availability":"partial","behavior":"partial"}},
+    "raylib:type:Color": {"status":"partial","jonlib":"U32 / Color.rgba","scope":"Packed 0xRRGGBBAA storage and channel access; Bend representation adaptation.","gaps":["Full consuming API, integration/target/performance evidence"],"evidence":["docs/API.md","tests/contracts.bend"],"gates":{"availability":"partial","behavior":"partial"}},
+    "raylib:type:Image": {"status":"partial","jonlib":"Surface","scope":"Owned RGBA8 pixels, dimensions 1..4096; one mip level.","gaps":["All image formats, mipmaps, full dimension domain and target/performance gates"],"evidence":["docs/API.md","tests/transforms.bend"],"gates":{"availability":"partial","behavior":"partial","ownership":"partial"}},
+    "raymath:type:Vector2": {"status":"partial","jonlib":"Vector2","scope":"Two F32 components shared with the raylib Vector2 mapping.","gaps":["Raymath operations, complete domains and target/performance evidence"],"evidence":["docs/API.md","tests/contracts.bend"],"gates":{"availability":"partial"}},
+    "rcamera:type:Vector2": {"status":"partial","jonlib":"Vector2","scope":"Two F32 components shared with the raylib Vector2 mapping.","gaps":["Camera integration and target/performance evidence"],"evidence":["docs/API.md","tests/contracts.bend"],"gates":{"availability":"partial"}},
+    "rgestures:type:Vector2": {"status":"partial","jonlib":"Vector2","scope":"Two F32 components shared with the raylib Vector2 mapping.","gaps":["Gesture integration and target/performance evidence"],"evidence":["docs/API.md","tests/contracts.bend"],"gates":{"availability":"partial"}},
+    "raylib:function:GenImageColor": {
+      "status": "partial",
+      "jonlib": "Surface.create",
+      "legacy_status": "profile-covered",
+      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ImageClearBackground": {
+      "status": "partial",
+      "jonlib": "Surface.clear",
+      "legacy_status": "profile-covered",
+      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ImageDrawPixel": {
+      "status": "partial",
+      "jonlib": "Surface.draw_pixel",
+      "legacy_status": "profile-covered",
+      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ImageDrawRectangle": {
+      "status": "partial",
+      "jonlib": "Surface.draw_rectangle",
+      "legacy_status": "profile-covered",
+      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ImageDrawCircle": {
+      "status": "partial",
+      "jonlib": "Surface.draw_circle",
+      "legacy_status": "profile-covered",
+      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ImageFlipHorizontal": {
+      "status": "partial",
+      "jonlib": "Surface.flip_horizontal",
+      "legacy_status": "profile-covered",
+      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ImageFlipVertical": {
+      "status": "partial",
+      "jonlib": "Surface.flip_vertical",
+      "legacy_status": "profile-covered",
+      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:LoadImageColors": {
+      "status": "partial",
+      "jonlib": "Surface.colors",
+      "legacy_status": "profile-covered",
+      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:GetImageColor": {
+      "status": "partial",
+      "jonlib": "Surface.get",
+      "legacy_status": "contract-checked",
+      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ImageCopy": {
+      "status": "partial",
+      "jonlib": "Surface.copy",
+      "legacy_status": "contract-checked",
+      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:GetColor": {
+      "status": "partial",
+      "jonlib": "Color.red/green/blue/alpha",
+      "legacy_status": "contract-checked",
+      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ColorToInt": {
+      "status": "partial",
+      "jonlib": "Color.rgba",
+      "legacy_status": "contract-checked",
+      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ColorAlphaBlend": {
+      "status": "partial",
+      "jonlib": "Color.alpha_blend",
+      "legacy_status": "profile-covered",
+      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ImageDrawLine": {
+      "status": "partial",
+      "jonlib": "Surface.draw_line",
+      "legacy_status": "profile-covered",
+      "scope": "RGBA8; integral coordinates; pinned 16.16 stepping and excluded endpoint",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ImageDrawLineV": {
+      "status": "partial",
+      "jonlib": "Surface.draw_line_v",
+      "legacy_status": "profile-covered",
+      "scope": "RGBA8; bounded finite Vector2 inputs and raylib add-half/truncate rounding",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ImageDrawTriangle": {
+      "status": "partial",
+      "jonlib": "Surface.draw_triangle",
+      "legacy_status": "profile-covered",
+      "scope": "RGBA8; integral vertices; defined reference signed-edge arithmetic",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ImageDrawTriangleLines": {
+      "status": "partial",
+      "jonlib": "Surface.draw_triangle_lines",
+      "legacy_status": "profile-covered",
+      "scope": "RGBA8; bounded finite vertices truncated before line rasterization",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ImageDraw": {
+      "status": "partial",
+      "jonlib": "Surface.draw_image / Surface.draw_image_region / Surface.draw_image_rect",
+      "legacy_status": "profile-covered",
+      "scope": "RGBA8; bounded finite source/destination rectangles, including fractional fields; source clipping precedes truncated-size scaling decisions; destination clipping precedes pixel truncation; both owners preserved; one mip level",
+      "gaps": [
+        "empty or undefined source rectangles",
+        "other pixel formats",
+        "mipmaps",
+        "full platform/integration/performance validation"
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ImageFromImage": {
+      "status": "partial",
+      "jonlib": "Surface.extract",
+      "legacy_status": "profile-covered",
+      "scope": "RGBA8; positive integral in-bounds rectangle; original owner retained",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ImageCrop": {
+      "status": "partial",
+      "jonlib": "Surface.crop",
+      "legacy_status": "profile-covered",
+      "scope": "RGBA8; integral crop; positive clipped result or reference out-of-bounds no-op; errors preserve original",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ImageResizeNN": {
+      "status": "partial",
+      "jonlib": "Surface.resize_nn",
+      "legacy_status": "profile-covered",
+      "scope": "RGBA8; 1..4096 dimensions; exact fixed-point mapping where every flat source index is in bounds",
+      "gaps": [
+        "Full input/format domain and all applicable platform/performance gates remain open."
+      ],
+      "gates": {
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "targets": "partial",
+        "performance": "unverified"
+      },
+      "evidence": [
+        "docs/API.md",
+        "docs/VERIFICATION.md",
+        "docs/evidence/image-transforms.json"
+      ]
+    },
+    "raylib:function:ImageResize": {
+      "status": "partial",
+      "jonlib": "Surface.resize",
+      "legacy_status": "profile-covered",
+      "scope": "Owned RGBA8; one mip level; dimensions 1..4096; default Catmull-Rom/Mitchell filters, binary64 normalization, clamp folding and reference alpha/pass/accumulation order; invalid-size errors preserve the original owner.",
+      "gaps": [
+        "Other image formats and mipmap chains",
+        "Dimensions beyond the initial Surface domain",
+        "Complete platform, application-integration and performance validation"
+      ],
+      "gates": {"availability":"partial","behavior":"partial","ownership":"partial","targets":"partial","integration":"unverified","performance":"unverified"},
+      "symbols": ["Surface.resize"],
+      "evidence": [
+        "docs/RESAMPLING.md",
+        "docs/evidence/default-resize.json",
+        "tests/fixtures/images.json",
+        "tests/transforms.bend",
+        "tools/resize_conformance.py"
+      ]
+    }
+  }
+}
