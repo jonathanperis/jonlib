@@ -47,6 +47,29 @@
     "api_id": "raylib:function:GenImageColor",
     "milestone": "images"
   },
+  "GenImageGradientLinear": {
+    "jonlib": "Surface.create_gradient_linear",
+    "status": "profile-covered",
+    "scope": "RGBA8; dimensions 1..4096; integral directions -360..360 and nonzero reference normalization extent; software extended-precision trigonometry and balanced owned-array generation.",
+    "gaps": [
+      "Wider-angle platform libm rounding differences",
+      "Zero normalization extents",
+      "Full numerical/target/performance matrix"
+    ],
+    "api_id": "raylib:function:GenImageGradientLinear",
+    "milestone": "images"
+  },
+  "GenImageGradientRadial": {
+    "jonlib": "Surface.create_gradient_radial",
+    "status": "profile-covered",
+    "scope": "RGBA8; dimensions 1..4096; density 0..1 including the reference density-one behavior; balanced owned-array generation.",
+    "gaps": [
+      "Density values outside 0..1",
+      "Full numerical/target/performance matrix"
+    ],
+    "api_id": "raylib:function:GenImageGradientRadial",
+    "milestone": "images"
+  },
   "GenImageGradientSquare": {
     "jonlib": "Surface.create_gradient_square",
     "status": "profile-covered",

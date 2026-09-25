@@ -124,6 +124,10 @@ def checks() -> Bool:
     && no_surface(J.Surface.create_checked(0, 1, 1, 1, 0, 4294967295))
     && no_surface(J.Surface.create_gradient_square(1, 1, 1.5, 0, 4294967295))
     && no_surface(J.Surface.create_gradient_square(0, 1, 0.5, 0, 4294967295))
+    && no_surface(J.Surface.create_gradient_radial(1, 1, 1.5, 0, 4294967295))
+    && no_surface(J.Surface.create_gradient_linear(1, 1, 90.0, 0, 4294967295))
+    && no_surface(J.Surface.create_gradient_linear(3, 2, 0.5, 0, 4294967295))
+    && no_surface(J.Surface.create_gradient_linear(3, 2, 361.0, 0, 4294967295))
 
 def main() -> IO(Unit):
   verdict(checks())

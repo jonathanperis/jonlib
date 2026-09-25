@@ -31,6 +31,7 @@ differential test reference.
 - Vector drawing variants, outlines, thick lines, fans/strips and vertex-colored triangles.
 - RGBA8 color/alpha transforms, checkerboards and quarter-turn rotations.
 - Alpha bounds/cropping, raw canvas resizing and square gradients.
+- Radial and one-cycle linear gradient profiles with balanced owned-array generation.
 - QOI decoding/encoding and real byte-file loading/export, with typed failures.
 - Initial scalar and Vector2 math under an explicit uncontracted-F32 profile.
 - Horizontal and vertical flips.
@@ -120,6 +121,16 @@ The compiler overlay also has a focused upstream regression runner:
 python3 tools/verify_bend.py --bend-source "$BEND_SOURCE"
 python3 tools/verify_bend.py --bend-source "$BEND_SOURCE" --gpu
 ```
+
+Gradient arithmetic and measured parallel generation have separate probes:
+
+```sh
+python3 tools/trig_probe.py --bend-source "$BEND_SOURCE" --gpu
+python3 tools/gradient_bench.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+```
+
+See [GRADIENTS.md](docs/GRADIENTS.md) for the verified direction range, retained
+wider-angle counterexamples and timing scope.
 
 Evidence is written to `.build/conformance.json`, with source/input hashes,
 toolchain, host and per-lane results. Generated programs and complete reference/

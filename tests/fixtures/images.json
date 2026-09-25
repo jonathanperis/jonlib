@@ -1,6 +1,23 @@
 {
   "schema": 1,
   "cases": [
+    {"id":"gradient-radial-odd","width":17,"height":13,"background":[13,47,101,3],"gradient_radial":{"density":0,"outer":[241,199,151,253]},"operations":[]},
+    {"id":"gradient-radial-density-one","width":8,"height":5,"background":[13,47,101,3],"gradient_radial":{"density":1,"outer":[241,199,151,253]},"operations":[]},
+    {"id":"gradient-radial-forked","width":129,"height":65,"background":[13,47,101,3],"gradient_radial":{"density":0.2,"outer":[241,199,151,253]},"operations":[]},
+    {"id":"gradient-linear-zero","width":17,"height":9,"background":[17,60,220,0],"gradient_linear":{"direction":0,"outer":[240,180,30,255]},"operations":[]},
+    {"id":"gradient-linear-diagonal","width":31,"height":17,"background":[17,60,220,0],"gradient_linear":{"direction":45,"outer":[240,180,30,255]},"operations":[]},
+    {"id":"gradient-linear-horizontal","width":9,"height":7,"background":[17,60,220,0],"gradient_linear":{"direction":90,"outer":[240,180,30,255]},"operations":[]},
+    {"id":"gradient-linear-opposite","width":17,"height":11,"background":[17,60,220,0],"gradient_linear":{"direction":135,"outer":[240,180,30,255]},"operations":[]},
+    {"id":"gradient-linear-negative","width":31,"height":13,"background":[17,60,220,0],"gradient_linear":{"direction":-90,"outer":[240,180,30,255]},"operations":[]},
+    {"id":"vector2-distance-movement","width":13,"height":1,"background":[0,0,0,0],"operations":[
+      {"op":"vector_value","function":"distance","x":0,"y":0,"args":[1.25,-2.75,8.5,3.125]},
+      {"op":"vector_value","function":"move_towards","x":1,"y":0,"args":[0,0,3,4,2]},
+      {"op":"vector_value","function":"move_towards","x":3,"y":0,"args":[0,0,3,4,5]},
+      {"op":"vector_value","function":"move_towards","x":5,"y":0,"args":[0,0,3,4,-2]},
+      {"op":"vector_value","function":"move_towards","x":7,"y":0,"args":[1.25,-2.75,1.25,-2.75,-2]},
+      {"op":"vector_value","function":"move_towards","x":9,"y":0,"args":[1.25,-2.75,8.5,3.125,0.5]},
+      {"op":"vector_value","function":"move_towards","x":11,"y":0,"args":[1.25,-2.75,8.5,3.125,0]}
+    ]},
     {"id":"alpha-border-threshold-and-owner","width":5,"height":4,"background":[20,40,60,0],"alpha_border":0.5,"export_qoi":true,"operations":[
       {"op":"pixel","x":1,"y":1,"color":[90,80,70,127]}, {"op":"pixel","x":3,"y":1,"color":[120,130,140,128]},
       {"op":"pixel","x":2,"y":3,"color":[200,100,50,255]}

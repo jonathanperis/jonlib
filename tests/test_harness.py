@@ -72,6 +72,7 @@ class HarnessTests(unittest.TestCase):
                     dict(case, operations=[dict(op='alpha_crop', threshold=0)]),
                     dict(case, alpha_border=True),
                     dict(case, gradient_square=dict(density=1.5, outer=[0,0,0,0])),
+                    dict(case, width=2, height=2, gradient_linear=dict(direction=361, outer=[0,0,0,0])),
                     dict(case, operations=[dict(op='triangle_fan', points=[[0.5,1],[2,3],[4,5]], color=[0,0,0,255])]),
                     dict(case, operations=[dict(op='triangle_ex', x0=0, y0=0, x1=1, y1=1, x2=2, y2=2, color=[255,0,0,255], color2=[0,255,0,255], color3=[0,0,255,255])]),
                     dict(case, operations=[dict(op='color_brightness', amount=0.5)]),

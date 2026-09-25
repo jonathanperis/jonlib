@@ -1,7 +1,7 @@
 # Math profiles
 
 The current math implementation is Bend source in `jonlib.bend`. It begins the
-`raymath.h` work package with six scalar functions and twenty Vector2 functions.
+`raymath.h` work package with six scalar functions and twenty-two Vector2 functions.
 
 ## Scalar API
 
@@ -19,14 +19,17 @@ The current math implementation is Bend source in `jonlib.bend`. It begins the
 - Constructors: `zero()`, `one()`.
 - Component operations: `add`, `add_value`, `subtract`, `subtract_value`, `scale`,
   `multiply`, `negate`, `divide`, `invert`.
-- Metrics: `length`, `length_sqr`, `distance_sqr`, `dot_product`, `cross_product`.
-- Other operations: `normalize`, `lerp`, `reflect`, `equals`.
+- Metrics: `length`, `length_sqr`, `distance`, `distance_sqr`, `dot_product`, `cross_product`.
+- Other operations: `normalize`, `lerp`, `reflect`, `equals`, `move_towards`.
 
 `divide` takes two vectors; `invert` takes component reciprocals. `lerp` takes
 two vectors and a scalar amount. `reflect` takes a vector and the supplied normal;
 it does not normalize that normal. `equals` uses the reference epsilon on both axes.
 `normalize` returns two positive zeros when the computed length is zero; otherwise
 it multiplies both components by the reciprocal length in reference operation order.
+`move_towards(vector, target, max_distance)` snaps to an identical target or a
+target within a nonnegative step, and otherwise follows the reference direction
+formula. Negative steps move away; they do not trigger the positive-distance snap.
 
 ## Floating-point contract and evidence
 

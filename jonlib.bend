@@ -4,6 +4,8 @@
 import Base
 import ./src/resample.bend as Resample
 import ./src/qoi.bend as Qoi
+import ./src/gradients.bend as Gradients
+import ./src/trig.bend as Trig
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -97,6 +99,25 @@ def Vector2.normalize(vector: Vector2) -> Vector2:
 
 def Vector2.distance_sqr(left: Vector2, right: Vector2) -> F32:
   Vector2.length_sqr(Vector2.subtract(left, right))
+
+def Vector2.distance(left: Vector2, right: Vector2) -> F32:
+  F32.sqrt(Vector2.distance_sqr(left, right))
+
+def Vector2.move.route(snap: Bool, x: F32, y: F32, dx: F32, dy: F32, square: F32, +distance: F32, target: Vector2) -> Vector2:
+  match snap:
+    case True{}: target
+    case False{}:
+      +length = F32.sqrt(square)
+      Vector2{(x + dx / length * distance : F32), (y + dy / length * distance : F32)}
+
+def Vector2.move_towards(vector: Vector2, target: Vector2, +distance: F32) -> Vector2:
+  Vector2{+x, +y} = vector
+  Vector2{+tx, +ty} = target
+  +dx = (tx - x : F32)
+  +dy = (ty - y : F32)
+  +square = (dx * dx + dy * dy : F32)
+  Vector2.move.route(F32.is_eq(square, 0.0) || ((distance >= 0.0) && (square <= distance * distance) : F32),
+    x, y, dx, dy, square, distance, Vector2{tx, ty})
 
 def Vector2.dot_product(left: Vector2, right: Vector2) -> F32:
   Vector2{x, y} = left
@@ -356,6 +377,45 @@ def Surface.square_gradient.checked(valid: Bool, solid: Bool, +width: U32, +heig
 def Surface.create_gradient_square(+width: U32, +height: U32, +density: F32, inner: U32, outer: U32) -> Maybe<Surface>:
   Surface.square_gradient.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
     && ((density >= 0.0) && (density <= 1.0) : F32), F32.is_eq(density, 1.0), width, height, density, inner, outer)
+
+def Surface.radial.checked(valid: Bool, +width: U32, +height: U32, density: F32, inner: U32, outer: U32) -> Maybe<Surface>:
+  match valid:
+    case False{}: None{}
+    case True{}:
+      +count = (width * height : U32)
+      paint = {Gradients.Radial{(U32.to_f32(width) / 2.0 : F32), (U32.to_f32(height) / 2.0 : F32),
+        (U32.to_f32(U32.min(width, height)) / 2.0 : F32), density, inner, outer} : Gradients.Paint}
+      Some{Surface{width, height, Gradients.generate(Surface.capacity(count), width, count, paint)}}
+
+def Surface.create_gradient_radial(+width: U32, +height: U32, +density: F32, inner: U32, outer: U32) -> Maybe<Surface>:
+  Surface.radial.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
+    && ((density >= 0.0) && (density <= 1.0) : F32), width, height, density, inner, outer)
+
+def Surface.linear.ready(valid: Bool, +width: U32, +height: U32, cosine: F32, sine: F32, start: F32, extent: F32, inner: U32, outer: U32) -> Maybe<Surface>:
+  match valid:
+    case False{}: None{}
+    case True{}:
+      +count = (width * height : U32)
+      Some{Surface{width, height, Gradients.generate(Surface.capacity(count), width, count,
+        Gradients.Linear{cosine, sine, start, extent, inner, outer})}}
+
+def Surface.linear.trigonometry(+width: U32, +height: U32, inner: U32, outer: U32, values: F32 & F32) -> Maybe<Surface>:
+  (+cosine, +sine) = values
+  +start = (0.5 - cosine * U32.to_f32(width) / 2.0 - sine * U32.to_f32(height) / 2.0 : F32)
+  same_sign = U32.is_eq((F32.bits(sine) >> 31n : U32), (F32.bits(cosine) >> 31n : U32))
+  +extent = F32.abs(Bool.pick(F32, same_sign, start, (start + U32.to_f32(width) * cosine : F32)))
+  Surface.linear.ready((extent > 0.0 : F32), width, height, cosine, sine, start, extent, inner, outer)
+
+def Surface.linear.checked(valid: Bool, +width: U32, +height: U32, direction: F32, inner: U32, outer: U32) -> Maybe<Surface>:
+  match valid:
+    case False{}: None{}
+    case True{}:
+      radians = ((90.0 - direction) / 180.0 * 3.14159 : F32)
+      Surface.linear.trigonometry(width, height, inner, outer, Trig.sincos(radians))
+
+def Surface.create_gradient_linear(+width: U32, +height: U32, +direction: F32, inner: U32, outer: U32) -> Maybe<Surface>:
+  Surface.linear.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
+    && (F32.abs(direction) <= 360.0 : F32) && F32.is_eq(F32.floor(direction), direction), width, height, direction, inner, outer)
 
 def Surface.clear(surface: Surface, color: U32) -> Surface:
   Surface{+w, +h, _} = surface

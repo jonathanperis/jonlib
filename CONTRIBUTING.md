@@ -32,6 +32,19 @@ for the historical failure, rejected candidates and remaining verification limit
 
 ## Changes and evidence
 
+Follow the [official Bend workflow](https://bend-lang.com/#get) using the pinned
+toolchain: consult its `guide`, keep important invariants in `LAWS.bend`, and run
+the real proof entry point before an implementation commit:
+
+```sh
+BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" guide
+BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
+```
+
+Check the complete proof verdict. Prefer balanced, ownership-safe parallel work
+where measurements support it; retain reference arithmetic order. Proofs establish
+the stated laws, while conformance and runtime tests establish their exercised scope.
+
 Select stable API IDs from the [progress dashboard](docs/PROGRESS.md). Update
 `api/progress.json` with scope, gaps and evidence, then run
 `python3 tools/api_plan.py build`. Generated ledgers/checklists must not be
@@ -64,6 +77,8 @@ becomes a conformance test. Consult asset-specific licenses before adding files.
   529 real raylib image outputs, including the retained precision counterexamples.
   The main corpus also checks QOI export bytes, codec failures, real byte-file IO
   and exact scalar/Vector2 results under the declared uncontracted-F32 profile.
+  A separate gate checks the bounded gradient trigonometry profile against the
+  runner's actual `sinf`/`cosf` results.
 - Actions are pinned to immutable commits; dependency revisions come from
   `toolchain.json`. Workflows use read-only repository permissions.
 - Hosted conformance does not claim Metal/CUDA or live window/audio validation.

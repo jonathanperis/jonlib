@@ -1,0 +1,20 @@
+{
+  "date": "2026-09-25",
+  "host": "Apple M1 / Apple clang 21.0.0 / Bun 1.3.12",
+  "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "source_sha256": {
+    "jonlib.bend": "ad054c9ab13826ca52632d39d6f58d77ece18b12a3279ba1248ead377a3db08a",
+    "src/gradients.bend": "5b48de143c9e42a0a268f01632561be0909d9a447ef9d8b4d3fe85d279c0224d",
+    "src/trig.bend": "3ed39b783bc585751036e55ffd7acf93e575666464d8325d17bbf4f5a1f614f3"
+  },
+  "conformance": {"passed":true,"scenarios":134,"output_words_per_lane":32277,"numeric_probe_cells":78,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"],"fixtures_sha256":"7c5422c1a6152952d93faf064a9a91e6ad58d6537c5682b9944037537fb62234"},
+  "trigonometry": {"passed":true,"integral_directions":721,"range":[-360,360],"lanes":["cpu","javascript","metal"]},
+  "wider_range": {"passed":false,"directions":65535,"apple_float_libm_mismatches":52,"record":"gradient-trig-full.json"},
+  "benchmark": {
+    "dimensions":[512,512],"checksum":2103517670,"samples_per_lane":5,
+    "scope":"Warm full-process elapsed time including allocation, checksum, runtime startup and device setup; no universal speed or performance-parity claim.",
+    "median_seconds":{"serial-1":0.012265541998203844,"parallel-1":0.010739374964032322,"parallel-2":0.009143124974798411,"metal":0.1901862089871429}
+  },
+  "proof": "Pinned CLI executed PROOF.bend: All terms check.",
+  "limits": ["Linear directions outside -360..360", "Platform-specific libm rounding outside the verified profile", "Additional formats and performance/target gates"]
+}

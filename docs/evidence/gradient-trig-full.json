@@ -1,0 +1,15 @@
+{
+  "date": "2026-09-25",
+  "host": "Apple M1 / Apple clang 21.0.0",
+  "profile": "Diagnostic only: every integer linear-gradient direction -32767..32767",
+  "directions": 65535,
+  "cpu_mismatching_directions": 52,
+  "passed": false,
+  "counterexamples": [
+    {"direction":-32153,"reference":[3211506288,3200767035],"candidate":[3211506289,3200767035]},
+    {"direction":-28980,"reference":[3118311682,3212836862],"candidate":[3118311682,3212836863]},
+    {"direction":-27795,"reference":[3212263589,1048883895],"candidate":[3212263588,1048883895]}
+  ],
+  "finding": "These candidate values also match double-libm evaluation rounded to F32; the reference float-libm result differs by one output bit. This is still an exact-compatibility failure.",
+  "decision": "The initial linear-gradient API accepts the independently verified -360..360 profile. Wider-angle parity remains an explicit gap; no tolerance or expected values were changed."
+}

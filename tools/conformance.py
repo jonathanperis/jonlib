@@ -36,6 +36,7 @@ VECTOR2_APIS = {
     'distance_sqr':('Vector2DistanceSqr','vv','float'), 'dot_product':('Vector2DotProduct','vv','float'),
     'cross_product':('Vector2CrossProduct','vv','float'), 'equals':('Vector2Equals','vv','bool'),
     'length':('Vector2Length','v','float'), 'normalize':('Vector2Normalize','v','vector'),
+    'distance':('Vector2Distance','vv','float'), 'move_towards':('Vector2MoveTowards','vvs','vector'),
 }
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -169,11 +170,18 @@ def cases_from(document):
             raise ValueError(f'{name}: export_qoi must be Boolean')
         if 'alpha_border' in case and (not coordinate(case['alpha_border'], True) or not 0 <= case['alpha_border'] <= 1):
             raise ValueError(f'{name}: alpha border threshold must be in 0..1')
-        if sum(key in case for key in ('qoi','checked','gradient_square')) > 1:
+        if sum(key in case for key in ('qoi','checked','gradient_square','gradient_radial','gradient_linear')) > 1:
             raise ValueError(f'{name}: only one image source may be selected')
-        if 'gradient_square' in case:
-            gradient = case['gradient_square']
-            if not isinstance(gradient, dict) or not coordinate(gradient.get('density'), True) or not 0 <= gradient['density'] <= 1:
+        for kind in ('gradient_square','gradient_radial','gradient_linear'):
+            if kind not in case:
+                continue
+            gradient = case[kind]
+            if not isinstance(gradient, dict):
+                raise ValueError(f'{name}: expected gradient parameters')
+            if kind == 'gradient_linear':
+                if not integer(gradient.get('direction'),-360,360) or min(case['width'],case['height']) < 2:
+                    raise ValueError(f'{name}: linear fixtures require integral angles in -360..360 and dimensions at least 2')
+            elif not coordinate(gradient.get('density'), True) or not 0 <= gradient['density'] <= 1:
                 raise ValueError(f'{name}: gradient density must be in 0..1')
             rgba(gradient['outer'])
         if 'checked' in case:
@@ -383,9 +391,12 @@ def c_source(cases):
         elif 'checked' in case:
             checked = case['checked']
             lines += ['{', f'Image image = GenImageChecked({w}, {h}, {checked["tile_width"]}, {checked["tile_height"]}, GetColor({rgba(case["background"])}u), GetColor({rgba(checked["color"])}u));']
-        elif 'gradient_square' in case:
-            gradient = case['gradient_square']
-            lines += ['{', f'Image image = GenImageGradientSquare({w}, {h}, {gradient["density"]}, GetColor({rgba(case["background"])}u), GetColor({rgba(gradient["outer"])}u));']
+        elif any(key in case for key in ('gradient_square','gradient_radial','gradient_linear')):
+            kind = next(key for key in ('gradient_square','gradient_radial','gradient_linear') if key in case)
+            gradient = case[kind]
+            function = {'gradient_square':'GenImageGradientSquare','gradient_radial':'GenImageGradientRadial','gradient_linear':'GenImageGradientLinear'}[kind]
+            parameter = gradient['direction'] if kind=='gradient_linear' else gradient['density']
+            lines += ['{', f'Image image = {function}({w}, {h}, {parameter}, GetColor({rgba(case["background"])}u), GetColor({rgba(gradient["outer"])}u));']
         else:
             lines += ['{', f'Image image = GenImageColor({w}, {h}, GetColor({rgba(case["background"])}u));']
         for op in case["operations"]:
@@ -715,9 +726,11 @@ def bend_source(cases, gpu=False):
         if 'checked' in case:
             checked = case['checked']
             creation = f'J.Surface.create_checked{"!" if gpu else ""}({case["width"]}, {case["height"]}, {checked["tile_width"]}, {checked["tile_height"]}, {rgba(case["background"])}, {rgba(checked["color"])})'
-        if 'gradient_square' in case:
-            gradient = case['gradient_square']
-            creation = f'J.Surface.create_gradient_square{"!" if gpu else ""}({case["width"]}, {case["height"]}, {f32(gradient["density"])}, {rgba(case["background"])}, {rgba(gradient["outer"])})'
+        for kind in ('gradient_square','gradient_radial','gradient_linear'):
+            if kind in case:
+                gradient = case[kind]
+                parameter = gradient['direction'] if kind=='gradient_linear' else gradient['density']
+                creation = f'J.Surface.create_{kind}{"!" if gpu else ""}({case["width"]}, {case["height"]}, {f32(parameter)}, {rgba(case["background"])}, {rgba(gradient["outer"])})'
         lines += [f'    case_{i}({creation})']
     return '\n'.join(lines) + '\n'
 

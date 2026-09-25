@@ -6,24 +6,24 @@
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1793,
-    "partial": 91
+    "not-started": 1789,
+    "partial": 95
   },
   "core_functions": {
     "total": 600,
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 542,
-    "partial": 58
+    "not-started": 540,
+    "partial": 60
   },
   "function_declarations": {
     "total": 931,
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 847,
-    "partial": 84
+    "not-started": 843,
+    "partial": 88
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -46,16 +46,16 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 975,
-      "partial": 62
+      "not-started": 973,
+      "partial": 64
     },
     "raymath.h": {
       "total": 254,
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 227,
-      "partial": 27
+      "not-started": 225,
+      "partial": 29
     },
     "rlgl.h": {
       "total": 403,
@@ -128,8 +128,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 201,
-      "partial": 20
+      "not-started": 199,
+      "partial": 22
     },
     {
       "id": "memory",
@@ -201,8 +201,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 16,
-      "partial": 38
+      "not-started": 14,
+      "partial": 40
     },
     {
       "id": "resampling",
@@ -563,32 +563,6 @@
   ],
   "next_work": [
     {
-      "id": "raylib:function:GenImageGradientRadial",
-      "name": "GenImageGradientRadial",
-      "milestone": "images",
-      "status": "not-started",
-      "jonlib": "Surface.gen_image_gradient_radial",
-      "next_step": "Derive GenImageGradientRadial semantics from the linked source, add a reference fixture, then implement Surface.gen_image_gradient_radial.",
-      "milestone_dependencies": [
-        "pixels",
-        "memory"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raylib:function:GenImageGradientLinear",
-      "name": "GenImageGradientLinear",
-      "milestone": "images",
-      "status": "not-started",
-      "jonlib": "Surface.gen_image_gradient_linear",
-      "next_step": "Derive GenImageGradientLinear semantics from the linked source, add a reference fixture, then implement Surface.gen_image_gradient_linear.",
-      "milestone_dependencies": [
-        "pixels",
-        "memory"
-      ],
-      "api_dependencies": []
-    },
-    {
       "id": "raylib:function:ImageRotate",
       "name": "ImageRotate",
       "milestone": "images",
@@ -602,30 +576,6 @@
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:Vector2Distance",
-      "name": "Vector2Distance",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Vector2.distance",
-      "next_step": "Derive Vector2Distance semantics from the linked source, add a reference fixture, then implement Vector2.distance.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2MoveTowards",
-      "name": "Vector2MoveTowards",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Vector2.move_towards",
-      "next_step": "Derive Vector2MoveTowards semantics from the linked source, add a reference fixture, then implement Vector2.move_towards.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
       "id": "raylib:function:ImageToPOT",
       "name": "ImageToPOT",
       "milestone": "images",
@@ -635,6 +585,54 @@
       "milestone_dependencies": [
         "pixels",
         "memory"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2Clamp",
+      "name": "Vector2Clamp",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Vector2.clamp",
+      "next_step": "Derive Vector2Clamp semantics from the linked source, add a reference fixture, then implement Vector2.clamp.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2ClampValue",
+      "name": "Vector2ClampValue",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Vector2.clamp_value",
+      "next_step": "Derive Vector2ClampValue semantics from the linked source, add a reference fixture, then implement Vector2.clamp_value.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2Rotate",
+      "name": "Vector2Rotate",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Vector2.rotate",
+      "next_step": "Derive Vector2Rotate semantics from the linked source, add a reference fixture, then implement Vector2.rotate.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2Refract",
+      "name": "Vector2Refract",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Vector2.refract",
+      "next_step": "Derive Vector2Refract semantics from the linked source, add a reference fixture, then implement Vector2.refract.",
+      "milestone_dependencies": [
+        "numerics"
       ],
       "api_dependencies": []
     },

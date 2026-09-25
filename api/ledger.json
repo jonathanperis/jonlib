@@ -40918,23 +40918,29 @@
       "milestone": "images",
       "phase": 1,
       "sequence": 7,
-      "status": "not-started",
-      "jonlib": "Surface.gen_image_gradient_linear",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Surface.create_gradient_linear",
+      "mapping_state": "implemented",
+      "scope": "RGBA8; dimensions 1..4096; integral directions -360..360 and nonzero reference normalization extent; software extended-precision trigonometry and balanced owned-array generation.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Wider-angle platform libm rounding differences",
+        "Zero normalization extents",
+        "Full numerical/target/performance matrix"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/GRADIENTS.md",
+        "docs/evidence/gradient-trig-full.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -40949,8 +40955,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
-      "next_step": "Derive GenImageGradientLinear semantics from the linked source, add a reference fixture, then implement Surface.gen_image_gradient_linear.",
-      "priority": 1
+      "next_step": "Close documented gaps and unverified gates for GenImageGradientLinear.",
+      "priority": 207
     },
     {
       "id": "raylib:function:GenImageGradientRadial",
@@ -40975,23 +40981,27 @@
       "milestone": "images",
       "phase": 1,
       "sequence": 7,
-      "status": "not-started",
-      "jonlib": "Surface.gen_image_gradient_radial",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Surface.create_gradient_radial",
+      "mapping_state": "implemented",
+      "scope": "RGBA8; dimensions 1..4096; density 0..1 including the reference density-one behavior; balanced owned-array generation.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Density values outside 0..1",
+        "Full numerical/target/performance matrix"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
-        "performance": "unverified"
+        "targets": "partial",
+        "performance": "partial"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/GRADIENTS.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -41006,8 +41016,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
-      "next_step": "Derive GenImageGradientRadial semantics from the linked source, add a reference fixture, then implement Surface.gen_image_gradient_radial.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for GenImageGradientRadial.",
+      "priority": 207
     },
     {
       "id": "raylib:function:GenImageGradientSquare",
@@ -41762,7 +41772,7 @@
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
       "next_step": "Derive ImageToPOT semantics from the linked source, add a reference fixture, then implement Surface.image_to_pot.",
-      "priority": 5
+      "priority": 1
     },
     {
       "id": "raylib:function:ImageCrop",
@@ -42651,7 +42661,7 @@
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
       "next_step": "Derive ImageRotate semantics from the linked source, add a reference fixture, then implement Surface.image_rotate.",
-      "priority": 2
+      "priority": 0
     },
     {
       "id": "raylib:function:ImageRotateCW",
@@ -60846,23 +60856,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector2.distance",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 distance with reference subtraction, square sum and square root order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted variants",
+        "Full target/performance gates"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -60875,8 +60889,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector2Distance semantics from the linked source, add a reference fixture, then implement Vector2.distance.",
-      "priority": 3
+      "next_step": "Close documented gaps and unverified gates for Vector2Distance.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector2DistanceSqr",
@@ -61672,7 +61686,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector2Rotate semantics from the linked source, add a reference fixture, then implement Vector2.rotate.",
-      "priority": 202
+      "priority": 4
     },
     {
       "id": "raymath:function:Vector2MoveTowards",
@@ -61697,23 +61711,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector2.move_towards",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 motion, including zero distance, negative movement and exact reference target snapping.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted variants",
+        "Full target/performance gates"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -61726,8 +61744,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector2MoveTowards semantics from the linked source, add a reference fixture, then implement Vector2.move_towards.",
-      "priority": 4
+      "next_step": "Close documented gaps and unverified gates for Vector2MoveTowards.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector2Invert",
@@ -61840,7 +61858,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector2Clamp semantics from the linked source, add a reference fixture, then implement Vector2.clamp.",
-      "priority": 202
+      "priority": 2
     },
     {
       "id": "raymath:function:Vector2ClampValue",
@@ -61895,7 +61913,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector2ClampValue semantics from the linked source, add a reference fixture, then implement Vector2.clamp_value.",
-      "priority": 202
+      "priority": 3
     },
     {
       "id": "raymath:function:Vector2Equals",
@@ -62008,7 +62026,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector2Refract semantics from the linked source, add a reference fixture, then implement Vector2.refract.",
-      "priority": 202
+      "priority": 5
     },
     {
       "id": "raymath:function:Vector3Zero",

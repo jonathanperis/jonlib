@@ -13,6 +13,10 @@ requires an exact byte-array match to a real raylib file export.
 `gradient_square` is another exclusive source mode with `density` in 0..1 and
 RGBA `outer`; `background` supplies the inner color. A top-level `alpha_border`
 threshold adds an exact final rectangle observation while retaining image pixels.
+`gradient_radial` uses the same density/outer-color fields. `gradient_linear`
+uses integral `direction` in -360..360 and `outer`; its fixtures use dimensions
+at least two to avoid undefined reference normalization extents. Generator
+failures are exercised separately in the owner/input contract tests.
 
 Supported operations:
 

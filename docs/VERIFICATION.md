@@ -13,15 +13,18 @@ python3 -m unittest discover -s tests -v
 python3 tools/conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 python3 tools/resize_conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --images-only
 python3 tools/resize_conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --images-only --gpu --lane metal
+python3 tools/trig_probe.py --bend-source "$BEND_SOURCE" --gpu
+python3 tools/gradient_bench.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 ```
 
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 125 scenarios / 22,285 output words match pinned raylib exactly on each
+- 134 scenarios / 32,277 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
-- The word count includes 65 exact scalar/Vector2 result-bit probe cells.
+- The word count includes 78 exact scalar/Vector2 result-bit probe cells.
   The math reference explicitly uses uncontracted F32; no comparison tolerance
   is applied. Both components of each vector output are checked.
 - Seven QOI export scenarios compare all 299 encoded bytes per lane. Real CPU/JS
@@ -47,9 +50,15 @@ python3 tools/resize_conformance.py --bend-source "$BEND_SOURCE" --raylib-source
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 58 have
-  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 26
+- The pinned core header inventory contains 600 unique public functions; 60 have
+  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 28
   functions. Every mapping remains partial; all six completion gates are still required.
+- The bounded trigonometry gate matches all 721 integral directions in -360..360
+  on CPU, JS and Metal. A wider 65,535-direction diagnostic retains 52 Apple
+  float-libm mismatches as an explicit open domain, not a passing gate.
+- Serial and balanced gradient generation retain the reference checksum on a
+  512×512 workload. CPU process-time improvement and device setup costs are
+  reported with their actual scope in [GRADIENTS.md](GRADIENTS.md).
 - Library source passes the no-unsafe/no-custom-foreign-import gate.
 - Relative documentation links resolve, raylib's license is retained verbatim,
   and `.specs/` is ignored. No specification files were previously tracked.
@@ -79,12 +88,14 @@ The current expansion is recorded in
 [evidence/image-parity-expansion.json](evidence/image-parity-expansion.json).
 The following alpha/canvas/gradient/metric batch is recorded in
 [evidence/alpha-bounds-canvas.json](evidence/alpha-bounds-canvas.json).
+The balanced gradient/movement batch, its timing scope and retained numerical
+gap are recorded in [evidence/gradient-generation.json](evidence/gradient-generation.json).
 
 ## Acceptance status
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 125 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 134 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -262,3 +273,20 @@ Regression scan: 59 callers checked, 29 assertions checked, 0 flagged/fixed.
 The full local CPU-1/CPU-2/JS/forced-Metal corpus, ownership/codec contracts and
 file examples pass. The compiler and resampler algorithms were not changed in
 this batch; their previous focused regression evidence remains applicable.
+
+## Balanced gradient and movement review
+
+Reviewed 92 caller contexts and 25 assertion contexts across gradient partitions,
+software trigonometry, vector motion, generator validation, probes and existing
+conformance consumers. Native Metal trigonometry's byte mismatch is fixed in the
+one-cycle profile. The wider-angle float-libm mismatch is explicitly retained as
+an open domain and rejected by the public factory. The exact comparison gate and
+the full-range diagnostic remain strict.
+
+Regression scan: 92 callers checked, 25 assertions checked, 2 flagged/fixed.
+
+`PROOF.bend` was executed with the pinned CLI before committing and reported
+`All terms check.` The existing clear-dimension law is preserved; it does not
+prove the whole numerical/rendering implementation. The new generators expose
+balanced independent array partitions, and their reported timings are process
+measurements on one machine rather than a blanket performance claim.
