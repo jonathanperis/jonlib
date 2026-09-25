@@ -1,0 +1,25 @@
+{
+  "checked": "2026-09-25",
+  "commit": "1a792f9cbba58ab0f3b19d63a47e5be3d54baf4d",
+  "branch": "main",
+  "checks": {"conclusion":"success","url":"https://github.com/jonathanperis/jonlib/actions/runs/36157572756"},
+  "conformance": {"conclusion":"success","url":"https://github.com/jonathanperis/jonlib/actions/runs/36157572809"},
+  "source_sha256": {
+    "jonlib.bend":"d1328b6ec7e79e9a3f9fba45829e9f8cd412d51bf7bd819f1604c68629caa1d2",
+    "src/gradients.bend":"5b48de143c9e42a0a268f01632561be0909d9a447ef9d8b4d3fe85d279c0224d",
+    "src/trig.bend":"72d887302d5c29b862bb5ea945fd6f8007e9d688f6f54d2cce2b6c69181b7744"
+  },
+  "fixtures_sha256":"7c5422c1a6152952d93faf064a9a91e6ad58d6537c5682b9944037537fb62234",
+  "scenarios_per_host":134,
+  "output_words_per_lane":32277,
+  "hosted_lanes":["cpu-1","cpu-2","javascript"],
+  "trigonometry": {
+    "directions_per_host":721,
+    "ubuntu-24.04":{"profile":"GnuGradient","reference":"native-libm","cpu_mismatches":0,"javascript_mismatches":0},
+    "macos-15":{"profile":"AccurateGradient","reference":"native-libm","cpu_mismatches":0,"javascript_mismatches":0}
+  },
+  "resize_gate_passed_on_both_hosts":true,
+  "local_gpu":"Full conformance, accurate/native-libm probe, and GNU/independent-C-model probe passed on forced Metal.",
+  "prior_failure":"8ac09e8's Ubuntu trig gate exposed the missing GNU reference profile; the strict gate remains enabled.",
+  "passed":true
+}

@@ -11,6 +11,8 @@ macOS/double-rounded profile, or `GnuGradient{}` for the verified GNU/Arm polyno
 profile. `create_gradient_linear` remains the accurate-profile convenience API.
 The conformance harness selects the matching declared profile for Darwin or
 Linux/glibc; other host families need their own verified declaration.
+Both declared profiles now pass all 721 native-host comparisons in the
+[hosted verification record](evidence/hosted-1a792f9.json).
 
 ## Exact arithmetic and remaining gap
 

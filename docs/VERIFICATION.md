@@ -149,6 +149,14 @@ Regression scan: 46 callers checked, 20 assertions checked, 1 flagged/fixed.
 ## GitHub Actions
 
 The public repository is <https://github.com/jonathanperis/jonlib>.
+The gradient-reference follow-up `1a792f9cbba58ab0f3b19d63a47e5be3d54baf4d` passed
+[Checks](https://github.com/jonathanperis/jonlib/actions/runs/36157572756) and
+[Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36157572809).
+Downloaded artifacts establish all 134 scenarios and the 529-image resize gate
+on both hosts, plus zero mismatches for all 721 directions against each host's
+actual native libm. Ubuntu uses `GnuGradient`; macOS uses `AccurateGradient`.
+See [the exact hosted record](evidence/hosted-1a792f9.json).
+
 Commit `b73c97aee2de38a2f90f22648f9925f8574ee8b2`, published to `main`, passed:
 
 - [Checks — harness and project validation](https://github.com/jonathanperis/jonlib/actions/runs/36147174640).
@@ -293,3 +301,14 @@ Regression scan: 92 callers checked, 25 assertions checked, 2 flagged/fixed.
 prove the whole numerical/rendering implementation. The new generators expose
 balanced independent array partitions, and their reported timings are process
 measurements on one machine rather than a blanket performance claim.
+
+The subsequent Ubuntu finding required an explicit numerical reference profile.
+The licensed GNU/Arm polynomial passes the independent C model on local CPU/JS/
+Metal and actual GNU libm on hosted Ubuntu CPU/JS. The accurate profile retains
+its native macOS and forced-Metal evidence. Wider-angle and other-libm contracts
+remain open; the passing native-host gate was preserved rather than relaxed.
+
+Follow-up review included the profile selector, all changed callers and both
+native-host gates. The final scoped count is:
+
+Regression scan: 108 callers checked, 25 assertions checked, 3 flagged/fixed.
