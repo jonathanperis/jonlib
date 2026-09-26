@@ -21,10 +21,10 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 228 scenarios / 34,271 output words match pinned raylib exactly on each
+- 231 scenarios / 34,290 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
-- The word count includes 1,827 exact numeric/collision result-bit probe cells.
+- The word count includes 1,846 exact numeric/collision result-bit probe cells.
   The math reference explicitly uses uncontracted F32; no comparison tolerance
   is applied. Both components of each vector output are checked.
 - Seven QOI export scenarios compare all 299 encoded bytes per lane. Real CPU/JS
@@ -51,7 +51,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
 - The pinned core header inventory contains 600 unique public functions; 81 have
-  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 139
+  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 142
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
   on CPU, JS and Metal for its declared reference profile. Ubuntu's subsequent
@@ -101,7 +101,7 @@ reference comparison of all 4096 supported POT axis sizes.
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 228 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 231 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -752,3 +752,31 @@ The CLI entry point, numerical evaluator, workflow invocation and documented
 command were inspected, together with the retained result comparison.
 
 Regression scan: 4 callers checked, 1 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `c223135`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36233833593)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36233833564)
+completed successfully, including the explicitly diagnostic perspective record.
+
+## Vector angle numerical profiles
+
+The pinned Base atan2 primitive differed from native macOS on 14/128 CPU/JS and
+68/128 forced-Metal inputs. Independent Bend evaluation of the documented Apple
+mathematical profile and a permitted Sun float-kernel adaptation now support
+Vector2 angle/line-angle and Vector3 angle with explicit reference selection.
+The Apple profile retains π rounded toward zero near the negative X axis.
+[Evidence](evidence/vector-angle-profiles.json) records the 231-scenario corpus,
+1,086 exact angle probes per profile/lane, and 512 native-bit binary64 arithmetic
+operations per lane. GNU local evidence uses the independent Sun control; hosted
+Ubuntu checks the actual native GNU function.
+
+Probe execution uses bounded runtime batches and one compilation per lane. This
+addresses the initial device-stack failure of an oversized result batch and the
+cost of compiling each small batch independently. A subnormal-angle native control
+fails closed. A26/A4/A5, eight harness tests, project checks and all four pinned laws
+pass; other numerical/libm/target/performance domains remain gaps. The compiler and
+existing library comparisons retain their declared boundaries and exact values.
+Reviewed 85 arithmetic/profile/wrapper/generator/diagnostic caller contexts,
+19 differential angle operations, the native invalid-result control and two
+independent probe comparisons.
+
+Regression scan: 85 callers checked, 22 assertions checked, 1 flagged/fixed.

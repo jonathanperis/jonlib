@@ -6,8 +6,8 @@
     "blocked": 1,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1645,
-    "partial": 238
+    "not-started": 1642,
+    "partial": 241
   },
   "core_functions": {
     "total": 600,
@@ -22,8 +22,8 @@
     "blocked": 1,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 710,
-    "partial": 220
+    "not-started": 707,
+    "partial": 223
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 1,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 107,
-      "partial": 146
+      "not-started": 104,
+      "partial": 149
     },
     "rlgl.h": {
       "total": 403,
@@ -128,8 +128,8 @@
       "blocked": 1,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 87,
-      "partial": 133
+      "not-started": 84,
+      "partial": 136
     },
     {
       "id": "memory",
@@ -563,42 +563,6 @@
   ],
   "next_work": [
     {
-      "id": "raymath:function:Vector2Angle",
-      "name": "Vector2Angle",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Vector2.angle",
-      "next_step": "Derive Vector2Angle semantics from the linked source, add a reference fixture, then implement Vector2.angle.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2LineAngle",
-      "name": "Vector2LineAngle",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Vector2.line_angle",
-      "next_step": "Derive Vector2LineAngle semantics from the linked source, add a reference fixture, then implement Vector2.line_angle.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector3Angle",
-      "name": "Vector3Angle",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Vector3.angle",
-      "next_step": "Derive Vector3Angle semantics from the linked source, add a reference fixture, then implement Vector3.angle.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
       "id": "raymath:function:QuaternionSlerp",
       "name": "QuaternionSlerp",
       "milestone": "raymath",
@@ -797,6 +761,42 @@
       "status": "partial",
       "jonlib": "Vector2.length",
       "next_step": "Close documented gaps and unverified gates for Vector2Length.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2LengthSqr",
+      "name": "Vector2LengthSqr",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.length_sqr",
+      "next_step": "Close documented gaps and unverified gates for Vector2LengthSqr.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2DotProduct",
+      "name": "Vector2DotProduct",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.dot_product",
+      "next_step": "Close documented gaps and unverified gates for Vector2DotProduct.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2CrossProduct",
+      "name": "Vector2CrossProduct",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.cross_product",
+      "next_step": "Close documented gaps and unverified gates for Vector2CrossProduct.",
       "milestone_dependencies": [
         "numerics"
       ],

@@ -41,6 +41,7 @@ VECTOR2_APIS = {
     'refract':('Vector2Refract','vvs','vector'), 'rotate':('Vector2Rotate','vs','vector'),
     'min':('Vector2Min','vv','vector'), 'max':('Vector2Max','vv','vector'),
     'transform':('Vector2Transform','vm','vector'),
+    'angle':('Vector2Angle','vv','float'), 'line_angle':('Vector2LineAngle','vv','float'),
 }
 VECTOR3_APIS = {
     'zero':('Vector3Zero','','vector'), 'one':('Vector3One','','vector'),
@@ -67,6 +68,7 @@ VECTOR3_APIS = {
     'rotate_by_quaternion':('Vector3RotateByQuaternion','tq','vector'),
     'rotate_by_axis_angle':('Vector3RotateByAxisAngle','tts','vector'),
     'unproject':('Vector3Unproject','tmm','vector'),
+    'angle':('Vector3Angle','tt','float'),
 }
 VECTOR4_APIS = {
     'zero':('Vector4Zero','','vector'), 'one':('Vector4One','','vector'),
@@ -118,6 +120,7 @@ ROTATION_ANGLES = {('Matrix',name):3 if name in ('rotate_xyz','rotate_zyx') else
                    for name in ('rotate_x','rotate_y','rotate_z','rotate_xyz','rotate_zyx','rotate')}
 ROTATION_ANGLES.update({('Vector2','rotate'):1, ('Vector3','rotate_by_axis_angle'):1,
                         ('Quaternion','from_axis_angle'):1, ('Quaternion','from_euler'):3})
+ANGLE_QUERIES = {('Vector2','angle'),('Vector2','line_angle'),('Vector3','angle')}
 MATRIX_FIELDS = tuple(f'm{row+4*column}' for row in range(4) for column in range(4))
 ARGUMENT_SIZES = {'v':2, 't':3, 'q':4, 'c':4, 'm':16, 'b':6, 'r':4, 's':1, 'i':1, 'd':1}
 VECTOR_APIS = {'vector_value':('Vector2',2,VECTOR2_APIS), 'vector3_value':('Vector3',3,VECTOR3_APIS),
@@ -787,8 +790,13 @@ def c_source(cases):
                         lines += [f'ImageDrawPixel(&image, {op["x"]+index}, {op["y"]}, float_bits(v.{field}));']
                     lines += ['}']
                 else:
-                    color = f'GetColor((unsigned int){expression})' if result=='bool' else f'float_bits({expression})'
-                    lines += [f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, {color});']
+                    if (namespace,op['function']) in ANGLE_QUERIES:
+                        lines += ['{', f'float angle={expression};',
+                                  'if(!isfinite(angle) || (angle!=0.0f && !isnormal(angle))) { fprintf(stderr,"invalid angle result\\n"); return 10; }',
+                                  f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, float_bits(angle));', '}']
+                    else:
+                        color = f'GetColor((unsigned int){expression})' if result=='bool' else f'float_bits({expression})'
+                        lines += [f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, {color});']
                 continue
             if kind == 'collision_value':
                 function, signature, result = COLLISION_APIS[op['function']]
@@ -1049,7 +1057,7 @@ def bend_source(cases, gpu=False):
             if kind in VECTOR_APIS:
                 namespace, dimensions, apis = VECTOR_APIS[kind]
                 _, signature, result = apis[op['function']]
-                profiled = op['function'] in ('clamp','min','max') or (namespace,op['function']) in ROTATION_ANGLES
+                profiled = op['function'] in ('clamp','min','max') or (namespace,op['function']) in ROTATION_ANGLES or (namespace,op['function']) in ANGLE_QUERIES
                 function_name = op['function']+'_for' if profiled else op['function']
                 profile = f'J.{gradient_reference()}{{}}, ' if profiled else ''
                 expression = f'J.{namespace}.{function_name}({profile}{vector_arguments(signature,op["args"],bend=True)})'
@@ -1333,6 +1341,12 @@ def main():
         verify_native_rejection(args.raylib_source, cmake/'raylib/libraylib.a', control, 9, 'invalid projection result')
         report['projection_rejections'] = 1
         print('projection: subnormal-output native oracle control rejected',flush=True)
+    if any(op['op'] in VECTOR_APIS and (VECTOR_APIS[op['op']][0],op['function']) in ANGLE_QUERIES for case in cases for op in case['operations']):
+        control = dict(id='angle-invalid-result',width=1,height=1,background=[0,0,0,0],
+                       operations=[dict(op='vector_value',function='line_angle',x=0,y=0,args=[0,0,1,1e-40])])
+        verify_native_rejection(args.raylib_source,cmake/'raylib/libraylib.a',control,10,'invalid angle result')
+        report['angle_rejections'] = 1
+        print('angles: subnormal-output native oracle control rejected',flush=True)
     exports = [row for row in reference if 'qoi' in row]
     report['qoi_exports'] = dict(scenarios=len(exports), bytes=sum(len(row['qoi']) for row in exports))
     source = BUILD / 'candidate.bend'

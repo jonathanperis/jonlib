@@ -29,7 +29,7 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 |---|---:|---|---:|---:|---:|---|
 | 1 | 0 | `types` — Types, constants and language mappings | 549 | 18 | 0 | — |
 | 2 | 1 | `numerics` — Numeric fidelity and scalar contracts | 14 | 6 | 0 | types |
-| 3 | 1 | `raymath` — Vectors, matrices and quaternions | 221 | 133 | 0 | numerics |
+| 3 | 1 | `raymath` — Vectors, matrices and quaternions | 221 | 136 | 0 | numerics |
 | 4 | 1 | `memory` — Buffers, memory and callback contracts | 12 | 0 | 0 | types |
 | 5 | 1 | `files` — Files, paths, compression and data utilities | 49 | 0 | 0 | memory |
 | 6 | 1 | `random` — Random-number and sequence contracts | 4 | 0 | 0 | numerics, memory |
@@ -63,9 +63,6 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 
 This is a priority queue with visible prerequisites, not a claim that every item is unblocked.
 
-- **`raymath:function:Vector2Angle`** (not-started, `raymath`): Derive Vector2Angle semantics from the linked source, add a reference fixture, then implement Vector2.angle.
-- **`raymath:function:Vector2LineAngle`** (not-started, `raymath`): Derive Vector2LineAngle semantics from the linked source, add a reference fixture, then implement Vector2.line_angle.
-- **`raymath:function:Vector3Angle`** (not-started, `raymath`): Derive Vector3Angle semantics from the linked source, add a reference fixture, then implement Vector3.angle.
 - **`raymath:function:QuaternionSlerp`** (not-started, `raymath`): Derive QuaternionSlerp semantics from the linked source, add a reference fixture, then implement Quaternion.slerp.
 - **`raymath:function:QuaternionToAxisAngle`** (not-started, `raymath`): Derive QuaternionToAxisAngle semantics from the linked source, add a reference fixture, then implement Quaternion.to_axis_angle.
 - **`raymath:function:QuaternionToEuler`** (not-started, `raymath`): Derive QuaternionToEuler semantics from the linked source, add a reference fixture, then implement Quaternion.to_euler.
@@ -83,6 +80,9 @@ This is a priority queue with visible prerequisites, not a claim that every item
 - **`raymath:function:Vector2Subtract`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Subtract.
 - **`raymath:function:Vector2SubtractValue`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2SubtractValue.
 - **`raymath:function:Vector2Length`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Length.
+- **`raymath:function:Vector2LengthSqr`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2LengthSqr.
+- **`raymath:function:Vector2DotProduct`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2DotProduct.
+- **`raymath:function:Vector2CrossProduct`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2CrossProduct.
 
 ## Closing an item
 

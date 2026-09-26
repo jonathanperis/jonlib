@@ -11,6 +11,7 @@ import ./src/trig.bend as Trig
 import ./src/rotation.bend as Rotation
 import ./src/fused.bend as Fused
 import ./src/float64.bend as Float64Numeric
+import ./src/angle.bend as Angle
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -188,6 +189,20 @@ def Vector2.cross_product(left: Vector2, right: Vector2) -> F32:
   Vector2{x, y} = left
   Vector2{u, v} = right
   (x * v - y * u : F32)
+
+def Vector2.angle_for(reference: Gradient.Reference, +left: Vector2, +right: Vector2) -> F32:
+  Angle.atan2(Gradient.gnu(reference), Vector2.cross_product(left, right), Vector2.dot_product(left, right))
+
+def Vector2.angle(left: Vector2, right: Vector2) -> F32:
+  Vector2.angle_for(AccurateGradient{}, left, right)
+
+def Vector2.line_angle_for(reference: Gradient.Reference, start: Vector2, end: Vector2) -> F32:
+  Vector2{x, y} = start
+  Vector2{u, v} = end
+  F32.neg(Angle.atan2(Gradient.gnu(reference), (v - y : F32), (u - x : F32)))
+
+def Vector2.line_angle(start: Vector2, end: Vector2) -> F32:
+  Vector2.line_angle_for(AccurateGradient{}, start, end)
 
 def Vector2.lerp(left: Vector2, right: Vector2, +amount: F32) -> Vector2:
   Vector2{x, y} = left
@@ -492,6 +507,12 @@ def Vector3.length_sqr(+vector: Vector3) -> F32:
 
 def Vector3.length(vector: Vector3) -> F32:
   F32.sqrt(Vector3.length_sqr(vector))
+
+def Vector3.angle_for(reference: Gradient.Reference, +left: Vector3, +right: Vector3) -> F32:
+  Angle.atan2(Gradient.gnu(reference), Vector3.length(Vector3.cross_product(left, right)), Vector3.dot_product(left, right))
+
+def Vector3.angle(left: Vector3, right: Vector3) -> F32:
+  Vector3.angle_for(AccurateGradient{}, left, right)
 
 def Vector3.distance(left: Vector3, right: Vector3) -> F32:
   F32.sqrt(Vector3.distance_sqr(left, right))

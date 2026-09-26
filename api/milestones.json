@@ -60,7 +60,7 @@
     {"id":"web-rgfw","scope":"WebRGFW alternative platform configuration"}
   ],
   "scope_sources": ["https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/FAQ.md", "https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/CMakeOptions.txt"],
-  "priority_overrides": {"raymath:function:Vector2Angle":0, "raymath:function:Vector2LineAngle":1, "raymath:function:Vector3Angle":2, "raymath:function:QuaternionSlerp":3, "raymath:function:QuaternionToAxisAngle":4, "raymath:function:QuaternionToEuler":5, "raymath:function:MatrixPerspective":6},
+  "priority_overrides": {"raymath:function:QuaternionSlerp":0, "raymath:function:QuaternionToAxisAngle":1, "raymath:function:QuaternionToEuler":2, "raymath:function:MatrixPerspective":3},
   "api_dependencies": {
     "raylib:function:ImageDraw":["raylib:function:ImageFromImage","raylib:function:ImageResize","raylib:function:ColorAlphaBlend"],
     "raylib:function:LoadTexture":["raylib:function:LoadImage","raylib:function:LoadTextureFromImage"],

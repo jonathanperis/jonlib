@@ -66,6 +66,21 @@ These are altered Bend/tooling implementations, limited to the documented
 gradient/rotation profiles. Jonlib selects the upstream MIT alternative; source copyright
 notices and the selected license are retained in [LICENSES/arm-math.txt](LICENSES/arm-math.txt).
 
+## Arctangent numerical references
+
+- The Apple-profile mathematical polynomial, coefficient values and numerical
+  boundary rules are documented by Eric Postpischil (July 2007) in
+  [Apple Libm atan2f.s at 17a5f9daa3f5679f7536b26f133b40cc078753c3](https://github.com/apple-oss-distributions/Libm/blob/17a5f9daa3f5679f7536b26f133b40cc078753c3/Source/Intel/atan2f.s).
+  `src/angle.bend` independently evaluates that mathematical specification using
+  original Bend argument reduction and integer-limb arithmetic. No assembly
+  implementation is copied or included.
+- The GNU float atan/atan2 profile and independent C control adapt the Sun
+  algorithms in glibc 2.39, revision `ef321e23c20eebc6d6fb4044425c00e6df27b05f`,
+  `sysdeps/ieee754/flt-32/s_atanf.c` and `e_atan2f.c`. Their explicit permissive
+  grant is retained in [LICENSES/sun-math.txt](LICENSES/sun-math.txt). These are
+  altered implementations; floating-point exception-state behavior is outside
+  the current numeric profile.
+
 ## Bend
 
 Jonlib uses the Bend language and Base library, provided by HigherOrderCO and

@@ -1,0 +1,18 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {
+    "jonlib.bend": "05a2dfd9c4932db0b4df6fe81e5dd7746efaa76cb719ace063af004acfe0e16a",
+    "src/angle.bend": "e1ba99af2016e40cdbca80c13dbb756a4a455eafdbad5aa13d6a0c17ffc9cdcb",
+    "src/float64_ops.bend": "a7324c793e541affe4e17f7effc7f826e72fb3a7e1df76f00e684d0431eedf52"
+  },
+  "fixtures_sha256": "271b8232f210d0b169631b5b0e61281024784e4b2a85eea605e92173a136274e",
+  "scenarios": 231,
+  "output_words_per_lane": 34290,
+  "numeric_probe_cells": 1846,
+  "passed": true,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "primitive_baseline": {"samples":128,"cpu_mismatches":14,"javascript_mismatches":14,"metal_mismatches":68},
+  "angle_probe": {"samples":1086,"inputs_sha256":"e97e8ae61b081cbf56aaedf449be5e40795523ee73deba21649e297d20d499fb","apple_native_passed":["cpu","javascript","metal"],"gnu_sun_control_passed":["cpu","javascript","metal"]},
+  "arithmetic_probe": {"operations":512,"inputs_sha256":"bc4162e80b18b3ee11f2727117046cc8bf4c2dc0acda6851b3f70b71a5738883","passed":["cpu","javascript","metal"]},
+  "limits": ["Exceptional/subnormal and contracted arithmetic domains", "Other native libm variants and full target/performance coverage"]
+}

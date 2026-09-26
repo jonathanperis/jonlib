@@ -1,7 +1,7 @@
 # Math profiles
 
 The current math implementation is Bend source in `jonlib.bend`. It begins the
-`raymath.h` work package with six scalar, twenty-nine Vector2, thirty-eight Vector3,
+`raymath.h` work package with six scalar, thirty-one Vector2, thirty-nine Vector3,
 twenty-two Vector4, twenty-three Matrix and twenty-one Quaternion functions.
 
 ## Scalar API
@@ -22,7 +22,8 @@ twenty-two Vector4, twenty-three Matrix and twenty-one Quaternion functions.
   `multiply`, `negate`, `divide`, `invert`, `min`/`min_for`, `max`/`max_for`.
 - Metrics: `length`, `length_sqr`, `distance`, `distance_sqr`, `dot_product`, `cross_product`.
 - Other operations: `normalize`, `lerp`, `reflect`, `equals`, `move_towards`,
-  `clamp`, `clamp_value`, `rotate`/`rotate_for`, `refract`, `transform`.
+  `clamp`, `clamp_value`, `rotate`/`rotate_for`, `refract`, `transform`,
+  `angle`/`angle_for`, `line_angle`/`line_angle_for`.
 
 `divide` takes two vectors; `invert` takes component reciprocals. `lerp` takes
 two vectors and a scalar amount. `reflect` takes a vector and the supplied normal;
@@ -60,7 +61,7 @@ radians within one cycle and preserves reference operation order. See
   `subtract_value(vector, scalar)`, `negate(vector)`, `divide(left, right)`.
 - Products and metrics: `cross_product(left, right)`, `dot_product(left, right)`,
   `distance_sqr(left, right)`, `distance(left, right)`, `length_sqr(vector)`,
-  `length(vector)`, `normalize(vector)`.
+  `length(vector)`, `normalize(vector)`, `angle`/`angle_for`.
 - Geometric operations: `project`, `reject`, `perpendicular`, `lerp`, `reflect`,
   `invert`, `equals`, `move_towards`, `clamp`/`clamp_for`, `clamp_value`, `refract`.
 - Interpolation/frame operations: `barycenter(point, a, b, c)`,
@@ -284,6 +285,32 @@ The export lengths have structural laws checked in `PROOF.bend`; runtime
 conformance verifies list length, order and every F32 bit. Native contiguous-array
 ABI and mutability correspondence remain gaps, and the general list type itself
 does not enforce a fixed length for arbitrary caller-created lists.
+
+## Vector angle profiles
+
+`Vector2.angle(left, right)` returns the reference signed cross/dot angle.
+`Vector2.line_angle(start, end)` negates the endpoint-difference angle.
+`Vector3.angle(left, right)` uses the reference cross-product length and dot
+product. Each has an `_for(reference, ...)` variant; convenience calls use the
+existing `AccurateGradient{}` Apple selection, while `GnuGradient{}` selects the
+GNU float profile.
+
+The Apple numerical specification rounds π toward zero near the negative X axis;
+the GNU profile retains its own float polynomial and quadrant corrections.
+The implementations preserve those observable differences. An independent Bend
+polynomial evaluation and licensed Sun-kernel adaptation replace backend-native
+atan2 primitives that failed exact probes. Supporting binary64 multiplication
+and division round directly from integer limbs.
+
+```sh
+python3 tools/float64_ops_probe.py --bend-source "$BEND_SOURCE" --gpu
+python3 tools/angle_probe.py --bend-source "$BEND_SOURCE" --gpu
+python3 tools/angle_probe.py --bend-source "$BEND_SOURCE" --gnu-control --gpu
+```
+
+The current angle profile covers finite inputs with normal/zero intermediates
+and outputs. Exceptional/subnormal arithmetic and other libm/contracted variants
+remain gaps. Runtime probe batches are bounded while each lane is compiled once.
 
 ## Floating-point contract and evidence
 
