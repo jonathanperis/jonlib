@@ -797,3 +797,20 @@ Local full CPU-1/CPU-2/JS/Metal conformance and the 1,086 native angle probes pa
 hosted native-profile confirmation remains pending for this follow-up.
 
 Regression scan: 8 callers checked, 4 assertions checked, 1 flagged/fixed.
+
+The next hosted run, `9f3ac95`, confirmed the dispatch distinction: Apple clang 17
+folded literal π to `40490fdb` while the actual native function returned
+`40490fda`; Ubuntu clang 18 folded the near-π/2 input to `3fc90fdb` while native
+glibc 2.39 returned `3fc90fda`. Both native angle probes passed, and Ubuntu's full
+conformance passed. macOS's remaining failure was the existing 240-second limit
+on its monolithic candidate build, not a numeric mismatch. Exact artifact values
+are retained in [evidence/angle-native-dispatch.json](evidence/angle-native-dispatch.json).
+
+Candidate compilation now uses the established 64-case batching approach, with
+all ordered outputs concatenated before the unchanged complete-corpus comparison.
+Local batches of 64/64/64/39 scenarios compiled their CPU/JS runners in
+28.178/4.512/5.739/3.556 seconds, respectively. All 231 scenarios / 34,290 words
+still pass on CPU-1/CPU-2/JavaScript/forced Metal; eight harness tests and project
+checks pass. No command timeout, scenario, expected value or tolerance was relaxed.
+
+Regression scan: 12 callers checked, 4 assertions checked, 1 flagged/fixed.

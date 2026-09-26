@@ -1,0 +1,31 @@
+{
+  "date": "2026-09-26",
+  "hosted_run": "https://github.com/jonathanperis/jonlib/actions/runs/36238067805",
+  "macos": {
+    "clang": "Apple clang version 17.0.0 (clang-1700.0.13.5)",
+    "literal_pi": "40490fdb",
+    "native_pi": "40490fda",
+    "literal_near_half_pi": "3fc90fdb",
+    "native_near_half_pi": "3fc90fdb",
+    "native_angle_probe_passed": true,
+    "remaining_failure": "Monolithic candidate CPU/JS build exceeded the 240-second command limit"
+  },
+  "ubuntu": {
+    "clang": "Ubuntu clang version 18.1.3 (1ubuntu1)",
+    "libc": "glibc 2.39",
+    "literal_pi": "40490fdb",
+    "native_pi": "40490fdb",
+    "literal_near_half_pi": "3fc90fdb",
+    "native_near_half_pi": "3fc90fda",
+    "native_angle_probe_passed": true,
+    "full_conformance_passed": true
+  },
+  "local_batched_conformance": {
+    "scenarios": 231,
+    "output_words_per_lane": 34290,
+    "batch_sizes": [64,64,64,39],
+    "cpu_js_build_seconds": [28.178,4.512,5.739,3.556],
+    "lanes": ["cpu-1","cpu-2","javascript","gpu-forced"],
+    "passed": true
+  }
+}
