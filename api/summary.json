@@ -6,24 +6,24 @@
     "blocked": 4,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1636,
-    "partial": 244
+    "not-started": 1634,
+    "partial": 246
   },
   "core_functions": {
     "total": 600,
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 516,
-    "partial": 84
+    "not-started": 514,
+    "partial": 86
   },
   "function_declarations": {
     "total": 931,
     "blocked": 4,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 701,
-    "partial": 226
+    "not-started": 699,
+    "partial": 228
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -46,8 +46,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 944,
-      "partial": 93
+      "not-started": 942,
+      "partial": 95
     },
     "raymath.h": {
       "total": 254,
@@ -171,8 +171,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 2,
-      "partial": 2
+      "not-started": 0,
+      "partial": 4
     },
     {
       "id": "pixels",
@@ -563,27 +563,14 @@
   ],
   "next_work": [
     {
-      "id": "raylib:function:LoadRandomSequence",
-      "name": "LoadRandomSequence",
-      "milestone": "random",
+      "id": "raylib:function:GenImageCellular",
+      "name": "GenImageCellular",
+      "milestone": "images",
       "status": "not-started",
-      "jonlib": "Random.load_random_sequence",
-      "next_step": "Derive LoadRandomSequence semantics from the linked source, add a reference fixture, then implement Random.load_random_sequence.",
+      "jonlib": "Surface.gen_image_cellular",
+      "next_step": "Derive GenImageCellular semantics from the linked source, add a reference fixture, then implement Surface.gen_image_cellular.",
       "milestone_dependencies": [
-        "numerics",
-        "memory"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raylib:function:UnloadRandomSequence",
-      "name": "UnloadRandomSequence",
-      "milestone": "random",
-      "status": "not-started",
-      "jonlib": "Random.unload_random_sequence",
-      "next_step": "Derive UnloadRandomSequence semantics from the linked source, add a reference fixture, then implement Random.unload_random_sequence.",
-      "milestone_dependencies": [
-        "numerics",
+        "pixels",
         "memory"
       ],
       "api_dependencies": []
@@ -595,19 +582,6 @@
       "status": "not-started",
       "jonlib": "Surface.gen_image_perlin_noise",
       "next_step": "Derive GenImagePerlinNoise semantics from the linked source, add a reference fixture, then implement Surface.gen_image_perlin_noise.",
-      "milestone_dependencies": [
-        "pixels",
-        "memory"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raylib:function:GenImageCellular",
-      "name": "GenImageCellular",
-      "milestone": "images",
-      "status": "not-started",
-      "jonlib": "Surface.gen_image_cellular",
-      "next_step": "Derive GenImageCellular semantics from the linked source, add a reference fixture, then implement Surface.gen_image_cellular.",
       "milestone_dependencies": [
         "pixels",
         "memory"
@@ -801,6 +775,30 @@
       "status": "partial",
       "jonlib": "Vector2.subtract_value",
       "next_step": "Close documented gaps and unverified gates for Vector2SubtractValue.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2Length",
+      "name": "Vector2Length",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.length",
+      "next_step": "Close documented gaps and unverified gates for Vector2Length.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2LengthSqr",
+      "name": "Vector2LengthSqr",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.length_sqr",
+      "next_step": "Close documented gaps and unverified gates for Vector2LengthSqr.",
       "milestone_dependencies": [
         "numerics"
       ],

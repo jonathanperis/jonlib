@@ -142,6 +142,35 @@ def noise_rejected(result: J.Random.State & Maybe<J.Surface>) -> Bool:
       U32.is_eq(random_word(J.Random.value(state, 0.0, 99.0)), random_word(J.Random.value(J.Random.seed(123), 0.0, 99.0)))
     case _: False{}
 
+def sequence_rejected(result: J.Random.State & Result<&1, &1, J.Random.Sequence.Error, J.Random.Sequence>) -> Bool:
+  match result:
+    case Tuple{state, Fail{J.InvalidSequenceRequest{}}}:
+      U32.is_eq(random_word(J.Random.value(state, 0.0, 99.0)), random_word(J.Random.value(J.Random.seed(123), 0.0, 99.0)))
+    case _: False{}
+
+def sequence_budget_owner(values: +List<F32>, state: J.Random.State, baseline: J.Random.State & F32) -> Bool:
+  match values baseline:
+    case Con{value, Nil{}} Tuple{original, expected}:
+      F32.is_eq(value, expected) && U32.is_eq(random_word(J.Random.value(state, 0.0, 99.0)), random_word(J.Random.value(original, 0.0, 99.0)))
+    case _ _: False{}
+
+def sequence_budget(result: J.Random.State & Result<&1, &1, J.Random.Sequence.Error, J.Random.Sequence>) -> Bool:
+  match result:
+    case Tuple{state, Fail{J.SequenceDrawLimit{partial}}}:
+      sequence_budget_owner(J.Random.Sequence.values(partial), state, J.Random.value(J.Random.seed(123), 0.0, 1.0))
+    case _: False{}
+
+def sequence_unloaded(unit: Unit) -> Bool:
+  match unit:
+    case Unit{}: True{}
+
+def sequence_empty(result: J.Random.State & Result<&1, &1, J.Random.Sequence.Error, J.Random.Sequence>) -> Bool:
+  match result:
+    case Tuple{state, Done{sequence}}:
+      sequence_unloaded(J.Random.unload_sequence(sequence))
+        && U32.is_eq(random_word(J.Random.value(state, 0.0, 99.0)), random_word(J.Random.value(J.Random.seed(123), 0.0, 99.0)))
+    case _: False{}
+
 def verdict(ok: Bool) -> IO(Unit):
   match ok:
     case True{}:
@@ -177,6 +206,10 @@ def checks() -> Bool:
     && channel_created(J.Surface.create(2, 1, 16909060))
     && noise_rejected(J.Surface.create_white_noise(J.Random.seed(123), 0, 2, 0.5))
     && noise_rejected(J.Surface.create_white_noise(J.Random.seed(123), 2, 2, F32.neg(0.1)))
+    && sequence_rejected(J.Random.load_sequence(J.Random.seed(123), 1, 0.5, 1.0, 1n))
+    && sequence_rejected(J.Random.load_sequence(J.Random.seed(123), 3, 0.0, 1.0, 8n))
+    && sequence_budget(J.Random.load_sequence(J.Random.seed(123), 2, 0.0, 1.0, 1n))
+    && sequence_empty(J.Random.load_sequence(J.Random.seed(123), 0, 0.0, 0.0, 0n))
 
 def main() -> IO(Unit):
   verdict(checks())

@@ -50,7 +50,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 84 have
+- The pinned core header inventory contains 600 unique public functions; 86 have
   explicitly scoped Jonlib mappings. The raymath ledger additionally maps 142
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
@@ -869,3 +869,28 @@ APIs and complete integration/target/performance coverage remain gaps. Reviewed
 scenarios, two rejected-owner checks, two malformed sources and the stream probe.
 
 Regression scan: 44 callers checked, 10 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `3a97be5`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36242292011)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36242292009)
+completed successfully.
+
+## Owned unique random sequences
+
+Seven complete sequence/following-stream results match actual `LoadRandomSequence`
+on CPU, JavaScript and forced Metal, alongside the existing 960 random draws and
+three post-noise observations. The sequence reference retains reversed endpoints
+without swapping, unlike `GetRandomValue`. Duplicate rejection, exact acceptance
+order, empty requests and excessive counts are covered. Four ownership controls
+check invalid endpoints/counts, explicit draw exhaustion and empty disposal.
+[Evidence](evidence/random-sequences.json) records the source and probe inputs.
+
+The draw budget is explicit because safe Bend recursion must structurally descend.
+Exhaustion returns an incomplete ordered sequence and the stream after consumed
+draws; it does not report a successful native sequence. All 236 image/numeric
+scenarios still pass CPU-1/CPU-2/JavaScript/forced Metal, eight harness tests pass,
+and the pinned proof verdict is `All terms check.` A26/A3/A4/A5 hold for the scoped
+sequence/state/source/backend contracts. I67 matches `Random.load_sequence` and
+the `SequenceDrawLimit` owner path. Native unbounded retries, global state,
+allocator/null correspondence and complete target/performance evidence remain gaps.
+
+Regression scan: 16 callers checked, 11 assertions checked, 0 flagged/fixed.

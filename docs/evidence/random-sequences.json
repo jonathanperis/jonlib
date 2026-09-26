@@ -1,0 +1,15 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {"jonlib.bend":"544d9021218734a6db002a0be7e35a99cecc326a289c8a7f458fe79c402c05ab"},
+  "probe_sha256": "aaa474d67944d9bd20129b3fdd1247e1185bdf0ff67f5593b5e5d63dedd53100",
+  "inputs_sha256": "34d3b9c5e9682991fde609d3eaa71d33ebbad490fd98446d3e01b1ad18f56242",
+  "sequence_cases": 7,
+  "sequence_draw_budget": 4096,
+  "random_values": 960,
+  "post_noise_observations": 3,
+  "passed": true,
+  "lanes": ["cpu","javascript","metal"],
+  "full_corpus": {"scenarios":236,"output_words_per_lane":34353,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"],"passed":true},
+  "scope": ["Full ordered native sequences and following stream values", "Duplicate retries, reversed/constant ranges, zero and excessive count", "Explicit draw exhaustion with partial sequence and retained owners"],
+  "limits": ["Unbounded retry/global-state/allocator correspondence", "Full integer domains and complete target/resource/performance coverage"]
+}

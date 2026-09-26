@@ -21,6 +21,28 @@
     "api_id": "raylib:function:GetRandomValue",
     "milestone": "random"
   },
+  "LoadRandomSequence": {
+    "jonlib": "Random.load_sequence",
+    "status": "profile-covered",
+    "scope": "Owned rprand duplicate-rejection sequence with exact acceptance order and following-stream position. Integral F32 bounds -32767..32767; reversed bounds preserve the reference's unswapped minimum offset. Explicit Nat draw budget returns partial values and advanced state on exhaustion; invalid requests preserve the original stream.",
+    "gaps": [
+      "Unbounded retry/global-state/allocator correspondence",
+      "Full integer domains and target/resource/performance coverage"
+    ],
+    "api_id": "raylib:function:LoadRandomSequence",
+    "milestone": "random"
+  },
+  "UnloadRandomSequence": {
+    "jonlib": "Random.unload_sequence",
+    "status": "profile-covered",
+    "scope": "Consumes the owned sequence and returns Unit; Bend ownership adapts the explicit C allocation/free lifecycle.",
+    "gaps": [
+      "Native pointer/allocator/null behavior",
+      "Full integration/target/resource/performance coverage"
+    ],
+    "api_id": "raylib:function:UnloadRandomSequence",
+    "milestone": "random"
+  },
   "CheckCollisionRecs": {
     "jonlib": "Collision.recs",
     "status": "profile-covered",

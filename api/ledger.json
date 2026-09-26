@@ -29766,23 +29766,28 @@
       "milestone": "random",
       "phase": 1,
       "sequence": 5,
-      "status": "not-started",
-      "jonlib": "Random.load_random_sequence",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Random.load_sequence",
+      "mapping_state": "implemented",
+      "scope": "Owned rprand duplicate-rejection sequence with exact acceptance order and following-stream position. Integral F32 bounds -32767..32767; reversed bounds preserve the reference's unswapped minimum offset. Explicit Nat draw budget returns partial values and advanced state on exhaustion; invalid requests preserve the original stream.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Unbounded retry/global-state/allocator correspondence",
+        "Full integer domains and target/resource/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/random_probe.py",
+        "tests/transforms.bend",
+        "docs/RANDOM.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -29794,8 +29799,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Fixed-seed output sequences, inclusive ranges, uniqueness/sequence ownership and overflow boundaries.",
-      "next_step": "Derive LoadRandomSequence semantics from the linked source, add a reference fixture, then implement Random.load_random_sequence.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for LoadRandomSequence.",
+      "priority": 205
     },
     {
       "id": "raylib:function:UnloadRandomSequence",
@@ -29820,23 +29825,27 @@
       "milestone": "random",
       "phase": 1,
       "sequence": 5,
-      "status": "not-started",
-      "jonlib": "Random.unload_random_sequence",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Random.unload_sequence",
+      "mapping_state": "implemented",
+      "scope": "Consumes the owned sequence and returns Unit; Bend ownership adapts the explicit C allocation/free lifecycle.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native pointer/allocator/null behavior",
+        "Full integration/target/resource/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/transforms.bend",
+        "docs/RANDOM.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -29848,8 +29857,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Fixed-seed output sequences, inclusive ranges, uniqueness/sequence ownership and overflow boundaries.",
-      "next_step": "Derive UnloadRandomSequence semantics from the linked source, add a reference fixture, then implement Random.unload_random_sequence.",
-      "priority": 1
+      "next_step": "Close documented gaps and unverified gates for UnloadRandomSequence.",
+      "priority": 205
     },
     {
       "id": "raylib:function:TakeScreenshot",
@@ -41329,7 +41338,7 @@
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
       "next_step": "Derive GenImagePerlinNoise semantics from the linked source, add a reference fixture, then implement Surface.gen_image_perlin_noise.",
-      "priority": 2
+      "priority": 1
     },
     {
       "id": "raylib:function:GenImageCellular",
@@ -41385,7 +41394,7 @@
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
       "next_step": "Derive GenImageCellular semantics from the linked source, add a reference fixture, then implement Surface.gen_image_cellular.",
-      "priority": 3
+      "priority": 0
     },
     {
       "id": "raylib:function:GenImageText",
@@ -66921,7 +66930,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.",
-      "priority": 7
+      "priority": 5
     },
     {
       "id": "raymath:function:MatrixOrtho",
@@ -67926,7 +67935,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Base and investigated inverse-trig models differ from the actual float libm; no verified acos profile is available yet.",
-      "priority": 4
+      "priority": 2
     },
     {
       "id": "raymath:function:QuaternionCubicHermiteSpline",
@@ -68287,7 +68296,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Native acosf endpoint/tail values differ from Base and investigated numerical models.",
-      "priority": 5
+      "priority": 3
     },
     {
       "id": "raymath:function:QuaternionFromEuler",
@@ -68408,7 +68417,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models.",
-      "priority": 6
+      "priority": 4
     },
     {
       "id": "raymath:function:QuaternionTransform",

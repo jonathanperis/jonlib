@@ -1494,6 +1494,58 @@ def Random.value(state: Random.State, +minimum: F32, +maximum: F32) -> Random.St
   upper = F32.max(minimum, maximum)
   Random.value.result(lower, F32.to_u32((upper - lower + 1.0 : F32)), Random.next_u32(state))
 
+type Random.Sequence is Type:
+  RandomSequence{values: +List<F32>}
+
+type Random.Sequence.Error is Type:
+  InvalidSequenceRequest{}
+  SequenceDrawLimit{partial: Random.Sequence}
+
+def Random.Sequence.values(sequence: Random.Sequence) -> +List<F32>:
+  RandomSequence{values} = sequence
+  values
+
+def Random.unload_sequence(sequence: Random.Sequence) -> Unit:
+  Unit{}
+
+def Random.sequence.contains(values: +List<F32>, +value: F32) -> Bool:
+  match values:
+    case Nil{}: False{}
+    case Con{head, rest}: F32.is_eq(head, value) || Random.sequence.contains(rest, value)
+
+def Random.sequence.step(+remaining: Nat, +values: +List<F32>, draw: Random.State & F32) -> Random.State & (Nat & +List<F32>):
+  (state, +value) = draw
+  +duplicate = Random.sequence.contains(values, value)
+  (state, (Bool.pick(Nat, duplicate, 1n+remaining, remaining), Bool.pick(+List<F32>, duplicate, values, Con{value, values})))
+
+def Random.sequence.loop(budget: Nat, +minimum: F32, +span: U32, cursor: Random.State & (Nat & +List<F32>)) -> Random.State & Result<&1, &1, Random.Sequence.Error, Random.Sequence>:
+  match budget cursor:
+    case _ Tuple{state, Tuple{0n, values}}:
+      (state, Done{RandomSequence{List.reverse(&2, F32, values)}})
+    case 0n Tuple{state, Tuple{_, values}}:
+      (state, Fail{SequenceDrawLimit{RandomSequence{List.reverse(&2, F32, values)}}})
+    case 1n+more Tuple{state, Tuple{1n+remaining, values}}:
+      Random.sequence.loop(more, minimum, span, Random.sequence.step(remaining, values,
+        Random.value.result(minimum, span, Random.next_u32(state))))
+
+def Random.sequence.count(valid: Bool, state: Random.State, count: U32, minimum: F32, span: U32, budget: Nat) -> Random.State & Result<&1, &1, Random.Sequence.Error, Random.Sequence>:
+  match valid:
+    case False{}: (state, Fail{InvalidSequenceRequest{}})
+    case True{}: Random.sequence.loop(budget, minimum, span, (state, (U32.to_nat(count), Nil{})))
+
+def Random.sequence.bounds(valid: Bool, state: Random.State, +count: U32, +minimum: F32, maximum: F32, budget: Nat) -> Random.State & Result<&1, &1, Random.Sequence.Error, Random.Sequence>:
+  match valid:
+    case False{}: (state, Fail{InvalidSequenceRequest{}})
+    case True{}:
+      +span = F32.to_u32((F32.abs((maximum - minimum : F32)) + 1.0 : F32))
+      Random.sequence.count((count <= span : U32), state, count, minimum, span, budget)
+
+def Random.load_sequence(state: Random.State, count: U32, +minimum: F32, +maximum: F32, budget: Nat) -> Random.State & Result<&1, &1, Random.Sequence.Error, Random.Sequence>:
+  Random.sequence.bounds(((minimum >= F32.neg(32767.0)) && (minimum <= 32767.0)
+    && (maximum >= F32.neg(32767.0)) && (maximum <= 32767.0) : F32)
+    && F32.is_eq(F32.floor(minimum), minimum) && F32.is_eq(F32.floor(maximum), maximum),
+    state, count, minimum, maximum, budget)
+
 # Construct through Surface.create; preserve its dimensions/storage invariant.
 type Surface is Type:
   Surface{width: U32, height: U32, pixels: Array<U32>}
