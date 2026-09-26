@@ -6,24 +6,24 @@
     "blocked": 5,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1623,
-    "partial": 256
+    "not-started": 1621,
+    "partial": 258
   },
   "core_functions": {
     "total": 600,
     "blocked": 1,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 503,
-    "partial": 96
+    "not-started": 501,
+    "partial": 98
   },
   "function_declarations": {
     "total": 931,
     "blocked": 5,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 688,
-    "partial": 238
+    "not-started": 686,
+    "partial": 240
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -46,8 +46,8 @@
       "blocked": 1,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 931,
-      "partial": 105
+      "not-started": 929,
+      "partial": 107
     },
     "raymath.h": {
       "total": 254,
@@ -186,8 +186,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 31,
-      "partial": 15
+      "not-started": 30,
+      "partial": 16
     },
     {
       "id": "images",
@@ -201,8 +201,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 5,
-      "partial": 49
+      "not-started": 4,
+      "partial": 50
     },
     {
       "id": "resampling",
@@ -563,12 +563,12 @@
   ],
   "next_work": [
     {
-      "id": "raylib:function:GetPixelDataSize",
-      "name": "GetPixelDataSize",
+      "id": "raylib:function:GetPixelColor",
+      "name": "GetPixelColor",
       "milestone": "pixels",
       "status": "not-started",
-      "jonlib": "Color.get_pixel_data_size",
-      "next_step": "Derive GetPixelDataSize semantics from the linked source, add a reference fixture, then implement Color.get_pixel_data_size.",
+      "jonlib": "Color.get_pixel_color",
+      "next_step": "Derive GetPixelColor semantics from the linked source, add a reference fixture, then implement Color.get_pixel_color.",
       "milestone_dependencies": [
         "numerics",
         "memory"
@@ -576,14 +576,27 @@
       "api_dependencies": []
     },
     {
-      "id": "raylib:function:ImageDither",
-      "name": "ImageDither",
-      "milestone": "images",
+      "id": "raylib:function:SetPixelColor",
+      "name": "SetPixelColor",
+      "milestone": "pixels",
       "status": "not-started",
-      "jonlib": "Surface.image_dither",
-      "next_step": "Derive ImageDither semantics from the linked source, add a reference fixture, then implement Surface.image_dither.",
+      "jonlib": "Color.set_pixel_color",
+      "next_step": "Derive SetPixelColor semantics from the linked source, add a reference fixture, then implement Color.set_pixel_color.",
       "milestone_dependencies": [
-        "pixels",
+        "numerics",
+        "memory"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:ImageFormat",
+      "name": "ImageFormat",
+      "milestone": "pixels",
+      "status": "not-started",
+      "jonlib": "Color.image_format",
+      "next_step": "Derive ImageFormat semantics from the linked source, add a reference fixture, then implement Color.image_format.",
+      "milestone_dependencies": [
+        "numerics",
         "memory"
       ],
       "api_dependencies": []
@@ -790,18 +803,6 @@
       "status": "partial",
       "jonlib": "Vector2.subtract_value",
       "next_step": "Close documented gaps and unverified gates for Vector2SubtractValue.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2Length",
-      "name": "Vector2Length",
-      "milestone": "raymath",
-      "status": "partial",
-      "jonlib": "Vector2.length",
-      "next_step": "Close documented gaps and unverified gates for Vector2Length.",
       "milestone_dependencies": [
         "numerics"
       ],

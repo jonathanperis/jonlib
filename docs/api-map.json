@@ -472,6 +472,17 @@
     "api_id": "raylib:function:ImageResizeCanvas",
     "milestone": "resampling"
   },
+  "ImageDither": {
+    "jonlib": "Surface.dither / Image.Packed16.export",
+    "status": "profile-covered",
+    "scope": "Owned RGBA8 to raw 16-bit-word Floyd-Steinberg output for per-channel widths 0..8 totaling at most 16. Preserves raster order, truncation, neighbor saturation, alpha handling and exact format metadata; rejects unsupported bits with original surface.",
+    "gaps": [
+      "Other source formats/mipmaps and native 16-bit memory/allocator ABI",
+      "Full integration/target/resource/performance coverage"
+    ],
+    "api_id": "raylib:function:ImageDither",
+    "milestone": "images"
+  },
   "ImageFlipVertical": {
     "jonlib": "Surface.flip_vertical",
     "status": "profile-covered",
@@ -982,6 +993,17 @@
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
     "api_id": "raylib:function:GetColor",
+    "milestone": "pixels"
+  },
+  "GetPixelDataSize": {
+    "jonlib": "Pixel.data_size",
+    "status": "profile-covered",
+    "scope": "U32 dimensions 0..4096 and nonnegative signed-int format codes; exact pinned bit rates, truncation, zero-dimension and compressed minimum-size behavior, including ASTC8x8 and unknown formats.",
+    "gaps": [
+      "Wider/signed dimension domains and native integer-overflow behavior",
+      "Full integration/target/performance coverage"
+    ],
+    "api_id": "raylib:function:GetPixelDataSize",
     "milestone": "pixels"
   },
   "CheckCollisionSpheres": {

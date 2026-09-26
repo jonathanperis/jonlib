@@ -16,6 +16,7 @@ import ./src/random.bend as Rng
 import ./src/cellular.bend as Cellular
 import ./src/perlin.bend as Perlin
 import ./src/spline.bend as SplineNumeric
+import ./src/dither.bend as Dither
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -1612,6 +1613,54 @@ type Surface.Error is Data:
   InvalidSize{}
   InvalidRectangle{}
   UnsafeNearestMapping{}
+  InvalidDitherBits{}
+
+type Image.Packed16 is Type:
+  Packed16{width: U32, height: U32, format: U32, pixels: Array<U32>}
+
+def Image.Packed16.export(image: Image.Packed16) -> (U32 & U32) & (U32 & List<U32>):
+  Packed16{+width, +height, format, pixels} = image
+  ((width, height), (format, List.take(&1, U32, Array.to_list(~U32, pixels), U32.to_nat((width * height : U32)))))
+
+def Pixel.bits_per_pixel(format: U32) -> U32:
+  match format:
+    case 1: 8
+    case 2: 16
+    case 3: 16
+    case 4: 24
+    case 5: 16
+    case 6: 16
+    case 7: 32
+    case 8: 32
+    case 9: 96
+    case 10: 128
+    case 11: 16
+    case 12: 48
+    case 13: 64
+    case 14: 4
+    case 15: 4
+    case 16: 8
+    case 17: 8
+    case 18: 4
+    case 19: 4
+    case 20: 8
+    case 21: 4
+    case 22: 4
+    case 23: 8
+    case 24: 2
+    case _: 0
+
+def Pixel.size.checked(valid: Bool, +width: U32, +height: U32, +format: U32) -> Maybe<&2, U32>:
+  match valid:
+    case False{}: None{}
+    case True{}:
+      size = (width * height * Pixel.bits_per_pixel(format) / 8 : U32)
+      +small = ((width < 4) && (height < 4) : U32)
+      Some{Bool.pick(U32, small && ((format >= 14) && (format < 16) : U32), 8,
+        Bool.pick(U32, small && ((format >= 16) && (format < 24) : U32), 16, size))}
+
+def Pixel.data_size(+width: U32, +height: U32, +format: U32) -> Maybe<&2, U32>:
+  Pixel.size.checked(((width <= 4096) && (height <= 4096) && (format <= 2147483647) : U32), width, height, format)
 
 type Image.DecodeError is Data:
   InvalidImageHeader{}
@@ -1661,6 +1710,18 @@ def Surface.creation.checked(ok: Bool, +w: U32, +h: U32, color: U32) -> Maybe<Su
 # The initial profile supports 1..4096 pixels on each axis.
 def Surface.create(+w: U32, +h: U32, color: U32) -> Maybe<Surface>:
   Surface.creation.checked(((w > 0) && (h > 0) && (w <= 4096) && (h <= 4096) : U32), w, h, color)
+
+def Surface.dither.checked(valid: Bool, surface: Surface, +r: U32, +g: U32, +b: U32, +a: U32) -> Result<&1, &1, Surface & Surface.Error, Image.Packed16>:
+  match valid surface:
+    case False{} _: Fail{(surface, InvalidDitherBits{})}
+    case True{} Surface{+w, +h, pixels}:
+      +count = (w * h : U32)
+      Done{Packed16{w, h, Dither.format(r, g, b, a), Dither.loop(U32.to_nat(count), 0, w, h,
+        Dither.Bits{U32.to_nat(r), U32.to_nat(g), U32.to_nat(b), U32.to_nat(a)},
+        (pixels, Array.new(U32, Surface.capacity(count), 0)))}}
+
+def Surface.dither(surface: Surface, +r: U32, +g: U32, +b: U32, +a: U32) -> Result<&1, &1, Surface & Surface.Error, Image.Packed16>:
+  Surface.dither.checked(((r <= 8) && (g <= 8) && (b <= 8) && (a <= 8) && (r + g + b + a <= 16) : U32), surface, r, g, b, a)
 
 def Surface.text.fill(n: Nat, +index: U32, bytes: +List<U32>, pixels: Array<U32>) -> Array<U32>:
   match n bytes:

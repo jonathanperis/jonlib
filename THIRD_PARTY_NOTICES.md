@@ -27,6 +27,8 @@ It is not affiliated with or endorsed by raylib or Bend's maintainers.
   `rtextures.c`; these remain modified Bend implementations with explicit profiles.
   `src/cellular.bend` also adapts `GenImageCellular`, retaining seed order and
   quantization while selecting capped integer squared distances before square root.
+  `src/dither.bend` adapts the same source's Floyd-Steinberg dithering and raw
+  16-bit packing; pixel-data sizing retains the pinned format table and edge rules.
 - Reference testing: `tools/conformance.py` builds a separate raylib executable
   from a locally supplied checkout. Raylib is not linked into the Jonlib runner.
 - API documentation: `api/reference.json`, generated `api/ledger.json` and

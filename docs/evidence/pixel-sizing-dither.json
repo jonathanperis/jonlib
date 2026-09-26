@@ -1,0 +1,15 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {
+    "jonlib.bend": "529823f62c334680c8aebd857cb01f813f9df265b6a51902013c3d0bfe7e4b18",
+    "src/dither.bend": "2871a1a6aef839028b3f76bdc167e6b00c24abf4b41d6e6314ba44c4ca093b08"
+  },
+  "inputs_sha256": "242255f1871a84e0c6ddf94baff766e1ad234f22705ab920a7f016b7388bf7ed",
+  "size_cases": 4563,
+  "dither_cases": 42,
+  "packed_words": 406,
+  "passed": true,
+  "lanes": ["cpu","javascript","metal"],
+  "full_corpus": {"scenarios":261,"output_words_per_lane":40101,"passed":true,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "limits": ["Wider/signed sizing and integer-overflow domains", "Other dither source formats/mipmaps and native 16-bit allocation ABI", "Complete integration/target/resource/performance coverage"]
+}

@@ -32,7 +32,7 @@ originally established the CPU/JS baseline; current CI applies the declared over
 A current run's precise inputs, source hashes and lane outcomes are in
 `.build/conformance.json`. The authoritative [API dashboard](PROGRESS.md) covers
 the complete release-header/support inventory. The 600-entry
-`.build/api-inventory.json` is its legacy core view, mapping 96 reference APIs to
+`.build/api-inventory.json` is its legacy core view, mapping 98 reference APIs to
 these scoped operations/contracts. The companion ledger additionally maps 142
 `raymath.h` functions. Remaining functions retain explicit planned work.
 These counts are an inventory, not a percentage of full parity.
@@ -72,6 +72,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | Cellular images | `Surface.create_cellular` | Exact seed order, full pixels and post-generation state; exhaustive native integer-distance reduction gate |
 | Perlin images | `Surface.create_perlin/create_perlin_for` | Six seeded octaves with explicit arithmetic profiles; exact tables, raw octave values and complete native pixels |
 | Text data / grayscale / palettes | `Surface.create_text_bytes/color_grayscale/load_palette`, `Image.Palette` | Opaque normalized data images; exhaustive native luminance gate; complete ordered/padded palette observations and source preservation |
+| Pixel sizes / raw dithering | `Pixel.data_size`, `Surface.dither`, `Image.Packed16` | Exact all-format size boundaries and raw packed words/metadata; native byte-allocation ABI remains a gap |
 | `ImageFlipHorizontal/Vertical` | `Surface.flip_horizontal/flip_vertical` | Exact explicit and seeded full-image comparisons |
 | `ImageRotateCW/CCW` | `Surface.rotate_cw/rotate_ccw` | Exact RGBA bytes, non-square dimensions and transform sequencing |
 | `ImageRotate` / `ImageToPOT` | `Surface.rotate_degrees_for/to_pot` | Checked general rotation with reference bilinear sampling; exhaustive supported POT-axis reference validation and exact fill/copy fixtures |

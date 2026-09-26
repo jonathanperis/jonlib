@@ -42,6 +42,7 @@ Spline point queries and their explicit arithmetic profiles are listed in
 [SPLINES.md](SPLINES.md).
 Owned random-stream APIs and their native rprand profile are described in
 [RANDOM.md](RANDOM.md).
+Pixel sizing and raw packed dithering are documented in [PIXELS.md](PIXELS.md).
 
 ## Owned RGBA8 surfaces
 
@@ -112,6 +113,7 @@ is outside this API's contract.
 | `Surface.color_tint`, `color_invert`, `color_contrast`, `color_brightness`, `color_replace` | Owned RGBA8 transforms described below. |
 | `Surface.color_grayscale(surface) -> Surface` | Reference luminance conversion with opaque grayscale RGBA8 output; alpha is discarded. See [PALETTES.md](PALETTES.md). |
 | `Surface.load_palette(surface, maximum) -> Surface & Maybe<Image.Palette>` | Preserves source; first-occurrence RGBA colors excluding alpha zero, with exact count and full padded capacity. Capacity 1..4096; access/disposal in [PALETTES.md](PALETTES.md). |
+| `Surface.dither(surface, r_bits, g_bits, b_bits, a_bits)` | Returns an owned `Image.Packed16` or original source with `InvalidDitherBits`; channel widths 0..8 totaling at most 16. Exact raw format/export rules in [PIXELS.md](PIXELS.md). |
 | `Surface.alpha_clear(surface, color, threshold)` | Finite threshold 0..1, converted to an inclusive alpha-byte cutoff; replaces all RGBA bytes at matching pixels. |
 | `Surface.alpha_premultiply(surface)` | Reference F32 alpha multiplication of RGB, including transparent-black conversion; retains alpha. |
 | `Surface.alpha_mask(destination, mask)` | Same-size RGBA8 mask converted to reference grayscale values, replacing destination alpha while preserving the original mask. Returns the two-owner Result; mismatched dimensions return both originals with `InvalidSize`. |
@@ -222,8 +224,8 @@ degenerate behavior.
 
 ### Transform failures
 
-`Surface.Error` has `InvalidSize`, `InvalidRectangle` and `UnsafeNearestMapping`
-constructors. A failed crop/resize returns `(original, error)` in `Fail`; failed
+`Surface.Error` has `InvalidSize`, `InvalidRectangle`, `UnsafeNearestMapping`
+and `InvalidDitherBits` constructors. A failed crop/resize/dither returns `(original, error)` in `Fail`; failed
 region drawing returns `((destination, source), error)`. Callers can recover and
 reuse these owners. `Done` carries the resulting surface or pair.
 

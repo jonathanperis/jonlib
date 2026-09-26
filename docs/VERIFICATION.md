@@ -50,7 +50,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 96 have
+- The pinned core header inventory contains 600 unique public functions; 98 have
   explicitly scoped Jonlib mappings. The raymath ledger additionally maps 142
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
@@ -990,3 +990,26 @@ exceptional/subnormal/extrapolation domains and full target/performance coverage
 remain gaps.
 
 Regression scan: 61 callers checked, 20 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `5c2b6a8`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36247485444)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36247485460)
+completed successfully, including the new linked spline-point gate.
+
+## Pixel sizing and raw dithering
+
+The dedicated pixel probe passes 4,563 all-format size results and 42 complete
+dithered images (406 packed words) on CPU, JavaScript and forced Metal. Exact
+metadata includes known 16-bit formats and format zero for custom layouts.
+Sizing retains the unusual both-small-axes minimums, zero dimensions and the
+ASTC 8×8 exception. Dithering retains row-order diffusion, truncation, saturation
+and undiffused alpha. [Evidence](evidence/pixel-sizing-dither.json) records the
+inputs and source hashes. No RGBA conversion hides raw packing or format details.
+
+The unchanged 261-scenario image/numeric corpus still passes every CPU-1/CPU-2/
+JavaScript/forced-Metal word. Four new contracts verify rejected dither owners
+and out-of-profile size requests. A26/A3/A4/A5, eight harness tests, project checks
+and all four pinned laws pass. I73/I74 match the bounded sizing and owned raw
+format contracts. Wider/signed size domains, other input formats/mipmaps, native
+allocation ABI and complete target/resource/performance evidence remain gaps.
+
+Regression scan: 23 callers checked, 6 assertions checked, 0 flagged/fixed.

@@ -39566,7 +39566,7 @@
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
       "next_step": "Resolve: Native Apple powf(t,3) differs from a double-cube substitute: 6670/1048576 investigated inputs, with a retained actual GetSplinePointBezierCubic coordinate mismatch.",
-      "priority": 2
+      "priority": 3
     },
     {
       "id": "raylib:function:CheckCollisionRecs",
@@ -41850,7 +41850,7 @@
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
       "next_step": "Derive ImageFormat semantics from the linked source, add a reference fixture, then implement Color.image_format.",
-      "priority": 206
+      "priority": 2
     },
     {
       "id": "raylib:function:ImageToPOT",
@@ -42594,23 +42594,28 @@
       "milestone": "images",
       "phase": 1,
       "sequence": 7,
-      "status": "not-started",
-      "jonlib": "Surface.image_dither",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Surface.dither / Image.Packed16.export",
+      "mapping_state": "implemented",
+      "scope": "Owned RGBA8 to raw 16-bit-word Floyd-Steinberg output for per-channel widths 0..8 totaling at most 16. Preserves raster order, truncation, neighbor saturation, alpha handling and exact format metadata; rejects unsupported bits with original surface.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Other source formats/mipmaps and native 16-bit memory/allocator ABI",
+        "Full integration/target/resource/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/pixel_probe.py",
+        "tests/transforms.bend",
+        "docs/PIXELS.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -42624,8 +42629,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
-      "next_step": "Derive ImageDither semantics from the linked source, add a reference fixture, then implement Surface.image_dither.",
-      "priority": 1
+      "next_step": "Close documented gaps and unverified gates for ImageDither.",
+      "priority": 207
     },
     {
       "id": "raylib:function:ImageFlipVertical",
@@ -46993,7 +46998,7 @@
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
       "next_step": "Derive GetPixelColor semantics from the linked source, add a reference fixture, then implement Color.get_pixel_color.",
-      "priority": 206
+      "priority": 0
     },
     {
       "id": "raylib:function:SetPixelColor",
@@ -47049,7 +47054,7 @@
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
       "next_step": "Derive SetPixelColor semantics from the linked source, add a reference fixture, then implement Color.set_pixel_color.",
-      "priority": 206
+      "priority": 1
     },
     {
       "id": "raylib:function:GetPixelDataSize",
@@ -47074,23 +47079,28 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
-      "jonlib": "Color.get_pixel_data_size",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Pixel.data_size",
+      "mapping_state": "implemented",
+      "scope": "U32 dimensions 0..4096 and nonnegative signed-int format codes; exact pinned bit rates, truncation, zero-dimension and compressed minimum-size behavior, including ASTC8x8 and unknown formats.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Wider/signed dimension domains and native integer-overflow behavior",
+        "Full integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/pixel_probe.py",
+        "tests/transforms.bend",
+        "docs/PIXELS.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47102,8 +47112,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive GetPixelDataSize semantics from the linked source, add a reference fixture, then implement Color.get_pixel_data_size.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for GetPixelDataSize.",
+      "priority": 206
     },
     {
       "id": "raylib:function:GetFontDefault",
@@ -66988,7 +66998,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.",
-      "priority": 6
+      "priority": 7
     },
     {
       "id": "raymath:function:MatrixOrtho",
@@ -67993,7 +68003,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Base and investigated inverse-trig models differ from the actual float libm; no verified acos profile is available yet.",
-      "priority": 3
+      "priority": 4
     },
     {
       "id": "raymath:function:QuaternionCubicHermiteSpline",
@@ -68354,7 +68364,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Native acosf endpoint/tail values differ from Base and investigated numerical models.",
-      "priority": 4
+      "priority": 5
     },
     {
       "id": "raymath:function:QuaternionFromEuler",
@@ -68475,7 +68485,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models.",
-      "priority": 5
+      "priority": 6
     },
     {
       "id": "raymath:function:QuaternionTransform",

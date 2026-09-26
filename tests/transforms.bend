@@ -20,6 +20,8 @@ def failed(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>, expec
           U32.is_eq(expected, 1) && pixels_kept(J.Surface.colors(surface))
         case J.UnsafeNearestMapping{}:
           U32.is_eq(expected, 2) && pixels_kept(J.Surface.colors(surface))
+        case J.InvalidDitherBits{}:
+          False{}
 
 def invalid(created: Maybe<J.Surface>, operation: U32) -> Bool:
   match created:
@@ -188,6 +190,22 @@ def palette_created(created: Maybe<J.Surface>, invalid: Bool) -> Bool:
     case Some{surface} True{}: palette_rejected(J.Surface.load_palette(surface, 0))
     case Some{surface} False{}: palette_disposed(J.Surface.load_palette(surface, 4))
 
+def dither_rejected(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Image.Packed16>) -> Bool:
+  match result:
+    case Fail{Tuple{surface, J.InvalidDitherBits{}}}: pixels_kept(J.Surface.colors(surface))
+    case _: False{}
+
+def dither_created(created: Maybe<J.Surface>, wide: Bool) -> Bool:
+  match created wide:
+    case None{} _: False{}
+    case Some{surface} True{}: dither_rejected(J.Surface.dither(surface, 9, 0, 0, 0))
+    case Some{surface} False{}: dither_rejected(J.Surface.dither(surface, 8, 8, 8, 8))
+
+def no_size(result: Maybe<&2, U32>) -> Bool:
+  match result:
+    case None{}: True{}
+    case Some{_}: False{}
+
 def verdict(ok: Bool) -> IO(Unit):
   match ok:
     case True{}:
@@ -236,6 +254,10 @@ def checks() -> Bool:
     && no_surface(J.Surface.create_text_bytes(1, 1, [0, 256]))
     && palette_created(J.Surface.create(2, 1, 16909060), True{})
     && palette_created(J.Surface.create(2, 1, 16909060), False{})
+    && dither_created(J.Surface.create(2, 1, 16909060), True{})
+    && dither_created(J.Surface.create(2, 1, 16909060), False{})
+    && no_size(J.Pixel.data_size(4097, 1, 7))
+    && no_size(J.Pixel.data_size(1, 1, 2147483648))
 
 def main() -> IO(Unit):
   verdict(checks())
