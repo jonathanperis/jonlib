@@ -6,24 +6,24 @@
     "blocked": 5,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1618,
-    "partial": 261
+    "not-started": 1617,
+    "partial": 262
   },
   "core_functions": {
     "total": 600,
     "blocked": 1,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 498,
-    "partial": 101
+    "not-started": 497,
+    "partial": 102
   },
   "function_declarations": {
     "total": 931,
     "blocked": 5,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 683,
-    "partial": 243
+    "not-started": 682,
+    "partial": 244
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -46,8 +46,8 @@
       "blocked": 1,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 926,
-      "partial": 110
+      "not-started": 925,
+      "partial": 111
     },
     "raymath.h": {
       "total": 254,
@@ -232,8 +232,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 5,
-      "partial": 3
+      "not-started": 4,
+      "partial": 4
     },
     {
       "id": "collision",
@@ -563,12 +563,12 @@
   ],
   "next_work": [
     {
-      "id": "raylib:function:LoadImageRaw",
-      "name": "LoadImageRaw",
+      "id": "raylib:function:LoadImageFromMemory",
+      "name": "LoadImageFromMemory",
       "milestone": "image-codecs",
-      "status": "not-started",
-      "jonlib": "Surface.load_image_raw",
-      "next_step": "Derive LoadImageRaw semantics from the linked source, add a reference fixture, then implement Surface.load_image_raw.",
+      "status": "partial",
+      "jonlib": "Surface.decode_qoi",
+      "next_step": "Close documented gaps and unverified gates for LoadImageFromMemory.",
       "milestone_dependencies": [
         "files",
         "pixels",
@@ -581,7 +581,7 @@
       "name": "ExportImage",
       "milestone": "image-codecs",
       "status": "partial",
-      "jonlib": "Surface.write_qoi / Surface.to_qoi",
+      "jonlib": "Surface.write_qoi / Surface.to_qoi / Image.Formatted.write_raw",
       "next_step": "Close documented gaps and unverified gates for ExportImage.",
       "milestone_dependencies": [
         "files",

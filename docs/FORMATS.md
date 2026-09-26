@@ -16,6 +16,8 @@ separate compatibility gaps.
 
 Create owners with the checked factory or Surface bridge. Manually inconsistent
 `FormattedImage{width, height, format, pixels}` values are outside the contract.
+`Image.Formatted.load_raw` and `write_raw` provide file boundaries with explicit
+header/error/closure behavior, documented in [RAW-FILES.md](RAW-FILES.md).
 
 ## Conversion arithmetic
 

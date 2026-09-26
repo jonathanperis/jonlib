@@ -221,6 +221,17 @@
     "api_id": "raylib:function:LoadImage",
     "milestone": "image-codecs"
   },
+  "LoadImageRaw": {
+    "jonlib": "Image.Formatted.load_raw",
+    "status": "profile-covered",
+    "scope": "Ordinary non-changing files, formats 1..7 and dimensions 1..4096; exact payload bytes and native header-fit/fallback-to-zero behavior. Bounded positional reads, typed parameter/file/size/truncation errors and explicit file closure.",
+    "gaps": [
+      "Other formats, signed/out-of-range parameters and concurrent/special-file behavior",
+      "Native callbacks/allocation ABI and complete target/integration/performance coverage"
+    ],
+    "api_id": "raylib:function:LoadImageRaw",
+    "milestone": "image-codecs"
+  },
   "LoadImageFromMemory": {
     "jonlib": "Surface.decode_qoi",
     "status": "profile-covered",
@@ -235,13 +246,12 @@
     "milestone": "image-codecs"
   },
   "ExportImage": {
-    "jonlib": "Surface.write_qoi / Surface.to_qoi",
+    "jonlib": "Surface.write_qoi / Surface.to_qoi / Image.Formatted.write_raw",
     "status": "profile-covered",
-    "scope": "QOI export from owned RGBA8; exact reference bytes; fixed channels=4/colorspace=0; Base byte-file writing.",
+    "scope": "QOI export from owned RGBA8 with fixed channels=4/colorspace=0, plus headerless RAW export for byte/integer formats 1..7. Exact native bytes and Base file-write/closure behavior.",
     "gaps": [
-      "Other export formats and source pixel formats",
-      "Format dispatch",
-      "Complete targets/integration/performance"
+      "Other export/source formats and generic extension dispatch",
+      "Native callbacks/allocation ABI and complete targets/integration/performance"
     ],
     "api_id": "raylib:function:ExportImage",
     "milestone": "image-codecs"

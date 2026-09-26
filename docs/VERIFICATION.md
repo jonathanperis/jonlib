@@ -50,7 +50,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 101 have
+- The pinned core header inventory contains 600 unique public functions; 102 have
   explicitly scoped Jonlib mappings. The raymath ledger additionally maps 142
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
@@ -1103,3 +1103,31 @@ Hosted follow-up confirmation remains pending, and no runtime performance-parity
 claim follows from these compile-resource measurements.
 
 Regression scan: 8 callers checked, 5 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `2ec4131`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36259006133)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36259006097)
+completed successfully after the private angle branch rewrite.
+
+## Raw image-file boundaries
+
+The raw-file probe passes 25 native load/export cases, a native export failure,
+five typed boundary controls and 100 low-descriptor closure iterations on both
+CPU and JavaScript. Native tests cover all seven byte/integer formats, exact-fit
+headers, non-fitting headers, the largest permitted header, ignored file tails
+and missing/empty/truncated inputs. Each successful candidate export is compared
+byte-for-byte with actual raylib `ExportImage`. Metadata is checked before the
+round trip to prevent a compensating loader/exporter error from hiding it.
+See [evidence/raw-image-files.json](evidence/raw-image-files.json).
+
+The loader uses bounded positional reads and closes opened handles on every
+observed outcome. Unsupported requests are rejected before opening; the native
+header-does-not-fit behavior is preserved as an explicit selection of offset zero.
+The shared byte producer now supports the output quantities required by Base IO;
+all 109 format-pair/chain/bridge results and the full 261-scenario / 40,101-word
+CPU-1/CPU-2/JavaScript/forced-Metal corpus still pass. Eight harness tests, project
+checks and all four pinned laws pass. A26/A28 and I80 hold for the declared raw
+file profile. GPU filesystem IO, other formats/parameters, concurrent/special-file
+semantics, native callbacks/allocation ABI and full target/performance coverage
+remain gaps.
+
+Regression scan: 30 callers checked, 11 assertions checked, 1 flagged/fixed.

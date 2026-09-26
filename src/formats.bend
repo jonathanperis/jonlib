@@ -36,15 +36,15 @@ def unpack(n: Nat, +index: U32, +bytes_per_pixel: Nat, input: Maybe<Input>) -> M
     case 1n+rest Some{Input{bytes, pixels}}:
       unpack(rest, (index + 1 : U32), bytes_per_pixel, read_pixel(index, pixels, read_word(bytes_per_pixel, 0n, 0, bytes)))
 
-def word_bytes(n: Nat, +word: U32, values: List<U32>) -> List<U32>:
+def word_bytes(~q: Quant, n: Nat, +word: U32, values: List<q, U32>) -> List<q, U32>:
   match n:
     case 0n: values
-    case 1n+rest: word_bytes(rest, (word >> 8n : U32), Con{(word .&. 255 : U32), values})
+    case 1n+rest: word_bytes(~q, rest, (word >> 8n : U32), Con{(word .&. 255 : U32), values})
 
-def bytes(pixels: List<U32>, +bytes_per_pixel: Nat, values: List<U32>) -> List<U32>:
+def bytes(~q: Quant, pixels: List<U32>, +bytes_per_pixel: Nat, values: List<q, U32>) -> List<q, U32>:
   match pixels:
-    case Nil{}: List.reverse(&1, U32, values)
-    case Con{word, rest}: bytes(rest, bytes_per_pixel, word_bytes(bytes_per_pixel, word, values))
+    case Nil{}: List.reverse(q, U32, values)
+    case Con{word, rest}: bytes(~q, rest, bytes_per_pixel, word_bytes(~q, bytes_per_pixel, word, values))
 
 def byte_norm(value: U32) -> F32:
   (U32.to_f32(value) / 255.0 : F32)

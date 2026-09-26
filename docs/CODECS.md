@@ -1,5 +1,8 @@
 # Image codec profiles
 
+Headerless byte/integer image files are supported through the owned formatted
+image APIs; see [RAW-FILES.md](RAW-FILES.md) for exact loading/export contracts.
+
 ## QOI
 
 The QOI implementation is entirely Bend, in `src/qoi.bend`. Its error and

@@ -1,0 +1,18 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {
+    "jonlib.bend": "70e885a6dd5447fed1a6113870719170c8091304b4c44f0ca84d8b66e8d7d2b4",
+    "src/formats.bend": "f4f2a2a0777e17262782fb181664ba9b2b35d5cd821ba47b2d26598d3fc634ff"
+  },
+  "inputs_sha256": "3d253a75aa6e5b7e8a56d38d83b664488c8efb9bb6d5ca7e4f9cbafd7bc78a39",
+  "native_load_export_cases": 25,
+  "native_export_failure_cases": 1,
+  "boundary_controls": 5,
+  "closure_iterations_per_lane": 100,
+  "file_descriptor_limit": 64,
+  "passed": true,
+  "file_io_lanes": ["cpu","javascript"],
+  "pure_format_lanes": ["cpu","javascript","metal"],
+  "full_corpus": {"scenarios":261,"output_words_per_lane":40101,"passed":true,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "limits": ["Other formats and signed/out-of-range parameters", "Concurrent/special-file behavior, native callbacks and allocation ABI", "GPU filesystem IO and complete target/integration/performance coverage"]
+}
