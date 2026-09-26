@@ -50,7 +50,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 102 have
+- The pinned core header inventory contains 600 unique public functions; 103 have
   explicitly scoped Jonlib mappings. The raymath ledger additionally maps 142
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
@@ -1203,3 +1203,33 @@ gains PNM coverage; 16-bit PNM, original-format metadata, permissive malformed
 header recovery and full target/resource/performance evidence remain gaps.
 
 Regression scan: 30 callers checked, 48 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `78ea12b`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36265201324)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36265201350)
+completed successfully, including binary PGM/PPM boundaries.
+
+## Raw DEFLATE and PNG-oriented dependency
+
+The bounded decoder passes 24 streams against actual `DecompressData` and linked
+stb raw inflation on CPU, JavaScript and forced Metal. Full outputs total 122,651
+bytes for the public native profile and 125,651 for the PNG-oriented path.
+The difference is retained explicitly: a non-final empty stored block terminates
+native `DecompressData` after 300 bytes, while stb and zlib return the full 3,300.
+Stored/fixed/dynamic blocks, all three code-length repeat commands, literal-only
+trees without distance codes, exact distance 32,768, overlap, multiple blocks
+and the 1-MiB compressed-input boundary are covered. Sixteen invalid/limit controls
+pass for both paths. See [evidence/raw-deflate.json](evidence/raw-deflate.json).
+
+Forced Metal exposed stack growth when exporting a larger output through generic
+list prefix extraction. Tail-recursive owned-array extraction fixes that failure;
+all original streams and native expected bytes are retained. The full 261-scenario
+/ 40,101-word corpus, eight harness tests, project checks and four pinned laws pass.
+The scoped drift review confirms I84, C3/C6, A4/A5/A6 and V2/V3 for the exercised
+profile. The ledger gains one partial `DecompressData` mapping, reaching 103 core
+and 142 raymath partial functions. No API has passed every full-parity gate.
+
+Zlib/gzip framing, PNG chunk/filter integration, larger inputs, other native
+malformed/partial-output recovery, allocation ABI and full target/resource/
+performance evidence remain gaps.
+
+Regression scan: 61 callers checked, 21 assertions checked, 2 flagged/fixed.

@@ -43,6 +43,7 @@ differential test reference.
 - BMP 24/32-bit memory decoding and exact RGBA8 V4 export; owned raw image-file IO.
 - TGA raw/RLE true-color and grayscale decoding with byte-exact default RLE export.
 - Binary PGM/PPM byte-sample decoding with native header and maxval behavior.
+- Bounded raw DEFLATE decompression with native empty-block semantics.
 - Initial scalar and Vector2 math under an explicit uncontracted-F32 profile.
 - Horizontal and vertical flips.
 - Conversion to Bend's `Base.Image` quadtree.

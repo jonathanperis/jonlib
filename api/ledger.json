@@ -32636,23 +32636,29 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.decompress_data",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Compression.decompress",
+      "mapping_state": "implemented",
+      "scope": "Bounded raw DEFLATE with stored/fixed/dynamic blocks, code-length repeats and overlapping copies. Input at most 1 MiB, caller output capacity 0..64 MiB; returns Maybe of owned bytes. Preserves native early completion on empty stored blocks.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Larger compressed inputs and native pointer/allocation ABI",
+        "Other permissive malformed/partial-output recovery",
+        "Complete integration/target/resource/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/inflate_probe.py",
+        "docs/DEFLATE.md",
+        "docs/evidence/raw-deflate.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -32663,7 +32669,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive DecompressData semantics from the linked source, add a reference fixture, then implement File.decompress_data.",
+      "next_step": "Close documented gaps and unverified gates for DecompressData.",
       "priority": 204
     },
     {

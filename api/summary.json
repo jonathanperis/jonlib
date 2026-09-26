@@ -6,24 +6,24 @@
     "blocked": 5,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1617,
-    "partial": 262
+    "not-started": 1616,
+    "partial": 263
   },
   "core_functions": {
     "total": 600,
     "blocked": 1,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 497,
-    "partial": 102
+    "not-started": 496,
+    "partial": 103
   },
   "function_declarations": {
     "total": 931,
     "blocked": 5,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 682,
-    "partial": 244
+    "not-started": 681,
+    "partial": 245
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -46,8 +46,8 @@
       "blocked": 1,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 925,
-      "partial": 111
+      "not-started": 924,
+      "partial": 112
     },
     "raymath.h": {
       "total": 254,
@@ -156,8 +156,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 49,
-      "partial": 0
+      "not-started": 48,
+      "partial": 1
     },
     {
       "id": "random",

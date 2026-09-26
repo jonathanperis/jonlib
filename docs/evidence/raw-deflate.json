@@ -1,0 +1,18 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {
+    "jonlib.bend": "831c4c229ecdfc7eeebf26cd586b1e8b1fed3426ad0294fce974069666bf107b",
+    "src/inflate.bend": "b108ad51da394faab07bda4eea47149c558cba0799ccb8698d10c320402d50c4"
+  },
+  "inputs_sha256": "44a77fad0f4cd223eb0ecaed17df3935a987413e83a3cf5897c23934d9ed62a6",
+  "reference_sha256": "480550db69dd9d62228ef58d8f1b4ae555df7c84908391e6ed0c889f1db71da0",
+  "valid_streams": 24,
+  "invalid_controls": 16,
+  "native_output_bytes": 122651,
+  "png_output_bytes": 125651,
+  "empty_stored_block": {"native_prefix_bytes":300,"png_complete_bytes":3300},
+  "passed": true,
+  "lanes": ["cpu","javascript","metal"],
+  "full_corpus": {"scenarios":261,"output_words_per_lane":40101,"passed":true,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "limits": ["Larger compressed inputs and native allocation ABI", "Other malformed/partial-output recovery", "Zlib/gzip framing and PNG image integration", "Complete target/resource/performance coverage"]
+}

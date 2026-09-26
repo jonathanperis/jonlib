@@ -46,6 +46,8 @@ Pixel sizing, raw byte/integer reads and writes, and packed dithering are
 documented in [PIXELS.md](PIXELS.md).
 Owned byte/integer image conversion and Surface bridges are documented in
 [FORMATS.md](FORMATS.md).
+Bounded raw DEFLATE and its reference-specific empty-block behavior are documented
+in [DEFLATE.md](DEFLATE.md).
 
 ## Owned RGBA8 surfaces
 

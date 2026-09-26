@@ -21,9 +21,13 @@ import ./src/formats.bend as Formats
 import ./src/bmp.bend as Bmp
 import ./src/tga.bend as Tga
 import ./src/pnm.bend as Pnm
+import ./src/inflate.bend as Inflate
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
+
+def Compression.decompress(bytes: +List<U32>, maximum: U32) -> Maybe<List<U32>>:
+  Inflate.decompress(True{}, bytes, maximum)
 
 type Vector3 is Data:
   Vector3{x: F32, y: F32, z: F32}

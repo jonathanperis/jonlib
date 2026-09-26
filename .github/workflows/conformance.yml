@@ -144,6 +144,11 @@ jobs:
         run: >-
           python3 tools/verify_bend.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+      - name: Verify raw and PNG-oriented DEFLATE behavior
+        run: >-
+          python3 tools/inflate_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Record default-filter precision diagnostics
         run: >-
           python3 tools/filter_probe.py
@@ -214,3 +219,4 @@ jobs:
             .build/bmp-probe/results.json
             .build/tga-probe/results.json
             .build/pnm-probe/results.json
+            .build/inflate-probe/results.json

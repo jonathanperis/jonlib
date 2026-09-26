@@ -75,6 +75,11 @@ byte validation, preserves the exercised native pixel/export rules, and rejects
 unsupported or truncated inputs. The native headers are used only by reference
 tooling; no stb implementation is linked into the Bend candidate.
 
+`src/inflate.bend` adapts the canonical DEFLATE decoding rules from the same
+stb header to bounded owned output and tail-recursive extraction. Its raw API
+also retains the observed empty-stored-block completion rule of raylib's
+`DecompressData`. Native sinfl, stb and zlib are reference tooling only.
+
 ## Arm numerical routines
 
 The GNU-reference polynomial in `src/trig.bend` and its independent C control

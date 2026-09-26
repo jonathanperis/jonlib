@@ -10,6 +10,9 @@ documented in [TGA.md](TGA.md).
 Binary 8-bit P5/P6 decoding and native maxval/separator rules are documented in
 [PNM.md](PNM.md).
 
+The raw [DEFLATE dependency](DEFLATE.md) is verified separately. PNG image parsing
+and filtering are not yet implemented by the current codecs.
+
 ## QOI
 
 The QOI implementation is entirely Bend, in `src/qoi.bend`. Its error and

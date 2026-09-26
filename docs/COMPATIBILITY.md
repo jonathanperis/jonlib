@@ -32,7 +32,7 @@ originally established the CPU/JS baseline; current CI applies the declared over
 A current run's precise inputs, source hashes and lane outcomes are in
 `.build/conformance.json`. The authoritative [API dashboard](PROGRESS.md) covers
 the complete release-header/support inventory. The 600-entry
-`.build/api-inventory.json` is its legacy core view, mapping 102 reference APIs to
+`.build/api-inventory.json` is its legacy core view, mapping 103 reference APIs to
 these scoped operations/contracts. The companion ledger additionally maps 142
 `raymath.h` functions. Remaining functions retain explicit planned work.
 These counts are an inventory, not a percentage of full parity.
@@ -83,6 +83,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | BMP decoding/export | `Surface.decode_bmp/to_bmp/write_bmp` | Bounded INFO/V4 24/32-bit decoding; exact RGBA8 V4 bytes, native alpha/orientation/gap rules and typed malformed-input checks |
 | TGA decoding/export | `Surface.decode_tga/to_tga/write_tga` | Raw/RLE true-color and grayscale profiles; exact default per-row RLE packet bytes and bounded decode errors |
 | Binary PGM/PPM decoding | `Surface.decode_pnm` | P5/P6 byte samples, native maxval/separator/comment rules and full dimension-boundary pixels |
+| Raw DEFLATE | `Compression.decompress` | Stored/fixed/dynamic blocks and bounded copies; native empty-stored-block completion differs explicitly from the internal PNG-oriented path |
 | Scalar/Vector2/Vector3/Vector4 raymath | `Math` and vector functions | Exact results for the explicit uncontracted-F32 profile; exceptional/contracted variants remain open |
 | Vector angle queries | `Vector2.angle/line_angle`, `Vector3.angle` and `_for` variants | Explicit Apple/GNU numerical profiles with exact native/control probes and signed quadrant behavior |
 | Quaternion arithmetic/metrics/interpolation | `Quaternion` functions | Shared Vector4 representation; exact Hamilton products, zero normalization/inversion, NLERP and sign-equivalent equality |
