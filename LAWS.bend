@@ -12,3 +12,11 @@ law clear_dimensions:
 law transpose_involution:
   for +matrix: J.Matrix
   {J.Matrix.transpose(J.Matrix.transpose(matrix)) == matrix : J.Matrix}
+
+law vector3_float_count:
+  for vector: J.Vector3
+  {List.length(&2, F32, J.Vector3.to_float_v(vector)) == 3n : Nat}
+
+law matrix_float_count:
+  for matrix: J.Matrix
+  {List.length(&2, F32, J.Matrix.to_float_v(matrix)) == 16n : Nat}

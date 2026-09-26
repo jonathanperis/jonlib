@@ -54,6 +54,9 @@ Supported operations:
   barycentric fixtures require a nonzero denominator after reference F32 rounding.
   Matrix inversion fixtures independently check the reference inversion-minor
   denominator; they do not substitute the public determinant's arithmetic.
+- Float-list exports compare every element in native return order; the Bend
+  verification writer rejects both short and overlong returned lists.
+- `vector4_value` uses flattened XYZW arguments and checks all four result cells.
 - `color_tint`, `color_invert`, `color_contrast`, `color_brightness`,
   `color_replace`: image transforms. Tint/replacement use RGBA `color`,
   replacement also uses `replacement`, and contrast/brightness use `amount`.

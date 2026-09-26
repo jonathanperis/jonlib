@@ -1,8 +1,8 @@
 # Math profiles
 
 The current math implementation is Bend source in `jonlib.bend`. It begins the
-`raymath.h` work package with six scalar, twenty-nine Vector2, thirty-four Vector3
-and eighteen Matrix functions.
+`raymath.h` work package with six scalar, twenty-nine Vector2, thirty-five Vector3,
+six Vector4 and nineteen Matrix functions.
 
 ## Scalar API
 
@@ -101,6 +101,13 @@ updated vectors as a pair, corresponding to two distinct pointer outputs in C.
 Zero and parallel inputs retain the reference arithmetic instead of inventing
 a replacement basis. Aliased C pointer behavior remains outside this mapping.
 
+## Vector4 API
+
+`Vector4{x, y, z, w}` is immutable `Data` with four F32 fields.
+The initial operations are `zero()`, `one()`, `add(left, right)`,
+`subtract(left, right)`, `scale(vector, scalar)` and `multiply(left, right)`.
+All four components are compared bitwise, including W and signed-zero results.
+
 ## Matrix API
 
 `Matrix` is immutable `Data`. Constructor fields match the reference declaration:
@@ -158,6 +165,18 @@ F32 values around π/4, quadrant/full-cycle angles, non-unit and zero axes.
 without perspective division. The Vector2 version retains the multiplication
 and addition of the zero-Z term; dropping it could change signed-zero behavior.
 All 16 matrix fields and all transformed vector components are checked bitwise.
+
+## Float-list exports
+
+`Vector3.to_float_v(vector) -> +List<F32>` returns exactly `[x, y, z]`.
+`Matrix.to_float_v(matrix) -> +List<F32>` returns exactly `[m0, m1, ..., m15]`.
+The matrix export order differs from its row-wise constructor order.
+
+These immutable lists adapt raymath's `float3` and `float16` return carriers.
+The export lengths have structural laws checked in `PROOF.bend`; runtime
+conformance verifies list length, order and every F32 bit. Native contiguous-array
+ABI and mutability correspondence remain gaps, and the general list type itself
+does not enforce a fixed length for arbitrary caller-created lists.
 
 ## Floating-point contract and evidence
 

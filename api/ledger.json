@@ -3208,23 +3208,26 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Immutable four-F32 XYZW value used by component arithmetic.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Complete numeric domains and integration/target/performance evidence"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/API.md",
+        "tests/fixtures/images.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -3235,7 +3238,7 @@
         "raymath:type:Vector4"
       ],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive Vector4 semantics from the linked source, add a reference fixture, then implement Vector4.",
+      "next_step": "Close documented gaps and unverified gates for Vector4.",
       "priority": 100
     },
     {
@@ -59361,23 +59364,26 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Four F32 components shared with the raylib Vector4 mapping.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Remaining vector operations and full integration/target/performance evidence"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/MATH.md",
+        "tests/fixtures/images.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59388,7 +59394,7 @@
         "raylib:type:Vector4"
       ],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive Vector4 semantics from the linked source, add a reference fixture, then implement Vector4.",
+      "next_step": "Close documented gaps and unverified gates for Vector4.",
       "priority": 100
     },
     {
@@ -59708,23 +59714,29 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
-      "jonlib": "float3",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "+List<F32> returned by Vector3.to_float_v",
+      "mapping_state": "implemented",
+      "scope": "Immutable three-element float return carrier; exact length has a checked structural proof.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native contiguous-array ABI/mutability and static fixed-length type correspondence",
+        "Full integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/MATH.md",
+        "LAWS.bend",
+        "PROOF.bend",
+        "tests/fixtures/images.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59733,7 +59745,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive float3 semantics from the linked source, add a reference fixture, then implement float3.",
+      "next_step": "Close documented gaps and unverified gates for float3.",
       "priority": 100
     },
     {
@@ -59817,23 +59829,29 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
-      "jonlib": "float16",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "+List<F32> returned by Matrix.to_float_v",
+      "mapping_state": "implemented",
+      "scope": "Immutable sixteen-element float return carrier in numeric m0..m15 order; exact length has a checked structural proof.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native contiguous-array ABI/mutability and static fixed-length type correspondence",
+        "Full integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/MATH.md",
+        "LAWS.bend",
+        "PROOF.bend",
+        "tests/fixtures/images.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59842,7 +59860,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive float16 semantics from the linked source, add a reference fixture, then implement float16.",
+      "next_step": "Close documented gaps and unverified gates for float16.",
       "priority": 100
     },
     {
@@ -64096,23 +64114,29 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector3.to_float_v",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Immutable F32 list containing exactly X, Y, Z; exact component bits and proven length.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native array ABI/mutability correspondence",
+        "Complete numeric/integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "LAWS.bend",
+        "PROOF.bend",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64126,8 +64150,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3ToFloatV semantics from the linked source, add a reference fixture, then implement Vector3.to_float_v.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for Vector3ToFloatV.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3Invert",
@@ -64447,23 +64471,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.zero",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Four positive-zero F32 components.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Full integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64476,8 +64503,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4Zero semantics from the linked source, add a reference fixture, then implement Vector4.zero.",
-      "priority": 2
+      "next_step": "Close documented gaps and unverified gates for Vector4Zero.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4One",
@@ -64502,23 +64529,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.one",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Four F32 components equal to one.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Full integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64531,8 +64561,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4One semantics from the linked source, add a reference fixture, then implement Vector4.one.",
-      "priority": 3
+      "next_step": "Close documented gaps and unverified gates for Vector4One.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4Add",
@@ -64557,23 +64587,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.add",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 XYZW component addition, including signed-zero cases.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64586,8 +64619,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4Add semantics from the linked source, add a reference fixture, then implement Vector4.add.",
-      "priority": 4
+      "next_step": "Close documented gaps and unverified gates for Vector4Add.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4AddValue",
@@ -64642,7 +64675,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4AddValue semantics from the linked source, add a reference fixture, then implement Vector4.add_value.",
-      "priority": 202
+      "priority": 0
     },
     {
       "id": "raymath:function:Vector4Subtract",
@@ -64667,23 +64700,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.subtract",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 XYZW component subtraction in reference operand order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64696,8 +64732,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4Subtract semantics from the linked source, add a reference fixture, then implement Vector4.subtract.",
-      "priority": 5
+      "next_step": "Close documented gaps and unverified gates for Vector4Subtract.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4SubtractValue",
@@ -64752,7 +64788,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4SubtractValue semantics from the linked source, add a reference fixture, then implement Vector4.subtract_value.",
-      "priority": 202
+      "priority": 1
     },
     {
       "id": "raymath:function:Vector4Length",
@@ -64807,7 +64843,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4Length semantics from the linked source, add a reference fixture, then implement Vector4.length.",
-      "priority": 202
+      "priority": 2
     },
     {
       "id": "raymath:function:Vector4LengthSqr",
@@ -64862,7 +64898,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4LengthSqr semantics from the linked source, add a reference fixture, then implement Vector4.length_sqr.",
-      "priority": 202
+      "priority": 3
     },
     {
       "id": "raymath:function:Vector4DotProduct",
@@ -64917,7 +64953,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4DotProduct semantics from the linked source, add a reference fixture, then implement Vector4.dot_product.",
-      "priority": 202
+      "priority": 4
     },
     {
       "id": "raymath:function:Vector4Distance",
@@ -64972,7 +65008,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4Distance semantics from the linked source, add a reference fixture, then implement Vector4.distance.",
-      "priority": 202
+      "priority": 5
     },
     {
       "id": "raymath:function:Vector4DistanceSqr",
@@ -65027,7 +65063,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4DistanceSqr semantics from the linked source, add a reference fixture, then implement Vector4.distance_sqr.",
-      "priority": 202
+      "priority": 6
     },
     {
       "id": "raymath:function:Vector4Scale",
@@ -65052,23 +65088,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.scale",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 scalar multiplication of all four components.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -65081,8 +65120,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4Scale semantics from the linked source, add a reference fixture, then implement Vector4.scale.",
-      "priority": 6
+      "next_step": "Close documented gaps and unverified gates for Vector4Scale.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4Multiply",
@@ -65107,23 +65146,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.multiply",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 component-wise multiplication including the W component.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -65136,8 +65178,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4Multiply semantics from the linked source, add a reference fixture, then implement Vector4.multiply.",
-      "priority": 7
+      "next_step": "Close documented gaps and unverified gates for Vector4Multiply.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4Negate",
@@ -65192,7 +65234,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4Negate semantics from the linked source, add a reference fixture, then implement Vector4.negate.",
-      "priority": 202
+      "priority": 7
     },
     {
       "id": "raymath:function:Vector4Divide",
@@ -65247,7 +65289,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4Divide semantics from the linked source, add a reference fixture, then implement Vector4.divide.",
-      "priority": 202
+      "priority": 8
     },
     {
       "id": "raymath:function:Vector4Normalize",
@@ -65302,7 +65344,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4Normalize semantics from the linked source, add a reference fixture, then implement Vector4.normalize.",
-      "priority": 202
+      "priority": 9
     },
     {
       "id": "raymath:function:Vector4Min",
@@ -65357,7 +65399,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4Min semantics from the linked source, add a reference fixture, then implement Vector4.min.",
-      "priority": 202
+      "priority": 10
     },
     {
       "id": "raymath:function:Vector4Max",
@@ -65412,7 +65454,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4Max semantics from the linked source, add a reference fixture, then implement Vector4.max.",
-      "priority": 202
+      "priority": 11
     },
     {
       "id": "raymath:function:Vector4Lerp",
@@ -65467,7 +65509,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4Lerp semantics from the linked source, add a reference fixture, then implement Vector4.lerp.",
-      "priority": 202
+      "priority": 12
     },
     {
       "id": "raymath:function:Vector4MoveTowards",
@@ -65522,7 +65564,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4MoveTowards semantics from the linked source, add a reference fixture, then implement Vector4.move_towards.",
-      "priority": 202
+      "priority": 13
     },
     {
       "id": "raymath:function:Vector4Invert",
@@ -65577,7 +65619,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4Invert semantics from the linked source, add a reference fixture, then implement Vector4.invert.",
-      "priority": 202
+      "priority": 14
     },
     {
       "id": "raymath:function:Vector4Equals",
@@ -65632,7 +65674,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4Equals semantics from the linked source, add a reference fixture, then implement Vector4.equals.",
-      "priority": 202
+      "priority": 15
     },
     {
       "id": "raymath:function:MatrixDeterminant",
@@ -66883,23 +66925,29 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Matrix.to_float_v",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Immutable F32 list containing exactly m0..m15, distinct from constructor order; exact bits and proven length.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native array ABI/mutability correspondence",
+        "Complete numeric/integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "LAWS.bend",
+        "PROOF.bend",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -66913,8 +66961,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixToFloatV semantics from the linked source, add a reference fixture, then implement Matrix.to_float_v.",
-      "priority": 1
+      "next_step": "Close documented gaps and unverified gates for MatrixToFloatV.",
+      "priority": 202
     },
     {
       "id": "raymath:function:QuaternionAdd",

@@ -1,0 +1,13 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {"jonlib.bend": "4dad47c88952fdc7f5c47f85c0ad2fa7772384870b8a7b64e57d39874f28b303"},
+  "fixtures_sha256": "e18447b8f1190b9d0e61582681af93ceb60c73ea175b5eee984a584cdf39a6a5",
+  "scenarios": 198,
+  "output_words_per_lane": 33605,
+  "numeric_probe_cells": 1178,
+  "passed": true,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "proof": {"verdict": "All terms check.", "laws": ["clear_dimensions", "transpose_involution", "vector3_float_count", "matrix_float_count"]},
+  "scope": ["Immutable Vector3 XYZ and Matrix m0..m15 float-list exports with checked exact lengths", "Six Vector4 operations with every XYZW component compared"],
+  "limits": ["Native contiguous-array ABI/mutability correspondence", "Exceptional/subnormal and remaining numerical domains", "Complete integration/target/performance coverage"]
+}

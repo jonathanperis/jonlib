@@ -21,10 +21,10 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 195 scenarios / 33,554 output words match pinned raylib exactly on each
+- 198 scenarios / 33,605 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
-- The word count includes 1,127 exact scalar/vector/matrix/collision result-bit probe cells.
+- The word count includes 1,178 exact scalar/vector/matrix/collision result-bit probe cells.
   The math reference explicitly uses uncontracted F32; no comparison tolerance
   is applied. Both components of each vector output are checked.
 - Seven QOI export scenarios compare all 299 encoded bytes per lane. Real CPU/JS
@@ -51,7 +51,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
 - The pinned core header inventory contains 600 unique public functions; 77 have
-  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 87
+  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 95
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
   on CPU, JS and Metal for its declared reference profile. Ubuntu's subsequent
@@ -101,7 +101,7 @@ reference comparison of all 4096 supported POT axis sizes.
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 195 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 198 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -552,3 +552,26 @@ Reviewed 71 numerical/helper/wrapper/generator/diagnostic caller contexts,
 29 differential matrix operations and two malformed-angle assertions.
 
 Regression scan: 71 callers checked, 31 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `91e76b9`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36222199916)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36222199907)
+completed successfully, including the new raw matrix-trigonometry fields.
+
+## Float exports and Vector4 foundation
+
+The Vector3/Matrix float exports and six Vector4 operations pass 198 scenarios /
+33,605 words per CPU-1/CPU-2/JavaScript/forced-Metal lane. Export fixtures compare
+XYZ order and numeric matrix field order `m0..m15`, while the verification writer
+rejects both short and overlong lists. Vector4 fixtures compare every component,
+including W and signed-zero products. See
+[evidence/float-exports-vector4.json](evidence/float-exports-vector4.json).
+
+Two new structural laws establish the exact export lengths. The complete pinned
+proof verdict reports `All terms check.` for all four laws. A26/A4/A5 pass the
+scoped data/source/backend contracts, and eight harness tests plus project checks
+pass. Native contiguous-array ABI/mutability, exceptional/subnormal domains and
+full integration/target/performance evidence remain gaps. Reviewed 47 constructor,
+proof, generator and diagnostic caller contexts, ten differential operations,
+two output-bound assertions and the two new laws.
+
+Regression scan: 47 callers checked, 14 assertions checked, 0 flagged/fixed.

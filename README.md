@@ -35,6 +35,7 @@ differential test reference.
 - Source-preserving channel extraction and eleven scoped pure 2D collision queries.
 - Vector3 arithmetic, cross/dot products, and bounded sphere/box collision queries.
 - Matrix arithmetic/inversion, view/rotation constructors, vector transforms and paired-vector orthonormalization.
+- Four-component vector arithmetic and immutable float-list exports with checked length laws.
 - Radial and one-cycle linear gradient profiles with balanced owned-array generation.
 - QOI decoding/encoding and real byte-file loading/export, with typed failures.
 - Initial scalar and Vector2 math under an explicit uncontracted-F32 profile.

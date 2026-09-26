@@ -89,6 +89,8 @@ class HarnessTests(unittest.TestCase):
                     dict(case, width=16, operations=[dict(op='matrix_value', function='invert', args=[1,1,0,0,1,1,0,0,0,0,1,0,0,0,0,1], x=0, y=0)]),
                     dict(case, width=16, operations=[dict(op='matrix_value', function='rotate', args=[0,1,0,7], x=0, y=0)]),
                     dict(case, width=16, operations=[dict(op='matrix_value', function='rotate_xyz', args=[0,7,0], x=0, y=0)]),
+                    dict(case, width=15, operations=[dict(op='matrix_value', function='to_float_v', args=list(range(16)), x=0, y=0)]),
+                    dict(case, width=3, operations=[dict(op='vector4_value', function='one', args=[], x=0, y=0)]),
                     dict(case, alpha_border=True),
                     dict(case, gradient_square=dict(density=1.5, outer=[0,0,0,0])),
                     dict(case, width=2, height=2, gradient_linear=dict(direction=361, outer=[0,0,0,0])),

@@ -17,6 +17,9 @@ type Vector2 is Data:
 type Vector3 is Data:
   Vector3{x: F32, y: F32, z: F32}
 
+type Vector4 is Data:
+  Vector4{x: F32, y: F32, z: F32, w: F32}
+
 type BoundingBox is Data:
   BoundingBox{min: Vector3, max: Vector3}
 
@@ -262,6 +265,10 @@ def Matrix.transpose(matrix: Matrix) -> Matrix:
   Matrix{m0, m4, m8, m12, m1, m5, m9, m13, m2, m6, m10, m14, m3, m7, m11, m15} = matrix
   Matrix{m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15}
 
+def Matrix.to_float_v(matrix: Matrix) -> +List<F32>:
+  Matrix{m0, m4, m8, m12, m1, m5, m9, m13, m2, m6, m10, m14, m3, m7, m11, m15} = matrix
+  [m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15]
+
 def Matrix.add(left: Matrix, right: Matrix) -> Matrix:
   Matrix{a0, a4, a8, a12, a1, a5, a9, a13, a2, a6, a10, a14, a3, a7, a11, a15} = left
   Matrix{b0, b4, b8, b12, b1, b5, b9, b13, b2, b6, b10, b14, b3, b7, b11, b15} = right
@@ -369,6 +376,10 @@ def Vector3.zero() -> Vector3:
 
 def Vector3.one() -> Vector3:
   Vector3{1.0, 1.0, 1.0}
+
+def Vector3.to_float_v(vector: Vector3) -> +List<F32>:
+  Vector3{x, y, z} = vector
+  [x, y, z]
 
 def Vector3.add(left: Vector3, right: Vector3) -> Vector3:
   Vector3{x, y, z} = left
@@ -680,6 +691,31 @@ def Matrix.rotate_for(reference: Gradient.Reference, +axis: Vector3, angle: F32)
 
 def Matrix.rotate(axis: Vector3, angle: F32) -> Matrix:
   Matrix.rotate_for(AccurateGradient{}, axis, angle)
+
+def Vector4.zero() -> Vector4:
+  Vector4{0.0, 0.0, 0.0, 0.0}
+
+def Vector4.one() -> Vector4:
+  Vector4{1.0, 1.0, 1.0, 1.0}
+
+def Vector4.add(left: Vector4, right: Vector4) -> Vector4:
+  Vector4{x, y, z, w} = left
+  Vector4{a, b, c, d} = right
+  Vector4{(x + a : F32), (y + b : F32), (z + c : F32), (w + d : F32)}
+
+def Vector4.subtract(left: Vector4, right: Vector4) -> Vector4:
+  Vector4{x, y, z, w} = left
+  Vector4{a, b, c, d} = right
+  Vector4{(x - a : F32), (y - b : F32), (z - c : F32), (w - d : F32)}
+
+def Vector4.scale(vector: Vector4, +factor: F32) -> Vector4:
+  Vector4{x, y, z, w} = vector
+  Vector4{(x * factor : F32), (y * factor : F32), (z * factor : F32), (w * factor : F32)}
+
+def Vector4.multiply(left: Vector4, right: Vector4) -> Vector4:
+  Vector4{x, y, z, w} = left
+  Vector4{a, b, c, d} = right
+  Vector4{(x * a : F32), (y * b : F32), (z * c : F32), (w * d : F32)}
 
 def Collision.spheres(left: Vector3, radius: F32, right: Vector3, other_radius: F32) -> Bool:
   +sum = (radius + other_radius : F32)

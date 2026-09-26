@@ -40,6 +40,7 @@ crop/extraction/region-drawing profile requires integral rectangle values;
 `draw_image_rect` and the documented rectangle wrappers also support fractional fields.
 
 `Vector3{x, y, z}` is immutable `Data` with three F32 fields.
+`Vector4{x, y, z, w}` provides four immutable F32 fields.
 `BoundingBox{min, max}` contains two `Vector3` values; supplied bounds are retained
 without reordering. Their numeric and collision operations are documented in
 [MATH.md](MATH.md) and [COLLISION.md](COLLISION.md).
@@ -213,10 +214,11 @@ Every drawing call consumes its input surface and returns the updated surface.
 Do not reuse the previous handle. `Surface.get` returns a pair; destructure its
 computed result through a typed helper parameter, following Bend's rules.
 
-`LAWS.bend`/`PROOF.bend` establish that clearing preserves dimensions and that
-transposing a Matrix twice returns the original value. Full-pixel
-tests establish the exercised reference behaviors. Neither is a claim that
-all rendering, allocation, hardware or compiler behavior is formally proven.
+`LAWS.bend`/`PROOF.bend` establish that clearing preserves dimensions, transposing
+a Matrix twice returns the original value, and Vector3/Matrix float-list exports
+contain exactly 3/16 elements. Full-pixel and numeric tests establish the
+exercised reference behaviors. These proofs and tests do not establish that all
+rendering, allocation, hardware or compiler behavior is formally proven.
 
 `to_image` currently builds a complete power-of-two quadtree. `to_ppm` builds
 the complete output string in memory. These are correct small-image adapters;

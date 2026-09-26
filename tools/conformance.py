@@ -63,6 +63,12 @@ VECTOR3_APIS = {
     'cubic_hermite':('Vector3CubicHermite','tttts','vector'),
     'ortho_normalize':('Vector3OrthoNormalize','tt','pair'),
     'transform':('Vector3Transform','tm','vector'),
+    'to_float_v':('Vector3ToFloatV','t','buffer'),
+}
+VECTOR4_APIS = {
+    'zero':('Vector4Zero','','vector'), 'one':('Vector4One','','vector'),
+    'add':('Vector4Add','qq','vector'), 'subtract':('Vector4Subtract','qq','vector'),
+    'scale':('Vector4Scale','qs','vector'), 'multiply':('Vector4Multiply','qq','vector'),
 }
 MATRIX_APIS = {
     'identity':('MatrixIdentity','','matrix'), 'transpose':('MatrixTranspose','m','matrix'),
@@ -74,11 +80,13 @@ MATRIX_APIS = {
     'rotate_x':('MatrixRotateX','s','matrix'), 'rotate_y':('MatrixRotateY','s','matrix'),
     'rotate_z':('MatrixRotateZ','s','matrix'), 'rotate_xyz':('MatrixRotateXYZ','t','matrix'),
     'rotate_zyx':('MatrixRotateZYX','t','matrix'), 'rotate':('MatrixRotate','ts','matrix'),
+    'to_float_v':('MatrixToFloatV','m','buffer'),
 }
 MATRIX_ROTATIONS = {'rotate_x','rotate_y','rotate_z','rotate_xyz','rotate_zyx','rotate'}
 MATRIX_FIELDS = tuple(f'm{row+4*column}' for row in range(4) for column in range(4))
-ARGUMENT_SIZES = {'v':2, 't':3, 'm':16, 'b':6, 'r':4, 's':1, 'i':1}
+ARGUMENT_SIZES = {'v':2, 't':3, 'q':4, 'm':16, 'b':6, 'r':4, 's':1, 'i':1}
 VECTOR_APIS = {'vector_value':('Vector2',2,VECTOR2_APIS), 'vector3_value':('Vector3',3,VECTOR3_APIS),
+               'vector4_value':('Vector4',4,VECTOR4_APIS),
                'matrix_value':('Matrix',16,MATRIX_APIS)}
 COLLISION_APIS = {
     'recs':('CheckCollisionRecs','rr','bool'),
@@ -175,7 +183,7 @@ def matrix_inverse_denominator(values):
 def numeric_cells(kind, function):
     _, dimensions, apis = VECTOR_APIS[kind]
     result = apis[function][2]
-    return dimensions*2 if result=='pair' else dimensions if result in ('vector','matrix') else 1
+    return dimensions*2 if result=='pair' else dimensions if result in ('vector','matrix','buffer') else 1
 
 
 def crop_rectangle(width, height, op):
@@ -291,7 +299,7 @@ def cases_from(document):
             if not isinstance(kind, str) or kind not in ("pixel", "rectangle", "circle", "clear", "flip_horizontal", "flip_vertical", "blend_color",
                              "line", "line_v", "triangle", "triangle_lines", "blit", "blit_region", "blit_rect", "crop", "extract", "resize_nn", "resize",
                              "pixel_v", "circle_v", "circle_lines", "circle_lines_v", "rectangle_v", "rectangle_rec", "rectangle_lines",
-                             "line_ex", "triangle_fan", "triangle_strip", "triangle_ex", "color_value", "number_value", "vector_value", "vector3_value", "matrix_value", "collision_value", "from_channel", "alpha_clear", "alpha_mask", "alpha_crop", "resize_canvas", "rotate_degrees", "to_pot") and kind not in UNARY_IMAGE_APIS and kind not in COLOR_IMAGE_APIS:
+                             "line_ex", "triangle_fan", "triangle_strip", "triangle_ex", "color_value", "number_value", "vector_value", "vector3_value", "vector4_value", "matrix_value", "collision_value", "from_channel", "alpha_clear", "alpha_mask", "alpha_crop", "resize_canvas", "rotate_degrees", "to_pot") and kind not in UNARY_IMAGE_APIS and kind not in COLOR_IMAGE_APIS:
                 raise ValueError(f"{name}: unknown operation {kind!r}")
             if kind in ('blit', 'blit_region', 'blit_rect', 'alpha_mask'):
                 if kind != 'alpha_mask':
@@ -325,7 +333,7 @@ def cases_from(document):
                             raise ValueError(f'{name}: invalid destination rectangle')
                 if op.get('observe_source'):
                     current_w, current_h = source['width'], source['height']
-            elif kind not in ('crop', 'extract', 'resize_nn', 'resize', 'color_contrast', 'color_brightness', 'number_value', 'vector_value', 'vector3_value', 'matrix_value', 'collision_value', 'from_channel', 'alpha_crop', 'rotate_degrees') and kind not in UNARY_IMAGE_APIS:
+            elif kind not in ('crop', 'extract', 'resize_nn', 'resize', 'color_contrast', 'color_brightness', 'number_value', 'vector_value', 'vector3_value', 'vector4_value', 'matrix_value', 'collision_value', 'from_channel', 'alpha_crop', 'rotate_degrees') and kind not in UNARY_IMAGE_APIS:
                 rgba(op["color"])
             if kind == 'color_replace':
                 rgba(op['replacement'])
@@ -516,8 +524,8 @@ def vector_arguments(signature, values, bend=False):
     result, at = [], 0
     literal = f32 if bend else lambda value: f'{float(value)!r}f'
     for parameter in signature:
-        if parameter in ('v','t','r','m'):
-            size, name = {'v':(2,'Vector2'), 't':(3,'Vector3'), 'r':(4,'Rectangle'), 'm':(16,'Matrix')}[parameter]
+        if parameter in ('v','t','q','r','m'):
+            size, name = {'v':(2,'Vector2'), 't':(3,'Vector3'), 'q':(4,'Vector4'), 'r':(4,'Rectangle'), 'm':(16,'Matrix')}[parameter]
             vector = ', '.join(literal(v) for v in values[at:at+size])
             result.append((f'J.{name}{{' if bend else f'({name}){{') + vector + '}')
             at += size
@@ -642,7 +650,12 @@ def c_source(cases):
                 namespace, dimensions, apis = VECTOR_APIS[kind]
                 function, signature, result = apis[op['function']]
                 expression = f'{function}({vector_arguments(signature,op["args"])})'
-                if result == 'pair':
+                if result == 'buffer':
+                    lines += ['{', f'float{dimensions} v = {expression};']
+                    for index in range(dimensions):
+                        lines += [f'ImageDrawPixel(&image, {op["x"]+index}, {op["y"]}, float_bits(v.v[{index}]));']
+                    lines += ['}']
+                elif result == 'pair':
                     left,right = vector_arguments('t',op['args'][:3]),vector_arguments('t',op['args'][3:])
                     lines += ['{',f'Vector3 left={left}, right={right};',f'{function}(&left,&right);']
                     for index, field in enumerate(('left.x','left.y','left.z','right.x','right.y','right.z')):
@@ -650,7 +663,7 @@ def c_source(cases):
                     lines += ['}']
                 elif result in ('vector','matrix'):
                     lines += ['{', f'{namespace} v = {expression};']
-                    for index, field in enumerate(MATRIX_FIELDS if result=='matrix' else ('x','y','z')[:dimensions]):
+                    for index, field in enumerate(MATRIX_FIELDS if result=='matrix' else ('x','y','z','w')[:dimensions]):
                         lines += [f'ImageDrawPixel(&image, {op["x"]+index}, {op["y"]}, float_bits(v.{field}));']
                     lines += ['}']
                 else:
@@ -769,6 +782,16 @@ def bend_source(cases, gpu=False):
         '  J.Vector3{u, v, w} = vector',
         '  first = write_vector(surface, x, y, J.Vector2{u, v})',
         '  J.Surface.draw_pixel(first, (x + 2.0 : F32), y, F32.bits(w))',
+        'def write_vector4(surface: J.Surface, +x: F32, +y: F32, vector: J.Vector4) -> J.Surface:',
+        '  J.Vector4{u, v, w, q} = vector',
+        '  first = write_vector3(surface, x, y, J.Vector3{u, v, w})',
+        '  J.Surface.draw_pixel(first, (x + 3.0 : F32), y, F32.bits(q))',
+        'def write_float_buffer(n: Nat, surface: J.Surface, +x: F32, +y: F32, values: +List<F32>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:',
+        '  match n values:',
+        '    case 0n Nil{}: Done{surface}',
+        '    case 1n+k Con{value, rest}:',
+        '      write_float_buffer(k, J.Surface.draw_pixel(surface, x, y, F32.bits(value)), (x + 1.0 : F32), y, rest)',
+        '    case _ _: Fail{(surface, J.InvalidSize{})}',
         'def write_vector_pair(surface: J.Surface, +x: F32, +y: F32, pair: J.Vector3 & J.Vector3) -> J.Surface:',
         '  (left, right) = pair',
         '  first = write_vector3(surface, x, y, left)',
@@ -902,7 +925,11 @@ def bend_source(cases, gpu=False):
                 function_name = op['function']+'_for' if profiled else op['function']
                 profile = f'J.{gradient_reference()}{{}}, ' if profiled else ''
                 expression = f'J.{namespace}.{function_name}({profile}{vector_arguments(signature,op["args"],bend=True)})'
-                function = {'vector':'write_vector' if dimensions==2 else 'write_vector3', 'matrix':'write_matrix', 'pair':'write_vector_pair'}.get(result,'J.Surface.draw_pixel')
+                if result == 'buffer':
+                    previous = f's{j}'
+                    lines += [f'    {previous} : J.Surface <- write_float_buffer({dimensions}n, {args[0]}, {f32(op["x"])}, {f32(op["y"])}, {expression})']
+                    continue
+                function = {'vector':{2:'write_vector',3:'write_vector3',4:'write_vector4'}.get(dimensions), 'matrix':'write_matrix', 'pair':'write_vector_pair'}.get(result,'J.Surface.draw_pixel')
                 value = expression if result in ('vector','matrix','pair') else f'Bool.to_u32({expression})' if result=='bool' else f'F32.bits({expression})'
                 previous = f's{j}'
                 lines += [f'    {previous} : J.Surface = {function}({args[0]}, {f32(op["x"])}, {f32(op["y"])}, {value})']

@@ -60,7 +60,7 @@
     {"id":"web-rgfw","scope":"WebRGFW alternative platform configuration"}
   ],
   "scope_sources": ["https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/FAQ.md", "https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/CMakeOptions.txt"],
-  "priority_overrides": {"raymath:function:Vector3ToFloatV":0, "raymath:function:MatrixToFloatV":1, "raymath:function:Vector4Zero":2, "raymath:function:Vector4One":3, "raymath:function:Vector4Add":4, "raymath:function:Vector4Subtract":5, "raymath:function:Vector4Scale":6, "raymath:function:Vector4Multiply":7},
+  "priority_overrides": {"raymath:function:Vector4AddValue":0, "raymath:function:Vector4SubtractValue":1, "raymath:function:Vector4Length":2, "raymath:function:Vector4LengthSqr":3, "raymath:function:Vector4DotProduct":4, "raymath:function:Vector4Distance":5, "raymath:function:Vector4DistanceSqr":6, "raymath:function:Vector4Negate":7, "raymath:function:Vector4Divide":8, "raymath:function:Vector4Normalize":9, "raymath:function:Vector4Min":10, "raymath:function:Vector4Max":11, "raymath:function:Vector4Lerp":12, "raymath:function:Vector4MoveTowards":13, "raymath:function:Vector4Invert":14, "raymath:function:Vector4Equals":15},
   "api_dependencies": {
     "raylib:function:ImageDraw":["raylib:function:ImageFromImage","raylib:function:ImageResize","raylib:function:ColorAlphaBlend"],
     "raylib:function:LoadTexture":["raylib:function:LoadImage","raylib:function:LoadTextureFromImage"],
