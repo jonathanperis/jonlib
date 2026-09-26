@@ -21,6 +21,94 @@
     "api_id": "raylib:function:CheckCollisionCircles",
     "milestone": "collision"
   },
+  "CheckCollisionCircleRec": {
+    "jonlib": "Collision.circle_rec",
+    "status": "profile-covered",
+    "scope": "Finite bounded F32 circle/rectangle predicate preserving reference side and corner tests.",
+    "gaps": [
+      "Exceptional/subnormal and contracted variants",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:CheckCollisionCircleRec",
+    "milestone": "collision"
+  },
+  "CheckCollisionCircleLine": {
+    "jonlib": "Collision.circle_line",
+    "status": "profile-covered",
+    "scope": "Finite bounded F32 circle/segment closest-point predicate with reference epsilon-degenerate endpoint fallback.",
+    "gaps": [
+      "Exceptional/subnormal and contracted variants",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:CheckCollisionCircleLine",
+    "milestone": "collision"
+  },
+  "CheckCollisionPointRec": {
+    "jonlib": "Collision.point_rec",
+    "status": "profile-covered",
+    "scope": "Finite bounded F32 point/rectangle predicate; inclusive left/top and exclusive right/bottom edges.",
+    "gaps": [
+      "Exceptional/subnormal inputs",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:CheckCollisionPointRec",
+    "milestone": "collision"
+  },
+  "CheckCollisionPointCircle": {
+    "jonlib": "Collision.point_circle",
+    "status": "profile-covered",
+    "scope": "Finite bounded F32 point/circle squared-distance predicate with inclusive tangency.",
+    "gaps": [
+      "Exceptional/subnormal and contracted variants",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:CheckCollisionPointCircle",
+    "milestone": "collision"
+  },
+  "CheckCollisionPointTriangle": {
+    "jonlib": "Collision.point_triangle",
+    "status": "profile-covered",
+    "scope": "Finite bounded F32 point/triangle predicate; strict barycentric interior and false for tested degenerate triangles.",
+    "gaps": [
+      "Exceptional/subnormal and contracted variants",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:CheckCollisionPointTriangle",
+    "milestone": "collision"
+  },
+  "CheckCollisionPointLine": {
+    "jonlib": "Collision.point_line",
+    "status": "profile-covered",
+    "scope": "Finite bounded F32 point/segment predicate with integral threshold, strict cross-product margin and inclusive dominant-axis interval.",
+    "gaps": [
+      "Exceptional/subnormal and contracted variants",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:CheckCollisionPointLine",
+    "milestone": "collision"
+  },
+  "CheckCollisionPointPoly": {
+    "jonlib": "Collision.point_poly",
+    "status": "profile-covered",
+    "scope": "Immutable Vector2-list polygon predicate with reference crossing order, boundary comparisons and fewer-than-three-vertices behavior.",
+    "gaps": [
+      "Exceptional/subnormal and contracted variants",
+      "Full target/resource/performance coverage"
+    ],
+    "api_id": "raylib:function:CheckCollisionPointPoly",
+    "milestone": "collision"
+  },
+  "CheckCollisionLines": {
+    "jonlib": "Collision.lines_for / Collision.lines",
+    "status": "profile-covered",
+    "scope": "Finite bounded segment intersections; Maybe hit coordinates, inclusive endpoints and reference FLT_EPSILON determinant gate. Explicit uncontracted and Apple-clang FMA profiles with direct-rounding Bend arithmetic.",
+    "gaps": [
+      "Exceptional/subnormal/overflow and other contraction patterns",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:CheckCollisionLines",
+    "milestone": "collision"
+  },
   "GetCollisionRec": {
     "jonlib": "Collision.rectangle",
     "status": "profile-covered",

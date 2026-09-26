@@ -8,6 +8,7 @@ import ./src/qoi.bend as Qoi
 import ./src/gradients.bend as Gradients
 import ./src/trig.bend as Trig
 import ./src/rotation.bend as Rotation
+import ./src/fused.bend as Fused
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -18,6 +19,15 @@ type Rectangle is Data:
 type Gradient.Reference is Data:
   AccurateGradient{}
   GnuGradient{}
+
+type Collision.Arithmetic is Data:
+  UncontractedCollision{}
+  FusedCollision{}
+
+def Collision.multiply_add(arithmetic: Collision.Arithmetic, a: F32, b: F32, c: F32) -> F32:
+  match arithmetic:
+    case UncontractedCollision{}: (a * b + c : F32)
+    case FusedCollision{}: Fused.multiply_add(a, b, c)
 
 def Gradient.gnu(reference: Gradient.Reference) -> Bool:
   match reference:
@@ -261,6 +271,127 @@ def Collision.rectangle(left: Rectangle, right: Rectangle) -> Rectangle:
   +bottom2 = (v + rh : F32)
   +end_y = Bool.pick(F32, (bottom1 < bottom2 : F32), bottom1, bottom2)
   Collision.rectangle.result(((start_x < end_x) && (start_y < end_y) : F32), start_x, start_y, end_x, end_y)
+
+def Collision.point_rec(point: Vector2, rectangle: Rectangle) -> Bool:
+  Vector2{+x, +y} = point
+  Rectangle{+rx, +ry, w, h} = rectangle
+  ((x >= rx) && (x < rx + w) && (y >= ry) && (y < ry + h) : F32)
+
+def Collision.point_circle(point: Vector2, center: Vector2, +radius: F32) -> Bool:
+  Vector2{x, y} = point
+  Vector2{cx, cy} = center
+  +dx = (x - cx : F32)
+  +dy = (y - cy : F32)
+  (dx * dx + dy * dy <= radius * radius : F32)
+
+def Collision.circle_rec(center: Vector2, +radius: F32, rectangle: Rectangle) -> Bool:
+  Vector2{x, y} = center
+  Rectangle{rx, ry, w, h} = rectangle
+  +half_w = (w / 2.0 : F32)
+  +half_h = (h / 2.0 : F32)
+  +dx = F32.abs((x - (rx + half_w) : F32))
+  +dy = F32.abs((y - (ry + half_h) : F32))
+  +corner_x = (dx - half_w : F32)
+  +corner_y = (dy - half_h : F32)
+  (((dx <= half_w + radius) && (dy <= half_h + radius))
+    && ((dx <= half_w) || (dy <= half_h) || (corner_x * corner_x + corner_y * corner_y <= radius * radius)) : F32)
+
+def Collision.lines.hit(inside: Bool, +arithmetic: Collision.Arithmetic, x: F32, y: F32, rx: F32, ry: F32, +t: F32) -> Maybe<&2, Vector2>:
+  match inside:
+    case False{}: None{}
+    case True{}: Some{Vector2{Collision.multiply_add(arithmetic, t, rx, x), Collision.multiply_add(arithmetic, t, ry, y)}}
+
+def Collision.lines.divided(nonparallel: Bool, +arithmetic: Collision.Arithmetic, +x: F32, +y: F32, +rx: F32, +ry: F32, +sx: F32, +sy: F32, u: F32, v: F32, +divisor: F32) -> Maybe<&2, Vector2>:
+  match nonparallel:
+    case False{}: None{}
+    case True{}:
+      +dx = (u - x : F32)
+      +dy = (v - y : F32)
+      +t = (Collision.multiply_add(arithmetic, dx, sy, F32.neg((dy * sx : F32))) / divisor : F32)
+      +s = (Collision.multiply_add(arithmetic, dx, ry, F32.neg((dy * rx : F32))) / divisor : F32)
+      Collision.lines.hit(((0.0 <= t) && (t <= 1.0) && (0.0 <= s) && (s <= 1.0) : F32), arithmetic, x, y, rx, ry, t)
+
+def Collision.lines_for(+arithmetic: Collision.Arithmetic, start: Vector2, end: Vector2, other_start: Vector2, other_end: Vector2) -> Maybe<&2, Vector2>:
+  Vector2{+x, +y} = start
+  Vector2{ex, ey} = end
+  Vector2{+u, +v} = other_start
+  Vector2{eu, ev} = other_end
+  +rx = (ex - x : F32)
+  +ry = (ey - y : F32)
+  +sx = (eu - u : F32)
+  +sy = (ev - v : F32)
+  +divisor = Collision.multiply_add(arithmetic, rx, sy, F32.neg((ry * sx : F32)))
+  Collision.lines.divided((F32.abs(divisor) >= 0.00000011920928955078125 : F32), arithmetic, x, y, rx, ry, sx, sy, u, v, divisor)
+
+def Collision.lines(start: Vector2, end: Vector2, other_start: Vector2, other_end: Vector2) -> Maybe<&2, Vector2>:
+  Collision.lines_for(UncontractedCollision{}, start, end, other_start, other_end)
+
+def Collision.point_triangle(point: Vector2, first: Vector2, second: Vector2, third: Vector2) -> Bool:
+  Vector2{+x, +y} = point
+  Vector2{+ax, +ay} = first
+  Vector2{+bx, +by} = second
+  Vector2{+cx, +cy} = third
+  +denominator = ((by - cy) * (ax - cx) + (cx - bx) * (ay - cy) : F32)
+  +alpha = (((by - cy) * (x - cx) + (cx - bx) * (y - cy)) / denominator : F32)
+  +beta = (((cy - ay) * (x - cx) + (ax - cx) * (y - cy)) / denominator : F32)
+  gamma = (1.0 - alpha - beta : F32)
+  ((alpha > 0.0) && (beta > 0.0) && (gamma > 0.0) : F32)
+
+def Collision.point_line(point: Vector2, first: Vector2, second: Vector2, threshold: F32) -> Bool:
+  Vector2{+x, +y} = point
+  Vector2{+ax, +ay} = first
+  Vector2{+bx, +by} = second
+  +dx = (bx - ax : F32)
+  +dy = (by - ay : F32)
+  cross = ((x - ax) * dy - (y - ay) * dx : F32)
+  along_x = Bool.pick(Bool, (dx > 0.0 : F32), ((ax <= x) && (x <= bx) : F32), ((bx <= x) && (x <= ax) : F32))
+  along_y = Bool.pick(Bool, (dy > 0.0 : F32), ((ay <= y) && (y <= by) : F32), ((by <= y) && (y <= ay) : F32))
+  (F32.abs(cross) < threshold * F32.max(F32.abs(dx), F32.abs(dy)) : F32)
+    && Bool.pick(Bool, (F32.abs(dx) >= F32.abs(dy) : F32), along_x, along_y)
+
+def Collision.circle_line.route(degenerate: Bool, +x: F32, +y: F32, +radius: F32, +ax: F32, +ay: F32, bx: F32, by: F32, +dx: F32, +dy: F32) -> Bool:
+  match degenerate:
+    case True{}: Collision.circles(Vector2{ax, ay}, 0.0, Vector2{x, y}, radius)
+    case False{}:
+      length_squared = (dx * dx + dy * dy : F32)
+      +projection = Math.clamp((((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / length_squared : F32), 0.0, 1.0)
+      +distance_x = ((ax - projection * dx) - x : F32)
+      +distance_y = ((ay - projection * dy) - y : F32)
+      (distance_x * distance_x + distance_y * distance_y <= radius * radius : F32)
+
+def Collision.circle_line(center: Vector2, radius: F32, first: Vector2, second: Vector2) -> Bool:
+  Vector2{x, y} = center
+  Vector2{+ax, +ay} = first
+  Vector2{+bx, +by} = second
+  +dx = (ax - bx : F32)
+  +dy = (ay - by : F32)
+  Collision.circle_line.route((F32.abs(dx) + F32.abs(dy) <= 0.00000011920928955078125 : F32), x, y, radius, ax, ay, bx, by, dx, dy)
+
+def Collision.polygon.last(points: +List<Vector2>, previous: Vector2) -> Vector2:
+  match points:
+    case Nil{}: previous
+    case Con{point, rest}: Collision.polygon.last(rest, point)
+
+def Collision.polygon.crossing(straddles: Bool, x: F32, y: F32, +ax: F32, +ay: F32, bx: F32, by: F32) -> Bool:
+  match straddles:
+    case False{}: False{}
+    case True{}: (x < (bx - ax) * (y - ay) / (by - ay) + ax : F32)
+
+def Collision.polygon.edge(point: Vector2, current: Vector2, previous: Vector2) -> Bool:
+  Vector2{x, +y} = point
+  Vector2{ax, +ay} = current
+  Vector2{bx, +by} = previous
+  Collision.polygon.crossing(Bool.xor((ay > y : F32), (by > y : F32)), x, y, ax, ay, bx, by)
+
+def Collision.polygon.loop(points: +List<Vector2>, +point: Vector2, previous: Vector2, inside: Bool) -> Bool:
+  match points:
+    case Nil{}: inside
+    case Con{+current, rest}:
+      Collision.polygon.loop(rest, point, current, Bool.xor(inside, Collision.polygon.edge(point, current, previous)))
+
+def Collision.point_poly(point: Vector2, +points: +List<Vector2>) -> Bool:
+  (List.length(&2, Vector2, points) > 2n : Nat)
+    && Collision.polygon.loop(points, point, Collision.polygon.last(points, Vector2.zero()), False{})
 
 # Internal signed-word operations for raylib's integer raster stepping.
 def Signed.word(+x: F32) -> U32:

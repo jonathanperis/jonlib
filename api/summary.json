@@ -6,24 +6,24 @@
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1777,
-    "partial": 107
+    "not-started": 1769,
+    "partial": 115
   },
   "core_functions": {
     "total": 600,
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 534,
-    "partial": 66
+    "not-started": 526,
+    "partial": 74
   },
   "function_declarations": {
     "total": 931,
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 831,
-    "partial": 100
+    "not-started": 823,
+    "partial": 108
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -46,8 +46,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 967,
-      "partial": 70
+      "not-started": 959,
+      "partial": 78
     },
     "raymath.h": {
       "total": 254,
@@ -246,8 +246,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 18,
-      "partial": 3
+      "not-started": 10,
+      "partial": 11
     },
     {
       "id": "window",
@@ -563,96 +563,120 @@
   ],
   "next_work": [
     {
-      "id": "raylib:function:CheckCollisionPointRec",
-      "name": "CheckCollisionPointRec",
+      "id": "raymath:function:Vector3Zero",
+      "name": "Vector3Zero",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Vector3.zero",
+      "next_step": "Derive Vector3Zero semantics from the linked source, add a reference fixture, then implement Vector3.zero.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector3One",
+      "name": "Vector3One",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Vector3.one",
+      "next_step": "Derive Vector3One semantics from the linked source, add a reference fixture, then implement Vector3.one.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector3Add",
+      "name": "Vector3Add",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Vector3.add",
+      "next_step": "Derive Vector3Add semantics from the linked source, add a reference fixture, then implement Vector3.add.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector3Subtract",
+      "name": "Vector3Subtract",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Vector3.subtract",
+      "next_step": "Derive Vector3Subtract semantics from the linked source, add a reference fixture, then implement Vector3.subtract.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector3Scale",
+      "name": "Vector3Scale",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Vector3.scale",
+      "next_step": "Derive Vector3Scale semantics from the linked source, add a reference fixture, then implement Vector3.scale.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector3Multiply",
+      "name": "Vector3Multiply",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Vector3.multiply",
+      "next_step": "Derive Vector3Multiply semantics from the linked source, add a reference fixture, then implement Vector3.multiply.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector3CrossProduct",
+      "name": "Vector3CrossProduct",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Vector3.cross_product",
+      "next_step": "Derive Vector3CrossProduct semantics from the linked source, add a reference fixture, then implement Vector3.cross_product.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector3DotProduct",
+      "name": "Vector3DotProduct",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Vector3.dot_product",
+      "next_step": "Derive Vector3DotProduct semantics from the linked source, add a reference fixture, then implement Vector3.dot_product.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:CheckCollisionSpheres",
+      "name": "CheckCollisionSpheres",
       "milestone": "collision",
       "status": "not-started",
-      "jonlib": "Collision.check_collision_point_rec",
-      "next_step": "Derive CheckCollisionPointRec semantics from the linked source, add a reference fixture, then implement Collision.check_collision_point_rec.",
+      "jonlib": "Collision.check_collision_spheres",
+      "next_step": "Derive CheckCollisionSpheres semantics from the linked source, add a reference fixture, then implement Collision.check_collision_spheres.",
       "milestone_dependencies": [
         "raymath"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raylib:function:CheckCollisionPointCircle",
-      "name": "CheckCollisionPointCircle",
+      "id": "raylib:function:CheckCollisionBoxes",
+      "name": "CheckCollisionBoxes",
       "milestone": "collision",
       "status": "not-started",
-      "jonlib": "Collision.check_collision_point_circle",
-      "next_step": "Derive CheckCollisionPointCircle semantics from the linked source, add a reference fixture, then implement Collision.check_collision_point_circle.",
-      "milestone_dependencies": [
-        "raymath"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raylib:function:CheckCollisionCircleRec",
-      "name": "CheckCollisionCircleRec",
-      "milestone": "collision",
-      "status": "not-started",
-      "jonlib": "Collision.check_collision_circle_rec",
-      "next_step": "Derive CheckCollisionCircleRec semantics from the linked source, add a reference fixture, then implement Collision.check_collision_circle_rec.",
-      "milestone_dependencies": [
-        "raymath"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raylib:function:CheckCollisionLines",
-      "name": "CheckCollisionLines",
-      "milestone": "collision",
-      "status": "not-started",
-      "jonlib": "Collision.check_collision_lines",
-      "next_step": "Derive CheckCollisionLines semantics from the linked source, add a reference fixture, then implement Collision.check_collision_lines.",
-      "milestone_dependencies": [
-        "raymath"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raylib:function:CheckCollisionPointTriangle",
-      "name": "CheckCollisionPointTriangle",
-      "milestone": "collision",
-      "status": "not-started",
-      "jonlib": "Collision.check_collision_point_triangle",
-      "next_step": "Derive CheckCollisionPointTriangle semantics from the linked source, add a reference fixture, then implement Collision.check_collision_point_triangle.",
-      "milestone_dependencies": [
-        "raymath"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raylib:function:CheckCollisionPointLine",
-      "name": "CheckCollisionPointLine",
-      "milestone": "collision",
-      "status": "not-started",
-      "jonlib": "Collision.check_collision_point_line",
-      "next_step": "Derive CheckCollisionPointLine semantics from the linked source, add a reference fixture, then implement Collision.check_collision_point_line.",
-      "milestone_dependencies": [
-        "raymath"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raylib:function:CheckCollisionCircleLine",
-      "name": "CheckCollisionCircleLine",
-      "milestone": "collision",
-      "status": "not-started",
-      "jonlib": "Collision.check_collision_circle_line",
-      "next_step": "Derive CheckCollisionCircleLine semantics from the linked source, add a reference fixture, then implement Collision.check_collision_circle_line.",
-      "milestone_dependencies": [
-        "raymath"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raylib:function:CheckCollisionPointPoly",
-      "name": "CheckCollisionPointPoly",
-      "milestone": "collision",
-      "status": "not-started",
-      "jonlib": "Collision.check_collision_point_poly",
-      "next_step": "Derive CheckCollisionPointPoly semantics from the linked source, add a reference fixture, then implement Collision.check_collision_point_poly.",
+      "jonlib": "Collision.check_collision_boxes",
+      "next_step": "Derive CheckCollisionBoxes semantics from the linked source, add a reference fixture, then implement Collision.check_collision_boxes.",
       "milestone_dependencies": [
         "raymath"
       ],
@@ -773,30 +797,6 @@
       "status": "partial",
       "jonlib": "Vector2.add_value",
       "next_step": "Close documented gaps and unverified gates for Vector2AddValue.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2Subtract",
-      "name": "Vector2Subtract",
-      "milestone": "raymath",
-      "status": "partial",
-      "jonlib": "Vector2.subtract",
-      "next_step": "Close documented gaps and unverified gates for Vector2Subtract.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2SubtractValue",
-      "name": "Vector2SubtractValue",
-      "milestone": "raymath",
-      "status": "partial",
-      "jonlib": "Vector2.subtract_value",
-      "next_step": "Close documented gaps and unverified gates for Vector2SubtractValue.",
       "milestone_dependencies": [
         "numerics"
       ],

@@ -45,7 +45,16 @@ COLLISION_APIS = {
     'recs':('CheckCollisionRecs','rr','bool'),
     'circles':('CheckCollisionCircles','vsvs','bool'),
     'rectangle':('GetCollisionRec','rr','rectangle'),
+    'point_rec':('CheckCollisionPointRec','vr','bool'),
+    'point_circle':('CheckCollisionPointCircle','vvs','bool'),
+    'circle_rec':('CheckCollisionCircleRec','vsr','bool'),
+    'lines':('CheckCollisionLines','vvvv','hit'),
+    'point_triangle':('CheckCollisionPointTriangle','vvvv','bool'),
+    'point_line':('CheckCollisionPointLine','vvvi','bool'),
+    'circle_line':('CheckCollisionCircleLine','vsvv','bool'),
+    'point_poly':('CheckCollisionPointPoly','v','bool'),
 }
+COLLISION_CELLS = {'bool':1, 'rectangle':4, 'hit':3}
 
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / ".build"
@@ -288,9 +297,15 @@ def cases_from(document):
                 if not isinstance(function, str) or function not in COLLISION_APIS or not isinstance(values, list):
                     raise ValueError(f'{name}: invalid collision function/arguments')
                 _, signature, result = COLLISION_APIS[function]
-                if len(values) != sum({'v':2,'r':4,'s':1}[p] for p in signature) or not all(coordinate(v, True) for v in values):
+                if len(values) != sum({'v':2,'r':4,'s':1,'i':1}[p] for p in signature) or not all(coordinate(v, True) for v in values):
                     raise ValueError(f'{name}: invalid collision argument arity/domain')
-                cells = 4 if result == 'rectangle' else 1
+                if function == 'point_line' and not coordinate(values[-1]):
+                    raise ValueError(f'{name}: point-line threshold must be integral')
+                if function == 'point_poly':
+                    points = op.get('points')
+                    if not isinstance(points, list) or len(points)>4096 or any(not isinstance(p,list) or len(p)!=2 or not all(coordinate(v,True) for v in p) for p in points):
+                        raise ValueError(f'{name}: expected bounded polygon vertices')
+                cells = COLLISION_CELLS[result]
                 if not integer(op.get('x'),0,current_w-cells) or not integer(op.get('y'),0,current_h-1):
                     raise ValueError(f'{name}: all collision result fields must fit the image')
             if kind == 'from_channel':
@@ -401,6 +416,14 @@ def gradient_reference():
     if platform.system() == 'Linux' and platform.libc_ver()[0] == 'glibc':
         return 'GnuGradient'
     raise ValueError('Declare a verified gradient math reference for this host')
+
+
+def collision_arithmetic():
+    if platform.system() == 'Darwin' and platform.machine() == 'arm64':
+        return 'FusedCollision'
+    if platform.system() == 'Linux' and platform.machine() == 'x86_64':
+        return 'UncontractedCollision'
+    raise ValueError('Declare a verified linked collision arithmetic profile for this host')
 
 
 def vector_arguments(signature, values, bend=False):
@@ -538,12 +561,21 @@ def c_source(cases):
                 continue
             if kind == 'collision_value':
                 function, signature, result = COLLISION_APIS[op['function']]
-                expression = f'{function}({vector_arguments(signature,op["args"])})'
+                arguments = vector_arguments(signature,op['args'])
+                if op['function']=='point_poly':
+                    points = '(Vector2[]){' + ','.join('{' + ','.join(f'{float(v)!r}f' for v in p) + '}' for p in op['points']) + '}' if op['points'] else 'NULL'
+                    arguments += f', {points}, {len(op["points"])}'
+                expression = f'{function}({arguments})'
                 if result == 'rectangle':
                     lines += ['{', f'Rectangle result={expression};']
                     for index, field in enumerate(('x','y','width','height')):
                         lines += [f'ImageDrawPixel(&image, {op["x"]+index}, {op["y"]}, float_bits(result.{field}));']
                     lines += ['}']
+                elif result == 'hit':
+                    lines += ['{', 'Vector2 point={0};', f'bool hit={function}({arguments}, &point);',
+                              f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, GetColor((unsigned int)hit));',
+                              f'ImageDrawPixel(&image, {op["x"]+1}, {op["y"]}, float_bits(point.x));',
+                              f'ImageDrawPixel(&image, {op["x"]+2}, {op["y"]}, float_bits(point.y));', '}']
                 else:
                     lines += [f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, GetColor((unsigned int){expression}));']
                 continue
@@ -639,6 +671,14 @@ def bend_source(cases, gpu=False):
         '  J.Rectangle{rx, ry, w, h} = rectangle',
         '  first = write_vector(surface, x, y, J.Vector2{rx, ry})',
         '  write_vector(first, (x + 2.0 : F32), y, J.Vector2{w, h})',
+        'def write_hit(surface: J.Surface, +x: F32, +y: F32, hit: Maybe<&2, J.Vector2>) -> J.Surface:',
+        '  match hit:',
+        '    case None{}:',
+        '      first = J.Surface.draw_pixel(surface, x, y, 0)',
+        '      write_vector(first, (x + 1.0 : F32), y, J.Vector2{0.0, 0.0})',
+        '    case Some{point}:',
+        '      first = J.Surface.draw_pixel(surface, x, y, 1)',
+        '      write_vector(first, (x + 1.0 : F32), y, point)',
         'def emit_qoi_data(name: String, image: J.Surface, bytes: +List<U32>, extra: String) -> IO(Unit):',
         '  J.Surface{+w, +h, pixels} = image',
         '  IO.print("{\\"id\\":\\"" ++ name ++ "\\",\\"width\\":" ++ U32.show(w)',
@@ -754,9 +794,16 @@ def bend_source(cases, gpu=False):
                 continue
             if kind == 'collision_value':
                 _, signature, result = COLLISION_APIS[op['function']]
-                expression = f'J.Collision.{op["function"]}({vector_arguments(signature,op["args"],bend=True)})'
-                function = 'write_rectangle' if result=='rectangle' else 'J.Surface.draw_pixel'
-                value = expression if result=='rectangle' else f'Bool.to_u32({expression})'
+                arguments = vector_arguments(signature,op['args'],bend=True)
+                if op['function']=='point_poly':
+                    arguments += ', [' + ','.join('J.Vector2{' + ','.join(f32(v) for v in p) + '}' for p in op['points']) + ']'
+                function_name = op['function']
+                if function_name == 'lines':
+                    function_name = 'lines_for'
+                    arguments = f'J.{collision_arithmetic()}{{}}, ' + arguments
+                expression = f'J.Collision.{function_name}({arguments})'
+                function = {'rectangle':'write_rectangle','hit':'write_hit','bool':'J.Surface.draw_pixel'}[result]
+                value = f'Bool.to_u32({expression})' if result=='bool' else expression
                 previous = f's{j}'
                 lines += [f'    {previous} : J.Surface = {function}({args[0]}, {f32(op["x"])}, {f32(op["y"])}, {value})']
                 continue
@@ -959,7 +1006,7 @@ def main():
     report['pixels_per_lane'] = sum(width * height for width, height in map(result_size, cases))
     report['numeric_probe_cells'] = sum(1 if op['op']=='number_value' or VECTOR2_APIS[op['function']][2]!='vector' else 2
                                         for case in cases for op in case['operations'] if op['op'] in ('number_value','vector_value'))
-    report['numeric_probe_cells'] += sum(4 if COLLISION_APIS[op['function']][2]=='rectangle' else 1
+    report['numeric_probe_cells'] += sum(COLLISION_CELLS[COLLISION_APIS[op['function']][2]]
                                         for case in cases for op in case['operations'] if op['op']=='collision_value')
     report['alpha_border_observations'] = sum('alpha_border' in case for case in cases)
     report['pot_axes_checked'] = 4096 if any(op['op']=='to_pot' for case in cases for op in case['operations']) else 0

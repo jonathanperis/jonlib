@@ -1,0 +1,30 @@
+{
+  "date": "2026-09-26",
+  "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "source_sha256": {
+    "jonlib.bend": "6399397cd48722f8f9ab7aa8db6f6ee131f5b56a13787a72e0926c7a18a11c04",
+    "src/fused.bend": "ef50c9a1afa85a9fa7da6a249f7ed91200e3f20afd3176b5b673e3c898d146c5"
+  },
+  "fixtures_sha256": "7f4c3c964ca29f50eb9e97e996823ffcb29901f47fa13b0a61aabc0511971c20",
+  "scenarios": 163,
+  "output_words_per_lane": 32660,
+  "numeric_probe_cells": 233,
+  "passed": true,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "segment_counterexample": {
+    "inputs": [1.25, -2.75, 5, 7, -2, 4, 8, 0.25],
+    "native_macos_x_bits": "4046fdd9",
+    "uncontracted_x_bits": "4046fdda",
+    "cause": "Linked Apple clang arm64 CheckCollisionLines uses fmadd for determinants, numerators and hit coordinates",
+    "resolution": "Explicit FusedCollision profile; unchanged native oracle and fixture"
+  },
+  "fused_arithmetic": {
+    "samples": 2056,
+    "inputs_sha256": "92566f4df2fd1ff9bc55dd975cf6183013b7c2a2e5a3bac2b7a65bf495f9e202",
+    "reference": "native fmaf",
+    "lanes": ["cpu", "javascript", "metal"],
+    "passed": true,
+    "rounding": "Exact F32 product, aligned integer limbs, single direct 24-bit rounding"
+  },
+  "limits": ["Exceptional/subnormal/overflow domains", "Other contraction patterns and contracted predicates", "Other targets and full performance/resource parity"]
+}

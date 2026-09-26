@@ -21,10 +21,10 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 157 scenarios / 32,599 output words match pinned raylib exactly on each
+- 163 scenarios / 32,660 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
-- The word count includes 172 exact scalar/Vector2/collision result-bit probe cells.
+- The word count includes 233 exact scalar/Vector2/collision result-bit probe cells.
   The math reference explicitly uses uncontracted F32; no comparison tolerance
   is applied. Both components of each vector output are checked.
 - Seven QOI export scenarios compare all 299 encoded bytes per lane. Real CPU/JS
@@ -50,7 +50,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 66 have
+- The pinned core header inventory contains 600 unique public functions; 74 have
   explicitly scoped Jonlib mappings. The raymath ledger additionally maps 34
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
@@ -101,7 +101,7 @@ reference comparison of all 4096 supported POT axis sizes.
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 157 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 163 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -368,3 +368,36 @@ generation, the resize/Metal diagnostic callers, 32 new differential operations,
 three malformed-fixture assertions and the paired-owner contract.
 
 Regression scan: 37 callers checked, 36 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `4873d19`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36217794657)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36217794468)
+completed successfully.
+
+## Remaining 2D queries and segment contraction
+
+All eleven public 2D collision queries now have scoped mappings. The eight-query
+increment adds point, line, triangle and polygon predicates with reference
+boundary/degenerate rules and exact optional hit coordinates. The main suite is
+163 scenarios / 32,660 words on CPU-1, CPU-2, JavaScript and forced Metal.
+
+The non-dyadic segment fixture exposed a real one-bit mismatch: the pragma in
+the generated C caller does not control FP contraction in linked raylib objects.
+Disassembly confirmed `fmadd` in the macOS reference. `Collision.lines_for` now
+selects explicit fused/uncontracted behavior; the oracle and fixture remain
+unchanged. The internal Bend FMA passes 2,056 native-`fmaf` comparisons on CPU,
+JavaScript and forced Metal, including cancellation, signed-zero and tiny-addend
+double-rounding counterexamples. See [evidence/collision-2d.json](evidence/collision-2d.json).
+
+Scoped drift review: I42/I43 match the collision entry points, explicit arithmetic
+selector and `src/fused.bend`; A26/V2 hold for the exercised profiles. C1/C3 hold
+through the Bend-only source gate, and A5 passes the forced Metal lane. Other
+contracted predicates, exceptional/subnormal domains and full targets/resources/
+performance remain gaps. Eight harness tests and the complete pinned proof
+verdict pass. No expected output or tolerance was loosened.
+
+Reviewed the collision and fused helpers, shared serializers/validators and
+diagnostic callers, 45 differential operations, three invalid fixtures and the
+fused-probe assertion. Corrected one documentation statement that no longer
+accounted for the explicit fused profile.
+
+Regression scan: 44 callers checked, 49 assertions checked, 1 flagged/fixed.

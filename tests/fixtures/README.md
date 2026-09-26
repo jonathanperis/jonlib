@@ -43,6 +43,8 @@ Supported operations:
 - `collision_value`: a named `function`, flattened scalar/vector/rectangle `args`
   and output cell `x`,`y`. Boolean results use one cell; rectangle results use
   four adjacent exact F32-bit cells, all required to fit.
+  Segment `lines` results use three cells (hit flag and both coordinate bits).
+  `point_poly` adds a `points` array; `point_line` requires an integral threshold.
 - `color_tint`, `color_invert`, `color_contrast`, `color_brightness`,
   `color_replace`: image transforms. Tint/replacement use RGBA `color`,
   replacement also uses `replacement`, and contrast/brightness use `amount`.

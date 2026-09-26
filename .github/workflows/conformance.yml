@@ -105,6 +105,10 @@ jobs:
           cp .build/trig-probe/results.json .build/trig-probe/gradient-results.json
           python3 tools/trig_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend" --rotation
           cp .build/trig-probe/results.json .build/trig-probe/rotation-results.json
+      - name: Verify finite-normal fused arithmetic
+        run: >-
+          python3 tools/fused_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
       - name: Upload scoped conformance evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -132,3 +136,4 @@ jobs:
             .build/trig-probe/results.json
             .build/trig-probe/gradient-results.json
             .build/trig-probe/rotation-results.json
+            .build/fused-probe/results.json

@@ -39652,23 +39652,27 @@
       "milestone": "collision",
       "phase": 1,
       "sequence": 25,
-      "status": "not-started",
-      "jonlib": "Collision.check_collision_circle_rec",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Collision.circle_rec",
+      "mapping_state": "implemented",
+      "scope": "Finite bounded F32 circle/rectangle predicate preserving reference side and corner tests.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted variants",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/COLLISION.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39683,8 +39687,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
-      "next_step": "Derive CheckCollisionCircleRec semantics from the linked source, add a reference fixture, then implement Collision.check_collision_circle_rec.",
-      "priority": 2
+      "next_step": "Close documented gaps and unverified gates for CheckCollisionCircleRec.",
+      "priority": 225
     },
     {
       "id": "raylib:function:CheckCollisionCircleLine",
@@ -39709,23 +39713,27 @@
       "milestone": "collision",
       "phase": 1,
       "sequence": 25,
-      "status": "not-started",
-      "jonlib": "Collision.check_collision_circle_line",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Collision.circle_line",
+      "mapping_state": "implemented",
+      "scope": "Finite bounded F32 circle/segment closest-point predicate with reference epsilon-degenerate endpoint fallback.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted variants",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/COLLISION.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39739,8 +39747,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
-      "next_step": "Derive CheckCollisionCircleLine semantics from the linked source, add a reference fixture, then implement Collision.check_collision_circle_line.",
-      "priority": 6
+      "next_step": "Close documented gaps and unverified gates for CheckCollisionCircleLine.",
+      "priority": 225
     },
     {
       "id": "raylib:function:CheckCollisionPointRec",
@@ -39765,23 +39773,27 @@
       "milestone": "collision",
       "phase": 1,
       "sequence": 25,
-      "status": "not-started",
-      "jonlib": "Collision.check_collision_point_rec",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Collision.point_rec",
+      "mapping_state": "implemented",
+      "scope": "Finite bounded F32 point/rectangle predicate; inclusive left/top and exclusive right/bottom edges.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal inputs",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/COLLISION.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39796,8 +39808,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
-      "next_step": "Derive CheckCollisionPointRec semantics from the linked source, add a reference fixture, then implement Collision.check_collision_point_rec.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for CheckCollisionPointRec.",
+      "priority": 225
     },
     {
       "id": "raylib:function:CheckCollisionPointCircle",
@@ -39822,23 +39834,27 @@
       "milestone": "collision",
       "phase": 1,
       "sequence": 25,
-      "status": "not-started",
-      "jonlib": "Collision.check_collision_point_circle",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Collision.point_circle",
+      "mapping_state": "implemented",
+      "scope": "Finite bounded F32 point/circle squared-distance predicate with inclusive tangency.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted variants",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/COLLISION.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39852,8 +39868,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
-      "next_step": "Derive CheckCollisionPointCircle semantics from the linked source, add a reference fixture, then implement Collision.check_collision_point_circle.",
-      "priority": 1
+      "next_step": "Close documented gaps and unverified gates for CheckCollisionPointCircle.",
+      "priority": 225
     },
     {
       "id": "raylib:function:CheckCollisionPointTriangle",
@@ -39878,23 +39894,27 @@
       "milestone": "collision",
       "phase": 1,
       "sequence": 25,
-      "status": "not-started",
-      "jonlib": "Collision.check_collision_point_triangle",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Collision.point_triangle",
+      "mapping_state": "implemented",
+      "scope": "Finite bounded F32 point/triangle predicate; strict barycentric interior and false for tested degenerate triangles.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted variants",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/COLLISION.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39908,8 +39928,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
-      "next_step": "Derive CheckCollisionPointTriangle semantics from the linked source, add a reference fixture, then implement Collision.check_collision_point_triangle.",
-      "priority": 4
+      "next_step": "Close documented gaps and unverified gates for CheckCollisionPointTriangle.",
+      "priority": 225
     },
     {
       "id": "raylib:function:CheckCollisionPointLine",
@@ -39934,23 +39954,27 @@
       "milestone": "collision",
       "phase": 1,
       "sequence": 25,
-      "status": "not-started",
-      "jonlib": "Collision.check_collision_point_line",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Collision.point_line",
+      "mapping_state": "implemented",
+      "scope": "Finite bounded F32 point/segment predicate with integral threshold, strict cross-product margin and inclusive dominant-axis interval.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted variants",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/COLLISION.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39964,8 +39988,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
-      "next_step": "Derive CheckCollisionPointLine semantics from the linked source, add a reference fixture, then implement Collision.check_collision_point_line.",
-      "priority": 5
+      "next_step": "Close documented gaps and unverified gates for CheckCollisionPointLine.",
+      "priority": 225
     },
     {
       "id": "raylib:function:CheckCollisionPointPoly",
@@ -39990,23 +40014,27 @@
       "milestone": "collision",
       "phase": 1,
       "sequence": 25,
-      "status": "not-started",
-      "jonlib": "Collision.check_collision_point_poly",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Collision.point_poly",
+      "mapping_state": "implemented",
+      "scope": "Immutable Vector2-list polygon predicate with reference crossing order, boundary comparisons and fewer-than-three-vertices behavior.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted variants",
+        "Full target/resource/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/COLLISION.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -40020,8 +40048,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
-      "next_step": "Derive CheckCollisionPointPoly semantics from the linked source, add a reference fixture, then implement Collision.check_collision_point_poly.",
-      "priority": 7
+      "next_step": "Close documented gaps and unverified gates for CheckCollisionPointPoly.",
+      "priority": 225
     },
     {
       "id": "raylib:function:CheckCollisionLines",
@@ -40046,23 +40074,28 @@
       "milestone": "collision",
       "phase": 1,
       "sequence": 25,
-      "status": "not-started",
-      "jonlib": "Collision.check_collision_lines",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Collision.lines_for / Collision.lines",
+      "mapping_state": "implemented",
+      "scope": "Finite bounded segment intersections; Maybe hit coordinates, inclusive endpoints and reference FLT_EPSILON determinant gate. Explicit uncontracted and Apple-clang FMA profiles with direct-rounding Bend arithmetic.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal/overflow and other contraction patterns",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tools/fused_probe.py",
+        "docs/COLLISION.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -40076,8 +40109,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
-      "next_step": "Derive CheckCollisionLines semantics from the linked source, add a reference fixture, then implement Collision.check_collision_lines.",
-      "priority": 3
+      "next_step": "Close documented gaps and unverified gates for CheckCollisionLines.",
+      "priority": 225
     },
     {
       "id": "raylib:function:GetCollisionRec",
@@ -54093,7 +54126,7 @@
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
       "next_step": "Derive CheckCollisionSpheres semantics from the linked source, add a reference fixture, then implement Collision.check_collision_spheres.",
-      "priority": 225
+      "priority": 8
     },
     {
       "id": "raylib:function:CheckCollisionBoxes",
@@ -54149,7 +54182,7 @@
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
       "next_step": "Derive CheckCollisionBoxes semantics from the linked source, add a reference fixture, then implement Collision.check_collision_boxes.",
-      "priority": 225
+      "priority": 9
     },
     {
       "id": "raylib:function:CheckCollisionBoxSphere",
@@ -62134,7 +62167,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Zero semantics from the linked source, add a reference fixture, then implement Vector3.zero.",
-      "priority": 202
+      "priority": 0
     },
     {
       "id": "raymath:function:Vector3One",
@@ -62189,7 +62222,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3One semantics from the linked source, add a reference fixture, then implement Vector3.one.",
-      "priority": 202
+      "priority": 1
     },
     {
       "id": "raymath:function:Vector3Add",
@@ -62244,7 +62277,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Add semantics from the linked source, add a reference fixture, then implement Vector3.add.",
-      "priority": 202
+      "priority": 2
     },
     {
       "id": "raymath:function:Vector3AddValue",
@@ -62354,7 +62387,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Subtract semantics from the linked source, add a reference fixture, then implement Vector3.subtract.",
-      "priority": 202
+      "priority": 3
     },
     {
       "id": "raymath:function:Vector3SubtractValue",
@@ -62464,7 +62497,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Scale semantics from the linked source, add a reference fixture, then implement Vector3.scale.",
-      "priority": 202
+      "priority": 4
     },
     {
       "id": "raymath:function:Vector3Multiply",
@@ -62519,7 +62552,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Multiply semantics from the linked source, add a reference fixture, then implement Vector3.multiply.",
-      "priority": 202
+      "priority": 5
     },
     {
       "id": "raymath:function:Vector3CrossProduct",
@@ -62574,7 +62607,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3CrossProduct semantics from the linked source, add a reference fixture, then implement Vector3.cross_product.",
-      "priority": 202
+      "priority": 6
     },
     {
       "id": "raymath:function:Vector3Perpendicular",
@@ -62794,7 +62827,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3DotProduct semantics from the linked source, add a reference fixture, then implement Vector3.dot_product.",
-      "priority": 202
+      "priority": 7
     },
     {
       "id": "raymath:function:Vector3Distance",
