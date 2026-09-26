@@ -302,6 +302,11 @@ polynomial evaluation and licensed Sun-kernel adaptation replace backend-native
 atan2 primitives that failed exact probes. Supporting binary64 multiplication
 and division round directly from integer limbs.
 
+The angle oracle explicitly disables builtin `atan2f` folding, and the standalone
+probe calls the native function through a volatile pointer. This distinguishes
+actual libm behavior from compiler-folded literal calls. Probe artifacts retain
+both endpoint variants and host/compiler information.
+
 ```sh
 python3 tools/float64_ops_probe.py --bend-source "$BEND_SOURCE" --gpu
 python3 tools/angle_probe.py --bend-source "$BEND_SOURCE" --gpu

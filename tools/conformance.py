@@ -1244,7 +1244,7 @@ def verify_native_rejection(raylib_source, library, case, exit_code, message):
     source = BUILD/f'{case["id"]}.c'
     binary = BUILD/case['id']
     source.write_text(c_source(cases))
-    run(['clang','-std=c11','-O2','-I'+str(raylib_source/'src'),source,library,'-lm','-o',binary])
+    run(['clang','-std=c11','-O2','-fno-builtin-atan2f','-I'+str(raylib_source/'src'),source,library,'-lm','-o',binary])
     rejected = subprocess.run([str(binary)],cwd=ROOT,env=ENV,capture_output=True,text=True,timeout=240)
     if rejected.returncode != exit_code or message not in rejected.stderr:
         raise ValueError(f'{case["id"]}: native invalid-domain control did not fail closed')
@@ -1327,7 +1327,7 @@ def main():
          '-DSUPPORT_MODULE_RAUDIO=OFF', '-DUSE_EXTERNAL_GLFW=OFF'])
     run(['cmake', '--build', cmake, '--parallel', '4'])
     (BUILD / 'reference.c').write_text(c_source(cases))
-    run(['clang', '-std=c11', '-O2', '-I' + str(args.raylib_source / 'src'),
+    run(['clang', '-std=c11', '-O2', '-fno-builtin-atan2f', '-I' + str(args.raylib_source / 'src'),
          BUILD / 'reference.c', cmake / 'raylib/libraylib.a', '-lm', '-o', BUILD / 'reference'])
     reference_text = run([BUILD / 'reference'])
     (BUILD / 'reference.jsonl').write_text(reference_text)
@@ -1351,6 +1351,8 @@ def main():
     report['qoi_exports'] = dict(scenarios=len(exports), bytes=sum(len(row['qoi']) for row in exports))
     source = BUILD / 'candidate.bend'
     source.write_text(bend_source(cases))
+    report['angle_reference_evaluation'] = 'native atan2f; builtin folding disabled'
+    report_path.write_text(json.dumps(report,indent=2)+'\n')
     print('Building Bend CPU and JavaScript runners...', flush=True)
     run([*cli, source, '-o', BUILD / 'candidate', '-o', BUILD / 'candidate.js'])
     lanes = [('cpu-1', [BUILD / 'candidate', '--threads', '1']),

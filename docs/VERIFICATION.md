@@ -780,3 +780,20 @@ Reviewed 85 arithmetic/profile/wrapper/generator/diagnostic caller contexts,
 independent probe comparisons.
 
 Regression scan: 85 callers checked, 22 assertions checked, 1 flagged/fixed.
+
+### Hosted angle dispatch follow-up
+
+`bafb5b8` failed hosted angle comparisons at π on macOS and a near-π/2 input on
+Ubuntu. The retained outputs are `40490fdb` versus the Apple-profile `40490fda`,
+and `3fc90fdb` versus the Sun-control `3fc90fda`, respectively. These failures
+remain evidence; the local results above are scoped to their recorded host.
+
+The reference compilation now explicitly inhibits builtin `atan2f` folding;
+the dedicated probe uses a volatile native pointer and records literal/native
+endpoint results plus host/compiler metadata. Native probes run before the full
+hosted corpus, and conformance metadata is persisted before the first comparison.
+The original inputs, raymath header and exact-bit comparator are retained.
+Local full CPU-1/CPU-2/JS/Metal conformance and the 1,086 native angle probes pass;
+hosted native-profile confirmation remains pending for this follow-up.
+
+Regression scan: 8 callers checked, 4 assertions checked, 1 flagged/fixed.

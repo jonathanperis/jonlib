@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import platform
 import random
 import struct
 
@@ -73,17 +74,34 @@ def main():
     report_path.write_text(json.dumps(dict(passed=False))+'\n')
     source = work/'reference.c'
     source.write_text('#include <math.h>\n#include <stdint.h>\n#include <stdio.h>\n#include <string.h>\n#pragma STDC FP_CONTRACT OFF\n'+GNU_CONTROL+
-        '\nstatic const float samples[][2]={'+','.join('{'+','.join(v.hex()+'f' for v in pair)+'}' for pair in values)+'};\n'+
-        'int main(void) { for(unsigned i=0;i<sizeof(samples)/sizeof(samples[0]);i++) { float value='+('gnu_atan2' if args.gnu_control else 'atan2f')+
+        '\nstatic float (*volatile native_atan2)(float,float)=atan2f;\nstatic const float samples[][2]={'+','.join('{'+','.join(v.hex()+'f' for v in pair)+'}' for pair in values)+'};\n'+
+        'int main(void) { for(unsigned i=0;i<sizeof(samples)/sizeof(samples[0]);i++) { float value='+('gnu_atan2' if args.gnu_control else 'native_atan2')+
         '(samples[i][0],samples[i][1]); unsigned bits=word(value); printf("%u\\n",bits); } }\n')
     binary = work/'reference'
     run(['clang','-std=c11','-O2',source,'-lm','-o',binary])
     expected = [int(line) for line in run([binary]).splitlines()]
     if len(expected)!=len(values):raise ValueError('Incomplete atan2 reference result set')
     gnu = args.gnu_control or gradient_reference()=='GnuGradient'
+    folding = work/'folding.c'
+    folding.write_text('''#include <math.h>
+#include <stdio.h>
+#include <string.h>
+static unsigned word(float x) { unsigned b;memcpy(&b,&x,4);return b; }
+int main(void) {
+  float (*volatile native)(float,float)=atan2f;
+  printf("%u %u %u %u\\n",word(atan2f(0.0f,-1.0f)),word(native(0.0f,-1.0f)),word(atan2f(1.0f,-1e-20f)),word(native(1.0f,-1e-20f)));
+}
+''')
+    run(['clang','-std=c11','-O2',folding,'-lm','-o',work/'folding'])
+    literal_pi,native_pi,literal_half,native_half = map(int,run([work/'folding']).split())
     report = dict(passed=False,samples=len(values),profile='gnu' if gnu else 'apple',
                   reference='sun-control' if args.gnu_control else 'native-libm',
                   inputs_sha256=hashlib.sha256(json.dumps(values).encode()).hexdigest(),sources=source_gate(),lanes={})
+    report['host'] = dict(system=platform.system(),machine=platform.machine(),libc=platform.libc_ver(),
+                          clang=run(['clang','--version']).splitlines()[0])
+    report['constant_folding'] = dict(literal_pi=f'{literal_pi:08x}',native_pi=f'{native_pi:08x}',
+                                     literal_near_half_pi=f'{literal_half:08x}',native_near_half_pi=f'{native_half:08x}')
+    report_path.write_text(json.dumps(report,indent=2)+'\n')
     for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
         candidate = work/f'{lane}.bend'
         program = '''import Base
