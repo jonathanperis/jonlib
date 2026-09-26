@@ -50,7 +50,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 100 have
+- The pinned core header inventory contains 600 unique public functions; 101 have
   explicitly scoped Jonlib mappings. The raymath ledger additionally maps 142
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
@@ -1055,3 +1055,27 @@ over 17 contiguous batches. Eight harness tests and project checks pass; unchang
 library/proof evidence is reused. Hosted follow-up confirmation remains pending.
 
 Regression scan: 7 callers checked, 4 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `77b9ab7`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36253357894)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36253357944)
+completed successfully with the smaller measured candidate batches.
+
+## Owned image-format conversion
+
+`Image.Formatted` supports all seven byte/integer formats with checked byte
+construction, native-order export, in-place owned conversion and RGBA8 Surface
+bridges. The dedicated probe passes every one of 49 format pairs, no-op requests,
+chain prefixes and bridges: 109 complete results / 3,192 native bytes on CPU,
+JavaScript and forced Metal. The normalized F32 path retains reciprocal expansion
+and avoids routing through raw `GetPixelColor`, whose RGB5A1 blue behavior differs.
+See [evidence/image-format-conversion.json](evidence/image-format-conversion.json).
+
+The full 261-scenario / 40,101-word corpus still passes all four lanes. Seven
+new contracts check invalid sizes/formats/byte counts/byte values, retained owners
+and the Surface round trip. A26/A3/A4/A5, eight harness tests, project checks and
+all four pinned laws pass. I78 matches the single-mip, little-endian byte/integer
+profile. Float/half/compressed formats, mipmaps, other thresholds/endianness,
+native allocation ABI and full integration/target/resource/performance coverage
+remain gaps.
+
+Regression scan: 52 callers checked, 9 assertions checked, 0 flagged/fixed.

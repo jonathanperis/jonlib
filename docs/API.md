@@ -44,6 +44,8 @@ Owned random-stream APIs and their native rprand profile are described in
 [RANDOM.md](RANDOM.md).
 Pixel sizing, raw byte/integer reads and writes, and packed dithering are
 documented in [PIXELS.md](PIXELS.md).
+Owned byte/integer image conversion and Surface bridges are documented in
+[FORMATS.md](FORMATS.md).
 
 ## Owned RGBA8 surfaces
 

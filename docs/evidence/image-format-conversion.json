@@ -1,0 +1,16 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {
+    "jonlib.bend": "ae92d268eaab3017144b87149fe31d81e55462f1762123c27766d2896cbf4785",
+    "src/formats.bend": "d8d02a6b1531db46b9716fef335af6c321bb6f9d133af792a079c489d298491b"
+  },
+  "inputs_sha256": "42d4d094788cdfb73fa5840ee5af58a840ca9e7f2be0e5133a074d6858df592c",
+  "reference_sha256": "7d45f0ab252eaed479f83615e46bcb9a48c6e930c570bc57017ec2562251eb2a",
+  "format_pairs": 49,
+  "cases": 109,
+  "checked_bytes": 3192,
+  "passed": true,
+  "lanes": ["cpu","javascript","metal"],
+  "full_corpus": {"scenarios":261,"output_words_per_lane":40101,"passed":true,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "limits": ["Float/half/compressed formats, mipmaps and other thresholds/endianness", "Native allocation ABI and complete integration/target/resource/performance coverage"]
+}

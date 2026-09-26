@@ -3511,11 +3511,12 @@
       "phase": 0,
       "sequence": 0,
       "status": "partial",
-      "jonlib": "Surface",
+      "jonlib": "Surface / Image.Formatted / Image.Packed16",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 pixels, dimensions 1..4096; one mip level.",
+      "scope": "Owned RGBA8 surfaces, byte/integer format images and raw 16-bit dithering outputs, dimensions 1..4096; one mip level.",
       "gaps": [
-        "All image formats, mipmaps, full dimension domain and target/performance gates"
+        "Remaining image formats, mipmaps and full dimension domain",
+        "Native allocation ABI and complete integration/target/resource/performance gates"
       ],
       "blocker": null,
       "gates": {
@@ -3528,6 +3529,8 @@
       },
       "evidence": [
         "docs/API.md",
+        "docs/FORMATS.md",
+        "docs/PIXELS.md",
         "tests/transforms.bend"
       ],
       "gate_evidence": {},
@@ -39566,7 +39569,7 @@
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
       "next_step": "Resolve: Native Apple powf(t,3) differs from a double-cube substitute: 6670/1048576 investigated inputs, with a retained actual GetSplinePointBezierCubic coordinate mismatch.",
-      "priority": 1
+      "priority": 3
     },
     {
       "id": "raylib:function:CheckCollisionRecs",
@@ -40349,7 +40352,7 @@
       "related_declarations": [],
       "verification": "Per-format decode/encode fixtures, metadata, truncated/malformed data, dimensions and resource limits.",
       "next_step": "Derive LoadImageRaw semantics from the linked source, add a reference fixture, then implement Surface.load_image_raw.",
-      "priority": 209
+      "priority": 0
     },
     {
       "id": "raylib:function:LoadImageAnim",
@@ -40819,7 +40822,7 @@
       "related_declarations": [],
       "verification": "Per-format decode/encode fixtures, metadata, truncated/malformed data, dimensions and resource limits.",
       "next_step": "Close documented gaps and unverified gates for ExportImage.",
-      "priority": 209
+      "priority": 1
     },
     {
       "id": "raylib:function:ExportImageToMemory",
@@ -41819,23 +41822,28 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
-      "jonlib": "Color.image_format",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Image.Formatted.convert / Surface.to_formatted / Image.Formatted.to_surface",
+      "mapping_state": "implemented",
+      "scope": "Owned single-mip conversions among byte/integer formats 1..7. Preserves native normalized F32 arithmetic, reciprocal expansion, quantization, alpha threshold and same-format/zero-target no-ops; exports exact little-endian native-order bytes.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Float/half/compressed formats, mipmaps and other thresholds/endianness",
+        "Native allocation ABI and complete integration/target/resource/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/image_format_probe.py",
+        "tests/transforms.bend",
+        "docs/FORMATS.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -41849,8 +41857,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive ImageFormat semantics from the linked source, add a reference fixture, then implement Color.image_format.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for ImageFormat.",
+      "priority": 2
     },
     {
       "id": "raylib:function:ImageToPOT",
@@ -67008,7 +67016,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.",
-      "priority": 5
+      "priority": 7
     },
     {
       "id": "raymath:function:MatrixOrtho",
@@ -68013,7 +68021,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Base and investigated inverse-trig models differ from the actual float libm; no verified acos profile is available yet.",
-      "priority": 2
+      "priority": 4
     },
     {
       "id": "raymath:function:QuaternionCubicHermiteSpline",
@@ -68374,7 +68382,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Native acosf endpoint/tail values differ from Base and investigated numerical models.",
-      "priority": 3
+      "priority": 5
     },
     {
       "id": "raymath:function:QuaternionFromEuler",
@@ -68495,7 +68503,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models.",
-      "priority": 4
+      "priority": 6
     },
     {
       "id": "raymath:function:QuaternionTransform",

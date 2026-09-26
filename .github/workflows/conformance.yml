@@ -111,6 +111,11 @@ jobs:
           python3 tools/raw_pixel_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify owned image-format conversions
+        run: >-
+          python3 tools/image_format_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Independently audit the public API catalog
         run: >-
           python3 tools/api_plan.py check --clang-audit
@@ -184,3 +189,4 @@ jobs:
             .build/spline-probe/results.json
             .build/pixel-probe/results.json
             .build/raw-pixel-probe/results.json
+            .build/image-format-probe/results.json

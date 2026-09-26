@@ -217,6 +217,31 @@ def pixel_failed(-A: Data, result: Result<&2, &2, J.Pixel.Error, A>, expected: U
     case Fail{error}: pixel_error(error, expected)
     case Done{_}: False{}
 
+def no_formatted(result: Maybe<J.Image.Formatted>) -> Bool:
+  match result:
+    case None{}: True{}
+    case Some{_}: False{}
+
+def formatted_bytes_kept(data: (U32 & U32) & (U32 & List<U32>)) -> Bool:
+  match data:
+    case Tuple{Tuple{1, 2}, Tuple{2, Con{1, Con{2, Con{3, Con{4, Nil{}}}}}}}: True{}
+    case _: False{}
+
+def formatted_rejected(result: Result<&1, &1, J.Image.Formatted & J.Pixel.Error, J.Image.Formatted>) -> Bool:
+  match result:
+    case Fail{Tuple{image, J.UnsupportedPixelFormat{}}}: formatted_bytes_kept(J.Image.Formatted.export(image))
+    case _: False{}
+
+def formatted_created(result: Maybe<J.Image.Formatted>) -> Bool:
+  match result:
+    case None{}: False{}
+    case Some{image}: formatted_rejected(J.Image.Formatted.convert(image, 8))
+
+def formatted_roundtrip(result: Maybe<J.Surface>) -> Bool:
+  match result:
+    case None{}: False{}
+    case Some{surface}: pixels_kept(J.Surface.colors(J.Image.Formatted.to_surface(J.Surface.to_formatted(surface))))
+
 def verdict(ok: Bool) -> IO(Unit):
   match ok:
     case True{}:
@@ -275,6 +300,13 @@ def checks() -> Bool:
     && pixel_failed(+List<U32>, J.Pixel.set_color([0,0,0,0], 0, 8), 0)
     && pixel_failed(+List<U32>, J.Pixel.set_color([0,0,0,0,256], 0, 7), 1)
     && pixel_failed(+List<U32>, J.Pixel.set_color([1,2], 0, 7), 2)
+    && no_formatted(J.Image.Formatted.from_bytes(0, 1, 7, []))
+    && no_formatted(J.Image.Formatted.from_bytes(1, 1, 0, []))
+    && no_formatted(J.Image.Formatted.from_bytes(1, 1, 7, [1,2,3]))
+    && no_formatted(J.Image.Formatted.from_bytes(1, 1, 7, [1,2,3,4,5]))
+    && no_formatted(J.Image.Formatted.from_bytes(1, 1, 7, [1,2,3,256]))
+    && formatted_created(J.Image.Formatted.from_bytes(1, 2, 2, [1,2,3,4]))
+    && formatted_roundtrip(J.Surface.create(2, 1, 16909060))
 
 def main() -> IO(Unit):
   verdict(checks())

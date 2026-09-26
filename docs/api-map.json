@@ -376,6 +376,17 @@
     "api_id": "raylib:function:ImageFromChannel",
     "milestone": "images"
   },
+  "ImageFormat": {
+    "jonlib": "Image.Formatted.convert / Surface.to_formatted / Image.Formatted.to_surface",
+    "status": "profile-covered",
+    "scope": "Owned single-mip conversions among byte/integer formats 1..7. Preserves native normalized F32 arithmetic, reciprocal expansion, quantization, alpha threshold and same-format/zero-target no-ops; exports exact little-endian native-order bytes.",
+    "gaps": [
+      "Float/half/compressed formats, mipmaps and other thresholds/endianness",
+      "Native allocation ABI and complete integration/target/resource/performance coverage"
+    ],
+    "api_id": "raylib:function:ImageFormat",
+    "milestone": "pixels"
+  },
   "ImageToPOT": {
     "jonlib": "Surface.to_pot",
     "status": "profile-covered",

@@ -17,6 +17,7 @@ import ./src/cellular.bend as Cellular
 import ./src/perlin.bend as Perlin
 import ./src/spline.bend as SplineNumeric
 import ./src/dither.bend as Dither
+import ./src/formats.bend as Formats
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -1795,6 +1796,64 @@ def Surface.creation.checked(ok: Bool, +w: U32, +h: U32, color: U32) -> Maybe<Su
 # The initial profile supports 1..4096 pixels on each axis.
 def Surface.create(+w: U32, +h: U32, color: U32) -> Maybe<Surface>:
   Surface.creation.checked(((w > 0) && (h > 0) && (w <= 4096) && (h <= 4096) : U32), w, h, color)
+
+type Image.Formatted is Type:
+  FormattedImage{width: U32, height: U32, format: U32, pixels: Array<U32>}
+
+def Image.Formatted.created(width: U32, height: U32, format: U32, result: Maybe<Array<U32>>) -> Maybe<Image.Formatted>:
+  match result:
+    case None{}: None{}
+    case Some{pixels}: Some{FormattedImage{width, height, format, pixels}}
+
+def Image.Formatted.validated(valid: Bool, +width: U32, +height: U32, +format: U32, bytes: +List<U32>) -> Maybe<Image.Formatted>:
+  match valid:
+    case False{}: None{}
+    case True{}:
+      +count = (width * height : U32)
+      Image.Formatted.created(width, height, format, Formats.unpack(U32.to_nat(count), 0,
+        U32.to_nat((Pixel.bits_per_pixel(format) / 8 : U32)), Some{Formats.Input{bytes, Array.new(U32, Surface.capacity(count), 0)}}))
+
+def Image.Formatted.checked(valid: Bool, +width: U32, +height: U32, +format: U32, +bytes: +List<U32>) -> Maybe<Image.Formatted>:
+  match valid:
+    case False{}: None{}
+    case True{}:
+      Image.Formatted.validated(Formats.valid(bytes, (width * height * (Pixel.bits_per_pixel(format) / 8) : U32), True{}), width, height, format, bytes)
+
+def Image.Formatted.from_bytes(+width: U32, +height: U32, +format: U32, bytes: +List<U32>) -> Maybe<Image.Formatted>:
+  Image.Formatted.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096)
+    && (format >= 1) && (format <= 7) : U32), width, height, format, bytes)
+
+def Surface.to_formatted(surface: Surface) -> Image.Formatted:
+  Surface{+width, +height, pixels} = surface
+  FormattedImage{width, height, 7, Formats.swap_pixels(U32.to_nat((width * height : U32)), 0, pixels)}
+
+def Image.Formatted.routed(unchanged: Bool, image: Image.Formatted, +to: U32) -> Image.Formatted:
+  match unchanged image:
+    case True{} _: image
+    case False{} FormattedImage{+width, +height, from, pixels}:
+      FormattedImage{width, height, to, Formats.convert(U32.to_nat((width * height : U32)), 0, from, to, pixels)}
+
+def Image.Formatted.converted(valid: Bool, image: Image.Formatted, +target: U32) -> Result<&1, &1, Image.Formatted & Pixel.Error, Image.Formatted>:
+  match valid image:
+    case False{} _: Fail{(image, UnsupportedPixelFormat{})}
+    case True{} FormattedImage{width, height, +format, pixels}:
+      Done{Image.Formatted.routed(U32.is_eq(target, 0) || U32.is_eq(target, format), FormattedImage{width, height, format, pixels}, target)}
+
+def Image.Formatted.convert(image: Image.Formatted, +target: U32) -> Result<&1, &1, Image.Formatted & Pixel.Error, Image.Formatted>:
+  Image.Formatted.converted((target <= 7 : U32), image, target)
+
+def Image.Formatted.export(image: Image.Formatted) -> (U32 & U32) & (U32 & List<U32>):
+  FormattedImage{+width, +height, +format, pixels} = image
+  words = List.take(&1, U32, Array.to_list(~U32, pixels), U32.to_nat((width * height : U32)))
+  ((width, height), (format, Formats.bytes(words, U32.to_nat((Pixel.bits_per_pixel(format) / 8 : U32)), Nil{})))
+
+def Image.Formatted.surface(image: Image.Formatted) -> Surface:
+  FormattedImage{+width, +height, _, pixels} = image
+  Surface{width, height, Formats.swap_pixels(U32.to_nat((width * height : U32)), 0, pixels)}
+
+def Image.Formatted.to_surface(image: Image.Formatted) -> Surface:
+  FormattedImage{width, height, +format, pixels} = image
+  Image.Formatted.surface(Image.Formatted.routed(U32.is_eq(format, 7), FormattedImage{width, height, format, pixels}, 7))
 
 def Surface.dither.checked(valid: Bool, surface: Surface, +r: U32, +g: U32, +b: U32, +a: U32) -> Result<&1, &1, Surface & Surface.Error, Image.Packed16>:
   match valid surface:
