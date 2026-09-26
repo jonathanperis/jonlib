@@ -1662,6 +1662,91 @@ def Pixel.size.checked(valid: Bool, +width: U32, +height: U32, +format: U32) -> 
 def Pixel.data_size(+width: U32, +height: U32, +format: U32) -> Maybe<&2, U32>:
   Pixel.size.checked(((width <= 4096) && (height <= 4096) && (format <= 2147483647) : U32), width, height, format)
 
+type Pixel.Error is Data:
+  UnsupportedPixelFormat{}
+  InvalidPixelByte{}
+  TruncatedPixelData{}
+
+def Pixel.packed_color(format: U32, +word: U32) -> U32:
+  match format:
+    case 3:
+      Color.rgba(((word >> 11n) * 255 / 31 : U32), (((word >> 5n) .&. 63) * 255 / 63 : U32), ((word .&. 31) * 255 / 31 : U32), 255)
+    case 5:
+      # GetPixelColor uses the low five bits directly for blue, including alpha.
+      Color.rgba(((word >> 11n) * 255 / 31 : U32), (((word >> 6n) .&. 31) * 255 / 31 : U32), ((word .&. 31) * 255 / 31 : U32), ((word .&. 1) * 255 : U32))
+    case _:
+      Color.rgba(((word >> 12n) * 17 : U32), (((word >> 8n) .&. 15) * 17 : U32), (((word >> 4n) .&. 15) * 17 : U32), ((word .&. 15) * 17 : U32))
+
+def Pixel.read.bytes(format: U32, bytes: +List<U32>) -> Result<&2, &2, Pixel.Error, U32>:
+  match format bytes:
+    case 1 Con{+gray, _}: Done{Color.rgba(gray, gray, gray, 255)}
+    case 2 Con{+gray, Con{alpha, _}}: Done{Color.rgba(gray, gray, gray, alpha)}
+    case 3 Con{low, Con{high, _}}: Done{Pixel.packed_color(3, (low .|. (high << 8n) : U32))}
+    case 4 Con{r, Con{g, Con{b, _}}}: Done{Color.rgba(r, g, b, 255)}
+    case 5 Con{low, Con{high, _}}: Done{Pixel.packed_color(5, (low .|. (high << 8n) : U32))}
+    case 6 Con{low, Con{high, _}}: Done{Pixel.packed_color(6, (low .|. (high << 8n) : U32))}
+    case 7 Con{r, Con{g, Con{b, Con{a, _}}}}: Done{Color.rgba(r, g, b, a)}
+    case _ _: Fail{TruncatedPixelData{}}
+
+def Pixel.read.valid(valid: Bool, format: U32, bytes: +List<U32>) -> Result<&2, &2, Pixel.Error, U32>:
+  match valid:
+    case False{}: Fail{InvalidPixelByte{}}
+    case True{}: Pixel.read.bytes(format, bytes)
+
+def Pixel.read.format(valid: Bool, format: U32, +bytes: +List<U32>) -> Result<&2, &2, Pixel.Error, U32>:
+  match valid:
+    case False{}: Fail{UnsupportedPixelFormat{}}
+    case True{}: Pixel.read.valid(Qoi.valid_bytes(bytes, True{}), format, bytes)
+
+def Pixel.get_color(bytes: +List<U32>, +format: U32) -> Result<&2, &2, Pixel.Error, U32>:
+  Pixel.read.format(((format >= 1) && (format <= 7) : U32), format, bytes)
+
+def Pixel.quantize(channel: U32, maximum: U32) -> U32:
+  ((2 * channel * maximum + 255) / 510 : U32)
+
+def Pixel.word_bytes(+word: U32) -> +List<U32>:
+  [(word .&. 255 : U32), (word >> 8n : U32)]
+
+def Pixel.encode(format: U32, +color: U32) -> +List<U32>:
+  match format:
+    case 1: [Color.grayscale(color)]
+    case 2: [Color.grayscale(color), Color.alpha(color)]
+    case 3:
+      Pixel.word_bytes(((Pixel.quantize(Color.red(color), 31) << 11n) .|. (Pixel.quantize(Color.green(color), 63) << 5n) .|. Pixel.quantize(Color.blue(color), 31) : U32))
+    case 4: [Color.red(color), Color.green(color), Color.blue(color)]
+    case 5:
+      Pixel.word_bytes(((Pixel.quantize(Color.red(color), 31) << 11n) .|. (Pixel.quantize(Color.green(color), 31) << 6n)
+        .|. (Pixel.quantize(Color.blue(color), 31) << 1n) .|. Bool.to_u32((Color.alpha(color) > 50 : U32)) : U32))
+    case 6:
+      Pixel.word_bytes(((Pixel.quantize(Color.red(color), 15) << 12n) .|. (Pixel.quantize(Color.green(color), 15) << 8n)
+        .|. (Pixel.quantize(Color.blue(color), 15) << 4n) .|. Pixel.quantize(Color.alpha(color), 15) : U32))
+    case _: [Color.red(color), Color.green(color), Color.blue(color), Color.alpha(color)]
+
+def Pixel.enough(n: Nat, bytes: +List<U32>) -> Bool:
+  match n bytes:
+    case 0n _: True{}
+    case _ Nil{}: False{}
+    case 1n+rest Con{_, tail}: Pixel.enough(rest, tail)
+
+def Pixel.write.sized(valid: Bool, +format: U32, color: U32, bytes: +List<U32>) -> Result<&2, &2, Pixel.Error, +List<U32>>:
+  match valid:
+    case False{}: Fail{TruncatedPixelData{}}
+    case True{}:
+      Done{List.append(&2, U32, Pixel.encode(format, color), List.drop(&2, U32, bytes, U32.to_nat((Pixel.bits_per_pixel(format) / 8 : U32))))}
+
+def Pixel.write.bytes(valid: Bool, +format: U32, color: U32, +bytes: +List<U32>) -> Result<&2, &2, Pixel.Error, +List<U32>>:
+  match valid:
+    case False{}: Fail{InvalidPixelByte{}}
+    case True{}: Pixel.write.sized(Pixel.enough(U32.to_nat((Pixel.bits_per_pixel(format) / 8 : U32)), bytes), format, color, bytes)
+
+def Pixel.write.format(valid: Bool, format: U32, color: U32, +bytes: +List<U32>) -> Result<&2, &2, Pixel.Error, +List<U32>>:
+  match valid:
+    case False{}: Fail{UnsupportedPixelFormat{}}
+    case True{}: Pixel.write.bytes(Qoi.valid_bytes(bytes, True{}), format, color, bytes)
+
+def Pixel.set_color(bytes: +List<U32>, color: U32, +format: U32) -> Result<&2, &2, Pixel.Error, +List<U32>>:
+  Pixel.write.format(((format >= 1) && (format <= 7) : U32), format, color, bytes)
+
 type Image.DecodeError is Data:
   InvalidImageHeader{}
   InvalidImageByte{}

@@ -1,4 +1,4 @@
-# Pixel sizing and raw dithering
+# Pixel sizing, raw access and dithering
 
 ## Data sizes
 
@@ -16,6 +16,34 @@ codes return zero. This is reference behavior, not a general block-allocation ru
 
 Computing a size does not establish decoding or rendering support for that format.
 Wider/signed dimension and native integer-overflow domains remain gaps.
+
+## Raw byte/integer pixel access
+
+`Pixel.get_color(bytes: +List<U32>, format: U32)` returns
+`Result<&2, &2, Pixel.Error, U32>` containing packed `0xRRGGBBAA`.
+`Pixel.set_color(bytes: +List<U32>, color: U32, format: U32)` returns
+`Result<&2, &2, Pixel.Error, +List<U32>>` containing the changed byte list.
+The latter replaces only the pixel prefix and preserves every trailing byte;
+the immutable input remains a value, adapting the C pointer mutation explicitly.
+
+The current formats are 1..7: grayscale, gray-alpha, RGB565, RGB888, RGB5A1,
+RGBA4 and RGBA8888. Packed 16-bit words use little-endian bytes. Every supplied
+list value must be 0..255, and the list must contain the format's required prefix.
+Errors are `UnsupportedPixelFormat`, `InvalidPixelByte` and `TruncatedPixelData`.
+Format support is checked before byte validity, then required length.
+
+Reads retain the exact `GetPixelColor` rules. In particular, pinned RGB5A1 blue
+is computed from **`word & 31` without removing the alpha bit**: bytes `[1,0]`
+produce `0x000008ff`. This differs from the conventional bit-layout interpretation,
+`GetImageColor` and `ImageFormat`. Other packed integer reads expand channels
+using integer multiplication by 255 followed by division by 31/63/15.
+
+Writes retain native grayscale luminance and nearest channel quantization.
+All 768 byte-to-5/6/4-bit conversions are checked against the reference normalized
+F32/round calculation before using the equivalent integer quantizer. RGB5A1
+alpha is one only for **alpha > 50**, the pinned default threshold. This differs
+from the top-bit truncation used by dithering. Float/half/compressed formats,
+other configured thresholds, big-endian buffers and native pointer ABI remain gaps.
 
 ## Owned dithering
 
@@ -50,6 +78,7 @@ expressions, so normalizing prematurely would hide an observable format detail.
 
 ```sh
 python3 tools/pixel_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+python3 tools/raw_pixel_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 ```
 
 Configure checkouts as described in [README.md](../README.md#requirements).
@@ -59,3 +88,10 @@ alpha thresholds, saturation, custom layouts and zero-width channels are covered
 on CPU, JavaScript and forced Metal. Rejected requests retain their original owners.
 Other source formats/mipmaps and complete target/resource/performance coverage
 remain open.
+
+The raw-access probe exhausts all 65,536 two-byte words for each of four formats
+(262,144 reads), then compares 1,792 complete eight-byte write buffers and native
+readback colors. It also checks all RGB triples against native grayscale writes
+and all packed-channel quantizers. Status words make rejected candidate reads
+fail the comparison even when the expected color is zero or white. Six typed
+failure contracts cover both APIs.

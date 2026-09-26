@@ -39566,7 +39566,7 @@
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
       "next_step": "Resolve: Native Apple powf(t,3) differs from a double-cube substitute: 6670/1048576 investigated inputs, with a retained actual GetSplinePointBezierCubic coordinate mismatch.",
-      "priority": 3
+      "priority": 1
     },
     {
       "id": "raylib:function:CheckCollisionRecs",
@@ -41850,7 +41850,7 @@
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
       "next_step": "Derive ImageFormat semantics from the linked source, add a reference fixture, then implement Color.image_format.",
-      "priority": 2
+      "priority": 0
     },
     {
       "id": "raylib:function:ImageToPOT",
@@ -46967,23 +46967,28 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
-      "jonlib": "Color.get_pixel_color",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Pixel.get_color",
+      "mapping_state": "implemented",
+      "scope": "Little-endian immutable byte lists for native formats 1..7; packed RGBA results preserve integer expansion and the pinned R5G5B5A1 low-five-bit blue quirk. Unsupported formats, invalid bytes and truncated input produce typed failures.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Float/half/compressed and big-endian profiles",
+        "Native pointers and complete integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/raw_pixel_probe.py",
+        "tests/transforms.bend",
+        "docs/PIXELS.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -46997,8 +47002,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive GetPixelColor semantics from the linked source, add a reference fixture, then implement Color.get_pixel_color.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for GetPixelColor.",
+      "priority": 206
     },
     {
       "id": "raylib:function:SetPixelColor",
@@ -47023,23 +47028,28 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
-      "jonlib": "Color.set_pixel_color",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Pixel.set_color",
+      "mapping_state": "implemented",
+      "scope": "Formats 1..7 with exact grayscale and nearest packed-channel quantization, strict alpha>50 threshold and little-endian words. Functional byte-list result replaces only the pixel prefix and preserves trailing bytes.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Other formats/configured alpha thresholds and big-endian profiles",
+        "Native pointer mutation and complete integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/raw_pixel_probe.py",
+        "tests/transforms.bend",
+        "docs/PIXELS.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47053,8 +47063,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive SetPixelColor semantics from the linked source, add a reference fixture, then implement Color.set_pixel_color.",
-      "priority": 1
+      "next_step": "Close documented gaps and unverified gates for SetPixelColor.",
+      "priority": 206
     },
     {
       "id": "raylib:function:GetPixelDataSize",
@@ -66998,7 +67008,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.",
-      "priority": 7
+      "priority": 5
     },
     {
       "id": "raymath:function:MatrixOrtho",
@@ -68003,7 +68013,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Base and investigated inverse-trig models differ from the actual float libm; no verified acos profile is available yet.",
-      "priority": 4
+      "priority": 2
     },
     {
       "id": "raymath:function:QuaternionCubicHermiteSpline",
@@ -68364,7 +68374,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Native acosf endpoint/tail values differ from Base and investigated numerical models.",
-      "priority": 5
+      "priority": 3
     },
     {
       "id": "raymath:function:QuaternionFromEuler",
@@ -68485,7 +68495,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models.",
-      "priority": 6
+      "priority": 4
     },
     {
       "id": "raymath:function:QuaternionTransform",

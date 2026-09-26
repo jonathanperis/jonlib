@@ -42,7 +42,8 @@ Spline point queries and their explicit arithmetic profiles are listed in
 [SPLINES.md](SPLINES.md).
 Owned random-stream APIs and their native rprand profile are described in
 [RANDOM.md](RANDOM.md).
-Pixel sizing and raw packed dithering are documented in [PIXELS.md](PIXELS.md).
+Pixel sizing, raw byte/integer reads and writes, and packed dithering are
+documented in [PIXELS.md](PIXELS.md).
 
 ## Owned RGBA8 surfaces
 

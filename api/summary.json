@@ -6,24 +6,24 @@
     "blocked": 5,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1621,
-    "partial": 258
+    "not-started": 1619,
+    "partial": 260
   },
   "core_functions": {
     "total": 600,
     "blocked": 1,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 501,
-    "partial": 98
+    "not-started": 499,
+    "partial": 100
   },
   "function_declarations": {
     "total": 931,
     "blocked": 5,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 686,
-    "partial": 240
+    "not-started": 684,
+    "partial": 242
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -46,8 +46,8 @@
       "blocked": 1,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 929,
-      "partial": 107
+      "not-started": 927,
+      "partial": 109
     },
     "raymath.h": {
       "total": 254,
@@ -186,8 +186,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 30,
-      "partial": 16
+      "not-started": 28,
+      "partial": 18
     },
     {
       "id": "images",
@@ -563,32 +563,6 @@
   ],
   "next_work": [
     {
-      "id": "raylib:function:GetPixelColor",
-      "name": "GetPixelColor",
-      "milestone": "pixels",
-      "status": "not-started",
-      "jonlib": "Color.get_pixel_color",
-      "next_step": "Derive GetPixelColor semantics from the linked source, add a reference fixture, then implement Color.get_pixel_color.",
-      "milestone_dependencies": [
-        "numerics",
-        "memory"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raylib:function:SetPixelColor",
-      "name": "SetPixelColor",
-      "milestone": "pixels",
-      "status": "not-started",
-      "jonlib": "Color.set_pixel_color",
-      "next_step": "Derive SetPixelColor semantics from the linked source, add a reference fixture, then implement Color.set_pixel_color.",
-      "milestone_dependencies": [
-        "numerics",
-        "memory"
-      ],
-      "api_dependencies": []
-    },
-    {
       "id": "raylib:function:ImageFormat",
       "name": "ImageFormat",
       "milestone": "pixels",
@@ -803,6 +777,30 @@
       "status": "partial",
       "jonlib": "Vector2.subtract_value",
       "next_step": "Close documented gaps and unverified gates for Vector2SubtractValue.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2Length",
+      "name": "Vector2Length",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.length",
+      "next_step": "Close documented gaps and unverified gates for Vector2Length.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2LengthSqr",
+      "name": "Vector2LengthSqr",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.length_sqr",
+      "next_step": "Close documented gaps and unverified gates for Vector2LengthSqr.",
       "milestone_dependencies": [
         "numerics"
       ],

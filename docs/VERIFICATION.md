@@ -50,7 +50,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 98 have
+- The pinned core header inventory contains 600 unique public functions; 100 have
   explicitly scoped Jonlib mappings. The raymath ledger additionally maps 142
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
@@ -1013,3 +1013,27 @@ format contracts. Wider/signed size domains, other input formats/mipmaps, native
 allocation ABI and complete target/resource/performance evidence remain gaps.
 
 Regression scan: 23 callers checked, 6 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `9cf17d4`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36249122243)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36249122346)
+completed successfully, including the new raw dithering and size gate.
+
+## Raw byte/integer pixel access
+
+Both byte-list APIs pass 262,144 exhaustive two-byte reads and 1,792 complete
+write/readback buffers on CPU, JavaScript and forced Metal. Native grayscale
+writes match all 16,777,216 RGB triples, and all 768 packed-channel quantizers
+match the integer reduction. Six typed-failure contracts and the full existing
+261-scenario / 40,101-word corpus pass all four execution lanes. Eight harness
+tests, project checks and all four pinned laws also pass. See
+[evidence/raw-pixel-access.json](evidence/raw-pixel-access.json).
+
+The exhaustive read gate caught the native RGB5A1 quirk: `GetPixelColor` does not
+shift alpha out of its blue mask, so word 0x0001 returns RGBA 0x000008ff. The
+candidate now preserves that API-specific rule. I75/I76 match the byte-validation,
+prefix-write and mask contracts; A26/A4/A5 pass in the little-endian formats-1..7
+profile. Other formats, configured thresholds, native pointer mutation/ABI and
+complete integration/target/performance coverage remain gaps. The reference and
+expected values were retained throughout the correction.
+
+Regression scan: 38 callers checked, 10 assertions checked, 1 flagged/fixed.

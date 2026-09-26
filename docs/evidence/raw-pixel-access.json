@@ -1,0 +1,14 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {"jonlib.bend":"92cb6cc7c5169e3e826a3641671eb78373203426715cf8a39ba530fe54037c4c"},
+  "reference_sha256": "fa774d0a715ddbfe75cdd78d256a7910ecf0fb8c5628e9a6a313a12e8dbf6ca5",
+  "exhaustive_reads": 262144,
+  "write_cases": 1792,
+  "grayscale_write_checks": 16777216,
+  "channel_quantizer_checks": 768,
+  "passed": true,
+  "lanes": ["cpu","javascript","metal"],
+  "read_quirk": {"format":5,"bytes":[1,0],"rgba":"000008ff","rule":"blue uses low five bits without shifting alpha"},
+  "full_corpus": {"scenarios":261,"output_words_per_lane":40101,"passed":true,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "limits": ["Float/half/compressed and big-endian profiles", "Configured alpha thresholds and native pointer mutation/ABI", "Complete integration/target/performance coverage"]
+}

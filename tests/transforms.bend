@@ -206,6 +206,17 @@ def no_size(result: Maybe<&2, U32>) -> Bool:
     case None{}: True{}
     case Some{_}: False{}
 
+def pixel_error(error: J.Pixel.Error, expected: U32) -> Bool:
+  match error:
+    case J.UnsupportedPixelFormat{}: U32.is_eq(expected, 0)
+    case J.InvalidPixelByte{}: U32.is_eq(expected, 1)
+    case J.TruncatedPixelData{}: U32.is_eq(expected, 2)
+
+def pixel_failed(-A: Data, result: Result<&2, &2, J.Pixel.Error, A>, expected: U32) -> Bool:
+  match result:
+    case Fail{error}: pixel_error(error, expected)
+    case Done{_}: False{}
+
 def verdict(ok: Bool) -> IO(Unit):
   match ok:
     case True{}:
@@ -258,6 +269,12 @@ def checks() -> Bool:
     && dither_created(J.Surface.create(2, 1, 16909060), False{})
     && no_size(J.Pixel.data_size(4097, 1, 7))
     && no_size(J.Pixel.data_size(1, 1, 2147483648))
+    && pixel_failed(U32, J.Pixel.get_color([0], 0), 0)
+    && pixel_failed(U32, J.Pixel.get_color([256], 1), 1)
+    && pixel_failed(U32, J.Pixel.get_color([1], 3), 2)
+    && pixel_failed(+List<U32>, J.Pixel.set_color([0,0,0,0], 0, 8), 0)
+    && pixel_failed(+List<U32>, J.Pixel.set_color([0,0,0,0,256], 0, 7), 1)
+    && pixel_failed(+List<U32>, J.Pixel.set_color([1,2], 0, 7), 2)
 
 def main() -> IO(Unit):
   verdict(checks())
