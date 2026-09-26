@@ -1,0 +1,15 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {
+    "jonlib.bend": "af7fd50dd2f8297b5d826945b84ea30fe6cac3130a911449a4f77cd1fddd83bf",
+    "src/random.bend": "6b5b7ef98c28a6634b9b35f8765cdc9126a979ba20d208e5c82778d67690b08f"
+  },
+  "fixtures_sha256": "c413affd4260802572246203c61b1b322b711857d05f13d71bf73248539c8725",
+  "scenarios": 236,
+  "output_words_per_lane": 34353,
+  "passed": true,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "random_probe": {"seeds":6,"draws_per_seed":160,"post_noise_observations":3,"inputs_sha256":"7daa119230651a4982ae0b0aeadd807e9e9ac403c309b01aeb0e6ca0b110889b","passed":["cpu","javascript","metal"]},
+  "scope": ["Owned rprand-compatible seeding and inclusive random values", "Exact RGBA8 white-noise pixels and fixed draw consumption", "Original random owner retained on rejected generation"],
+  "limits": ["Implicit global state, libc fallback and wider integer profiles", "Random sequence APIs and complete integration/target/performance coverage"]
+}

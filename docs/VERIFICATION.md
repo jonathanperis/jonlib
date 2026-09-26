@@ -21,7 +21,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 231 scenarios / 34,290 output words match pinned raylib exactly on each
+- 236 scenarios / 34,353 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
 - The word count includes 1,846 exact numeric/collision result-bit probe cells.
@@ -50,7 +50,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 81 have
+- The pinned core header inventory contains 600 unique public functions; 84 have
   explicitly scoped Jonlib mappings. The raymath ledger additionally maps 142
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
@@ -101,7 +101,7 @@ reference comparison of all 4096 supported POT axis sizes.
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 231 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 236 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -846,3 +846,26 @@ no performance-parity claim. The current-source runtime/proof evidence is reused
 eight harness tests and project checks pass for the scoped timeout change.
 
 Regression scan: 3 callers checked, 0 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `092cb0a`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36241027496)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36241027497)
+completed successfully with the separate candidate-build budget.
+
+## Owned random streams and white noise
+
+Pinned rprand seeding/stepping is now implemented in Bend with an owned stream.
+The dedicated probe compares 960 native random values across six seeds and three
+post-noise stream observations on CPU, JavaScript and forced Metal. The main
+corpus passes 236 scenarios / 34,353 words on CPU-1/CPU-2/JavaScript/forced Metal,
+including every white-noise pixel. Rejected dimensions/factors preserve the
+original stream, while constant ranges and density endpoints still consume the
+reference draws. See [evidence/random-white-noise.json](evidence/random-white-noise.json).
+
+A26/A3/A4/A5 pass the scoped state/image/source/backend contracts; eight harness
+tests, project checks and all four pinned laws pass. The reference configuration
+explicitly enables rprand. Implicit globals, libc fallback, wider ranges, sequence
+APIs and complete integration/target/performance coverage remain gaps. Reviewed
+44 helper, owner, fixture, generator and diagnostic caller contexts, five image
+scenarios, two rejected-owner checks, two malformed sources and the stream probe.
+
+Regression scan: 44 callers checked, 10 assertions checked, 0 flagged/fixed.

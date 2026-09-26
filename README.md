@@ -37,6 +37,7 @@ differential test reference.
 - Matrix arithmetic/inversion, binary64-input projections, view/rotation constructors, vector transforms and paired-vector orthonormalization.
 - Four-component vector arithmetic and immutable float-list exports with checked length laws.
 - Normalized/HSV color conversions and quaternion Hamilton-product foundations.
+- Owned seeded random streams and reference-exact white-noise images.
 - Radial and one-cycle linear gradient profiles with balanced owned-array generation.
 - QOI decoding/encoding and real byte-file loading/export, with typed failures.
 - Initial scalar and Vector2 math under an explicit uncontracted-F32 profile.

@@ -1,6 +1,11 @@
 {
   "schema": 1,
   "cases": [
+    {"id":"white-noise-zero","width":3,"height":2,"background":[0,0,0,255],"white_noise":{"seed":0,"factor":0},"operations":[]},
+    {"id":"white-noise-one","width":3,"height":2,"background":[0,0,0,255],"white_noise":{"seed":0,"factor":1},"operations":[]},
+    {"id":"white-noise-mixed","width":7,"height":5,"background":[0,0,0,255],"white_noise":{"seed":1,"factor":0.37},"operations":[]},
+    {"id":"white-noise-threshold","width":5,"height":3,"background":[0,0,0,255],"white_noise":{"seed":4294967295,"factor":0.009999998845160008},"operations":[]},
+    {"id":"white-noise-single","width":1,"height":1,"background":[0,0,0,255],"white_noise":{"seed":2147483648,"factor":0.5},"operations":[]},
     {"id":"vector2-angle-profiles","width":8,"height":1,"background":[255,255,255,255],"operations":[
       {"op":"vector_value","function":"angle","x":0,"y":0,"args":[1,0,0,1]},
       {"op":"vector_value","function":"angle","x":1,"y":0,"args":[0,1,1,0]},

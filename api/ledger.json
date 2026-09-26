@@ -29650,23 +29650,27 @@
       "milestone": "random",
       "phase": 1,
       "sequence": 5,
-      "status": "not-started",
-      "jonlib": "Random.set_random_seed",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Random.seed",
+      "mapping_state": "implemented",
+      "scope": "U32 seed initializes an owned stream using pinned rprand SplitMix64 extraction and Xoshiro128** state, without implicit global mutation.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Implicit-global and libc fallback profiles",
+        "Complete integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/random_probe.py",
+        "docs/RANDOM.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -29678,8 +29682,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Fixed-seed output sequences, inclusive ranges, uniqueness/sequence ownership and overflow boundaries.",
-      "next_step": "Derive SetRandomSeed semantics from the linked source, add a reference fixture, then implement Random.set_random_seed.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for SetRandomSeed.",
+      "priority": 205
     },
     {
       "id": "raylib:function:GetRandomValue",
@@ -29704,23 +29708,27 @@
       "milestone": "random",
       "phase": 1,
       "sequence": 5,
-      "status": "not-started",
-      "jonlib": "Random.get_random_value",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Random.value",
+      "mapping_state": "implemented",
+      "scope": "Owned state plus integral F32 result for bounds -32767..32767; inclusive/swapped bounds and exactly one draw for equal bounds match native rprand.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Wider integer domains, implicit globals and libc fallback",
+        "Complete integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/random_probe.py",
+        "docs/RANDOM.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -29732,8 +29740,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Fixed-seed output sequences, inclusive ranges, uniqueness/sequence ownership and overflow boundaries.",
-      "next_step": "Derive GetRandomValue semantics from the linked source, add a reference fixture, then implement Random.get_random_value.",
-      "priority": 1
+      "next_step": "Close documented gaps and unverified gates for GetRandomValue.",
+      "priority": 205
     },
     {
       "id": "raylib:function:LoadRandomSequence",
@@ -29787,7 +29795,7 @@
       "related_declarations": [],
       "verification": "Fixed-seed output sequences, inclusive ranges, uniqueness/sequence ownership and overflow boundaries.",
       "next_step": "Derive LoadRandomSequence semantics from the linked source, add a reference fixture, then implement Random.load_random_sequence.",
-      "priority": 3
+      "priority": 0
     },
     {
       "id": "raylib:function:UnloadRandomSequence",
@@ -29841,7 +29849,7 @@
       "related_declarations": [],
       "verification": "Fixed-seed output sequences, inclusive ranges, uniqueness/sequence ownership and overflow boundaries.",
       "next_step": "Derive UnloadRandomSequence semantics from the linked source, add a reference fixture, then implement Random.unload_random_sequence.",
-      "priority": 4
+      "priority": 1
     },
     {
       "id": "raylib:function:TakeScreenshot",
@@ -41228,23 +41236,29 @@
       "milestone": "images",
       "phase": 1,
       "sequence": 7,
-      "status": "not-started",
-      "jonlib": "Surface.gen_image_white_noise",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Surface.create_white_noise",
+      "mapping_state": "implemented",
+      "scope": "Owned random stream and RGBA8 image generation for dimensions 1..4096 and factor 0..1; one draw per pixel, reference threshold truncation, retained stream on rejected requests.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Implicit-global/libc random profiles and broader generation domains",
+        "Complete integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tests/transforms.bend",
+        "tools/random_probe.py",
+        "docs/RANDOM.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -41258,8 +41272,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
-      "next_step": "Derive GenImageWhiteNoise semantics from the linked source, add a reference fixture, then implement Surface.gen_image_white_noise.",
-      "priority": 2
+      "next_step": "Close documented gaps and unverified gates for GenImageWhiteNoise.",
+      "priority": 207
     },
     {
       "id": "raylib:function:GenImagePerlinNoise",
@@ -41315,7 +41329,7 @@
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
       "next_step": "Derive GenImagePerlinNoise semantics from the linked source, add a reference fixture, then implement Surface.gen_image_perlin_noise.",
-      "priority": 207
+      "priority": 2
     },
     {
       "id": "raylib:function:GenImageCellular",
@@ -41371,7 +41385,7 @@
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
       "next_step": "Derive GenImageCellular semantics from the linked source, add a reference fixture, then implement Surface.gen_image_cellular.",
-      "priority": 207
+      "priority": 3
     },
     {
       "id": "raylib:function:GenImageText",
@@ -66907,7 +66921,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.",
-      "priority": 8
+      "priority": 7
     },
     {
       "id": "raymath:function:MatrixOrtho",
@@ -67912,7 +67926,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Base and investigated inverse-trig models differ from the actual float libm; no verified acos profile is available yet.",
-      "priority": 5
+      "priority": 4
     },
     {
       "id": "raymath:function:QuaternionCubicHermiteSpline",
@@ -68273,7 +68287,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Native acosf endpoint/tail values differ from Base and investigated numerical models.",
-      "priority": 6
+      "priority": 5
     },
     {
       "id": "raymath:function:QuaternionFromEuler",
@@ -68394,7 +68408,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models.",
-      "priority": 7
+      "priority": 6
     },
     {
       "id": "raymath:function:QuaternionTransform",

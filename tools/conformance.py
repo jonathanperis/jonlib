@@ -330,8 +330,12 @@ def cases_from(document):
             raise ValueError(f'{name}: export_qoi must be Boolean')
         if 'alpha_border' in case and (not coordinate(case['alpha_border'], True) or not 0 <= case['alpha_border'] <= 1):
             raise ValueError(f'{name}: alpha border threshold must be in 0..1')
-        if sum(key in case for key in ('qoi','checked','gradient_square','gradient_radial','gradient_linear')) > 1:
+        if sum(key in case for key in ('qoi','checked','gradient_square','gradient_radial','gradient_linear','white_noise')) > 1:
             raise ValueError(f'{name}: only one image source may be selected')
+        if 'white_noise' in case:
+            noise = case['white_noise']
+            if not isinstance(noise,dict) or not integer(noise.get('seed'),0,2**32-1) or not coordinate(noise.get('factor'),True) or not 0<=noise['factor']<=1:
+                raise ValueError(f'{name}: white noise requires a U32 seed and factor 0..1')
         for kind in ('gradient_square','gradient_radial','gradient_linear'):
             if kind not in case:
                 continue
@@ -659,6 +663,9 @@ def c_source(cases):
             lines += ['{', 'unsigned char encoded[] = {' + ','.join(map(str,case['qoi'])) + '};',
                       'Image image = LoadImageFromMemory(".qoi", encoded, sizeof(encoded));',
                       'if (!image.data) return 2;', 'ImageFormat(&image, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);']
+        elif 'white_noise' in case:
+            noise = case['white_noise']
+            lines += ['{',f'SetRandomSeed({noise["seed"]}u);',f'Image image=GenImageWhiteNoise({w},{h},{float(noise["factor"])!r}f);']
         elif 'checked' in case:
             checked = case['checked']
             lines += ['{', f'Image image = GenImageChecked({w}, {h}, {checked["tile_width"]}, {checked["tile_height"]}, GetColor({rgba(case["background"])}u), GetColor({rgba(checked["color"])}u));']
@@ -902,6 +909,8 @@ def bend_source(cases, gpu=False):
              '    ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"pixels\\":"',
              '    ++ List.show(~&1, ~U32, ~U32.show, J.Surface.colors(J.Surface{w, h, pixels})) ++ extra ++ "}")', '']
     lines += [
+        'def create_noise(seed: U32, width: U32, height: U32, factor: F32) -> Maybe<J.Surface>:',
+        '  Pair.snd(J.Random.State, Maybe<J.Surface>, J.Surface.create_white_noise(J.Random.seed(seed), width, height, factor))',
         'def write_vector(surface: J.Surface, +x: F32, +y: F32, vector: J.Vector2) -> J.Surface:',
         '  J.Vector2{u, v} = vector',
         '  first = J.Surface.draw_pixel(surface, x, y, F32.bits(u))',
@@ -1152,6 +1161,9 @@ def bend_source(cases, gpu=False):
     lines += ['def main() -> IO(Unit):', '  do IO<Unit>:']
     for i, case in enumerate(cases):
         creation = f'J.Surface.decode_qoi{"!" if gpu else ""}([' + ','.join(map(str,case['qoi'])) + '])' if 'qoi' in case else f'J.Surface.create({case["width"]}, {case["height"]}, {rgba(case["background"])})'
+        if 'white_noise' in case:
+            noise = case['white_noise']
+            creation = f'create_noise{"!" if gpu else ""}({noise["seed"]}, {case["width"]}, {case["height"]}, {f32(noise["factor"])})'
         if 'checked' in case:
             checked = case['checked']
             creation = f'J.Surface.create_checked{"!" if gpu else ""}({case["width"]}, {case["height"]}, {checked["tile_width"]}, {checked["tile_height"]}, {rgba(case["background"])}, {rgba(checked["color"])})'
@@ -1324,7 +1336,7 @@ def main():
     print('Building pinned raylib reference...', flush=True)
     run(['cmake', '-S', args.raylib_source, '-B', cmake, '-DPLATFORM=Memory',
          '-DCMAKE_BUILD_TYPE=Release', '-DBUILD_EXAMPLES=OFF', '-DCUSTOMIZE_BUILD=ON',
-         '-DSUPPORT_MODULE_RAUDIO=OFF', '-DUSE_EXTERNAL_GLFW=OFF'])
+         '-DSUPPORT_MODULE_RAUDIO=OFF', '-DSUPPORT_RPRAND_GENERATOR=ON', '-DUSE_EXTERNAL_GLFW=OFF'])
     run(['cmake', '--build', cmake, '--parallel', '4'])
     (BUILD / 'reference.c').write_text(c_source(cases))
     run(['clang', '-std=c11', '-O2', '-fno-builtin-atan2f', '-I' + str(args.raylib_source / 'src'),

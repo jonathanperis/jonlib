@@ -73,6 +73,9 @@ Supported operations:
   gate rejects non-finite/subnormal outputs and has an executable negative control.
 - `float64_value` compares native F32-to-binary64 promotion words and the internal
   projection narrowing bridge, including signed zero and ties-to-even boundaries.
+- A `white_noise` image source provides a U32 `seed` and `factor` in 0..1.
+  Both runners initialize the corresponding stream before generating pixels;
+  the forced-GPU candidate includes seeding inside the dispatched operation.
 - `color_tint`, `color_invert`, `color_contrast`, `color_brightness`,
   `color_replace`: image transforms. Tint/replacement use RGBA `color`,
   replacement also uses `replacement`, and contrast/brightness use `amount`.

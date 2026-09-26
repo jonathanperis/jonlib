@@ -12,6 +12,7 @@ import ./src/rotation.bend as Rotation
 import ./src/fused.bend as Fused
 import ./src/float64.bend as Float64Numeric
 import ./src/angle.bend as Angle
+import ./src/random.bend as Rng
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -1470,6 +1471,29 @@ def Color.lerp(+left: U32, +right: U32, factor: F32) -> U32:
   Color.rgba(Color.lerp.channel(Color.red(left), Color.red(right), bounded), Color.lerp.channel(Color.green(left), Color.green(right), bounded),
     Color.lerp.channel(Color.blue(left), Color.blue(right), bounded), Color.lerp.channel(Color.alpha(left), Color.alpha(right), bounded))
 
+type Random.State is Type:
+  RandomState{state: Rng.State}
+
+def Random.seed(seed: U32) -> Random.State:
+  RandomState{Rng.seed(seed)}
+
+def Random.next.result(result: Rng.State & U32) -> Random.State & U32:
+  (state, value) = result
+  (RandomState{state}, value)
+
+def Random.next_u32(state: Random.State) -> Random.State & U32:
+  RandomState{inner} = state
+  Random.next.result(Rng.next(inner))
+
+def Random.value.result(lower: F32, span: U32, result: Random.State & U32) -> Random.State & F32:
+  (state, value) = result
+  (state, (U32.to_f32((value % span : U32)) + lower : F32))
+
+def Random.value(state: Random.State, +minimum: F32, +maximum: F32) -> Random.State & F32:
+  +lower = F32.min(minimum, maximum)
+  upper = F32.max(minimum, maximum)
+  Random.value.result(lower, F32.to_u32((upper - lower + 1.0 : F32)), Random.next_u32(state))
+
 # Construct through Surface.create; preserve its dimensions/storage invariant.
 type Surface is Type:
   Surface{width: U32, height: U32, pixels: Array<U32>}
@@ -1527,6 +1551,33 @@ def Surface.creation.checked(ok: Bool, +w: U32, +h: U32, color: U32) -> Maybe<Su
 # The initial profile supports 1..4096 pixels on each axis.
 def Surface.create(+w: U32, +h: U32, color: U32) -> Maybe<Surface>:
   Surface.creation.checked(((w > 0) && (h > 0) && (w <= 4096) && (h <= 4096) : U32), w, h, color)
+
+def Surface.noise.write(index: U32, threshold: U32, pixels: Array<U32>, draw: Random.State & U32) -> Random.State & Array<U32>:
+  (state, value) = draw
+  color = Bool.pick(U32, (value % 100 < threshold : U32), 4294967295, 255)
+  (state, Array.set(U32, pixels, index, color))
+
+def Surface.noise.loop(n: Nat, +index: U32, +threshold: U32, buffers: Random.State & Array<U32>) -> Random.State & Array<U32>:
+  match n buffers:
+    case 0n _: buffers
+    case 1n+k Tuple{state, pixels}:
+      Surface.noise.loop(k, (index + 1 : U32), threshold, Surface.noise.write(index, threshold, pixels, Random.next_u32(state)))
+
+def Surface.noise.finished(width: U32, height: U32, buffers: Random.State & Array<U32>) -> Random.State & Maybe<Surface>:
+  (state, pixels) = buffers
+  (state, Some{Surface{width, height, pixels}})
+
+def Surface.noise.checked(valid: Bool, state: Random.State, +width: U32, +height: U32, factor: F32) -> Random.State & Maybe<Surface>:
+  match valid:
+    case False{}: (state, None{})
+    case True{}:
+      +count = (width * height : U32)
+      Surface.noise.finished(width, height, Surface.noise.loop(U32.to_nat(count), 0, F32.to_u32((factor * 100.0 : F32)),
+        (state, Array.new(U32, Surface.capacity(count), 255))))
+
+def Surface.create_white_noise(state: Random.State, +width: U32, +height: U32, +factor: F32) -> Random.State & Maybe<Surface>:
+  Surface.noise.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
+    && ((factor >= 0.0) && (factor <= 1.0) : F32), state, width, height, factor)
 
 def Surface.checked.loop(n: Nat, +i: U32, +width: U32, +tx: U32, +ty: U32, +first: U32, +second: U32, pixels: Array<U32>) -> Array<U32>:
   match n:

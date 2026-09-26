@@ -132,6 +132,16 @@ def channel_created(created: Maybe<J.Surface>) -> Bool:
     case None{}: False{}
     case Some{surface}: channel_owners(J.Surface.from_channel(surface, 1.0))
 
+def random_word(result: J.Random.State & F32) -> U32:
+  (_, value) = result
+  F32.bits(value)
+
+def noise_rejected(result: J.Random.State & Maybe<J.Surface>) -> Bool:
+  match result:
+    case Tuple{state, None{}}:
+      U32.is_eq(random_word(J.Random.value(state, 0.0, 99.0)), random_word(J.Random.value(J.Random.seed(123), 0.0, 99.0)))
+    case _: False{}
+
 def verdict(ok: Bool) -> IO(Unit):
   match ok:
     case True{}:
@@ -165,6 +175,8 @@ def checks() -> Bool:
     && no_surface(J.Surface.create_gradient_linear(3, 2, 361.0, 0, 4294967295))
     && rotation_size(J.Surface.create(4096, 128, 16909060))
     && channel_created(J.Surface.create(2, 1, 16909060))
+    && noise_rejected(J.Surface.create_white_noise(J.Random.seed(123), 0, 2, 0.5))
+    && noise_rejected(J.Surface.create_white_noise(J.Random.seed(123), 2, 2, F32.neg(0.1)))
 
 def main() -> IO(Unit):
   verdict(checks())

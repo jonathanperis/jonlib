@@ -86,6 +86,11 @@ jobs:
           python3 tools/conformance.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify owned random streams and post-noise state
+        run: >-
+          python3 tools/random_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Independently audit the public API catalog
         run: >-
           python3 tools/api_plan.py check --clang-audit
@@ -153,3 +158,4 @@ jobs:
             .build/float64-ops-probe/results.json
             .build/angle-probe/results.json
             .build/inverse-trig-probe/results.json
+            .build/random-probe/results.json

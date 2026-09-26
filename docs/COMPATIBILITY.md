@@ -8,8 +8,8 @@ Profile: **rgba8-cpu-images-v1**, with domains defined in [API.md](API.md).
 
 ## Verified evidence
 
-The current local Apple M1/macOS corpus contains **231 deterministic scenarios /
-34,290 checked output words per lane**, matching native CPU (one and two threads), JavaScript
+The current local Apple M1/macOS corpus contains **236 deterministic scenarios /
+34,353 checked output words per lane**, matching native CPU (one and two threads), JavaScript
 and forced Metal. Most words are RGBA pixels; 1,846 are exact numeric/collision
 result-bit probe cells. QOI export bytes are compared separately. GitHub Actions
 is configured to run this corpus on **Ubuntu 24.04
@@ -31,7 +31,7 @@ originally established the CPU/JS baseline; current CI applies the declared over
 A current run's precise inputs, source hashes and lane outcomes are in
 `.build/conformance.json`. The authoritative [API dashboard](PROGRESS.md) covers
 the complete release-header/support inventory. The 600-entry
-`.build/api-inventory.json` is its legacy core view, mapping 81 reference APIs to
+`.build/api-inventory.json` is its legacy core view, mapping 84 reference APIs to
 these scoped operations/contracts. The companion ledger additionally maps 142
 `raymath.h` functions. Remaining functions retain explicit planned work.
 These counts are an inventory, not a percentage of full parity.
@@ -66,6 +66,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | Canvas resizing | `Surface.resize_canvas` | Raw RGBA copy/fill, clipping and same-size no-op; rejected requests preserve the original owner |
 | Square gradients | `Surface.create_gradient_square` | Exact odd/even and density-endpoint fixtures, including density one |
 | Radial/linear gradients | `Surface.create_gradient_radial/linear` | Balanced generation; radial density 0..1, integral linear directions -360..360; wider-angle rounding remains a gap |
+| Random streams / white noise | `Random.seed/value`, `Surface.create_white_noise` | Exact rprand sequences, full image pixels, fixed draw consumption and rejected-owner preservation |
 | `ImageFlipHorizontal/Vertical` | `Surface.flip_horizontal/flip_vertical` | Exact explicit and seeded full-image comparisons |
 | `ImageRotateCW/CCW` | `Surface.rotate_cw/rotate_ccw` | Exact RGBA bytes, non-square dimensions and transform sequencing |
 | `ImageRotate` / `ImageToPOT` | `Surface.rotate_degrees_for/to_pot` | Checked general rotation with reference bilinear sampling; exhaustive supported POT-axis reference validation and exact fill/copy fixtures |

@@ -81,6 +81,14 @@ notices and the selected license are retained in [LICENSES/arm-math.txt](LICENSE
   altered implementations; floating-point exception-state behavior is outside
   the current numeric profile.
 
+## rprand
+
+`src/random.bend` is an altered Bend adaptation of pinned raylib's
+`src/external/rprand.h` (rprand 1.0), Copyright (c) 2023 Ramon Santamaria.
+Its SplitMix64 initialization and Xoshiro128** stepping preserve the reference
+sequence. The zlib/libpng notice and David Blackman/Sebastiano Vigna algorithm
+dedications are retained in [LICENSES/rprand.txt](LICENSES/rprand.txt).
+
 ## Bend
 
 Jonlib uses the Bend language and Base library, provided by HigherOrderCO and

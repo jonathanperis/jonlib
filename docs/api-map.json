@@ -1,4 +1,26 @@
 {
+  "SetRandomSeed": {
+    "jonlib": "Random.seed",
+    "status": "profile-covered",
+    "scope": "U32 seed initializes an owned stream using pinned rprand SplitMix64 extraction and Xoshiro128** state, without implicit global mutation.",
+    "gaps": [
+      "Implicit-global and libc fallback profiles",
+      "Complete integration/target/performance coverage"
+    ],
+    "api_id": "raylib:function:SetRandomSeed",
+    "milestone": "random"
+  },
+  "GetRandomValue": {
+    "jonlib": "Random.value",
+    "status": "profile-covered",
+    "scope": "Owned state plus integral F32 result for bounds -32767..32767; inclusive/swapped bounds and exactly one draw for equal bounds match native rprand.",
+    "gaps": [
+      "Wider integer domains, implicit globals and libc fallback",
+      "Complete integration/target/performance coverage"
+    ],
+    "api_id": "raylib:function:GetRandomValue",
+    "milestone": "random"
+  },
   "CheckCollisionRecs": {
     "jonlib": "Collision.recs",
     "status": "profile-covered",
@@ -211,6 +233,17 @@
       "Full size/domain and target/performance gates"
     ],
     "api_id": "raylib:function:GenImageChecked",
+    "milestone": "images"
+  },
+  "GenImageWhiteNoise": {
+    "jonlib": "Surface.create_white_noise",
+    "status": "profile-covered",
+    "scope": "Owned random stream and RGBA8 image generation for dimensions 1..4096 and factor 0..1; one draw per pixel, reference threshold truncation, retained stream on rejected requests.",
+    "gaps": [
+      "Implicit-global/libc random profiles and broader generation domains",
+      "Complete integration/target/performance coverage"
+    ],
+    "api_id": "raylib:function:GenImageWhiteNoise",
     "milestone": "images"
   },
   "ImageCopy": {

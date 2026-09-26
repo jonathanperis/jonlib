@@ -38,6 +38,8 @@ The public scalar and Vector2 operations are listed in [MATH.md](MATH.md),
 including their explicit uncontracted-F32 profile and remaining numeric gaps.
 Pure geometry queries are listed in [COLLISION.md](COLLISION.md), including
 strict rectangle edges and inclusive circle tangency.
+Owned random-stream APIs and their native rprand profile are described in
+[RANDOM.md](RANDOM.md).
 
 ## Owned RGBA8 surfaces
 
@@ -70,6 +72,7 @@ is outside this API's contract.
 |---|---|
 | `Surface.create(width, height, color) -> Maybe<Surface>` | Dimensions 1..4096 on each axis; otherwise `None`. Storage is rounded up to a power of two, with padding excluded from exports. |
 | `Surface.create_checked(width, height, tile_width, tile_height, first, second) -> Maybe<Surface>` | Reference checkerboard generation. Dimensions 1..4096, checker sizes 1..2147483647; invalid values return `None` before allocation/division. |
+| `Surface.create_white_noise(state, width, height, factor) -> Random.State & Maybe<Surface>` | Owned-stream RGBA8 white noise, dimensions 1..4096 and factor 0..1. Returns the advanced stream on success or the original stream with `None` on invalid input. |
 | `Surface.create_gradient_square(width, height, density, inner, outer) -> Maybe<Surface>` | Square gradient with dimensions 1..4096 and finite density 0..1. Invalid requests return `None`; density one produces the inner color, matching the reference clamp behavior. |
 | `Surface.create_gradient_radial(width, height, density, inner, outer)` | Same Maybe result, dimensions 1..4096 and density 0..1; reference radial RGBA interpolation with balanced generation. |
 | `Surface.create_gradient_linear(width, height, direction, start, end)` | Same Maybe result; integral directions -360..360. Rejects invalid sizes/directions and a zero reference normalization extent. Wider-angle libm parity remains open; see [GRADIENTS.md](GRADIENTS.md). |
