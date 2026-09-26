@@ -1,0 +1,19 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {"src/angle.bend":"8d34870d5d5f01bdae7bf35c09aaf1b063c7e6368bcf20d143ca556d357fbc1d"},
+  "hosted_run": "https://github.com/jonathanperis/jonlib/actions/runs/36256607391",
+  "hosted_outcome": {"ubuntu":"success","macos":"job cancelled at 20 minutes during candidate builds"},
+  "hosted_slow_batch": {"start":16,"cases":16,"c_emit_seconds":217.175,"cpu_js_build_seconds":256.206},
+  "local_profiled_c_emission": {
+    "same_generated_bend_input": ".build/candidate-1.bend",
+    "before_seconds":43.80,
+    "after_seconds":2.31,
+    "before_peak_footprint_bytes":11276330176,
+    "after_peak_footprint_bytes":1139983872,
+    "diagnosis":"Bend literal-word pattern analysis repeatedly lowers/serializes nested default branches",
+    "change":"Equivalent Boolean zero/equality/order classifications in private Apple/GNU axis helpers"
+  },
+  "angle_probes": {"samples_per_profile":1086,"inputs_sha256":"e97e8ae61b081cbf56aaedf449be5e40795523ee73deba21649e297d20d499fb","native_apple_passed":["cpu","javascript","metal"],"gnu_control_passed":["cpu","javascript","metal"]},
+  "full_corpus": {"passed":true,"scenarios":261,"output_words_per_lane":40101,"elapsed_seconds":235.792,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "limits": ["Local compiler-resource measurement, not runtime performance parity", "Hosted follow-up confirmation pending"]
+}

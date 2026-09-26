@@ -1079,3 +1079,27 @@ native allocation ABI and full integration/target/resource/performance coverage
 remain gaps.
 
 Regression scan: 52 callers checked, 9 assertions checked, 0 flagged/fixed.
+
+### Angle branch compilation footprint
+
+`72faf74` passed Ubuntu, including image-format conversion. macOS reached the
+20-minute job limit: staged artifacts showed 217.175 seconds spent emitting C
+for the second batch before its native/JS build. A local CPU profile identified
+Bend's literal-word matcher key construction and term traversal as the dominant
+cost, with an 11.28 GB peak footprint. This was not solely Clang optimization.
+
+The private Apple/GNU axis helpers now match equivalent Boolean classifications
+instead of nested literal U32 zero patterns. Public signatures and all numerical
+choices are retained. On the same generated Bend input, profiled C emission fell
+from 43.80 to 2.31 seconds and peak footprint from 11.28 to 1.14 GB. Both 1,086-case
+angle probes pass CPU/JS/forced Metal, and all 261 scenarios / 40,101 words still
+match on CPU-1/CPU-2/JavaScript/forced Metal. The full local run took 235.792 seconds.
+[Evidence](evidence/angle-branch-compilation.json) records scope and source hash.
+
+Eight harness tests, project checks and all four pinned proofs pass. The pinned
+compiler, build flags and job/command budgets are unchanged. I79 matches the
+measured source-level correction; A26/V2 retain exact native/control results.
+Hosted follow-up confirmation remains pending, and no runtime performance-parity
+claim follows from these compile-resource measurements.
+
+Regression scan: 8 callers checked, 5 assertions checked, 1 flagged/fixed.

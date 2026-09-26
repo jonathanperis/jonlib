@@ -45,16 +45,18 @@ def apple.reduced(equal: Bool, vertical: Bool, negative_x: Bool, negative_y: Boo
     case False{} False{}:
       apple.horizontal(negative_x, negative_y, O.divide(O.from_f32(y), O.from_f32(x)))
 
-def apple.axes(+ay: U32, +ax: U32, negative_x: Bool, negative_y: Bool, +y: F32, x: F32) -> F32:
-  match ay ax:
-    case 0 _: Bool.pick(F32, negative_x, signed(negative_y, 3.141592502593994), y)
-    case _ 0: signed(negative_y, 1.5707963267948966)
-    case _ _: apple.reduced(U32.is_eq(ay, ax), (ay > ax : U32), negative_x, negative_y, y, x)
+def apple.axes(y_zero: Bool, x_zero: Bool, equal: Bool, vertical: Bool, negative_x: Bool, negative_y: Bool, +y: F32, x: F32) -> F32:
+  match y_zero x_zero:
+    case True{} _: Bool.pick(F32, negative_x, signed(negative_y, 3.141592502593994), y)
+    case False{} True{}: signed(negative_y, 1.5707963267948966)
+    case False{} False{}: apple.reduced(equal, vertical, negative_x, negative_y, y, x)
 
 def apple(+y: F32, +x: F32) -> F32:
   +yb = F32.bits(y)
   +xb = F32.bits(x)
-  apple.axes((yb .&. 2147483647 : U32), (xb .&. 2147483647 : U32),
+  +ay = (yb .&. 2147483647 : U32)
+  +ax = (xb .&. 2147483647 : U32)
+  apple.axes(U32.is_eq(ay, 0), U32.is_eq(ax, 0), U32.is_eq(ay, ax), (ay > ax : U32),
     (xb >= 2147483648 : U32), (yb >= 2147483648 : U32), y, x)
 
 def gnu.correction(+x: F32) -> F32:
@@ -108,19 +110,21 @@ def gnu.quadrant(negative_x: Bool, negative_y: Bool, +angle: F32) -> F32:
       +adjusted = (angle - F32.neg(0.000000087422776573) : F32)
       Bool.pick(F32, negative_y, (adjusted - 3.1415927410 : F32), (3.1415927410 - adjusted : F32))
 
-def gnu.axes(+ay: U32, +ax: U32, +negative_x: Bool, negative_y: Bool, +y: F32, x: F32) -> F32:
-  match ay ax:
-    case 0 _: Bool.pick(F32, negative_x, signed(negative_y, 3.1415927410), y)
-    case _ 0: signed(negative_y, 1.5707963705)
-    case _ _:
-      gnu.quadrant(negative_x, negative_y, gnu.ratio((ay >= ax + 511705088 : U32),
-        negative_x && (ax > ay + 503316480 : U32), y, x))
+def gnu.axes(y_zero: Bool, x_zero: Bool, negative_x: Bool, negative_y: Bool, huge: Bool, tiny_negative: Bool, +y: F32, x: F32) -> F32:
+  match y_zero x_zero:
+    case True{} _: Bool.pick(F32, negative_x, signed(negative_y, 3.1415927410), y)
+    case False{} True{}: signed(negative_y, 1.5707963705)
+    case False{} False{}:
+      gnu.quadrant(negative_x, negative_y, gnu.ratio(huge, tiny_negative, y, x))
 
 def gnu(+y: F32, +x: F32) -> F32:
   +yb = F32.bits(y)
   +xb = F32.bits(x)
-  gnu.axes((yb .&. 2147483647 : U32), (xb .&. 2147483647 : U32), (xb >= 2147483648 : U32),
-    (yb >= 2147483648 : U32), y, x)
+  +ay = (yb .&. 2147483647 : U32)
+  +ax = (xb .&. 2147483647 : U32)
+  +negative_x = (xb >= 2147483648 : U32)
+  gnu.axes(U32.is_eq(ay, 0), U32.is_eq(ax, 0), negative_x, (yb >= 2147483648 : U32),
+    (ay >= ax + 511705088 : U32), negative_x && (ax > ay + 503316480 : U32), y, x)
 
 def atan2(gnu_profile: Bool, y: F32, x: F32) -> F32:
   match gnu_profile:
