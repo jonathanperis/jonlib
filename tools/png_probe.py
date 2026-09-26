@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Native PNG byte/packed color/filter/transparency fixtures for the bitmap gate."""
+"""Native PNG packed/8/16-bit color/filter/transparency fixtures for the bitmap gate."""
 import struct
 import zlib
 
@@ -97,16 +97,38 @@ def fixtures():
             inputs.append(dict(id=f'packed-opaque-{depth}-{color}',bytes=list(png(colors,1,color,samples,depth=depth,**opaque))))
         inputs.append(dict(id=f'packed-key-wrap-{depth}',bytes=list(png(colors,1,0,bytes(range(colors)),depth=depth,transparency=b'\0\xff'))))
     inputs.append(dict(id='packed-tall',bytes=list(png(1,4096,0,bytes(i%2 for i in range(4096)),(4,3,2,1,0),depth=1))))
+    for color in (0,2,4,6):
+        components=CHANNELS[color]
+        values=[(i*7919+255)&65535 for i in range(25*components)]
+        options={}
+        if color==0:
+            values[:5]=[0x1234,0x1235,0x12ff,0,65535]
+            options['transparency']=struct.pack('>H',0x1234)
+        elif color==2:
+            values[:15]=[0x1234,0x5678,0x9abc, 0x1234,0x5678,0x9abd, 0x1234,0x5679,0x9abc, 0x1235,0x5678,0x9abc, 0,65535,255]
+            options['transparency']=struct.pack('>HHH',0x1234,0x5678,0x9abc)
+        else:
+            for i,alpha in enumerate((255,256,65535,32768,0)):
+                values[i*components+components-1]=alpha
+        raw=struct.pack('>'+'H'*len(values),*values)
+        for mode in range(6):
+            filters=(mode,) if mode<5 else (0,1,2,3,4)
+            inputs.append(dict(id=f'wide16-{color}-{mode}',bytes=list(png(5,5,color,raw,filters,depth=16,**options))))
+        if color in (0,2):
+            inputs.append(dict(id=f'wide16-opaque-{color}',bytes=list(png(5,5,color,raw,depth=16))))
+    raw=b''.join(struct.pack('>H',(i*257+255)&65535) for i in range(4096))
+    inputs.append(dict(id='wide16-tall',bytes=list(png(1,4096,0,raw,(4,3,2,1,0),depth=16))))
     base=png(1,1,6,bytes([1,2,3,4]))
     gray=png(1,1,0,b'\1')
     malformed=[dict(id='empty',bytes=[],error=0),dict(id='bad-byte',bytes=[256],error=1),
                dict(id='short-chunk',bytes=list(base[:-1]),error=0)]
     for name,width,height,depth,color,method,filter_method,interlace,error in [
         ('zero-width',0,1,8,6,0,0,0,2),('wide-size',4097,1,8,6,0,0,0,2),
-        ('filtered-limit',4096,4096,8,6,0,0,0,2),('depth16',1,1,16,6,0,0,0,0),
+        ('filtered-limit',4096,4096,8,6,0,0,0,2),('depth12',1,1,12,6,0,0,0,0),
         ('bad-color',1,1,8,5,0,0,0,0),('compression',1,1,8,6,1,0,0,0),
         ('filter-method',1,1,8,6,0,1,0,0),('adam7',1,1,8,6,0,0,1,0),
-        ('depth3',1,1,3,0,0,0,0,0),('packed-rgb',1,1,4,2,0,0,0,0)]:
+        ('depth3',1,1,3,0,0,0,0,0),('packed-rgb',1,1,4,2,0,0,0,0),
+        ('wide16-palette',1,1,16,3,0,0,0,0),('wide16-short-raster',1,1,16,6,0,0,0,4)]:
         header=struct.pack('>IIBBBBB',width,height,depth,color,method,filter_method,interlace)
         data=SIGNATURE+chunk(b'IHDR',header)+base[33:]
         malformed.append(dict(id=name,bytes=list(data),error=error))

@@ -27,11 +27,11 @@ operation preserves this rule. A retained stream created with zlib's sync flush
 therefore returns a 300-byte prefix through `DecompressData`, while PNG's native
 stb inflater returns the complete 3,300 bytes.
 
-The internal implementation has an explicit empty-block policy so the future
-PNG boundary can follow stb's behavior. Both paths are compared against their
+The internal implementation has an explicit empty-block policy so the
+[PNG boundary](PNG.md) follows stb's behavior. Both paths are compared against their
 actual linked native entry points. This is a behavioral distinction between
 reference APIs, not a tolerance or substitute expected result. PNG chunk parsing,
-zlib framing, filtering and image integration remain separate work.
+zlib framing, filtering and image normalization live in the separate PNG module.
 
 ## Implementation and verification
 

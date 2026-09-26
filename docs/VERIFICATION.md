@@ -1307,3 +1307,29 @@ conformance, nine harness tests, project checks and all four pinned laws pass.
 coverage remain gaps. API completion counts are unchanged.
 
 Regression scan: 45 callers checked, 32 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `ec2f708`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36271921257)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36271921256)
+completed successfully, including packed PNG depths and transparency wrapping.
+
+## PNG 16-bit samples and transparency
+
+Non-interlaced grayscale/RGB/gray-alpha/RGBA input now supports 16-bit samples.
+The complete PNG gate passes 97 native images / 18,585 pixels and 32 typed-error
+controls on CPU, JavaScript and forced Metal. Samples are filtered as bytes,
+reconstructed big-endian and narrowed through the native high-byte rule. Full
+16-bit tRNS comparisons distinguish close keys whose RGBA8 RGB values coincide;
+alpha boundary cases include 255→0 and 256→1. See
+[evidence/png-16bit.json](evidence/png-16bit.json).
+
+All previous valid packed/8-bit inputs are retained. The old unsupported-depth
+control uses 12 bits now; its original 16-bit header/data bytes remain as a
+truncated-raster control, correctly returning stream rather than header failure
+after the new header support. Invalid 16-bit palette input remains rejected.
+The full 261-scenario / 40,101-word corpus, nine harness tests, project checks and
+four pinned laws pass. I88 and A4/A5 hold for the exercised normalization profile.
+The stale DEFLATE documentation describing PNG integration as future work was
+updated to point to the implemented decoder. Adam7/CgBI, PNG export, original
+format metadata and broader recovery/resource/platform coverage remain gaps.
+
+Regression scan: 64 callers checked, 34 assertions checked, 1 flagged/fixed.
