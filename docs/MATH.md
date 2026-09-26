@@ -2,7 +2,7 @@
 
 The current math implementation is Bend source in `jonlib.bend`. It begins the
 `raymath.h` work package with six scalar, twenty-nine Vector2, thirty-eight Vector3,
-twenty-two Vector4, twenty-one Matrix and twenty-one Quaternion functions.
+twenty-two Vector4, twenty-three Matrix and twenty-one Quaternion functions.
 
 ## Scalar API
 
@@ -199,6 +199,28 @@ F32 values around π/4, quadrant/full-cycle angles, non-unit and zero axes.
 without perspective division. The Vector2 version retains the multiplication
 and addition of the zero-Z term; dropping it could change signed-zero behavior.
 All 16 matrix fields and all transformed vector components are checked bitwise.
+
+### Binary64 projection inputs
+
+`Float64{high, low}` stores the high and low U32 words of an IEEE binary64 value.
+`Float64.from_f32(value)` promotes an F32 value without decimal re-parsing;
+finite normal/subnormal inputs and signed zeros have native bit-level evidence.
+Promotion starts with the supplied F32 value: it cannot restore precision already
+lost before the call. For a full-precision binary64 constant, use its two words;
+for example, `Float64{1069128089, 2576980378}` encodes the C double value `0.1`.
+
+`Matrix.frustum(left, right, bottom, top, near, far)` and `Matrix.ortho(...)`
+take six `Float64` values. They preserve binary64 interval subtraction before
+the exact reference F32 casts and subsequent arithmetic. Bounds such as
+16777216 and 16777217 therefore retain a nonzero span despite sharing the same
+rounded F32 value.
+
+The initial projection profile requires finite normal/zero binary64 inputs,
+normal/zero relevant F32 casts/intermediates/results and nonzero spans. The
+fixture validator and actual C result gate enforce this scope. Exceptional and
+subnormal projection arithmetic, and unverified non-finite promotion payloads,
+remain gaps. The public carrier API provides storage and promotion; arithmetic
+helpers are internal and reuse finite-normal integer-limb operations.
 
 ## Quaternion API
 

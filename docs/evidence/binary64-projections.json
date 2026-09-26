@@ -1,0 +1,17 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {
+    "jonlib.bend": "bb471a9d94d53e6795719340dd8bed3c4fb3d4abbd82630bc61b9a9abb372da4",
+    "src/float64.bend": "21234ced4533e2fadb872f1070e066ce053de77f09e85dc3db903fa0551dd9f3"
+  },
+  "fixtures_sha256": "fe5a143774cfa9a7005f2542b9b44d24ecbd7b82e474b8f022c12c6fd32440c6",
+  "scenarios": 228,
+  "output_words_per_lane": 34271,
+  "numeric_probe_cells": 1827,
+  "passed": true,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "projection_rejections": 1,
+  "unprojection_rejections": 2,
+  "scope": ["Exact finite F32 promotion to binary64 words, including subnormals and signed zero", "Ties-to-even narrowing at normal F32 boundaries", "Frustum/orthographic matrices with original binary64 inputs and sub-F32-ULP intervals"],
+  "limits": ["Exceptional/subnormal projection arithmetic and non-finite promotion payload evidence", "General public F64 arithmetic", "Complete integration/target/performance coverage"]
+}

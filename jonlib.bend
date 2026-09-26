@@ -10,6 +10,7 @@ import ./src/gradients.bend as Gradients
 import ./src/trig.bend as Trig
 import ./src/rotation.bend as Rotation
 import ./src/fused.bend as Fused
+import ./src/float64.bend as Float64Numeric
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -31,6 +32,25 @@ type Matrix is Data:
 
 type Matrix.Decomposition is Data:
   Decomposed{translation: Vector3, rotation: Vector4, scale: Vector3}
+
+type Float64 is Data:
+  Float64{high: U32, low: U32}
+
+def Float64.promoted(words: U32 & U32) -> Float64:
+  (high, low) = words
+  Float64{high, low}
+
+def Float64.from_f32(value: F32) -> Float64:
+  Float64.promoted(Float64Numeric.promote(value))
+
+def Float64.internal.f32(value: Float64) -> F32:
+  Float64{high, low} = value
+  Float64Numeric.to_f32(high, low)
+
+def Float64.internal.difference(left: Float64, right: Float64) -> F32:
+  Float64{ah, al} = left
+  Float64{bh, bl} = right
+  Float64Numeric.difference(ah, al, bh, bl)
 
 type Rectangle is Data:
   Rectangle{x: F32, y: F32, width: F32, height: F32}
@@ -368,6 +388,35 @@ def Matrix.multiply_value(matrix: Matrix, +value: F32) -> Matrix:
     (m1 * value : F32), (m5 * value : F32), (m9 * value : F32), (m13 * value : F32),
     (m2 * value : F32), (m6 * value : F32), (m10 * value : F32), (m14 * value : F32),
     (m3 * value : F32), (m7 * value : F32), (m11 * value : F32), (m15 * value : F32)}
+
+def Matrix.frustum(+left: Float64, +right: Float64, +bottom: Float64, +top: Float64, +near: Float64, +far: Float64) -> Matrix:
+  +rl = Float64.internal.difference(right, left)
+  +tb = Float64.internal.difference(top, bottom)
+  +fn = Float64.internal.difference(far, near)
+  lf = Float64.internal.f32(left)
+  rf = Float64.internal.f32(right)
+  bf = Float64.internal.f32(bottom)
+  tf = Float64.internal.f32(top)
+  +nf = Float64.internal.f32(near)
+  +ff = Float64.internal.f32(far)
+  Matrix{(nf * 2.0 / rl : F32), 0.0, ((rf + lf) / rl : F32), 0.0,
+    0.0, (nf * 2.0 / tb : F32), ((tf + bf) / tb : F32), 0.0,
+    0.0, 0.0, (F32.neg((ff + nf : F32)) / fn : F32), (F32.neg((ff * nf * 2.0 : F32)) / fn : F32),
+    0.0, 0.0, F32.neg(1.0), 0.0}
+
+def Matrix.ortho(+left: Float64, +right: Float64, +bottom: Float64, +top: Float64, +near: Float64, +far: Float64) -> Matrix:
+  +rl = Float64.internal.difference(right, left)
+  +tb = Float64.internal.difference(top, bottom)
+  +fn = Float64.internal.difference(far, near)
+  lf = Float64.internal.f32(left)
+  rf = Float64.internal.f32(right)
+  bf = Float64.internal.f32(bottom)
+  tf = Float64.internal.f32(top)
+  nf = Float64.internal.f32(near)
+  ff = Float64.internal.f32(far)
+  Matrix{(2.0 / rl : F32), 0.0, 0.0, (F32.neg((lf + rf : F32)) / rl : F32),
+    0.0, (2.0 / tb : F32), 0.0, (F32.neg((tf + bf : F32)) / tb : F32),
+    0.0, 0.0, (F32.neg(2.0) / fn : F32), (F32.neg((ff + nf : F32)) / fn : F32), 0.0, 0.0, 0.0, 1.0}
 
 def Vector2.transform(vector: Vector2, matrix: Matrix) -> Vector2:
   Vector2{+x, +y} = vector

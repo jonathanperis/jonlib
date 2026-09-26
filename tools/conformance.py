@@ -98,6 +98,7 @@ QUATERNION_APIS = {
 COLOR_VECTOR3_APIS = {'to_hsv':('ColorToHSV','c','vector')}
 COLOR_VECTOR4_APIS = {'normalize':('ColorNormalize','c','vector')}
 COLOR_NUMERIC_APIS = {'from_normalized':('ColorFromNormalized','q','color'), 'from_hsv':('ColorFromHSV','sss','color')}
+FLOAT64_APIS = {'from_f32':('promote_f32','s','binary64'), 'internal.f32':('narrow_f64','d','float')}
 MATRIX_APIS = {
     'identity':('MatrixIdentity','','matrix'), 'transpose':('MatrixTranspose','m','matrix'),
     'add':('MatrixAdd','mm','matrix'), 'subtract':('MatrixSubtract','mm','matrix'),
@@ -111,19 +112,21 @@ MATRIX_APIS = {
     'to_float_v':('MatrixToFloatV','m','buffer'),
     'compose':('MatrixCompose','tqt','matrix'),
     'decompose':('MatrixDecompose','m','decomposition'),
+    'frustum':('MatrixFrustum','dddddd','matrix'), 'ortho':('MatrixOrtho','dddddd','matrix'),
 }
 ROTATION_ANGLES = {('Matrix',name):3 if name in ('rotate_xyz','rotate_zyx') else 1
                    for name in ('rotate_x','rotate_y','rotate_z','rotate_xyz','rotate_zyx','rotate')}
 ROTATION_ANGLES.update({('Vector2','rotate'):1, ('Vector3','rotate_by_axis_angle'):1,
                         ('Quaternion','from_axis_angle'):1, ('Quaternion','from_euler'):3})
 MATRIX_FIELDS = tuple(f'm{row+4*column}' for row in range(4) for column in range(4))
-ARGUMENT_SIZES = {'v':2, 't':3, 'q':4, 'c':4, 'm':16, 'b':6, 'r':4, 's':1, 'i':1}
+ARGUMENT_SIZES = {'v':2, 't':3, 'q':4, 'c':4, 'm':16, 'b':6, 'r':4, 's':1, 'i':1, 'd':1}
 VECTOR_APIS = {'vector_value':('Vector2',2,VECTOR2_APIS), 'vector3_value':('Vector3',3,VECTOR3_APIS),
                'vector4_value':('Vector4',4,VECTOR4_APIS),
                'quaternion_value':('Quaternion',4,QUATERNION_APIS),
                'color_vector3_value':('Color',3,COLOR_VECTOR3_APIS),
                'color_vector4_value':('Color',4,COLOR_VECTOR4_APIS),
                'color_numeric_value':('Color',1,COLOR_NUMERIC_APIS),
+               'float64_value':('Float64',2,FLOAT64_APIS),
                'matrix_value':('Matrix',16,MATRIX_APIS)}
 COLLISION_APIS = {
     'recs':('CheckCollisionRecs','rr','bool'),
@@ -200,6 +203,29 @@ def rounded_f32(value):
     return struct.unpack('f', struct.pack('f', value))[0]
 
 
+def finite_number(value, limit):
+    return type(value) in (int,float) and -limit<=value<=limit and math.isfinite(value)
+
+
+def normal_f32_or_zero(value):
+    return math.isfinite(value) and (value==0 or abs(value)>=float.fromhex('0x1p-126'))
+
+
+def projection_contract(values, frustum):
+    values = [float(value) for value in values]
+    try:
+        left,right,bottom,top,near,far = [rounded_f32(value) for value in values]
+        spans = [rounded_f32(values[b]-values[a]) for a,b in ((0,1),(2,3),(4,5))]
+        intermediates = [left,right,bottom,top,near,far,*spans,
+                         rounded_f32(left+right),rounded_f32(top+bottom),rounded_f32(far+near)]
+        if frustum:
+            product = rounded_f32(far*near)
+            intermediates += [rounded_f32(near*2),product,rounded_f32(product*2)]
+    except OverflowError:
+        return False
+    return all(normal_f32_or_zero(value) for value in intermediates) and all(value!=0 for value in spans)
+
+
 def dot3_f32(left, right):
     products = [rounded_f32(a*b) for a,b in zip(left,right)]
     return rounded_f32(rounded_f32(products[0]+products[1])+products[2])
@@ -220,7 +246,7 @@ def matrix_inverse_denominator(values):
 def numeric_cells(kind, function):
     _, dimensions, apis = VECTOR_APIS[kind]
     result = apis[function][2]
-    return 10 if result=='decomposition' else 16 if result=='matrix' else dimensions*2 if result=='pair' else dimensions if result in ('vector','buffer') else 1
+    return 2 if result=='binary64' else 10 if result=='decomposition' else 16 if result=='matrix' else dimensions*2 if result=='pair' else dimensions if result in ('vector','buffer') else 1
 
 
 def crop_rectangle(width, height, op):
@@ -398,8 +424,24 @@ def cases_from(document):
                 if not isinstance(function, str) or function not in apis or not isinstance(values, list):
                     raise ValueError(f'{name}: invalid {namespace} function/arguments')
                 _, signature, result = apis[function]
-                if len(values) != sum(ARGUMENT_SIZES[p] for p in signature) or not all(coordinate(v, True) for v in values):
+                if 'd' in signature:
+                    valid_numbers = all(finite_number(v,float.fromhex('0x1.fffffffffffffp+1023'))
+                                        and (v==0 or abs(v)>=float.fromhex('0x1p-1022')) for v in values)
+                elif namespace=='Float64':
+                    valid_numbers = all(finite_number(v,float.fromhex('0x1.fffffep+127')) for v in values)
+                else:
+                    valid_numbers = all(coordinate(v,True) for v in values)
+                if len(values) != sum(ARGUMENT_SIZES[p] for p in signature) or not valid_numbers:
                     raise ValueError(f'{name}: invalid {namespace} argument arity/domain')
+                if namespace=='Matrix' and function in ('frustum','ortho') and not projection_contract(values,function=='frustum'):
+                    raise ValueError(f'{name}: projection requires supported F32 casts/intermediates and nonzero spans')
+                if namespace=='Float64' and function=='internal.f32':
+                    try:
+                        valid_cast = normal_f32_or_zero(rounded_f32(values[0]))
+                    except OverflowError:
+                        valid_cast = False
+                    if not valid_cast:
+                        raise ValueError(f'{name}: binary64 narrowing is outside the normal/zero profile')
                 if signature == 'c':
                     rgba(values)
                 if namespace=='Color' and function=='from_normalized' and any(not 0<=v<=1 for v in values):
@@ -577,6 +619,10 @@ def vector_arguments(signature, values, bend=False):
             color = rgba(values[at:at+4])
             result.append(str(color) if bend else f'GetColor({color}u)')
             at += 4
+        elif parameter == 'd':
+            high,low = struct.unpack('>II',struct.pack('>d',float(values[at])))
+            result.append(f'J.Float64{{{high}, {low}}}' if bend else float(values[at]).hex())
+            at += 1
         else:
             result.append(literal(values[at]))
             at += 1
@@ -584,9 +630,11 @@ def vector_arguments(signature, values, bend=False):
 
 
 def c_source(cases):
-    lines = ['#include "raylib.h"', '#include <stdio.h>', '#include <string.h>',
+    lines = ['#include "raylib.h"', '#include <stdio.h>', '#include <string.h>', '#include <stdint.h>',
              '#pragma STDC FP_CONTRACT OFF', '#define RAYMATH_STATIC_INLINE', '#include "raymath.h"',
              'static Color float_bits(float value) { unsigned int bits; memcpy(&bits, &value, 4); return GetColor(bits); }',
+             'static double promote_f32(float value) { return (double)value; }',
+             'static float narrow_f64(double value) { return (float)value; }',
              'int main(void) {',
              'SetTraceLogLevel(LOG_NONE);']
     if any(op['op']=='to_pot' for case in cases for op in case['operations']):
@@ -704,7 +752,11 @@ def c_source(cases):
                               f'Vector3 domain_point={point};',
                               'Quaternion domain_h=QuaternionTransform((Quaternion){domain_point.x,domain_point.y,domain_point.z,1.0f},domain_inverse);',
                               'if(!isfinite(domain_h.x) || !isfinite(domain_h.y) || !isfinite(domain_h.z) || !isfinite(domain_h.w) || domain_h.w==0.0f) { fprintf(stderr,"invalid unprojection homogeneous point\\n"); return 8; }', '}']
-                if result == 'decomposition':
+                if result == 'binary64':
+                    lines += ['{', f'double value={expression}; uint64_t bits; memcpy(&bits,&value,8);',
+                              f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, GetColor((uint32_t)(bits>>32)));',
+                              f'ImageDrawPixel(&image, {op["x"]+1}, {op["y"]}, GetColor((uint32_t)bits));', '}']
+                elif result == 'decomposition':
                     lines += ['{', 'Vector3 translation={0}, scale={0}; Quaternion rotation={0};',
                               f'{function}({vector_arguments(signature,op["args"])}, &translation, &rotation, &scale);']
                     for index, field in enumerate(('translation.x','translation.y','translation.z','rotation.x','rotation.y','rotation.z','rotation.w','scale.x','scale.y','scale.z')):
@@ -728,6 +780,9 @@ def c_source(cases):
                     lines += ['{', f'{output_type} v = {expression};']
                     if namespace=='Vector3' and op['function']=='unproject':
                         lines += ['if(!isfinite(v.x) || !isfinite(v.y) || !isfinite(v.z)) { fprintf(stderr,"invalid unprojection result\\n"); return 8; }']
+                    if namespace=='Matrix' and op['function'] in ('frustum','ortho'):
+                        lines += ['float16 fields=MatrixToFloatV(v);',
+                                  'for(int field=0;field<16;field++) if(!isfinite(fields.v[field]) || (fields.v[field]!=0.0f && !isnormal(fields.v[field]))) { fprintf(stderr,"invalid projection result\\n"); return 9; }']
                     for index, field in enumerate(MATRIX_FIELDS if result=='matrix' else ('x','y','z','w')[:dimensions]):
                         lines += [f'ImageDrawPixel(&image, {op["x"]+index}, {op["y"]}, float_bits(v.{field}));']
                     lines += ['}']
@@ -851,6 +906,10 @@ def bend_source(cases, gpu=False):
         '  J.Vector4{u, v, w, q} = vector',
         '  first = write_vector3(surface, x, y, J.Vector3{u, v, w})',
         '  J.Surface.draw_pixel(first, (x + 3.0 : F32), y, F32.bits(q))',
+        'def write_float64(surface: J.Surface, +x: F32, +y: F32, value: J.Float64) -> J.Surface:',
+        '  J.Float64{high, low} = value',
+        '  first = J.Surface.draw_pixel(surface, x, y, high)',
+        '  J.Surface.draw_pixel(first, (x + 1.0 : F32), y, low)',
         'def write_decomposition(surface: J.Surface, +x: F32, +y: F32, result: J.Matrix.Decomposition) -> J.Surface:',
         '  J.Decomposed{translation, rotation, scale} = result',
         '  first = write_vector3(surface, x, y, translation)',
@@ -998,8 +1057,8 @@ def bend_source(cases, gpu=False):
                     previous = f's{j}'
                     lines += [f'    {previous} : J.Surface <- write_float_buffer({dimensions}n, {args[0]}, {f32(op["x"])}, {f32(op["y"])}, {expression})']
                     continue
-                function = {'vector':{2:'write_vector',3:'write_vector3',4:'write_vector4'}.get(dimensions), 'matrix':'write_matrix', 'pair':'write_vector_pair', 'decomposition':'write_decomposition'}.get(result,'J.Surface.draw_pixel')
-                value = expression if result in ('vector','matrix','pair','color','decomposition') else f'Bool.to_u32({expression})' if result=='bool' else f'F32.bits({expression})'
+                function = {'vector':{2:'write_vector',3:'write_vector3',4:'write_vector4'}.get(dimensions), 'matrix':'write_matrix', 'pair':'write_vector_pair', 'decomposition':'write_decomposition', 'binary64':'write_float64'}.get(result,'J.Surface.draw_pixel')
+                value = expression if result in ('vector','matrix','pair','color','decomposition','binary64') else f'Bool.to_u32({expression})' if result=='bool' else f'F32.bits({expression})'
                 previous = f's{j}'
                 lines += [f'    {previous} : J.Surface = {function}({args[0]}, {f32(op["x"])}, {f32(op["y"])}, {value})']
                 continue
@@ -1172,6 +1231,17 @@ def inventory(header):
             for entry in declarations]
 
 
+def verify_native_rejection(raylib_source, library, case, exit_code, message):
+    cases = cases_from(dict(schema=1, cases=[case]))
+    source = BUILD/f'{case["id"]}.c'
+    binary = BUILD/case['id']
+    source.write_text(c_source(cases))
+    run(['clang','-std=c11','-O2','-I'+str(raylib_source/'src'),source,library,'-lm','-o',binary])
+    rejected = subprocess.run([str(binary)],cwd=ROOT,env=ENV,capture_output=True,text=True,timeout=240)
+    if rejected.returncode != exit_code or message not in rejected.stderr:
+        raise ValueError(f'{case["id"]}: native invalid-domain control did not fail closed')
+
+
 def verify_unproject_rejections(raylib_source, library):
     identity = [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]
     controls = [([0,0,0], [0]*16),
@@ -1179,14 +1249,7 @@ def verify_unproject_rejections(raylib_source, library):
     for index, (point, projection) in enumerate(controls):
         case = dict(id=f'unproject-invalid-{index}', width=3, height=1, background=[0,0,0,0],
                     operations=[dict(op='vector3_value', function='unproject', x=0, y=0, args=point+projection+identity)])
-        cases = cases_from(dict(schema=1, cases=[case]))
-        source = BUILD/f'unproject-invalid-{index}.c'
-        binary = BUILD/f'unproject-invalid-{index}'
-        source.write_text(c_source(cases))
-        run(['clang','-std=c11','-O2','-I'+str(raylib_source/'src'),source,library,'-lm','-o',binary])
-        rejected = subprocess.run([str(binary)],cwd=ROOT,env=ENV,capture_output=True,text=True,timeout=240)
-        if rejected.returncode != 8 or 'invalid unprojection' not in rejected.stderr:
-            raise ValueError(f'{case["id"]}: native invalid-domain control did not fail closed')
+        verify_native_rejection(raylib_source, library, case, 8, 'invalid unprojection')
     return len(controls)
 
 
@@ -1264,6 +1327,12 @@ def main():
     if any(op['op']=='vector3_value' and op['function']=='unproject' for case in cases for op in case['operations']):
         report['unprojection_rejections'] = verify_unproject_rejections(args.raylib_source, cmake/'raylib/libraylib.a')
         print('unprojection: singular and zero-W native oracle controls rejected',flush=True)
+    if any(op['op']=='matrix_value' and op['function'] in ('frustum','ortho') for case in cases for op in case['operations']):
+        control = dict(id='projection-invalid-result', width=16, height=1, background=[0,0,0,0],
+                       operations=[dict(op='matrix_value',function='ortho',x=0,y=0,args=[-1e38,1e38,-1,1,0,1])])
+        verify_native_rejection(args.raylib_source, cmake/'raylib/libraylib.a', control, 9, 'invalid projection result')
+        report['projection_rejections'] = 1
+        print('projection: subnormal-output native oracle control rejected',flush=True)
     exports = [row for row in reference if 'qoi' in row]
     report['qoi_exports'] = dict(scenarios=len(exports), bytes=sum(len(row['qoi']) for row in exports))
     source = BUILD / 'candidate.bend'

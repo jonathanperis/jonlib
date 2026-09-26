@@ -8,9 +8,9 @@ Profile: **rgba8-cpu-images-v1**, with domains defined in [API.md](API.md).
 
 ## Verified evidence
 
-The current local Apple M1/macOS corpus contains **224 deterministic scenarios /
-34,111 checked output words per lane**, matching native CPU (one and two threads), JavaScript
-and forced Metal. Most words are RGBA pixels; 1,667 are exact numeric/collision
+The current local Apple M1/macOS corpus contains **228 deterministic scenarios /
+34,271 checked output words per lane**, matching native CPU (one and two threads), JavaScript
+and forced Metal. Most words are RGBA pixels; 1,827 are exact numeric/collision
 result-bit probe cells. QOI export bytes are compared separately. GitHub Actions
 is configured to run this corpus on **Ubuntu 24.04
 (x86_64)** and **macOS 15 (arm64)** for CPU/JavaScript; use the current workflow
@@ -32,7 +32,7 @@ A current run's precise inputs, source hashes and lane outcomes are in
 `.build/conformance.json`. The authoritative [API dashboard](PROGRESS.md) covers
 the complete release-header/support inventory. The 600-entry
 `.build/api-inventory.json` is its legacy core view, mapping 81 reference APIs to
-these scoped operations/contracts. The companion ledger additionally maps 137
+these scoped operations/contracts. The companion ledger additionally maps 139
 `raymath.h` functions. Remaining functions retain explicit planned work.
 These counts are an inventory, not a percentage of full parity.
 Both `profile-covered` and `contract-checked` are partial-coverage statuses.
@@ -74,6 +74,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | Quaternion arithmetic/metrics/interpolation | `Quaternion` functions | Shared Vector4 representation; exact Hamilton products, zero normalization/inversion, NLERP and sign-equivalent equality |
 | Quaternion/matrix conversion and composition | `Quaternion.from_matrix/to_matrix/transform`, `Vector3.rotate_by_quaternion`, `Matrix.compose` | Exact branch/tie order, full matrix/four-dimensional results and non-unit/zero quaternion behavior |
 | Decomposition, 3D constructors and unprojection | `Matrix.decompose`, quaternion constructors/spline, `Vector3.rotate_by_axis_angle/unproject` | Ten-field decomposition, bounded half-angle profiles, exact inverse ordering and native invalid-domain controls |
+| Binary64-input projection matrices | `Float64`, `Matrix.frustum/ortho` | Full input bits retained before reference F32 casts; exact fine-interval fields and normal/zero domain controls |
 | Float-list exports | `Vector3.to_float_v`, `Matrix.to_float_v` | Exact values/order and proven 3/16-element lengths; native array ABI/mutability remain gaps |
 | Matrix arithmetic/inversion, affine constructors and vector transforms | `Matrix`, `Vector2.transform`, `Vector3.transform` | All 16 fields and transformed components compared exactly, including noncommuting products and near-singular inversion; double-transpose law checked |
 | View and rotation matrices | `Matrix.look_at`, `rotate_*_for`, `rotate_for` | Reference degenerate bases, explicit bounded trigonometric profiles, raw trig bits and distinct Euler orders |

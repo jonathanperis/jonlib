@@ -29,7 +29,7 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 |---|---:|---|---:|---:|---:|---|
 | 1 | 0 | `types` — Types, constants and language mappings | 549 | 18 | 0 | — |
 | 2 | 1 | `numerics` — Numeric fidelity and scalar contracts | 14 | 6 | 0 | types |
-| 3 | 1 | `raymath` — Vectors, matrices and quaternions | 221 | 131 | 0 | numerics |
+| 3 | 1 | `raymath` — Vectors, matrices and quaternions | 221 | 133 | 0 | numerics |
 | 4 | 1 | `memory` — Buffers, memory and callback contracts | 12 | 0 | 0 | types |
 | 5 | 1 | `files` — Files, paths, compression and data utilities | 49 | 0 | 0 | memory |
 | 6 | 1 | `random` — Random-number and sequence contracts | 4 | 0 | 0 | numerics, memory |
@@ -63,8 +63,6 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 
 This is a priority queue with visible prerequisites, not a claim that every item is unblocked.
 
-- **`raymath:function:MatrixFrustum`** (not-started, `raymath`): Derive MatrixFrustum semantics from the linked source, add a reference fixture, then implement Matrix.frustum.
-- **`raymath:function:MatrixOrtho`** (not-started, `raymath`): Derive MatrixOrtho semantics from the linked source, add a reference fixture, then implement Matrix.ortho.
 - **`raymath:function:MatrixPerspective`** (not-started, `raymath`): Derive MatrixPerspective semantics from the linked source, add a reference fixture, then implement Matrix.perspective.
 - **`raymath:function:Vector2Angle`** (not-started, `raymath`): Derive Vector2Angle semantics from the linked source, add a reference fixture, then implement Vector2.angle.
 - **`raymath:function:Vector2LineAngle`** (not-started, `raymath`): Derive Vector2LineAngle semantics from the linked source, add a reference fixture, then implement Vector2.line_angle.
@@ -83,6 +81,8 @@ This is a priority queue with visible prerequisites, not a claim that every item
 - **`raymath:function:Vector2Add`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Add.
 - **`raymath:function:Vector2AddValue`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2AddValue.
 - **`raymath:function:Vector2Subtract`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Subtract.
+- **`raymath:function:Vector2SubtractValue`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2SubtractValue.
+- **`raymath:function:Vector2Length`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Length.
 
 ## Closing an item
 

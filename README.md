@@ -34,7 +34,7 @@ differential test reference.
 - Checked general image rotation and power-of-two canvas expansion.
 - Source-preserving channel extraction and eleven scoped pure 2D collision queries.
 - Vector3 arithmetic, cross/dot products, and bounded sphere/box collision queries.
-- Matrix arithmetic/inversion, view/rotation constructors, vector transforms and paired-vector orthonormalization.
+- Matrix arithmetic/inversion, binary64-input projections, view/rotation constructors, vector transforms and paired-vector orthonormalization.
 - Four-component vector arithmetic and immutable float-list exports with checked length laws.
 - Normalized/HSV color conversions and quaternion Hamilton-product foundations.
 - Radial and one-cycle linear gradient profiles with balanced owned-array generation.

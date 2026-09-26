@@ -67,6 +67,12 @@ Supported operations:
 - `color_vector3_value`/`color_vector4_value` accept four integer byte arguments
   and compare returned HSV/normalized float bits. `color_numeric_value` compares
   packed RGBA results from normalized/HSV inputs with validated domains.
+- Projection arguments are binary64 JSON values, emitted as exact hexadecimal
+  C double literals and `Float64` word pairs in Bend. Casts, spans and relevant
+  F32 intermediates must be normal/zero, with nonzero spans; the native result
+  gate rejects non-finite/subnormal outputs and has an executable negative control.
+- `float64_value` compares native F32-to-binary64 promotion words and the internal
+  projection narrowing bridge, including signed zero and ties-to-even boundaries.
 - `color_tint`, `color_invert`, `color_contrast`, `color_brightness`,
   `color_replace`: image transforms. Tint/replacement use RGBA `color`,
   replacement also uses `replacement`, and contrast/brightness use `amount`.

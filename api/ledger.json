@@ -61135,7 +61135,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector2Angle semantics from the linked source, add a reference fixture, then implement Vector2.angle.",
-      "priority": 3
+      "priority": 1
     },
     {
       "id": "raymath:function:Vector2LineAngle",
@@ -61190,7 +61190,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector2LineAngle semantics from the linked source, add a reference fixture, then implement Vector2.line_angle.",
-      "priority": 4
+      "priority": 2
     },
     {
       "id": "raymath:function:Vector2Scale",
@@ -63117,7 +63117,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Angle semantics from the linked source, add a reference fixture, then implement Vector3.angle.",
-      "priority": 5
+      "priority": 3
     },
     {
       "id": "raymath:function:Vector3Negate",
@@ -66795,23 +66795,29 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Matrix.frustum",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Six binary64 Float64 inputs retained through interval subtraction before reference F32 casts/arithmetic. Exact full-field fixtures include intervals below an F32 ULP; normal/zero intermediate/result profile with nonzero spans.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal arithmetic profiles",
+        "Complete integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tests/test_harness.py",
+        "tools/conformance.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -66824,8 +66830,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixFrustum semantics from the linked source, add a reference fixture, then implement Matrix.frustum.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for MatrixFrustum.",
+      "priority": 202
     },
     {
       "id": "raymath:function:MatrixPerspective",
@@ -66880,7 +66886,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive MatrixPerspective semantics from the linked source, add a reference fixture, then implement Matrix.perspective.",
-      "priority": 2
+      "priority": 0
     },
     {
       "id": "raymath:function:MatrixOrtho",
@@ -66905,23 +66911,29 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Matrix.ortho",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Six binary64 Float64 inputs with exact reference interval precision, cast order and F32 orthographic fields. Normal/zero intermediate/result profile with nonzero spans.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal arithmetic profiles",
+        "Complete integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tests/test_harness.py",
+        "tools/conformance.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -66934,8 +66946,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixOrtho semantics from the linked source, add a reference fixture, then implement Matrix.ortho.",
-      "priority": 1
+      "next_step": "Close documented gaps and unverified gates for MatrixOrtho.",
+      "priority": 202
     },
     {
       "id": "raymath:function:MatrixLookAt",
@@ -67874,7 +67886,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive QuaternionSlerp semantics from the linked source, add a reference fixture, then implement Quaternion.slerp.",
-      "priority": 6
+      "priority": 4
     },
     {
       "id": "raymath:function:QuaternionCubicHermiteSpline",
@@ -68230,7 +68242,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive QuaternionToAxisAngle semantics from the linked source, add a reference fixture, then implement Quaternion.to_axis_angle.",
-      "priority": 7
+      "priority": 5
     },
     {
       "id": "raymath:function:QuaternionFromEuler",
@@ -68346,7 +68358,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive QuaternionToEuler semantics from the linked source, add a reference fixture, then implement Quaternion.to_euler.",
-      "priority": 8
+      "priority": 6
     },
     {
       "id": "raymath:function:QuaternionTransform",

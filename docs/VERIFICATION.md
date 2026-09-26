@@ -21,10 +21,10 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 224 scenarios / 34,111 output words match pinned raylib exactly on each
+- 228 scenarios / 34,271 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
-- The word count includes 1,667 exact numeric/collision result-bit probe cells.
+- The word count includes 1,827 exact numeric/collision result-bit probe cells.
   The math reference explicitly uses uncontracted F32; no comparison tolerance
   is applied. Both components of each vector output are checked.
 - Seven QOI export scenarios compare all 299 encoded bytes per lane. Real CPU/JS
@@ -51,7 +51,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
 - The pinned core header inventory contains 600 unique public functions; 81 have
-  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 137
+  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 139
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
   on CPU, JS and Metal for its declared reference profile. Ubuntu's subsequent
@@ -101,7 +101,7 @@ reference comparison of all 4096 supported POT axis sizes.
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 224 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 228 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -700,3 +700,31 @@ generator/oracle/diagnostic caller contexts, 29 differential operations, two
 malformed fixtures and two native invalid-domain controls.
 
 Regression scan: 58 callers checked, 33 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `10e27b9`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36229933755)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36229933753)
+completed successfully.
+
+## Binary64 inputs for frustum and orthographic matrices
+
+The new Float64 carrier preserves both IEEE words through projection interval
+subtraction. Native C arguments use exact hexadecimal double literals; candidate
+arguments use the matching word pairs. Fixtures include 16777216/16777217 bounds,
+one-double-ULP spans near 0.1, large translated intervals, signed zero, finite F32
+promotion extremes/subnormals and normal narrowing ties. All 228 scenarios /
+34,271 words pass on CPU-1, CPU-2, JavaScript and forced Metal. See
+[evidence/binary64-projections.json](evidence/binary64-projections.json).
+
+Projection validation requires supported normal/zero casts/intermediates and
+nonzero spans; the native matrix-result gate rejects non-finite or subnormal
+outputs. A generated subnormal-result oracle control fails with the expected
+exit, and both existing unprojection controls still fail closed after sharing
+the native-control runner. A26/A4/A5, eight harness tests, project checks and all
+four pinned laws pass. I58 retains original input precision without changing the
+compiler or shared resize arithmetic. Exceptional/subnormal projection arithmetic,
+unverified non-finite promotion payloads and complete integration/target/performance
+coverage remain gaps. Reviewed 67 helper, codec, validator, generator and diagnostic
+caller contexts, 28 differential operations, five malformed/domain fixtures and
+three native invalid-domain controls.
+
+Regression scan: 67 callers checked, 36 assertions checked, 0 flagged/fixed.

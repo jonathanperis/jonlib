@@ -57,6 +57,9 @@ without reordering. Their numeric and collision operations are documented in
 identity/transpose operations and vector transforms are listed in [MATH.md](MATH.md#matrix-api).
 `Matrix.Decomposition` contains `Decomposed{translation, rotation, scale}` with
 Vector3/Vector4/Vector3 fields, adapting the three distinct outputs of decomposition.
+`Float64{high, low}` retains binary64 input bits for projection matrices;
+`Float64.from_f32` promotes existing F32 values. Precision and supported domains
+are detailed in [MATH.md](MATH.md#binary64-projection-inputs).
 
 `Surface` owns its row-major pixel array. Always start with `Surface.create`:
 the underlying constructor is visible because Bend does not provide the needed
