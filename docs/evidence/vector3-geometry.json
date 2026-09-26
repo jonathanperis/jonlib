@@ -1,0 +1,12 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {"jonlib.bend": "02f0124a54ac7b8784c4bfff9e8cb861967c48e26a0ee06db9ac00b140b21acd"},
+  "fixtures_sha256": "7e20eb64806e87c784136bd99199f8af05658d7d21388a439a465a65042237c8",
+  "scenarios": 178,
+  "output_words_per_lane": 32816,
+  "numeric_probe_cells": 389,
+  "passed": true,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "scope": ["Eleven Vector3 projection/direction/constraint operations", "Explicit component-clamp signed-zero profiles", "Nonzero F32 projection-denominator guards in fixtures"],
+  "limits": ["Exceptional/subnormal/undefined and contracted numerical variants", "Other platforms and full performance/resource gates"]
+}

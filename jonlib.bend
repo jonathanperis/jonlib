@@ -326,6 +326,90 @@ def Vector3.normalize(+vector: Vector3) -> Vector3:
   +length = Vector3.length(vector)
   Vector3.normalized(F32.is_ne(length, 0.0), vector, length)
 
+def Vector3.project(vector: Vector3, +onto: Vector3) -> Vector3:
+  factor = (Vector3.dot_product(vector, onto) / Vector3.dot_product(onto, onto) : F32)
+  Vector3.scale(onto, factor)
+
+def Vector3.reject(+vector: Vector3, onto: Vector3) -> Vector3:
+  Vector3.subtract(vector, Vector3.project(vector, onto))
+
+def Vector3.perpendicular(vector: Vector3) -> Vector3:
+  Vector3{+x, +y, +z} = vector
+  +choose_y = (F32.abs(y) < F32.abs(x) : F32)
+  minimum = Bool.pick(F32, choose_y, F32.abs(y), F32.abs(x))
+  axis = Bool.pick(Vector3, (F32.abs(z) < minimum : F32), Vector3{0.0, 0.0, 1.0},
+    Bool.pick(Vector3, choose_y, Vector3{0.0, 1.0, 0.0}, Vector3{1.0, 0.0, 0.0}))
+  Vector3.cross_product(Vector3{x, y, z}, axis)
+
+def Vector3.lerp(left: Vector3, right: Vector3, +amount: F32) -> Vector3:
+  Vector3{x, y, z} = left
+  Vector3{u, v, w} = right
+  Vector3{Math.lerp(x, u, amount), Math.lerp(y, v, amount), Math.lerp(z, w, amount)}
+
+def Vector3.reflect(+vector: Vector3, +normal: Vector3) -> Vector3:
+  dot = Vector3.dot_product(vector, normal)
+  Vector3.subtract(vector, Vector3.scale(Vector3.scale(normal, 2.0), dot))
+
+def Vector3.invert(vector: Vector3) -> Vector3:
+  Vector3{x, y, z} = vector
+  Vector3{(1.0 / x : F32), (1.0 / y : F32), (1.0 / z : F32)}
+
+def Vector3.equals(left: Vector3, right: Vector3) -> Bool:
+  Vector3{x, y, z} = left
+  Vector3{u, v, w} = right
+  Math.float_equals(x, u) && Math.float_equals(y, v) && Math.float_equals(z, w)
+
+def Vector3.move.route(snap: Bool, vector: Vector3, target: Vector3, delta: Vector3, square: F32, +distance: F32) -> Vector3:
+  match snap:
+    case True{}: target
+    case False{}:
+      Vector3{x, y, z} = vector
+      Vector3{dx, dy, dz} = delta
+      +length = F32.sqrt(square)
+      Vector3{(x + dx / length * distance : F32), (y + dy / length * distance : F32), (z + dz / length * distance : F32)}
+
+def Vector3.move_towards(+vector: Vector3, +target: Vector3, +distance: F32) -> Vector3:
+  +delta = Vector3.subtract(target, vector)
+  +square = Vector3.dot_product(delta, delta)
+  Vector3.move.route(F32.is_eq(square, 0.0) || (((distance >= 0.0) && (square <= distance * distance)) : F32), vector, target, delta, square, distance)
+
+def Vector3.clamp_for(reference: Gradient.Reference, vector: Vector3, lower: Vector3, upper: Vector3) -> Vector3:
+  Vector3{x, y, z} = vector
+  Vector3{lx, ly, lz} = lower
+  Vector3{ux, uy, uz} = upper
+  +gnu = Gradient.gnu(reference)
+  Vector3{Vector2.clamp.minimum(gnu, ux, Vector2.clamp.maximum(gnu, lx, x)),
+    Vector2.clamp.minimum(gnu, uy, Vector2.clamp.maximum(gnu, ly, y)),
+    Vector2.clamp.minimum(gnu, uz, Vector2.clamp.maximum(gnu, lz, z))}
+
+def Vector3.clamp(vector: Vector3, lower: Vector3, upper: Vector3) -> Vector3:
+  Vector3.clamp_for(AccurateGradient{}, vector, lower, upper)
+
+def Vector3.clamp.magnitude(nonzero: Bool, vector: Vector3, square: F32, +lower: F32, +upper: F32) -> Vector3:
+  match nonzero:
+    case False{}: vector
+    case True{}:
+      +length = F32.sqrt(square)
+      scale = Bool.pick(F32, (length < lower : F32), (lower / length : F32),
+        Bool.pick(F32, (length > upper : F32), (upper / length : F32), 1.0))
+      Vector3.scale(vector, scale)
+
+def Vector3.clamp_value(+vector: Vector3, lower: F32, upper: F32) -> Vector3:
+  +square = Vector3.length_sqr(vector)
+  Vector3.clamp.magnitude((square > 0.0 : F32), vector, square, lower, upper)
+
+def Vector3.refraction(valid: Bool, vector: Vector3, normal: Vector3, +ratio: F32, dot: F32, determinant: F32) -> Vector3:
+  match valid:
+    case False{}: Vector3.zero()
+    case True{}:
+      gain = (ratio * dot + F32.sqrt(determinant) : F32)
+      Vector3.subtract(Vector3.scale(vector, ratio), Vector3.scale(normal, gain))
+
+def Vector3.refract(+vector: Vector3, +normal: Vector3, +ratio: F32) -> Vector3:
+  +dot = Vector3.dot_product(vector, normal)
+  +determinant = (1.0 - ratio * ratio * (1.0 - dot * dot) : F32)
+  Vector3.refraction((determinant >= 0.0 : F32), vector, normal, ratio, dot, determinant)
+
 def Collision.spheres(left: Vector3, radius: F32, right: Vector3, other_radius: F32) -> Bool:
   +sum = (radius + other_radius : F32)
   (Vector3.distance_sqr(left, right) <= sum * sum : F32)

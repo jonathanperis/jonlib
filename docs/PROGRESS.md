@@ -29,7 +29,7 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 |---|---:|---|---:|---:|---:|---|
 | 1 | 0 | `types` — Types, constants and language mappings | 549 | 10 | 0 | — |
 | 2 | 1 | `numerics` — Numeric fidelity and scalar contracts | 14 | 6 | 0 | types |
-| 3 | 1 | `raymath` — Vectors, matrices and quaternions | 221 | 45 | 0 | numerics |
+| 3 | 1 | `raymath` — Vectors, matrices and quaternions | 221 | 56 | 0 | numerics |
 | 4 | 1 | `memory` — Buffers, memory and callback contracts | 12 | 0 | 0 | types |
 | 5 | 1 | `files` — Files, paths, compression and data utilities | 49 | 0 | 0 | memory |
 | 6 | 1 | `random` — Random-number and sequence contracts | 4 | 0 | 0 | numerics, memory |
@@ -63,17 +63,15 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 
 This is a priority queue with visible prerequisites, not a claim that every item is unblocked.
 
-- **`raymath:function:Vector3Project`** (not-started, `raymath`): Derive Vector3Project semantics from the linked source, add a reference fixture, then implement Vector3.project.
-- **`raymath:function:Vector3Reject`** (not-started, `raymath`): Derive Vector3Reject semantics from the linked source, add a reference fixture, then implement Vector3.reject.
-- **`raymath:function:Vector3Perpendicular`** (not-started, `raymath`): Derive Vector3Perpendicular semantics from the linked source, add a reference fixture, then implement Vector3.perpendicular.
-- **`raymath:function:Vector3Lerp`** (not-started, `raymath`): Derive Vector3Lerp semantics from the linked source, add a reference fixture, then implement Vector3.lerp.
-- **`raymath:function:Vector3Reflect`** (not-started, `raymath`): Derive Vector3Reflect semantics from the linked source, add a reference fixture, then implement Vector3.reflect.
-- **`raymath:function:Vector3Invert`** (not-started, `raymath`): Derive Vector3Invert semantics from the linked source, add a reference fixture, then implement Vector3.invert.
-- **`raymath:function:Vector3Equals`** (not-started, `raymath`): Derive Vector3Equals semantics from the linked source, add a reference fixture, then implement Vector3.equals.
-- **`raymath:function:Vector3MoveTowards`** (not-started, `raymath`): Derive Vector3MoveTowards semantics from the linked source, add a reference fixture, then implement Vector3.move_towards.
-- **`raymath:function:Vector3Clamp`** (not-started, `raymath`): Derive Vector3Clamp semantics from the linked source, add a reference fixture, then implement Vector3.clamp.
-- **`raymath:function:Vector3ClampValue`** (not-started, `raymath`): Derive Vector3ClampValue semantics from the linked source, add a reference fixture, then implement Vector3.clamp_value.
-- **`raymath:function:Vector3Refract`** (not-started, `raymath`): Derive Vector3Refract semantics from the linked source, add a reference fixture, then implement Vector3.refract.
+- **`raymath:function:Vector3Min`** (not-started, `raymath`): Derive Vector3Min semantics from the linked source, add a reference fixture, then implement Vector3.min.
+- **`raymath:function:Vector3Max`** (not-started, `raymath`): Derive Vector3Max semantics from the linked source, add a reference fixture, then implement Vector3.max.
+- **`raymath:function:Vector3Barycenter`** (not-started, `raymath`): Derive Vector3Barycenter semantics from the linked source, add a reference fixture, then implement Vector3.barycenter.
+- **`raymath:function:Vector3CubicHermite`** (not-started, `raymath`): Derive Vector3CubicHermite semantics from the linked source, add a reference fixture, then implement Vector3.cubic_hermite.
+- **`raymath:function:Vector3OrthoNormalize`** (not-started, `raymath`): Derive Vector3OrthoNormalize semantics from the linked source, add a reference fixture, then implement Vector3.ortho_normalize.
+- **`raymath:function:MatrixIdentity`** (not-started, `raymath`): Derive MatrixIdentity semantics from the linked source, add a reference fixture, then implement Matrix.identity.
+- **`raymath:function:MatrixTranspose`** (not-started, `raymath`): Derive MatrixTranspose semantics from the linked source, add a reference fixture, then implement Matrix.transpose.
+- **`raymath:function:Vector2Transform`** (not-started, `raymath`): Derive Vector2Transform semantics from the linked source, add a reference fixture, then implement Vector2.transform.
+- **`raymath:function:Vector3Transform`** (not-started, `raymath`): Derive Vector3Transform semantics from the linked source, add a reference fixture, then implement Vector3.transform.
 - **`raymath:function:Clamp`** (partial, `numerics`): Close documented gaps and unverified gates for Clamp.
 - **`raymath:function:Lerp`** (partial, `numerics`): Close documented gaps and unverified gates for Lerp.
 - **`raymath:function:Normalize`** (partial, `numerics`): Close documented gaps and unverified gates for Normalize.
@@ -83,6 +81,8 @@ This is a priority queue with visible prerequisites, not a claim that every item
 - **`raymath:function:Vector2Zero`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Zero.
 - **`raymath:function:Vector2One`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2One.
 - **`raymath:function:Vector2Add`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Add.
+- **`raymath:function:Vector2AddValue`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2AddValue.
+- **`raymath:function:Vector2Subtract`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Subtract.
 
 ## Closing an item
 

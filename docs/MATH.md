@@ -1,7 +1,7 @@
 # Math profiles
 
 The current math implementation is Bend source in `jonlib.bend`. It begins the
-`raymath.h` work package with six scalar, twenty-eight Vector2 and seventeen Vector3 functions.
+`raymath.h` work package with six scalar, twenty-eight Vector2 and twenty-eight Vector3 functions.
 
 ## Scalar API
 
@@ -60,6 +60,8 @@ radians within one cycle and preserves reference operation order. See
 - Products and metrics: `cross_product(left, right)`, `dot_product(left, right)`,
   `distance_sqr(left, right)`, `distance(left, right)`, `length_sqr(vector)`,
   `length(vector)`, `normalize(vector)`.
+- Geometric operations: `project`, `reject`, `perpendicular`, `lerp`, `reflect`,
+  `invert`, `equals`, `move_towards`, `clamp`/`clamp_for`, `clamp_value`, `refract`.
 
 The cross product retains raylib's handedness and XYZ field order. Dot products
 and squared distance accumulate in reference left-to-right F32 order. The
@@ -71,6 +73,20 @@ remain ledger gaps.
 this differs from `Vector2.normalize`, which returns positive-zero components.
 Nonzero vectors multiply by the reciprocal length in reference order. Vector3
 division requires all three F32 divisors to remain nonzero.
+
+`project(vector, onto)` and `reject(vector, onto)` require the reference F32
+squared length of `onto` to be nonzero. `perpendicular(vector)` crosses against
+the axis whose component has the smallest absolute magnitude; strict comparison
+ties retain X before Y before Z. `lerp` permits extrapolation, and `reflect`
+does not normalize the supplied normal. `invert` requires nonzero components;
+`equals` applies the existing relative epsilon on all three axes.
+
+`move_towards` divides each delta by length before multiplying by the step;
+negative steps move away, and zero distance returns the exact target value.
+`clamp_for(reference, vector, lower, upper)` shares the explicit signed-zero
+profiles used by Vector2; `clamp` selects the accurate profile. `clamp_value`
+preserves zero vectors and the lower-before-upper magnitude branch order.
+`refract` returns positive zero components for total internal reflection.
 
 ## Floating-point contract and evidence
 

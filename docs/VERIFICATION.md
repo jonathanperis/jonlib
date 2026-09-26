@@ -21,10 +21,10 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 171 scenarios / 32,744 output words match pinned raylib exactly on each
+- 178 scenarios / 32,816 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
-- The word count includes 317 exact scalar/vector/collision result-bit probe cells.
+- The word count includes 389 exact scalar/vector/collision result-bit probe cells.
   The math reference explicitly uses uncontracted F32; no comparison tolerance
   is applied. Both components of each vector output are checked.
 - Seven QOI export scenarios compare all 299 encoded bytes per lane. Real CPU/JS
@@ -51,7 +51,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
 - The pinned core header inventory contains 600 unique public functions; 77 have
-  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 51
+  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 62
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
   on CPU, JS and Metal for its declared reference profile. Ubuntu's subsequent
@@ -101,7 +101,7 @@ reference comparison of all 4096 supported POT axis sizes.
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 171 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 178 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -445,3 +445,26 @@ numerical profiles, remaining integrations and full target/performance gates
 remain gaps.
 
 Regression scan: 16 callers checked, 18 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `8853f98`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36219429846)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36219429809)
+completed successfully.
+
+## Vector3 projection, direction and constraints
+
+Eleven additional Vector3 functions pass exact component/Boolean comparisons
+within the 178-scenario CPU-1/CPU-2/JavaScript/forced-Metal corpus. Fixtures retain
+projection/rejection arithmetic, cardinal-axis ties, extrapolation, non-unit
+reflection normals, negative-step movement, target signed zeros, explicit clamp
+profiles, reversed magnitude bounds and total internal reflection. Both an
+actually zero target and a target whose squared length underflows to zero are
+rejected by the fixture validator before calling the undefined reference path.
+See [evidence/vector3-geometry.json](evidence/vector3-geometry.json).
+
+A26 passes these scoped contracts; the eight harness tests, project metadata
+checks and complete pinned proof verdict pass. The scan covered 57 numerical/
+generator/diagnostic caller contexts, 26 differential operations and two
+projection-domain assertions. Undefined/exceptional/subnormal and contracted
+domains, other platforms and full performance/resource gates remain gaps.
+
+Regression scan: 57 callers checked, 28 assertions checked, 0 flagged/fixed.

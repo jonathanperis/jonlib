@@ -51,6 +51,12 @@ VECTOR3_APIS = {
     'negate':('Vector3Negate','t','vector'), 'divide':('Vector3Divide','tt','vector'),
     'length':('Vector3Length','t','float'), 'length_sqr':('Vector3LengthSqr','t','float'),
     'distance':('Vector3Distance','tt','float'), 'normalize':('Vector3Normalize','t','vector'),
+    'project':('Vector3Project','tt','vector'), 'reject':('Vector3Reject','tt','vector'),
+    'perpendicular':('Vector3Perpendicular','t','vector'), 'lerp':('Vector3Lerp','tts','vector'),
+    'reflect':('Vector3Reflect','tt','vector'), 'invert':('Vector3Invert','t','vector'),
+    'equals':('Vector3Equals','tt','bool'), 'move_towards':('Vector3MoveTowards','tts','vector'),
+    'clamp':('Vector3Clamp','ttt','vector'), 'clamp_value':('Vector3ClampValue','tss','vector'),
+    'refract':('Vector3Refract','tts','vector'),
 }
 VECTOR_APIS = {'vector_value':('Vector2',2,VECTOR2_APIS), 'vector3_value':('Vector3',3,VECTOR3_APIS)}
 COLLISION_APIS = {
@@ -122,6 +128,10 @@ def coordinate(value, fractional=False):
     if not fractional:
         return integer(value, -32767, 32767)
     return type(value) in (int, float) and math.isfinite(value) and -32767 <= value <= 32767
+
+
+def rounded_f32(value):
+    return struct.unpack('f', struct.pack('f', value))[0]
 
 
 def crop_rectangle(width, height, op):
@@ -304,6 +314,10 @@ def cases_from(document):
                 divisors = values[dimensions:] if function=='divide' else values if function=='invert' else []
                 if any(struct.unpack('f',struct.pack('f',v))[0] == 0 for v in divisors):
                     raise ValueError(f'{name}: vector divisors must remain nonzero in F32')
+                if function in ('project','reject'):
+                    squares = [rounded_f32(rounded_f32(v)**2) for v in values[dimensions:]]
+                    if rounded_f32(rounded_f32(squares[0]+squares[1])+squares[2]) == 0:
+                        raise ValueError(f'{name}: projection squared target length must remain nonzero in F32')
                 if function == 'rotate' and abs(values[2]) > 6.283186:
                     raise ValueError(f'{name}: vector rotation profile is bounded to one cycle')
                 if result == 'vector' and (not integer(op.get('x'),0,current_w-dimensions) or not integer(op.get('y'),0,current_h-1)):
@@ -811,7 +825,7 @@ def bend_source(cases, gpu=False):
             if kind in VECTOR_APIS:
                 namespace, dimensions, apis = VECTOR_APIS[kind]
                 _, signature, result = apis[op['function']]
-                profiled = kind=='vector_value' and op['function'] in ('rotate','clamp','min','max')
+                profiled = op['function']=='clamp' or kind=='vector_value' and op['function'] in ('rotate','min','max')
                 function_name = op['function']+'_for' if profiled else op['function']
                 profile = f'J.{gradient_reference()}{{}}, ' if profiled else ''
                 expression = f'J.{namespace}.{function_name}({profile}{vector_arguments(signature,op["args"],bend=True)})'

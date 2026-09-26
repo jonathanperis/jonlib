@@ -81,6 +81,8 @@ class HarnessTests(unittest.TestCase):
                     dict(case, width=2, operations=[dict(op='vector3_value', function='one', args=[], x=0, y=0)]),
                     dict(case, width=3, operations=[dict(op='vector3_value', function='add', args=[1,2,3,4,5], x=0, y=0)]),
                     dict(case, width=3, operations=[dict(op='vector3_value', function='divide', args=[1,2,3,4,5,1e-50], x=0, y=0)]),
+                    dict(case, width=3, operations=[dict(op='vector3_value', function='project', args=[1,2,3,0,0,0], x=0, y=0)]),
+                    dict(case, width=3, operations=[dict(op='vector3_value', function='reject', args=[1,2,3,1e-30,1e-30,1e-30], x=0, y=0)]),
                     dict(case, alpha_border=True),
                     dict(case, gradient_square=dict(density=1.5, outer=[0,0,0,0])),
                     dict(case, width=2, height=2, gradient_linear=dict(direction=361, outer=[0,0,0,0])),
