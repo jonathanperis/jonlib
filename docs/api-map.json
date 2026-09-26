@@ -245,14 +245,14 @@
     "milestone": "image-codecs"
   },
   "LoadImageFromMemory": {
-    "jonlib": "Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm",
+    "jonlib": "Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png",
     "status": "profile-covered",
-    "scope": "QOI, bounded BMP INFO/V4, non-paletted TGA raw/RLE and binary 8-bit P5/P6 PNM decoded to owned RGBA8. Dimensions 1..4096; native orientation/alpha/sample rules and typed malformed-input rejection.",
+    "scope": "Owned RGBA8 decoding for QOI, bounded BMP, non-paletted TGA, binary 8-bit PNM and non-interlaced 8-bit PNG color types 0/2/3/4/6. PNG retains five filters, palette/tRNS, split IDAT and native checksum behavior within encoded/decoded size limits.",
     "gaps": [
-      "Other codecs, remaining BMP/TGA variants and 16-bit PNM",
+      "Other codecs and remaining BMP/TGA/PNM variants",
+      "Other PNG depths, Adam7/CgBI and excess-inflated-data recovery",
       "Original pixel-format metadata and generic format dispatch",
-      "Reference permissive malformed-stream recovery",
-      "Complete targets/integration/performance"
+      "Other permissive malformed-stream recovery and complete targets/integration/performance"
     ],
     "api_id": "raylib:function:LoadImageFromMemory",
     "milestone": "image-codecs"

@@ -144,6 +144,11 @@ jobs:
         run: >-
           python3 tools/verify_bend.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+      - name: Verify PNG 8-bit colors and scanline filters
+        run: >-
+          python3 tools/png_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Verify raw and PNG-oriented DEFLATE behavior
         run: >-
           python3 tools/inflate_probe.py
@@ -220,3 +225,4 @@ jobs:
             .build/tga-probe/results.json
             .build/pnm-probe/results.json
             .build/inflate-probe/results.json
+            .build/png-probe/results.json

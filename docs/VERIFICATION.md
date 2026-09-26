@@ -1253,3 +1253,33 @@ settings are unchanged; existing full-corpus/proof evidence remains applicable.
 Hosted Ubuntu follow-up remains pending.
 
 Regression scan: 10 callers checked, 10 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `ec54445`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36267964218)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36267964256)
+completed successfully with bounded DEFLATE result serialization.
+
+## PNG non-interlaced 8-bit decoding
+
+The PNG profile passes 38 native images / 8,987 complete pixels and 26 typed-error
+controls on CPU, JavaScript and forced Metal. Every color type 0/2/3/4/6 is crossed
+with all five scanline filters. Cases include palette/default alpha, low-byte tRNS
+keys, 4096-wide/tall images, split/empty IDAT chunks, the native empty-stored-block
+rule for PNG and ignored CRC/Adler checks. A grayscale late-tRNS control isolates
+the ordering rule from the separate rejection of tRNS on existing alpha formats.
+See [evidence/png-8bit.json](evidence/png-8bit.json).
+
+An initial Metal compiler interruption persisted in a single-image program.
+Stage isolation narrowed it to an 88-KiB generated chunk-reader probe; inflation,
+filtering and chunk dispatch built independently. Separating payload collection
+from subsequent CRC parsing resolved the minimized and full decoder failures.
+Unhelpful intermediate parser rewrites were removed. The pinned compiler and
+native expected pixels remain unchanged.
+
+The full 261-scenario / 40,101-word corpus, nine harness tests, project checks and
+all four pinned laws pass. The scoped drift review confirms I86, C3/C6, A4/A5/A6
+and V2/V3 for this profile. Existing memory-loader coverage expands; counts remain
+103 core and 142 raymath partial mappings, with no full-parity completions.
+Other depths, Adam7/CgBI, PNG export, broader malformed recovery and complete
+target/resource/performance evidence remain gaps.
+
+Regression scan: 52 callers checked, 28 assertions checked, 2 flagged/fixed.

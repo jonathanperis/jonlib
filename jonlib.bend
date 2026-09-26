@@ -22,6 +22,7 @@ import ./src/bmp.bend as Bmp
 import ./src/tga.bend as Tga
 import ./src/pnm.bend as Pnm
 import ./src/inflate.bend as Inflate
+import ./src/png.bend as Png
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -1839,6 +1840,21 @@ def Surface.pnm.result(result: Result<&1, &1, Pnm.Error, Pnm.Image>) -> Result<&
 
 def Surface.decode_pnm(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   Surface.pnm.result(Pnm.decode(bytes))
+
+def Surface.png.error(error: Png.Error) -> Image.DecodeError:
+  match error:
+    case Png.BadHeader{}: InvalidImageHeader{}
+    case Png.BadByte{}: InvalidImageByte{}
+    case Png.BadSize{}: UnsupportedImageSize{}
+    case Png.BadStream{}: InvalidImageStream{}
+
+def Surface.png.result(result: Result<&1, &1, Png.Error, Png.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
+  match result:
+    case Fail{error}: Fail{Surface.png.error(error)}
+    case Done{Png.Image{w, h, pixels}}: Done{Surface{w, h, pixels}}
+
+def Surface.decode_png(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
+  Surface.png.result(Png.decode(bytes))
 
 def Surface.dimensions(surface: Surface) -> U32 & U32:
   Surface{w, h, _} = surface

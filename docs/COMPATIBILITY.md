@@ -84,6 +84,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | TGA decoding/export | `Surface.decode_tga/to_tga/write_tga` | Raw/RLE true-color and grayscale profiles; exact default per-row RLE packet bytes and bounded decode errors |
 | Binary PGM/PPM decoding | `Surface.decode_pnm` | P5/P6 byte samples, native maxval/separator/comment rules and full dimension-boundary pixels |
 | Raw DEFLATE | `Compression.decompress` | Stored/fixed/dynamic blocks and bounded copies; native empty-stored-block completion differs explicitly from the internal PNG-oriented path |
+| PNG decoding | `Surface.decode_png` | Non-interlaced 8-bit color types 0/2/3/4/6, all filters, palette/tRNS, split IDAT and bounded error controls |
 | Scalar/Vector2/Vector3/Vector4 raymath | `Math` and vector functions | Exact results for the explicit uncontracted-F32 profile; exceptional/contracted variants remain open |
 | Vector angle queries | `Vector2.angle/line_angle`, `Vector3.angle` and `_for` variants | Explicit Apple/GNU numerical profiles with exact native/control probes and signed quadrant behavior |
 | Quaternion arithmetic/metrics/interpolation | `Quaternion` functions | Shared Vector4 representation; exact Hamilton products, zero normalization/inversion, NLERP and sign-equivalent equality |

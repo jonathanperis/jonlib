@@ -1,0 +1,19 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {
+    "jonlib.bend": "2c66820cdac577e6ff051603ee752b48ffa8d47d212f2362d9776798b74f2ce2",
+    "src/png.bend": "74db296e1307e020e3ef79021d72568b779bebd6282d67e75a2b06a13e932236"
+  },
+  "inputs_sha256": "9801f6e16bd58d13062b1465cb6a2887a7aa6f391fff9755b3719aaabe8c0bb8",
+  "reference_sha256": "2493b60385f30e8ef65a330631f158eafdd8fb2b4133067e9ed118d96bb8bf79",
+  "decode_cases": 38,
+  "decoded_pixels": 8987,
+  "typed_error_cases": 26,
+  "color_types": [0,2,3,4,6],
+  "filters": [0,1,2,3,4],
+  "passed": true,
+  "lanes": ["cpu","javascript","metal"],
+  "full_corpus": {"scenarios":261,"output_words_per_lane":40101,"passed":true,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "metal_compile_correction": "Separate payload collection from CRC parsing after a minimized chunk-reader shader compile failure",
+  "limits": ["Other bit depths, Adam7/CgBI and PNG export", "Original-format metadata, broader malformed recovery and size domains", "Complete integration/target/resource/performance coverage"]
+}

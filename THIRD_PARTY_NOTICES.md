@@ -66,8 +66,8 @@ is used only by reference tooling; it is not linked into Jonlib's implementation
 
 ## stb_image and stb_image_write
 
-`src/bmp.bend`, `src/tga.bend` and `src/pnm.bend` are altered, bounded Bend
-adaptations of the BMP/TGA readers and writers and binary PNM reader
+`src/bmp.bend`, `src/tga.bend`, `src/pnm.bend` and `src/png.bend` are altered,
+bounded Bend adaptations of the BMP/TGA readers and writers and PNM/PNG readers
 in pinned raylib's `src/external/stb_image.h` and `stb_image_write.h`, by Sean
 Barrett and contributors. Jonlib selects their MIT alternative, retained in
 [LICENSES/stb-image.txt](LICENSES/stb-image.txt). It uses owned arrays and explicit
