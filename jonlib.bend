@@ -15,6 +15,7 @@ import ./src/angle.bend as Angle
 import ./src/random.bend as Rng
 import ./src/cellular.bend as Cellular
 import ./src/perlin.bend as Perlin
+import ./src/spline.bend as SplineNumeric
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -24,6 +25,57 @@ type Vector3 is Data:
 
 type Vector4 is Data:
   Vector4{x: F32, y: F32, z: F32, w: F32}
+
+type Spline.Reference is Data:
+  UncontractedSpline{}
+  FusedSpline{}
+
+def Spline.fused(reference: Spline.Reference) -> Bool:
+  match reference:
+    case UncontractedSpline{}: False{}
+    case FusedSpline{}: True{}
+
+def Spline.linear_for(reference: Spline.Reference, start: Vector2, end: Vector2, +t: F32) -> Vector2:
+  Vector2{x, y} = start
+  Vector2{u, v} = end
+  +fused = Spline.fused(reference)
+  Vector2{SplineNumeric.linear(fused, x, u, t), SplineNumeric.linear(fused, y, v, t)}
+
+def Spline.linear(start: Vector2, end: Vector2, t: F32) -> Vector2:
+  Spline.linear_for(UncontractedSpline{}, start, end, t)
+
+def Spline.basis_for(reference: Spline.Reference, first: Vector2, second: Vector2, third: Vector2, fourth: Vector2, +t: F32) -> Vector2:
+  Vector2{ax, ay} = first
+  Vector2{bx, by} = second
+  Vector2{cx, cy} = third
+  Vector2{dx, dy} = fourth
+  +fused = Spline.fused(reference)
+  Vector2{SplineNumeric.basis(fused, ax, bx, cx, dx, t), SplineNumeric.basis(fused, ay, by, cy, dy, t)}
+
+def Spline.basis(first: Vector2, second: Vector2, third: Vector2, fourth: Vector2, t: F32) -> Vector2:
+  Spline.basis_for(UncontractedSpline{}, first, second, third, fourth, t)
+
+def Spline.catmull_rom_for(reference: Spline.Reference, first: Vector2, second: Vector2, third: Vector2, fourth: Vector2, t: F32) -> Vector2:
+  Vector2{ax, ay} = first
+  Vector2{bx, by} = second
+  Vector2{cx, cy} = third
+  Vector2{dx, dy} = fourth
+  +fused = Spline.fused(reference)
+  +weights = SplineNumeric.catmull_weights(fused, t)
+  Vector2{SplineNumeric.catmull(fused, weights, ax, bx, cx, dx), SplineNumeric.catmull(fused, weights, ay, by, cy, dy)}
+
+def Spline.catmull_rom(first: Vector2, second: Vector2, third: Vector2, fourth: Vector2, t: F32) -> Vector2:
+  Spline.catmull_rom_for(UncontractedSpline{}, first, second, third, fourth, t)
+
+def Spline.bezier_quad_for(reference: Spline.Reference, start: Vector2, control: Vector2, end: Vector2, +t: F32) -> Vector2:
+  Vector2{ax, ay} = start
+  Vector2{bx, by} = control
+  Vector2{cx, cy} = end
+  +fused = Spline.fused(reference)
+  Vector2{SplineNumeric.bezier_quad(fused, ax, bx, cx, t), SplineNumeric.bezier_quad(fused, ay, by, cy, t)}
+
+def Spline.bezier_quad(start: Vector2, control: Vector2, end: Vector2, t: F32) -> Vector2:
+  Spline.bezier_quad_for(UncontractedSpline{}, start, control, end, t)
 
 type BoundingBox is Data:
   BoundingBox{min: Vector3, max: Vector3}

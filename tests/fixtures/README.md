@@ -89,6 +89,9 @@ Supported operations:
 - `palette` requests a capacity 1..4096 observation. Both the actual count and
   all allocated entries, including unused BLANK padding, are emitted and checked
   alongside the original image pixels; alpha-border and QOI observations may coexist.
+- `spline_value` uses flattened Vector2 arguments and a t parameter in 0..1,
+  comparing both output component bits against the linked spline function.
+  Candidate arithmetic uses the explicit reference profile for the host compiler.
 - `color_tint`, `color_invert`, `color_contrast`, `color_brightness`,
   `color_replace`: image transforms. Tint/replacement use RGBA `color`,
   replacement also uses `replacement`, and contrast/brightness use `amount`.

@@ -20,7 +20,8 @@ It is not affiliated with or endorsed by raylib or Bend's maintainers.
   color/alpha transforms, checkerboards and quarter-turn rotations from
   `rtextures.c`, plus the documented scalar/Vector2 operations from `raymath.h`.
   Their scoped contracts and reference evidence are recorded in `docs/`.
-- Pure collision queries in `jonlib.bend` adapt the same release's `rshapes.c`.
+- Pure collision queries in `jonlib.bend` and spline formulas in `src/spline.bend`
+  adapt the same release's `rshapes.c`.
   Sphere/box predicates adapt `rmodels.c`; vector/matrix/quaternion operations adapt `raymath.h`.
   General bilinear rotation, power-of-two canvases and channel extraction adapt
   `rtextures.c`; these remain modified Bend implementations with explicit profiles.

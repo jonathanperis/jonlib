@@ -1,6 +1,28 @@
 {
   "schema": 1,
   "cases": [
+    {"id":"spline-linear-quadratic","width":12,"height":1,"background":[255,255,255,255],"operations":[
+      {"op":"spline_value","function":"linear","x":0,"y":0,"args":[1.25,-2.75,-0.3,0.7,0]},
+      {"op":"spline_value","function":"linear","x":2,"y":0,"args":[1.25,-2.75,-0.3,0.7,1]},
+      {"op":"spline_value","function":"linear","x":4,"y":0,"args":[1.25,-2.75,-0.3,0.7,0.3]},
+      {"op":"spline_value","function":"bezier_quad","x":6,"y":0,"args":[1.25,-2.75,3.5,-4.25,-0.3,0.7,0]},
+      {"op":"spline_value","function":"bezier_quad","x":8,"y":0,"args":[1.25,-2.75,3.5,-4.25,-0.3,0.7,1]},
+      {"op":"spline_value","function":"bezier_quad","x":10,"y":0,"args":[1.25,-2.75,3.5,-4.25,-0.3,0.7,0.3]}
+    ]},
+    {"id":"spline-basis-catmull","width":12,"height":1,"background":[255,255,255,255],"operations":[
+      {"op":"spline_value","function":"basis","x":0,"y":0,"args":[1.25,-2.75,3.5,-4.25,-0.3,0.7,1.1,-0.2,0]},
+      {"op":"spline_value","function":"basis","x":2,"y":0,"args":[1.25,-2.75,3.5,-4.25,-0.3,0.7,1.1,-0.2,1]},
+      {"op":"spline_value","function":"basis","x":4,"y":0,"args":[1.25,-2.75,3.5,-4.25,-0.3,0.7,1.1,-0.2,0.3]},
+      {"op":"spline_value","function":"catmull_rom","x":6,"y":0,"args":[1.25,-2.75,3.5,-4.25,-0.3,0.7,1.1,-0.2,0]},
+      {"op":"spline_value","function":"catmull_rom","x":8,"y":0,"args":[1.25,-2.75,3.5,-4.25,-0.3,0.7,1.1,-0.2,1]},
+      {"op":"spline_value","function":"catmull_rom","x":10,"y":0,"args":[1.25,-2.75,3.5,-4.25,-0.3,0.7,1.1,-0.2,0.3]}
+    ]},
+    {"id":"spline-signed-zeros","width":8,"height":1,"background":[255,255,255,255],"operations":[
+      {"op":"spline_value","function":"linear","x":0,"y":0,"args":[-0.0,0.0,-0.0,-0.0,0]},
+      {"op":"spline_value","function":"bezier_quad","x":2,"y":0,"args":[-0.0,0.0,-0.0,-0.0,-0.0,0.0,0.5]},
+      {"op":"spline_value","function":"basis","x":4,"y":0,"args":[-0.0,0.0,-0.0,-0.0,0.0,-0.0,-0.0,0.0,0.5]},
+      {"op":"spline_value","function":"catmull_rom","x":6,"y":0,"args":[-0.0,0.0,-0.0,-0.0,0.0,-0.0,-0.0,0.0,0.5]}
+    ]},
     {"id":"text-bytes-empty","width":2,"height":2,"background":[0,0,0,255],"text_bytes":[],"operations":[]},
     {"id":"text-bytes-padding-observed","width":3,"height":2,"background":[0,0,0,255],"text_bytes":[1,127,128,255],"palette":8,"alpha_border":0,"export_qoi":true,"operations":[]},
     {"id":"text-bytes-nul","width":3,"height":1,"background":[0,0,0,255],"text_bytes":[10,0,255,1],"operations":[]},

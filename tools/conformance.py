@@ -101,6 +101,10 @@ COLOR_VECTOR3_APIS = {'to_hsv':('ColorToHSV','c','vector')}
 COLOR_VECTOR4_APIS = {'normalize':('ColorNormalize','c','vector')}
 COLOR_NUMERIC_APIS = {'from_normalized':('ColorFromNormalized','q','color'), 'from_hsv':('ColorFromHSV','sss','color')}
 FLOAT64_APIS = {'from_f32':('promote_f32','s','binary64'), 'internal.f32':('narrow_f64','d','float')}
+SPLINE_APIS = {
+    'linear':('GetSplinePointLinear','vvs','vector'), 'basis':('GetSplinePointBasis','vvvvs','vector'),
+    'catmull_rom':('GetSplinePointCatmullRom','vvvvs','vector'), 'bezier_quad':('GetSplinePointBezierQuad','vvvs','vector'),
+}
 MATRIX_APIS = {
     'identity':('MatrixIdentity','','matrix'), 'transpose':('MatrixTranspose','m','matrix'),
     'add':('MatrixAdd','mm','matrix'), 'subtract':('MatrixSubtract','mm','matrix'),
@@ -130,6 +134,7 @@ VECTOR_APIS = {'vector_value':('Vector2',2,VECTOR2_APIS), 'vector3_value':('Vect
                'color_vector4_value':('Color',4,COLOR_VECTOR4_APIS),
                'color_numeric_value':('Color',1,COLOR_NUMERIC_APIS),
                'float64_value':('Float64',2,FLOAT64_APIS),
+               'spline_value':('Spline',2,SPLINE_APIS),
                'matrix_value':('Matrix',16,MATRIX_APIS)}
 COLLISION_APIS = {
     'recs':('CheckCollisionRecs','rr','bool'),
@@ -455,6 +460,8 @@ def cases_from(document):
                     valid_numbers = all(coordinate(v,True) for v in values)
                 if len(values) != sum(ARGUMENT_SIZES[p] for p in signature) or not valid_numbers:
                     raise ValueError(f'{name}: invalid {namespace} argument arity/domain')
+                if namespace=='Spline' and not 0<=values[-1]<=1:
+                    raise ValueError(f'{name}: spline parameter must be in 0..1')
                 if namespace=='Matrix' and function in ('frustum','ortho') and not projection_contract(values,function=='frustum'):
                     raise ValueError(f'{name}: projection requires supported F32 casts/intermediates and nonzero spans')
                 if namespace=='Float64' and function=='internal.f32':
@@ -626,6 +633,10 @@ def collision_arithmetic():
 
 def noise_reference():
     return {'FusedCollision':'FusedNoise','UncontractedCollision':'UncontractedNoise'}[collision_arithmetic()]
+
+
+def spline_reference():
+    return {'FusedCollision':'FusedSpline','UncontractedCollision':'UncontractedSpline'}[collision_arithmetic()]
 
 
 def vector_arguments(signature, values, bend=False):
@@ -1129,9 +1140,9 @@ def bend_source(cases, gpu=False):
             if kind in VECTOR_APIS:
                 namespace, dimensions, apis = VECTOR_APIS[kind]
                 _, signature, result = apis[op['function']]
-                profiled = op['function'] in ('clamp','min','max') or (namespace,op['function']) in ROTATION_ANGLES or (namespace,op['function']) in ANGLE_QUERIES
+                profiled = namespace=='Spline' or op['function'] in ('clamp','min','max') or (namespace,op['function']) in ROTATION_ANGLES or (namespace,op['function']) in ANGLE_QUERIES
                 function_name = op['function']+'_for' if profiled else op['function']
-                profile = f'J.{gradient_reference()}{{}}, ' if profiled else ''
+                profile = f'J.{spline_reference() if namespace=="Spline" else gradient_reference()}{{}}, ' if profiled else ''
                 expression = f'J.{namespace}.{function_name}({profile}{vector_arguments(signature,op["args"],bend=True)})'
                 if result == 'buffer':
                     previous = f's{j}'

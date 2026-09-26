@@ -114,6 +114,7 @@ class HarnessTests(unittest.TestCase):
                     dict(case, perlin=dict(offset_x=0,offset_y=0,scale=1e-30)),
                     dict(case, palette=0),
                     dict(case, text_bytes=[0,256]),
+                    dict(case, width=2, operations=[dict(op='spline_value',function='linear',args=[0,0,1,1,1.1],x=0,y=0)]),
                     dict(case, width=9, operations=[dict(op='matrix_value', function='decompose', args=list(range(16)), x=0, y=0)]),
                     dict(case, width=4, operations=[dict(op='quaternion_value', function='from_euler', args=[7,0,0], x=0, y=0)]),
                     dict(case, width=16, operations=[dict(op='matrix_value', function='frustum', args=[1,1,-1,1,0.1,10], x=0, y=0)]),

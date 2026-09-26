@@ -43,6 +43,50 @@
     "api_id": "raylib:function:UnloadRandomSequence",
     "milestone": "random"
   },
+  "GetSplinePointLinear": {
+    "jonlib": "Spline.linear_for / Spline.linear",
+    "status": "profile-covered",
+    "scope": "Finite bounded point interpolation with the original start*(1-t)+end*t expression and explicit fused/uncontracted reference arithmetic; t in 0..1.",
+    "gaps": [
+      "Exceptional/subnormal, extrapolation and other contraction profiles",
+      "Full integration/target/performance coverage"
+    ],
+    "api_id": "raylib:function:GetSplinePointLinear",
+    "milestone": "shapes"
+  },
+  "GetSplinePointBasis": {
+    "jonlib": "Spline.basis_for / Spline.basis",
+    "status": "profile-covered",
+    "scope": "Reference B-spline coefficients, division by six and Horner order with explicit fused/uncontracted profiles and exact XY bits; t in 0..1.",
+    "gaps": [
+      "Exceptional/subnormal, extrapolation and other contraction profiles",
+      "Full integration/target/performance coverage"
+    ],
+    "api_id": "raylib:function:GetSplinePointBasis",
+    "milestone": "shapes"
+  },
+  "GetSplinePointCatmullRom": {
+    "jonlib": "Spline.catmull_rom_for / Spline.catmull_rom",
+    "status": "profile-covered",
+    "scope": "Reference Catmull-Rom coefficient and weighted-point accumulation order with explicit fused/uncontracted profiles; t in 0..1.",
+    "gaps": [
+      "Exceptional/subnormal, extrapolation and other contraction profiles",
+      "Full integration/target/performance coverage"
+    ],
+    "api_id": "raylib:function:GetSplinePointCatmullRom",
+    "milestone": "shapes"
+  },
+  "GetSplinePointBezierQuad": {
+    "jonlib": "Spline.bezier_quad_for / Spline.bezier_quad",
+    "status": "profile-covered",
+    "scope": "Reference quadratic Bezier weights and original product order with explicit fused/uncontracted profiles and exact endpoints/XY fields; t in 0..1.",
+    "gaps": [
+      "Exceptional/subnormal, extrapolation and other contraction profiles",
+      "Full integration/target/performance coverage"
+    ],
+    "api_id": "raylib:function:GetSplinePointBezierQuad",
+    "milestone": "shapes"
+  },
   "CheckCollisionRecs": {
     "jonlib": "Collision.recs",
     "status": "profile-covered",

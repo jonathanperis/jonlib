@@ -39276,23 +39276,28 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.get_spline_point_linear",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Spline.linear_for / Spline.linear",
+      "mapping_state": "implemented",
+      "scope": "Finite bounded point interpolation with the original start*(1-t)+end*t expression and explicit fused/uncontracted reference arithmetic; t in 0..1.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal, extrapolation and other contraction profiles",
+        "Full integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tools/spline_probe.py",
+        "docs/SPLINES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39308,8 +39313,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive GetSplinePointLinear semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_linear.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for GetSplinePointLinear.",
+      "priority": 314
     },
     {
       "id": "raylib:function:GetSplinePointBasis",
@@ -39334,23 +39339,28 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.get_spline_point_basis",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Spline.basis_for / Spline.basis",
+      "mapping_state": "implemented",
+      "scope": "Reference B-spline coefficients, division by six and Horner order with explicit fused/uncontracted profiles and exact XY bits; t in 0..1.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal, extrapolation and other contraction profiles",
+        "Full integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tools/spline_probe.py",
+        "docs/SPLINES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39366,8 +39376,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive GetSplinePointBasis semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_basis.",
-      "priority": 1
+      "next_step": "Close documented gaps and unverified gates for GetSplinePointBasis.",
+      "priority": 314
     },
     {
       "id": "raylib:function:GetSplinePointCatmullRom",
@@ -39392,23 +39402,28 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.get_spline_point_catmull_rom",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Spline.catmull_rom_for / Spline.catmull_rom",
+      "mapping_state": "implemented",
+      "scope": "Reference Catmull-Rom coefficient and weighted-point accumulation order with explicit fused/uncontracted profiles; t in 0..1.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal, extrapolation and other contraction profiles",
+        "Full integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tools/spline_probe.py",
+        "docs/SPLINES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39424,8 +39439,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive GetSplinePointCatmullRom semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_catmull_rom.",
-      "priority": 2
+      "next_step": "Close documented gaps and unverified gates for GetSplinePointCatmullRom.",
+      "priority": 314
     },
     {
       "id": "raylib:function:GetSplinePointBezierQuad",
@@ -39450,23 +39465,28 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.get_spline_point_bezier_quad",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Spline.bezier_quad_for / Spline.bezier_quad",
+      "mapping_state": "implemented",
+      "scope": "Reference quadratic Bezier weights and original product order with explicit fused/uncontracted profiles and exact endpoints/XY fields; t in 0..1.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal, extrapolation and other contraction profiles",
+        "Full integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tools/spline_probe.py",
+        "docs/SPLINES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39482,8 +39502,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive GetSplinePointBezierQuad semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_bezier_quad.",
-      "priority": 3
+      "next_step": "Close documented gaps and unverified gates for GetSplinePointBezierQuad.",
+      "priority": 314
     },
     {
       "id": "raylib:function:GetSplinePointBezierCubic",
@@ -39508,14 +39528,15 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "Draw.get_spline_point_bezier_cubic",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "The pinned cubic Bezier function calls native powf(t,3), whose result is observable directly in a returned point.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Verified native powf cube profile",
+        "Complete cubic Bezier parity"
       ],
-      "blocker": null,
+      "blocker": "Native Apple powf(t,3) differs from a double-cube substitute: 6670/1048576 investigated inputs, with a retained actual GetSplinePointBezierCubic coordinate mismatch.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -39524,7 +39545,11 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/spline_probe.py",
+        "docs/SPLINES.md",
+        "docs/evidence/spline-points.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39540,8 +39565,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive GetSplinePointBezierCubic semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_bezier_cubic.",
-      "priority": 4
+      "next_step": "Resolve: Native Apple powf(t,3) differs from a double-cube substitute: 6670/1048576 investigated inputs, with a retained actual GetSplinePointBezierCubic coordinate mismatch.",
+      "priority": 2
     },
     {
       "id": "raylib:function:CheckCollisionRecs",
@@ -42600,7 +42625,7 @@
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
       "next_step": "Derive ImageDither semantics from the linked source, add a reference fixture, then implement Surface.image_dither.",
-      "priority": 6
+      "priority": 1
     },
     {
       "id": "raylib:function:ImageFlipVertical",
@@ -47078,7 +47103,7 @@
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
       "next_step": "Derive GetPixelDataSize semantics from the linked source, add a reference fixture, then implement Color.get_pixel_data_size.",
-      "priority": 5
+      "priority": 0
     },
     {
       "id": "raylib:function:GetFontDefault",
@@ -66963,7 +66988,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.",
-      "priority": 10
+      "priority": 6
     },
     {
       "id": "raymath:function:MatrixOrtho",
@@ -67968,7 +67993,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Base and investigated inverse-trig models differ from the actual float libm; no verified acos profile is available yet.",
-      "priority": 7
+      "priority": 3
     },
     {
       "id": "raymath:function:QuaternionCubicHermiteSpline",
@@ -68329,7 +68354,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Native acosf endpoint/tail values differ from Base and investigated numerical models.",
-      "priority": 8
+      "priority": 4
     },
     {
       "id": "raymath:function:QuaternionFromEuler",
@@ -68450,7 +68475,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models.",
-      "priority": 9
+      "priority": 5
     },
     {
       "id": "raymath:function:QuaternionTransform",

@@ -1,0 +1,16 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {
+    "jonlib.bend": "e34287987e3e52f39b8bea59ab1944ab4782373d50173fdc2af60e88e28a9b99",
+    "src/spline.bend": "eaca2df9e1dc099c6b2c05ec1326040a5210c9819c3c4d75e84f85adc978a0e2"
+  },
+  "fixtures_sha256": "ce399d3d60bb4cce4f696b80b6fd792941619875cc71e3ab00055ff80a56b869",
+  "scenarios": 261,
+  "output_words_per_lane": 40101,
+  "numeric_probe_cells": 1878,
+  "passed": true,
+  "lanes": ["cpu-1","cpu-2","javascript","gpu-forced"],
+  "spline_probe": {"points_per_profile":512,"inputs_sha256":"3cad304b9028428fcece5cf85ff27f46a404a32d0b316a373ab0d764065a0679","native_fused_passed":["cpu","javascript","metal"],"uncontracted_control_passed":["cpu","javascript","metal"]},
+  "cubic_bezier_blocker": {"t_hex":"0x1.940af8p-2","native_x_bits":"3d7b9e4d","double_cube_bits":"3d7b9e4e","native_cube_samples":1048576,"native_cube_mismatches":6670,"implemented":false},
+  "limits": ["Cubic Bezier powf dependency", "Exceptional/subnormal, extrapolation and other contraction domains", "Complete integration/target/performance coverage"]
+}

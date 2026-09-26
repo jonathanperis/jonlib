@@ -3,27 +3,27 @@
   "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
   "declaration_inventory": {
     "total": 1884,
-    "blocked": 4,
+    "blocked": 5,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1628,
-    "partial": 252
+    "not-started": 1623,
+    "partial": 256
   },
   "core_functions": {
     "total": 600,
-    "blocked": 0,
+    "blocked": 1,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 508,
-    "partial": 92
+    "not-started": 503,
+    "partial": 96
   },
   "function_declarations": {
     "total": 931,
-    "blocked": 4,
+    "blocked": 5,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 693,
-    "partial": 234
+    "not-started": 688,
+    "partial": 238
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -43,11 +43,11 @@
   "headers": {
     "raylib.h": {
       "total": 1037,
-      "blocked": 0,
+      "blocked": 1,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 936,
-      "partial": 101
+      "not-started": 931,
+      "partial": 105
     },
     "raymath.h": {
       "total": 254,
@@ -321,11 +321,11 @@
         "pixels"
       ],
       "total": 62,
-      "blocked": 0,
+      "blocked": 1,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 62,
-      "partial": 0
+      "not-started": 57,
+      "partial": 4
     },
     {
       "id": "textures",
@@ -563,81 +563,6 @@
   ],
   "next_work": [
     {
-      "id": "raylib:function:GetSplinePointLinear",
-      "name": "GetSplinePointLinear",
-      "milestone": "shapes",
-      "status": "not-started",
-      "jonlib": "Draw.get_spline_point_linear",
-      "next_step": "Derive GetSplinePointLinear semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_linear.",
-      "milestone_dependencies": [
-        "frame",
-        "rlgl-core",
-        "raymath",
-        "pixels"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raylib:function:GetSplinePointBasis",
-      "name": "GetSplinePointBasis",
-      "milestone": "shapes",
-      "status": "not-started",
-      "jonlib": "Draw.get_spline_point_basis",
-      "next_step": "Derive GetSplinePointBasis semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_basis.",
-      "milestone_dependencies": [
-        "frame",
-        "rlgl-core",
-        "raymath",
-        "pixels"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raylib:function:GetSplinePointCatmullRom",
-      "name": "GetSplinePointCatmullRom",
-      "milestone": "shapes",
-      "status": "not-started",
-      "jonlib": "Draw.get_spline_point_catmull_rom",
-      "next_step": "Derive GetSplinePointCatmullRom semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_catmull_rom.",
-      "milestone_dependencies": [
-        "frame",
-        "rlgl-core",
-        "raymath",
-        "pixels"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raylib:function:GetSplinePointBezierQuad",
-      "name": "GetSplinePointBezierQuad",
-      "milestone": "shapes",
-      "status": "not-started",
-      "jonlib": "Draw.get_spline_point_bezier_quad",
-      "next_step": "Derive GetSplinePointBezierQuad semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_bezier_quad.",
-      "milestone_dependencies": [
-        "frame",
-        "rlgl-core",
-        "raymath",
-        "pixels"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raylib:function:GetSplinePointBezierCubic",
-      "name": "GetSplinePointBezierCubic",
-      "milestone": "shapes",
-      "status": "not-started",
-      "jonlib": "Draw.get_spline_point_bezier_cubic",
-      "next_step": "Derive GetSplinePointBezierCubic semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_bezier_cubic.",
-      "milestone_dependencies": [
-        "frame",
-        "rlgl-core",
-        "raymath",
-        "pixels"
-      ],
-      "api_dependencies": []
-    },
-    {
       "id": "raylib:function:GetPixelDataSize",
       "name": "GetPixelDataSize",
       "milestone": "pixels",
@@ -660,6 +585,21 @@
       "milestone_dependencies": [
         "pixels",
         "memory"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:GetSplinePointBezierCubic",
+      "name": "GetSplinePointBezierCubic",
+      "milestone": "shapes",
+      "status": "blocked",
+      "jonlib": "Draw.get_spline_point_bezier_cubic",
+      "next_step": "Resolve: Native Apple powf(t,3) differs from a double-cube substitute: 6670/1048576 investigated inputs, with a retained actual GetSplinePointBezierCubic coordinate mismatch.",
+      "milestone_dependencies": [
+        "frame",
+        "rlgl-core",
+        "raymath",
+        "pixels"
       ],
       "api_dependencies": []
     },
@@ -814,6 +754,54 @@
       "status": "partial",
       "jonlib": "Vector2.add",
       "next_step": "Close documented gaps and unverified gates for Vector2Add.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2AddValue",
+      "name": "Vector2AddValue",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.add_value",
+      "next_step": "Close documented gaps and unverified gates for Vector2AddValue.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2Subtract",
+      "name": "Vector2Subtract",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.subtract",
+      "next_step": "Close documented gaps and unverified gates for Vector2Subtract.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2SubtractValue",
+      "name": "Vector2SubtractValue",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.subtract_value",
+      "next_step": "Close documented gaps and unverified gates for Vector2SubtractValue.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2Length",
+      "name": "Vector2Length",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.length",
+      "next_step": "Close documented gaps and unverified gates for Vector2Length.",
       "milestone_dependencies": [
         "numerics"
       ],

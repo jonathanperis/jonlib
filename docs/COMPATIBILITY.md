@@ -8,9 +8,9 @@ Profile: **rgba8-cpu-images-v1**, with domains defined in [API.md](API.md).
 
 ## Verified evidence
 
-The current local Apple M1/macOS corpus contains **258 deterministic scenarios /
-40,069 checked output words per lane**, matching native CPU (one and two threads), JavaScript
-and forced Metal. Most words are RGBA pixels; 1,846 are exact numeric/collision
+The current local Apple M1/macOS corpus contains **261 deterministic scenarios /
+40,101 checked output words per lane**, matching native CPU (one and two threads), JavaScript
+and forced Metal. Most words are RGBA pixels; 1,878 are exact numeric/collision
 result-bit probe cells. QOI export bytes and full palette observations are
 compared separately. GitHub Actions
 is configured to run this corpus on **Ubuntu 24.04
@@ -32,7 +32,7 @@ originally established the CPU/JS baseline; current CI applies the declared over
 A current run's precise inputs, source hashes and lane outcomes are in
 `.build/conformance.json`. The authoritative [API dashboard](PROGRESS.md) covers
 the complete release-header/support inventory. The 600-entry
-`.build/api-inventory.json` is its legacy core view, mapping 92 reference APIs to
+`.build/api-inventory.json` is its legacy core view, mapping 96 reference APIs to
 these scoped operations/contracts. The companion ledger additionally maps 142
 `raymath.h` functions. Remaining functions retain explicit planned work.
 These counts are an inventory, not a percentage of full parity.
@@ -86,6 +86,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | Matrix arithmetic/inversion, affine constructors and vector transforms | `Matrix`, `Vector2.transform`, `Vector3.transform` | All 16 fields and transformed components compared exactly, including noncommuting products and near-singular inversion; double-transpose law checked |
 | View and rotation matrices | `Matrix.look_at`, `rotate_*_for`, `rotate_for` | Reference degenerate bases, explicit bounded trigonometric profiles, raw trig bits and distinct Euler orders |
 | Eleven 2D collision queries | `Collision` functions | Exact Boolean/rectangle/hit-coordinate fixtures; explicit segment contraction profiles and native-fmaf verification |
+| Linear/B-spline/Catmull-Rom/quadratic Bezier points | `Spline` functions | Exact XY and coefficient order with explicit arithmetic profiles; cubic Bezier remains blocked by native powf rounding |
 | Sphere/box queries | `Collision.spheres/boxes/box_sphere` | Exact bounded Boolean fixtures, inclusive contacts, signed radii and supplied-bound ordering |
 | `ImageFromChannel` | `Surface.from_channel` | Preserved RGBA8 source and independent normalized output; all reference byte/channel combinations checked |
 | Base.Image conversion / PPM export | `Surface.to_image/to_ppm/write_ppm` | Adapter pixels/padding and actual file RGB output checked |

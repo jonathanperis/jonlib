@@ -38,6 +38,8 @@ The public scalar and Vector2 operations are listed in [MATH.md](MATH.md),
 including their explicit uncontracted-F32 profile and remaining numeric gaps.
 Pure geometry queries are listed in [COLLISION.md](COLLISION.md), including
 strict rectangle edges and inclusive circle tangency.
+Spline point queries and their explicit arithmetic profiles are listed in
+[SPLINES.md](SPLINES.md).
 Owned random-stream APIs and their native rprand profile are described in
 [RANDOM.md](RANDOM.md).
 
