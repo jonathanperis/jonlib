@@ -44,7 +44,7 @@ differential test reference.
 - TGA raw/RLE true-color and grayscale decoding with byte-exact default RLE export.
 - Binary PGM/PPM byte-sample decoding with native header and maxval behavior.
 - Bounded raw DEFLATE decompression with native empty-block semantics.
-- Non-interlaced 8-bit PNG decoding across grayscale, RGB, palette and alpha formats.
+- Non-interlaced PNG decoding: 8-bit color/alpha formats and packed 1/2/4-bit grayscale/palette.
 - Initial scalar and Vector2 math under an explicit uncontracted-F32 profile.
 - Horizontal and vertical flips.
 - Conversion to Bend's `Base.Image` quadtree.

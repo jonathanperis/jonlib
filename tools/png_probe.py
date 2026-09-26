@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Native PNG 8-bit color/filter/transparency fixtures for the bitmap gate."""
+"""Native PNG byte/packed color/filter/transparency fixtures for the bitmap gate."""
 import struct
 import zlib
 
@@ -20,8 +20,18 @@ def paeth(a,b,c):
     return a if pa<=pb and pa<=pc else b if pb<=pc else c
 
 
-def filtered(width,height,color,raw,filters):
-    channels=CHANNELS[color];stride=width*channels;output=bytearray()
+def filtered(width,height,color,raw,filters,depth=8):
+    components=CHANNELS[color];stride=(width*components*depth+7)//8
+    channels=(components*depth+7)//8;output=bytearray()
+    if depth<8:
+        packed=bytearray(stride*height)
+        for y in range(height):
+            for x in range(width*components):
+                bit=x*depth
+                packed[y*stride+bit//8] |= raw[(y*width*components)+x] << (8-depth-bit%8)
+            padding=(-width*components*depth)%8
+            if padding:packed[(y+1)*stride-1] |= 0x55&((1<<padding)-1)
+        raw=packed
     for y in range(height):
         mode=filters[y%len(filters)];output.append(mode)
         for x in range(stride):
@@ -34,13 +44,13 @@ def filtered(width,height,color,raw,filters):
     return bytes(output)
 
 
-def png(width,height,color,raw,filters=(0,),*,palette=None,transparency=None,stream=None,extra=(),split=False):
-    header=struct.pack('>IIBBBBB',width,height,8,color,0,0,0)
+def png(width,height,color,raw,filters=(0,),*,depth=8,palette=None,transparency=None,stream=None,extra=(),split=False):
+    header=struct.pack('>IIBBBBB',width,height,depth,color,0,0,0)
     data=SIGNATURE+chunk(b'IHDR',header)
     if palette is not None:data+=chunk(b'PLTE',palette)
     if transparency is not None:data+=chunk(b'tRNS',transparency)
     for kind,body in extra:data+=chunk(kind,body)
-    stream=zlib.compress(filtered(width,height,color,raw,filters)) if stream is None else stream
+    stream=zlib.compress(filtered(width,height,color,raw,filters,depth)) if stream is None else stream
     if split:
         data+=chunk(b'IDAT',stream[:1])+chunk(b'IDAT',b'')+chunk(b'tEXt',b'between\x00chunks')+chunk(b'IDAT',stream[1:4])+chunk(b'IDAT',stream[4:])
     else:data+=chunk(b'IDAT',stream)
@@ -74,6 +84,19 @@ def fixtures():
     broken[-1]^=255  # The native PNG decoder ignores both CRC and Adler-32.
     inputs.append(dict(id='ignored-checksums',bytes=list(broken)))
     inputs.append(dict(id='absent-adler',bytes=list(png(3,3,6,raw,stream=stream[:-4]))))
+    for depth in (1,2,4):
+        colors=1<<depth
+        pal=bytes((i*61+j*47)&255 for i in range(colors) for j in range(3))
+        for color in (0,3):
+            options=dict(transparency=bytes([9,colors-1])) if color==0 else dict(palette=pal,transparency=b'\x00\x80')
+            for width in sorted({1,max(1,8//depth-1),8//depth+1,13}):
+                samples=bytes((i*3+colors-1)%colors for i in range(width*5))
+                inputs.append(dict(id=f'packed-{depth}-{color}-{width}',bytes=list(png(width,5,color,samples,(4,3,2,1,0),depth=depth,**options))))
+            samples=bytes(range(colors))
+            opaque=dict(palette=pal) if color==3 else {}
+            inputs.append(dict(id=f'packed-opaque-{depth}-{color}',bytes=list(png(colors,1,color,samples,depth=depth,**opaque))))
+        inputs.append(dict(id=f'packed-key-wrap-{depth}',bytes=list(png(colors,1,0,bytes(range(colors)),depth=depth,transparency=b'\0\xff'))))
+    inputs.append(dict(id='packed-tall',bytes=list(png(1,4096,0,bytes(i%2 for i in range(4096)),(4,3,2,1,0),depth=1))))
     base=png(1,1,6,bytes([1,2,3,4]))
     gray=png(1,1,0,b'\1')
     malformed=[dict(id='empty',bytes=[],error=0),dict(id='bad-byte',bytes=[256],error=1),
@@ -82,7 +105,8 @@ def fixtures():
         ('zero-width',0,1,8,6,0,0,0,2),('wide-size',4097,1,8,6,0,0,0,2),
         ('filtered-limit',4096,4096,8,6,0,0,0,2),('depth16',1,1,16,6,0,0,0,0),
         ('bad-color',1,1,8,5,0,0,0,0),('compression',1,1,8,6,1,0,0,0),
-        ('filter-method',1,1,8,6,0,1,0,0),('adam7',1,1,8,6,0,0,1,0)]:
+        ('filter-method',1,1,8,6,0,1,0,0),('adam7',1,1,8,6,0,0,1,0),
+        ('depth3',1,1,3,0,0,0,0,0),('packed-rgb',1,1,4,2,0,0,0,0)]:
         header=struct.pack('>IIBBBBB',width,height,depth,color,method,filter_method,interlace)
         data=SIGNATURE+chunk(b'IHDR',header)+base[33:]
         malformed.append(dict(id=name,bytes=list(data),error=error))
@@ -102,6 +126,8 @@ def fixtures():
                         ('extra-raster',zlib.compress(b'\0\1\2\3\4\5')),
                         ('truncated-deflate',b'\x78\x9c\x03')]:
         malformed.append(dict(id=name,bytes=list(png(1,1,6,b'\1\2\3\4',stream=stream)),error=4))
+    malformed += [dict(id='packed-short-row',bytes=list(png(9,1,0,bytes(9),depth=1,stream=zlib.compress(b'\0\x80'))),error=4),
+                  dict(id='packed-palette-index',bytes=list(png(1,1,3,b'\x0f',depth=4,palette=palette)),error=4)]
     return inputs,malformed,[]
 
 

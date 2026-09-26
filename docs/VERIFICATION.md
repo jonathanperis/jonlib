@@ -1283,3 +1283,27 @@ Other depths, Adam7/CgBI, PNG export, broader malformed recovery and complete
 target/resource/performance evidence remain gaps.
 
 Regression scan: 52 callers checked, 28 assertions checked, 2 flagged/fixed.
+
+Hosted confirmation for `2e022c2`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36270386724)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36270386729)
+completed successfully, including the initial PNG profile.
+
+## Packed PNG grayscale and palette depths
+
+PNG now supports non-interlaced 1/2/4-bit grayscale/palette input alongside the
+existing 8-bit families. All 70 native images / 13,839 pixels and 30 typed-error
+controls pass CPU, JavaScript and forced Metal. New cases cover odd widths,
+partial bytes with nonzero padding, all packed-byte filters, opaque/translucent
+palettes, grayscale sample/key scaling and byte-wrapped oversized transparency
+keys. A 1×4096 packed image checks row-reset behavior. All previous 8-bit fixture
+inputs and error expectations are retained. See [evidence/png-packed.json](evidence/png-packed.json).
+
+The logical pixel index is mapped to a bounded packed row byte before MSB-first
+extraction; filtering still sees the complete stored bytes. Rounded-up row sizes
+also govern decompression limits, with a short partial-row negative control.
+I87 and A4/A5 pass the declared packed profile. Full 261-scenario / 40,101-word
+conformance, nine harness tests, project checks and all four pinned laws pass.
+16-bit samples, Adam7/CgBI, PNG export and broader recovery/resource/platform
+coverage remain gaps. API completion counts are unchanged.
+
+Regression scan: 45 callers checked, 32 assertions checked, 1 flagged/fixed.

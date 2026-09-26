@@ -138,7 +138,7 @@ is outside this API's contract.
 | `Surface.decode_bmp`, `to_bmp`, `write_bmp` | Bounded 24/32-bit BMP decoding and exact RGBA8 V4 export; native orientation, alpha and offset rules in [BMP.md](BMP.md). |
 | `Surface.decode_tga`, `to_tga`, `write_tga` | Bounded raw/RLE true-color/grayscale decoding and byte-exact default RLE export; packet rules and limits in [TGA.md](TGA.md). |
 | `Surface.decode_pnm` | Binary 8-bit P5/P6 decoding with native unscaled samples and header parsing; see [PNM.md](PNM.md). |
-| `Surface.decode_png` | Non-interlaced 8-bit grayscale/RGB/palette/alpha PNG decoding with native filter/transparency rules; limits and errors in [PNG.md](PNG.md). |
+| `Surface.decode_png` | Non-interlaced 8-bit grayscale/RGB/palette/alpha and packed 1/2/4-bit grayscale/palette decoding; native filter/transparency rules and limits in [PNG.md](PNG.md). |
 
 Drawing coordinates and rectangle extents are represented as **F32 but must be
 finite integers in -32767..32767**. Radius is **0..32767**. This permits negative

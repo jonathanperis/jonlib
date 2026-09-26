@@ -1,4 +1,4 @@
-# PNG non-interlaced 8-bit decoding
+# PNG non-interlaced packed and 8-bit decoding
 
 `Surface.decode_png(bytes: +List<U32>)` returns
 `Result<&1, &1, Image.DecodeError, Surface>` with owned normalized RGBA8 pixels.
@@ -7,18 +7,24 @@
 
 - Non-interlaced, 8-bit PNG color types **0, 2, 3, 4 and 6**: grayscale, RGB,
   palette, gray-alpha and RGBA.
+- Packed **1/2/4-bit grayscale and palette** images (color types 0 and 3).
 - Dimensions 1..4096, complete encoded input at most 1 MiB, and filtered scanline
-  output `(width*channels + 1)*height` at most 64 MiB. The filtered byte count must
+  output `(ceil(width*channels*depth/8) + 1)*height` at most 64 MiB. The filtered byte count must
   match exactly; native recovery of excess inflated bytes is outside this profile.
 - IHDR is first and unique; PLTE/tRNS precede IDAT. Multiple/split/empty IDAT
   chunks are combined in order. Unknown ancillary chunks are skipped; unknown
   critical chunks, CgBI and unsupported header fields are rejected.
 - All five filters are reconstructed with exact byte arithmetic, including
   first-row/left-edge rules, Average truncation and Paeth ties.
+- Packed samples are filtered as bytes with a one-byte neighbor distance, then
+  extracted MSB-first within each row. Unused row-end bits are retained during
+  filtering and excluded from output pixels. Grayscale samples expand by
+  `255/((1<<depth)-1)`; palette indices remain unscaled.
 - Palette entries default to alpha 255; tRNS replaces the supplied prefix.
   Missing palettes and indices beyond their actual entry count are rejected.
-- Grayscale/RGB tRNS keys use the low byte of each 16-bit field, matching the
-  native 8-bit reader. Exact key matches become transparent. Existing alpha
+- Grayscale/RGB tRNS keys use the low byte of each 16-bit field. Packed grayscale
+  keys use the same scale as samples, then wrap to a byte, matching the native
+  reader even for oversized key values. Exact key matches become transparent. Existing alpha
   channels retain their bytes, including zero.
 
 ## Native checksum and framing behavior
@@ -36,7 +42,7 @@ violations return `UnsupportedImageSize`. Invalid zlib/DEFLATE data, filter mode
 raster lengths or palette indices return `InvalidImageStream`. Bounds are checked
 before array indexing, and dimensions/filtered capacity before allocation.
 
-Other depths, Adam7 interlacing, CgBI, original-format metadata, generic dispatch
+16-bit samples, Adam7 interlacing, CgBI, original-format metadata, generic dispatch
 and broader malformed-input recovery remain gaps. PNG export is not implemented.
 
 ## Verification
@@ -46,10 +52,13 @@ python3 tools/png_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 ```
 
 Configure checkout variables as described in [README.md](../README.md#requirements).
-The probe checks 38 native images / 8,987 pixels and 26 typed-error controls on
-CPU, JavaScript and forced Metal. Cases cross every color/filter family, 4096-wide/
-tall boundaries, transparency, ancillary chunks, split IDATs, empty stored blocks
+The probe checks 70 native images / 13,839 pixels and 30 typed-error controls on
+CPU, JavaScript and forced Metal. Cases cross every supported color/filter family,
+odd widths, packed-byte boundaries/nonzero padding, 4096-wide/tall dimensions,
+transparency scaling/wrapping, ancillary chunks, split IDATs, empty stored blocks
 and ignored checksums. Expected pixels always come from actual `LoadImageFromMemory`.
+The [initial 8-bit evidence](evidence/png-8bit.json) is retained alongside the
+[packed-depth increment](evidence/png-packed.json).
 
 A minimized Metal compile failure isolated to chunk extraction was resolved by
 collecting payload bytes first, then parsing the CRC field outside that tail loop.

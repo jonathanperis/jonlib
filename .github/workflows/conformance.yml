@@ -144,7 +144,7 @@ jobs:
         run: >-
           python3 tools/verify_bend.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
-      - name: Verify PNG 8-bit colors and scanline filters
+      - name: Verify PNG byte and packed color/filter profiles
         run: >-
           python3 tools/png_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
