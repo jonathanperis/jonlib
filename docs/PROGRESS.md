@@ -29,7 +29,7 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 |---|---:|---|---:|---:|---:|---|
 | 1 | 0 | `types` — Types, constants and language mappings | 549 | 18 | 0 | — |
 | 2 | 1 | `numerics` — Numeric fidelity and scalar contracts | 14 | 6 | 0 | types |
-| 3 | 1 | `raymath` — Vectors, matrices and quaternions | 221 | 109 | 0 | numerics |
+| 3 | 1 | `raymath` — Vectors, matrices and quaternions | 221 | 119 | 0 | numerics |
 | 4 | 1 | `memory` — Buffers, memory and callback contracts | 12 | 0 | 0 | types |
 | 5 | 1 | `files` — Files, paths, compression and data utilities | 49 | 0 | 0 | memory |
 | 6 | 1 | `random` — Random-number and sequence contracts | 4 | 0 | 0 | numerics, memory |
@@ -63,16 +63,11 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 
 This is a priority queue with visible prerequisites, not a claim that every item is unblocked.
 
-- **`raymath:function:QuaternionAddValue`** (not-started, `raymath`): Derive QuaternionAddValue semantics from the linked source, add a reference fixture, then implement Quaternion.add_value.
-- **`raymath:function:QuaternionSubtractValue`** (not-started, `raymath`): Derive QuaternionSubtractValue semantics from the linked source, add a reference fixture, then implement Quaternion.subtract_value.
-- **`raymath:function:QuaternionLength`** (not-started, `raymath`): Derive QuaternionLength semantics from the linked source, add a reference fixture, then implement Quaternion.length.
-- **`raymath:function:QuaternionNormalize`** (not-started, `raymath`): Derive QuaternionNormalize semantics from the linked source, add a reference fixture, then implement Quaternion.normalize.
-- **`raymath:function:QuaternionInvert`** (not-started, `raymath`): Derive QuaternionInvert semantics from the linked source, add a reference fixture, then implement Quaternion.invert.
-- **`raymath:function:QuaternionScale`** (not-started, `raymath`): Derive QuaternionScale semantics from the linked source, add a reference fixture, then implement Quaternion.scale.
-- **`raymath:function:QuaternionDivide`** (not-started, `raymath`): Derive QuaternionDivide semantics from the linked source, add a reference fixture, then implement Quaternion.divide.
-- **`raymath:function:QuaternionLerp`** (not-started, `raymath`): Derive QuaternionLerp semantics from the linked source, add a reference fixture, then implement Quaternion.lerp.
-- **`raymath:function:QuaternionNlerp`** (not-started, `raymath`): Derive QuaternionNlerp semantics from the linked source, add a reference fixture, then implement Quaternion.nlerp.
-- **`raymath:function:QuaternionEquals`** (not-started, `raymath`): Derive QuaternionEquals semantics from the linked source, add a reference fixture, then implement Quaternion.equals.
+- **`raymath:function:QuaternionFromMatrix`** (not-started, `raymath`): Derive QuaternionFromMatrix semantics from the linked source, add a reference fixture, then implement Quaternion.from_matrix.
+- **`raymath:function:QuaternionToMatrix`** (not-started, `raymath`): Derive QuaternionToMatrix semantics from the linked source, add a reference fixture, then implement Quaternion.to_matrix.
+- **`raymath:function:QuaternionTransform`** (not-started, `raymath`): Derive QuaternionTransform semantics from the linked source, add a reference fixture, then implement Quaternion.transform.
+- **`raymath:function:Vector3RotateByQuaternion`** (not-started, `raymath`): Derive Vector3RotateByQuaternion semantics from the linked source, add a reference fixture, then implement Vector3.rotate_by_quaternion.
+- **`raymath:function:MatrixCompose`** (not-started, `raymath`): Derive MatrixCompose semantics from the linked source, add a reference fixture, then implement Matrix.compose.
 - **`raymath:function:Clamp`** (partial, `numerics`): Close documented gaps and unverified gates for Clamp.
 - **`raymath:function:Lerp`** (partial, `numerics`): Close documented gaps and unverified gates for Lerp.
 - **`raymath:function:Normalize`** (partial, `numerics`): Close documented gaps and unverified gates for Normalize.
@@ -83,6 +78,11 @@ This is a priority queue with visible prerequisites, not a claim that every item
 - **`raymath:function:Vector2One`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2One.
 - **`raymath:function:Vector2Add`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Add.
 - **`raymath:function:Vector2AddValue`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2AddValue.
+- **`raymath:function:Vector2Subtract`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Subtract.
+- **`raymath:function:Vector2SubtractValue`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2SubtractValue.
+- **`raymath:function:Vector2Length`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Length.
+- **`raymath:function:Vector2LengthSqr`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2LengthSqr.
+- **`raymath:function:Vector2DotProduct`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2DotProduct.
 
 ## Closing an item
 

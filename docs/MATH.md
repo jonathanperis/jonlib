@@ -2,7 +2,7 @@
 
 The current math implementation is Bend source in `jonlib.bend`. It begins the
 `raymath.h` work package with six scalar, twenty-nine Vector2, thirty-five Vector3,
-twenty-two Vector4, nineteen Matrix and four Quaternion functions.
+twenty-two Vector4, nineteen Matrix and fourteen Quaternion functions.
 
 ## Scalar API
 
@@ -188,6 +188,18 @@ typedef alias. `Quaternion.identity()` returns `(0,0,0,1)`.
 `Quaternion.multiply(left, right)` applies the reference Hamilton product in
 its original uncontracted F32 order; operands are not implicitly normalized.
 Multiplication is noncommutative and differs from `Vector4.multiply`.
+
+Additional operations are `add_value`, `subtract_value`, `length`, `normalize`,
+`invert`, `scale`, `divide`, `lerp`, `nlerp` and `equals`. Division remains
+component-wise and requires nonzero divisors; inversion instead uses conjugation
+and reciprocal squared length, with the original quaternion returned at zero
+length. Both normalization and inversion retain zero quaternion signs, unlike
+Vector4's positive-zero normalization result.
+
+`nlerp` performs component interpolation followed by quaternion normalization.
+It does not choose a common hemisphere: exactly opposite quaternions can collapse
+to zero at the midpoint, as in the reference. `equals` accepts approximate `q`
+or `-q` equivalence using all four components and the reference relative epsilon.
 The remaining quaternion operations and full integration/ABI/target/performance
 coverage remain ledger gaps.
 

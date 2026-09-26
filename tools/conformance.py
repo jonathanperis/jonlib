@@ -81,6 +81,11 @@ VECTOR4_APIS = {
 QUATERNION_APIS = {
     'identity':('QuaternionIdentity','','vector'), 'add':('QuaternionAdd','qq','vector'),
     'subtract':('QuaternionSubtract','qq','vector'), 'multiply':('QuaternionMultiply','qq','vector'),
+    'add_value':('QuaternionAddValue','qs','vector'), 'subtract_value':('QuaternionSubtractValue','qs','vector'),
+    'length':('QuaternionLength','q','float'), 'normalize':('QuaternionNormalize','q','vector'),
+    'invert':('QuaternionInvert','q','vector'), 'scale':('QuaternionScale','qs','vector'),
+    'divide':('QuaternionDivide','qq','vector'), 'lerp':('QuaternionLerp','qqs','vector'),
+    'nlerp':('QuaternionNlerp','qqs','vector'), 'equals':('QuaternionEquals','qq','bool'),
 }
 COLOR_VECTOR3_APIS = {'to_hsv':('ColorToHSV','c','vector')}
 COLOR_VECTOR4_APIS = {'normalize':('ColorNormalize','c','vector')}
@@ -388,7 +393,7 @@ def cases_from(document):
                     raise ValueError(f'{name}: normalized color components must be in 0..1')
                 if namespace=='Color' and function=='from_hsv' and (not 0<=values[0]<=360 or any(not 0<=v<=1 for v in values[1:])):
                     raise ValueError(f'{name}: HSV requires hue 0..360 and saturation/value 0..1')
-                divisors = values[dimensions:] if function=='divide' else values if function=='invert' and namespace!='Matrix' else []
+                divisors = values[dimensions:] if function=='divide' else values if function=='invert' and namespace in ('Vector2','Vector3','Vector4') else []
                 if any(struct.unpack('f',struct.pack('f',v))[0] == 0 for v in divisors):
                     raise ValueError(f'{name}: vector divisors must remain nonzero in F32')
                 if namespace=='Matrix' and function=='invert' and matrix_inverse_denominator(values)==0:

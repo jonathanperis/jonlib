@@ -1,0 +1,12 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {"jonlib.bend": "2fd5f71a5cba50d82cc4bfba47d94ab26abd52022c3c75aa69d3db530f5908d0"},
+  "fixtures_sha256": "d2bb479be36eac7b6e33b31122a67789a25c76f4bb9408f21a0ef60e4208790e",
+  "scenarios": 212,
+  "output_words_per_lane": 33818,
+  "numeric_probe_cells": 1374,
+  "passed": true,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "scope": ["Ten quaternion metric/component/interpolation operations", "Reference zero normalization/inversion signs and antipodal NLERP collapse", "q/-q epsilon equality and component-wise division"],
+  "limits": ["Exceptional/subnormal and contracted numerical domains", "Remaining quaternion operations and full integration/target/performance evidence"]
+}

@@ -97,6 +97,7 @@ class HarnessTests(unittest.TestCase):
                     dict(case, operations=[dict(op='color_numeric_value', function='from_hsv', args=[361,1,1], x=0, y=0)]),
                     dict(case, operations=[dict(op='color_numeric_value', function='from_hsv', args=[60,-0.1,1], x=0, y=0)]),
                     dict(case, width=4, operations=[dict(op='color_vector4_value', function='normalize', args=[0,1.5,254,255], x=0, y=0)]),
+                    dict(case, width=4, operations=[dict(op='quaternion_value', function='divide', args=[0,1,0,1,1,2,3,0], x=0, y=0)]),
                     dict(case, alpha_border=True),
                     dict(case, gradient_square=dict(density=1.5, outer=[0,0,0,0])),
                     dict(case, width=2, height=2, gradient_linear=dict(direction=361, outer=[0,0,0,0])),

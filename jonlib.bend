@@ -830,6 +830,47 @@ def Quaternion.multiply(left: Vector4, right: Vector4) -> Vector4:
   Vector4{(x * d + w * a + y * c - z * b : F32), (y * d + w * b + z * a - x * c : F32),
     (z * d + w * c + x * b - y * a : F32), (w * d - x * a - y * b - z * c : F32)}
 
+def Quaternion.add_value(quaternion: Vector4, value: F32) -> Vector4:
+  Vector4.add_value(quaternion, value)
+
+def Quaternion.subtract_value(quaternion: Vector4, value: F32) -> Vector4:
+  Vector4.subtract_value(quaternion, value)
+
+def Quaternion.length(quaternion: Vector4) -> F32:
+  Vector4.length(quaternion)
+
+def Quaternion.normalize(+quaternion: Vector4) -> Vector4:
+  +length = Quaternion.length(quaternion)
+  inverse = (1.0 / Bool.pick(F32, F32.is_eq(length, 0.0), 1.0, length) : F32)
+  Vector4.scale(quaternion, inverse)
+
+def Quaternion.inverted(nonzero: Bool, quaternion: Vector4, square: F32) -> Vector4:
+  match nonzero:
+    case False{}: quaternion
+    case True{}:
+      Vector4{x, y, z, w} = quaternion
+      +inverse = (1.0 / square : F32)
+      Vector4{(x * F32.neg(inverse) : F32), (y * F32.neg(inverse) : F32), (z * F32.neg(inverse) : F32), (w * inverse : F32)}
+
+def Quaternion.invert(+quaternion: Vector4) -> Vector4:
+  +square = Vector4.length_sqr(quaternion)
+  Quaternion.inverted(F32.is_ne(square, 0.0), quaternion, square)
+
+def Quaternion.scale(quaternion: Vector4, factor: F32) -> Vector4:
+  Vector4.scale(quaternion, factor)
+
+def Quaternion.divide(left: Vector4, right: Vector4) -> Vector4:
+  Vector4.divide(left, right)
+
+def Quaternion.lerp(left: Vector4, right: Vector4, amount: F32) -> Vector4:
+  Vector4.lerp(left, right, amount)
+
+def Quaternion.nlerp(left: Vector4, right: Vector4, amount: F32) -> Vector4:
+  Quaternion.normalize(Quaternion.lerp(left, right, amount))
+
+def Quaternion.equals(+left: Vector4, +right: Vector4) -> Bool:
+  Vector4.equals(left, right) || Vector4.equals(left, Vector4.negate(right))
+
 def Collision.spheres(left: Vector3, radius: F32, right: Vector3, other_radius: F32) -> Bool:
   +sum = (radius + other_radius : F32)
   (Vector3.distance_sqr(left, right) <= sum * sum : F32)

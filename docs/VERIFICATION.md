@@ -21,10 +21,10 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 208 scenarios / 33,761 output words match pinned raylib exactly on each
+- 212 scenarios / 33,818 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
-- The word count includes 1,317 exact numeric/collision result-bit probe cells.
+- The word count includes 1,374 exact numeric/collision result-bit probe cells.
   The math reference explicitly uses uncontracted F32; no comparison tolerance
   is applied. Both components of each vector output are checked.
 - Seven QOI export scenarios compare all 299 encoded bytes per lane. Real CPU/JS
@@ -51,7 +51,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
 - The pinned core header inventory contains 600 unique public functions; 81 have
-  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 115
+  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 125
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
   on CPU, JS and Metal for its declared reference profile. Ubuntu's subsequent
@@ -101,7 +101,7 @@ reference comparison of all 4096 supported POT axis sizes.
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 208 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 212 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -624,3 +624,26 @@ color-domain assertions. Packed color results remain ordinary RGBA output words;
 only actual float/Boolean results contribute to the numeric-probe count.
 
 Regression scan: 37 callers checked, 40 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `478460e`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36225344756)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36225344626)
+completed successfully.
+
+## Quaternion metrics, inversion and interpolation
+
+Ten further quaternion functions pass 212 scenarios / 33,818 words on CPU-1,
+CPU-2, JavaScript and forced Metal. The fixtures check zero quaternion signs,
+identity/non-unit inversion, component division, extrapolation, antipodal NLERP
+collapse and all-component `q`/`-q` epsilon equivalence. Quaternion zero behavior
+is retained explicitly instead of reusing Vector4's positive-zero normalization.
+See [evidence/quaternion-metrics.json](evidence/quaternion-metrics.json).
+
+The inverse fixture guard is restricted to actual vector reciprocals, permitting
+identity and zero quaternion inversion while component quaternion division still
+rejects zero divisors. A26/A4/A5 pass the scoped numerical/source/backend gates;
+eight harness tests, project checks and all four pinned laws pass. Exceptional/
+subnormal and contracted domains, remaining operations and full target/integration/
+performance gates remain gaps. Reviewed 43 helper/registry/generator/diagnostic
+caller contexts, 18 differential operations and one division-domain assertion.
+
+Regression scan: 43 callers checked, 19 assertions checked, 1 flagged/fixed.
