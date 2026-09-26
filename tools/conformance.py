@@ -78,6 +78,13 @@ VECTOR4_APIS = {
     'lerp':('Vector4Lerp','qqs','vector'), 'move_towards':('Vector4MoveTowards','qqs','vector'),
     'invert':('Vector4Invert','q','vector'), 'equals':('Vector4Equals','qq','bool'),
 }
+QUATERNION_APIS = {
+    'identity':('QuaternionIdentity','','vector'), 'add':('QuaternionAdd','qq','vector'),
+    'subtract':('QuaternionSubtract','qq','vector'), 'multiply':('QuaternionMultiply','qq','vector'),
+}
+COLOR_VECTOR3_APIS = {'to_hsv':('ColorToHSV','c','vector')}
+COLOR_VECTOR4_APIS = {'normalize':('ColorNormalize','c','vector')}
+COLOR_NUMERIC_APIS = {'from_normalized':('ColorFromNormalized','q','color'), 'from_hsv':('ColorFromHSV','sss','color')}
 MATRIX_APIS = {
     'identity':('MatrixIdentity','','matrix'), 'transpose':('MatrixTranspose','m','matrix'),
     'add':('MatrixAdd','mm','matrix'), 'subtract':('MatrixSubtract','mm','matrix'),
@@ -92,9 +99,13 @@ MATRIX_APIS = {
 }
 MATRIX_ROTATIONS = {'rotate_x','rotate_y','rotate_z','rotate_xyz','rotate_zyx','rotate'}
 MATRIX_FIELDS = tuple(f'm{row+4*column}' for row in range(4) for column in range(4))
-ARGUMENT_SIZES = {'v':2, 't':3, 'q':4, 'm':16, 'b':6, 'r':4, 's':1, 'i':1}
+ARGUMENT_SIZES = {'v':2, 't':3, 'q':4, 'c':4, 'm':16, 'b':6, 'r':4, 's':1, 'i':1}
 VECTOR_APIS = {'vector_value':('Vector2',2,VECTOR2_APIS), 'vector3_value':('Vector3',3,VECTOR3_APIS),
                'vector4_value':('Vector4',4,VECTOR4_APIS),
+               'quaternion_value':('Quaternion',4,QUATERNION_APIS),
+               'color_vector3_value':('Color',3,COLOR_VECTOR3_APIS),
+               'color_vector4_value':('Color',4,COLOR_VECTOR4_APIS),
+               'color_numeric_value':('Color',1,COLOR_NUMERIC_APIS),
                'matrix_value':('Matrix',16,MATRIX_APIS)}
 COLLISION_APIS = {
     'recs':('CheckCollisionRecs','rr','bool'),
@@ -307,7 +318,7 @@ def cases_from(document):
             if not isinstance(kind, str) or kind not in ("pixel", "rectangle", "circle", "clear", "flip_horizontal", "flip_vertical", "blend_color",
                              "line", "line_v", "triangle", "triangle_lines", "blit", "blit_region", "blit_rect", "crop", "extract", "resize_nn", "resize",
                              "pixel_v", "circle_v", "circle_lines", "circle_lines_v", "rectangle_v", "rectangle_rec", "rectangle_lines",
-                             "line_ex", "triangle_fan", "triangle_strip", "triangle_ex", "color_value", "number_value", "vector_value", "vector3_value", "vector4_value", "matrix_value", "collision_value", "from_channel", "alpha_clear", "alpha_mask", "alpha_crop", "resize_canvas", "rotate_degrees", "to_pot") and kind not in UNARY_IMAGE_APIS and kind not in COLOR_IMAGE_APIS:
+                             "line_ex", "triangle_fan", "triangle_strip", "triangle_ex", "color_value", "number_value", "collision_value", "from_channel", "alpha_clear", "alpha_mask", "alpha_crop", "resize_canvas", "rotate_degrees", "to_pot") and kind not in UNARY_IMAGE_APIS and kind not in COLOR_IMAGE_APIS and kind not in VECTOR_APIS:
                 raise ValueError(f"{name}: unknown operation {kind!r}")
             if kind in ('blit', 'blit_region', 'blit_rect', 'alpha_mask'):
                 if kind != 'alpha_mask':
@@ -341,7 +352,7 @@ def cases_from(document):
                             raise ValueError(f'{name}: invalid destination rectangle')
                 if op.get('observe_source'):
                     current_w, current_h = source['width'], source['height']
-            elif kind not in ('crop', 'extract', 'resize_nn', 'resize', 'color_contrast', 'color_brightness', 'number_value', 'vector_value', 'vector3_value', 'vector4_value', 'matrix_value', 'collision_value', 'from_channel', 'alpha_crop', 'rotate_degrees') and kind not in UNARY_IMAGE_APIS:
+            elif kind not in ('crop', 'extract', 'resize_nn', 'resize', 'color_contrast', 'color_brightness', 'number_value', 'collision_value', 'from_channel', 'alpha_crop', 'rotate_degrees') and kind not in UNARY_IMAGE_APIS and kind not in VECTOR_APIS:
                 rgba(op["color"])
             if kind == 'color_replace':
                 rgba(op['replacement'])
@@ -371,6 +382,12 @@ def cases_from(document):
                 _, signature, result = apis[function]
                 if len(values) != sum(ARGUMENT_SIZES[p] for p in signature) or not all(coordinate(v, True) for v in values):
                     raise ValueError(f'{name}: invalid {namespace} argument arity/domain')
+                if signature == 'c':
+                    rgba(values)
+                if namespace=='Color' and function=='from_normalized' and any(not 0<=v<=1 for v in values):
+                    raise ValueError(f'{name}: normalized color components must be in 0..1')
+                if namespace=='Color' and function=='from_hsv' and (not 0<=values[0]<=360 or any(not 0<=v<=1 for v in values[1:])):
+                    raise ValueError(f'{name}: HSV requires hue 0..360 and saturation/value 0..1')
                 divisors = values[dimensions:] if function=='divide' else values if function=='invert' and namespace!='Matrix' else []
                 if any(struct.unpack('f',struct.pack('f',v))[0] == 0 for v in divisors):
                     raise ValueError(f'{name}: vector divisors must remain nonzero in F32')
@@ -541,6 +558,10 @@ def vector_arguments(signature, values, bend=False):
             vectors = vector_arguments('tt',values[at:at+6],bend)
             result.append(('J.BoundingBox{' if bend else '(BoundingBox){') + vectors + '}')
             at += 6
+        elif parameter == 'c':
+            color = rgba(values[at:at+4])
+            result.append(str(color) if bend else f'GetColor({color}u)')
+            at += 4
         else:
             result.append(literal(values[at]))
             at += 1
@@ -658,7 +679,9 @@ def c_source(cases):
                 namespace, dimensions, apis = VECTOR_APIS[kind]
                 function, signature, result = apis[op['function']]
                 expression = f'{function}({vector_arguments(signature,op["args"])})'
-                if result == 'buffer':
+                if result == 'color':
+                    lines += [f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, {expression});']
+                elif result == 'buffer':
                     lines += ['{', f'float{dimensions} v = {expression};']
                     for index in range(dimensions):
                         lines += [f'ImageDrawPixel(&image, {op["x"]+index}, {op["y"]}, float_bits(v.v[{index}]));']
@@ -670,7 +693,8 @@ def c_source(cases):
                         lines += [f'ImageDrawPixel(&image, {op["x"]+index}, {op["y"]}, float_bits({field}));']
                     lines += ['}']
                 elif result in ('vector','matrix'):
-                    lines += ['{', f'{namespace} v = {expression};']
+                    output_type = f'Vector{dimensions}' if result=='vector' else namespace
+                    lines += ['{', f'{output_type} v = {expression};']
                     for index, field in enumerate(MATRIX_FIELDS if result=='matrix' else ('x','y','z','w')[:dimensions]):
                         lines += [f'ImageDrawPixel(&image, {op["x"]+index}, {op["y"]}, float_bits(v.{field}));']
                     lines += ['}']
@@ -938,7 +962,7 @@ def bend_source(cases, gpu=False):
                     lines += [f'    {previous} : J.Surface <- write_float_buffer({dimensions}n, {args[0]}, {f32(op["x"])}, {f32(op["y"])}, {expression})']
                     continue
                 function = {'vector':{2:'write_vector',3:'write_vector3',4:'write_vector4'}.get(dimensions), 'matrix':'write_matrix', 'pair':'write_vector_pair'}.get(result,'J.Surface.draw_pixel')
-                value = expression if result in ('vector','matrix','pair') else f'Bool.to_u32({expression})' if result=='bool' else f'F32.bits({expression})'
+                value = expression if result in ('vector','matrix','pair','color') else f'Bool.to_u32({expression})' if result=='bool' else f'F32.bits({expression})'
                 previous = f's{j}'
                 lines += [f'    {previous} : J.Surface = {function}({args[0]}, {f32(op["x"])}, {f32(op["y"])}, {value})']
                 continue
@@ -1155,7 +1179,7 @@ def main():
     report['scenarios'] = [c['id'] for c in cases]
     report['pixels_per_lane'] = sum(width * height for width, height in map(result_size, cases))
     report['numeric_probe_cells'] = sum(1 if op['op']=='number_value' else numeric_cells(op['op'],op['function'])
-                                        for case in cases for op in case['operations'] if op['op']=='number_value' or op['op'] in VECTOR_APIS)
+                                        for case in cases for op in case['operations'] if op['op']=='number_value' or op['op'] in VECTOR_APIS and VECTOR_APIS[op['op']][2][op['function']][2]!='color')
     report['numeric_probe_cells'] += sum(COLLISION_CELLS[COLLISION_APIS[op['function']][2]]
                                         for case in cases for op in case['operations'] if op['op']=='collision_value')
     report['alpha_border_observations'] = sum('alpha_border' in case for case in cases)

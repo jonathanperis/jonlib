@@ -8,9 +8,9 @@ Profile: **rgba8-cpu-images-v1**, with domains defined in [API.md](API.md).
 
 ## Verified evidence
 
-The current local Apple M1/macOS corpus contains **203 deterministic scenarios /
-33,677 checked output words per lane**, matching native CPU (one and two threads), JavaScript
-and forced Metal. Most words are RGBA pixels; 1,250 are exact scalar/vector/matrix/collision
+The current local Apple M1/macOS corpus contains **208 deterministic scenarios /
+33,761 checked output words per lane**, matching native CPU (one and two threads), JavaScript
+and forced Metal. Most words are RGBA pixels; 1,317 are exact numeric/collision
 result-bit probe cells. QOI export bytes are compared separately. GitHub Actions
 is configured to run this corpus on **Ubuntu 24.04
 (x86_64)** and **macOS 15 (arm64)** for CPU/JavaScript; use the current workflow
@@ -31,8 +31,8 @@ originally established the CPU/JS baseline; current CI applies the declared over
 A current run's precise inputs, source hashes and lane outcomes are in
 `.build/conformance.json`. The authoritative [API dashboard](PROGRESS.md) covers
 the complete release-header/support inventory. The 600-entry
-`.build/api-inventory.json` is its legacy core view, mapping 77 reference APIs to
-these scoped operations/contracts. The companion ledger additionally maps 111
+`.build/api-inventory.json` is its legacy core view, mapping 81 reference APIs to
+these scoped operations/contracts. The companion ledger additionally maps 115
 `raymath.h` functions. Remaining functions retain explicit planned work.
 These counts are an inventory, not a percentage of full parity.
 Both `profile-covered` and `contract-checked` are partial-coverage statuses.
@@ -60,6 +60,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | `GetColor` / `ColorToInt` | `Color.rgba` / channel extractors | Channel/packing contracts checked, including unsigned-byte truncation |
 | `ColorAlphaBlend` | `Color.alpha_blend` | Exact reference vectors including transparent/opaque/tinted cases |
 | Color equality, alpha/Fade, tint, brightness, contrast and lerp | `Color` value operations | Exact packed bytes/Boolean values in the documented finite-factor profiles |
+| Normalized/HSV colors | `Color.normalize/from_normalized/to_hsv/from_hsv` | Exact float bits or packed bytes, including achromatic/sector boundaries; bounded HSV input profile |
 | Image color/alpha operations and checkerboards | `Surface.color_*`, `alpha_*`, `create_checked` | Exact reference arithmetic, preserved mask ownership and checked generator inputs |
 | Alpha bounds/cropping | `Surface.alpha_border/alpha_crop` | Exact rectangles, retained observation owner and unchanged images for empty selections |
 | Canvas resizing | `Surface.resize_canvas` | Raw RGBA copy/fill, clipping and same-size no-op; rejected requests preserve the original owner |
@@ -70,6 +71,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | `ImageRotate` / `ImageToPOT` | `Surface.rotate_degrees_for/to_pot` | Checked general rotation with reference bilinear sampling; exhaustive supported POT-axis reference validation and exact fill/copy fixtures |
 | QOI loading/export | `Surface.decode_qoi/to_qoi/load_qoi/write_qoi` | Valid-stream RGBA8 profile, all opcodes, exact export bytes, typed malformed-input errors and real CPU/JS file round trips |
 | Scalar/Vector2/Vector3/Vector4 raymath | `Math` and vector functions | Exact results for the explicit uncontracted-F32 profile; exceptional/contracted variants remain open |
+| Quaternion foundation | `Quaternion.identity/add/subtract/multiply` | Shared Vector4 representation; exact uncontracted Hamilton products and operand order |
 | Float-list exports | `Vector3.to_float_v`, `Matrix.to_float_v` | Exact values/order and proven 3/16-element lengths; native array ABI/mutability remain gaps |
 | Matrix arithmetic/inversion, affine constructors and vector transforms | `Matrix`, `Vector2.transform`, `Vector3.transform` | All 16 fields and transformed components compared exactly, including noncommuting products and near-singular inversion; double-transpose law checked |
 | View and rotation matrices | `Matrix.look_at`, `rotate_*_for`, `rotate_for` | Reference degenerate bases, explicit bounded trigonometric profiles, raw trig bits and distinct Euler orders |

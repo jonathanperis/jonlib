@@ -707,6 +707,48 @@
     "api_id": "raylib:function:ColorToInt",
     "milestone": "pixels"
   },
+  "ColorNormalize": {
+    "jonlib": "Color.normalize",
+    "status": "profile-covered",
+    "scope": "RGBA8 packed color to exact reference normalized RGBA Vector4 components.",
+    "gaps": [
+      "Complete target/integration/performance coverage"
+    ],
+    "api_id": "raylib:function:ColorNormalize",
+    "milestone": "pixels"
+  },
+  "ColorFromNormalized": {
+    "jonlib": "Color.from_normalized",
+    "status": "profile-covered",
+    "scope": "Finite normalized Vector4 components 0..1 converted with reference F32 multiplication and byte truncation.",
+    "gaps": [
+      "Out-of-profile/exceptional/subnormal inputs",
+      "Complete target/integration/performance coverage"
+    ],
+    "api_id": "raylib:function:ColorFromNormalized",
+    "milestone": "pixels"
+  },
+  "ColorToHSV": {
+    "jonlib": "Color.to_hsv",
+    "status": "profile-covered",
+    "scope": "RGBA8 to HSV Vector3 with exact reference float bits, max-channel ties, achromatic results and ignored alpha.",
+    "gaps": [
+      "Complete target/integration/performance coverage"
+    ],
+    "api_id": "raylib:function:ColorToHSV",
+    "milestone": "pixels"
+  },
+  "ColorFromHSV": {
+    "jonlib": "Color.from_hsv",
+    "status": "profile-covered",
+    "scope": "Hue 0..360 and saturation/value 0..1; exact bounded remainder, reference channel arithmetic and byte truncation; opaque output alpha.",
+    "gaps": [
+      "Wider hue and exceptional/subnormal domains",
+      "Other arithmetic/target/performance coverage"
+    ],
+    "api_id": "raylib:function:ColorFromHSV",
+    "milestone": "pixels"
+  },
   "ColorTint": {
     "jonlib": "Color.multiply",
     "status": "profile-covered",

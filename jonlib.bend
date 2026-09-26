@@ -815,6 +815,21 @@ def Vector4.equals(left: Vector4, right: Vector4) -> Bool:
   Vector4{a, b, c, d} = right
   Math.float_equals(x, a) && Math.float_equals(y, b) && Math.float_equals(z, c) && Math.float_equals(w, d)
 
+def Quaternion.identity() -> Vector4:
+  Vector4{0.0, 0.0, 0.0, 1.0}
+
+def Quaternion.add(left: Vector4, right: Vector4) -> Vector4:
+  Vector4.add(left, right)
+
+def Quaternion.subtract(left: Vector4, right: Vector4) -> Vector4:
+  Vector4.subtract(left, right)
+
+def Quaternion.multiply(left: Vector4, right: Vector4) -> Vector4:
+  Vector4{+x, +y, +z, +w} = left
+  Vector4{+a, +b, +c, +d} = right
+  Vector4{(x * d + w * a + y * c - z * b : F32), (y * d + w * b + z * a - x * c : F32),
+    (z * d + w * c + x * b - y * a : F32), (w * d - x * a - y * b - z * c : F32)}
+
 def Collision.spheres(left: Vector3, radius: F32, right: Vector3, other_radius: F32) -> Bool:
   +sum = (radius + other_radius : F32)
   (Vector3.distance_sqr(left, right) <= sum * sum : F32)
@@ -1013,6 +1028,44 @@ def Color.blue(c: U32) -> U32:
 
 def Color.alpha(c: U32) -> U32:
   (c .&. 255 : U32)
+
+def Color.normalize(+color: U32) -> Vector4:
+  Vector4{(U32.to_f32(Color.red(color)) / 255.0 : F32), (U32.to_f32(Color.green(color)) / 255.0 : F32),
+    (U32.to_f32(Color.blue(color)) / 255.0 : F32), (U32.to_f32(Color.alpha(color)) / 255.0 : F32)}
+
+def Color.from_normalized(value: Vector4) -> U32:
+  Vector4{r, g, b, a} = value
+  Color.rgba(F32.to_u32((r * 255.0 : F32)), F32.to_u32((g * 255.0 : F32)),
+    F32.to_u32((b * 255.0 : F32)), F32.to_u32((a * 255.0 : F32)))
+
+def Color.hsv.components(achromatic: Bool, +r: F32, +g: F32, +b: F32, +maximum: F32, +delta: F32) -> Vector3:
+  match achromatic:
+    case True{}: Vector3{0.0, 0.0, maximum}
+    case False{}:
+      sector = Bool.pick(F32, (r >= maximum : F32), ((g - b) / delta : F32),
+        Bool.pick(F32, (g >= maximum : F32), (2.0 + (b - r) / delta : F32), (4.0 + (r - g) / delta : F32)))
+      +hue = (sector * 60.0 : F32)
+      Vector3{Bool.pick(F32, (hue < 0.0 : F32), (hue + 360.0 : F32), hue), (delta / maximum : F32), maximum}
+
+def Color.to_hsv(+color: U32) -> Vector3:
+  +r = (U32.to_f32(Color.red(color)) / 255.0 : F32)
+  +g = (U32.to_f32(Color.green(color)) / 255.0 : F32)
+  +b = (U32.to_f32(Color.blue(color)) / 255.0 : F32)
+  minimum = F32.min(F32.min(r, g), b)
+  +maximum = F32.max(F32.max(r, g), b)
+  +delta = (maximum - minimum : F32)
+  Color.hsv.components((delta < 0.00001 : F32), r, g, b, maximum, delta)
+
+def Color.hsv.channel(offset: F32, hue: F32, saturation: F32, +value: F32) -> U32:
+  # Hue 0..360 makes the shifted phase 1..11, requiring at most one remainder subtraction.
+  +phase = (offset + hue / 60.0 : F32)
+  +k = Bool.pick(F32, (phase >= 6.0 : F32), (phase - 6.0 : F32), phase)
+  gain = F32.clamp(F32.min((4.0 - k : F32), k), 0.0, 1.0)
+  F32.to_u32(((value - value * saturation * gain) * 255.0 : F32))
+
+def Color.from_hsv(+hue: F32, +saturation: F32, +value: F32) -> U32:
+  Color.rgba(Color.hsv.channel(5.0, hue, saturation, value), Color.hsv.channel(3.0, hue, saturation, value),
+    Color.hsv.channel(1.0, hue, saturation, value), 255)
 
 def Color.tint(+source: U32, +tint: U32) -> U32:
   Color.rgba(((Color.red(source) * (Color.red(tint) + 1)) >> 8n : U32),

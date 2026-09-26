@@ -2,7 +2,7 @@
 
 The current math implementation is Bend source in `jonlib.bend`. It begins the
 `raymath.h` work package with six scalar, twenty-nine Vector2, thirty-five Vector3,
-twenty-two Vector4 and nineteen Matrix functions.
+twenty-two Vector4, nineteen Matrix and four Quaternion functions.
 
 ## Scalar API
 
@@ -179,6 +179,17 @@ F32 values around π/4, quadrant/full-cycle angles, non-unit and zero axes.
 without perspective division. The Vector2 version retains the multiplication
 and addition of the zero-Z term; dropping it could change signed-zero behavior.
 All 16 matrix fields and all transformed vector components are checked bitwise.
+
+## Quaternion API
+
+Quaternion values use `Vector4{x, y, z, w}`, mirroring raylib's `Quaternion`
+typedef alias. `Quaternion.identity()` returns `(0,0,0,1)`.
+`Quaternion.add(left, right)` and `subtract(left, right)` operate component-wise.
+`Quaternion.multiply(left, right)` applies the reference Hamilton product in
+its original uncontracted F32 order; operands are not implicitly normalized.
+Multiplication is noncommutative and differs from `Vector4.multiply`.
+The remaining quaternion operations and full integration/ABI/target/performance
+coverage remain ledger gaps.
 
 ## Float-list exports
 

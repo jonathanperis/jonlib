@@ -21,10 +21,10 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 203 scenarios / 33,677 output words match pinned raylib exactly on each
+- 208 scenarios / 33,761 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
-- The word count includes 1,250 exact scalar/vector/matrix/collision result-bit probe cells.
+- The word count includes 1,317 exact numeric/collision result-bit probe cells.
   The math reference explicitly uses uncontracted F32; no comparison tolerance
   is applied. Both components of each vector output are checked.
 - Seven QOI export scenarios compare all 299 encoded bytes per lane. Real CPU/JS
@@ -50,8 +50,8 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 77 have
-  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 111
+- The pinned core header inventory contains 600 unique public functions; 81 have
+  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 115
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
   on CPU, JS and Metal for its declared reference profile. Ubuntu's subsequent
@@ -101,7 +101,7 @@ reference comparison of all 4096 supported POT axis sizes.
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 203 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 208 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -598,3 +598,29 @@ performance evidence remain gaps. Reviewed 51 numerical/registry/generator/
 diagnostic caller contexts, 27 differential operations and two divisor controls.
 
 Regression scan: 51 callers checked, 29 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `7696141`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36224050657)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36224050665)
+completed successfully.
+
+## Normalized/HSV colors and quaternion foundation
+
+Four core color functions and four quaternion functions pass 208 scenarios /
+33,761 words per CPU-1/CPU-2/JavaScript/forced-Metal lane. The linked raylib oracle
+checks normalized/HSV float bits, channel/sector boundaries, hidden RGB under
+zero alpha, opaque HSV output and byte truncation. The bounded HSV remainder
+uses at most one exact subtraction. Inspection of the linked macOS implementation
+confirmed separate multiply/subtract instructions; reference flags were not changed.
+Quaternion values share Vector4 representation, while Hamilton multiplication
+retains its noncommuting reference order. See
+[evidence/colors-quaternion-foundation.json](evidence/colors-quaternion-foundation.json).
+
+A26/A4/A5 pass the scoped numerical/source/backend contracts; eight harness
+tests, project checks and all four pinned laws pass. Wider hue/numerical domains,
+remaining quaternion operations and complete ABI/integration/target/performance
+evidence remain gaps. Reviewed 37 helper, byte-conversion, registry, serializer
+and diagnostic caller contexts, 36 differential operations and four malformed
+color-domain assertions. Packed color results remain ordinary RGBA output words;
+only actual float/Boolean results contribute to the numeric-probe count.
+
+Regression scan: 37 callers checked, 40 assertions checked, 0 flagged/fixed.

@@ -57,6 +57,11 @@ Supported operations:
 - Float-list exports compare every element in native return order; the Bend
   verification writer rejects both short and overlong returned lists.
 - `vector4_value` uses flattened XYZW arguments and checks all four result cells.
+- `quaternion_value` also uses XYZW arguments/results, but calls quaternion
+  operations such as the Hamilton product rather than component multiplication.
+- `color_vector3_value`/`color_vector4_value` accept four integer byte arguments
+  and compare returned HSV/normalized float bits. `color_numeric_value` compares
+  packed RGBA results from normalized/HSV inputs with validated domains.
 - `color_tint`, `color_invert`, `color_contrast`, `color_brightness`,
   `color_replace`: image transforms. Tint/replacement use RGBA `color`,
   replacement also uses `replacement`, and contrast/brightness use `amount`.

@@ -24,6 +24,15 @@ the unsigned bit pattern returned by `ColorToInt`.
   factors clamped to -1..1 with reference byte truncation; alpha is retained.
 - `Color.lerp(first, second, factor)`: straight RGBA interpolation with a finite
   factor clamped to 0..1; this does not perform alpha blending.
+- `Color.normalize(color) -> Vector4`: exact reference RGBA normalization by 255.
+- `Color.from_normalized(vector) -> U32`: finite RGBA components in 0..1,
+  multiplied by 255 in F32 and truncated to bytes.
+- `Color.to_hsv(color) -> Vector3`: hue in degrees, saturation and value in 0..1;
+  ignores alpha and returns zero hue/saturation for achromatic colors.
+- `Color.from_hsv(hue, saturation, value) -> U32`: hue 0..360 and saturation/value
+  0..1; preserves reference sector arithmetic and byte truncation, with alpha 255.
+  Wider hue inputs remain outside this profile. RGB→HSV→RGB is not promised to
+  recover every byte, because the reference itself rounds intermediate values.
 
 The public scalar and Vector2 operations are listed in [MATH.md](MATH.md),
 including their explicit uncontracted-F32 profile and remaining numeric gaps.

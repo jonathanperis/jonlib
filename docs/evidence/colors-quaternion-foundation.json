@@ -1,0 +1,13 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {"jonlib.bend": "518090dc779fc33c8eccb1c32776f21a7a95f535abc00bc8f3b86a3dc6caf02c"},
+  "fixtures_sha256": "4237d49ba9acc9422c4af37b1a85f1c68184039defe723d6ec5f528e9903b6c7",
+  "scenarios": 208,
+  "output_words_per_lane": 33761,
+  "numeric_probe_cells": 1317,
+  "passed": true,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "scope": ["RGBA normalization and bounded HSV conversions against linked raylib", "Quaternion alias representation, identity, add/subtract and Hamilton product", "Packed color outputs retain byte truncation and exact alpha semantics"],
+  "reference_arithmetic": "Linked macOS ColorFromHSV inspected: separate fmul/fsub instructions; reference build flags unchanged",
+  "limits": ["Wider hue and exceptional/subnormal/contracted numerical domains", "Remaining quaternion operations and complete integration/ABI/target/performance coverage"]
+}
