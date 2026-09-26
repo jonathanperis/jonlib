@@ -83,6 +83,14 @@ notices and the selected license are retained in [LICENSES/arm-math.txt](LICENSE
   altered implementations; floating-point exception-state behavior is outside
   the current numeric profile.
 
+## stb_perlin
+
+`src/perlin.bend` is an altered Bend adaptation of stb_perlin.h v0.5 from pinned
+raylib, Copyright (c) 2017 Sean Barrett, with fractal/seed contributions by Jack
+Mott and Jordan Peck. Jonlib selects the MIT alternative retained in
+[LICENSES/stb-perlin.txt](LICENSES/stb-perlin.txt). The original lookup tables
+are packed into U32 words; arithmetic uses explicit reference profiles.
+
 ## rprand
 
 `src/random.bend` is an altered Bend adaptation of pinned raylib's

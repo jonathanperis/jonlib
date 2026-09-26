@@ -268,6 +268,17 @@
     "api_id": "raylib:function:GenImageWhiteNoise",
     "milestone": "images"
   },
+  "GenImagePerlinNoise": {
+    "jonlib": "Surface.create_perlin_for / Surface.create_perlin",
+    "status": "profile-covered",
+    "scope": "RGBA8 six-octave stb_perlin generation with original tables, seeded octaves, aspect compensation and byte quantization. Explicit fused/uncontracted profiles; dimensions 1..4096, integral offsets -32767..32767, scale zero or magnitude 2^-16..256.",
+    "gaps": [
+      "Broader numerical/size domains and other compiler contraction patterns",
+      "Full target/resource/performance coverage"
+    ],
+    "api_id": "raylib:function:GenImagePerlinNoise",
+    "milestone": "images"
+  },
   "GenImageCellular": {
     "jonlib": "Surface.create_cellular",
     "status": "profile-covered",

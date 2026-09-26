@@ -79,6 +79,9 @@ Supported operations:
 - A `cellular` image source provides a U32 `seed` and `tile` in 1..4096.
   The native gate first exhausts the supported integer-distance pairs; complete
   pixels are then compared against actual `GenImageCellular` output.
+- A `perlin` source provides integral `offset_x`/`offset_y` in -32767..32767
+  and `scale` zero or with magnitude 2^-16..256. The host reference determines
+  the explicit fused/uncontracted candidate profile; the linked oracle is unchanged.
 - `color_tint`, `color_invert`, `color_contrast`, `color_brightness`,
   `color_replace`: image transforms. Tint/replacement use RGBA `color`,
   replacement also uses `replacement`, and contrast/brightness use `amount`.

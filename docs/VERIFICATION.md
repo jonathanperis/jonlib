@@ -21,7 +21,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 242 scenarios / 39,623 output words match pinned raylib exactly on each
+- 249 scenarios / 40,024 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
 - The word count includes 1,846 exact numeric/collision result-bit probe cells.
@@ -50,7 +50,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 87 have
+- The pinned core header inventory contains 600 unique public functions; 88 have
   explicitly scoped Jonlib mappings. The raymath ledger additionally maps 142
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
@@ -101,7 +101,7 @@ reference comparison of all 4096 supported POT axis sizes.
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 242 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 249 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -917,3 +917,28 @@ globals/libc random variants, broader size domains and complete target/resource/
 performance coverage remain gaps.
 
 Regression scan: 38 callers checked, 14 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `411398b`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36244010118)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36244010066)
+completed successfully, including the exhaustive cellular-distance gate.
+
+## Profiled Perlin image generation
+
+The linked native `GenImagePerlinNoise` matches all seven new fixtures in the
+249-scenario / 40,024-word CPU-1/CPU-2/JavaScript/forced-Metal corpus. The new
+module preserves the pinned MIT-licensed stb tables, octave seeds, aspect
+compensation and intensity arithmetic. Inspection of the actual Apple arm64
+reference confirmed fused easing/interpolation/accumulation; explicit
+`Noise.Reference` variants retain that difference. The convenience API uses the
+uncontracted variant. [Evidence](evidence/perlin-generation.json) records both
+profiles passing all 1,024 table cells and 222 raw octave results on CPU/JS/Metal.
+
+A26/A4/A5 pass the scoped pixel/source/backend contracts. Eight harness tests,
+project checks and all four pinned laws pass. I69 matches the declared domains,
+rejection behavior and arithmetic selection. The unchanged numeric/resize/trig
+dependencies reuse their passing evidence; the new raw-octave probe independently
+checks their relevant FMA composition. Broader numerical/size domains, other
+compiler contraction patterns and full target/resource/performance coverage
+remain gaps. The original tables and expected output pixels are retained.
+
+Regression scan: 71 callers checked, 14 assertions checked, 0 flagged/fixed.

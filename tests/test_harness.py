@@ -103,6 +103,8 @@ class HarnessTests(unittest.TestCase):
                     dict(case, white_noise=dict(seed=0,factor=1.5)),
                     dict(case, cellular=dict(seed=0,tile=0)),
                     dict(case, cellular=dict(seed=0,tile=4097)),
+                    dict(case, perlin=dict(offset_x=0.5,offset_y=0,scale=1)),
+                    dict(case, perlin=dict(offset_x=0,offset_y=0,scale=1e-30)),
                     dict(case, width=9, operations=[dict(op='matrix_value', function='decompose', args=list(range(16)), x=0, y=0)]),
                     dict(case, width=4, operations=[dict(op='quaternion_value', function='from_euler', args=[7,0,0], x=0, y=0)]),
                     dict(case, width=16, operations=[dict(op='matrix_value', function='frustum', args=[1,1,-1,1,0.1,10], x=0, y=0)]),

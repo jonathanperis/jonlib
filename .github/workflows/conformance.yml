@@ -91,6 +91,11 @@ jobs:
           python3 tools/random_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify Perlin tables and octave arithmetic
+        run: >-
+          python3 tools/perlin_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Independently audit the public API catalog
         run: >-
           python3 tools/api_plan.py check --clang-audit
@@ -159,3 +164,4 @@ jobs:
             .build/angle-probe/results.json
             .build/inverse-trig-probe/results.json
             .build/random-probe/results.json
+            .build/perlin-probe/results.json

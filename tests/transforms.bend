@@ -212,6 +212,9 @@ def checks() -> Bool:
     && sequence_empty(J.Random.load_sequence(J.Random.seed(123), 0, 0.0, 0.0, 0n))
     && noise_rejected(J.Surface.create_cellular(J.Random.seed(123), 2, 2, 0))
     && noise_rejected(J.Surface.create_cellular(J.Random.seed(123), 4097, 1, 1))
+    && no_surface(J.Surface.create_perlin(1, 1, 0.5, 0.0, 1.0))
+    && no_surface(J.Surface.create_perlin(0, 1, 0.0, 0.0, 1.0))
+    && no_surface(J.Surface.create_perlin(1, 1, 0.0, 0.0, 0.00000001))
 
 def main() -> IO(Unit):
   verdict(checks())

@@ -1,6 +1,13 @@
 {
   "schema": 1,
   "cases": [
+    {"id":"perlin-square","width":8,"height":8,"background":[0,0,0,255],"perlin":{"offset_x":0,"offset_y":0,"scale":2.5},"operations":[]},
+    {"id":"perlin-wide-offset","width":17,"height":11,"background":[0,0,0,255],"perlin":{"offset_x":-19,"offset_y":7,"scale":3.7},"operations":[]},
+    {"id":"perlin-tall-negative-scale","width":7,"height":13,"background":[0,0,0,255],"perlin":{"offset_x":3,"offset_y":-5,"scale":-1.3},"operations":[]},
+    {"id":"perlin-wrap-offset","width":5,"height":7,"background":[0,0,0,255],"perlin":{"offset_x":-32767,"offset_y":32767,"scale":256},"operations":[]},
+    {"id":"perlin-thin","width":1,"height":9,"background":[0,0,0,255],"perlin":{"offset_x":1,"offset_y":-2,"scale":0.7},"operations":[]},
+    {"id":"perlin-zero-scale","width":3,"height":2,"background":[0,0,0,255],"perlin":{"offset_x":0,"offset_y":0,"scale":0},"operations":[]},
+    {"id":"perlin-small-scale","width":9,"height":1,"background":[0,0,0,255],"perlin":{"offset_x":-1,"offset_y":1,"scale":0.0000152587890625},"operations":[]},
     {"id":"cellular-unit-tiles","width":3,"height":2,"background":[0,0,0,255],"cellular":{"seed":0,"tile":1},"operations":[]},
     {"id":"cellular-remainder-grid","width":17,"height":11,"background":[0,0,0,255],"cellular":{"seed":42,"tile":4},"operations":[]},
     {"id":"cellular-saturated-edges","width":33,"height":29,"background":[0,0,0,255],"cellular":{"seed":1,"tile":16},"operations":[]},

@@ -1,0 +1,15 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {
+    "jonlib.bend": "309a6c40721b34665f75422b0daeebf9c29a6a8baed5a62f987d3991772761e8",
+    "src/perlin.bend": "48c3d6fa5ddd2c5edb9fe96927756e0865241874dcc43aeeab92b56a9571762b"
+  },
+  "fixtures_sha256": "3a6d08b32c1c459f7d185f0994bf5b1a6ff608b02d65c1819b7d8c9d386abc0c",
+  "scenarios": 249,
+  "output_words_per_lane": 40024,
+  "passed": true,
+  "lanes": ["cpu-1","cpu-2","javascript","gpu-forced"],
+  "perlin_probe": {"table_cells":1024,"octave_samples":222,"inputs_sha256":"7738c8a4717dd5b69107477d2adc01daef9e4c407829450917dd6c1ecb41efbc","fused_passed":["cpu","javascript","metal"],"uncontracted_passed":["cpu","javascript","metal"]},
+  "scope": ["Six-octave generation, fixed lookup tables and reference aspect compensation", "Explicit FMA and uncontracted arithmetic with exact raw-octave checks", "Complete native image pixels and rejected-domain contracts"],
+  "limits": ["Broader numerical/size domains and other compiler contraction patterns", "Complete target/resource/performance coverage"]
+}

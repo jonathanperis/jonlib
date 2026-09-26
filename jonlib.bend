@@ -14,6 +14,7 @@ import ./src/float64.bend as Float64Numeric
 import ./src/angle.bend as Angle
 import ./src/random.bend as Rng
 import ./src/cellular.bend as Cellular
+import ./src/perlin.bend as Perlin
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -1645,6 +1646,32 @@ def Surface.cellular.checked(valid: Bool, state: Random.State, +width: U32, +hei
 def Surface.create_cellular(state: Random.State, +width: U32, +height: U32, +tile: U32) -> Random.State & Maybe<Surface>:
   Surface.cellular.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096)
     && (tile > 0) && (tile <= 4096) : U32), state, width, height, tile)
+
+type Noise.Reference is Data:
+  UncontractedNoise{}
+  FusedNoise{}
+
+def Noise.fused(reference: Noise.Reference) -> Bool:
+  match reference:
+    case UncontractedNoise{}: False{}
+    case FusedNoise{}: True{}
+
+def Surface.perlin.checked(valid: Bool, reference: Noise.Reference, +width: U32, +height: U32, offset_x: F32, offset_y: F32, scale: F32) -> Maybe<Surface>:
+  match valid:
+    case False{}: None{}
+    case True{}:
+      +count = (width * height : U32)
+      Some{Surface{width, height, Perlin.pixels(U32.to_nat(count), 0, Noise.fused(reference), width, height, offset_x, offset_y, scale,
+        Array.new(U32, Surface.capacity(count), 255))}}
+
+def Surface.create_perlin_for(reference: Noise.Reference, +width: U32, +height: U32, +offset_x: F32, +offset_y: F32, +scale: F32) -> Maybe<Surface>:
+  Surface.perlin.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
+    && ((F32.abs(offset_x) <= 32767.0) && (F32.abs(offset_y) <= 32767.0) && (F32.abs(scale) <= 256.0) : F32)
+    && F32.is_eq(F32.floor(offset_x), offset_x) && F32.is_eq(F32.floor(offset_y), offset_y)
+    && (F32.is_eq(scale, 0.0) || (F32.abs(scale) >= 0.0000152587890625 : F32)), reference, width, height, offset_x, offset_y, scale)
+
+def Surface.create_perlin(width: U32, height: U32, offset_x: F32, offset_y: F32, scale: F32) -> Maybe<Surface>:
+  Surface.create_perlin_for(UncontractedNoise{}, width, height, offset_x, offset_y, scale)
 
 def Surface.checked.loop(n: Nat, +i: U32, +width: U32, +tx: U32, +ty: U32, +first: U32, +second: U32, pixels: Array<U32>) -> Array<U32>:
   match n:

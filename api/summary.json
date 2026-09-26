@@ -6,24 +6,24 @@
     "blocked": 4,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1633,
-    "partial": 247
+    "not-started": 1632,
+    "partial": 248
   },
   "core_functions": {
     "total": 600,
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 513,
-    "partial": 87
+    "not-started": 512,
+    "partial": 88
   },
   "function_declarations": {
     "total": 931,
     "blocked": 4,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 698,
-    "partial": 229
+    "not-started": 697,
+    "partial": 230
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -46,8 +46,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 941,
-      "partial": 96
+      "not-started": 940,
+      "partial": 97
     },
     "raymath.h": {
       "total": 254,
@@ -201,8 +201,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 9,
-      "partial": 45
+      "not-started": 8,
+      "partial": 46
     },
     {
       "id": "resampling",
@@ -563,19 +563,6 @@
   ],
   "next_work": [
     {
-      "id": "raylib:function:GenImagePerlinNoise",
-      "name": "GenImagePerlinNoise",
-      "milestone": "images",
-      "status": "not-started",
-      "jonlib": "Surface.gen_image_perlin_noise",
-      "next_step": "Derive GenImagePerlinNoise semantics from the linked source, add a reference fixture, then implement Surface.gen_image_perlin_noise.",
-      "milestone_dependencies": [
-        "pixels",
-        "memory"
-      ],
-      "api_dependencies": []
-    },
-    {
       "id": "raylib:function:GenImageText",
       "name": "GenImageText",
       "milestone": "fonts",
@@ -803,6 +790,18 @@
       "status": "partial",
       "jonlib": "Vector2.subtract",
       "next_step": "Close documented gaps and unverified gates for Vector2Subtract.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2SubtractValue",
+      "name": "Vector2SubtractValue",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.subtract_value",
+      "next_step": "Close documented gaps and unverified gates for Vector2SubtractValue.",
       "milestone_dependencies": [
         "numerics"
       ],

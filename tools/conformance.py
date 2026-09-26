@@ -330,7 +330,7 @@ def cases_from(document):
             raise ValueError(f'{name}: export_qoi must be Boolean')
         if 'alpha_border' in case and (not coordinate(case['alpha_border'], True) or not 0 <= case['alpha_border'] <= 1):
             raise ValueError(f'{name}: alpha border threshold must be in 0..1')
-        if sum(key in case for key in ('qoi','checked','gradient_square','gradient_radial','gradient_linear','white_noise','cellular')) > 1:
+        if sum(key in case for key in ('qoi','checked','gradient_square','gradient_radial','gradient_linear','white_noise','cellular','perlin')) > 1:
             raise ValueError(f'{name}: only one image source may be selected')
         if 'white_noise' in case:
             noise = case['white_noise']
@@ -340,6 +340,12 @@ def cases_from(document):
             cellular = case['cellular']
             if not isinstance(cellular,dict) or not integer(cellular.get('seed'),0,2**32-1) or not integer(cellular.get('tile'),1,4096):
                 raise ValueError(f'{name}: cellular requires a U32 seed and tile size 1..4096')
+        if 'perlin' in case:
+            perlin = case['perlin']
+            if not isinstance(perlin,dict) or not all(coordinate(perlin.get(k)) for k in ('offset_x','offset_y')) or not coordinate(perlin.get('scale'),True):
+                raise ValueError(f'{name}: Perlin requires integral offsets and finite scale')
+            if not (perlin['scale']==0 or 2**-16<=abs(perlin['scale'])<=256):
+                raise ValueError(f'{name}: Perlin scale is outside the declared profile')
         for kind in ('gradient_square','gradient_radial','gradient_linear'):
             if kind not in case:
                 continue
@@ -613,6 +619,10 @@ def collision_arithmetic():
     raise ValueError('Declare a verified linked collision arithmetic profile for this host')
 
 
+def noise_reference():
+    return {'FusedCollision':'FusedNoise','UncontractedCollision':'UncontractedNoise'}[collision_arithmetic()]
+
+
 def vector_arguments(signature, values, bend=False):
     result, at = [], 0
     literal = f32 if bend else lambda value: f'{float(value)!r}f'
@@ -679,6 +689,9 @@ def c_source(cases):
         elif 'cellular' in case:
             cellular = case['cellular']
             lines += ['{',f'SetRandomSeed({cellular["seed"]}u);',f'Image image=GenImageCellular({w},{h},{cellular["tile"]});']
+        elif 'perlin' in case:
+            perlin = case['perlin']
+            lines += ['{',f'Image image=GenImagePerlinNoise({w},{h},{int(perlin["offset_x"])},{int(perlin["offset_y"])},{float(perlin["scale"])!r}f);']
         elif 'checked' in case:
             checked = case['checked']
             lines += ['{', f'Image image = GenImageChecked({w}, {h}, {checked["tile_width"]}, {checked["tile_height"]}, GetColor({rgba(case["background"])}u), GetColor({rgba(checked["color"])}u));']
@@ -1182,6 +1195,9 @@ def bend_source(cases, gpu=False):
         if 'cellular' in case:
             cellular = case['cellular']
             creation = f'create_cellular{"!" if gpu else ""}({cellular["seed"]}, {case["width"]}, {case["height"]}, {cellular["tile"]})'
+        if 'perlin' in case:
+            perlin = case['perlin']
+            creation = f'J.Surface.create_perlin_for{"!" if gpu else ""}(J.{noise_reference()}{{}}, {case["width"]}, {case["height"]}, {f32(perlin["offset_x"])}, {f32(perlin["offset_y"])}, {f32(perlin["scale"])})'
         if 'checked' in case:
             checked = case['checked']
             creation = f'J.Surface.create_checked{"!" if gpu else ""}({case["width"]}, {case["height"]}, {checked["tile_width"]}, {checked["tile_height"]}, {rgba(case["background"])}, {rgba(checked["color"])})'

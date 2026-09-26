@@ -41307,23 +41307,29 @@
       "milestone": "images",
       "phase": 1,
       "sequence": 7,
-      "status": "not-started",
-      "jonlib": "Surface.gen_image_perlin_noise",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Surface.create_perlin_for / Surface.create_perlin",
+      "mapping_state": "implemented",
+      "scope": "RGBA8 six-octave stb_perlin generation with original tables, seeded octaves, aspect compensation and byte quantization. Explicit fused/uncontracted profiles; dimensions 1..4096, integral offsets -32767..32767, scale zero or magnitude 2^-16..256.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Broader numerical/size domains and other compiler contraction patterns",
+        "Full target/resource/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tests/transforms.bend",
+        "tools/perlin_probe.py",
+        "docs/PERLIN.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -41337,8 +41343,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
-      "next_step": "Derive GenImagePerlinNoise semantics from the linked source, add a reference fixture, then implement Surface.gen_image_perlin_noise.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for GenImagePerlinNoise.",
+      "priority": 207
     },
     {
       "id": "raylib:function:GenImageCellular",
@@ -41458,7 +41464,7 @@
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
       "next_step": "Derive GenImageText semantics from the linked source, add a reference fixture, then implement Font.gen_image_text.",
-      "priority": 1
+      "priority": 0
     },
     {
       "id": "raylib:function:ImageCopy",
@@ -43064,7 +43070,7 @@
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
       "next_step": "Derive ImageColorGrayscale semantics from the linked source, add a reference fixture, then implement Surface.image_color_grayscale.",
-      "priority": 2
+      "priority": 1
     },
     {
       "id": "raylib:function:ImageColorContrast",
@@ -43360,7 +43366,7 @@
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
       "next_step": "Derive LoadImagePalette semantics from the linked source, add a reference fixture, then implement Surface.load_image_palette.",
-      "priority": 3
+      "priority": 2
     },
     {
       "id": "raylib:function:UnloadImageColors",
@@ -43472,7 +43478,7 @@
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
       "next_step": "Derive UnloadImagePalette semantics from the linked source, add a reference fixture, then implement Surface.unload_image_palette.",
-      "priority": 4
+      "priority": 3
     },
     {
       "id": "raylib:function:GetImageAlphaBorder",
@@ -66937,7 +66943,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.",
-      "priority": 8
+      "priority": 7
     },
     {
       "id": "raymath:function:MatrixOrtho",
@@ -67942,7 +67948,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Base and investigated inverse-trig models differ from the actual float libm; no verified acos profile is available yet.",
-      "priority": 5
+      "priority": 4
     },
     {
       "id": "raymath:function:QuaternionCubicHermiteSpline",
@@ -68303,7 +68309,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Native acosf endpoint/tail values differ from Base and investigated numerical models.",
-      "priority": 6
+      "priority": 5
     },
     {
       "id": "raymath:function:QuaternionFromEuler",
@@ -68424,7 +68430,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models.",
-      "priority": 7
+      "priority": 6
     },
     {
       "id": "raymath:function:QuaternionTransform",
