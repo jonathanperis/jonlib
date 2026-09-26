@@ -798,5 +798,16 @@
     ],
     "api_id": "raylib:function:CheckCollisionBoxes",
     "milestone": "collision"
+  },
+  "CheckCollisionBoxSphere": {
+    "jonlib": "Collision.box_sphere",
+    "status": "profile-covered",
+    "scope": "Finite bounded box/sphere predicate with reference component Clamp ordering and inclusive closest-point distance test.",
+    "gaps": [
+      "Exceptional/subnormal and contracted variants",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:CheckCollisionBoxSphere",
+    "milestone": "collision"
   }
 }

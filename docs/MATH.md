@@ -1,7 +1,7 @@
 # Math profiles
 
 The current math implementation is Bend source in `jonlib.bend`. It begins the
-`raymath.h` work package with six scalar, twenty-eight Vector2 and nine Vector3 functions.
+`raymath.h` work package with six scalar, twenty-eight Vector2 and seventeen Vector3 functions.
 
 ## Scalar API
 
@@ -55,15 +55,22 @@ radians within one cycle and preserves reference operation order. See
 
 - Constructors: `zero()`, `one()`.
 - Component operations: `add(left, right)`, `subtract(left, right)`,
-  `scale(vector, scalar)`, `multiply(left, right)`.
+  `scale(vector, scalar)`, `multiply(left, right)`, `add_value(vector, scalar)`,
+  `subtract_value(vector, scalar)`, `negate(vector)`, `divide(left, right)`.
 - Products and metrics: `cross_product(left, right)`, `dot_product(left, right)`,
-  `distance_sqr(left, right)`.
+  `distance_sqr(left, right)`, `distance(left, right)`, `length_sqr(vector)`,
+  `length(vector)`, `normalize(vector)`.
 
 The cross product retains raylib's handedness and XYZ field order. Dot products
 and squared distance accumulate in reference left-to-right F32 order. The
 fixture serializer checks all three component bits, including the Z component
 and signed zero. Full transforms, remaining metrics and other numeric profiles
 remain ledger gaps.
+
+`Vector3.normalize` preserves a zero-length input, including signed-zero bits;
+this differs from `Vector2.normalize`, which returns positive-zero components.
+Nonzero vectors multiply by the reciprocal length in reference order. Vector3
+division requires all three F32 divisors to remain nonzero.
 
 ## Floating-point contract and evidence
 

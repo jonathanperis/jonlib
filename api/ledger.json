@@ -54221,23 +54221,27 @@
       "milestone": "collision",
       "phase": 1,
       "sequence": 25,
-      "status": "not-started",
-      "jonlib": "Collision.check_collision_box_sphere",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Collision.box_sphere",
+      "mapping_state": "implemented",
+      "scope": "Finite bounded box/sphere predicate with reference component Clamp ordering and inclusive closest-point distance test.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted variants",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/COLLISION.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -54252,8 +54256,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
-      "next_step": "Derive CheckCollisionBoxSphere semantics from the linked source, add a reference fixture, then implement Collision.check_collision_box_sphere.",
-      "priority": 8
+      "next_step": "Close documented gaps and unverified gates for CheckCollisionBoxSphere.",
+      "priority": 225
     },
     {
       "id": "raylib:function:GetRayCollisionSphere",
@@ -62328,23 +62332,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector3.add_value",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 scalar addition to every component.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal domains and full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -62357,8 +62364,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3AddValue semantics from the linked source, add a reference fixture, then implement Vector3.add_value.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for Vector3AddValue.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3Subtract",
@@ -62441,23 +62448,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector3.subtract_value",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 scalar subtraction from every component.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal domains and full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -62470,8 +62480,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3SubtractValue semantics from the linked source, add a reference fixture, then implement Vector3.subtract_value.",
-      "priority": 1
+      "next_step": "Close documented gaps and unverified gates for Vector3SubtractValue.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3Scale",
@@ -62701,7 +62711,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Perpendicular semantics from the linked source, add a reference fixture, then implement Vector3.perpendicular.",
-      "priority": 202
+      "priority": 2
     },
     {
       "id": "raymath:function:Vector3Length",
@@ -62726,23 +62736,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector3.length",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 length with reference XYZ accumulation and square root.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted variants",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -62755,8 +62769,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3Length semantics from the linked source, add a reference fixture, then implement Vector3.length.",
-      "priority": 4
+      "next_step": "Close documented gaps and unverified gates for Vector3Length.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3LengthSqr",
@@ -62781,23 +62795,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector3.length_sqr",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 squared length in reference accumulation order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted variants",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -62810,8 +62828,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3LengthSqr semantics from the linked source, add a reference fixture, then implement Vector3.length_sqr.",
-      "priority": 5
+      "next_step": "Close documented gaps and unverified gates for Vector3LengthSqr.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3DotProduct",
@@ -62895,23 +62913,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector3.distance",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 distance with reference accumulation and square root.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted variants",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -62924,8 +62946,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3Distance semantics from the linked source, add a reference fixture, then implement Vector3.distance.",
-      "priority": 6
+      "next_step": "Close documented gaps and unverified gates for Vector3Distance.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3DistanceSqr",
@@ -63064,23 +63086,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector3.negate",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 component negation including signed zeros.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal domains and full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63093,8 +63118,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3Negate semantics from the linked source, add a reference fixture, then implement Vector3.negate.",
-      "priority": 2
+      "next_step": "Close documented gaps and unverified gates for Vector3Negate.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3Divide",
@@ -63119,23 +63144,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector3.divide",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 component division with all three divisors nonzero after F32 conversion.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal/zero-divisor domains and full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tests/test_harness.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63148,8 +63177,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3Divide semantics from the linked source, add a reference fixture, then implement Vector3.divide.",
-      "priority": 3
+      "next_step": "Close documented gaps and unverified gates for Vector3Divide.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3Normalize",
@@ -63174,23 +63203,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector3.normalize",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 inverse-length normalization; a zero-length vector retains its original signed-zero components.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted variants",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63203,8 +63236,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3Normalize semantics from the linked source, add a reference fixture, then implement Vector3.normalize.",
-      "priority": 7
+      "next_step": "Close documented gaps and unverified gates for Vector3Normalize.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3Project",
@@ -63259,7 +63292,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Project semantics from the linked source, add a reference fixture, then implement Vector3.project.",
-      "priority": 202
+      "priority": 0
     },
     {
       "id": "raymath:function:Vector3Reject",
@@ -63314,7 +63347,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Reject semantics from the linked source, add a reference fixture, then implement Vector3.reject.",
-      "priority": 202
+      "priority": 1
     },
     {
       "id": "raymath:function:Vector3OrthoNormalize",
@@ -63591,7 +63624,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3MoveTowards semantics from the linked source, add a reference fixture, then implement Vector3.move_towards.",
-      "priority": 202
+      "priority": 7
     },
     {
       "id": "raymath:function:Vector3Lerp",
@@ -63646,7 +63679,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Lerp semantics from the linked source, add a reference fixture, then implement Vector3.lerp.",
-      "priority": 202
+      "priority": 3
     },
     {
       "id": "raymath:function:Vector3CubicHermite",
@@ -63756,7 +63789,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Reflect semantics from the linked source, add a reference fixture, then implement Vector3.reflect.",
-      "priority": 202
+      "priority": 4
     },
     {
       "id": "raymath:function:Vector3Min",
@@ -64088,7 +64121,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Invert semantics from the linked source, add a reference fixture, then implement Vector3.invert.",
-      "priority": 202
+      "priority": 5
     },
     {
       "id": "raymath:function:Vector3Clamp",
@@ -64143,7 +64176,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Clamp semantics from the linked source, add a reference fixture, then implement Vector3.clamp.",
-      "priority": 202
+      "priority": 8
     },
     {
       "id": "raymath:function:Vector3ClampValue",
@@ -64198,7 +64231,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3ClampValue semantics from the linked source, add a reference fixture, then implement Vector3.clamp_value.",
-      "priority": 202
+      "priority": 9
     },
     {
       "id": "raymath:function:Vector3Equals",
@@ -64253,7 +64286,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Equals semantics from the linked source, add a reference fixture, then implement Vector3.equals.",
-      "priority": 202
+      "priority": 6
     },
     {
       "id": "raymath:function:Vector3Refract",
@@ -64308,7 +64341,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Refract semantics from the linked source, add a reference fixture, then implement Vector3.refract.",
-      "priority": 202
+      "priority": 10
     },
     {
       "id": "raymath:function:Vector4Zero",

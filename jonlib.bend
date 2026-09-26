@@ -273,6 +273,23 @@ def Vector3.multiply(left: Vector3, right: Vector3) -> Vector3:
   Vector3{u, v, w} = right
   Vector3{(x * u : F32), (y * v : F32), (z * w : F32)}
 
+def Vector3.add_value(vector: Vector3, +value: F32) -> Vector3:
+  Vector3{x, y, z} = vector
+  Vector3{(x + value : F32), (y + value : F32), (z + value : F32)}
+
+def Vector3.subtract_value(vector: Vector3, +value: F32) -> Vector3:
+  Vector3{x, y, z} = vector
+  Vector3{(x - value : F32), (y - value : F32), (z - value : F32)}
+
+def Vector3.negate(vector: Vector3) -> Vector3:
+  Vector3{x, y, z} = vector
+  Vector3{F32.neg(x), F32.neg(y), F32.neg(z)}
+
+def Vector3.divide(left: Vector3, right: Vector3) -> Vector3:
+  Vector3{x, y, z} = left
+  Vector3{u, v, w} = right
+  Vector3{(x / u : F32), (y / v : F32), (z / w : F32)}
+
 def Vector3.cross_product(left: Vector3, right: Vector3) -> Vector3:
   Vector3{+x, +y, +z} = left
   Vector3{+u, +v, +w} = right
@@ -291,6 +308,24 @@ def Vector3.distance_sqr(left: Vector3, right: Vector3) -> F32:
   +dz = (w - z : F32)
   (dx * dx + dy * dy + dz * dz : F32)
 
+def Vector3.length_sqr(+vector: Vector3) -> F32:
+  Vector3.dot_product(vector, vector)
+
+def Vector3.length(vector: Vector3) -> F32:
+  F32.sqrt(Vector3.length_sqr(vector))
+
+def Vector3.distance(left: Vector3, right: Vector3) -> F32:
+  F32.sqrt(Vector3.distance_sqr(left, right))
+
+def Vector3.normalized(nonzero: Bool, vector: Vector3, length: F32) -> Vector3:
+  match nonzero:
+    case False{}: vector
+    case True{}: Vector3.scale(vector, (1.0 / length : F32))
+
+def Vector3.normalize(+vector: Vector3) -> Vector3:
+  +length = Vector3.length(vector)
+  Vector3.normalized(F32.is_ne(length, 0.0), vector, length)
+
 def Collision.spheres(left: Vector3, radius: F32, right: Vector3, other_radius: F32) -> Bool:
   +sum = (radius + other_radius : F32)
   (Vector3.distance_sqr(left, right) <= sum * sum : F32)
@@ -299,6 +334,12 @@ def Collision.boxes(left: BoundingBox, right: BoundingBox) -> Bool:
   BoundingBox{Vector3{ax, ay, az}, Vector3{bx, by, bz}} = left
   BoundingBox{Vector3{cx, cy, cz}, Vector3{dx, dy, dz}} = right
   ((bx >= cx) && (ax <= dx) && (by >= cy) && (ay <= dy) && (bz >= cz) && (az <= dz) : F32)
+
+def Collision.box_sphere(box: BoundingBox, center: Vector3, +radius: F32) -> Bool:
+  BoundingBox{Vector3{lx, ly, lz}, Vector3{ux, uy, uz}} = box
+  Vector3{+x, +y, +z} = center
+  closest = {Vector3{Math.clamp(x, lx, ux), Math.clamp(y, ly, uy), Math.clamp(z, lz, uz)} : Vector3}
+  (Vector3.distance_sqr(Vector3{x, y, z}, closest) <= radius * radius : F32)
 
 def Collision.recs(left: Rectangle, right: Rectangle) -> Bool:
   Rectangle{+x, +y, w, h} = left

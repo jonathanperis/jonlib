@@ -1,0 +1,12 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {"jonlib.bend": "5a24e0bcee893d76ca4a8b389cba1478d26b1c5901d54462ed6f5733b3b9eb07"},
+  "fixtures_sha256": "1eec6262ad44bbfd993cc8cfcb39a6af2caf3dbb9e58637da447ffbf5d87fcef",
+  "scenarios": 171,
+  "output_words_per_lane": 32744,
+  "numeric_probe_cells": 317,
+  "passed": true,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "scope": ["Vector3 shifts, negate/divide, metrics and normalization", "Original signed-zero retention for zero Vector3 normalization", "Reference box/sphere closest-point predicate"],
+  "limits": ["Exceptional/subnormal and contracted variants", "Remaining 3D integrations", "Full target/resource/performance gates"]
+}

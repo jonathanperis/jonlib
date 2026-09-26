@@ -60,7 +60,7 @@
     {"id":"web-rgfw","scope":"WebRGFW alternative platform configuration"}
   ],
   "scope_sources": ["https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/FAQ.md", "https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/CMakeOptions.txt"],
-  "priority_overrides": {"raymath:function:Vector3AddValue":0, "raymath:function:Vector3SubtractValue":1, "raymath:function:Vector3Negate":2, "raymath:function:Vector3Divide":3, "raymath:function:Vector3Length":4, "raymath:function:Vector3LengthSqr":5, "raymath:function:Vector3Distance":6, "raymath:function:Vector3Normalize":7, "raylib:function:CheckCollisionBoxSphere":8},
+  "priority_overrides": {"raymath:function:Vector3Project":0, "raymath:function:Vector3Reject":1, "raymath:function:Vector3Perpendicular":2, "raymath:function:Vector3Lerp":3, "raymath:function:Vector3Reflect":4, "raymath:function:Vector3Invert":5, "raymath:function:Vector3Equals":6, "raymath:function:Vector3MoveTowards":7, "raymath:function:Vector3Clamp":8, "raymath:function:Vector3ClampValue":9, "raymath:function:Vector3Refract":10},
   "api_dependencies": {
     "raylib:function:ImageDraw":["raylib:function:ImageFromImage","raylib:function:ImageResize","raylib:function:ColorAlphaBlend"],
     "raylib:function:LoadTexture":["raylib:function:LoadImage","raylib:function:LoadTextureFromImage"],

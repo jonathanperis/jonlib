@@ -47,6 +47,10 @@ VECTOR3_APIS = {
     'scale':('Vector3Scale','ts','vector'), 'multiply':('Vector3Multiply','tt','vector'),
     'cross_product':('Vector3CrossProduct','tt','vector'), 'dot_product':('Vector3DotProduct','tt','float'),
     'distance_sqr':('Vector3DistanceSqr','tt','float'),
+    'add_value':('Vector3AddValue','ts','vector'), 'subtract_value':('Vector3SubtractValue','ts','vector'),
+    'negate':('Vector3Negate','t','vector'), 'divide':('Vector3Divide','tt','vector'),
+    'length':('Vector3Length','t','float'), 'length_sqr':('Vector3LengthSqr','t','float'),
+    'distance':('Vector3Distance','tt','float'), 'normalize':('Vector3Normalize','t','vector'),
 }
 VECTOR_APIS = {'vector_value':('Vector2',2,VECTOR2_APIS), 'vector3_value':('Vector3',3,VECTOR3_APIS)}
 COLLISION_APIS = {
@@ -63,6 +67,7 @@ COLLISION_APIS = {
     'point_poly':('CheckCollisionPointPoly','v','bool'),
     'spheres':('CheckCollisionSpheres','tsts','bool'),
     'boxes':('CheckCollisionBoxes','bb','bool'),
+    'box_sphere':('CheckCollisionBoxSphere','bts','bool'),
 }
 COLLISION_CELLS = {'bool':1, 'rectangle':4, 'hit':3}
 
@@ -296,7 +301,7 @@ def cases_from(document):
                 _, signature, result = apis[function]
                 if len(values) != sum(dimensions if p in ('v','t') else 1 for p in signature) or not all(coordinate(v, True) for v in values):
                     raise ValueError(f'{name}: invalid {namespace} argument arity/domain')
-                divisors = values[2:] if function=='divide' else values if function=='invert' else []
+                divisors = values[dimensions:] if function=='divide' else values if function=='invert' else []
                 if any(struct.unpack('f',struct.pack('f',v))[0] == 0 for v in divisors):
                     raise ValueError(f'{name}: vector divisors must remain nonzero in F32')
                 if function == 'rotate' and abs(values[2]) > 6.283186:

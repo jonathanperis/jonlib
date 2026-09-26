@@ -10,6 +10,11 @@ negative radii retain raylib's squared-sum behavior. The same bounded finite
 input and numerical/platform limitations below apply. Fixtures compare the
 actual linked `rmodels.c` queries and include separation on the Z axis.
 
+`Collision.box_sphere(box, center, radius)` clamps each center component using
+raylib's `Clamp` ordering, then compares the closest-point squared distance
+inclusively against `radius*radius`. Reversed bounds and negative radii retain
+their reference behavior; they are not repaired or normalized.
+
 ## 2D queries
 
 Pure Bend queries in `jonlib.bend`, adapted from pinned raylib `rshapes.c`:

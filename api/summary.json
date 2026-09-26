@@ -6,24 +6,24 @@
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1755,
-    "partial": 129
+    "not-started": 1746,
+    "partial": 138
   },
   "core_functions": {
     "total": 600,
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 524,
-    "partial": 76
+    "not-started": 523,
+    "partial": 77
   },
   "function_declarations": {
     "total": 931,
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 812,
-    "partial": 119
+    "not-started": 803,
+    "partial": 128
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -46,16 +46,16 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 955,
-      "partial": 82
+      "not-started": 954,
+      "partial": 83
     },
     "raymath.h": {
       "total": 254,
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 209,
-      "partial": 45
+      "not-started": 201,
+      "partial": 53
     },
     "rlgl.h": {
       "total": 403,
@@ -128,8 +128,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 184,
-      "partial": 37
+      "not-started": 176,
+      "partial": 45
     },
     {
       "id": "memory",
@@ -246,8 +246,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 8,
-      "partial": 13
+      "not-started": 7,
+      "partial": 14
     },
     {
       "id": "window",
@@ -563,110 +563,134 @@
   ],
   "next_work": [
     {
-      "id": "raymath:function:Vector3AddValue",
-      "name": "Vector3AddValue",
+      "id": "raymath:function:Vector3Project",
+      "name": "Vector3Project",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Vector3.add_value",
-      "next_step": "Derive Vector3AddValue semantics from the linked source, add a reference fixture, then implement Vector3.add_value.",
+      "jonlib": "Vector3.project",
+      "next_step": "Derive Vector3Project semantics from the linked source, add a reference fixture, then implement Vector3.project.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:Vector3SubtractValue",
-      "name": "Vector3SubtractValue",
+      "id": "raymath:function:Vector3Reject",
+      "name": "Vector3Reject",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Vector3.subtract_value",
-      "next_step": "Derive Vector3SubtractValue semantics from the linked source, add a reference fixture, then implement Vector3.subtract_value.",
+      "jonlib": "Vector3.reject",
+      "next_step": "Derive Vector3Reject semantics from the linked source, add a reference fixture, then implement Vector3.reject.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:Vector3Negate",
-      "name": "Vector3Negate",
+      "id": "raymath:function:Vector3Perpendicular",
+      "name": "Vector3Perpendicular",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Vector3.negate",
-      "next_step": "Derive Vector3Negate semantics from the linked source, add a reference fixture, then implement Vector3.negate.",
+      "jonlib": "Vector3.perpendicular",
+      "next_step": "Derive Vector3Perpendicular semantics from the linked source, add a reference fixture, then implement Vector3.perpendicular.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:Vector3Divide",
-      "name": "Vector3Divide",
+      "id": "raymath:function:Vector3Lerp",
+      "name": "Vector3Lerp",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Vector3.divide",
-      "next_step": "Derive Vector3Divide semantics from the linked source, add a reference fixture, then implement Vector3.divide.",
+      "jonlib": "Vector3.lerp",
+      "next_step": "Derive Vector3Lerp semantics from the linked source, add a reference fixture, then implement Vector3.lerp.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:Vector3Length",
-      "name": "Vector3Length",
+      "id": "raymath:function:Vector3Reflect",
+      "name": "Vector3Reflect",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Vector3.length",
-      "next_step": "Derive Vector3Length semantics from the linked source, add a reference fixture, then implement Vector3.length.",
+      "jonlib": "Vector3.reflect",
+      "next_step": "Derive Vector3Reflect semantics from the linked source, add a reference fixture, then implement Vector3.reflect.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:Vector3LengthSqr",
-      "name": "Vector3LengthSqr",
+      "id": "raymath:function:Vector3Invert",
+      "name": "Vector3Invert",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Vector3.length_sqr",
-      "next_step": "Derive Vector3LengthSqr semantics from the linked source, add a reference fixture, then implement Vector3.length_sqr.",
+      "jonlib": "Vector3.invert",
+      "next_step": "Derive Vector3Invert semantics from the linked source, add a reference fixture, then implement Vector3.invert.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:Vector3Distance",
-      "name": "Vector3Distance",
+      "id": "raymath:function:Vector3Equals",
+      "name": "Vector3Equals",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Vector3.distance",
-      "next_step": "Derive Vector3Distance semantics from the linked source, add a reference fixture, then implement Vector3.distance.",
+      "jonlib": "Vector3.equals",
+      "next_step": "Derive Vector3Equals semantics from the linked source, add a reference fixture, then implement Vector3.equals.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:Vector3Normalize",
-      "name": "Vector3Normalize",
+      "id": "raymath:function:Vector3MoveTowards",
+      "name": "Vector3MoveTowards",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Vector3.normalize",
-      "next_step": "Derive Vector3Normalize semantics from the linked source, add a reference fixture, then implement Vector3.normalize.",
+      "jonlib": "Vector3.move_towards",
+      "next_step": "Derive Vector3MoveTowards semantics from the linked source, add a reference fixture, then implement Vector3.move_towards.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raylib:function:CheckCollisionBoxSphere",
-      "name": "CheckCollisionBoxSphere",
-      "milestone": "collision",
+      "id": "raymath:function:Vector3Clamp",
+      "name": "Vector3Clamp",
+      "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Collision.check_collision_box_sphere",
-      "next_step": "Derive CheckCollisionBoxSphere semantics from the linked source, add a reference fixture, then implement Collision.check_collision_box_sphere.",
+      "jonlib": "Vector3.clamp",
+      "next_step": "Derive Vector3Clamp semantics from the linked source, add a reference fixture, then implement Vector3.clamp.",
       "milestone_dependencies": [
-        "raymath"
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector3ClampValue",
+      "name": "Vector3ClampValue",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Vector3.clamp_value",
+      "next_step": "Derive Vector3ClampValue semantics from the linked source, add a reference fixture, then implement Vector3.clamp_value.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector3Refract",
+      "name": "Vector3Refract",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Vector3.refract",
+      "next_step": "Derive Vector3Refract semantics from the linked source, add a reference fixture, then implement Vector3.refract.",
+      "milestone_dependencies": [
+        "numerics"
       ],
       "api_dependencies": []
     },
@@ -773,30 +797,6 @@
       "status": "partial",
       "jonlib": "Vector2.add",
       "next_step": "Close documented gaps and unverified gates for Vector2Add.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2AddValue",
-      "name": "Vector2AddValue",
-      "milestone": "raymath",
-      "status": "partial",
-      "jonlib": "Vector2.add_value",
-      "next_step": "Close documented gaps and unverified gates for Vector2AddValue.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2Subtract",
-      "name": "Vector2Subtract",
-      "milestone": "raymath",
-      "status": "partial",
-      "jonlib": "Vector2.subtract",
-      "next_step": "Close documented gaps and unverified gates for Vector2Subtract.",
       "milestone_dependencies": [
         "numerics"
       ],
