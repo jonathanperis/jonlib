@@ -262,6 +262,96 @@ def Matrix.transpose(matrix: Matrix) -> Matrix:
   Matrix{m0, m4, m8, m12, m1, m5, m9, m13, m2, m6, m10, m14, m3, m7, m11, m15} = matrix
   Matrix{m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15}
 
+def Matrix.add(left: Matrix, right: Matrix) -> Matrix:
+  Matrix{a0, a4, a8, a12, a1, a5, a9, a13, a2, a6, a10, a14, a3, a7, a11, a15} = left
+  Matrix{b0, b4, b8, b12, b1, b5, b9, b13, b2, b6, b10, b14, b3, b7, b11, b15} = right
+  Matrix{(a0 + b0 : F32), (a4 + b4 : F32), (a8 + b8 : F32), (a12 + b12 : F32),
+    (a1 + b1 : F32), (a5 + b5 : F32), (a9 + b9 : F32), (a13 + b13 : F32),
+    (a2 + b2 : F32), (a6 + b6 : F32), (a10 + b10 : F32), (a14 + b14 : F32),
+    (a3 + b3 : F32), (a7 + b7 : F32), (a11 + b11 : F32), (a15 + b15 : F32)}
+
+def Matrix.subtract(left: Matrix, right: Matrix) -> Matrix:
+  Matrix{a0, a4, a8, a12, a1, a5, a9, a13, a2, a6, a10, a14, a3, a7, a11, a15} = left
+  Matrix{b0, b4, b8, b12, b1, b5, b9, b13, b2, b6, b10, b14, b3, b7, b11, b15} = right
+  Matrix{(a0 - b0 : F32), (a4 - b4 : F32), (a8 - b8 : F32), (a12 - b12 : F32),
+    (a1 - b1 : F32), (a5 - b5 : F32), (a9 - b9 : F32), (a13 - b13 : F32),
+    (a2 - b2 : F32), (a6 - b6 : F32), (a10 - b10 : F32), (a14 - b14 : F32),
+    (a3 - b3 : F32), (a7 - b7 : F32), (a11 - b11 : F32), (a15 - b15 : F32)}
+
+def Matrix.product.cell(a: F32, b: F32, c: F32, d: F32, e: F32, f: F32, g: F32, h: F32) -> F32:
+  (a * e + b * f + c * g + d * h : F32)
+
+def Matrix.multiply(left: Matrix, right: Matrix) -> Matrix:
+  Matrix{+a0, +a4, +a8, +a12, +a1, +a5, +a9, +a13, +a2, +a6, +a10, +a14, +a3, +a7, +a11, +a15} = left
+  Matrix{+b0, +b4, +b8, +b12, +b1, +b5, +b9, +b13, +b2, +b6, +b10, +b14, +b3, +b7, +b11, +b15} = right
+  Matrix{
+    Matrix.product.cell(a0, a1, a2, a3, b0, b4, b8, b12),
+    Matrix.product.cell(a4, a5, a6, a7, b0, b4, b8, b12),
+    Matrix.product.cell(a8, a9, a10, a11, b0, b4, b8, b12),
+    Matrix.product.cell(a12, a13, a14, a15, b0, b4, b8, b12),
+    Matrix.product.cell(a0, a1, a2, a3, b1, b5, b9, b13),
+    Matrix.product.cell(a4, a5, a6, a7, b1, b5, b9, b13),
+    Matrix.product.cell(a8, a9, a10, a11, b1, b5, b9, b13),
+    Matrix.product.cell(a12, a13, a14, a15, b1, b5, b9, b13),
+    Matrix.product.cell(a0, a1, a2, a3, b2, b6, b10, b14),
+    Matrix.product.cell(a4, a5, a6, a7, b2, b6, b10, b14),
+    Matrix.product.cell(a8, a9, a10, a11, b2, b6, b10, b14),
+    Matrix.product.cell(a12, a13, a14, a15, b2, b6, b10, b14),
+    Matrix.product.cell(a0, a1, a2, a3, b3, b7, b11, b15),
+    Matrix.product.cell(a4, a5, a6, a7, b3, b7, b11, b15),
+    Matrix.product.cell(a8, a9, a10, a11, b3, b7, b11, b15),
+    Matrix.product.cell(a12, a13, a14, a15, b3, b7, b11, b15)}
+
+def Matrix.trace(matrix: Matrix) -> F32:
+  Matrix{m0, _, _, _, _, m5, _, _, _, _, m10, _, _, _, _, m15} = matrix
+  (m0 + m5 + m10 + m15 : F32)
+
+def Matrix.determinant(matrix: Matrix) -> F32:
+  Matrix{m0, m4, m8, m12, +m1, +m5, +m9, +m13, +m2, +m6, +m10, +m14, +m3, +m7, +m11, +m15} = matrix
+  (m0 * (m5 * (m10 * m15 - m11 * m14) - m9 * (m6 * m15 - m7 * m14) + m13 * (m6 * m11 - m7 * m10))
+    - m4 * (m1 * (m10 * m15 - m11 * m14) - m9 * (m2 * m15 - m3 * m14) + m13 * (m2 * m11 - m3 * m10))
+    + m8 * (m1 * (m6 * m15 - m7 * m14) - m5 * (m2 * m15 - m3 * m14) + m13 * (m2 * m7 - m3 * m6))
+    - m12 * (m1 * (m6 * m11 - m7 * m10) - m5 * (m2 * m11 - m3 * m10) + m9 * (m2 * m7 - m3 * m6)) : F32)
+
+def Matrix.invert(matrix: Matrix) -> Matrix:
+  Matrix{+a00, +a10, +a20, +a30, +a01, +a11, +a21, +a31, +a02, +a12, +a22, +a32, +a03, +a13, +a23, +a33} = matrix
+  +b00 = (a00 * a11 - a01 * a10 : F32)
+  +b01 = (a00 * a12 - a02 * a10 : F32)
+  +b02 = (a00 * a13 - a03 * a10 : F32)
+  +b03 = (a01 * a12 - a02 * a11 : F32)
+  +b04 = (a01 * a13 - a03 * a11 : F32)
+  +b05 = (a02 * a13 - a03 * a12 : F32)
+  +b06 = (a20 * a31 - a21 * a30 : F32)
+  +b07 = (a20 * a32 - a22 * a30 : F32)
+  +b08 = (a20 * a33 - a23 * a30 : F32)
+  +b09 = (a21 * a32 - a22 * a31 : F32)
+  +b10 = (a21 * a33 - a23 * a31 : F32)
+  +b11 = (a22 * a33 - a23 * a32 : F32)
+  +inverse = (1.0 / (b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06) : F32)
+  Matrix{
+    ((a11 * b11 - a12 * b10 + a13 * b09) * inverse : F32),
+    ((F32.neg(a10) * b11 + a12 * b08 - a13 * b07) * inverse : F32),
+    ((a10 * b10 - a11 * b08 + a13 * b06) * inverse : F32),
+    ((F32.neg(a10) * b09 + a11 * b07 - a12 * b06) * inverse : F32),
+    ((F32.neg(a01) * b11 + a02 * b10 - a03 * b09) * inverse : F32),
+    ((a00 * b11 - a02 * b08 + a03 * b07) * inverse : F32),
+    ((F32.neg(a00) * b10 + a01 * b08 - a03 * b06) * inverse : F32),
+    ((a00 * b09 - a01 * b07 + a02 * b06) * inverse : F32),
+    ((a31 * b05 - a32 * b04 + a33 * b03) * inverse : F32),
+    ((F32.neg(a30) * b05 + a32 * b02 - a33 * b01) * inverse : F32),
+    ((a30 * b04 - a31 * b02 + a33 * b00) * inverse : F32),
+    ((F32.neg(a30) * b03 + a31 * b01 - a32 * b00) * inverse : F32),
+    ((F32.neg(a21) * b05 + a22 * b04 - a23 * b03) * inverse : F32),
+    ((a20 * b05 - a22 * b02 + a23 * b01) * inverse : F32),
+    ((F32.neg(a20) * b04 + a21 * b02 - a23 * b00) * inverse : F32),
+    ((a20 * b03 - a21 * b01 + a22 * b00) * inverse : F32)}
+
+def Matrix.translate(x: F32, y: F32, z: F32) -> Matrix:
+  Matrix{1.0, 0.0, 0.0, x, 0.0, 1.0, 0.0, y, 0.0, 0.0, 1.0, z, 0.0, 0.0, 0.0, 1.0}
+
+def Matrix.scale(x: F32, y: F32, z: F32) -> Matrix:
+  Matrix{x, 0.0, 0.0, 0.0, 0.0, y, 0.0, 0.0, 0.0, 0.0, z, 0.0, 0.0, 0.0, 0.0, 1.0}
+
 def Vector2.transform(vector: Vector2, matrix: Matrix) -> Vector2:
   Vector2{+x, +y} = vector
   Matrix{m0, m4, m8, m12, m1, m5, m9, m13, _, _, _, _, _, _, _, _} = matrix

@@ -64,7 +64,13 @@ VECTOR3_APIS = {
     'ortho_normalize':('Vector3OrthoNormalize','tt','pair'),
     'transform':('Vector3Transform','tm','vector'),
 }
-MATRIX_APIS = {'identity':('MatrixIdentity','','matrix'), 'transpose':('MatrixTranspose','m','matrix')}
+MATRIX_APIS = {
+    'identity':('MatrixIdentity','','matrix'), 'transpose':('MatrixTranspose','m','matrix'),
+    'add':('MatrixAdd','mm','matrix'), 'subtract':('MatrixSubtract','mm','matrix'),
+    'multiply':('MatrixMultiply','mm','matrix'), 'trace':('MatrixTrace','m','float'),
+    'determinant':('MatrixDeterminant','m','float'), 'invert':('MatrixInvert','m','matrix'),
+    'translate':('MatrixTranslate','sss','matrix'), 'scale':('MatrixScale','sss','matrix'),
+}
 MATRIX_FIELDS = tuple(f'm{row+4*column}' for row in range(4) for column in range(4))
 ARGUMENT_SIZES = {'v':2, 't':3, 'm':16, 'b':6, 'r':4, 's':1, 'i':1}
 VECTOR_APIS = {'vector_value':('Vector2',2,VECTOR2_APIS), 'vector3_value':('Vector3',3,VECTOR3_APIS),
@@ -147,6 +153,18 @@ def rounded_f32(value):
 def dot3_f32(left, right):
     products = [rounded_f32(a*b) for a,b in zip(left,right)]
     return rounded_f32(rounded_f32(products[0]+products[1])+products[2])
+
+
+def matrix_inverse_denominator(values):
+    """Validate MatrixInvert's own minor expansion, not MatrixDeterminant's."""
+    m = {name:rounded_f32(value) for name,value in zip(MATRIX_FIELDS,values)}
+    pairs = ((0,5,1,4),(0,6,2,4),(0,7,3,4),(1,6,2,5),(1,7,3,5),(2,7,3,6),
+             (8,13,9,12),(8,14,10,12),(8,15,11,12),(9,14,10,13),(9,15,11,13),(10,15,11,14))
+    b = [rounded_f32(rounded_f32(m[f'm{a}']*m[f'm{c}'])-rounded_f32(m[f'm{d}']*m[f'm{e}'])) for a,c,d,e in pairs]
+    result = rounded_f32(b[0]*b[11])
+    for a,c,sign in ((1,10,-1),(2,9,1),(3,8,1),(4,7,-1),(5,6,1)):
+        result = rounded_f32(result+sign*rounded_f32(b[a]*b[c]))
+    return result
 
 
 def numeric_cells(kind, function):
@@ -332,9 +350,11 @@ def cases_from(document):
                 _, signature, result = apis[function]
                 if len(values) != sum(ARGUMENT_SIZES[p] for p in signature) or not all(coordinate(v, True) for v in values):
                     raise ValueError(f'{name}: invalid {namespace} argument arity/domain')
-                divisors = values[dimensions:] if function=='divide' else values if function=='invert' else []
+                divisors = values[dimensions:] if function=='divide' else values if function=='invert' and namespace!='Matrix' else []
                 if any(struct.unpack('f',struct.pack('f',v))[0] == 0 for v in divisors):
                     raise ValueError(f'{name}: vector divisors must remain nonzero in F32')
+                if namespace=='Matrix' and function=='invert' and matrix_inverse_denominator(values)==0:
+                    raise ValueError(f'{name}: matrix inverse denominator must remain nonzero in F32')
                 if function in ('project','reject'):
                     target = [rounded_f32(v) for v in values[dimensions:]]
                     if dot3_f32(target,target) == 0:

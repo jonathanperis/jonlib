@@ -1,0 +1,12 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {"jonlib.bend": "5da0c64867bf968f4e9f8ed61d8ee8fdeb986f34dddd64abe318c79d5c2fe0d2"},
+  "fixtures_sha256": "c0089082927c280467f94ee73c4f5d8b45159e77b3170522f0169e068ef30ace",
+  "scenarios": 189,
+  "output_words_per_lane": 33090,
+  "numeric_probe_cells": 663,
+  "passed": true,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "scope": ["Matrix add/subtract/multiply with exact operand and accumulation order", "Trace and public Laplace determinant", "Reference-minor inversion with identity, affine, dense and near-singular inputs", "Translation/scaling constructors with signed zero"],
+  "limits": ["Singular inverse and exceptional/subnormal/contracted numerical profiles", "Complete SIMD/target/performance matrix"]
+}

@@ -60,7 +60,7 @@
     {"id":"web-rgfw","scope":"WebRGFW alternative platform configuration"}
   ],
   "scope_sources": ["https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/FAQ.md", "https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/CMakeOptions.txt"],
-  "priority_overrides": {"raymath:function:MatrixAdd":0, "raymath:function:MatrixSubtract":1, "raymath:function:MatrixMultiply":2, "raymath:function:MatrixTrace":3, "raymath:function:MatrixDeterminant":4, "raymath:function:MatrixInvert":5, "raymath:function:MatrixTranslate":6, "raymath:function:MatrixScale":7},
+  "priority_overrides": {"raymath:function:MatrixMultiplyValue":0, "raymath:function:MatrixLookAt":1, "raymath:function:MatrixRotateX":2, "raymath:function:MatrixRotateY":3, "raymath:function:MatrixRotateZ":4, "raymath:function:MatrixRotateXYZ":5, "raymath:function:MatrixRotateZYX":6, "raymath:function:MatrixRotate":7},
   "api_dependencies": {
     "raylib:function:ImageDraw":["raylib:function:ImageFromImage","raylib:function:ImageResize","raylib:function:ColorAlphaBlend"],
     "raylib:function:LoadTexture":["raylib:function:LoadImage","raylib:function:LoadTextureFromImage"],

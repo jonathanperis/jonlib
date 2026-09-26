@@ -2,7 +2,7 @@
 
 The current math implementation is Bend source in `jonlib.bend`. It begins the
 `raymath.h` work package with six scalar, twenty-nine Vector2, thirty-four Vector3
-and two Matrix functions.
+and ten Matrix functions.
 
 ## Scalar API
 
@@ -117,6 +117,22 @@ arguments follow its row-wise declaration order. `Matrix.identity()` returns
 the 4×4 identity. `Matrix.transpose(matrix)` permutes fields exactly, including
 signed-zero bits. `LAWS.bend`/`PROOF.bend` establish that transposing twice returns
 the original Matrix; conformance separately checks the actual reference layout.
+
+- `Matrix.add(left, right)` and `subtract(left, right)` operate component-wise.
+- `Matrix.multiply(left, right)` retains raylib's operand convention and exact
+  four-term accumulation order. In ordinary column-vector notation its numeric
+  result is `right × left`; do not reverse arguments based on another library's
+  multiplication convention.
+- `Matrix.trace(matrix)` sums the diagonal in reference order.
+- `Matrix.determinant(matrix)` uses the pinned Laplace expansion, including
+  singular matrices whose result is zero.
+- `Matrix.invert(matrix)` uses the reference minor expansion and reciprocal
+  denominator. Its initial profile requires a nonzero inversion denominator and
+  finite supported intermediate/result values. Singular inverse results remain
+  outside this profile. The public determinant and inversion denominator have
+  different arithmetic orders and are not substituted for one another.
+- `Matrix.translate(x, y, z)` and `scale(x, y, z)` preserve the supplied finite
+  components, including negative and signed-zero values.
 
 `Vector2.transform` and `Vector3.transform` apply the reference matrix expressions
 without perspective division. The Vector2 version retains the multiplication

@@ -6,8 +6,8 @@
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1724,
-    "partial": 160
+    "not-started": 1716,
+    "partial": 168
   },
   "core_functions": {
     "total": 600,
@@ -22,8 +22,8 @@
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 783,
-    "partial": 148
+    "not-started": 775,
+    "partial": 156
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 180,
-      "partial": 74
+      "not-started": 172,
+      "partial": 82
     },
     "rlgl.h": {
       "total": 403,
@@ -128,8 +128,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 156,
-      "partial": 65
+      "not-started": 148,
+      "partial": 73
     },
     {
       "id": "memory",
@@ -563,96 +563,96 @@
   ],
   "next_work": [
     {
-      "id": "raymath:function:MatrixAdd",
-      "name": "MatrixAdd",
+      "id": "raymath:function:MatrixMultiplyValue",
+      "name": "MatrixMultiplyValue",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Matrix.add",
-      "next_step": "Derive MatrixAdd semantics from the linked source, add a reference fixture, then implement Matrix.add.",
+      "jonlib": "Matrix.multiply_value",
+      "next_step": "Derive MatrixMultiplyValue semantics from the linked source, add a reference fixture, then implement Matrix.multiply_value.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:MatrixSubtract",
-      "name": "MatrixSubtract",
+      "id": "raymath:function:MatrixLookAt",
+      "name": "MatrixLookAt",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Matrix.subtract",
-      "next_step": "Derive MatrixSubtract semantics from the linked source, add a reference fixture, then implement Matrix.subtract.",
+      "jonlib": "Matrix.look_at",
+      "next_step": "Derive MatrixLookAt semantics from the linked source, add a reference fixture, then implement Matrix.look_at.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:MatrixMultiply",
-      "name": "MatrixMultiply",
+      "id": "raymath:function:MatrixRotateX",
+      "name": "MatrixRotateX",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Matrix.multiply",
-      "next_step": "Derive MatrixMultiply semantics from the linked source, add a reference fixture, then implement Matrix.multiply.",
+      "jonlib": "Matrix.rotate_x",
+      "next_step": "Derive MatrixRotateX semantics from the linked source, add a reference fixture, then implement Matrix.rotate_x.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:MatrixTrace",
-      "name": "MatrixTrace",
+      "id": "raymath:function:MatrixRotateY",
+      "name": "MatrixRotateY",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Matrix.trace",
-      "next_step": "Derive MatrixTrace semantics from the linked source, add a reference fixture, then implement Matrix.trace.",
+      "jonlib": "Matrix.rotate_y",
+      "next_step": "Derive MatrixRotateY semantics from the linked source, add a reference fixture, then implement Matrix.rotate_y.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:MatrixDeterminant",
-      "name": "MatrixDeterminant",
+      "id": "raymath:function:MatrixRotateZ",
+      "name": "MatrixRotateZ",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Matrix.determinant",
-      "next_step": "Derive MatrixDeterminant semantics from the linked source, add a reference fixture, then implement Matrix.determinant.",
+      "jonlib": "Matrix.rotate_z",
+      "next_step": "Derive MatrixRotateZ semantics from the linked source, add a reference fixture, then implement Matrix.rotate_z.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:MatrixInvert",
-      "name": "MatrixInvert",
+      "id": "raymath:function:MatrixRotateXYZ",
+      "name": "MatrixRotateXYZ",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Matrix.invert",
-      "next_step": "Derive MatrixInvert semantics from the linked source, add a reference fixture, then implement Matrix.invert.",
+      "jonlib": "Matrix.rotate_xyz",
+      "next_step": "Derive MatrixRotateXYZ semantics from the linked source, add a reference fixture, then implement Matrix.rotate_xyz.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:MatrixTranslate",
-      "name": "MatrixTranslate",
+      "id": "raymath:function:MatrixRotateZYX",
+      "name": "MatrixRotateZYX",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Matrix.translate",
-      "next_step": "Derive MatrixTranslate semantics from the linked source, add a reference fixture, then implement Matrix.translate.",
+      "jonlib": "Matrix.rotate_zyx",
+      "next_step": "Derive MatrixRotateZYX semantics from the linked source, add a reference fixture, then implement Matrix.rotate_zyx.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:MatrixScale",
-      "name": "MatrixScale",
+      "id": "raymath:function:MatrixRotate",
+      "name": "MatrixRotate",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Matrix.scale",
-      "next_step": "Derive MatrixScale semantics from the linked source, add a reference fixture, then implement Matrix.scale.",
+      "jonlib": "Matrix.rotate",
+      "next_step": "Derive MatrixRotate semantics from the linked source, add a reference fixture, then implement Matrix.rotate.",
       "milestone_dependencies": [
         "numerics"
       ],

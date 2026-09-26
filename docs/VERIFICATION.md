@@ -21,10 +21,10 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 184 scenarios / 32,909 output words match pinned raylib exactly on each
+- 189 scenarios / 33,090 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
-- The word count includes 482 exact scalar/vector/matrix/collision result-bit probe cells.
+- The word count includes 663 exact scalar/vector/matrix/collision result-bit probe cells.
   The math reference explicitly uses uncontracted F32; no comparison tolerance
   is applied. Both components of each vector output are checked.
 - Seven QOI export scenarios compare all 299 encoded bytes per lane. Real CPU/JS
@@ -51,7 +51,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
 - The pinned core header inventory contains 600 unique public functions; 77 have
-  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 71
+  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 79
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
   on CPU, JS and Metal for its declared reference profile. Ubuntu's subsequent
@@ -101,7 +101,7 @@ reference comparison of all 4096 supported POT axis sizes.
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 184 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 189 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -496,3 +496,31 @@ Reviewed 66 numerical, generator, serializer, proof and diagnostic caller contex
 20 differential operations, three malformed/domain fixtures and the new law.
 
 Regression scan: 66 callers checked, 24 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `5ccf660`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36220733696)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36220733683)
+completed successfully.
+
+## Matrix arithmetic, inversion and affine constructors
+
+Eight further matrix functions pass the 189-scenario CPU-1/CPU-2/JavaScript/
+forced-Metal gate. Every matrix result field is compared, with explicit reversed
+multiplication order, dense products, trace cancellation, singular/negative
+determinants, identity/affine/dense/near-singular inverses and signed-zero
+constructors. The public Laplace determinant and inversion-minor denominator
+retain their separate reference operation orders. See
+[evidence/matrix-arithmetic.json](evidence/matrix-arithmetic.json).
+
+The shared `invert` fixture name required a namespace-specific validation fix:
+vector reciprocals need nonzero components, while matrices can contain zeros
+and instead require a nonzero reference inversion denominator. The valid sparse
+inverse fixtures and singular-matrix negative control verify that distinction.
+A26/A4/A5 pass the scoped numerical/source/backend contracts; eight harness
+tests, project checks and both pinned proofs pass. Singular inverse results,
+exceptional/subnormal and contracted profiles, and complete target/performance
+coverage remain gaps. Reviewed 16 product-helper calls, 24 harness/diagnostic
+caller contexts, 16 differential operations and the new domain assertion.
+Scoped drift review: I48 matches the separate determinant/inversion code paths
+and namespaced fixture validation; A26/V2 hold for the exercised finite profile.
+
+Regression scan: 40 callers checked, 17 assertions checked, 1 flagged/fixed.

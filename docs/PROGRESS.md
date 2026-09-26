@@ -29,7 +29,7 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 |---|---:|---|---:|---:|---:|---|
 | 1 | 0 | `types` — Types, constants and language mappings | 549 | 12 | 0 | — |
 | 2 | 1 | `numerics` — Numeric fidelity and scalar contracts | 14 | 6 | 0 | types |
-| 3 | 1 | `raymath` — Vectors, matrices and quaternions | 221 | 65 | 0 | numerics |
+| 3 | 1 | `raymath` — Vectors, matrices and quaternions | 221 | 73 | 0 | numerics |
 | 4 | 1 | `memory` — Buffers, memory and callback contracts | 12 | 0 | 0 | types |
 | 5 | 1 | `files` — Files, paths, compression and data utilities | 49 | 0 | 0 | memory |
 | 6 | 1 | `random` — Random-number and sequence contracts | 4 | 0 | 0 | numerics, memory |
@@ -63,14 +63,14 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 
 This is a priority queue with visible prerequisites, not a claim that every item is unblocked.
 
-- **`raymath:function:MatrixAdd`** (not-started, `raymath`): Derive MatrixAdd semantics from the linked source, add a reference fixture, then implement Matrix.add.
-- **`raymath:function:MatrixSubtract`** (not-started, `raymath`): Derive MatrixSubtract semantics from the linked source, add a reference fixture, then implement Matrix.subtract.
-- **`raymath:function:MatrixMultiply`** (not-started, `raymath`): Derive MatrixMultiply semantics from the linked source, add a reference fixture, then implement Matrix.multiply.
-- **`raymath:function:MatrixTrace`** (not-started, `raymath`): Derive MatrixTrace semantics from the linked source, add a reference fixture, then implement Matrix.trace.
-- **`raymath:function:MatrixDeterminant`** (not-started, `raymath`): Derive MatrixDeterminant semantics from the linked source, add a reference fixture, then implement Matrix.determinant.
-- **`raymath:function:MatrixInvert`** (not-started, `raymath`): Derive MatrixInvert semantics from the linked source, add a reference fixture, then implement Matrix.invert.
-- **`raymath:function:MatrixTranslate`** (not-started, `raymath`): Derive MatrixTranslate semantics from the linked source, add a reference fixture, then implement Matrix.translate.
-- **`raymath:function:MatrixScale`** (not-started, `raymath`): Derive MatrixScale semantics from the linked source, add a reference fixture, then implement Matrix.scale.
+- **`raymath:function:MatrixMultiplyValue`** (not-started, `raymath`): Derive MatrixMultiplyValue semantics from the linked source, add a reference fixture, then implement Matrix.multiply_value.
+- **`raymath:function:MatrixLookAt`** (not-started, `raymath`): Derive MatrixLookAt semantics from the linked source, add a reference fixture, then implement Matrix.look_at.
+- **`raymath:function:MatrixRotateX`** (not-started, `raymath`): Derive MatrixRotateX semantics from the linked source, add a reference fixture, then implement Matrix.rotate_x.
+- **`raymath:function:MatrixRotateY`** (not-started, `raymath`): Derive MatrixRotateY semantics from the linked source, add a reference fixture, then implement Matrix.rotate_y.
+- **`raymath:function:MatrixRotateZ`** (not-started, `raymath`): Derive MatrixRotateZ semantics from the linked source, add a reference fixture, then implement Matrix.rotate_z.
+- **`raymath:function:MatrixRotateXYZ`** (not-started, `raymath`): Derive MatrixRotateXYZ semantics from the linked source, add a reference fixture, then implement Matrix.rotate_xyz.
+- **`raymath:function:MatrixRotateZYX`** (not-started, `raymath`): Derive MatrixRotateZYX semantics from the linked source, add a reference fixture, then implement Matrix.rotate_zyx.
+- **`raymath:function:MatrixRotate`** (not-started, `raymath`): Derive MatrixRotate semantics from the linked source, add a reference fixture, then implement Matrix.rotate.
 - **`raymath:function:Clamp`** (partial, `numerics`): Close documented gaps and unverified gates for Clamp.
 - **`raymath:function:Lerp`** (partial, `numerics`): Close documented gaps and unverified gates for Lerp.
 - **`raymath:function:Normalize`** (partial, `numerics`): Close documented gaps and unverified gates for Normalize.
