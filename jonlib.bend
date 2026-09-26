@@ -20,6 +20,12 @@ type Vector3 is Data:
 type BoundingBox is Data:
   BoundingBox{min: Vector3, max: Vector3}
 
+type Matrix is Data:
+  Matrix{m0: F32, m4: F32, m8: F32, m12: F32,
+    m1: F32, m5: F32, m9: F32, m13: F32,
+    m2: F32, m6: F32, m10: F32, m14: F32,
+    m3: F32, m7: F32, m11: F32, m15: F32}
+
 type Rectangle is Data:
   Rectangle{x: F32, y: F32, width: F32, height: F32}
 
@@ -248,6 +254,19 @@ def Vector2.rotate_for(reference: Gradient.Reference, vector: Vector2, angle: F3
 def Vector2.rotate(vector: Vector2, angle: F32) -> Vector2:
   Vector2.rotate_for(AccurateGradient{}, vector, angle)
 
+def Matrix.identity() -> Matrix:
+  Matrix{1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0}
+
+def Matrix.transpose(matrix: Matrix) -> Matrix:
+  Matrix{m0, m4, m8, m12, m1, m5, m9, m13, m2, m6, m10, m14, m3, m7, m11, m15} = matrix
+  Matrix{m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15}
+
+def Vector2.transform(vector: Vector2, matrix: Matrix) -> Vector2:
+  Vector2{+x, +y} = vector
+  Matrix{m0, m4, m8, m12, m1, m5, m9, m13, _, _, _, _, _, _, _, _} = matrix
+  Vector2{(m0 * x + m4 * y + m8 * 0.0 + m12 : F32), (m1 * x + m5 * y + m9 * 0.0 + m13 : F32)}
+
 def Vector3.zero() -> Vector3:
   Vector3{0.0, 0.0, 0.0}
 
@@ -409,6 +428,58 @@ def Vector3.refract(+vector: Vector3, +normal: Vector3, +ratio: F32) -> Vector3:
   +dot = Vector3.dot_product(vector, normal)
   +determinant = (1.0 - ratio * ratio * (1.0 - dot * dot) : F32)
   Vector3.refraction((determinant >= 0.0 : F32), vector, normal, ratio, dot, determinant)
+
+def Vector3.min_for(reference: Gradient.Reference, left: Vector3, right: Vector3) -> Vector3:
+  Vector3{x, y, z} = left
+  Vector3{u, v, w} = right
+  +gnu = Gradient.gnu(reference)
+  Vector3{Vector2.clamp.minimum(gnu, x, u), Vector2.clamp.minimum(gnu, y, v), Vector2.clamp.minimum(gnu, z, w)}
+
+def Vector3.max_for(reference: Gradient.Reference, left: Vector3, right: Vector3) -> Vector3:
+  Vector3{x, y, z} = left
+  Vector3{u, v, w} = right
+  +gnu = Gradient.gnu(reference)
+  Vector3{Vector2.clamp.maximum(gnu, x, u), Vector2.clamp.maximum(gnu, y, v), Vector2.clamp.maximum(gnu, z, w)}
+
+def Vector3.min(left: Vector3, right: Vector3) -> Vector3:
+  Vector3.min_for(AccurateGradient{}, left, right)
+
+def Vector3.max(left: Vector3, right: Vector3) -> Vector3:
+  Vector3.max_for(AccurateGradient{}, left, right)
+
+def Vector3.barycenter(point: Vector3, +a: Vector3, b: Vector3, c: Vector3) -> Vector3:
+  +v0 = Vector3.subtract(b, a)
+  +v1 = Vector3.subtract(c, a)
+  +v2 = Vector3.subtract(point, a)
+  +d00 = Vector3.dot_product(v0, v0)
+  +d01 = Vector3.dot_product(v0, v1)
+  +d11 = Vector3.dot_product(v1, v1)
+  +d20 = Vector3.dot_product(v2, v0)
+  +d21 = Vector3.dot_product(v2, v1)
+  +denominator = (d00 * d11 - d01 * d01 : F32)
+  +y = ((d11 * d20 - d01 * d21) / denominator : F32)
+  +z = ((d00 * d21 - d01 * d20) / denominator : F32)
+  Vector3{(1.0 - (z + y) : F32), y, z}
+
+def Vector3.cubic_hermite(first: Vector3, first_tangent: Vector3, second: Vector3, second_tangent: Vector3, +amount: F32) -> Vector3:
+  +square = (amount * amount : F32)
+  +cube = (amount * amount * amount : F32)
+  a = Vector3.scale(first, (2.0 * cube - 3.0 * square + 1.0 : F32))
+  b = Vector3.scale(first_tangent, (cube - 2.0 * square + amount : F32))
+  c = Vector3.scale(second, (F32.neg(2.0) * cube + 3.0 * square : F32))
+  d = Vector3.scale(second_tangent, (cube - square : F32))
+  Vector3.add(Vector3.add(Vector3.add(a, b), c), d)
+
+def Vector3.ortho_normalize(first: Vector3, second: Vector3) -> Vector3 & Vector3:
+  +normalized = Vector3.normalize(first)
+  perpendicular = Vector3.normalize(Vector3.cross_product(normalized, second))
+  (normalized, Vector3.cross_product(perpendicular, normalized))
+
+def Vector3.transform(vector: Vector3, matrix: Matrix) -> Vector3:
+  Vector3{+x, +y, +z} = vector
+  Matrix{m0, m4, m8, m12, m1, m5, m9, m13, m2, m6, m10, m14, _, _, _, _} = matrix
+  Vector3{(m0 * x + m4 * y + m8 * z + m12 : F32),
+    (m1 * x + m5 * y + m9 * z + m13 : F32), (m2 * x + m6 * y + m10 * z + m14 : F32)}
 
 def Collision.spheres(left: Vector3, radius: F32, right: Vector3, other_radius: F32) -> Bool:
   +sum = (radius + other_radius : F32)

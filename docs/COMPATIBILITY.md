@@ -8,9 +8,9 @@ Profile: **rgba8-cpu-images-v1**, with domains defined in [API.md](API.md).
 
 ## Verified evidence
 
-The current local Apple M1/macOS corpus contains **178 deterministic scenarios /
-32,816 checked output words per lane**, matching native CPU (one and two threads), JavaScript
-and forced Metal. Most words are RGBA pixels; 389 are exact scalar/vector/collision
+The current local Apple M1/macOS corpus contains **184 deterministic scenarios /
+32,909 checked output words per lane**, matching native CPU (one and two threads), JavaScript
+and forced Metal. Most words are RGBA pixels; 482 are exact scalar/vector/matrix/collision
 result-bit probe cells. QOI export bytes are compared separately. GitHub Actions
 is configured to run this corpus on **Ubuntu 24.04
 (x86_64)** and **macOS 15 (arm64)** for CPU/JavaScript; use the current workflow
@@ -18,7 +18,7 @@ result for the exact published commit's hosted evidence.
 Ownership, bounds, color and Base.Image adapter contracts also pass on CPU/JS.
 Every RGB pixel in the primitive, composite and crop/resize PPM examples matches
 the corresponding raylib reference scene.
-The dimension-preservation proof checks with `All terms check.` See the
+The dimension-preservation and transpose-involution proofs check with `All terms check.` See the
 [hosted verification record](VERIFICATION.md#github-actions).
 
 The complete **forced Metal gate passes all current scenarios and export bytes** on the
@@ -31,7 +31,7 @@ A current run's precise inputs, source hashes and lane outcomes are in
 `.build/conformance.json`. The authoritative [API dashboard](PROGRESS.md) covers
 the complete release-header/support inventory. The 600-entry
 `.build/api-inventory.json` is its legacy core view, mapping 77 reference APIs to
-these scoped operations/contracts. The companion ledger additionally maps 62
+these scoped operations/contracts. The companion ledger additionally maps 71
 `raymath.h` functions. Remaining functions retain explicit planned work.
 These counts are an inventory, not a percentage of full parity.
 Both `profile-covered` and `contract-checked` are partial-coverage statuses.
@@ -69,6 +69,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | `ImageRotate` / `ImageToPOT` | `Surface.rotate_degrees_for/to_pot` | Checked general rotation with reference bilinear sampling; exhaustive supported POT-axis reference validation and exact fill/copy fixtures |
 | QOI loading/export | `Surface.decode_qoi/to_qoi/load_qoi/write_qoi` | Valid-stream RGBA8 profile, all opcodes, exact export bytes, typed malformed-input errors and real CPU/JS file round trips |
 | Scalar/Vector2/Vector3 raymath | `Math`, `Vector2` and `Vector3` functions | Exact results for the explicit uncontracted-F32 profile; exceptional/contracted variants remain open |
+| Matrix identity/transpose and vector transforms | `Matrix`, `Vector2.transform`, `Vector3.transform` | All 16 matrix fields and transformed components compared exactly; double-transpose law checked |
 | Eleven 2D collision queries | `Collision` functions | Exact Boolean/rectangle/hit-coordinate fixtures; explicit segment contraction profiles and native-fmaf verification |
 | Sphere/box queries | `Collision.spheres/boxes/box_sphere` | Exact bounded Boolean fixtures, inclusive contacts, signed radii and supplied-bound ordering |
 | `ImageFromChannel` | `Surface.from_channel` | Preserved RGBA8 source and independent normalized output; all reference byte/channel combinations checked |

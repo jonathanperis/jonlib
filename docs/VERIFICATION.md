@@ -21,10 +21,10 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 178 scenarios / 32,816 output words match pinned raylib exactly on each
+- 184 scenarios / 32,909 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
-- The word count includes 389 exact scalar/vector/collision result-bit probe cells.
+- The word count includes 482 exact scalar/vector/matrix/collision result-bit probe cells.
   The math reference explicitly uses uncontracted F32; no comparison tolerance
   is applied. Both components of each vector output are checked.
 - Seven QOI export scenarios compare all 299 encoded bytes per lane. Real CPU/JS
@@ -51,7 +51,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
 - The pinned core header inventory contains 600 unique public functions; 77 have
-  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 62
+  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 71
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
   on CPU, JS and Metal for its declared reference profile. Ubuntu's subsequent
@@ -101,7 +101,7 @@ reference comparison of all 4096 supported POT axis sizes.
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 178 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 184 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -468,3 +468,31 @@ projection-domain assertions. Undefined/exceptional/subnormal and contracted
 domains, other platforms and full performance/resource gates remain gaps.
 
 Regression scan: 57 callers checked, 28 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `c5c2f0d`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36219894223)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36219894222)
+completed successfully.
+
+## Matrix foundation and paired-vector interpolation
+
+Nine new function mappings cover profiled Vector3 extrema, barycentric and
+cubic Hermite interpolation, paired-result orthonormalization, Matrix identity/
+transpose and Vector2/Vector3 matrix transforms. The matrix type retains the
+reference's row-wise declaration order and column-index field names. The oracle
+checks every one of 16 matrix fields, all six orthonormalized-vector components
+and every transformed component. No zero-Z term or accumulation step is dropped.
+[Evidence](evidence/matrix-foundation.json) records 184 scenarios / 32,909 words
+per CPU-1/CPU-2/JavaScript/forced-Metal lane.
+
+The pinned `PROOF.bend` entry point reports `All terms check.` for both clearing
+dimension preservation and the new structural transpose-involution law. A26
+passes the scoped matrix/vector contracts; A4/A5 pass the source/device gates,
+and eight harness tests plus project checks pass. Pointer aliasing, degenerate
+barycentric denominators and other numerical/target/performance domains remain
+gaps. Existing dedicated resize/trig/fmaf code and inputs are unchanged; hosted
+CI additionally runs those independent gates for each published revision.
+
+Reviewed 66 numerical, generator, serializer, proof and diagnostic caller contexts,
+20 differential operations, three malformed/domain fixtures and the new law.
+
+Regression scan: 66 callers checked, 24 assertions checked, 0 flagged/fixed.

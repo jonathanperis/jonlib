@@ -1,0 +1,13 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {"jonlib.bend": "85bed672d10e3b90096e616b8566c79aa986f7cd020ffd8c813de266ca09befb"},
+  "fixtures_sha256": "e106aa0be811df4a98d7a75f66b07a5534f0a57893f4aa193c5ff789b566c6bd",
+  "scenarios": 184,
+  "output_words_per_lane": 32909,
+  "numeric_probe_cells": 482,
+  "passed": true,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "proof": {"verdict": "All terms check.", "laws": ["clear_dimensions", "transpose_involution"]},
+  "scope": ["Matrix identity/transpose and complete 16-field serialization", "Vector2/Vector3 matrix transforms", "Profiled Vector3 extrema, barycenter, cubic Hermite and paired orthonormalization"],
+  "limits": ["Pointer aliasing and degenerate barycentric denominators", "Exceptional/subnormal and contracted numerical domains", "Remaining matrix operations and full target/performance coverage"]
+}

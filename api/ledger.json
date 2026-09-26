@@ -3320,23 +3320,28 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Matrix",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Immutable 16-F32 matrix with reference field names and row-wise declaration/constructor order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Complete numeric domains, integration and target/performance evidence"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/MATH.md",
+        "tests/fixtures/images.json",
+        "LAWS.bend",
+        "PROOF.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -3349,7 +3354,7 @@
         "rcamera:type:Matrix"
       ],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive Matrix semantics from the linked source, add a reference fixture, then implement Matrix.",
+      "next_step": "Close documented gaps and unverified gates for Matrix.",
       "priority": 100
     },
     {
@@ -59584,23 +59589,26 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Matrix",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Shared immutable matrix type matching the pinned declaration's field order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Remaining matrix operations and complete integration/target/performance evidence"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/MATH.md",
+        "tests/fixtures/images.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59613,7 +59621,7 @@
         "rcamera:type:Matrix"
       ],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive Matrix semantics from the linked source, add a reference fixture, then implement Matrix.",
+      "next_step": "Close documented gaps and unverified gates for Matrix.",
       "priority": 100
     },
     {
@@ -61458,23 +61466,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector2.transform",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 matrix transformation with reference field ordering and explicit zero-Z multiplication/addition.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted domains",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -61488,8 +61500,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector2Transform semantics from the linked source, add a reference fixture, then implement Vector2.transform.",
-      "priority": 7
+      "next_step": "Close documented gaps and unverified gates for Vector2Transform.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector2Lerp",
@@ -63386,23 +63398,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector3.ortho_normalize",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 paired-result orthonormalization, adapting two distinct pointer outputs and retaining zero/parallel behavior.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Pointer aliasing, exceptional/subnormal and contracted domains",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63415,8 +63431,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3OrthoNormalize semantics from the linked source, add a reference fixture, then implement Vector3.ortho_normalize.",
-      "priority": 4
+      "next_step": "Close documented gaps and unverified gates for Vector3OrthoNormalize.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3Transform",
@@ -63441,23 +63457,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector3.transform",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 affine matrix transformation with reference XYZ field and accumulation order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted domains",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63471,8 +63491,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3Transform semantics from the linked source, add a reference fixture, then implement Vector3.transform.",
-      "priority": 8
+      "next_step": "Close documented gaps and unverified gates for Vector3Transform.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3RotateByQuaternion",
@@ -63726,23 +63746,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector3.cubic_hermite",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 cubic Hermite interpolation/extrapolation, retaining reference coefficient and accumulation order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted domains",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63755,8 +63779,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3CubicHermite semantics from the linked source, add a reference fixture, then implement Vector3.cubic_hermite.",
-      "priority": 3
+      "next_step": "Close documented gaps and unverified gates for Vector3CubicHermite.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3Reflect",
@@ -63840,23 +63864,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "Vector3.min",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Vector3.min_for / Vector3.min",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 component minima with explicit reference signed-zero selection.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and complete target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63869,8 +63896,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3Min semantics from the linked source, add a reference fixture, then implement Vector3.min.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for Vector3Min.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3Max",
@@ -63895,23 +63922,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "Vector3.max",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Vector3.max_for / Vector3.max",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 component maxima with explicit reference signed-zero selection.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and complete target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63924,8 +63954,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3Max semantics from the linked source, add a reference fixture, then implement Vector3.max.",
-      "priority": 1
+      "next_step": "Close documented gaps and unverified gates for Vector3Max.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3Barycenter",
@@ -63950,23 +63980,28 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector3.barycenter",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 barycentric coordinates with nonzero reference denominator and exact XYZ operation order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Degenerate/exceptional/subnormal and contracted domains",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tests/test_harness.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63979,8 +64014,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3Barycenter semantics from the linked source, add a reference fixture, then implement Vector3.barycenter.",
-      "priority": 2
+      "next_step": "Close documented gaps and unverified gates for Vector3Barycenter.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3Unproject",
@@ -65652,7 +65687,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive MatrixDeterminant semantics from the linked source, add a reference fixture, then implement Matrix.determinant.",
-      "priority": 202
+      "priority": 4
     },
     {
       "id": "raymath:function:MatrixTrace",
@@ -65707,7 +65742,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive MatrixTrace semantics from the linked source, add a reference fixture, then implement Matrix.trace.",
-      "priority": 202
+      "priority": 3
     },
     {
       "id": "raymath:function:MatrixTranspose",
@@ -65732,23 +65767,28 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Matrix.transpose",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Reference field permutation, including signed-zero bits; double-transpose involution has a checked structural proof.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Complete integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "LAWS.bend",
+        "PROOF.bend",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -65761,8 +65801,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixTranspose semantics from the linked source, add a reference fixture, then implement Matrix.transpose.",
-      "priority": 6
+      "next_step": "Close documented gaps and unverified gates for MatrixTranspose.",
+      "priority": 202
     },
     {
       "id": "raymath:function:MatrixInvert",
@@ -65817,7 +65857,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive MatrixInvert semantics from the linked source, add a reference fixture, then implement Matrix.invert.",
-      "priority": 202
+      "priority": 5
     },
     {
       "id": "raymath:function:MatrixIdentity",
@@ -65842,23 +65882,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Matrix.identity",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Reference 4x4 identity with all 16 F32 fields compared exactly.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Full integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -65871,8 +65914,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixIdentity semantics from the linked source, add a reference fixture, then implement Matrix.identity.",
-      "priority": 5
+      "next_step": "Close documented gaps and unverified gates for MatrixIdentity.",
+      "priority": 202
     },
     {
       "id": "raymath:function:MatrixAdd",
@@ -65927,7 +65970,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive MatrixAdd semantics from the linked source, add a reference fixture, then implement Matrix.add.",
-      "priority": 202
+      "priority": 0
     },
     {
       "id": "raymath:function:MatrixSubtract",
@@ -65982,7 +66025,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive MatrixSubtract semantics from the linked source, add a reference fixture, then implement Matrix.subtract.",
-      "priority": 202
+      "priority": 1
     },
     {
       "id": "raymath:function:MatrixMultiply",
@@ -66037,7 +66080,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive MatrixMultiply semantics from the linked source, add a reference fixture, then implement Matrix.multiply.",
-      "priority": 202
+      "priority": 2
     },
     {
       "id": "raymath:function:MatrixMultiplyValue",
@@ -66147,7 +66190,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive MatrixTranslate semantics from the linked source, add a reference fixture, then implement Matrix.translate.",
-      "priority": 202
+      "priority": 6
     },
     {
       "id": "raymath:function:MatrixRotate",
@@ -66535,7 +66578,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive MatrixScale semantics from the linked source, add a reference fixture, then implement Matrix.scale.",
-      "priority": 202
+      "priority": 7
     },
     {
       "id": "raymath:function:MatrixFrustum",

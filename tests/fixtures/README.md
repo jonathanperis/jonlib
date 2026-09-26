@@ -48,6 +48,10 @@ Supported operations:
 - `vector3_value` follows the numeric-probe format with flattened XYZ arguments
   and three adjacent result-bit cells for vector results. Bounding-box collision
   arguments flatten each minimum XYZ and maximum XYZ pair.
+- `matrix_value` checks every matrix field in declaration order (`m0,m4,m8,m12`,
+  then subsequent rows). Matrix arguments use that same order. Orthonormalization
+  writes six adjacent cells for both returned vectors. Every output cell must fit;
+  barycentric fixtures require a nonzero denominator after reference F32 rounding.
 - `color_tint`, `color_invert`, `color_contrast`, `color_brightness`,
   `color_replace`: image transforms. Tint/replacement use RGBA `color`,
   replacement also uses `replacement`, and contrast/brightness use `amount`.

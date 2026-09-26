@@ -1,7 +1,8 @@
 # Math profiles
 
 The current math implementation is Bend source in `jonlib.bend`. It begins the
-`raymath.h` work package with six scalar, twenty-eight Vector2 and twenty-eight Vector3 functions.
+`raymath.h` work package with six scalar, twenty-nine Vector2, thirty-four Vector3
+and two Matrix functions.
 
 ## Scalar API
 
@@ -21,7 +22,7 @@ The current math implementation is Bend source in `jonlib.bend`. It begins the
   `multiply`, `negate`, `divide`, `invert`, `min`/`min_for`, `max`/`max_for`.
 - Metrics: `length`, `length_sqr`, `distance`, `distance_sqr`, `dot_product`, `cross_product`.
 - Other operations: `normalize`, `lerp`, `reflect`, `equals`, `move_towards`,
-  `clamp`, `clamp_value`, `rotate`/`rotate_for`, `refract`.
+  `clamp`, `clamp_value`, `rotate`/`rotate_for`, `refract`, `transform`.
 
 `divide` takes two vectors; `invert` takes component reciprocals. `lerp` takes
 two vectors and a scalar amount. `reflect` takes a vector and the supplied normal;
@@ -62,6 +63,11 @@ radians within one cycle and preserves reference operation order. See
   `length(vector)`, `normalize(vector)`.
 - Geometric operations: `project`, `reject`, `perpendicular`, `lerp`, `reflect`,
   `invert`, `equals`, `move_towards`, `clamp`/`clamp_for`, `clamp_value`, `refract`.
+- Interpolation/frame operations: `barycenter(point, a, b, c)`,
+  `cubic_hermite(first, first_tangent, second, second_tangent, amount)`,
+  `ortho_normalize(first, second)`, `transform(vector, matrix)`.
+- Extrema: `min`/`min_for` and `max`/`max_for`, with the same explicit signed-zero
+  reference profiles as their Vector2 counterparts.
 
 The cross product retains raylib's handedness and XYZ field order. Dot products
 and squared distance accumulate in reference left-to-right F32 order. The
@@ -87,6 +93,35 @@ negative steps move away, and zero distance returns the exact target value.
 profiles used by Vector2; `clamp` selects the accurate profile. `clamp_value`
 preserves zero vectors and the lower-before-upper magnitude branch order.
 `refract` returns positive zero components for total internal reflection.
+
+`barycenter` requires a nonzero reference F32 denominator; degenerate triangles
+are outside this initial profile. `cubic_hermite` retains the reference powers,
+coefficient order and extrapolation behavior. `ortho_normalize` returns both
+updated vectors as a pair, corresponding to two distinct pointer outputs in C.
+Zero and parallel inputs retain the reference arithmetic instead of inventing
+a replacement basis. Aliased C pointer behavior remains outside this mapping.
+
+## Matrix API
+
+`Matrix` is immutable `Data`. Constructor fields match the reference declaration:
+
+```text
+Matrix{m0, m4, m8,  m12,
+       m1, m5, m9,  m13,
+       m2, m6, m10, m14,
+       m3, m7, m11, m15}
+```
+
+The numeric field indices follow raylib's column-major naming; constructor
+arguments follow its row-wise declaration order. `Matrix.identity()` returns
+the 4×4 identity. `Matrix.transpose(matrix)` permutes fields exactly, including
+signed-zero bits. `LAWS.bend`/`PROOF.bend` establish that transposing twice returns
+the original Matrix; conformance separately checks the actual reference layout.
+
+`Vector2.transform` and `Vector3.transform` apply the reference matrix expressions
+without perspective division. The Vector2 version retains the multiplication
+and addition of the zero-Z term; dropping it could change signed-zero behavior.
+All 16 matrix fields and all transformed vector components are checked bitwise.
 
 ## Floating-point contract and evidence
 

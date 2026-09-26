@@ -43,6 +43,8 @@ crop/extraction/region-drawing profile requires integral rectangle values;
 `BoundingBox{min, max}` contains two `Vector3` values; supplied bounds are retained
 without reordering. Their numeric and collision operations are documented in
 [MATH.md](MATH.md) and [COLLISION.md](COLLISION.md).
+`Matrix` contains 16 F32 fields in the reference declaration order; its layout,
+identity/transpose operations and vector transforms are listed in [MATH.md](MATH.md#matrix-api).
 
 `Surface` owns its row-major pixel array. Always start with `Surface.create`:
 the underlying constructor is visible because Bend does not provide the needed
@@ -211,7 +213,8 @@ Every drawing call consumes its input surface and returns the updated surface.
 Do not reuse the previous handle. `Surface.get` returns a pair; destructure its
 computed result through a typed helper parameter, following Bend's rules.
 
-`LAWS.bend`/`PROOF.bend` establish that clearing preserves dimensions. Full-pixel
+`LAWS.bend`/`PROOF.bend` establish that clearing preserves dimensions and that
+transposing a Matrix twice returns the original value. Full-pixel
 tests establish the exercised reference behaviors. Neither is a claim that
 all rendering, allocation, hardware or compiler behavior is formally proven.
 
