@@ -1,0 +1,20 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {
+    "jonlib.bend": "4018444ae8ab235c37d3baa3cd466065cb87dba1ae965843f2d54da2b1874264",
+    "src/tga.bend": "17e871fa71312ca0bae1b4dc8c85fef7184b9974e1163d1b2b4685c0f7ca34f1"
+  },
+  "inputs_sha256": "0f77d23855031da18dcadbce57758028d5c7826afc305e2ef4281ba74be62d59",
+  "reference_sha256": "20efbea00c649120e7ad385cb24d18ae514052d85551ffbaacd10c27e58035c7",
+  "decode_cases": 19,
+  "decoded_pixels": 358,
+  "typed_error_cases": 14,
+  "export_cases": 11,
+  "export_bytes": 3447,
+  "passed": true,
+  "lanes": ["cpu","javascript","metal"],
+  "file_export_lanes": ["cpu","javascript"],
+  "bmp_regression": {"passed":true,"lanes":["cpu","javascript","metal"]},
+  "full_corpus": {"scenarios":261,"output_words_per_lane":40101,"passed":true,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "limits": ["Paletted and 15/16-bit true-color TGA", "Original-format metadata, nondefault exporter flags and malformed-stream recovery", "Complete integration/target/resource/performance coverage"]
+}

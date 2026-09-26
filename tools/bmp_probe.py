@@ -70,8 +70,8 @@ def bend_bytes(values):
     return f'input_bytes([{chunks}], Nil{{}})'
 
 
-def main():
-    parser=argparse.ArgumentParser(description=__doc__)
+def main(codec='bmp', fixture_factory=fixtures):
+    parser=argparse.ArgumentParser(description=f'Compare {codec.upper()} decoding and RGBA8 export with raylib.')
     parser.add_argument('--bend-source',type=Path,required=True)
     parser.add_argument('--raylib-source',type=Path,required=True)
     parser.add_argument('--gpu',action='store_true')
@@ -79,9 +79,9 @@ def main():
     lock=json.loads((ROOT/'toolchain.json').read_text())
     checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'))
     checkout(args.raylib_source,lock['raylib']['revision'])
-    work=BUILD/'bmp-probe';work.mkdir(parents=True,exist_ok=True)
+    work=BUILD/f'{codec}-probe';work.mkdir(parents=True,exist_ok=True)
     report_path=work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    inputs,malformed,outputs=fixtures()
+    inputs,malformed,outputs=fixture_factory()
     lines=['#include "raylib.h"','#include <stdio.h>',
            'static void emit(Image image){if(!image.data){fputs("valid BMP rejected\\n",stderr);exit(2);} ImageFormat(&image,7);',
            'printf("{\\"width\\":%d,\\"height\\":%d,\\"pixels\\":[",image.width,image.height);',
@@ -90,9 +90,9 @@ def main():
            'int main(void){SetTraceLogLevel(LOG_NONE);']
     lines.insert(2,'#include <stdlib.h>')
     for case in inputs:
-        lines += ['{unsigned char bytes[]={'+','.join(map(str,case['bytes']))+'};emit(LoadImageFromMemory(".bmp",bytes,sizeof(bytes)));}']
+        lines += ['{unsigned char bytes[]={'+','.join(map(str,case['bytes']))+'};emit(LoadImageFromMemory(".'+codec+'",bytes,sizeof(bytes)));}']
     for case in outputs:
-        path=work/f'reference-{case["id"]}.bmp'
+        path=work/f'reference-{case["id"]}.{codec}'
         lines += ['{',f'Image image=GenImageColor({case["width"]},{case["height"]},BLANK);',
                   'unsigned pixels[]={'+','.join(str(v)+'u' for v in case['pixels'])+'};',
                   f'for(int i=0;i<{len(case["pixels"])};i++)((Color*)image.data)[i]=GetColor(pixels[i]);',
@@ -103,7 +103,7 @@ def main():
     binary=work/'reference'
     run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary])
     reference=run([binary]);expected=[json.loads(line) for line in reference.splitlines()]
-    if len(expected)!=len(inputs)+len(outputs):raise ValueError('Incomplete native BMP results')
+    if len(expected)!=len(inputs)+len(outputs):raise ValueError(f'Incomplete native {codec.upper()} results')
     expected = expected[:len(inputs)]+[c['error'] for c in malformed]+expected[len(inputs):]
     report=dict(passed=False,decode_cases=len(inputs),error_cases=len(malformed),export_cases=len(outputs),
                 decoded_pixels=sum(len(row['pixels']) for row in expected[:len(inputs)]),export_bytes=sum(len(row) for row in expected[-len(outputs):]),
@@ -149,11 +149,11 @@ def saved(result: Maybe<J.Surface>) -> IO(Unit):
     case Some{surface}: IO.try(Unit, J.Surface.write_bmp(surface, OUTPUT))
 def main() -> IO(Unit):
   do IO<Unit>:
-'''.replace('OUTPUT',json.dumps(str(work/f'{lane}-single.bmp')))
+'''.replace('OUTPUT',json.dumps(str(work/f'{lane}-single.{codec}'))).replace('BMP',codec.upper()).replace('Surface.to_bmp',f'Surface.to_{codec}').replace('Surface.write_bmp',f'Surface.write_{codec}')
         bang='!' if lane=='metal' else ''
-        for case in inputs:program+=f'    decoded(J.Surface.decode_bmp{bang}({bend_bytes(case["bytes"])}))\n'
-        for case in malformed:program+=f'    IO.print(U32.show(error_code(J.Surface.decode_bmp{bang}({bend_bytes(case["bytes"])}))))\n'
-        for case in outputs:program+=f'    IO.print(List.show(~&2, ~U32, ~U32.show, encoded{bang}({case["width"]}, [{",".join(map(str,case["pixels"]))}], J.Surface.create({case["width"]}, {case["height"]}, 0))))\n'
+        for case in inputs:program+=f'    decoded(J.Surface.decode_{codec}{bang}({bend_bytes(case["bytes"])}))\n'
+        for case in malformed:program+=f'    IO.print(U32.show(error_code(J.Surface.decode_{codec}{bang}({bend_bytes(case["bytes"])}))))\n'
+        for case in outputs:program+=f'    IO.print(List.show(~&2, ~U32, ~U32.show, encoded{bang}({case["width"]}, {bend_bytes(case["pixels"])}, J.Surface.create({case["width"]}, {case["height"]}, 0))))\n'
         if lane!='metal':program+='    saved(J.Surface.create(1, 1, 4294967295))\n'
         source=work/f'{lane}.bend';source.write_text(program)
         binary=work/('candidate.js' if lane=='javascript' else f'candidate-{lane}')
@@ -161,11 +161,11 @@ def main() -> IO(Unit):
         command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
         actual=[json.loads(line) for line in run(command).splitlines()]
         differences=[dict(index=i,reference=a,candidate=b) for i,(a,b) in enumerate(zip(expected,actual)) if a!=b]
-        file_match=lane=='metal' or (work/f'{lane}-single.bmp').read_bytes()==(work/'reference-rgba-single.bmp').read_bytes()
+        file_match=lane=='metal' or (work/f'{lane}-single.{codec}').read_bytes()==(work/f'reference-rgba-single.{codec}').read_bytes()
         report['lanes'][lane]=dict(passed=actual==expected and file_match,differences=differences[:2])
         report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if actual!=expected or not file_match:raise ValueError(f'{lane}: BMP results differ: {differences[:1]}')
-        print(f'{lane}: {len(inputs)} BMP images, {len(malformed)} typed errors and {len(outputs)} exact exports passed',flush=True)
+        if actual!=expected or not file_match:raise ValueError(f'{lane}: {codec.upper()} results differ: {differences[:1]}')
+        print(f'{lane}: {len(inputs)} {codec.upper()} images, {len(malformed)} typed errors and {len(outputs)} exact exports passed',flush=True)
     report['passed']=True
     report_path.write_text(json.dumps(report,indent=2)+'\n')
 

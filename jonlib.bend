@@ -19,6 +19,7 @@ import ./src/spline.bend as SplineNumeric
 import ./src/dither.bend as Dither
 import ./src/formats.bend as Formats
 import ./src/bmp.bend as Bmp
+import ./src/tga.bend as Tga
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -1799,6 +1800,26 @@ def Surface.to_bmp(surface: Surface) -> +List<U32>:
   Surface{w, h, pixels} = surface
   Bmp.encode(w, h, pixels)
 
+def Surface.tga.error(error: Tga.Error) -> Image.DecodeError:
+  match error:
+    case Tga.BadHeader{}: InvalidImageHeader{}
+    case Tga.BadByte{}: InvalidImageByte{}
+    case Tga.BadSize{}: UnsupportedImageSize{}
+    case Tga.Truncated{}: TruncatedImageData{}
+    case Tga.BadStream{}: InvalidImageStream{}
+
+def Surface.tga.result(result: Result<&1, &1, Tga.Error, Tga.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
+  match result:
+    case Fail{error}: Fail{Surface.tga.error(error)}
+    case Done{Tga.Image{w, h, pixels}}: Done{Surface{w, h, pixels}}
+
+def Surface.decode_tga(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
+  Surface.tga.result(Tga.decode(bytes))
+
+def Surface.to_tga(surface: Surface) -> +List<U32>:
+  Surface{w, h, pixels} = surface
+  Tga.encode(w, h, pixels)
+
 def Surface.dimensions(surface: Surface) -> U32 & U32:
   Surface{w, h, _} = surface
   (w, h)
@@ -2997,6 +3018,10 @@ def Surface.write_qoi(surface: Surface, path: String) -> IO(Result<&1, &1, U32 &
 def Surface.write_bmp(surface: Surface, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
     File.open(path, "w"), Surface.qoi.opened(Surface.to_bmp(surface)))
+
+def Surface.write_tga(surface: Surface, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
+  IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
+    File.open(path, "w"), Surface.qoi.opened(Surface.to_tga(surface)))
 
 def Surface.load_qoi.decoded(result: Result<&1, &1, Image.DecodeError, Surface>) -> Result<&1, &1, Image.LoadError, Surface>:
   match result:

@@ -1157,3 +1157,27 @@ permissive malformed-input recovery and full target/resource/performance evidenc
 remain gaps. The selected stb MIT notice is retained with the adaptation.
 
 Regression scan: 35 callers checked, 21 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `b15af4b`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36263721767)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36263721856)
+completed successfully, including BMP decode and exact export bytes.
+
+## TGA raw/RLE decoding and export
+
+The true-color/grayscale decoder passes 19 native images (358 pixels), 14 typed
+errors and 11 complete default RLE exports (3,447 bytes) on CPU, JavaScript and
+forced Metal. Export fixtures retain the native two-position raw-run comparison,
+128/129/130-pixel boundaries and per-row packet restart. Decode fixtures cover
+ID fields, both vertical orientations, ignored descriptor/origin fields,
+gray-alpha values and packets spanning row boundaries. Real CPU/JS files match
+native bytes. See [evidence/tga-codec.json](evidence/tga-codec.json).
+
+The shared bitmap harness also reruns the complete BMP profile successfully.
+The 261-scenario / 40,101-word full corpus, eight harness tests, project checks
+and four pinned laws pass. I82 and A4/A5/A6 pass within the declared profile.
+The existing partial load/export mappings gain another codec; complete API
+counts do not increase. Paletted/15-bit/16-bit true-color variants, original
+metadata, nondefault export flags, malformed-data recovery and full target/
+resource/performance evidence remain gaps.
+
+Regression scan: 39 callers checked, 35 assertions checked, 0 flagged/fixed.

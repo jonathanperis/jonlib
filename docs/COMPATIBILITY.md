@@ -81,6 +81,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | `ImageRotate` / `ImageToPOT` | `Surface.rotate_degrees_for/to_pot` | Checked general rotation with reference bilinear sampling; exhaustive supported POT-axis reference validation and exact fill/copy fixtures |
 | QOI loading/export | `Surface.decode_qoi/to_qoi/load_qoi/write_qoi` | Valid-stream RGBA8 profile, all opcodes, exact export bytes, typed malformed-input errors and real CPU/JS file round trips |
 | BMP decoding/export | `Surface.decode_bmp/to_bmp/write_bmp` | Bounded INFO/V4 24/32-bit decoding; exact RGBA8 V4 bytes, native alpha/orientation/gap rules and typed malformed-input checks |
+| TGA decoding/export | `Surface.decode_tga/to_tga/write_tga` | Raw/RLE true-color and grayscale profiles; exact default per-row RLE packet bytes and bounded decode errors |
 | Scalar/Vector2/Vector3/Vector4 raymath | `Math` and vector functions | Exact results for the explicit uncontracted-F32 profile; exceptional/contracted variants remain open |
 | Vector angle queries | `Vector2.angle/line_angle`, `Vector3.angle` and `_for` variants | Explicit Apple/GNU numerical profiles with exact native/control probes and signed quadrant behavior |
 | Quaternion arithmetic/metrics/interpolation | `Quaternion` functions | Shared Vector4 representation; exact Hamilton products, zero normalization/inversion, NLERP and sign-equivalent equality |

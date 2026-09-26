@@ -41,6 +41,7 @@ differential test reference.
 - Radial and one-cycle linear gradient profiles with balanced owned-array generation.
 - QOI decoding/encoding and real byte-file loading/export, with typed failures.
 - BMP 24/32-bit memory decoding and exact RGBA8 V4 export; owned raw image-file IO.
+- TGA raw/RLE true-color and grayscale decoding with byte-exact default RLE export.
 - Initial scalar and Vector2 math under an explicit uncontracted-F32 profile.
 - Horizontal and vertical flips.
 - Conversion to Bend's `Base.Image` quadtree.

@@ -126,6 +126,11 @@ jobs:
           python3 tools/bmp_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify TGA pixels and exact RLE export bytes
+        run: >-
+          python3 tools/tga_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Independently audit the public API catalog
         run: >-
           python3 tools/api_plan.py check --clang-audit
@@ -202,3 +207,4 @@ jobs:
             .build/image-format-probe/results.json
             .build/raw-file-probe/results.json
             .build/bmp-probe/results.json
+            .build/tga-probe/results.json
