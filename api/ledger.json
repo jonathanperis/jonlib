@@ -40496,12 +40496,12 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.decode_qoi",
+      "jonlib": "Surface.decode_qoi / Surface.decode_bmp",
       "mapping_state": "implemented",
-      "scope": "Valid QOI RGB/RGBA streams decoded to owned RGBA8; dimensions 1..4096; typed rejection of malformed streams.",
+      "scope": "QOI RGB/RGBA and bounded BMP 24/32-bit INFO/V4 profiles decoded to owned RGBA8; dimensions 1..4096; typed malformed-input rejection. BMP retains native orientation, padding, alpha rules and double-skip gap behavior.",
       "gaps": [
-        "Other codecs",
-        "Original pixel-format metadata",
+        "Other codecs and BMP variants/masks/compression",
+        "Original pixel-format metadata and generic format dispatch",
         "Reference permissive malformed-stream recovery",
         "Complete targets/integration/performance"
       ],
@@ -40517,7 +40517,9 @@
       "evidence": [
         "tests/fixtures/images.json",
         "tests/decoding.bend",
-        "docs/CODECS.md"
+        "tools/bmp_probe.py",
+        "docs/CODECS.md",
+        "docs/BMP.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -40788,9 +40790,9 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.write_qoi / Surface.to_qoi / Image.Formatted.write_raw",
+      "jonlib": "Surface.write_qoi / Surface.to_qoi / Surface.to_bmp / Surface.write_bmp / Image.Formatted.write_raw",
       "mapping_state": "implemented",
-      "scope": "QOI export from owned RGBA8 with fixed channels=4/colorspace=0, plus headerless RAW export for byte/integer formats 1..7. Exact native bytes and Base file-write/closure behavior.",
+      "scope": "QOI and V4/32-bit BMP export from owned RGBA8, plus headerless RAW export for byte/integer formats 1..7. Exact native bytes and Base file-write/closure behavior.",
       "gaps": [
         "Other export/source formats and generic extension dispatch",
         "Native callbacks/allocation ABI and complete targets/integration/performance"
@@ -40808,8 +40810,10 @@
         "tests/fixtures/images.json",
         "examples/qoi_roundtrip.bend",
         "tools/raw_file_probe.py",
+        "tools/bmp_probe.py",
         "docs/CODECS.md",
-        "docs/RAW-FILES.md"
+        "docs/RAW-FILES.md",
+        "docs/BMP.md"
       ],
       "gate_evidence": {},
       "target_results": {},

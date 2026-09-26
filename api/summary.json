@@ -567,7 +567,7 @@
       "name": "LoadImageFromMemory",
       "milestone": "image-codecs",
       "status": "partial",
-      "jonlib": "Surface.decode_qoi",
+      "jonlib": "Surface.decode_qoi / Surface.decode_bmp",
       "next_step": "Close documented gaps and unverified gates for LoadImageFromMemory.",
       "milestone_dependencies": [
         "files",
@@ -581,7 +581,7 @@
       "name": "ExportImage",
       "milestone": "image-codecs",
       "status": "partial",
-      "jonlib": "Surface.write_qoi / Surface.to_qoi / Image.Formatted.write_raw",
+      "jonlib": "Surface.write_qoi / Surface.to_qoi / Surface.to_bmp / Surface.write_bmp / Image.Formatted.write_raw",
       "next_step": "Close documented gaps and unverified gates for ExportImage.",
       "milestone_dependencies": [
         "files",

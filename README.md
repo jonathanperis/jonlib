@@ -40,6 +40,7 @@ differential test reference.
 - Owned seeded random streams and reference-exact white-noise images.
 - Radial and one-cycle linear gradient profiles with balanced owned-array generation.
 - QOI decoding/encoding and real byte-file loading/export, with typed failures.
+- BMP 24/32-bit memory decoding and exact RGBA8 V4 export; owned raw image-file IO.
 - Initial scalar and Vector2 math under an explicit uncontracted-F32 profile.
 - Horizontal and vertical flips.
 - Conversion to Bend's `Base.Image` quadtree.

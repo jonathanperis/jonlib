@@ -121,6 +121,11 @@ jobs:
           python3 tools/raw_file_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify BMP pixels and exact export bytes
+        run: >-
+          python3 tools/bmp_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Independently audit the public API catalog
         run: >-
           python3 tools/api_plan.py check --clang-audit
@@ -196,3 +201,4 @@ jobs:
             .build/raw-pixel-probe/results.json
             .build/image-format-probe/results.json
             .build/raw-file-probe/results.json
+            .build/bmp-probe/results.json

@@ -3,6 +3,9 @@
 Headerless byte/integer image files are supported through the owned formatted
 image APIs; see [RAW-FILES.md](RAW-FILES.md) for exact loading/export contracts.
 
+BMP memory decoding and exact RGBA8 V4 export are documented in [BMP.md](BMP.md),
+including supported headers, native alpha/offset rules and rejected variants.
+
 ## QOI
 
 The QOI implementation is entirely Bend, in `src/qoi.bend`. Its error and

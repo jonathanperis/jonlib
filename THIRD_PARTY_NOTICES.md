@@ -64,6 +64,16 @@ to RGBA8, implements reference QOI encoding and reports malformed streams explic
 are retained in [LICENSES/qoi.txt](LICENSES/qoi.txt). The standalone C implementation
 is used only by reference tooling; it is not linked into Jonlib's implementation.
 
+## stb_image and stb_image_write
+
+`src/bmp.bend` is an altered, bounded Bend adaptation of the BMP reader/writer
+in pinned raylib's `src/external/stb_image.h` and `stb_image_write.h`, by Sean
+Barrett and contributors. Jonlib selects their MIT alternative, retained in
+[LICENSES/stb-image.txt](LICENSES/stb-image.txt). It uses owned arrays and explicit
+byte validation, preserves the exercised native pixel/export rules, and rejects
+unsupported or truncated inputs. The native headers are used only by reference
+tooling; no stb implementation is linked into the Bend candidate.
+
 ## Arm numerical routines
 
 The GNU-reference polynomial in `src/trig.bend` and its independent C control

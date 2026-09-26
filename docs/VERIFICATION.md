@@ -1131,3 +1131,29 @@ semantics, native callbacks/allocation ABI and full target/performance coverage
 remain gaps.
 
 Regression scan: 30 callers checked, 11 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `8ec0a18`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36261897675)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36261897667)
+completed successfully, including raw-file bytes and descriptor-closure checks.
+
+## BMP memory codec and RGBA8 export
+
+The bounded INFO/V4 24/32-bit decoder passes 24 native images (131 complete
+pixels), 17 typed-error controls and three byte-exact RGBA8 V4 exports (410 bytes)
+on CPU, JavaScript and forced Metal. CPU/JS additionally write a real file and
+compare every byte with native `ExportImage`. Row orientation/padding, native
+all-zero-alpha promotion, explicit bitfield alpha and the observed double-skip
+post-header gap are retained. The maximum-gap fixture is built from bounded
+literal chunks after a deeply nested generated JavaScript literal exceeded its
+stack; the fixture bytes and native expectations are unchanged. See
+[evidence/bmp-codec.json](evidence/bmp-codec.json).
+
+The full 261-scenario / 40,101-word corpus, eight harness tests, project checks
+and all four pinned laws pass. I81 and A4/A5/A6 pass within the declared profile.
+The two existing partial mappings (`LoadImageFromMemory`, `ExportImage`) gain
+BMP coverage; the ledger remains 102 core and 142 raymath partial functions,
+with zero full-parity completions. Other BMP variants, original-format metadata,
+permissive malformed-input recovery and full target/resource/performance evidence
+remain gaps. The selected stb MIT notice is retained with the adaptation.
+
+Regression scan: 35 callers checked, 21 assertions checked, 1 flagged/fixed.

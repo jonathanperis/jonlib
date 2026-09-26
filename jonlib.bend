@@ -18,6 +18,7 @@ import ./src/perlin.bend as Perlin
 import ./src/spline.bend as SplineNumeric
 import ./src/dither.bend as Dither
 import ./src/formats.bend as Formats
+import ./src/bmp.bend as Bmp
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -1779,6 +1780,25 @@ def Surface.to_qoi(surface: Surface) -> +List<U32>:
   Surface{w, h, pixels} = surface
   Qoi.encode(w, h, pixels)
 
+def Surface.bmp.error(error: Bmp.Error) -> Image.DecodeError:
+  match error:
+    case Bmp.BadHeader{}: InvalidImageHeader{}
+    case Bmp.BadByte{}: InvalidImageByte{}
+    case Bmp.BadSize{}: UnsupportedImageSize{}
+    case Bmp.Truncated{}: TruncatedImageData{}
+
+def Surface.bmp.result(result: Result<&1, &1, Bmp.Error, Bmp.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
+  match result:
+    case Fail{error}: Fail{Surface.bmp.error(error)}
+    case Done{Bmp.Image{w, h, pixels}}: Done{Surface{w, h, pixels}}
+
+def Surface.decode_bmp(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
+  Surface.bmp.result(Bmp.decode(bytes))
+
+def Surface.to_bmp(surface: Surface) -> +List<U32>:
+  Surface{w, h, pixels} = surface
+  Bmp.encode(w, h, pixels)
+
 def Surface.dimensions(surface: Surface) -> U32 & U32:
   Surface{w, h, _} = surface
   (w, h)
@@ -2973,6 +2993,10 @@ def Surface.qoi.opened(bytes: +List<U32>, opened: Result<&1, &1, U32 & String, F
 def Surface.write_qoi(surface: Surface, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
     File.open(path, "w"), Surface.qoi.opened(Surface.to_qoi(surface)))
+
+def Surface.write_bmp(surface: Surface, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
+  IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
+    File.open(path, "w"), Surface.qoi.opened(Surface.to_bmp(surface)))
 
 def Surface.load_qoi.decoded(result: Result<&1, &1, Image.DecodeError, Surface>) -> Result<&1, &1, Image.LoadError, Surface>:
   match result:

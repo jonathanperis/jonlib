@@ -1,0 +1,19 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {
+    "jonlib.bend": "6d9763285801cc6880b30eac57de58f0658dd1833c67bff70daca6f20c099824",
+    "src/bmp.bend": "1301fa11f29babc32bda68b9a58daf48771433a1e373ad406103a8f08e0ac00b"
+  },
+  "inputs_sha256": "37ddd2963b73fbc0949ac3aa5f99f50de54eefdaf93fd6b12663485aa957e9d7",
+  "reference_sha256": "3b86dd4a201fd8a1cf588394c767b07f6f295df558ef1c6035283ba6286f9d55",
+  "decode_cases": 24,
+  "decoded_pixels": 131,
+  "typed_error_cases": 17,
+  "export_cases": 3,
+  "export_bytes": 410,
+  "passed": true,
+  "lanes": ["cpu","javascript","metal"],
+  "file_export_lanes": ["cpu","javascript"],
+  "full_corpus": {"scenarios":261,"output_words_per_lane":40101,"passed":true,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "limits": ["Other BMP headers, masks, bit depths and compression", "Original-format metadata and permissive malformed-input recovery", "Complete integration/target/resource/performance coverage"]
+}
