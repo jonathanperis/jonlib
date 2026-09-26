@@ -1,0 +1,14 @@
+{
+  "date": "2026-09-26",
+  "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "source_sha256": {"jonlib.bend": "f9b24d39631d203f2703fe2f8b76e0718ab7bf994c8aa7833960016f213134a3"},
+  "fixtures_sha256": "6f3ba645eb08c5593680f9fed79c092b3d1ae1ff23ae1a9fab7d16d64ee12cb2",
+  "scenarios": 157,
+  "output_words_per_lane": 32599,
+  "numeric_probe_cells": 172,
+  "channel_byte_reference_checks": 1024,
+  "passed": true,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "scope": ["Rectangle/circle predicates and four-field rectangle overlap", "Profiled Vector2 extrema", "RGBA8 channel extraction with both owners retained"],
+  "limits": ["Other image formats and native grayscale storage", "Exceptional/subnormal and contracted numerical variants", "Full target/performance gates"]
+}

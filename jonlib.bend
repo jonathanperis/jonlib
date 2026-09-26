@@ -1,5 +1,6 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
 # Image/color algorithms adapted from raylib 6.0 rtextures.c; math from raymath.h.
+# Collision queries adapted from the same release's rshapes.c.
 # Altered Bend implementations; see THIRD_PARTY_NOTICES.md and LICENSES/raylib.txt.
 import Base
 import ./src/resample.bend as Resample
@@ -173,6 +174,24 @@ def Vector2.clamp_for(reference: Gradient.Reference, vector: Vector2, lower: Vec
 def Vector2.clamp(vector: Vector2, lower: Vector2, upper: Vector2) -> Vector2:
   Vector2.clamp_for(AccurateGradient{}, vector, lower, upper)
 
+def Vector2.min_for(reference: Gradient.Reference, left: Vector2, right: Vector2) -> Vector2:
+  Vector2{x, y} = left
+  Vector2{u, v} = right
+  +gnu = Gradient.gnu(reference)
+  Vector2{Vector2.clamp.minimum(gnu, x, u), Vector2.clamp.minimum(gnu, y, v)}
+
+def Vector2.max_for(reference: Gradient.Reference, left: Vector2, right: Vector2) -> Vector2:
+  Vector2{x, y} = left
+  Vector2{u, v} = right
+  +gnu = Gradient.gnu(reference)
+  Vector2{Vector2.clamp.maximum(gnu, x, u), Vector2.clamp.maximum(gnu, y, v)}
+
+def Vector2.min(left: Vector2, right: Vector2) -> Vector2:
+  Vector2.min_for(AccurateGradient{}, left, right)
+
+def Vector2.max(left: Vector2, right: Vector2) -> Vector2:
+  Vector2.max_for(AccurateGradient{}, left, right)
+
 def Vector2.clamp.magnitude(nonzero: Bool, +x: F32, +y: F32, square: F32, +lower: F32, +upper: F32) -> Vector2:
   match nonzero:
     case False{}: Vector2{x, y}
@@ -211,6 +230,37 @@ def Vector2.rotate_for(reference: Gradient.Reference, vector: Vector2, angle: F3
 
 def Vector2.rotate(vector: Vector2, angle: F32) -> Vector2:
   Vector2.rotate_for(AccurateGradient{}, vector, angle)
+
+def Collision.recs(left: Rectangle, right: Rectangle) -> Bool:
+  Rectangle{+x, +y, w, h} = left
+  Rectangle{+u, +v, rw, rh} = right
+  ((x < u + rw) && (x + w > u) && (y < v + rh) && (y + h > v) : F32)
+
+def Collision.circles(left: Vector2, radius: F32, right: Vector2, other_radius: F32) -> Bool:
+  Vector2{x, y} = left
+  Vector2{u, v} = right
+  +dx = (u - x : F32)
+  +dy = (v - y : F32)
+  +sum = (radius + other_radius : F32)
+  (dx * dx + dy * dy <= sum * sum : F32)
+
+def Collision.rectangle.result(overlap: Bool, +x: F32, +y: F32, right: F32, bottom: F32) -> Rectangle:
+  match overlap:
+    case False{}: Rectangle{0.0, 0.0, 0.0, 0.0}
+    case True{}: Rectangle{x, y, (right - x : F32), (bottom - y : F32)}
+
+def Collision.rectangle(left: Rectangle, right: Rectangle) -> Rectangle:
+  Rectangle{+x, +y, w, h} = left
+  Rectangle{+u, +v, rw, rh} = right
+  +start_x = Bool.pick(F32, (x > u : F32), x, u)
+  +end1 = (x + w : F32)
+  +end2 = (u + rw : F32)
+  +end_x = Bool.pick(F32, (end1 < end2 : F32), end1, end2)
+  +start_y = Bool.pick(F32, (y > v : F32), y, v)
+  +bottom1 = (y + h : F32)
+  +bottom2 = (v + rh : F32)
+  +end_y = Bool.pick(F32, (bottom1 < bottom2 : F32), bottom1, bottom2)
+  Collision.rectangle.result(((start_x < end_x) && (start_y < end_y) : F32), start_x, start_y, end_x, end_y)
 
 # Internal signed-word operations for raylib's integer raster stepping.
 def Signed.word(+x: F32) -> U32:
@@ -282,6 +332,7 @@ type Color.Transform is Data:
   ImageReplace{original: U32, replacement: U32}
   AlphaClear{threshold: U32, color: U32}
   AlphaPremultiply{}
+  ImageChannel{shift: Nat}
 
 def Color.image_contrast(channel: U32, factor: F32) -> U32:
   F32.to_u32(F32.clamp((((U32.to_f32(channel) / 255.0 - 0.5) * factor + 0.5) * 255.0 : F32), 0.0, 255.0))
@@ -292,6 +343,9 @@ def Color.image_brightness(channel: U32, amount: F32) -> U32:
 
 def Color.transform(transform: Color.Transform, +pixel: U32) -> U32:
   match transform:
+    case ImageChannel{shift}:
+      +channel = ((pixel >> shift) .&. 255 : U32)
+      Color.rgba(channel, channel, channel, 255)
     case ImageTint{+color}:
       Color.rgba((Color.red(pixel) * Color.red(color) / 255 : U32), (Color.green(pixel) * Color.green(color) / 255 : U32),
         (Color.blue(pixel) * Color.blue(color) / 255 : U32), (Color.alpha(pixel) * Color.alpha(color) / 255 : U32))
@@ -1263,6 +1317,14 @@ def Surface.copy.result(+w: U32, +h: U32, pair: Array<U32> & Array<U32>) -> Surf
 def Surface.copy(surface: Surface) -> Surface & Surface:
   Surface{w, h, pixels} = surface
   Surface.copy.result(w, h, Array.clone(U32, pixels))
+
+def Surface.channel.copied(pair: Surface & Surface, selected: F32) -> Surface & Surface:
+  (source, copy) = pair
+  shift = U32.to_nat((24 - 8 * F32.to_u32(F32.clamp(selected, 0.0, 3.0)) : U32))
+  (source, Surface.color.transform(copy, ImageChannel{shift}))
+
+def Surface.from_channel(surface: Surface, selected: F32) -> Surface & Surface:
+  Surface.channel.copied(Surface.copy(surface), selected)
 
 def Surface.flip.index(horizontal: Bool, +i: U32, +w: U32, h: U32) -> U32:
   +x = (i % w : U32)

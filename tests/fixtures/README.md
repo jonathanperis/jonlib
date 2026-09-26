@@ -36,6 +36,13 @@ Supported operations:
   `result_height` hints, checked by the actual C oracle after rotation.
 - `to_pot`: RGBA fill `color`; the reference first verifies every supported axis
   size against the integer size calculation used for fixture tracking.
+- `from_channel`: integral `channel`, clamped to 0..3 for RGBA8. Optional
+  `observe_source` retains the original as the next fixture image. The oracle
+  first checks all 256 byte values in all four channels before raw byte extraction
+  is used by the candidate; grayscale output is normalized to RGBA8 explicitly.
+- `collision_value`: a named `function`, flattened scalar/vector/rectangle `args`
+  and output cell `x`,`y`. Boolean results use one cell; rectangle results use
+  four adjacent exact F32-bit cells, all required to fit.
 - `color_tint`, `color_invert`, `color_contrast`, `color_brightness`,
   `color_replace`: image transforms. Tint/replacement use RGBA `color`,
   replacement also uses `replacement`, and contrast/brightness use `amount`.

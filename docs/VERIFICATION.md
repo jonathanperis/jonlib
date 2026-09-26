@@ -21,10 +21,10 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 149 scenarios / 32,515 output words match pinned raylib exactly on each
+- 157 scenarios / 32,599 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
-- The word count includes 118 exact scalar/Vector2 result-bit probe cells.
+- The word count includes 172 exact scalar/Vector2/collision result-bit probe cells.
   The math reference explicitly uses uncontracted F32; no comparison tolerance
   is applied. Both components of each vector output are checked.
 - Seven QOI export scenarios compare all 299 encoded bytes per lane. Real CPU/JS
@@ -50,8 +50,8 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 62 have
-  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 32
+- The pinned core header inventory contains 600 unique public functions; 66 have
+  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 34
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
   on CPU, JS and Metal for its declared reference profile. Ubuntu's subsequent
@@ -101,7 +101,7 @@ reference comparison of all 4096 supported POT axis sizes.
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 149 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 157 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -343,3 +343,28 @@ The six helper/wrapper/generator calls and four exact vector fixture assertions
 were inspected, including the convenience API's profile selection.
 
 Regression scan: 6 callers checked, 4 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `18a507b`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36217181133)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36217181159)
+both completed successfully, including the native gradient and rotation trigonometry gates.
+
+## Collision/channel increment
+
+The six new mappings add rectangle/circle predicates, rectangle overlap,
+profiled Vector2 minima/maxima and source-preserving RGBA8 channel extraction.
+[Evidence](evidence/collision-channel.json) records full CPU-1/CPU-2/JavaScript/
+forced-Metal results. The native oracle checks all 256 values for each of four
+channels; the image corpus and ownership contracts verify normalized grayscale
+pixels, opaque alpha, original-source retention and independent output ownership.
+Geometry results retain strict rectangle edges, inclusive circle tangency,
+signed-zero selection and the reference's degenerate-extent behavior.
+
+A26 passes for these scoped contracts; A3/A4/A5/A6/A7 pass the exercised ownership,
+source-boundary, forced-device, documentation and negative-control gates.
+Full format/numerical/target/performance parity remains a gap.
+
+Reviewed helper/wrapper calls, all color-transform consumers, shared fixture
+generation, the resize/Metal diagnostic callers, 32 new differential operations,
+three malformed-fixture assertions and the paired-owner contract.
+
+Regression scan: 37 callers checked, 36 assertions checked, 0 flagged/fixed.

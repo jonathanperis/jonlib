@@ -1,4 +1,37 @@
 {
+  "CheckCollisionRecs": {
+    "jonlib": "Collision.recs",
+    "status": "profile-covered",
+    "scope": "Finite bounded F32 rectangles; exact strict edge comparisons, including zero and signed extents.",
+    "gaps": [
+      "Exceptional/subnormal and contracted variants",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:CheckCollisionRecs",
+    "milestone": "collision"
+  },
+  "CheckCollisionCircles": {
+    "jonlib": "Collision.circles",
+    "status": "profile-covered",
+    "scope": "Finite bounded F32 centers/radii, inclusive squared-distance tangency and reference signed-radius behavior.",
+    "gaps": [
+      "Exceptional/subnormal and contracted variants",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:CheckCollisionCircles",
+    "milestone": "collision"
+  },
+  "GetCollisionRec": {
+    "jonlib": "Collision.rectangle",
+    "status": "profile-covered",
+    "scope": "Finite bounded F32 rectangle intersection; exact four-field result bits, signed-zero tie ordering and positive-zero empty results.",
+    "gaps": [
+      "Exceptional/subnormal behavior",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:GetCollisionRec",
+    "milestone": "collision"
+  },
   "LoadImage": {
     "jonlib": "Surface.load_qoi",
     "status": "profile-covered",
@@ -111,6 +144,17 @@
     ],
     "api_id": "raylib:function:ImageFromImage",
     "milestone": "resampling"
+  },
+  "ImageFromChannel": {
+    "jonlib": "Surface.from_channel",
+    "status": "profile-covered",
+    "scope": "RGBA8 source; returns unchanged source and independent opaque grayscale RGBA8 output, matching ImageFromChannel plus RGBA8 normalization. Integral selectors clamp to 0..3; all 256 byte values in all four reference channels checked.",
+    "gaps": [
+      "Native grayscale storage and other source formats/mipmaps",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:ImageFromChannel",
+    "milestone": "images"
   },
   "ImageToPOT": {
     "jonlib": "Surface.to_pot",

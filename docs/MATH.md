@@ -1,7 +1,7 @@
 # Math profiles
 
 The current math implementation is Bend source in `jonlib.bend`. It begins the
-`raymath.h` work package with six scalar functions and twenty-six Vector2 functions.
+`raymath.h` work package with six scalar functions and twenty-eight Vector2 functions.
 
 ## Scalar API
 
@@ -18,7 +18,7 @@ The current math implementation is Bend source in `jonlib.bend`. It begins the
 
 - Constructors: `zero()`, `one()`.
 - Component operations: `add`, `add_value`, `subtract`, `subtract_value`, `scale`,
-  `multiply`, `negate`, `divide`, `invert`.
+  `multiply`, `negate`, `divide`, `invert`, `min`/`min_for`, `max`/`max_for`.
 - Metrics: `length`, `length_sqr`, `distance`, `distance_sqr`, `dot_product`, `cross_product`.
 - Other operations: `normalize`, `lerp`, `reflect`, `equals`, `move_towards`,
   `clamp`, `clamp_value`, `rotate`/`rotate_for`, `refract`.
@@ -40,6 +40,9 @@ for maxima. `clamp_value` clamps magnitude and preserves
 zero vectors. Reversed magnitude bounds retain raylib's lower-before-upper
 branch order. `refract(vector, normal, ratio)` returns positive zero components
 for total internal reflection and otherwise applies the original formula.
+
+`min_for(reference, left, right)` and `max_for(reference, left, right)` share the
+same explicit zero-tie contract. `min` and `max` select the accurate profile.
 
 `rotate_for(reference, vector, radians)` uses the explicit trigonometric reference
 profile; `rotate` selects the accurate profile. The current profile covers finite

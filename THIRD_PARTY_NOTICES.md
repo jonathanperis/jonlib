@@ -20,6 +20,9 @@ It is not affiliated with or endorsed by raylib or Bend's maintainers.
   color/alpha transforms, checkerboards and quarter-turn rotations from
   `rtextures.c`, plus the documented scalar/Vector2 operations from `raymath.h`.
   Their scoped contracts and reference evidence are recorded in `docs/`.
+- Pure collision queries in `jonlib.bend` adapt the same release's `rshapes.c`.
+  General bilinear rotation, power-of-two canvases and channel extraction adapt
+  `rtextures.c`; these remain modified Bend implementations with explicit profiles.
 - Reference testing: `tools/conformance.py` builds a separate raylib executable
   from a locally supplied checkout. Raylib is not linked into the Jonlib runner.
 - API documentation: `api/reference.json`, generated `api/ledger.json` and
@@ -59,7 +62,7 @@ The GNU-reference polynomial in `src/trig.bend` and its independent C control
 in `tools/trig_probe.py` adapt `math/sincosf.h` and `math/sincosf_data.c` from
 [Arm optimized-routines at 47597821aaa52e9c055caf1ecf8f3aecfd751cd9](https://github.com/ARM-software/optimized-routines/tree/47597821aaa52e9c055caf1ecf8f3aecfd751cd9).
 These are altered Bend/tooling implementations, limited to the documented
-gradient profile. Jonlib selects the upstream MIT alternative; source copyright
+gradient/rotation profiles. Jonlib selects the upstream MIT alternative; source copyright
 notices and the selected license are retained in [LICENSES/arm-math.txt](LICENSES/arm-math.txt).
 
 ## Bend

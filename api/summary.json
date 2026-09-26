@@ -6,24 +6,24 @@
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1783,
-    "partial": 101
+    "not-started": 1777,
+    "partial": 107
   },
   "core_functions": {
     "total": 600,
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 538,
-    "partial": 62
+    "not-started": 534,
+    "partial": 66
   },
   "function_declarations": {
     "total": 931,
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 837,
-    "partial": 94
+    "not-started": 831,
+    "partial": 100
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -46,16 +46,16 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 971,
-      "partial": 66
+      "not-started": 967,
+      "partial": 70
     },
     "raymath.h": {
       "total": 254,
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 221,
-      "partial": 33
+      "not-started": 219,
+      "partial": 35
     },
     "rlgl.h": {
       "total": 403,
@@ -128,8 +128,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 195,
-      "partial": 26
+      "not-started": 193,
+      "partial": 28
     },
     {
       "id": "memory",
@@ -201,8 +201,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 12,
-      "partial": 42
+      "not-started": 11,
+      "partial": 43
     },
     {
       "id": "resampling",
@@ -246,8 +246,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 21,
-      "partial": 0
+      "not-started": 18,
+      "partial": 3
     },
     {
       "id": "window",
@@ -563,75 +563,98 @@
   ],
   "next_work": [
     {
-      "id": "raylib:function:CheckCollisionRecs",
-      "name": "CheckCollisionRecs",
+      "id": "raylib:function:CheckCollisionPointRec",
+      "name": "CheckCollisionPointRec",
       "milestone": "collision",
       "status": "not-started",
-      "jonlib": "Collision.check_collision_recs",
-      "next_step": "Derive CheckCollisionRecs semantics from the linked source, add a reference fixture, then implement Collision.check_collision_recs.",
+      "jonlib": "Collision.check_collision_point_rec",
+      "next_step": "Derive CheckCollisionPointRec semantics from the linked source, add a reference fixture, then implement Collision.check_collision_point_rec.",
       "milestone_dependencies": [
         "raymath"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raylib:function:CheckCollisionCircles",
-      "name": "CheckCollisionCircles",
+      "id": "raylib:function:CheckCollisionPointCircle",
+      "name": "CheckCollisionPointCircle",
       "milestone": "collision",
       "status": "not-started",
-      "jonlib": "Collision.check_collision_circles",
-      "next_step": "Derive CheckCollisionCircles semantics from the linked source, add a reference fixture, then implement Collision.check_collision_circles.",
+      "jonlib": "Collision.check_collision_point_circle",
+      "next_step": "Derive CheckCollisionPointCircle semantics from the linked source, add a reference fixture, then implement Collision.check_collision_point_circle.",
       "milestone_dependencies": [
         "raymath"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raylib:function:GetCollisionRec",
-      "name": "GetCollisionRec",
+      "id": "raylib:function:CheckCollisionCircleRec",
+      "name": "CheckCollisionCircleRec",
       "milestone": "collision",
       "status": "not-started",
-      "jonlib": "Collision.get_collision_rec",
-      "next_step": "Derive GetCollisionRec semantics from the linked source, add a reference fixture, then implement Collision.get_collision_rec.",
+      "jonlib": "Collision.check_collision_circle_rec",
+      "next_step": "Derive CheckCollisionCircleRec semantics from the linked source, add a reference fixture, then implement Collision.check_collision_circle_rec.",
       "milestone_dependencies": [
         "raymath"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:Vector2Min",
-      "name": "Vector2Min",
-      "milestone": "raymath",
+      "id": "raylib:function:CheckCollisionLines",
+      "name": "CheckCollisionLines",
+      "milestone": "collision",
       "status": "not-started",
-      "jonlib": "Vector2.min",
-      "next_step": "Derive Vector2Min semantics from the linked source, add a reference fixture, then implement Vector2.min.",
+      "jonlib": "Collision.check_collision_lines",
+      "next_step": "Derive CheckCollisionLines semantics from the linked source, add a reference fixture, then implement Collision.check_collision_lines.",
       "milestone_dependencies": [
-        "numerics"
+        "raymath"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:Vector2Max",
-      "name": "Vector2Max",
-      "milestone": "raymath",
+      "id": "raylib:function:CheckCollisionPointTriangle",
+      "name": "CheckCollisionPointTriangle",
+      "milestone": "collision",
       "status": "not-started",
-      "jonlib": "Vector2.max",
-      "next_step": "Derive Vector2Max semantics from the linked source, add a reference fixture, then implement Vector2.max.",
+      "jonlib": "Collision.check_collision_point_triangle",
+      "next_step": "Derive CheckCollisionPointTriangle semantics from the linked source, add a reference fixture, then implement Collision.check_collision_point_triangle.",
       "milestone_dependencies": [
-        "numerics"
+        "raymath"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raylib:function:ImageFromChannel",
-      "name": "ImageFromChannel",
-      "milestone": "images",
+      "id": "raylib:function:CheckCollisionPointLine",
+      "name": "CheckCollisionPointLine",
+      "milestone": "collision",
       "status": "not-started",
-      "jonlib": "Surface.image_from_channel",
-      "next_step": "Derive ImageFromChannel semantics from the linked source, add a reference fixture, then implement Surface.image_from_channel.",
+      "jonlib": "Collision.check_collision_point_line",
+      "next_step": "Derive CheckCollisionPointLine semantics from the linked source, add a reference fixture, then implement Collision.check_collision_point_line.",
       "milestone_dependencies": [
-        "pixels",
-        "memory"
+        "raymath"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:CheckCollisionCircleLine",
+      "name": "CheckCollisionCircleLine",
+      "milestone": "collision",
+      "status": "not-started",
+      "jonlib": "Collision.check_collision_circle_line",
+      "next_step": "Derive CheckCollisionCircleLine semantics from the linked source, add a reference fixture, then implement Collision.check_collision_circle_line.",
+      "milestone_dependencies": [
+        "raymath"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:CheckCollisionPointPoly",
+      "name": "CheckCollisionPointPoly",
+      "milestone": "collision",
+      "status": "not-started",
+      "jonlib": "Collision.check_collision_point_poly",
+      "next_step": "Derive CheckCollisionPointPoly semantics from the linked source, add a reference fixture, then implement Collision.check_collision_point_poly.",
+      "milestone_dependencies": [
+        "raymath"
       ],
       "api_dependencies": []
     },
@@ -774,30 +797,6 @@
       "status": "partial",
       "jonlib": "Vector2.subtract_value",
       "next_step": "Close documented gaps and unverified gates for Vector2SubtractValue.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2Length",
-      "name": "Vector2Length",
-      "milestone": "raymath",
-      "status": "partial",
-      "jonlib": "Vector2.length",
-      "next_step": "Close documented gaps and unverified gates for Vector2Length.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2LengthSqr",
-      "name": "Vector2LengthSqr",
-      "milestone": "raymath",
-      "status": "partial",
-      "jonlib": "Vector2.length_sqr",
-      "next_step": "Close documented gaps and unverified gates for Vector2LengthSqr.",
       "milestone_dependencies": [
         "numerics"
       ],

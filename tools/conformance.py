@@ -39,6 +39,12 @@ VECTOR2_APIS = {
     'distance':('Vector2Distance','vv','float'), 'move_towards':('Vector2MoveTowards','vvs','vector'),
     'clamp':('Vector2Clamp','vvv','vector'), 'clamp_value':('Vector2ClampValue','vss','vector'),
     'refract':('Vector2Refract','vvs','vector'), 'rotate':('Vector2Rotate','vs','vector'),
+    'min':('Vector2Min','vv','vector'), 'max':('Vector2Max','vv','vector'),
+}
+COLLISION_APIS = {
+    'recs':('CheckCollisionRecs','rr','bool'),
+    'circles':('CheckCollisionCircles','vsvs','bool'),
+    'rectangle':('GetCollisionRec','rr','rectangle'),
 }
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -207,7 +213,7 @@ def cases_from(document):
             if not isinstance(kind, str) or kind not in ("pixel", "rectangle", "circle", "clear", "flip_horizontal", "flip_vertical", "blend_color",
                              "line", "line_v", "triangle", "triangle_lines", "blit", "blit_region", "blit_rect", "crop", "extract", "resize_nn", "resize",
                              "pixel_v", "circle_v", "circle_lines", "circle_lines_v", "rectangle_v", "rectangle_rec", "rectangle_lines",
-                             "line_ex", "triangle_fan", "triangle_strip", "triangle_ex", "color_value", "number_value", "vector_value", "alpha_clear", "alpha_mask", "alpha_crop", "resize_canvas", "rotate_degrees", "to_pot") and kind not in UNARY_IMAGE_APIS and kind not in COLOR_IMAGE_APIS:
+                             "line_ex", "triangle_fan", "triangle_strip", "triangle_ex", "color_value", "number_value", "vector_value", "collision_value", "from_channel", "alpha_clear", "alpha_mask", "alpha_crop", "resize_canvas", "rotate_degrees", "to_pot") and kind not in UNARY_IMAGE_APIS and kind not in COLOR_IMAGE_APIS:
                 raise ValueError(f"{name}: unknown operation {kind!r}")
             if kind in ('blit', 'blit_region', 'blit_rect', 'alpha_mask'):
                 if kind != 'alpha_mask':
@@ -241,7 +247,7 @@ def cases_from(document):
                             raise ValueError(f'{name}: invalid destination rectangle')
                 if op.get('observe_source'):
                     current_w, current_h = source['width'], source['height']
-            elif kind not in ('crop', 'extract', 'resize_nn', 'resize', 'color_contrast', 'color_brightness', 'number_value', 'vector_value', 'alpha_crop', 'rotate_degrees') and kind not in UNARY_IMAGE_APIS:
+            elif kind not in ('crop', 'extract', 'resize_nn', 'resize', 'color_contrast', 'color_brightness', 'number_value', 'vector_value', 'collision_value', 'from_channel', 'alpha_crop', 'rotate_degrees') and kind not in UNARY_IMAGE_APIS:
                 rgba(op["color"])
             if kind == 'color_replace':
                 rgba(op['replacement'])
@@ -277,6 +283,19 @@ def cases_from(document):
                     raise ValueError(f'{name}: vector rotation profile is bounded to one cycle')
                 if result == 'vector' and (not integer(op.get('x'),0,current_w-2) or not integer(op.get('y'),0,current_h-1)):
                     raise ValueError(f'{name}: both vector output components must fit the image')
+            if kind == 'collision_value':
+                function, values = op.get('function'), op.get('args')
+                if not isinstance(function, str) or function not in COLLISION_APIS or not isinstance(values, list):
+                    raise ValueError(f'{name}: invalid collision function/arguments')
+                _, signature, result = COLLISION_APIS[function]
+                if len(values) != sum({'v':2,'r':4,'s':1}[p] for p in signature) or not all(coordinate(v, True) for v in values):
+                    raise ValueError(f'{name}: invalid collision argument arity/domain')
+                cells = 4 if result == 'rectangle' else 1
+                if not integer(op.get('x'),0,current_w-cells) or not integer(op.get('y'),0,current_h-1):
+                    raise ValueError(f'{name}: all collision result fields must fit the image')
+            if kind == 'from_channel':
+                if not coordinate(op.get('channel')) or type(op.get('observe_source', False)) is not bool:
+                    raise ValueError(f'{name}: channel requires an integral selector and Boolean source observation')
             if kind in ('color_contrast', 'color_brightness') and not coordinate(op.get('amount'), kind == 'color_contrast'):
                 raise ValueError(f'{name}: invalid color adjustment amount')
             if kind in ('alpha_clear','alpha_crop') and (not coordinate(op.get('threshold'), True) or not 0 <= op['threshold'] <= 1):
@@ -284,7 +303,7 @@ def cases_from(document):
             if kind == 'blend_color':
                 rgba(op['destination'])
                 rgba(op['tint'])
-            fields = [] if kind in ('clear', 'resize_nn', 'resize', 'blit_rect', 'triangle_fan', 'triangle_strip', 'alpha_clear', 'alpha_mask', 'alpha_crop', 'rotate_degrees', 'to_pot') or kind in UNARY_IMAGE_APIS or kind in COLOR_IMAGE_APIS else ["x", "y"]
+            fields = [] if kind in ('clear', 'resize_nn', 'resize', 'blit_rect', 'triangle_fan', 'triangle_strip', 'alpha_clear', 'alpha_mask', 'alpha_crop', 'rotate_degrees', 'to_pot', 'from_channel') or kind in UNARY_IMAGE_APIS or kind in COLOR_IMAGE_APIS else ["x", "y"]
             if kind in ('line', 'line_v', 'line_ex', 'triangle', 'triangle_lines', 'triangle_ex'):
                 fields = ['x0', 'y0', 'x1', 'y1']
                 if kind.startswith('triangle'):
@@ -388,10 +407,11 @@ def vector_arguments(signature, values, bend=False):
     result, at = [], 0
     literal = f32 if bend else lambda value: f'{float(value)!r}f'
     for parameter in signature:
-        if parameter == 'v':
-            vector = ', '.join(literal(v) for v in values[at:at+2])
-            result.append(('J.Vector2{' if bend else '(Vector2){') + vector + '}')
-            at += 2
+        if parameter in ('v','r'):
+            size, name = (2,'Vector2') if parameter=='v' else (4,'Rectangle')
+            vector = ', '.join(literal(v) for v in values[at:at+size])
+            result.append((f'J.{name}{{' if bend else f'({name}){{') + vector + '}')
+            at += size
         else:
             result.append(literal(values[at]))
             at += 1
@@ -409,6 +429,14 @@ def c_source(cases):
                   'Image probe=GenImageColor(n,1,BLANK); ImageToPOT(&probe,WHITE);',
                   'if(probe.width!=expected || probe.height!=1) { fprintf(stderr,"POT axis contract mismatch\\n"); return 5; }',
                   'UnloadImage(probe); }']
+    if any(op['op']=='from_channel' for case in cases for op in case['operations']):
+        lines += ['{ Image probe=GenImageColor(256,1,BLANK);',
+                  'for(int n=0;n<256;n++) ImageDrawPixel(&probe,n,0,(Color){n,255-n,(73*n)%256,(151*n)%256});',
+                  'for(int channel=0;channel<4;channel++) { Image extracted=ImageFromChannel(probe,channel);',
+                  'for(int n=0;n<256;n++) { unsigned char expected=((unsigned char*)probe.data)[4*n+channel];',
+                  'Color got=GetImageColor(extracted,n,0);',
+                  'if(got.r!=expected || got.g!=expected || got.b!=expected || got.a!=255) { fprintf(stderr,"channel byte contract mismatch\\n"); return 7; } }',
+                  'UnloadImage(extracted); } UnloadImage(probe); }']
     for case in cases:
         w, h = case["width"], case["height"]
         if 'qoi' in case:
@@ -428,6 +456,12 @@ def c_source(cases):
             lines += ['{', f'Image image = GenImageColor({w}, {h}, GetColor({rgba(case["background"])}u));']
         for op in case["operations"]:
             kind = op["op"]
+            if kind == 'from_channel':
+                lines += ['{', f'Image extracted=ImageFromChannel(image,{op["channel"]});',
+                          'ImageFormat(&extracted, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);']
+                lines += ['UnloadImage(extracted);'] if op.get('observe_source') else ['UnloadImage(image);','image=extracted;']
+                lines += ['}']
+                continue
             if kind == 'rotate_degrees':
                 lines += [f'ImageRotate(&image, {op["degrees"]});',
                           f'if(image.width!={op["result_width"]} || image.height!={op["result_height"]}) {{ fprintf(stderr,"rotation size hint mismatch\\n"); return 6; }}']
@@ -501,6 +535,17 @@ def c_source(cases):
                 else:
                     color = f'GetColor((unsigned int){expression})' if result=='bool' else f'float_bits({expression})'
                     lines += [f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, {color});']
+                continue
+            if kind == 'collision_value':
+                function, signature, result = COLLISION_APIS[op['function']]
+                expression = f'{function}({vector_arguments(signature,op["args"])})'
+                if result == 'rectangle':
+                    lines += ['{', f'Rectangle result={expression};']
+                    for index, field in enumerate(('x','y','width','height')):
+                        lines += [f'ImageDrawPixel(&image, {op["x"]+index}, {op["y"]}, float_bits(result.{field}));']
+                    lines += ['}']
+                else:
+                    lines += [f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, GetColor((unsigned int){expression}));']
                 continue
             color = f'GetColor({rgba(op["color"])}u)'
             if kind == "clear":
@@ -590,6 +635,10 @@ def bend_source(cases, gpu=False):
         '  J.Vector2{u, v} = vector',
         '  first = J.Surface.draw_pixel(surface, x, y, F32.bits(u))',
         '  J.Surface.draw_pixel(first, (x + 1.0 : F32), y, F32.bits(v))',
+        'def write_rectangle(surface: J.Surface, +x: F32, +y: F32, rectangle: J.Rectangle) -> J.Surface:',
+        '  J.Rectangle{rx, ry, w, h} = rectangle',
+        '  first = write_vector(surface, x, y, J.Vector2{rx, ry})',
+        '  write_vector(first, (x + 2.0 : F32), y, J.Vector2{w, h})',
         'def emit_qoi_data(name: String, image: J.Surface, bytes: +List<U32>, extra: String) -> IO(Unit):',
         '  J.Surface{+w, +h, pixels} = image',
         '  IO.print("{\\"id\\":\\"" ++ name ++ "\\",\\"width\\":" ++ U32.show(w)',
@@ -637,6 +686,12 @@ def bend_source(cases, gpu=False):
         previous = 'surface'
         for j, op in enumerate(case["operations"]):
             kind = op["op"]
+            if kind == 'from_channel':
+                draw = f'J.Surface.from_channel({previous}, {f32(op["channel"])})'
+                previous = f's{j}'
+                pick = 'fst' if op.get('observe_source') else 'snd'
+                lines += [f'    {previous} : J.Surface = Pair.{pick}(J.Surface, J.Surface, {draw})']
+                continue
             if kind in ('rotate_degrees','to_pot'):
                 draw = f'J.Surface.rotate_degrees_for(J.{gradient_reference()}{{}}, {previous}, {f32(op["degrees"])})' if kind=='rotate_degrees' else f'J.Surface.to_pot({previous}, {rgba(op["color"])})'
                 previous = f's{j}'
@@ -689,11 +744,19 @@ def bend_source(cases, gpu=False):
             args = [previous]
             if kind == 'vector_value':
                 _, signature, result = VECTOR2_APIS[op['function']]
-                function_name = op['function']+'_for' if op['function'] in ('rotate','clamp') else op['function']
-                profile = f'J.{gradient_reference()}{{}}, ' if op['function'] in ('rotate','clamp') else ''
+                function_name = op['function']+'_for' if op['function'] in ('rotate','clamp','min','max') else op['function']
+                profile = f'J.{gradient_reference()}{{}}, ' if op['function'] in ('rotate','clamp','min','max') else ''
                 expression = f'J.Vector2.{function_name}({profile}{vector_arguments(signature,op["args"],bend=True)})'
                 function = 'write_vector' if result=='vector' else 'J.Surface.draw_pixel'
                 value = expression if result=='vector' else f'Bool.to_u32({expression})' if result=='bool' else f'F32.bits({expression})'
+                previous = f's{j}'
+                lines += [f'    {previous} : J.Surface = {function}({args[0]}, {f32(op["x"])}, {f32(op["y"])}, {value})']
+                continue
+            if kind == 'collision_value':
+                _, signature, result = COLLISION_APIS[op['function']]
+                expression = f'J.Collision.{op["function"]}({vector_arguments(signature,op["args"],bend=True)})'
+                function = 'write_rectangle' if result=='rectangle' else 'J.Surface.draw_pixel'
+                value = expression if result=='rectangle' else f'Bool.to_u32({expression})'
                 previous = f's{j}'
                 lines += [f'    {previous} : J.Surface = {function}({args[0]}, {f32(op["x"])}, {f32(op["y"])}, {value})']
                 continue
@@ -896,8 +959,11 @@ def main():
     report['pixels_per_lane'] = sum(width * height for width, height in map(result_size, cases))
     report['numeric_probe_cells'] = sum(1 if op['op']=='number_value' or VECTOR2_APIS[op['function']][2]!='vector' else 2
                                         for case in cases for op in case['operations'] if op['op'] in ('number_value','vector_value'))
+    report['numeric_probe_cells'] += sum(4 if COLLISION_APIS[op['function']][2]=='rectangle' else 1
+                                        for case in cases for op in case['operations'] if op['op']=='collision_value')
     report['alpha_border_observations'] = sum('alpha_border' in case for case in cases)
     report['pot_axes_checked'] = 4096 if any(op['op']=='to_pot' for case in cases for op in case['operations']) else 0
+    report['channel_bytes_checked'] = 1024 if any(op['op']=='from_channel' for case in cases for op in case['operations']) else 0
     cli = ['bun', args.bend_source / 'bend2/main.ts']
     library_verdict = run([*cli, ROOT / 'jonlib.bend', '--check-only'])
     if library_verdict.strip() != 'All terms check.':

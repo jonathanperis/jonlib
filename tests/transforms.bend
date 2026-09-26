@@ -118,6 +118,20 @@ def rotation_size(created: Maybe<J.Surface>) -> Bool:
     case None{}: False{}
     case Some{surface}: rotation_too_large(J.Surface.rotate_degrees(surface, 1.0))
 
+def channel_pixels(values: List<U32>) -> Bool:
+  match values:
+    case Con{33686271, Con{33686271, Nil{}}}: True{}
+    case _: False{}
+
+def channel_owners(pair: J.Surface & J.Surface) -> Bool:
+  (source, extracted) = pair
+  pixels_kept(J.Surface.colors(source)) && channel_pixels(J.Surface.colors(extracted))
+
+def channel_created(created: Maybe<J.Surface>) -> Bool:
+  match created:
+    case None{}: False{}
+    case Some{surface}: channel_owners(J.Surface.from_channel(surface, 1.0))
+
 def verdict(ok: Bool) -> IO(Unit):
   match ok:
     case True{}:
@@ -150,6 +164,7 @@ def checks() -> Bool:
     && no_surface(J.Surface.create_gradient_linear(3, 2, 0.5, 0, 4294967295))
     && no_surface(J.Surface.create_gradient_linear(3, 2, 361.0, 0, 4294967295))
     && rotation_size(J.Surface.create(4096, 128, 16909060))
+    && channel_created(J.Surface.create(2, 1, 16909060))
 
 def main() -> IO(Unit):
   verdict(checks())

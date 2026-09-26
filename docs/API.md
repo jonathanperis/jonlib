@@ -27,6 +27,8 @@ the unsigned bit pattern returned by `ColorToInt`.
 
 The public scalar and Vector2 operations are listed in [MATH.md](MATH.md),
 including their explicit uncontracted-F32 profile and remaining numeric gaps.
+Pure geometry queries are listed in [COLLISION.md](COLLISION.md), including
+strict rectangle edges and inclusive circle tangency.
 
 ## Owned RGBA8 surfaces
 
@@ -89,6 +91,7 @@ is outside this API's contract.
 | `Surface.rotate_cw(surface)` / `rotate_ccw(surface)` | Quarter-turn rotations preserving exact RGBA bytes and swapping width/height. |
 | `Surface.rotate_degrees(surface, degrees)` / `rotate_degrees_for(reference, surface, degrees)` | Single-owner Result; integral degrees -360..360, reference bilinear sampling and truncated output dimensions. Invalid angles/output sizes preserve the original owner. See [ROTATION.md](ROTATION.md). |
 | `Surface.to_pot(surface, fill)` | Single-owner Result; raw canvas expansion to the next power-of-two dimensions, preserving the reference no-op for already-POT images. |
+| `Surface.from_channel(surface, selected) -> Surface & Surface` | Returns the unchanged original, then an independent opaque grayscale RGBA8 image. Integral selectors in -32767..32767 clamp to 0..3 (RGBA). Equivalent to `ImageFromChannel` followed by RGBA8 normalization; native grayscale storage and other input formats remain gaps. |
 | `Surface.to_image(surface) -> Image` | Consumes the surface and builds a Base.Image quadtree. RGB is retained, alpha discarded; padded regions are black. |
 | `Surface.to_ppm(surface) -> String` | Consumes the surface and encodes P3 PPM text (RGB, alpha discarded). |
 | `Surface.write_ppm(surface, path) -> IO(Result<&1, &1, U32 & String, Unit>)` | Writes P3 PPM through Base.File; returns open/write errors and closes the file after writing. |
