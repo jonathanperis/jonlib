@@ -18,7 +18,7 @@ python3 tools/gradient_bench.py --bend-source "$BEND_SOURCE" --raylib-source "$R
 BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 ```
 
-- Eight harness/planning test methods pass, including changed pixels, empty/missing results,
+- Nine harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
 - 261 scenarios / 40,101 output words match pinned raylib exactly on each
@@ -1233,3 +1233,23 @@ malformed/partial-output recovery, allocation ABI and full target/resource/
 performance evidence remain gaps.
 
 Regression scan: 61 callers checked, 21 assertions checked, 2 flagged/fixed.
+
+### Hosted DEFLATE result serialization
+
+`12f507c` passed [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36267191527)
+and the macOS conformance job. Ubuntu's native DEFLATE lane passed, but its
+JavaScript lane overflowed while formatting the larger byte lists. The emitted
+JavaScript showed non-tail recursive calls in generic `List.show.go`, matching
+the failure after the smaller results had been emitted.
+
+The probe now groups bytes through a tail-recursive traversal and formats at
+most 256 per chunk. An explicit end marker separates successful results, including
+empty output; null retains failed-result meaning. The parser validates framing
+and byte ranges, then compares the same complete ordered arrays with the original
+native expectations. All 24 streams / 16 controls still pass CPU/JS/forced Metal,
+and nine harness tests pass. Decoder sources, fixtures, native hashes and compiler
+settings are unchanged; existing full-corpus/proof evidence remains applicable.
+[Evidence](evidence/deflate-result-chunks.json) records the scoped correction.
+Hosted Ubuntu follow-up remains pending.
+
+Regression scan: 10 callers checked, 10 assertions checked, 1 flagged/fixed.

@@ -9,9 +9,19 @@ from unittest.mock import patch
 
 from tools.conformance import BUILD, cases_from, checkout, compare, parse_output, result_size
 from tools.resize_conformance import verify_images
+from tools.inflate_probe import parse_results
 
 
 class HarnessTests(unittest.TestCase):
+    def test_inflate_chunk_protocol_rejects_incomplete_results(self):
+        encoded=lambda rows:'\n'.join(json.dumps(row) for row in rows)
+        rows=[None,'end',list(range(256)),[0,255],'end']
+        self.assertEqual(parse_results(encoded(rows)),[None,[],[*range(256),0,255]])
+        for rows in ([[1]],[[1],None],[[True],'end'],[[],'end'],[[0]*257,'end'],[[256],'end'],[{}]):
+            with self.subTest(rows=rows):
+                with self.assertRaises(ValueError):
+                    parse_results(encoded(rows))
+
     def test_failed_resize_probe_invalidates_previous_success(self):
         BUILD.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=BUILD, prefix='resize-negative-') as directory:

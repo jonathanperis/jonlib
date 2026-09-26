@@ -1,0 +1,15 @@
+{
+  "date": "2026-09-26",
+  "failed_hosted_run": "https://github.com/jonathanperis/jonlib/actions/runs/36267191528",
+  "failure": "Ubuntu JavaScript result formatting exceeded the stack in generic List.show.go; native CPU and hosted macOS passed",
+  "output_chunk_limit": 256,
+  "inputs_sha256": "44a77fad0f4cd223eb0ecaed17df3935a987413e83a3cf5897c23934d9ed62a6",
+  "reference_sha256": "480550db69dd9d62228ef58d8f1b4ae555df7c84908391e6ed0c889f1db71da0",
+  "valid_streams": 24,
+  "invalid_controls": 16,
+  "native_output_bytes": 122651,
+  "png_output_bytes": 125651,
+  "passed": true,
+  "lanes": ["cpu","javascript","metal"],
+  "limits": ["Hosted Ubuntu follow-up confirmation pending", "No change to decoder compatibility or performance claims"]
+}

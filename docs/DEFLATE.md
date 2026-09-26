@@ -55,6 +55,10 @@ blocks/trees/distances, truncation, input-byte/range bounds and output limits.
 Explicit fixtures exercise all three code-length repeats, an empty distance
 tree for a literal-only block, exact distance 32,768, overlap and the 1-MiB input
 boundary. Original payloads are independently checked through zlib and native stb.
+Probe results use chunks of at most 256 bytes with an explicit completion marker;
+the harness reassembles all bytes before comparison. This bounds the generic
+list formatter's recursion on hosted JavaScript and retains empty-result/failure
+distinctions. Malformed or unfinished chunk sequences are rejected.
 
 The altered canonical decoding implementation retains stb's MIT notice in
 [LICENSES/stb-image.txt](../LICENSES/stb-image.txt).
