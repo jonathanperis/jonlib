@@ -69,6 +69,14 @@ VECTOR4_APIS = {
     'zero':('Vector4Zero','','vector'), 'one':('Vector4One','','vector'),
     'add':('Vector4Add','qq','vector'), 'subtract':('Vector4Subtract','qq','vector'),
     'scale':('Vector4Scale','qs','vector'), 'multiply':('Vector4Multiply','qq','vector'),
+    'add_value':('Vector4AddValue','qs','vector'), 'subtract_value':('Vector4SubtractValue','qs','vector'),
+    'length':('Vector4Length','q','float'), 'length_sqr':('Vector4LengthSqr','q','float'),
+    'dot_product':('Vector4DotProduct','qq','float'), 'distance':('Vector4Distance','qq','float'),
+    'distance_sqr':('Vector4DistanceSqr','qq','float'), 'negate':('Vector4Negate','q','vector'),
+    'divide':('Vector4Divide','qq','vector'), 'normalize':('Vector4Normalize','q','vector'),
+    'min':('Vector4Min','qq','vector'), 'max':('Vector4Max','qq','vector'),
+    'lerp':('Vector4Lerp','qqs','vector'), 'move_towards':('Vector4MoveTowards','qqs','vector'),
+    'invert':('Vector4Invert','q','vector'), 'equals':('Vector4Equals','qq','bool'),
 }
 MATRIX_APIS = {
     'identity':('MatrixIdentity','','matrix'), 'transpose':('MatrixTranspose','m','matrix'),

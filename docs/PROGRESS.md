@@ -29,7 +29,7 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 |---|---:|---|---:|---:|---:|---|
 | 1 | 0 | `types` — Types, constants and language mappings | 549 | 16 | 0 | — |
 | 2 | 1 | `numerics` — Numeric fidelity and scalar contracts | 14 | 6 | 0 | types |
-| 3 | 1 | `raymath` — Vectors, matrices and quaternions | 221 | 89 | 0 | numerics |
+| 3 | 1 | `raymath` — Vectors, matrices and quaternions | 221 | 105 | 0 | numerics |
 | 4 | 1 | `memory` — Buffers, memory and callback contracts | 12 | 0 | 0 | types |
 | 5 | 1 | `files` — Files, paths, compression and data utilities | 49 | 0 | 0 | memory |
 | 6 | 1 | `random` — Random-number and sequence contracts | 4 | 0 | 0 | numerics, memory |
@@ -63,26 +63,26 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 
 This is a priority queue with visible prerequisites, not a claim that every item is unblocked.
 
-- **`raymath:function:Vector4AddValue`** (not-started, `raymath`): Derive Vector4AddValue semantics from the linked source, add a reference fixture, then implement Vector4.add_value.
-- **`raymath:function:Vector4SubtractValue`** (not-started, `raymath`): Derive Vector4SubtractValue semantics from the linked source, add a reference fixture, then implement Vector4.subtract_value.
-- **`raymath:function:Vector4Length`** (not-started, `raymath`): Derive Vector4Length semantics from the linked source, add a reference fixture, then implement Vector4.length.
-- **`raymath:function:Vector4LengthSqr`** (not-started, `raymath`): Derive Vector4LengthSqr semantics from the linked source, add a reference fixture, then implement Vector4.length_sqr.
-- **`raymath:function:Vector4DotProduct`** (not-started, `raymath`): Derive Vector4DotProduct semantics from the linked source, add a reference fixture, then implement Vector4.dot_product.
-- **`raymath:function:Vector4Distance`** (not-started, `raymath`): Derive Vector4Distance semantics from the linked source, add a reference fixture, then implement Vector4.distance.
-- **`raymath:function:Vector4DistanceSqr`** (not-started, `raymath`): Derive Vector4DistanceSqr semantics from the linked source, add a reference fixture, then implement Vector4.distance_sqr.
-- **`raymath:function:Vector4Negate`** (not-started, `raymath`): Derive Vector4Negate semantics from the linked source, add a reference fixture, then implement Vector4.negate.
-- **`raymath:function:Vector4Divide`** (not-started, `raymath`): Derive Vector4Divide semantics from the linked source, add a reference fixture, then implement Vector4.divide.
-- **`raymath:function:Vector4Normalize`** (not-started, `raymath`): Derive Vector4Normalize semantics from the linked source, add a reference fixture, then implement Vector4.normalize.
-- **`raymath:function:Vector4Min`** (not-started, `raymath`): Derive Vector4Min semantics from the linked source, add a reference fixture, then implement Vector4.min.
-- **`raymath:function:Vector4Max`** (not-started, `raymath`): Derive Vector4Max semantics from the linked source, add a reference fixture, then implement Vector4.max.
-- **`raymath:function:Vector4Lerp`** (not-started, `raymath`): Derive Vector4Lerp semantics from the linked source, add a reference fixture, then implement Vector4.lerp.
-- **`raymath:function:Vector4MoveTowards`** (not-started, `raymath`): Derive Vector4MoveTowards semantics from the linked source, add a reference fixture, then implement Vector4.move_towards.
-- **`raymath:function:Vector4Invert`** (not-started, `raymath`): Derive Vector4Invert semantics from the linked source, add a reference fixture, then implement Vector4.invert.
-- **`raymath:function:Vector4Equals`** (not-started, `raymath`): Derive Vector4Equals semantics from the linked source, add a reference fixture, then implement Vector4.equals.
+- **`raylib:function:ColorNormalize`** (not-started, `pixels`): Derive ColorNormalize semantics from the linked source, add a reference fixture, then implement Color.color_normalize.
+- **`raylib:function:ColorFromNormalized`** (not-started, `pixels`): Derive ColorFromNormalized semantics from the linked source, add a reference fixture, then implement Color.color_from_normalized.
+- **`raylib:function:ColorToHSV`** (not-started, `pixels`): Derive ColorToHSV semantics from the linked source, add a reference fixture, then implement Color.color_to_hsv.
+- **`raylib:function:ColorFromHSV`** (not-started, `pixels`): Derive ColorFromHSV semantics from the linked source, add a reference fixture, then implement Color.color_from_hsv.
+- **`raymath:function:QuaternionIdentity`** (not-started, `raymath`): Derive QuaternionIdentity semantics from the linked source, add a reference fixture, then implement Quaternion.identity.
+- **`raymath:function:QuaternionAdd`** (not-started, `raymath`): Derive QuaternionAdd semantics from the linked source, add a reference fixture, then implement Quaternion.add.
+- **`raymath:function:QuaternionSubtract`** (not-started, `raymath`): Derive QuaternionSubtract semantics from the linked source, add a reference fixture, then implement Quaternion.subtract.
+- **`raymath:function:QuaternionMultiply`** (not-started, `raymath`): Derive QuaternionMultiply semantics from the linked source, add a reference fixture, then implement Quaternion.multiply.
 - **`raymath:function:Clamp`** (partial, `numerics`): Close documented gaps and unverified gates for Clamp.
 - **`raymath:function:Lerp`** (partial, `numerics`): Close documented gaps and unverified gates for Lerp.
 - **`raymath:function:Normalize`** (partial, `numerics`): Close documented gaps and unverified gates for Normalize.
 - **`raymath:function:Remap`** (partial, `numerics`): Close documented gaps and unverified gates for Remap.
+- **`raymath:function:Wrap`** (partial, `numerics`): Close documented gaps and unverified gates for Wrap.
+- **`raymath:function:FloatEquals`** (partial, `numerics`): Close documented gaps and unverified gates for FloatEquals.
+- **`raymath:function:Vector2Zero`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Zero.
+- **`raymath:function:Vector2One`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2One.
+- **`raymath:function:Vector2Add`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Add.
+- **`raymath:function:Vector2AddValue`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2AddValue.
+- **`raymath:function:Vector2Subtract`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Subtract.
+- **`raymath:function:Vector2SubtractValue`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2SubtractValue.
 
 ## Closing an item
 

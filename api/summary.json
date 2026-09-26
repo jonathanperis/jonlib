@@ -6,8 +6,8 @@
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1696,
-    "partial": 188
+    "not-started": 1680,
+    "partial": 204
   },
   "core_functions": {
     "total": 600,
@@ -22,8 +22,8 @@
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 759,
-    "partial": 172
+    "not-started": 743,
+    "partial": 188
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 153,
-      "partial": 101
+      "not-started": 137,
+      "partial": 117
     },
     "rlgl.h": {
       "total": 403,
@@ -128,8 +128,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 132,
-      "partial": 89
+      "not-started": 116,
+      "partial": 105
     },
     {
       "id": "memory",
@@ -563,192 +563,100 @@
   ],
   "next_work": [
     {
-      "id": "raymath:function:Vector4AddValue",
-      "name": "Vector4AddValue",
+      "id": "raylib:function:ColorNormalize",
+      "name": "ColorNormalize",
+      "milestone": "pixels",
+      "status": "not-started",
+      "jonlib": "Color.color_normalize",
+      "next_step": "Derive ColorNormalize semantics from the linked source, add a reference fixture, then implement Color.color_normalize.",
+      "milestone_dependencies": [
+        "numerics",
+        "memory"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:ColorFromNormalized",
+      "name": "ColorFromNormalized",
+      "milestone": "pixels",
+      "status": "not-started",
+      "jonlib": "Color.color_from_normalized",
+      "next_step": "Derive ColorFromNormalized semantics from the linked source, add a reference fixture, then implement Color.color_from_normalized.",
+      "milestone_dependencies": [
+        "numerics",
+        "memory"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:ColorToHSV",
+      "name": "ColorToHSV",
+      "milestone": "pixels",
+      "status": "not-started",
+      "jonlib": "Color.color_to_hsv",
+      "next_step": "Derive ColorToHSV semantics from the linked source, add a reference fixture, then implement Color.color_to_hsv.",
+      "milestone_dependencies": [
+        "numerics",
+        "memory"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:ColorFromHSV",
+      "name": "ColorFromHSV",
+      "milestone": "pixels",
+      "status": "not-started",
+      "jonlib": "Color.color_from_hsv",
+      "next_step": "Derive ColorFromHSV semantics from the linked source, add a reference fixture, then implement Color.color_from_hsv.",
+      "milestone_dependencies": [
+        "numerics",
+        "memory"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:QuaternionIdentity",
+      "name": "QuaternionIdentity",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Vector4.add_value",
-      "next_step": "Derive Vector4AddValue semantics from the linked source, add a reference fixture, then implement Vector4.add_value.",
+      "jonlib": "Quaternion.identity",
+      "next_step": "Derive QuaternionIdentity semantics from the linked source, add a reference fixture, then implement Quaternion.identity.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:Vector4SubtractValue",
-      "name": "Vector4SubtractValue",
+      "id": "raymath:function:QuaternionAdd",
+      "name": "QuaternionAdd",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Vector4.subtract_value",
-      "next_step": "Derive Vector4SubtractValue semantics from the linked source, add a reference fixture, then implement Vector4.subtract_value.",
+      "jonlib": "Quaternion.add",
+      "next_step": "Derive QuaternionAdd semantics from the linked source, add a reference fixture, then implement Quaternion.add.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:Vector4Length",
-      "name": "Vector4Length",
+      "id": "raymath:function:QuaternionSubtract",
+      "name": "QuaternionSubtract",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Vector4.length",
-      "next_step": "Derive Vector4Length semantics from the linked source, add a reference fixture, then implement Vector4.length.",
+      "jonlib": "Quaternion.subtract",
+      "next_step": "Derive QuaternionSubtract semantics from the linked source, add a reference fixture, then implement Quaternion.subtract.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:Vector4LengthSqr",
-      "name": "Vector4LengthSqr",
+      "id": "raymath:function:QuaternionMultiply",
+      "name": "QuaternionMultiply",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Vector4.length_sqr",
-      "next_step": "Derive Vector4LengthSqr semantics from the linked source, add a reference fixture, then implement Vector4.length_sqr.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector4DotProduct",
-      "name": "Vector4DotProduct",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Vector4.dot_product",
-      "next_step": "Derive Vector4DotProduct semantics from the linked source, add a reference fixture, then implement Vector4.dot_product.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector4Distance",
-      "name": "Vector4Distance",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Vector4.distance",
-      "next_step": "Derive Vector4Distance semantics from the linked source, add a reference fixture, then implement Vector4.distance.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector4DistanceSqr",
-      "name": "Vector4DistanceSqr",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Vector4.distance_sqr",
-      "next_step": "Derive Vector4DistanceSqr semantics from the linked source, add a reference fixture, then implement Vector4.distance_sqr.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector4Negate",
-      "name": "Vector4Negate",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Vector4.negate",
-      "next_step": "Derive Vector4Negate semantics from the linked source, add a reference fixture, then implement Vector4.negate.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector4Divide",
-      "name": "Vector4Divide",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Vector4.divide",
-      "next_step": "Derive Vector4Divide semantics from the linked source, add a reference fixture, then implement Vector4.divide.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector4Normalize",
-      "name": "Vector4Normalize",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Vector4.normalize",
-      "next_step": "Derive Vector4Normalize semantics from the linked source, add a reference fixture, then implement Vector4.normalize.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector4Min",
-      "name": "Vector4Min",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Vector4.min",
-      "next_step": "Derive Vector4Min semantics from the linked source, add a reference fixture, then implement Vector4.min.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector4Max",
-      "name": "Vector4Max",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Vector4.max",
-      "next_step": "Derive Vector4Max semantics from the linked source, add a reference fixture, then implement Vector4.max.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector4Lerp",
-      "name": "Vector4Lerp",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Vector4.lerp",
-      "next_step": "Derive Vector4Lerp semantics from the linked source, add a reference fixture, then implement Vector4.lerp.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector4MoveTowards",
-      "name": "Vector4MoveTowards",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Vector4.move_towards",
-      "next_step": "Derive Vector4MoveTowards semantics from the linked source, add a reference fixture, then implement Vector4.move_towards.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector4Invert",
-      "name": "Vector4Invert",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Vector4.invert",
-      "next_step": "Derive Vector4Invert semantics from the linked source, add a reference fixture, then implement Vector4.invert.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector4Equals",
-      "name": "Vector4Equals",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Vector4.equals",
-      "next_step": "Derive Vector4Equals semantics from the linked source, add a reference fixture, then implement Vector4.equals.",
+      "jonlib": "Quaternion.multiply",
+      "next_step": "Derive QuaternionMultiply semantics from the linked source, add a reference fixture, then implement Quaternion.multiply.",
       "milestone_dependencies": [
         "numerics"
       ],
@@ -799,6 +707,102 @@
       "next_step": "Close documented gaps and unverified gates for Remap.",
       "milestone_dependencies": [
         "types"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Wrap",
+      "name": "Wrap",
+      "milestone": "numerics",
+      "status": "partial",
+      "jonlib": "Math.wrap",
+      "next_step": "Close documented gaps and unverified gates for Wrap.",
+      "milestone_dependencies": [
+        "types"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:FloatEquals",
+      "name": "FloatEquals",
+      "milestone": "numerics",
+      "status": "partial",
+      "jonlib": "Math.float_equals",
+      "next_step": "Close documented gaps and unverified gates for FloatEquals.",
+      "milestone_dependencies": [
+        "types"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2Zero",
+      "name": "Vector2Zero",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.zero",
+      "next_step": "Close documented gaps and unverified gates for Vector2Zero.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2One",
+      "name": "Vector2One",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.one",
+      "next_step": "Close documented gaps and unverified gates for Vector2One.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2Add",
+      "name": "Vector2Add",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.add",
+      "next_step": "Close documented gaps and unverified gates for Vector2Add.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2AddValue",
+      "name": "Vector2AddValue",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.add_value",
+      "next_step": "Close documented gaps and unverified gates for Vector2AddValue.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2Subtract",
+      "name": "Vector2Subtract",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.subtract",
+      "next_step": "Close documented gaps and unverified gates for Vector2Subtract.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector2SubtractValue",
+      "name": "Vector2SubtractValue",
+      "milestone": "raymath",
+      "status": "partial",
+      "jonlib": "Vector2.subtract_value",
+      "next_step": "Close documented gaps and unverified gates for Vector2SubtractValue.",
+      "milestone_dependencies": [
+        "numerics"
       ],
       "api_dependencies": []
     }

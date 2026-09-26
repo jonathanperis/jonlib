@@ -717,6 +717,104 @@ def Vector4.multiply(left: Vector4, right: Vector4) -> Vector4:
   Vector4{a, b, c, d} = right
   Vector4{(x * a : F32), (y * b : F32), (z * c : F32), (w * d : F32)}
 
+def Vector4.add_value(vector: Vector4, +value: F32) -> Vector4:
+  Vector4{x, y, z, w} = vector
+  Vector4{(x + value : F32), (y + value : F32), (z + value : F32), (w + value : F32)}
+
+def Vector4.subtract_value(vector: Vector4, +value: F32) -> Vector4:
+  Vector4{x, y, z, w} = vector
+  Vector4{(x - value : F32), (y - value : F32), (z - value : F32), (w - value : F32)}
+
+def Vector4.negate(vector: Vector4) -> Vector4:
+  Vector4{x, y, z, w} = vector
+  Vector4{F32.neg(x), F32.neg(y), F32.neg(z), F32.neg(w)}
+
+def Vector4.divide(left: Vector4, right: Vector4) -> Vector4:
+  Vector4{x, y, z, w} = left
+  Vector4{a, b, c, d} = right
+  Vector4{(x / a : F32), (y / b : F32), (z / c : F32), (w / d : F32)}
+
+def Vector4.invert(vector: Vector4) -> Vector4:
+  Vector4{x, y, z, w} = vector
+  Vector4{(1.0 / x : F32), (1.0 / y : F32), (1.0 / z : F32), (1.0 / w : F32)}
+
+def Vector4.dot_product(left: Vector4, right: Vector4) -> F32:
+  Vector4{x, y, z, w} = left
+  Vector4{a, b, c, d} = right
+  (x * a + y * b + z * c + w * d : F32)
+
+def Vector4.length_sqr(+vector: Vector4) -> F32:
+  Vector4.dot_product(vector, vector)
+
+def Vector4.length(vector: Vector4) -> F32:
+  F32.sqrt(Vector4.length_sqr(vector))
+
+def Vector4.distance_sqr(left: Vector4, right: Vector4) -> F32:
+  Vector4{a, b, c, d} = left
+  Vector4{x, y, z, w} = right
+  +dx = (a - x : F32)
+  +dy = (b - y : F32)
+  +dz = (c - z : F32)
+  +dw = (d - w : F32)
+  (dx * dx + dy * dy + dz * dz + dw * dw : F32)
+
+def Vector4.distance(left: Vector4, right: Vector4) -> F32:
+  F32.sqrt(Vector4.distance_sqr(left, right))
+
+def Vector4.normalized(nonzero: Bool, vector: Vector4, length: F32) -> Vector4:
+  match nonzero:
+    case False{}: Vector4.zero()
+    case True{}: Vector4.scale(vector, (1.0 / length : F32))
+
+def Vector4.normalize(+vector: Vector4) -> Vector4:
+  +length = Vector4.length(vector)
+  Vector4.normalized((length > 0.0 : F32), vector, length)
+
+def Vector4.min_for(reference: Gradient.Reference, left: Vector4, right: Vector4) -> Vector4:
+  Vector4{x, y, z, w} = left
+  Vector4{a, b, c, d} = right
+  +gnu = Gradient.gnu(reference)
+  Vector4{Vector2.clamp.minimum(gnu, x, a), Vector2.clamp.minimum(gnu, y, b),
+    Vector2.clamp.minimum(gnu, z, c), Vector2.clamp.minimum(gnu, w, d)}
+
+def Vector4.max_for(reference: Gradient.Reference, left: Vector4, right: Vector4) -> Vector4:
+  Vector4{x, y, z, w} = left
+  Vector4{a, b, c, d} = right
+  +gnu = Gradient.gnu(reference)
+  Vector4{Vector2.clamp.maximum(gnu, x, a), Vector2.clamp.maximum(gnu, y, b),
+    Vector2.clamp.maximum(gnu, z, c), Vector2.clamp.maximum(gnu, w, d)}
+
+def Vector4.min(left: Vector4, right: Vector4) -> Vector4:
+  Vector4.min_for(AccurateGradient{}, left, right)
+
+def Vector4.max(left: Vector4, right: Vector4) -> Vector4:
+  Vector4.max_for(AccurateGradient{}, left, right)
+
+def Vector4.lerp(left: Vector4, right: Vector4, +amount: F32) -> Vector4:
+  Vector4{x, y, z, w} = left
+  Vector4{a, b, c, d} = right
+  Vector4{Math.lerp(x, a, amount), Math.lerp(y, b, amount), Math.lerp(z, c, amount), Math.lerp(w, d, amount)}
+
+def Vector4.move.route(snap: Bool, vector: Vector4, target: Vector4, delta: Vector4, square: F32, +distance: F32) -> Vector4:
+  match snap:
+    case True{}: target
+    case False{}:
+      Vector4{x, y, z, w} = vector
+      Vector4{dx, dy, dz, dw} = delta
+      +length = F32.sqrt(square)
+      Vector4{(x + dx / length * distance : F32), (y + dy / length * distance : F32),
+        (z + dz / length * distance : F32), (w + dw / length * distance : F32)}
+
+def Vector4.move_towards(+vector: Vector4, +target: Vector4, +distance: F32) -> Vector4:
+  +delta = Vector4.subtract(target, vector)
+  +square = Vector4.dot_product(delta, delta)
+  Vector4.move.route(F32.is_eq(square, 0.0) || (((distance >= 0.0) && (square <= distance * distance)) : F32), vector, target, delta, square, distance)
+
+def Vector4.equals(left: Vector4, right: Vector4) -> Bool:
+  Vector4{x, y, z, w} = left
+  Vector4{a, b, c, d} = right
+  Math.float_equals(x, a) && Math.float_equals(y, b) && Math.float_equals(z, c) && Math.float_equals(w, d)
+
 def Collision.spheres(left: Vector3, radius: F32, right: Vector3, other_radius: F32) -> Bool:
   +sum = (radius + other_radius : F32)
   (Vector3.distance_sqr(left, right) <= sum * sum : F32)

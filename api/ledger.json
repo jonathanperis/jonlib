@@ -46252,7 +46252,7 @@
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
       "next_step": "Derive ColorNormalize semantics from the linked source, add a reference fixture, then implement Color.color_normalize.",
-      "priority": 206
+      "priority": 0
     },
     {
       "id": "raylib:function:ColorFromNormalized",
@@ -46309,7 +46309,7 @@
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
       "next_step": "Derive ColorFromNormalized semantics from the linked source, add a reference fixture, then implement Color.color_from_normalized.",
-      "priority": 206
+      "priority": 1
     },
     {
       "id": "raylib:function:ColorToHSV",
@@ -46366,7 +46366,7 @@
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
       "next_step": "Derive ColorToHSV semantics from the linked source, add a reference fixture, then implement Color.color_to_hsv.",
-      "priority": 206
+      "priority": 2
     },
     {
       "id": "raylib:function:ColorFromHSV",
@@ -46422,7 +46422,7 @@
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
       "next_step": "Derive ColorFromHSV semantics from the linked source, add a reference fixture, then implement Color.color_from_hsv.",
-      "priority": 206
+      "priority": 3
     },
     {
       "id": "raylib:function:ColorTint",
@@ -64645,23 +64645,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.add_value",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 scalar addition to all XYZW components.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64674,8 +64677,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4AddValue semantics from the linked source, add a reference fixture, then implement Vector4.add_value.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for Vector4AddValue.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4Subtract",
@@ -64758,23 +64761,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.subtract_value",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 scalar subtraction from all XYZW components.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64787,8 +64793,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4SubtractValue semantics from the linked source, add a reference fixture, then implement Vector4.subtract_value.",
-      "priority": 1
+      "next_step": "Close documented gaps and unverified gates for Vector4SubtractValue.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4Length",
@@ -64813,23 +64819,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.length",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 four-component length in reference accumulation/square-root order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted profiles",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64842,8 +64852,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4Length semantics from the linked source, add a reference fixture, then implement Vector4.length.",
-      "priority": 2
+      "next_step": "Close documented gaps and unverified gates for Vector4Length.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4LengthSqr",
@@ -64868,23 +64878,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.length_sqr",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 squared length, retaining every component and accumulation step.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted profiles",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64897,8 +64911,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4LengthSqr semantics from the linked source, add a reference fixture, then implement Vector4.length_sqr.",
-      "priority": 3
+      "next_step": "Close documented gaps and unverified gates for Vector4LengthSqr.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4DotProduct",
@@ -64923,23 +64937,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.dot_product",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 XYZW dot product with left-to-right accumulation.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted profiles",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64952,8 +64970,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4DotProduct semantics from the linked source, add a reference fixture, then implement Vector4.dot_product.",
-      "priority": 4
+      "next_step": "Close documented gaps and unverified gates for Vector4DotProduct.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4Distance",
@@ -64978,23 +64996,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.distance",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 four-component distance with reference subtraction/square-root order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted profiles",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -65007,8 +65029,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4Distance semantics from the linked source, add a reference fixture, then implement Vector4.distance.",
-      "priority": 5
+      "next_step": "Close documented gaps and unverified gates for Vector4Distance.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4DistanceSqr",
@@ -65033,23 +65055,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.distance_sqr",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 squared distance including W-only separation.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted profiles",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -65062,8 +65088,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4DistanceSqr semantics from the linked source, add a reference fixture, then implement Vector4.distance_sqr.",
-      "priority": 6
+      "next_step": "Close documented gaps and unverified gates for Vector4DistanceSqr.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4Scale",
@@ -65204,23 +65230,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.negate",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 component negation including signed-zero bits.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -65233,8 +65262,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4Negate semantics from the linked source, add a reference fixture, then implement Vector4.negate.",
-      "priority": 7
+      "next_step": "Close documented gaps and unverified gates for Vector4Negate.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4Divide",
@@ -65259,23 +65288,28 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.divide",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 component division with all four converted divisors nonzero.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Zero-divisor/exceptional/subnormal domains",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tests/test_harness.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -65288,8 +65322,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4Divide semantics from the linked source, add a reference fixture, then implement Vector4.divide.",
-      "priority": 8
+      "next_step": "Close documented gaps and unverified gates for Vector4Divide.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4Normalize",
@@ -65314,23 +65348,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.normalize",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 inverse-length normalization; zero length returns four positive zeros.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted profiles",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -65343,8 +65381,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4Normalize semantics from the linked source, add a reference fixture, then implement Vector4.normalize.",
-      "priority": 9
+      "next_step": "Close documented gaps and unverified gates for Vector4Normalize.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4Min",
@@ -65369,23 +65407,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "Vector4.min",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Vector4.min_for / Vector4.min",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 component minima with explicit reference signed-zero selection.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -65398,8 +65439,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4Min semantics from the linked source, add a reference fixture, then implement Vector4.min.",
-      "priority": 10
+      "next_step": "Close documented gaps and unverified gates for Vector4Min.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4Max",
@@ -65424,23 +65465,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "Vector4.max",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Vector4.max_for / Vector4.max",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 component maxima with explicit reference signed-zero selection.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -65453,8 +65497,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4Max semantics from the linked source, add a reference fixture, then implement Vector4.max.",
-      "priority": 11
+      "next_step": "Close documented gaps and unverified gates for Vector4Max.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4Lerp",
@@ -65479,23 +65523,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.lerp",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 four-component interpolation/extrapolation without amount clamping.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted profiles",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -65508,8 +65556,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4Lerp semantics from the linked source, add a reference fixture, then implement Vector4.lerp.",
-      "priority": 12
+      "next_step": "Close documented gaps and unverified gates for Vector4Lerp.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4MoveTowards",
@@ -65534,23 +65582,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.move_towards",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 movement with exact target snapping, negative steps and division-before-step ordering.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted profiles",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -65563,8 +65615,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4MoveTowards semantics from the linked source, add a reference fixture, then implement Vector4.move_towards.",
-      "priority": 13
+      "next_step": "Close documented gaps and unverified gates for Vector4MoveTowards.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4Invert",
@@ -65589,23 +65641,28 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.invert",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 component reciprocals with nonzero converted XYZW inputs.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Zero-input/exceptional/subnormal domains",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tests/test_harness.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -65618,8 +65675,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4Invert semantics from the linked source, add a reference fixture, then implement Vector4.invert.",
-      "priority": 14
+      "next_step": "Close documented gaps and unverified gates for Vector4Invert.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector4Equals",
@@ -65644,23 +65701,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector4.equals",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 relative-epsilon comparison on all four components, including W-only differences.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -65673,8 +65733,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4Equals semantics from the linked source, add a reference fixture, then implement Vector4.equals.",
-      "priority": 15
+      "next_step": "Close documented gaps and unverified gates for Vector4Equals.",
+      "priority": 202
     },
     {
       "id": "raymath:function:MatrixDeterminant",
@@ -67017,7 +67077,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive QuaternionAdd semantics from the linked source, add a reference fixture, then implement Quaternion.add.",
-      "priority": 202
+      "priority": 5
     },
     {
       "id": "raymath:function:QuaternionAddValue",
@@ -67127,7 +67187,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive QuaternionSubtract semantics from the linked source, add a reference fixture, then implement Quaternion.subtract.",
-      "priority": 202
+      "priority": 6
     },
     {
       "id": "raymath:function:QuaternionSubtractValue",
@@ -67237,7 +67297,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive QuaternionIdentity semantics from the linked source, add a reference fixture, then implement Quaternion.identity.",
-      "priority": 202
+      "priority": 4
     },
     {
       "id": "raymath:function:QuaternionLength",
@@ -67457,7 +67517,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive QuaternionMultiply semantics from the linked source, add a reference fixture, then implement Quaternion.multiply.",
-      "priority": 202
+      "priority": 7
     },
     {
       "id": "raymath:function:QuaternionScale",

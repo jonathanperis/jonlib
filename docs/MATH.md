@@ -2,7 +2,7 @@
 
 The current math implementation is Bend source in `jonlib.bend`. It begins the
 `raymath.h` work package with six scalar, twenty-nine Vector2, thirty-five Vector3,
-six Vector4 and nineteen Matrix functions.
+twenty-two Vector4 and nineteen Matrix functions.
 
 ## Scalar API
 
@@ -103,10 +103,24 @@ a replacement basis. Aliased C pointer behavior remains outside this mapping.
 
 ## Vector4 API
 
-`Vector4{x, y, z, w}` is immutable `Data` with four F32 fields.
-The initial operations are `zero()`, `one()`, `add(left, right)`,
-`subtract(left, right)`, `scale(vector, scalar)` and `multiply(left, right)`.
+`Vector4{x, y, z, w}` is immutable `Data` with four F32 fields. All twenty-two
+pinned Vector4 functions now have scoped mappings:
+
+- Constructors: `zero()`, `one()`.
+- Components: `add`, `add_value`, `subtract`, `subtract_value`, `scale`,
+  `multiply`, `negate`, `divide`, `invert`, `min`/`min_for`, `max`/`max_for`.
+- Metrics: `length`, `length_sqr`, `dot_product`, `distance`, `distance_sqr`.
+- Other operations: `normalize`, `lerp`, `move_towards`, `equals`.
+
 All four components are compared bitwise, including W and signed-zero results.
+Metric accumulation remains left-to-right. Division and reciprocals require
+every converted F32 divisor to be nonzero. Extrema use the same explicit
+signed-zero profiles as Vector2/Vector3. `normalize` returns four positive zeros
+for zero length, unlike Vector3's retained input zeros. `lerp` permits
+extrapolation; movement retains negative steps and division-before-step ordering,
+and snapping returns the exact target. `equals` includes W in the relative
+epsilon comparison. These mappings remain partial under the numerical and
+target/performance limits below.
 
 ## Matrix API
 

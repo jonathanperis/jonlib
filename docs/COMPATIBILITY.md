@@ -8,9 +8,9 @@ Profile: **rgba8-cpu-images-v1**, with domains defined in [API.md](API.md).
 
 ## Verified evidence
 
-The current local Apple M1/macOS corpus contains **198 deterministic scenarios /
-33,605 checked output words per lane**, matching native CPU (one and two threads), JavaScript
-and forced Metal. Most words are RGBA pixels; 1,178 are exact scalar/vector/matrix/collision
+The current local Apple M1/macOS corpus contains **203 deterministic scenarios /
+33,677 checked output words per lane**, matching native CPU (one and two threads), JavaScript
+and forced Metal. Most words are RGBA pixels; 1,250 are exact scalar/vector/matrix/collision
 result-bit probe cells. QOI export bytes are compared separately. GitHub Actions
 is configured to run this corpus on **Ubuntu 24.04
 (x86_64)** and **macOS 15 (arm64)** for CPU/JavaScript; use the current workflow
@@ -32,7 +32,7 @@ A current run's precise inputs, source hashes and lane outcomes are in
 `.build/conformance.json`. The authoritative [API dashboard](PROGRESS.md) covers
 the complete release-header/support inventory. The 600-entry
 `.build/api-inventory.json` is its legacy core view, mapping 77 reference APIs to
-these scoped operations/contracts. The companion ledger additionally maps 95
+these scoped operations/contracts. The companion ledger additionally maps 111
 `raymath.h` functions. Remaining functions retain explicit planned work.
 These counts are an inventory, not a percentage of full parity.
 Both `profile-covered` and `contract-checked` are partial-coverage statuses.

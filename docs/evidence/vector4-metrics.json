@@ -1,0 +1,12 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {"jonlib.bend": "598e5a7822c7128004caeaa3434318f04f4be6466e10e8d3728cf73c1dfdad0d"},
+  "fixtures_sha256": "b7f491cf2882f2da342ae268809e994fff840d6a695cd7c71650031f74b057ed",
+  "scenarios": 203,
+  "output_words_per_lane": 33677,
+  "numeric_probe_cells": 1250,
+  "passed": true,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "scope": ["Sixteen further Vector4 functions, bringing the full 22-function family to scoped mappings", "Positive-zero normalization, explicit extrema signs and exact target snapping", "W-only metrics/equality and all-component divisor validation"],
+  "limits": ["Exceptional/subnormal/contracted numerical profiles", "Complete target/integration/performance coverage"]
+}
