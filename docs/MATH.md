@@ -1,7 +1,7 @@
 # Math profiles
 
 The current math implementation is Bend source in `jonlib.bend`. It begins the
-`raymath.h` work package with six scalar functions and twenty-two Vector2 functions.
+`raymath.h` work package with six scalar functions and twenty-six Vector2 functions.
 
 ## Scalar API
 
@@ -20,7 +20,8 @@ The current math implementation is Bend source in `jonlib.bend`. It begins the
 - Component operations: `add`, `add_value`, `subtract`, `subtract_value`, `scale`,
   `multiply`, `negate`, `divide`, `invert`.
 - Metrics: `length`, `length_sqr`, `distance`, `distance_sqr`, `dot_product`, `cross_product`.
-- Other operations: `normalize`, `lerp`, `reflect`, `equals`, `move_towards`.
+- Other operations: `normalize`, `lerp`, `reflect`, `equals`, `move_towards`,
+  `clamp`, `clamp_value`, `rotate`/`rotate_for`, `refract`.
 
 `divide` takes two vectors; `invert` takes component reciprocals. `lerp` takes
 two vectors and a scalar amount. `reflect` takes a vector and the supplied normal;
@@ -30,6 +31,16 @@ it multiplies both components by the reciprocal length in reference operation or
 `move_towards(vector, target, max_distance)` snaps to an identical target or a
 target within a nonnegative step, and otherwise follows the reference direction
 formula. Negative steps move away; they do not trigger the positive-distance snap.
+
+`clamp` operates component-wise; `clamp_value` clamps magnitude and preserves
+zero vectors. Reversed magnitude bounds retain raylib's lower-before-upper
+branch order. `refract(vector, normal, ratio)` returns positive zero components
+for total internal reflection and otherwise applies the original formula.
+
+`rotate_for(reference, vector, radians)` uses the explicit trigonometric reference
+profile; `rotate` selects the accurate profile. The current profile covers finite
+radians within one cycle and preserves reference operation order. See
+[ROTATION.md](ROTATION.md) for the corresponding image operation and numerical gates.
 
 ## Floating-point contract and evidence
 

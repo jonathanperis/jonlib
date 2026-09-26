@@ -41,8 +41,12 @@ def invalid(created: Maybe<J.Surface>, operation: U32) -> Bool:
           failed(J.Surface.resize_canvas(surface, 0, 2, 0.0, 0.0, 0), 0)
         case 6:
           failed(J.Surface.resize_canvas(surface, 3, 2, 0.5, 0.0, 0), 1)
-        case _:
+        case 7:
           failed(J.Surface.resize_canvas(surface, 3, 2, 3.0, 0.0, 0), 1)
+        case 8:
+          failed(J.Surface.rotate_degrees(surface, 361.0), 1)
+        case _:
+          failed(J.Surface.rotate_degrees(surface, 0.5), 1)
 
 def pair_failed(result: Result<&1, &1, (J.Surface & J.Surface) & J.Surface.Error, J.Surface & J.Surface>) -> Bool:
   match result:
@@ -99,6 +103,21 @@ def no_surface(result: Maybe<J.Surface>) -> Bool:
     case None{}: True{}
     case Some{_}: False{}
 
+def rotation_last(result: Array<U32> & U32) -> Bool:
+  (_, pixel) = result
+  U32.is_eq(pixel, 16909060)
+
+def rotation_too_large(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Bool:
+  match result:
+    case Fail{Tuple{J.Surface{w, h, pixels}, J.InvalidSize{}}}:
+      U32.is_eq(w, 4096) && U32.is_eq(h, 128) && rotation_last(Array.get(U32, pixels, 524287))
+    case _: False{}
+
+def rotation_size(created: Maybe<J.Surface>) -> Bool:
+  match created:
+    case None{}: False{}
+    case Some{surface}: rotation_too_large(J.Surface.rotate_degrees(surface, 1.0))
+
 def verdict(ok: Bool) -> IO(Unit):
   match ok:
     case True{}:
@@ -115,6 +134,8 @@ def checks() -> Bool:
     && invalid(J.Surface.create(2, 1, 16909060), 5)
     && invalid(J.Surface.create(2, 1, 16909060), 6)
     && invalid(J.Surface.create(2, 1, 16909060), 7)
+    && invalid(J.Surface.create(2, 1, 16909060), 8)
+    && invalid(J.Surface.create(2, 1, 16909060), 9)
     && region(J.Surface.create(2, 1, 16909060))
     && scaled(J.Surface.create(2, 1, 16909060), 0)
     && scaled(J.Surface.create(2, 1, 16909060), 1)
@@ -128,6 +149,7 @@ def checks() -> Bool:
     && no_surface(J.Surface.create_gradient_linear(1, 1, 90.0, 0, 4294967295))
     && no_surface(J.Surface.create_gradient_linear(3, 2, 0.5, 0, 4294967295))
     && no_surface(J.Surface.create_gradient_linear(3, 2, 361.0, 0, 4294967295))
+    && rotation_size(J.Surface.create(4096, 128, 16909060))
 
 def main() -> IO(Unit):
   verdict(checks())

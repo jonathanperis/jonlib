@@ -32,6 +32,10 @@ Supported operations:
 - `clear`: RGBA `color`.
 - `flip_horizontal`, `flip_vertical`: no other fields required.
 - `rotate_cw`, `rotate_ccw`: quarter turns; the tracked dimensions swap.
+- `rotate_degrees`: integral `degrees` in -360..360 and positive `result_width`/
+  `result_height` hints, checked by the actual C oracle after rotation.
+- `to_pot`: RGBA fill `color`; the reference first verifies every supported axis
+  size against the integer size calculation used for fixture tracking.
 - `color_tint`, `color_invert`, `color_contrast`, `color_brightness`,
   `color_replace`: image transforms. Tint/replacement use RGBA `color`,
   replacement also uses `replacement`, and contrast/brightness use `amount`.

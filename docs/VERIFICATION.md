@@ -1,6 +1,6 @@
 # Verification record
 
-Latest expansion: 2026-09-25. Host: Apple M1 / macOS 27.0. Bun 1.3.12 and Apple clang 21.0.0.
+Latest expansion: 2026-09-26. Host: Apple M1 / macOS 27.0. Bun 1.3.12 and Apple clang 21.0.0.
 The current base revision and exact compiler overlay are pinned in `toolchain.json`.
 
 ## Executed checks
@@ -21,10 +21,10 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 134 scenarios / 32,277 output words match pinned raylib exactly on each
+- 149 scenarios / 32,515 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
-- The word count includes 78 exact scalar/Vector2 result-bit probe cells.
+- The word count includes 118 exact scalar/Vector2 result-bit probe cells.
   The math reference explicitly uses uncontracted F32; no comparison tolerance
   is applied. Both components of each vector output are checked.
 - Seven QOI export scenarios compare all 299 encoded bytes per lane. Real CPU/JS
@@ -50,8 +50,8 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 60 have
-  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 28
+- The pinned core header inventory contains 600 unique public functions; 62 have
+  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 32
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
   on CPU, JS and Metal for its declared reference profile. Ubuntu's subsequent
@@ -93,12 +93,15 @@ The following alpha/canvas/gradient/metric batch is recorded in
 [evidence/alpha-bounds-canvas.json](evidence/alpha-bounds-canvas.json).
 The balanced gradient/movement batch, its timing scope and retained numerical
 gap are recorded in [evidence/gradient-generation.json](evidence/gradient-generation.json).
+The subsequent general rotation/POT/vector batch is recorded in
+[evidence/rotation-pot.json](evidence/rotation-pot.json), including exhaustive
+reference comparison of all 4096 supported POT axis sizes.
 
 ## Acceptance status
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 134 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 149 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -312,3 +315,14 @@ Follow-up review included the profile selector, all changed callers and both
 native-host gates. The final scoped count is:
 
 Regression scan: 108 callers checked, 25 assertions checked, 3 flagged/fixed.
+
+## General rotation, POT and vector follow-up
+
+Reviewed 63 caller contexts and 26 assertion contexts across general rotation,
+the existing raw canvas path, scalar helpers, fixture size tracking and result
+serialization. General rotation preserves reference bilinear/center behavior
+rather than substituting the quarter-turn permutation. Rejected angles and
+oversized output retain the original owner. The real C oracle checks all 4096
+POT axis inputs before the integer size mapping is used by the fixture tracker.
+
+Regression scan: 63 callers checked, 26 assertions checked, 0 flagged/fixed.

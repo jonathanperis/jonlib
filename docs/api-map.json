@@ -112,6 +112,17 @@
     "api_id": "raylib:function:ImageFromImage",
     "milestone": "resampling"
   },
+  "ImageToPOT": {
+    "jonlib": "Surface.to_pot",
+    "status": "profile-covered",
+    "scope": "RGBA8; supported dimensions 1..4096; raw canvas expansion to the next power of two with reference fill and no-op behavior. All 4096 axis values are compared with actual ImageToPOT.",
+    "gaps": [
+      "Other dimensions/formats/mipmaps",
+      "Full target/performance gates"
+    ],
+    "api_id": "raylib:function:ImageToPOT",
+    "milestone": "images"
+  },
   "ImageCrop": {
     "jonlib": "Surface.crop",
     "status": "profile-covered",
@@ -215,6 +226,18 @@
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
     "api_id": "raylib:function:ImageFlipHorizontal",
+    "milestone": "images"
+  },
+  "ImageRotate": {
+    "jonlib": "Surface.rotate_degrees_for / Surface.rotate_degrees",
+    "status": "profile-covered",
+    "scope": "Owned RGBA8; integral degrees -360..360 with explicit reference trigonometry; reference bilinear interpolation, truncated bounds and transparent outside pixels; output dimensions 1..4096; rejected requests preserve the original owner.",
+    "gaps": [
+      "Wider-angle reference behavior",
+      "Other formats/mipmaps",
+      "Full target/performance gates"
+    ],
+    "api_id": "raylib:function:ImageRotate",
     "milestone": "images"
   },
   "ImageRotateCW": {

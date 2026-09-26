@@ -8,9 +8,9 @@ Profile: **rgba8-cpu-images-v1**, with domains defined in [API.md](API.md).
 
 ## Verified evidence
 
-The current local Apple M1/macOS corpus contains **134 deterministic scenarios /
-32,277 checked output words per lane**, matching native CPU (one and two threads), JavaScript
-and forced Metal. Most words are RGBA pixels; 78 are exact scalar/Vector2
+The current local Apple M1/macOS corpus contains **149 deterministic scenarios /
+32,515 checked output words per lane**, matching native CPU (one and two threads), JavaScript
+and forced Metal. Most words are RGBA pixels; 118 are exact scalar/Vector2
 result-bit probe cells. QOI export bytes are compared separately. GitHub Actions
 is configured to run this corpus on **Ubuntu 24.04
 (x86_64)** and **macOS 15 (arm64)** for CPU/JavaScript; use the current workflow
@@ -30,8 +30,8 @@ originally established the CPU/JS baseline; current CI applies the declared over
 A current run's precise inputs, source hashes and lane outcomes are in
 `.build/conformance.json`. The authoritative [API dashboard](PROGRESS.md) covers
 the complete release-header/support inventory. The 600-entry
-`.build/api-inventory.json` is its legacy core view, mapping 60 reference APIs to
-these scoped operations/contracts. The companion ledger additionally maps 28
+`.build/api-inventory.json` is its legacy core view, mapping 62 reference APIs to
+these scoped operations/contracts. The companion ledger additionally maps 32
 `raymath.h` functions. Remaining functions retain explicit planned work.
 These counts are an inventory, not a percentage of full parity.
 Both `profile-covered` and `contract-checked` are partial-coverage statuses.
@@ -66,6 +66,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | Radial/linear gradients | `Surface.create_gradient_radial/linear` | Balanced generation; radial density 0..1, integral linear directions -360..360; wider-angle rounding remains a gap |
 | `ImageFlipHorizontal/Vertical` | `Surface.flip_horizontal/flip_vertical` | Exact explicit and seeded full-image comparisons |
 | `ImageRotateCW/CCW` | `Surface.rotate_cw/rotate_ccw` | Exact RGBA bytes, non-square dimensions and transform sequencing |
+| `ImageRotate` / `ImageToPOT` | `Surface.rotate_degrees_for/to_pot` | Checked general rotation with reference bilinear sampling; exhaustive supported POT-axis reference validation and exact fill/copy fixtures |
 | QOI loading/export | `Surface.decode_qoi/to_qoi/load_qoi/write_qoi` | Valid-stream RGBA8 profile, all opcodes, exact export bytes, typed malformed-input errors and real CPU/JS file round trips |
 | Scalar/Vector2 raymath | `Math` and `Vector2` functions | Exact results for the explicit uncontracted-F32 profile; exceptional/contracted variants remain open |
 | Base.Image conversion / PPM export | `Surface.to_image/to_ppm/write_ppm` | Adapter pixels/padding and actual file RGB output checked |

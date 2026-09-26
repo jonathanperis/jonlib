@@ -31,6 +31,7 @@ differential test reference.
 - Vector drawing variants, outlines, thick lines, fans/strips and vertex-colored triangles.
 - RGBA8 color/alpha transforms, checkerboards and quarter-turn rotations.
 - Alpha bounds/cropping, raw canvas resizing and square gradients.
+- Checked general image rotation and power-of-two canvas expansion.
 - Radial and one-cycle linear gradient profiles with balanced owned-array generation.
 - QOI decoding/encoding and real byte-file loading/export, with typed failures.
 - Initial scalar and Vector2 math under an explicit uncontracted-F32 profile.

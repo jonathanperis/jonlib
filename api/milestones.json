@@ -60,7 +60,7 @@
     {"id":"web-rgfw","scope":"WebRGFW alternative platform configuration"}
   ],
   "scope_sources": ["https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/FAQ.md", "https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/CMakeOptions.txt"],
-  "priority_overrides": {"raylib:function:ImageRotate":0, "raylib:function:ImageToPOT":1, "raymath:function:Vector2Clamp":2, "raymath:function:Vector2ClampValue":3, "raymath:function:Vector2Rotate":4, "raymath:function:Vector2Refract":5},
+  "priority_overrides": {"raylib:function:CheckCollisionRecs":0, "raylib:function:CheckCollisionCircles":1, "raylib:function:GetCollisionRec":2, "raymath:function:Vector2Min":3, "raymath:function:Vector2Max":4, "raylib:function:ImageFromChannel":5},
   "api_dependencies": {
     "raylib:function:ImageDraw":["raylib:function:ImageFromImage","raylib:function:ImageResize","raylib:function:ColorAlphaBlend"],
     "raylib:function:LoadTexture":["raylib:function:LoadImage","raylib:function:LoadTextureFromImage"],

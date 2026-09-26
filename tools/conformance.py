@@ -37,6 +37,8 @@ VECTOR2_APIS = {
     'cross_product':('Vector2CrossProduct','vv','float'), 'equals':('Vector2Equals','vv','bool'),
     'length':('Vector2Length','v','float'), 'normalize':('Vector2Normalize','v','vector'),
     'distance':('Vector2Distance','vv','float'), 'move_towards':('Vector2MoveTowards','vvs','vector'),
+    'clamp':('Vector2Clamp','vvv','vector'), 'clamp_value':('Vector2ClampValue','vss','vector'),
+    'refract':('Vector2Refract','vvs','vector'), 'rotate':('Vector2Rotate','vs','vector'),
 }
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -205,7 +207,7 @@ def cases_from(document):
             if not isinstance(kind, str) or kind not in ("pixel", "rectangle", "circle", "clear", "flip_horizontal", "flip_vertical", "blend_color",
                              "line", "line_v", "triangle", "triangle_lines", "blit", "blit_region", "blit_rect", "crop", "extract", "resize_nn", "resize",
                              "pixel_v", "circle_v", "circle_lines", "circle_lines_v", "rectangle_v", "rectangle_rec", "rectangle_lines",
-                             "line_ex", "triangle_fan", "triangle_strip", "triangle_ex", "color_value", "number_value", "vector_value", "alpha_clear", "alpha_mask", "alpha_crop", "resize_canvas") and kind not in UNARY_IMAGE_APIS and kind not in COLOR_IMAGE_APIS:
+                             "line_ex", "triangle_fan", "triangle_strip", "triangle_ex", "color_value", "number_value", "vector_value", "alpha_clear", "alpha_mask", "alpha_crop", "resize_canvas", "rotate_degrees", "to_pot") and kind not in UNARY_IMAGE_APIS and kind not in COLOR_IMAGE_APIS:
                 raise ValueError(f"{name}: unknown operation {kind!r}")
             if kind in ('blit', 'blit_region', 'blit_rect', 'alpha_mask'):
                 if kind != 'alpha_mask':
@@ -239,7 +241,7 @@ def cases_from(document):
                             raise ValueError(f'{name}: invalid destination rectangle')
                 if op.get('observe_source'):
                     current_w, current_h = source['width'], source['height']
-            elif kind not in ('crop', 'extract', 'resize_nn', 'resize', 'color_contrast', 'color_brightness', 'number_value', 'vector_value', 'alpha_crop') and kind not in UNARY_IMAGE_APIS:
+            elif kind not in ('crop', 'extract', 'resize_nn', 'resize', 'color_contrast', 'color_brightness', 'number_value', 'vector_value', 'alpha_crop', 'rotate_degrees') and kind not in UNARY_IMAGE_APIS:
                 rgba(op["color"])
             if kind == 'color_replace':
                 rgba(op['replacement'])
@@ -271,6 +273,8 @@ def cases_from(document):
                 divisors = values[2:] if function=='divide' else values if function=='invert' else []
                 if any(struct.unpack('f',struct.pack('f',v))[0] == 0 for v in divisors):
                     raise ValueError(f'{name}: Vector2 divisors must remain nonzero in F32')
+                if function == 'rotate' and abs(values[2]) > 6.283186:
+                    raise ValueError(f'{name}: vector rotation profile is bounded to one cycle')
                 if result == 'vector' and (not integer(op.get('x'),0,current_w-2) or not integer(op.get('y'),0,current_h-1)):
                     raise ValueError(f'{name}: both vector output components must fit the image')
             if kind in ('color_contrast', 'color_brightness') and not coordinate(op.get('amount'), kind == 'color_contrast'):
@@ -280,7 +284,7 @@ def cases_from(document):
             if kind == 'blend_color':
                 rgba(op['destination'])
                 rgba(op['tint'])
-            fields = [] if kind in ('clear', 'resize_nn', 'resize', 'blit_rect', 'triangle_fan', 'triangle_strip', 'alpha_clear', 'alpha_mask', 'alpha_crop') or kind in UNARY_IMAGE_APIS or kind in COLOR_IMAGE_APIS else ["x", "y"]
+            fields = [] if kind in ('clear', 'resize_nn', 'resize', 'blit_rect', 'triangle_fan', 'triangle_strip', 'alpha_clear', 'alpha_mask', 'alpha_crop', 'rotate_degrees', 'to_pot') or kind in UNARY_IMAGE_APIS or kind in COLOR_IMAGE_APIS else ["x", "y"]
             if kind in ('line', 'line_v', 'line_ex', 'triangle', 'triangle_lines', 'triangle_ex'):
                 fields = ['x0', 'y0', 'x1', 'y1']
                 if kind.startswith('triangle'):
@@ -326,6 +330,12 @@ def cases_from(document):
                 if op['result_width'] > current_w or op['result_height'] > current_h:
                     raise ValueError(f'{name}: alpha crop cannot increase dimensions')
                 current_w, current_h = op['result_width'], op['result_height']
+            elif kind == 'rotate_degrees':
+                if not integer(op.get('degrees'),-360,360) or not all(integer(op.get(key),1,4096) for key in ('result_width','result_height')):
+                    raise ValueError(f'{name}: rotation requires a supported angle and checked output size')
+                current_w,current_h=op['result_width'],op['result_height']
+            elif kind == 'to_pot':
+                current_w,current_h=1<<(current_w-1).bit_length(),1<<(current_h-1).bit_length()
             elif kind in ('resize_nn', 'resize', 'resize_canvas'):
                 w, h = op.get('width'), op.get('height')
                 if not integer(w, 1, 4096) or not integer(h, 1, 4096):
@@ -357,6 +367,10 @@ def result_size(case):
             width, height = op['width'], op['height']
         elif op['op'] == 'alpha_crop':
             width, height = op['result_width'], op['result_height']
+        elif op['op'] == 'rotate_degrees':
+            width, height = op['result_width'], op['result_height']
+        elif op['op'] == 'to_pot':
+            width,height=1<<(width-1).bit_length(),1<<(height-1).bit_length()
         elif op['op'] in ('rotate_cw', 'rotate_ccw'):
             width, height = height, width
     return width, height
@@ -390,6 +404,11 @@ def c_source(cases):
              'static Color float_bits(float value) { unsigned int bits; memcpy(&bits, &value, 4); return GetColor(bits); }',
              'int main(void) {',
              'SetTraceLogLevel(LOG_NONE);']
+    if any(op['op']=='to_pot' for case in cases for op in case['operations']):
+        lines += ['for (int n=1;n<=4096;n++) { int expected=1; while(expected<n) expected*=2;',
+                  'Image probe=GenImageColor(n,1,BLANK); ImageToPOT(&probe,WHITE);',
+                  'if(probe.width!=expected || probe.height!=1) { fprintf(stderr,"POT axis contract mismatch\\n"); return 5; }',
+                  'UnloadImage(probe); }']
     for case in cases:
         w, h = case["width"], case["height"]
         if 'qoi' in case:
@@ -409,6 +428,13 @@ def c_source(cases):
             lines += ['{', f'Image image = GenImageColor({w}, {h}, GetColor({rgba(case["background"])}u));']
         for op in case["operations"]:
             kind = op["op"]
+            if kind == 'rotate_degrees':
+                lines += [f'ImageRotate(&image, {op["degrees"]});',
+                          f'if(image.width!={op["result_width"]} || image.height!={op["result_height"]}) {{ fprintf(stderr,"rotation size hint mismatch\\n"); return 6; }}']
+                continue
+            if kind == 'to_pot':
+                lines += [f'ImageToPOT(&image, GetColor({rgba(op["color"])}u));']
+                continue
             if kind == 'alpha_crop':
                 lines += [f'ImageAlphaCrop(&image, {op["threshold"]});',
                           f'if (image.width != {op["result_width"]} || image.height != {op["result_height"]}) {{ fprintf(stderr, "alpha crop size hint mismatch\\n"); return 4; }}']
@@ -611,6 +637,11 @@ def bend_source(cases, gpu=False):
         previous = 'surface'
         for j, op in enumerate(case["operations"]):
             kind = op["op"]
+            if kind in ('rotate_degrees','to_pot'):
+                draw = f'J.Surface.rotate_degrees_for(J.{gradient_reference()}{{}}, {previous}, {f32(op["degrees"])})' if kind=='rotate_degrees' else f'J.Surface.to_pot({previous}, {rgba(op["color"])})'
+                previous = f's{j}'
+                lines += [f'    {previous} : J.Surface <- {draw}']
+                continue
             if kind in ('alpha_crop','resize_canvas'):
                 if kind == 'alpha_crop':
                     draw = f'J.Surface.alpha_crop({previous}, {f32(op["threshold"])})'
@@ -658,7 +689,9 @@ def bend_source(cases, gpu=False):
             args = [previous]
             if kind == 'vector_value':
                 _, signature, result = VECTOR2_APIS[op['function']]
-                expression = f'J.Vector2.{op["function"]}({vector_arguments(signature,op["args"],bend=True)})'
+                function_name = 'rotate_for' if op['function']=='rotate' else op['function']
+                profile = f'J.{gradient_reference()}{{}}, ' if op['function']=='rotate' else ''
+                expression = f'J.Vector2.{function_name}({profile}{vector_arguments(signature,op["args"],bend=True)})'
                 function = 'write_vector' if result=='vector' else 'J.Surface.draw_pixel'
                 value = expression if result=='vector' else f'Bool.to_u32({expression})' if result=='bool' else f'F32.bits({expression})'
                 previous = f's{j}'
@@ -864,6 +897,7 @@ def main():
     report['numeric_probe_cells'] = sum(1 if op['op']=='number_value' or VECTOR2_APIS[op['function']][2]!='vector' else 2
                                         for case in cases for op in case['operations'] if op['op'] in ('number_value','vector_value'))
     report['alpha_border_observations'] = sum('alpha_border' in case for case in cases)
+    report['pot_axes_checked'] = 4096 if any(op['op']=='to_pot' for case in cases for op in case['operations']) else 0
     cli = ['bun', args.bend_source / 'bend2/main.ts']
     library_verdict = run([*cli, ROOT / 'jonlib.bend', '--check-only'])
     if library_verdict.strip() != 'All terms check.':

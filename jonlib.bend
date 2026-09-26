@@ -6,6 +6,7 @@ import ./src/resample.bend as Resample
 import ./src/qoi.bend as Qoi
 import ./src/gradients.bend as Gradients
 import ./src/trig.bend as Trig
+import ./src/rotation.bend as Rotation
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -153,6 +154,59 @@ def Vector2.equals(left: Vector2, right: Vector2) -> Bool:
   Vector2{x, y} = left
   Vector2{u, v} = right
   Math.float_equals(x, u) && Math.float_equals(y, v)
+
+def Vector2.clamp.minimum(+left: F32, +right: F32) -> F32:
+  zero = Bool.pick(F32, U32.is_ne(((F32.bits(left) .|. F32.bits(right)) .&. 2147483648 : U32), 0), F32.neg(0.0), 0.0)
+  Bool.pick(F32, F32.is_eq(left, 0.0) && F32.is_eq(right, 0.0), zero, Bool.pick(F32, (left < right : F32), left, right))
+
+def Vector2.clamp.maximum(+left: F32, +right: F32) -> F32:
+  zero = Bool.pick(F32, U32.is_ne(((F32.bits(left) .&. F32.bits(right)) .&. 2147483648 : U32), 0), F32.neg(0.0), 0.0)
+  Bool.pick(F32, F32.is_eq(left, 0.0) && F32.is_eq(right, 0.0), zero, Bool.pick(F32, (left > right : F32), left, right))
+
+def Vector2.clamp(vector: Vector2, lower: Vector2, upper: Vector2) -> Vector2:
+  Vector2{x, y} = vector
+  Vector2{lx, ly} = lower
+  Vector2{ux, uy} = upper
+  Vector2{Vector2.clamp.minimum(ux, Vector2.clamp.maximum(lx, x)), Vector2.clamp.minimum(uy, Vector2.clamp.maximum(ly, y))}
+
+def Vector2.clamp.magnitude(nonzero: Bool, +x: F32, +y: F32, square: F32, +lower: F32, +upper: F32) -> Vector2:
+  match nonzero:
+    case False{}: Vector2{x, y}
+    case True{}:
+      +length = F32.sqrt(square)
+      +scale = Bool.pick(F32, (length < lower : F32), (lower / length : F32),
+        Bool.pick(F32, (length > upper : F32), (upper / length : F32), 1.0))
+      Vector2{(x * scale : F32), (y * scale : F32)}
+
+def Vector2.clamp_value(vector: Vector2, lower: F32, upper: F32) -> Vector2:
+  Vector2{+x, +y} = vector
+  +square = (x * x + y * y : F32)
+  Vector2.clamp.magnitude((square > 0.0 : F32), x, y, square, lower, upper)
+
+def Vector2.refraction(valid: Bool, x: F32, y: F32, +nx: F32, +ny: F32, +ratio: F32, dot: F32, determinant: F32) -> Vector2:
+  match valid:
+    case False{}: Vector2.zero()
+    case True{}:
+      +gain = (ratio * dot + F32.sqrt(determinant) : F32)
+      Vector2{(ratio * x - gain * nx : F32), (ratio * y - gain * ny : F32)}
+
+def Vector2.refract(vector: Vector2, normal: Vector2, +ratio: F32) -> Vector2:
+  Vector2{+x, +y} = vector
+  Vector2{+nx, +ny} = normal
+  +dot = (x * nx + y * ny : F32)
+  +determinant = (1.0 - ratio * ratio * (1.0 - dot * dot) : F32)
+  Vector2.refraction((determinant >= 0.0 : F32), x, y, nx, ny, ratio, dot, determinant)
+
+def Vector2.rotation(vector: Vector2, values: F32 & F32) -> Vector2:
+  Vector2{+x, +y} = vector
+  (+cosine, +sine) = values
+  Vector2{(x * cosine - y * sine : F32), (x * sine + y * cosine : F32)}
+
+def Vector2.rotate_for(reference: Gradient.Reference, vector: Vector2, angle: F32) -> Vector2:
+  Vector2.rotation(vector, Trig.sincos_for(Gradient.gnu(reference), angle))
+
+def Vector2.rotate(vector: Vector2, angle: F32) -> Vector2:
+  Vector2.rotate_for(AccurateGradient{}, vector, angle)
 
 # Internal signed-word operations for raylib's integer raster stepping.
 def Signed.word(+x: F32) -> U32:
@@ -1078,6 +1132,38 @@ def Surface.resize_canvas(surface: Surface, +width: U32, +height: U32, +x: F32, 
   Surface.canvas.checked(((width >= 1) && (height >= 1) && (width <= 4096) && (height <= 4096) : U32),
     ((F32.abs(x) <= 32767.0) && (F32.abs(y) <= 32767.0) : F32)
       && F32.is_eq(F32.floor(x), x) && F32.is_eq(F32.floor(y), y), surface, width, height, x, y, fill)
+
+def Surface.to_pot(surface: Surface, fill: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface{+width, +height, pixels} = surface
+  Surface.resize_canvas(Surface{width, height, pixels}, U32.shln(1, Surface.capacity(width)), U32.shln(1, Surface.capacity(height)), 0.0, 0.0, fill)
+
+def Surface.rotation.sized(valid: Bool, surface: Surface, +width: U32, +height: U32, cosine: F32, sine: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match valid:
+    case False{}: Fail{(surface, InvalidSize{})}
+    case True{}:
+      Surface{sw, sh, pixels} = surface
+      Done{Surface{width, height, Rotation.render(sw, sh, width, height, cosine, sine, pixels)}}
+
+def Surface.rotation.trigonometry(surface: Surface, values: F32 & F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface{+sw, +sh, pixels} = surface
+  (+cosine, +sine) = values
+  +width = F32.to_u32((F32.abs((U32.to_f32(sw) * cosine : F32)) + F32.abs((U32.to_f32(sh) * sine : F32)) : F32))
+  +height = F32.to_u32((F32.abs((U32.to_f32(sh) * cosine : F32)) + F32.abs((U32.to_f32(sw) * sine : F32)) : F32))
+  Surface.rotation.sized(((width >= 1) && (height >= 1) && (width <= 4096) && (height <= 4096) : U32),
+    Surface{sw, sh, pixels}, width, height, cosine, sine)
+
+def Surface.rotation.checked(valid: Bool, reference: Gradient.Reference, surface: Surface, degrees: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match valid:
+    case False{}: Fail{(surface, InvalidRectangle{})}
+    case True{}:
+      radians = (degrees * 3.14159265358979323846 / 180.0 : F32)
+      Surface.rotation.trigonometry(surface, Trig.sincos_for(Gradient.gnu(reference), radians))
+
+def Surface.rotate_degrees_for(reference: Gradient.Reference, surface: Surface, +degrees: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface.rotation.checked((F32.abs(degrees) <= 360.0 : F32) && F32.is_eq(F32.floor(degrees), degrees), reference, surface, degrees)
+
+def Surface.rotate_degrees(surface: Surface, degrees: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface.rotate_degrees_for(AccurateGradient{}, surface, degrees)
 
 def Surface.blit.region(destination: Surface, source: Surface, rect: Rectangle, +x: F32, +y: F32, tint: U32) -> Surface & Surface:
   Surface{+dw, +dh, dst} = destination

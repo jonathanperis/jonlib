@@ -70,6 +70,8 @@ class HarnessTests(unittest.TestCase):
                     dict(case, operations=[dict(op='resize', width=1, height=4097)]),
                     dict(case, operations=[dict(op='resize_canvas', width=2, height=2, x=2, y=0, color=[0,0,0,0])]),
                     dict(case, operations=[dict(op='alpha_crop', threshold=0)]),
+                    dict(case, operations=[dict(op='rotate_degrees', degrees=361, result_width=1, result_height=1)]),
+                    dict(case, operations=[dict(op='rotate_degrees', degrees=45, result_width=True, result_height=1)]),
                     dict(case, alpha_border=True),
                     dict(case, gradient_square=dict(density=1.5, outer=[0,0,0,0])),
                     dict(case, width=2, height=2, gradient_linear=dict(direction=361, outer=[0,0,0,0])),
