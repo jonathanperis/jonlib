@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Native PNG depth/filter/transparency/Adam7 fixtures for the bitmap gate."""
+"""Native PNG depth/filter/transparency/Adam7/CgBI fixtures for the bitmap gate."""
 import struct
 import zlib
 import random
@@ -58,15 +58,17 @@ def adam_filtered(width,height,color,raw,filters,depth):
     return bytes(output)
 
 
-def png(width,height,color,raw,filters=(0,),*,depth=8,interlaced=False,palette=None,transparency=None,stream=None,extra=(),split=False):
+def png(width,height,color,raw,filters=(0,),*,depth=8,interlaced=False,cgbi=False,palette=None,transparency=None,stream=None,extra=(),split=False):
     header=struct.pack('>IIBBBBB',width,height,depth,color,0,0,int(interlaced))
-    data=SIGNATURE+chunk(b'IHDR',header)
+    data=SIGNATURE+(chunk(b'CgBI',b'\x40\xa0\x60\x82') if cgbi else b'')+chunk(b'IHDR',header)
     if palette is not None:data+=chunk(b'PLTE',palette)
     if transparency is not None:data+=chunk(b'tRNS',transparency)
     for kind,body in extra:data+=chunk(kind,body)
     if stream is None:
         raster=adam_filtered(width,height,color,raw,filters,depth) if interlaced else filtered(width,height,color,raw,filters,depth)
-        stream=zlib.compress(raster)
+        if cgbi:
+            obj=zlib.compressobj(wbits=-15);stream=obj.compress(raster)+obj.flush()
+        else:stream=zlib.compress(raster)
     if split:
         data+=chunk(b'IDAT',stream[:1])+chunk(b'IDAT',b'')+chunk(b'tEXt',b'between\x00chunks')+chunk(b'IDAT',stream[1:4])+chunk(b'IDAT',stream[4:])
     else:data+=chunk(b'IDAT',stream)
@@ -156,6 +158,26 @@ def fixtures():
     raw=b''.join(struct.pack('>H',(i*257+255)&65535) for i in range(4096))
     inputs.append(dict(id='adam7-wide16',bytes=list(png(4096,1,0,raw,(4,3,2,1,0),depth=16,interlaced=True))))
     inputs.append(dict(id='adam7-former-control',bytes=list(png(1,1,6,b'\1\2\3\4',interlaced=True))))
+    for color,depth in ((2,8),(6,8),(0,4),(3,2),(4,16),(6,16)):
+        count=6*CHANNELS[color];maximum=(1<<depth)-1
+        values=[(i*73+3)&maximum for i in range(count)];options={}
+        if color==2:values[:3]=[3,8,12]
+        elif color==6 and depth==8:values=[3,8,12,16, 11,22,33,0, 20,30,40,64, 55,30,10,127, 2,1,4,255, 1,3,2,4]
+        elif color==0:options['transparency']=b'\0\3'
+        elif color==3:options=dict(palette=palette,transparency=b'\0\x7f')
+        raw=struct.pack('>'+'H'*count,*values) if depth==16 else bytes(values)
+        for interlaced in (False,True):
+            inputs.append(dict(id=f'cgbi-{color}-{depth}-{interlaced}',bytes=list(png(3,2,color,raw,(4,3,2,1,0),depth=depth,cgbi=True,interlaced=interlaced,split=True,**options))))
+    raw=bytes([3,8,12,16,11,22,33,0]);cg=png(2,1,6,raw,cgbi=True)
+    marker=cg[8:24];ihdr=cg[24:49];tail=cg[49:]
+    inputs += [dict(id='cgbi-empty-payload',bytes=list(SIGNATURE+chunk(b'CgBI',b'')+cg[24:])),
+               dict(id='cgbi-ignored-payload',bytes=list(SIGNATURE+chunk(b'CgBI',b'arbitrary')+cg[24:])),
+               dict(id='cgbi-after-header',bytes=list(SIGNATURE+ihdr+marker+tail)),
+               dict(id='cgbi-after-idat',bytes=list(SIGNATURE+ihdr+tail[:-12]+marker+tail[-12:])),
+               dict(id='cgbi-repeated',bytes=list(SIGNATURE+marker+cg[8:]))]
+    raster=filtered(2,1,6,raw,(0,));obj=zlib.compressobj(wbits=-15)
+    stream=obj.compress(raster[:3])+obj.flush(zlib.Z_SYNC_FLUSH)+obj.compress(raster[3:])+obj.flush()
+    inputs.append(dict(id='cgbi-empty-stored',bytes=list(png(2,1,6,raw,cgbi=True,stream=stream,split=True))))
     base=png(1,1,6,bytes([1,2,3,4]))
     gray=png(1,1,0,b'\1')
     malformed=[dict(id='empty',bytes=[],error=0),dict(id='bad-byte',bytes=[256],error=1),
@@ -193,6 +215,10 @@ def fixtures():
     bad_filter=bytearray(raster);bad_filter[4]=5  # The 9x9 1-bit first pass has four filtered bytes.
     for name,payload in [('short-last-pass',raster[:-1]),('extra-pass-byte',raster+b'\0'),('later-filter',bad_filter)]:
         malformed.append(dict(id=f'adam7-{name}',bytes=list(png(9,9,0,raw,depth=1,interlaced=True,stream=zlib.compress(payload))),error=4))
+    raw=b'\1\2\3\4';raster=filtered(1,1,6,raw,(0,));obj=zlib.compressobj(wbits=-15);stream=obj.compress(raster)+obj.flush()
+    malformed += [dict(id='cgbi-wrong-framing',bytes=list(png(1,1,6,raw,cgbi=True,stream=zlib.compress(raster))),error=4),
+                  dict(id='raw-without-cgbi',bytes=list(png(1,1,6,raw,stream=stream)),error=4),
+                  dict(id='cgbi-no-header',bytes=list(SIGNATURE+chunk(b'CgBI',b'')+chunk(b'IEND',b'')),error=0)]
     return inputs,malformed,[]
 
 

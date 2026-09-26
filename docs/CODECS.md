@@ -11,7 +11,7 @@ Binary 8-bit P5/P6 decoding and native maxval/separator rules are documented in
 [PNM.md](PNM.md).
 
 The raw [DEFLATE dependency](DEFLATE.md) is verified separately. Non-interlaced and
-Adam7 packed/8/16-bit PNG decoding, filters, palette/transparency rules and limits are documented
+Adam7 packed/8/16-bit PNG decoding, native-default CgBI, filters, transparency rules and limits are documented
 in [PNG.md](PNG.md).
 
 ## QOI

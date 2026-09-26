@@ -1,0 +1,18 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {
+    "jonlib.bend": "2c66820cdac577e6ff051603ee752b48ffa8d47d212f2362d9776798b74f2ce2",
+    "src/png.bend": "91d6876ed65dbf203582508b0917b9a00730f75baf5bba4e6bbd4faf5301e7f3"
+  },
+  "inputs_sha256": "6b240593625dbd64c70f644b60e8f072649f39f0525f208ef7ed6b4aabee04b9",
+  "reference_sha256": "d06b419a8500699f4550693f37d550d0510f9449493620e133ab64f0d2841b3d",
+  "decode_cases": 193,
+  "decoded_pixels": 31677,
+  "typed_error_cases": 39,
+  "native_flags": {"convert_iphone_png_to_rgb":0,"unpremultiply_on_load":0},
+  "existing_inputs_and_errors_retained": true,
+  "passed": true,
+  "lanes": ["cpu","javascript","metal"],
+  "full_corpus": {"scenarios":261,"output_words_per_lane":40101,"passed":true,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "limits": ["Nondefault external stb decoder flags and PNG export", "Original-format metadata, broader malformed recovery and size domains", "Complete integration/target/resource/performance coverage"]
+}

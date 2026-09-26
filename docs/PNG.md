@@ -17,9 +17,10 @@
   `(ceil(width*channels*depth/8) + 1)*height`; for Adam7 it is the sum of that
   expression over nonempty pass dimensions. The filtered byte count must
   match exactly; native recovery of excess inflated bytes is outside this profile.
-- IHDR is first and unique; PLTE/tRNS precede IDAT. Multiple/split/empty IDAT
+- IHDR is the first image header and unique; CgBI markers may precede it.
+  PLTE/tRNS precede IDAT. Multiple/split/empty IDAT
   chunks are combined in order. Unknown ancillary chunks are skipped; unknown
-  critical chunks, CgBI and unsupported header fields are rejected.
+  critical chunks and unsupported header fields are rejected.
 - All five filters are reconstructed with exact byte arithmetic, including
   first-row/left-edge rules, Average truncation and Paeth ties.
 - Packed samples are filtered as bytes with a one-byte neighbor distance, then
@@ -46,12 +47,28 @@ coordinates through the pass strides. Palette and transparency operations are
 pointwise, so applying them before scattering preserves the native final pixels.
 The complete pass stream must be consumed, including its filter bytes.
 
+## Native-default CgBI behavior
+
+CgBI markers select raw DEFLATE for IDAT rather than zlib framing. Marker payload
+contents are ignored, matching the pinned reader; markers before/after IHDR,
+after IDAT and repeated markers retain the selected framing through IEND.
+
+The pinned native defaults disable iPhone channel conversion and
+unpremultiplication. This profile therefore applies **no additional BGR swap or
+alpha division**: stored channel/alpha values follow the ordinary sample-to-RGBA8
+normalization described above. This distinction is visible for premultiplied-looking
+and zero-alpha samples. External callers changing stb's global/thread-local
+conversion flags are outside the current profile.
+
+Raw CgBI uses the PNG inflater policy and continues empty non-final stored blocks.
+
 ## Native checksum and framing behavior
 
 The pinned reader consumes chunk CRC fields but does not validate them. It also
 does not validate Adler-32, and accepts a completed DEFLATE stream without that
 trailer. Jonlib preserves these observed behaviors and checks them against native
-execution. Zlib method, header checksum and preset-dictionary checks are retained.
+execution. Zlib method, header checksum and preset-dictionary checks are retained
+for ordinary framed PNG input.
 The PNG-oriented inflater continues empty non-final stored blocks, as required
 by the native PNG path; see [DEFLATE.md](DEFLATE.md).
 
@@ -61,7 +78,7 @@ violations return `UnsupportedImageSize`. Invalid zlib/DEFLATE data, filter mode
 raster lengths or palette indices return `InvalidImageStream`. Bounds are checked
 before array indexing, and dimensions/filtered capacity before allocation.
 
-CgBI, original-format metadata, generic dispatch
+Nondefault external stb decoder flags, original-format metadata, generic dispatch
 and broader malformed-input recovery remain gaps. PNG export is not implemented.
 
 ## Verification
@@ -71,17 +88,18 @@ python3 tools/png_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 ```
 
 Configure checkout variables as described in [README.md](../README.md#requirements).
-The probe checks 175 native images / 31,593 pixels and 36 typed-error controls on
+The probe checks 193 native images / 31,677 pixels and 39 typed-error controls on
 CPU, JavaScript and forced Metal. Cases cross every supported color/filter family,
 odd widths, packed-byte boundaries/nonzero padding, 4096-wide/tall dimensions,
 transparency scaling/wrapping, close full-width transparency keys, 16-bit alpha
 truncation, all supported Adam7 color/depth combinations and tiny/thin/odd pass
-geometries, ancillary chunks, split IDATs, empty stored blocks
+geometries, native-default CgBI samples/framing/markers, ancillary chunks, split IDATs, empty stored blocks
 and ignored checksums. Expected pixels always come from actual `LoadImageFromMemory`.
 The [initial 8-bit evidence](evidence/png-8bit.json) is retained alongside the
 [packed-depth increment](evidence/png-packed.json) and
 [16-bit normalization](evidence/png-16bit.json) and
-[Adam7 reconstruction](evidence/png-adam7.json).
+[Adam7 reconstruction](evidence/png-adam7.json) and
+[CgBI defaults](evidence/png-cgbi.json).
 
 A minimized Metal compile failure isolated to chunk extraction was resolved by
 collecting payload bytes first, then parsing the CRC field outside that tail loop.

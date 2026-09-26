@@ -77,7 +77,7 @@ type Key is Data:
   Key{red: U32, green: U32, blue: U32}
 
 type Parts is Data:
-  Parts{config: Maybe<&2, Config>, palette: +List<U32>, key: Maybe<&2, Key>, compressed: +List<U32>, seen: Bool}
+  Parts{config: Maybe<&2, Config>, palette: +List<U32>, key: Maybe<&2, Key>, compressed: +List<U32>, seen: Bool, raw: Bool}
 
 type Parsing is Data:
   More{bytes: +List<U32>, parts: Parts}
@@ -120,63 +120,64 @@ def more.valid(valid: Bool, bytes: +List<U32>, parts: Parts) -> Result<&2, &2, E
     case False{}: Fail{BadHeader{}}
     case True{}: Done{More{bytes, parts}}
 
-def more.config(bytes: +List<U32>, result: Result<&2, &2, Error, Config>) -> Result<&2, &2, Error, Parsing>:
+def more.config(bytes: +List<U32>, raw: Bool, result: Result<&2, &2, Error, Config>) -> Result<&2, &2, Error, Parsing>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{cfg}: Done{More{bytes, Parts{Some{cfg}, Nil{}, None{}, Nil{}, False{}}}}
+    case Done{cfg}: Done{More{bytes, Parts{Some{cfg}, Nil{}, None{}, Nil{}, False{}, raw}}}
 
-def more.palette(cfg: Config, key: Maybe<&2, Key>, compressed: +List<U32>, seen: Bool, bytes: +List<U32>, colors: Maybe<&2, +List<U32>>) -> Result<&2, &2, Error, Parsing>:
+def more.palette(cfg: Config, key: Maybe<&2, Key>, compressed: +List<U32>, seen: Bool, raw: Bool, bytes: +List<U32>, colors: Maybe<&2, +List<U32>>) -> Result<&2, &2, Error, Parsing>:
   match colors:
     case None{}: Fail{BadHeader{}}
-    case Some{values}: Done{More{bytes, Parts{Some{cfg}, values, key, compressed, seen}}}
+    case Some{values}: Done{More{bytes, Parts{Some{cfg}, values, key, compressed, seen, raw}}}
 
-def more.plte(valid: Bool, cfg: Config, key: Maybe<&2, Key>, compressed: +List<U32>, seen: Bool, payload: +List<U32>, bytes: +List<U32>) -> Result<&2, &2, Error, Parsing>:
+def more.plte(valid: Bool, cfg: Config, key: Maybe<&2, Key>, compressed: +List<U32>, seen: Bool, raw: Bool, payload: +List<U32>, bytes: +List<U32>) -> Result<&2, &2, Error, Parsing>:
   match valid:
     case False{}: Fail{BadHeader{}}
-    case True{}: more.palette(cfg, key, compressed, seen, bytes, palette(payload, Nil{}))
+    case True{}: more.palette(cfg, key, compressed, seen, raw, bytes, palette(payload, Nil{}))
 
 def key.component(wide: Bool, high: U32, +low: U32, scale: U32) -> U32:
   Bool.pick(U32, wide, ((high << 8n) .|. low : U32), ((low * scale) .&. 255 : U32))
 
-def more.transparency(color: U32, +wide: Bool, +scale: U32, cfg: Config, colors: +List<U32>, compressed: +List<U32>, payload: +List<U32>, bytes: +List<U32>) -> Result<&2, &2, Error, Parsing>:
+def more.transparency(color: U32, +wide: Bool, +scale: U32, cfg: Config, colors: +List<U32>, compressed: +List<U32>, raw: Bool, payload: +List<U32>, bytes: +List<U32>) -> Result<&2, &2, Error, Parsing>:
   match color payload:
     case 0 Con{high, Con{value, Nil{}}}:
       +gray = key.component(wide, high, value, scale)
-      Done{More{bytes, Parts{Some{cfg}, colors, Some{Key{gray, gray, gray}}, compressed, False{}}}}
+      Done{More{bytes, Parts{Some{cfg}, colors, Some{Key{gray, gray, gray}}, compressed, False{}, raw}}}
     case 2 Con{rh, Con{r, Con{gh, Con{g, Con{bh, Con{b, Nil{}}}}}}}:
-      Done{More{bytes, Parts{Some{cfg}, colors, Some{Key{key.component(wide, rh, r, scale), key.component(wide, gh, g, scale), key.component(wide, bh, b, scale)}}, compressed, False{}}}}
-    case 3 _: more.palette(cfg, None{}, compressed, False{}, bytes, palette.alpha(colors, payload, Nil{}))
+      Done{More{bytes, Parts{Some{cfg}, colors, Some{Key{key.component(wide, rh, r, scale), key.component(wide, gh, g, scale), key.component(wide, bh, b, scale)}}, compressed, False{}, raw}}}
+    case 3 _: more.palette(cfg, None{}, compressed, False{}, raw, bytes, palette.alpha(colors, payload, Nil{}))
     case _ _: Fail{BadHeader{}}
 
-def more.trns(valid: Bool, color: U32, wide: Bool, scale: U32, cfg: Config, colors: +List<U32>, compressed: +List<U32>, payload: +List<U32>, bytes: +List<U32>) -> Result<&2, &2, Error, Parsing>:
+def more.trns(valid: Bool, color: U32, wide: Bool, scale: U32, cfg: Config, colors: +List<U32>, compressed: +List<U32>, raw: Bool, payload: +List<U32>, bytes: +List<U32>) -> Result<&2, &2, Error, Parsing>:
   match valid:
     case False{}: Fail{BadHeader{}}
-    case True{}: more.transparency(color, wide, scale, cfg, colors, compressed, payload, bytes)
+    case True{}: more.transparency(color, wide, scale, cfg, colors, compressed, raw, payload, bytes)
 
 def complete(valid: Bool, parts: Parts) -> Result<&2, &2, Error, Parsing>:
   match valid:
     case False{}: Fail{BadHeader{}}
     case True{}: Done{Complete{parts}}
 
-def dispatch.kind(+kind: U32, +size: U32, cfg: Config, colors: +List<U32>, key: Maybe<&2, Key>, compressed: +List<U32>, +seen: Bool, payload: +List<U32>, bytes: +List<U32>, color: U32, wide: Bool, scale: U32, indexed: Bool, has_palette: Bool) -> Result<&2, &2, Error, Parsing>:
+def dispatch.kind(+kind: U32, +size: U32, cfg: Config, colors: +List<U32>, key: Maybe<&2, Key>, compressed: +List<U32>, +seen: Bool, raw: Bool, payload: +List<U32>, bytes: +List<U32>, color: U32, wide: Bool, scale: U32, indexed: Bool, has_palette: Bool) -> Result<&2, &2, Error, Parsing>:
   match kind:
     case 1229472850: Fail{BadHeader{}}
-    case 1347179589: more.plte(((size > 0) && (size <= 768) : U32) && U32.is_eq((size % 3 : U32), 0) && Bool.not(seen), cfg, key, compressed, seen, payload, bytes)
-    case 1951551059: more.trns(Bool.not(seen) && (Bool.not(indexed) || has_palette), color, wide, scale, cfg, colors, compressed, payload, bytes)
-    case 1229209940: more.valid(Bool.not(indexed) || has_palette, bytes, Parts{Some{cfg}, colors, key, reverse_into(payload, compressed), True{}})
-    case 1229278788: complete(U32.is_eq(size, 0) && seen, Parts{Some{cfg}, colors, key, compressed, seen})
-    case _: more.valid(((kind .&. 536870912) > 0 : U32), bytes, Parts{Some{cfg}, colors, key, compressed, seen})
+    case 1347179589: more.plte(((size > 0) && (size <= 768) : U32) && U32.is_eq((size % 3 : U32), 0) && Bool.not(seen), cfg, key, compressed, seen, raw, payload, bytes)
+    case 1951551059: more.trns(Bool.not(seen) && (Bool.not(indexed) || has_palette), color, wide, scale, cfg, colors, compressed, raw, payload, bytes)
+    case 1229209940: more.valid(Bool.not(indexed) || has_palette, bytes, Parts{Some{cfg}, colors, key, reverse_into(payload, compressed), True{}, raw})
+    case 1229278788: complete(U32.is_eq(size, 0) && seen, Parts{Some{cfg}, colors, key, compressed, seen, raw})
+    case _: more.valid(((kind .&. 536870912) > 0 : U32), bytes, Parts{Some{cfg}, colors, key, compressed, seen, raw})
 
-def dispatch(+cfg: Config, kind: U32, size: U32, +colors: +List<U32>, key: Maybe<&2, Key>, compressed: +List<U32>, seen: Bool, payload: +List<U32>, bytes: +List<U32>) -> Result<&2, &2, Error, Parsing>:
+def dispatch(+cfg: Config, kind: U32, size: U32, +colors: +List<U32>, key: Maybe<&2, Key>, compressed: +List<U32>, seen: Bool, raw: Bool, payload: +List<U32>, bytes: +List<U32>) -> Result<&2, &2, Error, Parsing>:
   Config{_, _, +color, _, +bits, _} = cfg
-  dispatch.kind(kind, size, cfg, colors, key, compressed, seen, payload, bytes, color, U32.is_eq(bits, 16), (255 / ((1 << U32.to_nat(bits)) - 1) : U32), U32.is_eq(color, 3), Bool.not(List.is_empty(&2, U32, colors)))
+  dispatch.kind(kind, size, cfg, colors, key, compressed, seen, raw, payload, bytes, color, U32.is_eq(bits, 16), (255 / ((1 << U32.to_nat(bits)) - 1) : U32), U32.is_eq(color, 3), Bool.not(List.is_empty(&2, U32, colors)))
 
 def parsed(parts: Parts, result: Maybe<&2, Chunk>) -> Result<&2, &2, Error, Parsing>:
   match parts result:
     case _ None{}: Fail{BadHeader{}}
-    case Parts{None{}, _, _, _, _} Some{Chunk{1229472850, 13, payload, rest}}: more.config(rest, config(Q.word(payload)))
-    case Parts{None{}, _, _, _, _} _: Fail{BadHeader{}}
-    case Parts{Some{cfg}, colors, key, compressed, seen} Some{Chunk{kind, size, payload, rest}}: dispatch(cfg, kind, size, colors, key, compressed, seen, payload, rest)
+    case Parts{cfg, colors, key, compressed, seen, _} Some{Chunk{1130840649, _, _, rest}}: Done{More{rest, Parts{cfg, colors, key, compressed, seen, True{}}}}
+    case Parts{None{}, _, _, _, _, raw} Some{Chunk{1229472850, 13, payload, rest}}: more.config(rest, raw, config(Q.word(payload)))
+    case Parts{None{}, _, _, _, _, _} _: Fail{BadHeader{}}
+    case Parts{Some{cfg}, colors, key, compressed, seen, raw} Some{Chunk{kind, size, payload, rest}}: dispatch(cfg, kind, size, colors, key, compressed, seen, raw, payload, rest)
 
 def parse(n: Nat, state: Result<&2, &2, Error, Parsing>) -> Result<&2, &2, Error, Parts>:
   match n state:
@@ -188,7 +189,7 @@ def parse(n: Nat, state: Result<&2, &2, Error, Parsing>) -> Result<&2, &2, Error
 def signature(size: U32, bytes: +List<U32>) -> Result<&2, &2, Error, Parts>:
   match bytes:
     case Con{137, Con{80, Con{78, Con{71, Con{13, Con{10, Con{26, Con{10, rest}}}}}}}}:
-      parse(U32.to_nat(size), Done{More{rest, Parts{None{}, Nil{}, None{}, Nil{}, False{}}}})
+      parse(U32.to_nat(size), Done{More{rest, Parts{None{}, Nil{}, None{}, Nil{}, False{}, False{}}}})
     case _: Fail{BadHeader{}}
 
 def difference(+a: U32, +b: U32) -> U32:
@@ -478,17 +479,22 @@ def zlib(bytes: +List<U32>, limit: U32) -> Maybe<List<U32>>:
       zlib.valid(U32.is_eq((cmf .&. 15 : U32), 8) && U32.is_eq(((cmf * 256 + flag) % 31 : U32), 0) && U32.is_eq((flag .&. 32 : U32), 0), rest, limit)
     case _: None{}
 
-def decode.bounded(valid: Bool, width: U32, height: U32, color: U32, channels: U32, bits: U32, interlaced: Bool, palette: +List<U32>, key: Maybe<&2, Key>, compressed: +List<U32>, limit: U32) -> Result<&1, &1, Error, Image>:
+def inflate(raw: Bool, bytes: +List<U32>, limit: U32) -> Maybe<List<U32>>:
+  match raw:
+    case False{}: zlib(bytes, limit)
+    case True{}: Z.decompress(False{}, bytes, limit)
+
+def decode.bounded(valid: Bool, width: U32, height: U32, color: U32, channels: U32, bits: U32, interlaced: Bool, palette: +List<U32>, key: Maybe<&2, Key>, compressed: +List<U32>, limit: U32, raw: Bool) -> Result<&1, &1, Error, Image>:
   match valid:
     case False{}: Fail{BadSize{}}
-    case True{}: rendered(interlaced, width, height, color, channels, bits, palette, key, zlib(List.reverse(&2, U32, compressed), limit))
+    case True{}: rendered(interlaced, width, height, color, channels, bits, palette, key, inflate(raw, List.reverse(&2, U32, compressed), limit))
 
 def decode.parts(result: Result<&2, &2, Error, Parts>) -> Result<&1, &1, Error, Image>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{Parts{Some{Config{+width, +height, color, +channels, +bits, +interlaced}}, palette, key, compressed, _}}:
+    case Done{Parts{Some{Config{+width, +height, color, +channels, +bits, +interlaced}}, palette, key, compressed, _, raw}}:
       +limit = expected(interlaced, width, height, channels, bits)
-      decode.bounded((limit <= 67108864 : U32), width, height, color, channels, bits, interlaced, palette, key, compressed, limit)
+      decode.bounded((limit <= 67108864 : U32), width, height, color, channels, bits, interlaced, palette, key, compressed, limit, raw)
     case _: Fail{BadHeader{}}
 
 def input.error(valid_byte: Bool, valid_size: Bool) -> Maybe<&2, Error>:

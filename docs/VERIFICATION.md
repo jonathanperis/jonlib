@@ -1358,3 +1358,28 @@ API completion counts. CgBI, PNG export, original-format metadata and broader
 recovery/resource/platform evidence remain gaps.
 
 Regression scan: 67 callers checked, 38 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `6a803d4`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36275515537)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36275515532)
+completed successfully, including all supported Adam7 color/depth combinations.
+
+## Native-default CgBI PNG framing
+
+CgBI markers now select raw DEFLATE while retaining the pinned native defaults:
+iPhone channel conversion and unpremultiplication are both disabled. Stored
+channel/alpha values therefore follow ordinary sample normalization with no
+extra swap/division. All 193 native images / 31,677 pixels and 39 typed-error
+controls pass CPU, JavaScript and forced Metal. New cases cover distinct RGB/A
+channels, premultiplied-looking and hidden zero-alpha values, ignored marker
+payloads, repeated/late markers, split IDATs, empty stored blocks and representative
+packed/16-bit/Adam7 input. See [evidence/png-cgbi.json](evidence/png-cgbi.json).
+
+Every previous PNG input and error expectation is retained. Framing is carried
+independently through header, palette and transparency parsing; mismatched framing
+and a CgBI stream without IHDR are rejected. I90 and A4/A5 hold for the native
+default profile. Full 261-scenario / 40,101-word conformance, nine harness tests,
+project checks and four pinned laws pass. Nondefault external stb flags, PNG
+export, original-format metadata and broader recovery/resource/platform coverage
+remain gaps. API completion counts are unchanged.
+
+Regression scan: 61 callers checked, 41 assertions checked, 0 flagged/fixed.
