@@ -1,0 +1,10 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {"jonlib.bend": "0f92d4b98ffa1f8683641fb66725ab846092e6dbed7a1734a952f90e617b0c92"},
+  "reference_run": "https://github.com/jonathanperis/jonlib/actions/runs/36216535025",
+  "ubuntu_reference_jsonl_sha256": "5faff7da3e9b85f84abcd2323b6c0a3f09f326f310535a0b1fcf790cd2ec3b28",
+  "regression": {"scenario": "vector2-clamp-components", "cells": [4, 6], "ubuntu_bits": [2147483648, 0], "macos_bits": [0, 2147483648]},
+  "accurate_profile": {"passed": true, "scenarios": 149, "output_words_per_lane": 32515, "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"]},
+  "gnu_clamp_retained_oracle": {"passed": true, "words_per_lane": 8, "lanes": ["cpu", "javascript", "metal"]},
+  "limits": ["Finite, non-subnormal profile", "Reference compiler/libm-specific signed-zero behavior", "Hosted results belong to their exact published revisions"]
+}

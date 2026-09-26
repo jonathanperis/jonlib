@@ -61847,9 +61847,9 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "Vector2.clamp",
+      "jonlib": "Vector2.clamp_for / Vector2.clamp",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component clamp, including reversed bounds and signed-zero selection.",
+      "scope": "Finite F32 component clamp, including reversed bounds and explicit AccurateGradient/GnuGradient signed-zero selection.",
       "gaps": [
         "Exceptional/subnormal and full platform/performance coverage"
       ],

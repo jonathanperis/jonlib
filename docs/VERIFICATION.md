@@ -326,3 +326,20 @@ oversized output retain the original owner. The real C oracle checks all 4096
 POT axis inputs before the integer size mapping is used by the fixture tracker.
 
 Regression scan: 63 callers checked, 26 assertions checked, 0 flagged/fixed.
+
+### Signed-zero follow-up
+
+Commit `78f4c6f` passed hosted macOS but failed Ubuntu on two signed-zero cells
+in `Vector2Clamp`. `Vector2.clamp_for` now selects the explicit numerical profile;
+the convenience wrapper retains the accurate profile. No expected result or
+tolerance changed. The full 149-scenario local CPU/JS/Metal gate passes, and
+the GNU clamp profile matches all eight retained Ubuntu oracle words on CPU,
+JavaScript and forced Metal. See [evidence/clamp-profiles.json](evidence/clamp-profiles.json).
+
+Contract review: I38/I39 match the implementation at `jonlib.bend`'s clamp
+entry points and the shared fixture generator. A26 and V2 hold for the exercised
+profiles; exceptional/subnormal inputs and untested platforms remain gaps.
+The six helper/wrapper/generator calls and four exact vector fixture assertions
+were inspected, including the convenience API's profile selection.
+
+Regression scan: 6 callers checked, 4 assertions checked, 0 flagged/fixed.

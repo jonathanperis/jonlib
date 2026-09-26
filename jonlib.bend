@@ -155,19 +155,23 @@ def Vector2.equals(left: Vector2, right: Vector2) -> Bool:
   Vector2{u, v} = right
   Math.float_equals(x, u) && Math.float_equals(y, v)
 
-def Vector2.clamp.minimum(+left: F32, +right: F32) -> F32:
+def Vector2.clamp.minimum(gnu: Bool, +left: F32, +right: F32) -> F32:
   zero = Bool.pick(F32, U32.is_ne(((F32.bits(left) .|. F32.bits(right)) .&. 2147483648 : U32), 0), F32.neg(0.0), 0.0)
-  Bool.pick(F32, F32.is_eq(left, 0.0) && F32.is_eq(right, 0.0), zero, Bool.pick(F32, (left < right : F32), left, right))
+  Bool.pick(F32, F32.is_eq(left, 0.0) && F32.is_eq(right, 0.0), Bool.pick(F32, gnu, left, zero), Bool.pick(F32, (left < right : F32), left, right))
 
-def Vector2.clamp.maximum(+left: F32, +right: F32) -> F32:
+def Vector2.clamp.maximum(gnu: Bool, +left: F32, +right: F32) -> F32:
   zero = Bool.pick(F32, U32.is_ne(((F32.bits(left) .&. F32.bits(right)) .&. 2147483648 : U32), 0), F32.neg(0.0), 0.0)
-  Bool.pick(F32, F32.is_eq(left, 0.0) && F32.is_eq(right, 0.0), zero, Bool.pick(F32, (left > right : F32), left, right))
+  Bool.pick(F32, F32.is_eq(left, 0.0) && F32.is_eq(right, 0.0), Bool.pick(F32, gnu, left, zero), Bool.pick(F32, (left > right : F32), left, right))
 
-def Vector2.clamp(vector: Vector2, lower: Vector2, upper: Vector2) -> Vector2:
+def Vector2.clamp_for(reference: Gradient.Reference, vector: Vector2, lower: Vector2, upper: Vector2) -> Vector2:
   Vector2{x, y} = vector
   Vector2{lx, ly} = lower
   Vector2{ux, uy} = upper
-  Vector2{Vector2.clamp.minimum(ux, Vector2.clamp.maximum(lx, x)), Vector2.clamp.minimum(uy, Vector2.clamp.maximum(ly, y))}
+  +gnu = Gradient.gnu(reference)
+  Vector2{Vector2.clamp.minimum(gnu, ux, Vector2.clamp.maximum(gnu, lx, x)), Vector2.clamp.minimum(gnu, uy, Vector2.clamp.maximum(gnu, ly, y))}
+
+def Vector2.clamp(vector: Vector2, lower: Vector2, upper: Vector2) -> Vector2:
+  Vector2.clamp_for(AccurateGradient{}, vector, lower, upper)
 
 def Vector2.clamp.magnitude(nonzero: Bool, +x: F32, +y: F32, square: F32, +lower: F32, +upper: F32) -> Vector2:
   match nonzero:

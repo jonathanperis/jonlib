@@ -32,7 +32,11 @@ it multiplies both components by the reciprocal length in reference operation or
 target within a nonnegative step, and otherwise follows the reference direction
 formula. Negative steps move away; they do not trigger the positive-distance snap.
 
-`clamp` operates component-wise; `clamp_value` clamps magnitude and preserves
+`clamp` operates component-wise with the accurate reference profile;
+`clamp_for(reference, vector, lower, upper)` selects the declared profile's
+signed-zero behavior. The tested GNU reference retains the first operand on
+zero ties; the accurate profile uses negative zero for minima and positive zero
+for maxima. `clamp_value` clamps magnitude and preserves
 zero vectors. Reversed magnitude bounds retain raylib's lower-before-upper
 branch order. `refract(vector, normal, ratio)` returns positive zero components
 for total internal reflection and otherwise applies the original formula.

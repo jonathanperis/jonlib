@@ -689,8 +689,8 @@ def bend_source(cases, gpu=False):
             args = [previous]
             if kind == 'vector_value':
                 _, signature, result = VECTOR2_APIS[op['function']]
-                function_name = 'rotate_for' if op['function']=='rotate' else op['function']
-                profile = f'J.{gradient_reference()}{{}}, ' if op['function']=='rotate' else ''
+                function_name = op['function']+'_for' if op['function'] in ('rotate','clamp') else op['function']
+                profile = f'J.{gradient_reference()}{{}}, ' if op['function'] in ('rotate','clamp') else ''
                 expression = f'J.Vector2.{function_name}({profile}{vector_arguments(signature,op["args"],bend=True)})'
                 function = 'write_vector' if result=='vector' else 'J.Surface.draw_pixel'
                 value = expression if result=='vector' else f'Bool.to_u32({expression})' if result=='bool' else f'F32.bits({expression})'
