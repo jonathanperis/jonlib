@@ -247,10 +247,10 @@
   "LoadImageFromMemory": {
     "jonlib": "Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png",
     "status": "profile-covered",
-    "scope": "Owned RGBA8 decoding for QOI, bounded BMP, non-paletted TGA, binary 8-bit PNM and bounded non-interlaced PNG at supported 1/2/4/8/16-bit color combinations. PNG preserves byte filtering, full-width tRNS comparisons before U16 narrowing, palette alpha, split IDAT and native checksum behavior.",
+    "scope": "Owned RGBA8 decoding for QOI, bounded BMP, non-paletted TGA, binary 8-bit PNM and bounded PNG at supported 1/2/4/8/16-bit color combinations, including Adam7. PNG preserves pass-local filtering, full-width tRNS comparisons, palette alpha, split IDAT and native checksum behavior.",
     "gaps": [
       "Other codecs and remaining BMP/TGA/PNM variants",
-      "PNG Adam7/CgBI and excess-inflated-data recovery",
+      "PNG CgBI and excess-inflated-data recovery",
       "Original pixel-format metadata and generic format dispatch",
       "Other permissive malformed-stream recovery and complete targets/integration/performance"
     ],

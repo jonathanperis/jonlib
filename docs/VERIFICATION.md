@@ -1333,3 +1333,28 @@ updated to point to the implemented decoder. Adam7/CgBI, PNG export, original
 format metadata and broader recovery/resource/platform coverage remain gaps.
 
 Regression scan: 64 callers checked, 34 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `a97b3dd`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36273595808)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36273595825)
+completed successfully, including full-width PNG transparency and narrowing.
+
+## PNG Adam7 reconstruction
+
+PNG decoding now supports Adam7 across every declared color/depth combination.
+All 175 native images / 31,593 pixels and 36 typed-error controls pass CPU,
+JavaScript and forced Metal. Tests cross 1×1, thin, odd and multi-pass geometries,
+plus 4096-axis boundaries, palette/transparency and packed/16-bit samples. Empty
+passes consume no data; each nonempty pass resets filtering and scatters its
+normalized pixels through the pinned origin/stride tuples. Later-pass filter
+errors, truncated final passes, excess data and filtered-capacity limits are
+rejected. See [evidence/png-adam7.json](evidence/png-adam7.json).
+
+All prior valid non-interlaced inputs are retained. The former Adam7 rejection
+bytes are now a native-verified valid-image case; reserved interlace method 2
+continues the invalid-header control. I89 and A4/A5 hold for the exercised profile.
+Full 261-scenario / 40,101-word conformance, nine harness tests, project checks and
+four pinned laws pass. Existing loader coverage expands without increasing full
+API completion counts. CgBI, PNG export, original-format metadata and broader
+recovery/resource/platform evidence remain gaps.
+
+Regression scan: 67 callers checked, 38 assertions checked, 0 flagged/fixed.

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Native PNG packed/8/16-bit color/filter/transparency fixtures for the bitmap gate."""
+"""Native PNG depth/filter/transparency/Adam7 fixtures for the bitmap gate."""
 import struct
 import zlib
+import random
 
 from bmp_probe import main
 
 
 SIGNATURE=b'\x89PNG\r\n\x1a\n'
 CHANNELS={0:1,2:3,3:1,4:2,6:4}
+PASSES=((0,0,8,8),(4,0,8,8),(0,4,4,8),(2,0,4,4),(0,2,2,4),(1,0,2,2),(0,1,1,2))
 
 
 def chunk(kind,data):
@@ -44,13 +46,27 @@ def filtered(width,height,color,raw,filters,depth=8):
     return bytes(output)
 
 
-def png(width,height,color,raw,filters=(0,),*,depth=8,palette=None,transparency=None,stream=None,extra=(),split=False):
-    header=struct.pack('>IIBBBBB',width,height,depth,color,0,0,0)
+def adam_filtered(width,height,color,raw,filters,depth):
+    size=CHANNELS[color]*(2 if depth==16 else 1)
+    output=bytearray()
+    for i,(x0,y0,dx,dy) in enumerate(PASSES):
+        xs=range(x0,width,dx);ys=range(y0,height,dy)
+        if not xs or not ys:continue
+        samples=b''.join(raw[(y*width+x)*size:(y*width+x+1)*size] for y in ys for x in xs)
+        modes=filters[i%len(filters):]+filters[:i%len(filters)]
+        output.extend(filtered(len(xs),len(ys),color,samples,modes,depth))
+    return bytes(output)
+
+
+def png(width,height,color,raw,filters=(0,),*,depth=8,interlaced=False,palette=None,transparency=None,stream=None,extra=(),split=False):
+    header=struct.pack('>IIBBBBB',width,height,depth,color,0,0,int(interlaced))
     data=SIGNATURE+chunk(b'IHDR',header)
     if palette is not None:data+=chunk(b'PLTE',palette)
     if transparency is not None:data+=chunk(b'tRNS',transparency)
     for kind,body in extra:data+=chunk(kind,body)
-    stream=zlib.compress(filtered(width,height,color,raw,filters,depth)) if stream is None else stream
+    if stream is None:
+        raster=adam_filtered(width,height,color,raw,filters,depth) if interlaced else filtered(width,height,color,raw,filters,depth)
+        stream=zlib.compress(raster)
     if split:
         data+=chunk(b'IDAT',stream[:1])+chunk(b'IDAT',b'')+chunk(b'tEXt',b'between\x00chunks')+chunk(b'IDAT',stream[1:4])+chunk(b'IDAT',stream[4:])
     else:data+=chunk(b'IDAT',stream)
@@ -118,6 +134,28 @@ def fixtures():
             inputs.append(dict(id=f'wide16-opaque-{color}',bytes=list(png(5,5,color,raw,depth=16))))
     raw=b''.join(struct.pack('>H',(i*257+255)&65535) for i in range(4096))
     inputs.append(dict(id='wide16-tall',bytes=list(png(1,4096,0,raw,(4,3,2,1,0),depth=16))))
+    rng=random.Random(0xada7)
+    for color,depths in ((0,(1,2,4,8,16)),(2,(8,16)),(3,(1,2,4,8)),(4,(8,16)),(6,(8,16))):
+        for depth in depths:
+            for width,height in ((1,1),(1,9),(9,1),(9,9),(17,13)):
+                components=CHANNELS[color];maximum=(1<<depth)-1;options={}
+                samples=[rng.randrange(maximum+1) for _ in range(width*height*components)]
+                if color==0:
+                    samples[0]=samples[-1]=1;options['transparency']=b'\0\1'
+                elif color==2:
+                    samples[:3]=samples[-3:]=[1,2,3];options['transparency']=struct.pack('>HHH',1,2,3)
+                elif color==3:
+                    count=min(maximum+1,16)
+                    samples=[value%count for value in samples];samples[0]=0;samples[-1]=1
+                    options=dict(palette=bytes(rng.randrange(256) for _ in range(count*3)),transparency=b'\0\x7f')
+                else:
+                    samples[components-1]=0;samples[-1]=maximum
+                raw=struct.pack('>'+'H'*len(samples),*samples) if depth==16 else bytes(samples)
+                inputs.append(dict(id=f'adam7-{color}-{depth}-{width}-{height}',bytes=list(png(width,height,color,raw,(4,3,2,1,0),depth=depth,interlaced=True,**options))))
+    inputs.append(dict(id='adam7-tall',bytes=list(png(1,4096,0,bytes(i%2 for i in range(4096)),(4,3,2,1,0),depth=1,interlaced=True))))
+    raw=b''.join(struct.pack('>H',(i*257+255)&65535) for i in range(4096))
+    inputs.append(dict(id='adam7-wide16',bytes=list(png(4096,1,0,raw,(4,3,2,1,0),depth=16,interlaced=True))))
+    inputs.append(dict(id='adam7-former-control',bytes=list(png(1,1,6,b'\1\2\3\4',interlaced=True))))
     base=png(1,1,6,bytes([1,2,3,4]))
     gray=png(1,1,0,b'\1')
     malformed=[dict(id='empty',bytes=[],error=0),dict(id='bad-byte',bytes=[256],error=1),
@@ -126,9 +164,10 @@ def fixtures():
         ('zero-width',0,1,8,6,0,0,0,2),('wide-size',4097,1,8,6,0,0,0,2),
         ('filtered-limit',4096,4096,8,6,0,0,0,2),('depth12',1,1,12,6,0,0,0,0),
         ('bad-color',1,1,8,5,0,0,0,0),('compression',1,1,8,6,1,0,0,0),
-        ('filter-method',1,1,8,6,0,1,0,0),('adam7',1,1,8,6,0,0,1,0),
+        ('filter-method',1,1,8,6,0,1,0,0),('interlace2',1,1,8,6,0,0,2,0),
         ('depth3',1,1,3,0,0,0,0,0),('packed-rgb',1,1,4,2,0,0,0,0),
-        ('wide16-palette',1,1,16,3,0,0,0,0),('wide16-short-raster',1,1,16,6,0,0,0,4)]:
+        ('wide16-palette',1,1,16,3,0,0,0,0),('wide16-short-raster',1,1,16,6,0,0,0,4),
+        ('adam7-filtered-limit',4096,4096,8,6,0,0,1,2)]:
         header=struct.pack('>IIBBBBB',width,height,depth,color,method,filter_method,interlace)
         data=SIGNATURE+chunk(b'IHDR',header)+base[33:]
         malformed.append(dict(id=name,bytes=list(data),error=error))
@@ -150,6 +189,10 @@ def fixtures():
         malformed.append(dict(id=name,bytes=list(png(1,1,6,b'\1\2\3\4',stream=stream)),error=4))
     malformed += [dict(id='packed-short-row',bytes=list(png(9,1,0,bytes(9),depth=1,stream=zlib.compress(b'\0\x80'))),error=4),
                   dict(id='packed-palette-index',bytes=list(png(1,1,3,b'\x0f',depth=4,palette=palette)),error=4)]
+    raw=bytes(i%2 for i in range(81));raster=adam_filtered(9,9,0,raw,(4,3,2,1,0),1)
+    bad_filter=bytearray(raster);bad_filter[4]=5  # The 9x9 1-bit first pass has four filtered bytes.
+    for name,payload in [('short-last-pass',raster[:-1]),('extra-pass-byte',raster+b'\0'),('later-filter',bad_filter)]:
+        malformed.append(dict(id=f'adam7-{name}',bytes=list(png(9,9,0,raw,depth=1,interlaced=True,stream=zlib.compress(payload))),error=4))
     return inputs,malformed,[]
 
 

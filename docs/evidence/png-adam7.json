@@ -1,0 +1,18 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {
+    "jonlib.bend": "2c66820cdac577e6ff051603ee752b48ffa8d47d212f2362d9776798b74f2ce2",
+    "src/png.bend": "21c106219bac55330481125b201e99fffcfd2febf6a3c7f25c458b3f95cc2607"
+  },
+  "inputs_sha256": "ec700e899d36146e819270480c3a52ea3deba680d88b72d683dc109b003a7c88",
+  "reference_sha256": "0312c9277f8512e0edb2f7b90a907b9b2f34fbfe4b48b663f7853f5888ee7389",
+  "decode_cases": 175,
+  "decoded_pixels": 31593,
+  "typed_error_cases": 36,
+  "existing_valid_inputs_retained": true,
+  "former_interlace_rejection_is_native_verified": true,
+  "passed": true,
+  "lanes": ["cpu","javascript","metal"],
+  "full_corpus": {"scenarios":261,"output_words_per_lane":40101,"passed":true,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "limits": ["CgBI and PNG export", "Original-format metadata, broader malformed recovery and size domains", "Complete integration/target/resource/performance coverage"]
+}
