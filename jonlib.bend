@@ -29,6 +29,9 @@ type Matrix is Data:
     m2: F32, m6: F32, m10: F32, m14: F32,
     m3: F32, m7: F32, m11: F32, m15: F32}
 
+type Matrix.Decomposition is Data:
+  Decomposed{translation: Vector3, rotation: Vector4, scale: Vector3}
+
 type Rectangle is Data:
   Rectangle{x: F32, y: F32, width: F32, height: F32}
 
@@ -940,6 +943,120 @@ def Matrix.compose(translation: Vector3, +rotation: Vector4, scale: Vector3) -> 
   up = Vector3.rotate_by_quaternion(Vector3.scale(Vector3{0.0, 1.0, 0.0}, y), rotation)
   forward = Vector3.rotate_by_quaternion(Vector3.scale(Vector3{0.0, 0.0, 1.0}, z), rotation)
   Matrix.composed(translation, right, up, forward)
+
+def Matrix.decomposition.maximum(previous: F32, vector: Vector3) -> F32:
+  Vector3{x, y, z} = vector
+  F32.max(F32.max(F32.max(previous, F32.abs(x)), F32.abs(y)), F32.abs(z))
+
+def Matrix.decomposition.rows(first: Vector3, second: Vector3, third: Vector3) -> Matrix:
+  Vector3{a, b, c} = first
+  Vector3{d, e, f} = second
+  Vector3{g, h, i} = third
+  Matrix{a, b, c, 0.0, d, e, f, 0.0, g, h, i, 0.0, 0.0, 0.0, 0.0, 1.0}
+
+def Matrix.decomposition.finish(translation: Vector3, +x: Vector3, +y: Vector3, +z: Vector3, +scale: Vector3, stabilizer: F32) -> Matrix.Decomposition:
+  +reflected = (Vector3.dot_product(x, Vector3.cross_product(y, z)) < 0.0 : F32)
+  rx = Bool.pick(Vector3, reflected, Vector3.negate(x), x)
+  ry = Bool.pick(Vector3, reflected, Vector3.negate(y), y)
+  rz = Bool.pick(Vector3, reflected, Vector3.negate(z), z)
+  signed_scale = Bool.pick(Vector3, reflected, Vector3.negate(scale), scale)
+  Decomposed{translation, Quaternion.from_matrix(Matrix.decomposition.rows(rx, ry, rz)), Vector3.scale(signed_scale, stabilizer)}
+
+def Matrix.decompose(matrix: Matrix) -> Matrix.Decomposition:
+  Matrix{m0, m4, m8, tx, m1, m5, m9, ty, m2, m6, m10, tz, _, _, _, _} = matrix
+  +first = {Vector3{m0, m4, m8} : Vector3}
+  +second = {Vector3{m1, m5, m9} : Vector3}
+  +third = {Vector3{m2, m6, m10} : Vector3}
+  +stabilizer = Matrix.decomposition.maximum(Matrix.decomposition.maximum(Matrix.decomposition.maximum(0.000000001, first), second), third)
+  +inverse = (1.0 / stabilizer : F32)
+  +x0 = Vector3.scale(first, inverse)
+  +y0 = Vector3.scale(second, inverse)
+  +z0 = Vector3.scale(third, inverse)
+  +sx = Vector3.length(x0)
+  +x = Vector3.normalized((sx > 0.000000001 : F32), x0, sx)
+  +y1 = Vector3.subtract(y0, Vector3.scale(x, Vector3.dot_product(x, y0)))
+  +sy = Vector3.length(y1)
+  +y = Vector3.normalized((sy > 0.000000001 : F32), y1, sy)
+  +z1 = Vector3.subtract(z0, Vector3.scale(x, Vector3.dot_product(x, z0)))
+  +z2 = Vector3.subtract(z1, Vector3.scale(y, Vector3.dot_product(y, z1)))
+  +sz = Vector3.length(z2)
+  z = Vector3.normalized((sz > 0.000000001 : F32), z2, sz)
+  Matrix.decomposition.finish(Vector3{tx, ty, tz}, x, y, z, Vector3{sx, sy, sz}, stabilizer)
+
+def Quaternion.vectors.result(cross: Vector3, +dot: F32) -> Vector4:
+  Vector3{+x, +y, +z} = cross
+  w = (F32.sqrt((x * x + y * y + z * z + dot * dot : F32)) + dot : F32)
+  Quaternion.normalize(Vector4{x, y, z, w})
+
+def Quaternion.from_vector3_to_vector3(+first: Vector3, +second: Vector3) -> Vector4:
+  Quaternion.vectors.result(Vector3.cross_product(first, second), Vector3.dot_product(first, second))
+
+def Quaternion.axis.values(axis: Vector3, values: F32 & F32) -> Vector4:
+  Vector3{x, y, z} = axis
+  (cosine, +sine) = values
+  Quaternion.normalize(Vector4{(x * sine : F32), (y * sine : F32), (z * sine : F32), cosine})
+
+def Quaternion.axis.checked(nonzero: Bool, reference: Gradient.Reference, axis: Vector3, length: F32, angle: F32) -> Vector4:
+  match nonzero:
+    case False{}: Quaternion.identity()
+    case True{}:
+      normalized = Vector3.scale(axis, (1.0 / length : F32))
+      Quaternion.axis.values(normalized, Trig.sincos_for(Gradient.gnu(reference), (angle * 0.5 : F32)))
+
+def Quaternion.from_axis_angle_for(reference: Gradient.Reference, +axis: Vector3, angle: F32) -> Vector4:
+  +length = Vector3.length(axis)
+  Quaternion.axis.checked(F32.is_ne(length, 0.0), reference, axis, length, angle)
+
+def Quaternion.from_axis_angle(axis: Vector3, angle: F32) -> Vector4:
+  Quaternion.from_axis_angle_for(AccurateGradient{}, axis, angle)
+
+def Quaternion.euler.values(pitch: F32 & F32, yaw: F32 & F32, roll: F32 & F32) -> Vector4:
+  (+cx, +sx) = pitch
+  (+cy, +sy) = yaw
+  (+cz, +sz) = roll
+  Vector4{(sx * cy * cz - cx * sy * sz : F32), (cx * sy * cz + sx * cy * sz : F32),
+    (cx * cy * sz - sx * sy * cz : F32), (cx * cy * cz + sx * sy * sz : F32)}
+
+def Quaternion.from_euler_for(reference: Gradient.Reference, pitch: F32, yaw: F32, roll: F32) -> Vector4:
+  +gnu = Gradient.gnu(reference)
+  Quaternion.euler.values(Trig.sincos_for(gnu, (pitch * 0.5 : F32)), Trig.sincos_for(gnu, (yaw * 0.5 : F32)), Trig.sincos_for(gnu, (roll * 0.5 : F32)))
+
+def Quaternion.from_euler(pitch: F32, yaw: F32, roll: F32) -> Vector4:
+  Quaternion.from_euler_for(AccurateGradient{}, pitch, yaw, roll)
+
+def Vector3.axis.rotated(+vector: Vector3, axis: Vector3, values: F32 & F32) -> Vector3:
+  (cosine, sine) = values
+  +spin = Vector3.scale(axis, sine)
+  +first = Vector3.cross_product(spin, vector)
+  second = Vector3.cross_product(spin, first)
+  Vector3.add(Vector3.add(vector, Vector3.scale(first, (cosine * 2.0 : F32))), Vector3.scale(second, 2.0))
+
+def Vector3.rotate_by_axis_angle_for(reference: Gradient.Reference, vector: Vector3, +axis: Vector3, angle: F32) -> Vector3:
+  +length = Vector3.length(axis)
+  normalized = Vector3.scale(axis, (1.0 / Bool.pick(F32, F32.is_eq(length, 0.0), 1.0, length) : F32))
+  Vector3.axis.rotated(vector, normalized, Trig.sincos_for(Gradient.gnu(reference), (angle / 2.0 : F32)))
+
+def Vector3.rotate_by_axis_angle(vector: Vector3, axis: Vector3, angle: F32) -> Vector3:
+  Vector3.rotate_by_axis_angle_for(AccurateGradient{}, vector, axis, angle)
+
+def Quaternion.cubic_hermite_spline(first: Vector4, first_tangent: Vector4, second: Vector4, second_tangent: Vector4, +amount: F32) -> Vector4:
+  +square = (amount * amount : F32)
+  +cube = (square * amount : F32)
+  a = Quaternion.scale(first, (2.0 * cube - 3.0 * square + 1.0 : F32))
+  b = Quaternion.scale(first_tangent, (cube - 2.0 * square + amount : F32))
+  c = Quaternion.scale(second, (F32.neg(2.0) * cube + 3.0 * square : F32))
+  d = Quaternion.scale(second_tangent, (cube - square : F32))
+  Quaternion.normalize(Quaternion.add(Quaternion.add(Quaternion.add(a, b), c), d))
+
+def Vector3.unproject.result(value: Vector4) -> Vector3:
+  Vector4{x, y, z, +w} = value
+  Vector3{(x / w : F32), (y / w : F32), (z / w : F32)}
+
+def Vector3.unproject(source: Vector3, projection: Matrix, view: Matrix) -> Vector3:
+  Vector3{x, y, z} = source
+  # Preserve the two transposed Matrix initializers in raymath's inlined path.
+  inverse = Matrix.transpose(Matrix.invert(Matrix.transpose(Matrix.multiply(view, projection))))
+  Vector3.unproject.result(Quaternion.transform(Vector4{x, y, z, 1.0}, inverse))
 
 def Collision.spheres(left: Vector3, radius: F32, right: Vector3, other_radius: F32) -> Bool:
   +sum = (radius + other_radius : F32)

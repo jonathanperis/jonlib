@@ -1,8 +1,8 @@
 # Math profiles
 
 The current math implementation is Bend source in `jonlib.bend`. It begins the
-`raymath.h` work package with six scalar, twenty-nine Vector2, thirty-six Vector3,
-twenty-two Vector4, twenty Matrix and seventeen Quaternion functions.
+`raymath.h` work package with six scalar, twenty-nine Vector2, thirty-eight Vector3,
+twenty-two Vector4, twenty-one Matrix and twenty-one Quaternion functions.
 
 ## Scalar API
 
@@ -68,6 +68,14 @@ radians within one cycle and preserves reference operation order. See
   `ortho_normalize(first, second)`, `transform(vector, matrix)`.
 - Quaternion rotation: `rotate_by_quaternion(vector, quaternion)` uses the
   direct reference formula without normalizing the supplied quaternion.
+- Axis rotation: `rotate_by_axis_angle(vector, axis, angle)` and its `_for`
+  variant retain the reference Euler-Rodrigues two-cross-product order, including
+  zero axes. Angle/profile selection follows the bounded rotation rules below.
+- `unproject(source, projection, view)` retains the two intermediate constructor
+  transpositions in the reference's inlined multiplication/inversion path and
+  divides the transformed XYZ by W. Its profile requires finite supported inverse,
+  homogeneous and result values, with W nonzero. The actual C oracle rejects
+  singular/zero-W controls before comparison.
 - Extrema: `min`/`min_for` and `max`/`max_for`, with the same explicit signed-zero
   reference profiles as their Vector2 counterparts.
 
@@ -164,6 +172,12 @@ the original Matrix; conformance separately checks the actual reference layout.
   applying `Vector3.rotate_by_quaternion`, then inserts translation. Replacing
   this sequence with a differently ordered matrix product can change reference
   rounding, signed zeros and non-unit quaternion behavior.
+- `Matrix.decompose(matrix) -> Matrix.Decomposition` returns
+  `Decomposed{translation: Vector3, rotation: Vector4, scale: Vector3}`. All ten
+  fields correspond to distinct C pointer outputs. The algorithm preserves the
+  reference grouping of matrix rows, max-stabilization, 1e-9 guards, shear removal
+  and all-axis sign changes for reflected bases. Degenerate results are retained:
+  a zero matrix produces zero scale and a quaternion W of 0.5.
 
 ### Rotation constructors
 
@@ -206,6 +220,17 @@ Vector4's positive-zero normalization result.
 It does not choose a common hemisphere: exactly opposite quaternions can collapse
 to zero at the midpoint, as in the reference. `equals` accepts approximate `q`
 or `-q` equivalence using all four components and the reference relative epsilon.
+
+`from_vector3_to_vector3(first, second)` retains the reference cross/dot formula
+and normalization, including zero output for exactly opposite directions.
+`from_axis_angle(axis, angle)` returns identity for a zero axis; other axes use
+the original half-angle construction and quaternion normalization.
+`from_euler(pitch, yaw, roll)` preserves the reference ZYX half-angle formulas.
+Both angle constructors have `_for(reference, ...)` variants; convenience calls
+select `AccurateGradient{}`, with each input angle bounded to absolute value
+≤ 6.283186. `cubic_hermite_spline(first, first_tangent, second, second_tangent,
+amount)` uses the reference four weights and then normalizes the result, retaining
+zero collapse without a replacement orientation.
 
 `Quaternion.from_matrix(matrix)` selects the largest quaternion component using
 strict comparisons in W/X/Y/Z order and applies the reference off-diagonal

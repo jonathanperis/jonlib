@@ -65,6 +65,8 @@ VECTOR3_APIS = {
     'transform':('Vector3Transform','tm','vector'),
     'to_float_v':('Vector3ToFloatV','t','buffer'),
     'rotate_by_quaternion':('Vector3RotateByQuaternion','tq','vector'),
+    'rotate_by_axis_angle':('Vector3RotateByAxisAngle','tts','vector'),
+    'unproject':('Vector3Unproject','tmm','vector'),
 }
 VECTOR4_APIS = {
     'zero':('Vector4Zero','','vector'), 'one':('Vector4One','','vector'),
@@ -89,6 +91,9 @@ QUATERNION_APIS = {
     'nlerp':('QuaternionNlerp','qqs','vector'), 'equals':('QuaternionEquals','qq','bool'),
     'from_matrix':('QuaternionFromMatrix','m','vector'), 'to_matrix':('QuaternionToMatrix','q','matrix'),
     'transform':('QuaternionTransform','qm','vector'),
+    'from_vector3_to_vector3':('QuaternionFromVector3ToVector3','tt','vector'),
+    'from_axis_angle':('QuaternionFromAxisAngle','ts','vector'), 'from_euler':('QuaternionFromEuler','sss','vector'),
+    'cubic_hermite_spline':('QuaternionCubicHermiteSpline','qqqqs','vector'),
 }
 COLOR_VECTOR3_APIS = {'to_hsv':('ColorToHSV','c','vector')}
 COLOR_VECTOR4_APIS = {'normalize':('ColorNormalize','c','vector')}
@@ -105,8 +110,12 @@ MATRIX_APIS = {
     'rotate_zyx':('MatrixRotateZYX','t','matrix'), 'rotate':('MatrixRotate','ts','matrix'),
     'to_float_v':('MatrixToFloatV','m','buffer'),
     'compose':('MatrixCompose','tqt','matrix'),
+    'decompose':('MatrixDecompose','m','decomposition'),
 }
-MATRIX_ROTATIONS = {'rotate_x','rotate_y','rotate_z','rotate_xyz','rotate_zyx','rotate'}
+ROTATION_ANGLES = {('Matrix',name):3 if name in ('rotate_xyz','rotate_zyx') else 1
+                   for name in ('rotate_x','rotate_y','rotate_z','rotate_xyz','rotate_zyx','rotate')}
+ROTATION_ANGLES.update({('Vector2','rotate'):1, ('Vector3','rotate_by_axis_angle'):1,
+                        ('Quaternion','from_axis_angle'):1, ('Quaternion','from_euler'):3})
 MATRIX_FIELDS = tuple(f'm{row+4*column}' for row in range(4) for column in range(4))
 ARGUMENT_SIZES = {'v':2, 't':3, 'q':4, 'c':4, 'm':16, 'b':6, 'r':4, 's':1, 'i':1}
 VECTOR_APIS = {'vector_value':('Vector2',2,VECTOR2_APIS), 'vector3_value':('Vector3',3,VECTOR3_APIS),
@@ -211,7 +220,7 @@ def matrix_inverse_denominator(values):
 def numeric_cells(kind, function):
     _, dimensions, apis = VECTOR_APIS[kind]
     result = apis[function][2]
-    return 16 if result=='matrix' else dimensions*2 if result=='pair' else dimensions if result in ('vector','buffer') else 1
+    return 10 if result=='decomposition' else 16 if result=='matrix' else dimensions*2 if result=='pair' else dimensions if result in ('vector','buffer') else 1
 
 
 def crop_rectangle(width, height, op):
@@ -412,12 +421,9 @@ def cases_from(document):
                     d00,d01,d11 = dot3_f32(v0,v0),dot3_f32(v0,v1),dot3_f32(v1,v1)
                     if rounded_f32(rounded_f32(d00*d11)-rounded_f32(d01*d01)) == 0:
                         raise ValueError(f'{name}: barycentric denominator must remain nonzero in F32')
-                if namespace=='Vector2' and function == 'rotate' and abs(values[2]) > 6.283186:
-                    raise ValueError(f'{name}: vector rotation profile is bounded to one cycle')
-                if namespace=='Matrix' and function in MATRIX_ROTATIONS:
-                    angles = values[-1:] if function=='rotate' else values
-                    if any(abs(value)>6.283186 for value in angles):
-                        raise ValueError(f'{name}: matrix rotation profile is bounded to one cycle')
+                angle_count = ROTATION_ANGLES.get((namespace,function))
+                if angle_count and any(abs(value)>6.283186 for value in values[-angle_count:]):
+                    raise ValueError(f'{name}: rotation profile is bounded to one cycle')
                 if not integer(op.get('x'),0,current_w-numeric_cells(kind,function)) or not integer(op.get('y'),0,current_h-1):
                     raise ValueError(f'{name}: all numeric output components must fit the image')
             if kind == 'collision_value':
@@ -688,7 +694,23 @@ def c_source(cases):
                 namespace, dimensions, apis = VECTOR_APIS[kind]
                 function, signature, result = apis[op['function']]
                 expression = f'{function}({vector_arguments(signature,op["args"])})'
-                if result == 'color':
+                if namespace=='Vector3' and op['function']=='unproject':
+                    point = vector_arguments('t',op['args'][:3])
+                    projection = vector_arguments('m',op['args'][3:19])
+                    view = vector_arguments('m',op['args'][19:])
+                    lines += ['{', f'Matrix domain_inverse=MatrixTranspose(MatrixInvert(MatrixTranspose(MatrixMultiply({view},{projection}))));',
+                              'float16 domain_fields=MatrixToFloatV(domain_inverse);',
+                              'for(int field=0;field<16;field++) if(!isfinite(domain_fields.v[field])) { fprintf(stderr,"invalid unprojection inverse\\n"); return 8; }',
+                              f'Vector3 domain_point={point};',
+                              'Quaternion domain_h=QuaternionTransform((Quaternion){domain_point.x,domain_point.y,domain_point.z,1.0f},domain_inverse);',
+                              'if(!isfinite(domain_h.x) || !isfinite(domain_h.y) || !isfinite(domain_h.z) || !isfinite(domain_h.w) || domain_h.w==0.0f) { fprintf(stderr,"invalid unprojection homogeneous point\\n"); return 8; }', '}']
+                if result == 'decomposition':
+                    lines += ['{', 'Vector3 translation={0}, scale={0}; Quaternion rotation={0};',
+                              f'{function}({vector_arguments(signature,op["args"])}, &translation, &rotation, &scale);']
+                    for index, field in enumerate(('translation.x','translation.y','translation.z','rotation.x','rotation.y','rotation.z','rotation.w','scale.x','scale.y','scale.z')):
+                        lines += [f'ImageDrawPixel(&image, {op["x"]+index}, {op["y"]}, float_bits({field}));']
+                    lines += ['}']
+                elif result == 'color':
                     lines += [f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, {expression});']
                 elif result == 'buffer':
                     lines += ['{', f'float{dimensions} v = {expression};']
@@ -704,6 +726,8 @@ def c_source(cases):
                 elif result in ('vector','matrix'):
                     output_type = f'Vector{dimensions}' if result=='vector' else 'Matrix'
                     lines += ['{', f'{output_type} v = {expression};']
+                    if namespace=='Vector3' and op['function']=='unproject':
+                        lines += ['if(!isfinite(v.x) || !isfinite(v.y) || !isfinite(v.z)) { fprintf(stderr,"invalid unprojection result\\n"); return 8; }']
                     for index, field in enumerate(MATRIX_FIELDS if result=='matrix' else ('x','y','z','w')[:dimensions]):
                         lines += [f'ImageDrawPixel(&image, {op["x"]+index}, {op["y"]}, float_bits(v.{field}));']
                     lines += ['}']
@@ -827,6 +851,11 @@ def bend_source(cases, gpu=False):
         '  J.Vector4{u, v, w, q} = vector',
         '  first = write_vector3(surface, x, y, J.Vector3{u, v, w})',
         '  J.Surface.draw_pixel(first, (x + 3.0 : F32), y, F32.bits(q))',
+        'def write_decomposition(surface: J.Surface, +x: F32, +y: F32, result: J.Matrix.Decomposition) -> J.Surface:',
+        '  J.Decomposed{translation, rotation, scale} = result',
+        '  first = write_vector3(surface, x, y, translation)',
+        '  second = write_vector4(first, (x + 3.0 : F32), y, rotation)',
+        '  write_vector3(second, (x + 7.0 : F32), y, scale)',
         'def write_float_buffer(n: Nat, surface: J.Surface, +x: F32, +y: F32, values: +List<F32>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:',
         '  match n values:',
         '    case 0n Nil{}: Done{surface}',
@@ -961,8 +990,7 @@ def bend_source(cases, gpu=False):
             if kind in VECTOR_APIS:
                 namespace, dimensions, apis = VECTOR_APIS[kind]
                 _, signature, result = apis[op['function']]
-                profiled = (op['function'] in ('clamp','min','max') or kind=='vector_value' and op['function']=='rotate'
-                            or kind=='matrix_value' and op['function'] in MATRIX_ROTATIONS)
+                profiled = op['function'] in ('clamp','min','max') or (namespace,op['function']) in ROTATION_ANGLES
                 function_name = op['function']+'_for' if profiled else op['function']
                 profile = f'J.{gradient_reference()}{{}}, ' if profiled else ''
                 expression = f'J.{namespace}.{function_name}({profile}{vector_arguments(signature,op["args"],bend=True)})'
@@ -970,8 +998,8 @@ def bend_source(cases, gpu=False):
                     previous = f's{j}'
                     lines += [f'    {previous} : J.Surface <- write_float_buffer({dimensions}n, {args[0]}, {f32(op["x"])}, {f32(op["y"])}, {expression})']
                     continue
-                function = {'vector':{2:'write_vector',3:'write_vector3',4:'write_vector4'}.get(dimensions), 'matrix':'write_matrix', 'pair':'write_vector_pair'}.get(result,'J.Surface.draw_pixel')
-                value = expression if result in ('vector','matrix','pair','color') else f'Bool.to_u32({expression})' if result=='bool' else f'F32.bits({expression})'
+                function = {'vector':{2:'write_vector',3:'write_vector3',4:'write_vector4'}.get(dimensions), 'matrix':'write_matrix', 'pair':'write_vector_pair', 'decomposition':'write_decomposition'}.get(result,'J.Surface.draw_pixel')
+                value = expression if result in ('vector','matrix','pair','color','decomposition') else f'Bool.to_u32({expression})' if result=='bool' else f'F32.bits({expression})'
                 previous = f's{j}'
                 lines += [f'    {previous} : J.Surface = {function}({args[0]}, {f32(op["x"])}, {f32(op["y"])}, {value})']
                 continue
@@ -1144,6 +1172,24 @@ def inventory(header):
             for entry in declarations]
 
 
+def verify_unproject_rejections(raylib_source, library):
+    identity = [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]
+    controls = [([0,0,0], [0]*16),
+                ([0,0,1], [1,0,0,0,0,1,0,0,0,0,1,0,0,0,1,1])]
+    for index, (point, projection) in enumerate(controls):
+        case = dict(id=f'unproject-invalid-{index}', width=3, height=1, background=[0,0,0,0],
+                    operations=[dict(op='vector3_value', function='unproject', x=0, y=0, args=point+projection+identity)])
+        cases = cases_from(dict(schema=1, cases=[case]))
+        source = BUILD/f'unproject-invalid-{index}.c'
+        binary = BUILD/f'unproject-invalid-{index}'
+        source.write_text(c_source(cases))
+        run(['clang','-std=c11','-O2','-I'+str(raylib_source/'src'),source,library,'-lm','-o',binary])
+        rejected = subprocess.run([str(binary)],cwd=ROOT,env=ENV,capture_output=True,text=True,timeout=240)
+        if rejected.returncode != 8 or 'invalid unprojection' not in rejected.stderr:
+            raise ValueError(f'{case["id"]}: native invalid-domain control did not fail closed')
+    return len(controls)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--bend-source', type=Path, default=Path.home() / 'Projetos/bendlang/bend')
@@ -1215,6 +1261,9 @@ def main():
     reference_text = run([BUILD / 'reference'])
     (BUILD / 'reference.jsonl').write_text(reference_text)
     reference = parse_output(reference_text, cases)
+    if any(op['op']=='vector3_value' and op['function']=='unproject' for case in cases for op in case['operations']):
+        report['unprojection_rejections'] = verify_unproject_rejections(args.raylib_source, cmake/'raylib/libraylib.a')
+        print('unprojection: singular and zero-W native oracle controls rejected',flush=True)
     exports = [row for row in reference if 'qoi' in row]
     report['qoi_exports'] = dict(scenarios=len(exports), bytes=sum(len(row['qoi']) for row in exports))
     source = BUILD / 'candidate.bend'

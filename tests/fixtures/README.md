@@ -59,6 +59,11 @@ Supported operations:
 - `vector4_value` uses flattened XYZW arguments and checks all four result cells.
 - `quaternion_value` also uses XYZW arguments/results, but calls quaternion
   operations such as the Hamilton product rather than component multiplication.
+- Matrix decomposition checks ten cells (translation XYZ, quaternion XYZW,
+  scale XYZ). Result shapes are independent of input-family component counts.
+- Unprojection uses actual C inverse/homogeneous/result finiteness checks and a
+  nonzero-W gate. The harness also runs singular and zero-W oracle programs that
+  must exit with the expected invalid-domain failure.
 - `color_vector3_value`/`color_vector4_value` accept four integer byte arguments
   and compare returned HSV/normalized float bits. `color_numeric_value` compares
   packed RGBA results from normalized/HSV inputs with validated domains.

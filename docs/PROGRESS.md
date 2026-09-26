@@ -29,7 +29,7 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 |---|---:|---|---:|---:|---:|---|
 | 1 | 0 | `types` — Types, constants and language mappings | 549 | 18 | 0 | — |
 | 2 | 1 | `numerics` — Numeric fidelity and scalar contracts | 14 | 6 | 0 | types |
-| 3 | 1 | `raymath` — Vectors, matrices and quaternions | 221 | 124 | 0 | numerics |
+| 3 | 1 | `raymath` — Vectors, matrices and quaternions | 221 | 131 | 0 | numerics |
 | 4 | 1 | `memory` — Buffers, memory and callback contracts | 12 | 0 | 0 | types |
 | 5 | 1 | `files` — Files, paths, compression and data utilities | 49 | 0 | 0 | memory |
 | 6 | 1 | `random` — Random-number and sequence contracts | 4 | 0 | 0 | numerics, memory |
@@ -63,13 +63,15 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 
 This is a priority queue with visible prerequisites, not a claim that every item is unblocked.
 
-- **`raymath:function:MatrixDecompose`** (not-started, `raymath`): Derive MatrixDecompose semantics from the linked source, add a reference fixture, then implement Matrix.decompose.
-- **`raymath:function:QuaternionFromVector3ToVector3`** (not-started, `raymath`): Derive QuaternionFromVector3ToVector3 semantics from the linked source, add a reference fixture, then implement Quaternion.from_vector3_to_vector3.
-- **`raymath:function:QuaternionFromAxisAngle`** (not-started, `raymath`): Derive QuaternionFromAxisAngle semantics from the linked source, add a reference fixture, then implement Quaternion.from_axis_angle.
-- **`raymath:function:QuaternionFromEuler`** (not-started, `raymath`): Derive QuaternionFromEuler semantics from the linked source, add a reference fixture, then implement Quaternion.from_euler.
-- **`raymath:function:Vector3RotateByAxisAngle`** (not-started, `raymath`): Derive Vector3RotateByAxisAngle semantics from the linked source, add a reference fixture, then implement Vector3.rotate_by_axis_angle.
-- **`raymath:function:QuaternionCubicHermiteSpline`** (not-started, `raymath`): Derive QuaternionCubicHermiteSpline semantics from the linked source, add a reference fixture, then implement Quaternion.cubic_hermite_spline.
-- **`raymath:function:Vector3Unproject`** (not-started, `raymath`): Derive Vector3Unproject semantics from the linked source, add a reference fixture, then implement Vector3.unproject.
+- **`raymath:function:MatrixFrustum`** (not-started, `raymath`): Derive MatrixFrustum semantics from the linked source, add a reference fixture, then implement Matrix.frustum.
+- **`raymath:function:MatrixOrtho`** (not-started, `raymath`): Derive MatrixOrtho semantics from the linked source, add a reference fixture, then implement Matrix.ortho.
+- **`raymath:function:MatrixPerspective`** (not-started, `raymath`): Derive MatrixPerspective semantics from the linked source, add a reference fixture, then implement Matrix.perspective.
+- **`raymath:function:Vector2Angle`** (not-started, `raymath`): Derive Vector2Angle semantics from the linked source, add a reference fixture, then implement Vector2.angle.
+- **`raymath:function:Vector2LineAngle`** (not-started, `raymath`): Derive Vector2LineAngle semantics from the linked source, add a reference fixture, then implement Vector2.line_angle.
+- **`raymath:function:Vector3Angle`** (not-started, `raymath`): Derive Vector3Angle semantics from the linked source, add a reference fixture, then implement Vector3.angle.
+- **`raymath:function:QuaternionSlerp`** (not-started, `raymath`): Derive QuaternionSlerp semantics from the linked source, add a reference fixture, then implement Quaternion.slerp.
+- **`raymath:function:QuaternionToAxisAngle`** (not-started, `raymath`): Derive QuaternionToAxisAngle semantics from the linked source, add a reference fixture, then implement Quaternion.to_axis_angle.
+- **`raymath:function:QuaternionToEuler`** (not-started, `raymath`): Derive QuaternionToEuler semantics from the linked source, add a reference fixture, then implement Quaternion.to_euler.
 - **`raymath:function:Clamp`** (partial, `numerics`): Close documented gaps and unverified gates for Clamp.
 - **`raymath:function:Lerp`** (partial, `numerics`): Close documented gaps and unverified gates for Lerp.
 - **`raymath:function:Normalize`** (partial, `numerics`): Close documented gaps and unverified gates for Normalize.
@@ -81,8 +83,6 @@ This is a priority queue with visible prerequisites, not a claim that every item
 - **`raymath:function:Vector2Add`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Add.
 - **`raymath:function:Vector2AddValue`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2AddValue.
 - **`raymath:function:Vector2Subtract`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Subtract.
-- **`raymath:function:Vector2SubtractValue`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2SubtractValue.
-- **`raymath:function:Vector2Length`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Length.
 
 ## Closing an item
 

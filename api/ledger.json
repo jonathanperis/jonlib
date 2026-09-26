@@ -61135,7 +61135,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector2Angle semantics from the linked source, add a reference fixture, then implement Vector2.angle.",
-      "priority": 202
+      "priority": 3
     },
     {
       "id": "raymath:function:Vector2LineAngle",
@@ -61190,7 +61190,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector2LineAngle semantics from the linked source, add a reference fixture, then implement Vector2.line_angle.",
-      "priority": 202
+      "priority": 4
     },
     {
       "id": "raymath:function:Vector2Scale",
@@ -63117,7 +63117,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Angle semantics from the linked source, add a reference fixture, then implement Vector3.angle.",
-      "priority": 202
+      "priority": 5
     },
     {
       "id": "raymath:function:Vector3Negate",
@@ -63617,23 +63617,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "Vector3.rotate_by_axis_angle",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Vector3.rotate_by_axis_angle_for / Vector3.rotate_by_axis_angle",
+      "mapping_state": "implemented",
+      "scope": "Finite vectors and bounded one-cycle radians; explicit reference trigonometry with the original two-cross-product Euler-Rodrigues order and zero-axis behavior.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Wider-angle, exceptional/subnormal and contracted domains",
+        "Other libm/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63646,8 +63650,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3RotateByAxisAngle semantics from the linked source, add a reference fixture, then implement Vector3.rotate_by_axis_angle.",
-      "priority": 4
+      "next_step": "Close documented gaps and unverified gates for Vector3RotateByAxisAngle.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3MoveTowards",
@@ -64084,23 +64088,28 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector3.unproject",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted F32 inverse projection/view transform retaining both reference constructor transpositions. Requires finite supported intermediates/results and nonzero homogeneous W; native oracle domain controls fail closed.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Singular/zero-W/exceptional/subnormal and contracted domains",
+        "Complete integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tools/conformance.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -64114,8 +64123,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3Unproject semantics from the linked source, add a reference fixture, then implement Vector3.unproject.",
-      "priority": 6
+      "next_step": "Close documented gaps and unverified gates for Vector3Unproject.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3ToFloatV",
@@ -66816,7 +66825,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive MatrixFrustum semantics from the linked source, add a reference fixture, then implement Matrix.frustum.",
-      "priority": 202
+      "priority": 0
     },
     {
       "id": "raymath:function:MatrixPerspective",
@@ -66871,7 +66880,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive MatrixPerspective semantics from the linked source, add a reference fixture, then implement Matrix.perspective.",
-      "priority": 202
+      "priority": 2
     },
     {
       "id": "raymath:function:MatrixOrtho",
@@ -66926,7 +66935,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive MatrixOrtho semantics from the linked source, add a reference fixture, then implement Matrix.ortho.",
-      "priority": 202
+      "priority": 1
     },
     {
       "id": "raymath:function:MatrixLookAt",
@@ -67865,7 +67874,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive QuaternionSlerp semantics from the linked source, add a reference fixture, then implement Quaternion.slerp.",
-      "priority": 202
+      "priority": 6
     },
     {
       "id": "raymath:function:QuaternionCubicHermiteSpline",
@@ -67890,23 +67899,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Quaternion.cubic_hermite_spline",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 Hermite coefficients and accumulation followed by reference quaternion normalization, including antipodal zero collapse.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted profiles",
+        "Complete integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -67919,8 +67932,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive QuaternionCubicHermiteSpline semantics from the linked source, add a reference fixture, then implement Quaternion.cubic_hermite_spline.",
-      "priority": 5
+      "next_step": "Close documented gaps and unverified gates for QuaternionCubicHermiteSpline.",
+      "priority": 202
     },
     {
       "id": "raymath:function:QuaternionFromVector3ToVector3",
@@ -67945,23 +67958,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Quaternion.from_vector3_to_vector3",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 cross/dot construction followed by reference normalization, including scaled, zero and opposite vectors.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted profiles",
+        "Complete integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -67975,8 +67992,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive QuaternionFromVector3ToVector3 semantics from the linked source, add a reference fixture, then implement Quaternion.from_vector3_to_vector3.",
-      "priority": 1
+      "next_step": "Close documented gaps and unverified gates for QuaternionFromVector3ToVector3.",
+      "priority": 202
     },
     {
       "id": "raymath:function:QuaternionFromMatrix",
@@ -68122,23 +68139,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "Quaternion.from_axis_angle",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Quaternion.from_axis_angle_for / Quaternion.from_axis_angle",
+      "mapping_state": "implemented",
+      "scope": "Finite axis and bounded one-cycle radians with explicit reference trigonometry; zero axis returns identity, otherwise half-angle construction and reference quaternion normalization.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Wider-angle, exceptional/subnormal and contracted domains",
+        "Other libm/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -68152,8 +68173,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive QuaternionFromAxisAngle semantics from the linked source, add a reference fixture, then implement Quaternion.from_axis_angle.",
-      "priority": 2
+      "next_step": "Close documented gaps and unverified gates for QuaternionFromAxisAngle.",
+      "priority": 202
     },
     {
       "id": "raymath:function:QuaternionToAxisAngle",
@@ -68209,7 +68230,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive QuaternionToAxisAngle semantics from the linked source, add a reference fixture, then implement Quaternion.to_axis_angle.",
-      "priority": 202
+      "priority": 7
     },
     {
       "id": "raymath:function:QuaternionFromEuler",
@@ -68234,23 +68255,28 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "Quaternion.from_euler",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Quaternion.from_euler_for / Quaternion.from_euler",
+      "mapping_state": "implemented",
+      "scope": "Bounded one-cycle pitch/yaw/roll radians with explicit reference trigonometry and unchanged half-angle coefficient order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Wider-angle, exceptional/subnormal and contracted domains",
+        "Other libm/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tests/test_harness.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -68263,8 +68289,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive QuaternionFromEuler semantics from the linked source, add a reference fixture, then implement Quaternion.from_euler.",
-      "priority": 3
+      "next_step": "Close documented gaps and unverified gates for QuaternionFromEuler.",
+      "priority": 202
     },
     {
       "id": "raymath:function:QuaternionToEuler",
@@ -68320,7 +68346,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive QuaternionToEuler semantics from the linked source, add a reference fixture, then implement Quaternion.to_euler.",
-      "priority": 202
+      "priority": 8
     },
     {
       "id": "raymath:function:QuaternionTransform",
@@ -68524,23 +68550,28 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "Matrix.decompose",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Matrix.decompose -> Matrix.Decomposition",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 decomposition into translation, quaternion and scale; all ten fields checked. Preserves max-stabilization, epsilon guards, shear-removal order, reflections and zero-matrix results.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Pointer aliasing, exceptional/subnormal and contracted profiles",
+        "Complete integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tests/test_harness.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -68555,8 +68586,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixDecompose semantics from the linked source, add a reference fixture, then implement Matrix.decompose.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for MatrixDecompose.",
+      "priority": 202
     },
     {
       "id": "raymath:switch:RAYMATH_DISABLE_CPP_OPERATORS",

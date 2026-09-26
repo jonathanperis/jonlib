@@ -1,0 +1,13 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {"jonlib.bend": "244dae50fb8793fc870ef942db5ad305e46ee17980fe2563a32a85092ec73a07"},
+  "fixtures_sha256": "94b897111fddcc5bd46a3f33764a4ba93a3aa79fb514e595af213ae8732ef695",
+  "scenarios": 224,
+  "output_words_per_lane": 34111,
+  "numeric_probe_cells": 1667,
+  "passed": true,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "unprojection_rejections": 2,
+  "scope": ["Ten-field decomposition with stabilization, epsilon/shear/reflection behavior", "Vector-pair, axis/Euler quaternion constructors and normalized cubic Hermite", "Euler-Rodrigues axis rotation and exact transposed unprojection path"],
+  "limits": ["Pointer aliasing, singular/zero-W and unsupported numerical domains", "Wider-angle/other libm profiles", "Complete integration/target/performance coverage"]
+}

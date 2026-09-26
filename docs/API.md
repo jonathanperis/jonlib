@@ -55,6 +55,8 @@ without reordering. Their numeric and collision operations are documented in
 [MATH.md](MATH.md) and [COLLISION.md](COLLISION.md).
 `Matrix` contains 16 F32 fields in the reference declaration order; its layout,
 identity/transpose operations and vector transforms are listed in [MATH.md](MATH.md#matrix-api).
+`Matrix.Decomposition` contains `Decomposed{translation, rotation, scale}` with
+Vector3/Vector4/Vector3 fields, adapting the three distinct outputs of decomposition.
 
 `Surface` owns its row-major pixel array. Always start with `Surface.create`:
 the underlying constructor is visible because Bend does not provide the needed
