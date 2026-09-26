@@ -1456,17 +1456,26 @@ def main():
     report['angle_reference_evaluation'] = 'native atan2f; builtin folding disabled'
     report['candidate_batches'] = []
     report['candidate_compile_timeout_seconds'] = 600
+    report['candidate_batch_limit'] = 16
     report_path.write_text(json.dumps(report,indent=2)+'\n')
     lanes = {'cpu-1':[], 'cpu-2':[], 'javascript':[]}
     if args.gpu:
         lanes['gpu-forced'] = []
-    for batch, start in enumerate(range(0,len(cases),64)):
-        selected = cases[start:start+64]
+    for batch, start in enumerate(range(0,len(cases),16)):
+        selected = cases[start:start+16]
         source = BUILD/f'candidate-{batch}.bend'
+        generated_c = BUILD/f'candidate-{batch}.c'
         binary = BUILD/f'candidate-{batch}'
         javascript = BUILD/f'candidate-{batch}.js'
         source.write_text(bend_source(selected))
         print(f'Building candidate batch {batch+1}: {len(selected)} scenarios...',flush=True)
+        build = dict(start=start,scenarios=len(selected),phase='emit-c')
+        report['candidate_batches'].append(build)
+        report_path.write_text(json.dumps(report,indent=2)+'\n')
+        emitted = time.monotonic()
+        run([*cli,source,'-o',generated_c],timeout=600)
+        build.update(c_emit_seconds=round(time.monotonic()-emitted,3),c_bytes=generated_c.stat().st_size,phase='compile-cpu-js')
+        report_path.write_text(json.dumps(report,indent=2)+'\n')
         batch_started = time.monotonic()
         run([*cli,source,'-o',binary,'-o',javascript],timeout=600)
         host_build_seconds = round(time.monotonic()-batch_started,3)
@@ -1474,12 +1483,14 @@ def main():
         lanes['cpu-2'].append([binary,'--threads','2'])
         lanes['javascript'].append(['bun',javascript])
         if args.gpu:
+            build.update(cpu_js_build_seconds=host_build_seconds,phase='compile-gpu')
+            report_path.write_text(json.dumps(report,indent=2)+'\n')
             gpu_source = BUILD/f'candidate-gpu-{batch}.bend'
             gpu_binary = BUILD/f'candidate-gpu-{batch}'
             gpu_source.write_text(bend_source(selected,gpu=True))
             run([*cli,gpu_source,'-o',gpu_binary],timeout=600)
             lanes['gpu-forced'].append([gpu_binary,'--gpu','on'])
-        report['candidate_batches'].append(dict(start=start,scenarios=len(selected),cpu_js_build_seconds=host_build_seconds))
+        build.update(cpu_js_build_seconds=host_build_seconds,phase='complete')
         report_path.write_text(json.dumps(report,indent=2)+'\n')
     for lane, commands in lanes.items():
         output = ''.join(run(command) for command in commands)

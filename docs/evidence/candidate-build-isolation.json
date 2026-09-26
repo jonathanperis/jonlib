@@ -1,0 +1,22 @@
+{
+  "date": "2026-09-26",
+  "failed_hosted_run": "https://github.com/jonathanperis/jonlib/actions/runs/36251234245",
+  "failure": "macOS 15 first 64-case candidate CLI build exceeded 600 seconds; Ubuntu completed successfully",
+  "local_generated_c_prefixes": {"1":305288,"8":388656,"16":515842,"64":2265210},
+  "local_clang21_compile_seconds": {"1":0.829,"8":0.730,"16":0.848,"64":2.533},
+  "candidate_batch_limit": 16,
+  "candidate_compile_timeout_seconds": 600,
+  "local_full_run": {
+    "passed": true,
+    "scenarios": 261,
+    "output_words_per_lane": 40101,
+    "batches": 17,
+    "first_c_emit_seconds": 3.241,
+    "first_c_bytes": 515842,
+    "first_cpu_js_build_seconds": 4.593,
+    "largest_c_bytes": 1382561,
+    "slowest_cpu_js_build_seconds": 46.001,
+    "lanes": ["cpu-1","cpu-2","javascript","gpu-forced"]
+  },
+  "limits": ["Hosted follow-up confirmation pending", "No compiler or library performance-parity claim"]
+}

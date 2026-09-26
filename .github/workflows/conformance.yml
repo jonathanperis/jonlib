@@ -156,6 +156,7 @@ jobs:
           if-no-files-found: warn
           path: |
             .build/conformance.json
+            .build/candidate-*.c
             .build/api-inventory.json
             .build/scenarios.json
             .build/reference.jsonl

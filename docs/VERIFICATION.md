@@ -1037,3 +1037,21 @@ complete integration/target/performance coverage remain gaps. The reference and
 expected values were retained throughout the correction.
 
 Regression scan: 38 callers checked, 10 assertions checked, 1 flagged/fixed.
+
+### Hosted candidate-build isolation
+
+`f5d6c73` passed Ubuntu, including raw pixel access, but macOS 15 exceeded the
+600-second CLI build budget on its first 64-case candidate. The retained failure
+was a compilation timeout, not a numerical mismatch. Generated local C grew to
+2,265,210 bytes for that batch, versus 515,842 bytes for the 16-case prefix.
+[Evidence](evidence/candidate-build-isolation.json) records the measurements.
+
+The deterministic batch bound is now 16. Each batch first emits its C artifact,
+then builds through the unchanged pinned CLI; reports persist emit/CPU-JS/GPU/
+complete phases and timings before each stage. CI retains the generated C for
+subsequent diagnosis. Compiler flags and the 600-second budget are unchanged.
+All 261 ordered cases / 40,101 words still pass CPU-1/CPU-2/JavaScript/forced Metal
+over 17 contiguous batches. Eight harness tests and project checks pass; unchanged
+library/proof evidence is reused. Hosted follow-up confirmation remains pending.
+
+Regression scan: 7 callers checked, 4 assertions checked, 1 flagged/fixed.
