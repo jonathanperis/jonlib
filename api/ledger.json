@@ -63557,23 +63557,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Vector3.rotate_by_quaternion",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 direct quaternion rotation formula, retaining non-unit and zero-quaternion behavior.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted profiles",
+        "Full integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -63587,8 +63591,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3RotateByQuaternion semantics from the linked source, add a reference fixture, then implement Vector3.rotate_by_quaternion.",
-      "priority": 3
+      "next_step": "Close documented gaps and unverified gates for Vector3RotateByQuaternion.",
+      "priority": 202
     },
     {
       "id": "raymath:function:Vector3RotateByAxisAngle",
@@ -63643,7 +63647,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3RotateByAxisAngle semantics from the linked source, add a reference fixture, then implement Vector3.rotate_by_axis_angle.",
-      "priority": 202
+      "priority": 4
     },
     {
       "id": "raymath:function:Vector3MoveTowards",
@@ -64111,7 +64115,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Unproject semantics from the linked source, add a reference fixture, then implement Vector3.unproject.",
-      "priority": 202
+      "priority": 6
     },
     {
       "id": "raymath:function:Vector3ToFloatV",
@@ -67916,7 +67920,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive QuaternionCubicHermiteSpline semantics from the linked source, add a reference fixture, then implement Quaternion.cubic_hermite_spline.",
-      "priority": 202
+      "priority": 5
     },
     {
       "id": "raymath:function:QuaternionFromVector3ToVector3",
@@ -67972,7 +67976,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive QuaternionFromVector3ToVector3 semantics from the linked source, add a reference fixture, then implement Quaternion.from_vector3_to_vector3.",
-      "priority": 202
+      "priority": 1
     },
     {
       "id": "raymath:function:QuaternionFromMatrix",
@@ -67997,23 +68001,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Quaternion.from_matrix",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 matrix conversion with strict largest-component W/X/Y/Z tie order and unchanged reference off-diagonal formulas.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted profiles",
+        "Full integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -68027,8 +68035,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive QuaternionFromMatrix semantics from the linked source, add a reference fixture, then implement Quaternion.from_matrix.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for QuaternionFromMatrix.",
+      "priority": 202
     },
     {
       "id": "raymath:function:QuaternionToMatrix",
@@ -68053,23 +68061,28 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Quaternion.to_matrix",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 reference matrix formula with all 16 fields checked, including non-unit and zero quaternions without normalization.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted profiles",
+        "Full integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tests/test_harness.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -68083,8 +68096,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive QuaternionToMatrix semantics from the linked source, add a reference fixture, then implement Quaternion.to_matrix.",
-      "priority": 1
+      "next_step": "Close documented gaps and unverified gates for QuaternionToMatrix.",
+      "priority": 202
     },
     {
       "id": "raymath:function:QuaternionFromAxisAngle",
@@ -68140,7 +68153,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive QuaternionFromAxisAngle semantics from the linked source, add a reference fixture, then implement Quaternion.from_axis_angle.",
-      "priority": 202
+      "priority": 2
     },
     {
       "id": "raymath:function:QuaternionToAxisAngle",
@@ -68251,7 +68264,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive QuaternionFromEuler semantics from the linked source, add a reference fixture, then implement Quaternion.from_euler.",
-      "priority": 202
+      "priority": 3
     },
     {
       "id": "raymath:function:QuaternionToEuler",
@@ -68332,23 +68345,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Quaternion.transform",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 four-dimensional matrix transform using the supplied W component and complete final matrix row.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted profiles",
+        "Full integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -68362,8 +68379,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive QuaternionTransform semantics from the linked source, add a reference fixture, then implement Quaternion.transform.",
-      "priority": 2
+      "next_step": "Close documented gaps and unverified gates for QuaternionTransform.",
+      "priority": 202
     },
     {
       "id": "raymath:function:QuaternionEquals",
@@ -68446,23 +68463,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Matrix.compose",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 composition by scaling basis vectors before quaternion rotation, then inserting translation. Preserves non-unit, zero and signed-zero inputs.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted profiles",
+        "Full integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -68477,8 +68498,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixCompose semantics from the linked source, add a reference fixture, then implement Matrix.compose.",
-      "priority": 4
+      "next_step": "Close documented gaps and unverified gates for MatrixCompose.",
+      "priority": 202
     },
     {
       "id": "raymath:function:MatrixDecompose",
@@ -68535,7 +68556,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive MatrixDecompose semantics from the linked source, add a reference fixture, then implement Matrix.decompose.",
-      "priority": 202
+      "priority": 0
     },
     {
       "id": "raymath:switch:RAYMATH_DISABLE_CPP_OPERATORS",

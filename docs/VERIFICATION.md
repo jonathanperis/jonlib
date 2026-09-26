@@ -21,10 +21,10 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 212 scenarios / 33,818 output words match pinned raylib exactly on each
+- 217 scenarios / 33,959 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
-- The word count includes 1,374 exact numeric/collision result-bit probe cells.
+- The word count includes 1,515 exact numeric/collision result-bit probe cells.
   The math reference explicitly uses uncontracted F32; no comparison tolerance
   is applied. Both components of each vector output are checked.
 - Seven QOI export scenarios compare all 299 encoded bytes per lane. Real CPU/JS
@@ -51,7 +51,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
 - The pinned core header inventory contains 600 unique public functions; 81 have
-  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 125
+  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 130
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
   on CPU, JS and Metal for its declared reference profile. Ubuntu's subsequent
@@ -101,7 +101,7 @@ reference comparison of all 4096 supported POT axis sizes.
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 212 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 217 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -647,3 +647,28 @@ performance gates remain gaps. Reviewed 43 helper/registry/generator/diagnostic
 caller contexts, 18 differential operations and one division-domain assertion.
 
 Regression scan: 43 callers checked, 19 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `eaa2f5f`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36226323577)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36226323548)
+completed successfully.
+
+## Quaternion/matrix conversions and composition
+
+Five further functions pass 217 scenarios / 33,959 words per CPU-1/CPU-2/
+JavaScript/forced-Metal lane. Fixtures cover all largest-component winners,
+strict ties, nonsymmetric matrices, projective fourth-row transforms, non-unit
+and zero quaternions, and scale-before-rotation composition with signed zero.
+The direct reference formulas remain separate: zero-quaternion `to_matrix`
+returns identity while `compose` produces a zero basis. See
+[evidence/quaternion-matrix-conversions.json](evidence/quaternion-matrix-conversions.json).
+
+Matrix output size and C type now come from the declared result shape, independently
+of the quaternion input family's four components. A short-output negative control
+prevents silently comparing only four fields of `QuaternionToMatrix`. Scoped
+review confirms I55's input/output distinction and A26/V2's complete exact-bit
+comparison. A4/A5, eight harness tests, project checks and all four pinned laws
+pass. Other numerical/ABI/integration/target/performance domains remain gaps.
+Reviewed 36 helper, registry, serializer and diagnostic caller contexts,
+18 differential operations and one result-shape assertion.
+
+Regression scan: 36 callers checked, 19 assertions checked, 1 flagged/fixed.

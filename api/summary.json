@@ -6,8 +6,8 @@
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1660,
-    "partial": 224
+    "not-started": 1655,
+    "partial": 229
   },
   "core_functions": {
     "total": 600,
@@ -22,8 +22,8 @@
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 725,
-    "partial": 206
+    "not-started": 720,
+    "partial": 211
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 122,
-      "partial": 132
+      "not-started": 117,
+      "partial": 137
     },
     "rlgl.h": {
       "total": 403,
@@ -128,8 +128,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 102,
-      "partial": 119
+      "not-started": 97,
+      "partial": 124
     },
     {
       "id": "memory",
@@ -563,60 +563,84 @@
   ],
   "next_work": [
     {
-      "id": "raymath:function:QuaternionFromMatrix",
-      "name": "QuaternionFromMatrix",
+      "id": "raymath:function:MatrixDecompose",
+      "name": "MatrixDecompose",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Quaternion.from_matrix",
-      "next_step": "Derive QuaternionFromMatrix semantics from the linked source, add a reference fixture, then implement Quaternion.from_matrix.",
+      "jonlib": "Matrix.decompose",
+      "next_step": "Derive MatrixDecompose semantics from the linked source, add a reference fixture, then implement Matrix.decompose.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:QuaternionToMatrix",
-      "name": "QuaternionToMatrix",
+      "id": "raymath:function:QuaternionFromVector3ToVector3",
+      "name": "QuaternionFromVector3ToVector3",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Quaternion.to_matrix",
-      "next_step": "Derive QuaternionToMatrix semantics from the linked source, add a reference fixture, then implement Quaternion.to_matrix.",
+      "jonlib": "Quaternion.from_vector3_to_vector3",
+      "next_step": "Derive QuaternionFromVector3ToVector3 semantics from the linked source, add a reference fixture, then implement Quaternion.from_vector3_to_vector3.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:QuaternionTransform",
-      "name": "QuaternionTransform",
+      "id": "raymath:function:QuaternionFromAxisAngle",
+      "name": "QuaternionFromAxisAngle",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Quaternion.transform",
-      "next_step": "Derive QuaternionTransform semantics from the linked source, add a reference fixture, then implement Quaternion.transform.",
+      "jonlib": "Quaternion.from_axis_angle",
+      "next_step": "Derive QuaternionFromAxisAngle semantics from the linked source, add a reference fixture, then implement Quaternion.from_axis_angle.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:Vector3RotateByQuaternion",
-      "name": "Vector3RotateByQuaternion",
+      "id": "raymath:function:QuaternionFromEuler",
+      "name": "QuaternionFromEuler",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Vector3.rotate_by_quaternion",
-      "next_step": "Derive Vector3RotateByQuaternion semantics from the linked source, add a reference fixture, then implement Vector3.rotate_by_quaternion.",
+      "jonlib": "Quaternion.from_euler",
+      "next_step": "Derive QuaternionFromEuler semantics from the linked source, add a reference fixture, then implement Quaternion.from_euler.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:MatrixCompose",
-      "name": "MatrixCompose",
+      "id": "raymath:function:Vector3RotateByAxisAngle",
+      "name": "Vector3RotateByAxisAngle",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Matrix.compose",
-      "next_step": "Derive MatrixCompose semantics from the linked source, add a reference fixture, then implement Matrix.compose.",
+      "jonlib": "Vector3.rotate_by_axis_angle",
+      "next_step": "Derive Vector3RotateByAxisAngle semantics from the linked source, add a reference fixture, then implement Vector3.rotate_by_axis_angle.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:QuaternionCubicHermiteSpline",
+      "name": "QuaternionCubicHermiteSpline",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Quaternion.cubic_hermite_spline",
+      "next_step": "Derive QuaternionCubicHermiteSpline semantics from the linked source, add a reference fixture, then implement Quaternion.cubic_hermite_spline.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:Vector3Unproject",
+      "name": "Vector3Unproject",
+      "milestone": "raymath",
+      "status": "not-started",
+      "jonlib": "Vector3.unproject",
+      "next_step": "Derive Vector3Unproject semantics from the linked source, add a reference fixture, then implement Vector3.unproject.",
       "milestone_dependencies": [
         "numerics"
       ],
@@ -773,30 +797,6 @@
       "status": "partial",
       "jonlib": "Vector2.length",
       "next_step": "Close documented gaps and unverified gates for Vector2Length.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2LengthSqr",
-      "name": "Vector2LengthSqr",
-      "milestone": "raymath",
-      "status": "partial",
-      "jonlib": "Vector2.length_sqr",
-      "next_step": "Close documented gaps and unverified gates for Vector2LengthSqr.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2DotProduct",
-      "name": "Vector2DotProduct",
-      "milestone": "raymath",
-      "status": "partial",
-      "jonlib": "Vector2.dot_product",
-      "next_step": "Close documented gaps and unverified gates for Vector2DotProduct.",
       "milestone_dependencies": [
         "numerics"
       ],

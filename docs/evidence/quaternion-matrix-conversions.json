@@ -1,0 +1,12 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {"jonlib.bend": "72d7a169dbcaa7408a3f941d75570bda4338c3c3596323ab8cef3d164665718f"},
+  "fixtures_sha256": "dcb4c9a88ef5b958498fe3274ff5d4377756a45eb3db8f019031a38bc18ead3e",
+  "scenarios": 217,
+  "output_words_per_lane": 33959,
+  "numeric_probe_cells": 1515,
+  "passed": true,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "scope": ["Quaternion/matrix conversion with strict winner/tie order and full result shape", "Full 4D quaternion matrix transforms", "Direct Vector3 quaternion rotation and scale-before-rotation matrix composition"],
+  "limits": ["Exceptional/subnormal and contracted numerical domains", "Complete integration/ABI/target/performance coverage"]
+}

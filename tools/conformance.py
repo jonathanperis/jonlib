@@ -64,6 +64,7 @@ VECTOR3_APIS = {
     'ortho_normalize':('Vector3OrthoNormalize','tt','pair'),
     'transform':('Vector3Transform','tm','vector'),
     'to_float_v':('Vector3ToFloatV','t','buffer'),
+    'rotate_by_quaternion':('Vector3RotateByQuaternion','tq','vector'),
 }
 VECTOR4_APIS = {
     'zero':('Vector4Zero','','vector'), 'one':('Vector4One','','vector'),
@@ -86,6 +87,8 @@ QUATERNION_APIS = {
     'invert':('QuaternionInvert','q','vector'), 'scale':('QuaternionScale','qs','vector'),
     'divide':('QuaternionDivide','qq','vector'), 'lerp':('QuaternionLerp','qqs','vector'),
     'nlerp':('QuaternionNlerp','qqs','vector'), 'equals':('QuaternionEquals','qq','bool'),
+    'from_matrix':('QuaternionFromMatrix','m','vector'), 'to_matrix':('QuaternionToMatrix','q','matrix'),
+    'transform':('QuaternionTransform','qm','vector'),
 }
 COLOR_VECTOR3_APIS = {'to_hsv':('ColorToHSV','c','vector')}
 COLOR_VECTOR4_APIS = {'normalize':('ColorNormalize','c','vector')}
@@ -101,6 +104,7 @@ MATRIX_APIS = {
     'rotate_z':('MatrixRotateZ','s','matrix'), 'rotate_xyz':('MatrixRotateXYZ','t','matrix'),
     'rotate_zyx':('MatrixRotateZYX','t','matrix'), 'rotate':('MatrixRotate','ts','matrix'),
     'to_float_v':('MatrixToFloatV','m','buffer'),
+    'compose':('MatrixCompose','tqt','matrix'),
 }
 MATRIX_ROTATIONS = {'rotate_x','rotate_y','rotate_z','rotate_xyz','rotate_zyx','rotate'}
 MATRIX_FIELDS = tuple(f'm{row+4*column}' for row in range(4) for column in range(4))
@@ -207,7 +211,7 @@ def matrix_inverse_denominator(values):
 def numeric_cells(kind, function):
     _, dimensions, apis = VECTOR_APIS[kind]
     result = apis[function][2]
-    return dimensions*2 if result=='pair' else dimensions if result in ('vector','matrix','buffer') else 1
+    return 16 if result=='matrix' else dimensions*2 if result=='pair' else dimensions if result in ('vector','buffer') else 1
 
 
 def crop_rectangle(width, height, op):
@@ -698,7 +702,7 @@ def c_source(cases):
                         lines += [f'ImageDrawPixel(&image, {op["x"]+index}, {op["y"]}, float_bits({field}));']
                     lines += ['}']
                 elif result in ('vector','matrix'):
-                    output_type = f'Vector{dimensions}' if result=='vector' else namespace
+                    output_type = f'Vector{dimensions}' if result=='vector' else 'Matrix'
                     lines += ['{', f'{output_type} v = {expression};']
                     for index, field in enumerate(MATRIX_FIELDS if result=='matrix' else ('x','y','z','w')[:dimensions]):
                         lines += [f'ImageDrawPixel(&image, {op["x"]+index}, {op["y"]}, float_bits(v.{field}));']

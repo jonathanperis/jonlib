@@ -1,8 +1,8 @@
 # Math profiles
 
 The current math implementation is Bend source in `jonlib.bend`. It begins the
-`raymath.h` work package with six scalar, twenty-nine Vector2, thirty-five Vector3,
-twenty-two Vector4, nineteen Matrix and fourteen Quaternion functions.
+`raymath.h` work package with six scalar, twenty-nine Vector2, thirty-six Vector3,
+twenty-two Vector4, twenty Matrix and seventeen Quaternion functions.
 
 ## Scalar API
 
@@ -66,6 +66,8 @@ radians within one cycle and preserves reference operation order. See
 - Interpolation/frame operations: `barycenter(point, a, b, c)`,
   `cubic_hermite(first, first_tangent, second, second_tangent, amount)`,
   `ortho_normalize(first, second)`, `transform(vector, matrix)`.
+- Quaternion rotation: `rotate_by_quaternion(vector, quaternion)` uses the
+  direct reference formula without normalizing the supplied quaternion.
 - Extrema: `min`/`min_for` and `max`/`max_for`, with the same explicit signed-zero
   reference profiles as their Vector2 counterparts.
 
@@ -158,6 +160,10 @@ the original Matrix; conformance separately checks the actual reference layout.
 - `Matrix.look_at(eye, target, up)` retains the reference basis normalization and
   negative-dot translation. Coincident eye/target and parallel up vectors keep
   their reference degenerate results instead of substituting a camera basis.
+- `Matrix.compose(translation, rotation, scale)` scales each basis vector before
+  applying `Vector3.rotate_by_quaternion`, then inserts translation. Replacing
+  this sequence with a differently ordered matrix product can change reference
+  rounding, signed zeros and non-unit quaternion behavior.
 
 ### Rotation constructors
 
@@ -200,6 +206,19 @@ Vector4's positive-zero normalization result.
 It does not choose a common hemisphere: exactly opposite quaternions can collapse
 to zero at the midpoint, as in the reference. `equals` accepts approximate `q`
 or `-q` equivalence using all four components and the reference relative epsilon.
+
+`Quaternion.from_matrix(matrix)` selects the largest quaternion component using
+strict comparisons in W/X/Y/Z order and applies the reference off-diagonal
+formulas. `Quaternion.to_matrix(quaternion)` retains the direct coefficient
+formula, including its non-unit and zero-input results, and returns a complete
+16-field Matrix. `Quaternion.transform(quaternion, matrix)` is a four-dimensional
+linear transform: it uses the supplied W and the final matrix row without
+perspective division or normalization.
+
+These operations are intentionally distinct from `Vector3.rotate_by_quaternion`.
+For example, a zero quaternion yields an identity in `to_matrix`, but zeroes the
+basis used by `Matrix.compose`. Both results follow their respective reference
+implementations; no implicit normalization makes them interchangeable.
 The remaining quaternion operations and full integration/ABI/target/performance
 coverage remain ledger gaps.
 

@@ -871,6 +871,76 @@ def Quaternion.nlerp(left: Vector4, right: Vector4, amount: F32) -> Vector4:
 def Quaternion.equals(+left: Vector4, +right: Vector4) -> Bool:
   Vector4.equals(left, right) || Vector4.equals(left, Vector4.negate(right))
 
+def Quaternion.matrix.pick(index: U32, +score: F32, current: U32 & F32) -> U32 & F32:
+  (previous, +best) = current
+  +greater = (score > best : F32)
+  (Bool.pick(U32, greater, index, previous), Bool.pick(F32, greater, score, best))
+
+def Quaternion.matrix.result(index: U32, biggest: F32, +scale: F32, m1: F32, m2: F32, m4: F32, m6: F32, m8: F32, m9: F32) -> Vector4:
+  match index:
+    case 0: Vector4{((m6 - m9) * scale : F32), ((m8 - m2) * scale : F32), ((m1 - m4) * scale : F32), biggest}
+    case 1: Vector4{biggest, ((m1 + m4) * scale : F32), ((m8 + m2) * scale : F32), ((m6 - m9) * scale : F32)}
+    case 2: Vector4{((m1 + m4) * scale : F32), biggest, ((m6 + m9) * scale : F32), ((m8 - m2) * scale : F32)}
+    case _: Vector4{((m8 + m2) * scale : F32), ((m6 + m9) * scale : F32), biggest, ((m1 - m4) * scale : F32)}
+
+def Quaternion.matrix.finish(choice: U32 & F32, m1: F32, m2: F32, m4: F32, m6: F32, m8: F32, m9: F32) -> Vector4:
+  (index, score) = choice
+  +biggest = (F32.sqrt((score + 1.0 : F32)) * 0.5 : F32)
+  Quaternion.matrix.result(index, biggest, (0.25 / biggest : F32), m1, m2, m4, m6, m8, m9)
+
+def Quaternion.from_matrix(matrix: Matrix) -> Vector4:
+  Matrix{+m0, m4, m8, _, m1, +m5, m9, _, m2, m6, +m10, _, _, _, _, _} = matrix
+  w = (m0 + m5 + m10 : F32)
+  x = (m0 - m5 - m10 : F32)
+  y = (m5 - m0 - m10 : F32)
+  z = (m10 - m0 - m5 : F32)
+  Quaternion.matrix.finish(Quaternion.matrix.pick(3, z, Quaternion.matrix.pick(2, y,
+    Quaternion.matrix.pick(1, x, (0, w)))), m1, m2, m4, m6, m8, m9)
+
+def Quaternion.to_matrix(quaternion: Vector4) -> Matrix:
+  Vector4{+x, +y, +z, +w} = quaternion
+  +a2 = (x * x : F32)
+  +b2 = (y * y : F32)
+  +c2 = (z * z : F32)
+  +ac = (x * z : F32)
+  +ab = (x * y : F32)
+  +bc = (y * z : F32)
+  +ad = (w * x : F32)
+  +bd = (w * y : F32)
+  +cd = (w * z : F32)
+  Matrix{(1.0 - 2.0 * (b2 + c2) : F32), (2.0 * (ab - cd) : F32), (2.0 * (ac + bd) : F32), 0.0,
+    (2.0 * (ab + cd) : F32), (1.0 - 2.0 * (a2 + c2) : F32), (2.0 * (bc - ad) : F32), 0.0,
+    (2.0 * (ac - bd) : F32), (2.0 * (bc + ad) : F32), (1.0 - 2.0 * (a2 + b2) : F32), 0.0,
+    0.0, 0.0, 0.0, 1.0}
+
+def Quaternion.transform(quaternion: Vector4, matrix: Matrix) -> Vector4:
+  Vector4{+x, +y, +z, +w} = quaternion
+  Matrix{m0, m4, m8, m12, m1, m5, m9, m13, m2, m6, m10, m14, m3, m7, m11, m15} = matrix
+  Vector4{(m0 * x + m4 * y + m8 * z + m12 * w : F32), (m1 * x + m5 * y + m9 * z + m13 * w : F32),
+    (m2 * x + m6 * y + m10 * z + m14 * w : F32), (m3 * x + m7 * y + m11 * z + m15 * w : F32)}
+
+def Vector3.rotate_by_quaternion(vector: Vector3, quaternion: Vector4) -> Vector3:
+  Vector3{+vx, +vy, +vz} = vector
+  Vector4{+x, +y, +z, +w} = quaternion
+  Vector3{
+    (vx * (x * x + w * w - y * y - z * z) + vy * (2.0 * x * y - 2.0 * w * z) + vz * (2.0 * x * z + 2.0 * w * y) : F32),
+    (vx * (2.0 * w * z + 2.0 * x * y) + vy * (w * w - x * x + y * y - z * z) + vz * (F32.neg(2.0) * w * x + 2.0 * y * z) : F32),
+    (vx * (F32.neg(2.0) * w * y + 2.0 * x * z) + vy * (2.0 * w * x + 2.0 * y * z) + vz * (w * w - x * x - y * y + z * z) : F32)}
+
+def Matrix.composed(translation: Vector3, right: Vector3, up: Vector3, forward: Vector3) -> Matrix:
+  Vector3{tx, ty, tz} = translation
+  Vector3{rx, ry, rz} = right
+  Vector3{ux, uy, uz} = up
+  Vector3{fx, fy, fz} = forward
+  Matrix{rx, ux, fx, tx, ry, uy, fy, ty, rz, uz, fz, tz, 0.0, 0.0, 0.0, 1.0}
+
+def Matrix.compose(translation: Vector3, +rotation: Vector4, scale: Vector3) -> Matrix:
+  Vector3{x, y, z} = scale
+  right = Vector3.rotate_by_quaternion(Vector3.scale(Vector3{1.0, 0.0, 0.0}, x), rotation)
+  up = Vector3.rotate_by_quaternion(Vector3.scale(Vector3{0.0, 1.0, 0.0}, y), rotation)
+  forward = Vector3.rotate_by_quaternion(Vector3.scale(Vector3{0.0, 0.0, 1.0}, z), rotation)
+  Matrix.composed(translation, right, up, forward)
+
 def Collision.spheres(left: Vector3, radius: F32, right: Vector3, other_radius: F32) -> Bool:
   +sum = (radius + other_radius : F32)
   (Vector3.distance_sqr(left, right) <= sum * sum : F32)
