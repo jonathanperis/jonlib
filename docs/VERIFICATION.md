@@ -1181,3 +1181,25 @@ metadata, nondefault export flags, malformed-data recovery and full target/
 resource/performance evidence remain gaps.
 
 Regression scan: 39 callers checked, 35 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `a8efe9e`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36264484902)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36264484915)
+completed successfully, including exact native TGA RLE exports.
+
+## Binary PGM/PPM decoding
+
+The P5/P6 byte-sample decoder passes 21 native images / 8,294 pixels and 13
+typed-error controls on CPU, JavaScript and forced Metal. Native comparisons
+retain unscaled samples for maxval below 255, comments/whitespace between fields,
+exactly one consumed maxval separator, and 4096×1/1×4096 dimension boundaries.
+The reference is dispatched through raylib's supported `.ppm` extension; it
+detects both P5 and P6 magic. See [evidence/pnm-codec.json](evidence/pnm-codec.json).
+
+The shared bitmap gate now supports decode-only profiles. Both complete BMP/TGA
+decode/export suites pass again, as do the 261-scenario / 40,101-word full corpus,
+eight harness tests, project checks and all four pinned laws. I83 and A4/A5/A6
+pass within the declared 8-bit profile. The existing partial memory-loader mapping
+gains PNM coverage; 16-bit PNM, original-format metadata, permissive malformed
+header recovery and full target/resource/performance evidence remain gaps.
+
+Regression scan: 30 callers checked, 48 assertions checked, 0 flagged/fixed.

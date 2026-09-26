@@ -1,0 +1,17 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {
+    "jonlib.bend": "82ad3a082b4626fd34a3325184a32e0369e9b615e25e14d57edd64a51125e6d4",
+    "src/pnm.bend": "c6ae6652af75dc9195bcc360a5106adfe38151e0a1d94631c3119f09d65ad0da"
+  },
+  "inputs_sha256": "1b19311d12e1263e96d9f9c996c38d48a4a11a01174dea555422a759a6e64a2c",
+  "reference_sha256": "e91264f4538dcf1469604033cc2f50e73ba39f9c9c1375e5c34bade8158a60db",
+  "decode_cases": 21,
+  "decoded_pixels": 8294,
+  "typed_error_cases": 13,
+  "passed": true,
+  "lanes": ["cpu","javascript","metal"],
+  "bitmap_regressions": {"bmp":true,"tga":true,"lanes":["cpu","javascript","metal"]},
+  "full_corpus": {"scenarios":261,"output_words_per_lane":40101,"passed":true,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "limits": ["16-bit PNM, original-format metadata and generic dispatch", "Permissive malformed-header recovery", "Complete integration/target/resource/performance coverage"]
+}

@@ -233,11 +233,11 @@
     "milestone": "image-codecs"
   },
   "LoadImageFromMemory": {
-    "jonlib": "Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga",
+    "jonlib": "Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm",
     "status": "profile-covered",
-    "scope": "QOI, bounded BMP INFO/V4 24/32-bit and non-paletted TGA raw/RLE true-color/grayscale decoded to owned RGBA8. Dimensions 1..4096; native orientation/alpha rules and typed malformed-input rejection.",
+    "scope": "QOI, bounded BMP INFO/V4, non-paletted TGA raw/RLE and binary 8-bit P5/P6 PNM decoded to owned RGBA8. Dimensions 1..4096; native orientation/alpha/sample rules and typed malformed-input rejection.",
     "gaps": [
-      "Other codecs and remaining BMP/TGA variants",
+      "Other codecs, remaining BMP/TGA variants and 16-bit PNM",
       "Original pixel-format metadata and generic format dispatch",
       "Reference permissive malformed-stream recovery",
       "Complete targets/integration/performance"

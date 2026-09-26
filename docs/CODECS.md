@@ -7,6 +7,8 @@ BMP memory decoding and exact RGBA8 V4 export are documented in [BMP.md](BMP.md)
 including supported headers, native alpha/offset rules and rejected variants.
 TGA true-color/grayscale raw/RLE decoding and exact default RLE export are
 documented in [TGA.md](TGA.md).
+Binary 8-bit P5/P6 decoding and native maxval/separator rules are documented in
+[PNM.md](PNM.md).
 
 ## QOI
 

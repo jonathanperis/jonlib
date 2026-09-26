@@ -135,6 +135,11 @@ jobs:
         run: >-
           python3 tools/api_plan.py check --clang-audit
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify binary PGM and PPM pixels
+        run: >-
+          python3 tools/pnm_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Check the compiler overlay against upstream regressions
         run: >-
           python3 tools/verify_bend.py
@@ -208,3 +213,4 @@ jobs:
             .build/raw-file-probe/results.json
             .build/bmp-probe/results.json
             .build/tga-probe/results.json
+            .build/pnm-probe/results.json

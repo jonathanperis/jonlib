@@ -20,6 +20,7 @@ import ./src/dither.bend as Dither
 import ./src/formats.bend as Formats
 import ./src/bmp.bend as Bmp
 import ./src/tga.bend as Tga
+import ./src/pnm.bend as Pnm
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -1819,6 +1820,21 @@ def Surface.decode_tga(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, S
 def Surface.to_tga(surface: Surface) -> +List<U32>:
   Surface{w, h, pixels} = surface
   Tga.encode(w, h, pixels)
+
+def Surface.pnm.error(error: Pnm.Error) -> Image.DecodeError:
+  match error:
+    case Pnm.BadHeader{}: InvalidImageHeader{}
+    case Pnm.BadByte{}: InvalidImageByte{}
+    case Pnm.BadSize{}: UnsupportedImageSize{}
+    case Pnm.Truncated{}: TruncatedImageData{}
+
+def Surface.pnm.result(result: Result<&1, &1, Pnm.Error, Pnm.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
+  match result:
+    case Fail{error}: Fail{Surface.pnm.error(error)}
+    case Done{Pnm.Image{w, h, pixels}}: Done{Surface{w, h, pixels}}
+
+def Surface.decode_pnm(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
+  Surface.pnm.result(Pnm.decode(bytes))
 
 def Surface.dimensions(surface: Surface) -> U32 & U32:
   Surface{w, h, _} = surface
