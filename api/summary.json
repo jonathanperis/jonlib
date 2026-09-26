@@ -6,24 +6,24 @@
     "blocked": 4,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1632,
-    "partial": 248
+    "not-started": 1628,
+    "partial": 252
   },
   "core_functions": {
     "total": 600,
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 512,
-    "partial": 88
+    "not-started": 508,
+    "partial": 92
   },
   "function_declarations": {
     "total": 931,
     "blocked": 4,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 697,
-    "partial": 230
+    "not-started": 693,
+    "partial": 234
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -46,8 +46,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 940,
-      "partial": 97
+      "not-started": 936,
+      "partial": 101
     },
     "raymath.h": {
       "total": 254,
@@ -201,8 +201,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 8,
-      "partial": 46
+      "not-started": 5,
+      "partial": 49
     },
     {
       "id": "resampling",
@@ -371,8 +371,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 29,
-      "partial": 0
+      "not-started": 28,
+      "partial": 1
     },
     {
       "id": "audio-codecs",
@@ -563,52 +563,100 @@
   ],
   "next_work": [
     {
-      "id": "raylib:function:GenImageText",
-      "name": "GenImageText",
-      "milestone": "fonts",
+      "id": "raylib:function:GetSplinePointLinear",
+      "name": "GetSplinePointLinear",
+      "milestone": "shapes",
       "status": "not-started",
-      "jonlib": "Font.gen_image_text",
-      "next_step": "Derive GenImageText semantics from the linked source, add a reference fixture, then implement Font.gen_image_text.",
+      "jonlib": "Draw.get_spline_point_linear",
+      "next_step": "Derive GetSplinePointLinear semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_linear.",
       "milestone_dependencies": [
-        "text-utils",
-        "textures",
-        "image-codecs"
+        "frame",
+        "rlgl-core",
+        "raymath",
+        "pixels"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raylib:function:ImageColorGrayscale",
-      "name": "ImageColorGrayscale",
-      "milestone": "images",
+      "id": "raylib:function:GetSplinePointBasis",
+      "name": "GetSplinePointBasis",
+      "milestone": "shapes",
       "status": "not-started",
-      "jonlib": "Surface.image_color_grayscale",
-      "next_step": "Derive ImageColorGrayscale semantics from the linked source, add a reference fixture, then implement Surface.image_color_grayscale.",
+      "jonlib": "Draw.get_spline_point_basis",
+      "next_step": "Derive GetSplinePointBasis semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_basis.",
       "milestone_dependencies": [
-        "pixels",
+        "frame",
+        "rlgl-core",
+        "raymath",
+        "pixels"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:GetSplinePointCatmullRom",
+      "name": "GetSplinePointCatmullRom",
+      "milestone": "shapes",
+      "status": "not-started",
+      "jonlib": "Draw.get_spline_point_catmull_rom",
+      "next_step": "Derive GetSplinePointCatmullRom semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_catmull_rom.",
+      "milestone_dependencies": [
+        "frame",
+        "rlgl-core",
+        "raymath",
+        "pixels"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:GetSplinePointBezierQuad",
+      "name": "GetSplinePointBezierQuad",
+      "milestone": "shapes",
+      "status": "not-started",
+      "jonlib": "Draw.get_spline_point_bezier_quad",
+      "next_step": "Derive GetSplinePointBezierQuad semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_bezier_quad.",
+      "milestone_dependencies": [
+        "frame",
+        "rlgl-core",
+        "raymath",
+        "pixels"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:GetSplinePointBezierCubic",
+      "name": "GetSplinePointBezierCubic",
+      "milestone": "shapes",
+      "status": "not-started",
+      "jonlib": "Draw.get_spline_point_bezier_cubic",
+      "next_step": "Derive GetSplinePointBezierCubic semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_bezier_cubic.",
+      "milestone_dependencies": [
+        "frame",
+        "rlgl-core",
+        "raymath",
+        "pixels"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:GetPixelDataSize",
+      "name": "GetPixelDataSize",
+      "milestone": "pixels",
+      "status": "not-started",
+      "jonlib": "Color.get_pixel_data_size",
+      "next_step": "Derive GetPixelDataSize semantics from the linked source, add a reference fixture, then implement Color.get_pixel_data_size.",
+      "milestone_dependencies": [
+        "numerics",
         "memory"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raylib:function:LoadImagePalette",
-      "name": "LoadImagePalette",
+      "id": "raylib:function:ImageDither",
+      "name": "ImageDither",
       "milestone": "images",
       "status": "not-started",
-      "jonlib": "Surface.load_image_palette",
-      "next_step": "Derive LoadImagePalette semantics from the linked source, add a reference fixture, then implement Surface.load_image_palette.",
-      "milestone_dependencies": [
-        "pixels",
-        "memory"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raylib:function:UnloadImagePalette",
-      "name": "UnloadImagePalette",
-      "milestone": "images",
-      "status": "not-started",
-      "jonlib": "Surface.unload_image_palette",
-      "next_step": "Derive UnloadImagePalette semantics from the linked source, add a reference fixture, then implement Surface.unload_image_palette.",
+      "jonlib": "Surface.image_dither",
+      "next_step": "Derive ImageDither semantics from the linked source, add a reference fixture, then implement Surface.image_dither.",
       "milestone_dependencies": [
         "pixels",
         "memory"
@@ -766,42 +814,6 @@
       "status": "partial",
       "jonlib": "Vector2.add",
       "next_step": "Close documented gaps and unverified gates for Vector2Add.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2AddValue",
-      "name": "Vector2AddValue",
-      "milestone": "raymath",
-      "status": "partial",
-      "jonlib": "Vector2.add_value",
-      "next_step": "Close documented gaps and unverified gates for Vector2AddValue.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2Subtract",
-      "name": "Vector2Subtract",
-      "milestone": "raymath",
-      "status": "partial",
-      "jonlib": "Vector2.subtract",
-      "next_step": "Close documented gaps and unverified gates for Vector2Subtract.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2SubtractValue",
-      "name": "Vector2SubtractValue",
-      "milestone": "raymath",
-      "status": "partial",
-      "jonlib": "Vector2.subtract_value",
-      "next_step": "Close documented gaps and unverified gates for Vector2SubtractValue.",
       "milestone_dependencies": [
         "numerics"
       ],

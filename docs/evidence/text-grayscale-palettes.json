@@ -1,0 +1,13 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {"jonlib.bend":"64f6f1b934c77fba90860b80ec597f1a0830a0388c1b8c4c83288cb17e5ee0ff"},
+  "fixtures_sha256": "df7cfb17f8bcd7e8a1dc9a13a472ba5b8282848b2f1d1673501cde64dc1cead6",
+  "scenarios": 258,
+  "output_words_per_lane": 40069,
+  "grayscale_rgb_triples_checked": 16777216,
+  "palette_observations": 5,
+  "passed": true,
+  "lanes": ["cpu-1","cpu-2","javascript","gpu-forced"],
+  "scope": ["Text-byte NUL/truncation/padding behavior normalized to RGBA8", "Exact native grayscale luminance with discarded alpha", "Complete palette counts/entries/padding and original image ownership"],
+  "limits": ["Native grayscale storage, C pointers/allocators and other image formats/mipmaps", "Complete integration/target/resource/performance coverage"]
+}

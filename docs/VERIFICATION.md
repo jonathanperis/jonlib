@@ -21,7 +21,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 249 scenarios / 40,024 output words match pinned raylib exactly on each
+- 258 scenarios / 40,069 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
 - The word count includes 1,846 exact numeric/collision result-bit probe cells.
@@ -50,7 +50,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 88 have
+- The pinned core header inventory contains 600 unique public functions; 92 have
   explicitly scoped Jonlib mappings. The raymath ledger additionally maps 142
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
@@ -101,7 +101,7 @@ reference comparison of all 4096 supported POT axis sizes.
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 249 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 258 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -942,3 +942,26 @@ compiler contraction patterns and full target/resource/performance coverage
 remain gaps. The original tables and expected output pixels are retained.
 
 Regression scan: 71 callers checked, 14 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `18f113e`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36244858413)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36244858336)
+completed successfully, including the new table/octave gate.
+
+## Text-byte images, grayscale and palettes
+
+Four additional core mappings pass 258 scenarios / 40,069 words per CPU-1/CPU-2/
+JavaScript/forced-Metal lane. The native luminance gate verifies every RGB byte
+triple (16,777,216 combinations). Nine new fixtures cover text truncation/NUL/
+padding, grayscale alpha discard and five complete palette observations. Palette
+count, all capacity entries including padding, and original image pixels are
+compared. The combined alpha-border/QOI/palette fixture verifies serialization
+and ownership across simultaneous observations. See
+[evidence/text-grayscale-palettes.json](evidence/text-grayscale-palettes.json).
+
+A26/A3/A4/A5 pass the scoped byte/pixel/palette/ownership/source/backend contracts.
+Eight harness tests, project checks and all four pinned laws pass. I70/I71 match
+the declared byte-list and RGBA8-normalized profiles, capacity rejection and
+owned disposal. Native storage/pointer/allocator correspondence, other image
+formats/mipmaps and complete target/resource/performance coverage remain gaps.
+
+Regression scan: 71 callers checked, 20 assertions checked, 0 flagged/fixed.

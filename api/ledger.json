@@ -39309,7 +39309,7 @@
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
       "next_step": "Derive GetSplinePointLinear semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_linear.",
-      "priority": 314
+      "priority": 0
     },
     {
       "id": "raylib:function:GetSplinePointBasis",
@@ -39367,7 +39367,7 @@
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
       "next_step": "Derive GetSplinePointBasis semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_basis.",
-      "priority": 314
+      "priority": 1
     },
     {
       "id": "raylib:function:GetSplinePointCatmullRom",
@@ -39425,7 +39425,7 @@
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
       "next_step": "Derive GetSplinePointCatmullRom semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_catmull_rom.",
-      "priority": 314
+      "priority": 2
     },
     {
       "id": "raylib:function:GetSplinePointBezierQuad",
@@ -39483,7 +39483,7 @@
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
       "next_step": "Derive GetSplinePointBezierQuad semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_bezier_quad.",
-      "priority": 314
+      "priority": 3
     },
     {
       "id": "raylib:function:GetSplinePointBezierCubic",
@@ -39541,7 +39541,7 @@
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
       "next_step": "Derive GetSplinePointBezierCubic semantics from the linked source, add a reference fixture, then implement Draw.get_spline_point_bezier_cubic.",
-      "priority": 314
+      "priority": 4
     },
     {
       "id": "raylib:function:CheckCollisionRecs",
@@ -41432,23 +41432,28 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.gen_image_text",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Surface.create_text_bytes",
+      "mapping_state": "implemented",
+      "scope": "Byte-list image data, stopping at the first NUL, truncating to dimensions and padding with zero grayscale. Returns opaque RGBA8 matching native GenImageText followed by format normalization; dimensions 1..4096 and byte values 0..255.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native grayscale storage, C-string/null/encoding ABI correspondence",
+        "Full integration/target/resource/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tests/transforms.bend",
+        "docs/PALETTES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -41463,8 +41468,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive GenImageText semantics from the linked source, add a reference fixture, then implement Font.gen_image_text.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for GenImageText.",
+      "priority": 418
     },
     {
       "id": "raylib:function:ImageCopy",
@@ -42595,7 +42600,7 @@
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
       "next_step": "Derive ImageDither semantics from the linked source, add a reference fixture, then implement Surface.image_dither.",
-      "priority": 207
+      "priority": 6
     },
     {
       "id": "raylib:function:ImageFlipVertical",
@@ -43039,23 +43044,28 @@
       "milestone": "images",
       "phase": 1,
       "sequence": 7,
-      "status": "not-started",
-      "jonlib": "Surface.image_color_grayscale",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Surface.color_grayscale",
+      "mapping_state": "implemented",
+      "scope": "RGBA8 input to opaque normalized grayscale RGBA8 output. Preserves native F32 luminance order and byte truncation; the numerical formula is gated against all 2^24 native RGB conversions.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native grayscale storage and other input formats/mipmaps",
+        "Full target/resource/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tools/conformance.py",
+        "docs/PALETTES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -43069,8 +43079,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
-      "next_step": "Derive ImageColorGrayscale semantics from the linked source, add a reference fixture, then implement Surface.image_color_grayscale.",
-      "priority": 1
+      "next_step": "Close documented gaps and unverified gates for ImageColorGrayscale.",
+      "priority": 207
     },
     {
       "id": "raylib:function:ImageColorContrast",
@@ -43334,23 +43344,29 @@
       "milestone": "images",
       "phase": 1,
       "sequence": 7,
-      "status": "not-started",
-      "jonlib": "Surface.load_image_palette",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Surface.load_palette / Image.Palette.entries",
+      "mapping_state": "implemented",
+      "scope": "Preserves the source owner and returns an owned RGBA palette for capacity 1..4096; first occurrence order, alpha-zero exclusion, alpha-sensitive uniqueness, count and full BLANK-padded capacity are compared exactly.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native pointers/allocators and other image formats/mipmaps",
+        "Full integration/target/resource/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "tests/transforms.bend",
+        "tests/test_harness.py",
+        "docs/PALETTES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -43365,8 +43381,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
-      "next_step": "Derive LoadImagePalette semantics from the linked source, add a reference fixture, then implement Surface.load_image_palette.",
-      "priority": 2
+      "next_step": "Close documented gaps and unverified gates for LoadImagePalette.",
+      "priority": 207
     },
     {
       "id": "raylib:function:UnloadImageColors",
@@ -43447,23 +43463,27 @@
       "milestone": "images",
       "phase": 1,
       "sequence": 7,
-      "status": "not-started",
-      "jonlib": "Surface.unload_image_palette",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Image.Palette.unload",
+      "mapping_state": "implemented",
+      "scope": "Consumes the owned palette and returns Unit while the separately retained source surface remains usable.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native pointer/allocator/null correspondence",
+        "Full integration/target/resource/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/transforms.bend",
+        "docs/PALETTES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -43477,8 +43497,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
-      "next_step": "Derive UnloadImagePalette semantics from the linked source, add a reference fixture, then implement Surface.unload_image_palette.",
-      "priority": 3
+      "next_step": "Close documented gaps and unverified gates for UnloadImagePalette.",
+      "priority": 207
     },
     {
       "id": "raylib:function:GetImageAlphaBorder",
@@ -47058,7 +47078,7 @@
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
       "next_step": "Derive GetPixelDataSize semantics from the linked source, add a reference fixture, then implement Color.get_pixel_data_size.",
-      "priority": 206
+      "priority": 5
     },
     {
       "id": "raylib:function:GetFontDefault",
@@ -66943,7 +66963,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.",
-      "priority": 7
+      "priority": 10
     },
     {
       "id": "raymath:function:MatrixOrtho",
@@ -67948,7 +67968,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Base and investigated inverse-trig models differ from the actual float libm; no verified acos profile is available yet.",
-      "priority": 4
+      "priority": 7
     },
     {
       "id": "raymath:function:QuaternionCubicHermiteSpline",
@@ -68309,7 +68329,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Native acosf endpoint/tail values differ from Base and investigated numerical models.",
-      "priority": 5
+      "priority": 8
     },
     {
       "id": "raymath:function:QuaternionFromEuler",
@@ -68430,7 +68450,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models.",
-      "priority": 6
+      "priority": 9
     },
     {
       "id": "raymath:function:QuaternionTransform",

@@ -82,6 +82,13 @@ Supported operations:
 - A `perlin` source provides integral `offset_x`/`offset_y` in -32767..32767
   and `scale` zero or with magnitude 2^-16..256. The host reference determines
   the explicit fused/uncontracted candidate profile; the linked oracle is unchanged.
+- `text_bytes` supplies the C text-data bytes for `GenImageText`, explicitly
+  normalized to opaque RGBA8. Embedded NUL terminates the source.
+- `color_grayscale` converts to native grayscale and then normalizes to RGBA8.
+  An exhaustive native RGB-to-byte gate checks the retained luminance expression.
+- `palette` requests a capacity 1..4096 observation. Both the actual count and
+  all allocated entries, including unused BLANK padding, are emitted and checked
+  alongside the original image pixels; alpha-border and QOI observations may coexist.
 - `color_tint`, `color_invert`, `color_contrast`, `color_brightness`,
   `color_replace`: image transforms. Tint/replacement use RGBA `color`,
   replacement also uses `replacement`, and contrast/brightness use `amount`.

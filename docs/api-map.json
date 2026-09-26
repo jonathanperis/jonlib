@@ -290,6 +290,17 @@
     "api_id": "raylib:function:GenImageCellular",
     "milestone": "images"
   },
+  "GenImageText": {
+    "jonlib": "Surface.create_text_bytes",
+    "status": "profile-covered",
+    "scope": "Byte-list image data, stopping at the first NUL, truncating to dimensions and padding with zero grayscale. Returns opaque RGBA8 matching native GenImageText followed by format normalization; dimensions 1..4096 and byte values 0..255.",
+    "gaps": [
+      "Native grayscale storage, C-string/null/encoding ABI correspondence",
+      "Full integration/target/resource/performance coverage"
+    ],
+    "api_id": "raylib:function:GenImageText",
+    "milestone": "fonts"
+  },
   "ImageCopy": {
     "jonlib": "Surface.copy",
     "status": "contract-checked",
@@ -489,6 +500,17 @@
     "api_id": "raylib:function:ImageColorInvert",
     "milestone": "images"
   },
+  "ImageColorGrayscale": {
+    "jonlib": "Surface.color_grayscale",
+    "status": "profile-covered",
+    "scope": "RGBA8 input to opaque normalized grayscale RGBA8 output. Preserves native F32 luminance order and byte truncation; the numerical formula is gated against all 2^24 native RGB conversions.",
+    "gaps": [
+      "Native grayscale storage and other input formats/mipmaps",
+      "Full target/resource/performance coverage"
+    ],
+    "api_id": "raylib:function:ImageColorGrayscale",
+    "milestone": "images"
+  },
   "ImageColorContrast": {
     "jonlib": "Surface.color_contrast",
     "status": "profile-covered",
@@ -528,6 +550,28 @@
     ],
     "api_id": "raylib:function:LoadImageColors",
     "milestone": "pixels"
+  },
+  "LoadImagePalette": {
+    "jonlib": "Surface.load_palette / Image.Palette.entries",
+    "status": "profile-covered",
+    "scope": "Preserves the source owner and returns an owned RGBA palette for capacity 1..4096; first occurrence order, alpha-zero exclusion, alpha-sensitive uniqueness, count and full BLANK-padded capacity are compared exactly.",
+    "gaps": [
+      "Native pointers/allocators and other image formats/mipmaps",
+      "Full integration/target/resource/performance coverage"
+    ],
+    "api_id": "raylib:function:LoadImagePalette",
+    "milestone": "images"
+  },
+  "UnloadImagePalette": {
+    "jonlib": "Image.Palette.unload",
+    "status": "profile-covered",
+    "scope": "Consumes the owned palette and returns Unit while the separately retained source surface remains usable.",
+    "gaps": [
+      "Native pointer/allocator/null correspondence",
+      "Full integration/target/resource/performance coverage"
+    ],
+    "api_id": "raylib:function:UnloadImagePalette",
+    "milestone": "images"
   },
   "GetImageAlphaBorder": {
     "jonlib": "Surface.alpha_border",

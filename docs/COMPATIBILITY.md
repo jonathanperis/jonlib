@@ -8,10 +8,11 @@ Profile: **rgba8-cpu-images-v1**, with domains defined in [API.md](API.md).
 
 ## Verified evidence
 
-The current local Apple M1/macOS corpus contains **249 deterministic scenarios /
-40,024 checked output words per lane**, matching native CPU (one and two threads), JavaScript
+The current local Apple M1/macOS corpus contains **258 deterministic scenarios /
+40,069 checked output words per lane**, matching native CPU (one and two threads), JavaScript
 and forced Metal. Most words are RGBA pixels; 1,846 are exact numeric/collision
-result-bit probe cells. QOI export bytes are compared separately. GitHub Actions
+result-bit probe cells. QOI export bytes and full palette observations are
+compared separately. GitHub Actions
 is configured to run this corpus on **Ubuntu 24.04
 (x86_64)** and **macOS 15 (arm64)** for CPU/JavaScript; use the current workflow
 result for the exact published commit's hosted evidence.
@@ -31,7 +32,7 @@ originally established the CPU/JS baseline; current CI applies the declared over
 A current run's precise inputs, source hashes and lane outcomes are in
 `.build/conformance.json`. The authoritative [API dashboard](PROGRESS.md) covers
 the complete release-header/support inventory. The 600-entry
-`.build/api-inventory.json` is its legacy core view, mapping 88 reference APIs to
+`.build/api-inventory.json` is its legacy core view, mapping 92 reference APIs to
 these scoped operations/contracts. The companion ledger additionally maps 142
 `raymath.h` functions. Remaining functions retain explicit planned work.
 These counts are an inventory, not a percentage of full parity.
@@ -70,6 +71,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | Unique random sequences | `Random.load_sequence/unload_sequence` | Exact acceptance order/following state; explicit structural draw budget and owned incomplete/error results |
 | Cellular images | `Surface.create_cellular` | Exact seed order, full pixels and post-generation state; exhaustive native integer-distance reduction gate |
 | Perlin images | `Surface.create_perlin/create_perlin_for` | Six seeded octaves with explicit arithmetic profiles; exact tables, raw octave values and complete native pixels |
+| Text data / grayscale / palettes | `Surface.create_text_bytes/color_grayscale/load_palette`, `Image.Palette` | Opaque normalized data images; exhaustive native luminance gate; complete ordered/padded palette observations and source preservation |
 | `ImageFlipHorizontal/Vertical` | `Surface.flip_horizontal/flip_vertical` | Exact explicit and seeded full-image comparisons |
 | `ImageRotateCW/CCW` | `Surface.rotate_cw/rotate_ccw` | Exact RGBA bytes, non-square dimensions and transform sequencing |
 | `ImageRotate` / `ImageToPOT` | `Surface.rotate_degrees_for/to_pot` | Checked general rotation with reference bilinear sampling; exhaustive supported POT-axis reference validation and exact fill/copy fixtures |

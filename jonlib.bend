@@ -1398,6 +1398,11 @@ def Color.blend.tinted(dst: U32, +src: U32) -> U32:
 def Color.alpha_blend(dst: U32, src: U32, tint: U32) -> U32:
   Color.blend.tinted(dst, Color.tint(src, tint))
 
+def Color.grayscale(+pixel: U32) -> U32:
+  F32.to_u32(((U32.to_f32(Color.red(pixel)) / 255.0 * 0.299
+    + U32.to_f32(Color.green(pixel)) / 255.0 * 0.587
+    + U32.to_f32(Color.blue(pixel)) / 255.0 * 0.114) * 255.0 : F32))
+
 type Color.Transform is Data:
   ImageTint{color: U32}
   ImageInvert{}
@@ -1407,6 +1412,7 @@ type Color.Transform is Data:
   AlphaClear{threshold: U32, color: U32}
   AlphaPremultiply{}
   ImageChannel{shift: Nat}
+  ImageGrayscale{}
 
 def Color.image_contrast(channel: U32, factor: F32) -> U32:
   F32.to_u32(F32.clamp((((U32.to_f32(channel) / 255.0 - 0.5) * factor + 0.5) * 255.0 : F32), 0.0, 255.0))
@@ -1417,6 +1423,9 @@ def Color.image_brightness(channel: U32, amount: F32) -> U32:
 
 def Color.transform(transform: Color.Transform, +pixel: U32) -> U32:
   match transform:
+    case ImageGrayscale{}:
+      +value = Color.grayscale(pixel)
+      Color.rgba(value, value, value, 255)
     case ImageChannel{shift}:
       +channel = ((pixel >> shift) .&. 255 : U32)
       Color.rgba(channel, channel, channel, 255)
@@ -1437,11 +1446,6 @@ def Color.transform(transform: Color.Transform, +pixel: U32) -> U32:
       +factor = (U32.to_f32(alpha) / 255.0 : F32)
       Color.rgba(F32.to_u32((U32.to_f32(Color.red(pixel)) * factor : F32)),
         F32.to_u32((U32.to_f32(Color.green(pixel)) * factor : F32)), F32.to_u32((U32.to_f32(Color.blue(pixel)) * factor : F32)), alpha)
-
-def Color.grayscale(+pixel: U32) -> U32:
-  F32.to_u32(((U32.to_f32(Color.red(pixel)) / 255.0 * 0.299
-    + U32.to_f32(Color.green(pixel)) / 255.0 * 0.587
-    + U32.to_f32(Color.blue(pixel)) / 255.0 * 0.114) * 255.0 : F32))
 
 def Color.is_equal(left: U32, right: U32) -> Bool:
   U32.is_eq(left, right)
@@ -1605,6 +1609,25 @@ def Surface.creation.checked(ok: Bool, +w: U32, +h: U32, color: U32) -> Maybe<Su
 # The initial profile supports 1..4096 pixels on each axis.
 def Surface.create(+w: U32, +h: U32, color: U32) -> Maybe<Surface>:
   Surface.creation.checked(((w > 0) && (h > 0) && (w <= 4096) && (h <= 4096) : U32), w, h, color)
+
+def Surface.text.fill(n: Nat, +index: U32, bytes: +List<U32>, pixels: Array<U32>) -> Array<U32>:
+  match n bytes:
+    case 0n _: pixels
+    case _ Nil{}: pixels
+    case _ Con{0, _}: pixels
+    case 1n+rest Con{+byte, tail}:
+      Surface.text.fill(rest, (index + 1 : U32), tail, Array.set(U32, pixels, index, Color.rgba(byte, byte, byte, 255)))
+
+def Surface.text.checked(valid: Bool, +width: U32, +height: U32, bytes: +List<U32>) -> Maybe<Surface>:
+  match valid:
+    case False{}: None{}
+    case True{}:
+      +count = (width * height : U32)
+      Some{Surface{width, height, Surface.text.fill(U32.to_nat(count), 0, bytes, Array.new(U32, Surface.capacity(count), 255))}}
+
+def Surface.create_text_bytes(+width: U32, +height: U32, +bytes: +List<U32>) -> Maybe<Surface>:
+  Surface.text.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
+    && Qoi.valid_bytes(bytes, True{}), width, height, bytes)
 
 def Surface.noise.write(index: U32, threshold: U32, pixels: Array<U32>, draw: Random.State & U32) -> Random.State & Array<U32>:
   (state, value) = draw
@@ -1774,6 +1797,9 @@ def Surface.color.loop(n: Nat, +i: U32, +transform: Color.Transform, pixels: Arr
 def Surface.color.transform(surface: Surface, transform: Color.Transform) -> Surface:
   Surface{+w, +h, pixels} = surface
   Surface{w, h, Surface.color.loop(U32.to_nat((w * h : U32)), 0, transform, pixels)}
+
+def Surface.color_grayscale(surface: Surface) -> Surface:
+  Surface.color.transform(surface, ImageGrayscale{})
 
 def Surface.color_tint(surface: Surface, color: U32) -> Surface:
   Surface.color.transform(surface, ImageTint{color})
@@ -2525,6 +2551,52 @@ def Surface.draw_image_rect(destination: Surface, source: Surface, +rect: Rectan
 def Surface.colors(surface: Surface) -> List<U32>:
   Surface{w, h, pixels} = surface
   List.take(&1, U32, Array.to_list(~U32, pixels), U32.to_nat((w * h : U32)))
+
+type Image.Palette is Type:
+  Palette{count: U32, colors: +List<U32>}
+
+def Image.Palette.entries(palette: Image.Palette) -> U32 & +List<U32>:
+  Palette{count, colors} = palette
+  (count, colors)
+
+def Image.Palette.unload(palette: Image.Palette) -> Unit:
+  Unit{}
+
+def Surface.palette.contains(values: +List<U32>, +color: U32, found: Bool) -> Bool:
+  match values found:
+    case _ True{}: True{}
+    case Nil{} False{}: False{}
+    case Con{head, rest} False{}: Surface.palette.contains(rest, color, U32.is_eq(head, color))
+
+def Surface.palette.collect(+remaining: U32, +values: +List<U32>, read: Array<U32> & U32) -> Array<U32> & (U32 & +List<U32>):
+  (pixels, +color) = read
+  +fresh = U32.is_ne(Color.alpha(color), 0) && Bool.not(Surface.palette.contains(values, color, False{}))
+  (pixels, (Bool.pick(U32, fresh, (remaining - 1 : U32), remaining), Bool.pick(+List<U32>, fresh, Con{color, values}, values)))
+
+def Surface.palette.loop(n: Nat, +index: U32, cursor: Array<U32> & (U32 & +List<U32>)) -> Array<U32> & (U32 & +List<U32>):
+  match n cursor:
+    case _ Tuple{pixels, Tuple{0, values}}: (pixels, (0, values))
+    case 0n _: cursor
+    case 1n+rest Tuple{pixels, Tuple{remaining, values}}:
+      Surface.palette.loop(rest, (index + 1 : U32), Surface.palette.collect(remaining, values, Array.get(U32, pixels, index)))
+
+def Surface.palette.pad(n: Nat, values: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: List.reverse(&2, U32, values)
+    case 1n+rest: Surface.palette.pad(rest, Con{0, values})
+
+def Surface.palette.finished(width: U32, height: U32, maximum: U32, result: Array<U32> & (U32 & +List<U32>)) -> Surface & Maybe<Image.Palette>:
+  (pixels, (+remaining, values)) = result
+  (Surface{width, height, pixels}, Some{Palette{(maximum - remaining : U32), Surface.palette.pad(U32.to_nat(remaining), values)}})
+
+def Surface.palette.checked(valid: Bool, surface: Surface, +maximum: U32) -> Surface & Maybe<Image.Palette>:
+  match valid surface:
+    case False{} _: (surface, None{})
+    case True{} Surface{+w, +h, pixels}:
+      Surface.palette.finished(w, h, maximum, Surface.palette.loop(U32.to_nat((w * h : U32)), 0, (pixels, (maximum, Nil{}))))
+
+def Surface.load_palette(surface: Surface, +maximum: U32) -> Surface & Maybe<Image.Palette>:
+  Surface.palette.checked(((maximum > 0) && (maximum <= 4096) : U32), surface, maximum)
 
 def Surface.copy.result(+w: U32, +h: U32, pair: Array<U32> & Array<U32>) -> Surface & Surface:
   (a, b) = pair

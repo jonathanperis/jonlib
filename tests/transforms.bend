@@ -171,6 +171,23 @@ def sequence_empty(result: J.Random.State & Result<&1, &1, J.Random.Sequence.Err
         && U32.is_eq(random_word(J.Random.value(state, 0.0, 99.0)), random_word(J.Random.value(J.Random.seed(123), 0.0, 99.0)))
     case _: False{}
 
+def palette_rejected(result: J.Surface & Maybe<J.Image.Palette>) -> Bool:
+  match result:
+    case Tuple{surface, None{}}: pixels_kept(J.Surface.colors(surface))
+    case _: False{}
+
+def palette_disposed(result: J.Surface & Maybe<J.Image.Palette>) -> Bool:
+  match result:
+    case Tuple{surface, Some{palette}}:
+      sequence_unloaded(J.Image.Palette.unload(palette)) && pixels_kept(J.Surface.colors(surface))
+    case _: False{}
+
+def palette_created(created: Maybe<J.Surface>, invalid: Bool) -> Bool:
+  match created invalid:
+    case None{} _: False{}
+    case Some{surface} True{}: palette_rejected(J.Surface.load_palette(surface, 0))
+    case Some{surface} False{}: palette_disposed(J.Surface.load_palette(surface, 4))
+
 def verdict(ok: Bool) -> IO(Unit):
   match ok:
     case True{}:
@@ -215,6 +232,10 @@ def checks() -> Bool:
     && no_surface(J.Surface.create_perlin(1, 1, 0.5, 0.0, 1.0))
     && no_surface(J.Surface.create_perlin(0, 1, 0.0, 0.0, 1.0))
     && no_surface(J.Surface.create_perlin(1, 1, 0.0, 0.0, 0.00000001))
+    && no_surface(J.Surface.create_text_bytes(0, 1, [1]))
+    && no_surface(J.Surface.create_text_bytes(1, 1, [0, 256]))
+    && palette_created(J.Surface.create(2, 1, 16909060), True{})
+    && palette_created(J.Surface.create(2, 1, 16909060), False{})
 
 def main() -> IO(Unit):
   verdict(checks())

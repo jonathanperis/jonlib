@@ -54,6 +54,13 @@ class HarnessTests(unittest.TestCase):
         for invalid in ([True,0,1,1], [0,0,2,1]):
             with self.assertRaises(ValueError):
                 parse_output(json.dumps(dict(bounded, alpha_border=invalid)), [dict(scenario, alpha_border=0)])
+        palette = dict(reference[0], palette_count=1, palette=[0x11223344,0])
+        for altered in (dict(palette,palette_count=0),dict(palette,palette=[0x11223344,1])):
+            with self.assertRaisesRegex(ValueError, 'palette differs'):
+                compare([palette],[altered])
+        for altered in (dict(palette,palette_count=True),dict(palette,palette=[0x11223344])):
+            with self.assertRaisesRegex(ValueError, 'Invalid palette result'):
+                parse_output(json.dumps(altered),[dict(scenario,palette=2)])
 
     def test_empty_or_invalid_fixtures_cannot_pass(self):
         with self.assertRaisesRegex(ValueError, 'empty'):
@@ -105,6 +112,8 @@ class HarnessTests(unittest.TestCase):
                     dict(case, cellular=dict(seed=0,tile=4097)),
                     dict(case, perlin=dict(offset_x=0.5,offset_y=0,scale=1)),
                     dict(case, perlin=dict(offset_x=0,offset_y=0,scale=1e-30)),
+                    dict(case, palette=0),
+                    dict(case, text_bytes=[0,256]),
                     dict(case, width=9, operations=[dict(op='matrix_value', function='decompose', args=list(range(16)), x=0, y=0)]),
                     dict(case, width=4, operations=[dict(op='quaternion_value', function='from_euler', args=[7,0,0], x=0, y=0)]),
                     dict(case, width=16, operations=[dict(op='matrix_value', function='frustum', args=[1,1,-1,1,0.1,10], x=0, y=0)]),

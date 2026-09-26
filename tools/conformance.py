@@ -17,7 +17,7 @@ import struct
 
 UNARY_IMAGE_APIS = {'flip_horizontal':'ImageFlipHorizontal', 'flip_vertical':'ImageFlipVertical',
                     'rotate_cw':'ImageRotateCW', 'rotate_ccw':'ImageRotateCCW', 'color_invert':'ImageColorInvert',
-                    'alpha_premultiply':'ImageAlphaPremultiply'}
+                    'alpha_premultiply':'ImageAlphaPremultiply', 'color_grayscale':'ImageColorGrayscale'}
 COLOR_IMAGE_APIS = {'color_tint':'ImageColorTint', 'color_contrast':'ImageColorContrast',
                    'color_brightness':'ImageColorBrightness', 'color_replace':'ImageColorReplace'}
 COLOR_VALUE_APIS = {'alpha':('ColorAlpha','with_alpha'), 'fade':('Fade','with_alpha'),
@@ -330,8 +330,13 @@ def cases_from(document):
             raise ValueError(f'{name}: export_qoi must be Boolean')
         if 'alpha_border' in case and (not coordinate(case['alpha_border'], True) or not 0 <= case['alpha_border'] <= 1):
             raise ValueError(f'{name}: alpha border threshold must be in 0..1')
-        if sum(key in case for key in ('qoi','checked','gradient_square','gradient_radial','gradient_linear','white_noise','cellular','perlin')) > 1:
+        if 'palette' in case and not integer(case['palette'],1,4096):
+            raise ValueError(f'{name}: palette capacity must be 1..4096')
+        if sum(key in case for key in ('qoi','checked','gradient_square','gradient_radial','gradient_linear','white_noise','cellular','perlin','text_bytes')) > 1:
             raise ValueError(f'{name}: only one image source may be selected')
+        if 'text_bytes' in case:
+            if not isinstance(case['text_bytes'],list) or not all(integer(value,0,255) for value in case['text_bytes']):
+                raise ValueError(f'{name}: expected text byte values 0..255')
         if 'white_noise' in case:
             noise = case['white_noise']
             if not isinstance(noise,dict) or not integer(noise.get('seed'),0,2**32-1) or not coordinate(noise.get('factor'),True) or not 0<=noise['factor']<=1:
@@ -677,12 +682,24 @@ def c_source(cases):
                   'unsigned square=x*x+y*y; if(square>16777216u) continue;',
                   'float native=(float)native_hypot(x,y), reduced=sqrtf((float)square);',
                   'if(memcmp(&native,&reduced,4)!=0) { fprintf(stderr,"cellular distance reduction mismatch\\n"); return 11; }', '}}']
+    if any(op['op']=='color_grayscale' for case in cases for op in case['operations']):
+        lines += ['{ Image all=GenImageColor(4096,4096,BLANK); Color *input=all.data;',
+                  'for(unsigned i=0;i<16777216u;i++) input[i]=(Color){i>>16,i>>8,i,255};',
+                  'ImageColorGrayscale(&all);',
+                  'for(unsigned i=0;i<16777216u;i++) {',
+                  'float r=(float)((i>>16)&255)/255.0f,g=(float)((i>>8)&255)/255.0f,b=(float)(i&255)/255.0f;',
+                  'unsigned char value=(unsigned char)((r*0.299f+g*0.587f+b*0.114f)*255.0f);',
+                  'if(value!=((unsigned char*)all.data)[i]) { fprintf(stderr,"grayscale luminance profile mismatch\\n"); return 12; }',
+                  '} UnloadImage(all); }']
     for case in cases:
         w, h = case["width"], case["height"]
         if 'qoi' in case:
             lines += ['{', 'unsigned char encoded[] = {' + ','.join(map(str,case['qoi'])) + '};',
                       'Image image = LoadImageFromMemory(".qoi", encoded, sizeof(encoded));',
                       'if (!image.data) return 2;', 'ImageFormat(&image, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);']
+        elif 'text_bytes' in case:
+            lines += ['{', 'unsigned char text[]={' + ','.join(map(str,case['text_bytes']+[0])) + '};',
+                      f'Image image=GenImageText({w},{h},(const char*)text);', 'ImageFormat(&image,PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);']
         elif 'white_noise' in case:
             noise = case['white_noise']
             lines += ['{',f'SetRandomSeed({noise["seed"]}u);',f'Image image=GenImageWhiteNoise({w},{h},{float(noise["factor"])!r}f);']
@@ -760,6 +777,8 @@ def c_source(cases):
             if kind in UNARY_IMAGE_APIS:
                 function = UNARY_IMAGE_APIS[kind]
                 lines += [f'{function}(&image);']
+                if kind=='color_grayscale':
+                    lines += ['ImageFormat(&image,PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);']
                 continue
             if kind in COLOR_IMAGE_APIS:
                 values = str(op['amount']) if kind in ('color_contrast', 'color_brightness') else f'GetColor({rgba(op["color"])}u)'
@@ -915,7 +934,12 @@ def c_source(cases):
                       f'unsigned char *qoi_data = LoadFileData({export_path}, &qoi_size);',
                       'if (!qoi_data || qoi_size < 22) return 3;',
                       'for (int i=0;i<qoi_size;i++) printf("%s%u", i?",":"", qoi_data[i]);',
-                      'printf("]");', 'UnloadFileData(qoi_data);']
+                       'printf("]");', 'UnloadFileData(qoi_data);']
+        if 'palette' in case:
+            lines += ['int palette_count=0;', f'Color *palette=LoadImagePalette(image,{case["palette"]},&palette_count);',
+                      'if(!palette) return 13;', 'printf(",\\"palette_count\\":%d,\\"palette\\":[",palette_count);',
+                      f'for(int i=0;i<{case["palette"]};i++) printf("%s%u",i?",":"",(unsigned int)ColorToInt(palette[i]));',
+                      'printf("]"); UnloadImagePalette(palette);']
         lines += ['puts("}");', 'UnloadImage(image);', '}']
     return '\n'.join(lines + ['return 0;', '}']) + '\n'
 
@@ -994,16 +1018,27 @@ def bend_source(cases, gpu=False):
         'def emit_choice(encoded: Bool, name: String, image: J.Surface, extra: String) -> IO(Unit):',
         '  match encoded:', '    case False{}: emit(name, image, extra)',
         '    case True{}: emit_qoi(name, J.Surface.copy(image), extra)',
-        'def emit_bordered(name: String, encoded: Bool, observed: J.Surface & J.Rectangle) -> IO(Unit):',
+        'def emit_bordered(name: String, encoded: Bool, extra: String, observed: J.Surface & J.Rectangle) -> IO(Unit):',
         '  match observed:', '    case Tuple{surface, J.Rectangle{x, y, w, h}}:',
-        '      emit_choice(encoded, name, surface, ",\\"alpha_border\\":[" ++ U32.show(F32.to_u32(x)) ++ "," ++ U32.show(F32.to_u32(y)) ++ "," ++ U32.show(F32.to_u32(w)) ++ "," ++ U32.show(F32.to_u32(h)) ++ "]")',
-        'def emit_observed(border: Maybe<&2, F32>, name: String, encoded: Bool, image: J.Surface) -> IO(Unit):',
-        '  match border:', '    case None{}: emit_choice(encoded, name, image, "")',
-        f'    case Some{{threshold}}: emit_bordered(name, encoded, J.Surface.alpha_border{"!" if gpu else ""}(image, threshold))',
-        'def emit_result(name: String, encoded: Bool, border: Maybe<&2, F32>, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):',
+        '      emit_choice(encoded, name, surface, extra ++ ",\\"alpha_border\\":[" ++ U32.show(F32.to_u32(x)) ++ "," ++ U32.show(F32.to_u32(y)) ++ "," ++ U32.show(F32.to_u32(w)) ++ "," ++ U32.show(F32.to_u32(h)) ++ "]")',
+        'def emit_observed(border: Maybe<&2, F32>, name: String, encoded: Bool, image: J.Surface, extra: String) -> IO(Unit):',
+        '  match border:', '    case None{}: emit_choice(encoded, name, image, extra)',
+        f'    case Some{{threshold}}: emit_bordered(name, encoded, extra, J.Surface.alpha_border{"!" if gpu else ""}(image, threshold))',
+        'def emit_palette_fields(border: Maybe<&2, F32>, name: String, encoded: Bool, surface: J.Surface, entries: U32 & +List<U32>) -> IO(Unit):',
+        '  (count, colors) = entries',
+        '  emit_observed(border, name, encoded, surface, ",\\"palette_count\\":" ++ U32.show(count) ++ ",\\"palette\\":" ++ List.show(~&2, ~U32, ~U32.show, colors))',
+        'def emit_palette_result(border: Maybe<&2, F32>, name: String, encoded: Bool, result: J.Surface & Maybe<J.Image.Palette>) -> IO(Unit):',
+        '  match result:',
+        '    case Tuple{surface, Some{palette}}: emit_palette_fields(border, name, encoded, surface, J.Image.Palette.entries(palette))',
+        '    case _: IO.die(Unit, 1, "valid palette observation rejected")',
+        'def emit_palette(capacity: Maybe<&2, U32>, border: Maybe<&2, F32>, name: String, encoded: Bool, surface: J.Surface) -> IO(Unit):',
+        '  match capacity:',
+        '    case None{}: emit_observed(border, name, encoded, surface, "")',
+        f'    case Some{{maximum}}: emit_palette_result(border, name, encoded, J.Surface.load_palette{"!" if gpu else ""}(surface, maximum))',
+        'def emit_result(name: String, encoded: Bool, border: Maybe<&2, F32>, palette: Maybe<&2, U32>, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):',
         '  match result:', '    case Fail{_}:',
         '      IO.die(Unit, 1, "valid transform fixture was rejected")',
-        '    case Done{surface}:', '      emit_observed(border, name, encoded, surface)', '',
+        '    case Done{surface}:', '      emit_palette(palette, border, name, encoded, surface)', '',
         'def extracted(keep: Bool, pair: J.Surface & Maybe<J.Surface>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:',
         '  match pair:', '    case Tuple{source, None{}}:',
         '      Fail{(source, J.InvalidRectangle{})}', '    case Tuple{source, Some{region}}:',
@@ -1181,14 +1216,17 @@ def bend_source(cases, gpu=False):
         failure = 'Fail{_}' if 'qoi' in case else 'None{}'
         success = 'Done{surface}' if 'qoi' in case else 'Some{surface}'
         border = 'Some{' + f32(case['alpha_border']) + '}' if 'alpha_border' in case else 'None{}'
+        palette = 'Some{' + str(case['palette']) + '}' if 'palette' in case else 'None{}'
         lines += [f'    return {previous}', '', f'def case_{i}(created: {created_type}) -> IO(Unit):',
                   '  match created:', f'    case {failure}:',
                   '      IO.die(Unit, 1, "valid fixture image creation failed")',
                   f'    case {success}:',
-                  f'      emit_result("{case["id"]}", {"True{}" if case.get("export_qoi") else "False{}"}, {border}, draw_{i}{"!" if gpu else ""}(surface))', '']
+                  f'      emit_result("{case["id"]}", {"True{}" if case.get("export_qoi") else "False{}"}, {border}, {palette}, draw_{i}{"!" if gpu else ""}(surface))', '']
     lines += ['def main() -> IO(Unit):', '  do IO<Unit>:']
     for i, case in enumerate(cases):
         creation = f'J.Surface.decode_qoi{"!" if gpu else ""}([' + ','.join(map(str,case['qoi'])) + '])' if 'qoi' in case else f'J.Surface.create({case["width"]}, {case["height"]}, {rgba(case["background"])})'
+        if 'text_bytes' in case:
+            creation = f'J.Surface.create_text_bytes{"!" if gpu else ""}({case["width"]}, {case["height"]}, [' + ','.join(map(str,case['text_bytes'])) + '])'
         if 'white_noise' in case:
             noise = case['white_noise']
             creation = f'create_noise{"!" if gpu else ""}({noise["seed"]}, {case["width"]}, {case["height"]}, {f32(noise["factor"])})'
@@ -1230,6 +1268,10 @@ def parse_output(output, cases):
             encoded = row.get('qoi')
             if not isinstance(encoded, list) or not encoded or not all(integer(v, 0, 255) for v in encoded):
                 raise ValueError(f"Invalid QOI bytes: {row['id']}")
+        if 'palette' in case:
+            colors = row.get('palette')
+            if not integer(row.get('palette_count'),0,case['palette']) or not isinstance(colors,list) or len(colors)!=case['palette'] or not all(integer(c,0,2**32-1) for c in colors):
+                raise ValueError(f"Invalid palette result: {row['id']}")
         if 'alpha_border' in case:
             border = row.get('alpha_border')
             if not isinstance(border, list) or len(border)!=4 or not all(integer(v,0,4096) for v in border):
@@ -1256,6 +1298,8 @@ def compare(expected, actual):
             raise ValueError(f"{reference['id']}: QOI export bytes differ")
         if reference.get('alpha_border') != candidate.get('alpha_border'):
             raise ValueError(f"{reference['id']}: alpha border differs")
+        if (reference.get('palette_count'),reference.get('palette')) != (candidate.get('palette_count'),candidate.get('palette')):
+            raise ValueError(f"{reference['id']}: palette differs")
 
 
 def source_gate():
@@ -1358,6 +1402,8 @@ def main():
     report['pot_axes_checked'] = 4096 if any(op['op']=='to_pot' for case in cases for op in case['operations']) else 0
     report['channel_bytes_checked'] = 1024 if any(op['op']=='from_channel' for case in cases for op in case['operations']) else 0
     report['cellular_distance_pairs_checked'] = 13180825 if any('cellular' in case for case in cases) else 0
+    report['grayscale_rgb_triples_checked'] = 16777216 if any(op['op']=='color_grayscale' for case in cases for op in case['operations']) else 0
+    report['palette_observations'] = sum('palette' in case for case in cases)
     cli = ['bun', args.bend_source / 'bend2/main.ts']
     library_verdict = run([*cli, ROOT / 'jonlib.bend', '--check-only'])
     if library_verdict.strip() != 'All terms check.':
