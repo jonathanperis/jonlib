@@ -63,13 +63,13 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 
 This is a priority queue with visible prerequisites, not a claim that every item is unblocked.
 
-- **`raymath:function:MatrixPerspective`** (not-started, `raymath`): Derive MatrixPerspective semantics from the linked source, add a reference fixture, then implement Matrix.perspective.
 - **`raymath:function:Vector2Angle`** (not-started, `raymath`): Derive Vector2Angle semantics from the linked source, add a reference fixture, then implement Vector2.angle.
 - **`raymath:function:Vector2LineAngle`** (not-started, `raymath`): Derive Vector2LineAngle semantics from the linked source, add a reference fixture, then implement Vector2.line_angle.
 - **`raymath:function:Vector3Angle`** (not-started, `raymath`): Derive Vector3Angle semantics from the linked source, add a reference fixture, then implement Vector3.angle.
 - **`raymath:function:QuaternionSlerp`** (not-started, `raymath`): Derive QuaternionSlerp semantics from the linked source, add a reference fixture, then implement Quaternion.slerp.
 - **`raymath:function:QuaternionToAxisAngle`** (not-started, `raymath`): Derive QuaternionToAxisAngle semantics from the linked source, add a reference fixture, then implement Quaternion.to_axis_angle.
 - **`raymath:function:QuaternionToEuler`** (not-started, `raymath`): Derive QuaternionToEuler semantics from the linked source, add a reference fixture, then implement Quaternion.to_euler.
+- **`raymath:function:MatrixPerspective`** (blocked, `raymath`): Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.
 - **`raymath:function:Clamp`** (partial, `numerics`): Close documented gaps and unverified gates for Clamp.
 - **`raymath:function:Lerp`** (partial, `numerics`): Close documented gaps and unverified gates for Lerp.
 - **`raymath:function:Normalize`** (partial, `numerics`): Close documented gaps and unverified gates for Normalize.

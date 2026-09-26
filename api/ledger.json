@@ -61135,7 +61135,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector2Angle semantics from the linked source, add a reference fixture, then implement Vector2.angle.",
-      "priority": 1
+      "priority": 0
     },
     {
       "id": "raymath:function:Vector2LineAngle",
@@ -61190,7 +61190,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector2LineAngle semantics from the linked source, add a reference fixture, then implement Vector2.line_angle.",
-      "priority": 2
+      "priority": 1
     },
     {
       "id": "raymath:function:Vector2Scale",
@@ -63117,7 +63117,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3Angle semantics from the linked source, add a reference fixture, then implement Vector3.angle.",
-      "priority": 3
+      "priority": 2
     },
     {
       "id": "raymath:function:Vector3Negate",
@@ -66856,14 +66856,15 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "Matrix.perspective",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Binary64 inputs are supported, but native-reference tangent rounding has no verified implementation yet.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Verified native-reference binary64 tangent behavior on target hosts",
+        "Complete perspective matrix parity"
       ],
-      "blocker": null,
+      "blocker": "A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -66872,7 +66873,11 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/perspective_probe.py",
+        "docs/PERSPECTIVE.md",
+        "docs/evidence/perspective-rounding-blocker.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -66885,8 +66890,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixPerspective semantics from the linked source, add a reference fixture, then implement Matrix.perspective.",
-      "priority": 0
+      "next_step": "Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.",
+      "priority": 6
     },
     {
       "id": "raymath:function:MatrixOrtho",
@@ -67886,7 +67891,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive QuaternionSlerp semantics from the linked source, add a reference fixture, then implement Quaternion.slerp.",
-      "priority": 4
+      "priority": 3
     },
     {
       "id": "raymath:function:QuaternionCubicHermiteSpline",
@@ -68242,7 +68247,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive QuaternionToAxisAngle semantics from the linked source, add a reference fixture, then implement Quaternion.to_axis_angle.",
-      "priority": 5
+      "priority": 4
     },
     {
       "id": "raymath:function:QuaternionFromEuler",
@@ -68358,7 +68363,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive QuaternionToEuler semantics from the linked source, add a reference fixture, then implement Quaternion.to_euler.",
-      "priority": 6
+      "priority": 5
     },
     {
       "id": "raymath:function:QuaternionTransform",

@@ -3,10 +3,10 @@
   "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
   "declaration_inventory": {
     "total": 1884,
-    "blocked": 0,
+    "blocked": 1,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1646,
+    "not-started": 1645,
     "partial": 238
   },
   "core_functions": {
@@ -19,10 +19,10 @@
   },
   "function_declarations": {
     "total": 931,
-    "blocked": 0,
+    "blocked": 1,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 711,
+    "not-started": 710,
     "partial": 220
   },
   "unique_c_function_names": 923,
@@ -51,10 +51,10 @@
     },
     "raymath.h": {
       "total": 254,
-      "blocked": 0,
+      "blocked": 1,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 108,
+      "not-started": 107,
       "partial": 146
     },
     "rlgl.h": {
@@ -125,10 +125,10 @@
         "numerics"
       ],
       "total": 221,
-      "blocked": 0,
+      "blocked": 1,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 88,
+      "not-started": 87,
       "partial": 133
     },
     {
@@ -563,18 +563,6 @@
   ],
   "next_work": [
     {
-      "id": "raymath:function:MatrixPerspective",
-      "name": "MatrixPerspective",
-      "milestone": "raymath",
-      "status": "not-started",
-      "jonlib": "Matrix.perspective",
-      "next_step": "Derive MatrixPerspective semantics from the linked source, add a reference fixture, then implement Matrix.perspective.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
       "id": "raymath:function:Vector2Angle",
       "name": "Vector2Angle",
       "milestone": "raymath",
@@ -641,6 +629,18 @@
       "status": "not-started",
       "jonlib": "Quaternion.to_euler",
       "next_step": "Derive QuaternionToEuler semantics from the linked source, add a reference fixture, then implement Quaternion.to_euler.",
+      "milestone_dependencies": [
+        "numerics"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raymath:function:MatrixPerspective",
+      "name": "MatrixPerspective",
+      "milestone": "raymath",
+      "status": "blocked",
+      "jonlib": "Matrix.perspective",
+      "next_step": "Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.",
       "milestone_dependencies": [
         "numerics"
       ],

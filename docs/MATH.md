@@ -222,6 +222,10 @@ subnormal projection arithmetic, and unverified non-finite promotion payloads,
 remain gaps. The public carrier API provides storage and promotion; arithmetic
 helpers are internal and reuse finite-normal integer-limb operations.
 
+`MatrixPerspective` remains blocked by an observed native binary64 tangent
+rounding difference that survives into F32 matrix fields. The exact counterexample
+and reproducible diagnostic are recorded in [PERSPECTIVE.md](PERSPECTIVE.md).
+
 ## Quaternion API
 
 Quaternion values use `Vector4{x, y, z, w}`, mirroring raylib's `Quaternion`

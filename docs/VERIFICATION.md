@@ -728,3 +728,27 @@ caller contexts, 28 differential operations, five malformed/domain fixtures and
 three native invalid-domain controls.
 
 Regression scan: 67 callers checked, 36 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `b15779e`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36232241255)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36232241293)
+completed successfully.
+
+## Perspective rounding investigation
+
+The new diagnostic executes actual native `MatrixPerspective` and retains a
+counterexample where a one-ULP binary64 tangent difference changes m5 by two F32
+steps. A published Sun/FreeBSD kernel control also fails to match the current
+macOS implementation under off/on/fast contraction settings. The API remains
+blocked and contributes no implemented mapping. Exact inputs, outputs, sources
+and reproduction commands are in [PERSPECTIVE.md](PERSPECTIVE.md) and
+[evidence/perspective-rounding-blocker.json](evidence/perspective-rounding-blocker.json).
+
+The diagnostic completes and records the mismatch; it is explicitly separate
+from a passing candidate gate. Hosted CI will retain per-host evidence. Eight
+harness tests and project checks pass. The unchanged 228-scenario library corpus
+and four proofs reuse the prior current-source evidence. A26 remains a gap for
+MatrixPerspective, with the established implemented profiles still passing.
+The CLI entry point, numerical evaluator, workflow invocation and documented
+command were inspected, together with the retained result comparison.
+
+Regression scan: 4 callers checked, 1 assertions checked, 0 flagged/fixed.

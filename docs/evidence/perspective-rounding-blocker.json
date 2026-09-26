@@ -1,0 +1,26 @@
+{
+  "date": "2026-09-26",
+  "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "status": "blocked",
+  "probe_completed": true,
+  "candidate_passed": false,
+  "host": {"system": "Darwin", "machine": "arm64"},
+  "fov_hex": "0x1.caac02dacfefep+0",
+  "near_hex": "0x1.99c7240652e10p-2",
+  "aspect": 1.0,
+  "far": 1000.0,
+  "native_tangent_bits": "3ff3fdc710f27cee",
+  "accurate_tangent_bits": "3ff3fdc710f27cef",
+  "native_m5_bits": "3f4ce392",
+  "accurate_m5_bits": "3f4ce390",
+  "published_kernel_control": {
+    "revision": "17a5f9daa3f5679f7536b26f133b40cc078753c3",
+    "source": "https://github.com/apple-oss-distributions/Libm/blob/17a5f9daa3f5679f7536b26f133b40cc078753c3/Source/ARM/k_tan_freeBSD.c",
+    "samples": 4096,
+    "contraction_off_mismatches": 1597,
+    "contraction_on_mismatches": 1590,
+    "contraction_fast_mismatches": 1590,
+    "shipped_in_jonlib": false
+  },
+  "scope": "Retained failure evidence; no MatrixPerspective implementation is claimed"
+}
