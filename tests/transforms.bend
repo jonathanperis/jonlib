@@ -210,6 +210,8 @@ def checks() -> Bool:
     && sequence_rejected(J.Random.load_sequence(J.Random.seed(123), 3, 0.0, 1.0, 8n))
     && sequence_budget(J.Random.load_sequence(J.Random.seed(123), 2, 0.0, 1.0, 1n))
     && sequence_empty(J.Random.load_sequence(J.Random.seed(123), 0, 0.0, 0.0, 0n))
+    && noise_rejected(J.Surface.create_cellular(J.Random.seed(123), 2, 2, 0))
+    && noise_rejected(J.Surface.create_cellular(J.Random.seed(123), 4097, 1, 1))
 
 def main() -> IO(Unit):
   verdict(checks())

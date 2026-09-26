@@ -24,6 +24,7 @@ def main():
     tails = [(0,3,2,0.0),(0,3,2,1.0),(1,7,5,0.37)]
     sequences = [(0,5,-3,5),(1,21,-10,10),(4294967295,1,7,7),
                  (0,3,10,8),(123,0,-2,2),(123,4,5,7),(42,64,0,63)]
+    cellular_tails = [(0,3,2,1),(42,17,11,4),(1,5,3,8)]
     work = BUILD/'random-probe';work.mkdir(parents=True,exist_ok=True)
     report_path = work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
     lines = ['#include "raylib.h"','#include <stdio.h>','#include <string.h>',
@@ -42,14 +43,18 @@ def main():
                   f'int accepted=({count}==0 || sequence!=NULL); printf("[%d",accepted);',
                   f'if(accepted) for(unsigned i=0;i<{count};i++) printf(",%u",bits((float)sequence[i]));',
                   'UnloadRandomSequence(sequence); printf(",%u]\\n",bits((float)GetRandomValue(-100,100)));','}']
+    for seed,w,h,tile in cellular_tails:
+        lines += ['{',f'SetRandomSeed({seed}u); Image image=GenImageCellular({w},{h},{tile});',
+                  'UnloadImage(image); printf("[%u]\\n",bits((float)GetRandomValue(-100,100)));','}']
     (work/'reference.c').write_text('\n'.join(lines+['}'])+'\n')
     run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),work/'reference.c',library,'-lm','-o',work/'reference'])
     expected = [json.loads(line) for line in run([work/'reference']).splitlines()]
-    if len(expected)!=len(seeds)+len(tails)+len(sequences):raise ValueError('Incomplete random reference rows')
+    if len(expected)!=len(seeds)+len(tails)+len(sequences)+len(cellular_tails):raise ValueError('Incomplete random reference rows')
     report = dict(passed=False,seeds=seeds,draws_per_seed=len(ranges),post_noise_observations=len(tails),
                   sequence_cases=len(sequences),sequence_draw_budget=4096,
+                  post_cellular_observations=len(cellular_tails),
                   profile='rprand-xoshiro128starstar-v1',sources=source_gate(),
-                  inputs_sha256=hashlib.sha256(json.dumps([seeds,ranges,tails,sequences]).encode()).hexdigest(),lanes={})
+                  inputs_sha256=hashlib.sha256(json.dumps([seeds,ranges,tails,sequences,cellular_tails]).encode()).hexdigest(),lanes={})
     for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
         program = '''import Base
 import ../../jonlib.bend as J
@@ -74,6 +79,8 @@ def after_noise(result: J.Random.State & Maybe<J.Surface>) -> List<U32>:
     case _: Nil{}
 def noise_tail(seed: U32, width: U32, height: U32, factor: F32) -> List<U32>:
   after_noise(J.Surface.create_white_noise(J.Random.seed(seed), width, height, factor))
+def cellular_tail(seed: U32, width: U32, height: U32, tile: U32) -> List<U32>:
+  after_noise(J.Surface.create_cellular(J.Random.seed(seed), width, height, tile))
 def sequence_words(values: +List<F32>, tail: List<U32>) -> List<U32>:
   match values:
     case Nil{}: tail
@@ -95,6 +102,7 @@ def main() -> IO(Unit):
         for seed in seeds:program += f'    IO.print(List.show(~&1, ~U32, ~U32.show, stream{bang}({seed}, [{requests}])))\n'
         for seed,w,h,factor in tails:program += f'    IO.print(List.show(~&1, ~U32, ~U32.show, noise_tail{bang}({seed}, {w}, {h}, {f32(factor)})))\n'
         for seed,count,lower,upper in sequences:program += f'    IO.print(List.show(~&1, ~U32, ~U32.show, sequence_sample{bang}({seed}, {count}, {f32(lower)}, {f32(upper)})))\n'
+        for seed,w,h,tile in cellular_tails:program += f'    IO.print(List.show(~&1, ~U32, ~U32.show, cellular_tail{bang}({seed}, {w}, {h}, {tile})))\n'
         source = work/f'{lane}.bend';source.write_text(program)
         binary = work/('candidate.js' if lane=='javascript' else f'candidate-{lane}')
         run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
@@ -103,7 +111,7 @@ def main() -> IO(Unit):
         report['lanes'][lane] = dict(passed=actual==expected)
         report_path.write_text(json.dumps(report,indent=2)+'\n')
         if actual!=expected:raise ValueError(f'{lane}: random stream or post-noise state mismatch')
-        print(f'{lane}: {len(seeds)*len(ranges)} random values, {len(tails)} post-noise observations and {len(sequences)} complete sequence/state results match native raylib',flush=True)
+        print(f'{lane}: {len(seeds)*len(ranges)} random values, {len(tails)+len(cellular_tails)} post-image observations and {len(sequences)} complete sequence/state results match native raylib',flush=True)
     report['passed'] = True
     report_path.write_text(json.dumps(report,indent=2)+'\n')
 

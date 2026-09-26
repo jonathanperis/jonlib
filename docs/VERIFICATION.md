@@ -21,7 +21,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 236 scenarios / 34,353 output words match pinned raylib exactly on each
+- 242 scenarios / 39,623 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
 - The word count includes 1,846 exact numeric/collision result-bit probe cells.
@@ -50,7 +50,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 86 have
+- The pinned core header inventory contains 600 unique public functions; 87 have
   explicitly scoped Jonlib mappings. The raymath ledger additionally maps 142
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
@@ -101,7 +101,7 @@ reference comparison of all 4096 supported POT axis sizes.
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 236 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 242 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -894,3 +894,26 @@ the `SequenceDrawLimit` owner path. Native unbounded retries, global state,
 allocator/null correspondence and complete target/performance evidence remain gaps.
 
 Regression scan: 16 callers checked, 11 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `85066d4`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36243383436)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36243383429)
+completed successfully.
+
+## Cellular image generation
+
+`Surface.create_cellular` passes all six new image fixtures and the complete
+242-scenario / 39,623-word CPU-1/CPU-2/JavaScript/forced-Metal corpus. The native
+preflight checks 13,180,825 coordinate-difference pairs against actual `hypot`;
+the candidate caps the minimum integer square at tile size squared before one
+square root and the original F32 quantization. Fixtures cover floor-sized grids,
+partial edge tiles, saturation, unit tiles, empty seed grids and the maximum
+tile size. Three additional native post-cellular stream observations and two
+rejected-owner controls pass. See [evidence/cellular-generation.json](evidence/cellular-generation.json).
+
+A26/A3/A4/A5 pass the scoped pixel/state/bounds/source/backend contracts. Eight
+harness tests, project checks and all four pinned laws pass. I68 matches the
+1..4096 size/tile domain, seed order and capped-distance reduction. Implicit
+globals/libc random variants, broader size domains and complete target/resource/
+performance coverage remain gaps.
+
+Regression scan: 38 callers checked, 14 assertions checked, 0 flagged/fixed.

@@ -1,6 +1,12 @@
 {
   "schema": 1,
   "cases": [
+    {"id":"cellular-unit-tiles","width":3,"height":2,"background":[0,0,0,255],"cellular":{"seed":0,"tile":1},"operations":[]},
+    {"id":"cellular-remainder-grid","width":17,"height":11,"background":[0,0,0,255],"cellular":{"seed":42,"tile":4},"operations":[]},
+    {"id":"cellular-saturated-edges","width":33,"height":29,"background":[0,0,0,255],"cellular":{"seed":1,"tile":16},"operations":[]},
+    {"id":"cellular-no-seeds","width":5,"height":3,"background":[0,0,0,255],"cellular":{"seed":4294967295,"tile":8},"operations":[]},
+    {"id":"cellular-thin-grid","width":1,"height":9,"background":[0,0,0,255],"cellular":{"seed":2147483648,"tile":2},"operations":[]},
+    {"id":"cellular-maximum-tile","width":4096,"height":1,"background":[0,0,0,255],"cellular":{"seed":123,"tile":4096},"operations":[]},
     {"id":"white-noise-zero","width":3,"height":2,"background":[0,0,0,255],"white_noise":{"seed":0,"factor":0},"operations":[]},
     {"id":"white-noise-one","width":3,"height":2,"background":[0,0,0,255],"white_noise":{"seed":0,"factor":1},"operations":[]},
     {"id":"white-noise-mixed","width":7,"height":5,"background":[0,0,0,255],"white_noise":{"seed":1,"factor":0.37},"operations":[]},

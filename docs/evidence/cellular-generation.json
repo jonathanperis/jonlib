@@ -1,0 +1,16 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {
+    "jonlib.bend": "f1affac6ac7b443736240fa51d82d9e10df33305ecc8afce76f6b662aaec7668",
+    "src/cellular.bend": "35bcfe098bec84325600150abd0c3f342dcf403d2f11c39ebefccfec60dfb55d"
+  },
+  "fixtures_sha256": "00a9eba498109a349bcd3ec1f4057ed162358374f36f1359d76266a8dfc7c8b7",
+  "scenarios": 242,
+  "output_words_per_lane": 39623,
+  "cellular_distance_pairs_checked": 13180825,
+  "passed": true,
+  "lanes": ["cpu-1","cpu-2","javascript","gpu-forced"],
+  "random_probe": {"post_cellular_observations":3,"inputs_sha256":"fb8f1dadd183727b5ba54d6df846392b0da79da30da5b9ab38043f78f22a75d0","passed":["cpu","javascript","metal"]},
+  "scope": ["Floor seed grids, Y-before-X draws and clipped neighboring tiles", "Full opaque grayscale pixels after exact integer-distance selection", "Original owner retained on rejected requests and no-seed draw preservation"],
+  "limits": ["Implicit globals/libc random variants and broader size domains", "Complete target/resource/performance evidence"]
+}

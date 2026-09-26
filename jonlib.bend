@@ -13,6 +13,7 @@ import ./src/fused.bend as Fused
 import ./src/float64.bend as Float64Numeric
 import ./src/angle.bend as Angle
 import ./src/random.bend as Rng
+import ./src/cellular.bend as Cellular
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -1630,6 +1631,20 @@ def Surface.noise.checked(valid: Bool, state: Random.State, +width: U32, +height
 def Surface.create_white_noise(state: Random.State, +width: U32, +height: U32, +factor: F32) -> Random.State & Maybe<Surface>:
   Surface.noise.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
     && ((factor >= 0.0) && (factor <= 1.0) : F32), state, width, height, factor)
+
+def Surface.cellular.finished(width: U32, height: U32, result: Rng.State & Array<U32>) -> Random.State & Maybe<Surface>:
+  (state, pixels) = result
+  (RandomState{state}, Some{Surface{width, height, pixels}})
+
+def Surface.cellular.checked(valid: Bool, state: Random.State, +width: U32, +height: U32, tile: U32) -> Random.State & Maybe<Surface>:
+  match valid state:
+    case False{} _: (state, None{})
+    case True{} RandomState{inner}:
+      Surface.cellular.finished(width, height, Cellular.generate(inner, width, height, tile))
+
+def Surface.create_cellular(state: Random.State, +width: U32, +height: U32, +tile: U32) -> Random.State & Maybe<Surface>:
+  Surface.cellular.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096)
+    && (tile > 0) && (tile <= 4096) : U32), state, width, height, tile)
 
 def Surface.checked.loop(n: Nat, +i: U32, +width: U32, +tx: U32, +ty: U32, +first: U32, +second: U32, pixels: Array<U32>) -> Array<U32>:
   match n:

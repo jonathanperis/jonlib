@@ -54,13 +54,18 @@ with the truncated F32 `factor*100` threshold, and becomes opaque white or black
 Factors zero and one still consume every draw. Invalid dimensions or factors
 return the original stream and `None` before allocation or generation.
 
+`Surface.create_cellular(state, width, height, tile_size)` shares this ownership
+convention. It consumes two draws per complete seed tile, Y before X; no-seed
+grids consume no draws. See [CELLULAR.md](CELLULAR.md).
+
 ## Evidence
 
 The full-image corpus checks dimensions and every noise pixel. A separate probe
 compares 960 native `GetRandomValue` results across six seeds, three stream
 observations after actual `GenImageWhiteNoise` calls, and seven complete
 `LoadRandomSequence`/following-draw results. Sequence cases include full ranges,
-duplicate retries, reversed/constant bounds, empty requests and excessive count:
+duplicate retries, reversed/constant bounds, empty requests and excessive count.
+Three additional observations check the stream after cellular generation:
 
 ```sh
 python3 tools/random_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu

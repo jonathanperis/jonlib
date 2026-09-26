@@ -24,6 +24,8 @@ It is not affiliated with or endorsed by raylib or Bend's maintainers.
   Sphere/box predicates adapt `rmodels.c`; vector/matrix/quaternion operations adapt `raymath.h`.
   General bilinear rotation, power-of-two canvases and channel extraction adapt
   `rtextures.c`; these remain modified Bend implementations with explicit profiles.
+  `src/cellular.bend` also adapts `GenImageCellular`, retaining seed order and
+  quantization while selecting capped integer squared distances before square root.
 - Reference testing: `tools/conformance.py` builds a separate raylib executable
   from a locally supplied checkout. Raylib is not linked into the Jonlib runner.
 - API documentation: `api/reference.json`, generated `api/ledger.json` and

@@ -268,6 +268,17 @@
     "api_id": "raylib:function:GenImageWhiteNoise",
     "milestone": "images"
   },
+  "GenImageCellular": {
+    "jonlib": "Surface.create_cellular",
+    "status": "profile-covered",
+    "scope": "Owned-stream RGBA8 cellular generation with dimensions/tile size 1..4096; reference floor seed grids, Y-before-X draws, adjacent-tile clipping and opaque intensity order. Exact integer-distance reduction is gated against every in-domain native hypot pair; invalid requests preserve the stream.",
+    "gaps": [
+      "Implicit-global/libc random profiles and broader generation domains",
+      "Full integration/target/resource/performance coverage"
+    ],
+    "api_id": "raylib:function:GenImageCellular",
+    "milestone": "images"
+  },
   "ImageCopy": {
     "jonlib": "Surface.copy",
     "status": "contract-checked",

@@ -101,6 +101,8 @@ class HarnessTests(unittest.TestCase):
                     dict(case, width=4, operations=[dict(op='quaternion_value', function='to_matrix', args=[0,0,0,1], x=0, y=0)]),
                     dict(case, white_noise=dict(seed=-1,factor=0.5)),
                     dict(case, white_noise=dict(seed=0,factor=1.5)),
+                    dict(case, cellular=dict(seed=0,tile=0)),
+                    dict(case, cellular=dict(seed=0,tile=4097)),
                     dict(case, width=9, operations=[dict(op='matrix_value', function='decompose', args=list(range(16)), x=0, y=0)]),
                     dict(case, width=4, operations=[dict(op='quaternion_value', function='from_euler', args=[7,0,0], x=0, y=0)]),
                     dict(case, width=16, operations=[dict(op='matrix_value', function='frustum', args=[1,1,-1,1,0.1,10], x=0, y=0)]),

@@ -76,6 +76,9 @@ Supported operations:
 - A `white_noise` image source provides a U32 `seed` and `factor` in 0..1.
   Both runners initialize the corresponding stream before generating pixels;
   the forced-GPU candidate includes seeding inside the dispatched operation.
+- A `cellular` image source provides a U32 `seed` and `tile` in 1..4096.
+  The native gate first exhausts the supported integer-distance pairs; complete
+  pixels are then compared against actual `GenImageCellular` output.
 - `color_tint`, `color_invert`, `color_contrast`, `color_brightness`,
   `color_replace`: image transforms. Tint/replacement use RGBA `color`,
   replacement also uses `replacement`, and contrast/brightness use `amount`.

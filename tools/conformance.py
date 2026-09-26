@@ -330,12 +330,16 @@ def cases_from(document):
             raise ValueError(f'{name}: export_qoi must be Boolean')
         if 'alpha_border' in case and (not coordinate(case['alpha_border'], True) or not 0 <= case['alpha_border'] <= 1):
             raise ValueError(f'{name}: alpha border threshold must be in 0..1')
-        if sum(key in case for key in ('qoi','checked','gradient_square','gradient_radial','gradient_linear','white_noise')) > 1:
+        if sum(key in case for key in ('qoi','checked','gradient_square','gradient_radial','gradient_linear','white_noise','cellular')) > 1:
             raise ValueError(f'{name}: only one image source may be selected')
         if 'white_noise' in case:
             noise = case['white_noise']
             if not isinstance(noise,dict) or not integer(noise.get('seed'),0,2**32-1) or not coordinate(noise.get('factor'),True) or not 0<=noise['factor']<=1:
                 raise ValueError(f'{name}: white noise requires a U32 seed and factor 0..1')
+        if 'cellular' in case:
+            cellular = case['cellular']
+            if not isinstance(cellular,dict) or not integer(cellular.get('seed'),0,2**32-1) or not integer(cellular.get('tile'),1,4096):
+                raise ValueError(f'{name}: cellular requires a U32 seed and tile size 1..4096')
         for kind in ('gradient_square','gradient_radial','gradient_linear'):
             if kind not in case:
                 continue
@@ -657,6 +661,12 @@ def c_source(cases):
                   'Color got=GetImageColor(extracted,n,0);',
                   'if(got.r!=expected || got.g!=expected || got.b!=expected || got.a!=255) { fprintf(stderr,"channel byte contract mismatch\\n"); return 7; } }',
                   'UnloadImage(extracted); } UnloadImage(probe); }']
+    if any('cellular' in case for case in cases):
+        lines += ['{ double (*volatile native_hypot)(double,double)=hypot;',
+                  'for(unsigned x=0;x<4096;x++) for(unsigned y=0;y<4096;y++) {',
+                  'unsigned square=x*x+y*y; if(square>16777216u) continue;',
+                  'float native=(float)native_hypot(x,y), reduced=sqrtf((float)square);',
+                  'if(memcmp(&native,&reduced,4)!=0) { fprintf(stderr,"cellular distance reduction mismatch\\n"); return 11; }', '}}']
     for case in cases:
         w, h = case["width"], case["height"]
         if 'qoi' in case:
@@ -666,6 +676,9 @@ def c_source(cases):
         elif 'white_noise' in case:
             noise = case['white_noise']
             lines += ['{',f'SetRandomSeed({noise["seed"]}u);',f'Image image=GenImageWhiteNoise({w},{h},{float(noise["factor"])!r}f);']
+        elif 'cellular' in case:
+            cellular = case['cellular']
+            lines += ['{',f'SetRandomSeed({cellular["seed"]}u);',f'Image image=GenImageCellular({w},{h},{cellular["tile"]});']
         elif 'checked' in case:
             checked = case['checked']
             lines += ['{', f'Image image = GenImageChecked({w}, {h}, {checked["tile_width"]}, {checked["tile_height"]}, GetColor({rgba(case["background"])}u), GetColor({rgba(checked["color"])}u));']
@@ -911,6 +924,8 @@ def bend_source(cases, gpu=False):
     lines += [
         'def create_noise(seed: U32, width: U32, height: U32, factor: F32) -> Maybe<J.Surface>:',
         '  Pair.snd(J.Random.State, Maybe<J.Surface>, J.Surface.create_white_noise(J.Random.seed(seed), width, height, factor))',
+        'def create_cellular(seed: U32, width: U32, height: U32, tile: U32) -> Maybe<J.Surface>:',
+        '  Pair.snd(J.Random.State, Maybe<J.Surface>, J.Surface.create_cellular(J.Random.seed(seed), width, height, tile))',
         'def write_vector(surface: J.Surface, +x: F32, +y: F32, vector: J.Vector2) -> J.Surface:',
         '  J.Vector2{u, v} = vector',
         '  first = J.Surface.draw_pixel(surface, x, y, F32.bits(u))',
@@ -1164,6 +1179,9 @@ def bend_source(cases, gpu=False):
         if 'white_noise' in case:
             noise = case['white_noise']
             creation = f'create_noise{"!" if gpu else ""}({noise["seed"]}, {case["width"]}, {case["height"]}, {f32(noise["factor"])})'
+        if 'cellular' in case:
+            cellular = case['cellular']
+            creation = f'create_cellular{"!" if gpu else ""}({cellular["seed"]}, {case["width"]}, {case["height"]}, {cellular["tile"]})'
         if 'checked' in case:
             checked = case['checked']
             creation = f'J.Surface.create_checked{"!" if gpu else ""}({case["width"]}, {case["height"]}, {checked["tile_width"]}, {checked["tile_height"]}, {rgba(case["background"])}, {rgba(checked["color"])})'
@@ -1323,6 +1341,7 @@ def main():
     report['alpha_border_observations'] = sum('alpha_border' in case for case in cases)
     report['pot_axes_checked'] = 4096 if any(op['op']=='to_pot' for case in cases for op in case['operations']) else 0
     report['channel_bytes_checked'] = 1024 if any(op['op']=='from_channel' for case in cases for op in case['operations']) else 0
+    report['cellular_distance_pairs_checked'] = 13180825 if any('cellular' in case for case in cases) else 0
     cli = ['bun', args.bend_source / 'bend2/main.ts']
     library_verdict = run([*cli, ROOT / 'jonlib.bend', '--check-only'])
     if library_verdict.strip() != 'All terms check.':
