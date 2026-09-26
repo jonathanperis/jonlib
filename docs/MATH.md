@@ -273,6 +273,9 @@ basis used by `Matrix.compose`. Both results follow their respective reference
 implementations; no implicit normalization makes them interchangeable.
 The remaining quaternion operations and full integration/ABI/target/performance
 coverage remain ledger gaps.
+Spherical interpolation and axis/Euler extraction currently depend on an
+unresolved native inverse-trig profile; retained failures and the diagnostic
+are documented in [INVERSE-TRIG.md](INVERSE-TRIG.md).
 
 ## Float-list exports
 

@@ -1,0 +1,18 @@
+{
+  "date": "2026-09-26",
+  "status": "blocked",
+  "host": {"system":"Darwin","machine":"arm64"},
+  "probe_completed": true,
+  "candidate_passed": false,
+  "unique_inputs": 286,
+  "result_words": 572,
+  "mismatches": {"cpu":10,"javascript":10,"metal":286},
+  "retained_endpoints": [
+    {"function":"asin","input":-1,"native":"bfc90fda","base":"bfc90fdb"},
+    {"function":"acos","input":-1,"native":"40490fda","base":"40490fdb"},
+    {"function":"asin","input":1,"native":"3fc90fda","base":"3fc90fdb"},
+    {"function":"asin","input":"-0","native":"80000000","metal":"00000000"}
+  ],
+  "legacy_mathematical_model": {"inputs":4128,"asin_mismatches":719,"acos_mismatches":737,"adopted":false},
+  "double_function_with_endpoint_adjustment": {"inputs":4128,"asin_mismatches":65,"acos_mismatches":46,"adopted":false}
+}

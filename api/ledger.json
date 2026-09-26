@@ -29679,7 +29679,7 @@
       "related_declarations": [],
       "verification": "Fixed-seed output sequences, inclusive ranges, uniqueness/sequence ownership and overflow boundaries.",
       "next_step": "Derive SetRandomSeed semantics from the linked source, add a reference fixture, then implement Random.set_random_seed.",
-      "priority": 205
+      "priority": 0
     },
     {
       "id": "raylib:function:GetRandomValue",
@@ -29733,7 +29733,7 @@
       "related_declarations": [],
       "verification": "Fixed-seed output sequences, inclusive ranges, uniqueness/sequence ownership and overflow boundaries.",
       "next_step": "Derive GetRandomValue semantics from the linked source, add a reference fixture, then implement Random.get_random_value.",
-      "priority": 205
+      "priority": 1
     },
     {
       "id": "raylib:function:LoadRandomSequence",
@@ -29787,7 +29787,7 @@
       "related_declarations": [],
       "verification": "Fixed-seed output sequences, inclusive ranges, uniqueness/sequence ownership and overflow boundaries.",
       "next_step": "Derive LoadRandomSequence semantics from the linked source, add a reference fixture, then implement Random.load_random_sequence.",
-      "priority": 205
+      "priority": 3
     },
     {
       "id": "raylib:function:UnloadRandomSequence",
@@ -29841,7 +29841,7 @@
       "related_declarations": [],
       "verification": "Fixed-seed output sequences, inclusive ranges, uniqueness/sequence ownership and overflow boundaries.",
       "next_step": "Derive UnloadRandomSequence semantics from the linked source, add a reference fixture, then implement Random.unload_random_sequence.",
-      "priority": 205
+      "priority": 4
     },
     {
       "id": "raylib:function:TakeScreenshot",
@@ -41259,7 +41259,7 @@
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
       "next_step": "Derive GenImageWhiteNoise semantics from the linked source, add a reference fixture, then implement Surface.gen_image_white_noise.",
-      "priority": 207
+      "priority": 2
     },
     {
       "id": "raylib:function:GenImagePerlinNoise",
@@ -66907,7 +66907,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.",
-      "priority": 3
+      "priority": 8
     },
     {
       "id": "raymath:function:MatrixOrtho",
@@ -67877,14 +67877,15 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "Quaternion.slerp",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Reference spherical interpolation requires an exact native acosf path before sine weighting.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Verified native inverse-trig dependency",
+        "Complete spherical interpolation evidence"
       ],
-      "blocker": null,
+      "blocker": "Base and investigated inverse-trig models differ from the actual float libm; no verified acos profile is available yet.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -67893,7 +67894,11 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/inverse_trig_probe.py",
+        "docs/INVERSE-TRIG.md",
+        "docs/evidence/inverse-trig-blocker.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -67906,8 +67911,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive QuaternionSlerp semantics from the linked source, add a reference fixture, then implement Quaternion.slerp.",
-      "priority": 0
+      "next_step": "Resolve: Base and investigated inverse-trig models differ from the actual float libm; no verified acos profile is available yet.",
+      "priority": 5
     },
     {
       "id": "raymath:function:QuaternionCubicHermiteSpline",
@@ -68232,14 +68237,15 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "Quaternion.to_axis_angle",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Reference axis/angle extraction requires native acosf rounding and endpoint behavior.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Verified native acos dependency",
+        "Complete axis/angle extraction evidence"
       ],
-      "blocker": null,
+      "blocker": "Native acosf endpoint/tail values differ from Base and investigated numerical models.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -68248,7 +68254,11 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/inverse_trig_probe.py",
+        "docs/INVERSE-TRIG.md",
+        "docs/evidence/inverse-trig-blocker.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -68262,8 +68272,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive QuaternionToAxisAngle semantics from the linked source, add a reference fixture, then implement Quaternion.to_axis_angle.",
-      "priority": 1
+      "next_step": "Resolve: Native acosf endpoint/tail values differ from Base and investigated numerical models.",
+      "priority": 6
     },
     {
       "id": "raymath:function:QuaternionFromEuler",
@@ -68348,14 +68358,15 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "Quaternion.to_euler",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Reference Euler extraction requires exact native asinf in addition to the verified atan2 profile.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Verified native asin dependency",
+        "Complete Euler extraction evidence"
       ],
-      "blocker": null,
+      "blocker": "Native asinf endpoint/tail values differ from Base and investigated numerical models.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -68364,7 +68375,11 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/inverse_trig_probe.py",
+        "docs/INVERSE-TRIG.md",
+        "docs/evidence/inverse-trig-blocker.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -68378,8 +68393,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive QuaternionToEuler semantics from the linked source, add a reference fixture, then implement Quaternion.to_euler.",
-      "priority": 2
+      "next_step": "Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models.",
+      "priority": 7
     },
     {
       "id": "raymath:function:QuaternionTransform",

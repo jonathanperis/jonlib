@@ -63,9 +63,14 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 
 This is a priority queue with visible prerequisites, not a claim that every item is unblocked.
 
-- **`raymath:function:QuaternionSlerp`** (not-started, `raymath`): Derive QuaternionSlerp semantics from the linked source, add a reference fixture, then implement Quaternion.slerp.
-- **`raymath:function:QuaternionToAxisAngle`** (not-started, `raymath`): Derive QuaternionToAxisAngle semantics from the linked source, add a reference fixture, then implement Quaternion.to_axis_angle.
-- **`raymath:function:QuaternionToEuler`** (not-started, `raymath`): Derive QuaternionToEuler semantics from the linked source, add a reference fixture, then implement Quaternion.to_euler.
+- **`raylib:function:SetRandomSeed`** (not-started, `random`): Derive SetRandomSeed semantics from the linked source, add a reference fixture, then implement Random.set_random_seed.
+- **`raylib:function:GetRandomValue`** (not-started, `random`): Derive GetRandomValue semantics from the linked source, add a reference fixture, then implement Random.get_random_value.
+- **`raylib:function:GenImageWhiteNoise`** (not-started, `images`): Derive GenImageWhiteNoise semantics from the linked source, add a reference fixture, then implement Surface.gen_image_white_noise.
+- **`raylib:function:LoadRandomSequence`** (not-started, `random`): Derive LoadRandomSequence semantics from the linked source, add a reference fixture, then implement Random.load_random_sequence.
+- **`raylib:function:UnloadRandomSequence`** (not-started, `random`): Derive UnloadRandomSequence semantics from the linked source, add a reference fixture, then implement Random.unload_random_sequence.
+- **`raymath:function:QuaternionSlerp`** (blocked, `raymath`): Resolve: Base and investigated inverse-trig models differ from the actual float libm; no verified acos profile is available yet.
+- **`raymath:function:QuaternionToAxisAngle`** (blocked, `raymath`): Resolve: Native acosf endpoint/tail values differ from Base and investigated numerical models.
+- **`raymath:function:QuaternionToEuler`** (blocked, `raymath`): Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models.
 - **`raymath:function:MatrixPerspective`** (blocked, `raymath`): Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.
 - **`raymath:function:Clamp`** (partial, `numerics`): Close documented gaps and unverified gates for Clamp.
 - **`raymath:function:Lerp`** (partial, `numerics`): Close documented gaps and unverified gates for Lerp.
@@ -78,11 +83,6 @@ This is a priority queue with visible prerequisites, not a claim that every item
 - **`raymath:function:Vector2Add`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Add.
 - **`raymath:function:Vector2AddValue`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2AddValue.
 - **`raymath:function:Vector2Subtract`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Subtract.
-- **`raymath:function:Vector2SubtractValue`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2SubtractValue.
-- **`raymath:function:Vector2Length`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2Length.
-- **`raymath:function:Vector2LengthSqr`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2LengthSqr.
-- **`raymath:function:Vector2DotProduct`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2DotProduct.
-- **`raymath:function:Vector2CrossProduct`** (partial, `raymath`): Close documented gaps and unverified gates for Vector2CrossProduct.
 
 ## Closing an item
 

@@ -814,3 +814,25 @@ still pass on CPU-1/CPU-2/JavaScript/forced Metal; eight harness tests and proje
 checks pass. No command timeout, scenario, expected value or tolerance was relaxed.
 
 Regression scan: 12 callers checked, 4 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `7a09b91`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36239017971)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36239017967)
+completed successfully. This closes the native-dispatch/build-scaling follow-up.
+
+## Remaining inverse-trig dependencies
+
+The native inverse-trig diagnostic retains 286 unique F32 inputs and 572 result
+words. Base primitives differ in ten CPU/JavaScript words and 286 forced-Metal
+words, including endpoint rounding and negative-zero preservation. Investigated
+legacy mathematical models and endpoint-adjusted double functions also retain
+mismatches. `QuaternionSlerp`, `QuaternionToAxisAngle` and `QuaternionToEuler`
+remain explicitly blocked, with no implementation count added. See
+[INVERSE-TRIG.md](INVERSE-TRIG.md) and
+[evidence/inverse-trig-blocker.json](evidence/inverse-trig-blocker.json).
+
+The diagnostic completed on CPU/JS/Metal; its mismatch record is not a parity
+pass. The unchanged library/proof corpus reuses its passing current-source
+evidence. Harness tests and project checks pass. Reviewed the diagnostic entry
+point, lane generator, native pointer calls and workflow/artifact consumers.
+
+Regression scan: 6 callers checked, 2 assertions checked, 0 flagged/fixed.

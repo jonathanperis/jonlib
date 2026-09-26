@@ -3,10 +3,10 @@
   "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
   "declaration_inventory": {
     "total": 1884,
-    "blocked": 1,
+    "blocked": 4,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1642,
+    "not-started": 1639,
     "partial": 241
   },
   "core_functions": {
@@ -19,10 +19,10 @@
   },
   "function_declarations": {
     "total": 931,
-    "blocked": 1,
+    "blocked": 4,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 707,
+    "not-started": 704,
     "partial": 223
   },
   "unique_c_function_names": 923,
@@ -51,10 +51,10 @@
     },
     "raymath.h": {
       "total": 254,
-      "blocked": 1,
+      "blocked": 4,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 104,
+      "not-started": 101,
       "partial": 149
     },
     "rlgl.h": {
@@ -125,10 +125,10 @@
         "numerics"
       ],
       "total": 221,
-      "blocked": 1,
+      "blocked": 4,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 84,
+      "not-started": 81,
       "partial": 136
     },
     {
@@ -563,12 +563,77 @@
   ],
   "next_work": [
     {
+      "id": "raylib:function:SetRandomSeed",
+      "name": "SetRandomSeed",
+      "milestone": "random",
+      "status": "not-started",
+      "jonlib": "Random.set_random_seed",
+      "next_step": "Derive SetRandomSeed semantics from the linked source, add a reference fixture, then implement Random.set_random_seed.",
+      "milestone_dependencies": [
+        "numerics",
+        "memory"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:GetRandomValue",
+      "name": "GetRandomValue",
+      "milestone": "random",
+      "status": "not-started",
+      "jonlib": "Random.get_random_value",
+      "next_step": "Derive GetRandomValue semantics from the linked source, add a reference fixture, then implement Random.get_random_value.",
+      "milestone_dependencies": [
+        "numerics",
+        "memory"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:GenImageWhiteNoise",
+      "name": "GenImageWhiteNoise",
+      "milestone": "images",
+      "status": "not-started",
+      "jonlib": "Surface.gen_image_white_noise",
+      "next_step": "Derive GenImageWhiteNoise semantics from the linked source, add a reference fixture, then implement Surface.gen_image_white_noise.",
+      "milestone_dependencies": [
+        "pixels",
+        "memory"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:LoadRandomSequence",
+      "name": "LoadRandomSequence",
+      "milestone": "random",
+      "status": "not-started",
+      "jonlib": "Random.load_random_sequence",
+      "next_step": "Derive LoadRandomSequence semantics from the linked source, add a reference fixture, then implement Random.load_random_sequence.",
+      "milestone_dependencies": [
+        "numerics",
+        "memory"
+      ],
+      "api_dependencies": []
+    },
+    {
+      "id": "raylib:function:UnloadRandomSequence",
+      "name": "UnloadRandomSequence",
+      "milestone": "random",
+      "status": "not-started",
+      "jonlib": "Random.unload_random_sequence",
+      "next_step": "Derive UnloadRandomSequence semantics from the linked source, add a reference fixture, then implement Random.unload_random_sequence.",
+      "milestone_dependencies": [
+        "numerics",
+        "memory"
+      ],
+      "api_dependencies": []
+    },
+    {
       "id": "raymath:function:QuaternionSlerp",
       "name": "QuaternionSlerp",
       "milestone": "raymath",
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "Quaternion.slerp",
-      "next_step": "Derive QuaternionSlerp semantics from the linked source, add a reference fixture, then implement Quaternion.slerp.",
+      "next_step": "Resolve: Base and investigated inverse-trig models differ from the actual float libm; no verified acos profile is available yet.",
       "milestone_dependencies": [
         "numerics"
       ],
@@ -578,9 +643,9 @@
       "id": "raymath:function:QuaternionToAxisAngle",
       "name": "QuaternionToAxisAngle",
       "milestone": "raymath",
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "Quaternion.to_axis_angle",
-      "next_step": "Derive QuaternionToAxisAngle semantics from the linked source, add a reference fixture, then implement Quaternion.to_axis_angle.",
+      "next_step": "Resolve: Native acosf endpoint/tail values differ from Base and investigated numerical models.",
       "milestone_dependencies": [
         "numerics"
       ],
@@ -590,9 +655,9 @@
       "id": "raymath:function:QuaternionToEuler",
       "name": "QuaternionToEuler",
       "milestone": "raymath",
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "Quaternion.to_euler",
-      "next_step": "Derive QuaternionToEuler semantics from the linked source, add a reference fixture, then implement Quaternion.to_euler.",
+      "next_step": "Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models.",
       "milestone_dependencies": [
         "numerics"
       ],
@@ -737,66 +802,6 @@
       "status": "partial",
       "jonlib": "Vector2.subtract",
       "next_step": "Close documented gaps and unverified gates for Vector2Subtract.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2SubtractValue",
-      "name": "Vector2SubtractValue",
-      "milestone": "raymath",
-      "status": "partial",
-      "jonlib": "Vector2.subtract_value",
-      "next_step": "Close documented gaps and unverified gates for Vector2SubtractValue.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2Length",
-      "name": "Vector2Length",
-      "milestone": "raymath",
-      "status": "partial",
-      "jonlib": "Vector2.length",
-      "next_step": "Close documented gaps and unverified gates for Vector2Length.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2LengthSqr",
-      "name": "Vector2LengthSqr",
-      "milestone": "raymath",
-      "status": "partial",
-      "jonlib": "Vector2.length_sqr",
-      "next_step": "Close documented gaps and unverified gates for Vector2LengthSqr.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2DotProduct",
-      "name": "Vector2DotProduct",
-      "milestone": "raymath",
-      "status": "partial",
-      "jonlib": "Vector2.dot_product",
-      "next_step": "Close documented gaps and unverified gates for Vector2DotProduct.",
-      "milestone_dependencies": [
-        "numerics"
-      ],
-      "api_dependencies": []
-    },
-    {
-      "id": "raymath:function:Vector2CrossProduct",
-      "name": "Vector2CrossProduct",
-      "milestone": "raymath",
-      "status": "partial",
-      "jonlib": "Vector2.cross_product",
-      "next_step": "Close documented gaps and unverified gates for Vector2CrossProduct.",
       "milestone_dependencies": [
         "numerics"
       ],
