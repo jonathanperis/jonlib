@@ -258,14 +258,26 @@
     "milestone": "image-codecs"
   },
   "ExportImage": {
-    "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Image.Formatted.write_raw",
+    "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.write_raw",
     "status": "profile-covered",
-    "scope": "QOI, V4/32-bit BMP and default RLE TGA export from owned RGBA8, plus headerless RAW for byte/integer formats 1..7. Exact native bytes and Base file-write/closure behavior.",
+    "scope": "QOI, V4/32-bit BMP, default RLE TGA and default quality-8 PNG export from owned RGBA8, plus RAW for byte/integer formats 1..7. Exact native bytes and Base file-write/closure behavior.",
     "gaps": [
       "Other export/source formats, configured exporter options and generic extension dispatch",
       "Native callbacks/allocation ABI and complete targets/integration/performance"
     ],
     "api_id": "raylib:function:ExportImage",
+    "milestone": "image-codecs"
+  },
+  "ExportImageToMemory": {
+    "jonlib": "Surface.to_png",
+    "status": "profile-covered",
+    "scope": "Consumes owned RGBA8 and emits exact default PNG bytes: auto filter selection, quality-8 stb compression, stored fallback, Adler-32 and chunk CRCs. Full native memory/file bytes and candidate round trips are compared.",
+    "gaps": [
+      "Other source formats, configured writer flags and generic extension dispatch",
+      "Native pointer/output-size/allocator ABI and ownership correspondence",
+      "Complete integration/target/resource/performance coverage"
+    ],
+    "api_id": "raylib:function:ExportImageToMemory",
     "milestone": "image-codecs"
   },
   "GenImageColor": {

@@ -10,8 +10,10 @@ import zlib
 
 if __package__:
     from .conformance import BUILD, ROOT, checkout, run, source_gate
+    from .byte_probe import BEND_EMITTER, parse_results
 else:
     from conformance import BUILD, ROOT, checkout, run, source_gate
+    from byte_probe import BEND_EMITTER, parse_results
 
 
 def compress(data, level=6, strategy=zlib.Z_DEFAULT_STRATEGY):
@@ -88,25 +90,6 @@ def fixtures():
     return inputs,malformed
 
 
-def parse_results(text):
-    results=[]
-    current=[]
-    for line in text.splitlines():
-        row=json.loads(line)
-        if row is None:
-            if current:raise ValueError('Failure inside an unfinished DEFLATE result')
-            results.append(None)
-        elif row=='end':
-            results.append(current)
-            current=[]
-        elif isinstance(row,list) and 1<=len(row)<=256 and all(type(value) is int and 0<=value<=255 for value in row):
-            current.extend(row)
-        else:
-            raise ValueError('Malformed DEFLATE output chunk')
-    if current:raise ValueError('Unterminated DEFLATE result')
-    return results
-
-
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--bend-source',type=Path,required=True)
@@ -159,30 +142,11 @@ def main():
         program='''import Base
 import ../../jonlib.bend as J
 import ../../src/inflate.bend as D
-def chunk.put(full: Bool, partial: List<U32>, chunks: List<List<U32>>) -> List<U32> & List<List<U32>>:
-  match full:
-    case False{}: (partial, chunks)
-    case True{}: (Nil{}, Con{List.reverse(&1, U32, partial), chunks})
-def chunk.finish(partial: List<U32>, chunks: List<List<U32>>) -> List<List<U32>>:
-  match partial:
-    case Nil{}: List.reverse(&1, List<U32>, chunks)
-    case _: List.reverse(&1, List<U32>, Con{List.reverse(&1, U32, partial), chunks})
-def chunked(bytes: List<U32>, +count: U32, state: List<U32> & List<List<U32>>) -> List<List<U32>>:
-  match bytes state:
-    case Nil{} Tuple{partial, chunks}: chunk.finish(partial, chunks)
-    case Con{byte, rest} Tuple{partial, chunks}:
-      chunked(rest, ((count + 1) % 256 : U32), chunk.put(U32.is_eq(count, 255), Con{byte, partial}, chunks))
-def emit_chunks(chunks: List<List<U32>>) -> IO(Unit):
-  match chunks:
-    case Nil{}: IO.print("\\"end\\"")
-    case Con{chunk, rest}:
-      do IO<Unit>:
-        IO.print(List.show(~&1, ~U32, ~U32.show, chunk))
-        emit_chunks(rest)
+''' + BEND_EMITTER + '''
 def emit(result: Maybe<List<U32>>) -> IO(Unit):
   match result:
     case None{}: IO.print("null")
-    case Some{bytes}: emit_chunks(chunked(bytes, 0, (Nil{}, Nil{})))
+    case Some{bytes}: emit_bytes(~&1, bytes)
 def payload(+maximum: U32, result: Result<&1, &1, U32 & String, +List<U32>>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "compressed fixture read failed")

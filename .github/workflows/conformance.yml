@@ -149,6 +149,10 @@ jobs:
           python3 tools/png_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify exact PNG compression and memory/file export
+        run: |
+          python3 tools/deflate_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend" --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+          python3 tools/png_export_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend" --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Verify raw and PNG-oriented DEFLATE behavior
         run: >-
           python3 tools/inflate_probe.py
@@ -226,3 +230,5 @@ jobs:
             .build/pnm-probe/results.json
             .build/inflate-probe/results.json
             .build/png-probe/results.json
+            .build/deflate-probe/results.json
+            .build/png-export-probe/results.json

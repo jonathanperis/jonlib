@@ -1,0 +1,27 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {
+    "jonlib.bend": "d62c7965c694ba7971389909aa041b50e7af39a2abde0b7e4590071047273e29",
+    "src/deflate.bend": "681a6b777b12638756aa33eda906032ffcfce0a9b40908c6bc78b8767d0955ea",
+    "src/png_encode.bend": "759ad33f9eb71ebec9384a4cee520acf9f8c6f329f97e552b3334bee05a54481",
+    "src/png.bend": "91d6876ed65dbf203582508b0917b9a00730f75baf5bba4e6bbd4faf5301e7f3"
+  },
+  "inputs_sha256": "6da254b6e0e4f3a7540d88143459bb69ad491a1aa17b21a906b4604f7f406be4",
+  "reference_sha256": "1dd94ee5c16a60e9d44df3b309c27e26d1539a924d43429653d7daad09b02540",
+  "images": 12,
+  "encoded_bytes": 166087,
+  "roundtrip_bytes": 166980,
+  "filters": [0,1,2,3,4],
+  "block_types": [0,1],
+  "compressor": {
+    "cases":17,"encoded_bytes":170780,
+    "inputs_sha256":"1d5cdd3a3ef6338b1d468f2bc9db6d2d98259014688a75b0baf3dcce9d08bf4b",
+    "reference_sha256":"aed73732a7406d0500d93799bbdfcd5c6c20f17725d82ac7a27f31ad864b8ec3"
+  },
+  "passed": true,
+  "lanes": ["cpu","javascript","metal"],
+  "file_export_lanes": ["cpu","javascript"],
+  "inflate_regression_passed": true,
+  "full_corpus": {"scenarios":261,"output_words_per_lane":40101,"passed":true,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "limits": ["Other source formats and configured writer flags", "Native buffer/ownership/allocation ABI and generic dispatch", "Complete integration/target/resource/performance coverage"]
+}

@@ -9,7 +9,7 @@ from unittest.mock import patch
 
 from tools.conformance import BUILD, cases_from, checkout, compare, parse_output, result_size
 from tools.resize_conformance import verify_images
-from tools.inflate_probe import parse_results
+from tools.byte_probe import parse_results
 
 
 class HarnessTests(unittest.TestCase):

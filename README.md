@@ -45,6 +45,7 @@ differential test reference.
 - Binary PGM/PPM byte-sample decoding with native header and maxval behavior.
 - Bounded raw DEFLATE decompression with native empty-block semantics.
 - PNG decoding across supported 1/2/4/8/16-bit formats, Adam7 and native-default CgBI.
+- Byte-exact default RGBA8 PNG memory/file export, including filtering and compression.
 - Initial scalar and Vector2 math under an explicit uncontracted-F32 profile.
 - Horizontal and vertical flips.
 - Conversion to Bend's `Base.Image` quadtree.

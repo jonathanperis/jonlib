@@ -50,7 +50,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 103 have
+- The pinned core header inventory contains 600 unique public functions; 104 have
   explicitly scoped Jonlib mappings. The raymath ledger additionally maps 142
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
@@ -1383,3 +1383,33 @@ export, original-format metadata and broader recovery/resource/platform coverage
 remain gaps. API completion counts are unchanged.
 
 Regression scan: 61 callers checked, 41 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `cb24c9c`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36277197043)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36277197045)
+completed successfully, including native-default CgBI framing and channels.
+
+## Exact default PNG memory and file export
+
+The quality-8 compressor matches 17 linked-stb comparisons / 170,780 encoded
+bytes on CPU, JavaScript and forced Metal. Complete native memory/file exports
+agree for 12 PNG images / 166,087 bytes; candidate encoders match every byte and
+candidate decoders recover all 166,980 original RGBA bytes on each lane. Native
+inspection confirms coverage of all five selected filters and both fixed/stored
+DEFLATE output. CPU/JS additionally verify public mixed-alpha/noise file exports.
+See [evidence/png-export.json](evidence/png-export.json).
+
+The implementation preserves signed-byte filter scoring and strict ties, newest
+equal matches, bucket eviction, lazy lookahead, strict window limits, bit packing,
+stored fallback, native 5,552-byte Adler boundaries and all PNG CRC/header fields.
+Review aligned Adler reduction boundaries with the reference order; encoded
+expectations remained unchanged. The byte-result serializer is shared with the
+inflater probe, whose original 24 streams / 16 controls still pass every lane.
+
+Full 261-scenario / 40,101-word conformance, nine harness tests, project checks and
+four pinned laws pass. I91 and A4/A5/A6 hold for default RGBA8 export. The ledger
+adds partial `ExportImageToMemory` coverage and extends `ExportImage`, reaching
+104 core plus 142 raymath partial functions with zero full-parity completions.
+Other source formats, nondefault writer settings, pointer/buffer ownership ABI,
+generic dispatch and complete resource/performance/platform evidence remain gaps.
+
+Regression scan: 90 callers checked, 26 assertions checked, 1 flagged/fixed.

@@ -23,6 +23,7 @@ import ./src/tga.bend as Tga
 import ./src/pnm.bend as Pnm
 import ./src/inflate.bend as Inflate
 import ./src/png.bend as Png
+import ./src/png_encode.bend as PngEncode
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -1856,6 +1857,10 @@ def Surface.png.result(result: Result<&1, &1, Png.Error, Png.Image>) -> Result<&
 def Surface.decode_png(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   Surface.png.result(Png.decode(bytes))
 
+def Surface.to_png(surface: Surface) -> +List<U32>:
+  Surface{width, height, pixels} = surface
+  PngEncode.encode(width, height, pixels)
+
 def Surface.dimensions(surface: Surface) -> U32 & U32:
   Surface{w, h, _} = surface
   (w, h)
@@ -3058,6 +3063,10 @@ def Surface.write_bmp(surface: Surface, path: String) -> IO(Result<&1, &1, U32 &
 def Surface.write_tga(surface: Surface, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
     File.open(path, "w"), Surface.qoi.opened(Surface.to_tga(surface)))
+
+def Surface.write_png(surface: Surface, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
+  IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
+    File.open(path, "w"), Surface.qoi.opened(Surface.to_png(surface)))
 
 def Surface.load_qoi.decoded(result: Result<&1, &1, Image.DecodeError, Surface>) -> Result<&1, &1, Image.LoadError, Surface>:
   match result:

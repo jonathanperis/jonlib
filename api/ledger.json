@@ -40802,9 +40802,9 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Image.Formatted.write_raw",
+      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.write_raw",
       "mapping_state": "implemented",
-      "scope": "QOI, V4/32-bit BMP and default RLE TGA export from owned RGBA8, plus headerless RAW for byte/integer formats 1..7. Exact native bytes and Base file-write/closure behavior.",
+      "scope": "QOI, V4/32-bit BMP, default RLE TGA and default quality-8 PNG export from owned RGBA8, plus RAW for byte/integer formats 1..7. Exact native bytes and Base file-write/closure behavior.",
       "gaps": [
         "Other export/source formats, configured exporter options and generic extension dispatch",
         "Native callbacks/allocation ABI and complete targets/integration/performance"
@@ -40824,10 +40824,12 @@
         "tools/raw_file_probe.py",
         "tools/bmp_probe.py",
         "tools/tga_probe.py",
+        "tools/png_export_probe.py",
         "docs/CODECS.md",
         "docs/RAW-FILES.md",
         "docs/BMP.md",
-        "docs/TGA.md"
+        "docs/TGA.md",
+        "docs/PNG-EXPORT.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -40870,24 +40872,28 @@
       "milestone": "image-codecs",
       "phase": 1,
       "sequence": 9,
-      "status": "not-started",
-      "jonlib": "Surface.export_image_to_memory",
-      "mapping_state": "proposed",
-      "scope": "The pinned implementation supports PNG memory export only; QOI is supported by ExportImage, not this API.",
+      "status": "partial",
+      "jonlib": "Surface.to_png",
+      "mapping_state": "implemented",
+      "scope": "Consumes owned RGBA8 and emits exact default PNG bytes: auto filter selection, quality-8 stb compression, stored fallback, Adler-32 and chunk CRCs. Full native memory/file bytes and candidate round trips are compared.",
       "gaps": [
-        "PNG memory encoding"
+        "Other source formats, configured writer flags and generic extension dispatch",
+        "Native pointer/output-size/allocator ABI and ownership correspondence",
+        "Complete integration/target/resource/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/CODECS.md"
+        "tools/png_export_probe.py",
+        "tools/deflate_probe.py",
+        "docs/PNG-EXPORT.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -40903,7 +40909,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-format decode/encode fixtures, metadata, truncated/malformed data, dimensions and resource limits.",
-      "next_step": "Derive ExportImageToMemory semantics from the linked source, add a reference fixture, then implement Surface.export_image_to_memory.",
+      "next_step": "Close documented gaps and unverified gates for ExportImageToMemory.",
       "priority": 209
     },
     {

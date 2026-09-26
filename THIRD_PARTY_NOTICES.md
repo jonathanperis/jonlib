@@ -80,6 +80,11 @@ stb header to bounded owned output and tail-recursive extraction. Its raw API
 also retains the observed empty-stored-block completion rule of raylib's
 `DecompressData`. Native sinfl, stb and zlib are reference tooling only.
 
+`src/png_encode.bend` and `src/deflate.bend` adapt the default PNG filter heuristic,
+quality-8 zlib compressor, stored fallback and checksums from the same pinned
+`stb_image_write.h`, with owned Bend input/dictionary arrays and byte lists.
+The retained stb MIT notice applies to these altered implementations too.
+
 ## Arm numerical routines
 
 The GNU-reference polynomial in `src/trig.bend` and its independent C control

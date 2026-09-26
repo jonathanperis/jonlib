@@ -139,6 +139,7 @@ is outside this API's contract.
 | `Surface.decode_tga`, `to_tga`, `write_tga` | Bounded raw/RLE true-color/grayscale decoding and byte-exact default RLE export; packet rules and limits in [TGA.md](TGA.md). |
 | `Surface.decode_pnm` | Binary 8-bit P5/P6 decoding with native unscaled samples and header parsing; see [PNM.md](PNM.md). |
 | `Surface.decode_png` | Bounded non-interlaced/Adam7 PNG and native-default CgBI decoding at supported 1/2/4/8/16-bit combinations; filtering, transparency and normalization in [PNG.md](PNG.md). |
+| `Surface.to_png`, `write_png` | Consuming RGBA8 memory/file exports with byte-exact native default filtering, quality-8 compression and checksums; see [PNG-EXPORT.md](PNG-EXPORT.md). |
 
 Drawing coordinates and rectangle extents are represented as **F32 but must be
 finite integers in -32767..32767**. Radius is **0..32767**. This permits negative
