@@ -154,9 +154,9 @@ BUILD = ROOT / ".build"
 ENV = dict(os.environ, BEND_NO_TELEMETRY="1")
 
 
-def run(command, cwd=ROOT):
+def run(command, cwd=ROOT, timeout=240):
     result = subprocess.run([str(x) for x in command], cwd=cwd, env=ENV,
-                            capture_output=True, text=True, timeout=240)
+                            capture_output=True, text=True, timeout=timeout)
     if result.returncode:
         raise RuntimeError(f"Command failed: {' '.join(map(str, command))}\n"
                            + result.stdout[-4000:] + result.stderr[-4000:])
@@ -1351,6 +1351,7 @@ def main():
     report['qoi_exports'] = dict(scenarios=len(exports), bytes=sum(len(row['qoi']) for row in exports))
     report['angle_reference_evaluation'] = 'native atan2f; builtin folding disabled'
     report['candidate_batches'] = []
+    report['candidate_compile_timeout_seconds'] = 600
     report_path.write_text(json.dumps(report,indent=2)+'\n')
     lanes = {'cpu-1':[], 'cpu-2':[], 'javascript':[]}
     if args.gpu:
@@ -1363,7 +1364,7 @@ def main():
         source.write_text(bend_source(selected))
         print(f'Building candidate batch {batch+1}: {len(selected)} scenarios...',flush=True)
         batch_started = time.monotonic()
-        run([*cli,source,'-o',binary,'-o',javascript])
+        run([*cli,source,'-o',binary,'-o',javascript],timeout=600)
         host_build_seconds = round(time.monotonic()-batch_started,3)
         lanes['cpu-1'].append([binary,'--threads','1'])
         lanes['cpu-2'].append([binary,'--threads','2'])
@@ -1372,7 +1373,7 @@ def main():
             gpu_source = BUILD/f'candidate-gpu-{batch}.bend'
             gpu_binary = BUILD/f'candidate-gpu-{batch}'
             gpu_source.write_text(bend_source(selected,gpu=True))
-            run([*cli,gpu_source,'-o',gpu_binary])
+            run([*cli,gpu_source,'-o',gpu_binary],timeout=600)
             lanes['gpu-forced'].append([gpu_binary,'--gpu','on'])
         report['candidate_batches'].append(dict(start=start,scenarios=len(selected),cpu_js_build_seconds=host_build_seconds))
         report_path.write_text(json.dumps(report,indent=2)+'\n')

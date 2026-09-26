@@ -836,3 +836,13 @@ evidence. Harness tests and project checks pass. Reviewed the diagnostic entry
 point, lane generator, native pointer calls and workflow/artifact consumers.
 
 Regression scan: 6 callers checked, 2 assertions checked, 0 flagged/fixed.
+
+`2550b35` passed Ubuntu but a later macOS runner again exceeded 240 seconds on
+the unchanged first 64-case candidate build. Candidate compilation now has an
+explicit bounded 600-second budget recorded in the report; execution retains
+the 240-second default. Batching, scenarios and exact comparisons are retained.
+This allowance addresses observed compiler-resource variability and establishes
+no performance-parity claim. The current-source runtime/proof evidence is reused;
+eight harness tests and project checks pass for the scoped timeout change.
+
+Regression scan: 3 callers checked, 0 assertions checked, 1 flagged/fixed.
