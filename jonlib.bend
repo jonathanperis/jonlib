@@ -1,6 +1,7 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
 # Image/color algorithms adapted from raylib 6.0 rtextures.c; math from raymath.h.
 # Collision queries adapted from the same release's rshapes.c.
+# 3D collision queries adapted from rmodels.c.
 # Altered Bend implementations; see THIRD_PARTY_NOTICES.md and LICENSES/raylib.txt.
 import Base
 import ./src/resample.bend as Resample
@@ -12,6 +13,12 @@ import ./src/fused.bend as Fused
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
+
+type Vector3 is Data:
+  Vector3{x: F32, y: F32, z: F32}
+
+type BoundingBox is Data:
+  BoundingBox{min: Vector3, max: Vector3}
 
 type Rectangle is Data:
   Rectangle{x: F32, y: F32, width: F32, height: F32}
@@ -240,6 +247,58 @@ def Vector2.rotate_for(reference: Gradient.Reference, vector: Vector2, angle: F3
 
 def Vector2.rotate(vector: Vector2, angle: F32) -> Vector2:
   Vector2.rotate_for(AccurateGradient{}, vector, angle)
+
+def Vector3.zero() -> Vector3:
+  Vector3{0.0, 0.0, 0.0}
+
+def Vector3.one() -> Vector3:
+  Vector3{1.0, 1.0, 1.0}
+
+def Vector3.add(left: Vector3, right: Vector3) -> Vector3:
+  Vector3{x, y, z} = left
+  Vector3{u, v, w} = right
+  Vector3{(x + u : F32), (y + v : F32), (z + w : F32)}
+
+def Vector3.subtract(left: Vector3, right: Vector3) -> Vector3:
+  Vector3{x, y, z} = left
+  Vector3{u, v, w} = right
+  Vector3{(x - u : F32), (y - v : F32), (z - w : F32)}
+
+def Vector3.scale(vector: Vector3, +scale: F32) -> Vector3:
+  Vector3{x, y, z} = vector
+  Vector3{(x * scale : F32), (y * scale : F32), (z * scale : F32)}
+
+def Vector3.multiply(left: Vector3, right: Vector3) -> Vector3:
+  Vector3{x, y, z} = left
+  Vector3{u, v, w} = right
+  Vector3{(x * u : F32), (y * v : F32), (z * w : F32)}
+
+def Vector3.cross_product(left: Vector3, right: Vector3) -> Vector3:
+  Vector3{+x, +y, +z} = left
+  Vector3{+u, +v, +w} = right
+  Vector3{(y * w - z * v : F32), (z * u - x * w : F32), (x * v - y * u : F32)}
+
+def Vector3.dot_product(left: Vector3, right: Vector3) -> F32:
+  Vector3{x, y, z} = left
+  Vector3{u, v, w} = right
+  (x * u + y * v + z * w : F32)
+
+def Vector3.distance_sqr(left: Vector3, right: Vector3) -> F32:
+  Vector3{x, y, z} = left
+  Vector3{u, v, w} = right
+  +dx = (u - x : F32)
+  +dy = (v - y : F32)
+  +dz = (w - z : F32)
+  (dx * dx + dy * dy + dz * dz : F32)
+
+def Collision.spheres(left: Vector3, radius: F32, right: Vector3, other_radius: F32) -> Bool:
+  +sum = (radius + other_radius : F32)
+  (Vector3.distance_sqr(left, right) <= sum * sum : F32)
+
+def Collision.boxes(left: BoundingBox, right: BoundingBox) -> Bool:
+  BoundingBox{Vector3{ax, ay, az}, Vector3{bx, by, bz}} = left
+  BoundingBox{Vector3{cx, cy, cz}, Vector3{dx, dy, dz}} = right
+  ((bx >= cx) && (ax <= dx) && (by >= cy) && (ay <= dy) && (bz >= cz) && (az <= dz) : F32)
 
 def Collision.recs(left: Rectangle, right: Rectangle) -> Bool:
   Rectangle{+x, +y, w, h} = left

@@ -21,10 +21,10 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 163 scenarios / 32,660 output words match pinned raylib exactly on each
+- 168 scenarios / 32,715 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
-- The word count includes 233 exact scalar/Vector2/collision result-bit probe cells.
+- The word count includes 288 exact scalar/vector/collision result-bit probe cells.
   The math reference explicitly uses uncontracted F32; no comparison tolerance
   is applied. Both components of each vector output are checked.
 - Seven QOI export scenarios compare all 299 encoded bytes per lane. Real CPU/JS
@@ -50,8 +50,8 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 74 have
-  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 34
+- The pinned core header inventory contains 600 unique public functions; 76 have
+  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 43
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
   on CPU, JS and Metal for its declared reference profile. Ubuntu's subsequent
@@ -101,7 +101,7 @@ reference comparison of all 4096 supported POT axis sizes.
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 163 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 168 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -401,3 +401,25 @@ fused-probe assertion. Corrected one documentation statement that no longer
 accounted for the explicit fused profile.
 
 Regression scan: 44 callers checked, 49 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `1e3a764`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36218678462)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36218678470)
+completed successfully, including both hosts' native `fmaf` probes.
+
+## Vector3 and bounded 3D queries
+
+The next batch adds nine Vector3 functions, shared Vector3/BoundingBox type
+mappings and two 3D collision predicates. All three components are serialized
+and compared bit-for-bit. Fixtures cover cross-product handedness, non-dyadic
+products, accumulation order, signed zero, sphere tangency and box separation
+on each relevant axis. [Evidence](evidence/vector3-foundation.json) records
+168 scenarios / 32,715 words per CPU-1/CPU-2/JavaScript/forced-Metal lane.
+
+A26/A4/A5 pass the scoped numerical/source/backend gates, the eight harness
+tests pass, and the pinned proof entry point reports `All terms check.` The
+49 constructor/caller contexts include the generalized two/three-component
+serializer and its existing diagnostic consumers; 29 differential operations
+and two malformed-vector assertions were inspected. Complete 3D integration,
+other numerical profiles and full target/performance gates remain gaps.
+
+Regression scan: 49 callers checked, 31 assertions checked, 0 flagged/fixed.

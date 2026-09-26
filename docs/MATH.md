@@ -1,7 +1,7 @@
 # Math profiles
 
 The current math implementation is Bend source in `jonlib.bend`. It begins the
-`raymath.h` work package with six scalar functions and twenty-eight Vector2 functions.
+`raymath.h` work package with six scalar, twenty-eight Vector2 and nine Vector3 functions.
 
 ## Scalar API
 
@@ -49,6 +49,22 @@ profile; `rotate` selects the accurate profile. The current profile covers finit
 radians within one cycle and preserves reference operation order. See
 [ROTATION.md](ROTATION.md) for the corresponding image operation and numerical gates.
 
+## Vector3 API
+
+`Vector3` is immutable `Data` with F32 `x`, `y`, `z` fields.
+
+- Constructors: `zero()`, `one()`.
+- Component operations: `add(left, right)`, `subtract(left, right)`,
+  `scale(vector, scalar)`, `multiply(left, right)`.
+- Products and metrics: `cross_product(left, right)`, `dot_product(left, right)`,
+  `distance_sqr(left, right)`.
+
+The cross product retains raylib's handedness and XYZ field order. Dot products
+and squared distance accumulate in reference left-to-right F32 order. The
+fixture serializer checks all three component bits, including the Z component
+and signed zero. Full transforms, remaining metrics and other numeric profiles
+remain ledger gaps.
+
 ## Floating-point contract and evidence
 
 The initial profile is **uncontracted F32**, matching the primitive arithmetic
@@ -57,8 +73,8 @@ unmodified pinned `raymath.h` with `FP_CONTRACT OFF`. This choice is explicit:
 fused multiply-add/contracted build variants are separate, unverified contracts.
 
 The shared fixtures compare exact returned F32 bit patterns and Boolean values.
-Vector-returning operations write both components to adjacent verification cells;
-the validator requires both cells to fit. Signed zero is retained in generated
+Vector-returning operations write every component to adjacent verification cells;
+the validator requires all cells to fit. Signed zero is retained in generated
 Bend literals. There is no tolerance added to make mismatches pass.
 
 Current evidence uses finite inputs, nonzero normalized ranges, and nonzero

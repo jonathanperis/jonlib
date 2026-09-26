@@ -78,6 +78,8 @@ class HarnessTests(unittest.TestCase):
                     dict(case, width=2, operations=[dict(op='collision_value', function='lines', args=[0,0,1,1,0,1,1,0], x=0, y=0)]),
                     dict(case, operations=[dict(op='collision_value', function='point_line', args=[0,0,1,1,2,2,0.5], x=0, y=0)]),
                     dict(case, operations=[dict(op='collision_value', function='point_poly', args=[0,0], points=[[1]], x=0, y=0)]),
+                    dict(case, width=2, operations=[dict(op='vector3_value', function='one', args=[], x=0, y=0)]),
+                    dict(case, width=3, operations=[dict(op='vector3_value', function='add', args=[1,2,3,4,5], x=0, y=0)]),
                     dict(case, alpha_border=True),
                     dict(case, gradient_square=dict(density=1.5, outer=[0,0,0,0])),
                     dict(case, width=2, height=2, gradient_linear=dict(direction=361, outer=[0,0,0,0])),

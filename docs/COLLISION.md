@@ -1,5 +1,17 @@
 # Collision query profiles
 
+## 3D foundation
+
+`Collision.spheres(center, radius, other_center, other_radius)` compares the
+Vector3 squared distance inclusively with the squared sum of radii.
+`Collision.boxes(left, right)` accepts two `BoundingBox{min, max}` values and
+includes touching faces, edges and points. Bounds are not normalized, and
+negative radii retain raylib's squared-sum behavior. The same bounded finite
+input and numerical/platform limitations below apply. Fixtures compare the
+actual linked `rmodels.c` queries and include separation on the Z axis.
+
+## 2D queries
+
 Pure Bend queries in `jonlib.bend`, adapted from pinned raylib `rshapes.c`:
 
 | Operation | Result and edge behavior |

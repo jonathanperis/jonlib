@@ -45,6 +45,9 @@ Supported operations:
   four adjacent exact F32-bit cells, all required to fit.
   Segment `lines` results use three cells (hit flag and both coordinate bits).
   `point_poly` adds a `points` array; `point_line` requires an integral threshold.
+- `vector3_value` follows the numeric-probe format with flattened XYZ arguments
+  and three adjacent result-bit cells for vector results. Bounding-box collision
+  arguments flatten each minimum XYZ and maximum XYZ pair.
 - `color_tint`, `color_invert`, `color_contrast`, `color_brightness`,
   `color_replace`: image transforms. Tint/replacement use RGBA `color`,
   replacement also uses `replacement`, and contrast/brightness use `amount`.

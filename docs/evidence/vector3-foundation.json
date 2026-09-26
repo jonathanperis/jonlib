@@ -1,0 +1,13 @@
+{
+  "date": "2026-09-26",
+  "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "source_sha256": {"jonlib.bend": "2865d0efcc4c2e078372442278db75bef234f454ed9b83b079b5b27ca319bf84"},
+  "fixtures_sha256": "3fdac3266deefbfa6f07c627bd0b78a3fb269dc14aeab7f75c3b9c413e95169e",
+  "scenarios": 168,
+  "output_words_per_lane": 32715,
+  "numeric_probe_cells": 288,
+  "passed": true,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "scope": ["Nine uncontracted Vector3 functions with every component checked", "Immutable Vector3/BoundingBox type mappings", "Inclusive sphere/box predicates against linked raylib"],
+  "limits": ["Exceptional/subnormal and contracted numerical variants", "Remaining 3D operations and complete integration", "Full target/resource/performance coverage"]
+}

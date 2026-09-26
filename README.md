@@ -33,6 +33,7 @@ differential test reference.
 - Alpha bounds/cropping, raw canvas resizing and square gradients.
 - Checked general image rotation and power-of-two canvas expansion.
 - Source-preserving channel extraction and eleven scoped pure 2D collision queries.
+- Vector3 arithmetic, cross/dot products, and bounded sphere/box collision queries.
 - Radial and one-cycle linear gradient profiles with balanced owned-array generation.
 - QOI decoding/encoding and real byte-file loading/export, with typed failures.
 - Initial scalar and Vector2 math under an explicit uncontracted-F32 profile.

@@ -41,6 +41,14 @@ VECTOR2_APIS = {
     'refract':('Vector2Refract','vvs','vector'), 'rotate':('Vector2Rotate','vs','vector'),
     'min':('Vector2Min','vv','vector'), 'max':('Vector2Max','vv','vector'),
 }
+VECTOR3_APIS = {
+    'zero':('Vector3Zero','','vector'), 'one':('Vector3One','','vector'),
+    'add':('Vector3Add','tt','vector'), 'subtract':('Vector3Subtract','tt','vector'),
+    'scale':('Vector3Scale','ts','vector'), 'multiply':('Vector3Multiply','tt','vector'),
+    'cross_product':('Vector3CrossProduct','tt','vector'), 'dot_product':('Vector3DotProduct','tt','float'),
+    'distance_sqr':('Vector3DistanceSqr','tt','float'),
+}
+VECTOR_APIS = {'vector_value':('Vector2',2,VECTOR2_APIS), 'vector3_value':('Vector3',3,VECTOR3_APIS)}
 COLLISION_APIS = {
     'recs':('CheckCollisionRecs','rr','bool'),
     'circles':('CheckCollisionCircles','vsvs','bool'),
@@ -53,6 +61,8 @@ COLLISION_APIS = {
     'point_line':('CheckCollisionPointLine','vvvi','bool'),
     'circle_line':('CheckCollisionCircleLine','vsvv','bool'),
     'point_poly':('CheckCollisionPointPoly','v','bool'),
+    'spheres':('CheckCollisionSpheres','tsts','bool'),
+    'boxes':('CheckCollisionBoxes','bb','bool'),
 }
 COLLISION_CELLS = {'bool':1, 'rectangle':4, 'hit':3}
 
@@ -222,7 +232,7 @@ def cases_from(document):
             if not isinstance(kind, str) or kind not in ("pixel", "rectangle", "circle", "clear", "flip_horizontal", "flip_vertical", "blend_color",
                              "line", "line_v", "triangle", "triangle_lines", "blit", "blit_region", "blit_rect", "crop", "extract", "resize_nn", "resize",
                              "pixel_v", "circle_v", "circle_lines", "circle_lines_v", "rectangle_v", "rectangle_rec", "rectangle_lines",
-                             "line_ex", "triangle_fan", "triangle_strip", "triangle_ex", "color_value", "number_value", "vector_value", "collision_value", "from_channel", "alpha_clear", "alpha_mask", "alpha_crop", "resize_canvas", "rotate_degrees", "to_pot") and kind not in UNARY_IMAGE_APIS and kind not in COLOR_IMAGE_APIS:
+                             "line_ex", "triangle_fan", "triangle_strip", "triangle_ex", "color_value", "number_value", "vector_value", "vector3_value", "collision_value", "from_channel", "alpha_clear", "alpha_mask", "alpha_crop", "resize_canvas", "rotate_degrees", "to_pot") and kind not in UNARY_IMAGE_APIS and kind not in COLOR_IMAGE_APIS:
                 raise ValueError(f"{name}: unknown operation {kind!r}")
             if kind in ('blit', 'blit_region', 'blit_rect', 'alpha_mask'):
                 if kind != 'alpha_mask':
@@ -256,7 +266,7 @@ def cases_from(document):
                             raise ValueError(f'{name}: invalid destination rectangle')
                 if op.get('observe_source'):
                     current_w, current_h = source['width'], source['height']
-            elif kind not in ('crop', 'extract', 'resize_nn', 'resize', 'color_contrast', 'color_brightness', 'number_value', 'vector_value', 'collision_value', 'from_channel', 'alpha_crop', 'rotate_degrees') and kind not in UNARY_IMAGE_APIS:
+            elif kind not in ('crop', 'extract', 'resize_nn', 'resize', 'color_contrast', 'color_brightness', 'number_value', 'vector_value', 'vector3_value', 'collision_value', 'from_channel', 'alpha_crop', 'rotate_degrees') and kind not in UNARY_IMAGE_APIS:
                 rgba(op["color"])
             if kind == 'color_replace':
                 rgba(op['replacement'])
@@ -278,26 +288,27 @@ def cases_from(document):
                 inputs = [struct.unpack('f',struct.pack('f',v))[0] for v in values]
                 if function in ('normalize','remap','wrap') and inputs[1] == inputs[2]:
                     raise ValueError(f'{name}: scalar range must remain nonzero in F32')
-            if kind == 'vector_value':
+            if kind in VECTOR_APIS:
+                namespace, dimensions, apis = VECTOR_APIS[kind]
                 function, values = op.get('function'), op.get('args')
-                if not isinstance(function, str) or function not in VECTOR2_APIS or not isinstance(values, list):
-                    raise ValueError(f'{name}: invalid Vector2 function/arguments')
-                _, signature, result = VECTOR2_APIS[function]
-                if len(values) != sum(2 if p=='v' else 1 for p in signature) or not all(coordinate(v, True) for v in values):
-                    raise ValueError(f'{name}: invalid Vector2 argument arity/domain')
+                if not isinstance(function, str) or function not in apis or not isinstance(values, list):
+                    raise ValueError(f'{name}: invalid {namespace} function/arguments')
+                _, signature, result = apis[function]
+                if len(values) != sum(dimensions if p in ('v','t') else 1 for p in signature) or not all(coordinate(v, True) for v in values):
+                    raise ValueError(f'{name}: invalid {namespace} argument arity/domain')
                 divisors = values[2:] if function=='divide' else values if function=='invert' else []
                 if any(struct.unpack('f',struct.pack('f',v))[0] == 0 for v in divisors):
-                    raise ValueError(f'{name}: Vector2 divisors must remain nonzero in F32')
+                    raise ValueError(f'{name}: vector divisors must remain nonzero in F32')
                 if function == 'rotate' and abs(values[2]) > 6.283186:
                     raise ValueError(f'{name}: vector rotation profile is bounded to one cycle')
-                if result == 'vector' and (not integer(op.get('x'),0,current_w-2) or not integer(op.get('y'),0,current_h-1)):
-                    raise ValueError(f'{name}: both vector output components must fit the image')
+                if result == 'vector' and (not integer(op.get('x'),0,current_w-dimensions) or not integer(op.get('y'),0,current_h-1)):
+                    raise ValueError(f'{name}: all vector output components must fit the image')
             if kind == 'collision_value':
                 function, values = op.get('function'), op.get('args')
                 if not isinstance(function, str) or function not in COLLISION_APIS or not isinstance(values, list):
                     raise ValueError(f'{name}: invalid collision function/arguments')
                 _, signature, result = COLLISION_APIS[function]
-                if len(values) != sum({'v':2,'r':4,'s':1,'i':1}[p] for p in signature) or not all(coordinate(v, True) for v in values):
+                if len(values) != sum({'v':2,'t':3,'b':6,'r':4,'s':1,'i':1}[p] for p in signature) or not all(coordinate(v, True) for v in values):
                     raise ValueError(f'{name}: invalid collision argument arity/domain')
                 if function == 'point_line' and not coordinate(values[-1]):
                     raise ValueError(f'{name}: point-line threshold must be integral')
@@ -430,11 +441,15 @@ def vector_arguments(signature, values, bend=False):
     result, at = [], 0
     literal = f32 if bend else lambda value: f'{float(value)!r}f'
     for parameter in signature:
-        if parameter in ('v','r'):
-            size, name = (2,'Vector2') if parameter=='v' else (4,'Rectangle')
+        if parameter in ('v','t','r'):
+            size, name = {'v':(2,'Vector2'), 't':(3,'Vector3'), 'r':(4,'Rectangle')}[parameter]
             vector = ', '.join(literal(v) for v in values[at:at+size])
             result.append((f'J.{name}{{' if bend else f'({name}){{') + vector + '}')
             at += size
+        elif parameter == 'b':
+            vectors = vector_arguments('tt',values[at:at+6],bend)
+            result.append(('J.BoundingBox{' if bend else '(BoundingBox){') + vectors + '}')
+            at += 6
         else:
             result.append(literal(values[at]))
             at += 1
@@ -548,13 +563,15 @@ def c_source(cases):
                 color = f'GetColor((unsigned int){expression})' if function == 'float_equals' else f'float_bits({expression})'
                 lines += [f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, {color});']
                 continue
-            if kind == 'vector_value':
-                function, signature, result = VECTOR2_APIS[op['function']]
+            if kind in VECTOR_APIS:
+                namespace, dimensions, apis = VECTOR_APIS[kind]
+                function, signature, result = apis[op['function']]
                 expression = f'{function}({vector_arguments(signature,op["args"])})'
                 if result == 'vector':
-                    lines += ['{', f'Vector2 v = {expression};',
-                              f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, float_bits(v.x));',
-                              f'ImageDrawPixel(&image, {op["x"]+1}, {op["y"]}, float_bits(v.y));', '}']
+                    lines += ['{', f'{namespace} v = {expression};']
+                    for index, field in enumerate(('x','y','z')[:dimensions]):
+                        lines += [f'ImageDrawPixel(&image, {op["x"]+index}, {op["y"]}, float_bits(v.{field}));']
+                    lines += ['}']
                 else:
                     color = f'GetColor((unsigned int){expression})' if result=='bool' else f'float_bits({expression})'
                     lines += [f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, {color});']
@@ -667,6 +684,10 @@ def bend_source(cases, gpu=False):
         '  J.Vector2{u, v} = vector',
         '  first = J.Surface.draw_pixel(surface, x, y, F32.bits(u))',
         '  J.Surface.draw_pixel(first, (x + 1.0 : F32), y, F32.bits(v))',
+        'def write_vector3(surface: J.Surface, +x: F32, +y: F32, vector: J.Vector3) -> J.Surface:',
+        '  J.Vector3{u, v, w} = vector',
+        '  first = write_vector(surface, x, y, J.Vector2{u, v})',
+        '  J.Surface.draw_pixel(first, (x + 2.0 : F32), y, F32.bits(w))',
         'def write_rectangle(surface: J.Surface, +x: F32, +y: F32, rectangle: J.Rectangle) -> J.Surface:',
         '  J.Rectangle{rx, ry, w, h} = rectangle',
         '  first = write_vector(surface, x, y, J.Vector2{rx, ry})',
@@ -782,12 +803,14 @@ def bend_source(cases, gpu=False):
                 lines += [f'    {previous} : J.Surface <- {draw}']
                 continue
             args = [previous]
-            if kind == 'vector_value':
-                _, signature, result = VECTOR2_APIS[op['function']]
-                function_name = op['function']+'_for' if op['function'] in ('rotate','clamp','min','max') else op['function']
-                profile = f'J.{gradient_reference()}{{}}, ' if op['function'] in ('rotate','clamp','min','max') else ''
-                expression = f'J.Vector2.{function_name}({profile}{vector_arguments(signature,op["args"],bend=True)})'
-                function = 'write_vector' if result=='vector' else 'J.Surface.draw_pixel'
+            if kind in VECTOR_APIS:
+                namespace, dimensions, apis = VECTOR_APIS[kind]
+                _, signature, result = apis[op['function']]
+                profiled = kind=='vector_value' and op['function'] in ('rotate','clamp','min','max')
+                function_name = op['function']+'_for' if profiled else op['function']
+                profile = f'J.{gradient_reference()}{{}}, ' if profiled else ''
+                expression = f'J.{namespace}.{function_name}({profile}{vector_arguments(signature,op["args"],bend=True)})'
+                function = ('write_vector' if dimensions==2 else 'write_vector3') if result=='vector' else 'J.Surface.draw_pixel'
                 value = expression if result=='vector' else f'Bool.to_u32({expression})' if result=='bool' else f'F32.bits({expression})'
                 previous = f's{j}'
                 lines += [f'    {previous} : J.Surface = {function}({args[0]}, {f32(op["x"])}, {f32(op["y"])}, {value})']
@@ -1004,8 +1027,8 @@ def main():
     report['fixtures_sha256'] = hashlib.sha256(expanded.encode()).hexdigest()
     report['scenarios'] = [c['id'] for c in cases]
     report['pixels_per_lane'] = sum(width * height for width, height in map(result_size, cases))
-    report['numeric_probe_cells'] = sum(1 if op['op']=='number_value' or VECTOR2_APIS[op['function']][2]!='vector' else 2
-                                        for case in cases for op in case['operations'] if op['op'] in ('number_value','vector_value'))
+    report['numeric_probe_cells'] = sum(1 if op['op']=='number_value' or VECTOR_APIS[op['op']][2][op['function']][2]!='vector' else VECTOR_APIS[op['op']][1]
+                                        for case in cases for op in case['operations'] if op['op']=='number_value' or op['op'] in VECTOR_APIS)
     report['numeric_probe_cells'] += sum(COLLISION_CELLS[COLLISION_APIS[op['function']][2]]
                                         for case in cases for op in case['operations'] if op['op']=='collision_value')
     report['alpha_border_observations'] = sum('alpha_border' in case for case in cases)

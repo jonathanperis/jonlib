@@ -776,5 +776,27 @@
     ],
     "api_id": "raylib:function:GetColor",
     "milestone": "pixels"
+  },
+  "CheckCollisionSpheres": {
+    "jonlib": "Collision.spheres",
+    "status": "profile-covered",
+    "scope": "Finite bounded sphere predicate using inclusive squared distance and the reference squared sum of signed radii.",
+    "gaps": [
+      "Exceptional/subnormal and contracted variants",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:CheckCollisionSpheres",
+    "milestone": "collision"
+  },
+  "CheckCollisionBoxes": {
+    "jonlib": "Collision.boxes",
+    "status": "profile-covered",
+    "scope": "Finite bounded axis-aligned box predicate; inclusive contacts on all axes and unchanged supplied bounds.",
+    "gaps": [
+      "Exceptional/subnormal domains",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:CheckCollisionBoxes",
+    "milestone": "collision"
   }
 }

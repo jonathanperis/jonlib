@@ -39,6 +39,11 @@ Reusable local constructor bindings need a type annotation, for example
 crop/extraction/region-drawing profile requires integral rectangle values;
 `draw_image_rect` and the documented rectangle wrappers also support fractional fields.
 
+`Vector3{x, y, z}` is immutable `Data` with three F32 fields.
+`BoundingBox{min, max}` contains two `Vector3` values; supplied bounds are retained
+without reordering. Their numeric and collision operations are documented in
+[MATH.md](MATH.md) and [COLLISION.md](COLLISION.md).
+
 `Surface` owns its row-major pixel array. Always start with `Surface.create`:
 the underlying constructor is visible because Bend does not provide the needed
 opaque user-type facility, but manually constructing an inconsistent surface
