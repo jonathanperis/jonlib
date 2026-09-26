@@ -70,7 +70,12 @@ MATRIX_APIS = {
     'multiply':('MatrixMultiply','mm','matrix'), 'trace':('MatrixTrace','m','float'),
     'determinant':('MatrixDeterminant','m','float'), 'invert':('MatrixInvert','m','matrix'),
     'translate':('MatrixTranslate','sss','matrix'), 'scale':('MatrixScale','sss','matrix'),
+    'multiply_value':('MatrixMultiplyValue','ms','matrix'), 'look_at':('MatrixLookAt','ttt','matrix'),
+    'rotate_x':('MatrixRotateX','s','matrix'), 'rotate_y':('MatrixRotateY','s','matrix'),
+    'rotate_z':('MatrixRotateZ','s','matrix'), 'rotate_xyz':('MatrixRotateXYZ','t','matrix'),
+    'rotate_zyx':('MatrixRotateZYX','t','matrix'), 'rotate':('MatrixRotate','ts','matrix'),
 }
+MATRIX_ROTATIONS = {'rotate_x','rotate_y','rotate_z','rotate_xyz','rotate_zyx','rotate'}
 MATRIX_FIELDS = tuple(f'm{row+4*column}' for row in range(4) for column in range(4))
 ARGUMENT_SIZES = {'v':2, 't':3, 'm':16, 'b':6, 'r':4, 's':1, 'i':1}
 VECTOR_APIS = {'vector_value':('Vector2',2,VECTOR2_APIS), 'vector3_value':('Vector3',3,VECTOR3_APIS),
@@ -365,8 +370,12 @@ def cases_from(document):
                     d00,d01,d11 = dot3_f32(v0,v0),dot3_f32(v0,v1),dot3_f32(v1,v1)
                     if rounded_f32(rounded_f32(d00*d11)-rounded_f32(d01*d01)) == 0:
                         raise ValueError(f'{name}: barycentric denominator must remain nonzero in F32')
-                if function == 'rotate' and abs(values[2]) > 6.283186:
+                if namespace=='Vector2' and function == 'rotate' and abs(values[2]) > 6.283186:
                     raise ValueError(f'{name}: vector rotation profile is bounded to one cycle')
+                if namespace=='Matrix' and function in MATRIX_ROTATIONS:
+                    angles = values[-1:] if function=='rotate' else values
+                    if any(abs(value)>6.283186 for value in angles):
+                        raise ValueError(f'{name}: matrix rotation profile is bounded to one cycle')
                 if not integer(op.get('x'),0,current_w-numeric_cells(kind,function)) or not integer(op.get('y'),0,current_h-1):
                     raise ValueError(f'{name}: all numeric output components must fit the image')
             if kind == 'collision_value':
@@ -888,7 +897,8 @@ def bend_source(cases, gpu=False):
             if kind in VECTOR_APIS:
                 namespace, dimensions, apis = VECTOR_APIS[kind]
                 _, signature, result = apis[op['function']]
-                profiled = op['function'] in ('clamp','min','max') or kind=='vector_value' and op['function']=='rotate'
+                profiled = (op['function'] in ('clamp','min','max') or kind=='vector_value' and op['function']=='rotate'
+                            or kind=='matrix_value' and op['function'] in MATRIX_ROTATIONS)
                 function_name = op['function']+'_for' if profiled else op['function']
                 profile = f'J.{gradient_reference()}{{}}, ' if profiled else ''
                 expression = f'J.{namespace}.{function_name}({profile}{vector_arguments(signature,op["args"],bend=True)})'

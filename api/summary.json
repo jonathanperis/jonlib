@@ -6,8 +6,8 @@
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1716,
-    "partial": 168
+    "not-started": 1708,
+    "partial": 176
   },
   "core_functions": {
     "total": 600,
@@ -22,8 +22,8 @@
     "blocked": 0,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 775,
-    "partial": 156
+    "not-started": 767,
+    "partial": 164
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 172,
-      "partial": 82
+      "not-started": 164,
+      "partial": 90
     },
     "rlgl.h": {
       "total": 403,
@@ -128,8 +128,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 148,
-      "partial": 73
+      "not-started": 140,
+      "partial": 81
     },
     {
       "id": "memory",
@@ -563,96 +563,96 @@
   ],
   "next_work": [
     {
-      "id": "raymath:function:MatrixMultiplyValue",
-      "name": "MatrixMultiplyValue",
+      "id": "raymath:function:Vector3ToFloatV",
+      "name": "Vector3ToFloatV",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Matrix.multiply_value",
-      "next_step": "Derive MatrixMultiplyValue semantics from the linked source, add a reference fixture, then implement Matrix.multiply_value.",
+      "jonlib": "Vector3.to_float_v",
+      "next_step": "Derive Vector3ToFloatV semantics from the linked source, add a reference fixture, then implement Vector3.to_float_v.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:MatrixLookAt",
-      "name": "MatrixLookAt",
+      "id": "raymath:function:MatrixToFloatV",
+      "name": "MatrixToFloatV",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Matrix.look_at",
-      "next_step": "Derive MatrixLookAt semantics from the linked source, add a reference fixture, then implement Matrix.look_at.",
+      "jonlib": "Matrix.to_float_v",
+      "next_step": "Derive MatrixToFloatV semantics from the linked source, add a reference fixture, then implement Matrix.to_float_v.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:MatrixRotateX",
-      "name": "MatrixRotateX",
+      "id": "raymath:function:Vector4Zero",
+      "name": "Vector4Zero",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Matrix.rotate_x",
-      "next_step": "Derive MatrixRotateX semantics from the linked source, add a reference fixture, then implement Matrix.rotate_x.",
+      "jonlib": "Vector4.zero",
+      "next_step": "Derive Vector4Zero semantics from the linked source, add a reference fixture, then implement Vector4.zero.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:MatrixRotateY",
-      "name": "MatrixRotateY",
+      "id": "raymath:function:Vector4One",
+      "name": "Vector4One",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Matrix.rotate_y",
-      "next_step": "Derive MatrixRotateY semantics from the linked source, add a reference fixture, then implement Matrix.rotate_y.",
+      "jonlib": "Vector4.one",
+      "next_step": "Derive Vector4One semantics from the linked source, add a reference fixture, then implement Vector4.one.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:MatrixRotateZ",
-      "name": "MatrixRotateZ",
+      "id": "raymath:function:Vector4Add",
+      "name": "Vector4Add",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Matrix.rotate_z",
-      "next_step": "Derive MatrixRotateZ semantics from the linked source, add a reference fixture, then implement Matrix.rotate_z.",
+      "jonlib": "Vector4.add",
+      "next_step": "Derive Vector4Add semantics from the linked source, add a reference fixture, then implement Vector4.add.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:MatrixRotateXYZ",
-      "name": "MatrixRotateXYZ",
+      "id": "raymath:function:Vector4Subtract",
+      "name": "Vector4Subtract",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Matrix.rotate_xyz",
-      "next_step": "Derive MatrixRotateXYZ semantics from the linked source, add a reference fixture, then implement Matrix.rotate_xyz.",
+      "jonlib": "Vector4.subtract",
+      "next_step": "Derive Vector4Subtract semantics from the linked source, add a reference fixture, then implement Vector4.subtract.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:MatrixRotateZYX",
-      "name": "MatrixRotateZYX",
+      "id": "raymath:function:Vector4Scale",
+      "name": "Vector4Scale",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Matrix.rotate_zyx",
-      "next_step": "Derive MatrixRotateZYX semantics from the linked source, add a reference fixture, then implement Matrix.rotate_zyx.",
+      "jonlib": "Vector4.scale",
+      "next_step": "Derive Vector4Scale semantics from the linked source, add a reference fixture, then implement Vector4.scale.",
       "milestone_dependencies": [
         "numerics"
       ],
       "api_dependencies": []
     },
     {
-      "id": "raymath:function:MatrixRotate",
-      "name": "MatrixRotate",
+      "id": "raymath:function:Vector4Multiply",
+      "name": "Vector4Multiply",
       "milestone": "raymath",
       "status": "not-started",
-      "jonlib": "Matrix.rotate",
-      "next_step": "Derive MatrixRotate semantics from the linked source, add a reference fixture, then implement Matrix.rotate.",
+      "jonlib": "Vector4.multiply",
+      "next_step": "Derive Vector4Multiply semantics from the linked source, add a reference fixture, then implement Vector4.multiply.",
       "milestone_dependencies": [
         "numerics"
       ],

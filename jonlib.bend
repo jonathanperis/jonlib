@@ -352,6 +352,13 @@ def Matrix.translate(x: F32, y: F32, z: F32) -> Matrix:
 def Matrix.scale(x: F32, y: F32, z: F32) -> Matrix:
   Matrix{x, 0.0, 0.0, 0.0, 0.0, y, 0.0, 0.0, 0.0, 0.0, z, 0.0, 0.0, 0.0, 0.0, 1.0}
 
+def Matrix.multiply_value(matrix: Matrix, +value: F32) -> Matrix:
+  Matrix{m0, m4, m8, m12, m1, m5, m9, m13, m2, m6, m10, m14, m3, m7, m11, m15} = matrix
+  Matrix{(m0 * value : F32), (m4 * value : F32), (m8 * value : F32), (m12 * value : F32),
+    (m1 * value : F32), (m5 * value : F32), (m9 * value : F32), (m13 * value : F32),
+    (m2 * value : F32), (m6 * value : F32), (m10 * value : F32), (m14 * value : F32),
+    (m3 * value : F32), (m7 * value : F32), (m11 * value : F32), (m15 * value : F32)}
+
 def Vector2.transform(vector: Vector2, matrix: Matrix) -> Vector2:
   Vector2{+x, +y} = vector
   Matrix{m0, m4, m8, m12, m1, m5, m9, m13, _, _, _, _, _, _, _, _} = matrix
@@ -570,6 +577,109 @@ def Vector3.transform(vector: Vector3, matrix: Matrix) -> Vector3:
   Matrix{m0, m4, m8, m12, m1, m5, m9, m13, m2, m6, m10, m14, _, _, _, _} = matrix
   Vector3{(m0 * x + m4 * y + m8 * z + m12 : F32),
     (m1 * x + m5 * y + m9 * z + m13 : F32), (m2 * x + m6 * y + m10 * z + m14 : F32)}
+
+def Matrix.view.basis(eye: Vector3, right: Vector3, vertical: Vector3, forward: Vector3) -> Matrix:
+  Vector3{+ex, +ey, +ez} = eye
+  Vector3{+xx, +xy, +xz} = right
+  Vector3{+yx, +yy, +yz} = vertical
+  Vector3{+zx, +zy, +zz} = forward
+  Matrix{xx, xy, xz, F32.neg((xx * ex + xy * ey + xz * ez : F32)),
+    yx, yy, yz, F32.neg((yx * ex + yy * ey + yz * ez : F32)),
+    zx, zy, zz, F32.neg((zx * ex + zy * ey + zz * ez : F32)), 0.0, 0.0, 0.0, 1.0}
+
+def Matrix.look_at(+eye: Vector3, target: Vector3, up: Vector3) -> Matrix:
+  +forward = Vector3.normalize(Vector3.subtract(eye, target))
+  +right = Vector3.normalize(Vector3.cross_product(up, forward))
+  vertical = Vector3.cross_product(forward, right)
+  Matrix.view.basis(eye, right, vertical, forward)
+
+def Matrix.rotation.x(values: F32 & F32) -> Matrix:
+  (+cosine, +sine) = values
+  Matrix{1.0, 0.0, 0.0, 0.0, 0.0, cosine, F32.neg(sine), 0.0,
+    0.0, sine, cosine, 0.0, 0.0, 0.0, 0.0, 1.0}
+
+def Matrix.rotate_x_for(reference: Gradient.Reference, angle: F32) -> Matrix:
+  Matrix.rotation.x(Trig.sincos_for(Gradient.gnu(reference), angle))
+
+def Matrix.rotate_x(angle: F32) -> Matrix:
+  Matrix.rotate_x_for(AccurateGradient{}, angle)
+
+def Matrix.rotation.y(values: F32 & F32) -> Matrix:
+  (+cosine, +sine) = values
+  Matrix{cosine, 0.0, sine, 0.0, 0.0, 1.0, 0.0, 0.0,
+    F32.neg(sine), 0.0, cosine, 0.0, 0.0, 0.0, 0.0, 1.0}
+
+def Matrix.rotate_y_for(reference: Gradient.Reference, angle: F32) -> Matrix:
+  Matrix.rotation.y(Trig.sincos_for(Gradient.gnu(reference), angle))
+
+def Matrix.rotate_y(angle: F32) -> Matrix:
+  Matrix.rotate_y_for(AccurateGradient{}, angle)
+
+def Matrix.rotation.z(values: F32 & F32) -> Matrix:
+  (+cosine, +sine) = values
+  Matrix{cosine, F32.neg(sine), 0.0, 0.0, sine, cosine, 0.0, 0.0,
+    0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0}
+
+def Matrix.rotate_z_for(reference: Gradient.Reference, angle: F32) -> Matrix:
+  Matrix.rotation.z(Trig.sincos_for(Gradient.gnu(reference), angle))
+
+def Matrix.rotate_z(angle: F32) -> Matrix:
+  Matrix.rotate_z_for(AccurateGradient{}, angle)
+
+def Matrix.rotation.xyz(x_values: F32 & F32, y_values: F32 & F32, z_values: F32 & F32) -> Matrix:
+  (+cx, +sx) = x_values
+  (+cy, +sy) = y_values
+  (+cz, +sz) = z_values
+  Matrix{(cz * cy : F32), (sz * cy : F32), F32.neg(sy), 0.0,
+    (cz * sy * sx - sz * cx : F32), (sz * sy * sx + cz * cx : F32), (cy * sx : F32), 0.0,
+    (cz * sy * cx + sz * sx : F32), (sz * sy * cx - cz * sx : F32), (cy * cx : F32), 0.0,
+    0.0, 0.0, 0.0, 1.0}
+
+def Matrix.rotate_xyz_for(reference: Gradient.Reference, angles: Vector3) -> Matrix:
+  Vector3{x, y, z} = angles
+  +gnu = Gradient.gnu(reference)
+  Matrix.rotation.xyz(Trig.sincos_for(gnu, F32.neg(x)), Trig.sincos_for(gnu, F32.neg(y)), Trig.sincos_for(gnu, F32.neg(z)))
+
+def Matrix.rotate_xyz(angles: Vector3) -> Matrix:
+  Matrix.rotate_xyz_for(AccurateGradient{}, angles)
+
+def Matrix.rotation.zyx(x_values: F32 & F32, y_values: F32 & F32, z_values: F32 & F32) -> Matrix:
+  (+cx, +sx) = x_values
+  (+cy, +sy) = y_values
+  (+cz, +sz) = z_values
+  Matrix{(cz * cy : F32), (cz * sy * sx - cx * sz : F32), (sz * sx + cz * cx * sy : F32), 0.0,
+    (cy * sz : F32), (cz * cx + sz * sy * sx : F32), (cx * sz * sy - cz * sx : F32), 0.0,
+    F32.neg(sy), (cy * sx : F32), (cy * cx : F32), 0.0, 0.0, 0.0, 0.0, 1.0}
+
+def Matrix.rotate_zyx_for(reference: Gradient.Reference, angles: Vector3) -> Matrix:
+  Vector3{x, y, z} = angles
+  +gnu = Gradient.gnu(reference)
+  Matrix.rotation.zyx(Trig.sincos_for(gnu, x), Trig.sincos_for(gnu, y), Trig.sincos_for(gnu, z))
+
+def Matrix.rotate_zyx(angles: Vector3) -> Matrix:
+  Matrix.rotate_zyx_for(AccurateGradient{}, angles)
+
+def Matrix.rotation.around(axis: Vector3, values: F32 & F32) -> Matrix:
+  Vector3{+x, +y, +z} = axis
+  (+cosine, +sine) = values
+  +t = (1.0 - cosine : F32)
+  Matrix{(x * x * t + cosine : F32), (x * y * t - z * sine : F32), (x * z * t + y * sine : F32), 0.0,
+    (y * x * t + z * sine : F32), (y * y * t + cosine : F32), (y * z * t - x * sine : F32), 0.0,
+    (z * x * t - y * sine : F32), (z * y * t + x * sine : F32), (z * z * t + cosine : F32), 0.0,
+    0.0, 0.0, 0.0, 1.0}
+
+def Matrix.rotation.normalized(required: Bool, axis: Vector3, square: F32) -> Vector3:
+  match required:
+    case False{}: axis
+    case True{}: Vector3.scale(axis, (1.0 / F32.sqrt(square) : F32))
+
+def Matrix.rotate_for(reference: Gradient.Reference, +axis: Vector3, angle: F32) -> Matrix:
+  +square = Vector3.length_sqr(axis)
+  normalized = Matrix.rotation.normalized(F32.is_ne(square, 0.0) && F32.is_ne(square, 1.0), axis, square)
+  Matrix.rotation.around(normalized, Trig.sincos_for(Gradient.gnu(reference), angle))
+
+def Matrix.rotate(axis: Vector3, angle: F32) -> Matrix:
+  Matrix.rotate_for(AccurateGradient{}, axis, angle)
 
 def Collision.spheres(left: Vector3, radius: F32, right: Vector3, other_radius: F32) -> Bool:
   +sum = (radius + other_radius : F32)

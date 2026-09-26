@@ -21,10 +21,10 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Eight harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
-- 189 scenarios / 33,090 output words match pinned raylib exactly on each
+- 195 scenarios / 33,554 output words match pinned raylib exactly on each
   of native CPU one-thread, native CPU two-thread, emitted JavaScript, and forced
   Metal with the declared compiler overlay.
-- The word count includes 663 exact scalar/vector/matrix/collision result-bit probe cells.
+- The word count includes 1,127 exact scalar/vector/matrix/collision result-bit probe cells.
   The math reference explicitly uses uncontracted F32; no comparison tolerance
   is applied. Both components of each vector output are checked.
 - Seven QOI export scenarios compare all 299 encoded bytes per lane. Real CPU/JS
@@ -51,7 +51,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
 - The pinned core header inventory contains 600 unique public functions; 77 have
-  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 79
+  explicitly scoped Jonlib mappings. The raymath ledger additionally maps 87
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
   on CPU, JS and Metal for its declared reference profile. Ubuntu's subsequent
@@ -101,7 +101,7 @@ reference comparison of all 4096 supported POT axis sizes.
 
 | Criterion | Result | Evidence |
 |---|---|---|
-| A1: nonempty, full-pixel differential suite | Pass | 189 scenarios per execution lane; strict comparison |
+| A1: nonempty, full-pixel differential suite | Pass | 195 scenarios per execution lane; strict comparison |
 | A2: clear/pixel/clipped rectangle/midpoint circle parity | Pass within declared profile | Explicit and seeded reference fixtures |
 | A3: dimensions, ownership and bounded indexing | Pass for checked contract | Clear law, full outputs, owned-copy/get and clipping checks |
 | A4: Bend-only source, CPU/JS behavior | Pass | Source gate and three execution lanes |
@@ -524,3 +524,31 @@ Scoped drift review: I48 matches the separate determinant/inversion code paths
 and namespaced fixture validation; A26/V2 hold for the exercised finite profile.
 
 Regression scan: 40 callers checked, 17 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `6d97915`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36221315026)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36221315029)
+completed successfully.
+
+## View and rotation matrices
+
+Eight new matrix functions pass all 195 scenarios / 33,554 words on CPU-1,
+CPU-2, JavaScript and forced Metal. Matrix rotation fields expose raw cosine
+and sine bits directly: fixtures cover signed zero, adjacent π/4 values,
+quadrants/full cycles, distinct Euler formulas and non-unit/zero axes. Look-at
+fixtures retain coincident eye/target and parallel-up behavior. The zero-axis
+rotation matches the reference cosine diagonal rather than substituting identity.
+See [evidence/matrix-view-rotation.json](evidence/matrix-view-rotation.json).
+
+The rotation validator now distinguishes Vector2's third argument from the
+matrix axis-angle operation's fourth argument. A large valid axis component
+and two invalid-angle fixtures verify that only the actual angles receive the
+one-cycle bound. A26/A4/A5 pass the scoped numerical/source/backend gates;
+eight harness tests, project checks and both pinned proofs pass. Wider angles,
+other numerical/libm profiles and full target/performance gates remain gaps.
+The existing trigonometric implementation is reused without changing reference
+outputs or comparison tolerances.
+
+Reviewed 71 numerical/helper/wrapper/generator/diagnostic caller contexts,
+29 differential matrix operations and two malformed-angle assertions.
+
+Regression scan: 71 callers checked, 31 assertions checked, 1 flagged/fixed.

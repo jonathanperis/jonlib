@@ -1,6 +1,47 @@
 {
   "schema": 1,
   "cases": [
+    {"id":"matrix-rotation-x-boundaries","width":128,"height":1,"background":[255,255,255,255],"operations":[
+      {"op":"matrix_value","function":"rotate_x","x":0,"y":0,"args":[-0.0]},
+      {"op":"matrix_value","function":"rotate_x","x":16,"y":0,"args":[0.0]},
+      {"op":"matrix_value","function":"rotate_x","x":32,"y":0,"args":[0.3]},
+      {"op":"matrix_value","function":"rotate_x","x":48,"y":0,"args":[0.7853981256484985]},
+      {"op":"matrix_value","function":"rotate_x","x":64,"y":0,"args":[0.7853981852531433]},
+      {"op":"matrix_value","function":"rotate_x","x":80,"y":0,"args":[1.5707963705062866]},
+      {"op":"matrix_value","function":"rotate_x","x":96,"y":0,"args":[-3.1415927410125732]},
+      {"op":"matrix_value","function":"rotate_x","x":112,"y":0,"args":[6.2831854820251465]}
+    ]},
+    {"id":"matrix-rotation-y-z","width":64,"height":1,"background":[255,255,255,255],"operations":[
+      {"op":"matrix_value","function":"rotate_y","x":0,"y":0,"args":[-0.7]},
+      {"op":"matrix_value","function":"rotate_z","x":16,"y":0,"args":[1.1]},
+      {"op":"matrix_value","function":"rotate_y","x":32,"y":0,"args":[-0.0]},
+      {"op":"matrix_value","function":"rotate_z","x":48,"y":0,"args":[-6.2831854820251465]}
+    ]},
+    {"id":"matrix-rotation-euler","width":96,"height":1,"background":[255,255,255,255],"operations":[
+      {"op":"matrix_value","function":"rotate_xyz","x":0,"y":0,"args":[0.3,-0.7,1.1]},
+      {"op":"matrix_value","function":"rotate_zyx","x":16,"y":0,"args":[0.3,-0.7,1.1]},
+      {"op":"matrix_value","function":"rotate_xyz","x":32,"y":0,"args":[-0.0,0.0,-0.0]},
+      {"op":"matrix_value","function":"rotate_zyx","x":48,"y":0,"args":[-0.0,0.0,-0.0]},
+      {"op":"matrix_value","function":"rotate_xyz","x":64,"y":0,"args":[1.5707963705062866,-0.7853981256484985,3.1415927410125732]},
+      {"op":"matrix_value","function":"rotate_zyx","x":80,"y":0,"args":[1.5707963705062866,-0.7853981256484985,3.1415927410125732]}
+    ]},
+    {"id":"matrix-rotation-axis","width":80,"height":1,"background":[255,255,255,255],"operations":[
+      {"op":"matrix_value","function":"rotate","x":0,"y":0,"args":[1.25,-2.75,3.5,0.3]},
+      {"op":"matrix_value","function":"rotate","x":16,"y":0,"args":[0,1,0,0.7]},
+      {"op":"matrix_value","function":"rotate","x":32,"y":0,"args":[-0.0,0.0,-0.0,1.1]},
+      {"op":"matrix_value","function":"rotate","x":48,"y":0,"args":[1.0000001192092896,0,0,-0.7]},
+      {"op":"matrix_value","function":"rotate","x":64,"y":0,"args":[0,0,20,0.25]}
+    ]},
+    {"id":"matrix-look-at","width":64,"height":1,"background":[255,255,255,255],"operations":[
+      {"op":"matrix_value","function":"look_at","x":0,"y":0,"args":[0,0,5,0,0,0,0,1,0]},
+      {"op":"matrix_value","function":"look_at","x":16,"y":0,"args":[1.25,-2.75,3.5,-0.3,0.7,1.1,0.2,1,0.3]},
+      {"op":"matrix_value","function":"look_at","x":32,"y":0,"args":[1,2,3,1,2,3,0,1,0]},
+      {"op":"matrix_value","function":"look_at","x":48,"y":0,"args":[0,0,5,0,0,0,0,0,1]}
+    ]},
+    {"id":"matrix-scalar-multiplication","width":32,"height":1,"background":[255,255,255,255],"operations":[
+      {"op":"matrix_value","function":"multiply_value","x":0,"y":0,"args":[1.25,-2.5,3.75,4,-5.5,6.25,7,-8.75,9,0.1,-11,12.5,-13,14.25,-0.0,16,-0.3]},
+      {"op":"matrix_value","function":"multiply_value","x":16,"y":0,"args":[1.25,-2.5,3.75,4,-5.5,6.25,7,-8.75,9,0.1,-11,12.5,-13,14.25,-0.0,16,-0.0]}
+    ]},
     {"id":"matrix-add-subtract","width":32,"height":1,"background":[255,255,255,255],"operations":[
       {"op":"matrix_value","function":"add","x":0,"y":0,"args":[1.25,-2.5,3.75,4,-5.5,6.25,7,-8.75,9,0.1,-11,12.5,-13,14.25,-0.0,16,-0.5,2,0.25,-4,5,0.5,-7,8,-9,-0.1,11,-12,13,-14,0.0,-16]},
       {"op":"matrix_value","function":"subtract","x":16,"y":0,"args":[1.25,-2.5,3.75,4,-5.5,6.25,7,-8.75,9,0.1,-11,12.5,-13,14.25,-0.0,16,-0.5,2,0.25,-4,5,0.5,-7,8,-9,-0.1,11,-12,13,-14,0.0,-16]}

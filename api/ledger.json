@@ -64127,7 +64127,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector3ToFloatV semantics from the linked source, add a reference fixture, then implement Vector3.to_float_v.",
-      "priority": 202
+      "priority": 0
     },
     {
       "id": "raymath:function:Vector3Invert",
@@ -64477,7 +64477,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4Zero semantics from the linked source, add a reference fixture, then implement Vector4.zero.",
-      "priority": 202
+      "priority": 2
     },
     {
       "id": "raymath:function:Vector4One",
@@ -64532,7 +64532,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4One semantics from the linked source, add a reference fixture, then implement Vector4.one.",
-      "priority": 202
+      "priority": 3
     },
     {
       "id": "raymath:function:Vector4Add",
@@ -64587,7 +64587,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4Add semantics from the linked source, add a reference fixture, then implement Vector4.add.",
-      "priority": 202
+      "priority": 4
     },
     {
       "id": "raymath:function:Vector4AddValue",
@@ -64697,7 +64697,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4Subtract semantics from the linked source, add a reference fixture, then implement Vector4.subtract.",
-      "priority": 202
+      "priority": 5
     },
     {
       "id": "raymath:function:Vector4SubtractValue",
@@ -65082,7 +65082,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4Scale semantics from the linked source, add a reference fixture, then implement Vector4.scale.",
-      "priority": 202
+      "priority": 6
     },
     {
       "id": "raymath:function:Vector4Multiply",
@@ -65137,7 +65137,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive Vector4Multiply semantics from the linked source, add a reference fixture, then implement Vector4.multiply.",
-      "priority": 202
+      "priority": 7
     },
     {
       "id": "raymath:function:Vector4Negate",
@@ -66127,23 +66127,26 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Matrix.multiply_value",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Finite F32 scalar multiplication of all 16 matrix fields, including signed-zero products.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -66156,8 +66159,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixMultiplyValue semantics from the linked source, add a reference fixture, then implement Matrix.multiply_value.",
-      "priority": 0
+      "next_step": "Close documented gaps and unverified gates for MatrixMultiplyValue.",
+      "priority": 202
     },
     {
       "id": "raymath:function:MatrixTranslate",
@@ -66240,23 +66243,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "Matrix.rotate",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Matrix.rotate_for / Matrix.rotate",
+      "mapping_state": "implemented",
+      "scope": "Bounded one-cycle F32 angle and finite axis; reference skips normalization for zero/exactly-unit squared axes, with explicit trigonometric profile.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Wider-angle, exceptional/subnormal and contracted profiles",
+        "Other libm/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -66270,8 +66277,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixRotate semantics from the linked source, add a reference fixture, then implement Matrix.rotate.",
-      "priority": 7
+      "next_step": "Close documented gaps and unverified gates for MatrixRotate.",
+      "priority": 202
     },
     {
       "id": "raymath:function:MatrixRotateX",
@@ -66296,23 +66303,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "Matrix.rotate_x",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Matrix.rotate_x_for / Matrix.rotate_x",
+      "mapping_state": "implemented",
+      "scope": "Bounded one-cycle F32 radians, explicit reference trigonometry and exact raw cosine/sine fields with signed-zero behavior.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Wider-angle and exceptional/subnormal profiles",
+        "Other libm/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -66325,8 +66336,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixRotateX semantics from the linked source, add a reference fixture, then implement Matrix.rotate_x.",
-      "priority": 2
+      "next_step": "Close documented gaps and unverified gates for MatrixRotateX.",
+      "priority": 202
     },
     {
       "id": "raymath:function:MatrixRotateY",
@@ -66351,23 +66362,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "Matrix.rotate_y",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Matrix.rotate_y_for / Matrix.rotate_y",
+      "mapping_state": "implemented",
+      "scope": "Bounded one-cycle F32 radians with explicit reference trigonometry and reference field signs/order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Wider-angle and exceptional/subnormal profiles",
+        "Other libm/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -66380,8 +66395,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixRotateY semantics from the linked source, add a reference fixture, then implement Matrix.rotate_y.",
-      "priority": 3
+      "next_step": "Close documented gaps and unverified gates for MatrixRotateY.",
+      "priority": 202
     },
     {
       "id": "raymath:function:MatrixRotateZ",
@@ -66406,23 +66421,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "Matrix.rotate_z",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Matrix.rotate_z_for / Matrix.rotate_z",
+      "mapping_state": "implemented",
+      "scope": "Bounded one-cycle F32 radians with explicit reference trigonometry and reference field signs/order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Wider-angle and exceptional/subnormal profiles",
+        "Other libm/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -66435,8 +66454,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixRotateZ semantics from the linked source, add a reference fixture, then implement Matrix.rotate_z.",
-      "priority": 4
+      "next_step": "Close documented gaps and unverified gates for MatrixRotateZ.",
+      "priority": 202
     },
     {
       "id": "raymath:function:MatrixRotateXYZ",
@@ -66461,23 +66480,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "Matrix.rotate_xyz",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Matrix.rotate_xyz_for / Matrix.rotate_xyz",
+      "mapping_state": "implemented",
+      "scope": "Bounded one-cycle F32 Euler radians; explicit reference trigonometry and unchanged negative-angle XYZ formulas/accumulation order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Wider-angle, exceptional/subnormal and contracted profiles",
+        "Other libm/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -66491,8 +66514,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixRotateXYZ semantics from the linked source, add a reference fixture, then implement Matrix.rotate_xyz.",
-      "priority": 5
+      "next_step": "Close documented gaps and unverified gates for MatrixRotateXYZ.",
+      "priority": 202
     },
     {
       "id": "raymath:function:MatrixRotateZYX",
@@ -66517,23 +66540,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "Matrix.rotate_zyx",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Matrix.rotate_zyx_for / Matrix.rotate_zyx",
+      "mapping_state": "implemented",
+      "scope": "Bounded one-cycle F32 Euler radians; explicit reference trigonometry and distinct reference ZYX formulas/accumulation order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Wider-angle, exceptional/subnormal and contracted profiles",
+        "Other libm/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -66547,8 +66574,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixRotateZYX semantics from the linked source, add a reference fixture, then implement Matrix.rotate_zyx.",
-      "priority": 6
+      "next_step": "Close documented gaps and unverified gates for MatrixRotateZYX.",
+      "priority": 202
     },
     {
       "id": "raymath:function:MatrixScale",
@@ -66796,23 +66823,27 @@
       "milestone": "raymath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Matrix.look_at",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Uncontracted finite F32 view basis and translation with reference normalization, zero-distance and parallel-up behavior.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal and contracted profiles",
+        "Full integration/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/fixtures/images.json",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -66826,8 +66857,8 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixLookAt semantics from the linked source, add a reference fixture, then implement Matrix.look_at.",
-      "priority": 1
+      "next_step": "Close documented gaps and unverified gates for MatrixLookAt.",
+      "priority": 202
     },
     {
       "id": "raymath:function:MatrixToFloatV",
@@ -66883,7 +66914,7 @@
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
       "next_step": "Derive MatrixToFloatV semantics from the linked source, add a reference fixture, then implement Matrix.to_float_v.",
-      "priority": 202
+      "priority": 1
     },
     {
       "id": "raymath:function:QuaternionAdd",

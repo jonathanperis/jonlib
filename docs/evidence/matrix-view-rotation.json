@@ -1,0 +1,12 @@
+{
+  "date": "2026-09-26",
+  "source_sha256": {"jonlib.bend": "b7e9a34a2c9b9a38a6ac680523f60c09ea709163ad2bd467b0ba3bd19e0ce3c9"},
+  "fixtures_sha256": "77725afc98cf0da53d9f74d5ebc740a1a701f78aed8249c1887ca496442605f0",
+  "scenarios": 195,
+  "output_words_per_lane": 33554,
+  "numeric_probe_cells": 1127,
+  "passed": true,
+  "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"],
+  "scope": ["Matrix scalar multiplication and look-at bases", "Profiled X/Y/Z/XYZ/ZYX/axis-angle rotations", "Raw trigonometric bits, signed-zero/quadrant boundaries and non-unit/zero axes"],
+  "limits": ["Wider-angle and exceptional/subnormal/contracted numerical domains", "Other libm/target/performance coverage"]
+}

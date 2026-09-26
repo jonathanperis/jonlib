@@ -21,7 +21,7 @@ It is not affiliated with or endorsed by raylib or Bend's maintainers.
   `rtextures.c`, plus the documented scalar/Vector2 operations from `raymath.h`.
   Their scoped contracts and reference evidence are recorded in `docs/`.
 - Pure collision queries in `jonlib.bend` adapt the same release's `rshapes.c`.
-  Sphere/box predicates adapt `rmodels.c`; Vector3 operations adapt `raymath.h`.
+  Sphere/box predicates adapt `rmodels.c`; Vector3/Matrix operations adapt `raymath.h`.
   General bilinear rotation, power-of-two canvases and channel extraction adapt
   `rtextures.c`; these remain modified Bend implementations with explicit profiles.
 - Reference testing: `tools/conformance.py` builds a separate raylib executable

@@ -2,7 +2,7 @@
 
 The current math implementation is Bend source in `jonlib.bend`. It begins the
 `raymath.h` work package with six scalar, twenty-nine Vector2, thirty-four Vector3
-and ten Matrix functions.
+and eighteen Matrix functions.
 
 ## Scalar API
 
@@ -133,6 +133,26 @@ the original Matrix; conformance separately checks the actual reference layout.
   different arithmetic orders and are not substituted for one another.
 - `Matrix.translate(x, y, z)` and `scale(x, y, z)` preserve the supplied finite
   components, including negative and signed-zero values.
+- `Matrix.multiply_value(matrix, scalar)` multiplies every field independently.
+- `Matrix.look_at(eye, target, up)` retains the reference basis normalization and
+  negative-dot translation. Coincident eye/target and parallel up vectors keep
+  their reference degenerate results instead of substituting a camera basis.
+
+### Rotation constructors
+
+`Matrix.rotate_x/y/z(angle)`, `rotate_xyz/zyx(angles)` and `rotate(axis, angle)`
+use radians. Each has a corresponding `_for(reference, ...)` entry point taking
+the existing `Gradient.Reference`; convenience calls select `AccurateGradient{}`.
+The initial profile bounds every angle component to absolute value ≤ 6.283186,
+matching the existing one-cycle F32 rotation profile. Wider angles remain gaps.
+
+XYZ and ZYX retain their distinct pinned formulas, signs and F32 accumulation
+orders; they are not replaced by products of simpler rotation matrices. The
+axis-angle operation skips normalization when squared axis length is zero or
+exactly one. A zero axis therefore preserves raylib's cosine-diagonal result,
+which is not generally an identity matrix. Fixture validation bounds the angle,
+not the axis components. The exact oracle includes signed zeros, neighboring
+F32 values around π/4, quadrant/full-cycle angles, non-unit and zero axes.
 
 `Vector2.transform` and `Vector3.transform` apply the reference matrix expressions
 without perspective division. The Vector2 version retains the multiplication
