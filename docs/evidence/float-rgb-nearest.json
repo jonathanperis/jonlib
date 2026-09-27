@@ -1,0 +1,15 @@
+{
+  "date":"2026-09-27",
+  "source_sha256":{"jonlib.bend":"2c2fbbddbbb2cb024e1146aee6ffe24a4269ab4233283a307a29e71c7c17a5a3"},
+  "profile":"Native format-9 nearest path via RGBA8 truncation, plus-one 16.16 mapping and float normalization, including same-size quantization",
+  "nearest": {
+    "inputs_sha256":"349028139d3d9ebf8371a56efc09b0f6643ba8431b6da89d09c2a43c4a098f71",
+    "reference_sha256":"7243d9c881e4511c63a3ec4e32487de3650ea73eb8bbb0529a266517f35fce66",
+    "native_cases":24,"pixels":1854,"retained_owner_controls":5,"passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "conversion_regression":{"normalized_byte_values":256,"boundary_pixels":769,"hdr_pixels":33024,"rejected_owners":7,"passed":true,"lanes":["cpu","javascript","metal"]},
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "limits":["Out-of-range/nonfinite source samples and unsafe native nearest mappings", "Other formats/mipmaps and complete resource/platform/performance coverage"]
+}

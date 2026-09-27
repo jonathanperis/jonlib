@@ -2643,3 +2643,37 @@ tests and project checks pass. Remaining targets and broader geometry/resource/
 performance domains were not exercised.
 
 Regression scan: 13 callers checked, 14 assertions checked, 0 flagged/fixed.
+
+## Native quantized RGB float nearest resizing
+
+`Image.FloatRGB.resize_nn` follows native format-9 behavior through RGBA8
+truncation, plus-one 16.16 nearest mapping and float normalization. Same-size
+requests retain that quantization: a native `0.5` channel becomes `127/255`.
+Finite `[0,1]` source samples and bounded safe target mappings are supported;
+failures return the original unquantized float owner.
+
+The conversion traversal now retains its read-only source beside the byte output
+until the resize completes. This preserves failure ownership without cloning the
+source solely for recovery. Existing `to_surface` drops that source only on its
+successful consuming path.
+
+The gate passes 24 native cases / 1,854 pixels and five complete retained-owner
+checks on CPU/JS/Metal, covering up/down/same-size/thin cases, byte-boundary floats,
+invalid sizes, unsafe mapping axes and unsupported source values. The native
+conversion/large-export gate retains all prior results after the traversal change.
+See [evidence/float-rgb-nearest.json](evidence/float-rgb-nearest.json).
+
+Scoped review: I129 MATCH (native quantization and owner recovery); A3 HOLD through
+complete source comparisons, including failures after byte conversion; A4/A5 HOLD
+through source/native backend gates; A6 HOLD in [FLOAT-RGB.md](FLOAT-RGB.md);
+V2 HOLD through complete native format-9 words; V3 HOLD through bit-domain, size
+and existing nearest-index checks. Out-of-range casts, unsafe native mappings,
+other formats/mipmaps and complete resource/platform/performance remain gaps.
+API statuses remain partial.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, including
+the existing Surface nearest and conversion contracts. All four proofs, eleven
+harness/planning tests and project checks pass. Remaining targets and unrestricted
+numeric/resource/performance domains were not exercised.
+
+Regression scan: 17 callers checked, 21 assertions checked, 0 flagged/fixed.

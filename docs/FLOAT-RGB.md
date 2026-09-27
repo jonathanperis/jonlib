@@ -44,6 +44,20 @@ owner, matching native behavior. Other unsupported rectangles retain the owner
 with `InvalidRectangle`. Fractional/native-invalid geometry remains outside this
 profile. See [evidence/float-rgb-crop.json](evidence/float-rgb-crop.json).
 
+## Native nearest-neighbor resizing
+
+`Image.FloatRGB.resize_nn(image, width, height)` returns
+`Result<&1, &1, Image.FloatRGB, Image.FloatRGB>`. Destination dimensions must be
+1..4096; source samples must be finite `[0,1]`. Unsafe fixed-point mappings and
+unsupported inputs return the original unquantized owner.
+
+Native format-9 nearest resizing first converts to RGBA8, uses the plus-one
+16.16 mapping, then normalizes RGB bytes back to floats. **Even unchanged
+dimensions quantize samples**: `0.5` becomes `127/255`. Jonlib preserves that
+sequence rather than treating the operation as a lossless float remap. Original
+float storage is retained through fallible stages without cloning it for recovery.
+See [evidence/float-rgb-nearest.json](evidence/float-rgb-nearest.json).
+
 ## Large owned exports
 
 Surface colors, FloatRGB entries and packed/formatted image exports use a shared
@@ -58,6 +72,7 @@ or changing the compiler/runtime. Output lengths, order and ownership are retain
 python3 tools/float_rgb_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 python3 tools/float_rgb_transform_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 python3 tools/float_rgb_crop_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+python3 tools/float_rgb_resize_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 ```
 
 Configure checkout variables as in [README.md](../README.md#requirements).
@@ -82,3 +97,5 @@ including rectangular/thin shapes, exact non-NaN words, repeated quarter-turns
 and mixed operation chains. An independent mutation check verifies cloned owners.
 The rectangle gate adds 15 native cases / 167 pixels, eight complete retained-
 owner checks and independent extracted-region mutation on CPU/JS/Metal.
+The nearest gate compares 24 native cases / 1,854 pixels and five retained owners,
+covering up/down/same-size/thin inputs, quantization boundaries and unsafe mappings.

@@ -937,18 +937,22 @@ def Image.FloatRGB.converted.read(index: U32, output: Array<U32>, result: Array<
       color = Color.rgba(F32.to_u32((r * 255.0 : F32)), F32.to_u32((g * 255.0 : F32)), F32.to_u32((b * 255.0 : F32)), 255)
       (pixels, Array.set(U32, output, index, color))
 
-def Image.FloatRGB.converted.pixels(n: Nat, +index: U32, state: Array<M.Vector3> & Array<U32>) -> Array<U32>:
+def Image.FloatRGB.converted.pixels(n: Nat, +index: U32, state: Array<M.Vector3> & Array<U32>) -> Array<M.Vector3> & Array<U32>:
   match n state:
-    case 0n Tuple{_, output}: output
+    case 0n _: state
     case 1n+rest Tuple{pixels, output}:
       Image.FloatRGB.converted.pixels(rest, (index + 1 : U32), Image.FloatRGB.converted.read(index, output, Array.get(M.Vector3, pixels, index)))
+
+def Image.FloatRGB.converted.surface(width: U32, height: U32, result: Array<M.Vector3> & Array<U32>) -> Surface:
+  (_, pixels) = result
+  Surface{width, height, pixels}
 
 def Image.FloatRGB.converted(+width: U32, +height: U32, state: Array<M.Vector3> & Bool) -> Result<&1, &1, Image.FloatRGB, Surface>:
   match state:
     case Tuple{pixels, False{}}: Fail{FloatRGB{width, height, pixels}}
     case Tuple{pixels, True{}}:
       +count = (width * height : U32)
-      Done{Surface{width, height, Image.FloatRGB.converted.pixels(U32.to_nat(count), 0, (pixels, Array.new(U32, Surface.capacity(count), 0)))}}
+      Done{Image.FloatRGB.converted.surface(width, height, Image.FloatRGB.converted.pixels(U32.to_nat(count), 0, (pixels, Array.new(U32, Surface.capacity(count), 0))))}
 
 def Image.FloatRGB.to_surface(image: Image.FloatRGB) -> Result<&1, &1, Image.FloatRGB, Surface>:
   FloatRGB{+width, +height, pixels} = image
@@ -2225,6 +2229,33 @@ def Image.FloatRGB.crop(image: Image.FloatRGB, +rect: Rectangle) -> Result<&1, &
   Rectangle{x, y, _, _} = rect
   Image.FloatRGB.crop.route(Rectangle.integral(rect), ((x > U32.to_f32(width)) || (y > U32.to_f32(height)) : F32),
     FloatRGB{width, height, pixels}, Rectangle.crop.bounds(rect, width, height))
+
+def Image.FloatRGB.nearest.resized(original: Image.FloatRGB, result: Result<&1, &1, Surface & Surface.Error, Surface>) -> Result<&1, &1, Image.FloatRGB, Image.FloatRGB>:
+  match result:
+    case Fail{_}: Fail{original}
+    case Done{surface}: Done{Surface.to_float_rgb(surface)}
+
+def Image.FloatRGB.nearest.routed(+sw: U32, +sh: U32, width: U32, height: U32, result: Array<M.Vector3> & Array<U32>) -> Result<&1, &1, Image.FloatRGB, Image.FloatRGB>:
+  (original, pixels) = result
+  Image.FloatRGB.nearest.resized(FloatRGB{sw, sh, original}, Surface.resize_nn(Surface{sw, sh, pixels}, width, height))
+
+def Image.FloatRGB.nearest.checked(+sw: U32, +sh: U32, width: U32, height: U32, state: Array<M.Vector3> & Bool) -> Result<&1, &1, Image.FloatRGB, Image.FloatRGB>:
+  match state:
+    case Tuple{pixels, False{}}: Fail{FloatRGB{sw, sh, pixels}}
+    case Tuple{pixels, True{}}:
+      +count = (sw * sh : U32)
+      Image.FloatRGB.nearest.routed(sw, sh, width, height,
+        Image.FloatRGB.converted.pixels(U32.to_nat(count), 0, (pixels, Array.new(U32, Surface.capacity(count), 0))))
+
+def Image.FloatRGB.nearest.sized(valid: Bool, image: Image.FloatRGB, width: U32, height: U32) -> Result<&1, &1, Image.FloatRGB, Image.FloatRGB>:
+  match valid image:
+    case False{} _: Fail{image}
+    case True{} FloatRGB{+sw, +sh, pixels}:
+      Image.FloatRGB.nearest.checked(sw, sh, width, height,
+        Image.FloatRGB.checked.pixels(~Image.FloatRGB.pixel.valid, U32.to_nat((sw * sh : U32)), 0, (pixels, True{})))
+
+def Image.FloatRGB.resize_nn(image: Image.FloatRGB, +width: U32, +height: U32) -> Result<&1, &1, Image.FloatRGB, Image.FloatRGB>:
+  Image.FloatRGB.nearest.sized(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32), image, width, height)
 
 # Base.Image contains RGB colors. Alpha is discarded, not composited.
 def Surface.tree.leaf(got: Array<U32> & U32) -> Array<U32> & Image:

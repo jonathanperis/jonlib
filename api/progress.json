@@ -690,9 +690,9 @@
     },
     "raylib:function:ImageResizeNN": {
       "status": "partial",
-      "jonlib": "Surface.resize_nn",
+      "jonlib": "Surface.resize_nn / Image.FloatRGB.resize_nn",
       "legacy_status": "profile-covered",
-      "scope": "RGBA8; 1..4096 dimensions; exact fixed-point mapping where every flat source index is in bounds",
+      "scope": "Owned RGBA8 and finite [0,1] RGB F32, dimensions 1..4096. Preserves native plus-one fixed-point mapping where indices are in bounds; float input follows native RGBA8 truncation and re-normalization even at unchanged dimensions. Rejection retains the original owner.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -706,6 +706,9 @@
       "evidence": [
         "docs/API.md",
         "docs/VERIFICATION.md",
+        "tools/float_rgb_resize_probe.py",
+        "docs/FLOAT-RGB.md",
+        "docs/evidence/float-rgb-nearest.json",
         "docs/evidence/image-transforms.json"
       ]
     },
