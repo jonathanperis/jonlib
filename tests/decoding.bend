@@ -18,7 +18,7 @@ def file_kind(kind: J.Image.FileKind) -> U32:
     case J.RasterFile{}: 1
     case J.UnsupportedImageFile{}: 2
 
-def short_read(result: Result<&1, &1, J.Image.LoadError, J.Surface>) -> Bool:
+def short_read(result: Result<&1, &1, J.Image.LoadError, +List<U32>>) -> Bool:
   match result:
     case Fail{J.ImageDecodeError{J.TruncatedImageData{}}}: True{}
     case _: False{}
@@ -50,7 +50,8 @@ def checks() -> Bool:
     && U32.is_eq(file_kind(J.Image.file.kind(".jpeg")), 2)
     && U32.is_eq(file_kind(J.Image.file.kind("image.PNG")), 1)
     && U32.is_eq(file_kind(J.Image.file.kind("image.PnG")), 2)
-    && short_read(J.Image.file.payload(J.UncontractedDecode{}, J.RasterFile{}, 2, Done{[1]}))
+    && short_read(J.Image.file.payload(2, Done{[1]}))
+    && String.eq(J.Image.Animation.file.token(J.Image.file.token(".GiF")), "")
     && psd_profiles()
 
 def verdict(ok: Bool) -> IO(Unit):

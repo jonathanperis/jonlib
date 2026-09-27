@@ -243,6 +243,18 @@
     "api_id": "raylib:function:LoadImageRaw",
     "milestone": "image-codecs"
   },
+  "LoadImageAnim": {
+    "jonlib": "Image.Animation.load_image / Image.Animation.load_image_for",
+    "status": "profile-covered",
+    "scope": "Bounded ordinary-file owned animation loading: case-insensitive GIF suffixes select the supported sequence profile; other supported suffixes yield one profiled static frame. Shared complete-read and handle-closure boundary, raster/QOI byte caps, caller frame/pixel budgets and typed file/decode errors. Explicit PSD arithmetic or uncontracted convenience defaults.",
+    "gaps": [
+      "Disposal 3 and remaining image-codec/profile gaps",
+      "Original pixel formats/native contiguous-buffer ABI and reference callbacks",
+      "Concurrent/special files, larger inputs and complete resource/target/performance coverage"
+    ],
+    "api_id": "raylib:function:LoadImageAnim",
+    "milestone": "image-codecs"
+  },
   "LoadImageAnimFromMemory": {
     "jonlib": "Image.Animation.decode_image / Image.Animation.decode_image_for / Image.Animation.decode_gif / Image.Animation.entries / Image.Animation.unload",
     "status": "profile-covered",

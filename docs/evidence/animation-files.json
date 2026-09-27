@@ -1,0 +1,18 @@
+{
+  "date":"2026-09-27",
+  "source_sha256":{"jonlib.bend":"b38dbc0bafdf4e01c21c08de3fd0142293f3749bf59cc4990f84b76312328eeb"},
+  "profile":"Case-insensitive GIF file suffixes, static profiled fallback, frame/pixel budgets and shared complete-read/closed-handle IO",
+  "files": {
+    "inputs_sha256":"52c0b4cc9748c6b1742c95d4ace408884d164a39116af869ec56a1796da62213",
+    "reference_sha256":"46777211df425e04444d6334aaa56266c694c919d829068452718b7767054024",
+    "native_cases":34,"frames":61,"pixels":604,"boundary_controls":7,
+    "default_reference_controls":1,"closure_iterations_per_lane":100,"file_descriptor_limit":64,
+    "passed":true,"lanes":["cpu","javascript"]
+  },
+  "surface_file_regression":{"native_cases":59,"boundary_controls":3,"closure_iterations_per_lane":100,"passed":true,"lanes":["cpu","javascript"]},
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "core_partial_functions":106,
+  "limits":["Disposal 3 and remaining image-codec profiles", "Original pixel formats/native ABI, callbacks and concurrent/special-file behavior", "GPU filesystem IO and complete resource/platform/performance coverage"]
+}
