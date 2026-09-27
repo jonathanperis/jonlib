@@ -2923,3 +2923,38 @@ remaining source/target domains and full resource/performance coverage were not
 exercised.
 
 Regression scan: 22 callers checked, 20 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `38bec12`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36336407675)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36336407628)
+passed. Ubuntu took 29m34s and macOS 31m46s, confirming the 35-minute aggregate
+budget with every verification step retained. This includes direct formats,
+reverse float normalization and native grayscale channels.
+
+## RGB float BMP and TGA file export
+
+`Image.FloatRGB.to_bmp/to_tga` produce native file bytes through checked RGB-to-
+RGBA normalization; `write_bmp/write_tga` add typed, explicit-codec file IO.
+Closed encoder templates share the conversion boundary with PNG. These pure
+encoders adapt native `ExportImage`, not unsupported BMP/TGA memory dispatch.
+
+Twelve native file profiles match 3,918 encoded bytes and 4,064 decoded RGBA bytes
+on CPU/JS/Metal. CPU/JS files use `.dat` names to verify explicit codec selection.
+Two rejected-owner and typed file-error controls, sentinel preservation and 100
+low-descriptor success/rejection/error cycles pass. Float PNG retains all six
+memory/five file profiles and closure controls; float RAW retains sixteen native
+cases, nine controls and 100 closure cycles. Evidence is in
+[evidence/float-rgb-raster-export.json](evidence/float-rgb-raster-export.json).
+
+Scoped review: I138 MATCH (normalized native file codecs and typed ownership);
+A3 HOLD through rejected owners/sentinel/closure checks; A4/A5 HOLD through source
+and pure backend gates; A6 HOLD in [FLOAT-RASTER-EXPORT.md](FLOAT-RASTER-EXPORT.md);
+V2 HOLD through actual native file bytes and complete decoded pixels; V3 HOLD
+through established sample and encoder bounds. GPU filesystem IO, other domains/
+formats/options/generic dispatch and complete native-ABI/resource/platform/
+performance remain gaps. Existing export scope expands; counts remain unchanged.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal. All four
+proofs, eleven harness/planning tests and project checks pass. GPU filesystem IO
+and broader source/target/resource/performance domains were not exercised.
+
+Regression scan: 17 callers checked, 19 assertions checked, 0 flagged/fixed.

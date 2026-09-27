@@ -173,6 +173,7 @@ is outside this API's contract.
 | `Image.Formatted.to_png` | Consuming PNG memory export preserving byte-format 1/2/3/4-channel data; unsupported packed formats return the original owner. See [PNG-EXPORT.md](PNG-EXPORT.md). |
 | `Image.Formatted.write_png` | Consuming PNG file export for checked formats 1..7, with native byte-channel or packed-color expansion; see [PNG-EXPORT.md](PNG-EXPORT.md). |
 | `Image.FloatRGB.to_png` / `write_png` | Preserve native raw-prefix memory PNG versus normalized-color file PNG, with retained rejected owners and typed file errors; see [PNG-EXPORT.md](PNG-EXPORT.md#rgb-float-memoryfile-distinction). |
+| `Image.FloatRGB.to_bmp/to_tga` / `write_bmp/write_tga` | Native normalized BMP/TGA file bytes and explicit typed writers, preserving rejected owners; see [FLOAT-RASTER-EXPORT.md](FLOAT-RASTER-EXPORT.md). |
 
 Drawing coordinates and rectangle extents are represented as **F32 but must be
 finite integers in -32767..32767**. Radius is **0..32767**. This permits negative

@@ -1191,13 +1191,19 @@ def Image.FloatRGB.to_png(image: Image.FloatRGB) -> Result<&1, &1, Image.FloatRG
   FloatRGB{+width, +height, pixels} = image
   Image.FloatRGB.png.checked(width, height, Image.FloatRGB.checked.pixels(~Image.FloatRGB.raw.pixel_valid, U32.to_nat((width * height : U32)), 0, (pixels, True{})))
 
-def Image.FloatRGB.png.file_converted(result: Result<&1, &1, Image.FloatRGB, Surface>) -> Result<&1, &1, Image.FloatRGB, +List<U32>>:
+def Image.FloatRGB.file.encoded(~encode: Surface -> +List<U32>, result: Result<&1, &1, Image.FloatRGB, Surface>) -> Result<&1, &1, Image.FloatRGB, +List<U32>>:
   match result:
     case Fail{image}: Fail{image}
-    case Done{surface}: Done{Surface.to_png(surface)}
+    case Done{surface}: Done{encode(surface)}
 
 def Image.FloatRGB.png.file_bytes(image: Image.FloatRGB) -> Result<&1, &1, Image.FloatRGB, +List<U32>>:
-  Image.FloatRGB.png.file_converted(Image.FloatRGB.to_surface(image))
+  Image.FloatRGB.file.encoded(~Surface.to_png, Image.FloatRGB.to_surface(image))
+
+def Image.FloatRGB.to_bmp(image: Image.FloatRGB) -> Result<&1, &1, Image.FloatRGB, +List<U32>>:
+  Image.FloatRGB.file.encoded(~Surface.to_bmp, Image.FloatRGB.to_surface(image))
+
+def Image.FloatRGB.to_tga(image: Image.FloatRGB) -> Result<&1, &1, Image.FloatRGB, +List<U32>>:
+  Image.FloatRGB.file.encoded(~Surface.to_tga, Image.FloatRGB.to_surface(image))
 
 def Surface.dither.checked(valid: Bool, surface: Surface, +r: U32, +g: U32, +b: U32, +a: U32) -> Result<&1, &1, Surface & Surface.Error, Image.Packed16>:
   match valid surface:
@@ -2994,3 +3000,9 @@ def Image.FloatRGB.write_raw(image: Image.FloatRGB, path: String) -> IO(Result<&
 
 def Image.FloatRGB.write_png(image: Image.FloatRGB, path: String) -> IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>):
   Image.FloatRGB.file.write(path, Image.FloatRGB.png.file_bytes(image))
+
+def Image.FloatRGB.write_bmp(image: Image.FloatRGB, path: String) -> IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>):
+  Image.FloatRGB.file.write(path, Image.FloatRGB.to_bmp(image))
+
+def Image.FloatRGB.write_tga(image: Image.FloatRGB, path: String) -> IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>):
+  Image.FloatRGB.file.write(path, Image.FloatRGB.to_tga(image))

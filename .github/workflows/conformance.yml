@@ -241,6 +241,11 @@ jobs:
           python3 tools/float_rgb_png_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify native RGB float BMP and TGA file paths
+        run: >-
+          python3 tools/float_rgb_raster_export_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Verify image-memory token and content dispatch
         run: >-
           python3 tools/image_memory_probe.py
@@ -374,6 +379,7 @@ jobs:
             .build/image-channel-probe/results.json
             .build/image-colors-probe/results.json
             .build/float-rgb-png-probe/results.json
+            .build/float-rgb-raster-export-probe/results.json
             .build/psd-matte-probe/results.json
             .build/inflate-probe/results.json
             .build/png-probe/results.json

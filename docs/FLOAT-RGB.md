@@ -124,6 +124,8 @@ Native bulk/point color observations and their owner/domain contracts are in
 [IMAGE-COLORS.md](IMAGE-COLORS.md).
 The distinct native float PNG memory/file paths are documented in
 [PNG-EXPORT.md](PNG-EXPORT.md#rgb-float-memoryfile-distinction).
+Native normalized BMP/TGA file paths are in
+[FLOAT-RASTER-EXPORT.md](FLOAT-RASTER-EXPORT.md).
 
 Surface colors, FloatRGB entries and packed/formatted image exports use a shared
 tail-recursive logical-prefix operation. This replaces pinned Base `List.take`
