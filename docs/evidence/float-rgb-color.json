@@ -1,0 +1,14 @@
+{
+  "date":"2026-09-27",
+  "source_sha256":{"jonlib.bend":"78a9c2b133b17ea0ae92bcff5df68edad3e682ae56d5245439a1f2e8751ecf6b"},
+  "profile":"Native RGB float tint/invert/contrast/brightness/replacement through byte quantization and RGB normalization",
+  "color": {
+    "inputs_sha256":"213ed6c1cbccfd88567dcfe1f4dfe260a4069a701c41f853bdad482a9635bdea",
+    "reference_sha256":"d503d4f7b767c33e9220f66028301f255ebf61515550afb2cfd98c5d792073c0",
+    "native_cases":44,"pixels":17050,"retained_owner_controls":6,"passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "limits":["Out-of-range/nonfinite source samples and unsupported numeric parameters", "Grayscale format changes, other formats/mipmaps and complete resource/platform/performance coverage"]
+}

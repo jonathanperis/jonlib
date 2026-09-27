@@ -605,21 +605,21 @@
     "milestone": "images"
   },
   "ImageColorTint": {
-    "jonlib": "Surface.color_tint",
+    "jonlib": "Surface.color_tint / Image.FloatRGB.color_tint",
     "status": "profile-covered",
-    "scope": "RGBA8; integer channel multiplication divided by 255, including alpha.",
+    "scope": "Owned RGBA8 or finite [0,1] RGB F32 through native byte truncation, integer tint multiplication and RGB normalization; alpha is retained in Surface and discarded in format 9. Rejected float owners are preserved.",
     "gaps": [
-      "Other formats/mipmaps and target/performance evidence"
+      "Other source domains/formats/mipmaps and target/performance evidence"
     ],
     "api_id": "raylib:function:ImageColorTint",
     "milestone": "images"
   },
   "ImageColorInvert": {
-    "jonlib": "Surface.color_invert",
+    "jonlib": "Surface.color_invert / Image.FloatRGB.color_invert",
     "status": "profile-covered",
-    "scope": "RGBA8; invert RGB bytes and preserve alpha.",
+    "scope": "Owned RGBA8 inversion and finite [0,1] RGB F32 via native byte quantization/inversion/normalization, preserving rejected float owners.",
     "gaps": [
-      "Other formats/mipmaps and target/performance evidence"
+      "Other source domains/formats/mipmaps and target/performance evidence"
     ],
     "api_id": "raylib:function:ImageColorInvert",
     "milestone": "images"
@@ -636,31 +636,31 @@
     "milestone": "images"
   },
   "ImageColorContrast": {
-    "jonlib": "Surface.color_contrast",
+    "jonlib": "Surface.color_contrast / Image.FloatRGB.color_contrast",
     "status": "profile-covered",
-    "scope": "RGBA8; finite contrast clamped to -100..100; reference F32 operation order and byte truncation; alpha preserved.",
+    "scope": "Owned RGBA8 and finite [0,1] RGB F32 byte-quantized paths; finite contrast clamped to -100..100, native F32 arithmetic/truncation and retained rejected float owners.",
     "gaps": [
-      "Other formats/mipmaps and target/performance evidence"
+      "Other source domains/formats/mipmaps and target/performance evidence"
     ],
     "api_id": "raylib:function:ImageColorContrast",
     "milestone": "images"
   },
   "ImageColorBrightness": {
-    "jonlib": "Surface.color_brightness",
+    "jonlib": "Surface.color_brightness / Image.FloatRGB.color_brightness",
     "status": "profile-covered",
-    "scope": "RGBA8; finite integral adjustment clamped to -255..255; negative channel underflow becomes 1; alpha preserved.",
+    "scope": "Owned RGBA8 and finite [0,1] RGB F32 byte-quantized paths; finite integral brightness clamped to -255..255, native underflow-to-one behavior and preserved rejected float owners.",
     "gaps": [
-      "Full signed input domain, other formats/mipmaps and target/performance evidence"
+      "Full signed/source domain, other formats/mipmaps and target/performance evidence"
     ],
     "api_id": "raylib:function:ImageColorBrightness",
     "milestone": "images"
   },
   "ImageColorReplace": {
-    "jonlib": "Surface.color_replace",
+    "jonlib": "Surface.color_replace / Image.FloatRGB.color_replace",
     "status": "profile-covered",
-    "scope": "RGBA8; exact four-channel color match and replacement.",
+    "scope": "Owned RGBA8 exact four-channel replacement; finite [0,1] RGB F32 through native byte quantization, alpha-255 input matching and RGB normalization that discards replacement alpha. Rejected float owners are retained.",
     "gaps": [
-      "Other formats/mipmaps and target/performance evidence"
+      "Other source domains/formats/mipmaps and target/performance evidence"
     ],
     "api_id": "raylib:function:ImageColorReplace",
     "milestone": "images"

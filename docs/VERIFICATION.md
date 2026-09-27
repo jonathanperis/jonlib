@@ -2735,3 +2735,33 @@ tests and project checks pass. Remaining targets and broader geometry/resource/
 performance domains were not exercised.
 
 Regression scan: 19 callers checked, 12 assertions checked, 0 flagged/fixed.
+
+## Native RGB float color transforms
+
+Float tint/invert/contrast/brightness/replacement now follow native format-9
+paths through RGBA8 truncation, existing Surface operations and RGB normalization.
+Nominal no-ops still quantize. Contrast is finite/clamped; brightness is finite
+integral/clamped, including native negative-underflow-to-one behavior. Replacement
+matches alpha 255 from float input, while replacement/tint alpha is discarded on
+conversion back to RGB. Unsupported values/parameters retain original owners.
+
+The gate passes 44 native cases / 17,050 pixels and six complete retained-owner
+controls on CPU/JS/Metal, covering clamping, byte boundaries, alpha distinctions,
+operation chains and nonfinite/fractional/subnormal parameter rejection. Surface
+contrast/brightness use the same transform construction, preserving arithmetic
+order. See [evidence/float-rgb-color.json](evidence/float-rgb-color.json).
+
+Scoped review: I132 MATCH (native quantized color paths and rejection); A3 HOLD
+through complete source comparisons; A4/A5 HOLD through source/native backend
+gates; A6 HOLD in [FLOAT-RGB.md](FLOAT-RGB.md); V2 HOLD through actual format-9
+color-operation words; V3 HOLD through existing image bounds and bit-checked
+numeric domains. Direct grayscale conversion, other formats/mipmaps and complete
+resource/platform/performance remain gaps. Five existing partial mappings expand;
+completion counts remain unchanged.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, including
+existing Surface color contracts. All four proofs, eleven harness/planning tests
+and project checks pass. Remaining targets and broader numeric/resource/
+performance domains were not exercised.
+
+Regression scan: 15 callers checked, 9 assertions checked, 0 flagged/fixed.

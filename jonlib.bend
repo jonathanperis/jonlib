@@ -1320,15 +1320,53 @@ def Surface.color_tint(surface: Surface, color: U32) -> Surface:
 def Surface.color_invert(surface: Surface) -> Surface:
   Surface.color.transform(surface, ImageInvert{})
 
-def Surface.color_contrast(surface: Surface, amount: F32) -> Surface:
+def Color.Transform.contrast(amount: F32) -> Color.Transform:
   +contrast = ((100.0 + F32.clamp(amount, (0.0 - 100.0 : F32), 100.0)) / 100.0 : F32)
-  Surface.color.transform(surface, ImageContrast{(contrast * contrast : F32)})
+  ImageContrast{(contrast * contrast : F32)}
+
+def Color.Transform.brightness(amount: F32) -> Color.Transform:
+  ImageBrightness{F32.clamp(amount, (0.0 - 255.0 : F32), 255.0)}
+
+def Surface.color_contrast(surface: Surface, amount: F32) -> Surface:
+  Surface.color.transform(surface, Color.Transform.contrast(amount))
 
 def Surface.color_brightness(surface: Surface, amount: F32) -> Surface:
-  Surface.color.transform(surface, ImageBrightness{F32.clamp(amount, (0.0 - 255.0 : F32), 255.0)})
+  Surface.color.transform(surface, Color.Transform.brightness(amount))
 
 def Surface.color_replace(surface: Surface, original: U32, replacement: U32) -> Surface:
   Surface.color.transform(surface, ImageReplace{original, replacement})
+
+def Image.FloatRGB.color.transformed(transform: Color.Transform, result: Result<&1, &1, Image.FloatRGB, Surface>) -> Result<&1, &1, Image.FloatRGB, Image.FloatRGB>:
+  match result:
+    case Fail{image}: Fail{image}
+    case Done{surface}: Done{Surface.to_float_rgb(Surface.color.transform(surface, transform))}
+
+def Image.FloatRGB.color.transform(valid: Bool, image: Image.FloatRGB, transform: Color.Transform) -> Result<&1, &1, Image.FloatRGB, Image.FloatRGB>:
+  match valid:
+    case False{}: Fail{image}
+    case True{}: Image.FloatRGB.color.transformed(transform, Image.FloatRGB.to_surface(image))
+
+def Image.FloatRGB.color.finite(amount: F32) -> Bool:
+  ((F32.bits(amount) .&. 2147483647) < 2139095040 : U32)
+
+def Image.FloatRGB.color.integral(+amount: F32) -> Bool:
+  +bits = (F32.bits(amount) .&. 2147483647 : U32)
+  (bits < 2139095040 : U32) && (U32.is_eq(bits, 0) || ((bits >= 1065353216 : U32) && F32.is_eq(F32.floor(amount), amount)))
+
+def Image.FloatRGB.color_tint(image: Image.FloatRGB, color: U32) -> Result<&1, &1, Image.FloatRGB, Image.FloatRGB>:
+  Image.FloatRGB.color.transform(True{}, image, ImageTint{color})
+
+def Image.FloatRGB.color_invert(image: Image.FloatRGB) -> Result<&1, &1, Image.FloatRGB, Image.FloatRGB>:
+  Image.FloatRGB.color.transform(True{}, image, ImageInvert{})
+
+def Image.FloatRGB.color_contrast(image: Image.FloatRGB, +amount: F32) -> Result<&1, &1, Image.FloatRGB, Image.FloatRGB>:
+  Image.FloatRGB.color.transform(Image.FloatRGB.color.finite(amount), image, Color.Transform.contrast(amount))
+
+def Image.FloatRGB.color_brightness(image: Image.FloatRGB, +amount: F32) -> Result<&1, &1, Image.FloatRGB, Image.FloatRGB>:
+  Image.FloatRGB.color.transform(Image.FloatRGB.color.integral(amount), image, Color.Transform.brightness(amount))
+
+def Image.FloatRGB.color_replace(image: Image.FloatRGB, original: U32, replacement: U32) -> Result<&1, &1, Image.FloatRGB, Image.FloatRGB>:
+  Image.FloatRGB.color.transform(True{}, image, ImageReplace{original, replacement})
 
 def Surface.alpha_clear(surface: Surface, color: U32, threshold: F32) -> Surface:
   Surface.color.transform(surface, AlphaClear{F32.to_u32((threshold * 255.0 : F32)), color})
