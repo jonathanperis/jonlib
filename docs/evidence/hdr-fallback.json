@@ -1,0 +1,18 @@
+{
+  "date":"2026-09-27",
+  "source_sha256": {
+    "jonlib.bend":"0f653804aa74395debd2ad9328f86d75af807b75c4c64a27fce170572617bb1f",
+    "src/hdr.bend":"bb7f4be8ffaa8e31ef42a7c10d42797cdafa58add6c6c9b8eb2964113642f7f6"
+  },
+  "profile":"Later-row raw fallback resets to pixel zero and replaces the complete canvas; incomplete replacement payloads reject",
+  "hdr": {
+    "inputs_sha256":"a809635fced25c5b7b0ad84c871105d5bba000006c0e389029ca045cc0557c9c",
+    "reference_sha256":"95483e3888bafecadbdb6f0d69ec2ac15d321f11b0aff0b0f145ea828777b901",
+    "images":22,"pixels":17939,"error_controls":21,"channel_exponent_pairs":65536,"ownership_controls":1,
+    "passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "limits":["Broader header/permissive malformed recovery", "RGBA8 conversion, shared float dispatch and file loading", "Complete metadata/resource/platform/performance coverage"]
+}

@@ -208,17 +208,15 @@ def planes(n: Nat, +width: U32, +shift: Nat, state: Result<&1, &1, Error, Row>) 
     case 0n _: state
     case 1n+rest Done{row}: planes(rest, width, Nat.sub(shift, 8n), plane.run(U32.to_nat(width), shift, Done{Cursor{width, 0, row}}))
 
-def scanline.valid(encoded: Bool, valid: Bool, width: U32, data: +List<U32>, packed: Array<U32>) -> Result<&1, &1, Error, Row>:
-  match encoded valid:
-    case False{} _: Fail{BadHeader{}}
-    case True{} False{}: Fail{BadStream{}}
-    case True{} True{}: planes(4n, width, 24n, Done{Row{data, packed}})
+def scanline.valid(valid: Bool, width: U32, data: +List<U32>, packed: Array<U32>) -> Result<&1, &1, Error, Row>:
+  match valid:
+    case False{}: Fail{BadStream{}}
+    case True{}: planes(4n, width, 24n, Done{Row{data, packed}})
 
 def scanline(+width: U32, data: +List<U32>, packed: Array<U32>) -> Result<&1, &1, Error, Row>:
   match data:
-    case Con{a, Con{b, Con{+high, Con{low, rest}}}}:
-      scanline.valid(U32.is_eq(a, 2) && U32.is_eq(b, 2) && (high < 128 : U32),
-        U32.is_eq(((high << 8n) .|. low : U32), width), width, rest, packed)
+    case Con{2, Con{2, Con{high, Con{low, rest}}}}:
+      scanline.valid(U32.is_eq(((high << 8n) .|. low : U32), width), width, rest, packed)
     case _: Fail{Truncated{}}
 
 type Converting is Type:
@@ -237,6 +235,7 @@ def convert(n: Nat, +index: U32, +at: U32, state: Converting) -> Converting:
 
 type Raster is Type:
   Raster{data: +List<U32>, packed: Array<U32>, pixels: Array<M.Vector3>}
+  Replaced{pixels: Array<M.Vector3>}
 
 def row.converted(data: +List<U32>, result: Converting) -> Raster:
   Converting{packed, pixels} = result
@@ -247,11 +246,30 @@ def row.decoded(+width: U32, y: U32, pixels: Array<M.Vector3>, result: Result<&1
     case Fail{error}: Fail{error}
     case Done{Row{data, packed}}: Done{row.converted(data, convert(U32.to_nat(width), 0, (y * width : U32), Converting{packed, pixels}))}
 
-def rows(n: Nat, +y: U32, +width: U32, state: Result<&1, &1, Error, Raster>) -> Result<&1, &1, Error, Array<M.Vector3>>:
+def row.replaced(result: Result<&1, &1, Error, Array<M.Vector3>>) -> Result<&1, &1, Error, Raster>:
+  match result:
+    case Fail{error}: Fail{error}
+    case Done{output}: Done{Replaced{output}}
+
+def row.raw(complete: Bool, width: U32, height: U32, data: +List<U32>, output: Array<M.Vector3>) -> Result<&1, &1, Error, Raster>:
+  match complete:
+    case False{}: Fail{Truncated{}}
+    case True{}:
+      # Native later-row fallback resets i/j and rewrites the entire canvas.
+      row.replaced(pixels(U32.to_nat((width * height : U32)), 0, data, output))
+
+def row.selected(encoded: Bool, +width: U32, +height: U32, y: U32, +data: +List<U32>, packed: Array<U32>, output: Array<M.Vector3>) -> Result<&1, &1, Error, Raster>:
+  match encoded:
+    case True{}: row.decoded(width, y, output, scanline(width, data, packed))
+    case False{}: row.raw(enough(U32.to_nat((width * height * 4 : U32)), data), width, height, data, output)
+
+def rows(n: Nat, +y: U32, +width: U32, +height: U32, state: Result<&1, &1, Error, Raster>) -> Result<&1, &1, Error, Array<M.Vector3>>:
   match n state:
     case _ Fail{error}: Fail{error}
+    case _ Done{Replaced{pixels}}: Done{pixels}
     case 0n Done{Raster{_, _, pixels}}: Done{pixels}
-    case 1n+rest Done{Raster{data, packed, pixels}}: rows(rest, (y + 1 : U32), width, row.decoded(width, y, pixels, scanline(width, data, packed)))
+    case 1n+rest Done{Raster{+data, packed, output}}:
+      rows(rest, (y + 1 : U32), width, height, row.selected(rle_marker(data), width, height, y, data, packed, output))
 
 def start.kind(raw: Bool, +width: U32, +height: U32, +data: +List<U32>) -> Result<&1, &1, Error, Image>:
   match raw:
@@ -260,7 +278,7 @@ def start.kind(raw: Bool, +width: U32, +height: U32, +data: +List<U32>) -> Resul
       +count = (width * height : U32)
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
       row_depth = {1n+U32.log2((width - 1 : U32)) : Nat}
-      image(width, height, rows(U32.to_nat(height), 0, width,
+      image(width, height, rows(U32.to_nat(height), 0, width, height,
         Done{Raster{data, Array.new(U32, row_depth, 0), Array.new(M.Vector3, depth, M.Vector3{0.0, 0.0, 0.0})}}))
 
 def start(result: Result<&2, &2, Error, Header>) -> Result<&1, &1, Error, Image>:
