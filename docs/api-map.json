@@ -270,9 +270,9 @@
   "LoadImageFromMemory": {
     "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Image.FloatRGB.decode_hdr",
     "status": "profile-covered",
-    "scope": "Owned RGBA8 decoding for QOI/BMP/TGA/PNM/PSD/PIC/PNG and first-frame GIF, plus separate raw Radiance RGBE FloatRGB images preserving native F32 bits including subnormals. HDR uses LF headers, bounded dimensions and complete raw samples. RGBA8 dispatch retains native tokens/content detection, GIF geometry/background/LZW, PIC packet/clipping rules, profiled PSD matte arithmetic, BMP/TGA/PNM sample/header/palette behavior and packed/8/16-bit/Adam7/CgBI PNG. QOI remains separately selected.",
+    "scope": "Owned RGBA8 decoding for QOI/BMP/TGA/PNM/PSD/PIC/PNG and first-frame GIF, plus separate raw/scanline-RLE Radiance RGBE FloatRGB images preserving native F32 bits including subnormals. HDR retains LF headers, bounded dimensions and checked four-plane RLE counts/row widths. RGBA8 dispatch retains native tokens/content detection, GIF geometry/background/LZW, PIC packet/clipping rules, profiled PSD matte arithmetic, BMP/TGA/PNM sample/header/palette behavior and packed/8/16-bit/Adam7/CgBI PNG. QOI remains separately selected.",
     "gaps": [
-      "JPEG and other payload codecs; HDR scanline RLE, shared float dispatch and conversion",
+      "JPEG and other payload codecs; HDR later-row fallback, shared float dispatch and conversion",
       "Nondefault external stb decoder flags, PSD out-of-range matte casts and permissive incomplete/excess raster recovery",
       "Original pixel-format metadata, additional native arithmetic/platform profiles and remaining dispatch families",
       "Other permissive malformed-stream recovery and complete targets/integration/performance"

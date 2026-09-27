@@ -20,7 +20,7 @@ First-frame GIF rectangles, interlacing, palettes, transparency and bounded LZW 
 in [GIF.md](GIF.md).
 Owned GIF animation frames and retain/restore disposal are documented in
 [GIF-ANIMATION.md](GIF-ANIMATION.md).
-Owned raw Radiance RGBE float images, including exact subnormal samples, are
+Owned raw/RLE Radiance RGBE float images, including exact subnormal samples, are
 documented in [HDR.md](HDR.md).
 
 The raw [DEFLATE dependency](DEFLATE.md) is verified separately. Non-interlaced and

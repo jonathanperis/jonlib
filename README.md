@@ -65,7 +65,7 @@ See [supported payloads, extension aliases and bounds](docs/IMAGE-FILES.md).
 - Raw/pure-RLE/mixed-RLE Softimage PIC decoding with native clipping, white defaults and channel overwrite order.
 - First-frame GIF decoding with offsets/interlacing, native background fills, global/local palettes, transparency and bounded LZW.
 - Bounded owned GIF animations from memory/files and generic single-image fallback, with native retain/restore disposal and complete frame comparisons.
-- Owned raw Radiance RGBE float images with exhaustive native F32-bit comparisons, including subnormals.
+- Owned raw/scanline-RLE Radiance RGBE float images with exhaustive native F32-bit comparisons, including subnormals.
 - Bounded raw DEFLATE decompression with native empty-block semantics.
 - PNG decoding across supported 1/2/4/8/16-bit formats, Adam7 and native-default CgBI.
 - Byte-exact default PNG export: byte-format memory output and all seven checked image formats through file export.
