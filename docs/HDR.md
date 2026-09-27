@@ -44,11 +44,13 @@ between rows, then converted to exact float pixels.
 
 Zero controls, row-width mismatches and packet overruns return
 `InvalidImageStream`. Missing packet/count/header bytes return `TruncatedImageData`.
-Every write is bounded by its row and image dimensions. A later row switching
-from RLE to raw fallback returns `InvalidImageHeader`: the native reset-to-origin
-behavior of that case has not been added to this profile.
+Every write is bounded by its row and image dimensions. If a later row lacks the
+native RLE marker, native decoding resets to the canvas origin: its first four
+bytes become pixel zero, and a complete raw canvas replaces all earlier RLE output.
+Jonlib preserves that behavior while requiring the entire replacement payload.
+It does not expose native uninitialized samples from truncated raw recovery.
 
-RGBA8 conversion, shared float-format dispatch/file loading, later-row fallback, broader
+RGBA8 conversion, shared float-format dispatch/file loading, broader
 header/permissive recovery and complete metadata/resource/platform/performance
 coverage remain gaps. `Surface.decode_image` retains its RGBA8 profiles; use the
 typed float API to preserve HDR samples.
@@ -60,14 +62,15 @@ python3 tools/hdr_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 ```
 
 Configure checkout variables as in [README.md](../README.md#requirements).
-The gate compares 18 native images / 17,859 RGB pixels, twenty-one typed-error
+The gate compares 22 native images / 17,939 RGB pixels, twenty-one typed-error
 controls and all **65,536 channel/exponent pairs** on CPU, JavaScript and forced
 Metal. Every component is compared as exact F32 bits. It exercises normal/
 subnormal/extreme exponents, zero-exponent black, raw-marker boundaries,
 metadata/decimal parsing and 4,096-pixel axes. Consuming entries and unload are
 also checked. RLE cases cover row/plane transitions, literals/repeats at packet
 limits, widths 8/9/127/128/129/256/4096 and zero/subnormal/extreme exponents.
-Evidence is in [evidence/hdr-rle.json](evidence/hdr-rle.json).
+Later-row fallback cases replace one or two prior encoded rows and include the
+high-bit marker variant. Evidence is in [evidence/hdr-fallback.json](evidence/hdr-fallback.json).
 
 The altered stb reader retains its MIT notice and upstream Nicolas Schulz credit;
 see [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).

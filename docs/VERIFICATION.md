@@ -2403,3 +2403,31 @@ four proofs, eleven harness/planning tests and project checks. Float file IO,
 remaining targets and broader resource/performance behavior were not exercised.
 
 Regression scan: 36 callers checked, 28 assertions checked, 1 flagged/fixed.
+
+## Native later-row HDR raw reset
+
+When a later HDR scanline lacks the native RLE marker, decoding now restarts at
+pixel zero using a complete raw canvas from that point. The existing output owner
+is overwritten, including previously decoded RLE rows. The four marker-candidate
+bytes become the first raw pixel. Replacement data must cover the full canvas;
+short native recovery is rejected rather than exposing uninitialized samples.
+
+The gate passes 22 native images / 17,939 RGB pixels, twenty-one error controls,
+consuming ownership and all 65,536 channel/exponent pairs on CPU/JS/Metal. Added
+cases replace one or two encoded rows and exercise high-bit marker rejection.
+The earlier unsupported-fallback control now checks the required replacement
+length. All valid raw/RLE cases retain complete native float-bit comparison. See
+[evidence/hdr-fallback.json](evidence/hdr-fallback.json).
+
+Scoped review: I120 MATCH (reset state and complete canvas replacement); A3 HOLD
+through reused owned output; A4/A5 HOLD through native/source backend gates;
+A6 HOLD in [HDR.md](HDR.md); V2 HOLD through actual native reset behavior and exact
+float words; V3 HOLD through full replacement-length validation and bounded
+origin-based writes. Broader headers/recovery, float file/dispatch/conversion and
+complete resource/platform/performance remain gaps. API statuses remain partial.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, as do all
+four proofs, eleven harness/planning tests and project checks. Float file IO and
+remaining targets/resource/performance profiles were not exercised.
+
+Regression scan: 26 callers checked, 28 assertions checked, 0 flagged/fixed.

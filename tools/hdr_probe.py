@@ -48,6 +48,15 @@ def fixtures():
                 (y+1 if x<width//2 else x&255,x&255,(x//5)&255,255 if y else (0,1,9,10,128,136,254,255)[x%8])]
         inputs.append(dict(id=f'rle-mixed-{width}',bytes=rle_hdr(width,2,values)))
     inputs.append(dict(id='rle-literal128',bytes=rle_hdr(128,1,[1,2,3,1]*128,literal=True)))
+    for prior_rows in (1,2):
+        width=8;height=prior_rows+1
+        encoded=rle_hdr(width,prior_rows,[200,201,202,136]*(width*prior_rows))
+        encoded=encoded[len(hdr(width,prior_rows,[])):]
+        raw=[v for i in range(width*height) for v in (i+1,i+2,i+3,(i*11)&255)]
+        for high_bit in (False,True):
+            replacement=raw.copy()
+            if high_bit:replacement[:4]=[2,2,128,136]
+            inputs.append(dict(id=f'later-raw-reset-{prior_rows}-{high_bit}',bytes=hdr(width,height,encoded+replacement)+[1,2,3]))
     base=hdr(1,1,[1,2,3,128])
     malformed=[dict(id='empty',bytes=[],error=0),dict(id='byte',bytes=[*base,256],error=1),
                dict(id='signature',bytes=hdr(1,1,[1,2,3,128],signature=b'#?RADIANCEX'),error=0),
@@ -64,7 +73,7 @@ def fixtures():
         malformed.append(dict(id='rle-'+name,bytes=hdr(8,1,bytes_),error=error))
     prefix=hdr(8,2,[]);first=[2,2,0,8,136,1,136,2,136,3,136,128]
     malformed += [dict(id='rle-short-next-header',bytes=prefix+first+[2,2,0],error=3),
-                  dict(id='rle-later-fallback',bytes=prefix+first+[0,1,2,3]*8,error=0)]
+                  dict(id='rle-later-fallback-short-canvas',bytes=prefix+first+[0,1,2,3]*8,error=3)]
     return inputs,malformed
 
 
