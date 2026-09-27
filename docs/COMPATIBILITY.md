@@ -104,6 +104,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | Byte/integer to RGB float | `Image.Formatted.to_float_rgb` | Native normalized F32 words from all seven layouts, packed precision and alpha discard verified through return chains |
 | Native grayscale channels | `Image.Formatted.from_channel` / `Image.FloatRGB.from_channel` | Format-specific selection, normalized sample truncation and independent grayscale storage with retained source words |
 | Native formatted/float color observations | `Image.Formatted.colors/get` / `Image.FloatRGB.colors/get` | Exact packed integer expansion/float truncation, bounded point reads and retained rejected owners |
+| RGB float PNG export | `Image.FloatRGB.to_png/write_png` | Exact native raw-storage memory prefix versus normalized file colors, retained rejected owners and closed handles |
 | RGB float RAW file IO | `Image.FloatRGB.load_raw/write_raw` | Native fitting-header/fallback selection, exact format-9 words and typed domain/file failures with closed handles on CPU/JS |
 | Raw DEFLATE | `Compression.decompress` | Stored/fixed/dynamic blocks and bounded copies; native empty-stored-block completion differs explicitly from the internal PNG-oriented path |
 | PNG decoding | `Surface.decode_png` | Non-interlaced/Adam7 1/2/4/8/16-bit and native-default CgBI profiles; filtering/scattering, palette/tRNS, framing and bounded errors |

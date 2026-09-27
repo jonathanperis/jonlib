@@ -2890,3 +2890,36 @@ proofs, eleven harness/planning tests and project checks pass. Remaining source
 domains/targets and full resource/performance coverage were not exercised.
 
 Regression scan: 28 callers checked, 18 assertions checked, 0 flagged/fixed.
+
+## Native RGB float PNG memory/file split
+
+`Image.FloatRGB.to_png` preserves the pinned memory API's raw storage-prefix
+interpretation: one little-endian float word becomes one encoded RGBA pixel until
+the logical canvas is filled. Non-NaN source words are supported. `write_png`
+instead follows native file export through finite `[0,1]` color truncation and
+opaque alpha. A `(0.5,0.25,0.75)` source decodes as `0000003f` from memory PNG and
+`7f3fbfff` from file PNG; the gate retains that distinction explicitly.
+
+Six memory profiles and five file profiles match 1,892 encoded bytes and 2,032
+decoded RGBA bytes on CPU/JS/Metal. CPU/JS additionally compare actual files and
+pass 100 success/rejection/file-error cycles with a 64-descriptor limit. Two pure
+rejection controls preserve source words, and invalid writes leave a sentinel
+file intact. The shared float writer retains all sixteen RAW file cases, nine
+controls and 100 closure cycles. See
+[evidence/float-rgb-png.json](evidence/float-rgb-png.json).
+
+Scoped review: I137 MATCH (distinct native storage paths and typed writes);
+A3 HOLD through returned owners/sentinel/closure controls; A4/A5 HOLD through
+source/native pure backend gates; A6 HOLD in [PNG-EXPORT.md](PNG-EXPORT.md);
+V2 HOLD through actual memory/file exports and full decoded pixels; V3 HOLD
+through checked source domains, bounded raw-prefix indices and existing PNG
+encoding bounds. GPU filesystem IO, NaN parity, other float layouts/generic
+dispatch and complete native-ABI/resource/platform/performance remain gaps.
+Existing export mappings expand without changing completion counts.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal. All four
+proofs, eleven harness/planning tests and project checks pass. GPU filesystem IO,
+remaining source/target domains and full resource/performance coverage were not
+exercised.
+
+Regression scan: 22 callers checked, 20 assertions checked, 0 flagged/fixed.

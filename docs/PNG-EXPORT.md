@@ -6,6 +6,8 @@
 | `Surface.write_png(surface, path)` | Consumes ownership and returns `IO(Result<&1, &1, U32 & String, Unit>)` through the established Base byte-write/close path. PNG is selected explicitly, independently of the path extension. |
 | `Image.Formatted.to_png(image)` | Returns `Result<&1, &1, Image.Formatted & Pixel.Error, +List<U32>>` for native byte formats 1/2/4/7. Success consumes ownership; unsupported packed formats return the original image with `UnsupportedPixelFormat`. |
 | `Image.Formatted.write_png(image, path)` | Consumes any checked format-1..7 owner and returns the established `IO(Result<&1, &1, U32 & String, Unit>)` file contract. Byte sources retain their channels; packed sources use native file-export expansion. |
+| `Image.FloatRGB.to_png(image)` | Returns `Result<&1, &1, Image.FloatRGB, +List<U32>>`, preserving native format-9 memory export's raw-storage-prefix interpretation. Non-NaN float words are supported; rejection returns the owner. |
+| `Image.FloatRGB.write_png(image, path)` | Returns `IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>)`. Finite `[0,1]` samples follow native normalized file export; unsupported samples retain their owner before opening the file. |
 
 The source Surface contract remains dimensions 1..4096 and row-major packed
 `0xRRGGBBAA` words. Only logical pixels are encoded; array-capacity padding is
@@ -44,6 +46,26 @@ pixels and complete PNG bytes are compared with native file export. Construct
 formatted owners through the checked factory/conversion APIs; manually inconsistent
 storage remains outside the contract.
 
+## RGB float memory/file distinction
+
+The pinned native APIs take different paths for format 9. Memory export treats
+float storage as four byte channels and encodes the first `width*height*4`
+little-endian bytes, without converting float values. This is a contiguous prefix
+of the RGB sample words, not one selected component per source pixel. Jonlib
+preserves that interpretation with non-NaN sample words, including infinities and
+subnormals.
+
+File export instead uses `LoadImageColors`, truncating finite `[0,1]` channels to
+RGBA8 with opaque alpha before encoding. For a one-pixel RGB source
+`(0.5, 0.25, 0.75)`, native memory PNG decodes to **`0000003f`**, while file PNG
+decodes to **`7f3fbfff`**. Use the file API for that normalized native export path.
+
+`FloatRGBSampleError{image}` retains unsupported file-export owners before the
+output path is opened; `FloatRGBFileError{code,message}` preserves Base open/write
+errors. PNG is selected explicitly regardless of filename. Valid writes share the
+closed-handle boundary with float RAW files. Exact NaN payload interoperability,
+other float layouts and generic export dispatch remain gaps.
+
 ## Reference defaults and byte-level rules
 
 The pinned writer uses compression quality **8**, automatic filtering (`-1`)
@@ -74,6 +96,7 @@ uses inputs inside both profiles; it does not enlarge the decoder limit.
 ```sh
 python3 tools/deflate_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 python3 tools/png_export_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+python3 tools/float_rgb_png_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 ```
 
 Configure checkout variables as described in [README.md](../README.md#requirements).
@@ -97,3 +120,11 @@ The altered stb algorithms retain [the selected MIT notice](../LICENSES/stb-imag
 See the original [RGBA8 evidence](evidence/png-export.json) and
 [byte-format increment](evidence/png-export-formats.json) and
 [formatted file export](evidence/png-export-files.json) for hashes and lane scope.
+
+The float gate adds six memory profiles and five normalized file profiles,
+comparing 1,892 native encoded bytes and 2,032 decoded RGBA bytes on CPU/JS/Metal.
+CPU/JS also compare actual files and run 100 success/rejection/file-error cycles
+under a 64-descriptor limit. Two pure rejection checks retain source samples,
+and rejected writes preserve an existing sentinel file. Metal evidence covers
+pure encoding/decoding, not filesystem IO. See
+[evidence/float-rgb-png.json](evidence/float-rgb-png.json).

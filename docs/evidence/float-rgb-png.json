@@ -1,0 +1,17 @@
+{
+  "date":"2026-09-27",
+  "source_sha256":{"jonlib.bend":"7e2a89a03c5a6c613263bba084f43aec16452a50240d4ed6ad5589ada1025ca5"},
+  "profile":"Native raw float-storage prefix for memory PNG, normalized finite [0,1] colors for file PNG, retained owners and closed handles",
+  "png":{
+    "inputs_sha256":"ccabedb4eb31ae26e39213c79081b4a2162c8494b17814f233996cac388b69a1",
+    "reference_sha256":"b71d600cbc3f69d192681a042d88e0fe196e88575d1706172e374789160cb8fb",
+    "memory_images":6,"file_images":5,"encoded_bytes":1892,"decoded_bytes":2032,"pure_rejected_owners":2,
+    "io_controls":2,"closure_iterations_per_io_lane":100,"file_descriptor_limit":64,
+    "passed":true,"pure_lanes":["cpu","javascript","metal"],"file_lanes":["cpu","javascript"]
+  },
+  "raw_writer_regression":{"native_cases":16,"controls":9,"closure_iterations_per_lane":100,"passed":true,"lanes":["cpu","javascript"]},
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "limits":["NaN payload parity, other float layouts and generic export dispatch", "GPU filesystem IO and complete native ABI/resource/platform/performance coverage"]
+}
