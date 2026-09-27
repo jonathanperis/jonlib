@@ -40890,9 +40890,9 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.write_png/write_raw / Image.FloatRGB.write_raw/write_png",
+      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.write_png/write_raw / Image.FloatRGB.write_raw/write_png/write_bmp/write_tga",
       "mapping_state": "implemented",
-      "scope": "QOI/BMP/TGA/default PNG from RGBA8; PNG/RAW from formats 1..7; non-NaN RGB float RAW words and finite [0,1] RGB float PNG through native LoadImageColors normalization. Exact native bytes, pre-open rejected-owner preservation, typed errors and closed handles are verified. Float RAW native exports use defined normalized auxiliary casts.",
+      "scope": "QOI/BMP/TGA/default PNG from RGBA8; PNG/RAW from formats 1..7; non-NaN RGB float RAW words and finite [0,1] RGB float PNG/BMP/TGA through native LoadImageColors normalization. Exact bytes/pixels, explicit codec selection, pre-open rejected-owner preservation, typed errors and closed handles are verified. Float RAW native exports use defined normalized auxiliary casts.",
       "gaps": [
         "Other formats/options and generic extension dispatch; NaN parity and native out-of-range auxiliary casts",
         "Native callbacks/allocation ABI and complete targets/integration/performance"
@@ -40912,6 +40912,7 @@
         "tools/raw_file_probe.py",
         "tools/float_rgb_raw_file_probe.py",
         "tools/float_rgb_png_probe.py",
+        "tools/float_rgb_raster_export_probe.py",
         "tools/bmp_probe.py",
         "tools/tga_probe.py",
         "tools/png_export_probe.py",
@@ -40921,8 +40922,10 @@
         "docs/BMP.md",
         "docs/TGA.md",
         "docs/PNG-EXPORT.md",
+        "docs/FLOAT-RASTER-EXPORT.md",
         "docs/evidence/float-rgb-raw-files.json",
-        "docs/evidence/float-rgb-png.json"
+        "docs/evidence/float-rgb-png.json",
+        "docs/evidence/float-rgb-raster-export.json"
       ],
       "gate_evidence": {},
       "target_results": {},

@@ -1,0 +1,18 @@
+{
+  "date":"2026-09-27",
+  "source_sha256":{"jonlib.bend":"23c1338f6357ac01f87c20fdcf1948640c51012a0968741bf09a5b96c28a1a8b"},
+  "profile":"Finite [0,1] RGB float normalized BMP/TGA file bytes, explicit codecs and pre-open retained-owner rejection",
+  "exports":{
+    "inputs_sha256":"388427653cfba0e12688358fe0ce290efdc9184c2a5b7fdf6df91545fe23702a",
+    "reference_sha256":"eb7934179b745fd656df390096fd67c82b323dc3e960adcf70c1f0255f4b62aa",
+    "images":12,"encoded_bytes":3918,"decoded_bytes":4064,"rejected_owner_controls":2,"io_error_controls":2,
+    "closure_iterations_per_io_lane":100,"file_descriptor_limit":64,"passed":true,
+    "pure_lanes":["cpu","javascript","metal"],"file_lanes":["cpu","javascript"]
+  },
+  "png_regression":{"memory_images":6,"file_images":5,"encoded_bytes":1892,"decoded_bytes":2032,"passed":true},
+  "raw_writer_regression":{"native_cases":16,"controls":9,"closure_iterations_per_lane":100,"passed":true,"lanes":["cpu","javascript"]},
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "limits":["Other source domains/formats/options and generic export dispatch", "GPU filesystem IO and complete native ABI/resource/platform/performance coverage"]
+}

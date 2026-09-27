@@ -281,9 +281,9 @@
     "milestone": "image-codecs"
   },
   "ExportImage": {
-    "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.write_png/write_raw / Image.FloatRGB.write_raw/write_png",
+    "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.write_png/write_raw / Image.FloatRGB.write_raw/write_png/write_bmp/write_tga",
     "status": "profile-covered",
-    "scope": "QOI/BMP/TGA/default PNG from RGBA8; PNG/RAW from formats 1..7; non-NaN RGB float RAW words and finite [0,1] RGB float PNG through native LoadImageColors normalization. Exact native bytes, pre-open rejected-owner preservation, typed errors and closed handles are verified. Float RAW native exports use defined normalized auxiliary casts.",
+    "scope": "QOI/BMP/TGA/default PNG from RGBA8; PNG/RAW from formats 1..7; non-NaN RGB float RAW words and finite [0,1] RGB float PNG/BMP/TGA through native LoadImageColors normalization. Exact bytes/pixels, explicit codec selection, pre-open rejected-owner preservation, typed errors and closed handles are verified. Float RAW native exports use defined normalized auxiliary casts.",
     "gaps": [
       "Other formats/options and generic extension dispatch; NaN parity and native out-of-range auxiliary casts",
       "Native callbacks/allocation ABI and complete targets/integration/performance"
