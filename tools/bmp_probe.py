@@ -70,6 +70,16 @@ def indexed_bitmap(width,height,indices,palette,*,bpp=4,dib=40,top=False,gap=0,c
     return list(header+colors+b'\xa5'*gap+payload)
 
 
+def core_bitmap(width,height,pixels,*,gap=0):
+    stride=(width*3+3)&~3;payload=bytearray()
+    for y in reversed(range(height)):
+        for pixel in pixels[y*width:(y+1)*width]:
+            r,g,b,_=pixel.to_bytes(4,'big');payload.extend((b,g,r))
+        payload.extend(b'\xee'*(stride-width*3))
+    header=struct.pack('<2sIHHI',b'BM',26+2*gap+len(payload),0,0,26+gap)
+    return list(header+struct.pack('<IHHHH',12,width,height,1,24)+b'\xa5'*2*gap+payload)
+
+
 def fixtures():
     inputs = []
     for width in range(1,5):
@@ -129,10 +139,16 @@ def fixtures():
         for name,bpp,compression,words,masks in profiles:
             inputs.append(dict(id=f'extended-{dib}-{name}',bytes=bitfield_bitmap(3,2,words,bpp=bpp,dib=dib,masks=masks,compression=compression,top=dib==124,gap=3)))
         inputs.append(dict(id=f'extended-{dib}-indexed',bytes=indexed_bitmap(3,2,[0,1,2,2,1,0],[0x01020300,0x10203080,0xaabbcc01],dib=dib,gap=2,colors_used=1)))
+    for width in range(1,5):
+        pixels=[((i*53+17)&255)<<24|((i*73+31)&255)<<16|((i*97+43)&255)<<8|(i*101&255) for i in range(width*2)]
+        inputs.append(dict(id=f'core24-{width}',bytes=core_bitmap(width,2,pixels)))
+    inputs += [dict(id='core24-small',bytes=core_bitmap(1,1,[0x12345600])),
+               dict(id='core24-wide',bytes=core_bitmap(4096,1,[(i*65793&0xffffff)<<8 for i in range(4096)])),
+               dict(id='core24-maximum-gap',bytes=core_bitmap(1,1,[0x12345678],gap=1024))]
     base = bitmap(1,1,[0x12345678])
     malformed = [dict(id='empty',bytes=[],error=0),dict(id='bad-byte',bytes=[256],error=1),
                  dict(id='short-header',bytes=base[:53],error=0),dict(id='short-padding',bytes=base[:-1],error=3)]
-    for name,offset,fmt,value,error in [('signature',0,'H',0,0),('dib',14,'I',12,0),('planes',26,'H',2,0),
+    for name,offset,fmt,value,error in [('signature',0,'H',0,0),('dib',14,'I',16,0),('planes',26,'H',2,0),
                                       ('bpp',28,'H',17,0),('compression',30,'I',1,0),('offset-before-header',10,'I',53,0),
                                       ('offset-too-far',10,'I',1079,0),('width-zero',18,'I',0,2),
                                       ('width-large',18,'I',4097,2),('height-min',22,'I',0x80000000,2)]:
@@ -164,6 +180,12 @@ def fixtures():
                   dict(id='info56-short-masks',bytes=info56[:81],error=0),
                   dict(id='info56-offset-inside-masks',bytes=list(inside56),error=0),
                   dict(id='v5-short-profile',bytes=bitfield_bitmap(1,1,[0x400],dib=124)[:137],error=0)]
+    core=core_bitmap(1,1,[0x12345678])
+    malformed += [dict(id='core-short-header',bytes=core[:25],error=0),dict(id='core-short-padding',bytes=core[:-1],error=3)]
+    for name,offset,fmt,value,error in [('planes',22,'H',2,0),('depth',24,'H',8,0),('zero-width',18,'H',0,2),
+                                      ('large-width',18,'H',65535,2),('offset-before-header',10,'I',25,0),('offset-too-far',10,'I',1051,0)]:
+        changed=bytearray(core);struct.pack_into('<'+fmt,changed,offset,value)
+        malformed.append(dict(id='core-'+name,bytes=list(changed),error=error))
     outputs = [dict(id='rgba-mixed',width=3,height=2,pixels=[v | (i*51) for i,v in enumerate(rgba)]),
                dict(id='rgba-zero-alpha',width=2,height=2,pixels=rgba[:4]),
                dict(id='rgba-single',width=1,height=1,pixels=[0xffffffff])]

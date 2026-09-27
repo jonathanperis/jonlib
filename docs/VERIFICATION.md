@@ -18,7 +18,7 @@ python3 tools/gradient_bench.py --bend-source "$BEND_SOURCE" --raylib-source "$R
 BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 ```
 
-- Ten harness/planning test methods pass, including changed pixels, empty/missing results,
+- Eleven harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
 - 261 scenarios / 40,101 output words match pinned raylib exactly on each
@@ -1825,3 +1825,50 @@ remaining targets were not exercised. The two loading mappings remain partial,
 with zero full-parity completions.
 
 Regression scan: 40 callers checked, 37 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `7dfa6d1`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36295142709)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36295142716)
+passed, including 56-byte/V5 headers and the preceding BMP profiles.
+
+## CORE RGB24 and bounded memory-probe runners
+
+The BMP reader now selects its layout after the common file/DIB prefix. A CORE
+RGB24 file can therefore use its complete 26-byte header without being mistaken
+for a truncated larger header. Unsigned 16-bit dimensions retain the 1..4096
+profile, planes must equal one, rows are bottom-up padded BGR, and output is opaque.
+The native true-color double-gap behavior is preserved relative to the shorter
+header end.
+
+The BMP gate passes 87 images / 9,979 pixels, 41 typed-error controls and three
+exact exports / 410 bytes on CPU/JavaScript/forced Metal. CORE inputs include a
+30-byte complete image, all row-padding widths, a 4096-pixel row and the maximum
+gap. Planes/depth/dimensions/offsets and truncated headers/padding reject correctly.
+All larger-header cases remain in the gate.
+
+The expanded 336-case memory matrix initially overflowed Bun's stack before any
+result was printed. Its final 64 unchanged actions, including the reported failure
+location, passed alone. The gate now compiles at most 64 observation/control
+actions per runner on each lane and concatenates every result before the unchanged
+whole-result comparator. All 341 original actions are byte-identical and ordered
+across six runners. Batch stages/counts persist before compilation/execution; a
+new failure-detection test rejects missing/extra identical results that could
+otherwise cancel across batches and confirms stale success is cleared.
+
+The final memory gate passes all 336 native pairs plus five typed controls on
+CPU/JS/Metal. File loading passes 47 cases, three boundaries and 100 low-descriptor
+cycles on CPU/JS. Hashes and batch coverage are in
+[evidence/bmp-core.json](evidence/bmp-core.json). Decoder semantics, native inputs,
+runtime flags and timeouts were retained while fixing the runner structure.
+
+Scoped drift review: I104/I105 MATCH (CORE prefix reader and bounded probe); A4/A5
+HOLD through source/native lane gates; A6 HOLD in [BMP.md](BMP.md) and
+[IMAGE-FILES.md](IMAGE-FILES.md); V2 HOLD through all unchanged ordered native
+expectations; V3 HOLD through checked dimensions/offsets/payloads and existing
+bounded addressing. Indexed CORE palettes, original metadata, native malformed
+recovery and complete resource/platform/performance parity remain gaps.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal. All four
+proofs, eleven harness/planning tests and project checks pass. GPU filesystem IO
+and remaining targets were not exercised. API mappings remain partial.
+
+Regression scan: 33 callers checked, 54 assertions checked, 1 flagged/fixed.
