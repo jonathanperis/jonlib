@@ -33,7 +33,9 @@ def image_streams():
             'tga-indexed':bytes(indexed_targa(3,2,[b'\3\2\1\0',b'\30\20\10\xff'],8,32,[0,1,1,0,2,255],skip=3,top=True)),
             'bmp-indexed':bytes(indexed_bitmap(3,2,[0,1,2,2,1,0],[0x01020300,0x10203080,0xaabbcc01],gap=2,colors_used=1)),
             'bmp16':bytes(bitmap16(3,2,[0,0xffff,0x1000,0x9000,0x1234,0x5678],gap=4)),
-            'bmp-bitfields':bytes(bitfield_bitmap(3,2,[0,0xffff,0x400,0x2404,0x1234,0x5678],gap=4))}
+            'bmp-bitfields':bytes(bitfield_bitmap(3,2,[0,0xffff,0x400,0x2404,0x1234,0x5678],gap=4)),
+            'bmp56':bytes(bitfield_bitmap(3,2,[0,0xffff,0x400,0x2404,0x1234,0x5678],dib=56,gap=3)),
+            'bmp-v5':bytes(bitfield_bitmap(3,2,[0x1000,0x9000,0x123,0xffff,0,0x7fff],dib=124,masks=(0x123,0x456,0x789,0x8000),compression=0))}
 
 
 def main():
@@ -62,6 +64,7 @@ def main():
     add('indexed.bmp',streams['bmp-indexed'])
     add('packed.bmp',streams['bmp16'])
     add('bitfields.bmp',streams['bmp-bitfields'])
+    add('header56.bmp',streams['bmp56']);add('header-v5.bmp',streams['bmp-v5'])
     for name,kind in [('png-data.bmp','png'),('bmp-data.png','bmp'),('pnm-data.tga','ppm'),('tga-data.ppm','tga')]:add(name,streams[kind])
     add('mixed.PnG',streams['png'],'decode');add('unsupported.data',streams['png'],'decode')
     add('qoi-data.png',streams['qoi'],'decode');add('png-data.qoi',streams['png'],'decode')

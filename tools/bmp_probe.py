@@ -41,11 +41,14 @@ def bitfield_bitmap(width,height,words,*,bpp=16,dib=40,masks=(0xf800,0x7e0,0x1f,
     for y in (range(height) if top else reversed(range(height))):
         for value in words[y*width:(y+1)*width]:payload.extend(value.to_bytes(size,'little'))
         payload.extend(b'\xee'*(stride-width*size))
-    extra=12 if dib==40 and compression==3 else 0;end=14+dib+extra
+    extra=12 if dib in (40,56) and compression==3 else 0;end=14+dib+extra
     header=struct.pack('<2sIHHI',b'BM',end+2*gap+len(payload),0,0,end+gap)
     header+=struct.pack('<IiiHHIIIIII',dib,width,-height if top else height,1,bpp,compression,len(payload),0,0,0,0)
-    if dib==108:header+=struct.pack('<IIII',*masks)+bytes(52)
-    elif extra:header+=struct.pack('<III',*masks[:3])
+    if dib==56:header+=struct.pack('<IIII',*[0xffffffff]*4)
+    elif dib in (108,124):
+        header+=struct.pack('<IIII',*masks)+bytes(52)
+        if dib==124:header+=struct.pack('<IIII',4,0xffffffff,0xffffff00,17)
+    if extra:header+=struct.pack('<III',*masks[:3])
     return list(header+b'\xa5'*2*gap+payload)
 
 
@@ -60,7 +63,7 @@ def indexed_bitmap(width,height,indices,palette,*,bpp=4,dib=40,top=False,gap=0,c
     offset=14+dib+4*len(palette)+gap
     header=struct.pack('<2sIHHI',b'BM',offset+len(payload),0,0,offset)
     header+=struct.pack('<IiiHHIIIIII',dib,width,-height if top else height,1,bpp,0,len(payload),0,0,colors_used,0)
-    if dib==108:header+=bytes(68)
+    header+=bytes(dib-40)
     colors=bytearray()
     for pixel in palette:
         r,g,b,a=pixel.to_bytes(4,'big');colors.extend((b,g,r,a))
@@ -116,6 +119,16 @@ def fixtures():
         inputs.append(dict(id=f'v4-rgb16-alpha-{name}',bytes=bitfield_bitmap(3,1,words,dib=108,masks=(0x123,0x456,0x789,alpha),compression=0)))
     inputs += [dict(id='v4-equal-masks',bytes=bitfield_bitmap(3,1,[0,31,17],dib=108,masks=(31,31,31,0))),
                dict(id='info-bitfields-odd-gap',bytes=bitfield_bitmap(3,2,[0,0xffff,0x400,0x2404,0x1234,0x5678],gap=4))]
+    profiles=[('rgb24',24,0,[0,0xffffff,0x102030,0x010203,0xfedcba,0x13579b],(0,0,0,0)),
+              ('rgb32-zero',32,0,[0,0xffffff,0x102030,0x010203,0xfedcba,0x13579b],(0,0,0,0)),
+              ('rgb32-mixed',32,0,[0,0xffffffff,0x80102030,0x010203,0x7ffedcba,0x0113579b],(0,0,0,0)),
+              ('rgb16-alpha',16,0,[0x1000,0x9000,0x123,0xffff,0,0x7fff],(0x123,0x456,0x789,0x8000)),
+              ('bitfields16',16,3,[0,0xffff,0x400,0x2404,0x1234,0x5678],(0xf800,0x7e0,0x1f,0)),
+              ('bitfields32',32,3,[0,0xffffffff,0x80102030,0x010203,0x7ffedcba,0x0113579b],(0xff,0xff00,0xff0000,0xff000000))]
+    for dib in (56,124):
+        for name,bpp,compression,words,masks in profiles:
+            inputs.append(dict(id=f'extended-{dib}-{name}',bytes=bitfield_bitmap(3,2,words,bpp=bpp,dib=dib,masks=masks,compression=compression,top=dib==124,gap=3)))
+        inputs.append(dict(id=f'extended-{dib}-indexed',bytes=indexed_bitmap(3,2,[0,1,2,2,1,0],[0x01020300,0x10203080,0xaabbcc01],dib=dib,gap=2,colors_used=1)))
     base = bitmap(1,1,[0x12345678])
     malformed = [dict(id='empty',bytes=[],error=0),dict(id='bad-byte',bytes=[256],error=1),
                  dict(id='short-header',bytes=base[:53],error=0),dict(id='short-padding',bytes=base[:-1],error=3)]
@@ -146,6 +159,11 @@ def fixtures():
                   dict(id='info-offset-inside-masks',bytes=list(inside),error=0),
                   dict(id='info-equal-masks',bytes=bitfield_bitmap(1,1,[31],masks=(31,31,31,0)),error=0),
                   dict(id='bitfield-missing-rgb',bytes=bitfield_bitmap(1,1,[0],masks=(0,0x7e0,0x1f,0)),error=0)]
+    info56=bitfield_bitmap(1,1,[0x400],dib=56);inside56=bytearray(info56);struct.pack_into('<I',inside56,10,81)
+    malformed += [dict(id='info56-short-prefix',bytes=info56[:69],error=0),
+                  dict(id='info56-short-masks',bytes=info56[:81],error=0),
+                  dict(id='info56-offset-inside-masks',bytes=list(inside56),error=0),
+                  dict(id='v5-short-profile',bytes=bitfield_bitmap(1,1,[0x400],dib=124)[:137],error=0)]
     outputs = [dict(id='rgba-mixed',width=3,height=2,pixels=[v | (i*51) for i,v in enumerate(rgba)]),
                dict(id='rgba-zero-alpha',width=2,height=2,pixels=rgba[:4]),
                dict(id='rgba-single',width=1,height=1,pixels=[0xffffffff])]
