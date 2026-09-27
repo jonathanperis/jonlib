@@ -34,6 +34,8 @@ Profile constructors are `M.AccurateGradient{}` and `M.GnuGradient{}`. Jonlib ow
 box's corners and geometry APIs use Jonmath vectors.
 `J.Image.Decode.Reference` and its `J.FusedDecode{}` / `J.UncontractedDecode{}`
 constructors belong to Jonlib's codec interface; see [PSD.md](PSD.md).
+`J.Image.FloatRGB` owns float image storage while its pixels use the canonical
+`M.Vector3` type; see [HDR.md](HDR.md).
 
 ## Import migration
 

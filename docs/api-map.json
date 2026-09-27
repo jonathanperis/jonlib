@@ -268,11 +268,11 @@
     "milestone": "image-codecs"
   },
   "LoadImageFromMemory": {
-    "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif",
+    "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Image.FloatRGB.decode_hdr",
     "status": "profile-covered",
-    "scope": "Owned RGBA8 decoding for QOI, BMP, TGA, PNM, PSD, PIC, bounded PNG and first-frame GIF, with native-style token/content dispatch. GIF preserves in-canvas rectangles, interlacing, native background fills, palettes/transparency and bounded LZW. PIC preserves raw/pure/mixed RLE channel order, defaults and clipping. PSD exposes fused/uncontracted matte arithmetic; convenience calls are uncontracted. BMP/TGA/PNM retain documented native sample/header/palette/alpha rules. PNG supports packed/8/16-bit, Adam7 and native-default CgBI. QOI remains separately selected.",
+    "scope": "Owned RGBA8 decoding for QOI/BMP/TGA/PNM/PSD/PIC/PNG and first-frame GIF, plus separate raw Radiance RGBE FloatRGB images preserving native F32 bits including subnormals. HDR uses LF headers, bounded dimensions and complete raw samples. RGBA8 dispatch retains native tokens/content detection, GIF geometry/background/LZW, PIC packet/clipping rules, profiled PSD matte arithmetic, BMP/TGA/PNM sample/header/palette behavior and packed/8/16-bit/Adam7/CgBI PNG. QOI remains separately selected.",
     "gaps": [
-      "JPEG/HDR and other payload codecs; GIF animation and zero-area/malformed profiles",
+      "JPEG and other payload codecs; HDR scanline RLE, shared float dispatch and conversion",
       "Nondefault external stb decoder flags, PSD out-of-range matte casts and permissive incomplete/excess raster recovery",
       "Original pixel-format metadata, additional native arithmetic/platform profiles and remaining dispatch families",
       "Other permissive malformed-stream recovery and complete targets/integration/performance"

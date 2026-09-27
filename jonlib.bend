@@ -24,6 +24,7 @@ import ./src/psd.bend as Psd
 import ./src/pic.bend as Pic
 import ./src/gif.bend as Gif
 import ./src/gif_animation.bend as GifAnimation
+import ./src/hdr.bend as Hdr
 import ./src/inflate.bend as Inflate
 import ./src/png.bend as Png
 import ./src/png_encode.bend as PngEncode
@@ -827,6 +828,31 @@ def Image.Animation.entries(animation: Image.Animation) -> U32 & U32 & U32 & Lis
   (width, height, count, frames)
 
 def Image.Animation.unload(animation: Image.Animation) -> Unit:
+  Unit{}
+
+type Image.FloatRGB is Type:
+  FloatRGB{width: U32, height: U32, pixels: Array<M.Vector3>}
+
+def Image.FloatRGB.hdr.error(error: Hdr.Error) -> Image.DecodeError:
+  match error:
+    case Hdr.BadHeader{}: InvalidImageHeader{}
+    case Hdr.BadByte{}: InvalidImageByte{}
+    case Hdr.BadSize{}: UnsupportedImageSize{}
+    case Hdr.Truncated{}: TruncatedImageData{}
+
+def Image.FloatRGB.hdr.result(result: Result<&1, &1, Hdr.Error, Hdr.Image>) -> Result<&1, &1, Image.DecodeError, Image.FloatRGB>:
+  match result:
+    case Fail{error}: Fail{Image.FloatRGB.hdr.error(error)}
+    case Done{Hdr.Image{w, h, pixels}}: Done{FloatRGB{w, h, pixels}}
+
+def Image.FloatRGB.decode_hdr(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.FloatRGB>:
+  Image.FloatRGB.hdr.result(Hdr.decode(bytes))
+
+def Image.FloatRGB.entries(image: Image.FloatRGB) -> U32 & U32 & List<M.Vector3>:
+  FloatRGB{+width, +height, pixels} = image
+  (width, height, List.take(&1, M.Vector3, Array.to_list(~M.Vector3, pixels), U32.to_nat((width * height : U32))))
+
+def Image.FloatRGB.unload(image: Image.FloatRGB) -> Unit:
   Unit{}
 
 def Surface.png.error(error: Png.Error) -> Image.DecodeError:
