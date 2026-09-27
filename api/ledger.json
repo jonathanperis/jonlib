@@ -41950,9 +41950,9 @@
       "phase": 1,
       "sequence": 6,
       "status": "partial",
-      "jonlib": "Image.Formatted.convert / Surface.to_formatted / Image.Formatted.to_surface / Surface.to_float_rgb / Image.FloatRGB.to_surface / Image.FloatRGB.from_bytes / Image.FloatRGB.to_bytes",
+      "jonlib": "Image.Formatted.convert / Surface.to_formatted / Image.Formatted.to_surface / Surface.to_float_rgb / Image.FloatRGB.to_surface / Image.FloatRGB.from_bytes / Image.FloatRGB.to_bytes / Image.FloatRGB.to_formatted",
       "mapping_state": "implemented",
-      "scope": "Owned byte/integer format-1..7 conversion plus a separate format-7/9 RGB float bridge and exact non-NaN raw-word interoperability. Preserves native F32 normalization/quantization and opaque float-to-byte alpha; unsupported float conversions/exports retain the original owner. Byte/integer paths retain reciprocal expansion, thresholds, no-ops and native-order bytes. Large owned exports use stack-bounded logical prefix extraction.",
+      "scope": "Owned format-1..7 conversions, format-7/9 RGB float bridge and direct finite [0,1] float-to-1..7 conversion with native luminance/packed rounding and alpha one. Exact non-NaN raw words, returned unsupported float owners, reciprocal expansion/thresholds/no-ops and stack-bounded native-order exports are retained.",
       "gaps": [
         "Other float/half/compressed formats, mipmaps and other thresholds/endianness",
         "NaN payload interoperability, out-of-domain float casts and native allocation ABI",
@@ -41971,12 +41971,14 @@
         "tools/image_format_probe.py",
         "tools/float_rgb_probe.py",
         "tools/float_rgb_bytes_probe.py",
+        "tools/float_rgb_formats_probe.py",
         "tests/transforms.bend",
         "docs/FORMATS.md",
         "docs/FLOAT-RGB.md",
         "docs/FLOAT-RGB-BYTES.md",
         "docs/evidence/float-rgb.json",
-        "docs/evidence/float-rgb-bytes.json"
+        "docs/evidence/float-rgb-bytes.json",
+        "docs/evidence/float-rgb-formats.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43251,11 +43253,11 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.color_grayscale",
+      "jonlib": "Surface.color_grayscale / Image.FloatRGB.color_grayscale",
       "mapping_state": "implemented",
-      "scope": "RGBA8 input to opaque normalized grayscale RGBA8 output. Preserves native F32 luminance order and byte truncation; the numerical formula is gated against all 2^24 native RGB conversions.",
+      "scope": "RGBA8 to opaque normalized grayscale RGBA8, plus finite [0,1] RGB float directly to owned native grayscale format 1. Preserves F32 luminance order/truncation; byte RGB uses its existing exhaustive 2^24 gate and float RGB adds targeted luminance boundaries with retained rejected owners.",
       "gaps": [
-        "Native grayscale storage and other input formats/mipmaps",
+        "Other source domains/formats/mipmaps and remaining metadata/native ABI",
         "Full target/resource/performance coverage"
       ],
       "blocker": null,
@@ -43270,7 +43272,10 @@
       "evidence": [
         "tests/fixtures/images.json",
         "tools/conformance.py",
-        "docs/PALETTES.md"
+        "tools/float_rgb_formats_probe.py",
+        "docs/PALETTES.md",
+        "docs/FLOAT-RGB.md",
+        "docs/evidence/float-rgb-formats.json"
       ],
       "gate_evidence": {},
       "target_results": {},

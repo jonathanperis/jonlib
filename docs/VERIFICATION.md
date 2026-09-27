@@ -2765,3 +2765,34 @@ and project checks pass. Remaining targets and broader numeric/resource/
 performance domains were not exercised.
 
 Regression scan: 15 callers checked, 9 assertions checked, 0 flagged/fixed.
+
+## Direct RGB float formats and grayscale
+
+`Image.FloatRGB.to_formatted` converts finite `[0,1]` RGB directly to native
+formats 1..7 with alpha one. `color_grayscale` returns format-1 storage. Both
+retain the original float owner on unsupported targets or samples. The direct
+path preserves float precision until final encoding rather than first producing
+RGBA8 bytes.
+
+The gate passes nine native cases / 5,758 pixels and four retained-owner controls
+on CPU/JavaScript/forced Metal. It covers 530 packed-boundary values and 1,024
+targeted grayscale-boundary pixels. Two explicit counterexamples require zero
+where F32 add-half/floor gives one; shared packed-channel rounding now rounds the
+already-rounded product, matching native `round`. All 109 existing format cases /
+3,192 bytes retain their exact results. Evidence is in
+[evidence/float-rgb-formats.json](evidence/float-rgb-formats.json).
+
+Scoped review: I133 MATCH (direct formats, grayscale storage and rounding);
+A3 HOLD through complete retained-owner comparisons; A4/A5 HOLD through native
+and source gates on all three lanes; A6 HOLD in [FLOAT-RGB.md](FLOAT-RGB.md);
+V2 HOLD through actual `ImageFormat`/`ImageColorGrayscale` outputs and distinguishing
+rounding controls; V3 HOLD through validated target/sample domains and existing
+logical pixel bounds. Other float/half/compressed targets, unrestricted casts,
+mipmaps and complete resource/platform/performance remain gaps. Two existing
+partial mappings expand; completion counts remain unchanged.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal. All four
+proofs, eleven harness/planning tests and project checks pass. Remaining targets,
+unrestricted float casts and full resource/performance coverage were not exercised.
+
+Regression scan: 15 callers checked, 16 assertions checked, 1 flagged/fixed.

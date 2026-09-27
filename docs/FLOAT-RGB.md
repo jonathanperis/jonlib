@@ -95,6 +95,21 @@ one rather than zero. Tint and replacement alpha are discarded when converting
 back to RGB. Replacement still matches all four RGBA bytes, with input alpha 255.
 See [evidence/float-rgb-color.json](evidence/float-rgb-color.json).
 
+## Direct byte/integer formats and grayscale
+
+`Image.FloatRGB.to_formatted(image, target)` returns
+`Result<&1, &1, Image.FloatRGB, Image.Formatted>` for targets 1..7. It uses native
+normalized F32 channels directly with alpha one; it does not first truncate to
+RGBA8. `Image.FloatRGB.color_grayscale(image)` selects target 1, preserving the
+native change to grayscale storage. Unsupported targets or samples outside
+finite `[0,1]` return the original float owner.
+
+Packed channels round the already-rounded F32 product as native `round` does.
+Adding one half in F32 first can round twice: words `0x3d088888` (limit 15) and
+`0x3c020820` (limit 63) must produce zero, while add-half/floor produces one.
+Grayscale retains direct uncontracted F32 luminance order and byte truncation.
+See [evidence/float-rgb-formats.json](evidence/float-rgb-formats.json).
+
 ## Large owned exports
 
 Surface colors, FloatRGB entries and packed/formatted image exports use a shared
@@ -113,6 +128,7 @@ python3 tools/float_rgb_resize_probe.py --bend-source "$BEND_SOURCE" --raylib-so
 python3 tools/float_rgb_resize_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --filtered --gpu
 python3 tools/float_rgb_canvas_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 python3 tools/float_rgb_color_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+python3 tools/float_rgb_formats_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 ```
 
 Configure checkout variables as in [README.md](../README.md#requirements).
@@ -147,3 +163,6 @@ owners on CPU/JS/Metal, including ignored fills and same-size offset no-ops.
 The color gate compares 44 native cases / 17,050 pixels and six retained-owner
 controls on CPU/JS/Metal, including clamping, alpha matching, chains and nonfinite/
 fractional parameter rejection.
+Direct formats add nine native cases / 5,758 pixels, 530 packed-boundary values,
+1,024 targeted grayscale-boundary pixels and four retained owners on CPU/JS/Metal.
+The 109 byte/integer format regressions remain passing after correcting shared rounding.

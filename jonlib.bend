@@ -1083,6 +1083,36 @@ def Image.Formatted.to_surface(image: Image.Formatted) -> Surface:
   FormattedImage{width, height, +format, pixels} = image
   Image.Formatted.surface(Image.Formatted.routed(U32.is_eq(format, 7), FormattedImage{width, height, format, pixels}, 7))
 
+def Image.FloatRGB.formatted.read(format: U32, index: U32, output: Array<U32>, result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Array<U32>:
+  match result:
+    case Tuple{pixels, M.Vector3{r, g, b}}:
+      (pixels, Array.set(U32, output, index, Formats.encode(Formats.Normal{r, g, b, 1.0}, format)))
+
+def Image.FloatRGB.formatted.pixels(n: Nat, +index: U32, +format: U32, state: Array<M.Vector3> & Array<U32>) -> Array<U32>:
+  match n state:
+    case 0n Tuple{_, output}: output
+    case 1n+rest Tuple{pixels, output}:
+      Image.FloatRGB.formatted.pixels(rest, (index + 1 : U32), format, Image.FloatRGB.formatted.read(format, index, output, Array.get(M.Vector3, pixels, index)))
+
+def Image.FloatRGB.formatted.checked(+width: U32, +height: U32, +format: U32, state: Array<M.Vector3> & Bool) -> Result<&1, &1, Image.FloatRGB, Image.Formatted>:
+  match state:
+    case Tuple{pixels, False{}}: Fail{FloatRGB{width, height, pixels}}
+    case Tuple{pixels, True{}}:
+      +count = (width * height : U32)
+      Done{FormattedImage{width, height, format, Image.FloatRGB.formatted.pixels(U32.to_nat(count), 0, format, (pixels, Array.new(U32, Surface.capacity(count), 0)))}}
+
+def Image.FloatRGB.formatted.target(valid: Bool, image: Image.FloatRGB, format: U32) -> Result<&1, &1, Image.FloatRGB, Image.Formatted>:
+  match valid image:
+    case False{} _: Fail{image}
+    case True{} FloatRGB{+width, +height, pixels}:
+      Image.FloatRGB.formatted.checked(width, height, format, Image.FloatRGB.checked.pixels(~Image.FloatRGB.pixel.valid, U32.to_nat((width * height : U32)), 0, (pixels, True{})))
+
+def Image.FloatRGB.to_formatted(image: Image.FloatRGB, +format: U32) -> Result<&1, &1, Image.FloatRGB, Image.Formatted>:
+  Image.FloatRGB.formatted.target(((format >= 1) && (format <= 7) : U32), image, format)
+
+def Image.FloatRGB.color_grayscale(image: Image.FloatRGB) -> Result<&1, &1, Image.FloatRGB, Image.Formatted>:
+  Image.FloatRGB.to_formatted(image, 1)
+
 def Image.Formatted.png.channels(format: U32) -> U32:
   match format:
     case 1: 1
