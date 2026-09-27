@@ -1,0 +1,30 @@
+{
+  "date":"2026-09-27",
+  "source_sha256": {
+    "jonlib.bend":"fe986f5dcb53a596f222ff54db432fa8e13a10425a01f4d628cfa419ef211cae",
+    "src/bmp.bend":"8a95fae8bc00d5a66e4c7eb0978b83ecd5478c07d778be7f844a58cee5c8f608"
+  },
+  "core_palette_profile":"Native count=floor((offset-38)/3), BGR triples, twelve-plus-remainder byte skip, 1..256 entries and checked indices",
+  "bmp": {
+    "inputs_sha256":"006ad7082fb1af55559f0ba1fe5a69dac0f9953e7db5b63f21fa9edfd0902e16",
+    "reference_sha256":"cdba92f47507e248ba5157a34041e00f8a8d954cb366ec455a5a207582bc4756",
+    "images":98,"pixels":10076,"typed_controls":46,"exports":3,"export_bytes":410,
+    "passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "memory_dispatch": {
+    "inputs_sha256":"f7d8ba10bef69b8e4f4c7bc7bd021e8a7c21d85122b9b9a2090c76fd8c5c52e3",
+    "reference_sha256":"352512408f638eca30d6c1c8616ba42a8a325d4414983f65ed431c8ee27f3f8e",
+    "native_cases":358,"loaded_images":302,"typed_controls":5,"batch_size":64,
+    "passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "files": {
+    "inputs_sha256":"521b8a63ee710786edda1bafdfe1f50c0e8a837804a408c13df25b4564e169a0",
+    "reference_sha256":"58f6e0ce1525ef8b3a3deac2340e4051518d9747748abf6d649f13ae0271bda3",
+    "native_cases":48,"boundary_controls":3,"closure_iterations_per_lane":100,
+    "passed":true,"lanes":["cpu","javascript"]
+  },
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "limits":["Undefined/uninitialized native palette reads are rejected", "Original metadata, malformed recovery and full resource/platform/performance coverage", "File IO evidence is CPU/JavaScript only"]
+}

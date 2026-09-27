@@ -80,6 +80,18 @@ def core_bitmap(width,height,pixels,*,gap=0):
     return list(header+struct.pack('<IHHHH',12,width,height,1,24)+b'\xa5'*2*gap+payload)
 
 
+def core_indexed_bitmap(width,height,indices,palette,*,bpp=4,remainder=0):
+    packed=bytes(indexed_bitmap(width,height,indices,palette,bpp=bpp))
+    payload=packed[struct.unpack_from('<I',packed,10)[0]:]
+    offset=38+3*len(palette)+remainder
+    header=struct.pack('<2sIHHI',b'BM',offset+len(payload),0,0,offset)
+    header+=struct.pack('<IHHHH',12,width,height,1,bpp)
+    colors=bytearray()
+    for pixel in palette:
+        r,g,b,_=pixel.to_bytes(4,'big');colors.extend((b,g,r))
+    return list(header+colors+b'\xa5'*(12+remainder)+payload)
+
+
 def fixtures():
     inputs = []
     for width in range(1,5):
@@ -145,6 +157,14 @@ def fixtures():
     inputs += [dict(id='core24-small',bytes=core_bitmap(1,1,[0x12345600])),
                dict(id='core24-wide',bytes=core_bitmap(4096,1,[(i*65793&0xffffff)<<8 for i in range(4096)])),
                dict(id='core24-maximum-gap',bytes=core_bitmap(1,1,[0x12345678],gap=1024))]
+    for bpp in (1,4,8):
+        palette=[((i*53+17)&255)<<24|((i*73+31)&255)<<16|((i*97+43)&255)<<8|(i*101&255) for i in range(1<<bpp)]
+        width=9 if bpp==1 else 3
+        indices=[len(palette)-1 if i%3==0 else (i*7)%len(palette) for i in range(width*2)]
+        for remainder in range(3):
+            inputs.append(dict(id=f'core-indexed-{bpp}-{remainder}',bytes=core_indexed_bitmap(width,2,indices,palette,bpp=bpp,remainder=remainder)))
+    inputs += [dict(id='core-indexed-reduced',bytes=core_indexed_bitmap(3,2,[0,1,2,2,1,0],[0x01020300,0x10203080,0xaabbcc01],remainder=1)),
+               dict(id='core-indexed-minimum',bytes=core_indexed_bitmap(1,1,[0],[0x12345678],bpp=8))]
     base = bitmap(1,1,[0x12345678])
     malformed = [dict(id='empty',bytes=[],error=0),dict(id='bad-byte',bytes=[256],error=1),
                  dict(id='short-header',bytes=base[:53],error=0),dict(id='short-padding',bytes=base[:-1],error=3)]
@@ -182,10 +202,16 @@ def fixtures():
                   dict(id='v5-short-profile',bytes=bitfield_bitmap(1,1,[0x400],dib=124)[:137],error=0)]
     core=core_bitmap(1,1,[0x12345678])
     malformed += [dict(id='core-short-header',bytes=core[:25],error=0),dict(id='core-short-padding',bytes=core[:-1],error=3)]
-    for name,offset,fmt,value,error in [('planes',22,'H',2,0),('depth',24,'H',8,0),('zero-width',18,'H',0,2),
+    for name,offset,fmt,value,error in [('planes',22,'H',2,0),('depth',24,'H',16,0),('zero-width',18,'H',0,2),
                                       ('large-width',18,'H',65535,2),('offset-before-header',10,'I',25,0),('offset-too-far',10,'I',1051,0)]:
         changed=bytearray(core);struct.pack_into('<'+fmt,changed,offset,value)
         malformed.append(dict(id='core-'+name,bytes=list(changed),error=error))
+    core_indexed=core_indexed_bitmap(1,1,[0],[0x12345678],bpp=8)
+    malformed += [dict(id='core-indexed-empty',bytes=core_indexed_bitmap(1,1,[0],[],bpp=8),error=0),
+                  dict(id='core-indexed-large',bytes=core_indexed_bitmap(1,1,[0],[0]*257,bpp=8),error=0),
+                  dict(id='core-indexed-short-palette',bytes=core_indexed[:28],error=3),
+                  dict(id='core-indexed-short-padding',bytes=core_indexed[:-1],error=3),
+                  dict(id='core-indexed-invalid-index',bytes=core_indexed_bitmap(1,1,[1],[0x12345678],bpp=8),error=4)]
     outputs = [dict(id='rgba-mixed',width=3,height=2,pixels=[v | (i*51) for i,v in enumerate(rgba)]),
                dict(id='rgba-zero-alpha',width=2,height=2,pixels=rgba[:4]),
                dict(id='rgba-single',width=1,height=1,pixels=[0xffffffff])]
