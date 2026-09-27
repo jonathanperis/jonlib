@@ -15,6 +15,21 @@ def hdr(width,height,samples,*,signature=b'#?RADIANCE',metadata=b'',dimensions=N
     return list(signature+b'\n'+metadata+b'FORMAT=32-bit_rle_rgbe\n\n'+line+b'\n'+bytes(samples))
 
 
+def rle_hdr(width,height,samples,*,literal=False):
+    data=hdr(width,height,[])
+    for y in range(height):
+        data.extend((2,2,width>>8,width&255))
+        for channel in range(4):
+            values=samples[(y*width)*4+channel:(y+1)*width*4:4];at=0
+            while at<width:
+                end=at+1
+                while end<min(width,at+127) and values[end]==values[at]:end+=1
+                if not literal and end-at>=2:data.extend((128+end-at,values[at]));at=end
+                else:
+                    end=min(width,at+128);data.extend([end-at,*values[at:end]]);at=end
+    return data
+
+
 def fixtures():
     inputs=[]
     samples=[1,127,255,1,1,127,255,10,1,127,255,136,1,127,255,255]
@@ -28,16 +43,28 @@ def fixtures():
                dict(id='wide',bytes=hdr(4096,1,[v for i in range(4096) for v in (i&255,(i*7)&255,(i*19)&255,(i*11)&255)])),
                dict(id='tall',bytes=hdr(1,4096,[v for i in range(4096) for v in (i&255,(i*7)&255,(i*19)&255,(i*11)&255)])),
                dict(id='trailing',bytes=hdr(1,1,[1,2,3,128])+[9,8,7])]
+    for width in (8,9,127,128,129,256,4096):
+        values=[v for y in range(2) for x in range(width) for v in
+                (y+1 if x<width//2 else x&255,x&255,(x//5)&255,255 if y else (0,1,9,10,128,136,254,255)[x%8])]
+        inputs.append(dict(id=f'rle-mixed-{width}',bytes=rle_hdr(width,2,values)))
+    inputs.append(dict(id='rle-literal128',bytes=rle_hdr(128,1,[1,2,3,1]*128,literal=True)))
     base=hdr(1,1,[1,2,3,128])
     malformed=[dict(id='empty',bytes=[],error=0),dict(id='byte',bytes=[*base,256],error=1),
                dict(id='signature',bytes=hdr(1,1,[1,2,3,128],signature=b'#?RADIANCEX'),error=0),
                dict(id='no-format',bytes=list(b'#?RGBE\n\n-Y 1 +X 1\n\1\2\3\x80'),error=0),
                dict(id='truncated-sample',bytes=base[:-1],error=3),
-               dict(id='unsupported-rle',bytes=hdr(8,1,[2,2,0,8]),error=0),
+               dict(id='rle-no-packets',bytes=hdr(8,1,[2,2,0,8]),error=3),
                dict(id='long-line',bytes=hdr(1,1,[1,2,3,128],metadata=b'x'*1024+b'\n'),error=0),
                dict(id='zero-width',bytes=hdr(0,1,[]),error=2),dict(id='large-height',bytes=hdr(1,4097,[]),error=2)]
     for name,line in [('orientation',b'+Y 1 +X 1'),('overflow',b'-Y 1 +X 4294967296'),('missing-width',b'-Y 1 +X'),('negative',b'-Y -1 +X 1')]:
         malformed.append(dict(id=name,bytes=hdr(1,1,[1,2,3,128],dimensions=line),error=0))
+    for name,bytes_,error in [('wrong-width',[2,2,0,9],4),('zero-control',[2,2,0,8,0],4),
+                            ('repeat-overrun',[2,2,0,8,137,1],4),('literal-overrun',[2,2,0,8,9,*range(9)],4),
+                            ('short-repeat',[2,2,0,8,129],3),('short-literal',[2,2,0,8,8,*range(7)],3)]:
+        malformed.append(dict(id='rle-'+name,bytes=hdr(8,1,bytes_),error=error))
+    prefix=hdr(8,2,[]);first=[2,2,0,8,136,1,136,2,136,3,136,128]
+    malformed += [dict(id='rle-short-next-header',bytes=prefix+first+[2,2,0],error=3),
+                  dict(id='rle-later-fallback',bytes=prefix+first+[0,1,2,3]*8,error=0)]
     return inputs,malformed
 
 

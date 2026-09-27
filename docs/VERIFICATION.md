@@ -2373,3 +2373,33 @@ four proofs, eleven harness/planning tests and project checks. Float file IO,
 remaining targets and broader resource/performance behavior were not exercised.
 
 Regression scan: 50 callers checked, 20 assertions checked, 1 flagged/fixed.
+
+## Radiance RGBE scanline RLE
+
+`Image.FloatRGB.decode_hdr` now accepts native four-plane scanline RLE for widths
+8..4096, retaining raw fallback at the first row. Literal/repeat counts are checked
+against the remaining plane; row headers must carry the declared width. A bounded
+packed scanline is reused and converted to exact float pixels after each row.
+Zero counts, overruns and mismatched widths reject before output writes.
+
+The gate passes 18 native images / 17,859 RGB pixels, twenty-one error controls,
+consuming ownership and the retained exhaustive 65,536 channel/exponent comparison
+on CPU/JavaScript/forced Metal. Cases cover literal/repeat mixtures, packet lengths
+through 128, row/plane transitions, widths 8/9/127/128/129/256/4096 and extreme
+exponents. The previous unsupported-RLE control now exercises truncated encoded
+input; valid RLE rows are compared with native float storage. Hashes are in
+[evidence/hdr-rle.json](evidence/hdr-rle.json).
+
+Scoped review: I119 MATCH (scanline/plane parsing and exact conversion); A3 HOLD
+through owned output; A4/A5 HOLD through source/native backend gates; A6 HOLD in
+[HDR.md](HDR.md); V2 HOLD through complete float bits and unchanged scalar-domain
+expectations; V3 HOLD through row/packet bounds and bounded packed/output arrays.
+The scan clarified raw preallocation checks versus compressed per-packet checks.
+Later-row fallback, shared float dispatch/file loading, RGBA8 conversion and full
+resource/platform/performance remain gaps. API statuses remain partial.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, as do all
+four proofs, eleven harness/planning tests and project checks. Float file IO,
+remaining targets and broader resource/performance behavior were not exercised.
+
+Regression scan: 36 callers checked, 28 assertions checked, 1 flagged/fixed.

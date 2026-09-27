@@ -10,6 +10,7 @@ type Error is Data:
   BadByte{}
   BadSize{}
   Truncated{}
+  BadStream{}
 
 type Image is Type:
   Image{width: U32, height: U32, pixels: Array<M.Vector3>}
@@ -135,20 +136,138 @@ def image(width: U32, height: U32, result: Result<&1, &1, Error, Array<M.Vector3
     case Fail{error}: Fail{error}
     case Done{pixels}: Done{Image{width, height, pixels}}
 
-def start.valid(raw: Bool, complete: Bool, +width: U32, +height: U32, data: +List<U32>) -> Result<&1, &1, Error, Image>:
-  match raw complete:
-    case False{} _: Fail{BadHeader{}}
-    case True{} False{}: Fail{Truncated{}}
-    case True{} True{}:
+def start.raw(complete: Bool, +width: U32, +height: U32, data: +List<U32>) -> Result<&1, &1, Error, Image>:
+  match complete:
+    case False{}: Fail{Truncated{}}
+    case True{}:
       +count = (width * height : U32)
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
       image(width, height, pixels(U32.to_nat(count), 0, data, Array.new(M.Vector3, depth, M.Vector3{0.0, 0.0, 0.0})))
+
+type Row is Type:
+  Row{data: +List<U32>, packed: Array<U32>}
+
+def plane.write(index: U32, +shift: Nat, value: U32, data: +List<U32>, read: Array<U32> & U32) -> Row:
+  (packed, old) = read
+  pixel = ((old .&. (4294967295 - (255 << shift))) .|. (value << shift) : U32)
+  Row{data, Array.set(U32, packed, index, pixel)}
+
+def plane.copy(n: Nat, +index: U32, +shift: Nat, state: Result<&1, &1, Error, Row>) -> Result<&1, &1, Error, Row>:
+  match n state:
+    case _ Fail{error}: Fail{error}
+    case 0n _: state
+    case 1n+rest Done{Row{Con{value, tail}, packed}}:
+      plane.copy(rest, (index + 1 : U32), shift, Done{plane.write(index, shift, value, tail, Array.get(U32, packed, index))})
+    case _ _: Fail{Truncated{}}
+
+def plane.repeat(n: Nat, +index: U32, +shift: Nat, +value: U32, row: Row) -> Row:
+  match n row:
+    case 0n _: row
+    case 1n+rest Row{data, packed}:
+      plane.repeat(rest, (index + 1 : U32), shift, value, plane.write(index, shift, value, data, Array.get(U32, packed, index)))
+
+type Cursor is Type:
+  Cursor{left: U32, index: U32, row: Row}
+
+def plane.written(left: U32, index: U32, result: Result<&1, &1, Error, Row>) -> Result<&1, &1, Error, Cursor>:
+  match result:
+    case Fail{error}: Fail{error}
+    case Done{row}: Done{Cursor{left, index, row}}
+
+def plane.repeated(+count: U32, left: U32, +index: U32, shift: Nat, data: +List<U32>, packed: Array<U32>) -> Result<&1, &1, Error, Cursor>:
+  match data:
+    case Nil{}: Fail{Truncated{}}
+    case Con{value, rest}:
+      plane.written((left - count : U32), (index + count : U32), Done{plane.repeat(U32.to_nat(count), index, shift, value, Row{rest, packed})})
+
+def plane.packet(valid: Bool, repeat: Bool, +count: U32, left: U32, +index: U32, shift: Nat, data: +List<U32>, packed: Array<U32>) -> Result<&1, &1, Error, Cursor>:
+  match valid repeat:
+    case False{} _: Fail{BadStream{}}
+    case True{} True{}: plane.repeated(count, left, index, shift, data, packed)
+    case True{} False{}:
+      plane.written((left - count : U32), (index + count : U32), plane.copy(U32.to_nat(count), index, shift, Done{Row{data, packed}}))
+
+def plane.step(shift: Nat, cursor: Cursor) -> Result<&1, &1, Error, Cursor>:
+  match cursor:
+    case Cursor{_, _, Row{Nil{}, _}}: Fail{Truncated{}}
+    case Cursor{+left, index, Row{Con{+code, rest}, packed}}:
+      +repeat = (code > 128 : U32)
+      +count = Bool.pick(U32, repeat, (code - 128 : U32), code)
+      plane.packet(((count > 0) && (count <= left) : U32), repeat, count, left, index, shift, rest, packed)
+
+def plane.run(n: Nat, +shift: Nat, state: Result<&1, &1, Error, Cursor>) -> Result<&1, &1, Error, Row>:
+  match n state:
+    case _ Fail{error}: Fail{error}
+    case _ Done{Cursor{0, _, row}}: Done{row}
+    case 0n _: Fail{BadStream{}}
+    case 1n+rest Done{cursor}: plane.run(rest, shift, plane.step(shift, cursor))
+
+def planes(n: Nat, +width: U32, +shift: Nat, state: Result<&1, &1, Error, Row>) -> Result<&1, &1, Error, Row>:
+  match n state:
+    case _ Fail{error}: Fail{error}
+    case 0n _: state
+    case 1n+rest Done{row}: planes(rest, width, Nat.sub(shift, 8n), plane.run(U32.to_nat(width), shift, Done{Cursor{width, 0, row}}))
+
+def scanline.valid(encoded: Bool, valid: Bool, width: U32, data: +List<U32>, packed: Array<U32>) -> Result<&1, &1, Error, Row>:
+  match encoded valid:
+    case False{} _: Fail{BadHeader{}}
+    case True{} False{}: Fail{BadStream{}}
+    case True{} True{}: planes(4n, width, 24n, Done{Row{data, packed}})
+
+def scanline(+width: U32, data: +List<U32>, packed: Array<U32>) -> Result<&1, &1, Error, Row>:
+  match data:
+    case Con{a, Con{b, Con{+high, Con{low, rest}}}}:
+      scanline.valid(U32.is_eq(a, 2) && U32.is_eq(b, 2) && (high < 128 : U32),
+        U32.is_eq(((high << 8n) .|. low : U32), width), width, rest, packed)
+    case _: Fail{Truncated{}}
+
+type Converting is Type:
+  Converting{packed: Array<U32>, pixels: Array<M.Vector3>}
+
+def convert.read(at: U32, pixels: Array<M.Vector3>, result: Array<U32> & U32) -> Converting:
+  (packed, +word) = result
+  +exponent = (word .&. 255 : U32)
+  color = {M.Vector3{sample((word >> 24n : U32), exponent), sample(((word >> 16n) .&. 255 : U32), exponent), sample(((word >> 8n) .&. 255 : U32), exponent)} : M.Vector3}
+  Converting{packed, Array.set(M.Vector3, pixels, at, color)}
+
+def convert(n: Nat, +index: U32, +at: U32, state: Converting) -> Converting:
+  match n state:
+    case 0n _: state
+    case 1n+rest Converting{packed, pixels}: convert(rest, (index + 1 : U32), (at + 1 : U32), convert.read(at, pixels, Array.get(U32, packed, index)))
+
+type Raster is Type:
+  Raster{data: +List<U32>, packed: Array<U32>, pixels: Array<M.Vector3>}
+
+def row.converted(data: +List<U32>, result: Converting) -> Raster:
+  Converting{packed, pixels} = result
+  Raster{data, packed, pixels}
+
+def row.decoded(+width: U32, y: U32, pixels: Array<M.Vector3>, result: Result<&1, &1, Error, Row>) -> Result<&1, &1, Error, Raster>:
+  match result:
+    case Fail{error}: Fail{error}
+    case Done{Row{data, packed}}: Done{row.converted(data, convert(U32.to_nat(width), 0, (y * width : U32), Converting{packed, pixels}))}
+
+def rows(n: Nat, +y: U32, +width: U32, state: Result<&1, &1, Error, Raster>) -> Result<&1, &1, Error, Array<M.Vector3>>:
+  match n state:
+    case _ Fail{error}: Fail{error}
+    case 0n Done{Raster{_, _, pixels}}: Done{pixels}
+    case 1n+rest Done{Raster{data, packed, pixels}}: rows(rest, (y + 1 : U32), width, row.decoded(width, y, pixels, scanline(width, data, packed)))
+
+def start.kind(raw: Bool, +width: U32, +height: U32, +data: +List<U32>) -> Result<&1, &1, Error, Image>:
+  match raw:
+    case True{}: start.raw(enough(U32.to_nat((width * height * 4 : U32)), data), width, height, data)
+    case False{}:
+      +count = (width * height : U32)
+      depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
+      row_depth = {1n+U32.log2((width - 1 : U32)) : Nat}
+      image(width, height, rows(U32.to_nat(height), 0, width,
+        Done{Raster{data, Array.new(U32, row_depth, 0), Array.new(M.Vector3, depth, M.Vector3{0.0, 0.0, 0.0})}}))
 
 def start(result: Result<&2, &2, Error, Header>) -> Result<&1, &1, Error, Image>:
   match result:
     case Fail{error}: Fail{error}
     case Done{Header{+width, +height, +data}}:
-      start.valid((width < 8 : U32) || Bool.not(rle_marker(data)), enough(U32.to_nat((width * height * 4 : U32)), data), width, height, data)
+      start.kind((width < 8 : U32) || Bool.not(rle_marker(data)), width, height, data)
 
 def checked(valid: Bool, data: +List<U32>) -> Result<&1, &1, Error, Image>:
   match valid:

@@ -839,6 +839,7 @@ def Image.FloatRGB.hdr.error(error: Hdr.Error) -> Image.DecodeError:
     case Hdr.BadByte{}: InvalidImageByte{}
     case Hdr.BadSize{}: UnsupportedImageSize{}
     case Hdr.Truncated{}: TruncatedImageData{}
+    case Hdr.BadStream{}: InvalidImageStream{}
 
 def Image.FloatRGB.hdr.result(result: Result<&1, &1, Hdr.Error, Hdr.Image>) -> Result<&1, &1, Image.DecodeError, Image.FloatRGB>:
   match result:
