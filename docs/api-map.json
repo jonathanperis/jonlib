@@ -423,12 +423,12 @@
     "milestone": "resampling"
   },
   "ImageFromChannel": {
-    "jonlib": "Surface.from_channel",
+    "jonlib": "Surface.from_channel / Image.Formatted.from_channel / Image.FloatRGB.from_channel",
     "status": "profile-covered",
-    "scope": "RGBA8 source; returns unchanged source and independent opaque grayscale RGBA8 output, matching ImageFromChannel plus RGBA8 normalization. Integral selectors clamp to 0..3; all 256 byte values in all four reference channels checked.",
+    "scope": "Retained sources and independent grayscale output: Surface returns normalized RGBA8; formats 1..7 and finite [0,1] RGB float return native format-1 storage. Bounded integral selectors retain native per-format redirection, packed reciprocal normalization and F32 byte truncation. Unsupported typed requests preserve original owners.",
     "gaps": [
-      "Native grayscale storage and other source formats/mipmaps",
-      "Full target/performance coverage"
+      "Other selector/source domains, formats and mipmaps",
+      "Complete native ABI/resource/target/performance coverage"
     ],
     "api_id": "raylib:function:ImageFromChannel",
     "milestone": "images"

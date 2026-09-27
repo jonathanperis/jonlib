@@ -21,7 +21,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04, macos-15]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 35
     env:
       BEND_NO_TELEMETRY: '1'
       CC: clang
@@ -226,6 +226,11 @@ jobs:
           python3 tools/formatted_float_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify native grayscale channels and retained sources
+        run: >-
+          python3 tools/image_channel_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Verify image-memory token and content dispatch
         run: >-
           python3 tools/image_memory_probe.py
@@ -356,6 +361,7 @@ jobs:
             .build/float-rgb-color-probe/results.json
             .build/float-rgb-formats-probe/results.json
             .build/formatted-float-probe/results.json
+            .build/image-channel-probe/results.json
             .build/psd-matte-probe/results.json
             .build/inflate-probe/results.json
             .build/png-probe/results.json

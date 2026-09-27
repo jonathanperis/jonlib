@@ -1,0 +1,15 @@
+{
+  "date":"2026-09-27",
+  "source_sha256":{"jonlib.bend":"a50453628cc717718dd8685f42a4bbfb0ebb4c5fd9f5b382903767c6f3a4f87f"},
+  "profile":"Native grayscale channels from formats 1..7 and finite [0,1] RGB floats, selector redirection and retained independent owners",
+  "channels":{
+    "inputs_sha256":"16376043ef47a69d87a49d3c07a257c976f854fd6bc6fe175c9db1e65c6c67a0",
+    "reference_sha256":"61e42a8e0c2f0d1efea7484b7063fd7fde8fbe99b22e83939d2c7906b895d17f",
+    "native_cases":48,"channel_pixels":15366,"rejected_owner_controls":7,"independence_controls":2,
+    "passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "limits":["Other selector/source domains and formats/mipmaps", "Complete native ABI/resource/platform/performance coverage"]
+}

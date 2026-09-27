@@ -2236,6 +2236,84 @@ def Surface.channel.copied(pair: Surface & Surface, selected: F32) -> Surface & 
 def Surface.from_channel(surface: Surface, selected: F32) -> Surface & Surface:
   Surface.channel.copied(Surface.copy(surface), selected)
 
+def Image.channel.index(format: U32, +selected: U32) -> U32:
+  match format:
+    case 1: 0
+    case 2: Bool.pick(U32, U32.is_eq(selected, 0), 0, 3)
+    case 3: Bool.pick(U32, (selected > 2 : U32), 0, selected)
+    case 4: Bool.pick(U32, (selected > 2 : U32), 0, selected)
+    case 9: Bool.pick(U32, (selected > 2 : U32), 0, selected)
+    case _: Bool.pick(U32, (selected > 3 : U32), 3, selected)
+
+def Image.channel.valid(+selected: F32) -> Bool:
+  Image.FloatRGB.color.integral(selected) && (F32.abs(selected) <= 32767.0 : F32)
+
+def Image.channel.value(index: U32, normal: Formats.Normal) -> U32:
+  match index normal:
+    case 0 Formats.Normal{r, _, _, _}: F32.to_u32((r * 255.0 : F32))
+    case 1 Formats.Normal{_, g, _, _}: F32.to_u32((g * 255.0 : F32))
+    case 2 Formats.Normal{_, _, b, _}: F32.to_u32((b * 255.0 : F32))
+    case _ Formats.Normal{_, _, _, a}: F32.to_u32((a * 255.0 : F32))
+
+def Image.Formatted.channel.read(format: U32, channel: U32, index: U32, output: Array<U32>, result: Array<U32> & U32) -> Array<U32> & Array<U32>:
+  (source, word) = result
+  (source, Array.set(U32, output, index, Image.channel.value(channel, Formats.decode(format, word))))
+
+def Image.Formatted.channel.pixels(n: Nat, +index: U32, +format: U32, +channel: U32, state: Array<U32> & Array<U32>) -> Array<U32> & Array<U32>:
+  match n state:
+    case 0n _: state
+    case 1n+rest Tuple{source, output}:
+      Image.Formatted.channel.pixels(rest, (index + 1 : U32), format, channel, Image.Formatted.channel.read(format, channel, index, output, Array.get(U32, source, index)))
+
+def Image.Formatted.channel.finished(+width: U32, +height: U32, format: U32, result: Array<U32> & Array<U32>) -> Image.Formatted & Maybe<Image.Formatted>:
+  (source, pixels) = result
+  (FormattedImage{width, height, format, source}, Some{FormattedImage{width, height, 1, pixels}})
+
+def Image.Formatted.channel.checked(valid: Bool, image: Image.Formatted, selected: F32) -> Image.Formatted & Maybe<Image.Formatted>:
+  match valid image:
+    case False{} _: (image, None{})
+    case True{} FormattedImage{+width, +height, +format, pixels}:
+      +count = (width * height : U32)
+      channel = Image.channel.index(format, F32.to_u32(F32.max(0.0, selected)))
+      Image.Formatted.channel.finished(width, height, format, Image.Formatted.channel.pixels(U32.to_nat(count), 0, format, channel,
+        (pixels, Array.new(U32, Surface.capacity(count), 0))))
+
+def Image.Formatted.from_channel(image: Image.Formatted, +selected: F32) -> Image.Formatted & Maybe<Image.Formatted>:
+  Image.Formatted.channel.checked(Image.channel.valid(selected), image, selected)
+
+def Image.FloatRGB.channel.read(channel: U32, index: U32, output: Array<U32>, result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Array<U32>:
+  match result:
+    case Tuple{source, M.Vector3{r, g, b}}:
+      (source, Array.set(U32, output, index, Image.channel.value(channel, Formats.Normal{r, g, b, 1.0})))
+
+def Image.FloatRGB.channel.pixels(n: Nat, +index: U32, +channel: U32, state: Array<M.Vector3> & Array<U32>) -> Array<M.Vector3> & Array<U32>:
+  match n state:
+    case 0n _: state
+    case 1n+rest Tuple{source, output}:
+      Image.FloatRGB.channel.pixels(rest, (index + 1 : U32), channel, Image.FloatRGB.channel.read(channel, index, output, Array.get(M.Vector3, source, index)))
+
+def Image.FloatRGB.channel.finished(+width: U32, +height: U32, result: Array<M.Vector3> & Array<U32>) -> Image.FloatRGB & Maybe<Image.Formatted>:
+  (source, pixels) = result
+  (FloatRGB{width, height, source}, Some{FormattedImage{width, height, 1, pixels}})
+
+def Image.FloatRGB.channel.checked(+width: U32, +height: U32, channel: U32, state: Array<M.Vector3> & Bool) -> Image.FloatRGB & Maybe<Image.Formatted>:
+  match state:
+    case Tuple{pixels, False{}}: (FloatRGB{width, height, pixels}, None{})
+    case Tuple{pixels, True{}}:
+      +count = (width * height : U32)
+      Image.FloatRGB.channel.finished(width, height, Image.FloatRGB.channel.pixels(U32.to_nat(count), 0, channel,
+        (pixels, Array.new(U32, Surface.capacity(count), 0))))
+
+def Image.FloatRGB.channel.selected(valid: Bool, image: Image.FloatRGB, selected: F32) -> Image.FloatRGB & Maybe<Image.Formatted>:
+  match valid image:
+    case False{} _: (image, None{})
+    case True{} FloatRGB{+width, +height, pixels}:
+      Image.FloatRGB.channel.checked(width, height, Image.channel.index(9, F32.to_u32(F32.max(0.0, selected))),
+        Image.FloatRGB.checked.pixels(~Image.FloatRGB.pixel.valid, U32.to_nat((width * height : U32)), 0, (pixels, True{})))
+
+def Image.FloatRGB.from_channel(image: Image.FloatRGB, +selected: F32) -> Image.FloatRGB & Maybe<Image.Formatted>:
+  Image.FloatRGB.channel.selected(Image.channel.valid(selected), image, selected)
+
 def Surface.flip.index(horizontal: Bool, +i: U32, +w: U32, h: U32) -> U32:
   Raster.index(Mirrored{w, h, horizontal}, i)
 
