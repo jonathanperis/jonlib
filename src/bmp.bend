@@ -10,6 +10,7 @@ type Error is Data:
   BadByte{}
   BadSize{}
   Truncated{}
+  BadStream{}
 
 type Image is Type:
   Image{width: U32, height: U32, pixels: Array<U32>}
@@ -18,7 +19,7 @@ type Words is Data:
   Words{values: +List<U32>, rest: +List<U32>}
 
 type Header is Data:
-  Header{width: U32, height: U32, top: Bool, wide: Bool, restore: Bool, gap: U32, data: +List<U32>}
+  Header{width: U32, height: U32, top: Bool, bits: U32, restore: Bool, gap: U32, data: +List<U32>}
 
 def words.step(values: +List<U32>, next: Maybe<&2, F.Word>) -> Maybe<&2, Words>:
   match next:
@@ -36,27 +37,27 @@ def header.valid(valid: Bool, header: Header) -> Result<&2, &2, Error, Header>:
     case False{}: Fail{BadHeader{}}
     case True{}: Done{header}
 
-def header.masks(width: U32, height: U32, top: Bool, wide: Bool, +compression: U32, gap: U32, result: Maybe<&2, Words>) -> Result<&2, &2, Error, Header>:
+def header.masks(width: U32, height: U32, top: Bool, bits: U32, +compression: U32, gap: U32, result: Maybe<&2, Words>) -> Result<&2, &2, Error, Header>:
   match result:
     case Some{Words{Con{r, Con{g, Con{b, Con{a, _}}}}, data}}:
       header.valid(U32.is_eq(compression, 0) || (U32.is_eq(r, 16711680) && U32.is_eq(g, 65280) && U32.is_eq(b, 255) && U32.is_eq(a, 4278190080)),
-        Header{width, height, top, wide, U32.is_eq(compression, 0), gap, data})
+        Header{width, height, top, bits, U32.is_eq(compression, 0), gap, data})
     case _: Fail{BadHeader{}}
 
-def header.extended(v4: Bool, width: U32, height: U32, top: Bool, wide: Bool, compression: U32, gap: U32, data: +List<U32>) -> Result<&2, &2, Error, Header>:
+def header.extended(v4: Bool, width: U32, height: U32, top: Bool, bits: U32, compression: U32, gap: U32, data: +List<U32>) -> Result<&2, &2, Error, Header>:
   match v4:
-    case False{}: Done{Header{width, height, top, wide, True{}, gap, data}}
-    case True{}: header.masks(width, height, top, wide, compression, gap, words(17n, Some{Words{Nil{}, data}}))
+    case False{}: Done{Header{width, height, top, bits, True{}, gap, data}}
+    case True{}: header.masks(width, height, top, bits, compression, gap, words(17n, Some{Words{Nil{}, data}}))
 
-def header.sized(valid: Bool, width: U32, height: U32, top: Bool, v4: Bool, wide: Bool, compression: U32, gap: U32, data: +List<U32>) -> Result<&2, &2, Error, Header>:
+def header.sized(valid: Bool, width: U32, height: U32, top: Bool, v4: Bool, bits: U32, compression: U32, gap: U32, data: +List<U32>) -> Result<&2, &2, Error, Header>:
   match valid:
     case False{}: Fail{BadSize{}}
-    case True{}: header.extended(v4, width, height, top, wide, compression, gap, data)
+    case True{}: header.extended(v4, width, height, top, bits, compression, gap, data)
 
-def header.checked(valid: Bool, +width: U32, +height: U32, top: Bool, v4: Bool, wide: Bool, compression: U32, gap: U32, data: +List<U32>) -> Result<&2, &2, Error, Header>:
+def header.checked(valid: Bool, +width: U32, +height: U32, top: Bool, v4: Bool, bits: U32, compression: U32, gap: U32, data: +List<U32>) -> Result<&2, &2, Error, Header>:
   match valid:
     case False{}: Fail{BadHeader{}}
-    case True{}: header.sized(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32), width, height, top, v4, wide, compression, gap, data)
+    case True{}: header.sized(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32), width, height, top, v4, bits, compression, gap, data)
 
 def header.fields(result: Maybe<&2, Words>) -> Result<&2, &2, Error, Header>:
   match result:
@@ -64,12 +65,17 @@ def header.fields(result: Maybe<&2, Words>) -> Result<&2, &2, Error, Header>:
       +top = (signed_height >= 2147483648 : U32)
       +height = Bool.pick(U32, top, (0 - signed_height : U32), signed_height)
       +v4 = U32.is_eq(dib, 108)
-      +wide = U32.is_eq(mode, 2097153)
+      +bits = (mode >> 16n : U32)
+      +indexed = U32.is_eq(bits, 1) || U32.is_eq(bits, 4) || U32.is_eq(bits, 8)
+      wide = U32.is_eq(bits, 32)
       +end = (14 + dib : U32)
-      header.checked((U32.is_eq(dib, 40) || v4) && (wide || U32.is_eq(mode, 1572865))
+      +gap = (offset - end : U32)
+      header.checked((U32.is_eq(dib, 40) || v4) && U32.is_eq((mode .&. 65535 : U32), 1)
+        && (indexed || U32.is_eq(bits, 24) || U32.is_eq(bits, 32))
         && (U32.is_eq(compression, 0) || (v4 && wide && U32.is_eq(compression, 3)))
-        && ((offset >= end) && (offset - end <= 1024) : U32),
-        width, height, top, v4, wide, compression, (offset - end : U32), data)
+        && ((offset >= end) && (gap <= Bool.pick(U32, indexed, 1027, 1024)) : U32)
+        && (Bool.not(indexed) || (gap >= 4 : U32)),
+        width, height, top, v4, bits, compression, gap, data)
     case _: Fail{BadHeader{}}
 
 def header(bytes: +List<U32>) -> Result<&2, &2, Error, Header>:
@@ -133,16 +139,86 @@ def start.valid(valid: Bool, +width: U32, +height: U32, top: Bool, wide: Bool, r
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
       finish(width, height, restore, pixels(U32.to_nat(count), 0, width, height, top, wide, U32.to_nat(padding), Done{State{data, Array.new(U32, depth, 0), 0}}))
 
-def start(result: Result<&2, &2, Error, Header>) -> Result<&1, &1, Error, Image>:
-  match result:
-    case Fail{error}: Fail{error}
-    case Done{Header{+width, +height, top, +wide, restore, gap, +data}}:
+def start.color(header: Header) -> Result<&1, &1, Error, Image>:
+  match header:
+    case Header{+width, +height, top, bits, restore, gap, +data}:
+      +wide = U32.is_eq(bits, 32)
       +row = (width * Bool.pick(U32, wide, 4, 3) : U32)
       +padding = ((0 - row) .&. 3 : U32)
       # The pinned true-color reader skips the post-header gap twice.
       +skip = (2 * gap : U32)
       start.valid(enough(U32.to_nat((skip + (row + padding) * height : U32)), data), width, height, top, wide, restore, padding,
         List.drop(&2, U32, data, U32.to_nat(skip)))
+
+type Indexed is Type:
+  Indexed{data: +List<U32>, byte: U32, pixels: Array<U32>}
+
+def indexed.byte(fresh: Bool, byte: U32, data: +List<U32>) -> Maybe<&2, F.Word>:
+  match fresh:
+    case False{}: Some{F.Word{byte, data}}
+    case True{}: F.read_word(1n, 0n, 0, data)
+
+def indexed.write(index: U32, byte: U32, padding: Nat, data: +List<U32>, pixels: Array<U32>, color: Maybe<&2, U32>) -> Result<&1, &1, Error, Indexed>:
+  match color:
+    case None{}: Fail{BadStream{}}
+    case Some{+word}:
+      rgba = ((((word >> 16n) .&. 255) << 24n) .|. (((word >> 8n) .&. 255) << 16n) .|. ((word .&. 255) << 8n) .|. 255 : U32)
+      Done{Indexed{List.drop(&2, U32, data, padding), byte, Array.set(U32, pixels, index, rgba)}}
+
+def indexed.read(index: U32, bits: U32, shift: Nat, palette: +List<U32>, padding: Nat, pixels: Array<U32>, result: Maybe<&2, F.Word>) -> Result<&1, &1, Error, Indexed>:
+  match result:
+    case None{}: Fail{Truncated{}}
+    case Some{F.Word{+byte, data}}:
+      color = ((byte >> shift) .&. ((1 << U32.to_nat(bits)) - 1) : U32)
+      indexed.write(index, byte, padding, data, pixels, List.get(&2, U32, palette, U32.to_nat(color)))
+
+def indexed.pixels(n: Nat, +index: U32, +width: U32, +height: U32, +top: Bool, +bits: U32, +palette: +List<U32>, +padding: Nat, state: Result<&1, &1, Error, Indexed>) -> Result<&1, &1, Error, Image>:
+  match n state:
+    case _ Fail{error}: Fail{error}
+    case 0n Done{Indexed{_, _, output}}: Done{Image{width, height, output}}
+    case 1n+rest Done{Indexed{data, byte, output}}:
+      +x = (index % width : U32)
+      +y = (index / width : U32)
+      +part = (x % (8 / bits) : U32)
+      at = (Bool.pick(U32, top, y, (height - 1 - y : U32)) * width + x : U32)
+      pad = Bool.pick(Nat, U32.is_eq((x + 1 : U32), width), padding, 0n)
+      indexed.pixels(rest, (index + 1 : U32), width, height, top, bits, palette, padding,
+        indexed.read(at, bits, U32.to_nat((8 - bits - part * bits : U32)), palette, pad, output,
+          indexed.byte(U32.is_eq(part, 0), byte, data)))
+
+def indexed.start(valid: Bool, +width: U32, +height: U32, top: Bool, bits: U32, palette: +List<U32>, padding: U32, data: +List<U32>) -> Result<&1, &1, Error, Image>:
+  match valid:
+    case False{}: Fail{Truncated{}}
+    case True{}:
+      +count = (width * height : U32)
+      depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
+      indexed.pixels(U32.to_nat(count), 0, width, height, top, bits, palette, U32.to_nat(padding), Done{Indexed{data, 0, Array.new(U32, depth, 0)}})
+
+def indexed.palette(+width: U32, +height: U32, top: Bool, +bits: U32, gap: U32, result: Maybe<&2, Words>) -> Result<&1, &1, Error, Image>:
+  match result:
+    case None{}: Fail{Truncated{}}
+    case Some{Words{palette, +data}}:
+      +row = ((width * bits + 7) / 8 : U32)
+      +padding = ((0 - row) .&. 3 : U32)
+      +skip = (gap .&. 3 : U32)
+      indexed.start(enough(U32.to_nat((skip + (row + padding) * height : U32)), data), width, height, top, bits, palette, padding,
+        List.drop(&2, U32, data, U32.to_nat(skip)))
+
+def start.indexed(header: Header) -> Result<&1, &1, Error, Image>:
+  Header{width, height, top, bits, _, +gap, data} = header
+  # Native palette length comes from the offset, independently of clrUsed.
+  indexed.palette(width, height, top, bits, gap, words(U32.to_nat((gap / 4 : U32)), Some{Words{Nil{}, data}}))
+
+def start.kind(indexed: Bool, header: Header) -> Result<&1, &1, Error, Image>:
+  match indexed:
+    case True{}: start.indexed(header)
+    case False{}: start.color(header)
+
+def start(result: Result<&2, &2, Error, Header>) -> Result<&1, &1, Error, Image>:
+  match result:
+    case Fail{error}: Fail{error}
+    case Done{Header{width, height, top, +bits, restore, gap, data}}:
+      start.kind((bits < 16 : U32), Header{width, height, top, bits, restore, gap, data})
 
 def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, Error, Image>:
   match valid:

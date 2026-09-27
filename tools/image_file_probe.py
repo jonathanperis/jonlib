@@ -10,7 +10,7 @@ import subprocess
 
 from conformance import BUILD, ENV, ROOT, checkout, run, source_gate
 from png_probe import png
-from bmp_probe import bitmap
+from bmp_probe import bitmap, indexed_bitmap
 from tga_probe import indexed_targa, targa
 
 
@@ -30,7 +30,8 @@ def image_streams():
             'qoi':b'qoif'+struct.pack('>II',3,2)+b'\4\0'+b''.join(b'\xff'+rgba[i:i+4] for i in range(0,len(rgba),4))+b'\0'*7+b'\1',
             'ppm16':b'P6\n3 2\n65535\n'+bytes(value for i in range(18) for value in ((i*43+128)&255,(i*61+17)&255)),
             'tga16':bytes(targa(3,2,3,b''.join(struct.pack('<H',value) for value in (0,1,31,1023,0x7fff,0xffff)),bits=16,top=True)),
-            'tga-indexed':bytes(indexed_targa(3,2,[b'\3\2\1\0',b'\30\20\10\xff'],8,32,[0,1,1,0,2,255],skip=3,top=True))}
+            'tga-indexed':bytes(indexed_targa(3,2,[b'\3\2\1\0',b'\30\20\10\xff'],8,32,[0,1,1,0,2,255],skip=3,top=True)),
+            'bmp-indexed':bytes(indexed_bitmap(3,2,[0,1,2,2,1,0],[0x01020300,0x10203080,0xaabbcc01],gap=2,colors_used=1))}
 
 
 def main():
@@ -56,6 +57,7 @@ def main():
     add('wide-samples.ppm',streams['ppm16'])
     add('packed.tga',streams['tga16'])
     add('indexed.tga',streams['tga-indexed'])
+    add('indexed.bmp',streams['bmp-indexed'])
     for name,kind in [('png-data.bmp','png'),('bmp-data.png','bmp'),('pnm-data.tga','ppm'),('tga-data.ppm','tga')]:add(name,streams[kind])
     add('mixed.PnG',streams['png'],'decode');add('unsupported.data',streams['png'],'decode')
     add('qoi-data.png',streams['qoi'],'decode');add('png-data.qoi',streams['png'],'decode')

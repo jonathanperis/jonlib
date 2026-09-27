@@ -1663,3 +1663,42 @@ passes, with all four proofs, ten harness/planning tests and project checks.
 GPU file IO and broader resource/platform/performance coverage remain unverified.
 
 Regression scan: 53 callers checked, 27 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `fe4fd44`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36290080551)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36290080552)
+passed. Indexed TGA was subsequently published as `9e7b9fa`.
+
+## Indexed BMP palettes
+
+INFO/V4 `BI_RGB` now supports 1/4/8-bit indexed images. Palette length comes from
+the pixel offset rather than `clrUsed`; BGR entries discard their reserved/alpha
+byte and become opaque. Packed samples are MSB-first, unused row-end bits are
+ignored, and input rows keep four-byte alignment. Residual palette-offset bytes
+are skipped once; the existing true-color double-gap behavior stays distinct.
+
+The BMP gate passes 38 native images / 4,345 pixels, 22 typed-error controls and
+three unchanged complete exports / 410 bytes on CPU/JavaScript/forced Metal.
+Cases cover INFO/V4, depths/orientations, full/reduced palettes, ignored metadata,
+partial-byte rows, maximum palette offset and a 4096-pixel row. Missing palette
+entries return `InvalidImageStream`, with a dedicated public-error control; native
+uninitialized palette reads remain outside the supported domain. Empty/oversized
+palettes and missing palette/row-padding bytes are rejected.
+
+Shared dispatch passes 226 memory pairs plus five controls on CPU/JS/Metal and
+42 file cases plus three boundaries and 100 low-descriptor cycles on CPU/JS.
+Both include an indexed BMP. Current hashes and results are recorded in
+[evidence/bmp-palettes.json](evidence/bmp-palettes.json).
+
+Scoped review: I100 MATCH (`src/bmp.bend`, offset-derived palette and indexed
+scanlines); A4/A5 HOLD through source/native lane gates; A6 HOLD in [BMP.md](BMP.md);
+V2 HOLD through complete linked native pixels/export bytes; V3 HOLD through
+validated dimensions, palette and payload bounds, checked indices and guarded
+output addressing. Original metadata, 16-bit/other header/mask/compression profiles
+and full resource/platform/performance coverage remain gaps. The ledger keeps
+104 core and 142 math partial mappings, zero full-parity completions.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal. All four
+proofs, ten harness/planning tests and project checks pass. GPU filesystem IO and
+the remaining platform/resource/performance domains were not exercised.
+
+Regression scan: 51 callers checked, 26 assertions checked, 0 flagged/fixed.

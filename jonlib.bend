@@ -693,6 +693,7 @@ def Surface.bmp.error(error: Bmp.Error) -> Image.DecodeError:
     case Bmp.BadByte{}: InvalidImageByte{}
     case Bmp.BadSize{}: UnsupportedImageSize{}
     case Bmp.Truncated{}: TruncatedImageData{}
+    case Bmp.BadStream{}: InvalidImageStream{}
 
 def Surface.bmp.result(result: Result<&1, &1, Bmp.Error, Bmp.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
   match result:
