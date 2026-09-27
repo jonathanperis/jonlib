@@ -1836,6 +1836,14 @@ def Rectangle.inside(rect: Rectangle, sw: U32, sh: U32) -> Bool:
   ((x >= 0.0) && (y >= 0.0) && (w >= 1.0) && (h >= 1.0)
     && (x + w <= U32.to_f32(sw)) && (y + h <= U32.to_f32(sh)) : F32)
 
+def Rectangle.crop.bounds(rect: Rectangle, sw: U32, sh: U32) -> Rectangle:
+  Rectangle{+x, +y, width, height} = rect
+  +sx = F32.max(0.0, x)
+  +sy = F32.max(0.0, y)
+  cw = F32.min((width + F32.min(0.0, x) : F32), (U32.to_f32(sw) - sx : F32))
+  ch = F32.min((height + F32.min(0.0, y) : F32), (U32.to_f32(sh) - sy : F32))
+  Rectangle{sx, sy, cw, ch}
+
 # ImageFromImage profile: positive integral in-bounds rectangle; source retained.
 def Surface.extract(surface: Surface, +rect: Rectangle) -> Surface & Maybe<Surface>:
   Surface{+w, +h, pixels} = surface
@@ -1860,13 +1868,9 @@ def Surface.crop.route(integral: Bool, outside: Bool, original: Surface, rect: R
 
 def Surface.crop(surface: Surface, +rect: Rectangle) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Surface{+w, +h, pixels} = surface
-  Rectangle{+x, +y, width, height} = rect
-  +sx = F32.max(0.0, x)
-  +sy = F32.max(0.0, y)
-  cw = F32.min((width + F32.min(0.0, x) : F32), (U32.to_f32(w) - sx : F32))
-  ch = F32.min((height + F32.min(0.0, y) : F32), (U32.to_f32(h) - sy : F32))
+  Rectangle{x, y, _, _} = rect
   Surface.crop.route(Rectangle.integral(rect), ((x > U32.to_f32(w)) || (y > U32.to_f32(h)) : F32),
-    Surface{w, h, pixels}, Rectangle{sx, sy, cw, ch})
+    Surface{w, h, pixels}, Rectangle.crop.bounds(rect, w, h))
 
 def Surface.resize.finish(w: U32, h: U32, buffers: Array<U32> & Array<U32>) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   (old, pixels) = buffers
@@ -2187,6 +2191,40 @@ def Image.FloatRGB.rotate_cw(image: Image.FloatRGB) -> Image.FloatRGB:
 
 def Image.FloatRGB.rotate_ccw(image: Image.FloatRGB) -> Image.FloatRGB:
   Image.FloatRGB.rotate(image, False{})
+
+def Image.FloatRGB.extract.finish(sw: U32, sh: U32, width: U32, height: U32, result: Array<M.Vector3> & Array<M.Vector3>) -> Image.FloatRGB & Maybe<Image.FloatRGB>:
+  (source, pixels) = result
+  (FloatRGB{sw, sh, source}, Some{FloatRGB{width, height, pixels}})
+
+def Image.FloatRGB.extract.checked(valid: Bool, +sw: U32, sh: U32, pixels: Array<M.Vector3>, x: F32, y: F32, width: F32, height: F32) -> Image.FloatRGB & Maybe<Image.FloatRGB>:
+  match valid:
+    case False{}: (FloatRGB{sw, sh, pixels}, None{})
+    case True{}:
+      +w = F32.to_u32(width)
+      +h = F32.to_u32(height)
+      Image.FloatRGB.extract.finish(sw, sh, w, h, Raster.sample(~M.Vector3, (w * h : U32), Region{sw, w, F32.to_u32(x), F32.to_u32(y)}, M.Vector3{0.0, 0.0, 0.0}, pixels))
+
+def Image.FloatRGB.extract(image: Image.FloatRGB, +rect: Rectangle) -> Image.FloatRGB & Maybe<Image.FloatRGB>:
+  FloatRGB{+width, +height, pixels} = image
+  Rectangle{x, y, w, h} = rect
+  Image.FloatRGB.extract.checked(Rectangle.integral(rect) && Rectangle.inside(rect, width, height), width, height, pixels, x, y, w, h)
+
+def Image.FloatRGB.crop.result(result: Image.FloatRGB & Maybe<Image.FloatRGB>) -> Result<&1, &1, Image.FloatRGB & Surface.Error, Image.FloatRGB>:
+  match result:
+    case Tuple{original, None{}}: Fail{(original, InvalidRectangle{})}
+    case Tuple{_, Some{region}}: Done{region}
+
+def Image.FloatRGB.crop.route(integral: Bool, outside: Bool, image: Image.FloatRGB, rect: Rectangle) -> Result<&1, &1, Image.FloatRGB & Surface.Error, Image.FloatRGB>:
+  match integral outside:
+    case False{} _: Fail{(image, InvalidRectangle{})}
+    case True{} True{}: Done{image}
+    case True{} False{}: Image.FloatRGB.crop.result(Image.FloatRGB.extract(image, rect))
+
+def Image.FloatRGB.crop(image: Image.FloatRGB, +rect: Rectangle) -> Result<&1, &1, Image.FloatRGB & Surface.Error, Image.FloatRGB>:
+  FloatRGB{+width, +height, pixels} = image
+  Rectangle{x, y, _, _} = rect
+  Image.FloatRGB.crop.route(Rectangle.integral(rect), ((x > U32.to_f32(width)) || (y > U32.to_f32(height)) : F32),
+    FloatRGB{width, height, pixels}, Rectangle.crop.bounds(rect, width, height))
 
 # Base.Image contains RGB colors. Alpha is discarded, not composited.
 def Surface.tree.leaf(got: Array<U32> & U32) -> Array<U32> & Image:

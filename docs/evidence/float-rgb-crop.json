@@ -1,0 +1,15 @@
+{
+  "date":"2026-09-27",
+  "source_sha256":{"jonlib.bend":"c01f9d5474dead2794b91e0c967aa4dff2dc69ea0a21e06e5cf6ef78328fc00a"},
+  "profile":"Owned non-NaN RGB float integral regions and clipped crops, exact native words and retained rejected owners",
+  "rectangles": {
+    "inputs_sha256":"83d9ff827059c96427036f4a169af2350449aefe99580d6996cc56e402a4400d",
+    "reference_sha256":"3f9704d885c78d145ccd78cbb350c48481bf5142afb5c96ce827890a3642cf79",
+    "native_cases":15,"pixels":167,"retained_owner_controls":8,"independent_extraction_controls":1,
+    "passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "limits":["Fractional/native-invalid geometry, NaN payload parity and mipmaps", "Complete resource/platform/performance coverage"]
+}

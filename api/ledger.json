@@ -41707,9 +41707,9 @@
       "phase": 1,
       "sequence": 8,
       "status": "partial",
-      "jonlib": "Surface.extract",
+      "jonlib": "Surface.extract / Image.FloatRGB.extract",
       "mapping_state": "implemented",
-      "scope": "RGBA8; positive integral in-bounds rectangle; original owner retained",
+      "scope": "Owned RGBA8 and non-NaN RGB F32 positive integral in-bounds regions; original owner retained and extracted storage independent with exact native samples.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -41725,6 +41725,9 @@
       "evidence": [
         "docs/API.md",
         "docs/VERIFICATION.md",
+        "tools/float_rgb_crop_probe.py",
+        "docs/FLOAT-RGB.md",
+        "docs/evidence/float-rgb-crop.json",
         "docs/evidence/image-transforms.json"
       ],
       "gate_evidence": {},
@@ -42077,9 +42080,9 @@
       "phase": 1,
       "sequence": 8,
       "status": "partial",
-      "jonlib": "Surface.crop",
+      "jonlib": "Surface.crop / Image.FloatRGB.crop",
       "mapping_state": "implemented",
-      "scope": "RGBA8; integral crop; positive clipped result or reference out-of-bounds no-op; errors preserve original",
+      "scope": "Owned RGBA8 and non-NaN RGB F32 integral crops; positive clipped results or native strictly-outside-origin no-ops. Exact samples and returned owners on rejection.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -42095,6 +42098,9 @@
       "evidence": [
         "docs/API.md",
         "docs/VERIFICATION.md",
+        "tools/float_rgb_crop_probe.py",
+        "docs/FLOAT-RGB.md",
+        "docs/evidence/float-rgb-crop.json",
         "docs/evidence/image-transforms.json"
       ],
       "gate_evidence": {},
