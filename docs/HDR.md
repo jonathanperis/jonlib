@@ -58,7 +58,9 @@ bytes become pixel zero, and a complete raw canvas replaces all earlier RLE outp
 Jonlib preserves that behavior while requiring the entire replacement payload.
 It does not expose native uninitialized samples from truncated raw recovery.
 
-RGBA8 conversion, shared float-format dispatch, broader
+Checked [RGB float/RGBA8 conversion](FLOAT-RGB.md) is available for samples in
+`[0,1]`, returning the original owner when outside that domain.
+Shared float-format dispatch, broader
 header/permissive recovery and complete metadata/resource/platform/performance
 coverage remain gaps. `Surface.decode_image` retains its RGBA8 profiles; use the
 typed float API to preserve HDR samples.

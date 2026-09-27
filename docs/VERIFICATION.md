@@ -2470,3 +2470,40 @@ The aggregate budget is now 30 minutes for the expanded serial suite. Individual
 compiler/runtime limits, native comparisons, expected results and all workflow
 steps are retained. The next published checkpoint must complete both hosted jobs
 before full hosted success is recorded.
+
+## RGB float conversion and stack-bounded image exports
+
+`Surface.to_float_rgb` preserves native format-7/9 byte normalization and drops
+alpha. `Image.FloatRGB.to_surface` accepts finite `[0,1]` RGB, including signed
+zero/subnormals, then uses native F32 multiply-and-truncate conversion with opaque
+alpha. Failed conversion returns the original float owner. Bit-domain validation
+rejects negative subnormals even on a flushing GPU backend.
+
+The gate passes every byte normalization, 769 quantization-boundary pixels,
+33,024 HDR-derived pixels and seven rejected-owner cases on CPU/JS/Metal. Native
+`ImageFormat` supplies exact float words and complete RGBA output. The large
+float and Surface exports are both observed in full. See
+[evidence/float-rgb.json](evidence/float-rgb.json).
+
+The initial JS run overflowed in pinned Base `List.take` inside Surface colors,
+after conversion succeeded. A diagnostic stack trace identified the actual call.
+Five image-owned prefix sites now use a shared tail-recursive implementation;
+the original large input, native comparisons and runtime limits were retained.
+Affected format regressions pass: 109 complete format cases / 3,192 bytes,
+42 packed-dither outputs, 4,563 pixel-size observations and 25 raw-file cases with
+five boundaries/100 closure cycles. Small bounded codec-table uses of Base's
+Data-list prefix operation are unchanged.
+
+Scoped drift review: I122/I124 MATCH (native conversion, owner return and bounded
+exports); A3 HOLD through rejected-owner checks; A4/A5 HOLD through native/source
+backend gates; A6 HOLD in [FLOAT-RGB.md](FLOAT-RGB.md); V2 HOLD through exact
+`ImageFormat` results; V3 HOLD through bit-domain and logical-length bounds.
+Other float/half/compressed formats, unrestricted HDR-to-byte conversion, mipmaps
+and complete resource/platform/performance remain gaps. API counts stay 106 core
+and 142 math partial functions, zero complete.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal. All four
+proofs, eleven harness/planning tests and project checks pass. Remaining targets,
+unrestricted float casts and full resource/performance coverage were not exercised.
+
+Regression scan: 52 callers checked, 19 assertions checked, 1 flagged/fixed.

@@ -48,6 +48,8 @@ Exact dimensions, format and complete byte arrays must match native raylib on
 CPU, JavaScript and forced Metal. Seven additional contracts cover invalid
 factory inputs, retained owners and the RGBA8 bridge.
 
-Float/half/compressed formats, mipmaps, other configured alpha thresholds,
+The separate [RGB float bridge](FLOAT-RGB.md) supports owned format-9 conversion
+to/from Surface without changing the `Image.Formatted` format-1..7 domain.
+Other float/half/compressed formats, mipmaps, other configured alpha thresholds,
 big-endian/native pointer layouts and full target/resource/performance evidence
 remain open.

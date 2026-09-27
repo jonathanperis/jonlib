@@ -532,9 +532,18 @@ type Surface.Error is Data:
 type Image.Packed16 is Type:
   Packed16{width: U32, height: U32, format: U32, pixels: Array<U32>}
 
+def Image.list.prefix(~T: Type, n: Nat, values: List<T>, prefix: List<T>) -> List<T>:
+  match n values:
+    case 0n _: List.reverse(&1, T, prefix)
+    case _ Nil{}: List.reverse(&1, T, prefix)
+    case 1n+rest Con{value, tail}: Image.list.prefix(~T, rest, tail, Con{value, prefix})
+
+def Image.list.take(~T: Type, values: List<T>, n: Nat) -> List<T>:
+  Image.list.prefix(~T, n, values, Nil{})
+
 def Image.Packed16.export(image: Image.Packed16) -> (U32 & U32) & (U32 & List<U32>):
   Packed16{+width, +height, format, pixels} = image
-  ((width, height), (format, List.take(&1, U32, Array.to_list(~U32, pixels), U32.to_nat((width * height : U32)))))
+  ((width, height), (format, Image.list.take(~U32, Array.to_list(~U32, pixels), U32.to_nat((width * height : U32)))))
 
 def Pixel.bits_per_pixel(format: U32) -> U32:
   match format:
@@ -851,7 +860,7 @@ def Image.FloatRGB.decode_hdr(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeE
 
 def Image.FloatRGB.entries(image: Image.FloatRGB) -> U32 & U32 & List<M.Vector3>:
   FloatRGB{+width, +height, pixels} = image
-  (width, height, List.take(&1, M.Vector3, Array.to_list(~M.Vector3, pixels), U32.to_nat((width * height : U32))))
+  (width, height, Image.list.take(~M.Vector3, Array.to_list(~M.Vector3, pixels), U32.to_nat((width * height : U32))))
 
 def Image.FloatRGB.unload(image: Image.FloatRGB) -> Unit:
   Unit{}
@@ -892,6 +901,58 @@ def Surface.creation.checked(ok: Bool, +w: U32, +h: U32, color: U32) -> Maybe<Su
 # The initial profile supports 1..4096 pixels on each axis.
 def Surface.create(+w: U32, +h: U32, color: U32) -> Maybe<Surface>:
   Surface.creation.checked(((w > 0) && (h > 0) && (w <= 4096) && (h <= 4096) : U32), w, h, color)
+
+def Surface.float_rgb.color(color: U32) -> M.Vector3:
+  +value = color
+  M.Vector3{(U32.to_f32(Color.red(value)) / 255.0 : F32),
+    (U32.to_f32(Color.green(value)) / 255.0 : F32), (U32.to_f32(Color.blue(value)) / 255.0 : F32)}
+
+def Surface.to_float_rgb(surface: Surface) -> Image.FloatRGB:
+  Surface{width, height, pixels} = surface
+  FloatRGB{width, height, Array.map(~U32, ~M.Vector3, ~Surface.float_rgb.color, pixels)}
+
+def Image.FloatRGB.channel.valid(value: F32) -> Bool:
+  +bits = F32.bits(value)
+  # Bit ordering retains the domain check even when a GPU flushes denormals.
+  (bits <= 1065353216 : U32) || U32.is_eq(bits, 2147483648)
+
+def Image.FloatRGB.pixel.valid(value: M.Vector3) -> Bool:
+  M.Vector3{r, g, b} = value
+  Image.FloatRGB.channel.valid(r) && Image.FloatRGB.channel.valid(g) && Image.FloatRGB.channel.valid(b)
+
+def Image.FloatRGB.checked.read(result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Bool:
+  (pixels, value) = result
+  (pixels, Image.FloatRGB.pixel.valid(value))
+
+def Image.FloatRGB.checked.pixels(n: Nat, +index: U32, state: Array<M.Vector3> & Bool) -> Array<M.Vector3> & Bool:
+  match n state:
+    case _ Tuple{pixels, False{}}: (pixels, False{})
+    case 0n _: state
+    case 1n+rest Tuple{pixels, True{}}:
+      Image.FloatRGB.checked.pixels(rest, (index + 1 : U32), Image.FloatRGB.checked.read(Array.get(M.Vector3, pixels, index)))
+
+def Image.FloatRGB.converted.read(index: U32, output: Array<U32>, result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Array<U32>:
+  match result:
+    case Tuple{pixels, M.Vector3{r, g, b}}:
+      color = Color.rgba(F32.to_u32((r * 255.0 : F32)), F32.to_u32((g * 255.0 : F32)), F32.to_u32((b * 255.0 : F32)), 255)
+      (pixels, Array.set(U32, output, index, color))
+
+def Image.FloatRGB.converted.pixels(n: Nat, +index: U32, state: Array<M.Vector3> & Array<U32>) -> Array<U32>:
+  match n state:
+    case 0n Tuple{_, output}: output
+    case 1n+rest Tuple{pixels, output}:
+      Image.FloatRGB.converted.pixels(rest, (index + 1 : U32), Image.FloatRGB.converted.read(index, output, Array.get(M.Vector3, pixels, index)))
+
+def Image.FloatRGB.converted(+width: U32, +height: U32, state: Array<M.Vector3> & Bool) -> Result<&1, &1, Image.FloatRGB, Surface>:
+  match state:
+    case Tuple{pixels, False{}}: Fail{FloatRGB{width, height, pixels}}
+    case Tuple{pixels, True{}}:
+      +count = (width * height : U32)
+      Done{Surface{width, height, Image.FloatRGB.converted.pixels(U32.to_nat(count), 0, (pixels, Array.new(U32, Surface.capacity(count), 0)))}}
+
+def Image.FloatRGB.to_surface(image: Image.FloatRGB) -> Result<&1, &1, Image.FloatRGB, Surface>:
+  FloatRGB{+width, +height, pixels} = image
+  Image.FloatRGB.converted(width, height, Image.FloatRGB.checked.pixels(U32.to_nat((width * height : U32)), 0, (pixels, True{})))
 
 type Image.Formatted is Type:
   FormattedImage{width: U32, height: U32, format: U32, pixels: Array<U32>}
@@ -940,7 +1001,7 @@ def Image.Formatted.convert(image: Image.Formatted, +target: U32) -> Result<&1, 
 
 def Image.Formatted.export(image: Image.Formatted) -> (U32 & U32) & (U32 & List<U32>):
   FormattedImage{+width, +height, +format, pixels} = image
-  words = List.take(&1, U32, Array.to_list(~U32, pixels), U32.to_nat((width * height : U32)))
+  words = Image.list.take(~U32, Array.to_list(~U32, pixels), U32.to_nat((width * height : U32)))
   ((width, height), (format, Formats.bytes(~&1, words, U32.to_nat((Pixel.bits_per_pixel(format) / 8 : U32)), Nil{})))
 
 def Image.Formatted.surface(image: Image.Formatted) -> Surface:
@@ -1931,7 +1992,7 @@ def Surface.draw_image_rect(destination: Surface, source: Surface, +rect: Rectan
 # Export consumes the surface and excludes power-of-two storage padding.
 def Surface.colors(surface: Surface) -> List<U32>:
   Surface{w, h, pixels} = surface
-  List.take(&1, U32, Array.to_list(~U32, pixels), U32.to_nat((w * h : U32)))
+  Image.list.take(~U32, Array.to_list(~U32, pixels), U32.to_nat((w * h : U32)))
 
 type Image.Palette is Type:
   Palette{count: U32, colors: +List<U32>}
@@ -2321,7 +2382,7 @@ type Image.RawLoadError is Type:
 
 def Image.Formatted.raw_bytes(image: Image.Formatted) -> +List<U32>:
   FormattedImage{width, height, format, pixels} = image
-  words = List.take(&1, U32, Array.to_list(~U32, pixels), U32.to_nat((width * height : U32)))
+  words = Image.list.take(~U32, Array.to_list(~U32, pixels), U32.to_nat((width * height : U32)))
   Formats.bytes(~&2, words, U32.to_nat((Pixel.bits_per_pixel(format) / 8 : U32)), Nil{})
 
 def Image.Formatted.write_raw(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
