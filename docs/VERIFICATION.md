@@ -2706,3 +2706,32 @@ proofs, eleven harness/planning tests and project checks pass. Remaining targets
 and unrestricted numerical/resource/performance domains were not exercised.
 
 Regression scan: 16 callers checked, 20 assertions checked, 1 flagged/fixed.
+
+## Native RGB float canvas and POT behavior
+
+`Image.FloatRGB.resize_canvas` and `to_pot` preserve non-NaN sample words during
+bounded region moves. Native format 9 leaves newly allocated fill pixels at zero:
+`SetPixelColor` has no float-format case. Same-size requests retain the original
+image for in-profile offsets. Surface and FloatRGB share Data-typed copying and
+overlap geometry; RGBA8 keeps its existing fill semantics.
+
+The gate passes 18 native cases / 4,277 pixels and six complete retained-owner
+controls on CPU/JS/Metal. Cases cover signed-zero/subnormal/extreme values,
+positive/negative/clipped offsets, ignored fill colors, unchanged-size offsets
+and thin/POT dimensions. A local native probe also confirmed the existing
+next-power-of-two calculation over all 4,096 supported axis sizes. Evidence is in
+[evidence/float-rgb-canvas.json](evidence/float-rgb-canvas.json).
+
+Scoped review: I131 MATCH (lossless moves, zero fill and POT); A3 HOLD through
+retained owners; A4/A5 HOLD through source/native backend gates; A6 HOLD in
+[FLOAT-RGB.md](FLOAT-RGB.md); V2 HOLD through actual format-9 canvas/POT words;
+V3 HOLD through bounded sizes/offsets, positive overlap and shared copy indices.
+Empty/unsafe native overlap domains, NaN payload parity, other formats/mipmaps
+and complete resource/platform/performance remain gaps. API statuses remain partial.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, including
+the existing RGBA8 canvas/POT contracts. All four proofs, eleven harness/planning
+tests and project checks pass. Remaining targets and broader geometry/resource/
+performance domains were not exercised.
+
+Regression scan: 19 callers checked, 12 assertions checked, 0 flagged/fixed.

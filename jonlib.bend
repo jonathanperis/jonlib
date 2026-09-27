@@ -1912,38 +1912,47 @@ def Surface.resize.checked(valid: Bool, surface: Surface, +w: U32, +h: U32) -> R
 def Surface.resize(surface: Surface, +w: U32, +h: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Surface.resize.checked(((w > 0) && (h > 0) && (w <= 4096) && (h <= 4096) : U32), surface, w, h)
 
-def Surface.canvas.pixel(at: U32, output: Array<U32>, got: Array<U32> & U32) -> Array<U32> & Array<U32>:
+def Raster.canvas.pixel(~T: Data, at: U32, output: Array<T>, got: Array<T> & T) -> Array<T> & Array<T>:
   (source, color) = got
-  (source, Array.set(U32, output, at, color))
+  (source, Array.set(T, output, at, color))
 
-def Surface.canvas.copy(n: Nat, +i: U32, +cols: U32, +sw: U32, +dw: U32, +source_at: U32, +output_at: U32, buffers: Array<U32> & Array<U32>) -> Array<U32> & Array<U32>:
+def Raster.canvas.copy(~T: Data, n: Nat, +i: U32, +cols: U32, +sw: U32, +dw: U32, +source_at: U32, +output_at: U32, buffers: Array<T> & Array<T>) -> Array<T> & Array<T>:
   match n buffers:
     case 0n _: buffers
     case 1n+k Tuple{source, output}:
       +x = (i % cols : U32)
       +y = (i / cols : U32)
-      Surface.canvas.copy(k, (i + 1 : U32), cols, sw, dw, source_at, output_at,
-        Surface.canvas.pixel((output_at + y * dw + x : U32), output, Array.get(U32, source, (source_at + y * sw + x : U32))))
+      Raster.canvas.copy(~T, k, (i + 1 : U32), cols, sw, dw, source_at, output_at,
+        Raster.canvas.pixel(~T, (output_at + y * dw + x : U32), output, Array.get(T, source, (source_at + y * sw + x : U32))))
+
+type Raster.Canvas is Data:
+  Canvas{sx: U32, sy: U32, dx: U32, dy: U32, columns: U32, rows: U32}
+
+def Raster.canvas.mapping(sw: U32, sh: U32, width: U32, height: U32, +x: F32, +y: F32) -> Raster.Canvas:
+  +sx = F32.max(0.0, F32.neg(x))
+  +sy = F32.max(0.0, F32.neg(y))
+  +dx = F32.max(0.0, x)
+  +dy = F32.max(0.0, y)
+  cols = F32.max(0.0, F32.min((U32.to_f32(sw) - sx : F32), (U32.to_f32(width) - dx : F32)))
+  rows = F32.max(0.0, F32.min((U32.to_f32(sh) - sy : F32), (U32.to_f32(height) - dy : F32)))
+  Canvas{F32.to_u32(sx), F32.to_u32(sy), F32.to_u32(dx), F32.to_u32(dy), F32.to_u32(cols), F32.to_u32(rows)}
 
 def Surface.canvas.overlap(valid: Bool, +sw: U32, sh: U32, pixels: Array<U32>, +width: U32, +height: U32, sx: U32, sy: U32, dx: U32, dy: U32, +cols: U32, rows: U32, fill: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match valid:
     case False{}: Fail{(Surface{sw, sh, pixels}, InvalidRectangle{})}
     case True{}:
-      Surface.resize.finish(width, height, Surface.canvas.copy(U32.to_nat((cols * rows : U32)), 0, cols, sw, width,
+      Surface.resize.finish(width, height, Raster.canvas.copy(~U32, U32.to_nat((cols * rows : U32)), 0, cols, sw, width,
         (sy * sw + sx : U32), (dy * width + dx : U32), (pixels, Array.new(U32, Surface.capacity((width * height : U32)), fill))))
+
+def Surface.canvas.mapped(sw: U32, sh: U32, pixels: Array<U32>, width: U32, height: U32, fill: U32, mapping: Raster.Canvas) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Canvas{sx, sy, dx, dy, +cols, +rows} = mapping
+  Surface.canvas.overlap(((cols >= 1) && (rows >= 1) : U32), sw, sh, pixels, width, height, sx, sy, dx, dy, cols, rows, fill)
 
 def Surface.canvas.route(same: Bool, +sw: U32, +sh: U32, pixels: Array<U32>, +width: U32, +height: U32, +x: F32, +y: F32, fill: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match same:
     case True{}: Done{Surface{sw, sh, pixels}}
     case False{}:
-      +sx = F32.max(0.0, F32.neg(x))
-      +sy = F32.max(0.0, F32.neg(y))
-      +dx = F32.max(0.0, x)
-      +dy = F32.max(0.0, y)
-      +cols = F32.max(0.0, F32.min((U32.to_f32(sw) - sx : F32), (U32.to_f32(width) - dx : F32)))
-      +rows = F32.max(0.0, F32.min((U32.to_f32(sh) - sy : F32), (U32.to_f32(height) - dy : F32)))
-      Surface.canvas.overlap(((cols >= 1.0) && (rows >= 1.0) : F32), sw, sh, pixels, width, height,
-        F32.to_u32(sx), F32.to_u32(sy), F32.to_u32(dx), F32.to_u32(dy), F32.to_u32(cols), F32.to_u32(rows), fill)
+      Surface.canvas.mapped(sw, sh, pixels, width, height, fill, Raster.canvas.mapping(sw, sh, width, height, x, y))
 
 def Surface.canvas.checked(size_ok: Bool, offsets_ok: Bool, surface: Surface, +width: U32, +height: U32, x: F32, y: F32, fill: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match size_ok offsets_ok:
@@ -2264,6 +2273,43 @@ def Image.FloatRGB.resize_nn(image: Image.FloatRGB, +width: U32, +height: U32) -
 
 def Image.FloatRGB.resize(image: Image.FloatRGB, +width: U32, +height: U32) -> Result<&1, &1, Image.FloatRGB, Image.FloatRGB>:
   Image.FloatRGB.resize.sized(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32), False{}, image, width, height)
+
+def Image.FloatRGB.canvas.finished(width: U32, height: U32, result: Array<M.Vector3> & Array<M.Vector3>) -> Result<&1, &1, Image.FloatRGB & Surface.Error, Image.FloatRGB>:
+  (_, pixels) = result
+  Done{FloatRGB{width, height, pixels}}
+
+def Image.FloatRGB.canvas.overlap(valid: Bool, +sw: U32, sh: U32, pixels: Array<M.Vector3>, +width: U32, +height: U32, sx: U32, sy: U32, dx: U32, dy: U32, +cols: U32, rows: U32) -> Result<&1, &1, Image.FloatRGB & Surface.Error, Image.FloatRGB>:
+  match valid:
+    case False{}: Fail{(FloatRGB{sw, sh, pixels}, InvalidRectangle{})}
+    case True{}:
+      # Native SetPixelColor ignores format 9, leaving calloc's zero RGB fill.
+      Image.FloatRGB.canvas.finished(width, height, Raster.canvas.copy(~M.Vector3, U32.to_nat((cols * rows : U32)), 0, cols, sw, width,
+        (sy * sw + sx : U32), (dy * width + dx : U32), (pixels, Array.new(M.Vector3, Surface.capacity((width * height : U32)), M.Vector3{0.0, 0.0, 0.0}))))
+
+def Image.FloatRGB.canvas.mapped(sw: U32, sh: U32, pixels: Array<M.Vector3>, width: U32, height: U32, mapping: Raster.Canvas) -> Result<&1, &1, Image.FloatRGB & Surface.Error, Image.FloatRGB>:
+  Canvas{sx, sy, dx, dy, +cols, +rows} = mapping
+  Image.FloatRGB.canvas.overlap(((cols >= 1) && (rows >= 1) : U32), sw, sh, pixels, width, height, sx, sy, dx, dy, cols, rows)
+
+def Image.FloatRGB.canvas.route(same: Bool, +sw: U32, +sh: U32, pixels: Array<M.Vector3>, +width: U32, +height: U32, x: F32, y: F32) -> Result<&1, &1, Image.FloatRGB & Surface.Error, Image.FloatRGB>:
+  match same:
+    case True{}: Done{FloatRGB{sw, sh, pixels}}
+    case False{}: Image.FloatRGB.canvas.mapped(sw, sh, pixels, width, height, Raster.canvas.mapping(sw, sh, width, height, x, y))
+
+def Image.FloatRGB.canvas.checked(size_ok: Bool, offsets_ok: Bool, image: Image.FloatRGB, +width: U32, +height: U32, x: F32, y: F32) -> Result<&1, &1, Image.FloatRGB & Surface.Error, Image.FloatRGB>:
+  match size_ok offsets_ok:
+    case False{} _: Fail{(image, InvalidSize{})}
+    case True{} False{}: Fail{(image, InvalidRectangle{})}
+    case True{} True{}:
+      FloatRGB{+sw, +sh, pixels} = image
+      Image.FloatRGB.canvas.route(U32.is_eq(sw, width) && U32.is_eq(sh, height), sw, sh, pixels, width, height, x, y)
+
+def Image.FloatRGB.resize_canvas(image: Image.FloatRGB, +width: U32, +height: U32, +x: F32, +y: F32, fill: U32) -> Result<&1, &1, Image.FloatRGB & Surface.Error, Image.FloatRGB>:
+  Image.FloatRGB.canvas.checked(((width >= 1) && (height >= 1) && (width <= 4096) && (height <= 4096) : U32),
+    ((F32.abs(x) <= 32767.0) && (F32.abs(y) <= 32767.0) : F32) && F32.is_eq(F32.floor(x), x) && F32.is_eq(F32.floor(y), y), image, width, height, x, y)
+
+def Image.FloatRGB.to_pot(image: Image.FloatRGB, fill: U32) -> Result<&1, &1, Image.FloatRGB & Surface.Error, Image.FloatRGB>:
+  FloatRGB{+width, +height, pixels} = image
+  Image.FloatRGB.resize_canvas(FloatRGB{width, height, pixels}, U32.shln(1, Surface.capacity(width)), U32.shln(1, Surface.capacity(height)), 0.0, 0.0, fill)
 
 # Base.Image contains RGB colors. Alpha is discarded, not composited.
 def Surface.tree.leaf(got: Array<U32> & U32) -> Array<U32> & Image:

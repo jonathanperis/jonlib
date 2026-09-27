@@ -206,6 +206,11 @@ jobs:
           python3 tools/float_rgb_resize_probe.py --filtered
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify RGB float canvas and POT behavior
+        run: >-
+          python3 tools/float_rgb_canvas_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Verify image-memory token and content dispatch
         run: >-
           python3 tools/image_memory_probe.py
@@ -332,6 +337,7 @@ jobs:
             .build/float-rgb-crop-probe/results.json
             .build/float-rgb-resize-probe/results.json
             .build/float-rgb-filtered-probe/results.json
+            .build/float-rgb-canvas-probe/results.json
             .build/psd-matte-probe/results.json
             .build/inflate-probe/results.json
             .build/png-probe/results.json
