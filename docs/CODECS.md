@@ -14,7 +14,7 @@ Binary 8/16-bit P5/P6 decoding and native sample/maxval/separator rules are docu
 [PNM.md](PNM.md).
 Raw/PackBits RGB/alpha PSD planes, explicit matte profiles and metadata bounds are documented in
 [PSD.md](PSD.md).
-Raw Softimage PIC packets, white defaults and channel overwrite order are
+Raw/pure-RLE/mixed-RLE Softimage PIC packets, white defaults and channel overwrite order are
 documented in [PIC.md](PIC.md).
 
 The raw [DEFLATE dependency](DEFLATE.md) is verified separately. Non-interlaced and

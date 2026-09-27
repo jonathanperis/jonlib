@@ -141,7 +141,7 @@ jobs:
           python3 tools/psd_matte_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
-      - name: Verify raw Softimage PIC packets and channel order
+      - name: Verify Softimage PIC raw and RLE packets
         run: >-
           python3 tools/pic_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
