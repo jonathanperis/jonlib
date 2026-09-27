@@ -603,7 +603,7 @@
       "name": "ImageFormat",
       "milestone": "pixels",
       "status": "partial",
-      "jonlib": "Image.Formatted.convert / Surface.to_formatted / Image.Formatted.to_surface / Surface.to_float_rgb / Image.FloatRGB.to_surface",
+      "jonlib": "Image.Formatted.convert / Surface.to_formatted / Image.Formatted.to_surface / Surface.to_float_rgb / Image.FloatRGB.to_surface / Image.FloatRGB.from_bytes / Image.FloatRGB.to_bytes",
       "next_step": "Close documented gaps and unverified gates for ImageFormat.",
       "milestone_dependencies": [
         "numerics",

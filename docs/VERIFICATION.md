@@ -2507,3 +2507,39 @@ proofs, eleven harness/planning tests and project checks pass. Remaining targets
 unrestricted float casts and full resource/performance coverage were not exercised.
 
 Regression scan: 52 callers checked, 19 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `a2de7d6`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36323996244)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36323996215)
+passed. The complete jobs took 25m01s on Ubuntu and 22m35s on macOS, validating the
+30-minute aggregate budget with all individual checks retained. This checkpoint
+also includes HDR RLE, native canvas-reset behavior and float file loading.
+
+## RGB float raw-byte interoperability
+
+`Image.FloatRGB.from_bytes` and `to_bytes` add exact little-endian format-9 storage
+for every non-NaN F32 class. Import checks dimensions, exact length, byte ranges
+and each raw word before constructing floats. Export shares the owned validation
+traversal with normalized conversion and returns the original image on NaN
+rejection. Signed zero, negative/positive finite values, subnormals and infinities
+preserve their bits. Pinned JS canonicalizes NaN signs/payloads, so those raw words
+are explicitly outside this profile.
+
+The gate passes 1,539 native format-9 raw pixels, exact byte round trips, 3,072
+defined normalized native RAW export bytes, eight malformed/NaN controls and
+retained-owner checks on CPU/JS/Metal. The existing byte normalization, 769 float
+boundaries, 33,024 HDR pixels and seven conversion rejections also pass after
+sharing validation. See [evidence/float-rgb-bytes.json](evidence/float-rgb-bytes.json).
+
+Scoped review: I125 MATCH (raw word validation, exact layout and owner return);
+A3 HOLD through rejected-owner checks; A4/A5 HOLD through source/native backend
+gates; A6 HOLD in [FLOAT-RGB-BYTES.md](FLOAT-RGB-BYTES.md); V2 HOLD through actual
+`LoadImageRaw` storage and defined native RAW export; V3 HOLD through checked
+dimensions/lengths/bytes, pre-construction NaN rejection and bounded indexing.
+Float raw-file APIs, NaN payload parity, other layouts and complete native ABI/
+resource/platform/performance remain gaps. API statuses remain partial.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal. All four
+proofs, eleven harness/planning tests and project checks pass. Remaining targets,
+raw NaN parity and complete resource/performance coverage were not exercised.
+
+Regression scan: 23 callers checked, 29 assertions checked, 0 flagged/fixed.
