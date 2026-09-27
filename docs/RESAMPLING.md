@@ -1,5 +1,8 @@
 # Cropping and resampling status
 
+The [RGB float wrappers](FLOAT-RGB.md) also use the verified RGBA8 filters after
+native-style float-to-byte truncation, then normalize the result back to floats.
+
 ## Implemented in Bend
 
 - `Surface.extract`: an independently owned positive, integral, in-bounds region;

@@ -509,9 +509,9 @@
     "milestone": "images"
   },
   "ImageResize": {
-    "jonlib": "Surface.resize",
+    "jonlib": "Surface.resize / Image.FloatRGB.resize",
     "status": "profile-covered",
-    "scope": "Owned RGBA8; one mip level; dimensions 1..4096; default Catmull-Rom/Mitchell filters, binary64 normalization, clamp folding and reference alpha/pass/accumulation order; invalid-size errors preserve the original owner.",
+    "scope": "Owned RGBA8 and finite [0,1] RGB F32; one mip; dimensions 1..4096. Default Catmull-Rom/Mitchell filters retain binary64 normalization, clamp folding and native alpha/pass/accumulation order. Float input follows native RGBA8 truncation and re-normalization, including same-size quantization. Unsupported requests preserve original owners.",
     "gaps": [
       "Other image formats and mipmap chains",
       "Dimensions beyond the initial Surface domain",

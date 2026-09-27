@@ -42496,9 +42496,9 @@
       "phase": 1,
       "sequence": 8,
       "status": "partial",
-      "jonlib": "Surface.resize",
+      "jonlib": "Surface.resize / Image.FloatRGB.resize",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8; one mip level; dimensions 1..4096; default Catmull-Rom/Mitchell filters, binary64 normalization, clamp folding and reference alpha/pass/accumulation order; invalid-size errors preserve the original owner.",
+      "scope": "Owned RGBA8 and finite [0,1] RGB F32; one mip; dimensions 1..4096. Default Catmull-Rom/Mitchell filters retain binary64 normalization, clamp folding and native alpha/pass/accumulation order. Float input follows native RGBA8 truncation and re-normalization, including same-size quantization. Unsupported requests preserve original owners.",
       "gaps": [
         "Other image formats and mipmap chains",
         "Dimensions beyond the initial Surface domain",
@@ -42518,12 +42518,16 @@
         "docs/evidence/default-resize.json",
         "tests/fixtures/images.json",
         "tests/transforms.bend",
+        "tools/float_rgb_resize_probe.py",
+        "docs/FLOAT-RGB.md",
+        "docs/evidence/float-rgb-filtered.json",
         "tools/resize_conformance.py"
       ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [
-        "Surface.resize"
+        "Surface.resize",
+        "Image.FloatRGB.resize"
       ],
       "milestone_dependencies": [
         "images",

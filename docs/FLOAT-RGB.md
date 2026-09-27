@@ -58,6 +58,14 @@ sequence rather than treating the operation as a lossless float remap. Original
 float storage is retained through fallible stages without cloning it for recovery.
 See [evidence/float-rgb-nearest.json](evidence/float-rgb-nearest.json).
 
+`Image.FloatRGB.resize(image, width, height)` has the same Result/owner contract
+and finite `[0,1]` input domain, using native default filtered resizing instead
+of nearest mapping. The format-9 reference path also goes through RGBA8:
+truncate samples, apply four-channel Catmull-Rom/Mitchell filtering, then normalize
+the resulting RGB bytes. Same-size calls still quantize. Both methods share the
+source-retaining conversion dispatch. See
+[evidence/float-rgb-filtered.json](evidence/float-rgb-filtered.json).
+
 ## Large owned exports
 
 Surface colors, FloatRGB entries and packed/formatted image exports use a shared
@@ -73,6 +81,7 @@ python3 tools/float_rgb_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$
 python3 tools/float_rgb_transform_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 python3 tools/float_rgb_crop_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 python3 tools/float_rgb_resize_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+python3 tools/float_rgb_resize_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --filtered --gpu
 ```
 
 Configure checkout variables as in [README.md](../README.md#requirements).
@@ -99,3 +108,6 @@ The rectangle gate adds 15 native cases / 167 pixels, eight complete retained-
 owner checks and independent extracted-region mutation on CPU/JS/Metal.
 The nearest gate compares 24 native cases / 1,854 pixels and five retained owners,
 covering up/down/same-size/thin inputs, quantization boundaries and unsafe mappings.
+The filtered gate compares 26 native cases / 2,878 pixels and three retained
+owners on CPU/JS/Metal. The existing Surface filter gate retains 529 images /
+46,474 pixels, 2,601 kernels and 6,470 normalization coefficient bits.
