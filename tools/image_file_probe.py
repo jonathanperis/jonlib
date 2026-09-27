@@ -13,6 +13,7 @@ from png_probe import png
 from bmp_probe import bitmap, bitmap16, bitfield_bitmap, core_bitmap, core_indexed_bitmap, indexed_bitmap
 from tga_probe import indexed_targa, targa
 from psd_probe import alpha_planes, psd, rle_psd
+from pic_probe import pic
 
 
 def limit_handles():
@@ -43,7 +44,8 @@ def image_streams():
             'tga-cross':bytes(cross),
             'psd':bytes(psd(3,2,[[1,4,7,10,13,16],[2,5,8,11,14,17],[3,6,9,12,15,18]])),
             'psd-rle':bytes(rle_psd(3,2,[[128,1,1,4,253,7],[255,2,253,5],[5,3,6,9,12,15,18]],depth=16)),
-            'psd-alpha':bytes(psd(3,2,alpha_planes()))}
+            'psd-alpha':bytes(psd(3,2,alpha_planes())),
+            'pic':bytes(pic(3,2,[(0xe0,pixels),(0x90,[0x07000000,0x08000080,0x090000ff,0x0a00007f,0x0b000001,0x0c0000fe])]))}
 
 
 def main():
@@ -64,7 +66,7 @@ def main():
         if data is not None:path.write_bytes(data)
         elif path.exists():raise ValueError('Task-owned missing-file fixture unexpectedly exists')
         cases.append(dict(path=str(path.relative_to(ROOT)),data=list(data) if data is not None else None,error=error,legacy=legacy))
-    for extension in ('png','bmp','tga','pgm','ppm','qoi','psd'):
+    for extension in ('png','bmp','tga','pgm','ppm','qoi','psd','pic'):
         add(f'normal.{extension}',streams[extension]);add(f'upper.{extension.upper()}',streams[extension])
     add('wide-samples.ppm',streams['ppm16'])
     add('packed.tga',streams['tga16'])

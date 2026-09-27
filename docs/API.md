@@ -144,6 +144,7 @@ is outside this API's contract.
 | `Surface.decode_pnm` | Binary 8/16-bit P5/P6 decoding with native unscaled samples, little-endian 16-bit normalization and header parsing; see [PNM.md](PNM.md). |
 | `Surface.decode_psd` | Raw/PackBits RGB/alpha PSD planes with native depth interpretation, missing-channel defaults, uncontracted matte arithmetic and typed bounds; see [PSD.md](PSD.md). |
 | `Surface.decode_psd_for(reference, bytes)` | Raw/PackBits RGB/alpha PSD profiles with explicit fused/uncontracted white-matte arithmetic. `decode_psd` selects uncontracted; see [PSD.md](PSD.md). |
+| `Surface.decode_pic(bytes)` | Raw Softimage PIC channel packets, native defaults/overwrite order and checked bounds; see [PIC.md](PIC.md). |
 | `Surface.decode_image_for(reference, file_type, bytes)` / `Surface.load_image_for(reference, path)` | Shared dispatch with `J.Image.Decode.Reference`; affects PSD matte arithmetic and retains existing bounds/error/closure behavior. Convenience calls select `J.UncontractedDecode{}`. |
 | `Surface.decode_png` | Bounded non-interlaced/Adam7 PNG and native-default CgBI decoding at supported 1/2/4/8/16-bit combinations; filtering, transparency and normalization in [PNG.md](PNG.md). |
 | `Surface.to_png`, `write_png` | Consuming RGBA8 memory/file exports with byte-exact native default filtering, quality-8 compression and checksums; see [PNG-EXPORT.md](PNG-EXPORT.md). |

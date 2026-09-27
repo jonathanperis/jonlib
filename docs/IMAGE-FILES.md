@@ -27,13 +27,13 @@ at position zero, such as the whole path `.png` or `.jpeg`, is rejected; a
 directory-qualified path such as `images/.png` is classified normally.
 
 QOI suffixes select QOI directly. The other recognized suffixes select the
-implemented stb-style family: PNG, BMP, P5/P6 and exact `8BPS` magic are recognized before
+implemented stb-style family: PNG, BMP, P5/P6, exact `8BPS` and Softimage PIC signatures are recognized before
 trying the supported TGA profile. Consequently, PNG bytes named `image.bmp`
 load as PNG, matching actual native content detection. QOI bytes with a raster
 suffix and raster bytes with a QOI suffix are rejected. The `.jpg/.jpeg/.gif/.pic/.psd`
 aliases accept the implemented raster payloads, just as the native shared decoder
-does. PSD payloads have the [raw/PackBits and matte profiles](PSD.md); actual JPEG/GIF/PIC
-decoding remains unimplemented. HDR uses a
+does. PSD payloads have the [raw/PackBits and matte profiles](PSD.md), and PIC has
+[raw channel-packet decoding](PIC.md). Actual JPEG/GIF decoding remains unimplemented. HDR uses a
 distinct native float path and remains outside this profile.
 
 `Surface.load_qoi(path)` remains an explicit QOI loader and does not consult the
@@ -66,17 +66,17 @@ python3 tools/image_file_probe.py --bend-source "$BEND_SOURCE" --raylib-source "
 ```
 
 Configure checkout variables as described in [README.md](../README.md#requirements).
-The memory probe compares 446 native token/content pairs, including 382 successful
+The memory probe compares 468 native token/content pairs, including 402 successful
 images with every dimension and pixel checked, plus five typed invalid controls
 on CPU, JavaScript and forced Metal. Runners contain at most 64 observation/control
 actions to bound generated IO-chain depth. All batch outputs are concatenated in
 order before the complete comparison; each batch's result count is checked too.
 
-The file probe compares 53 native file cases: 52 actual `LoadImage` calls and an
+The file probe compares 55 native file cases: 54 actual `LoadImage` calls and an
 explicit QOI-selection check through the native memory entry point. Cases cover
 all supported suffixes, uppercase and cross-extension content, mixed/unsupported
 suffixes, aliases, multiple dots, directory-qualified dotfiles,
-invalid/empty/missing files, RGB/alpha PSD, 16-bit PPM, packed/indexed/cross-type TGA, BMP bitfields/extended/CORE headers,
+invalid/empty/missing files, raw PIC, RGB/alpha PSD, 16-bit PPM, packed/indexed/cross-type TGA, BMP bitfields/extended/CORE headers,
 and retained explicit-QOI behavior.
 
 Three additional size/read boundaries and 100 success/decode/read/size-error
