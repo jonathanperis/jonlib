@@ -13,7 +13,7 @@ from png_probe import png
 from bmp_probe import bitmap, bitmap16, bitfield_bitmap, core_bitmap, core_indexed_bitmap, indexed_bitmap
 from tga_probe import indexed_targa, targa
 from psd_probe import alpha_planes, psd, rle_psd
-from pic_probe import pic
+from pic_probe import pic, pic_packets
 
 
 def limit_handles():
@@ -45,7 +45,8 @@ def image_streams():
             'psd':bytes(psd(3,2,[[1,4,7,10,13,16],[2,5,8,11,14,17],[3,6,9,12,15,18]])),
             'psd-rle':bytes(rle_psd(3,2,[[128,1,1,4,253,7],[255,2,253,5],[5,3,6,9,12,15,18]],depth=16)),
             'psd-alpha':bytes(psd(3,2,alpha_planes())),
-            'pic':bytes(pic(3,2,[(0xe0,pixels),(0x90,[0x07000000,0x08000080,0x090000ff,0x0a00007f,0x0b000001,0x0c0000fe])]))}
+            'pic':bytes(pic(3,2,[(0xe0,pixels),(0x90,[0x07000000,0x08000080,0x090000ff,0x0a00007f,0x0b000001,0x0c0000fe])])),
+            'pic-rle':bytes(pic_packets(3,2,[(2,0xf0,[[2,*rgba[:12]],[2,*rgba[12:]]])]))}
 
 
 def main():
@@ -80,6 +81,7 @@ def main():
     add('cross-type.tga',streams['tga-cross'])
     add('rle.psd',streams['psd-rle'])
     add('alpha.psd',streams['psd-alpha'])
+    add('rle.pic',streams['pic-rle'])
     for name,kind in [('png-data.bmp','png'),('bmp-data.png','bmp'),('pnm-data.tga','ppm'),('tga-data.ppm','tga')]:add(name,streams[kind])
     add('mixed.PnG',streams['png'],'decode');add('unsupported.data',streams['png'],'decode')
     add('qoi-data.png',streams['qoi'],'decode');add('png-data.qoi',streams['png'],'decode')

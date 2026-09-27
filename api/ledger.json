@@ -40272,7 +40272,7 @@
       "mapping_state": "implemented",
       "scope": "Bounded ordinary-file loading with native last-dot suffix/token/content selection across implemented BMP/PNG/TGA/PNM/PSD/PIC profiles and separate QOI selection. load_image_for propagates explicit PSD matte arithmetic through the complete-read and handle-closure path; load_image selects uncontracted. Results normalize to owned RGBA8 with typed file/decode errors; explicit load_qoi retains its selection/cap.",
       "gaps": [
-        "JPEG/GIF/HDR and other payload codecs; PIC RLE, remaining dispatch families and larger raster files",
+        "JPEG/GIF/HDR and other payload codecs, remaining dispatch families and larger raster files",
         "Original pixel formats, additional native arithmetic profiles and reference callbacks",
         "Concurrent/special-file semantics and complete targets/integration/performance"
       ],
@@ -40304,6 +40304,7 @@
         "docs/evidence/psd-rle.json",
         "docs/evidence/psd-alpha.json",
         "docs/evidence/pic-raw.json",
+        "docs/evidence/pic-rle.json",
         "examples/qoi_roundtrip.bend",
         "tests/io_decoding.bend",
         "tests/decoding.bend",
@@ -40530,9 +40531,9 @@
       "status": "partial",
       "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 decoding for QOI, CORE/extended BMP, direct/indexed TGA, binary PNM, raw/PackBits PSD, raw Softimage PIC and bounded PNG, with shared native token/content dispatch. PIC preserves chained channel packets, white defaults and per-row overwrite order. PSD supports first-four-plane decoding and explicit fused/uncontracted matte arithmetic for valid prematted RGB; convenience calls are uncontracted. BMP retains native palettes/masks/header/alpha/gaps. TGA retains type/depth, palette, scaling and alpha/index behavior. PNM preserves native sample rules. PNG supports packed/8/16-bit, Adam7 and native-default CgBI with filtering/transparency/framing/checksums. QOI remains separately selected.",
+      "scope": "Owned RGBA8 decoding for QOI, CORE/extended BMP, direct/indexed TGA, binary PNM, raw/PackBits PSD, raw/pure-RLE/mixed-RLE PIC and bounded PNG, with shared native token/content dispatch. PIC preserves ordered channel packets, white defaults, pure-run clipping, mixed row bounds and zero-count sample consumption. PSD supports first-four-plane decoding and explicit fused/uncontracted matte arithmetic for valid prematted RGB; convenience calls are uncontracted. BMP retains native palettes/masks/header/alpha/gaps. TGA retains type/depth, palette, scaling and alpha/index behavior. PNM preserves native sample rules. PNG supports packed/8/16-bit, Adam7 and native-default CgBI with filtering/transparency/framing/checksums. QOI remains separately selected.",
       "gaps": [
-        "JPEG/GIF/HDR and other payload codecs; PIC pure/mixed RLE",
+        "JPEG/GIF/HDR and other payload codecs",
         "Nondefault external stb decoder flags, PSD out-of-range matte casts and excess-inflated-data recovery",
         "Original pixel-format metadata, additional native arithmetic/platform profiles and remaining dispatch families",
         "Other permissive malformed-stream recovery and complete targets/integration/performance"
@@ -40566,6 +40567,7 @@
         "docs/evidence/psd-rle.json",
         "docs/evidence/psd-alpha.json",
         "docs/evidence/pic-raw.json",
+        "docs/evidence/pic-rle.json",
         "tools/bmp_probe.py",
         "tools/tga_probe.py",
         "tools/pnm_probe.py",

@@ -2104,3 +2104,38 @@ proofs, eleven harness/planning tests and project checks pass. GPU filesystem IO
 and remaining targets were not exercised. Loading mappings remain partial.
 
 Regression scan: 48 callers checked, 22 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `afc05c9`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36307771529)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36307771591)
+passed, including raw PIC packets and shared dispatch.
+
+## Pure and mixed Softimage PIC RLE
+
+PIC descriptors now support all three native packet types. Pure RLE clips counts
+to the remaining row; mixed RLE rejects overruns and preserves literal, short-
+repeat and big-endian extended counts. Zero-count runs consume selected samples
+without output progress. Both modes retain the native post-control availability
+check, including empty masks, and use structural input-byte fuel. Raw and RLE
+packets preserve their ordered per-row channel overwrites.
+
+The PIC gate passes 33 native images / 8,867 pixels and 24 error controls on
+CPU/JavaScript/forced Metal. Cases cover channel masks, clipped/zero runs, mode
+mixtures, alpha overwrites, 128/255 boundaries, 4096-pixel extended repeats and
+strict count/sample/row bounds. No-progress streams terminate with typed errors.
+All raw cases remain in the same gate. Shared dispatch passes 490 native memory
+pairs plus five controls and 56 file cases plus three boundaries/100 low-descriptor
+cycles. Pure memory evidence includes Metal; file IO remains CPU/JS.
+
+Scoped review: I112 MATCH (`src/pic.bend`, packet kinds/RLE cursor/row bounds);
+A4/A5 HOLD through source/native lane gates; A6 HOLD in [PIC.md](PIC.md); V2 HOLD
+through full linked native pixels; V3 HOLD through dimensions, descriptor limits,
+sample checks, clipped/validated counts and bounded output addressing. Original
+metadata, malformed recovery and full resource/platform/performance remain gaps.
+Hashes are in [evidence/pic-rle.json](evidence/pic-rle.json); loading mappings remain
+partial with zero completed APIs.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, as do all
+four proofs, eleven harness/planning tests and project checks. GPU filesystem IO
+and remaining targets were not exercised.
+
+Regression scan: 58 callers checked, 32 assertions checked, 0 flagged/fixed.

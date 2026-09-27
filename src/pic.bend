@@ -1,5 +1,5 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of the pinned stb_image Softimage PIC raw reader.
+# Altered Bend adaptation of the pinned stb_image Softimage PIC reader.
 # MIT notice: LICENSES/stb-image.txt. See THIRD_PARTY_NOTICES.md.
 import Base
 import ./qoi.bend as Q
@@ -9,6 +9,7 @@ type Error is Data:
   BadByte{}
   BadSize{}
   Truncated{}
+  BadStream{}
 
 type Image is Type:
   Image{width: U32, height: U32, pixels: Array<U32>}
@@ -47,22 +48,28 @@ def signature(bytes: +List<U32>) -> Bool:
     case _: False{}
 
 type Packet is Data:
-  Packet{channels: U32, mask: U32}
+  Packet{kind: U32, channels: U32, mask: U32}
 
 type Packets is Data:
   Packets{more: Bool, values: +List<Packet>, size: U32, data: +List<U32>}
 
-def packet(values: +List<Packet>, size: U32, bytes: +List<U32>) -> Result<&2, &2, Error, Packets>:
-  match bytes:
-    case Con{chain, Con{8, Con{0, Con{+channels, Con{first, rest}}}}}:
+def packet.valid(valid: Bool, chain: U32, kind: U32, +channels: U32, values: +List<Packet>, size: U32, data: +List<U32>) -> Result<&2, &2, Error, Packets>:
+  match valid:
+    case False{}: Fail{BadHeader{}}
+    case True{}:
       +red = U32.is_ne((channels .&. 128 : U32), 0)
       +green = U32.is_ne((channels .&. 64 : U32), 0)
       +blue = U32.is_ne((channels .&. 32 : U32), 0)
       +alpha = U32.is_ne((channels .&. 16 : U32), 0)
       mask = (Bool.pick(U32, red, 4278190080, 0) .|. Bool.pick(U32, green, 16711680, 0)
         .|. Bool.pick(U32, blue, 65280, 0) .|. Bool.pick(U32, alpha, 255, 0) : U32)
-      Done{Packets{U32.is_ne(chain, 0), Con{Packet{channels, mask}, values},
-        (size + Bool.to_u32(red) + Bool.to_u32(green) + Bool.to_u32(blue) + Bool.to_u32(alpha) : U32), Con{first, rest}}}
+      Done{Packets{U32.is_ne(chain, 0), Con{Packet{kind, channels, mask}, values},
+        (size + Bool.to_u32(red) + Bool.to_u32(green) + Bool.to_u32(blue) + Bool.to_u32(alpha) : U32), data}}
+
+def packet(values: +List<Packet>, size: U32, bytes: +List<U32>) -> Result<&2, &2, Error, Packets>:
+  match bytes:
+    case Con{chain, Con{8, Con{+kind, Con{channels, Con{first, rest}}}}}:
+      packet.valid((kind <= 2 : U32), chain, kind, channels, values, size, Con{first, rest})
     case _: Fail{BadHeader{}}
 
 def packets(n: Nat, state: Result<&2, &2, Error, Packets>) -> Result<&2, &2, Error, Packets>:
@@ -137,36 +144,114 @@ def pixels(n: Nat, +index: U32, +channels: U32, +mask: U32, state: Result<&1, &1
     case 1n+rest Done{State{data, output}}:
       pixels(rest, (index + 1 : U32), channels, mask, pixel.read(index, mask, output, sample(4n, 128, 24n, channels, Some{Word{0, data}})))
 
-def row(packets: +List<Packet>, +index: U32, +width: Nat, state: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, State>:
+type Rle is Type:
+  Rle{left: U32, index: U32, data: +List<U32>, pixels: Array<U32>}
+
+def rle.written(left: U32, index: U32, result: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, Rle>:
+  match result:
+    case Fail{error}: Fail{error}
+    case Done{State{data, output}}: Done{Rle{left, index, data, output}}
+
+def rle.repeat(n: Nat, +index: U32, +mask: U32, +value: U32, state: State) -> State:
+  match n state:
+    case 0n _: state
+    case 1n+rest State{data, output}:
+      rle.repeat(rest, (index + 1 : U32), mask, value, pixel.merge(index, mask, value, data, Array.get(U32, output, index)))
+
+def rle.repeated(+count: U32, left: U32, +index: U32, mask: U32, pixels: Array<U32>, result: Maybe<&2, Word>) -> Result<&1, &1, Error, Rle>:
+  match result:
+    case None{}: Fail{Truncated{}}
+    case Some{Word{value, data}}:
+      rle.written((left - count : U32), (index + count : U32), Done{rle.repeat(U32.to_nat(count), index, mask, value, State{data, pixels})})
+
+def rle.packet(valid: Bool, literal: Bool, +count: U32, left: U32, +index: U32, channels: U32, mask: U32, data: +List<U32>, output: Array<U32>) -> Result<&1, &1, Error, Rle>:
+  match valid literal:
+    case False{} _: Fail{BadStream{}}
+    case True{} True{}: rle.written((left - count : U32), (index + count : U32), pixels(U32.to_nat(count), index, channels, mask, Done{State{data, output}}))
+    case True{} False{}: rle.repeated(count, left, index, mask, output, sample(4n, 128, 24n, channels, Some{Word{0, data}}))
+
+def rle.extended(+left: U32, index: U32, channels: U32, mask: U32, output: Array<U32>, result: Maybe<&2, Word>) -> Result<&1, &1, Error, Rle>:
+  match result:
+    case None{}: Fail{Truncated{}}
+    case Some{Word{+count, data}}: rle.packet((count <= left : U32), False{}, count, left, index, channels, mask, data, output)
+
+def rle.mixed(extended: Bool, +literal: Bool, +code: U32, +left: U32, index: U32, channels: U32, mask: U32, data: +List<U32>, output: Array<U32>) -> Result<&1, &1, Error, Rle>:
+  match extended:
+    case True{}: rle.extended(left, index, channels, mask, output, read(2n, 0, data))
+    case False{}:
+      +count = Bool.pick(U32, literal, (code + 1 : U32), (code - 127 : U32))
+      rle.packet((count <= left : U32), literal, count, left, index, channels, mask, data, output)
+
+def rle.control(pure: Bool, +code: U32, +left: U32, index: U32, channels: U32, mask: U32, data: +List<U32>, output: Array<U32>) -> Result<&1, &1, Error, Rle>:
+  match pure:
+    case True{}: rle.packet(True{}, False{}, U32.min(code, left), left, index, channels, mask, data, output)
+    case False{}: rle.mixed(U32.is_eq(code, 128), (code < 128 : U32), code, left, index, channels, mask, data, output)
+
+def rle.step(kind: U32, channels: U32, mask: U32, state: Rle) -> Result<&1, &1, Error, Rle>:
+  match state:
+    case Rle{left, index, Con{code, Con{first, rest}}, output}:
+      # Native PIC requires data after the control, including for empty masks.
+      rle.control(U32.is_eq(kind, 1), code, left, index, channels, mask, Con{first, rest}, output)
+    case _: Fail{Truncated{}}
+
+def rle.run(n: Nat, +kind: U32, +channels: U32, +mask: U32, state: Result<&1, &1, Error, Rle>) -> Result<&1, &1, Error, State>:
+  match n state:
+    case _ Fail{error}: Fail{error}
+    case _ Done{Rle{0, _, data, output}}: Done{State{data, output}}
+    case 0n _: Fail{Truncated{}}
+    case 1n+rest Done{cursor}: rle.run(rest, kind, channels, mask, rle.step(kind, channels, mask, cursor))
+
+def packet.run(+kind: U32, width: U32, index: U32, channels: U32, mask: U32, fuel: Nat, state: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, State>:
+  match kind state:
+    case _ Fail{error}: Fail{error}
+    case 0 _: pixels(U32.to_nat(width), index, channels, mask, state)
+    case _ Done{State{data, output}}: rle.run(fuel, kind, channels, mask, Done{Rle{width, index, data, output}})
+
+def row(packets: +List<Packet>, +index: U32, +width: U32, +fuel: Nat, state: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, State>:
   match packets state:
     case _ Fail{error}: Fail{error}
     case Nil{} _: state
-    case Con{Packet{channels, mask}, rest} _: row(rest, index, width, pixels(width, index, channels, mask, state))
+    case Con{Packet{kind, channels, mask}, rest} _: row(rest, index, width, fuel, packet.run(kind, width, index, channels, mask, fuel, state))
 
-def rows(n: Nat, +y: U32, +width: U32, +packets: +List<Packet>, state: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, State>:
+def rows(n: Nat, +y: U32, +width: U32, +packets: +List<Packet>, +fuel: Nat, state: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, State>:
   match n state:
     case _ Fail{error}: Fail{error}
     case 0n _: state
-    case 1n+rest _: rows(rest, (y + 1 : U32), width, packets, row(packets, (y * width : U32), U32.to_nat(width), state))
+    case 1n+rest _: rows(rest, (y + 1 : U32), width, packets, fuel, row(packets, (y * width : U32), width, fuel, state))
 
 def image(width: U32, height: U32, result: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, Image>:
   match result:
     case Fail{error}: Fail{error}
     case Done{State{_, output}}: Done{Image{width, height, output}}
 
-def start.valid(valid: Bool, +width: U32, +height: U32, packets: +List<Packet>, data: +List<U32>) -> Result<&1, &1, Error, Image>:
+def start.valid(valid: Bool, +width: U32, +height: U32, packets: +List<Packet>, fuel: Nat, data: +List<U32>) -> Result<&1, &1, Error, Image>:
   match valid:
     case False{}: Fail{Truncated{}}
     case True{}:
       +count = (width * height : U32)
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
-      image(width, height, rows(U32.to_nat(height), 0, width, packets, Done{State{data, Array.new(U32, depth, 4294967295)}}))
+      image(width, height, rows(U32.to_nat(height), 0, width, packets, fuel, Done{State{data, Array.new(U32, depth, 4294967295)}}))
+
+def byte_count(data: +List<U32>, count: Nat) -> Nat:
+  match data:
+    case Nil{}: count
+    case Con{_, rest}: byte_count(rest, 1n+count)
+
+def raw(packets: +List<Packet>) -> Bool:
+  match packets:
+    case Nil{}: True{}
+    case Con{Packet{kind, _, _}, rest}: U32.is_eq(kind, 0) && raw(rest)
+
+def start.kind(plain: Bool, +width: U32, +height: U32, packets: +List<Packet>, size: U32, +data: +List<U32>) -> Result<&1, &1, Error, Image>:
+  match plain:
+    case True{}: start.valid(enough(U32.to_nat((width * height * size : U32)), data), width, height, packets, 0n, data)
+    case False{}: start.valid(True{}, width, height, packets, byte_count(data, 0n), data)
 
 def start(result: Result<&2, &2, Error, Header>) -> Result<&1, &1, Error, Image>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{Header{+width, +height, packets, size, +data}}:
-      start.valid(enough(U32.to_nat((width * height * size : U32)), data), width, height, packets, data)
+    case Done{Header{width, height, +packets, size, data}}:
+      start.kind(raw(packets), width, height, packets, size, data)
 
 def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, Error, Image>:
   match valid:
