@@ -223,7 +223,7 @@
   "LoadImage": {
     "jonlib": "Surface.load_image / Surface.load_qoi",
     "status": "profile-covered",
-    "scope": "Bounded ordinary-file loading with exact lower/upper-case tokens and native last-dot suffix selection. PNG/BMP/TGA/PGM/PPM and JPG/JPEG/GIF/PIC/PSD aliases detect implemented raster payloads; QOI selects its own decoder. RGBA8 normalization, complete-read checks, closed handles and typed file/decode errors; explicit load_qoi keeps its prior selection/cap.",
+    "scope": "Bounded ordinary-file loading with exact lower/upper-case tokens and native last-dot suffix selection. PNG/BMP/TGA/PGM/PPM and JPG/JPEG/GIF/PIC/PSD aliases detect implemented raster payloads, including native-normalized 8/16-bit PNM; QOI selects its own decoder. RGBA8 normalization, complete-read checks, closed handles and typed file/decode errors; explicit load_qoi keeps its prior selection/cap.",
     "gaps": [
       "JPEG/GIF/PIC/PSD/HDR and other payload codecs, remaining dispatch families and larger raster files",
       "Original pixel formats and reference callbacks",
@@ -246,11 +246,11 @@
   "LoadImageFromMemory": {
     "jonlib": "Surface.decode_image / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png",
     "status": "profile-covered",
-    "scope": "Shared native-style extension-token/content dispatch and owned RGBA8 decoding for QOI, bounded BMP, non-paletted TGA, binary 8-bit PNM and bounded PNG at supported 1/2/4/8/16-bit combinations, including Adam7 and native-default CgBI. Exact lower/upper-case raster aliases share implemented content detection; QOI remains separate. PNG preserves filtering, full-width tRNS, palette alpha, split IDAT, raw/zlib framing and native checksum behavior.",
+    "scope": "Shared native-style extension-token/content dispatch and owned RGBA8 decoding for QOI, bounded BMP, non-paletted TGA, binary 8/16-bit PNM and bounded PNG at supported 1/2/4/8/16-bit combinations, including Adam7 and native-default CgBI. PNM retains native unscaled samples and little-endian second-byte narrowing. Exact lower/upper-case raster aliases share implemented content detection; QOI remains separate. PNG preserves filtering, full-width tRNS, palette alpha, split IDAT, raw/zlib framing and native checksum behavior.",
     "gaps": [
-      "JPEG/GIF/PIC/PSD/HDR and other payload codecs, remaining BMP/TGA/PNM variants",
+      "JPEG/GIF/PIC/PSD/HDR and other payload codecs, remaining BMP/TGA variants",
       "Nondefault external stb decoder flags and excess-inflated-data recovery",
-      "Original pixel-format metadata and remaining native dispatch families",
+      "Original pixel-format metadata, big-endian PNM profiles and remaining native dispatch families",
       "Other permissive malformed-stream recovery and complete targets/integration/performance"
     ],
     "api_id": "raylib:function:LoadImageFromMemory",

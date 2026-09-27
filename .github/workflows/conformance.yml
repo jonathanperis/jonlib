@@ -150,7 +150,7 @@ jobs:
         run: >-
           python3 tools/api_plan.py check --clang-audit
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
-      - name: Verify binary PGM and PPM pixels
+      - name: Verify binary 8/16-bit PGM and PPM pixels
         run: >-
           python3 tools/pnm_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"

@@ -1,0 +1,30 @@
+{
+  "date":"2026-09-27",
+  "source_sha256": {
+    "jonlib.bend":"258a419508ad56794acd169b19651f9d4b439585ea87d0f27b80c00c6502287c",
+    "src/pnm.bend":"a02be16c8045ba190a997c0a8120506cdb898c01bd7b3cf0ab9240e2ebed8766"
+  },
+  "normalization":"Pinned little-endian stbi_load retains the second stored byte of each 16-bit PNM sample; no maxval rescaling",
+  "pnm": {
+    "inputs_sha256":"fe89ba9d3a438f4fc9ac2240d02cbdb1e67c42a1d4431215eeebee70dd68bd10",
+    "reference_sha256":"f32d44dde94b356482caf418d5251121f2da9c6944cb7cff125b7bde7762b4f8",
+    "images":30,"pixels":8844,"typed_controls":16,
+    "passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "memory_dispatch": {
+    "inputs_sha256":"2e6f49eaa1bd3bc81e30290793e153de082b49660475a991d28bbb1e72ab747e",
+    "reference_sha256":"fd1938f81db9104320c32fb8ddd51aba5e6c4ba178d2984e0be0fd2fe1a40071",
+    "native_cases":160,"loaded_images":122,"typed_controls":5,
+    "passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "files": {
+    "inputs_sha256":"0f69e2e9f51befb220477a471329940dabbd6597ad5d0fe0f52e101b0204c686",
+    "reference_sha256":"7cbd43ee1e6962b9f68096a60e5a0deb6ebc2ef8f3a8af827c16f9a832058833",
+    "native_cases":39,"boundary_controls":3,"closure_iterations_per_lane":100,
+    "passed":true,"lanes":["cpu","javascript"]
+  },
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":10,
+  "limits":["Original format/sample-depth metadata and big-endian native PNM profiles", "Native malformed-input recovery, larger dimensions and full resource/platform/performance coverage", "File IO evidence is CPU/JavaScript only"]
+}

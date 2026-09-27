@@ -1555,3 +1555,38 @@ GPU filesystem IO, CUDA and the remaining documented codec/resource/platform
 domains were not verified by this increment.
 
 Regression scan: 23 callers checked, 19 assertions checked, 4 flagged/fixed.
+
+## Native 16-bit PGM/PPM normalization
+
+The P5/P6 decoder now accepts maxval through 65535, retaining two bytes per sample
+when maxval exceeds 255. The pinned little-endian native reader copies those bytes
+without swapping, then narrows its U16 values by shifting right eight. Jonlib
+therefore keeps the second stored byte, including values above maxval, with no
+rescaling. For example, stored RGB samples `12 34 ab cd 01 fe` normalize to
+`34 cd fe ff`. This behavior differs from standard big-endian PNM interpretation
+and is explicitly part of the current reference profile.
+
+The native PNM gate passes 30 images / 8,844 pixels and 16 typed-error controls on
+CPU, JavaScript and forced Metal. It retains all earlier 8-bit inputs and adds
+16-bit maxval boundaries, all 256 output byte values, channel ordering, CRLF and
+trailing-data behavior. The old unsupported-16-bit rejection is replaced by a
+real native-supported fixture and an above-65535 rejection. Truncated samples,
+incomplete RGB channels and invalid bytes in discarded positions remain failures.
+
+Shared dispatch passes 160 memory token/content pairs and five controls across
+CPU/JS/Metal; file dispatch passes 39 cases, three boundaries and 100 low-descriptor
+cycles per CPU/JS lane. Both now exercise a 16-bit PPM stream. Source/input/native
+hashes are retained in [evidence/pnm-16bit.json](evidence/pnm-16bit.json).
+
+Scoped review: I97 MATCH (`src/pnm.bend:47-144`); A4/A5 HOLD under the source and
+native-comparison gates; A6 HOLD in [PNM.md](PNM.md); V2 HOLD through linked native
+expectations; V3 HOLD through validated dimensions and required two-byte payload
+length before output allocation. Original metadata, big-endian reference profiles,
+permissive malformed recovery and full resource/platform/performance parity remain
+gaps. API counts remain 104 core and 142 math partial mappings, zero complete.
+
+The full 261-scenario / 40,101-word CPU-1/CPU-2/JavaScript/forced-Metal corpus
+passes, as do all four proofs, ten harness/planning tests and project checks.
+No GPU filesystem IO or big-endian host behavior was exercised.
+
+Regression scan: 24 callers checked, 19 assertions checked, 1 flagged/fixed.

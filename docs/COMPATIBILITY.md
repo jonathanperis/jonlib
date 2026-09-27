@@ -84,7 +84,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | QOI loading/export | `Surface.decode_qoi/to_qoi/load_qoi/write_qoi` | Valid-stream RGBA8 profile, all opcodes, exact export bytes, typed malformed-input errors and real CPU/JS file round trips |
 | BMP decoding/export | `Surface.decode_bmp/to_bmp/write_bmp` | Bounded INFO/V4 24/32-bit decoding; exact RGBA8 V4 bytes, native alpha/orientation/gap rules and typed malformed-input checks |
 | TGA decoding/export | `Surface.decode_tga/to_tga/write_tga` | Raw/RLE true-color and grayscale profiles; exact default per-row RLE packet bytes and bounded decode errors |
-| Binary PGM/PPM decoding | `Surface.decode_pnm` | P5/P6 byte samples, native maxval/separator/comment rules and full dimension-boundary pixels |
+| Binary PGM/PPM decoding | `Surface.decode_pnm` | P5/P6 8/16-bit samples, native little-endian narrowing and maxval/separator/comment rules; full dimension-boundary pixels |
 | Raw DEFLATE | `Compression.decompress` | Stored/fixed/dynamic blocks and bounded copies; native empty-stored-block completion differs explicitly from the internal PNG-oriented path |
 | PNG decoding | `Surface.decode_png` | Non-interlaced/Adam7 1/2/4/8/16-bit and native-default CgBI profiles; filtering/scattering, palette/tRNS, framing and bounded errors |
 | PNG export | `Surface.to_png/write_png`, `Image.Formatted.to_png/write_png` | Exact default byte-format memory and format-1..7 file output; native packed expansion, channel/header preservation, rejection and normalized round trips |
