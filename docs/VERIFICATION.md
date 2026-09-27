@@ -2183,3 +2183,41 @@ four proofs, eleven harness/planning tests and project checks. GPU filesystem IO
 and remaining targets were not exercised.
 
 Regression scan: 98 callers checked, 28 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `ff24329`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36312479210)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36312479228)
+passed, including first-frame GIF palettes and bounded LZW.
+
+## GIF first-frame offsets and interlacing
+
+First-frame GIF now accepts positive in-canvas image rectangles and all four
+interlace passes, returning the logical canvas dimensions. Untouched pixels use
+transparent black for background index zero. For a positive index, the native
+first-frame memcpy retains global-palette BGR byte order and forces alpha 255;
+Jonlib preserves that red/blue swap. Decoded transparent pixels remain black/
+transparent even when untouched surrounding pixels receive the background.
+Required missing/out-of-table background entries reject instead of accessing
+undefined native palette data.
+
+The gate passes 41 native images / 5,410 pixels and 23 error controls on CPU,
+JavaScript and forced Metal. New cases cover offset/edge-aligned rectangles,
+global/local palettes, transparency versus untouched pixels, background selection,
+unused invalid background indices and thin/interlaced pass boundaries. All LZW,
+palette and full-canvas cases remain. Shared dispatch passes 534 memory pairs plus
+five controls and 59 file cases plus three boundaries/100 low-descriptor cycles.
+Memory lanes include forced Metal; file IO remains CPU/JS evidence. Hashes are in
+[evidence/gif-geometry.json](evidence/gif-geometry.json).
+
+Scoped review: I114 MATCH (`src/gif.bend`, rectangle/background/pass mapping);
+A4/A5 HOLD through source/native lane gates; A6 HOLD in [GIF.md](GIF.md); V2 HOLD
+through complete linked native pixels, including the observed background quirk;
+V3 HOLD through positive rectangle/canvas bounds, palette checks, rectangle-sized
+LZW output and bounded source/destination indices. Animation/disposal/timing,
+zero-area/malformed recovery, metadata and full resource/platform/performance
+remain gaps. Loading mappings remain partial.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, as do all
+four proofs, eleven harness/planning tests and project checks. GPU filesystem IO
+and remaining targets were not exercised.
+
+Regression scan: 80 callers checked, 31 assertions checked, 0 flagged/fixed.

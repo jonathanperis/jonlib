@@ -16,7 +16,7 @@ Raw/PackBits RGB/alpha PSD planes, explicit matte profiles and metadata bounds a
 [PSD.md](PSD.md).
 Raw/pure-RLE/mixed-RLE Softimage PIC packets, white defaults and channel overwrite order are
 documented in [PIC.md](PIC.md).
-Full-canvas first-frame GIF palettes, transparency and bounded LZW are documented
+First-frame GIF rectangles, interlacing, palettes, transparency and bounded LZW are documented
 in [GIF.md](GIF.md).
 
 The raw [DEFLATE dependency](DEFLATE.md) is verified separately. Non-interlaced and

@@ -225,7 +225,7 @@
     "status": "profile-covered",
     "scope": "Bounded ordinary-file loading with native last-dot suffix/token/content selection across implemented BMP/PNG/TGA/PNM/PSD/PIC/GIF profiles and separate QOI selection. load_image_for propagates explicit PSD matte arithmetic through the complete-read and handle-closure path; load_image selects uncontracted. Results normalize to owned RGBA8 with typed file/decode errors; explicit load_qoi retains its selection/cap.",
     "gaps": [
-      "JPEG/HDR and other payload codecs; broader GIF profiles, remaining dispatch families and larger raster files",
+      "JPEG/HDR and other payload codecs; GIF animation, remaining dispatch families and larger raster files",
       "Original pixel formats, additional native arithmetic profiles and reference callbacks",
       "Concurrent/special-file semantics and complete targets/integration/performance"
     ],
@@ -246,9 +246,9 @@
   "LoadImageFromMemory": {
     "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif",
     "status": "profile-covered",
-    "scope": "Owned RGBA8 decoding for QOI, BMP, TGA, PNM, PSD, PIC, bounded PNG and full-canvas first-frame GIF, with native-style token/content dispatch. GIF preserves palettes, Graphic Control transparency and bounded LZW clear/reset/growth/self-reference behavior. PIC preserves raw/pure/mixed RLE channel order, defaults and clipping. PSD exposes fused/uncontracted matte arithmetic; convenience calls are uncontracted. BMP/TGA/PNM retain documented native sample/header/palette/alpha rules. PNG supports packed/8/16-bit, Adam7 and native-default CgBI. QOI remains separately selected.",
+    "scope": "Owned RGBA8 decoding for QOI, BMP, TGA, PNM, PSD, PIC, bounded PNG and first-frame GIF, with native-style token/content dispatch. GIF preserves in-canvas rectangles, interlacing, native background fills, palettes/transparency and bounded LZW. PIC preserves raw/pure/mixed RLE channel order, defaults and clipping. PSD exposes fused/uncontracted matte arithmetic; convenience calls are uncontracted. BMP/TGA/PNM retain documented native sample/header/palette/alpha rules. PNG supports packed/8/16-bit, Adam7 and native-default CgBI. QOI remains separately selected.",
     "gaps": [
-      "JPEG/HDR and other payload codecs; GIF offset/interlaced frames and animation",
+      "JPEG/HDR and other payload codecs; GIF animation and zero-area/malformed profiles",
       "Nondefault external stb decoder flags, PSD out-of-range matte casts and permissive incomplete/excess raster recovery",
       "Original pixel-format metadata, additional native arithmetic/platform profiles and remaining dispatch families",
       "Other permissive malformed-stream recovery and complete targets/integration/performance"

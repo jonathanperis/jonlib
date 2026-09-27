@@ -1,0 +1,31 @@
+{
+  "date":"2026-09-27",
+  "source_sha256": {
+    "jonlib.bend":"b5623768108eefee55c97a117b1f9b1b0ac596cb86495cd2f8083893999ec4f2",
+    "src/gif.bend":"071b6ddacf7ee267c634c46040a92c891b0f4a54aa63412af6419e59e07d5d91",
+    "src/gif_lzw.bend":"ed28878be717bdc13f3ca5f1c5dc6f552b10ae242cb5d2ae71610b28b06eae55"
+  },
+  "geometry_profile":"Positive in-canvas first-image rectangles, native four-pass interlacing and BGR-ordered opaque background copies outside decoded pixels",
+  "gif": {
+    "inputs_sha256":"16f204024b9625e065b460a0da927042040fdee490ea2b3ebb89b398b59f7c66",
+    "reference_sha256":"89ab0724d0a7283aaca13118b8a7286f0850d7605cf081500daac1505cff5fda",
+    "images":41,"pixels":5410,"typed_controls":23,
+    "passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "memory_dispatch": {
+    "inputs_sha256":"d0153e7547517faa6039ea36e9aa584f952547c2eb129892f1437dd4beac4a86",
+    "reference_sha256":"b2c8a45ef55b3eca843cb65c2264522643495664ea42235090912dbe954314db",
+    "native_cases":534,"loaded_images":462,"typed_controls":5,"batch_size":64,
+    "passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "files": {
+    "inputs_sha256":"513f004ae5276d7ce03d857b97b5fdcbe4bc44cfb90ac9a26f5bfcdc92f739fe",
+    "reference_sha256":"004af340157f866583cdbe195c622f899e34a4d59af1e05bf4224913cd4d425c",
+    "native_cases":59,"boundary_controls":3,"closure_iterations_per_lane":100,
+    "passed":true,"lanes":["cpu","javascript"]
+  },
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "limits":["Animation/disposal/timing and zero-area/native malformed recovery", "Original metadata and full resource/platform/performance coverage", "Undefined background-table access is rejected; file IO evidence is CPU/JavaScript only"]
+}
