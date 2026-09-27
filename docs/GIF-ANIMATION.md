@@ -21,6 +21,26 @@ the memory-token path.
 `J.UncontractedDecode{}`. Static native fallback images are normalized to RGBA8
 before comparison, since their original native formats may be grayscale or RGB.
 
+## File loading
+
+`Image.Animation.load_image(path, maximum_frames, maximum_pixels)` returns
+`IO(Result<&1, &1, Image.LoadError, Image.Animation>)`. The `_for(reference, ...)`
+variant selects explicit PSD arithmetic; the convenience call is uncontracted.
+
+File suffixes use the native last-dot rule. GIF selection is ASCII case-insensitive:
+`.gif`, `.GIF` and `.GiF` all request a GIF sequence. Other suffixes retain the
+existing exact image-token rules and yield one frame. GIF content named `.png`
+therefore returns one frame; PNG content named `.GiF` fails GIF decoding. A whole
+path consisting only of `.gif` has no extension, while a directory-qualified
+dotfile is classified normally.
+
+Animation and Surface loaders share the same checked byte-file boundary:
+complete reported-size reads, a 1 MiB raster/unknown limit, the existing
+83,886,102-byte QOI limit, and handle closure before decoding or size/read errors.
+Open/size/read failures retain `ImageFileError`; image/budget failures are wrapped
+as `ImageDecodeError`. Caller frame/pixel budgets apply to retained frames.
+Ordinary non-changing files are the supported IO domain.
+
 ## Ownership and budgets
 
 - `maximum_frames` must be positive. `maximum_pixels` must be 1..16,777,216.
@@ -52,14 +72,15 @@ than a partial animation.
 
 Disposal 3 is outside this profile: the pinned native animation path assigns
 `two_back = out - 2*stride`, an address before its allocated output buffer. This
-implementation does not emulate undefined reads. File animation loading,
-original metadata/native ABI, permissive recovery and full
+implementation does not emulate undefined reads. Original metadata/native ABI,
+callbacks/concurrent/special-file behavior, permissive recovery and full
 resource/platform/performance coverage remain gaps.
 
 ## Verification
 
 ```sh
 python3 tools/gif_animation_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+python3 tools/animation_file_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
 ```
 
 Configure checkout variables as in [README.md](../README.md#requirements).
@@ -72,3 +93,11 @@ restore, transparent history, palette/control persistence, offsets/interlacing,
 ignored delays and exact-budget termination. First-frame and shared memory/file
 gates remain separate regressions. See
 [evidence/animation-memory.json](evidence/animation-memory.json).
+
+The file gate compares 34 native cases / 61 frames / 604 pixels on CPU/JavaScript,
+with seven file/budget/size boundaries, a default-arithmetic control and 100
+success/budget/decode/read/size-error cycles under a 64-descriptor limit. All eight
+GIF suffix letter-case combinations, dotfiles, cross-extension fallback and
+existing image-file/QOI behavior are checked. Evidence is in
+[evidence/animation-files.json](evidence/animation-files.json). GPU filesystem IO
+is outside this evidence.

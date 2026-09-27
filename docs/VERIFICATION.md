@@ -50,7 +50,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 105 have
+- The pinned core header inventory contains 600 unique public functions; 106 have
   explicitly scoped Jonlib mappings. The raymath ledger additionally maps 142
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
@@ -2301,3 +2301,39 @@ proofs, eleven harness/planning tests and project checks pass. GPU filesystem IO
 and remaining targets were not exercised.
 
 Regression scan: 9 callers checked, 19 assertions checked, 1 flagged/fixed.
+
+## Owned animation file loading
+
+`Image.Animation.load_image` and `load_image_for` add ordinary-file loading with
+case-insensitive GIF suffix selection. All other suffixes retain single-image
+token/content dispatch. The implementation shares one complete-read/closed-handle
+byte boundary with Surface loaders, retaining raster/QOI byte caps and typed
+file/decode failures. Animation budgets apply before retaining frames; convenience
+PSD arithmetic remains uncontracted.
+
+The file gate passes 34 native cases / 61 frames / 604 pixels on CPU/JavaScript,
+with seven boundary controls, an exact default-reference check and 100 cycles
+under a 64-descriptor limit. Cases cover all GIF letter-case combinations,
+directory-qualified dotfiles, multiple dots, static and cross-extension fallback,
+native failures and frame/pixel exhaustion. Closure cycles exercise success,
+budget, decode, read and byte-size failures. Existing Surface file loading retains
+59 native cases, three boundaries and its 100 low-descriptor cycles; the shared
+pure contract retains incomplete-read rejection. Evidence is in
+[evidence/animation-files.json](evidence/animation-files.json).
+
+Scoped review: I117 MATCH (suffix normalization and shared byte-file boundary);
+A3 HOLD through consuming results/closed handles; A4/A6 HOLD through source checks
+and documented contracts; V2 HOLD through every native frame/count/dimension;
+V3 HOLD through complete bounded reads and retained image/animation budgets.
+Disposal 3, other codec profiles, original metadata/ABI, callbacks and concurrent/
+special-file behavior remain gaps. GPU filesystem IO and complete resource/
+platform/performance coverage were not exercised.
+
+The ledger adds one partial mapping for `raylib:function:LoadImageAnim`, bringing
+the count to **106 core + 142 math partial functions**, with zero complete APIs.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal. The
+updated byte-read contract, all four proofs, eleven harness/planning tests and
+project checks pass.
+
+Regression scan: 33 callers checked, 24 assertions checked, 0 flagged/fixed.

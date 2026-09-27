@@ -2112,14 +2112,17 @@ def Image.file.last_dot(path: String, +position: Nat, last: Nat) -> Nat:
     case SNil{}: last
     case SCon{character, rest}: Image.file.last_dot(rest, 1n+position, Bool.pick(Nat, Char.is_eq(character, '.'), position, last))
 
-def Image.file.suffix(valid: Bool, path: String, position: Nat) -> Image.FileKind:
+def Image.file.suffix(valid: Bool, path: String, position: Nat) -> String:
   match valid:
-    case False{}: UnsupportedImageFile{}
-    case True{}: Image.memory.kind(String.drop(path, position))
+    case False{}: ""
+    case True{}: String.drop(path, position)
 
-def Image.file.kind(+path: String) -> Image.FileKind:
+def Image.file.token(+path: String) -> String:
   +position = Image.file.last_dot(path, 0n, 0n)
   Image.file.suffix(Nat.is_lt(0n, position), path, position)
+
+def Image.file.kind(path: String) -> Image.FileKind:
+  Image.memory.kind(Image.file.token(path))
 
 def Image.file.limit(kind: Image.FileKind) -> U32:
   match kind:
@@ -2186,7 +2189,7 @@ def Image.Animation.decode_image_for(reference: Image.Decode.Reference, +file_ty
 def Image.Animation.decode_image(file_type: String, bytes: +List<U32>, maximum_frames: U32, maximum_pixels: U32) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
   Image.Animation.decode_image_for(UncontractedDecode{}, file_type, bytes, maximum_frames, maximum_pixels)
 
-def Image.file.decoded(result: Result<&1, &1, Image.DecodeError, Surface>) -> Result<&1, &1, Image.LoadError, Surface>:
+def Image.file.decoded(-A: Type, result: Result<&1, &1, Image.DecodeError, A>) -> Result<&1, &1, Image.LoadError, A>:
   match result:
     case Fail{error}: Fail{ImageDecodeError{error}}
     case Done{image}: Done{image}
@@ -2197,51 +2200,81 @@ def Image.file.complete(n: Nat, bytes: +List<U32>) -> Bool:
     case 1n+rest Con{_, tail}: Image.file.complete(rest, tail)
     case _ _: False{}
 
-def Image.file.loaded(valid: Bool, reference: Image.Decode.Reference, kind: Image.FileKind, bytes: +List<U32>) -> Result<&1, &1, Image.LoadError, Surface>:
+def Image.file.loaded(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, Image.LoadError, +List<U32>>:
   match valid:
     case False{}: Fail{ImageDecodeError{TruncatedImageData{}}}
-    case True{}: Image.file.decoded(Image.file.decode(reference, kind, bytes))
+    case True{}: Done{bytes}
 
-def Image.file.payload(reference: Image.Decode.Reference, kind: Image.FileKind, size: U32, result: Result<&1, &1, U32 & String, +List<U32>>) -> Result<&1, &1, Image.LoadError, Surface>:
+def Image.file.payload(size: U32, result: Result<&1, &1, U32 & String, +List<U32>>) -> Result<&1, &1, Image.LoadError, +List<U32>>:
   match result:
     case Fail{Tuple{code, message}}: Fail{ImageFileError{code, message}}
-    case Done{+bytes}: Image.file.loaded(Image.file.complete(U32.to_nat(size), bytes), reference, kind, bytes)
+    case Done{+bytes}: Image.file.loaded(Image.file.complete(U32.to_nat(size), bytes), bytes)
 
-def Image.file.read(reference: Image.Decode.Reference, kind: Image.FileKind, size: U32, result: File & Result<&1, &1, U32 & String, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, Surface>):
+def Image.file.read(size: U32, result: File & Result<&1, &1, U32 & String, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, +List<U32>>):
   (file, status) = result
-  do IO<Result<&1, &1, Image.LoadError, Surface>>:
+  do IO<Result<&1, &1, Image.LoadError, +List<U32>>>:
     Unit <- File.close(file)
-    IO.pure(Result<&1, &1, Image.LoadError, Surface>, Image.file.payload(reference, kind, size, status))
+    IO.pure(Result<&1, &1, Image.LoadError, +List<U32>>, Image.file.payload(size, status))
 
-def Image.file.bounded(valid: Bool, reference: Image.Decode.Reference, kind: Image.FileKind, file: File, +size: U32) -> IO(Result<&1, &1, Image.LoadError, Surface>):
+def Image.file.bounded(valid: Bool, file: File, +size: U32) -> IO(Result<&1, &1, Image.LoadError, +List<U32>>):
   match valid:
     case False{}:
-      do IO<Result<&1, &1, Image.LoadError, Surface>>:
+      do IO<Result<&1, &1, Image.LoadError, +List<U32>>>:
         Unit <- File.close(file)
-        IO.pure(Result<&1, &1, Image.LoadError, Surface>, Fail{ImageDecodeError{UnsupportedImageSize{}}})
+        IO.pure(Result<&1, &1, Image.LoadError, +List<U32>>, Fail{ImageDecodeError{UnsupportedImageSize{}}})
     case True{}:
-      IO.bind(File & Result<&1, &1, U32 & String, +List<U32>>, Result<&1, &1, Image.LoadError, Surface>,
-        File.read_bytes(file, size), Image.file.read(reference, kind, size))
+      IO.bind(File & Result<&1, &1, U32 & String, +List<U32>>, Result<&1, &1, Image.LoadError, +List<U32>>,
+        File.read_bytes(file, size), Image.file.read(size))
 
-def Image.file.sized(reference: Image.Decode.Reference, +kind: Image.FileKind, result: File & Result<&1, &1, U32 & String, U32>) -> IO(Result<&1, &1, Image.LoadError, Surface>):
+def Image.file.sized(limit: U32, result: File & Result<&1, &1, U32 & String, U32>) -> IO(Result<&1, &1, Image.LoadError, +List<U32>>):
   match result:
-    case Tuple{file, Fail{error}}: Image.file.read(reference, kind, 0, (file, Fail{error}))
-    case Tuple{file, Done{+size}}: Image.file.bounded((size <= Image.file.limit(kind) : U32), reference, kind, file, size)
+    case Tuple{file, Fail{error}}: Image.file.read(0, (file, Fail{error}))
+    case Tuple{file, Done{+size}}: Image.file.bounded((size <= limit : U32), file, size)
 
-def Image.file.opened(reference: Image.Decode.Reference, +kind: Image.FileKind, opened: Result<&1, &1, U32 & String, File>) -> IO(Result<&1, &1, Image.LoadError, Surface>):
+def Image.file.opened(limit: U32, opened: Result<&1, &1, U32 & String, File>) -> IO(Result<&1, &1, Image.LoadError, +List<U32>>):
   match opened:
-    case Fail{Tuple{code, message}}: IO.pure(Result<&1, &1, Image.LoadError, Surface>, Fail{ImageFileError{code, message}})
+    case Fail{Tuple{code, message}}: IO.pure(Result<&1, &1, Image.LoadError, +List<U32>>, Fail{ImageFileError{code, message}})
     case Done{file}:
-      IO.bind(File & Result<&1, &1, U32 & String, U32>, Result<&1, &1, Image.LoadError, Surface>, File.size(file), Image.file.sized(reference, kind))
+      IO.bind(File & Result<&1, &1, U32 & String, U32>, Result<&1, &1, Image.LoadError, +List<U32>>, File.size(file), Image.file.sized(limit))
+
+def Image.file.bytes(path: String, limit: U32) -> IO(Result<&1, &1, Image.LoadError, +List<U32>>):
+  IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, Image.LoadError, +List<U32>>, File.open(path, "r"), Image.file.opened(limit))
+
+def Image.file.surface(reference: Image.Decode.Reference, kind: Image.FileKind, result: Result<&1, &1, Image.LoadError, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, Surface>):
+  match result:
+    case Fail{error}: IO.pure(Result<&1, &1, Image.LoadError, Surface>, Fail{error})
+    case Done{bytes}: IO.pure(Result<&1, &1, Image.LoadError, Surface>, Image.file.decoded(Surface, Image.file.decode(reference, kind, bytes)))
+
+def Image.file.load(reference: Image.Decode.Reference, +kind: Image.FileKind, path: String) -> IO(Result<&1, &1, Image.LoadError, Surface>):
+  IO.bind(Result<&1, &1, Image.LoadError, +List<U32>>, Result<&1, &1, Image.LoadError, Surface>,
+    Image.file.bytes(path, Image.file.limit(kind)), Image.file.surface(reference, kind))
 
 def Surface.load_qoi(path: String) -> IO(Result<&1, &1, Image.LoadError, Surface>):
-  IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, Image.LoadError, Surface>, File.open(path, "r"), Image.file.opened(UncontractedDecode{}, QoiFile{}))
+  Image.file.load(UncontractedDecode{}, QoiFile{}, path)
 
 def Surface.load_image_for(reference: Image.Decode.Reference, +path: String) -> IO(Result<&1, &1, Image.LoadError, Surface>):
-  IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, Image.LoadError, Surface>, File.open(path, "r"), Image.file.opened(reference, Image.file.kind(path)))
+  Image.file.load(reference, Image.file.kind(path), path)
 
 def Surface.load_image(path: String) -> IO(Result<&1, &1, Image.LoadError, Surface>):
   Surface.load_image_for(UncontractedDecode{}, path)
+
+def Image.Animation.file.token(+suffix: String) -> String:
+  Bool.pick(String, String.eq(String.to_lower(suffix), ".gif"), ".gif", suffix)
+
+def Image.Animation.file.loaded(reference: Image.Decode.Reference, token: String, maximum_frames: U32, maximum_pixels: U32, result: Result<&1, &1, Image.LoadError, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, Image.Animation>):
+  match result:
+    case Fail{error}: IO.pure(Result<&1, &1, Image.LoadError, Image.Animation>, Fail{error})
+    case Done{bytes}:
+      IO.pure(Result<&1, &1, Image.LoadError, Image.Animation>, Image.file.decoded(Image.Animation,
+        Image.Animation.decode_image_for(reference, token, bytes, maximum_frames, maximum_pixels)))
+
+def Image.Animation.load_image_for(reference: Image.Decode.Reference, +path: String, maximum_frames: U32, maximum_pixels: U32) -> IO(Result<&1, &1, Image.LoadError, Image.Animation>):
+  +token = Image.Animation.file.token(Image.file.token(path))
+  IO.bind(Result<&1, &1, Image.LoadError, +List<U32>>, Result<&1, &1, Image.LoadError, Image.Animation>,
+    Image.file.bytes(path, Image.file.limit(Image.memory.kind(token))), Image.Animation.file.loaded(reference, token, maximum_frames, maximum_pixels))
+
+def Image.Animation.load_image(path: String, maximum_frames: U32, maximum_pixels: U32) -> IO(Result<&1, &1, Image.LoadError, Image.Animation>):
+  Image.Animation.load_image_for(UncontractedDecode{}, path, maximum_frames, maximum_pixels)
 
 type Image.RawLoadError is Type:
   RawFileError{code: U32, message: String}

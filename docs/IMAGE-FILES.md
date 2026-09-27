@@ -39,6 +39,8 @@ distinct native float path and remains outside this profile.
 
 `Surface.load_qoi(path)` remains an explicit QOI loader and does not consult the
 suffix. Both operations share the checked IO boundary.
+The same byte-file boundary serves [owned animation loading](GIF-ANIMATION.md#file-loading),
+whose native GIF suffix selection additionally accepts mixed letter case.
 
 ## Bounds, ownership and errors
 

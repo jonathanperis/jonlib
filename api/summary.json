@@ -6,16 +6,16 @@
     "blocked": 5,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1614,
-    "partial": 265
+    "not-started": 1613,
+    "partial": 266
   },
   "core_functions": {
     "total": 600,
     "blocked": 1,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 494,
-    "partial": 105
+    "not-started": 493,
+    "partial": 106
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 5,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 679,
-    "partial": 247
+    "not-started": 678,
+    "partial": 248
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 1,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 922,
-      "partial": 114
+      "not-started": 921,
+      "partial": 115
     },
     "raymath.h": {
       "total": 254,
@@ -240,8 +240,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 2,
-      "partial": 6
+      "not-started": 1,
+      "partial": 7
     },
     {
       "id": "collision",
