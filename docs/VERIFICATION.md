@@ -2067,3 +2067,40 @@ affected matte gate was rerun. GPU filesystem IO and remaining targets were not
 exercised.
 
 Regression scan: 62 callers checked, 43 assertions checked, 2 flagged/fixed.
+
+Hosted confirmation for `baa4e37`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36305911994)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36305912080)
+passed. The hosted native matte gate confirmed the declared arithmetic profiles
+alongside profiled PSD memory/file interoperability.
+
+## Raw Softimage PIC decoding
+
+`Surface.decode_pic` recognizes the native magic/PICT markers and reads bounded
+eight-bit raw channel packets. All components start white; packets run in order
+within each row and later selected channels overwrite earlier values, including
+zero alpha. Low mask bits and reserved/ratio/field header values are ignored.
+One to ten chained descriptors and complete required samples are checked before
+output allocation. Shared raster dispatch recognizes PIC content across its
+supported extension family.
+
+The PIC gate passes 20 native images / 4,208 pixels and 14 error controls on
+CPU/JavaScript/forced Metal. Cases cover all high-bit masks, ignored low bits,
+white defaults, overlapping channel packets, alpha, nonunit chain flags,
+ten-packet/row boundaries and a 4096-pixel row. Invalid signatures/markers/depths,
+unsupported compression, incomplete descriptors/samples, excess chains and bad
+dimensions reject. Shared dispatch passes 468 native memory pairs plus five
+controls and 55 file cases plus three boundaries/100 low-descriptor cycles.
+File evidence is CPU/JS; pure decoding also runs forced Metal.
+
+Scoped review: I111 MATCH (`src/pic.bend` and Jonlib dispatch); A4/A5 HOLD through
+source/native lane gates; A6 HOLD in [PIC.md](PIC.md) and retained MIT/Tom Seddon
+attribution; V2 HOLD through complete linked native pixels; V3 HOLD through
+dimensions, descriptor limits, checked sample totals and bounded row/pixel writes.
+Pure/mixed RLE, original metadata, malformed recovery and full resource/platform/
+performance remain gaps. Hashes are in [evidence/pic-raw.json](evidence/pic-raw.json).
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal. All four
+proofs, eleven harness/planning tests and project checks pass. GPU filesystem IO
+and remaining targets were not exercised. Loading mappings remain partial.
+
+Regression scan: 48 callers checked, 22 assertions checked, 0 flagged/fixed.

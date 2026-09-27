@@ -141,6 +141,11 @@ jobs:
           python3 tools/psd_matte_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify raw Softimage PIC packets and channel order
+        run: >-
+          python3 tools/pic_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Verify image-memory token and content dispatch
         run: >-
           python3 tools/image_memory_probe.py
@@ -254,6 +259,7 @@ jobs:
             .build/tga-probe/results.json
             .build/pnm-probe/results.json
             .build/psd-probe/results.json
+            .build/pic-probe/results.json
             .build/psd-matte-probe/results.json
             .build/inflate-probe/results.json
             .build/png-probe/results.json
