@@ -18,8 +18,19 @@ type Image is Type:
 type Words is Data:
   Words{values: +List<U32>, rest: +List<U32>}
 
+type Channel is Data:
+  ChannelValue{value: U32}
+  ChannelField{mask: U32, shift: Nat, multiplier: U32, shrink: Nat}
+
+type Layout is Data:
+  Layout{red: Channel, green: Channel, blue: Channel, alpha: Channel}
+
+type Mode is Data:
+  IndexedMode{bits: U32}
+  ColorMode{bytes: U32, layout: Layout, repair: Bool}
+
 type Header is Data:
-  Header{width: U32, height: U32, top: Bool, bits: U32, restore: Bool, gap: U32, data: +List<U32>}
+  Header{width: U32, height: U32, top: Bool, mode: Mode, gap: U32, data: +List<U32>}
 
 def words.step(values: +List<U32>, next: Maybe<&2, F.Word>) -> Maybe<&2, Words>:
   match next:
@@ -32,22 +43,80 @@ def words(n: Nat, state: Maybe<&2, Words>) -> Maybe<&2, Words>:
     case 0n Some{Words{values, rest}}: Some{Words{List.reverse(&2, U32, values), rest}}
     case 1n+tail Some{Words{values, bytes}}: words(tail, words.step(values, F.read_word(4n, 0n, 0, bytes)))
 
-def header.valid(valid: Bool, header: Header) -> Result<&2, &2, Error, Header>:
-  match valid:
-    case False{}: Fail{BadHeader{}}
-    case True{}: Done{header}
+def channel.count(+mask: U32) -> U32:
+  +pairs = (mask - ((mask >> 1n) .&. 1431655765) : U32)
+  +groups = ((pairs .&. 858993459) + ((pairs >> 2n) .&. 858993459) : U32)
+  +bytes = ((groups + (groups >> 4n)) .&. 252645135 : U32)
+  +halves = (bytes + (bytes >> 8n) : U32)
+  ((halves + (halves >> 16n)) .&. 255 : U32)
 
-def header.masks(width: U32, height: U32, top: Bool, +bits: U32, +compression: U32, gap: U32, result: Maybe<&2, Words>) -> Result<&2, &2, Error, Header>:
+def channel.scaled(count: U32, mask: U32, shift: Nat) -> Maybe<&2, Channel>:
+  match count:
+    case 1: Some{ChannelField{mask, shift, 255, 0n}}
+    case 2: Some{ChannelField{mask, shift, 85, 0n}}
+    case 3: Some{ChannelField{mask, shift, 73, 1n}}
+    case 4: Some{ChannelField{mask, shift, 17, 0n}}
+    case 5: Some{ChannelField{mask, shift, 33, 2n}}
+    case 6: Some{ChannelField{mask, shift, 65, 4n}}
+    case 7: Some{ChannelField{mask, shift, 129, 6n}}
+    case 8: Some{ChannelField{mask, shift, 1, 0n}}
+    case _: None{}
+
+def channel.counted(+mask: U32, +count: U32) -> Maybe<&2, Channel>:
+  # Native extraction aligns by highest bit and population; holes are not packed.
+  channel.scaled(count, mask, Nat.sub(1n+U32.log2(mask), U32.to_nat(count)))
+
+def channel(+mask: U32, optional: Bool) -> Maybe<&2, Channel>:
+  match mask optional:
+    case 0 True{}: Some{ChannelValue{255}}
+    case 0 False{}: None{}
+    case _ _: channel.counted(mask, channel.count(mask))
+
+def mode.color(bytes: U32, repair: Bool, red: Maybe<&2, Channel>, green: Maybe<&2, Channel>, blue: Maybe<&2, Channel>, alpha: Maybe<&2, Channel>) -> Maybe<&2, Mode>:
+  match red green blue alpha:
+    case Some{r} Some{g} Some{b} Some{a}: Some{ColorMode{bytes, Layout{r, g, b, a}, repair}}
+    case _ _ _ _: None{}
+
+def mode.masks(bits: U32, repair: Bool, red: U32, green: U32, blue: U32, alpha: U32) -> Maybe<&2, Mode>:
+  mode.color((bits / 8 : U32), repair, channel(red, False{}), channel(green, False{}), channel(blue, False{}), channel(alpha, True{}))
+
+def mode.default(+bits: U32, alpha: U32) -> Maybe<&2, Mode>:
+  match bits:
+    case 16: mode.masks(16, False{}, 31744, 992, 31, alpha)
+    case 24: mode.masks(24, False{}, 16711680, 65280, 255, 0)
+    case 32: mode.masks(32, True{}, 16711680, 65280, 255, 4278190080)
+    case _: Some{IndexedMode{bits}}
+
+def mode.selected(explicit: Bool, bits: U32, red: U32, green: U32, blue: U32, alpha: U32) -> Maybe<&2, Mode>:
+  match explicit:
+    case False{}: mode.default(bits, alpha)
+    case True{}: mode.masks(bits, False{}, red, green, blue, alpha)
+
+def header.build(valid: Bool, width: U32, height: U32, top: Bool, gap: U32, data: +List<U32>, mode: Maybe<&2, Mode>) -> Result<&2, &2, Error, Header>:
+  match valid mode:
+    case True{} Some{format}: Done{Header{width, height, top, format, gap, data}}
+    case _ _: Fail{BadHeader{}}
+
+def header.masks(width: U32, height: U32, top: Bool, bits: U32, compression: U32, gap: U32, result: Maybe<&2, Words>) -> Result<&2, &2, Error, Header>:
   match result:
-    case Some{Words{Con{r, Con{g, Con{b, Con{+a, _}}}}, data}}:
-      header.valid((Bool.not(U32.is_eq(bits, 16)) || U32.is_eq(a, 0))
-        && (U32.is_eq(compression, 0) || (U32.is_eq(r, 16711680) && U32.is_eq(g, 65280) && U32.is_eq(b, 255) && U32.is_eq(a, 4278190080))),
-        Header{width, height, top, bits, U32.is_eq(compression, 0), gap, data})
+    case Some{Words{Con{r, Con{g, Con{b, Con{a, _}}}}, data}}:
+      header.build(True{}, width, height, top, gap, data, mode.selected(U32.is_eq(compression, 3), bits, r, g, b, a))
     case _: Fail{BadHeader{}}
+
+def header.info.masks(width: U32, height: U32, top: Bool, bits: U32, gap: U32, result: Maybe<&2, Words>) -> Result<&2, &2, Error, Header>:
+  match result:
+    case Some{Words{Con{+r, Con{+g, Con{+b, Nil{}}}}, data}}:
+      header.build(Bool.not(U32.is_eq(r, g) && U32.is_eq(g, b)), width, height, top, gap, data, mode.masks(bits, False{}, r, g, b, 0))
+    case _: Fail{BadHeader{}}
+
+def header.info(explicit: Bool, width: U32, height: U32, top: Bool, bits: U32, gap: U32, data: +List<U32>) -> Result<&2, &2, Error, Header>:
+  match explicit:
+    case False{}: header.build(True{}, width, height, top, gap, data, mode.default(bits, 0))
+    case True{}: header.info.masks(width, height, top, bits, gap, words(3n, Some{Words{Nil{}, data}}))
 
 def header.extended(v4: Bool, width: U32, height: U32, top: Bool, bits: U32, compression: U32, gap: U32, data: +List<U32>) -> Result<&2, &2, Error, Header>:
   match v4:
-    case False{}: Done{Header{width, height, top, bits, True{}, gap, data}}
+    case False{}: header.info(U32.is_eq(compression, 3), width, height, top, bits, gap, data)
     case True{}: header.masks(width, height, top, bits, compression, gap, words(17n, Some{Words{Nil{}, data}}))
 
 def header.sized(valid: Bool, width: U32, height: U32, top: Bool, v4: Bool, bits: U32, compression: U32, gap: U32, data: +List<U32>) -> Result<&2, &2, Error, Header>:
@@ -68,12 +137,13 @@ def header.fields(result: Maybe<&2, Words>) -> Result<&2, &2, Error, Header>:
       +v4 = U32.is_eq(dib, 108)
       +bits = (mode >> 16n : U32)
       +indexed = U32.is_eq(bits, 1) || U32.is_eq(bits, 4) || U32.is_eq(bits, 8)
-      wide = U32.is_eq(bits, 32)
-      +end = (14 + dib : U32)
+      +bitfields = U32.is_eq(compression, 3)
+      extra = Bool.pick(U32, U32.is_eq(dib, 40) && bitfields, 12, 0)
+      +end = (14 + dib + extra : U32)
       +gap = (offset - end : U32)
       header.checked((U32.is_eq(dib, 40) || v4) && U32.is_eq((mode .&. 65535 : U32), 1)
         && (indexed || U32.is_eq(bits, 16) || U32.is_eq(bits, 24) || U32.is_eq(bits, 32))
-        && (U32.is_eq(compression, 0) || (v4 && wide && U32.is_eq(compression, 3)))
+        && (U32.is_eq(compression, 0) || (bitfields && (U32.is_eq(bits, 16) || U32.is_eq(bits, 32))))
         && ((offset >= end) && (gap <= Bool.pick(U32, indexed, 1027, 1024)) : U32)
         && (Bool.not(indexed) || (gap >= 4 : U32)),
         width, height, top, v4, bits, compression, gap, data)
@@ -93,26 +163,24 @@ def enough(n: Nat, bytes: +List<U32>) -> Bool:
 type State is Type:
   State{data: +List<U32>, pixels: Array<U32>, alpha: U32}
 
-def pixel.rgba(+bits: U32, +word: U32) -> U32:
-  match bits:
-    case 16:
-      # BMP uses bit replication, unlike TGA's integer channel*255/31 scaling.
-      r = ((((word >> 10n) .&. 31) * 33) >> 2n : U32)
-      g = ((((word >> 5n) .&. 31) * 33) >> 2n : U32)
-      b = (((word .&. 31) * 33) >> 2n : U32)
-      ((r << 24n) .|. (g << 16n) .|. (b << 8n) .|. 255 : U32)
-    case _:
-      a = Bool.pick(U32, U32.is_eq(bits, 32), (word >> 24n : U32), 255)
-      ((((word >> 16n) .&. 255) << 24n) .|. (((word >> 8n) .&. 255) << 16n) .|. ((word .&. 255) << 8n) .|. a : U32)
+def channel.value(channel: Channel, word: U32) -> U32:
+  match channel:
+    case ChannelValue{value}: value
+    case ChannelField{mask, shift, multiplier, shrink}: ((((word .&. mask) >> shift) * multiplier) >> shrink : U32)
 
-def pixel.read(index: U32, bits: U32, padding: Nat, pixels: Array<U32>, alpha: U32, result: Maybe<&2, F.Word>) -> Result<&1, &1, Error, State>:
+def pixel.rgba(layout: Layout, +word: U32) -> U32:
+  Layout{red, green, blue, alpha} = layout
+  ((channel.value(red, word) << 24n) .|. (channel.value(green, word) << 16n)
+    .|. (channel.value(blue, word) << 8n) .|. channel.value(alpha, word) : U32)
+
+def pixel.read(index: U32, layout: Layout, padding: Nat, pixels: Array<U32>, alpha: U32, result: Maybe<&2, F.Word>) -> Result<&1, &1, Error, State>:
   match result:
     case None{}: Fail{Truncated{}}
     case Some{F.Word{word, data}}:
-      +rgba = pixel.rgba(bits, word)
+      +rgba = pixel.rgba(layout, word)
       Done{State{List.drop(&2, U32, data, padding), Array.set(U32, pixels, index, rgba), (alpha .|. (rgba .&. 255) : U32)}}
 
-def pixels(n: Nat, +index: U32, +width: U32, +height: U32, +top: Bool, +bits: U32, +padding: Nat, state: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, State>:
+def pixels(n: Nat, +index: U32, +width: U32, +height: U32, +top: Bool, +bytes: U32, +layout: Layout, +padding: Nat, state: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, State>:
   match n state:
     case _ Fail{error}: Fail{error}
     case 0n _: state
@@ -121,8 +189,8 @@ def pixels(n: Nat, +index: U32, +width: U32, +height: U32, +top: Bool, +bits: U3
       +y = (index / width : U32)
       at = (Bool.pick(U32, top, y, (height - 1 - y : U32)) * width + x : U32)
       pad = Bool.pick(Nat, U32.is_eq((x + 1 : U32), width), padding, 0n)
-      pixels(rest, (index + 1 : U32), width, height, top, bits, padding,
-        pixel.read(at, bits, pad, output, alpha, F.read_word(U32.to_nat((bits / 8 : U32)), 0n, 0, data)))
+      pixels(rest, (index + 1 : U32), width, height, top, bytes, layout, padding,
+        pixel.read(at, layout, pad, output, alpha, F.read_word(U32.to_nat(bytes), 0n, 0, data)))
 
 def opaque.write(index: U32, read: Array<U32> & U32) -> Array<U32>:
   (pixels, value) = read
@@ -143,23 +211,21 @@ def finish(width: U32, height: U32, restore: Bool, state: Result<&1, &1, Error, 
     case Fail{error}: Fail{error}
     case Done{State{_, pixels, alpha}}: Done{finish.alpha(restore && U32.is_eq(alpha, 0), width, height, pixels)}
 
-def start.valid(valid: Bool, +width: U32, +height: U32, top: Bool, bits: U32, restore: Bool, padding: U32, data: +List<U32>) -> Result<&1, &1, Error, Image>:
+def start.valid(valid: Bool, +width: U32, +height: U32, top: Bool, bytes: U32, layout: Layout, restore: Bool, padding: U32, data: +List<U32>) -> Result<&1, &1, Error, Image>:
   match valid:
     case False{}: Fail{Truncated{}}
     case True{}:
       +count = (width * height : U32)
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
-      finish(width, height, restore, pixels(U32.to_nat(count), 0, width, height, top, bits, U32.to_nat(padding), Done{State{data, Array.new(U32, depth, 0), 0}}))
+      finish(width, height, restore, pixels(U32.to_nat(count), 0, width, height, top, bytes, layout, U32.to_nat(padding), Done{State{data, Array.new(U32, depth, 0), 0}}))
 
-def start.color(header: Header) -> Result<&1, &1, Error, Image>:
-  match header:
-    case Header{+width, +height, top, +bits, restore, gap, +data}:
-      +row = (width * (bits / 8) : U32)
-      +padding = ((0 - row) .&. 3 : U32)
-      # The pinned true-color reader skips the post-header gap twice.
-      +skip = (2 * gap : U32)
-      start.valid(enough(U32.to_nat((skip + (row + padding) * height : U32)), data), width, height, top, bits, restore, padding,
-        List.drop(&2, U32, data, U32.to_nat(skip)))
+def start.color(+width: U32, +height: U32, top: Bool, +bytes: U32, layout: Layout, restore: Bool, gap: U32, +data: +List<U32>) -> Result<&1, &1, Error, Image>:
+  +row = (width * bytes : U32)
+  +padding = ((0 - row) .&. 3 : U32)
+  # The pinned true-color reader skips the post-header gap twice.
+  +skip = (2 * gap : U32)
+  start.valid(enough(U32.to_nat((skip + (row + padding) * height : U32)), data), width, height, top, bytes, layout, restore, padding,
+    List.drop(&2, U32, data, U32.to_nat(skip)))
 
 type Indexed is Type:
   Indexed{data: +List<U32>, byte: U32, pixels: Array<U32>}
@@ -215,21 +281,19 @@ def indexed.palette(+width: U32, +height: U32, top: Bool, +bits: U32, gap: U32, 
       indexed.start(enough(U32.to_nat((skip + (row + padding) * height : U32)), data), width, height, top, bits, palette, padding,
         List.drop(&2, U32, data, U32.to_nat(skip)))
 
-def start.indexed(header: Header) -> Result<&1, &1, Error, Image>:
-  Header{width, height, top, bits, _, +gap, data} = header
+def start.indexed(width: U32, height: U32, top: Bool, bits: U32, +gap: U32, data: +List<U32>) -> Result<&1, &1, Error, Image>:
   # Native palette length comes from the offset, independently of clrUsed.
   indexed.palette(width, height, top, bits, gap, words(U32.to_nat((gap / 4 : U32)), Some{Words{Nil{}, data}}))
 
-def start.kind(indexed: Bool, header: Header) -> Result<&1, &1, Error, Image>:
-  match indexed:
-    case True{}: start.indexed(header)
-    case False{}: start.color(header)
+def start.mode(width: U32, height: U32, top: Bool, mode: Mode, gap: U32, data: +List<U32>) -> Result<&1, &1, Error, Image>:
+  match mode:
+    case IndexedMode{bits}: start.indexed(width, height, top, bits, gap, data)
+    case ColorMode{bytes, layout, repair}: start.color(width, height, top, bytes, layout, repair, gap, data)
 
 def start(result: Result<&2, &2, Error, Header>) -> Result<&1, &1, Error, Image>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{Header{width, height, top, +bits, restore, gap, data}}:
-      start.kind((bits < 16 : U32), Header{width, height, top, bits, restore, gap, data})
+    case Done{Header{width, height, top, mode, gap, data}}: start.mode(width, height, top, mode, gap, data)
 
 def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, Error, Image>:
   match valid:

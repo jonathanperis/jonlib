@@ -1740,3 +1740,50 @@ proofs, ten harness/planning tests and project checks pass. GPU filesystem IO an
 the remaining platform/resource/performance domains were not exercised.
 
 Regression scan: 31 callers checked, 29 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `6a55a9a`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36291967317)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36291967309)
+passed, including opaque RGB555 BMP and the preceding indexed profiles.
+
+## Native BMP bitfields and V4 alpha
+
+The 16/32-bit INFO/V4 bitfield paths now retain native population-count/highest-bit
+alignment and per-width replication for masks with 1..8 set bits. Reordered,
+overlapping and noncontiguous masks are supported. Native extraction does not
+compact holes: RGB masks `5/0a/50` decode word `005f` as `aaaaaaff`.
+
+INFO bitfields consume three additional mask words, include them in the effective
+header length and reject three identical RGB masks. V4 keeps its four masks
+inside the DIB and permits equal RGB masks. Absent alpha is opaque; explicit
+bitfield alpha preserves zero. Uncompressed V4 16-bit now retains its stored
+alpha mask while using native RGB555 defaults, including all-zero alpha. The
+32-bit uncompressed all-zero-alpha repair remains a distinct profile.
+
+The BMP gate passes 66 native images / 5,777 pixels, 29 typed-error controls and
+three exact exports / 410 bytes on CPU/JavaScript/forced Metal. Fixtures cover
+every mask population 1..8, RGB565/ARGB1555/RGBA4444, reordered/overlapping/gapped
+masks, high bits, INFO mask offsets and V4 alpha below/above the stored word.
+Zero RGB masks, populations above eight, incomplete masks and invalid effective
+offsets reject. All prior indexed, byte-color, RGB555 and export cases remain.
+
+Shared dispatch passes 270 memory pairs plus five controls on CPU/JS/Metal and
+44 file cases plus three boundaries and 100 low-descriptor cycles on CPU/JS.
+The current source/native/input hashes are in
+[evidence/bmp-bitfields.json](evidence/bmp-bitfields.json).
+
+Scoped drift review: C2/C3 HOLD under pinned-checkout/source gates; I102 MATCH
+(`src/bmp.bend`, channels/modes/header parsing); A4/A5 HOLD under native backend
+gates; A6 HOLD in [BMP.md](BMP.md); V2 HOLD through full linked native pixels and
+exports; V3 HOLD through checked fields, effective header lengths, dimensions and
+payload/output bounds. The planned scope was expanded to match observed gapped-mask
+alignment before implementation. Original metadata, remaining header/compression
+profiles and full resource/platform/performance parity remain gaps.
+
+The scan removed an unnecessary scale carrier and clarified the compatibility
+table's 16/32-bit bitfield wording. Affected native and full-corpus gates were
+rerun after the source simplification. All 261 scenarios / 40,101 words pass
+CPU-1/CPU-2/JavaScript/forced Metal; all four proofs, ten harness/planning tests and
+project checks pass. GPU filesystem IO and remaining targets were not exercised.
+The API ledger retains 104 core and 142 math partial mappings, zero complete.
+
+Regression scan: 68 callers checked, 33 assertions checked, 2 flagged/fixed.

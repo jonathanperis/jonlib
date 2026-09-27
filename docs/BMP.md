@@ -11,11 +11,16 @@
 - Width and absolute height are 1..4096; positive height is bottom-up and negative
   height is top-down. Output is always top-down row-major RGBA8.
 - A 40-byte INFO header supports uncompressed (`BI_RGB`) 1/4/8-bit indexed and
-  16/24/32-bit true-color pixels.
-- A 108-byte V4 header supports the same `BI_RGB` depths, or 32-bit `BI_BITFIELDS`.
-  Explicit bitfields must be canonical RGBA masks: `00ff0000`, `0000ff00`,
-  `000000ff`, `ff000000`. Uncompressed V4 input ignores stored RGB masks; the
-  16-bit profile requires a zero stored alpha mask.
+  16/24/32-bit true-color pixels, plus 16/32-bit `BI_BITFIELDS`. INFO bitfields
+  read three RGB masks immediately after the DIB; those 12 bytes count toward the
+  effective header end. INFO rejects three identical RGB masks, matching native.
+- A 108-byte V4 header supports the same `BI_RGB` depths and 16/32-bit
+  `BI_BITFIELDS`, with four RGBA masks inside the header. Uncompressed V4 replaces
+  its stored RGB masks with native defaults; 16-bit input retains its alpha mask.
+- Explicit RGB masks must be nonzero with 1..8 set bits. Alpha may be absent
+  (opaque) or contain 1..8 set bits. Reordered, overlapping and noncontiguous masks
+  follow native highest-bit/population alignment and bit replication. Holes are
+  not compacted: masks `5`, `0a`, `50` decode word `005f` as `aaaaaaff`.
 - Row padding is retained in the input stride and excluded from output pixels.
 - Indexed palettes contain 1..256 BGR/reserved entries. Native palette count is
   `floor((pixel_offset - 14 - DIB_size)/4)`; `clrUsed` and palette alpha/reserved
@@ -24,14 +29,16 @@
   discarded, and each input row is padded to a multiple of four bytes.
 - `BI_RGB` 32-bit images whose alpha bytes are **all zero** become opaque, matching
   stb's reference behavior. If any alpha byte is nonzero, all input alpha bytes
-  are preserved. Explicit V4 bitfields preserve all-zero alpha too.
+  are preserved. Bitfields and V4 `BI_RGB` 16-bit preserve all-zero explicit alpha.
 - `BI_RGB` 16-bit samples use two little-endian bytes with RGB fields at shifts
-  10, 5 and 0. Each five-bit value expands with `(value*33)>>2`; bit 15 is ignored
-  and output alpha is 255. Native BMP bit replication differs from TGA's
+  10, 5 and 0. Each five-bit value expands with `(value*33)>>2`; RGB ignores bit 15.
+  INFO output is opaque; V4 uses its alpha mask, or opaque alpha when absent.
+  Native BMP bit replication differs from TGA's
   `value*255/31` integer scaling: channel value 4 becomes 33 in BMP and 32 in TGA.
 - For true-color input, the pixel offset may lie 0..1024 bytes past the header end. The pinned
   reader skips this gap **twice** for true-color images, so the effective payload
-  starts at `header_end + 2*gap`. Jonlib preserves this observed behavior.
+  starts at `effective_header_end + 2*gap`, including INFO's extra mask words when
+  present. Jonlib preserves this observed behavior.
 
 All supplied byte values must be 0..255. Unsupported header layouts, bit depths,
 planes, masks, compression or offsets return `InvalidImageHeader`. Unsupported
@@ -42,7 +49,7 @@ An index beyond the loaded palette returns `InvalidImageStream`; the native
 reader's uninitialized palette reads are outside the supported profile.
 File-size/reserved header fields do not override actual input availability.
 
-Nonzero 16-bit V4 alpha masks, other headers/masks/compression, original-format metadata
+Other headers/compression profiles, original-format metadata
 and the native decoder's permissive recovery of truncated input remain gaps.
 Shared memory/file dispatch uses this profile through `Surface.decode_image`
 and `Surface.load_image`; see [IMAGE-FILES.md](IMAGE-FILES.md).
@@ -62,7 +69,7 @@ python3 tools/bmp_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 ```
 
 Configure checkout variables as described in [README.md](../README.md#requirements).
-The probe checks 43 native decode cases (4,607 pixels), 25 typed-error controls and
+The probe checks 66 native decode cases (5,777 pixels), 29 typed-error controls and
 three complete exports (410 bytes) on CPU, JavaScript and forced Metal. CPU/JS
 also write a real BMP file and compare it with the native export. Input construction
 uses bounded literal chunks for the maximum-gap case, avoiding JavaScript stack
@@ -70,8 +77,12 @@ growth from a deeply nested generated list literal. Indexed cases cover INFO/V4,
 all three depths, both orientations, partial-byte rows, padding, offset residuals,
 ignored `clrUsed`/alpha, reduced/full palettes and a 4096-pixel row. RGB555 cases
 cover each five-bit channel range, both high-bit states, INFO/V4, orientation,
-odd row padding and a double-skipped offset gap. Native hashes and lane results
-are in [evidence/bmp-rgb555.json](evidence/bmp-rgb555.json).
+odd row padding and a double-skipped offset gap. Bitfield cases cover every mask
+population from 1..8, RGB565/ARGB1555/RGBA4444, reordered/overlapping/noncontiguous
+masks, high bits, INFO's mask extension, and native V4 16-bit alpha behavior.
+Missing/oversized RGB or alpha masks, INFO's equal-mask rejection and incomplete
+mask headers are checked. Hashes and lane results are in
+[evidence/bmp-bitfields.json](evidence/bmp-bitfields.json).
 
 The codec is an altered Bend implementation of the pinned stb BMP paths; its MIT
 notice is retained in [LICENSES/stb-image.txt](../LICENSES/stb-image.txt). Full
