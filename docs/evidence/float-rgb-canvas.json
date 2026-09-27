@@ -1,0 +1,14 @@
+{
+  "date":"2026-09-27",
+  "source_sha256":{"jonlib.bend":"12f569edf1cbc468bfaf6bb277eee5ff43d357bc2c1cdd747a27b17268bbc3e8"},
+  "profile":"Native format-9 lossless canvas movement, ignored fill/positive-zero background, same-size no-ops and bounded POT growth",
+  "canvas": {
+    "inputs_sha256":"c4809b3fbf498441082b256fa6f65c971581cf44a2cb18902def11a70dac0bac",
+    "reference_sha256":"1ab659a41fa441af8cf2b989ff00dc86941571bcca553ecfe83eaf843f67f68d",
+    "native_cases":18,"pixels":4277,"retained_owner_controls":6,"passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "limits":["No-overlap/unsafe native copy domains, NaN payload parity and other formats/mipmaps", "Complete resource/platform/performance coverage"]
+}

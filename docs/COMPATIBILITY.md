@@ -98,6 +98,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | RGB float rectangles | `Image.FloatRGB.extract/crop` | Native integral region/crop words and clipping, retained rejected owners and independent extracted storage |
 | RGB float nearest resize | `Image.FloatRGB.resize_nn` | Native RGBA8 quantization and fixed-point mapping followed by float normalization; original owners retained on rejection |
 | RGB float filtered resize | `Image.FloatRGB.resize` | Native format-9 RGBA8 fallback, default four-channel filtering and float normalization with retained rejected owners |
+| RGB float canvas/POT | `Image.FloatRGB.resize_canvas/to_pot` | Native sample movement, ignored fill/zero background, same-size no-ops and bounded owner-preserving geometry |
 | RGB float RAW file IO | `Image.FloatRGB.load_raw/write_raw` | Native fitting-header/fallback selection, exact format-9 words and typed domain/file failures with closed handles on CPU/JS |
 | Raw DEFLATE | `Compression.decompress` | Stored/fixed/dynamic blocks and bounded copies; native empty-stored-block completion differs explicitly from the internal PNG-oriented path |
 | PNG decoding | `Surface.decode_png` | Non-interlaced/Adam7 1/2/4/8/16-bit and native-default CgBI profiles; filtering/scattering, palette/tRNS, framing and bounded errors |

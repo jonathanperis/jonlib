@@ -42018,11 +42018,11 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.to_pot",
+      "jonlib": "Surface.to_pot / Image.FloatRGB.to_pot",
       "mapping_state": "implemented",
-      "scope": "RGBA8; supported dimensions 1..4096; raw canvas expansion to the next power of two with reference fill and no-op behavior. All 4096 axis values are compared with actual ImageToPOT.",
+      "scope": "Owned RGBA8 and non-NaN RGB F32, dimensions 1..4096; canvas expansion to next power-of-two dimensions with native fill/no-op behavior. Format 9 preserves sample words and ignores fill, leaving exposed pixels zero. All 4096 axis values are compared with actual ImageToPOT.",
       "gaps": [
-        "Other dimensions/formats/mipmaps",
+        "Other dimensions/formats/mipmaps and NaN payload parity",
         "Full target/performance gates"
       ],
       "blocker": null,
@@ -42037,7 +42037,10 @@
       "evidence": [
         "tests/fixtures/images.json",
         "tools/conformance.py",
-        "docs/ROTATION.md"
+        "tools/float_rgb_canvas_probe.py",
+        "docs/ROTATION.md",
+        "docs/FLOAT-RGB.md",
+        "docs/evidence/float-rgb-canvas.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42629,12 +42632,12 @@
       "phase": 1,
       "sequence": 8,
       "status": "partial",
-      "jonlib": "Surface.resize_canvas",
+      "jonlib": "Surface.resize_canvas / Image.FloatRGB.resize_canvas",
       "mapping_state": "implemented",
-      "scope": "RGBA8; dimensions 1..4096; bounded integral offsets with positive overlap for changed sizes; exact raw copying/fill and same-size no-op; invalid requests retain the original owner.",
+      "scope": "Owned RGBA8 and non-NaN RGB F32, dimensions 1..4096; bounded integral offsets with positive overlap for changed sizes. Exact sample movement and same-size no-ops; native format-9 fill is ignored and exposed RGB samples remain zero. Rejected requests retain original owners.",
       "gaps": [
         "No-overlap/unsafe reference copy domains",
-        "Other formats/mipmaps and complete platform/performance gates"
+        "Other formats/mipmaps, NaN payload parity and complete platform/performance gates"
       ],
       "blocker": null,
       "gates": {
@@ -42648,7 +42651,10 @@
       "evidence": [
         "tests/fixtures/images.json",
         "tests/transforms.bend",
-        "docs/API.md"
+        "tools/float_rgb_canvas_probe.py",
+        "docs/API.md",
+        "docs/FLOAT-RGB.md",
+        "docs/evidence/float-rgb-canvas.json"
       ],
       "gate_evidence": {},
       "target_results": {},

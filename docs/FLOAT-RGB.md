@@ -66,6 +66,20 @@ the resulting RGB bytes. Same-size calls still quantize. Both methods share the
 source-retaining conversion dispatch. See
 [evidence/float-rgb-filtered.json](evidence/float-rgb-filtered.json).
 
+## Canvas resizing and POT growth
+
+`Image.FloatRGB.resize_canvas(image, width, height, x, y, fill)` and `to_pot(image, fill)`
+return `Result<&1, &1, Image.FloatRGB & Surface.Error, Image.FloatRGB>`. Dimensions
+are 1..4096; canvas offsets follow the existing bounded integral Surface profile,
+with positive overlap required when dimensions change. Invalid requests retain
+their original owners.
+
+Moved non-NaN sample words remain exact. Native format 9 ignores the requested
+fill color because `SetPixelColor` has no float case; exposed pixels therefore
+remain positive RGB zero from allocation. Same-size requests preserve the source
+for in-profile offsets. POT uses the established next-power-of-two calculation.
+See [evidence/float-rgb-canvas.json](evidence/float-rgb-canvas.json).
+
 ## Large owned exports
 
 Surface colors, FloatRGB entries and packed/formatted image exports use a shared
@@ -82,6 +96,7 @@ python3 tools/float_rgb_transform_probe.py --bend-source "$BEND_SOURCE" --raylib
 python3 tools/float_rgb_crop_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 python3 tools/float_rgb_resize_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 python3 tools/float_rgb_resize_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --filtered --gpu
+python3 tools/float_rgb_canvas_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 ```
 
 Configure checkout variables as in [README.md](../README.md#requirements).
@@ -111,3 +126,5 @@ covering up/down/same-size/thin inputs, quantization boundaries and unsafe mappi
 The filtered gate compares 26 native cases / 2,878 pixels and three retained
 owners on CPU/JS/Metal. The existing Surface filter gate retains 529 images /
 46,474 pixels, 2,601 kernels and 6,470 normalization coefficient bits.
+The canvas/POT gate compares 18 native cases / 4,277 pixels and six retained
+owners on CPU/JS/Metal, including ignored fills and same-size offset no-ops.
