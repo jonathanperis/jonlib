@@ -41,11 +41,12 @@ def main():
     text=run([binary]);expected=[json.loads(line) for line in text.splitlines()]
     if len(expected)!=len(cases):raise ValueError('Incomplete native memory dispatch results')
     controls=[('.png',[256],1),('.qoi',[256],1),('.unknown',[256],0),('.png',[],0),('.png',[137,80],0)]
-    report=dict(passed=False,native_cases=len(cases),loaded_cases=sum(row['loaded'] for row in expected),invalid_controls=len(controls),
+    batch_size=64
+    report=dict(passed=False,native_cases=len(cases),loaded_cases=sum(row['loaded'] for row in expected),invalid_controls=len(controls),batch_size=batch_size,
                 sources=source_gate(),inputs_sha256=hashlib.sha256(json.dumps([cases,controls]).encode()).hexdigest(),
                 reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
     for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        program='''import Base
+        preamble='''import Base
 import ../../jonlib.bend as J
 def observed(result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> IO(Unit):
   match result:
@@ -66,16 +67,29 @@ def main() -> IO(Unit):
   do IO<Unit>:
 '''
         bang='!' if lane=='metal' else ''
-        for case in cases:program+=f'    observed(J.Surface.decode_image{bang}({json.dumps(case["token"])}, {bend_bytes(case["data"])}))\n'
-        for token,data,_ in controls:program+=f'    IO.print(U32.show(error_code(J.Surface.decode_image{bang}({json.dumps(token)}, {bend_bytes(data)}))))\n'
-        source=work/f'{lane}.bend';source.write_text(program)
-        binary=work/('candidate.js' if lane=='javascript' else f'candidate-{lane}')
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        actual=[json.loads(line) for line in run(command).splitlines()]
+        actions=[f'    observed(J.Surface.decode_image{bang}({json.dumps(case["token"])}, {bend_bytes(case["data"])}))\n' for case in cases]
+        actions += [f'    IO.print(U32.show(error_code(J.Surface.decode_image{bang}({json.dumps(token)}, {bend_bytes(data)}))))\n' for token,data,_ in controls]
+        actual=[]
+        report['lanes'][lane]=dict(passed=False,batches=[])
+        for index,start in enumerate(range(0,len(actions),batch_size)):
+            selected=actions[start:start+batch_size]
+            batch=dict(start=start,count=len(selected),stage='compile')
+            report['lanes'][lane]['batches'].append(batch)
+            report_path.write_text(json.dumps(report,indent=2)+'\n')
+            source=work/f'{lane}-{index}.bend';source.write_text(preamble+''.join(selected))
+            binary=work/f'candidate-{lane}-{index}{".js" if lane=="javascript" else ""}'
+            run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
+            batch['stage']='run';report_path.write_text(json.dumps(report,indent=2)+'\n')
+            command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
+            rows=[json.loads(line) for line in run(command).splitlines()]
+            batch['result_rows']=len(rows);report_path.write_text(json.dumps(report,indent=2)+'\n')
+            if len(rows)!=len(selected):raise ValueError(f'{lane}: memory dispatch batch {index} result count differs')
+            actual.extend(rows)
+            batch['stage']='complete'
+            report_path.write_text(json.dumps(report,indent=2)+'\n')
         wanted=expected+[code for _,_,code in controls]
         differences=[i for i,(a,b) in enumerate(zip(wanted,actual)) if a!=b]
-        report['lanes'][lane]=dict(passed=actual==wanted,different_cases=differences)
+        report['lanes'][lane].update(passed=actual==wanted,different_cases=differences)
         report_path.write_text(json.dumps(report,indent=2)+'\n')
         if actual!=wanted:raise ValueError(f'{lane}: memory dispatch differs: {differences[:8]}')
         print(f'{lane}: {len(cases)} native token/content pairs and {len(controls)} typed controls passed',flush=True)

@@ -122,6 +122,7 @@ def header.info.prefix(width: U32, height: U32, top: Bool, bits: U32, compressio
 
 def header.extended(dib: U32, width: U32, height: U32, top: Bool, bits: U32, compression: U32, gap: U32, data: +List<U32>) -> Result<&2, &2, Error, Header>:
   match dib:
+    case 12: header.info(False{}, width, height, top, bits, gap, data)
     case 40: header.info(U32.is_eq(compression, 3), width, height, top, bits, gap, data)
     case 56: header.info.prefix(width, height, top, bits, compression, gap, words(4n, Some{Words{Nil{}, data}}))
     case 108: header.masks(width, height, top, bits, compression, gap, words(17n, Some{Words{Nil{}, data}}))
@@ -137,9 +138,9 @@ def header.checked(valid: Bool, +width: U32, +height: U32, top: Bool, dib: U32, 
     case False{}: Fail{BadHeader{}}
     case True{}: header.sized(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32), width, height, top, dib, bits, compression, gap, data)
 
-def header.fields(result: Maybe<&2, Words>) -> Result<&2, &2, Error, Header>:
+def header.fields(+offset: U32, +dib: U32, result: Maybe<&2, Words>) -> Result<&2, &2, Error, Header>:
   match result:
-    case Some{Words{Con{_, Con{_, Con{+offset, Con{+dib, Con{+width, Con{+signed_height, Con{+mode, Con{+compression, Con{_, Con{_, Con{_, Con{_, Con{_, Nil{}}}}}}}}}}}}}}, data}}:
+    case Some{Words{Con{+width, Con{+signed_height, Con{+mode, Con{+compression, Con{_, Con{_, Con{_, Con{_, Con{_, Nil{}}}}}}}}}}, data}}:
       +top = (signed_height >= 2147483648 : U32)
       +height = Bool.pick(U32, top, (0 - signed_height : U32), signed_height)
       +info = U32.is_eq(dib, 40) || U32.is_eq(dib, 56)
@@ -157,9 +158,27 @@ def header.fields(result: Maybe<&2, Words>) -> Result<&2, &2, Error, Header>:
         width, height, top, dib, bits, compression, gap, data)
     case _: Fail{BadHeader{}}
 
+def header.core(+offset: U32, result: Maybe<&2, Words>) -> Result<&2, &2, Error, Header>:
+  match result:
+    case Some{Words{Con{+dimensions, Con{mode, Nil{}}}, data}}:
+      +gap = (offset - 26 : U32)
+      header.checked(U32.is_eq(mode, 1572865) && ((offset >= 26) && (gap <= 1024) : U32),
+        (dimensions .&. 65535 : U32), (dimensions >> 16n : U32), False{}, 12, 24, 0, gap, data)
+    case _: Fail{BadHeader{}}
+
+def header.kind(offset: U32, +dib: U32, data: +List<U32>) -> Result<&2, &2, Error, Header>:
+  match dib:
+    case 12: header.core(offset, words(2n, Some{Words{Nil{}, data}}))
+    case _: header.fields(offset, dib, words(9n, Some{Words{Nil{}, data}}))
+
+def header.prefix(result: Maybe<&2, Words>) -> Result<&2, &2, Error, Header>:
+  match result:
+    case Some{Words{Con{_, Con{_, Con{offset, Con{dib, Nil{}}}}}, data}}: header.kind(offset, dib, data)
+    case _: Fail{BadHeader{}}
+
 def header(bytes: +List<U32>) -> Result<&2, &2, Error, Header>:
   match bytes:
-    case Con{66, Con{77, rest}}: header.fields(words(13n, Some{Words{Nil{}, rest}}))
+    case Con{66, Con{77, rest}}: header.prefix(words(4n, Some{Words{Nil{}, rest}}))
     case _: Fail{BadHeader{}}
 
 def enough(n: Nat, bytes: +List<U32>) -> Bool:
