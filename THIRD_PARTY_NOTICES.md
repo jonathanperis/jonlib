@@ -71,8 +71,8 @@ is used only by reference tooling; it is not linked into Jonlib's implementation
 ## stb_image and stb_image_write
 
 `src/bmp.bend`, `src/tga.bend`, `src/pnm.bend`, `src/png.bend`, `src/psd.bend` and
-`src/pic.bend` are altered, bounded Bend adaptations of the BMP/TGA readers and
-writers and PNM/PNG/PSD/PIC readers
+`src/pic.bend`, `src/gif.bend` and `src/gif_lzw.bend` are altered, bounded Bend
+adaptations of the BMP/TGA readers and writers and PNM/PNG/PSD/PIC/GIF readers
 in pinned raylib's `src/external/stb_image.h` and `stb_image_write.h`, by Sean
 Barrett and contributors. Jonlib selects their MIT alternative, retained in
 [LICENSES/stb-image.txt](LICENSES/stb-image.txt). It uses owned arrays and explicit
@@ -80,6 +80,7 @@ byte validation, preserves the exercised native pixel/export rules, and rejects
 unsupported or truncated inputs. The native headers are used only by reference
 tooling; no stb implementation is linked into the Bend candidate.
 The upstream Softimage PIC reader credits Tom Seddon.
+The upstream GIF reader credits Jean-Marc Lienher, with simplification by stb.
 
 `src/inflate.bend` adapts the canonical DEFLATE decoding rules from the same
 stb header to bounded owned output and tail-recursive extraction. Its raw API

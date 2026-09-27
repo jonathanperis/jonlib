@@ -87,6 +87,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | Binary PGM/PPM decoding | `Surface.decode_pnm` | P5/P6 8/16-bit samples, native little-endian narrowing and maxval/separator/comment rules; full dimension-boundary pixels |
 | PSD decoding | `Surface.decode_psd_for` and shared `_for` dispatch | Version-1 RGB mode, 0..16 channels, raw/PackBits and explicit matte profiles; native alpha/defaults/depth rules and bounded packets/metadata |
 | Softimage PIC decoding | `Surface.decode_pic` | Raw/pure-RLE/mixed-RLE channel packets, native clipping/zero-count/default/overwrite behavior and bounded malformed-input errors |
+| First-frame GIF decoding | `Surface.decode_gif` | Full-canvas non-interlaced GIF87a/89a, global/local palettes, transparent-black pixels and bounded native-style LZW |
 | Raw DEFLATE | `Compression.decompress` | Stored/fixed/dynamic blocks and bounded copies; native empty-stored-block completion differs explicitly from the internal PNG-oriented path |
 | PNG decoding | `Surface.decode_png` | Non-interlaced/Adam7 1/2/4/8/16-bit and native-default CgBI profiles; filtering/scattering, palette/tRNS, framing and bounded errors |
 | PNG export | `Surface.to_png/write_png`, `Image.Formatted.to_png/write_png` | Exact default byte-format memory and format-1..7 file output; native packed expansion, channel/header preservation, rejection and normalized round trips |
