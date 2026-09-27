@@ -1590,3 +1590,36 @@ passes, as do all four proofs, ten harness/planning tests and project checks.
 No GPU filesystem IO or big-endian host behavior was exercised.
 
 Regression scan: 24 callers checked, 19 assertions checked, 1 flagged/fixed.
+
+## Packed 15/16-bit TGA true color
+
+Non-paletted type-2/type-10 images now accept 15/16-bit RGB555 samples. Each pixel
+consumes two little-endian bytes; the five-bit RGB fields expand with integer
+`channel*255/31`. Native packed alpha/high bits are ignored and output is opaque.
+Gray-alpha 16-bit images retain their separate gray/alpha-byte contract.
+
+The TGA gate passes 27 native images / 998 pixels, 16 typed-error controls and
+11 unchanged complete exports / 3,447 bytes on CPU/JavaScript/forced Metal, with
+real file-export comparison on CPU/JS. Packed cases cover every five-bit value,
+both high-bit states and vertical orientations, image IDs, raw/RLE transitions
+and partial samples. The former unsupported-depth-16 control is now native-supported;
+depth 17 retains the unsupported-format rejection.
+
+Shared dispatch passes 182 native memory pairs plus five typed controls on
+CPU/JS/Metal and 40 file cases plus three boundaries and 100 low-descriptor cycles
+on CPU/JS. Both include a packed TGA stream. See [TGA.md](TGA.md) and
+[evidence/tga-packed.json](evidence/tga-packed.json) for the profile and hashes.
+
+Scoped review: I98 MATCH (`src/tga.bend:18-119`); A4/A5 HOLD through source checks
+and native CPU/JS/Metal results; A6 HOLD in [TGA.md](TGA.md); V2 HOLD through
+linked native pixel/export expectations; V3 HOLD through existing dimension,
+packet-count and sample-availability guards. Paletted/remaining TGA variants,
+original metadata and full resource/platform/performance parity remain gaps.
+The two image-loading mappings remain partial; no completed APIs are added.
+
+The full 261-scenario / 40,101-word CPU-1/CPU-2/JavaScript/forced-Metal corpus
+passes. All four proofs, ten harness/planning tests and project checks pass.
+GPU file IO and the remaining platform/resource/performance domains were not
+exercised by this increment.
+
+Regression scan: 41 callers checked, 20 assertions checked, 0 flagged/fixed.

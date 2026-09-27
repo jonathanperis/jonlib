@@ -28,7 +28,8 @@ def image_streams():
             'pgm':b'P5\n# gray\n3 2\n255\n'+bytes([0,1,127,128,254,255]),
             'ppm':b'P6\n3 2\n255\n'+bytes(v for i in range(0,len(rgba),4) for v in rgba[i:i+3]),
             'qoi':b'qoif'+struct.pack('>II',3,2)+b'\4\0'+b''.join(b'\xff'+rgba[i:i+4] for i in range(0,len(rgba),4))+b'\0'*7+b'\1',
-            'ppm16':b'P6\n3 2\n65535\n'+bytes(value for i in range(18) for value in ((i*43+128)&255,(i*61+17)&255))}
+            'ppm16':b'P6\n3 2\n65535\n'+bytes(value for i in range(18) for value in ((i*43+128)&255,(i*61+17)&255)),
+            'tga16':bytes(targa(3,2,3,b''.join(struct.pack('<H',value) for value in (0,1,31,1023,0x7fff,0xffff)),bits=16,top=True))}
 
 
 def main():
@@ -49,10 +50,10 @@ def main():
         if data is not None:path.write_bytes(data)
         elif path.exists():raise ValueError('Task-owned missing-file fixture unexpectedly exists')
         cases.append(dict(path=str(path.relative_to(ROOT)),data=list(data) if data is not None else None,error=error,legacy=legacy))
-    for extension in streams:
-        if extension!='ppm16':
-            add(f'normal.{extension}',streams[extension]);add(f'upper.{extension.upper()}',streams[extension])
+    for extension in ('png','bmp','tga','pgm','ppm','qoi'):
+        add(f'normal.{extension}',streams[extension]);add(f'upper.{extension.upper()}',streams[extension])
     add('wide-samples.ppm',streams['ppm16'])
+    add('packed.tga',streams['tga16'])
     for name,kind in [('png-data.bmp','png'),('bmp-data.png','bmp'),('pnm-data.tga','ppm'),('tga-data.ppm','tga')]:add(name,streams[kind])
     add('mixed.PnG',streams['png'],'decode');add('unsupported.data',streams['png'],'decode')
     add('qoi-data.png',streams['qoi'],'decode');add('png-data.qoi',streams['png'],'decode')

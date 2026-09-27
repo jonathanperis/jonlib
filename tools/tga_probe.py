@@ -6,9 +6,9 @@ import struct
 from bmp_probe import main
 
 
-def targa(width,height,channels,payload,*,rle=False,top=False,identifier=b'',descriptor=0):
+def targa(width,height,channels,payload,*,rle=False,top=False,identifier=b'',descriptor=0,bits=None):
     kind=(3 if channels<3 else 2)+(8 if rle else 0)
-    return list(struct.pack('<BBBHHBHHHHBB',len(identifier),0,kind,0,0,0,11,17,width,height,channels*8,descriptor|(32 if top else 0))+identifier+bytes(payload))
+    return list(struct.pack('<BBBHHBHHHHBB',len(identifier),0,kind,0,0,0,11,17,width,height,channels*8 if bits is None else bits,descriptor|(32 if top else 0))+identifier+bytes(payload))
 
 
 def fixtures():
@@ -25,13 +25,22 @@ def fixtures():
         payload=[255,3,2,1,0,129,7,6,5,0] if repeat else [127,*[v for i in range(128) for v in (i,255-i,i^0x55,0)],1,1,2,3,0,4,5,6,0]
         inputs.append(dict(id=f'packet-limit-{repeat}',bytes=targa(130,1,4,payload,rle=True,top=True)))
     inputs.append(dict(id='ignored-attributes',bytes=targa(2,1,4,[3,2,1,0,6,5,4,0],descriptor=0xcf)))
+    words=[struct.pack('<H',(high<<15)|(i<<10)|(((i*5)&31)<<5)|(31-i)) for high in (0,1) for i in range(32)]
+    raw=b''.join(words)
+    encoded=b''.join(b'\0'+words[i]+b'\x81'+words[i+1] for i in range(0,64,2))
+    for bits in (15,16):
+        for top in (False,True):
+            for rle,payload,height in ((False,raw,2),(True,encoded,3)):
+                inputs.append(dict(id=f'rgb555-{bits}-{top}-{rle}',bytes=targa(32,height,3,payload,rle=rle,top=top,identifier=b'packed',descriptor=17,bits=bits)))
     base=targa(1,1,4,[3,2,1,0])
     malformed=[dict(id='empty',bytes=[],error=0),dict(id='byte',bytes=[256],error=1),
                dict(id='short-header',bytes=base[:17],error=0),dict(id='short-pixel',bytes=base[:-1],error=3)]
-    for name,offset,value,error in [('palette',1,1,0),('kind',2,1,0),('depth',16,16,0),('zero-width',12,0,2),('large-width',13,17,2),('short-id',0,255,3)]:
+    for name,offset,value,error in [('palette',1,1,0),('kind',2,1,0),('depth',16,17,0),('zero-width',12,0,2),('large-width',13,17,2),('short-id',0,255,3)]:
         data=base.copy();data[offset]=value;malformed.append(dict(id=name,bytes=data,error=error))
     for name,payload,error in [('no-command',[],3),('short-repeat',[128,1,2],3),('overrun-repeat',[129,1,2,3,4],4),('overrun-raw',[1,1,2,3,4,5,6,7,8],4)]:
         malformed.append(dict(id=name,bytes=targa(1,1,4,payload,rle=True),error=error))
+    malformed += [dict(id='rgb555-short-pixel',bytes=targa(1,1,3,[1],bits=15),error=3),
+                  dict(id='rgb555-short-repeat',bytes=targa(1,1,3,[128,1],rle=True,bits=16),error=3)]
     outputs=[]
     a,b,c=0x11223300,0x12345678,0x90abcdef
     for name,pixels in [('two',[a,b]),('aba',[a,b,a]),('abbc',[a,b,b,c]),('run128',[a]*128),('run129',[a]*129),
