@@ -58,7 +58,7 @@ See [supported payloads, extension aliases and bounds](docs/IMAGE-FILES.md).
 - Owned seeded random streams and reference-exact white-noise images.
 - Radial and one-cycle linear gradient profiles with balanced owned-array generation.
 - QOI decoding/encoding and real byte-file loading/export, with typed failures.
-- BMP indexed 1/4/8-bit and true-color 24/32-bit decoding, exact RGBA8 V4 export and owned raw image-file IO.
+- BMP indexed 1/4/8-bit and true-color 16/24/32-bit decoding, exact RGBA8 V4 export and owned raw image-file IO.
 - TGA raw/RLE true-color, grayscale and indexed decoding with byte-exact default RLE export.
 - Binary 8/16-bit PGM/PPM decoding with native header, maxval and little-endian sample behavior.
 - Bounded raw DEFLATE decompression with native empty-block semantics.
