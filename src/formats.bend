@@ -111,3 +111,22 @@ def swap_pixels(n: Nat, +index: U32, pixels: Array<U32>) -> Array<U32>:
   match n:
     case 0n: pixels
     case 1n+rest: swap_pixels(rest, (index + 1 : U32), swapped(index, Array.get(U32, pixels, index)))
+
+# LoadImageColors expansion used by native file export, not ImageFormat/GetPixelColor.
+def packed_rgba(format: U32, +word: U32) -> U32:
+  match format:
+    case 3:
+      ((((word >> 11n) * 8) << 24n) .|. ((((word >> 5n) .&. 63) * 4) << 16n) .|. (((word .&. 31) * 8) << 8n) .|. 255 : U32)
+    case 5:
+      ((((word >> 11n) * 8) << 24n) .|. ((((word >> 6n) .&. 31) * 8) << 16n) .|. ((((word >> 1n) .&. 31) * 8) << 8n) .|. ((word .&. 1) * 255) : U32)
+    case _:
+      ((((word >> 12n) * 17) << 24n) .|. ((((word >> 8n) .&. 15) * 17) << 16n) .|. ((((word >> 4n) .&. 15) * 17) << 8n) .|. ((word .&. 15) * 17) : U32)
+
+def packed_color.write(index: U32, format: U32, read: Array<U32> & U32) -> Array<U32>:
+  (pixels, word) = read
+  Array.set(U32, pixels, index, packed_rgba(format, word))
+
+def packed_colors(n: Nat, +index: U32, +format: U32, pixels: Array<U32>) -> Array<U32>:
+  match n:
+    case 0n: pixels
+    case 1n+rest: packed_colors(rest, (index + 1 : U32), format, packed_color.write(index, format, Array.get(U32, pixels, index)))

@@ -258,9 +258,9 @@
     "milestone": "image-codecs"
   },
   "ExportImage": {
-    "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.write_raw",
+    "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.write_png/write_raw",
     "status": "profile-covered",
-    "scope": "QOI, V4/32-bit BMP, default RLE TGA and default quality-8 PNG export from owned RGBA8, plus RAW for byte/integer formats 1..7. Exact native bytes and Base file-write/closure behavior.",
+    "scope": "QOI, BMP, TGA and default PNG export from owned RGBA8; PNG and RAW file export from formatted sources 1..7. PNG preserves direct byte channels and native LoadImageColors expansion for packed sources. Exact bytes and Base file-write/closure behavior are verified.",
     "gaps": [
       "Other export/source formats, configured exporter options and generic extension dispatch",
       "Native callbacks/allocation ABI and complete targets/integration/performance"

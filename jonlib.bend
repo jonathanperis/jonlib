@@ -1955,6 +1955,16 @@ def Image.Formatted.to_png(image: Image.Formatted) -> Result<&1, &1, Image.Forma
   +channels = Image.Formatted.png.channels(format)
   Image.Formatted.png.checked((channels > 0 : U32), channels, FormattedImage{width, height, format, pixels})
 
+def Image.Formatted.png.file_routed(direct: Bool, +width: U32, +height: U32, format: U32, channels: U32, pixels: Array<U32>) -> +List<U32>:
+  match direct:
+    case True{}: PngEncode.formatted(width, height, channels, pixels)
+    case False{}: PngEncode.encode(width, height, Formats.packed_colors(U32.to_nat((width * height : U32)), 0, format, pixels))
+
+def Image.Formatted.png.file_bytes(image: Image.Formatted) -> +List<U32>:
+  FormattedImage{width, height, +format, pixels} = image
+  +channels = Image.Formatted.png.channels(format)
+  Image.Formatted.png.file_routed((channels > 0 : U32), width, height, format, channels, pixels)
+
 def Surface.dither.checked(valid: Bool, surface: Surface, +r: U32, +g: U32, +b: U32, +a: U32) -> Result<&1, &1, Surface & Surface.Error, Image.Packed16>:
   match valid surface:
     case False{} _: Fail{(surface, InvalidDitherBits{})}
@@ -3140,6 +3150,10 @@ def Image.Formatted.raw_bytes(image: Image.Formatted) -> +List<U32>:
 def Image.Formatted.write_raw(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
     File.open(path, "w"), Surface.qoi.opened(Image.Formatted.raw_bytes(image)))
+
+def Image.Formatted.write_png(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
+  IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
+    File.open(path, "w"), Surface.qoi.opened(Image.Formatted.png.file_bytes(image)))
 
 def Image.raw.decoded(result: Maybe<Image.Formatted>) -> Result<&1, &1, Image.RawLoadError, Image.Formatted>:
   match result:

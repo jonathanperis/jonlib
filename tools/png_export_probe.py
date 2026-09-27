@@ -30,6 +30,10 @@ def fixtures():
                 for i,alpha in enumerate((0,1,127,128,254,255)):
                     if i<width*height:data[i*channels+channels-1]=alpha
             cases.append(dict(id=f'format-{format}-{width}-{height}',format=format,width=width,height=height,data=bytes(data)))
+    boundaries=[0,1,2,31,32,63,64,255,256,1023,1024,2047,2048,32767,65534,65535]
+    for format in (3,5,6):
+        for name,width,height,words in [('maximum',1,1,[65535]),('boundaries',4,4,boundaries),('seeded',7,5,[rng.randrange(65536) for _ in range(35)])]:
+            cases.append(dict(id=f'packed-{format}-{name}',format=format,file_only=True,width=width,height=height,data=struct.pack('<'+'H'*len(words),*words)))
     return cases
 
 
@@ -51,14 +55,16 @@ def main():
     for case in cases:
         path=work/f'{case["id"]}.rgba';path.write_bytes(case['data'])
         output=work/f'reference-{case["id"]}.png'
+        file_only=case.get('file_only',False)
         lines += ['{int size=0,n=0,file_size=0;',f'unsigned char *data=LoadFileData({json.dumps(str(path))},&size);if(!data||size!={len(case["data"])})return 1;',
                   f'Image image={{data,{case["width"]},{case["height"]},1,{case.get("format",7)}}};',
-                  'unsigned char *encoded=ExportImageToMemory(image,".png",&n);if(!encoded)return 2;',
+                  'unsigned char *encoded=NULL;' if file_only else 'unsigned char *encoded=ExportImageToMemory(image,".png",&n);if(!encoded)return 2;',
                   f'if(!ExportImage(image,{json.dumps(str(output))}))return 3;',
-                  f'unsigned char *file=LoadFileData({json.dumps(str(output))},&file_size);if(!file||file_size!=n||memcmp(file,encoded,n))return 4;',
+                  f'unsigned char *file=LoadFileData({json.dumps(str(output))},&file_size);if(!file)return 4;',
+                  'encoded=file;n=file_size;' if file_only else 'if(file_size!=n||memcmp(file,encoded,n))return 4;',
                   'Image decoded=LoadImageFromMemory(".png",encoded,n);if(!decoded.data||decoded.width!=image.width||decoded.height!=image.height)return 5;',
                   'ImageFormat(&decoded,7);Color *colors=LoadImageColors(image);int rgba_size=image.width*image.height*4;if(!colors||memcmp(decoded.data,colors,rgba_size))return 6;emit(encoded,n);emit(decoded.data,rgba_size);',
-                  'UnloadImageColors(colors);UnloadImage(decoded);MemFree(encoded);UnloadFileData(file);UnloadFileData(data);','}']
+                  'UnloadImageColors(colors);UnloadImage(decoded);'+('' if file_only else 'MemFree(encoded);')+'UnloadFileData(file);UnloadFileData(data);','}']
     source=work/'reference.c';source.write_text('\n'.join(lines+['}'])+'\n')
     binary=work/'reference'
     run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary])
@@ -71,15 +77,16 @@ def main():
             size=struct.unpack('>I',data[offset:offset+4])[0];kind=data[offset+4:offset+8]
             if kind==b'IDAT':idat.extend(data[offset+8:offset+8+size])
             offset+=12+size
-        format=case.get('format',7);channels={1:1,2:2,4:3,7:4}[format]
-        if data[25]!={1:0,2:4,4:2,7:6}[format]:raise ValueError('Native PNG color type differs')
+        format=case.get('format',7);channels=4 if case.get('file_only') else {1:1,2:2,4:3,7:4}[format]
+        color_type=6 if case.get('file_only') else {1:0,2:4,4:2,7:6}[format]
+        if data[25]!=color_type:raise ValueError('Native PNG color type differs')
         raster=zlib.decompress(idat);stride=case['width']*channels+1
         if len(raster)!=stride*case['height']:raise ValueError('Native filtered raster size differs')
         filters.update(raster[::stride]);blocks.add((idat[2]>>1)&3)
     if filters!=set(range(5)) or blocks!={0,1}:raise ValueError(f'Incomplete filter/block coverage: {filters}, {blocks}')
     report=dict(passed=False,images=len(cases),encoded_bytes=sum(map(len,expected[::2])),roundtrip_bytes=sum(map(len,expected[1::2])),
                 filters=sorted(filters),block_types=sorted(blocks),sources=source_gate(),
-                inputs_sha256=hashlib.sha256(b''.join(struct.pack('>III',c['width'],c['height'],c.get('format',7))+c['data'] for c in cases)).hexdigest(),
+                inputs_sha256=hashlib.sha256(b''.join(struct.pack('>IIII',c['width'],c['height'],c.get('format',7),int(c.get('file_only',False)))+c['data'] for c in cases)).hexdigest(),
                 reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
     for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
         program='''import Base
@@ -88,13 +95,14 @@ import ../../jonlib.bend as J
   match result:
     case Fail{_}: None{}
     case Done{bytes}: Some{bytes}
-def encoded(formatted: Bool, result: Maybe<J.Image.Formatted>) -> Maybe<&2, +List<U32>>:
-  match formatted result:
-    case _ None{}: None{}
-    case False{} Some{image}: Some{J.Surface.to_png(J.Image.Formatted.to_surface(image))}
-    case True{} Some{image}: encoded.formatted(J.Image.Formatted.to_png(image))
-def encode(formatted: Bool, width: U32, height: U32, format: U32, bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
-  encoded(formatted, J.Image.Formatted.from_bytes(width, height, format, bytes))
+def encoded(formatted: Bool, file_only: Bool, result: Maybe<J.Image.Formatted>) -> Maybe<&2, +List<U32>>:
+  match formatted file_only result:
+    case _ _ None{}: None{}
+    case False{} _ Some{image}: Some{J.Surface.to_png(J.Image.Formatted.to_surface(image))}
+    case True{} False{} Some{image}: encoded.formatted(J.Image.Formatted.to_png(image))
+    case True{} True{} Some{image}: Some{J.Image.Formatted.png.file_bytes(image)}
+def encode(formatted: Bool, file_only: Bool, width: U32, height: U32, format: U32, bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
+  encoded(formatted, file_only, J.Image.Formatted.from_bytes(width, height, format, bytes))
 def expanded(bytes: +List<U32>, read: Array<U32> & U32) -> Array<U32> & +List<U32>:
   (pixels, +value) = read
   (pixels, Con{(value .&. 255 : U32), Con{((value >> 8n) .&. 255 : U32), Con{((value >> 16n) .&. 255 : U32), Con{(value >> 24n : U32), bytes}}}})
@@ -117,39 +125,40 @@ def observed(width: U32, height: U32, result: Maybe<&2, +List<U32>>) -> IO(Unit)
       do IO<Unit>:
         emit_bytes(~&2, bytes)
         decoded(width, height, J.Surface.decode_pngBANG(bytes))
-def saved(path: String, result: Maybe<J.Image.Formatted>) -> IO(Unit):
-  match result:
-    case None{}: IO.die(Unit, 1, "invalid PNG file fixture")
-    case Some{image}: IO.try(Unit, J.Surface.write_png(J.Image.Formatted.to_surface(image), path))
-def save_file(enabled: Bool, path: String, width: U32, height: U32, bytes: +List<U32>) -> IO(Unit):
+def saved(formatted: Bool, path: String, result: Maybe<J.Image.Formatted>) -> IO(Unit):
+  match formatted result:
+    case _ None{}: IO.die(Unit, 1, "invalid PNG file fixture")
+    case False{} Some{image}: IO.try(Unit, J.Surface.write_png(J.Image.Formatted.to_surface(image), path))
+    case True{} Some{image}: IO.try(Unit, J.Image.Formatted.write_png(image, path))
+def save_file(enabled: Bool, formatted: Bool, path: String, width: U32, height: U32, format: U32, bytes: +List<U32>) -> IO(Unit):
   match enabled:
     case False{}: IO.pure(Unit, Unit{})
-    case True{}: saved(path, J.Image.Formatted.from_bytes(width, height, 7, bytes))
-def payload(formatted: Bool, +width: U32, +height: U32, format: U32, save: Bool, path: String, result: Result<&1, &1, U32 & String, +List<U32>>) -> IO(Unit):
+    case True{}: saved(formatted, path, J.Image.Formatted.from_bytes(width, height, format, bytes))
+def payload(+formatted: Bool, file_only: Bool, +width: U32, +height: U32, +format: U32, save: Bool, path: String, result: Result<&1, &1, U32 & String, +List<U32>>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "PNG fixture read failed")
     case Done{+bytes}:
       do IO<Unit>:
-        observed(width, height, encodeBANG(formatted, width, height, format, bytes))
-        save_file(save, path, width, height, bytes)
-def received(formatted: Bool, width: U32, height: U32, format: U32, save: Bool, path: String, result: File & Result<&1, &1, U32 & String, +List<U32>>) -> IO(Unit):
+        observed(width, height, encodeBANG(formatted, file_only, width, height, format, bytes))
+        save_file(save, formatted, path, width, height, format, bytes)
+def received(formatted: Bool, file_only: Bool, width: U32, height: U32, format: U32, save: Bool, path: String, result: File & Result<&1, &1, U32 & String, +List<U32>>) -> IO(Unit):
   (file, status) = result
   do IO<Unit>:
     Unit <- File.close(file)
-    payload(formatted, width, height, format, save, path, status)
-def opened(formatted: Bool, width: U32, height: U32, format: U32, size: U32, save: Bool, path: String, result: Result<&1, &1, U32 & String, File>) -> IO(Unit):
+    payload(formatted, file_only, width, height, format, save, path, status)
+def opened(formatted: Bool, file_only: Bool, width: U32, height: U32, format: U32, size: U32, save: Bool, path: String, result: Result<&1, &1, U32 & String, File>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "PNG fixture open failed")
-    case Done{file}: IO.bind(File & Result<&1, &1, U32 & String, +List<U32>>, Unit, File.read_bytes(file, size), received(formatted, width, height, format, save, path))
+    case Done{file}: IO.bind(File & Result<&1, &1, U32 & String, +List<U32>>, Unit, File.read_bytes(file, size), received(formatted, file_only, width, height, format, save, path))
 def main() -> IO(Unit):
   do IO<Unit>:
 '''.replace('BANG','!' if lane=='metal' else '')
         saved_cases=[]
         for case in cases:
-            save=lane!='metal' and case['id'] in ('mixed','noise-filters')
+            save=lane!='metal' and ('format' in case or case['id'] in ('mixed','noise-filters'))
             if save:saved_cases.append(case['id'])
             path=work/f'{case["id"]}.rgba';output=work/f'{lane}-{case["id"]}.png'
-            program+=f'    IO.bind(Result<&1, &1, U32 & String, File>, Unit, File.open({json.dumps(str(path))}, "r"), opened({"True{}" if "format" in case else "False{}"}, {case["width"]}, {case["height"]}, {case.get("format",7)}, {len(case["data"])}, {"True{}" if save else "False{}"}, {json.dumps(str(output))}))\n'
+            program+=f'    IO.bind(Result<&1, &1, U32 & String, File>, Unit, File.open({json.dumps(str(path))}, "r"), opened({"True{}" if "format" in case else "False{}"}, {"True{}" if case.get("file_only") else "False{}"}, {case["width"]}, {case["height"]}, {case.get("format",7)}, {len(case["data"])}, {"True{}" if save else "False{}"}, {json.dumps(str(output))}))\n'
         source=work/f'{lane}.bend';source.write_text(program)
         binary=work/('candidate.js' if lane=='javascript' else f'candidate-{lane}')
         run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)

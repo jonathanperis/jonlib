@@ -1439,3 +1439,28 @@ resource/performance/platform coverage remain gaps. API completion counts are
 unchanged.
 
 Regression scan: 32 callers checked, 12 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `1750352`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36281862208)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36281862204)
+completed successfully, including native byte-format PNG memory export.
+
+## Formatted-image PNG file export
+
+`Image.Formatted.write_png` covers all seven checked source formats. Byte formats
+retain native channels; RGB565/RGB5A1/RGBA4 use the native file API's
+`LoadImageColors` expansion. Exact 5/6-bit integer scale factors and shifted RGB5A1
+blue extraction are retained independently of raw pixel getters and ImageFormat.
+All 37 PNGs / 171,574 bytes and 172,340 normalized round-trip bytes pass CPU,
+JavaScript and forced Metal. CPU/JS each write 27 public Surface/formatted files
+and compare every byte. See [evidence/png-export-files.json](evidence/png-export-files.json).
+
+Packed file cases use the actual file oracle; the native memory oracle remains
+limited to its declared byte-source profile. Existing byte-format and Surface
+fixtures are retained, as are the packed memory-rejection ownership checks.
+I93 and A4/A5 hold for pure encoding, with file IO evidence scoped to CPU/JS.
+Full 261-scenario / 40,101-word conformance, nine harness tests, project checks and
+four pinned laws pass. Other formats/settings, generic dispatch, native ABI and
+complete resource/performance/platform coverage remain gaps. API completion counts
+are unchanged.
+
+Regression scan: 18 callers checked, 12 assertions checked, 0 flagged/fixed.
