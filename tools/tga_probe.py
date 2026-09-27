@@ -11,6 +11,11 @@ def targa(width,height,channels,payload,*,rle=False,top=False,identifier=b'',des
     return list(struct.pack('<BBBHHBHHHHBB',len(identifier),0,kind,0,0,0,11,17,width,height,channels*8 if bits is None else bits,descriptor|(32 if top else 0))+identifier+bytes(payload))
 
 
+def indexed_targa(width,height,entries,index_bits,entry_bits,payload,*,rle=False,top=False,skip=0,identifier=b''):
+    header=struct.pack('<BBBHHBHHHHBB',len(identifier),1,9 if rle else 1,skip,len(entries),entry_bits,0,0,width,height,index_bits,32 if top else 0)
+    return list(header+identifier+b'\xa5'*skip+b''.join(entries)+bytes(payload))
+
+
 def fixtures():
     inputs=[]
     for channels in range(1,5):
@@ -32,6 +37,19 @@ def fixtures():
         for top in (False,True):
             for rle,payload,height in ((False,raw,2),(True,encoded,3)):
                 inputs.append(dict(id=f'rgb555-{bits}-{top}-{rle}',bytes=targa(32,height,3,payload,rle=rle,top=top,identifier=b'packed',descriptor=17,bits=bits)))
+    palettes={8:[bytes([value]) for value in (0,127,255)],
+              15:[struct.pack('<H',value) for value in (0,0x4210,0xffff)],
+              16:[struct.pack('<H',value) for value in (0,0x4210,0xffff)],
+              24:[bytes(pixel) for pixel in ((3,2,1),(7,6,5),(30,20,10))],
+              32:[bytes(pixel) for pixel in ((3,2,1,0),(7,6,5,128),(30,20,10,255))]}
+    for entry_bits,entries in palettes.items():
+        for index_bits in (8,16):
+            values=[value.to_bytes(index_bits//8,'little') for value in (0,1,2,3,(1<<index_bits)-1)]
+            for rle in (False,True):
+                payload=b'\1'+values[0]+values[1]+b'\x81'+values[2]+b'\1'+values[3]+values[4] if rle else b''.join([*values[:3],values[2],*values[3:]])
+                inputs.append(dict(id=f'palette-{entry_bits}-{index_bits}-{rle}',bytes=indexed_targa(3,2,entries,index_bits,entry_bits,payload,rle=rle,top=rle,skip=3 if index_bits==8 else 0,identifier=b'idx\0')))
+    entries=[bytes((i&255,i>>8,255-(i&255),i&255)) for i in range(257)]
+    inputs.append(dict(id='palette-wide-index',bytes=indexed_targa(5,1,entries,16,32,b''.join(struct.pack('<H',i) for i in (0,255,256,257,65535)))))
     base=targa(1,1,4,[3,2,1,0])
     malformed=[dict(id='empty',bytes=[],error=0),dict(id='byte',bytes=[256],error=1),
                dict(id='short-header',bytes=base[:17],error=0),dict(id='short-pixel',bytes=base[:-1],error=3)]
@@ -41,6 +59,13 @@ def fixtures():
         malformed.append(dict(id=name,bytes=targa(1,1,4,payload,rle=True),error=error))
     malformed += [dict(id='rgb555-short-pixel',bytes=targa(1,1,3,[1],bits=15),error=3),
                   dict(id='rgb555-short-repeat',bytes=targa(1,1,3,[128,1],rle=True,bits=16),error=3)]
+    indexed=indexed_targa(1,1,[b'\3\2\1'],8,24,[0])
+    for name,offset,value in [('palette-empty',5,0),('palette-depth',7,17),('index-depth',16,24)]:
+        data=indexed.copy();data[offset]=value;malformed.append(dict(id=name,bytes=data,error=0))
+    malformed += [dict(id='palette-truncated',bytes=indexed[:20],error=3),
+                  dict(id='palette-missing-index',bytes=indexed[:-1],error=3),
+                  dict(id='palette-short-wide-index',bytes=indexed_targa(1,1,[b'\3\2\1'],16,24,[0]),error=3),
+                  dict(id='palette-packet-overrun',bytes=indexed_targa(1,1,[b'\3\2\1'],8,24,[129,0],rle=True),error=4)]
     outputs=[]
     a,b,c=0x11223300,0x12345678,0x90abcdef
     for name,pixels in [('two',[a,b]),('aba',[a,b,a]),('abbc',[a,b,b,c]),('run128',[a]*128),('run129',[a]*129),

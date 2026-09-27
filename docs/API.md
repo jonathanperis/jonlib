@@ -140,7 +140,7 @@ is outside this API's contract.
 | `Surface.load_image(path)` | Bounded PNG/BMP/TGA/PGM/PPM/QOI file loading with native supported suffix/content selection, closed handles and typed errors; see [IMAGE-FILES.md](IMAGE-FILES.md). |
 | `Surface.decode_image(file_type, bytes)` | Shared native-style memory dispatch for the implemented codec profiles, exact lower/upper-case extension tokens and typed decode errors; aliases and limits in [IMAGE-FILES.md](IMAGE-FILES.md). |
 | `Surface.decode_bmp`, `to_bmp`, `write_bmp` | Bounded 24/32-bit BMP decoding and exact RGBA8 V4 export; native orientation, alpha and offset rules in [BMP.md](BMP.md). |
-| `Surface.decode_tga`, `to_tga`, `write_tga` | Bounded raw/RLE 15/16/24/32-bit true-color and 8/16-bit grayscale decoding; byte-exact default RLE export. Packet rules and limits in [TGA.md](TGA.md). |
+| `Surface.decode_tga`, `to_tga`, `write_tga` | Bounded raw/RLE true-color, grayscale and indexed decoding, including RGB555 and native palette behavior; byte-exact default RLE export. Formats and limits in [TGA.md](TGA.md). |
 | `Surface.decode_pnm` | Binary 8/16-bit P5/P6 decoding with native unscaled samples, little-endian 16-bit normalization and header parsing; see [PNM.md](PNM.md). |
 | `Surface.decode_png` | Bounded non-interlaced/Adam7 PNG and native-default CgBI decoding at supported 1/2/4/8/16-bit combinations; filtering, transparency and normalization in [PNG.md](PNG.md). |
 | `Surface.to_png`, `write_png` | Consuming RGBA8 memory/file exports with byte-exact native default filtering, quality-8 compression and checksums; see [PNG-EXPORT.md](PNG-EXPORT.md). |

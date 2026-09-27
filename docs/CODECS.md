@@ -8,7 +8,7 @@ image APIs; see [RAW-FILES.md](RAW-FILES.md) for exact loading/export contracts.
 
 BMP memory decoding and exact RGBA8 V4 export are documented in [BMP.md](BMP.md),
 including supported headers, native alpha/offset rules and rejected variants.
-TGA true-color/grayscale raw/RLE decoding and exact default RLE export are
+TGA true-color/grayscale/indexed raw/RLE decoding and exact default RLE export are
 documented in [TGA.md](TGA.md).
 Binary 8/16-bit P5/P6 decoding and native sample/maxval/separator rules are documented in
 [PNM.md](PNM.md).

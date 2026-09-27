@@ -59,7 +59,7 @@ See [supported payloads, extension aliases and bounds](docs/IMAGE-FILES.md).
 - Radial and one-cycle linear gradient profiles with balanced owned-array generation.
 - QOI decoding/encoding and real byte-file loading/export, with typed failures.
 - BMP 24/32-bit memory decoding and exact RGBA8 V4 export; owned raw image-file IO.
-- TGA raw/RLE true-color and grayscale decoding with byte-exact default RLE export.
+- TGA raw/RLE true-color, grayscale and indexed decoding with byte-exact default RLE export.
 - Binary 8/16-bit PGM/PPM decoding with native header, maxval and little-endian sample behavior.
 - Bounded raw DEFLATE decompression with native empty-block semantics.
 - PNG decoding across supported 1/2/4/8/16-bit formats, Adam7 and native-default CgBI.
