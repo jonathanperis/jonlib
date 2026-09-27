@@ -223,7 +223,7 @@
   "LoadImage": {
     "jonlib": "Surface.load_image / Surface.load_qoi",
     "status": "profile-covered",
-    "scope": "Bounded ordinary-file loading with exact lower/upper-case tokens and native last-dot suffix selection. PNG/BMP/TGA/PGM/PPM and JPG/JPEG/GIF/PIC/PSD aliases detect implemented raster payloads, including 8/16-bit PNM, packed/indexed BMP/TGA and BMP CORE RGB24/bitfield/extended-header profiles; QOI selects its own decoder. RGBA8 normalization, complete-read checks, closed handles and typed file/decode errors; explicit load_qoi keeps its prior selection/cap.",
+    "scope": "Bounded ordinary-file loading with exact lower/upper-case tokens and native last-dot suffix selection. PNG/BMP/TGA/PGM/PPM and JPG/JPEG/GIF/PIC/PSD aliases detect implemented raster payloads, including 8/16-bit PNM, packed/indexed BMP/TGA and BMP CORE/bitfield/extended-header profiles; QOI selects its own decoder. RGBA8 normalization, complete-read checks, closed handles and typed file/decode errors; explicit load_qoi keeps its prior selection/cap.",
     "gaps": [
       "JPEG/GIF/PIC/PSD/HDR and other payload codecs, remaining dispatch families and larger raster files",
       "Original pixel formats and reference callbacks",
@@ -246,9 +246,9 @@
   "LoadImageFromMemory": {
     "jonlib": "Surface.decode_image / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png",
     "status": "profile-covered",
-    "scope": "Shared native-style extension-token/content dispatch and owned RGBA8 decoding for QOI, CORE RGB24 and 40/56/108/124-byte BMP profiles, direct/indexed TGA, binary 8/16-bit PNM and bounded PNG at supported 1/2/4/8/16-bit combinations, including Adam7 and native-default CgBI. BMP retains native short/extended headers, mask populations, INFO/56-byte external masks, V4/V5 alpha/profile behavior, offset-derived opaque palettes and true-color gaps. TGA supports 15/16/24/32-bit true-color, 8/16-bit grayscale, 8/16-bit indices and 8/15/16/24/32-bit palette entries, retaining native RGB555 integer expansion, packed alpha ignoring, palette-start byte skips and entry-zero index recovery. PNM retains unscaled samples and little-endian second-byte narrowing. Exact lower/upper-case raster aliases share implemented content detection; QOI remains separate. PNG preserves filtering, full-width tRNS, palette alpha, split IDAT, raw/zlib framing and native checksum behavior.",
+    "scope": "Shared native-style extension-token/content dispatch and owned RGBA8 decoding for QOI, CORE indexed/RGB24 and 40/56/108/124-byte BMP profiles, direct/indexed TGA, binary 8/16-bit PNM and bounded PNG at supported 1/2/4/8/16-bit combinations, including Adam7 and native-default CgBI. BMP retains native CORE palette-count/skip rules, mask populations, INFO/56-byte external masks, V4/V5 alpha/profile behavior, checked opaque palettes and true-color gaps. TGA supports 15/16/24/32-bit true-color, 8/16-bit grayscale, 8/16-bit indices and 8/15/16/24/32-bit palette entries, retaining native RGB555 integer expansion, packed alpha ignoring, palette-start byte skips and entry-zero index recovery. PNM retains unscaled samples and little-endian second-byte narrowing. Exact lower/upper-case raster aliases share implemented content detection; QOI remains separate. PNG preserves filtering, full-width tRNS, palette alpha, split IDAT, raw/zlib framing and native checksum behavior.",
     "gaps": [
-      "JPEG/GIF/PIC/PSD/HDR and other payload codecs, indexed CORE BMP and remaining TGA variants",
+      "JPEG/GIF/PIC/PSD/HDR and other payload codecs and remaining TGA variants",
       "Nondefault external stb decoder flags and excess-inflated-data recovery",
       "Original pixel-format metadata, big-endian PNM profiles and remaining native dispatch families",
       "Other permissive malformed-stream recovery and complete targets/integration/performance"

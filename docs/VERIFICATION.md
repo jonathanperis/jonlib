@@ -1872,3 +1872,42 @@ proofs, eleven harness/planning tests and project checks pass. GPU filesystem IO
 and remaining targets were not exercised. API mappings remain partial.
 
 Regression scan: 33 callers checked, 54 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `a22a539`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36296958027)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36296958033)
+passed, including CORE RGB24 and the bounded memory-probe runners.
+
+## Indexed CORE BMP palettes
+
+CORE 1/4/8-bit decoding now follows the pinned palette rule:
+`count = floor((pixel_offset - 38)/3)`. The reader consumes BGR triples after the
+26-byte header, then skips twelve plus the division remainder bytes. It retains
+bottom-up MSB-first indices, four-byte row padding and opaque colors. Palette
+count is constrained to 1..256 and every index is checked; native uninitialized
+palette access remains outside the supported domain.
+
+The BMP gate passes 98 images / 10,076 pixels, 46 typed-error controls and three
+exact exports / 410 bytes on CPU/JavaScript/forced Metal. CORE palette cases cover
+all depths, minimum/reduced/full tables, every skip remainder and byte/row
+boundaries. Empty/oversized tables, incomplete triples/padding and invalid indices
+reject. The shared word reader now accepts the entry width explicitly; all
+existing four-byte headers/palettes remain verified alongside three-byte CORE
+entries.
+
+Shared dispatch passes 358 native memory pairs plus five controls on CPU/JS/Metal
+and 48 file cases plus three boundaries and 100 low-descriptor cycles on CPU/JS.
+Source/input/native hashes are in
+[evidence/bmp-core-indexed.json](evidence/bmp-core-indexed.json).
+
+Scoped review: I106 MATCH (`src/bmp.bend`, CORE range/count/skip and indexed mode);
+A4/A5 HOLD through source/native lane gates; A6 HOLD in [BMP.md](BMP.md); V2 HOLD
+through complete native pixels and exports; V3 HOLD through bounded palette
+counts, checked indices, payload bounds and existing output addressing. Original
+metadata, malformed/undefined recovery and full resource/platform/performance
+coverage remain gaps. The two loading mappings remain partial.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, as do all
+four proofs, eleven harness/planning tests and project checks. GPU filesystem IO
+and remaining targets were not exercised.
+
+Regression scan: 35 callers checked, 50 assertions checked, 0 flagged/fixed.

@@ -26,7 +26,7 @@ type Layout is Data:
   Layout{red: Channel, green: Channel, blue: Channel, alpha: Channel}
 
 type Mode is Data:
-  IndexedMode{bits: U32}
+  IndexedMode{bits: U32, entry_bytes: U32, bias: U32}
   ColorMode{bytes: U32, layout: Layout, repair: Bool}
 
 type Header is Data:
@@ -37,11 +37,11 @@ def words.step(values: +List<U32>, next: Maybe<&2, F.Word>) -> Maybe<&2, Words>:
     case None{}: None{}
     case Some{F.Word{value, rest}}: Some{Words{Con{value, values}, rest}}
 
-def words(n: Nat, state: Maybe<&2, Words>) -> Maybe<&2, Words>:
+def words(n: Nat, +size: Nat, state: Maybe<&2, Words>) -> Maybe<&2, Words>:
   match n state:
     case _ None{}: None{}
     case 0n Some{Words{values, rest}}: Some{Words{List.reverse(&2, U32, values), rest}}
-    case 1n+tail Some{Words{values, bytes}}: words(tail, words.step(values, F.read_word(4n, 0n, 0, bytes)))
+    case 1n+tail Some{Words{values, bytes}}: words(tail, size, words.step(values, F.read_word(size, 0n, 0, bytes)))
 
 def channel.count(+mask: U32) -> U32:
   +pairs = (mask - ((mask >> 1n) .&. 1431655765) : U32)
@@ -85,7 +85,12 @@ def mode.default(+bits: U32, alpha: U32) -> Maybe<&2, Mode>:
     case 16: mode.masks(16, False{}, 31744, 992, 31, alpha)
     case 24: mode.masks(24, False{}, 16711680, 65280, 255, 0)
     case 32: mode.masks(32, True{}, 16711680, 65280, 255, 4278190080)
-    case _: Some{IndexedMode{bits}}
+    case _: Some{IndexedMode{bits, 4, 0}}
+
+def mode.core(+bits: U32) -> Maybe<&2, Mode>:
+  match bits:
+    case 24: mode.default(24, 0)
+    case _: Some{IndexedMode{bits, 3, 12}}
 
 def mode.selected(explicit: Bool, bits: U32, red: U32, green: U32, blue: U32, alpha: U32) -> Maybe<&2, Mode>:
   match explicit:
@@ -112,7 +117,7 @@ def header.info.masks(width: U32, height: U32, top: Bool, bits: U32, gap: U32, r
 def header.info(explicit: Bool, width: U32, height: U32, top: Bool, bits: U32, gap: U32, data: +List<U32>) -> Result<&2, &2, Error, Header>:
   match explicit:
     case False{}: header.build(True{}, width, height, top, gap, data, mode.default(bits, 0))
-    case True{}: header.info.masks(width, height, top, bits, gap, words(3n, Some{Words{Nil{}, data}}))
+    case True{}: header.info.masks(width, height, top, bits, gap, words(3n, 4n, Some{Words{Nil{}, data}}))
 
 def header.info.prefix(width: U32, height: U32, top: Bool, bits: U32, compression: U32, gap: U32, result: Maybe<&2, Words>) -> Result<&2, &2, Error, Header>:
   match result:
@@ -122,11 +127,11 @@ def header.info.prefix(width: U32, height: U32, top: Bool, bits: U32, compressio
 
 def header.extended(dib: U32, width: U32, height: U32, top: Bool, bits: U32, compression: U32, gap: U32, data: +List<U32>) -> Result<&2, &2, Error, Header>:
   match dib:
-    case 12: header.info(False{}, width, height, top, bits, gap, data)
+    case 12: header.build(True{}, width, height, top, gap, data, mode.core(bits))
     case 40: header.info(U32.is_eq(compression, 3), width, height, top, bits, gap, data)
-    case 56: header.info.prefix(width, height, top, bits, compression, gap, words(4n, Some{Words{Nil{}, data}}))
-    case 108: header.masks(width, height, top, bits, compression, gap, words(17n, Some{Words{Nil{}, data}}))
-    case _: header.masks(width, height, top, bits, compression, gap, words(21n, Some{Words{Nil{}, data}}))
+    case 56: header.info.prefix(width, height, top, bits, compression, gap, words(4n, 4n, Some{Words{Nil{}, data}}))
+    case 108: header.masks(width, height, top, bits, compression, gap, words(17n, 4n, Some{Words{Nil{}, data}}))
+    case _: header.masks(width, height, top, bits, compression, gap, words(21n, 4n, Some{Words{Nil{}, data}}))
 
 def header.sized(valid: Bool, width: U32, height: U32, top: Bool, dib: U32, bits: U32, compression: U32, gap: U32, data: +List<U32>) -> Result<&2, &2, Error, Header>:
   match valid:
@@ -160,16 +165,20 @@ def header.fields(+offset: U32, +dib: U32, result: Maybe<&2, Words>) -> Result<&
 
 def header.core(+offset: U32, result: Maybe<&2, Words>) -> Result<&2, &2, Error, Header>:
   match result:
-    case Some{Words{Con{+dimensions, Con{mode, Nil{}}}, data}}:
+    case Some{Words{Con{+dimensions, Con{+mode, Nil{}}}, data}}:
       +gap = (offset - 26 : U32)
-      header.checked(U32.is_eq(mode, 1572865) && ((offset >= 26) && (gap <= 1024) : U32),
-        (dimensions .&. 65535 : U32), (dimensions >> 16n : U32), False{}, 12, 24, 0, gap, data)
+      +bits = (mode >> 16n : U32)
+      indexed = U32.is_eq(bits, 1) || U32.is_eq(bits, 4) || U32.is_eq(bits, 8)
+      header.checked(U32.is_eq((mode .&. 65535 : U32), 1)
+        && ((indexed && ((offset >= 41) && (offset <= 808) : U32))
+          || (U32.is_eq(bits, 24) && ((offset >= 26) && (gap <= 1024) : U32))),
+        (dimensions .&. 65535 : U32), (dimensions >> 16n : U32), False{}, 12, bits, 0, gap, data)
     case _: Fail{BadHeader{}}
 
 def header.kind(offset: U32, +dib: U32, data: +List<U32>) -> Result<&2, &2, Error, Header>:
   match dib:
-    case 12: header.core(offset, words(2n, Some{Words{Nil{}, data}}))
-    case _: header.fields(offset, dib, words(9n, Some{Words{Nil{}, data}}))
+    case 12: header.core(offset, words(2n, 4n, Some{Words{Nil{}, data}}))
+    case _: header.fields(offset, dib, words(9n, 4n, Some{Words{Nil{}, data}}))
 
 def header.prefix(result: Maybe<&2, Words>) -> Result<&2, &2, Error, Header>:
   match result:
@@ -178,7 +187,7 @@ def header.prefix(result: Maybe<&2, Words>) -> Result<&2, &2, Error, Header>:
 
 def header(bytes: +List<U32>) -> Result<&2, &2, Error, Header>:
   match bytes:
-    case Con{66, Con{77, rest}}: header.prefix(words(4n, Some{Words{Nil{}, rest}}))
+    case Con{66, Con{77, rest}}: header.prefix(words(4n, 4n, Some{Words{Nil{}, rest}}))
     case _: Fail{BadHeader{}}
 
 def enough(n: Nat, bytes: +List<U32>) -> Bool:
@@ -298,23 +307,24 @@ def indexed.start(valid: Bool, +width: U32, +height: U32, top: Bool, bits: U32, 
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
       indexed.pixels(U32.to_nat(count), 0, width, height, top, bits, palette, U32.to_nat(padding), Done{Indexed{data, 0, Array.new(U32, depth, 0)}})
 
-def indexed.palette(+width: U32, +height: U32, top: Bool, +bits: U32, gap: U32, result: Maybe<&2, Words>) -> Result<&1, &1, Error, Image>:
+def indexed.palette(+width: U32, +height: U32, top: Bool, +bits: U32, +skip: U32, result: Maybe<&2, Words>) -> Result<&1, &1, Error, Image>:
   match result:
     case None{}: Fail{Truncated{}}
     case Some{Words{palette, +data}}:
       +row = ((width * bits + 7) / 8 : U32)
       +padding = ((0 - row) .&. 3 : U32)
-      +skip = (gap .&. 3 : U32)
       indexed.start(enough(U32.to_nat((skip + (row + padding) * height : U32)), data), width, height, top, bits, palette, padding,
         List.drop(&2, U32, data, U32.to_nat(skip)))
 
-def start.indexed(width: U32, height: U32, top: Bool, bits: U32, +gap: U32, data: +List<U32>) -> Result<&1, &1, Error, Image>:
-  # Native palette length comes from the offset, independently of clrUsed.
-  indexed.palette(width, height, top, bits, gap, words(U32.to_nat((gap / 4 : U32)), Some{Words{Nil{}, data}}))
+def start.indexed(width: U32, height: U32, top: Bool, bits: U32, +entry_bytes: U32, bias: U32, +gap: U32, data: +List<U32>) -> Result<&1, &1, Error, Image>:
+  # Native CORE palette sizing subtracts twelve extra bytes before counting triples.
+  +count = ((gap - bias) / entry_bytes : U32)
+  indexed.palette(width, height, top, bits, (gap - count * entry_bytes : U32),
+    words(U32.to_nat(count), U32.to_nat(entry_bytes), Some{Words{Nil{}, data}}))
 
 def start.mode(width: U32, height: U32, top: Bool, mode: Mode, gap: U32, data: +List<U32>) -> Result<&1, &1, Error, Image>:
   match mode:
-    case IndexedMode{bits}: start.indexed(width, height, top, bits, gap, data)
+    case IndexedMode{bits, entry_bytes, bias}: start.indexed(width, height, top, bits, entry_bytes, bias, gap, data)
     case ColorMode{bytes, layout, repair}: start.color(width, height, top, bytes, layout, repair, gap, data)
 
 def start(result: Result<&2, &2, Error, Header>) -> Result<&1, &1, Error, Image>:

@@ -8,10 +8,14 @@
 
 ## Supported decoding profile
 
-- A 12-byte CORE header supports 24-bit RGB. Its complete file/DIB header is
+- A 12-byte CORE header supports 24-bit RGB and bounded 1/4/8-bit indexed data. Its complete file/DIB header is
   26 bytes; width and height are unsigned 16-bit fields, bounded to 1..4096.
-  Rows are bottom-up padded BGR and output alpha is opaque. Indexed CORE is not
-  part of this profile.
+  Rows are bottom-up and output alpha is opaque.
+- Native CORE palette count is `floor((pixel_offset - 38)/3)`, despite the
+  26-byte header. It reads that many BGR triples, then skips **12 plus the division
+  remainder** bytes. This profile requires 1..256 loaded entries and indices below
+  that count. Offsets 41..808 cover the accepted count/remainder range. This
+  preserves the pinned reader's rule rather than standard CORE palette sizing.
 - Width and absolute height are 1..4096; positive height is bottom-up and negative
   height is top-down. Output is always top-down row-major RGBA8.
 - A 40-byte INFO header supports uncompressed (`BI_RGB`) 1/4/8-bit indexed and
@@ -31,7 +35,7 @@
   follow native highest-bit/population alignment and bit replication. Holes are
   not compacted: masks `5`, `0a`, `50` decode word `005f` as `aaaaaaff`.
 - Row padding is retained in the input stride and excluded from output pixels.
-- Indexed palettes contain 1..256 BGR/reserved entries. Native palette count is
+- Larger-header indexed palettes contain 1..256 BGR/reserved entries. Native palette count is
   `floor((pixel_offset - 14 - DIB_size)/4)`; `clrUsed` and palette alpha/reserved
   bytes are ignored. Output is opaque. Remaining offset bytes (0..3) are skipped
   once after the table. Packed indices are MSB-first; unused final-byte bits are
@@ -58,7 +62,7 @@ An index beyond the loaded palette returns `InvalidImageStream`; the native
 reader's uninitialized palette reads are outside the supported profile.
 File-size/reserved header fields do not override actual input availability.
 
-Indexed CORE headers, original-format metadata
+Original-format metadata
 and the native decoder's permissive recovery of truncated input remain gaps.
 Shared memory/file dispatch uses this profile through `Surface.decode_image`
 and `Surface.load_image`; see [IMAGE-FILES.md](IMAGE-FILES.md).
@@ -78,7 +82,7 @@ python3 tools/bmp_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 ```
 
 Configure checkout variables as described in [README.md](../README.md#requirements).
-The probe checks 87 native decode cases (9,979 pixels), 41 typed-error controls and
+The probe checks 98 native decode cases (10,076 pixels), 46 typed-error controls and
 three complete exports (410 bytes) on CPU, JavaScript and forced Metal. CPU/JS
 also write a real BMP file and compare it with the native export. Input construction
 uses bounded literal chunks for the maximum-gap case, avoiding JavaScript stack
@@ -94,8 +98,10 @@ mask headers are checked. The 56-byte/V5 cases cover indexed, byte-color, RGB555
 and bitfield data, contradictory embedded masks, ignored profile words and
 truncated/invalid effective headers. CORE cases cover short complete headers,
 all row-padding widths, a 4096-pixel row, the maximum post-header gap and rejected
-planes/depths/dimensions/offsets. Hashes and lane results are in
-[evidence/bmp-core.json](evidence/bmp-core.json).
+planes/depths/dimensions/offsets. Indexed CORE cases cover all three depths,
+1..256 palette entries, all native skip remainders, byte/row boundaries and
+rejected undefined index domains. Hashes and lane results are in
+[evidence/bmp-core-indexed.json](evidence/bmp-core-indexed.json).
 
 The codec is an altered Bend implementation of the pinned stb BMP paths; its MIT
 notice is retained in [LICENSES/stb-image.txt](../LICENSES/stb-image.txt). Full
