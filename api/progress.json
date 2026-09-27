@@ -236,8 +236,8 @@
     "raylib:function:ImageDrawLineEx": {"status":"partial","jonlib":"Surface.draw_line_ex","scope":"RGBA8; bounded finite endpoints; add-half/truncate rounding; safe signed 16.16 deltas; thickness 0..32767.","gaps":["Negative thickness, full formats/domains and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
     "raylib:function:ImageDrawTriangleFan": {"status":"partial","jonlib":"Surface.draw_triangle_fan","scope":"RGBA8; List<Vector2> with bounded integral vertices; reference fan order; fewer than three points is a no-op.","gaps":["Fractional vertices, full formats/domains and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
     "raylib:function:ImageDrawTriangleStrip": {"status":"partial","jonlib":"Surface.draw_triangle_strip","scope":"RGBA8; bounded integral vertices; alternating reference winding; fewer than three points is a no-op.","gaps":["Fractional vertices, full formats/domains and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
-    "raylib:function:ImageRotateCW": {"status":"partial","jonlib":"Surface.rotate_cw","scope":"Owned RGBA8; 90-degree clockwise rotation; swapped dimensions and exact RGBA bytes.","gaps":["Other formats/mipmaps and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","ownership":"partial","targets":"partial"}},
-    "raylib:function:ImageRotateCCW": {"status":"partial","jonlib":"Surface.rotate_ccw","scope":"Owned RGBA8; 90-degree counterclockwise rotation; swapped dimensions and exact RGBA bytes.","gaps":["Other formats/mipmaps and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","ownership":"partial","targets":"partial"}},
+    "raylib:function:ImageRotateCW": {"status":"partial","jonlib":"Surface.rotate_cw / Image.FloatRGB.rotate_cw","scope":"Owned RGBA8 and non-NaN RGB F32; 90-degree clockwise rotation with swapped dimensions and exact sample words.","gaps":["Other formats/mipmaps, NaN payload parity and complete target/performance evidence"],"evidence":["tests/fixtures/images.json","tools/float_rgb_transform_probe.py","docs/API.md","docs/FLOAT-RGB.md","docs/evidence/float-rgb-transforms.json"],"gates":{"availability":"partial","behavior":"partial","ownership":"partial","targets":"partial"}},
+    "raylib:function:ImageRotateCCW": {"status":"partial","jonlib":"Surface.rotate_ccw / Image.FloatRGB.rotate_ccw","scope":"Owned RGBA8 and non-NaN RGB F32; 90-degree counterclockwise rotation with swapped dimensions and exact sample words.","gaps":["Other formats/mipmaps, NaN payload parity and complete target/performance evidence"],"evidence":["tests/fixtures/images.json","tools/float_rgb_transform_probe.py","docs/API.md","docs/FLOAT-RGB.md","docs/evidence/float-rgb-transforms.json"],"gates":{"availability":"partial","behavior":"partial","ownership":"partial","targets":"partial"}},
     "raylib:function:ImageColorTint": {"status":"partial","jonlib":"Surface.color_tint","scope":"RGBA8; integer channel multiplication divided by 255, including alpha.","gaps":["Other formats/mipmaps and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
     "raylib:function:ImageColorInvert": {"status":"partial","jonlib":"Surface.color_invert","scope":"RGBA8; invert RGB bytes and preserve alpha.","gaps":["Other formats/mipmaps and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
     "raylib:function:ImageColorContrast": {"status":"partial","jonlib":"Surface.color_contrast","scope":"RGBA8; finite contrast clamped to -100..100; reference F32 operation order and byte truncation; alpha preserved.","gaps":["Other formats/mipmaps and target/performance evidence"],"evidence":["tests/fixtures/images.json","docs/API.md"],"gates":{"availability":"partial","behavior":"partial","targets":"partial"}},
@@ -357,9 +357,9 @@
     },
     "raylib:function:ImageFlipHorizontal": {
       "status": "partial",
-      "jonlib": "Surface.flip_horizontal",
+      "jonlib": "Surface.flip_horizontal / Image.FloatRGB.flip_horizontal",
       "legacy_status": "profile-covered",
-      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "scope": "Owned RGBA8 and non-NaN RGB F32 horizontal flipping with exact native sample words and preserved dimensions.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -373,14 +373,17 @@
       "evidence": [
         "docs/API.md",
         "docs/VERIFICATION.md",
+        "tools/float_rgb_transform_probe.py",
+        "docs/FLOAT-RGB.md",
+        "docs/evidence/float-rgb-transforms.json",
         "docs/evidence/image-transforms.json"
       ]
     },
     "raylib:function:ImageFlipVertical": {
       "status": "partial",
-      "jonlib": "Surface.flip_vertical",
+      "jonlib": "Surface.flip_vertical / Image.FloatRGB.flip_vertical",
       "legacy_status": "profile-covered",
-      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "scope": "Owned RGBA8 and non-NaN RGB F32 vertical flipping with exact native sample words and preserved dimensions.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -394,6 +397,9 @@
       "evidence": [
         "docs/API.md",
         "docs/VERIFICATION.md",
+        "tools/float_rgb_transform_probe.py",
+        "docs/FLOAT-RGB.md",
+        "docs/evidence/float-rgb-transforms.json",
         "docs/evidence/image-transforms.json"
       ]
     },
@@ -441,9 +447,9 @@
     },
     "raylib:function:ImageCopy": {
       "status": "partial",
-      "jonlib": "Surface.copy",
+      "jonlib": "Surface.copy / Image.FloatRGB.copy",
       "legacy_status": "contract-checked",
-      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "scope": "Owned RGBA8 and non-NaN RGB F32 copies, returning the source and an independent clone with exact native sample words.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -457,6 +463,9 @@
       "evidence": [
         "docs/API.md",
         "docs/VERIFICATION.md",
+        "tools/float_rgb_transform_probe.py",
+        "docs/FLOAT-RGB.md",
+        "docs/evidence/float-rgb-transforms.json",
         "docs/evidence/image-transforms.json"
       ]
     },

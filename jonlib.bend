@@ -1712,6 +1712,7 @@ type Raster.Mapping is Data:
   Region{stride: U32, columns: U32, x: U32, y: U32}
   Nearest{stride: U32, columns: U32, xr: U32, yr: U32}
   QuarterTurn{width: U32, height: U32, clockwise: Bool}
+  Mirrored{width: U32, height: U32, horizontal: Bool}
 
 def Raster.index(mapping: Raster.Mapping, +i: U32) -> U32:
   match mapping:
@@ -1722,19 +1723,26 @@ def Raster.index(mapping: Raster.Mapping, +i: U32) -> U32:
     case QuarterTurn{+width, +height, clockwise}:
       Bool.pick(U32, clockwise, ((height - 1 - i % height) * width + i / height : U32),
         ((i % height) * width + width - 1 - i / height : U32))
+    case Mirrored{+width, height, horizontal}:
+      +x = (i % width : U32)
+      +y = (i / width : U32)
+      Bool.pick(U32, horizontal, (y * width + width - 1 - x : U32), ((height - 1 - y) * width + x : U32))
 
-def Surface.sample.loop(more: Nat, +i: U32, +mapping: Raster.Mapping, output: Array<U32>, got: Array<U32> & U32) -> Array<U32> & Array<U32>:
+def Raster.sample.loop(~T: Data, more: Nat, +i: U32, +mapping: Raster.Mapping, output: Array<T>, got: Array<T> & T) -> Array<T> & Array<T>:
   match more got:
     case 0n Tuple{source, color}:
-      (source, Array.set(U32, output, i, color))
+      (source, Array.set(T, output, i, color))
     case 1n+k Tuple{source, color}:
       +next = (i + 1 : U32)
-      Surface.sample.loop(k, next, mapping, Array.set(U32, output, i, color),
-        Array.get(U32, source, Raster.index(mapping, next)))
+      Raster.sample.loop(~T, k, next, mapping, Array.set(T, output, i, color),
+        Array.get(T, source, Raster.index(mapping, next)))
+
+def Raster.sample(~T: Data, +count: U32, +mapping: Raster.Mapping, initial: T, source: Array<T>) -> Array<T> & Array<T>:
+  Raster.sample.loop(~T, U32.to_nat((count - 1 : U32)), 0, mapping,
+    Array.new(T, Surface.capacity(count), initial), Array.get(T, source, Raster.index(mapping, 0)))
 
 def Surface.sample(+count: U32, +mapping: Raster.Mapping, source: Array<U32>) -> Array<U32> & Array<U32>:
-  Surface.sample.loop(U32.to_nat((count - 1 : U32)), 0, mapping,
-    Array.new(U32, Surface.capacity(count), 0), Array.get(U32, source, Raster.index(mapping, 0)))
+  Raster.sample(~U32, count, mapping, 0, source)
 
 type Raster.AlphaBounds is Data:
   AlphaBounds{left: U32, top: U32, right: U32, bottom: U32}
@@ -2124,9 +2132,7 @@ def Surface.from_channel(surface: Surface, selected: F32) -> Surface & Surface:
   Surface.channel.copied(Surface.copy(surface), selected)
 
 def Surface.flip.index(horizontal: Bool, +i: U32, +w: U32, h: U32) -> U32:
-  +x = (i % w : U32)
-  +y = (i / w : U32)
-  Bool.pick(U32, horizontal, (y * w + w - 1 - x : U32), ((h - 1 - y) * w + x : U32))
+  Raster.index(Mirrored{w, h, horizontal}, i)
 
 def Surface.flip.loop(more: Nat, +i: U32, +w: U32, +h: U32, +horizontal: Bool, output: Array<U32>, got: Array<U32> & U32) -> Array<U32>:
   match more got:
@@ -2149,6 +2155,38 @@ def Surface.flip_horizontal(surface: Surface) -> Surface:
 
 def Surface.flip_vertical(surface: Surface) -> Surface:
   Surface.flip(surface, False{})
+
+def Image.FloatRGB.copy.result(+width: U32, +height: U32, result: Array<M.Vector3> & Array<M.Vector3>) -> Image.FloatRGB & Image.FloatRGB:
+  (source, clone) = result
+  (FloatRGB{width, height, source}, FloatRGB{width, height, clone})
+
+def Image.FloatRGB.copy(image: Image.FloatRGB) -> Image.FloatRGB & Image.FloatRGB:
+  FloatRGB{width, height, pixels} = image
+  Image.FloatRGB.copy.result(width, height, Array.clone(M.Vector3, pixels))
+
+def Image.FloatRGB.sampled(width: U32, height: U32, result: Array<M.Vector3> & Array<M.Vector3>) -> Image.FloatRGB:
+  (_, pixels) = result
+  FloatRGB{width, height, pixels}
+
+def Image.FloatRGB.flip(image: Image.FloatRGB, horizontal: Bool) -> Image.FloatRGB:
+  FloatRGB{+width, +height, pixels} = image
+  Image.FloatRGB.sampled(width, height, Raster.sample(~M.Vector3, (width * height : U32), Mirrored{width, height, horizontal}, M.Vector3{0.0, 0.0, 0.0}, pixels))
+
+def Image.FloatRGB.flip_horizontal(image: Image.FloatRGB) -> Image.FloatRGB:
+  Image.FloatRGB.flip(image, True{})
+
+def Image.FloatRGB.flip_vertical(image: Image.FloatRGB) -> Image.FloatRGB:
+  Image.FloatRGB.flip(image, False{})
+
+def Image.FloatRGB.rotate(image: Image.FloatRGB, clockwise: Bool) -> Image.FloatRGB:
+  FloatRGB{+width, +height, pixels} = image
+  Image.FloatRGB.sampled(height, width, Raster.sample(~M.Vector3, (width * height : U32), QuarterTurn{width, height, clockwise}, M.Vector3{0.0, 0.0, 0.0}, pixels))
+
+def Image.FloatRGB.rotate_cw(image: Image.FloatRGB) -> Image.FloatRGB:
+  Image.FloatRGB.rotate(image, True{})
+
+def Image.FloatRGB.rotate_ccw(image: Image.FloatRGB) -> Image.FloatRGB:
+  Image.FloatRGB.rotate(image, False{})
 
 # Base.Image contains RGB colors. Alpha is discarded, not composited.
 def Surface.tree.leaf(got: Array<U32> & U32) -> Array<U32> & Image:

@@ -403,9 +403,9 @@
     "milestone": "fonts"
   },
   "ImageCopy": {
-    "jonlib": "Surface.copy",
+    "jonlib": "Surface.copy / Image.FloatRGB.copy",
     "status": "contract-checked",
-    "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+    "scope": "Owned RGBA8 and non-NaN RGB F32 copies, returning the source and an independent clone with exact native sample words.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -553,9 +553,9 @@
     "milestone": "images"
   },
   "ImageFlipVertical": {
-    "jonlib": "Surface.flip_vertical",
+    "jonlib": "Surface.flip_vertical / Image.FloatRGB.flip_vertical",
     "status": "profile-covered",
-    "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+    "scope": "Owned RGBA8 and non-NaN RGB F32 vertical flipping with exact native sample words and preserved dimensions.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -563,9 +563,9 @@
     "milestone": "images"
   },
   "ImageFlipHorizontal": {
-    "jonlib": "Surface.flip_horizontal",
+    "jonlib": "Surface.flip_horizontal / Image.FloatRGB.flip_horizontal",
     "status": "profile-covered",
-    "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+    "scope": "Owned RGBA8 and non-NaN RGB F32 horizontal flipping with exact native sample words and preserved dimensions.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -585,21 +585,21 @@
     "milestone": "images"
   },
   "ImageRotateCW": {
-    "jonlib": "Surface.rotate_cw",
+    "jonlib": "Surface.rotate_cw / Image.FloatRGB.rotate_cw",
     "status": "profile-covered",
-    "scope": "Owned RGBA8; 90-degree clockwise rotation; swapped dimensions and exact RGBA bytes.",
+    "scope": "Owned RGBA8 and non-NaN RGB F32; 90-degree clockwise rotation with swapped dimensions and exact sample words.",
     "gaps": [
-      "Other formats/mipmaps and target/performance evidence"
+      "Other formats/mipmaps, NaN payload parity and complete target/performance evidence"
     ],
     "api_id": "raylib:function:ImageRotateCW",
     "milestone": "images"
   },
   "ImageRotateCCW": {
-    "jonlib": "Surface.rotate_ccw",
+    "jonlib": "Surface.rotate_ccw / Image.FloatRGB.rotate_ccw",
     "status": "profile-covered",
-    "scope": "Owned RGBA8; 90-degree counterclockwise rotation; swapped dimensions and exact RGBA bytes.",
+    "scope": "Owned RGBA8 and non-NaN RGB F32; 90-degree counterclockwise rotation with swapped dimensions and exact sample words.",
     "gaps": [
-      "Other formats/mipmaps and target/performance evidence"
+      "Other formats/mipmaps, NaN payload parity and complete target/performance evidence"
     ],
     "api_id": "raylib:function:ImageRotateCCW",
     "milestone": "images"

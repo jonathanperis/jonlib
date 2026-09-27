@@ -1,0 +1,14 @@
+{
+  "date":"2026-09-27",
+  "source_sha256":{"jonlib.bend":"d58df39fe4e158135b396167a759ec99d9625b6e303aa028c28805c815f44b74"},
+  "profile":"Owned format-9 copy, horizontal/vertical flips and clockwise/counterclockwise quarter turns with exact non-NaN sample words",
+  "orientation": {
+    "inputs_sha256":"2d92dcde1ce688d1e4fae18eb301fa066bb22b5c77605ee9bc6b6a3ec26ec3e4",
+    "reference_sha256":"98a6c0016bdf93fc5f8873d0258c2fdcedd11626ee5ad7797f5b8908ddd4eff8",
+    "cases":43,"pixels":14953,"ownership_controls":1,"passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "limits":["NaN payload parity, mipmaps and other/compressed formats", "Complete resource/platform/performance coverage"]
+}

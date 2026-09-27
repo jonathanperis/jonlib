@@ -2583,3 +2583,33 @@ tests and project checks pass. GPU file IO and remaining targets/resource profil
 were not exercised.
 
 Regression scan: 38 callers checked, 27 assertions checked, 0 flagged/fixed.
+
+## RGB float copying and lossless orientation
+
+`Image.FloatRGB.copy`, horizontal/vertical flips and clockwise/counterclockwise
+quarter-turns preserve native format-9 sample words. Copy returns independent
+owned storage; flips retain dimensions and quarter-turns swap them. The sampling
+loop now accepts Data elements, sharing established indices between U32 Surface
+pixels and Jonmath RGB vectors. Existing Surface sampling calls retain their
+interface and index arithmetic.
+
+The gate passes 43 native cases / 14,953 pixels and independent-copy mutation on
+CPU/JS/Metal. It covers rectangular/thin/single-pixel shapes, signed zero,
+subnormal/extreme/non-NaN values, repeated quarter-turns and operation chains.
+Each complete native word stream and output dimensions are compared. See
+[evidence/float-rgb-transforms.json](evidence/float-rgb-transforms.json).
+
+Scoped review: I127 MATCH (copy ownership and lossless orientation); A3 HOLD through
+independent mutation; A4/A5 HOLD through source/native backend gates; A6 HOLD in
+[FLOAT-RGB.md](FLOAT-RGB.md); V2 HOLD through actual native format-9 copy/flip/rotate
+output; V3 HOLD through existing logical-size invariants and established mapped
+indices. NaN payload parity, mipmaps/other formats and complete resource/platform/
+performance remain gaps. Five existing partial mappings expand; statuses stay
+106 core and 142 math partial functions, zero complete.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, including
+the existing Surface sampling/orientation contracts. All four proofs, eleven
+harness/planning tests and project checks pass. Remaining targets, NaN payload
+parity and complete resource/performance coverage were not exercised.
+
+Regression scan: 26 callers checked, 8 assertions checked, 0 flagged/fixed.
