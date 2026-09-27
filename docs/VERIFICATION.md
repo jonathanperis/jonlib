@@ -1911,3 +1911,35 @@ four proofs, eleven harness/planning tests and project checks. GPU filesystem IO
 and remaining targets were not exercised.
 
 Regression scan: 35 callers checked, 50 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `2c784a0`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36298421342)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36298421340)
+passed, including indexed CORE palettes and bounded dispatch runners.
+
+## Native TGA type/depth selection
+
+Non-paletted types 2/3/10/11 now accept every native depth 8/15/16/24/32. Eight-bit
+data is grayscale and 15-bit data is opaque RGB555 regardless of nominal type.
+Only 16-bit input distinguishes grayscale types 3/11 (gray-alpha) from types 2/10
+(RGB555). Depths 24/32 use BGR/BGRA for either type. Existing palette selection,
+alpha, row orientation, RLE and strict malformed-input behavior remain in place.
+
+The TGA gate passes 64 native images / 1,219 pixels, 23 error controls and all
+11 exact exports / 3,447 bytes on CPU/JavaScript/forced Metal. Added cross-type
+cases cover all four new combinations in raw/RLE and both orientations. Shared
+dispatch passes 380 memory pairs plus five controls and 49 file cases plus three
+boundaries/100 low-descriptor cycles. File IO evidence is CPU/JS only; pure memory
+decoding also passes forced Metal. See
+[evidence/tga-depths.json](evidence/tga-depths.json).
+
+Scoped review: I107 MATCH (`src/tga.bend:86-100`); A4/A5 HOLD through source/native
+lane gates; A6 HOLD in [TGA.md](TGA.md); V2 HOLD through full native pixels/exports;
+V3 HOLD through the existing dimensions, packets and sample bounds. Original
+metadata, native malformed recovery and full resource/platform/performance remain
+gaps. API mappings remain partial with zero full-parity completions.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, as do all
+four proofs, eleven harness/planning tests and project checks. GPU filesystem IO
+and remaining targets were not exercised.
+
+Regression scan: 45 callers checked, 27 assertions checked, 0 flagged/fixed.

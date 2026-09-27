@@ -37,6 +37,16 @@ def fixtures():
         for top in (False,True):
             for rle,payload,height in ((False,raw,2),(True,encoded,3)):
                 inputs.append(dict(id=f'rgb555-{bits}-{top}-{rle}',bytes=targa(32,height,3,payload,rle=rle,top=top,identifier=b'packed',descriptor=17,bits=bits)))
+    cross_types=[(2,8,[bytes([value]) for value in (0,1,127,128,254,255)]),
+                 (3,15,[struct.pack('<H',value) for value in (0,0x1000,0x9000,0x7fff,0xffff,0x4210)]),
+                 (3,24,[bytes(((i*37+3)&255,(i*53+2)&255,(i*71+1)&255)) for i in range(6)]),
+                 (3,32,[bytes(((i*37+3)&255,(i*53+2)&255,(i*71+1)&255,i*51)) for i in range(6)])]
+    for kind,bits,samples in cross_types:
+        for top in (False,True):
+            for rle in (False,True):
+                payload=b'\1'+samples[0]+samples[1]+b'\x83'+samples[2] if rle else b''.join(samples)
+                data=targa(3,2,(bits+7)//8,payload,rle=rle,top=top,bits=bits);data[2]=kind+(8 if rle else 0)
+                inputs.append(dict(id=f'cross-type-{kind}-{bits}-{top}-{rle}',bytes=data))
     palettes={8:[bytes([value]) for value in (0,127,255)],
               15:[struct.pack('<H',value) for value in (0,0x4210,0xffff)],
               16:[struct.pack('<H',value) for value in (0,0x4210,0xffff)],

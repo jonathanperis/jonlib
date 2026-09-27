@@ -87,9 +87,10 @@ def header(bytes: +List<U32>) -> Result<&2, &2, Error, Header>:
   match bytes:
     case Con{id, Con{+map, Con{+kind, Con{sl, Con{sh, Con{cl, Con{ch, Con{+entry_bits, Con{_, Con{_, Con{_, Con{_, Con{wl, Con{wh, Con{hl, Con{hh, Con{+bits, Con{descriptor, data}}}}}}}}}}}}}}}}}}:
       +gray = U32.is_eq(kind, 3) || U32.is_eq(kind, 11)
-      +color = U32.is_eq(kind, 2) || U32.is_eq(kind, 10)
-      +packed = color && (U32.is_eq(bits, 15) || U32.is_eq(bits, 16))
-      direct = U32.is_eq(map, 0) && ((gray && (U32.is_eq(bits, 8) || U32.is_eq(bits, 16))) || packed || (color && (U32.is_eq(bits, 24) || U32.is_eq(bits, 32))))
+      color = U32.is_eq(kind, 2) || U32.is_eq(kind, 10)
+      packed = U32.is_eq(bits, 15) || (U32.is_eq(bits, 16) && Bool.not(gray))
+      direct = U32.is_eq(map, 0) && (gray || color)
+        && (U32.is_eq(bits, 8) || U32.is_eq(bits, 15) || U32.is_eq(bits, 16) || U32.is_eq(bits, 24) || U32.is_eq(bits, 32))
       +indexed = U32.is_eq(map, 1)
       +count = (cl .|. (ch << 8n) : U32)
       mapped = indexed && (count > 0 : U32) && (U32.is_eq(kind, 1) || U32.is_eq(kind, 9)) && (U32.is_eq(bits, 8) || U32.is_eq(bits, 16))
