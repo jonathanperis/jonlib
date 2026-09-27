@@ -1083,6 +1083,26 @@ def Image.Formatted.to_surface(image: Image.Formatted) -> Surface:
   FormattedImage{width, height, +format, pixels} = image
   Image.Formatted.surface(Image.Formatted.routed(U32.is_eq(format, 7), FormattedImage{width, height, format, pixels}, 7))
 
+def Image.Formatted.float_rgb.normal(normal: Formats.Normal) -> M.Vector3:
+  Formats.Normal{r, g, b, _} = normal
+  M.Vector3{r, g, b}
+
+def Image.Formatted.float_rgb.read(format: U32, index: U32, output: Array<M.Vector3>, result: Array<U32> & U32) -> Array<U32> & Array<M.Vector3>:
+  (source, word) = result
+  (source, Array.set(M.Vector3, output, index, Image.Formatted.float_rgb.normal(Formats.decode(format, word))))
+
+def Image.Formatted.float_rgb.pixels(n: Nat, +index: U32, +format: U32, state: Array<U32> & Array<M.Vector3>) -> Array<M.Vector3>:
+  match n state:
+    case 0n Tuple{_, output}: output
+    case 1n+rest Tuple{source, output}:
+      Image.Formatted.float_rgb.pixels(rest, (index + 1 : U32), format, Image.Formatted.float_rgb.read(format, index, output, Array.get(U32, source, index)))
+
+def Image.Formatted.to_float_rgb(image: Image.Formatted) -> Image.FloatRGB:
+  FormattedImage{+width, +height, format, pixels} = image
+  +count = (width * height : U32)
+  FloatRGB{width, height, Image.Formatted.float_rgb.pixels(U32.to_nat(count), 0, format,
+    (pixels, Array.new(M.Vector3, Surface.capacity(count), M.Vector3{0.0, 0.0, 0.0})))}
+
 def Image.FloatRGB.formatted.read(format: U32, index: U32, output: Array<U32>, result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Array<U32>:
   match result:
     case Tuple{pixels, M.Vector3{r, g, b}}:

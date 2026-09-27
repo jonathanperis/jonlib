@@ -434,9 +434,9 @@
     "milestone": "images"
   },
   "ImageFormat": {
-    "jonlib": "Image.Formatted.convert / Surface.to_formatted / Image.Formatted.to_surface / Surface.to_float_rgb / Image.FloatRGB.to_surface / Image.FloatRGB.from_bytes / Image.FloatRGB.to_bytes / Image.FloatRGB.to_formatted",
+    "jonlib": "Image.Formatted.convert / Surface.to_formatted / Image.Formatted.to_surface / Image.Formatted.to_float_rgb / Surface.to_float_rgb / Image.FloatRGB.to_surface / Image.FloatRGB.from_bytes / Image.FloatRGB.to_bytes / Image.FloatRGB.to_formatted",
     "status": "profile-covered",
-    "scope": "Owned format-1..7 conversions, format-7/9 RGB float bridge and direct finite [0,1] float-to-1..7 conversion with native luminance/packed rounding and alpha one. Exact non-NaN raw words, returned unsupported float owners, reciprocal expansion/thresholds/no-ops and stack-bounded native-order exports are retained.",
+    "scope": "Owned formats 1..7 and bidirectional format-9 RGB float bridges with native direct normalization, packed reciprocal expansion, alpha discard and finite [0,1] float encoding/luminance/rounding. Exact non-NaN raw words, returned unsupported float owners, thresholds/no-ops and stack-bounded native-order exports are retained.",
     "gaps": [
       "Other float/half/compressed formats, mipmaps and other thresholds/endianness",
       "NaN payload interoperability, out-of-domain float casts and native allocation ABI",

@@ -2796,3 +2796,30 @@ proofs, eleven harness/planning tests and project checks pass. Remaining targets
 unrestricted float casts and full resource/performance coverage were not exercised.
 
 Regression scan: 15 callers checked, 16 assertions checked, 1 flagged/fixed.
+
+## Byte and packed formats to RGB floats
+
+`Image.Formatted.to_float_rgb` consumes checked format-1..7 images and produces
+native format-9 sample words directly. Grayscale replicates into RGB, alpha is
+discarded, and packed channels preserve reciprocal-multiply normalization without
+intermediate byte quantization.
+
+The gate passes seven source formats / 1,792 pixels and fourteen native float/
+return-chain results on CPU/JavaScript/forced Metal. Inputs span every source
+channel level and alpha pattern. Return chains use the verified direct float
+encoder and compare complete native bytes, including discarded alpha. See
+[evidence/formatted-float.json](evidence/formatted-float.json).
+
+Scoped review: I134 MATCH (`Image.Formatted.to_float_rgb` and existing decode
+arithmetic); A3 HOLD through consuming source ownership and bounded output;
+A4/A5 HOLD through source/native backend gates; A6 HOLD in [FORMATS.md](FORMATS.md);
+V2 HOLD through complete native normalization and return chains; V3 HOLD through
+the existing checked-owner dimensions and logical traversal. Other source
+formats/mipmaps, native allocation ABI and complete resource/platform/performance
+remain gaps. Existing partial mapping scope expands without changing counts.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal. All four
+proofs, eleven harness/planning tests and project checks pass. Other source formats,
+remaining targets and full resource/performance coverage were not exercised.
+
+Regression scan: 5 callers checked, 8 assertions checked, 0 flagged/fixed.
