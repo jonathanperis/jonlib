@@ -34,8 +34,9 @@ suffix and raster bytes with a QOI suffix are rejected. The `.jpg/.jpeg/.gif/.pi
 aliases accept the implemented raster payloads, just as the native shared decoder
 does. PSD payloads have the [raw/PackBits and matte profiles](PSD.md), and PIC has
 [raw and RLE channel-packet decoding](PIC.md). GIF has a bounded
-[first-frame profile](GIF.md). Actual JPEG decoding remains unimplemented. HDR uses a
-distinct native float path and remains outside this profile.
+[first-frame profile](GIF.md). Actual JPEG decoding remains unimplemented. HDR's
+native float path is exposed separately through [Image.FloatRGB](HDR.md), outside
+this RGBA8 dispatch profile.
 
 `Surface.load_qoi(path)` remains an explicit QOI loader and does not consult the
 suffix. Both operations share the checked IO boundary.

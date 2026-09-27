@@ -2337,3 +2337,39 @@ updated byte-read contract, all four proofs, eleven harness/planning tests and
 project checks pass.
 
 Regression scan: 33 callers checked, 24 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `504b450`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36320180961)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36320180953)
+passed. The verified animation-file batch was subsequently published as `d28023f`.
+
+## Owned raw Radiance RGBE float images
+
+`Image.FloatRGB.decode_hdr` adds raw Radiance RGBE decoding into independently
+owned Jonmath-vector storage. `entries` consumes the image to expose dimensions
+and row-major vectors; `unload` consumes the owner. The typed path preserves native
+format-9 RGB F32 samples instead of normalizing to RGBA8.
+
+RGBE exponent zero becomes black; otherwise `channel*2^(exponent-136)` is exactly
+representable across the byte domain. The decoder constructs F32/Word carrier
+bits from integers, preserving subnormals without backend underflow arithmetic.
+The gate compares **all 65,536 channel/exponent pairs** with actual native HDR
+float storage on CPU/JavaScript/forced Metal, plus 10 images / 8,225 RGB pixels,
+thirteen typed-error controls and consuming ownership. Header signatures,
+metadata, decimal/layout parsing, raw-marker boundaries and 4,096-pixel axes are
+covered. Every returned component is compared as an exact F32 word.
+
+Scoped review: I118 MATCH (`src/hdr.bend` and `Image.FloatRGB`); A3 HOLD through
+owned entries/unload; A4/A5 HOLD through source/native bitwise backend gates;
+A6 HOLD in [HDR.md](HDR.md) and retained Nicolas Schulz/stb attribution; V2 HOLD
+through complete native samples and exhaustive conversion; V3 HOLD through
+bounded lines, validated dimensions and complete required samples before output
+allocation. RLE, shared float/file dispatch, RGBA8 conversion, broader headers/
+recovery and complete resource/platform/performance remain gaps. Evidence is in
+[evidence/hdr-raw.json](evidence/hdr-raw.json). Existing mapping scope expands;
+counts remain 106 core and 142 math partial functions, zero complete.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, as do all
+four proofs, eleven harness/planning tests and project checks. Float file IO,
+remaining targets and broader resource/performance behavior were not exercised.
+
+Regression scan: 50 callers checked, 20 assertions checked, 1 flagged/fixed.
