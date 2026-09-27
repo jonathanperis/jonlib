@@ -1,4 +1,4 @@
-# Bounded owned GIF animations
+# Bounded owned image animations
 
 `Image.Animation.decode_gif(bytes, maximum_frames, maximum_pixels)` returns
 `Result<&1, &1, Image.DecodeError, Image.Animation>`.
@@ -6,6 +6,20 @@
 This is the GIF memory profile for native `LoadImageAnimFromMemory`: every frame
 is an independently owned RGBA8 Surface with the logical canvas dimensions.
 Native frame delays are discarded by that API and are not returned here.
+
+## Memory dispatch
+
+`Image.Animation.decode_image(file_type, bytes, maximum_frames, maximum_pixels)`
+accepts the existing image-format tokens. Exact `.gif` and `.GIF` tokens select
+the GIF sequence decoder. Other supported tokens use single-image content
+detection and return one owned frame. For example, GIF data under `.png` yields
+its first frame, matching native fallback behavior; mixed `.GiF` is rejected by
+the memory-token path.
+
+`Image.Animation.decode_image_for(reference, ...)` selects explicit
+`J.Image.Decode.Reference` for PSD fallback. The convenience call selects
+`J.UncontractedDecode{}`. Static native fallback images are normalized to RGBA8
+before comparison, since their original native formats may be grayscale or RGB.
 
 ## Ownership and budgets
 
@@ -38,8 +52,8 @@ than a partial animation.
 
 Disposal 3 is outside this profile: the pinned native animation path assigns
 `two_back = out - 2*stride`, an address before its allocated output buffer. This
-implementation does not emulate undefined reads. Generic non-GIF fallback, file
-animation loading, original metadata/native ABI, permissive recovery and full
+implementation does not emulate undefined reads. File animation loading,
+original metadata/native ABI, permissive recovery and full
 resource/platform/performance coverage remain gaps.
 
 ## Verification
@@ -49,10 +63,12 @@ python3 tools/gif_animation_probe.py --bend-source "$BEND_SOURCE" --raylib-sourc
 ```
 
 Configure checkout variables as in [README.md](../README.md#requirements).
-The gate compares 9 actual native animations / 24 frames / 382 pixels on CPU,
+The gate compares 20 native animation/static inputs / 37 frames / 460 pixels on CPU,
 JavaScript and forced Metal. It checks every frame, count and dimension, plus
-ten budget/error controls and two ownership/disposal checks. Cases cover retain/
+fifteen budget/error controls, two ownership/disposal checks and one default-
+reference check. Cases cover exact token selection, single-image/cross-extension
+fallback, PSD profiles, retain/
 restore, transparent history, palette/control persistence, offsets/interlacing,
 ignored delays and exact-budget termination. First-frame and shared memory/file
 gates remain separate regressions. See
-[evidence/gif-animation.json](evidence/gif-animation.json).
+[evidence/animation-memory.json](evidence/animation-memory.json).

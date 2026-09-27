@@ -6,15 +6,17 @@ import json
 from pathlib import Path
 
 from bmp_probe import bend_bytes
-from conformance import BUILD, ROOT, checkout, run, source_gate
+from conformance import BUILD, ROOT, checkout, image_decode_reference, run, source_gate
 from gif_probe import animation
+from image_file_probe import image_streams
+from psd_probe import psd
 
 
 def fixtures():
     colors=[0x010203ff,0x112233ff,0xaabbccff,0xfedcbaff]
     cases=[]
     def add(name,width,height,frames,background=0):
-        cases.append(dict(id=name,width=width,height=height,frames=len(frames),bytes=animation(width,height,colors,frames,background=background)))
+        cases.append(dict(id=name,token='.gif',width=width,height=height,frames=len(frames),bytes=animation(width,height,colors,frames,background=background)))
     add('single',3,2,[dict(indices=[0,1,2,3,2,1])])
     for disposal in (0,1,2):
         add(f'full-disposal-{disposal}',3,2,[dict(indices=[1]*6,disposal=disposal),
@@ -30,6 +32,11 @@ def fixtures():
         dict(indices=[(i*3+i//5)%4 for i in range(45)],frame=(1,1,5,9),interlaced=True,transparent=1,disposal=2),
         dict(indices=[3],frame=(7,9,1,1),disposal=0)])
     add('delay-ignored',2,1,[dict(indices=[0,1],disposal=1,delay=65535),dict(indices=[1,0],disposal=0,delay=0)])
+    cases += [dict(cases[1],id='uppercase-gif',token='.GIF'),dict(cases[1],id='gif-under-png',token='.png',frames=1)]
+    streams=image_streams()
+    for kind,token in [('png','.png'),('bmp','.bmp'),('tga','.tga'),('pgm','.pgm'),('ppm','.ppm'),('qoi','.qoi'),('psd-alpha','.psd'),('pic','.pic')]:
+        cases.append(dict(id='single-'+kind,token=token,width=3,height=2,frames=1,bytes=list(streams[kind])))
+    cases.append(dict(id='png-under-jpg',token='.jpg',width=3,height=2,frames=1,bytes=list(streams['png'])))
     base=cases[1]['bytes'];width=cases[1]['width'];height=cases[1]['height'];count=cases[1]['frames']
     controls=[dict(id='zero-frames',bytes=base,maximum_frames=0,maximum_pixels=100,error=2),
               dict(id='zero-pixels',bytes=base,maximum_frames=10,maximum_pixels=0,error=2),
@@ -41,6 +48,12 @@ def fixtures():
               dict(id='no-frame',bytes=animation(1,1,colors,[]),maximum_frames=2,maximum_pixels=2,error=0),
               dict(id='bad-later-frame',bytes=animation(2,1,colors,[dict(indices=[0,1]),dict(indices=[2],frame=(2,0,1,1))]),maximum_frames=2,maximum_pixels=4,error=0),
               dict(id='bad-byte',bytes=[*base,256],maximum_frames=10,maximum_pixels=100,error=1)]
+    for case in controls:case['token']='.gif'
+    controls += [dict(id='mixed-gif-token',token='.GiF',bytes=base,maximum_frames=10,maximum_pixels=100,error=0),
+                 dict(id='wrong-gif-payload',token='.gif',bytes=list(streams['png']),maximum_frames=10,maximum_pixels=100,error=0),
+                 dict(id='unsupported-token',token='.unknown',bytes=list(streams['png']),maximum_frames=10,maximum_pixels=100,error=0),
+                 dict(id='single-pixel-budget',token='.png',bytes=list(streams['png']),maximum_frames=1,maximum_pixels=5,error=2),
+                 dict(id='single-frame-budget',token='.png',bytes=list(streams['png']),maximum_frames=0,maximum_pixels=6,error=2)]
     return cases,controls
 
 
@@ -55,11 +68,11 @@ def main():
     report_path=work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
     cases,controls=fixtures()
     lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-           'static void emit(const unsigned char *data,int size){int frames=0;Image image=LoadImageAnimFromMemory(".gif",data,size,&frames);if(!image.data)exit(2);',
+           'static void emit(const char *token,const unsigned char *data,int size){int frames=0;Image image=LoadImageAnimFromMemory(token,data,size,&frames);if(!image.data)exit(2);ImageFormat(&image,PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);',
            'printf("{\\"width\\":%d,\\"height\\":%d,\\"count\\":%d}\\n",image.width,image.height,frames);',
            'for(int f=0;f<frames;f++){putchar(\'[\');for(int i=0;i<image.width*image.height;i++)printf("%s%u",i?",":"",(unsigned)ColorToInt(((Color*)image.data)[f*image.width*image.height+i]));puts("]");}UnloadImage(image);}',
            'int main(void){SetTraceLogLevel(LOG_NONE);']
-    for case in cases:lines+=['{unsigned char data[]={'+','.join(map(str,case['bytes']))+'};emit(data,sizeof(data));}']
+    for case in cases:lines+=['{unsigned char data[]={'+','.join(map(str,case['bytes']))+'};emit('+json.dumps(case['token'])+',data,sizeof(data));}']
     source=work/'reference.c';source.write_text('\n'.join(lines+['}'])+'\n');binary=work/'reference'
     run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary])
     text=run([binary]);expected=[json.loads(line) for line in text.splitlines()]
@@ -68,7 +81,8 @@ def main():
         if expected[at]!={key:case[key] for key in ('width','height')}|{'count':case['frames']}:raise ValueError('Native animation geometry/count differs')
         at+=1+case['frames']
     if at!=len(expected):raise ValueError('Incomplete native animation output')
-    report=dict(passed=False,animations=len(cases),frames=sum(c['frames'] for c in cases),
+    profile=image_decode_reference()
+    report=dict(passed=False,animations=len(cases),frames=sum(c['frames'] for c in cases),decode_reference=profile,
                 pixels=sum(c['frames']*c['width']*c['height'] for c in cases),error_controls=len(controls),sources=source_gate(),
                 inputs_sha256=hashlib.sha256(json.dumps([cases,controls]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
     program='''import Base
@@ -132,23 +146,41 @@ def disposed(result: Result<&1, &1, J.Image.DecodeError, J.Image.Animation>) -> 
   match result:
     case Fail{_}: False{}
     case Done{animation}: unit_seen(J.Image.Animation.unload(animation))
+def default_pixel(result: J.Surface & Maybe<&2, U32>) -> Bool:
+  match result:
+    case Tuple{_, Some{color}}: U32.is_eq(color, J.Color.rgba(255, 255, 255, 11))
+    case _: False{}
+def default_frames(frames: List<J.Surface>) -> Bool:
+  match frames:
+    case Con{surface, Nil{}}: default_pixel(J.Surface.get(surface, 0, 0))
+    case _: False{}
+def default_entries(result: U32 & U32 & U32 & List<J.Surface>) -> Bool:
+  (width, height, count, frames) = result
+  U32.is_eq(width, 1) && U32.is_eq(height, 1) && U32.is_eq(count, 1) && default_frames(frames)
+def default_checked(result: Result<&1, &1, J.Image.DecodeError, J.Image.Animation>) -> Bool:
+  match result:
+    case Fail{_}: False{}
+    case Done{animation}: default_entries(J.Image.Animation.entries(animation))
+def default_reference(bytes: +List<U32>) -> Bool:
+  default_checked(J.Image.Animation.decode_image(".psd", bytes, 1, 1))
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
     for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
         bang='!' if lane=='metal' else '';body=program
-        for case in cases:body+=f'    observed(J.Image.Animation.decode_gif{bang}({bend_bytes(case["bytes"])}, {case["frames"]}, {case["frames"]*case["width"]*case["height"]}))\n'
-        for case in controls:body+=f'    IO.print(U32.show(error_code(J.Image.Animation.decode_gif{bang}({bend_bytes(case["bytes"])}, {case["maximum_frames"]}, {case["maximum_pixels"]}))))\n'
+        for case in cases:body+=f'    observed(J.Image.Animation.decode_image_for{bang}(J.{profile}{{}}, {json.dumps(case["token"])}, {bend_bytes(case["bytes"])}, {case["frames"]}, {case["frames"]*case["width"]*case["height"]}))\n'
+        for case in controls:body+=f'    IO.print(U32.show(error_code(J.Image.Animation.decode_image_for{bang}(J.{profile}{{}}, {json.dumps(case["token"])}, {bend_bytes(case["bytes"])}, {case["maximum_frames"]}, {case["maximum_pixels"]}))))\n'
         for function in ('owned','disposed'):body+=f'    IO.print(U32.show(Bool.to_u32({function}{bang}(J.Image.Animation.decode_gif({bend_bytes(cases[1]["bytes"])}, 3, 18)))))\n'
+        body+=f'    IO.print(U32.show(Bool.to_u32(default_reference{bang}({bend_bytes(psd(1,1,[[255],[255],[255],[11]]))}))))\n'
         source=work/f'{lane}.bend';source.write_text(body);binary=work/('candidate.js' if lane=='javascript' else f'candidate-{lane}')
         run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
         command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        actual=[json.loads(line) for line in run(command).splitlines()];wanted=expected+[c['error'] for c in controls]+[1,1]
+        actual=[json.loads(line) for line in run(command).splitlines()];wanted=expected+[c['error'] for c in controls]+[1,1,1]
         differences=[dict(index=i,reference=a,candidate=b) for i,(a,b) in enumerate(zip(wanted,actual)) if a!=b]
         report['lanes'][lane]=dict(passed=actual==wanted,differences=differences[:2]);report_path.write_text(json.dumps(report,indent=2)+'\n')
         if actual!=wanted:raise ValueError(f'{lane}: animation differs: {differences[:1]}')
         print(f'{lane}: {len(cases)} animations / {report["frames"]} frames and {len(controls)} controls passed',flush=True)
-    report['ownership_controls']=2;report['passed']=True;report_path.write_text(json.dumps(report,indent=2)+'\n')
+    report['ownership_controls']=2;report['default_reference_controls']=1;report['passed']=True;report_path.write_text(json.dumps(report,indent=2)+'\n')
 
 
 if __name__=='__main__':

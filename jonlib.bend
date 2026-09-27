@@ -2160,6 +2160,32 @@ def Surface.decode_image_for(reference: Image.Decode.Reference, file_type: Strin
 def Surface.decode_image(file_type: String, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   Surface.decode_image_for(UncontractedDecode{}, file_type, bytes)
 
+def Image.Animation.single.sized(valid: Bool, +width: U32, +height: U32, pixels: Array<U32>) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
+  match valid:
+    case False{}: Fail{UnsupportedImageSize{}}
+    case True{}: Done{Animation{width, height, 1, Con{Surface{width, height, pixels}, Nil{}}}}
+
+def Image.Animation.single(maximum_pixels: U32, result: Result<&1, &1, Image.DecodeError, Surface>) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
+  match result:
+    case Fail{error}: Fail{error}
+    case Done{Surface{+width, +height, pixels}}: Image.Animation.single.sized((width * height <= maximum_pixels : U32), width, height, pixels)
+
+def Image.Animation.memory.checked(valid: Bool, reference: Image.Decode.Reference, file_type: String, bytes: +List<U32>, maximum_pixels: U32) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
+  match valid:
+    case False{}: Fail{UnsupportedImageSize{}}
+    case True{}: Image.Animation.single(maximum_pixels, Surface.decode_image_for(reference, file_type, bytes))
+
+def Image.Animation.memory.selected(gif: Bool, reference: Image.Decode.Reference, file_type: String, bytes: +List<U32>, maximum_frames: U32, +maximum_pixels: U32) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
+  match gif:
+    case True{}: Image.Animation.decode_gif(bytes, maximum_frames, maximum_pixels)
+    case False{}: Image.Animation.memory.checked(((maximum_frames > 0) && (maximum_pixels > 0) && (maximum_pixels <= 16777216) : U32), reference, file_type, bytes, maximum_pixels)
+
+def Image.Animation.decode_image_for(reference: Image.Decode.Reference, +file_type: String, bytes: +List<U32>, maximum_frames: U32, maximum_pixels: U32) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
+  Image.Animation.memory.selected(String.eq(file_type, ".gif") || String.eq(file_type, ".GIF"), reference, file_type, bytes, maximum_frames, maximum_pixels)
+
+def Image.Animation.decode_image(file_type: String, bytes: +List<U32>, maximum_frames: U32, maximum_pixels: U32) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
+  Image.Animation.decode_image_for(UncontractedDecode{}, file_type, bytes, maximum_frames, maximum_pixels)
+
 def Image.file.decoded(result: Result<&1, &1, Image.DecodeError, Surface>) -> Result<&1, &1, Image.LoadError, Surface>:
   match result:
     case Fail{error}: Fail{ImageDecodeError{error}}

@@ -2266,3 +2266,38 @@ All four proofs, eleven harness/planning tests and project checks pass. GPU file
 IO and remaining targets were not exercised.
 
 Regression scan: 101 callers checked, 47 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `ea0b76b`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36318182028)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36318181912)
+passed, including owned GIF frames and budget/ownership controls.
+
+## Generic animation memory dispatch
+
+`Image.Animation.decode_image` and `decode_image_for` select complete GIF frame
+sequences only for exact `.gif`/`.GIF` tokens. Other supported tokens decode one
+owned RGBA8 frame through the existing image decoder. GIF content under `.png`
+therefore yields its first frame, matching native fallback behavior. PSD fallback
+uses the explicit reference or the uncontracted convenience default.
+
+The gate passes 20 native inputs / 37 frames / 460 pixels on CPU/JavaScript/forced
+Metal, plus fifteen token/budget/error controls, two ownership controls and a
+default-arithmetic check. Static native fallback images are normalized to RGBA8
+before reading their pixels; the reference initially retained grayscale/RGB
+storage, and that oracle interpretation was corrected before accepting results.
+Source/input/native hashes are in
+[evidence/animation-memory.json](evidence/animation-memory.json).
+
+Scoped review: I116 MATCH (exact token selection and single-frame fallback);
+A3 HOLD through consuming ownership and independent frames; A4/A5 HOLD through
+source/native backend gates; A6 HOLD in [GIF-ANIMATION.md](GIF-ANIMATION.md);
+V2 HOLD through complete normalized native frames; V3 HOLD through retained GIF
+bounds and validated fallback retention budgets. Disposal 3, remaining codec
+profiles, animation file loading and native ABI/resource/platform/performance
+coverage remain gaps. The existing partial memory-animation mapping expands;
+counts remain 105 core and 142 math partial functions, zero complete.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal. All four
+proofs, eleven harness/planning tests and project checks pass. GPU filesystem IO
+and remaining targets were not exercised.
+
+Regression scan: 9 callers checked, 19 assertions checked, 1 flagged/fixed.

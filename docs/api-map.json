@@ -244,12 +244,12 @@
     "milestone": "image-codecs"
   },
   "LoadImageAnimFromMemory": {
-    "jonlib": "Image.Animation.decode_gif / Image.Animation.entries / Image.Animation.unload",
+    "jonlib": "Image.Animation.decode_image / Image.Animation.decode_image_for / Image.Animation.decode_gif / Image.Animation.entries / Image.Animation.unload",
     "status": "profile-covered",
-    "scope": "Owned GIF RGBA8 frame sequences with logical canvas dimensions, exact frame count/order, offsets/interlacing, native palette/control persistence and disposal 0/1 retain or 2 pre-frame restoration. Explicit frame/output-pixel budgets bound retained frames; entries and unload consume ownership. Delays are discarded as in the reference API.",
+    "scope": "Exact .gif/.GIF tokens decode owned GIF RGBA8 frame sequences; other supported tokens use profiled single-image fallback and return one owned frame. GIF preserves canvas dimensions, frame order/count, offsets/interlacing, palette/control persistence and disposal 0/1 retain or 2 restoration. Explicit frame/pixel budgets bound retained output, entries/unload consume ownership, and convenience arithmetic is uncontracted. Native delays are discarded.",
     "gaps": [
       "Disposal 3: pinned native two_back points before its allocated frame buffer",
-      "Generic non-GIF memory fallback and native contiguous-buffer ABI",
+      "Native contiguous-buffer ABI and remaining image-codec/profile gaps",
       "Permissive malformed recovery, original metadata and complete target/resource/performance coverage"
     ],
     "api_id": "raylib:function:LoadImageAnimFromMemory",
