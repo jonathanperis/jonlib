@@ -94,6 +94,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | HDR float file loading | `Image.FloatRGB.load_hdr` | Explicit Radiance selection, exact native file samples and shared bounded/complete/closed-handle IO on CPU/JS |
 | RGB float/Surface conversion | `Surface.to_float_rgb` / `Image.FloatRGB.to_surface` | Native byte normalization and finite `[0,1]` truncation, opaque alpha, bit-checked domains and rejected-owner preservation |
 | RGB float raw-byte interface | `Image.FloatRGB.from_bytes/to_bytes` | Exact non-NaN little-endian format-9 samples, strict size/byte checks and returned owners on export rejection |
+| RGB float copying/orientation | `Image.FloatRGB.copy/flip_horizontal/flip_vertical/rotate_cw/rotate_ccw` | Independent owners and exact native sample movement/dimensions on CPU/JS/Metal |
 | RGB float RAW file IO | `Image.FloatRGB.load_raw/write_raw` | Native fitting-header/fallback selection, exact format-9 words and typed domain/file failures with closed handles on CPU/JS |
 | Raw DEFLATE | `Compression.decompress` | Stored/fixed/dynamic blocks and bounded copies; native empty-stored-block completion differs explicitly from the internal PNG-oriented path |
 | PNG decoding | `Surface.decode_png` | Non-interlaced/Adam7 1/2/4/8/16-bit and native-default CgBI profiles; filtering/scattering, palette/tRNS, framing and bounded errors |

@@ -41644,9 +41644,9 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.copy",
+      "jonlib": "Surface.copy / Image.FloatRGB.copy",
       "mapping_state": "implemented",
-      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "scope": "Owned RGBA8 and non-NaN RGB F32 copies, returning the source and an independent clone with exact native sample words.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -41662,6 +41662,9 @@
       "evidence": [
         "docs/API.md",
         "docs/VERIFICATION.md",
+        "tools/float_rgb_transform_probe.py",
+        "docs/FLOAT-RGB.md",
+        "docs/evidence/float-rgb-transforms.json",
         "docs/evidence/image-transforms.json"
       ],
       "gate_evidence": {},
@@ -42792,9 +42795,9 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.flip_vertical",
+      "jonlib": "Surface.flip_vertical / Image.FloatRGB.flip_vertical",
       "mapping_state": "implemented",
-      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "scope": "Owned RGBA8 and non-NaN RGB F32 vertical flipping with exact native sample words and preserved dimensions.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -42810,6 +42813,9 @@
       "evidence": [
         "docs/API.md",
         "docs/VERIFICATION.md",
+        "tools/float_rgb_transform_probe.py",
+        "docs/FLOAT-RGB.md",
+        "docs/evidence/float-rgb-transforms.json",
         "docs/evidence/image-transforms.json"
       ],
       "gate_evidence": {},
@@ -42852,9 +42858,9 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.flip_horizontal",
+      "jonlib": "Surface.flip_horizontal / Image.FloatRGB.flip_horizontal",
       "mapping_state": "implemented",
-      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "scope": "Owned RGBA8 and non-NaN RGB F32 horizontal flipping with exact native sample words and preserved dimensions.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -42870,6 +42876,9 @@
       "evidence": [
         "docs/API.md",
         "docs/VERIFICATION.md",
+        "tools/float_rgb_transform_probe.py",
+        "docs/FLOAT-RGB.md",
+        "docs/evidence/float-rgb-transforms.json",
         "docs/evidence/image-transforms.json"
       ],
       "gate_evidence": {},
@@ -42974,11 +42983,11 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.rotate_cw",
+      "jonlib": "Surface.rotate_cw / Image.FloatRGB.rotate_cw",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8; 90-degree clockwise rotation; swapped dimensions and exact RGBA bytes.",
+      "scope": "Owned RGBA8 and non-NaN RGB F32; 90-degree clockwise rotation with swapped dimensions and exact sample words.",
       "gaps": [
-        "Other formats/mipmaps and target/performance evidence"
+        "Other formats/mipmaps, NaN payload parity and complete target/performance evidence"
       ],
       "blocker": null,
       "gates": {
@@ -42991,7 +43000,10 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "tools/float_rgb_transform_probe.py",
+        "docs/API.md",
+        "docs/FLOAT-RGB.md",
+        "docs/evidence/float-rgb-transforms.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43033,11 +43045,11 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.rotate_ccw",
+      "jonlib": "Surface.rotate_ccw / Image.FloatRGB.rotate_ccw",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8; 90-degree counterclockwise rotation; swapped dimensions and exact RGBA bytes.",
+      "scope": "Owned RGBA8 and non-NaN RGB F32; 90-degree counterclockwise rotation with swapped dimensions and exact sample words.",
       "gaps": [
-        "Other formats/mipmaps and target/performance evidence"
+        "Other formats/mipmaps, NaN payload parity and complete target/performance evidence"
       ],
       "blocker": null,
       "gates": {
@@ -43050,7 +43062,10 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "tools/float_rgb_transform_probe.py",
+        "docs/API.md",
+        "docs/FLOAT-RGB.md",
+        "docs/evidence/float-rgb-transforms.json"
       ],
       "gate_evidence": {},
       "target_results": {},

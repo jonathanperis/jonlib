@@ -17,6 +17,19 @@ inconsistent owner records are outside the contract. Failed conversion preserves
 every original sample bit and the complete owner. HDR values outside `[0,1]`
 remain available through [FloatRGB entries](HDR.md) after rejection.
 
+## Copy and lossless orientation
+
+`Image.FloatRGB.copy(image)` returns `(original, copy)` with independent owned
+storage. `flip_horizontal`, `flip_vertical`, `rotate_cw` and `rotate_ccw` consume
+the float image and preserve every supported sample word. Flips keep dimensions;
+quarter-turns swap them. These operations move RGB vectors without normalization
+or color conversion, matching native format-9 byte movement.
+
+Logical dimensions/storage must satisfy the existing image-owner invariant.
+Non-NaN float words, including signed zero, subnormals, infinities and values
+outside `[0,1]`, are supported. See
+[evidence/float-rgb-transforms.json](evidence/float-rgb-transforms.json).
+
 ## Large owned exports
 
 Surface colors, FloatRGB entries and packed/formatted image exports use a shared
@@ -29,6 +42,7 @@ or changing the compiler/runtime. Output lengths, order and ownership are retain
 
 ```sh
 python3 tools/float_rgb_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+python3 tools/float_rgb_transform_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 ```
 
 Configure checkout variables as in [README.md](../README.md#requirements).
@@ -47,3 +61,7 @@ changes. See [evidence/float-rgb.json](evidence/float-rgb.json).
 
 Other float/half/compressed formats, mipmaps, unrestricted HDR-to-byte conversion
 and complete resource/platform/performance coverage remain gaps.
+
+The orientation gate compares 43 native cases / 14,953 pixels on CPU/JS/Metal,
+including rectangular/thin shapes, exact non-NaN words, repeated quarter-turns
+and mixed operation chains. An independent mutation check verifies cloned owners.
