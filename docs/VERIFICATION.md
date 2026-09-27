@@ -2139,3 +2139,47 @@ four proofs, eleven harness/planning tests and project checks. GPU filesystem IO
 and remaining targets were not exercised.
 
 Regression scan: 58 callers checked, 32 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `8f3a17c`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36309784250)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36309784217)
+passed, including both PIC RLE modes and boundary controls.
+
+## Full-canvas first-frame GIF
+
+`Surface.decode_gif` adds GIF87a/GIF89a first-frame decoding with global/local
+palettes, Graphic Control transparency and extension sub-block handling. The
+current image descriptor covers the full logical canvas at origin zero without
+interlacing. Transparent pixels remain transparent black, matching the native
+initial canvas. Later frames are ignored after the first complete raster.
+
+The Bend LZW path uses owned 8,192-entry dictionary storage, LSB-first codes,
+clear/reset state, width growth through 12 bits and next-code self-reference.
+Structural bit/prefix fuel and independent dictionary/output bounds prevent
+unchecked array access. Complete pixel output and valid palette references are
+required; permissive malformed/incomplete recovery remains outside this profile.
+
+The gate passes 19 native images / 4,738 pixels and 20 error controls on CPU,
+JavaScript and forced Metal. It covers versions, palette selection, transparent
+black, control resets, comments/application blocks, small sub-blocks, self-reference,
+every minimum code size 2..8 and a 4,096-pixel stream reaching 12-bit codes and a
+dictionary reset. The scan added a separate dictionary-capacity control whose
+pixels fit the canvas but whose code additions exceed dictionary storage; the
+affected native/backend gate was rerun.
+
+Shared dispatch passes 512 memory pairs plus five controls and 58 file cases plus
+three boundaries/100 low-descriptor cycles. Memory decoding includes forced
+Metal; file IO remains CPU/JS. Source/input/native hashes are in
+[evidence/gif-first-frame.json](evidence/gif-first-frame.json).
+
+Scoped review: I113 MATCH (`src/gif.bend`, `src/gif_lzw.bend` and public dispatch);
+A4/A5 HOLD through source/native lane gates; A6 HOLD in [GIF.md](GIF.md) and MIT/
+Jean-Marc Lienher/stb attribution; V2 HOLD through complete native pixels; V3 HOLD
+through dimensions, palettes, sub-blocks, dictionary and output checks. Offset/
+interlaced frames, animation/disposal/timing, original metadata and full resource/
+platform/performance remain gaps. Loading mappings remain partial.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, as do all
+four proofs, eleven harness/planning tests and project checks. GPU filesystem IO
+and remaining targets were not exercised.
+
+Regression scan: 98 callers checked, 28 assertions checked, 1 flagged/fixed.

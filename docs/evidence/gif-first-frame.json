@@ -1,0 +1,31 @@
+{
+  "date":"2026-09-27",
+  "source_sha256": {
+    "jonlib.bend":"b5623768108eefee55c97a117b1f9b1b0ac596cb86495cd2f8083893999ec4f2",
+    "src/gif.bend":"821ef58219dab26f7bea09a541d722abf0e42386181e502719df2b5b346ea76b",
+    "src/gif_lzw.bend":"ed28878be717bdc13f3ca5f1c5dc6f552b10ae242cb5d2ae71610b28b06eae55"
+  },
+  "gif_profile":"GIF87a/89a full-canvas non-interlaced first image, global/local palettes, Graphic Control transparency and bounded LSB-first LZW",
+  "gif": {
+    "inputs_sha256":"0cbdfeaceb8dad592b640b25f451ead5776104b8afb80cef6bdee7e4f1ee538d",
+    "reference_sha256":"a3456b4e93a0678d06d00f809c796e06cfabc32deb85e802ed27828ecd1b42d6",
+    "images":19,"pixels":4738,"typed_controls":20,
+    "passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "memory_dispatch": {
+    "inputs_sha256":"43b63a43d29bec9517c9bd2ee984deb8b757308bce0cdf138cf0d9346c30d842",
+    "reference_sha256":"168d01cea8a46093b0b6768aba65b012df2f41efa1cd00a213e1a3892a4cccf4",
+    "native_cases":512,"loaded_images":442,"typed_controls":5,"batch_size":64,
+    "passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "files": {
+    "inputs_sha256":"e1142b0731dad15677595682d683bad9a61ace4080aa28e3838ad3ffdd87ad91",
+    "reference_sha256":"33ce2fb6a5a3f6ed1bfeb4e0cf2ed53c87d3adb4ca4d50b517dc6f48c010e090",
+    "native_cases":58,"boundary_controls":3,"closure_iterations_per_lane":100,
+    "passed":true,"lanes":["cpu","javascript"]
+  },
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "limits":["Offset/interlaced frames and animation/disposal/timing", "Original metadata, native malformed recovery and full resource/platform/performance coverage", "File IO evidence is CPU/JavaScript only"]
+}
