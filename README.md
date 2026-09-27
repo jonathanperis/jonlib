@@ -63,7 +63,7 @@ See [supported payloads, extension aliases and bounds](docs/IMAGE-FILES.md).
 - Binary 8/16-bit PGM/PPM decoding with native header, maxval and little-endian sample behavior.
 - Raw/PackBits PSD decoding with native channels/alpha, explicit matte arithmetic, depth rules, defaults and metadata skipping.
 - Raw/pure-RLE/mixed-RLE Softimage PIC decoding with native clipping, white defaults and channel overwrite order.
-- Full-canvas first-frame GIF decoding with global/local palettes, transparency and bounded LZW.
+- First-frame GIF decoding with offsets/interlacing, native background fills, global/local palettes, transparency and bounded LZW.
 - Bounded raw DEFLATE decompression with native empty-block semantics.
 - PNG decoding across supported 1/2/4/8/16-bit formats, Adam7 and native-default CgBI.
 - Byte-exact default PNG export: byte-format memory output and all seven checked image formats through file export.

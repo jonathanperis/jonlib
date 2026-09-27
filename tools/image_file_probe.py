@@ -48,7 +48,9 @@ def image_streams():
             'psd-alpha':bytes(psd(3,2,alpha_planes())),
             'pic':bytes(pic(3,2,[(0xe0,pixels),(0x90,[0x07000000,0x08000080,0x090000ff,0x0a00007f,0x0b000001,0x0c0000fe])])),
             'pic-rle':bytes(pic_packets(3,2,[(2,0xf0,[[2,*rgba[:12]],[2,*rgba[12:]]])])),
-            'gif':bytes(gif(3,2,[0,1,2,3,2,1],[0x010203ff,0x112233ff,0xaabbccff,0xfedcbaff],transparent=1))}
+            'gif':bytes(gif(3,2,[0,1,2,3,2,1],[0x010203ff,0x112233ff,0xaabbccff,0xfedcbaff],transparent=1)),
+            'gif-interlaced':bytes(gif(5,4,[0,1,2,3,2,1],[0x010203ff,0x112233ff,0xaabbccff,0xfedcbaff],
+                transparent=1,background=2,frame=(1,1,3,2),interlaced=True))}
 
 
 def main():
@@ -84,6 +86,7 @@ def main():
     add('rle.psd',streams['psd-rle'])
     add('alpha.psd',streams['psd-alpha'])
     add('rle.pic',streams['pic-rle'])
+    add('offset-interlaced.gif',streams['gif-interlaced'])
     for name,kind in [('png-data.bmp','png'),('bmp-data.png','bmp'),('pnm-data.tga','ppm'),('tga-data.ppm','tga')]:add(name,streams[kind])
     add('mixed.PnG',streams['png'],'decode');add('unsupported.data',streams['png'],'decode')
     add('qoi-data.png',streams['qoi'],'decode');add('png-data.qoi',streams['png'],'decode')
