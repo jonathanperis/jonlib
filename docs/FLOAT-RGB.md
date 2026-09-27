@@ -38,6 +38,8 @@ forced Metal. Float normalization and large vector exports use exact F32 words;
 RGBA conversion uses complete bytes. Seven rejection controls verify preserved
 owners across all three components, including negative subnormal, out-of-range,
 infinite and NaN samples. Native round trips produce opaque alpha.
+Exact non-NaN raw-word import/export is documented in
+[FLOAT-RGB-BYTES.md](FLOAT-RGB-BYTES.md).
 
 All 109 byte/integer format cases, 42 complete packed-dither outputs and raw-file
 load/export/closure checks retain their existing results after prefix extraction

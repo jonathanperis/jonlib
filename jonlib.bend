@@ -920,16 +920,16 @@ def Image.FloatRGB.pixel.valid(value: M.Vector3) -> Bool:
   M.Vector3{r, g, b} = value
   Image.FloatRGB.channel.valid(r) && Image.FloatRGB.channel.valid(g) && Image.FloatRGB.channel.valid(b)
 
-def Image.FloatRGB.checked.read(result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Bool:
+def Image.FloatRGB.checked.read(~valid: M.Vector3 -> Bool, result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Bool:
   (pixels, value) = result
-  (pixels, Image.FloatRGB.pixel.valid(value))
+  (pixels, valid(value))
 
-def Image.FloatRGB.checked.pixels(n: Nat, +index: U32, state: Array<M.Vector3> & Bool) -> Array<M.Vector3> & Bool:
+def Image.FloatRGB.checked.pixels(~valid: M.Vector3 -> Bool, n: Nat, +index: U32, state: Array<M.Vector3> & Bool) -> Array<M.Vector3> & Bool:
   match n state:
     case _ Tuple{pixels, False{}}: (pixels, False{})
     case 0n _: state
     case 1n+rest Tuple{pixels, True{}}:
-      Image.FloatRGB.checked.pixels(rest, (index + 1 : U32), Image.FloatRGB.checked.read(Array.get(M.Vector3, pixels, index)))
+      Image.FloatRGB.checked.pixels(~valid, rest, (index + 1 : U32), Image.FloatRGB.checked.read(~valid, Array.get(M.Vector3, pixels, index)))
 
 def Image.FloatRGB.converted.read(index: U32, output: Array<U32>, result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Array<U32>:
   match result:
@@ -952,7 +952,74 @@ def Image.FloatRGB.converted(+width: U32, +height: U32, state: Array<M.Vector3> 
 
 def Image.FloatRGB.to_surface(image: Image.FloatRGB) -> Result<&1, &1, Image.FloatRGB, Surface>:
   FloatRGB{+width, +height, pixels} = image
-  Image.FloatRGB.converted(width, height, Image.FloatRGB.checked.pixels(U32.to_nat((width * height : U32)), 0, (pixels, True{})))
+  Image.FloatRGB.converted(width, height, Image.FloatRGB.checked.pixels(~Image.FloatRGB.pixel.valid, U32.to_nat((width * height : U32)), 0, (pixels, True{})))
+
+def Image.FloatRGB.raw.word_valid(word: U32) -> Bool:
+  ((word .&. 2147483647) <= 2139095040 : U32)
+
+def Image.FloatRGB.raw.pixel_valid(pixel: M.Vector3) -> Bool:
+  M.Vector3{r, g, b} = pixel
+  Image.FloatRGB.raw.word_valid(F32.bits(r)) && Image.FloatRGB.raw.word_valid(F32.bits(g)) && Image.FloatRGB.raw.word_valid(F32.bits(b))
+
+type Image.FloatRGB.Raw is Type:
+  RawRGB{bytes: +List<U32>, pixels: Array<M.Vector3>}
+
+def Image.FloatRGB.raw.stored(valid: Bool, index: U32, r: U32, g: U32, b: U32, bytes: +List<U32>, pixels: Array<M.Vector3>) -> Maybe<Image.FloatRGB.Raw>:
+  match valid:
+    case False{}: None{}
+    case True{}: Some{RawRGB{bytes, Array.set(M.Vector3, pixels, index, M.Vector3{Hdr.float_bits(r), Hdr.float_bits(g), Hdr.float_bits(b)})}}
+
+def Image.FloatRGB.raw.read(index: U32, pixels: Array<M.Vector3>, bytes: +List<U32>) -> Maybe<Image.FloatRGB.Raw>:
+  match bytes:
+    case Con{r0, Con{r1, Con{r2, Con{r3, Con{g0, Con{g1, Con{g2, Con{g3, Con{b0, Con{b1, Con{b2, Con{b3, rest}}}}}}}}}}}}:
+      +r = (r0 .|. (r1 << 8n) .|. (r2 << 16n) .|. (r3 << 24n) : U32)
+      +g = (g0 .|. (g1 << 8n) .|. (g2 << 16n) .|. (g3 << 24n) : U32)
+      +b = (b0 .|. (b1 << 8n) .|. (b2 << 16n) .|. (b3 << 24n) : U32)
+      Image.FloatRGB.raw.stored(Image.FloatRGB.raw.word_valid(r) && Image.FloatRGB.raw.word_valid(g) && Image.FloatRGB.raw.word_valid(b), index, r, g, b, rest, pixels)
+    case _: None{}
+
+def Image.FloatRGB.raw.pixels(n: Nat, +index: U32, state: Maybe<Image.FloatRGB.Raw>) -> Maybe<Array<M.Vector3>>:
+  match n state:
+    case _ None{}: None{}
+    case 0n Some{RawRGB{_, pixels}}: Some{pixels}
+    case 1n+rest Some{RawRGB{bytes, pixels}}: Image.FloatRGB.raw.pixels(rest, (index + 1 : U32), Image.FloatRGB.raw.read(index, pixels, bytes))
+
+def Image.FloatRGB.raw.created(width: U32, height: U32, result: Maybe<Array<M.Vector3>>) -> Maybe<Image.FloatRGB>:
+  match result:
+    case None{}: None{}
+    case Some{pixels}: Some{FloatRGB{width, height, pixels}}
+
+def Image.FloatRGB.raw.checked(valid: Bool, +width: U32, +height: U32, bytes: +List<U32>) -> Maybe<Image.FloatRGB>:
+  match valid:
+    case False{}: None{}
+    case True{}:
+      +count = (width * height : U32)
+      Image.FloatRGB.raw.created(width, height, Image.FloatRGB.raw.pixels(U32.to_nat(count), 0,
+        Some{RawRGB{bytes, Array.new(M.Vector3, Surface.capacity(count), M.Vector3{0.0, 0.0, 0.0})}}))
+
+def Image.FloatRGB.raw.sized(valid: Bool, +width: U32, +height: U32, +bytes: +List<U32>) -> Maybe<Image.FloatRGB>:
+  match valid:
+    case False{}: None{}
+    case True{}: Image.FloatRGB.raw.checked(Formats.valid(bytes, (width * height * 12 : U32), True{}), width, height, bytes)
+
+def Image.FloatRGB.from_bytes(+width: U32, +height: U32, bytes: +List<U32>) -> Maybe<Image.FloatRGB>:
+  Image.FloatRGB.raw.sized(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32), width, height, bytes)
+
+def Image.FloatRGB.raw.pack(pixels: List<M.Vector3>, values: +List<U32>) -> +List<U32>:
+  match pixels:
+    case Nil{}: List.reverse(&2, U32, values)
+    case Con{M.Vector3{r, g, b}, rest}:
+      Image.FloatRGB.raw.pack(rest, Formats.word_bytes(~&2, 4n, F32.bits(b), Formats.word_bytes(~&2, 4n, F32.bits(g), Formats.word_bytes(~&2, 4n, F32.bits(r), values))))
+
+def Image.FloatRGB.raw.exported(+width: U32, +height: U32, state: Array<M.Vector3> & Bool) -> Result<&1, &1, Image.FloatRGB, +List<U32>>:
+  match state:
+    case Tuple{pixels, False{}}: Fail{FloatRGB{width, height, pixels}}
+    case Tuple{pixels, True{}}:
+      Done{Image.FloatRGB.raw.pack(Image.list.take(~M.Vector3, Array.to_list(~M.Vector3, pixels), U32.to_nat((width * height : U32))), Nil{})}
+
+def Image.FloatRGB.to_bytes(image: Image.FloatRGB) -> Result<&1, &1, Image.FloatRGB, +List<U32>>:
+  FloatRGB{+width, +height, pixels} = image
+  Image.FloatRGB.raw.exported(width, height, Image.FloatRGB.checked.pixels(~Image.FloatRGB.raw.pixel_valid, U32.to_nat((width * height : U32)), 0, (pixels, True{})))
 
 type Image.Formatted is Type:
   FormattedImage{width: U32, height: U32, format: U32, pixels: Array<U32>}
