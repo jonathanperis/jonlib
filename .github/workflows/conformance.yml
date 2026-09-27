@@ -231,6 +231,11 @@ jobs:
           python3 tools/image_channel_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify native formatted and float color observations
+        run: >-
+          python3 tools/image_colors_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Verify image-memory token and content dispatch
         run: >-
           python3 tools/image_memory_probe.py
@@ -362,6 +367,7 @@ jobs:
             .build/float-rgb-formats-probe/results.json
             .build/formatted-float-probe/results.json
             .build/image-channel-probe/results.json
+            .build/image-colors-probe/results.json
             .build/psd-matte-probe/results.json
             .build/inflate-probe/results.json
             .build/png-probe/results.json

@@ -120,6 +120,8 @@ preserving float bits that an intermediate RGBA8 conversion would lose. See
 
 Native grayscale channel extraction retains the float source and follows RGB
 selector redirection; see [IMAGE-CHANNELS.md](IMAGE-CHANNELS.md).
+Native bulk/point color observations and their owner/domain contracts are in
+[IMAGE-COLORS.md](IMAGE-COLORS.md).
 
 Surface colors, FloatRGB entries and packed/formatted image exports use a shared
 tail-recursive logical-prefix operation. This replaces pinned Base `List.take`

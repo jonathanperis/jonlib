@@ -931,11 +931,13 @@ def Image.FloatRGB.checked.pixels(~valid: M.Vector3 -> Bool, n: Nat, +index: U32
     case 1n+rest Tuple{pixels, True{}}:
       Image.FloatRGB.checked.pixels(~valid, rest, (index + 1 : U32), Image.FloatRGB.checked.read(~valid, Array.get(M.Vector3, pixels, index)))
 
+def Image.FloatRGB.pixel.color(value: M.Vector3) -> U32:
+  M.Vector3{r, g, b} = value
+  Color.rgba(F32.to_u32((r * 255.0 : F32)), F32.to_u32((g * 255.0 : F32)), F32.to_u32((b * 255.0 : F32)), 255)
+
 def Image.FloatRGB.converted.read(index: U32, output: Array<U32>, result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Array<U32>:
-  match result:
-    case Tuple{pixels, M.Vector3{r, g, b}}:
-      color = Color.rgba(F32.to_u32((r * 255.0 : F32)), F32.to_u32((g * 255.0 : F32)), F32.to_u32((b * 255.0 : F32)), 255)
-      (pixels, Array.set(U32, output, index, color))
+  (pixels, value) = result
+  (pixels, Array.set(U32, output, index, Image.FloatRGB.pixel.color(value)))
 
 def Image.FloatRGB.converted.pixels(n: Nat, +index: U32, state: Array<M.Vector3> & Array<U32>) -> Array<M.Vector3> & Array<U32>:
   match n state:
@@ -2313,6 +2315,59 @@ def Image.FloatRGB.channel.selected(valid: Bool, image: Image.FloatRGB, selected
 
 def Image.FloatRGB.from_channel(image: Image.FloatRGB, +selected: F32) -> Image.FloatRGB & Maybe<Image.Formatted>:
   Image.FloatRGB.channel.selected(Image.channel.valid(selected), image, selected)
+
+def Image.Formatted.colors.read(format: U32, values: List<U32>, result: Array<U32> & U32) -> Array<U32> & List<U32>:
+  (pixels, word) = result
+  (pixels, Con{Formats.image_color(format, word), values})
+
+def Image.Formatted.colors.pixels(n: Nat, +index: U32, +format: U32, state: Array<U32> & List<U32>) -> List<U32>:
+  match n state:
+    case 0n Tuple{_, values}: List.reverse(&1, U32, values)
+    case 1n+rest Tuple{source, values}:
+      Image.Formatted.colors.pixels(rest, (index + 1 : U32), format, Image.Formatted.colors.read(format, values, Array.get(U32, source, index)))
+
+def Image.Formatted.colors(image: Image.Formatted) -> List<U32>:
+  FormattedImage{width, height, format, pixels} = image
+  Image.Formatted.colors.pixels(U32.to_nat((width * height : U32)), 0, format, (pixels, Nil{}))
+
+def Image.Formatted.get.read(width: U32, height: U32, +format: U32, result: Array<U32> & U32) -> Image.Formatted & Maybe<&2, U32>:
+  (pixels, word) = result
+  (FormattedImage{width, height, format, pixels}, Some{Formats.image_color(format, word)})
+
+def Image.Formatted.get.checked(valid: Bool, +width: U32, height: U32, format: U32, pixels: Array<U32>, x: U32, y: U32) -> Image.Formatted & Maybe<&2, U32>:
+  match valid:
+    case False{}: (FormattedImage{width, height, format, pixels}, None{})
+    case True{}: Image.Formatted.get.read(width, height, format, Array.get(U32, pixels, (y * width + x : U32)))
+
+def Image.Formatted.get(image: Image.Formatted, +x: U32, +y: U32) -> Image.Formatted & Maybe<&2, U32>:
+  FormattedImage{+width, +height, format, pixels} = image
+  Image.Formatted.get.checked(((x < width) && (y < height) : U32), width, height, format, pixels, x, y)
+
+def Image.FloatRGB.colors.result(result: Result<&1, &1, Image.FloatRGB, Surface>) -> Result<&1, &1, Image.FloatRGB, List<U32>>:
+  match result:
+    case Fail{image}: Fail{image}
+    case Done{surface}: Done{Surface.colors(surface)}
+
+def Image.FloatRGB.colors(image: Image.FloatRGB) -> Result<&1, &1, Image.FloatRGB, List<U32>>:
+  Image.FloatRGB.colors.result(Image.FloatRGB.to_surface(image))
+
+def Image.FloatRGB.get.valid(valid: Bool, width: U32, height: U32, pixels: Array<M.Vector3>, value: M.Vector3) -> Image.FloatRGB & Maybe<&2, U32>:
+  match valid:
+    case False{}: (FloatRGB{width, height, pixels}, None{})
+    case True{}: (FloatRGB{width, height, pixels}, Some{Image.FloatRGB.pixel.color(value)})
+
+def Image.FloatRGB.get.read(width: U32, height: U32, result: Array<M.Vector3> & M.Vector3) -> Image.FloatRGB & Maybe<&2, U32>:
+  (pixels, +value) = result
+  Image.FloatRGB.get.valid(Image.FloatRGB.pixel.valid(value), width, height, pixels, value)
+
+def Image.FloatRGB.get.checked(valid: Bool, +width: U32, height: U32, pixels: Array<M.Vector3>, x: U32, y: U32) -> Image.FloatRGB & Maybe<&2, U32>:
+  match valid:
+    case False{}: (FloatRGB{width, height, pixels}, None{})
+    case True{}: Image.FloatRGB.get.read(width, height, Array.get(M.Vector3, pixels, (y * width + x : U32)))
+
+def Image.FloatRGB.get(image: Image.FloatRGB, +x: U32, +y: U32) -> Image.FloatRGB & Maybe<&2, U32>:
+  FloatRGB{+width, +height, pixels} = image
+  Image.FloatRGB.get.checked(((x < width) && (y < height) : U32), width, height, pixels, x, y)
 
 def Surface.flip.index(horizontal: Bool, +i: U32, +w: U32, h: U32) -> U32:
   Raster.index(Mirrored{w, h, horizontal}, i)

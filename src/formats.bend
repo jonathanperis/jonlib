@@ -125,6 +125,16 @@ def packed_rgba(format: U32, +word: U32) -> U32:
     case _:
       ((((word >> 12n) * 17) << 24n) .|. ((((word >> 8n) .&. 15) * 17) << 16n) .|. ((((word >> 4n) .&. 15) * 17) << 8n) .|. ((word .&. 15) * 17) : U32)
 
+def image_color(format: U32, +word: U32) -> U32:
+  match format:
+    case 1: (((word .&. 255) * 16843008) .|. 255 : U32)
+    case 2: (((word .&. 255) * 16843008) .|. (word >> 8n) : U32)
+    case 3: packed_rgba(3, word)
+    case 4: (swap(word) .|. 255 : U32)
+    case 5: packed_rgba(5, word)
+    case 6: packed_rgba(6, word)
+    case _: swap(word)
+
 def packed_color.write(index: U32, format: U32, read: Array<U32> & U32) -> Array<U32>:
   (pixels, word) = read
   Array.set(U32, pixels, index, packed_rgba(format, word))
