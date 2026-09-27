@@ -1943,3 +1943,42 @@ four proofs, eleven harness/planning tests and project checks. GPU filesystem IO
 and remaining targets were not exercised.
 
 Regression scan: 45 callers checked, 27 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `13e5688`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36299854244)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36299854259)
+passed, including native TGA type/depth selection.
+
+## Opaque raw PSD decoding
+
+`Surface.decode_psd` adds version-1 RGB PSD decoding for raw 8/16-bit planes and
+0..3 channels. RGB planes preserve order, absent channels default to zero, and
+alpha is opaque. Sixteen-bit big-endian samples retain their high byte. Reserved
+bytes and three mode/resource/layer sections are ignored after availability
+checks; dimensions and complete required samples are validated before allocating
+output. Shared raster dispatch recognizes the exact `8BPS` signature.
+
+The PSD gate passes 12 native images / 8,247 pixels and 16 typed-error controls on
+CPU/JavaScript/forced Metal. Cases cover every supported channel count/depth,
+reserved/metadata/trailing data, 4096-pixel axes, unsupported headers and incomplete
+samples/sections, including a declared section length of `0xffffffff` with a short
+actual input. Native inputs and output pixels are retained unchanged.
+
+Shared dispatch passes 402 memory pairs plus five controls on CPU/JS/Metal and
+51 file cases plus three boundaries and 100 low-descriptor cycles on CPU/JS.
+Both include actual PSD data, with lowercase/uppercase PSD files and cross-extension
+content detection. Evidence is in [evidence/psd-raw.json](evidence/psd-raw.json),
+and the retained stb MIT attribution covers the new Bend module.
+
+Scoped review: I108 MATCH (`src/psd.bend` and `jonlib.bend` adapters/dispatch);
+A4/A5 HOLD through source/native backend gates; A6 HOLD in [PSD.md](PSD.md) and
+the notices; V2 HOLD through complete linked native pixels; V3 HOLD through
+validated dimensions/sections/required plane bytes and bounded output indices.
+RLE, four-plus-channel white-matte correction, original metadata, malformed
+recovery and full resource/platform/performance remain gaps. The two loading
+mappings remain partial; no completed APIs are added.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, as do all
+four proofs, eleven harness/planning tests and project checks. GPU filesystem IO
+and remaining targets were not exercised.
+
+Regression scan: 50 callers checked, 24 assertions checked, 0 flagged/fixed.

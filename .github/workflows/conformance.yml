@@ -155,6 +155,11 @@ jobs:
           python3 tools/pnm_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify opaque raw PSD planes and metadata bounds
+        run: >-
+          python3 tools/psd_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Check the compiler overlay against upstream regressions
         run: >-
           python3 tools/verify_bend.py
@@ -243,6 +248,7 @@ jobs:
             .build/bmp-probe/results.json
             .build/tga-probe/results.json
             .build/pnm-probe/results.json
+            .build/psd-probe/results.json
             .build/inflate-probe/results.json
             .build/png-probe/results.json
             .build/deflate-probe/results.json

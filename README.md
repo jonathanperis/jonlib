@@ -61,6 +61,7 @@ See [supported payloads, extension aliases and bounds](docs/IMAGE-FILES.md).
 - CORE indexed/RGB24 and 40/56/108/124-byte BMP profiles with native palette, bitfield and alpha behavior; exact RGBA8 V4 export and owned raw image-file IO.
 - TGA raw/RLE true-color, grayscale and indexed decoding with byte-exact default RLE export.
 - Binary 8/16-bit PGM/PPM decoding with native header, maxval and little-endian sample behavior.
+- Opaque raw 8/16-bit PSD decoding with native planar channels, defaults and metadata skipping.
 - Bounded raw DEFLATE decompression with native empty-block semantics.
 - PNG decoding across supported 1/2/4/8/16-bit formats, Adam7 and native-default CgBI.
 - Byte-exact default PNG export: byte-format memory output and all seven checked image formats through file export.
