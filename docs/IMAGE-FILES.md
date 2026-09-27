@@ -59,15 +59,15 @@ python3 tools/image_file_probe.py --bend-source "$BEND_SOURCE" --raylib-source "
 ```
 
 Configure checkout variables as described in [README.md](../README.md#requirements).
-The memory probe compares 270 native token/content pairs, including 222 successful
+The memory probe compares 314 native token/content pairs, including 262 successful
 images with every dimension and pixel checked, plus five typed invalid controls
 on CPU, JavaScript and forced Metal.
 
-The file probe compares 44 native file cases: 43 actual `LoadImage` calls and an
+The file probe compares 46 native file cases: 45 actual `LoadImage` calls and an
 explicit QOI-selection check through the native memory entry point. Cases cover
 all supported suffixes, uppercase and cross-extension content, mixed/unsupported
 suffixes, aliases, multiple dots, directory-qualified dotfiles,
-invalid/empty/missing files, 16-bit PPM, packed/indexed TGA and BMP, BMP bitfields,
+invalid/empty/missing files, 16-bit PPM, packed/indexed TGA and BMP, BMP bitfields/extended headers,
 and retained explicit-QOI behavior.
 
 Three additional size/read boundaries and 100 success/decode/read/size-error

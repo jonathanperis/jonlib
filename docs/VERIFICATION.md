@@ -1787,3 +1787,41 @@ project checks pass. GPU filesystem IO and remaining targets were not exercised.
 The API ledger retains 104 core and 142 math partial mappings, zero complete.
 
 Regression scan: 68 callers checked, 33 assertions checked, 2 flagged/fixed.
+
+Hosted confirmation for `c4cca6f`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36293774991)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36293775065)
+passed, including native bitfield alignment and V4 alpha preservation.
+
+## 56-byte and V5 BMP headers
+
+The existing BMP profiles now accept 56-byte and 124-byte DIBs. Native 56-byte
+loading discards the embedded four mask words; bitfield images read three further
+RGB masks after the DIB and include them in the effective header length. Its
+uncompressed 16-bit path ignores embedded alpha and remains opaque. V5 follows
+V4 mask/alpha behavior and consumes four ignored intent/profile words without
+following profile offsets.
+
+The BMP gate passes 80 native images / 5,861 pixels, 33 typed-error controls and
+three exact exports / 410 bytes on CPU/JavaScript/forced Metal. Added profiles
+cover indexed, 16/24/32-bit and bitfield images, contradictory embedded masks,
+zero/mixed alpha, ignored V5 profile fields and double-skipped gap bytes. Missing
+embedded/external/profile words and offsets inside the 56-byte mask extension
+reject with typed header errors. All prior profiles remain in the same gate.
+
+Shared dispatch passes 314 memory pairs plus five controls on CPU/JS/Metal and
+46 file cases plus three boundaries and 100 low-descriptor cycles on CPU/JS.
+Both exercise 56-byte and V5 streams. Source/input/native hashes are in
+[evidence/bmp-headers.json](evidence/bmp-headers.json).
+
+Scoped review: I103 MATCH (`src/bmp.bend:117-162`); A4/A5 HOLD through source and
+native backend gates; A6 HOLD in [BMP.md](BMP.md); V2 HOLD through complete native
+pixel/export comparisons; V3 HOLD through header-prefix/effective-offset bounds
+and unchanged checked pixel addressing. CORE headers, original metadata, native
+malformed recovery and full resource/platform/performance remain gaps.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal. All four
+proofs, ten harness/planning tests and project checks pass. GPU filesystem IO and
+remaining targets were not exercised. The two loading mappings remain partial,
+with zero full-parity completions.
+
+Regression scan: 40 callers checked, 37 assertions checked, 0 flagged/fixed.

@@ -82,7 +82,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | `ImageRotateCW/CCW` | `Surface.rotate_cw/rotate_ccw` | Exact RGBA bytes, non-square dimensions and transform sequencing |
 | `ImageRotate` / `ImageToPOT` | `Surface.rotate_degrees_for/to_pot` | Checked general rotation with reference bilinear sampling; exhaustive supported POT-axis reference validation and exact fill/copy fixtures |
 | QOI loading/export | `Surface.decode_qoi/to_qoi/load_qoi/write_qoi` | Valid-stream RGBA8 profile, all opcodes, exact export bytes, typed malformed-input errors and real CPU/JS file round trips |
-| BMP decoding/export | `Surface.decode_bmp/to_bmp/write_bmp` | INFO/V4 indexed 1/4/8-bit, true-color 16/24/32-bit and bitfield 16/32-bit profiles; native masks, alpha/gaps, palettes and exact exports |
+| BMP decoding/export | `Surface.decode_bmp/to_bmp/write_bmp` | 40/56/108/124-byte headers: indexed 1/4/8-bit, true-color 16/24/32-bit and bitfield 16/32-bit; native masks/alpha/offsets and exact exports |
 | TGA decoding/export | `Surface.decode_tga/to_tga/write_tga` | Raw/RLE true-color, grayscale and indexed profiles; native RGB555/alpha, palette skips/index recovery, exact exports and bounded errors |
 | Binary PGM/PPM decoding | `Surface.decode_pnm` | P5/P6 8/16-bit samples, native little-endian narrowing and maxval/separator/comment rules; full dimension-boundary pixels |
 | Raw DEFLATE | `Compression.decompress` | Stored/fixed/dynamic blocks and bounded copies; native empty-stored-block completion differs explicitly from the internal PNG-oriented path |
