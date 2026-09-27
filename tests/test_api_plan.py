@@ -77,7 +77,7 @@ inline Vec operator + (const Vec& lhs, const float& rhs) { return lhs; }
                     'ImageDraw','ImageFromImage','ImageCrop','ImageResizeNN','ImageResize'}
         self.assertLessEqual(baseline, set(legacy))
         self.assertIn('Surface.draw_image_rect', legacy['ImageDraw']['jonlib'])
-        self.assertEqual(legacy['ImageResize']['jonlib'], 'Surface.resize')
+        self.assertEqual(legacy['ImageResize']['jonlib'], 'Surface.resize / Image.FloatRGB.resize')
         mapped = {row['id']:row for row in json.loads(outputs['api/ledger.json'])['entries']}
         self.assertEqual(mapped['raymath:function:Vector2Add']['jonlib'], 'jonmath.Vector2.add')
         self.assertEqual(mapped['raymath:function:Vector2Add']['milestone'], 'jonmath')

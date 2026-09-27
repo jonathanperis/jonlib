@@ -2677,3 +2677,32 @@ harness/planning tests and project checks pass. Remaining targets and unrestrict
 numeric/resource/performance domains were not exercised.
 
 Regression scan: 17 callers checked, 21 assertions checked, 0 flagged/fixed.
+
+## Native quantized RGB float filtered resizing
+
+`Image.FloatRGB.resize` follows the format-9 reference fallback through RGBA8
+truncation, default four-channel filtering and float normalization. Same-size
+calls still quantize. The filtered and nearest APIs share source-retaining
+dispatch, preserving the original owner on unsupported samples or dimensions.
+
+The filtered gate passes 26 native cases / 2,878 pixels and three complete
+retained owners on CPU/JS/Metal. Nearest retains all 24 cases / 1,854 pixels and
+five owner controls. The underlying Surface filter gate passes 529 images /
+46,474 pixels, 2,601 exact kernels and 1,059 normalization vectors / 6,470 exact
+coefficient bits across the same lanes. See
+[evidence/float-rgb-filtered.json](evidence/float-rgb-filtered.json).
+
+Scoped review: I130 MATCH (native quantized filtering and shared recovery);
+A3 HOLD through complete owner comparisons; A4/A5 HOLD through source/native
+backend gates; A6 HOLD in [FLOAT-RGB.md](FLOAT-RGB.md); V2 HOLD through actual
+`ImageResize` words and retained coefficient/pixel oracles; V3 HOLD through
+existing sample-domain, dimension and filter bounds. The planning test's exact
+legacy `ImageResize` mapping assertion was updated to include the verified float
+API and the suite rerun. Other domains/formats/mipmaps and complete resource/
+platform/performance remain gaps. Completion counts remain unchanged.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal. All four
+proofs, eleven harness/planning tests and project checks pass. Remaining targets
+and unrestricted numerical/resource/performance domains were not exercised.
+
+Regression scan: 16 callers checked, 20 assertions checked, 1 flagged/fixed.

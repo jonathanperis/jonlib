@@ -1,0 +1,16 @@
+{
+  "date":"2026-09-27",
+  "source_sha256":{"jonlib.bend":"52c320f28a32fa4368a6ea821314281297cc459faea8efd868dcbb253630622d"},
+  "profile":"Native format-9 fallback through RGBA8 truncation, default four-channel filtering and byte-to-float normalization",
+  "filtered": {
+    "inputs_sha256":"d9526688850dfc1f2fa340a0fde030928e5cffc533ffcad1d107117a6fee8d07",
+    "reference_sha256":"9414cb2b6c4eb13827d46d4ab9f5304c8c67272d955a2f9db1930dfb0e7d2e7f",
+    "native_cases":26,"pixels":2878,"retained_owner_controls":3,"passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "nearest_regression":{"native_cases":24,"pixels":1854,"retained_owners":5,"passed":true},
+  "surface_filter_regression":{"images":529,"pixels":46474,"kernels":2601,"normalization_vectors":1059,"coefficient_bits":6470,"passed":true,"lanes":["cpu","javascript","metal"]},
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "limits":["Out-of-range/nonfinite source samples and other image formats/mipmaps", "Complete resource/platform/performance coverage"]
+}
