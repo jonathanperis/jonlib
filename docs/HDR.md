@@ -9,6 +9,14 @@
 `(width, height, List<M.Vector3>)` in top-down row-major order.
 `Image.FloatRGB.unload(image)` consumes the owner and returns `Unit`.
 
+`Image.FloatRGB.load_hdr(path)` returns
+`IO(Result<&1, &1, Image.LoadError, Image.FloatRGB>)`. It explicitly selects the
+Radiance decoder regardless of filename, reads at most 1 MiB, requires the complete
+reported byte count and closes the handle before decoding. Open/size/read errors
+retain `ImageFileError`; decode/size errors are wrapped as `ImageDecodeError`.
+The supported IO domain is ordinary non-changing files, using the same byte-file
+boundary as Surface and animation loading.
+
 ## Current profile
 
 - `#?RADIANCE` or `#?RGBE` identifier, followed by LF-delimited header lines.
@@ -50,7 +58,7 @@ bytes become pixel zero, and a complete raw canvas replaces all earlier RLE outp
 Jonlib preserves that behavior while requiring the entire replacement payload.
 It does not expose native uninitialized samples from truncated raw recovery.
 
-RGBA8 conversion, shared float-format dispatch/file loading, broader
+RGBA8 conversion, shared float-format dispatch, broader
 header/permissive recovery and complete metadata/resource/platform/performance
 coverage remain gaps. `Surface.decode_image` retains its RGBA8 profiles; use the
 typed float API to preserve HDR samples.
@@ -59,6 +67,7 @@ typed float API to preserve HDR samples.
 
 ```sh
 python3 tools/hdr_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+python3 tools/hdr_file_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
 ```
 
 Configure checkout variables as in [README.md](../README.md#requirements).
@@ -71,6 +80,14 @@ also checked. RLE cases cover row/plane transitions, literals/repeats at packet
 limits, widths 8/9/127/128/129/256/4096 and zero/subnormal/extreme exponents.
 Later-row fallback cases replace one or two prior encoded rows and include the
 high-bit marker variant. Evidence is in [evidence/hdr-fallback.json](evidence/hdr-fallback.json).
+
+The file gate compares 26 native cases / 18,035 pixels on CPU/JavaScript, including
+uppercase `.HDR` and three explicit-selection cases with mixed/absent/other
+suffixes. Native `LoadImage` observes ordinary HDR suffixes; explicit cases use
+native `LoadFileData` plus `LoadImageFromMemory(".hdr", ...)`. Five boundary/error
+controls and 100 low-descriptor success/decode/read/size cycles pass. See
+[evidence/hdr-files.json](evidence/hdr-files.json). GPU filesystem IO, callbacks,
+concurrent/special files and complete resource/platform coverage remain gaps.
 
 The altered stb reader retains its MIT notice and upstream Nicolas Schulz credit;
 see [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).

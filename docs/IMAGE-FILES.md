@@ -42,6 +42,8 @@ this RGBA8 dispatch profile.
 suffix. Both operations share the checked IO boundary.
 The same byte-file boundary serves [owned animation loading](GIF-ANIMATION.md#file-loading),
 whose native GIF suffix selection additionally accepts mixed letter case.
+`Image.FloatRGB.load_hdr(path)` also shares that boundary, selecting the
+[HDR float decoder](HDR.md) explicitly with a 1 MiB encoded-input cap.
 
 ## Bounds, ownership and errors
 

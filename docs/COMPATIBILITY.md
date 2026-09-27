@@ -91,6 +91,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | Animation memory loading | `Image.Animation.decode_gif/decode_image_for/entries/unload` | Owned budgeted GIF sequences or one-frame static fallback; native disposal/palette/control behavior and explicit PSD arithmetic |
 | Animation file loading | `Image.Animation.load_image/load_image_for` | Case-insensitive GIF suffix selection, native static fallback, caller budgets and complete closed-handle reads on CPU/JS |
 | HDR float decoding | `Image.FloatRGB.decode_hdr/entries/unload` | Raw/RLE RGB F32, native later-row origin reset, bounded packets and exhaustive exact sample bits including subnormals |
+| HDR float file loading | `Image.FloatRGB.load_hdr` | Explicit Radiance selection, exact native file samples and shared bounded/complete/closed-handle IO on CPU/JS |
 | Raw DEFLATE | `Compression.decompress` | Stored/fixed/dynamic blocks and bounded copies; native empty-stored-block completion differs explicitly from the internal PNG-oriented path |
 | PNG decoding | `Surface.decode_png` | Non-interlaced/Adam7 1/2/4/8/16-bit and native-default CgBI profiles; filtering/scattering, palette/tRNS, framing and bounded errors |
 | PNG export | `Surface.to_png/write_png`, `Image.Formatted.to_png/write_png` | Exact default byte-format memory and format-1..7 file output; native packed expansion, channel/header preservation, rejection and normalized round trips |

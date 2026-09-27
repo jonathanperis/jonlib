@@ -2431,3 +2431,42 @@ four proofs, eleven harness/planning tests and project checks. Float file IO and
 remaining targets/resource/performance profiles were not exercised.
 
 Regression scan: 26 callers checked, 28 assertions checked, 0 flagged/fixed.
+
+## Explicit HDR float file loading
+
+`Image.FloatRGB.load_hdr` selects the Radiance decoder independently of filename,
+using the shared complete-read/closed-handle file boundary with a 1 MiB byte cap.
+It returns owned RGB float storage and preserves typed file/decode/size errors.
+
+The file gate passes 26 native cases / 18,035 pixels on CPU/JavaScript, including
+three explicit-selection cases. Ordinary `.hdr`/`.HDR` files use native
+`LoadImage`; mixed/absent/other suffixes use native file bytes and explicit `.hdr`
+memory selection. Five error/size controls and 100 success/decode/read/size cycles
+under a 64-descriptor limit pass. Every channel is compared as its exact native
+F32 word. Evidence is in [evidence/hdr-files.json](evidence/hdr-files.json).
+
+Scoped review: I121 MATCH (explicit codec, byte cap and shared IO); A3 HOLD through
+owned returns/closed handles; A4/A6 HOLD through source checks and [HDR.md](HDR.md);
+V2 HOLD through exact native file samples; V3 HOLD through the established byte
+boundary and decoder bounds. The scan removed stale file-loader gap wording that
+belonged to the separate animation API. Shared float dispatch/conversion, GPU file
+IO, callbacks and concurrent/special-file/native-ABI/resource/platform behavior
+remain gaps. Existing loading scope expands without changing API statuses.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, as do all
+four proofs, eleven harness/planning tests and project checks.
+
+Regression scan: 14 callers checked, 15 assertions checked, 2 flagged/fixed.
+
+## Hosted aggregate budget
+
+The [raw-HDR run for e6bceeb](https://github.com/jonathanperis/jonlib/actions/runs/36322504936)
+was cancelled at the 20-minute job deadline on both Ubuntu and macOS. HDR itself
+passed in 52/54 seconds, followed by the complete image-memory gate; cancellation
+occurred during the existing filtered-resize gate, with later steps skipped.
+This is partial hosted evidence, not a successful full workflow.
+
+The aggregate budget is now 30 minutes for the expanded serial suite. Individual
+compiler/runtime limits, native comparisons, expected results and all workflow
+steps are retained. The next published checkpoint must complete both hosted jobs
+before full hosted success is recorded.

@@ -21,7 +21,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04, macos-15]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 20
+    timeout-minutes: 30
     env:
       BEND_NO_TELEMETRY: '1'
       CC: clang
@@ -166,6 +166,11 @@ jobs:
           python3 tools/hdr_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify HDR float files and descriptor closure
+        run: >-
+          python3 tools/hdr_file_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Verify image-memory token and content dispatch
         run: >-
           python3 tools/image_memory_probe.py
@@ -284,6 +289,7 @@ jobs:
             .build/gif-animation-probe/results.json
             .build/animation-file-probe/results.json
             .build/hdr-probe/results.json
+            .build/hdr-file-probe/results.json
             .build/psd-matte-probe/results.json
             .build/inflate-probe/results.json
             .build/png-probe/results.json

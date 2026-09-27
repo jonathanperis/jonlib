@@ -151,6 +151,7 @@ is outside this API's contract.
 | `Image.Animation.load_image(path, maximum_frames, maximum_pixels)` / `load_image_for(reference, ...)` | Bounded ordinary-file animation loading with case-insensitive GIF suffixes, static fallback, closed handles and typed file/decode errors; see [GIF-ANIMATION.md](GIF-ANIMATION.md). |
 | `Image.Animation.entries(animation)` / `unload(animation)` | Consume the animation to return `(width, height, count, List<Surface>)` or dispose of the owned frames. |
 | `Image.FloatRGB.decode_hdr(bytes)` | Owned raw/scanline-RLE Radiance RGBE data with exact native F32 bits, including subnormals; see [HDR.md](HDR.md). |
+| `Image.FloatRGB.load_hdr(path)` | Explicit HDR file selection, 1 MiB byte cap, complete reads, closed handles and typed errors; returns owned RGB float pixels. See [HDR.md](HDR.md). |
 | `Image.FloatRGB.entries(image)` / `unload(image)` | Consume a float image to return `(width, height, List<M.Vector3>)` or dispose of its owned pixels. |
 | `Surface.decode_image_for(reference, file_type, bytes)` / `Surface.load_image_for(reference, path)` | Shared dispatch with `J.Image.Decode.Reference`; affects PSD matte arithmetic and retains existing bounds/error/closure behavior. Convenience calls select `J.UncontractedDecode{}`. |
 | `Surface.decode_png` | Bounded non-interlaced/Adam7 PNG and native-default CgBI decoding at supported 1/2/4/8/16-bit combinations; filtering, transparency and normalization in [PNG.md](PNG.md). |
