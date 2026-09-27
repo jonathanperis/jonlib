@@ -2543,3 +2543,43 @@ proofs, eleven harness/planning tests and project checks pass. Remaining targets
 raw NaN parity and complete resource/performance coverage were not exercised.
 
 Regression scan: 23 callers checked, 29 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `00933a4`: [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36325566236)
+passed, including native float conversion and stack-bounded large exports. The
+verified raw-byte interoperability batch was subsequently published as `f369aee`.
+
+## RGB float RAW file interoperability
+
+`Image.FloatRGB.load_raw` and `write_raw` add format-9 file IO. The load path shares
+bounded positional byte reads with the formatted loader, retaining native
+fitting-header/fallback-to-zero behavior and signed-int request/file bounds.
+Handles close before decoding; short reads retain `TruncatedRawImage`, while
+unsupported NaN payloads return `InvalidRawRequest` after closure.
+
+Writes consume valid owners into exact little-endian words. `FloatRGBSampleError`
+returns a rejected NaN owner before opening the path; `FloatRGBFileError` preserves
+Base file errors. The gate checks an existing sentinel file remains unchanged on
+sample rejection, alongside the returned owner and a directory write failure.
+
+Sixteen native RAW load/header cases, nine controls and 100 low-descriptor cycles
+pass on CPU/JS. Every output file matches native loaded storage; four normalized
+cases additionally use actual native `ExportImage(.raw)` where its auxiliary color
+casts are defined. Previous byte/integer RAW loading/export retains all 25 cases,
+five controls and 100 closure cycles. A pure short-read contract covers the shared
+byte-result boundary. See
+[evidence/float-rgb-raw-files.json](evidence/float-rgb-raw-files.json).
+
+Scoped review: I126 MATCH (shared RAW reads, exact float writes and typed owners);
+A3 HOLD through rejection/sentinel/closure checks; A4/A6 HOLD through source gates
+and [RAW-FILES.md](RAW-FILES.md); V2 HOLD through native loaded words and defined
+export bytes; V3 HOLD through request arithmetic, selected payload lengths and
+existing sample validation. NaN raw-bit parity, native auxiliary out-of-range
+casts, GPU file IO, callbacks/special files and complete resource/platform/native-
+ABI/performance coverage remain gaps. API statuses remain partial.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, including
+the updated pure RAW short-read contract. All four proofs, eleven harness/planning
+tests and project checks pass. GPU file IO and remaining targets/resource profiles
+were not exercised.
+
+Regression scan: 38 callers checked, 27 assertions checked, 0 flagged/fixed.

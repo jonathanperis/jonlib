@@ -68,6 +68,7 @@ See [supported payloads, extension aliases and bounds](docs/IMAGE-FILES.md).
 - Owned raw/scanline-RLE Radiance RGBE float images and bounded file loading, with exhaustive native F32-bit comparisons including subnormals.
 - Native RGB float/RGBA8 conversion with retained owners on unsupported samples and stack-bounded large image exports.
 - Exact non-NaN RGB float raw-byte import/export, including signed zero, subnormals and infinities.
+- RGB float RAW file loading/writing with native header selection, exact words and retained owners on rejected writes.
 - Bounded raw DEFLATE decompression with native empty-block semantics.
 - PNG decoding across supported 1/2/4/8/16-bit formats, Adam7 and native-default CgBI.
 - Byte-exact default PNG export: byte-format memory output and all seven checked image formats through file export.
