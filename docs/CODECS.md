@@ -12,6 +12,8 @@ TGA true-color/grayscale/indexed raw/RLE decoding and exact default RLE export a
 documented in [TGA.md](TGA.md).
 Binary 8/16-bit P5/P6 decoding and native sample/maxval/separator rules are documented in
 [PNM.md](PNM.md).
+Opaque raw 8/16-bit RGB PSD planes and metadata bounds are documented in
+[PSD.md](PSD.md).
 
 The raw [DEFLATE dependency](DEFLATE.md) is verified separately. Non-interlaced and
 Adam7 packed/8/16-bit PNG decoding, native-default CgBI, filters, transparency rules and limits are documented

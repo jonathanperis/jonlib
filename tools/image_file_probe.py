@@ -12,6 +12,7 @@ from conformance import BUILD, ENV, ROOT, checkout, run, source_gate
 from png_probe import png
 from bmp_probe import bitmap, bitmap16, bitfield_bitmap, core_bitmap, core_indexed_bitmap, indexed_bitmap
 from tga_probe import indexed_targa, targa
+from psd_probe import psd
 
 
 def limit_handles():
@@ -39,7 +40,8 @@ def image_streams():
             'bmp-v5':bytes(bitfield_bitmap(3,2,[0x1000,0x9000,0x123,0xffff,0,0x7fff],dib=124,masks=(0x123,0x456,0x789,0x8000),compression=0)),
             'bmp-core':bytes(core_bitmap(3,2,pixels,gap=4)),
             'bmp-core-indexed':bytes(core_indexed_bitmap(3,2,[0,1,2,2,1,0],[0x01020300,0x10203080,0xaabbcc01],remainder=2)),
-            'tga-cross':bytes(cross)}
+            'tga-cross':bytes(cross),
+            'psd':bytes(psd(3,2,[[1,4,7,10,13,16],[2,5,8,11,14,17],[3,6,9,12,15,18]]))}
 
 
 def main():
@@ -60,7 +62,7 @@ def main():
         if data is not None:path.write_bytes(data)
         elif path.exists():raise ValueError('Task-owned missing-file fixture unexpectedly exists')
         cases.append(dict(path=str(path.relative_to(ROOT)),data=list(data) if data is not None else None,error=error,legacy=legacy))
-    for extension in ('png','bmp','tga','pgm','ppm','qoi'):
+    for extension in ('png','bmp','tga','pgm','ppm','qoi','psd'):
         add(f'normal.{extension}',streams[extension]);add(f'upper.{extension.upper()}',streams[extension])
     add('wide-samples.ppm',streams['ppm16'])
     add('packed.tga',streams['tga16'])

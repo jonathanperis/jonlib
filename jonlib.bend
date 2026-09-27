@@ -20,6 +20,7 @@ import ./src/formats.bend as Formats
 import ./src/bmp.bend as Bmp
 import ./src/tga.bend as Tga
 import ./src/pnm.bend as Pnm
+import ./src/psd.bend as Psd
 import ./src/inflate.bend as Inflate
 import ./src/png.bend as Png
 import ./src/png_encode.bend as PngEncode
@@ -741,6 +742,21 @@ def Surface.pnm.result(result: Result<&1, &1, Pnm.Error, Pnm.Image>) -> Result<&
 
 def Surface.decode_pnm(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   Surface.pnm.result(Pnm.decode(bytes))
+
+def Surface.psd.error(error: Psd.Error) -> Image.DecodeError:
+  match error:
+    case Psd.BadHeader{}: InvalidImageHeader{}
+    case Psd.BadByte{}: InvalidImageByte{}
+    case Psd.BadSize{}: UnsupportedImageSize{}
+    case Psd.Truncated{}: TruncatedImageData{}
+
+def Surface.psd.result(result: Result<&1, &1, Psd.Error, Psd.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
+  match result:
+    case Fail{error}: Fail{Surface.psd.error(error)}
+    case Done{Psd.Image{w, h, pixels}}: Done{Surface{w, h, pixels}}
+
+def Surface.decode_psd(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
+  Surface.psd.result(Psd.decode(bytes))
 
 def Surface.png.error(error: Png.Error) -> Image.DecodeError:
   match error:
@@ -2039,18 +2055,24 @@ def Image.file.limit(kind: Image.FileKind) -> U32:
     case QoiFile{}: 83886102
     case _: 1048576
 
-def Image.file.raster_selected(png: Bool, bmp: Bool, pnm: Bool, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
-  match png bmp pnm:
-    case True{} _ _: Surface.decode_png(bytes)
-    case False{} True{} _: Surface.decode_bmp(bytes)
-    case False{} False{} True{}: Surface.decode_pnm(bytes)
-    case False{} False{} False{}: Surface.decode_tga(bytes)
+def Image.file.psd(bytes: +List<U32>) -> Bool:
+  match bytes:
+    case Con{56, Con{66, Con{80, Con{83, _}}}}: True{}
+    case _: False{}
+
+def Image.file.raster_selected(png: Bool, bmp: Bool, pnm: Bool, psd: Bool, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
+  match png bmp pnm psd:
+    case True{} _ _ _: Surface.decode_png(bytes)
+    case False{} True{} _ _: Surface.decode_bmp(bytes)
+    case False{} False{} True{} _: Surface.decode_pnm(bytes)
+    case False{} False{} False{} True{}: Surface.decode_psd(bytes)
+    case False{} False{} False{} False{}: Surface.decode_tga(bytes)
 
 def Image.file.raster(+bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   match bytes:
     case Con{+a, Con{+b, _}}:
       Image.file.raster_selected(U32.is_eq(a, 137) && U32.is_eq(b, 80), U32.is_eq(a, 66) && U32.is_eq(b, 77),
-        U32.is_eq(a, 80) && (U32.is_eq(b, 53) || U32.is_eq(b, 54)), bytes)
+        U32.is_eq(a, 80) && (U32.is_eq(b, 53) || U32.is_eq(b, 54)), Image.file.psd(bytes), bytes)
     case _: Surface.decode_tga(bytes)
 
 def Image.file.decode(kind: Image.FileKind, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
