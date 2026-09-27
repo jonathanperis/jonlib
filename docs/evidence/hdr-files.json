@@ -1,0 +1,19 @@
+{
+  "date":"2026-09-27",
+  "source_sha256": {
+    "jonlib.bend":"d24b11b53a29074b5f15a50c856fe65a68fa69e936321c7471811f77f05a4e7b",
+    "src/hdr.bend":"bb7f4be8ffaa8e31ef42a7c10d42797cdafa58add6c6c9b8eb2964113642f7f6"
+  },
+  "profile":"Explicit HDR file selection, 1 MiB cap, complete reads, closed handles and exact native RGB F32 sample bits",
+  "files": {
+    "inputs_sha256":"da66a6b56352a32226a0752ebd1a6c467b3e369f1a3cb0559bb5d153f3502199",
+    "reference_sha256":"91b8183126027b762dfc0e56002ca4c0907e7408c881981e3fd07be102e440a3",
+    "native_cases":26,"explicit_selection_cases":3,"pixels":18035,"controls":5,
+    "closure_iterations_per_lane":100,"file_descriptor_limit":64,
+    "passed":true,"lanes":["cpu","javascript"]
+  },
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "limits":["Shared float dispatch and conversion", "GPU filesystem IO, callbacks and concurrent/special-file semantics", "Original metadata and complete resource/platform/performance coverage"]
+}

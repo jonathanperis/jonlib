@@ -2303,6 +2303,16 @@ def Image.Animation.load_image_for(reference: Image.Decode.Reference, +path: Str
 def Image.Animation.load_image(path: String, maximum_frames: U32, maximum_pixels: U32) -> IO(Result<&1, &1, Image.LoadError, Image.Animation>):
   Image.Animation.load_image_for(UncontractedDecode{}, path, maximum_frames, maximum_pixels)
 
+def Image.FloatRGB.file.loaded(result: Result<&1, &1, Image.LoadError, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, Image.FloatRGB>):
+  match result:
+    case Fail{error}: IO.pure(Result<&1, &1, Image.LoadError, Image.FloatRGB>, Fail{error})
+    case Done{bytes}:
+      IO.pure(Result<&1, &1, Image.LoadError, Image.FloatRGB>, Image.file.decoded(Image.FloatRGB, Image.FloatRGB.decode_hdr(bytes)))
+
+def Image.FloatRGB.load_hdr(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.FloatRGB>):
+  IO.bind(Result<&1, &1, Image.LoadError, +List<U32>>, Result<&1, &1, Image.LoadError, Image.FloatRGB>,
+    Image.file.bytes(path, 1048576), Image.FloatRGB.file.loaded)
+
 type Image.RawLoadError is Type:
   RawFileError{code: U32, message: String}
   InvalidRawRequest{}

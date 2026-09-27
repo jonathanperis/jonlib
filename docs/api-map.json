@@ -221,11 +221,11 @@
     "milestone": "collision"
   },
   "LoadImage": {
-    "jonlib": "Surface.load_image / Surface.load_image_for / Surface.load_qoi",
+    "jonlib": "Surface.load_image / Surface.load_image_for / Surface.load_qoi / Image.FloatRGB.load_hdr",
     "status": "profile-covered",
-    "scope": "Bounded ordinary-file loading with native last-dot suffix/token/content selection across implemented BMP/PNG/TGA/PNM/PSD/PIC/GIF profiles and separate QOI selection. load_image_for propagates explicit PSD matte arithmetic through the complete-read and handle-closure path; load_image selects uncontracted. Results normalize to owned RGBA8 with typed file/decode errors; explicit load_qoi retains its selection/cap.",
+    "scope": "Bounded ordinary-file loading with native last-dot suffix/token/content selection across implemented RGBA8 BMP/PNG/TGA/PNM/PSD/PIC/GIF profiles, separate QOI selection and explicit Radiance HDR float loading. FloatRGB.load_hdr preserves native RGB F32 bits with a 1 MiB cap and filename-independent codec selection. All paths share complete reads, closed handles and typed file/decode errors. Surface.load_image_for propagates explicit PSD matte arithmetic; convenience Surface calls are uncontracted.",
     "gaps": [
-      "JPEG/HDR and other payload codecs; GIF animation, remaining dispatch families and larger raster files",
+      "JPEG and other payload codecs, shared float dispatch, remaining families and larger files",
       "Original pixel formats, additional native arithmetic profiles and reference callbacks",
       "Concurrent/special-file semantics and complete targets/integration/performance"
     ],
