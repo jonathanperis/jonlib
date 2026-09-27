@@ -153,6 +153,7 @@ is outside this API's contract.
 | `Image.FloatRGB.decode_hdr(bytes)` | Owned raw/scanline-RLE Radiance RGBE data with exact native F32 bits, including subnormals; see [HDR.md](HDR.md). |
 | `Image.FloatRGB.load_hdr(path)` | Explicit HDR file selection, 1 MiB byte cap, complete reads, closed handles and typed errors; returns owned RGB float pixels. See [HDR.md](HDR.md). |
 | `Image.FloatRGB.entries(image)` / `unload(image)` | Consume a float image to return `(width, height, List<M.Vector3>)` or dispose of its owned pixels. |
+| `Surface.to_float_rgb(surface)` / `Image.FloatRGB.to_surface(image)` | Native format-7/9 RGB normalization and checked opaque RGBA8 conversion. Rejection returns the original float owner; see [FLOAT-RGB.md](FLOAT-RGB.md). |
 | `Surface.decode_image_for(reference, file_type, bytes)` / `Surface.load_image_for(reference, path)` | Shared dispatch with `J.Image.Decode.Reference`; affects PSD matte arithmetic and retains existing bounds/error/closure behavior. Convenience calls select `J.UncontractedDecode{}`. |
 | `Surface.decode_png` | Bounded non-interlaced/Adam7 PNG and native-default CgBI decoding at supported 1/2/4/8/16-bit combinations; filtering, transparency and normalization in [PNG.md](PNG.md). |
 | `Surface.to_png`, `write_png` | Consuming RGBA8 memory/file exports with byte-exact native default filtering, quality-8 compression and checksums; see [PNG-EXPORT.md](PNG-EXPORT.md). |

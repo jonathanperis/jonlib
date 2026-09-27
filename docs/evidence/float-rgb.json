@@ -1,0 +1,19 @@
+{
+  "date":"2026-09-27",
+  "source_sha256":{"jonlib.bend":"a4900b7119144d86e2395caef1a4448ab08953a48e5b2c30b76621b25e745aa6"},
+  "profile":"Native format-7/9 RGB conversion, finite [0,1] bit-checked inputs, opaque alpha and preserved rejected owners",
+  "conversion": {
+    "inputs_sha256":"8c7758906974670d50b60cfe61d61ad463535d2778e9b40160441de382e6af32",
+    "reference_sha256":"084c7280cb1a1652b1c260c8687b03721ac0a9f7d42098001fe3d12faf15de79",
+    "normalized_byte_values":256,"boundary_pixels":769,"hdr_pixels":33024,"rejected_owner_controls":7,
+    "large_float_and_rgba_exports":true,"passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "regressions": {
+    "image_format_cases":109,"image_format_bytes":3192,"packed_dither_outputs":42,"pixel_size_cases":4563,
+    "raw_file_cases":25,"raw_file_controls":5,"raw_file_closure_cycles":100,"passed":true
+  },
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "limits":["Other float/half/compressed formats and mipmaps", "Unrestricted HDR-to-byte conversion and complete resource/platform/performance coverage"]
+}

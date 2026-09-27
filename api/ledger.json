@@ -41937,12 +41937,12 @@
       "phase": 1,
       "sequence": 6,
       "status": "partial",
-      "jonlib": "Image.Formatted.convert / Surface.to_formatted / Image.Formatted.to_surface",
+      "jonlib": "Image.Formatted.convert / Surface.to_formatted / Image.Formatted.to_surface / Surface.to_float_rgb / Image.FloatRGB.to_surface",
       "mapping_state": "implemented",
-      "scope": "Owned single-mip conversions among byte/integer formats 1..7. Preserves native normalized F32 arithmetic, reciprocal expansion, quantization, alpha threshold and same-format/zero-target no-ops; exports exact little-endian native-order bytes.",
+      "scope": "Owned single-mip conversions among byte/integer formats 1..7 and a separate format-7/9 RGB float bridge. Preserves native F32 normalization/quantization and opaque float-to-byte alpha; RGB floats outside finite [0,1] return the original owner. Byte/integer conversions retain reciprocal expansion, alpha thresholds, same-format/zero-target no-ops and native-order export bytes. Large owned exports use stack-bounded logical prefix extraction.",
       "gaps": [
-        "Float/half/compressed formats, mipmaps and other thresholds/endianness",
-        "Native allocation ABI and complete integration/target/resource/performance coverage"
+        "Other float/half/compressed formats, mipmaps and other thresholds/endianness",
+        "Out-of-domain float-to-byte casts, native allocation ABI and complete integration/target/resource/performance coverage"
       ],
       "blocker": null,
       "gates": {
@@ -41955,8 +41955,11 @@
       },
       "evidence": [
         "tools/image_format_probe.py",
+        "tools/float_rgb_probe.py",
         "tests/transforms.bend",
-        "docs/FORMATS.md"
+        "docs/FORMATS.md",
+        "docs/FLOAT-RGB.md",
+        "docs/evidence/float-rgb.json"
       ],
       "gate_evidence": {},
       "target_results": {},
