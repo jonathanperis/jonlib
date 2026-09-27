@@ -22,6 +22,7 @@ def image_streams():
     rgba=bytes([1,2,3,0, 17,63,201,128, 255,127,128,255, 254,253,252,1, 0,255,0,127, 255,0,255,255])
     pixels=[int.from_bytes(rgba[i:i+4],'big') for i in range(0,len(rgba),4)]
     bgra=bytes(v for i in range(0,len(rgba),4) for v in (rgba[i+2],rgba[i+1],rgba[i],rgba[i+3]))
+    cross=targa(3,2,4,[5,*bgra],rle=True,top=True);cross[2]=11
     return {'png':png(3,2,6,rgba,interlaced=True),
             'bmp':bytes(bitmap(3,2,pixels,top=True)),
             'tga':bytes(targa(3,2,4,[5,*bgra],rle=True,top=True)),
@@ -37,7 +38,8 @@ def image_streams():
             'bmp56':bytes(bitfield_bitmap(3,2,[0,0xffff,0x400,0x2404,0x1234,0x5678],dib=56,gap=3)),
             'bmp-v5':bytes(bitfield_bitmap(3,2,[0x1000,0x9000,0x123,0xffff,0,0x7fff],dib=124,masks=(0x123,0x456,0x789,0x8000),compression=0)),
             'bmp-core':bytes(core_bitmap(3,2,pixels,gap=4)),
-            'bmp-core-indexed':bytes(core_indexed_bitmap(3,2,[0,1,2,2,1,0],[0x01020300,0x10203080,0xaabbcc01],remainder=2))}
+            'bmp-core-indexed':bytes(core_indexed_bitmap(3,2,[0,1,2,2,1,0],[0x01020300,0x10203080,0xaabbcc01],remainder=2)),
+            'tga-cross':bytes(cross)}
 
 
 def main():
@@ -69,6 +71,7 @@ def main():
     add('header56.bmp',streams['bmp56']);add('header-v5.bmp',streams['bmp-v5'])
     add('header-core.bmp',streams['bmp-core'])
     add('core-indexed.bmp',streams['bmp-core-indexed'])
+    add('cross-type.tga',streams['tga-cross'])
     for name,kind in [('png-data.bmp','png'),('bmp-data.png','bmp'),('pnm-data.tga','ppm'),('tga-data.ppm','tga')]:add(name,streams[kind])
     add('mixed.PnG',streams['png'],'decode');add('unsupported.data',streams['png'],'decode')
     add('qoi-data.png',streams['qoi'],'decode');add('png-data.qoi',streams['png'],'decode')

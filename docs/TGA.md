@@ -8,8 +8,8 @@
 
 ## Decoding profile
 
-- Non-paletted true-color 15/16/24/32-bit images, types 2 and 10 (raw and RLE).
-- Non-paletted grayscale 8-bit and gray-alpha 16-bit images, types 3 and 11.
+- Non-paletted types 2/3/10/11 accept depths 8/15/16/24/32 with the native
+  depth-selection rules below. Types 10/11 are RLE.
 - Indexed images, types 1 and 9, with 8/16-bit indices and 1..65535 palette entries
   encoded at 8/15/16/24/32 bits. Palette 8-bit values are opaque grayscale;
   palette 15/16-bit values use opaque RGB555; 32-bit entries retain alpha.
@@ -21,7 +21,7 @@
   extending beyond the remaining image are rejected as `InvalidImageStream`.
 - Gray-alpha and 32-bit true-color retain zero alpha, unlike uncompressed BMP's
   alpha repair rule.
-- Both 15-bit and 16-bit true-color consume two little-endian bytes per pixel.
+- All 15-bit samples and type-2/type-10 16-bit samples consume two little-endian bytes per pixel.
   RGB fields are the five bits at shifts 10, 5 and 0, expanded with integer
   `channel*255/31`. The native decoder ignores bit 15 and the descriptor's alpha
   count for these packed formats: output alpha is always 255. This is distinct
@@ -30,13 +30,24 @@
   rather than shifting logical indices. Indices at or beyond the palette count
   select entry zero. Both behaviors are reproduced from actual native execution.
 
+| Depth | Types 2/10 | Types 3/11 |
+|---|---|---|
+| 8 | Opaque grayscale | Opaque grayscale |
+| 15 | Opaque RGB555 | Opaque RGB555 |
+| 16 | Opaque RGB555 | Gray + alpha bytes |
+| 24 | Opaque BGR | Opaque BGR |
+| 32 | BGRA, alpha retained | BGRA, alpha retained |
+
+The nominal true-color/grayscale type changes only the 16-bit interpretation.
+These cross-type combinations follow actual pinned native loading.
+
 Every supplied value must be a byte, otherwise decoding returns `InvalidImageByte`.
 Unsupported fields or incomplete headers return `InvalidImageHeader`; dimensions
 outside the profile return `UnsupportedImageSize`. Missing ID/pixel/packet data
 returns `TruncatedImageData`. Valid trailing bytes are ignored after the image.
 
-Other remaining variants, original-format metadata and native
-permissive malformed-data recovery remain gaps. Shared memory/file dispatch is
+Original-format metadata and native permissive malformed-data recovery remain
+gaps. Shared memory/file dispatch is
 documented in [IMAGE-FILES.md](IMAGE-FILES.md).
 
 ## Exact export packet selection
@@ -60,7 +71,7 @@ python3 tools/tga_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 ```
 
 Configure checkout variables as described in [README.md](../README.md#requirements).
-The shared bitmap comparison gate checks 48 native images (1,123 pixels), 23 typed
+The shared bitmap comparison gate checks 64 native images (1,219 pixels), 23 typed
 errors and 11 complete exports (3,447 bytes) on CPU, JavaScript and forced Metal.
 CPU/JS additionally compare a real file export. Packed cases cover all five-bit
 channel values, both high-bit states, both orientations and mixed raw/RLE packets;
@@ -68,8 +79,9 @@ existing gray-alpha and byte-color inputs remain in the same gate. Indexed cases
 cover every palette encoding and index width, raw/RLE packets, nonzero palette
 skips, out-of-range recovery, transparent entries and a 257-entry palette.
 Empty/unsupported/truncated palettes and indices are rejected. Shared memory
-and file dispatch exercise packed and indexed streams. See
-[evidence/tga-palettes.json](evidence/tga-palettes.json) for hashes and lane outcomes.
+and file dispatch exercise packed, indexed and cross-type streams. Cross-type
+fixtures verify every newly accepted combination in raw/RLE and both orientations.
+See [evidence/tga-depths.json](evidence/tga-depths.json) for hashes and lane outcomes.
 
 The altered stb implementation retains the selected MIT notice in
 [LICENSES/stb-image.txt](../LICENSES/stb-image.txt). Full platform/resource/
