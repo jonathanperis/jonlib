@@ -23,6 +23,22 @@ def short_read(result: Result<&1, &1, J.Image.LoadError, J.Surface>) -> Bool:
     case Fail{J.ImageDecodeError{J.TruncatedImageData{}}}: True{}
     case _: False{}
 
+def one_color(expected: U32, colors: List<U32>) -> Bool:
+  match colors:
+    case Con{actual, Nil{}}: U32.is_eq(expected, actual)
+    case _: False{}
+
+def decoded_color(expected: U32, result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> Bool:
+  match result:
+    case Done{J.Surface{1, 1, pixels}}: one_color(expected, J.Surface.colors(J.Surface{1, 1, pixels}))
+    case _: False{}
+
+def psd_profiles() -> Bool:
+  +bytes = {[56,66,80,83,0,1,0,0,0,0,0,0,0,4,0,0,0,1,0,0,0,1,0,8,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,11] : +List<U32>}
+  decoded_color(J.Color.rgba(255, 255, 255, 11), J.Surface.decode_psd(bytes))
+    && decoded_color(J.Color.rgba(255, 255, 255, 11), J.Surface.decode_image(".psd", bytes))
+    && decoded_color(J.Color.rgba(254, 254, 254, 11), J.Surface.decode_image_for(J.FusedDecode{}, ".psd", bytes))
+
 def checks() -> Bool:
   U32.is_eq(error_code(J.Surface.decode_qoi([113,111,105])), 0)
     && U32.is_eq(error_code(J.Surface.decode_qoi([256])), 1)
@@ -34,7 +50,8 @@ def checks() -> Bool:
     && U32.is_eq(file_kind(J.Image.file.kind(".jpeg")), 2)
     && U32.is_eq(file_kind(J.Image.file.kind("image.PNG")), 1)
     && U32.is_eq(file_kind(J.Image.file.kind("image.PnG")), 2)
-    && short_read(J.Image.file.payload(J.RasterFile{}, 2, Done{[1]}))
+    && short_read(J.Image.file.payload(J.UncontractedDecode{}, J.RasterFile{}, 2, Done{[1]}))
+    && psd_profiles()
 
 def verdict(ok: Bool) -> IO(Unit):
   match ok:

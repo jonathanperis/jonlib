@@ -32,6 +32,8 @@ with `M.Vector2{...}`, `M.Matrix{...}`, `M.Float64{...}` and `M.Decomposed{...}`
 Profile constructors are `M.AccurateGradient{}` and `M.GnuGradient{}`. Jonlib owns
 `J.Rectangle`, `J.BoundingBox`, `J.Surface` and its core-specific types; a bounding
 box's corners and geometry APIs use Jonmath vectors.
+`J.Image.Decode.Reference` and its `J.FusedDecode{}` / `J.UncontractedDecode{}`
+constructors belong to Jonlib's codec interface; see [PSD.md](PSD.md).
 
 ## Import migration
 

@@ -8,11 +8,11 @@ import resource
 import struct
 import subprocess
 
-from conformance import BUILD, ENV, ROOT, checkout, run, source_gate
+from conformance import BUILD, ENV, ROOT, checkout, image_decode_reference, run, source_gate
 from png_probe import png
 from bmp_probe import bitmap, bitmap16, bitfield_bitmap, core_bitmap, core_indexed_bitmap, indexed_bitmap
 from tga_probe import indexed_targa, targa
-from psd_probe import psd, rle_psd
+from psd_probe import alpha_planes, psd, rle_psd
 
 
 def limit_handles():
@@ -42,7 +42,8 @@ def image_streams():
             'bmp-core-indexed':bytes(core_indexed_bitmap(3,2,[0,1,2,2,1,0],[0x01020300,0x10203080,0xaabbcc01],remainder=2)),
             'tga-cross':bytes(cross),
             'psd':bytes(psd(3,2,[[1,4,7,10,13,16],[2,5,8,11,14,17],[3,6,9,12,15,18]])),
-            'psd-rle':bytes(rle_psd(3,2,[[128,1,1,4,253,7],[255,2,253,5],[5,3,6,9,12,15,18]],depth=16))}
+            'psd-rle':bytes(rle_psd(3,2,[[128,1,1,4,253,7],[255,2,253,5],[5,3,6,9,12,15,18]],depth=16)),
+            'psd-alpha':bytes(psd(3,2,alpha_planes()))}
 
 
 def main():
@@ -76,6 +77,7 @@ def main():
     add('core-indexed.bmp',streams['bmp-core-indexed'])
     add('cross-type.tga',streams['tga-cross'])
     add('rle.psd',streams['psd-rle'])
+    add('alpha.psd',streams['psd-alpha'])
     for name,kind in [('png-data.bmp','png'),('bmp-data.png','bmp'),('pnm-data.tga','ppm'),('tga-data.ppm','tga')]:add(name,streams[kind])
     add('mixed.PnG',streams['png'],'decode');add('unsupported.data',streams['png'],'decode')
     add('qoi-data.png',streams['qoi'],'decode');add('png-data.qoi',streams['png'],'decode')
@@ -110,7 +112,8 @@ def main():
     text=run([binary]);expected=[json.loads(line) for line in text.splitlines()]
     if len(expected)!=len(cases):raise ValueError('Incomplete native image-file results')
     if any(row['loaded']!=(case['error'] is None) for case,row in zip(cases,expected)):raise ValueError('Native image-file acceptance differs from fixture profile')
-    report=dict(passed=False,reference_cases=len(cases),boundary_controls=len(controls),closure_iterations=100,file_descriptor_limit=64,
+    profile=image_decode_reference()
+    report=dict(passed=False,reference_cases=len(cases),boundary_controls=len(controls),closure_iterations=100,file_descriptor_limit=64,decode_reference=profile,
                 inputs_sha256=hashlib.sha256(json.dumps([cases,controls]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest(),sources=source_gate(),lanes={})
     program='''import Base
 import ../../jonlib.bend as J
@@ -137,19 +140,21 @@ def closure_loop(n: Nat) -> IO(Unit):
     case 0n: IO.print("{\\"closure_checks\\":true}")
     case 1n+rest:
       do IO<Unit>:
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image(VALID), required("success"))
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image(INVALID), required("decode"))
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image(DIRECTORY), required("file"))
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image(LARGE), required("size"))
+        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, VALID), required("success"))
+        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, INVALID), required("decode"))
+        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, DIRECTORY), required("file"))
+        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, LARGE), required("size"))
         closure_loop(rest)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
-    for key,path in [('INVALID',work/'malformed.png'),('VALID',work/'normal.png'),('DIRECTORY',directory),('LARGE',work/'large.png')]:
+    program=program.replace('REFERENCE',f'J.{profile}{{}}')
+    for key,path in [('INVALID',work/'malformed.png'),('VALID',work/'alpha.psd'),('DIRECTORY',directory),('LARGE',work/'large.png')]:
         program=program.replace(key,json.dumps(str(path.relative_to(ROOT))))
     for case in [*cases,*controls]:
-        function='load_qoi' if case['legacy'] else 'load_image'
-        program+=f'    IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.{function}({json.dumps(case["path"])}), observed)\n'
+        function='load_qoi' if case['legacy'] else 'load_image_for'
+        reference='' if case['legacy'] else f'J.{profile}{{}}, '
+        program+=f'    IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.{function}({reference}{json.dumps(case["path"])}), observed)\n'
     program+='    closure_loop(100n)\n'
     source=work/'candidate.bend';source.write_text(program)
     for lane in ('cpu','javascript'):
