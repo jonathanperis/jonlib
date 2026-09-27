@@ -85,7 +85,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | Binary PGM/PPM decoding | `Surface.decode_pnm` | P5/P6 byte samples, native maxval/separator/comment rules and full dimension-boundary pixels |
 | Raw DEFLATE | `Compression.decompress` | Stored/fixed/dynamic blocks and bounded copies; native empty-stored-block completion differs explicitly from the internal PNG-oriented path |
 | PNG decoding | `Surface.decode_png` | Non-interlaced/Adam7 1/2/4/8/16-bit and native-default CgBI profiles; filtering/scattering, palette/tRNS, framing and bounded errors |
-| PNG export | `Surface.to_png/write_png` | Exact native default RGBA8 memory/file bytes, filter/compressor/checksum rules and complete candidate round trips |
+| PNG export | `Surface.to_png/write_png`, `Image.Formatted.to_png` | Exact native default RGBA8 memory/file and byte-format memory output; source channel/header preservation, checked rejection and complete normalized round trips |
 | Scalar/Vector2/Vector3/Vector4 raymath | `Math` and vector functions | Exact results for the explicit uncontracted-F32 profile; exceptional/contracted variants remain open |
 | Vector angle queries | `Vector2.angle/line_angle`, `Vector3.angle` and `_for` variants | Explicit Apple/GNU numerical profiles with exact native/control probes and signed quadrant behavior |
 | Quaternion arithmetic/metrics/interpolation | `Quaternion` functions | Shared Vector4 representation; exact Hamilton products, zero normalization/inversion, NLERP and sign-equivalent equality |

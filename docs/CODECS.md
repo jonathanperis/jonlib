@@ -49,7 +49,7 @@ the C decoder's permissive recovery of some malformed streams.
 The pinned raylib **`ExportImageToMemory` implements PNG only**. QOI memory
 encoding is a Jonlib convenience backing the QOI `ExportImage` mapping; it is
 not claimed as coverage of `ExportImageToMemory`.
-`Surface.to_png` now covers the default RGBA8 PNG memory path, with exact native
+`Surface.to_png` and `Image.Formatted.to_png` cover the default RGBA8 and byte-format PNG memory paths, with exact native
 memory/file verification described in [PNG-EXPORT.md](PNG-EXPORT.md).
 
 The conformance gate calls actual raylib `ExportImage` to task-owned QOI files

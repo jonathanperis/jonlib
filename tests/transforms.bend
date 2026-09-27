@@ -242,6 +242,26 @@ def formatted_roundtrip(result: Maybe<J.Surface>) -> Bool:
     case None{}: False{}
     case Some{surface}: pixels_kept(J.Surface.colors(J.Image.Formatted.to_surface(J.Surface.to_formatted(surface))))
 
+def png_owner_bytes(format: U32, data: (U32 & U32) & (U32 & List<U32>)) -> Bool:
+  match data:
+    case Tuple{Tuple{1, 2}, Tuple{actual, Con{1, Con{2, Con{3, Con{4, Nil{}}}}}}}: U32.is_eq(format, actual)
+    case _: False{}
+
+def png_rejected(format: U32, result: Result<&1, &1, J.Image.Formatted & J.Pixel.Error, +List<U32>>) -> Bool:
+  match result:
+    case Fail{Tuple{image, J.UnsupportedPixelFormat{}}}: png_owner_bytes(format, J.Image.Formatted.export(image))
+    case _: False{}
+
+def png_created(format: U32, result: Maybe<J.Image.Formatted>) -> Bool:
+  match result:
+    case None{}: False{}
+    case Some{image}: png_rejected(format, J.Image.Formatted.to_png(image))
+
+def png_rejections(formats: +List<U32>) -> Bool:
+  match formats:
+    case Nil{}: True{}
+    case Con{+format, rest}: png_created(format, J.Image.Formatted.from_bytes(1, 2, format, [1,2,3,4])) && png_rejections(rest)
+
 def verdict(ok: Bool) -> IO(Unit):
   match ok:
     case True{}:
@@ -307,6 +327,7 @@ def checks() -> Bool:
     && no_formatted(J.Image.Formatted.from_bytes(1, 1, 7, [1,2,3,256]))
     && formatted_created(J.Image.Formatted.from_bytes(1, 2, 2, [1,2,3,4]))
     && formatted_roundtrip(J.Surface.create(2, 1, 16909060))
+    && png_rejections([3,5,6])
 
 def main() -> IO(Unit):
   verdict(checks())

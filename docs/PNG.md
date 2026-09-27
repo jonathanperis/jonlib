@@ -79,7 +79,7 @@ raster lengths or palette indices return `InvalidImageStream`. Bounds are checke
 before array indexing, and dimensions/filtered capacity before allocation.
 
 Nondefault external stb decoder flags, original-format metadata, generic dispatch
-and broader malformed-input recovery remain gaps. Exact default RGBA8 export is
+and broader malformed-input recovery remain gaps. Exact default byte-format export is
 documented in [PNG-EXPORT.md](PNG-EXPORT.md).
 
 ## Verification

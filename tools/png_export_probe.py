@@ -23,6 +23,13 @@ def fixtures():
         cases.append(dict(id=name,width=width,height=height,data=data))
     for name,width,height in [('noise-filters',8,32),('stored32766',32,254),('stored32767',54,151),('stored-two',128,64),('stored-three',128,128)]:
         cases.append(dict(id=name,width=width,height=height,data=bytes(rng.randrange(256) for _ in range(width*height*4))))
+    for format,channels in ((1,1),(2,2),(4,3),(7,4)):
+        for width,height in ((1,1),(3,2),(1,33),(8,32)):
+            data=bytearray(rng.randrange(256) for _ in range(width*height*channels))
+            if channels in (2,4):
+                for i,alpha in enumerate((0,1,127,128,254,255)):
+                    if i<width*height:data[i*channels+channels-1]=alpha
+            cases.append(dict(id=f'format-{format}-{width}-{height}',format=format,width=width,height=height,data=bytes(data)))
     return cases
 
 
@@ -45,13 +52,13 @@ def main():
         path=work/f'{case["id"]}.rgba';path.write_bytes(case['data'])
         output=work/f'reference-{case["id"]}.png'
         lines += ['{int size=0,n=0,file_size=0;',f'unsigned char *data=LoadFileData({json.dumps(str(path))},&size);if(!data||size!={len(case["data"])})return 1;',
-                  f'Image image={{data,{case["width"]},{case["height"]},1,7}};',
+                  f'Image image={{data,{case["width"]},{case["height"]},1,{case.get("format",7)}}};',
                   'unsigned char *encoded=ExportImageToMemory(image,".png",&n);if(!encoded)return 2;',
                   f'if(!ExportImage(image,{json.dumps(str(output))}))return 3;',
                   f'unsigned char *file=LoadFileData({json.dumps(str(output))},&file_size);if(!file||file_size!=n||memcmp(file,encoded,n))return 4;',
                   'Image decoded=LoadImageFromMemory(".png",encoded,n);if(!decoded.data||decoded.width!=image.width||decoded.height!=image.height)return 5;',
-                  'ImageFormat(&decoded,7);if(memcmp(decoded.data,data,size))return 6;emit(encoded,n);emit(decoded.data,size);',
-                  'UnloadImage(decoded);MemFree(encoded);UnloadFileData(file);UnloadFileData(data);','}']
+                  'ImageFormat(&decoded,7);Color *colors=LoadImageColors(image);int rgba_size=image.width*image.height*4;if(!colors||memcmp(decoded.data,colors,rgba_size))return 6;emit(encoded,n);emit(decoded.data,rgba_size);',
+                  'UnloadImageColors(colors);UnloadImage(decoded);MemFree(encoded);UnloadFileData(file);UnloadFileData(data);','}']
     source=work/'reference.c';source.write_text('\n'.join(lines+['}'])+'\n')
     binary=work/'reference'
     run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary])
@@ -64,23 +71,30 @@ def main():
             size=struct.unpack('>I',data[offset:offset+4])[0];kind=data[offset+4:offset+8]
             if kind==b'IDAT':idat.extend(data[offset+8:offset+8+size])
             offset+=12+size
-        raster=zlib.decompress(idat);stride=case['width']*4+1
+        format=case.get('format',7);channels={1:1,2:2,4:3,7:4}[format]
+        if data[25]!={1:0,2:4,4:2,7:6}[format]:raise ValueError('Native PNG color type differs')
+        raster=zlib.decompress(idat);stride=case['width']*channels+1
         if len(raster)!=stride*case['height']:raise ValueError('Native filtered raster size differs')
         filters.update(raster[::stride]);blocks.add((idat[2]>>1)&3)
     if filters!=set(range(5)) or blocks!={0,1}:raise ValueError(f'Incomplete filter/block coverage: {filters}, {blocks}')
     report=dict(passed=False,images=len(cases),encoded_bytes=sum(map(len,expected[::2])),roundtrip_bytes=sum(map(len,expected[1::2])),
                 filters=sorted(filters),block_types=sorted(blocks),sources=source_gate(),
-                inputs_sha256=hashlib.sha256(b''.join(struct.pack('>II',c['width'],c['height'])+c['data'] for c in cases)).hexdigest(),
+                inputs_sha256=hashlib.sha256(b''.join(struct.pack('>III',c['width'],c['height'],c.get('format',7))+c['data'] for c in cases)).hexdigest(),
                 reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
     for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
         program='''import Base
 import ../../jonlib.bend as J
-'''+BEND_EMITTER+'''def encoded(result: Maybe<J.Image.Formatted>) -> Maybe<&2, +List<U32>>:
+'''+BEND_EMITTER+'''def encoded.formatted(result: Result<&1, &1, J.Image.Formatted & J.Pixel.Error, +List<U32>>) -> Maybe<&2, +List<U32>>:
   match result:
-    case None{}: None{}
-    case Some{image}: Some{J.Surface.to_png(J.Image.Formatted.to_surface(image))}
-def encode(width: U32, height: U32, bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
-  encoded(J.Image.Formatted.from_bytes(width, height, 7, bytes))
+    case Fail{_}: None{}
+    case Done{bytes}: Some{bytes}
+def encoded(formatted: Bool, result: Maybe<J.Image.Formatted>) -> Maybe<&2, +List<U32>>:
+  match formatted result:
+    case _ None{}: None{}
+    case False{} Some{image}: Some{J.Surface.to_png(J.Image.Formatted.to_surface(image))}
+    case True{} Some{image}: encoded.formatted(J.Image.Formatted.to_png(image))
+def encode(formatted: Bool, width: U32, height: U32, format: U32, bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
+  encoded(formatted, J.Image.Formatted.from_bytes(width, height, format, bytes))
 def expanded(bytes: +List<U32>, read: Array<U32> & U32) -> Array<U32> & +List<U32>:
   (pixels, +value) = read
   (pixels, Con{(value .&. 255 : U32), Con{((value >> 8n) .&. 255 : U32), Con{((value >> 16n) .&. 255 : U32), Con{(value >> 24n : U32), bytes}}}})
@@ -111,22 +125,22 @@ def save_file(enabled: Bool, path: String, width: U32, height: U32, bytes: +List
   match enabled:
     case False{}: IO.pure(Unit, Unit{})
     case True{}: saved(path, J.Image.Formatted.from_bytes(width, height, 7, bytes))
-def payload(+width: U32, +height: U32, save: Bool, path: String, result: Result<&1, &1, U32 & String, +List<U32>>) -> IO(Unit):
+def payload(formatted: Bool, +width: U32, +height: U32, format: U32, save: Bool, path: String, result: Result<&1, &1, U32 & String, +List<U32>>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "PNG fixture read failed")
     case Done{+bytes}:
       do IO<Unit>:
-        observed(width, height, encodeBANG(width, height, bytes))
+        observed(width, height, encodeBANG(formatted, width, height, format, bytes))
         save_file(save, path, width, height, bytes)
-def received(width: U32, height: U32, save: Bool, path: String, result: File & Result<&1, &1, U32 & String, +List<U32>>) -> IO(Unit):
+def received(formatted: Bool, width: U32, height: U32, format: U32, save: Bool, path: String, result: File & Result<&1, &1, U32 & String, +List<U32>>) -> IO(Unit):
   (file, status) = result
   do IO<Unit>:
     Unit <- File.close(file)
-    payload(width, height, save, path, status)
-def opened(+width: U32, +height: U32, save: Bool, path: String, result: Result<&1, &1, U32 & String, File>) -> IO(Unit):
+    payload(formatted, width, height, format, save, path, status)
+def opened(formatted: Bool, width: U32, height: U32, format: U32, size: U32, save: Bool, path: String, result: Result<&1, &1, U32 & String, File>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "PNG fixture open failed")
-    case Done{file}: IO.bind(File & Result<&1, &1, U32 & String, +List<U32>>, Unit, File.read_bytes(file, (width * height * 4 : U32)), received(width, height, save, path))
+    case Done{file}: IO.bind(File & Result<&1, &1, U32 & String, +List<U32>>, Unit, File.read_bytes(file, size), received(formatted, width, height, format, save, path))
 def main() -> IO(Unit):
   do IO<Unit>:
 '''.replace('BANG','!' if lane=='metal' else '')
@@ -135,7 +149,7 @@ def main() -> IO(Unit):
             save=lane!='metal' and case['id'] in ('mixed','noise-filters')
             if save:saved_cases.append(case['id'])
             path=work/f'{case["id"]}.rgba';output=work/f'{lane}-{case["id"]}.png'
-            program+=f'    IO.bind(Result<&1, &1, U32 & String, File>, Unit, File.open({json.dumps(str(path))}, "r"), opened({case["width"]}, {case["height"]}, {"True{}" if save else "False{}"}, {json.dumps(str(output))}))\n'
+            program+=f'    IO.bind(Result<&1, &1, U32 & String, File>, Unit, File.open({json.dumps(str(path))}, "r"), opened({"True{}" if "format" in case else "False{}"}, {case["width"]}, {case["height"]}, {case.get("format",7)}, {len(case["data"])}, {"True{}" if save else "False{}"}, {json.dumps(str(output))}))\n'
         source=work/f'{lane}.bend';source.write_text(program)
         binary=work/('candidate.js' if lane=='javascript' else f'candidate-{lane}')
         run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)

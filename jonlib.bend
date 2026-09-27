@@ -1937,6 +1937,24 @@ def Image.Formatted.to_surface(image: Image.Formatted) -> Surface:
   FormattedImage{width, height, +format, pixels} = image
   Image.Formatted.surface(Image.Formatted.routed(U32.is_eq(format, 7), FormattedImage{width, height, format, pixels}, 7))
 
+def Image.Formatted.png.channels(format: U32) -> U32:
+  match format:
+    case 1: 1
+    case 2: 2
+    case 4: 3
+    case 7: 4
+    case _: 0
+
+def Image.Formatted.png.checked(valid: Bool, channels: U32, image: Image.Formatted) -> Result<&1, &1, Image.Formatted & Pixel.Error, +List<U32>>:
+  match valid image:
+    case False{} _: Fail{(image, UnsupportedPixelFormat{})}
+    case True{} FormattedImage{width, height, _, pixels}: Done{PngEncode.formatted(width, height, channels, pixels)}
+
+def Image.Formatted.to_png(image: Image.Formatted) -> Result<&1, &1, Image.Formatted & Pixel.Error, +List<U32>>:
+  FormattedImage{width, height, +format, pixels} = image
+  +channels = Image.Formatted.png.channels(format)
+  Image.Formatted.png.checked((channels > 0 : U32), channels, FormattedImage{width, height, format, pixels})
+
 def Surface.dither.checked(valid: Bool, surface: Surface, +r: U32, +g: U32, +b: U32, +a: U32) -> Result<&1, &1, Surface & Surface.Error, Image.Packed16>:
   match valid surface:
     case False{} _: Fail{(surface, InvalidDitherBits{})}

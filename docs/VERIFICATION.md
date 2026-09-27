@@ -1413,3 +1413,29 @@ Other source formats, nondefault writer settings, pointer/buffer ownership ABI,
 generic dispatch and complete resource/performance/platform evidence remain gaps.
 
 Regression scan: 90 callers checked, 26 assertions checked, 1 flagged/fixed.
+
+Hosted confirmation for `777c6d7`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36280418576)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36280418580)
+completed successfully, including exact default PNG memory/file export.
+
+## Byte-format PNG memory export
+
+`Image.Formatted.to_png` now accepts native grayscale, gray-alpha, RGB888 and
+RGBA8888 byte formats without RGBA normalization before encoding. Native channel
+counts, color types and filter byte distances are preserved. All 28 native PNGs
+/ 170,383 bytes and 171,716 normalized round-trip bytes pass CPU, JavaScript and
+forced Metal. Native inspection confirms that every byte-format family selects
+all five filters in the corpus. The original Surface RGBA8 fixtures and its two
+public CPU/JS file exports remain covered. See
+[evidence/png-export-formats.json](evidence/png-export-formats.json).
+
+Packed memory-source formats 3/5/6 return the original image with
+`UnsupportedPixelFormat`; one shared ownership check compares dimensions, format
+and every retained byte for each rejected format. The full 261-scenario /
+40,101-word corpus, nine harness tests, project checks and all four pinned laws
+pass. I92 and A3/A4/A5 hold within the declared byte-format profile. Native buffer/
+ownership ABI, other sources/settings, formatted-image file wrappers and full
+resource/performance/platform coverage remain gaps. API completion counts are
+unchanged.
+
+Regression scan: 32 callers checked, 12 assertions checked, 0 flagged/fixed.
