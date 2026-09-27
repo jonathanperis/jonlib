@@ -2860,3 +2860,33 @@ run; remaining targets and broader source/resource/performance domains were not
 exercised.
 
 Regression scan: 15 callers checked, 14 assertions checked, 0 flagged/fixed.
+
+## Native formatted and float color observations
+
+`Image.Formatted.colors/get` and `Image.FloatRGB.colors/get` add native bulk and
+point RGBA observations. Packed inputs use integer expansion and conventionally
+shifted RGB5A1 blue, preserving the distinction from raw `GetPixelColor` and
+normalized `ImageFormat`. Float input uses checked multiply/truncate conversion.
+Point reads retain source owners and validate only the selected pixel; bulk float
+failure returns its original owner.
+
+The gate passes eight layouts / 2,561 pixels as both native bulk and point colors
+on CPU/JS/Metal. Every source word is retained after complete point traversal.
+Six controls cover bounds, unsupported selected samples and a valid pixel beside
+an unsupported float sample; bulk failure also retains its owner. The existing
+float conversion gate passes its 256 byte normalizations, 769 boundary pixels,
+33,024 HDR-derived pixels and seven rejection controls after sharing the pixel
+helper. Evidence is in [evidence/image-colors.json](evidence/image-colors.json).
+
+Scoped review: I136 MATCH (bulk/point semantics and ownership); A3 HOLD through
+complete retained-source checks; A4/A5 HOLD through source/native backend gates;
+A6 HOLD in [IMAGE-COLORS.md](IMAGE-COLORS.md); V2 HOLD through both actual native
+observation APIs; V3 HOLD through pre-access bounds and selected float-domain
+checks. Other source domains/formats/mipmaps and complete native-ABI/resource/
+platform/performance remain gaps. Two partial mappings expand; counts stay fixed.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal. All four
+proofs, eleven harness/planning tests and project checks pass. Remaining source
+domains/targets and full resource/performance coverage were not exercised.
+
+Regression scan: 28 callers checked, 18 assertions checked, 0 flagged/fixed.

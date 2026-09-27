@@ -405,9 +405,9 @@
     },
     "raylib:function:LoadImageColors": {
       "status": "partial",
-      "jonlib": "Surface.colors",
+      "jonlib": "Surface.colors / Image.Formatted.colors / Image.FloatRGB.colors",
       "legacy_status": "profile-covered",
-      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "scope": "Owned RGBA8, formats 1..7 and finite [0,1] RGB floats to complete row-major RGBA color lists. Native packed integer expansion and float truncation are preserved; unsupported float samples return the original owner.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -421,14 +421,17 @@
       "evidence": [
         "docs/API.md",
         "docs/VERIFICATION.md",
+        "tools/image_colors_probe.py",
+        "docs/IMAGE-COLORS.md",
+        "docs/evidence/image-colors.json",
         "docs/evidence/image-transforms.json"
       ]
     },
     "raylib:function:GetImageColor": {
       "status": "partial",
-      "jonlib": "Surface.get",
+      "jonlib": "Surface.get / Image.Formatted.get / Image.FloatRGB.get",
       "legacy_status": "contract-checked",
-      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "scope": "Owned RGBA8, formats 1..7 and finite [0,1] selected RGB float pixels. U32 coordinates are checked before access; out-of-bounds/unsupported pixels return None with the original owner. Native packed integer expansion and float truncation remain distinct from other pixel/format APIs.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -442,6 +445,9 @@
       "evidence": [
         "docs/API.md",
         "docs/VERIFICATION.md",
+        "tools/image_colors_probe.py",
+        "docs/IMAGE-COLORS.md",
+        "docs/evidence/image-colors.json",
         "docs/evidence/image-transforms.json"
       ]
     },
