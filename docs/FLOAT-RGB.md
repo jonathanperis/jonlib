@@ -110,6 +110,12 @@ Adding one half in F32 first can round twice: words `0x3d088888` (limit 15) and
 Grayscale retains direct uncontracted F32 luminance order and byte truncation.
 See [evidence/float-rgb-formats.json](evidence/float-rgb-formats.json).
 
+`Image.Formatted.to_float_rgb(image)` consumes any checked format-1..7 owner and
+returns native format-9 RGB float storage. Grayscale replicates into RGB; alpha is
+discarded. Packed channels use the native reciprocal-multiply expansion directly,
+preserving float bits that an intermediate RGBA8 conversion would lose. See
+[evidence/formatted-float.json](evidence/formatted-float.json).
+
 ## Large owned exports
 
 Surface colors, FloatRGB entries and packed/formatted image exports use a shared
@@ -129,6 +135,7 @@ python3 tools/float_rgb_resize_probe.py --bend-source "$BEND_SOURCE" --raylib-so
 python3 tools/float_rgb_canvas_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 python3 tools/float_rgb_color_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 python3 tools/float_rgb_formats_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+python3 tools/formatted_float_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 ```
 
 Configure checkout variables as in [README.md](../README.md#requirements).
@@ -166,3 +173,6 @@ fractional parameter rejection.
 Direct formats add nine native cases / 5,758 pixels, 530 packed-boundary values,
 1,024 targeted grayscale-boundary pixels and four retained owners on CPU/JS/Metal.
 The 109 byte/integer format regressions remain passing after correcting shared rounding.
+The reverse bridge compares seven source formats / 1,792 pixels and fourteen
+native float/return-chain results on CPU/JS/Metal, covering every channel level
+and alpha pattern in the source layouts.
