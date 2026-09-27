@@ -1702,3 +1702,41 @@ proofs, ten harness/planning tests and project checks pass. GPU filesystem IO an
 the remaining platform/resource/performance domains were not exercised.
 
 Regression scan: 51 callers checked, 26 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `9e7b9fa`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36290735613)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36290735621)
+passed. Indexed BMP was subsequently published as `c2cf7b2`.
+
+## Opaque RGB555 BMP
+
+The BMP decoder now accepts uncompressed 16-bit INFO/V4 images, with zero stored
+alpha masks required for V4 in this profile. Each five-bit RGB field uses native
+bit replication `(value*33)>>2`; bit 15 is ignored and pixels are opaque.
+This deliberately differs from packed TGA's integer `value*255/31` expansion:
+the retained native `0x1000`/`0x9000` BMP samples both become `0x210000ff`.
+
+The BMP gate passes 43 images / 4,607 pixels, 25 typed-error controls and three
+complete exports / 410 bytes on CPU/JavaScript/forced Metal, with real file-export
+checks on CPU/JS. New cases cover every five-bit channel value, both high-bit
+states, INFO/V4, ignored stored RGB masks, both orientations, odd row padding and
+double-skipped gap bytes. Nonzero 16-bit V4 alpha masks and truncated words/padding
+are rejected. All indexed and 24/32-bit cases and exact export bytes remain checked.
+
+Shared dispatch passes 248 native memory pairs plus five controls on CPU/JS/Metal,
+and 43 native file cases plus three boundaries and 100 low-descriptor cycles on
+CPU/JS. Both include an RGB555 BMP stream. Hashes and lane outcomes are recorded in
+[evidence/bmp-rgb555.json](evidence/bmp-rgb555.json).
+
+Scoped review: I101 MATCH (`src/bmp.bend`, depth-aware true-color reader and mask
+restriction); A4/A5 HOLD through source/native lane checks; A6 HOLD in [BMP.md](BMP.md);
+V2 HOLD through actual native pixels/export bytes; V3 HOLD through checked
+dimensions, byte-depth-aware payload/padding bounds and guarded output addressing.
+Nonzero V4 alpha masks, other header/mask/compression profiles, original metadata
+and full platform/resource/performance remain gaps. API mappings remain partial;
+no completed APIs are added.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal. All four
+proofs, ten harness/planning tests and project checks pass. GPU filesystem IO and
+the remaining platform/resource/performance domains were not exercised.
+
+Regression scan: 31 callers checked, 29 assertions checked, 0 flagged/fixed.
