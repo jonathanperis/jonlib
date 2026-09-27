@@ -5,7 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from conformance import BUILD, ROOT, checkout, run, source_gate
+from conformance import BUILD, ROOT, checkout, image_decode_reference, run, source_gate
 from image_file_probe import image_streams
 from bmp_probe import bend_bytes
 
@@ -41,10 +41,10 @@ def main():
     text=run([binary]);expected=[json.loads(line) for line in text.splitlines()]
     if len(expected)!=len(cases):raise ValueError('Incomplete native memory dispatch results')
     controls=[('.png',[256],1),('.qoi',[256],1),('.unknown',[256],0),('.png',[],0),('.png',[137,80],0)]
-    batch_size=64
+    batch_size=64;profile=image_decode_reference()
     report=dict(passed=False,native_cases=len(cases),loaded_cases=sum(row['loaded'] for row in expected),invalid_controls=len(controls),batch_size=batch_size,
                 sources=source_gate(),inputs_sha256=hashlib.sha256(json.dumps([cases,controls]).encode()).hexdigest(),
-                reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
+                reference_sha256=hashlib.sha256(text.encode()).hexdigest(),decode_reference=profile,lanes={})
     for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
         preamble='''import Base
 import ../../jonlib.bend as J
@@ -67,8 +67,8 @@ def main() -> IO(Unit):
   do IO<Unit>:
 '''
         bang='!' if lane=='metal' else ''
-        actions=[f'    observed(J.Surface.decode_image{bang}({json.dumps(case["token"])}, {bend_bytes(case["data"])}))\n' for case in cases]
-        actions += [f'    IO.print(U32.show(error_code(J.Surface.decode_image{bang}({json.dumps(token)}, {bend_bytes(data)}))))\n' for token,data,_ in controls]
+        actions=[f'    observed(J.Surface.decode_image_for{bang}(J.{profile}{{}}, {json.dumps(case["token"])}, {bend_bytes(case["data"])}))\n' for case in cases]
+        actions += [f'    IO.print(U32.show(error_code(J.Surface.decode_image_for{bang}(J.{profile}{{}}, {json.dumps(token)}, {bend_bytes(data)}))))\n' for token,data,_ in controls]
         actual=[]
         report['lanes'][lane]=dict(passed=False,batches=[])
         for index,start in enumerate(range(0,len(actions),batch_size)):

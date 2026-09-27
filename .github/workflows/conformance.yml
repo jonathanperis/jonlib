@@ -136,6 +136,11 @@ jobs:
           python3 tools/tga_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify native PSD matte arithmetic profiles
+        run: >-
+          python3 tools/psd_matte_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Verify image-memory token and content dispatch
         run: >-
           python3 tools/image_memory_probe.py
@@ -155,7 +160,7 @@ jobs:
           python3 tools/pnm_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
-      - name: Verify opaque raw and PackBits PSD profiles
+      - name: Verify raw and PackBits PSD alpha profiles
         run: >-
           python3 tools/psd_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
@@ -249,6 +254,7 @@ jobs:
             .build/tga-probe/results.json
             .build/pnm-probe/results.json
             .build/psd-probe/results.json
+            .build/psd-matte-probe/results.json
             .build/inflate-probe/results.json
             .build/png-probe/results.json
             .build/deflate-probe/results.json

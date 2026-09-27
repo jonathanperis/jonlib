@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 import struct
 
-from conformance import BUILD, ROOT, checkout, run, source_gate
+from conformance import BUILD, ROOT, checkout, image_decode_reference, run, source_gate
 
 
 def bitmap(width, height, pixels, *, bpp=24, dib=40, compression=0, top=False, gap=0):
@@ -264,7 +264,8 @@ def main(codec='bmp', fixture_factory=fixtures, native_extension=None):
     report=dict(passed=False,decode_cases=len(inputs),error_cases=len(malformed),export_cases=len(outputs),
                 decoded_pixels=sum(len(row['pixels']) for row in expected[:len(inputs)]),export_bytes=sum(len(row) for row in expected[-len(outputs):]) if outputs else 0,
                 inputs_sha256=hashlib.sha256(json.dumps([inputs,malformed,outputs]).encode()).hexdigest(),
-                reference_sha256=hashlib.sha256(reference.encode()).hexdigest(),sources=source_gate(),lanes={})
+                 reference_sha256=hashlib.sha256(reference.encode()).hexdigest(),sources=source_gate(),lanes={})
+    if codec=='psd':report['decode_reference']=image_decode_reference()
     for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
         program='''import Base
 import ../../jonlib.bend as J
@@ -309,8 +310,10 @@ def main() -> IO(Unit):
         if not outputs:
             program=program[:program.index('def fill(')]+'def main() -> IO(Unit):\n  do IO<Unit>:\n'
         bang='!' if lane=='metal' else ''
-        for case in inputs:program+=f'    decoded(J.Surface.decode_{codec}{bang}({bend_bytes(case["bytes"])}))\n'
-        for case in malformed:program+=f'    IO.print(U32.show(error_code(J.Surface.decode_{codec}{bang}({bend_bytes(case["bytes"])}))))\n'
+        function=f'decode_{codec}_for' if codec=='psd' else f'decode_{codec}'
+        profile=f'J.{image_decode_reference()}{{}}, ' if codec=='psd' else ''
+        for case in inputs:program+=f'    decoded(J.Surface.{function}{bang}({profile}{bend_bytes(case["bytes"])}))\n'
+        for case in malformed:program+=f'    IO.print(U32.show(error_code(J.Surface.{function}{bang}({profile}{bend_bytes(case["bytes"])}))))\n'
         for case in outputs:program+=f'    IO.print(List.show(~&2, ~U32, ~U32.show, encoded{bang}({case["width"]}, {bend_bytes(case["pixels"])}, J.Surface.create({case["width"]}, {case["height"]}, 0))))\n'
         if outputs and lane!='metal':program+='    saved(J.Surface.create(1, 1, 4294967295))\n'
         source=work/f'{lane}.bend';source.write_text(program)

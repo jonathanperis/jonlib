@@ -639,6 +639,10 @@ def spline_reference():
     return {'FusedCollision':'FusedSpline','UncontractedCollision':'UncontractedSpline'}[collision_arithmetic()]
 
 
+def image_decode_reference():
+    return {'FusedCollision':'FusedDecode','UncontractedCollision':'UncontractedDecode'}[collision_arithmetic()]
+
+
 def vector_arguments(signature, values, bend=False):
     result, at = [], 0
     literal = f32 if bend else lambda value: f'{float(value)!r}f'

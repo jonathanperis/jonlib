@@ -2017,3 +2017,53 @@ four proofs, eleven harness/planning tests and project checks. GPU filesystem IO
 and remaining targets were not exercised.
 
 Regression scan: 47 callers checked, 31 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `5f9ec65`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36303276810)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36303276840)
+passed, including PSD PackBits boundaries and native depth behavior.
+
+## Profiled PSD alpha and white-matte correction
+
+PSD now accepts 0..16 declared channels, observes only the first four pixel planes
+and preserves actual alpha, including zero. Extra pixel planes are ignored;
+RLE still consumes row-count entries for all declared channels. The native
+white-matte formula retains alpha-0/255 RGB directly and handles supported
+prematted intermediate-alpha RGB with explicit arithmetic selection.
+
+The independent gate compares all 33,151 supported channel/alpha pairs against
+both uncontracted and fused C models on CPU/JavaScript/forced Metal. Of 32,639
+intermediate-alpha pairs, 130 produce different bytes between models. Actual
+linked macOS PSD decoding matches the fused model throughout. The gate records
+both native mismatch counts before checking the declared host profile; hosted
+Linux validation checks the uncontracted selection independently.
+
+`Image.Decode.Reference` exposes `UncontractedDecode` and `FusedDecode` through
+`Surface.decode_psd_for`, `Surface.decode_image_for` and `Surface.load_image_for`.
+Convenience operations select uncontracted, with an exact default/profile contract
+test using the alpha-11 white pixel (255 uncontracted, 254 fused). Reference values
+flow through existing file complete-read/error/closure callbacks. Repeated file
+closure tests now load a real alpha PSD.
+
+The PSD gate passes 36 native images / 12,729 pixels and 25 typed-error controls
+on CPU/JS/Metal, covering raw/RLE, 8/16-bit data, zero/opaque/intermediate alpha,
+five/sixteen declared channels with only four pixel planes, invalid matte domains
+and missing alpha. Profiled shared dispatch passes 446 native memory pairs plus
+five controls and 53 file cases plus three boundaries/100 low-descriptor cycles.
+File IO evidence remains CPU/JS. See [evidence/psd-alpha.json](evidence/psd-alpha.json).
+
+Scoped drift review: I110 MATCH (PSD channels/matte and profiled adapters); A3 HOLD
+through affine results and retained file-owner closure; A4/A5 HOLD through source
+and native/model backend gates; A6 HOLD in [PSD.md](PSD.md), [API.md](API.md) and
+[IMAGE-FILES.md](IMAGE-FILES.md); V2 HOLD through exact models/native pixels and
+unchanged prior fixtures; V3 HOLD through dimensions, first-four-plane bounds,
+packet checks and supported matte-domain validation. Original metadata, out-of-
+range native casts, further arithmetic hosts and full resource/platform/performance
+coverage remain gaps. The loading mappings remain partial, with zero complete APIs.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal. All four
+proofs, eleven harness/planning tests and project checks pass. The scan corrected
+stale PSD scope wording and made native-profile failure diagnostics durable; the
+affected matte gate was rerun. GPU filesystem IO and remaining targets were not
+exercised.
+
+Regression scan: 62 callers checked, 43 assertions checked, 2 flagged/fixed.
