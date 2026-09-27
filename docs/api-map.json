@@ -221,14 +221,13 @@
     "milestone": "collision"
   },
   "LoadImage": {
-    "jonlib": "Surface.load_qoi",
+    "jonlib": "Surface.load_image / Surface.load_qoi",
     "status": "profile-covered",
-    "scope": "Explicit QOI file loading through Base byte IO, with RGBA8 normalization, closed file ownership and file/decode errors.",
+    "scope": "Bounded ordinary-file loading for exact lower/upper-case PNG/BMP/TGA/PGM/PPM/QOI suffixes, with native content detection across the implemented raster families. RGBA8 normalization, complete-read checks, closed handles and typed file/decode errors; explicit load_qoi keeps its prior selection/cap.",
     "gaps": [
-      "Other codecs and format dispatch",
-      "Original pixel formats",
-      "Reference callbacks",
-      "Complete targets/integration/performance"
+      "Other codec families/extension aliases and larger raster files",
+      "Original pixel formats and reference callbacks",
+      "Concurrent/special-file semantics and complete targets/integration/performance"
     ],
     "api_id": "raylib:function:LoadImage",
     "milestone": "image-codecs"

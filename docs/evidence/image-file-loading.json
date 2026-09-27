@@ -1,0 +1,14 @@
+{
+  "date": "2026-09-27",
+  "source_sha256": {"jonlib.bend":"ac4bdc10746c00c2369d78a7bf6830fd4ada709e3b641d3412ce6e0a79a72219"},
+  "inputs_sha256": "8fe18e4232b2c226c6fa0772274ef37061985ea13be683ca6f1d4b39d7190a5d",
+  "reference_sha256": "356506dd5e283e8526ce074760560256aac9cca7c3f265fab0b51333332c7bad",
+  "native_file_cases": 24,
+  "boundary_controls": 3,
+  "closure_iterations_per_lane": 100,
+  "file_descriptor_limit": 64,
+  "passed": true,
+  "file_io_lanes": ["cpu","javascript"],
+  "full_corpus": {"scenarios":261,"output_words_per_lane":40101,"passed":true,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "limits": ["Other codec families/extension aliases and larger raster files", "Original metadata, native callbacks and concurrent/special-file semantics", "GPU filesystem IO and complete resource/platform/performance coverage"]
+}

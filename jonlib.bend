@@ -3096,23 +3096,79 @@ def Surface.write_png(surface: Surface, path: String) -> IO(Result<&1, &1, U32 &
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
     File.open(path, "w"), Surface.qoi.opened(Surface.to_png(surface)))
 
-def Surface.load_qoi.decoded(result: Result<&1, &1, Image.DecodeError, Surface>) -> Result<&1, &1, Image.LoadError, Surface>:
+type Image.FileKind is Data:
+  QoiFile{}
+  RasterFile{}
+  UnsupportedImageFile{}
+
+def Image.file.selected(valid_path: Bool, qoi: Bool, raster: Bool) -> Image.FileKind:
+  match valid_path qoi raster:
+    case True{} True{} _: QoiFile{}
+    case True{} False{} True{}: RasterFile{}
+    case _ _ _: UnsupportedImageFile{}
+
+def Image.file.kind(+path: String) -> Image.FileKind:
+  Image.file.selected(Nat.is_lt(4n, String.length(path)),
+    String.ends_with(path, ".qoi") || String.ends_with(path, ".QOI"),
+    String.ends_with(path, ".png") || String.ends_with(path, ".PNG")
+      || String.ends_with(path, ".bmp") || String.ends_with(path, ".BMP")
+      || String.ends_with(path, ".tga") || String.ends_with(path, ".TGA")
+      || String.ends_with(path, ".pgm") || String.ends_with(path, ".PGM")
+      || String.ends_with(path, ".ppm") || String.ends_with(path, ".PPM"))
+
+def Image.file.limit(kind: Image.FileKind) -> U32:
+  match kind:
+    case QoiFile{}: 83886102
+    case _: 1048576
+
+def Image.file.raster_selected(png: Bool, bmp: Bool, pnm: Bool, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
+  match png bmp pnm:
+    case True{} _ _: Surface.decode_png(bytes)
+    case False{} True{} _: Surface.decode_bmp(bytes)
+    case False{} False{} True{}: Surface.decode_pnm(bytes)
+    case False{} False{} False{}: Surface.decode_tga(bytes)
+
+def Image.file.raster(+bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
+  match bytes:
+    case Con{+a, Con{+b, _}}:
+      Image.file.raster_selected(U32.is_eq(a, 137) && U32.is_eq(b, 80), U32.is_eq(a, 66) && U32.is_eq(b, 77),
+        U32.is_eq(a, 80) && (U32.is_eq(b, 53) || U32.is_eq(b, 54)), bytes)
+    case _: Fail{InvalidImageHeader{}}
+
+def Image.file.decode(kind: Image.FileKind, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
+  match kind:
+    case QoiFile{}: Surface.decode_qoi(bytes)
+    case RasterFile{}: Image.file.raster(bytes)
+    case UnsupportedImageFile{}: Fail{InvalidImageHeader{}}
+
+def Image.file.decoded(result: Result<&1, &1, Image.DecodeError, Surface>) -> Result<&1, &1, Image.LoadError, Surface>:
   match result:
     case Fail{error}: Fail{ImageDecodeError{error}}
     case Done{image}: Done{image}
 
-def Surface.load_qoi.payload(result: Result<&1, &1, U32 & String, +List<U32>>) -> Result<&1, &1, Image.LoadError, Surface>:
+def Image.file.complete(n: Nat, bytes: +List<U32>) -> Bool:
+  match n bytes:
+    case 0n Nil{}: True{}
+    case 1n+rest Con{_, tail}: Image.file.complete(rest, tail)
+    case _ _: False{}
+
+def Image.file.loaded(valid: Bool, kind: Image.FileKind, bytes: +List<U32>) -> Result<&1, &1, Image.LoadError, Surface>:
+  match valid:
+    case False{}: Fail{ImageDecodeError{TruncatedImageData{}}}
+    case True{}: Image.file.decoded(Image.file.decode(kind, bytes))
+
+def Image.file.payload(kind: Image.FileKind, size: U32, result: Result<&1, &1, U32 & String, +List<U32>>) -> Result<&1, &1, Image.LoadError, Surface>:
   match result:
     case Fail{Tuple{code, message}}: Fail{ImageFileError{code, message}}
-    case Done{bytes}: Surface.load_qoi.decoded(Surface.decode_qoi(bytes))
+    case Done{+bytes}: Image.file.loaded(Image.file.complete(U32.to_nat(size), bytes), kind, bytes)
 
-def Surface.load_qoi.read(result: File & Result<&1, &1, U32 & String, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, Surface>):
+def Image.file.read(kind: Image.FileKind, size: U32, result: File & Result<&1, &1, U32 & String, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, Surface>):
   (file, status) = result
   do IO<Result<&1, &1, Image.LoadError, Surface>>:
     Unit <- File.close(file)
-    IO.pure(Result<&1, &1, Image.LoadError, Surface>, Surface.load_qoi.payload(status))
+    IO.pure(Result<&1, &1, Image.LoadError, Surface>, Image.file.payload(kind, size, status))
 
-def Surface.load_qoi.bounded(valid: Bool, file: File, size: U32) -> IO(Result<&1, &1, Image.LoadError, Surface>):
+def Image.file.bounded(valid: Bool, kind: Image.FileKind, file: File, +size: U32) -> IO(Result<&1, &1, Image.LoadError, Surface>):
   match valid:
     case False{}:
       do IO<Result<&1, &1, Image.LoadError, Surface>>:
@@ -3120,21 +3176,24 @@ def Surface.load_qoi.bounded(valid: Bool, file: File, size: U32) -> IO(Result<&1
         IO.pure(Result<&1, &1, Image.LoadError, Surface>, Fail{ImageDecodeError{UnsupportedImageSize{}}})
     case True{}:
       IO.bind(File & Result<&1, &1, U32 & String, +List<U32>>, Result<&1, &1, Image.LoadError, Surface>,
-        File.read_bytes(file, size), Surface.load_qoi.read)
+        File.read_bytes(file, size), Image.file.read(kind, size))
 
-def Surface.load_qoi.sized(result: File & Result<&1, &1, U32 & String, U32>) -> IO(Result<&1, &1, Image.LoadError, Surface>):
+def Image.file.sized(+kind: Image.FileKind, result: File & Result<&1, &1, U32 & String, U32>) -> IO(Result<&1, &1, Image.LoadError, Surface>):
   match result:
-    case Tuple{file, Fail{error}}: Surface.load_qoi.read((file, Fail{error}))
-    case Tuple{file, Done{+size}}: Surface.load_qoi.bounded((size <= 83886102 : U32), file, size)
+    case Tuple{file, Fail{error}}: Image.file.read(kind, 0, (file, Fail{error}))
+    case Tuple{file, Done{+size}}: Image.file.bounded((size <= Image.file.limit(kind) : U32), kind, file, size)
 
-def Surface.load_qoi.opened(opened: Result<&1, &1, U32 & String, File>) -> IO(Result<&1, &1, Image.LoadError, Surface>):
+def Image.file.opened(+kind: Image.FileKind, opened: Result<&1, &1, U32 & String, File>) -> IO(Result<&1, &1, Image.LoadError, Surface>):
   match opened:
     case Fail{Tuple{code, message}}: IO.pure(Result<&1, &1, Image.LoadError, Surface>, Fail{ImageFileError{code, message}})
     case Done{file}:
-      IO.bind(File & Result<&1, &1, U32 & String, U32>, Result<&1, &1, Image.LoadError, Surface>, File.size(file), Surface.load_qoi.sized)
+      IO.bind(File & Result<&1, &1, U32 & String, U32>, Result<&1, &1, Image.LoadError, Surface>, File.size(file), Image.file.sized(kind))
 
 def Surface.load_qoi(path: String) -> IO(Result<&1, &1, Image.LoadError, Surface>):
-  IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, Image.LoadError, Surface>, File.open(path, "r"), Surface.load_qoi.opened)
+  IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, Image.LoadError, Surface>, File.open(path, "r"), Image.file.opened(QoiFile{}))
+
+def Surface.load_image(+path: String) -> IO(Result<&1, &1, Image.LoadError, Surface>):
+  IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, Image.LoadError, Surface>, File.open(path, "r"), Image.file.opened(Image.file.kind(path)))
 
 type Image.RawLoadError is Type:
   RawFileError{code: U32, message: String}

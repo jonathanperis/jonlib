@@ -1,5 +1,8 @@
 # Image codec profiles
 
+Supported image-file suffix/content selection and bounded IO are documented in
+[IMAGE-FILES.md](IMAGE-FILES.md), including the explicit QOI loader contract.
+
 Headerless byte/integer image files are supported through the owned formatted
 image APIs; see [RAW-FILES.md](RAW-FILES.md) for exact loading/export contracts.
 

@@ -1464,3 +1464,28 @@ complete resource/performance/platform coverage remain gaps. API completion coun
 are unchanged.
 
 Regression scan: 18 callers checked, 12 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `37e1740`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36283236538)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36283236530)
+completed successfully, including all formatted PNG file sources.
+
+## Bounded image-file loading
+
+`Surface.load_image` now selects supported lower/upper-case suffixes and detects
+implemented raster contents as the native loader does. The file probe passes
+24 native cases (23 LoadImage calls plus an explicit QOI-selection check), three
+size/read boundaries and 100 repeated success/decode/read/size-error cycles under
+a 64-descriptor limit on CPU and JavaScript. Cross-extension PNG/BMP/TGA/PNM data,
+mixed/unsupported suffixes, invalid/empty/missing files and explicit QOI loading
+are covered. See [evidence/image-file-loading.json](evidence/image-file-loading.json).
+
+QOI loading shares the refactored IO boundary and retains its original cap and
+explicit decoder choice. Handles close before decode and on size/read errors;
+the complete reported byte count is required. Pure controls check suffix-only
+and mixed-case names plus short reads. I94 and A4/A6 hold within the declared
+ordinary-file profile. Full 261-scenario / 40,101-word conformance, nine harness
+tests, project checks and four pinned laws pass. File IO claims remain CPU/JS;
+other aliases/codecs, larger raster files, concurrent/special-file semantics,
+native callbacks and full target/resource/performance coverage remain gaps.
+
+Regression scan: 32 callers checked, 14 assertions checked, 0 flagged/fixed.
