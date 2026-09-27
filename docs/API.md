@@ -138,6 +138,7 @@ is outside this API's contract.
 | `Surface.write_ppm(surface, path) -> IO(Result<&1, &1, U32 & String, Unit>)` | Writes P3 PPM through Base.File; returns open/write errors and closes the file after writing. |
 | `Surface.decode_qoi`, `to_qoi`, `load_qoi`, `write_qoi` | QOI memory/file APIs, typed errors and RGBA8 normalization are specified in [CODECS.md](CODECS.md). |
 | `Surface.load_image(path)` | Bounded PNG/BMP/TGA/PGM/PPM/QOI file loading with native supported suffix/content selection, closed handles and typed errors; see [IMAGE-FILES.md](IMAGE-FILES.md). |
+| `Surface.decode_image(file_type, bytes)` | Shared native-style memory dispatch for the implemented codec profiles, exact lower/upper-case extension tokens and typed decode errors; aliases and limits in [IMAGE-FILES.md](IMAGE-FILES.md). |
 | `Surface.decode_bmp`, `to_bmp`, `write_bmp` | Bounded 24/32-bit BMP decoding and exact RGBA8 V4 export; native orientation, alpha and offset rules in [BMP.md](BMP.md). |
 | `Surface.decode_tga`, `to_tga`, `write_tga` | Bounded raw/RLE true-color/grayscale decoding and byte-exact default RLE export; packet rules and limits in [TGA.md](TGA.md). |
 | `Surface.decode_pnm` | Binary 8-bit P5/P6 decoding with native unscaled samples and header parsing; see [PNM.md](PNM.md). |

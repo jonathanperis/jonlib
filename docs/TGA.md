@@ -23,8 +23,9 @@ Unsupported fields or incomplete headers return `InvalidImageHeader`; dimensions
 outside the profile return `UnsupportedImageSize`. Missing ID/pixel/packet data
 returns `TruncatedImageData`. Valid trailing bytes are ignored after the image.
 
-Paletted and 15/16-bit true-color variants, original-format metadata, native
-permissive malformed-data recovery and generic format dispatch remain gaps.
+Paletted and 15/16-bit true-color variants, original-format metadata and native
+permissive malformed-data recovery remain gaps. Shared memory/file dispatch is
+documented in [IMAGE-FILES.md](IMAGE-FILES.md).
 
 ## Exact export packet selection
 

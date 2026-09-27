@@ -28,8 +28,8 @@ Dimensions and payload availability are checked before output allocation.
 The native API is invoked through its supported `.ppm` dispatch, which detects
 both P5 and P6 magic. This API is separate from `Surface.to_ppm`'s inspectable P3
 text exporter: the pinned native PNM loader also does not accept ASCII P1..P4.
-16-bit PNM, original-format metadata, generic dispatch and permissive malformed
-header recovery remain gaps.
+16-bit PNM, original-format metadata and permissive malformed header recovery
+remain gaps. Shared memory/file dispatch is documented in [IMAGE-FILES.md](IMAGE-FILES.md).
 
 ## Verification
 

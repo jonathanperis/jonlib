@@ -31,7 +31,8 @@ File-size/reserved header fields do not override actual input availability.
 
 Palette/16-bit images, other headers/masks/compression, original-format metadata
 and the native decoder's permissive recovery of truncated input remain gaps.
-No generic extension dispatch or BMP-specific file loader is added by this profile.
+Shared memory/file dispatch uses this profile through `Surface.decode_image`
+and `Surface.load_image`; see [IMAGE-FILES.md](IMAGE-FILES.md).
 
 ## Export
 

@@ -31,6 +31,7 @@ def checks() -> Bool:
     && U32.is_eq(error_code(J.Surface.decode_qoi([113,111,105,102,0,0,0,1,0,0,0,1,4,0,193,0,0,0,0,0,0,0,1])), 4)
     && U32.is_eq(error_code(J.Surface.decode_qoi([113,111,105,102,0,0,0,1,0,0,0,1,4,0,192,0,0,0,0,0,0,0,2])), 4)
     && U32.is_eq(file_kind(J.Image.file.kind(".png")), 2)
+    && U32.is_eq(file_kind(J.Image.file.kind(".jpeg")), 2)
     && U32.is_eq(file_kind(J.Image.file.kind("image.PNG")), 1)
     && U32.is_eq(file_kind(J.Image.file.kind("image.PnG")), 2)
     && short_read(J.Image.file.payload(J.RasterFile{}, 2, Done{[1]}))

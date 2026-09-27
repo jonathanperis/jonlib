@@ -1520,3 +1520,38 @@ full-parity completions. Existing numerical/target/resource/performance gaps and
 the documented import migration remain explicit.
 
 Regression scan: 402 callers checked, 20 assertions checked, 3 flagged/fixed.
+
+Hosted confirmation for `06f82c9`: [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36287555153)
+completed successfully with the standalone Jonmath imports and shared types.
+
+## Shared image memory and file dispatch
+
+`Surface.decode_image(file_type, bytes)` selects the supported native token family
+and content decoder. Raster tokens include lower/upper-case PNG/BMP/TGA/PGM/PPM
+and JPG/JPEG/GIF/PIC/PSD aliases; QOI remains separately selected. File loading
+shares that resolver after native-style last-dot suffix extraction. Actual
+JPEG/GIF/PIC/PSD payloads and HDR's float path remain gaps. See
+[IMAGE-FILES.md](IMAGE-FILES.md) and [evidence/image-dispatch.json](evidence/image-dispatch.json).
+
+The native memory gate passes 138 token/content pairs (102 accepted images with
+all dimensions/pixels checked) and five typed failure controls on CPU/JavaScript/
+forced Metal. File loading passes 38 native cases, three size/read controls and
+100 low-descriptor cycles per CPU/JavaScript lane. Suffix-only `.jpeg` is rejected,
+directory-qualified dotfiles work, and mixed-case/unsupported tokens preserve
+their native rejection. Open/size/read failures and explicit QOI loading retain
+their previous ownership/error behavior.
+
+The scoped review finds I96 MATCH (`jonlib.bend`, shared selector and decoder);
+A4/A5 HOLD (source gate and forced native-comparison lanes); V2 HOLD (actual
+linked `LoadImageFromMemory`/`LoadImage` expectations); V3 HOLD (existing checked
+decoders and bounded complete file reads). The ledger expands the two existing
+partial mappings without adding completed APIs. Four stale codec-documentation
+dispatch gaps were corrected during the regression review.
+
+The full 261-scenario / 40,101-word corpus passes CPU-1, CPU-2, JavaScript and
+forced Metal, including the updated decoding contracts. All four proofs and ten
+harness/planning tests pass. Project metadata, links and generated ledgers check.
+GPU filesystem IO, CUDA and the remaining documented codec/resource/platform
+domains were not verified by this increment.
+
+Regression scan: 23 callers checked, 19 assertions checked, 4 flagged/fixed.

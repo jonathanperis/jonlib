@@ -77,6 +77,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | Byte/integer image-format conversion | `Image.Formatted` and Surface bridges | All 49 format pairs, no-ops and chains checked as complete native-order bytes; normalized channel rules retained |
 | Raw image files | `Image.Formatted.load_raw/write_raw` | Exact native payload/export bytes, header-offset rules, typed failures and low-descriptor closure checks on CPU/JS |
 | Image-file loading | `Surface.load_image/load_qoi` | Native supported suffix/content detection, complete reads, typed errors and low-descriptor closure checks on CPU/JS |
+| Image memory dispatch | `Surface.decode_image` | Native extension-token/content selection across implemented codecs; shared raster aliases, QOI separation and typed invalid controls on CPU/JS/Metal |
 | `ImageFlipHorizontal/Vertical` | `Surface.flip_horizontal/flip_vertical` | Exact explicit and seeded full-image comparisons |
 | `ImageRotateCW/CCW` | `Surface.rotate_cw/rotate_ccw` | Exact RGBA bytes, non-square dimensions and transform sequencing |
 | `ImageRotate` / `ImageToPOT` | `Surface.rotate_degrees_for/to_pot` | Checked general rotation with reference bilinear sampling; exhaustive supported POT-axis reference validation and exact fill/copy fixtures |

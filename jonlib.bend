@@ -2000,20 +2000,38 @@ type Image.FileKind is Data:
   RasterFile{}
   UnsupportedImageFile{}
 
-def Image.file.selected(valid_path: Bool, qoi: Bool, raster: Bool) -> Image.FileKind:
-  match valid_path qoi raster:
-    case True{} True{} _: QoiFile{}
-    case True{} False{} True{}: RasterFile{}
-    case _ _ _: UnsupportedImageFile{}
+def Image.memory.selected(qoi: Bool, raster: Bool) -> Image.FileKind:
+  match qoi raster:
+    case True{} _: QoiFile{}
+    case False{} True{}: RasterFile{}
+    case False{} False{}: UnsupportedImageFile{}
+
+def Image.memory.kind(+file_type: String) -> Image.FileKind:
+  Image.memory.selected(String.eq(file_type, ".qoi") || String.eq(file_type, ".QOI"),
+    String.eq(file_type, ".png") || String.eq(file_type, ".PNG")
+      || String.eq(file_type, ".bmp") || String.eq(file_type, ".BMP")
+      || String.eq(file_type, ".tga") || String.eq(file_type, ".TGA")
+      || String.eq(file_type, ".pgm") || String.eq(file_type, ".PGM")
+      || String.eq(file_type, ".ppm") || String.eq(file_type, ".PPM")
+      || String.eq(file_type, ".jpg") || String.eq(file_type, ".JPG")
+      || String.eq(file_type, ".jpeg") || String.eq(file_type, ".JPEG")
+      || String.eq(file_type, ".gif") || String.eq(file_type, ".GIF")
+      || String.eq(file_type, ".pic") || String.eq(file_type, ".PIC")
+      || String.eq(file_type, ".psd") || String.eq(file_type, ".PSD"))
+
+def Image.file.last_dot(path: String, +position: Nat, last: Nat) -> Nat:
+  match path:
+    case SNil{}: last
+    case SCon{character, rest}: Image.file.last_dot(rest, 1n+position, Bool.pick(Nat, Char.is_eq(character, '.'), position, last))
+
+def Image.file.suffix(valid: Bool, path: String, position: Nat) -> Image.FileKind:
+  match valid:
+    case False{}: UnsupportedImageFile{}
+    case True{}: Image.memory.kind(String.drop(path, position))
 
 def Image.file.kind(+path: String) -> Image.FileKind:
-  Image.file.selected(Nat.is_lt(4n, String.length(path)),
-    String.ends_with(path, ".qoi") || String.ends_with(path, ".QOI"),
-    String.ends_with(path, ".png") || String.ends_with(path, ".PNG")
-      || String.ends_with(path, ".bmp") || String.ends_with(path, ".BMP")
-      || String.ends_with(path, ".tga") || String.ends_with(path, ".TGA")
-      || String.ends_with(path, ".pgm") || String.ends_with(path, ".PGM")
-      || String.ends_with(path, ".ppm") || String.ends_with(path, ".PPM"))
+  +position = Image.file.last_dot(path, 0n, 0n)
+  Image.file.suffix(Nat.is_lt(0n, position), path, position)
 
 def Image.file.limit(kind: Image.FileKind) -> U32:
   match kind:
@@ -2032,13 +2050,16 @@ def Image.file.raster(+bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, S
     case Con{+a, Con{+b, _}}:
       Image.file.raster_selected(U32.is_eq(a, 137) && U32.is_eq(b, 80), U32.is_eq(a, 66) && U32.is_eq(b, 77),
         U32.is_eq(a, 80) && (U32.is_eq(b, 53) || U32.is_eq(b, 54)), bytes)
-    case _: Fail{InvalidImageHeader{}}
+    case _: Surface.decode_tga(bytes)
 
 def Image.file.decode(kind: Image.FileKind, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   match kind:
     case QoiFile{}: Surface.decode_qoi(bytes)
     case RasterFile{}: Image.file.raster(bytes)
     case UnsupportedImageFile{}: Fail{InvalidImageHeader{}}
+
+def Surface.decode_image(file_type: String, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
+  Image.file.decode(Image.memory.kind(file_type), bytes)
 
 def Image.file.decoded(result: Result<&1, &1, Image.DecodeError, Surface>) -> Result<&1, &1, Image.LoadError, Surface>:
   match result:

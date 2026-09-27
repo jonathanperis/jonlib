@@ -40270,9 +40270,9 @@
       "status": "partial",
       "jonlib": "Surface.load_image / Surface.load_qoi",
       "mapping_state": "implemented",
-      "scope": "Bounded ordinary-file loading for exact lower/upper-case PNG/BMP/TGA/PGM/PPM/QOI suffixes, with native content detection across the implemented raster families. RGBA8 normalization, complete-read checks, closed handles and typed file/decode errors; explicit load_qoi keeps its prior selection/cap.",
+      "scope": "Bounded ordinary-file loading with exact lower/upper-case tokens and native last-dot suffix selection. PNG/BMP/TGA/PGM/PPM and JPG/JPEG/GIF/PIC/PSD aliases detect implemented raster payloads; QOI selects its own decoder. RGBA8 normalization, complete-read checks, closed handles and typed file/decode errors; explicit load_qoi keeps its prior selection/cap.",
       "gaps": [
-        "Other codec families/extension aliases and larger raster files",
+        "JPEG/GIF/PIC/PSD/HDR and other payload codecs, remaining dispatch families and larger raster files",
         "Original pixel formats and reference callbacks",
         "Concurrent/special-file semantics and complete targets/integration/performance"
       ],
@@ -40287,6 +40287,8 @@
       },
       "evidence": [
         "tools/image_file_probe.py",
+        "tools/image_memory_probe.py",
+        "docs/evidence/image-dispatch.json",
         "examples/qoi_roundtrip.bend",
         "tests/io_decoding.bend",
         "tests/decoding.bend",
@@ -40509,13 +40511,13 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png",
+      "jonlib": "Surface.decode_image / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 decoding for QOI, bounded BMP, non-paletted TGA, binary 8-bit PNM and bounded PNG at supported 1/2/4/8/16-bit combinations, including Adam7 and native-default CgBI. PNG preserves filtering, full-width tRNS, palette alpha, split IDAT, raw/zlib framing and native checksum behavior.",
+      "scope": "Shared native-style extension-token/content dispatch and owned RGBA8 decoding for QOI, bounded BMP, non-paletted TGA, binary 8-bit PNM and bounded PNG at supported 1/2/4/8/16-bit combinations, including Adam7 and native-default CgBI. Exact lower/upper-case raster aliases share implemented content detection; QOI remains separate. PNG preserves filtering, full-width tRNS, palette alpha, split IDAT, raw/zlib framing and native checksum behavior.",
       "gaps": [
-        "Other codecs and remaining BMP/TGA/PNM variants",
+        "JPEG/GIF/PIC/PSD/HDR and other payload codecs, remaining BMP/TGA/PNM variants",
         "Nondefault external stb decoder flags and excess-inflated-data recovery",
-        "Original pixel-format metadata and generic format dispatch",
+        "Original pixel-format metadata and remaining native dispatch families",
         "Other permissive malformed-stream recovery and complete targets/integration/performance"
       ],
       "blocker": null,
@@ -40530,6 +40532,9 @@
       "evidence": [
         "tests/fixtures/images.json",
         "tests/decoding.bend",
+        "tools/image_memory_probe.py",
+        "docs/IMAGE-FILES.md",
+        "docs/evidence/image-dispatch.json",
         "tools/bmp_probe.py",
         "tools/tga_probe.py",
         "tools/pnm_probe.py",

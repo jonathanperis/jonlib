@@ -18,6 +18,18 @@ def limit_handles():
     resource.setrlimit(resource.RLIMIT_NOFILE,(64,64))
 
 
+def image_streams():
+    rgba=bytes([1,2,3,0, 17,63,201,128, 255,127,128,255, 254,253,252,1, 0,255,0,127, 255,0,255,255])
+    pixels=[int.from_bytes(rgba[i:i+4],'big') for i in range(0,len(rgba),4)]
+    bgra=bytes(v for i in range(0,len(rgba),4) for v in (rgba[i+2],rgba[i+1],rgba[i],rgba[i+3]))
+    return {'png':png(3,2,6,rgba,interlaced=True),
+            'bmp':bytes(bitmap(3,2,pixels,top=True)),
+            'tga':bytes(targa(3,2,4,[5,*bgra],rle=True,top=True)),
+            'pgm':b'P5\n# gray\n3 2\n255\n'+bytes([0,1,127,128,254,255]),
+            'ppm':b'P6\n3 2\n255\n'+bytes(v for i in range(0,len(rgba),4) for v in rgba[i:i+3]),
+            'qoi':b'qoif'+struct.pack('>II',3,2)+b'\4\0'+b''.join(b'\xff'+rgba[i:i+4] for i in range(0,len(rgba),4))+b'\0'*7+b'\1'}
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--bend-source',type=Path,required=True)
@@ -28,18 +40,11 @@ def main():
     checkout(args.raylib_source,lock['raylib']['revision'])
     work=BUILD/'image-file-probe';work.mkdir(parents=True,exist_ok=True)
     report_path=work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    rgba=bytes([1,2,3,0, 17,63,201,128, 255,127,128,255, 254,253,252,1, 0,255,0,127, 255,0,255,255])
-    pixels=[int.from_bytes(rgba[i:i+4],'big') for i in range(0,len(rgba),4)]
-    bgra=bytes(v for i in range(0,len(rgba),4) for v in (rgba[i+2],rgba[i+1],rgba[i],rgba[i+3]))
-    streams={'png':png(3,2,6,rgba,interlaced=True),
-             'bmp':bytes(bitmap(3,2,pixels,top=True)),
-             'tga':bytes(targa(3,2,4,[5,*bgra],rle=True,top=True)),
-             'pgm':b'P5\n# gray\n3 2\n255\n'+bytes([0,1,127,128,254,255]),
-             'ppm':b'P6\n3 2\n255\n'+bytes(v for i in range(0,len(rgba),4) for v in rgba[i:i+3]),
-             'qoi':b'qoif'+struct.pack('>II',3,2)+b'\4\0'+b''.join(b'\xff'+rgba[i:i+4] for i in range(0,len(rgba),4))+b'\0'*7+b'\1'}
+    streams=image_streams()
     cases=[]
     def add(name,data,error=None,legacy=False):
         path=work/name
+        path.parent.mkdir(parents=True,exist_ok=True)
         if data is not None:path.write_bytes(data)
         elif path.exists():raise ValueError('Task-owned missing-file fixture unexpectedly exists')
         cases.append(dict(path=str(path.relative_to(ROOT)),data=list(data) if data is not None else None,error=error,legacy=legacy))
@@ -50,6 +55,10 @@ def main():
     add('qoi-data.png',streams['qoi'],'decode');add('png-data.qoi',streams['png'],'decode')
     add('malformed.png',b'invalid','decode');add('empty.png',b'','decode');add('missing.png',None,'file')
     add('explicit-qoi.data',streams['qoi'],legacy=True)
+    for extension in ('jpg','jpeg','gif','pic','psd'):
+        add(f'alias.{extension}',streams['png']);add(f'alias.{extension.upper()}',streams['png'])
+    add('many.parts.JPEG',streams['png']);add('.png',streams['png'])
+    add('mixed.JpEg',streams['png'],'decode');add('folder.png/no-extension',streams['png'],'decode')
     controls=[]
     for name,size in [('large.png',1048577),('large.qoi',83886103)]:
         path=work/name

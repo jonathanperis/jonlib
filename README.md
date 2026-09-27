@@ -31,6 +31,10 @@ import ./jonlib.bend as J
 import ./jonmath.bend as M
 ```
 
+Image decoding supports shared memory/file dispatch through
+`J.Surface.decode_image(file_type, bytes)` and `J.Surface.load_image(path)`.
+See [supported payloads, extension aliases and bounds](docs/IMAGE-FILES.md).
+
 ## Implemented
 
 - Packed RGBA colors and integer alpha blending.
