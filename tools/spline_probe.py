@@ -62,10 +62,11 @@ def main():
     for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
         program = '''import Base
 import ../../jonlib.bend as J
+import ../../jonmath.bend as M
 type Sample is Data:
-  Sample{a: J.Vector2, b: J.Vector2, c: J.Vector2, d: J.Vector2, t: F32}
-def prepend(point: J.Vector2, values: List<U32>) -> List<U32>:
-  J.Vector2{x, y} = point
+  Sample{a: M.Vector2, b: M.Vector2, c: M.Vector2, d: M.Vector2, t: F32}
+def prepend(point: M.Vector2, values: List<U32>) -> List<U32>:
+  M.Vector2{x, y} = point
   Con{F32.bits(y), Con{F32.bits(x), values}}
 def calculate(samples: +List<Sample>, values: List<U32>) -> List<U32>:
   match samples:
@@ -80,7 +81,7 @@ def main() -> IO(Unit):
   do IO<Unit>:
 '''.replace('PROFILE',profile)
         for start in range(0,len(values),8):
-            inputs = ','.join('Sample{'+','.join('J.Vector2{'+','.join(f32(v) for v in row[index:index+2])+'}' for index in range(0,8,2))+','+f32(row[8])+'}' for row in values[start:start+8])
+            inputs = ','.join('Sample{'+','.join('M.Vector2{'+','.join(f32(v) for v in row[index:index+2])+'}' for index in range(0,8,2))+','+f32(row[8])+'}' for row in values[start:start+8])
             program += f'    IO.print(List.show(~&1, ~U32, ~U32.show, calculate{"!" if lane=="metal" else ""}([{inputs}], Nil{{}})))\n'
         source = work/f'{lane}.bend';source.write_text(program)
         binary = work/('candidate.js' if lane=='javascript' else f'candidate-{lane}')

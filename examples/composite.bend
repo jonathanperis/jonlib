@@ -1,6 +1,7 @@
 # A headless scene exercising the current primitive/compositing batch.
 import Base
 import ../jonlib.bend as J
+import ../jonmath.bend as M
 
 def save(pair: J.Surface & J.Surface) -> IO(Unit):
   (destination, source) = pair
@@ -22,9 +23,9 @@ def draw(created: Maybe<J.Surface>) -> IO(Unit):
     case None{}:
       IO.die(Unit, 1, "image creation failed")
     case Some{surface}:
-      +a = {J.Vector2{4.0, 40.0} : J.Vector2}
-      +b = {J.Vector2{32.0, 5.0} : J.Vector2}
-      +c = {J.Vector2{60.0, 40.0} : J.Vector2}
+      +a = {M.Vector2{4.0, 40.0} : M.Vector2}
+      +b = {M.Vector2{32.0, 5.0} : M.Vector2}
+      +c = {M.Vector2{60.0, 40.0} : M.Vector2}
       filled = J.Surface.draw_triangle(surface, a, b, c, J.Color.rgba(40, 170, 100, 255))
       outlined = J.Surface.draw_triangle_lines(filled, a, b, c, J.Color.rgba(230, 240, 255, 255))
       ground = J.Surface.draw_line(outlined, 2.0, 44.0, 62.0, 44.0, J.Color.rgba(255, 210, 40, 255))

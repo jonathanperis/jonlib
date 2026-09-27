@@ -6,8 +6,8 @@ are integral F32 values in **-360..360**, with a nonzero reference normalization
 extent. Invalid requests return `None`.
 
 `Surface.create_gradient_linear_for(reference, width, height, direction, start, end)`
-requires an explicit `Gradient.Reference`: `AccurateGradient{}` for the verified
-macOS/double-rounded profile, or `GnuGradient{}` for the verified GNU/Arm polynomial
+requires Jonmath's explicit `M.Gradient.Reference`: `M.AccurateGradient{}` for the verified
+macOS/double-rounded profile, or `M.GnuGradient{}` for the verified GNU/Arm polynomial
 profile. `create_gradient_linear` remains the accurate-profile convenience API.
 The conformance harness selects the matching declared profile for Darwin or
 Linux/glibc; other host families need their own verified declaration.

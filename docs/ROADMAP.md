@@ -1,4 +1,4 @@
-# Roadmap toward raylib parity
+# Jonlib and Jonmath roadmap
 
 The authoritative destination, phase gates and progress rules are in the
 [100% parity master plan](MASTER-PLAN.md). This page tracks the near-term sequence.

@@ -2,6 +2,9 @@
 
 Jonlib is an independent library written in Bend 2, inspired by raylib's design.
 It is not affiliated with or endorsed by raylib or Bend's maintainers.
+Jonmath is its separately importable mathematical module, porting `raymath.h`.
+Project-owned port names use the `ray*` → `jon*` convention; upstream names here
+identify the original sources and their required attribution.
 
 ## raylib
 
@@ -18,7 +21,8 @@ It is not affiliated with or endorsed by raylib or Bend's maintainers.
 - Subsequent adaptations include scaled/fractional image composition, vector
   drawing wrappers, outlines, thick lines, fan/strip and vertex-colored triangles,
   color/alpha transforms, checkerboards and quarter-turn rotations from
-  `rtextures.c`, plus the documented scalar/Vector2 operations from `raymath.h`.
+  `rtextures.c`. The scalar/vector/matrix/quaternion adaptations from `raymath.h`
+  are implemented in `jonmath.bend` and shared with Jonlib through imports.
   Their scoped contracts and reference evidence are recorded in `docs/`.
 - Pure collision queries in `jonlib.bend` and spline formulas in `src/spline.bend`
   adapt the same release's `rshapes.c`.

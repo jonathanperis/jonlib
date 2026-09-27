@@ -8,7 +8,7 @@ profile accepts integral degrees -360..360 and output dimensions 1..4096.
 Invalid angles return the original with `InvalidRectangle`; oversized output
 returns it with `InvalidSize`.
 
-The reference is `Gradient.Reference`: `AccurateGradient{}` or `GnuGradient{}`.
+The reference is Jonmath's `M.Gradient.Reference`: `M.AccurateGradient{}` or `M.GnuGradient{}`.
 `Surface.rotate_degrees` selects the accurate profile. The names are shared with
 the existing gradient numerical profiles; selection remains explicit.
 

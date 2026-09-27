@@ -1,4 +1,4 @@
-# raylib.h: complete API/support checklist
+# Jonlib — raylib.h: complete API/support checklist
 
 [Progress dashboard](../PROGRESS.md)
 
@@ -7,11 +7,11 @@ Each row inherits its milestone verification recipe and the six completion gates
 
 | Stable ID / source | Kind | Reference contract | Bend mapping | Status | Step |
 |---|---|---|---|---|---|
-| [`raylib:macro:RAYLIB_H`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L85) | macro | `#define RAYLIB_H` | `Config.RAYLIB_H` (proposed) | not-started | `configuration` |
-| [`raylib:macro:RAYLIB_VERSION_MAJOR`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L89) | macro | `#define RAYLIB_VERSION_MAJOR 6` | `Config.RAYLIB_VERSION_MAJOR` (proposed) | not-started | `configuration` |
-| [`raylib:macro:RAYLIB_VERSION_MINOR`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L90) | macro | `#define RAYLIB_VERSION_MINOR 0` | `Config.RAYLIB_VERSION_MINOR` (proposed) | not-started | `configuration` |
-| [`raylib:macro:RAYLIB_VERSION_PATCH`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L91) | macro | `#define RAYLIB_VERSION_PATCH 0` | `Config.RAYLIB_VERSION_PATCH` (proposed) | not-started | `configuration` |
-| [`raylib:macro:RAYLIB_VERSION`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L92) | macro | `#define RAYLIB_VERSION "6.0"` | `Config.RAYLIB_VERSION` (proposed) | not-started | `configuration` |
+| [`raylib:macro:RAYLIB_H`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L85) | macro | `#define RAYLIB_H` | `Config.JONLIB_H` (proposed) | not-started | `configuration` |
+| [`raylib:macro:RAYLIB_VERSION_MAJOR`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L89) | macro | `#define RAYLIB_VERSION_MAJOR 6` | `Config.JONLIB_VERSION_MAJOR` (proposed) | not-started | `configuration` |
+| [`raylib:macro:RAYLIB_VERSION_MINOR`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L90) | macro | `#define RAYLIB_VERSION_MINOR 0` | `Config.JONLIB_VERSION_MINOR` (proposed) | not-started | `configuration` |
+| [`raylib:macro:RAYLIB_VERSION_PATCH`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L91) | macro | `#define RAYLIB_VERSION_PATCH 0` | `Config.JONLIB_VERSION_PATCH` (proposed) | not-started | `configuration` |
+| [`raylib:macro:RAYLIB_VERSION`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L92) | macro | `#define RAYLIB_VERSION "6.0"` | `Config.JONLIB_VERSION` (proposed) | not-started | `configuration` |
 | [`raylib:macro:__declspec`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L99) | macro | `#define __declspec(x) __attribute__((x))` | `Config.__declspec` (proposed) | not-started | `configuration` |
 | [`raylib:switch:BUILD_LIBTYPE_SHARED`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L101) | switch | `#if defined(BUILD_LIBTYPE_SHARED)` | `Config.BUILD_LIBTYPE_SHARED` (proposed) | not-started | `configuration` |
 | [`raylib:macro:RLAPI`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L102) | macro | `#define RLAPI __declspec(dllexport)` | `Config.RLAPI` (proposed) | not-started | `configuration` |
@@ -61,11 +61,11 @@ Each row inherits its milestone verification recipe and the six completion gates
 | [`raylib:enumerator:false`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L209) | enumerator | `false = 0` | `Types.false` (proposed) | not-started | `types` |
 | [`raylib:enumerator:true`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L209) | enumerator | `true = !false` | `Types.true` (proposed) | not-started | `types` |
 | [`raylib:macro:RL_BOOL_TYPE`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L210) | macro | `#define RL_BOOL_TYPE` | `Config.RL_BOOL_TYPE` (proposed) | not-started | `configuration` |
-| [`raylib:type:Vector2`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L214) | type | `Vector2 — float x; float y` | `Vector2` (implemented) | partial | `types` |
-| [`raylib:type:Vector3`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L220) | type | `Vector3 — float x; float y; float z` | `Vector3` (implemented) | partial | `types` |
-| [`raylib:type:Vector4`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L227) | type | `Vector4 — float x; float y; float z; float w` | `Vector4` (implemented) | partial | `types` |
-| [`raylib:alias:Quaternion`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L235) | alias | `typedef Vector4 Quaternion;` | `Vector4 with Quaternion function namespace` (implemented) | partial | `types` |
-| [`raylib:type:Matrix`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L238) | type | `Matrix — float m0, m4, m8, m12; float m1, m5, m9, m13; float m2, m6, m10, m14; float m3, m7, m11, m15` | `Matrix` (implemented) | partial | `types` |
+| [`raylib:type:Vector2`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L214) | type | `Vector2 — float x; float y` | `jonmath.Vector2` (implemented) | partial | `types` |
+| [`raylib:type:Vector3`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L220) | type | `Vector3 — float x; float y; float z` | `jonmath.Vector3` (implemented) | partial | `types` |
+| [`raylib:type:Vector4`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L227) | type | `Vector4 — float x; float y; float z; float w` | `jonmath.Vector4` (implemented) | partial | `types` |
+| [`raylib:alias:Quaternion`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L235) | alias | `typedef Vector4 Quaternion;` | `jonmath.Vector4 with jonmath.Quaternion function namespace` (implemented) | partial | `types` |
+| [`raylib:type:Matrix`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L238) | type | `Matrix — float m0, m4, m8, m12; float m1, m5, m9, m13; float m2, m6, m10, m14; float m3, m7, m11, m15` | `jonmath.Matrix` (implemented) | partial | `types` |
 | [`raylib:type:Color`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L246) | type | `Color — unsigned char r; unsigned char g; unsigned char b; unsigned char a` | `U32 / Color.rgba` (implemented) | partial | `types` |
 | [`raylib:type:Rectangle`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L254) | type | `Rectangle — float x; float y; float width; float height` | `Rectangle` (implemented) | partial | `types` |
 | [`raylib:type:Image`](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/raylib.h#L262) | type | `Image — void *data; int width; int height; int mipmaps; int format` | `Surface / Image.Formatted / Image.Packed16` (implemented) | partial | `types` |

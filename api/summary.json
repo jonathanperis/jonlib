@@ -17,6 +17,14 @@
     "not-started": 495,
     "partial": 104
   },
+  "math_functions": {
+    "total": 146,
+    "blocked": 4,
+    "complete": 0,
+    "in-progress": 0,
+    "not-started": 0,
+    "partial": 142
+  },
   "function_declarations": {
     "total": 931,
     "blocked": 5,
@@ -118,8 +126,8 @@
       "partial": 6
     },
     {
-      "id": "raymath",
-      "title": "Vectors, matrices and quaternions",
+      "id": "jonmath",
+      "title": "Jonmath vectors, matrices and quaternions",
       "phase": 1,
       "depends_on": [
         "numerics"
@@ -240,7 +248,7 @@
       "title": "2D/3D collision and ray queries",
       "phase": 1,
       "depends_on": [
-        "raymath"
+        "jonmath"
       ],
       "total": 21,
       "blocked": 0,
@@ -300,7 +308,7 @@
       "phase": 6,
       "depends_on": [
         "window",
-        "raymath",
+        "jonmath",
         "memory"
       ],
       "total": 187,
@@ -317,7 +325,7 @@
       "depends_on": [
         "frame",
         "rlgl-core",
-        "raymath",
+        "jonmath",
         "pixels"
       ],
       "total": 62,
@@ -439,7 +447,7 @@
       "title": "Meshes, model loading and 3D drawing",
       "phase": 5,
       "depends_on": [
-        "raymath",
+        "jonmath",
         "textures",
         "files",
         "shaders"
@@ -486,7 +494,7 @@
       "title": "Camera controls and projection",
       "phase": 5,
       "depends_on": [
-        "raymath",
+        "jonmath",
         "input",
         "frame"
       ],
@@ -613,7 +621,7 @@
       "milestone_dependencies": [
         "frame",
         "rlgl-core",
-        "raymath",
+        "jonmath",
         "pixels"
       ],
       "api_dependencies": []
@@ -621,9 +629,9 @@
     {
       "id": "raymath:function:QuaternionSlerp",
       "name": "QuaternionSlerp",
-      "milestone": "raymath",
+      "milestone": "jonmath",
       "status": "blocked",
-      "jonlib": "Quaternion.slerp",
+      "jonlib": "jonmath.Quaternion.slerp",
       "next_step": "Resolve: Base and investigated inverse-trig models differ from the actual float libm; no verified acos profile is available yet.",
       "milestone_dependencies": [
         "numerics"
@@ -633,9 +641,9 @@
     {
       "id": "raymath:function:QuaternionToAxisAngle",
       "name": "QuaternionToAxisAngle",
-      "milestone": "raymath",
+      "milestone": "jonmath",
       "status": "blocked",
-      "jonlib": "Quaternion.to_axis_angle",
+      "jonlib": "jonmath.Quaternion.to_axis_angle",
       "next_step": "Resolve: Native acosf endpoint/tail values differ from Base and investigated numerical models.",
       "milestone_dependencies": [
         "numerics"
@@ -645,9 +653,9 @@
     {
       "id": "raymath:function:QuaternionToEuler",
       "name": "QuaternionToEuler",
-      "milestone": "raymath",
+      "milestone": "jonmath",
       "status": "blocked",
-      "jonlib": "Quaternion.to_euler",
+      "jonlib": "jonmath.Quaternion.to_euler",
       "next_step": "Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models.",
       "milestone_dependencies": [
         "numerics"
@@ -657,9 +665,9 @@
     {
       "id": "raymath:function:MatrixPerspective",
       "name": "MatrixPerspective",
-      "milestone": "raymath",
+      "milestone": "jonmath",
       "status": "blocked",
-      "jonlib": "Matrix.perspective",
+      "jonlib": "jonmath.Matrix.perspective",
       "next_step": "Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.",
       "milestone_dependencies": [
         "numerics"
@@ -671,7 +679,7 @@
       "name": "Clamp",
       "milestone": "numerics",
       "status": "partial",
-      "jonlib": "Math.clamp",
+      "jonlib": "jonmath.Math.clamp",
       "next_step": "Close documented gaps and unverified gates for Clamp.",
       "milestone_dependencies": [
         "types"
@@ -683,7 +691,7 @@
       "name": "Lerp",
       "milestone": "numerics",
       "status": "partial",
-      "jonlib": "Math.lerp",
+      "jonlib": "jonmath.Math.lerp",
       "next_step": "Close documented gaps and unverified gates for Lerp.",
       "milestone_dependencies": [
         "types"
@@ -695,7 +703,7 @@
       "name": "Normalize",
       "milestone": "numerics",
       "status": "partial",
-      "jonlib": "Math.normalize",
+      "jonlib": "jonmath.Math.normalize",
       "next_step": "Close documented gaps and unverified gates for Normalize.",
       "milestone_dependencies": [
         "types"
@@ -707,7 +715,7 @@
       "name": "Remap",
       "milestone": "numerics",
       "status": "partial",
-      "jonlib": "Math.remap",
+      "jonlib": "jonmath.Math.remap",
       "next_step": "Close documented gaps and unverified gates for Remap.",
       "milestone_dependencies": [
         "types"
@@ -719,7 +727,7 @@
       "name": "Wrap",
       "milestone": "numerics",
       "status": "partial",
-      "jonlib": "Math.wrap",
+      "jonlib": "jonmath.Math.wrap",
       "next_step": "Close documented gaps and unverified gates for Wrap.",
       "milestone_dependencies": [
         "types"
@@ -731,7 +739,7 @@
       "name": "FloatEquals",
       "milestone": "numerics",
       "status": "partial",
-      "jonlib": "Math.float_equals",
+      "jonlib": "jonmath.Math.float_equals",
       "next_step": "Close documented gaps and unverified gates for FloatEquals.",
       "milestone_dependencies": [
         "types"
@@ -741,9 +749,9 @@
     {
       "id": "raymath:function:Vector2Zero",
       "name": "Vector2Zero",
-      "milestone": "raymath",
+      "milestone": "jonmath",
       "status": "partial",
-      "jonlib": "Vector2.zero",
+      "jonlib": "jonmath.Vector2.zero",
       "next_step": "Close documented gaps and unverified gates for Vector2Zero.",
       "milestone_dependencies": [
         "numerics"
@@ -753,9 +761,9 @@
     {
       "id": "raymath:function:Vector2One",
       "name": "Vector2One",
-      "milestone": "raymath",
+      "milestone": "jonmath",
       "status": "partial",
-      "jonlib": "Vector2.one",
+      "jonlib": "jonmath.Vector2.one",
       "next_step": "Close documented gaps and unverified gates for Vector2One.",
       "milestone_dependencies": [
         "numerics"
@@ -765,9 +773,9 @@
     {
       "id": "raymath:function:Vector2Add",
       "name": "Vector2Add",
-      "milestone": "raymath",
+      "milestone": "jonmath",
       "status": "partial",
-      "jonlib": "Vector2.add",
+      "jonlib": "jonmath.Vector2.add",
       "next_step": "Close documented gaps and unverified gates for Vector2Add.",
       "milestone_dependencies": [
         "numerics"
@@ -777,9 +785,9 @@
     {
       "id": "raymath:function:Vector2AddValue",
       "name": "Vector2AddValue",
-      "milestone": "raymath",
+      "milestone": "jonmath",
       "status": "partial",
-      "jonlib": "Vector2.add_value",
+      "jonlib": "jonmath.Vector2.add_value",
       "next_step": "Close documented gaps and unverified gates for Vector2AddValue.",
       "milestone_dependencies": [
         "numerics"
@@ -789,9 +797,9 @@
     {
       "id": "raymath:function:Vector2Subtract",
       "name": "Vector2Subtract",
-      "milestone": "raymath",
+      "milestone": "jonmath",
       "status": "partial",
-      "jonlib": "Vector2.subtract",
+      "jonlib": "jonmath.Vector2.subtract",
       "next_step": "Close documented gaps and unverified gates for Vector2Subtract.",
       "milestone_dependencies": [
         "numerics"
@@ -801,9 +809,9 @@
     {
       "id": "raymath:function:Vector2SubtractValue",
       "name": "Vector2SubtractValue",
-      "milestone": "raymath",
+      "milestone": "jonmath",
       "status": "partial",
-      "jonlib": "Vector2.subtract_value",
+      "jonlib": "jonmath.Vector2.subtract_value",
       "next_step": "Close documented gaps and unverified gates for Vector2SubtractValue.",
       "milestone_dependencies": [
         "numerics"

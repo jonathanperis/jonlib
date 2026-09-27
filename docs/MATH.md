@@ -1,8 +1,11 @@
-# Math profiles
+# Jonmath profiles
 
-The current math implementation is Bend source in `jonlib.bend`. It begins the
-`raymath.h` work package with six scalar, thirty-one Vector2, thirty-nine Vector3,
+The math implementation is Bend source in `jonmath.bend`, imported as
+`import ./jonmath.bend as M`. Its `raymath.h` reference work package contains
+six scalar, thirty-one Vector2, thirty-nine Vector3,
 twenty-two Vector4, twenty-three Matrix and twenty-one Quaternion functions.
+These remain partial profiles. Type ownership and migration from earlier imports
+are documented in [MODULES.md](MODULES.md).
 
 ## Scalar API
 

@@ -1,4 +1,4 @@
-# Master plan: 100% raylib on Bend 2
+# Jonlib and Jonmath full-parity master plan
 
 ## Destination and completion rule
 

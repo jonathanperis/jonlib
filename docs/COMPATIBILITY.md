@@ -33,8 +33,8 @@ A current run's precise inputs, source hashes and lane outcomes are in
 `.build/conformance.json`. The authoritative [API dashboard](PROGRESS.md) covers
 the complete release-header/support inventory. The 600-entry
 `.build/api-inventory.json` is its legacy core view, mapping 104 reference APIs to
-these scoped operations/contracts. The companion ledger additionally maps 142
-`raymath.h` functions. Remaining functions retain explicit planned work.
+these scoped operations/contracts. Jonmath's companion ledger additionally maps
+142 functions from `raymath.h`. Remaining functions retain explicit planned work.
 These counts are an inventory, not a percentage of full parity.
 Both `profile-covered` and `contract-checked` are partial-coverage statuses.
 The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
@@ -87,7 +87,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | Raw DEFLATE | `Compression.decompress` | Stored/fixed/dynamic blocks and bounded copies; native empty-stored-block completion differs explicitly from the internal PNG-oriented path |
 | PNG decoding | `Surface.decode_png` | Non-interlaced/Adam7 1/2/4/8/16-bit and native-default CgBI profiles; filtering/scattering, palette/tRNS, framing and bounded errors |
 | PNG export | `Surface.to_png/write_png`, `Image.Formatted.to_png/write_png` | Exact default byte-format memory and format-1..7 file output; native packed expansion, channel/header preservation, rejection and normalized round trips |
-| Scalar/Vector2/Vector3/Vector4 raymath | `Math` and vector functions | Exact results for the explicit uncontracted-F32 profile; exceptional/contracted variants remain open |
+| Scalar/Vector2/Vector3/Vector4 raymath | Jonmath `Math` and vector functions | Exact results for the explicit uncontracted-F32 profile; exceptional/contracted variants remain open |
 | Vector angle queries | `Vector2.angle/line_angle`, `Vector3.angle` and `_for` variants | Explicit Apple/GNU numerical profiles with exact native/control probes and signed quadrant behavior |
 | Quaternion arithmetic/metrics/interpolation | `Quaternion` functions | Shared Vector4 representation; exact Hamilton products, zero normalization/inversion, NLERP and sign-equivalent equality |
 | Quaternion/matrix conversion and composition | `Quaternion.from_matrix/to_matrix/transform`, `Vector3.rotate_by_quaternion`, `Matrix.compose` | Exact branch/tie order, full matrix/four-dimensional results and non-unit/zero quaternion behavior |

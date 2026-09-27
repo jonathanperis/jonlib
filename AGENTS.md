@@ -1,4 +1,9 @@
-# Jonlib engineering
+# Jonlib and Jonmath engineering
+
+- Name ported modules `jon<suffix>` for upstream `ray<suffix>` names. Jonlib
+  (`jonlib.bend`) owns the core port; Jonmath (`jonmath.bend`) owns math APIs
+  and shared vector/matrix types. Keep upstream names in reference IDs,
+  source includes/URLs and required notices. See `docs/MODULES.md` for imports.
 
 - Implement the library in Bend 2. Keep raylib in the reference tooling;
   compiler/code-generation changes belong in the separately declared Bend overlay.

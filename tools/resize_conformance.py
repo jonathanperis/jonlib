@@ -219,7 +219,7 @@ def verify_images(args, work):
         outputs = []
         for batch, start in enumerate(range(0, len(cases), 64)):
             source = work / f'images-{name}-{batch}.bend'
-            source.write_text(bend_source(cases[start:start+64], gpu=name=='metal').replace('import ../jonlib.bend', 'import ../../jonlib.bend'))
+            source.write_text(bend_source(cases[start:start+64], gpu=name=='metal').replace('import ../jonlib.bend', 'import ../../jonlib.bend').replace('import ../jonmath.bend', 'import ../../jonmath.bend'))
             binary = work / (f'images-{batch}.js' if name=='javascript' else f'images-{name}-{batch}')
             run(['bun', args.bend_source/'bend2/main.ts', source, '-o', binary])
             command = ['bun', binary] if name=='javascript' else [binary, *(['--gpu','on'] if name=='metal' else [])]

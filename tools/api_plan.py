@@ -47,14 +47,14 @@ def classify(entry):
         if name in ('PI', 'DEG2RAD', 'RAD2DEG', 'EPSILON'):
             return 'numerics'
         if header == 'raymath.h' and name in ('MatrixToFloat', 'Vector3ToFloat'):
-            return 'raymath'
+            return 'jonmath'
         if header == 'rlgl.h' and name.startswith('RL_') and 'DEFAULT_' not in name and 'TYPE' not in name:
             return 'rlgl-core'
         return 'configuration'
     if header == 'raymath.h':
         if kind == 'function' and name in ('Clamp', 'Lerp', 'Normalize', 'Remap', 'Wrap', 'FloatEquals'):
             return 'numerics'
-        return 'raymath' if kind in ('function', 'operator', 'constant') else 'types'
+        return 'jonmath' if kind in ('function', 'operator', 'constant') else 'types'
     if kind not in ('function', 'operator'):
         return 'memory' if kind == 'callback' else 'types'
     if header == 'rcamera.h' or module == 'camera':
@@ -132,19 +132,21 @@ def classify(entry):
 
 def proposed(entry, milestone):
     name = entry['name']
+    name = re.sub(r'^(RAYLIB|RAYMATH|RAYGUI)', lambda match:'JON'+match[0][3:], name)
+    module = 'jonmath.' if entry['header']=='raymath.h' or (entry['kind'] in ('type','alias') and name in ('Vector2','Vector3','Vector4','Matrix','Quaternion')) else ''
     if entry['kind'] in ('type', 'alias', 'opaque', 'enum', 'callback'):
-        return name
+        return module + name
     if entry['kind'] == 'operator':
-        return 'Math.' + name
+        return module + 'Math.' + name
     if entry['kind'] != 'function':
-        return milestone['namespace'] + '.' + name
+        return module + milestone['namespace'] + '.' + name
     if entry['header'] == 'raymath.h':
         for prefix in ('Quaternion', 'Vector2', 'Vector3', 'Vector4', 'Matrix'):
             if name.startswith(prefix):
-                return prefix + '.' + snake(name[len(prefix):])
+                return module + prefix + '.' + snake(name[len(prefix):])
     if name.startswith('rl') and entry['header'] == 'rlgl.h':
         name = name[2:]
-    return milestone['namespace'] + '.' + snake(name)
+    return module + milestone['namespace'] + '.' + snake(name)
 
 
 def snake(name):
@@ -208,9 +210,12 @@ def make_ledger(reference, plan, progress):
     if not target_ids or len(target_ids) != len(plan['targets']):
         raise ValueError('Target policy must be nonempty with unique IDs')
     symbols = set()
-    for path in [ROOT / 'jonlib.bend', *sorted((ROOT / 'src').glob('**/*.bend'))]:
+    for path in [ROOT / 'jonlib.bend', ROOT / 'jonmath.bend', *sorted((ROOT / 'src').glob('**/*.bend'))]:
         if path.is_file():
-            symbols.update(re.findall(r'^(?:def|type) ([\w.]+)', path.read_text(), re.M))
+            found=re.findall(r'^(?:def|type) ([\w.]+)', path.read_text(), re.M)
+            symbols.update(found)
+            if path.parent==ROOT:
+                symbols.update(path.stem+'.'+name for name in found)
     rows = []
     for entry in entries:
         update = updates.get(entry['id'], {})
@@ -306,7 +311,7 @@ def summary(ledger, plan):
     queue = sorted((r for r in rows if r['kind'] == 'function' and r['status'] != 'complete'),
                    key=lambda r: (r['priority'], r['status'] != 'partial', r['header'], r['line']))
     return dict(schema=1, reference_revision=ledger['reference_revision'],
-                declaration_inventory=counts(rows), core_functions=counts(core), function_declarations=counts(functions),
+                 declaration_inventory=counts(rows), core_functions=counts(core), math_functions=counts([r for r in functions if r['header']=='raymath.h']), function_declarations=counts(functions),
                 unique_c_function_names=len({r['name'] for r in functions}),
                 kinds=dict(sorted(Counter(r['kind'] for r in rows).items())),
                 headers={header: counts([r for r in rows if r['header'] == header]) for header in HEADERS},
@@ -334,7 +339,8 @@ def generated(reference, plan, progress):
                  '## Inventory and implementation are different', '',
                  f'- **{len(ledger["entries"])} declaration/support entries** are catalogued across all six scoped headers.',
                  f'- **{report["function_declarations"]["total"]} C function declarations**, representing **{report["unique_c_function_names"]} unique names**.',
-                 f'- Core `raylib.h`: **{report["core_functions"]["total"]} functions**, **{report["core_functions"]["partial"]} partial**, **{report["core_functions"]["complete"]} complete**.',
+                  f'- Jonlib (`raylib.h` reference): **{report["core_functions"]["total"]} functions**, **{report["core_functions"]["partial"]} partial**, **{report["core_functions"]["complete"]} complete**.',
+                  f'- Jonmath (`raymath.h` reference): **{report["math_functions"]["total"]} functions**, **{report["math_functions"]["partial"]} partial**, **{report["math_functions"]["complete"]} complete**.',
                  '- Catalog coverage is not implementation completeness. Operators, constants, types and configuration controls have separate rows.',
                  '- Conditional variants and duplicate declarations are retained. Related IDs can share work, but do not automatically inherit completion.', '',
                  '## Complete checklists', '', '| Header | Entries | Checklist |', '|---|---:|---|']
@@ -359,7 +365,8 @@ def generated(reference, plan, progress):
     outputs['docs/PROGRESS.md'] = '\n'.join(dashboard)
     for header in HEADERS:
         rows = [r for r in ledger['entries'] if r['header'] == header]
-        lines = [f'# {header}: complete API/support checklist', '', '[Progress dashboard](../PROGRESS.md)', '',
+        title = {'raylib.h':'Jonlib — raylib.h','raymath.h':'Jonmath — raymath.h'}.get(header,header)
+        lines = [f'# {title}: complete API/support checklist', '', '[Progress dashboard](../PROGRESS.md)', '',
                  'Generated from the pinned source; proposed Bend names are planning targets, not existing functions.',
                   'Each row inherits its milestone verification recipe and the six completion gates in the machine-readable ledger.', '',
                  '| Stable ID / source | Kind | Reference contract | Bend mapping | Status | Step |', '|---|---|---|---|---|---|']

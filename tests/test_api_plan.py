@@ -78,6 +78,13 @@ inline Vec operator + (const Vec& lhs, const float& rhs) { return lhs; }
         self.assertLessEqual(baseline, set(legacy))
         self.assertIn('Surface.draw_image_rect', legacy['ImageDraw']['jonlib'])
         self.assertEqual(legacy['ImageResize']['jonlib'], 'Surface.resize')
+        mapped = {row['id']:row for row in json.loads(outputs['api/ledger.json'])['entries']}
+        self.assertEqual(mapped['raymath:function:Vector2Add']['jonlib'], 'jonmath.Vector2.add')
+        self.assertEqual(mapped['raymath:function:Vector2Add']['milestone'], 'jonmath')
+        self.assertEqual(mapped['raymath:function:QuaternionSlerp']['jonlib'], 'jonmath.Quaternion.slerp')
+        self.assertEqual(mapped['raymath:switch:RAYMATH_IMPLEMENTATION']['jonlib'], 'jonmath.Config.JONMATH_IMPLEMENTATION')
+        self.assertEqual(mapped['raylib:macro:RAYLIB_VERSION']['jonlib'], 'Config.JONLIB_VERSION')
+        self.assertEqual(report['math_functions']['total'], counts['raymath.h'])
         seen = set()
         for milestone in report['milestones']:
             self.assertLessEqual(set(milestone['depends_on']), seen)

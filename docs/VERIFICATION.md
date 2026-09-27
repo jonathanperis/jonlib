@@ -18,7 +18,7 @@ python3 tools/gradient_bench.py --bend-source "$BEND_SOURCE" --raylib-source "$R
 BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 ```
 
-- Nine harness/planning test methods pass, including changed pixels, empty/missing results,
+- Ten harness/planning test methods pass, including changed pixels, empty/missing results,
   invalid fixtures, Boolean/floating-point dimensions masquerading as integers,
   and compiler source/patch tampering or unexpected tracked changes.
 - 261 scenarios / 40,101 output words match pinned raylib exactly on each
@@ -1489,3 +1489,34 @@ other aliases/codecs, larger raster files, concurrent/special-file semantics,
 native callbacks and full target/resource/performance coverage remain gaps.
 
 Regression scan: 32 callers checked, 14 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `c3cd498`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36285392857)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36285392861)
+completed successfully, including file dispatch and descriptor closure.
+
+## Jonlib / Jonmath module ownership and naming
+
+The raymath port is now `jonmath.bend`; core geometry/image/IO code remains in
+`jonlib.bend`. Jonmath owns the shared vector/matrix/Float64 carriers and numerical
+reference profile. Jonlib, generated runners, examples and proofs import those
+same types. All 211 extracted declarations are byte-identical to the published
+math implementation, and 156 implementation mappings now identify Jonmath.
+See [MODULES.md](MODULES.md) for the `ray*` → `jon*` convention and required import
+migration, and [evidence/jonmath-module.json](evidence/jonmath-module.json) for hashes.
+
+The full 261-scenario / 40,101-word corpus passes CPU-1/CPU-2/JavaScript/forced
+Metal. The standalone Jonmath example returns 5 on native CPU, JavaScript and
+forced Metal; 512 native spline points and 529 resize images / 46,474 pixels
+also pass their affected caller gates. All four proof propositions check with
+the new imports. Ten harness/planning tests pass, including source-gate rejection
+of unsafe/foreign Jonmath code and actual/proposed module-qualified mappings.
+
+Source/symbol inventories cover both public modules. Project-side branded
+configuration proposals use `JONLIB_*`/`JONMATH_*`; source headers, IDs, URLs and
+notices continue to identify the actual upstream reference. The scoped review
+confirms C16/C17, I95, A4/A5/A6 and V2. Every one of 1,884 inventory IDs retains
+its status: 104 Jonlib core and 142 Jonmath functions remain partial, with zero
+full-parity completions. Existing numerical/target/resource/performance gaps and
+the documented import migration remain explicit.
+
+Regression scan: 402 callers checked, 20 assertions checked, 3 flagged/fixed.

@@ -1,6 +1,8 @@
 # Public API: current profiles
 
-Import `jonlib.bend` under an alias, for example `import ./jonlib.bend as J`.
+Import `jonlib.bend` as `J` for core operations and `jonmath.bend` as `M` for math
+operations and shared vector/matrix types. See [MODULES.md](MODULES.md) for the
+`ray*` → `jon*` naming convention and import migration.
 This is a source library for the Bend 2.0.27 base plus the compiler overlay in
 `toolchain.json`. Helpers with further dotted suffixes
 are implementation details; only operations listed here form this initial API.
@@ -51,24 +53,24 @@ in [DEFLATE.md](DEFLATE.md).
 
 ## Owned RGBA8 surfaces
 
-`Vector2` is immutable `Data`, constructed as `J.Vector2{x, y}` with F32 fields.
+`Vector2` is immutable Jonmath `Data`, constructed as `M.Vector2{x, y}` with F32 fields.
 Reusable local constructor bindings need a type annotation, for example
-`+point = {J.Vector2{1.0, 2.0} : J.Vector2}`.
+`+point = {M.Vector2{1.0, 2.0} : M.Vector2}`.
 `Rectangle` is `Data` with F32 `x`, `y`, `width`, `height` fields. The current
 crop/extraction/region-drawing profile requires integral rectangle values;
 `draw_image_rect` and the documented rectangle wrappers also support fractional fields.
 
-`Vector3{x, y, z}` is immutable `Data` with three F32 fields.
-`Vector4{x, y, z, w}` provides four immutable F32 fields.
-`BoundingBox{min, max}` contains two `Vector3` values; supplied bounds are retained
+`M.Vector3{x, y, z}` is immutable `Data` with three F32 fields.
+`M.Vector4{x, y, z, w}` provides four immutable F32 fields.
+`J.BoundingBox{min, max}` contains two `M.Vector3` values; supplied bounds are retained
 without reordering. Their numeric and collision operations are documented in
 [MATH.md](MATH.md) and [COLLISION.md](COLLISION.md).
-`Matrix` contains 16 F32 fields in the reference declaration order; its layout,
+Jonmath's `M.Matrix` contains 16 F32 fields in the reference declaration order; its layout,
 identity/transpose operations and vector transforms are listed in [MATH.md](MATH.md#matrix-api).
-`Matrix.Decomposition` contains `Decomposed{translation, rotation, scale}` with
+`M.Matrix.Decomposition` contains `M.Decomposed{translation, rotation, scale}` with
 Vector3/Vector4/Vector3 fields, adapting the three distinct outputs of decomposition.
-`Float64{high, low}` retains binary64 input bits for projection matrices;
-`Float64.from_f32` promotes existing F32 values. Precision and supported domains
+`M.Float64{high, low}` retains binary64 input bits for projection matrices;
+`M.Float64.from_f32` promotes existing F32 values. Precision and supported domains
 are detailed in [MATH.md](MATH.md#binary64-projection-inputs).
 
 `Surface` owns its row-major pixel array. Always start with `Surface.create`:
@@ -87,7 +89,7 @@ is outside this API's contract.
 | `Surface.create_gradient_square(width, height, density, inner, outer) -> Maybe<Surface>` | Square gradient with dimensions 1..4096 and finite density 0..1. Invalid requests return `None`; density one produces the inner color, matching the reference clamp behavior. |
 | `Surface.create_gradient_radial(width, height, density, inner, outer)` | Same Maybe result, dimensions 1..4096 and density 0..1; reference radial RGBA interpolation with balanced generation. |
 | `Surface.create_gradient_linear(width, height, direction, start, end)` | Same Maybe result; integral directions -360..360. Rejects invalid sizes/directions and a zero reference normalization extent. Wider-angle libm parity remains open; see [GRADIENTS.md](GRADIENTS.md). |
-| `Surface.create_gradient_linear_for(reference, width, height, direction, start, end)` | Explicit `Gradient.Reference`: `AccurateGradient{}` or `GnuGradient{}`. Selects the required reference's numerical behavior without hidden OS calls; see [GRADIENTS.md](GRADIENTS.md). |
+| `Surface.create_gradient_linear_for(reference, width, height, direction, start, end)` | Jonmath's explicit `M.Gradient.Reference`: `M.AccurateGradient{}` or `M.GnuGradient{}`. Selects reference numerical behavior; see [GRADIENTS.md](GRADIENTS.md). |
 | `Surface.dimensions(surface) -> U32 & U32` | Consumes a surface and returns its dimensions. |
 | `Surface.clear(surface, color) -> Surface` | Replaces all pixels; preserves dimensions. |
 | `Surface.get(surface, x, y) -> Surface & Maybe<&2, U32>` | Returns ownership and the pixel; out-of-bounds U32 coordinates return `None`, never wrap. |

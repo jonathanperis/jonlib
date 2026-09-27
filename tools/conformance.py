@@ -646,7 +646,8 @@ def vector_arguments(signature, values, bend=False):
         if parameter in ('v','t','q','r','m'):
             size, name = {'v':(2,'Vector2'), 't':(3,'Vector3'), 'q':(4,'Vector4'), 'r':(4,'Rectangle'), 'm':(16,'Matrix')}[parameter]
             vector = ', '.join(literal(v) for v in values[at:at+size])
-            result.append((f'J.{name}{{' if bend else f'({name}){{') + vector + '}')
+            module = 'J' if name=='Rectangle' else 'M'
+            result.append((f'{module}.{name}{{' if bend else f'({name}){{') + vector + '}')
             at += size
         elif parameter == 'b':
             vectors = vector_arguments('tt',values[at:at+6],bend)
@@ -658,7 +659,7 @@ def vector_arguments(signature, values, bend=False):
             at += 4
         elif parameter == 'd':
             high,low = struct.unpack('>II',struct.pack('>d',float(values[at])))
-            result.append(f'J.Float64{{{high}, {low}}}' if bend else float(values[at]).hex())
+            result.append(f'M.Float64{{{high}, {low}}}' if bend else float(values[at]).hex())
             at += 1
         else:
             result.append(literal(values[at]))
@@ -963,7 +964,7 @@ def f32(value):
 
 
 def bend_source(cases, gpu=False):
-    lines = ['import Base', 'import ../jonlib.bend as J', '',
+    lines = ['import Base', 'import ../jonlib.bend as J', 'import ../jonmath.bend as M', '',
              'def emit(name: String, image: J.Surface, extra: String) -> IO(Unit):',
              '  J.Surface{+w, +h, pixels} = image',
              '  IO.print("{\\"id\\":\\"" ++ name ++ "\\",\\"width\\":" ++ U32.show(w)',
@@ -974,24 +975,24 @@ def bend_source(cases, gpu=False):
         '  Pair.snd(J.Random.State, Maybe<J.Surface>, J.Surface.create_white_noise(J.Random.seed(seed), width, height, factor))',
         'def create_cellular(seed: U32, width: U32, height: U32, tile: U32) -> Maybe<J.Surface>:',
         '  Pair.snd(J.Random.State, Maybe<J.Surface>, J.Surface.create_cellular(J.Random.seed(seed), width, height, tile))',
-        'def write_vector(surface: J.Surface, +x: F32, +y: F32, vector: J.Vector2) -> J.Surface:',
-        '  J.Vector2{u, v} = vector',
+        'def write_vector(surface: J.Surface, +x: F32, +y: F32, vector: M.Vector2) -> J.Surface:',
+        '  M.Vector2{u, v} = vector',
         '  first = J.Surface.draw_pixel(surface, x, y, F32.bits(u))',
         '  J.Surface.draw_pixel(first, (x + 1.0 : F32), y, F32.bits(v))',
-        'def write_vector3(surface: J.Surface, +x: F32, +y: F32, vector: J.Vector3) -> J.Surface:',
-        '  J.Vector3{u, v, w} = vector',
-        '  first = write_vector(surface, x, y, J.Vector2{u, v})',
+        'def write_vector3(surface: J.Surface, +x: F32, +y: F32, vector: M.Vector3) -> J.Surface:',
+        '  M.Vector3{u, v, w} = vector',
+        '  first = write_vector(surface, x, y, M.Vector2{u, v})',
         '  J.Surface.draw_pixel(first, (x + 2.0 : F32), y, F32.bits(w))',
-        'def write_vector4(surface: J.Surface, +x: F32, +y: F32, vector: J.Vector4) -> J.Surface:',
-        '  J.Vector4{u, v, w, q} = vector',
-        '  first = write_vector3(surface, x, y, J.Vector3{u, v, w})',
+        'def write_vector4(surface: J.Surface, +x: F32, +y: F32, vector: M.Vector4) -> J.Surface:',
+        '  M.Vector4{u, v, w, q} = vector',
+        '  first = write_vector3(surface, x, y, M.Vector3{u, v, w})',
         '  J.Surface.draw_pixel(first, (x + 3.0 : F32), y, F32.bits(q))',
-        'def write_float64(surface: J.Surface, +x: F32, +y: F32, value: J.Float64) -> J.Surface:',
-        '  J.Float64{high, low} = value',
+        'def write_float64(surface: J.Surface, +x: F32, +y: F32, value: M.Float64) -> J.Surface:',
+        '  M.Float64{high, low} = value',
         '  first = J.Surface.draw_pixel(surface, x, y, high)',
         '  J.Surface.draw_pixel(first, (x + 1.0 : F32), y, low)',
-        'def write_decomposition(surface: J.Surface, +x: F32, +y: F32, result: J.Matrix.Decomposition) -> J.Surface:',
-        '  J.Decomposed{translation, rotation, scale} = result',
+        'def write_decomposition(surface: J.Surface, +x: F32, +y: F32, result: M.Matrix.Decomposition) -> J.Surface:',
+        '  M.Decomposed{translation, rotation, scale} = result',
         '  first = write_vector3(surface, x, y, translation)',
         '  second = write_vector4(first, (x + 3.0 : F32), y, rotation)',
         '  write_vector3(second, (x + 7.0 : F32), y, scale)',
@@ -1001,19 +1002,19 @@ def bend_source(cases, gpu=False):
         '    case 1n+k Con{value, rest}:',
         '      write_float_buffer(k, J.Surface.draw_pixel(surface, x, y, F32.bits(value)), (x + 1.0 : F32), y, rest)',
         '    case _ _: Fail{(surface, J.InvalidSize{})}',
-        'def write_vector_pair(surface: J.Surface, +x: F32, +y: F32, pair: J.Vector3 & J.Vector3) -> J.Surface:',
+        'def write_vector_pair(surface: J.Surface, +x: F32, +y: F32, pair: M.Vector3 & M.Vector3) -> J.Surface:',
         '  (left, right) = pair',
         '  first = write_vector3(surface, x, y, left)',
         '  write_vector3(first, (x + 3.0 : F32), y, right)',
         'def write_rectangle(surface: J.Surface, +x: F32, +y: F32, rectangle: J.Rectangle) -> J.Surface:',
         '  J.Rectangle{rx, ry, w, h} = rectangle',
-        '  first = write_vector(surface, x, y, J.Vector2{rx, ry})',
-        '  write_vector(first, (x + 2.0 : F32), y, J.Vector2{w, h})',
-        'def write_hit(surface: J.Surface, +x: F32, +y: F32, hit: Maybe<&2, J.Vector2>) -> J.Surface:',
+        '  first = write_vector(surface, x, y, M.Vector2{rx, ry})',
+        '  write_vector(first, (x + 2.0 : F32), y, M.Vector2{w, h})',
+        'def write_hit(surface: J.Surface, +x: F32, +y: F32, hit: Maybe<&2, M.Vector2>) -> J.Surface:',
         '  match hit:',
         '    case None{}:',
         '      first = J.Surface.draw_pixel(surface, x, y, 0)',
-        '      write_vector(first, (x + 1.0 : F32), y, J.Vector2{0.0, 0.0})',
+        '      write_vector(first, (x + 1.0 : F32), y, M.Vector2{0.0, 0.0})',
         '    case Some{point}:',
         '      first = J.Surface.draw_pixel(surface, x, y, 1)',
         '      write_vector(first, (x + 1.0 : F32), y, point)',
@@ -1060,8 +1061,8 @@ def bend_source(cases, gpu=False):
         '    case Done{Tuple{destination, source}}:',
         '      Done{Bool.pick(J.Surface, keep, source, destination)}', '',
     ]
-    lines += ['def write_matrix(surface: J.Surface, +x: F32, +y: F32, matrix: J.Matrix) -> J.Surface:',
-              '  J.Matrix{' + ', '.join(MATRIX_FIELDS) + '} = matrix']
+    lines += ['def write_matrix(surface: J.Surface, +x: F32, +y: F32, matrix: M.Matrix) -> J.Surface:',
+              '  M.Matrix{' + ', '.join(MATRIX_FIELDS) + '} = matrix']
     for index, field in enumerate(MATRIX_FIELDS):
         previous = 'surface' if index==0 else f'p{index-1}'
         lines += [f'  p{index} = J.Surface.draw_pixel({previous}, (x + {index}.0 : F32), y, F32.bits({field}))']
@@ -1088,7 +1089,7 @@ def bend_source(cases, gpu=False):
                 lines += [f'    {previous} : J.Surface = Pair.{pick}(J.Surface, J.Surface, {draw})']
                 continue
             if kind in ('rotate_degrees','to_pot'):
-                draw = f'J.Surface.rotate_degrees_for(J.{gradient_reference()}{{}}, {previous}, {f32(op["degrees"])})' if kind=='rotate_degrees' else f'J.Surface.to_pot({previous}, {rgba(op["color"])})'
+                draw = f'J.Surface.rotate_degrees_for(M.{gradient_reference()}{{}}, {previous}, {f32(op["degrees"])})' if kind=='rotate_degrees' else f'J.Surface.to_pot({previous}, {rgba(op["color"])})'
                 previous = f's{j}'
                 lines += [f'    {previous} : J.Surface <- {draw}']
                 continue
@@ -1142,8 +1143,9 @@ def bend_source(cases, gpu=False):
                 _, signature, result = apis[op['function']]
                 profiled = namespace=='Spline' or op['function'] in ('clamp','min','max') or (namespace,op['function']) in ROTATION_ANGLES or (namespace,op['function']) in ANGLE_QUERIES
                 function_name = op['function']+'_for' if profiled else op['function']
-                profile = f'J.{spline_reference() if namespace=="Spline" else gradient_reference()}{{}}, ' if profiled else ''
-                expression = f'J.{namespace}.{function_name}({profile}{vector_arguments(signature,op["args"],bend=True)})'
+                profile = (f'J.{spline_reference()}{{}}, ' if namespace=='Spline' else f'M.{gradient_reference()}{{}}, ') if profiled else ''
+                module = 'M' if namespace in ('Math','Vector2','Vector3','Vector4','Matrix','Quaternion','Float64') else 'J'
+                expression = f'{module}.{namespace}.{function_name}({profile}{vector_arguments(signature,op["args"],bend=True)})'
                 if result == 'buffer':
                     previous = f's{j}'
                     lines += [f'    {previous} : J.Surface <- write_float_buffer({dimensions}n, {args[0]}, {f32(op["x"])}, {f32(op["y"])}, {expression})']
@@ -1157,7 +1159,7 @@ def bend_source(cases, gpu=False):
                 _, signature, result = COLLISION_APIS[op['function']]
                 arguments = vector_arguments(signature,op['args'],bend=True)
                 if op['function']=='point_poly':
-                    arguments += ', [' + ','.join('J.Vector2{' + ','.join(f32(v) for v in p) + '}' for p in op['points']) + ']'
+                    arguments += ', [' + ','.join('M.Vector2{' + ','.join(f32(v) for v in p) + '}' for p in op['points']) + ']'
                 function_name = op['function']
                 if function_name == 'lines':
                     function_name = 'lines_for'
@@ -1183,15 +1185,15 @@ def bend_source(cases, gpu=False):
                 count = 2 if kind.startswith('line') else 3
                 for point in range(count):
                     x, y = f32(op['x'+str(point)]), f32(op['y'+str(point)])
-                    args += [x, y] if kind == 'line' else [f'J.Vector2{{{x}, {y}}}']
+                    args += [x, y] if kind == 'line' else [f'M.Vector2{{{x}, {y}}}']
             elif kind in ('pixel_v', 'circle_v', 'circle_lines_v'):
-                args += [f'J.Vector2{{{f32(op["x"])}, {f32(op["y"])}}}']
+                args += [f'M.Vector2{{{f32(op["x"])}, {f32(op["y"])}}}']
             elif kind == 'rectangle_v':
-                args += [f'J.Vector2{{{f32(op["x"])}, {f32(op["y"])}}}', f'J.Vector2{{{f32(op["width"])}, {f32(op["height"])}}}']
+                args += [f'M.Vector2{{{f32(op["x"])}, {f32(op["y"])}}}', f'M.Vector2{{{f32(op["width"])}, {f32(op["height"])}}}']
             elif kind in ('rectangle_rec', 'rectangle_lines'):
                 args += ['J.Rectangle{' + ', '.join(f32(op[k]) for k in ('x','y','width','height')) + '}']
             elif kind in ('triangle_fan', 'triangle_strip'):
-                args += ['[' + ', '.join(f'J.Vector2{{{f32(x)}, {f32(y)}}}' for x,y in op['points']) + ']']
+                args += ['[' + ', '.join(f'M.Vector2{{{f32(x)}, {f32(y)}}}' for x,y in op['points']) + ']']
             elif kind != 'clear' and kind not in UNARY_IMAGE_APIS:
                 args += [f32(op['x']), f32(op['y'])]
             if kind == 'rectangle':
@@ -1212,7 +1214,7 @@ def bend_source(cases, gpu=False):
                 value = f'J.Color.{COLOR_VALUE_APIS[function][1]}({", ".join(values)})'
                 args += [f'Bool.to_u32({value})' if function == 'equal' else value]
             elif kind == 'number_value':
-                value = f'J.Math.{op["function"]}(' + ', '.join(f32(v) for v in op['args']) + ')'
+                value = f'M.Math.{op["function"]}(' + ', '.join(f32(v) for v in op['args']) + ')'
                 args += [f'Bool.to_u32({value})' if op['function'] == 'float_equals' else f'F32.bits({value})']
             elif kind not in UNARY_IMAGE_APIS:
                 args += [str(rgba(op['color']))]
@@ -1255,7 +1257,7 @@ def bend_source(cases, gpu=False):
                 gradient = case[kind]
                 parameter = gradient['direction'] if kind=='gradient_linear' else gradient['density']
                 function = 'create_gradient_linear_for' if kind=='gradient_linear' else 'create_'+kind
-                profile = f'J.{gradient_reference()}{{}}, ' if kind=='gradient_linear' else ''
+                profile = f'M.{gradient_reference()}{{}}, ' if kind=='gradient_linear' else ''
                 creation = f'J.Surface.{function}{"!" if gpu else ""}({profile}{case["width"]}, {case["height"]}, {f32(parameter)}, {rgba(case["background"])}, {rgba(gradient["outer"])})'
         lines += [f'    case_{i}({creation})']
     return '\n'.join(lines) + '\n'
@@ -1314,7 +1316,7 @@ def compare(expected, actual):
 
 
 def source_gate():
-    sources = [ROOT / 'jonlib.bend', *sorted((ROOT / 'src').glob('**/*.bend'))]
+    sources = [ROOT / 'jonlib.bend', ROOT / 'jonmath.bend', *sorted((ROOT / 'src').glob('**/*.bend'))]
     for path in sources:
         text = path.read_text()
         if re.search(r'@unsafe|^def\s+[\w.]+\?', text, re.M):
@@ -1416,14 +1418,17 @@ def main():
     report['grayscale_rgb_triples_checked'] = 16777216 if any(op['op']=='color_grayscale' for case in cases for op in case['operations']) else 0
     report['palette_observations'] = sum('palette' in case for case in cases)
     cli = ['bun', args.bend_source / 'bend2/main.ts']
-    library_verdict = run([*cli, ROOT / 'jonlib.bend', '--check-only'])
-    if library_verdict.strip() != 'All terms check.':
-        raise ValueError(f"Unexpected library verdict: {library_verdict}")
+    report['modules'] = {}
+    for module in ('jonlib','jonmath'):
+        library_verdict = run([*cli, ROOT / f'{module}.bend', '--check-only'])
+        if library_verdict.strip() != 'All terms check.':
+            raise ValueError(f"Unexpected {module} verdict: {library_verdict}")
+        report['modules'][module] = library_verdict.strip()
     proof_verdict = run([*cli, ROOT / 'PROOF.bend', '--check-only'])
     if proof_verdict.strip() != 'All terms check.':
         raise ValueError(f"Unexpected proof verdict: {proof_verdict}")
     report['proof'] = proof_verdict.strip()
-    report['scalar_profile'] = 'raymath-f32-uncontracted-v1'
+    report['scalar_profile'] = 'jonmath-f32-uncontracted-v1'
     cmake = BUILD / 'raylib'
     print('Building pinned raylib reference...', flush=True)
     run(['cmake', '-S', args.raylib_source, '-B', cmake, '-DPLATFORM=Memory',

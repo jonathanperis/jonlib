@@ -7,12 +7,25 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from tools.conformance import BUILD, cases_from, checkout, compare, parse_output, result_size
+from tools.conformance import BUILD, cases_from, checkout, compare, parse_output, result_size, source_gate
 from tools.resize_conformance import verify_images
 from tools.byte_probe import parse_results
 
 
 class HarnessTests(unittest.TestCase):
+    def test_source_gate_covers_jonmath_root(self):
+        BUILD.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=BUILD,prefix='jonmath-source-') as directory:
+            root=Path(directory)
+            (root/'src').mkdir()
+            (root/'jonlib.bend').write_text('import Base\n')
+            math=root/'jonmath.bend';math.write_text('import Base\n')
+            with patch('tools.conformance.ROOT',root):
+                self.assertEqual(set(source_gate()),{'jonlib.bend','jonmath.bend'})
+                for invalid in ('@unsafe\ndef hidden() -> U32:\n  0\n','import "hidden.c"\n'):
+                    math.write_text(invalid)
+                    with self.assertRaises(ValueError):source_gate()
+
     def test_inflate_chunk_protocol_rejects_incomplete_results(self):
         encoded=lambda rows:'\n'.join(json.dumps(row) for row in rows)
         rows=[None,'end',list(range(256)),[0,255],'end']

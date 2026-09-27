@@ -1,4 +1,4 @@
-# Jonlib
+# Jonlib and Jonmath
 
 [![Checks](https://github.com/jonathanperis/jonlib/actions/workflows/checks.yml/badge.svg)](https://github.com/jonathanperis/jonlib/actions/workflows/checks.yml)
 [![Conformance](https://github.com/jonathanperis/jonlib/actions/workflows/conformance.yml/badge.svg)](https://github.com/jonathanperis/jonlib/actions/workflows/conformance.yml)
@@ -16,6 +16,20 @@ profiles remain explicitly partial.
 The first implementation is a headless, owned RGBA8 image library. Its drawing
 algorithms are Bend source. A separate C executable runs pinned raylib as a
 differential test reference.
+
+## Modules
+
+- **Jonlib** (`jonlib.bend`) ports raylib's core geometry/image/runtime surface.
+- **Jonmath** (`jonmath.bend`) ports raymath and owns shared vector/matrix types.
+
+Port names follow `ray<suffix>` → `jon<suffix>` (for example, a future raygui port
+is Jongui). See [module names and import migration](docs/MODULES.md).
+
+```bend
+import Base
+import ./jonlib.bend as J
+import ./jonmath.bend as M
+```
 
 ## Implemented
 
@@ -47,7 +61,7 @@ differential test reference.
 - PNG decoding across supported 1/2/4/8/16-bit formats, Adam7 and native-default CgBI.
 - Byte-exact default PNG export: byte-format memory output and all seven checked image formats through file export.
 - Bounded PNG/BMP/TGA/PGM/PPM/QOI file loading with native supported suffix/content detection.
-- Initial scalar and Vector2 math under an explicit uncontracted-F32 profile.
+- Jonmath scalar/vector/matrix/quaternion profiles with exact reference arithmetic.
 - Horizontal and vertical flips.
 - Conversion to Bend's `Base.Image` quadtree.
 - P3 PPM encoding and file export through Base IO.
