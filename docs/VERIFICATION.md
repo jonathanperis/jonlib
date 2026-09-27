@@ -1982,3 +1982,38 @@ four proofs, eleven harness/planning tests and project checks. GPU filesystem IO
 and remaining targets were not exercised.
 
 Regression scan: 50 callers checked, 24 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `3c9e7ff`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36301500331)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36301500317)
+passed, including opaque raw PSD and its shared dispatch.
+
+## Opaque PSD PackBits
+
+PSD compression 1 now decodes bounded literal/repeat/no-op packets per channel.
+The native row-count table is consumed but its values are ignored; packets can
+cross rows. A structural input-byte budget bounds no-op processing. Every packet
+count is checked against the remaining plane before output writes. The native
+RLE path emits byte samples even under a depth-16 header, distinct from raw
+big-endian sixteen-bit narrowing.
+
+The PSD gate passes 24 native images / 12,657 pixels and 23 error controls on
+CPU/JavaScript/forced Metal. It covers all channel/depth profiles, packet lengths
+1/2/128, no-ops, channel transitions, deliberately incorrect row lengths, a
+4096-pixel repeated plane, truncated tables/packets and overruns. All raw inputs
+remain in the gate. Shared dispatch passes 424 memory pairs plus five controls
+and 52 file cases plus three boundaries/100 low-descriptor cycles. Pure memory
+lanes include forced Metal; file IO remains CPU/JS evidence.
+
+Scoped review: I109 MATCH (`src/psd.bend`, PackBits cursor/fuel/packet bounds);
+A4/A5 HOLD through source/native lane gates; A6 HOLD in [PSD.md](PSD.md); V2 HOLD
+through complete linked native pixels; V3 HOLD through validated dimensions,
+table availability, remaining-plane checks and bounded output indices. Four-plus-
+channel matte correction, original metadata, malformed recovery and full
+resource/platform/performance remain gaps. Hashes are in
+[evidence/psd-rle.json](evidence/psd-rle.json); API mappings remain partial.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, as do all
+four proofs, eleven harness/planning tests and project checks. GPU filesystem IO
+and remaining targets were not exercised.
+
+Regression scan: 47 callers checked, 31 assertions checked, 0 flagged/fixed.

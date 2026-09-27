@@ -12,7 +12,7 @@ from conformance import BUILD, ENV, ROOT, checkout, run, source_gate
 from png_probe import png
 from bmp_probe import bitmap, bitmap16, bitfield_bitmap, core_bitmap, core_indexed_bitmap, indexed_bitmap
 from tga_probe import indexed_targa, targa
-from psd_probe import psd
+from psd_probe import psd, rle_psd
 
 
 def limit_handles():
@@ -41,7 +41,8 @@ def image_streams():
             'bmp-core':bytes(core_bitmap(3,2,pixels,gap=4)),
             'bmp-core-indexed':bytes(core_indexed_bitmap(3,2,[0,1,2,2,1,0],[0x01020300,0x10203080,0xaabbcc01],remainder=2)),
             'tga-cross':bytes(cross),
-            'psd':bytes(psd(3,2,[[1,4,7,10,13,16],[2,5,8,11,14,17],[3,6,9,12,15,18]]))}
+            'psd':bytes(psd(3,2,[[1,4,7,10,13,16],[2,5,8,11,14,17],[3,6,9,12,15,18]])),
+            'psd-rle':bytes(rle_psd(3,2,[[128,1,1,4,253,7],[255,2,253,5],[5,3,6,9,12,15,18]],depth=16))}
 
 
 def main():
@@ -74,6 +75,7 @@ def main():
     add('header-core.bmp',streams['bmp-core'])
     add('core-indexed.bmp',streams['bmp-core-indexed'])
     add('cross-type.tga',streams['tga-cross'])
+    add('rle.psd',streams['psd-rle'])
     for name,kind in [('png-data.bmp','png'),('bmp-data.png','bmp'),('pnm-data.tga','ppm'),('tga-data.ppm','tga')]:add(name,streams[kind])
     add('mixed.PnG',streams['png'],'decode');add('unsupported.data',streams['png'],'decode')
     add('qoi-data.png',streams['qoi'],'decode');add('png-data.qoi',streams['png'],'decode')

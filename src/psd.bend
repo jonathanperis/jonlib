@@ -1,5 +1,5 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of the pinned stb_image opaque raw PSD reader.
+# Altered Bend adaptation of the pinned stb_image opaque raw/PackBits PSD reader.
 # MIT notice: LICENSES/stb-image.txt. See THIRD_PARTY_NOTICES.md.
 import Base
 import ./qoi.bend as Q
@@ -9,6 +9,7 @@ type Error is Data:
   BadByte{}
   BadSize{}
   Truncated{}
+  BadStream{}
 
 type Image is Type:
   Image{width: U32, height: U32, pixels: Array<U32>}
@@ -116,6 +117,59 @@ def channels(n: Nat, +shift: Nat, +count: Nat, +wide: Bool, state: Result<&1, &1
     case 0n _: state
     case 1n+rest _: channels(rest, Nat.sub(shift, 8n), count, wide, pixels(count, 0, shift, wide, state))
 
+type Rle is Type:
+  Rle{left: U32, index: U32, data: +List<U32>, pixels: Array<U32>}
+
+def rle.written(left: U32, index: U32, result: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, Rle>:
+  match result:
+    case Fail{error}: Fail{error}
+    case Done{State{data, output}}: Done{Rle{left, index, data, output}}
+
+def rle.repeat(n: Nat, +index: U32, +shift: Nat, +value: U32, state: State) -> State:
+  match n state:
+    case 0n _: state
+    case 1n+rest State{data, output}:
+      rle.repeat(rest, (index + 1 : U32), shift, value, pixel.merge(index, shift, value, data, Array.get(U32, output, index)))
+
+def rle.repeated(+count: U32, left: U32, +index: U32, shift: Nat, data: +List<U32>, output: Array<U32>) -> Result<&1, &1, Error, Rle>:
+  match data:
+    case Nil{}: Fail{Truncated{}}
+    case Con{value, rest}: rle.written((left - count : U32), (index + count : U32), Done{rle.repeat(U32.to_nat(count), index, shift, value, State{rest, output})})
+
+def rle.packet(valid: Bool, literal: Bool, +count: U32, left: U32, +index: U32, shift: Nat, data: +List<U32>, output: Array<U32>) -> Result<&1, &1, Error, Rle>:
+  match valid literal:
+    case False{} _: Fail{BadStream{}}
+    case True{} True{}: rle.written((left - count : U32), (index + count : U32), pixels(U32.to_nat(count), index, shift, False{}, Done{State{data, output}}))
+    case True{} False{}: rle.repeated(count, left, index, shift, data, output)
+
+def rle.step(shift: Nat, state: Rle) -> Result<&1, &1, Error, Rle>:
+  match state:
+    case Rle{_, _, Nil{}, _}: Fail{Truncated{}}
+    case Rle{left, index, Con{128, data}, output}: Done{Rle{left, index, data, output}}
+    case Rle{+left, index, Con{+code, data}, output}:
+      +literal = (code < 128 : U32)
+      +count = Bool.pick(U32, literal, (code + 1 : U32), (257 - code : U32))
+      rle.packet((count <= left : U32), literal, count, left, index, shift, data, output)
+
+def rle.run(n: Nat, +shift: Nat, state: Result<&1, &1, Error, Rle>) -> Result<&1, &1, Error, State>:
+  match n state:
+    case _ Fail{error}: Fail{error}
+    case _ Done{Rle{0, _, data, output}}: Done{State{data, output}}
+    case 0n _: Fail{Truncated{}}
+    case 1n+rest Done{cursor}: rle.run(rest, shift, rle.step(shift, cursor))
+
+def rle.channels(n: Nat, +shift: Nat, +count: U32, +fuel: Nat, state: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, State>:
+  match n state:
+    case _ Fail{error}: Fail{error}
+    case 0n _: state
+    case 1n+rest Done{State{data, output}}:
+      rle.channels(rest, Nat.sub(shift, 8n), count, fuel, rle.run(fuel, shift, Done{Rle{count, 0, data, output}}))
+
+def byte_count(data: +List<U32>, count: Nat) -> Nat:
+  match data:
+    case Nil{}: count
+    case Con{_, rest}: byte_count(rest, 1n+count)
+
 def image(width: U32, height: U32, result: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, Image>:
   match result:
     case Fail{error}: Fail{error}
@@ -129,15 +183,25 @@ def start.valid(valid: Bool, +width: U32, +height: U32, amount: U32, wide: Bool,
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
       image(width, height, channels(U32.to_nat(amount), 24n, U32.to_nat(count), wide, Done{State{data, Array.new(U32, depth, 255)}}))
 
-def compression.valid(valid: Bool, +width: U32, +height: U32, +amount: U32, +wide: Bool, +data: +List<U32>) -> Result<&1, &1, Error, Image>:
-  match valid:
-    case False{}: Fail{BadHeader{}}
-    case True{}: start.valid(enough(U32.to_nat((width * height * amount * Bool.pick(U32, wide, 2, 1) : U32)), data), width, height, amount, wide, data)
+def compressed(+width: U32, +height: U32, amount: U32, result: Maybe<&2, +List<U32>>) -> Result<&1, &1, Error, Image>:
+  match result:
+    case None{}: Fail{Truncated{}}
+    case Some{+data}:
+      +count = (width * height : U32)
+      depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
+      # Native RLE ignores row lengths and emits byte samples even at depth 16.
+      image(width, height, rle.channels(U32.to_nat(amount), 24n, count, byte_count(data, 0n), Done{State{data, Array.new(U32, depth, 255)}}))
+
+def compression.code(code: U32, +width: U32, +height: U32, +amount: U32, +wide: Bool, +data: +List<U32>) -> Result<&1, &1, Error, Image>:
+  match code:
+    case 0: start.valid(enough(U32.to_nat((width * height * amount * Bool.pick(U32, wide, 2, 1) : U32)), data), width, height, amount, wide, data)
+    case 1: compressed(width, height, amount, skip(U32.to_nat((height * amount * 2 : U32)), data))
+    case _: Fail{BadHeader{}}
 
 def compression(width: U32, height: U32, amount: U32, wide: Bool, word: Maybe<&2, Word>) -> Result<&1, &1, Error, Image>:
   match word:
     case None{}: Fail{BadHeader{}}
-    case Some{Word{code, data}}: compression.valid(U32.is_eq(code, 0), width, height, amount, wide, data)
+    case Some{Word{code, data}}: compression.code(code, width, height, amount, wide, data)
 
 def prepared(width: U32, height: U32, amount: U32, wide: Bool, result: Result<&2, &2, Error, +List<U32>>) -> Result<&1, &1, Error, Image>:
   match result:
