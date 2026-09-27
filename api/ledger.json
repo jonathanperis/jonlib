@@ -40360,11 +40360,11 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Image.Formatted.load_raw",
+      "jonlib": "Image.Formatted.load_raw / Image.FloatRGB.load_raw",
       "mapping_state": "implemented",
-      "scope": "Ordinary non-changing files, formats 1..7 and dimensions 1..4096; exact payload bytes and native header-fit/fallback-to-zero behavior. Bounded positional reads, typed parameter/file/size/truncation errors and explicit file closure.",
+      "scope": "Ordinary non-changing files, formats 1..7 and non-NaN RGB F32 format 9, dimensions 1..4096. Shared bounded positional reads preserve native fitting-header/fallback-to-zero selection, exact payload words, signed-int bounds, typed errors and handle closure before decoding. Unsupported float NaNs report InvalidRawRequest after closure.",
       "gaps": [
-        "Other formats, signed/out-of-range parameters and concurrent/special-file behavior",
+        "Other formats, NaN payload parity, signed/out-of-range parameters and concurrent/special files",
         "Native callbacks/allocation ABI and complete target/integration/performance coverage"
       ],
       "blocker": null,
@@ -40378,7 +40378,11 @@
       },
       "evidence": [
         "tools/raw_file_probe.py",
-        "docs/RAW-FILES.md"
+        "tools/float_rgb_raw_file_probe.py",
+        "tests/decoding.bend",
+        "docs/RAW-FILES.md",
+        "docs/FLOAT-RGB-BYTES.md",
+        "docs/evidence/float-rgb-raw-files.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -40886,11 +40890,11 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.write_png/write_raw",
+      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.write_png/write_raw / Image.FloatRGB.write_raw",
       "mapping_state": "implemented",
-      "scope": "QOI, BMP, TGA and default PNG export from owned RGBA8; PNG and RAW file export from formatted sources 1..7. PNG preserves direct byte channels and native LoadImageColors expansion for packed sources. Exact bytes and Base file-write/closure behavior are verified.",
+      "scope": "QOI/BMP/TGA/default PNG from owned RGBA8; PNG/RAW files from formats 1..7; exact non-NaN RGB float RAW words with validated owners and typed file errors. Float RAW files match native loaded storage, with actual ExportImage comparisons on normalized inputs where auxiliary color casts are defined. PNG retains direct channels/native packed expansion. File handles close on completion/failure.",
       "gaps": [
-        "Other export/source formats, configured exporter options and generic extension dispatch",
+        "Other formats/options and generic extension dispatch; NaN parity and native out-of-range auxiliary casts",
         "Native callbacks/allocation ABI and complete targets/integration/performance"
       ],
       "blocker": null,
@@ -40906,14 +40910,17 @@
         "tests/fixtures/images.json",
         "examples/qoi_roundtrip.bend",
         "tools/raw_file_probe.py",
+        "tools/float_rgb_raw_file_probe.py",
         "tools/bmp_probe.py",
         "tools/tga_probe.py",
         "tools/png_export_probe.py",
         "docs/CODECS.md",
         "docs/RAW-FILES.md",
+        "docs/FLOAT-RGB-BYTES.md",
         "docs/BMP.md",
         "docs/TGA.md",
-        "docs/PNG-EXPORT.md"
+        "docs/PNG-EXPORT.md",
+        "docs/evidence/float-rgb-raw-files.json"
       ],
       "gate_evidence": {},
       "target_results": {},

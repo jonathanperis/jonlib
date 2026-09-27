@@ -37,5 +37,6 @@ pass. The existing float/RGBA8 conversion gate is also retained after sharing it
 validation traversal. See
 [evidence/float-rgb-bytes.json](evidence/float-rgb-bytes.json).
 
-Float raw-file APIs, NaN payload interoperability, other float/half layouts,
+Raw float file loading/writing is documented in [RAW-FILES.md](RAW-FILES.md#rgb-float-files).
+NaN payload interoperability, other float/half layouts,
 native pointer ABI and complete resource/platform/performance remain gaps.

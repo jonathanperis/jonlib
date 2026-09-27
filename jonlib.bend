@@ -2465,58 +2465,111 @@ def Image.raw.decoded(result: Maybe<Image.Formatted>) -> Result<&1, &1, Image.Ra
     case None{}: Fail{TruncatedRawImage{}}
     case Some{image}: Done{image}
 
-def Image.raw.payload(width: U32, height: U32, format: U32, result: Result<&1, &1, U32 & String, +List<U32>>) -> Result<&1, &1, Image.RawLoadError, Image.Formatted>:
+def Image.raw.complete(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, Image.RawLoadError, +List<U32>>:
+  match valid:
+    case False{}: Fail{TruncatedRawImage{}}
+    case True{}: Done{bytes}
+
+def Image.raw.payload(needed: U32, result: Result<&1, &1, U32 & String, +List<U32>>) -> Result<&1, &1, Image.RawLoadError, +List<U32>>:
   match result:
     case Fail{Tuple{code, message}}: Fail{RawFileError{code, message}}
-    case Done{bytes}: Image.raw.decoded(Image.Formatted.from_bytes(width, height, format, bytes))
+    case Done{+bytes}: Image.raw.complete(Image.file.complete(U32.to_nat(needed), bytes), bytes)
 
-def Image.raw.read(width: U32, height: U32, format: U32, result: File & Result<&1, &1, U32 & String, +List<U32>>) -> IO(Result<&1, &1, Image.RawLoadError, Image.Formatted>):
+def Image.raw.read(needed: U32, result: File & Result<&1, &1, U32 & String, +List<U32>>) -> IO(Result<&1, &1, Image.RawLoadError, +List<U32>>):
   (file, status) = result
-  do IO<Result<&1, &1, Image.RawLoadError, Image.Formatted>>:
+  do IO<Result<&1, &1, Image.RawLoadError, +List<U32>>>:
     Unit <- File.close(file)
-    IO.pure(Result<&1, &1, Image.RawLoadError, Image.Formatted>, Image.raw.payload(width, height, format, status))
+    IO.pure(Result<&1, &1, Image.RawLoadError, +List<U32>>, Image.raw.payload(needed, status))
 
-def Image.raw.failed(file: File, error: Image.RawLoadError) -> IO(Result<&1, &1, Image.RawLoadError, Image.Formatted>):
-  do IO<Result<&1, &1, Image.RawLoadError, Image.Formatted>>:
+def Image.raw.failed(file: File, error: Image.RawLoadError) -> IO(Result<&1, &1, Image.RawLoadError, +List<U32>>):
+  do IO<Result<&1, &1, Image.RawLoadError, +List<U32>>>:
     Unit <- File.close(file)
-    IO.pure(Result<&1, &1, Image.RawLoadError, Image.Formatted>, Fail{error})
+    IO.pure(Result<&1, &1, Image.RawLoadError, +List<U32>>, Fail{error})
 
-def Image.raw.bounded(too_large: Bool, enough: Bool, width: U32, height: U32, format: U32, +header: U32, +needed: U32, size: U32, file: File) -> IO(Result<&1, &1, Image.RawLoadError, Image.Formatted>):
+def Image.raw.bounded(too_large: Bool, enough: Bool, +header: U32, +needed: U32, size: U32, file: File) -> IO(Result<&1, &1, Image.RawLoadError, +List<U32>>):
   match too_large enough:
     case True{} _: Image.raw.failed(file, RawFileTooLarge{})
     case False{} False{}: Image.raw.failed(file, TruncatedRawImage{})
     case False{} True{}:
       offset = Bool.pick(U32, ((header > 0) && (header + needed <= size) : U32), header, 0)
-      IO.bind(File & Result<&1, &1, U32 & String, +List<U32>>, Result<&1, &1, Image.RawLoadError, Image.Formatted>,
-        File.read_at(file, offset, needed), Image.raw.read(width, height, format))
+      IO.bind(File & Result<&1, &1, U32 & String, +List<U32>>, Result<&1, &1, Image.RawLoadError, +List<U32>>,
+        File.read_at(file, offset, needed), Image.raw.read(needed))
 
-def Image.raw.sized(width: U32, height: U32, format: U32, header: U32, +needed: U32, result: File & Result<&1, &1, U32 & String, U32>) -> IO(Result<&1, &1, Image.RawLoadError, Image.Formatted>):
+def Image.raw.sized(header: U32, +needed: U32, result: File & Result<&1, &1, U32 & String, U32>) -> IO(Result<&1, &1, Image.RawLoadError, +List<U32>>):
   match result:
     case Tuple{file, Fail{Tuple{code, message}}}: Image.raw.failed(file, RawFileError{code, message})
     case Tuple{file, Done{+size}}:
-      Image.raw.bounded((size > 2147483647 : U32), (size >= needed : U32), width, height, format, header, needed, size, file)
+      Image.raw.bounded((size > 2147483647 : U32), (size >= needed : U32), header, needed, size, file)
 
-def Image.raw.opened(width: U32, height: U32, format: U32, header: U32, needed: U32, result: Result<&1, &1, U32 & String, File>) -> IO(Result<&1, &1, Image.RawLoadError, Image.Formatted>):
+def Image.raw.opened(header: U32, needed: U32, result: Result<&1, &1, U32 & String, File>) -> IO(Result<&1, &1, Image.RawLoadError, +List<U32>>):
   match result:
-    case Fail{Tuple{code, message}}: IO.pure(Result<&1, &1, Image.RawLoadError, Image.Formatted>, Fail{RawFileError{code, message}})
+    case Fail{Tuple{code, message}}: IO.pure(Result<&1, &1, Image.RawLoadError, +List<U32>>, Fail{RawFileError{code, message}})
     case Done{file}:
-      IO.bind(File & Result<&1, &1, U32 & String, U32>, Result<&1, &1, Image.RawLoadError, Image.Formatted>,
-        File.size(file), Image.raw.sized(width, height, format, header, needed))
+      IO.bind(File & Result<&1, &1, U32 & String, U32>, Result<&1, &1, Image.RawLoadError, +List<U32>>,
+        File.size(file), Image.raw.sized(header, needed))
 
-def Image.raw.request(valid: Bool, path: String, width: U32, height: U32, format: U32, header: U32, needed: U32) -> IO(Result<&1, &1, Image.RawLoadError, Image.Formatted>):
+def Image.raw.request(valid: Bool, path: String, header: U32, needed: U32) -> IO(Result<&1, &1, Image.RawLoadError, +List<U32>>):
   match valid:
-    case False{}: IO.pure(Result<&1, &1, Image.RawLoadError, Image.Formatted>, Fail{InvalidRawRequest{}})
+    case False{}: IO.pure(Result<&1, &1, Image.RawLoadError, +List<U32>>, Fail{InvalidRawRequest{}})
     case True{}:
-      IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, Image.RawLoadError, Image.Formatted>,
-        File.open(path, "r"), Image.raw.opened(width, height, format, header, needed))
+      IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, Image.RawLoadError, +List<U32>>,
+        File.open(path, "r"), Image.raw.opened(header, needed))
+
+def Image.raw.bytes(path: String, +header: U32, +needed: U32) -> IO(Result<&1, &1, Image.RawLoadError, +List<U32>>):
+  Image.raw.request((header <= 2147483647 - needed : U32), path, header, needed)
+
+def Image.raw.formatted(width: U32, height: U32, format: U32, result: Result<&1, &1, Image.RawLoadError, +List<U32>>) -> IO(Result<&1, &1, Image.RawLoadError, Image.Formatted>):
+  match result:
+    case Fail{error}: IO.pure(Result<&1, &1, Image.RawLoadError, Image.Formatted>, Fail{error})
+    case Done{bytes}: IO.pure(Result<&1, &1, Image.RawLoadError, Image.Formatted>, Image.raw.decoded(Image.Formatted.from_bytes(width, height, format, bytes)))
 
 def Image.raw.parameters(valid: Bool, path: String, +width: U32, +height: U32, +format: U32, +header: U32) -> IO(Result<&1, &1, Image.RawLoadError, Image.Formatted>):
   match valid:
     case False{}: IO.pure(Result<&1, &1, Image.RawLoadError, Image.Formatted>, Fail{InvalidRawRequest{}})
     case True{}:
-      +needed = (width * height * (Pixel.bits_per_pixel(format) / 8) : U32)
-      Image.raw.request((header <= 2147483647 - needed : U32), path, width, height, format, header, needed)
+      needed = (width * height * (Pixel.bits_per_pixel(format) / 8) : U32)
+      IO.bind(Result<&1, &1, Image.RawLoadError, +List<U32>>, Result<&1, &1, Image.RawLoadError, Image.Formatted>,
+        Image.raw.bytes(path, header, needed), Image.raw.formatted(width, height, format))
 
 def Image.Formatted.load_raw(path: String, +width: U32, +height: U32, +format: U32, header_size: U32) -> IO(Result<&1, &1, Image.RawLoadError, Image.Formatted>):
   Image.raw.parameters(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096)
     && (format >= 1) && (format <= 7) : U32), path, width, height, format, header_size)
+
+def Image.FloatRGB.raw.file.created(result: Maybe<Image.FloatRGB>) -> Result<&1, &1, Image.RawLoadError, Image.FloatRGB>:
+  match result:
+    case None{}: Fail{InvalidRawRequest{}}
+    case Some{image}: Done{image}
+
+def Image.FloatRGB.raw.file.loaded(width: U32, height: U32, result: Result<&1, &1, Image.RawLoadError, +List<U32>>) -> IO(Result<&1, &1, Image.RawLoadError, Image.FloatRGB>):
+  match result:
+    case Fail{error}: IO.pure(Result<&1, &1, Image.RawLoadError, Image.FloatRGB>, Fail{error})
+    case Done{bytes}: IO.pure(Result<&1, &1, Image.RawLoadError, Image.FloatRGB>, Image.FloatRGB.raw.file.created(Image.FloatRGB.from_bytes(width, height, bytes)))
+
+def Image.FloatRGB.raw.file.parameters(valid: Bool, path: String, +width: U32, +height: U32, header: U32) -> IO(Result<&1, &1, Image.RawLoadError, Image.FloatRGB>):
+  match valid:
+    case False{}: IO.pure(Result<&1, &1, Image.RawLoadError, Image.FloatRGB>, Fail{InvalidRawRequest{}})
+    case True{}:
+      IO.bind(Result<&1, &1, Image.RawLoadError, +List<U32>>, Result<&1, &1, Image.RawLoadError, Image.FloatRGB>,
+        Image.raw.bytes(path, header, (width * height * 12 : U32)), Image.FloatRGB.raw.file.loaded(width, height))
+
+def Image.FloatRGB.load_raw(path: String, +width: U32, +height: U32, header_size: U32) -> IO(Result<&1, &1, Image.RawLoadError, Image.FloatRGB>):
+  Image.FloatRGB.raw.file.parameters(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32), path, width, height, header_size)
+
+type Image.FloatRGB.WriteError is Type:
+  FloatRGBSampleError{image: Image.FloatRGB}
+  FloatRGBFileError{code: U32, message: String}
+
+def Image.FloatRGB.raw.file.written(result: Result<&1, &1, U32 & String, Unit>) -> IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>):
+  match result:
+    case Fail{Tuple{code, message}}: IO.pure(Result<&1, &1, Image.FloatRGB.WriteError, Unit>, Fail{FloatRGBFileError{code, message}})
+    case Done{unit}: IO.pure(Result<&1, &1, Image.FloatRGB.WriteError, Unit>, Done{unit})
+
+def Image.FloatRGB.raw.file.write(path: String, result: Result<&1, &1, Image.FloatRGB, +List<U32>>) -> IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>):
+  match result:
+    case Fail{image}: IO.pure(Result<&1, &1, Image.FloatRGB.WriteError, Unit>, Fail{FloatRGBSampleError{image}})
+    case Done{bytes}:
+      IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.FloatRGB.WriteError, Unit>,
+        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Surface.qoi.opened(bytes)), Image.FloatRGB.raw.file.written)
+
+def Image.FloatRGB.write_raw(image: Image.FloatRGB, path: String) -> IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>):
+  Image.FloatRGB.raw.file.write(path, Image.FloatRGB.to_bytes(image))

@@ -23,6 +23,11 @@ def short_read(result: Result<&1, &1, J.Image.LoadError, +List<U32>>) -> Bool:
     case Fail{J.ImageDecodeError{J.TruncatedImageData{}}}: True{}
     case _: False{}
 
+def raw_short_read(result: Result<&1, &1, J.Image.RawLoadError, +List<U32>>) -> Bool:
+  match result:
+    case Fail{J.TruncatedRawImage{}}: True{}
+    case _: False{}
+
 def one_color(expected: U32, colors: List<U32>) -> Bool:
   match colors:
     case Con{actual, Nil{}}: U32.is_eq(expected, actual)
@@ -51,6 +56,7 @@ def checks() -> Bool:
     && U32.is_eq(file_kind(J.Image.file.kind("image.PNG")), 1)
     && U32.is_eq(file_kind(J.Image.file.kind("image.PnG")), 2)
     && short_read(J.Image.file.payload(2, Done{[1]}))
+    && raw_short_read(J.Image.raw.payload(12, Done{[0,0,0,0]}))
     && String.eq(J.Image.Animation.file.token(J.Image.file.token(".GiF")), "")
     && psd_profiles()
 
