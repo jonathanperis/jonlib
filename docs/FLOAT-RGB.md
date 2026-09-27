@@ -118,6 +118,9 @@ preserving float bits that an intermediate RGBA8 conversion would lose. See
 
 ## Large owned exports
 
+Native grayscale channel extraction retains the float source and follows RGB
+selector redirection; see [IMAGE-CHANNELS.md](IMAGE-CHANNELS.md).
+
 Surface colors, FloatRGB entries and packed/formatted image exports use a shared
 tail-recursive logical-prefix operation. This replaces pinned Base `List.take`
 at those large-image sites, whose generated JavaScript recursed once per pixel.

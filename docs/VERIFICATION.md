@@ -2797,6 +2797,13 @@ unrestricted float casts and full resource/performance coverage were not exercis
 
 Regression scan: 15 callers checked, 16 assertions checked, 1 flagged/fixed.
 
+Hosted confirmation for `1df7f0b`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36334349034)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36334349047)
+passed, including canvas/POT and color transforms. Ubuntu took 19m30s and macOS
+29m34s. The next checkpoint's aggregate budget is 35 minutes to accommodate the
+added direct-format, normalization and channel gates. Individual subprocess
+limits and native comparisons are retained; that new hosted checkpoint is pending.
+
 ## Byte and packed formats to RGB floats
 
 `Image.Formatted.to_float_rgb` consumes checked format-1..7 images and produces
@@ -2823,3 +2830,33 @@ proofs, eleven harness/planning tests and project checks pass. Other source form
 remaining targets and full resource/performance coverage were not exercised.
 
 Regression scan: 5 callers checked, 8 assertions checked, 0 flagged/fixed.
+
+## Native grayscale channels from formatted and float images
+
+`Image.Formatted.from_channel` and `Image.FloatRGB.from_channel` retain source
+ownership and return independent native grayscale storage. Selection follows each
+format's actual rules: gray-alpha redirects positive selectors to alpha, while
+RGB formats redirect selectors above two to red. Selected samples use normalized
+F32 multiplication/truncation, preserving packed-channel precision.
+
+The gate passes 48 native cases / 15,366 grayscale pixels on CPU/JS/Metal, with
+complete source-word comparisons, seven rejected-owner controls and two independent
+output mutations. Fixtures cover source channel levels, float boundaries and
+selector redirection; failed selectors and float domains retain source contents.
+See [evidence/image-channels.json](evidence/image-channels.json).
+
+Scoped review: I135 MATCH (selection, native format-1 output and retained owners);
+A3 HOLD through source and independent-output checks; A4/A5 HOLD through source/
+native backend gates; A6 HOLD in [IMAGE-CHANNELS.md](IMAGE-CHANNELS.md); V2 HOLD
+through actual `ImageFromChannel` bytes; V3 HOLD through checked selectors,
+sample domains and bounded logical traversal. Other domains/formats/mipmaps and
+complete native-ABI/resource/platform/performance remain gaps. Existing partial
+mapping scope expands without changing counts.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, including
+existing Surface channel contracts. All four proofs, eleven harness/planning
+tests and project checks pass. The 35-minute hosted budget awaits the published
+run; remaining targets and broader source/resource/performance domains were not
+exercised.
+
+Regression scan: 15 callers checked, 14 assertions checked, 0 flagged/fixed.

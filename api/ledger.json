@@ -41771,12 +41771,12 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.from_channel",
+      "jonlib": "Surface.from_channel / Image.Formatted.from_channel / Image.FloatRGB.from_channel",
       "mapping_state": "implemented",
-      "scope": "RGBA8 source; returns unchanged source and independent opaque grayscale RGBA8 output, matching ImageFromChannel plus RGBA8 normalization. Integral selectors clamp to 0..3; all 256 byte values in all four reference channels checked.",
+      "scope": "Retained sources and independent grayscale output: Surface returns normalized RGBA8; formats 1..7 and finite [0,1] RGB float return native format-1 storage. Bounded integral selectors retain native per-format redirection, packed reciprocal normalization and F32 byte truncation. Unsupported typed requests preserve original owners.",
       "gaps": [
-        "Native grayscale storage and other source formats/mipmaps",
-        "Full target/performance coverage"
+        "Other selector/source domains, formats and mipmaps",
+        "Complete native ABI/resource/target/performance coverage"
       ],
       "blocker": null,
       "gates": {
@@ -41791,7 +41791,10 @@
         "tests/fixtures/images.json",
         "tests/transforms.bend",
         "tools/conformance.py",
-        "docs/API.md"
+        "tools/image_channel_probe.py",
+        "docs/API.md",
+        "docs/IMAGE-CHANNELS.md",
+        "docs/evidence/image-channels.json"
       ],
       "gate_evidence": {},
       "target_results": {},
