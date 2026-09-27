@@ -155,7 +155,7 @@ jobs:
           python3 tools/pnm_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
-      - name: Verify opaque raw PSD planes and metadata bounds
+      - name: Verify opaque raw and PackBits PSD profiles
         run: >-
           python3 tools/psd_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"

@@ -1,0 +1,30 @@
+{
+  "date":"2026-09-27",
+  "source_sha256": {
+    "jonlib.bend":"5da073914f94341450cec792ca5a1ea431961ae52e075fc2ea5dc4505f45269f",
+    "src/psd.bend":"72563616620203fac7aad902616206b03045cb8a72d6fe77650b0b5b3b744cd0"
+  },
+  "rle_profile":"PackBits literal/repeat/no-op packets, ignored row counts, cross-row channel streams and native byte output at both depth headers",
+  "psd": {
+    "inputs_sha256":"5f0c8ba384df0c75f409df1e8aadb767894d07cf9f927ca536b0b35efbaf2946",
+    "reference_sha256":"d0a5d52e6877fed97c6149a2cca173d6049778cf004692a278a43501c6f55e2d",
+    "images":24,"pixels":12657,"typed_controls":23,
+    "passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "memory_dispatch": {
+    "inputs_sha256":"9f840fef7237b38428dab9e506fa7fa62888f024f34b6bd05f98a5ce8d4061f1",
+    "reference_sha256":"2dad6d922449f9531e8cc0b28a6c66de4412020c2aaf9a54b15c83757e5de349",
+    "native_cases":424,"loaded_images":362,"typed_controls":5,"batch_size":64,
+    "passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "files": {
+    "inputs_sha256":"418b7ab08ad910d3f13768d72a32f35ee3aa10a65f4072d2db277e86cb216917",
+    "reference_sha256":"a1ce9a74419ba48818c73444f994b170282ee35949bc5b4d915b54f20eb21d5e",
+    "native_cases":52,"boundary_controls":3,"closure_iterations_per_lane":100,
+    "passed":true,"lanes":["cpu","javascript"]
+  },
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "limits":["Four-plus-channel white-matte correction", "Original metadata, malformed recovery and full resource/platform/performance coverage", "File IO evidence is CPU/JavaScript only"]
+}

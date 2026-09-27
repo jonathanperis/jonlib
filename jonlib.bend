@@ -749,6 +749,7 @@ def Surface.psd.error(error: Psd.Error) -> Image.DecodeError:
     case Psd.BadByte{}: InvalidImageByte{}
     case Psd.BadSize{}: UnsupportedImageSize{}
     case Psd.Truncated{}: TruncatedImageData{}
+    case Psd.BadStream{}: InvalidImageStream{}
 
 def Surface.psd.result(result: Result<&1, &1, Psd.Error, Psd.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
   match result:
