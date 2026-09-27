@@ -23,6 +23,7 @@ import ./src/pnm.bend as Pnm
 import ./src/psd.bend as Psd
 import ./src/pic.bend as Pic
 import ./src/gif.bend as Gif
+import ./src/gif_animation.bend as GifAnimation
 import ./src/inflate.bend as Inflate
 import ./src/png.bend as Png
 import ./src/png_encode.bend as PngEncode
@@ -804,6 +805,29 @@ def Surface.gif.result(result: Result<&1, &1, Gif.Error, Gif.Image>) -> Result<&
 
 def Surface.decode_gif(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   Surface.gif.result(Gif.decode(bytes))
+
+type Image.Animation is Type:
+  Animation{width: U32, height: U32, count: U32, frames: List<Surface>}
+
+def Image.Animation.convert(frames: List<Gif.Image>, values: List<Surface>) -> List<Surface>:
+  match frames:
+    case Nil{}: List.reverse(&1, Surface, values)
+    case Con{Gif.Image{w, h, pixels}, rest}: Image.Animation.convert(rest, Con{Surface{w, h, pixels}, values})
+
+def Image.Animation.result(result: Result<&1, &1, Gif.Error, GifAnimation.Animation>) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
+  match result:
+    case Fail{error}: Fail{Surface.gif.error(error)}
+    case Done{GifAnimation.Animation{width, height, count, frames}}: Done{Animation{width, height, count, Image.Animation.convert(frames, Nil{})}}
+
+def Image.Animation.decode_gif(bytes: +List<U32>, maximum_frames: U32, maximum_pixels: U32) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
+  Image.Animation.result(GifAnimation.decode(bytes, maximum_frames, maximum_pixels))
+
+def Image.Animation.entries(animation: Image.Animation) -> U32 & U32 & U32 & List<Surface>:
+  Animation{width, height, count, frames} = animation
+  (width, height, count, frames)
+
+def Image.Animation.unload(animation: Image.Animation) -> Unit:
+  Unit{}
 
 def Surface.png.error(error: Png.Error) -> Image.DecodeError:
   match error:

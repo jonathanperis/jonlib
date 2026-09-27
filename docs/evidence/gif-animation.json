@@ -1,0 +1,22 @@
+{
+  "date":"2026-09-27",
+  "source_sha256": {
+    "jonlib.bend":"229749583b8f8b7be61e6438714c2b7794aa0f2e0d37f11a6f2d5c3383260653",
+    "src/gif.bend":"ed9840b6a24e67df1acc45ac20a6a96a497d616e7b885b41f40b35ecf5f743ef",
+    "src/gif_animation.bend":"e40a125e75fc115f5f694da0abc6a645721b8e5d325271aefdd7f7fe832ebb33"
+  },
+  "animation_profile":"Owned logical-canvas RGBA8 frames, caller frame/pixel budgets, disposal 0/1 retain and 2 restore, native palette/control persistence",
+  "animation": {
+    "inputs_sha256":"e283e1c15bc26ec050697a3b48738b2bf7741f0e7435801509b7985bc2e7a528",
+    "reference_sha256":"78d81dc624bc043962f73ab69385b084073eb44d2fe735ce999cfa441a884653",
+    "animations":9,"frames":24,"pixels":382,"error_controls":10,"ownership_controls":2,
+    "passed":true,"lanes":["cpu","javascript","metal"]
+  },
+  "first_frame_regression":{"images":41,"pixels":5410,"typed_controls":23,"passed":true,"lanes":["cpu","javascript","metal"]},
+  "shared_dispatch_regression":{"memory_cases":534,"file_cases":59,"file_boundary_controls":3,"closure_iterations_per_lane":100,"passed":true},
+  "full_corpus":{"passed":true,"scenarios":261,"output_words_per_lane":40101,"lanes":["cpu-1","cpu-2","javascript","gpu-forced"]},
+  "proof_verdict":"All terms check.",
+  "harness_test_methods":11,
+  "core_partial_functions":105,
+  "limits":["Disposal 3 has undefined backward-pointer behavior in the pinned native animation path", "Generic non-GIF fallback and animation file loading", "Original metadata/native ABI, permissive malformed recovery and full resource/platform/performance coverage"]
+}

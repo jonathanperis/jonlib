@@ -32,7 +32,7 @@ originally established the CPU/JS baseline; current CI applies the declared over
 A current run's precise inputs, source hashes and lane outcomes are in
 `.build/conformance.json`. The authoritative [API dashboard](PROGRESS.md) covers
 the complete release-header/support inventory. The 600-entry
-`.build/api-inventory.json` is its legacy core view, mapping 104 reference APIs to
+`.build/api-inventory.json` is its legacy core view, mapping 105 reference APIs to
 these scoped operations/contracts. Jonmath's companion ledger additionally maps
 142 functions from `raymath.h`. Remaining functions retain explicit planned work.
 These counts are an inventory, not a percentage of full parity.
@@ -88,6 +88,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | PSD decoding | `Surface.decode_psd_for` and shared `_for` dispatch | Version-1 RGB mode, 0..16 channels, raw/PackBits and explicit matte profiles; native alpha/defaults/depth rules and bounded packets/metadata |
 | Softimage PIC decoding | `Surface.decode_pic` | Raw/pure-RLE/mixed-RLE channel packets, native clipping/zero-count/default/overwrite behavior and bounded malformed-input errors |
 | First-frame GIF decoding | `Surface.decode_gif` | GIF87a/89a in-canvas/interlaced rectangles, native background fills, global/local palettes, transparency and bounded LZW |
+| GIF animation memory loading | `Image.Animation.decode_gif/entries/unload` | Complete owned RGBA8 frame sequences under frame/pixel budgets; native retain/restore disposal, palette/control persistence and independent frame mutation |
 | Raw DEFLATE | `Compression.decompress` | Stored/fixed/dynamic blocks and bounded copies; native empty-stored-block completion differs explicitly from the internal PNG-oriented path |
 | PNG decoding | `Surface.decode_png` | Non-interlaced/Adam7 1/2/4/8/16-bit and native-default CgBI profiles; filtering/scattering, palette/tRNS, framing and bounded errors |
 | PNG export | `Surface.to_png/write_png`, `Image.Formatted.to_png/write_png` | Exact default byte-format memory and format-1..7 file output; native packed expansion, channel/header preservation, rejection and normalized round trips |

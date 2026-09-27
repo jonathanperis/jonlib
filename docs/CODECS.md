@@ -18,6 +18,8 @@ Raw/pure-RLE/mixed-RLE Softimage PIC packets, white defaults and channel overwri
 documented in [PIC.md](PIC.md).
 First-frame GIF rectangles, interlacing, palettes, transparency and bounded LZW are documented
 in [GIF.md](GIF.md).
+Owned GIF animation frames and retain/restore disposal are documented in
+[GIF-ANIMATION.md](GIF-ANIMATION.md).
 
 The raw [DEFLATE dependency](DEFLATE.md) is verified separately. Non-interlaced and
 Adam7 packed/8/16-bit PNG decoding, native-default CgBI, filters, transparency rules and limits are documented

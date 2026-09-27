@@ -45,16 +45,16 @@ def blocks(data,size=255):
     return b''.join(bytes([len(data[i:i+size])])+data[i:i+size] for i in range(0,len(data),size))+b'\0'
 
 
-def gce(index=None):
-    return bytes([33,249,4,0 if index is None else 1,9,0,99 if index is None else index,0])
+def gce(index=None,disposal=0,delay=9):
+    return bytes([33,249,4,(disposal<<2)|(0 if index is None else 1),delay&255,delay>>8,99 if index is None else index,0])
 
 
-def gif(width,height,indices,palette,*,minimum=2,local=None,transparent=None,version=b'9',block_size=255,extensions=b'',codes=None,reset_every=None,background=0,frame=None,interlaced=False):
+def gif(width,height,indices,palette,*,minimum=2,local=None,transparent=None,version=b'9',block_size=255,extensions=b'',codes=None,reset_every=None,background=0,frame=None,interlaced=False,disposal=None,delay=9):
     flags=0 if palette is None else 128|(len(palette).bit_length()-2)
     data=b'GIF8'+version[:1]+b'a'+struct.pack('<HHBBB',width,height,flags,background,0)
     if palette is not None:data+=b''.join(color.to_bytes(4,'big')[:3] for color in palette)
     data+=extensions
-    if transparent is not None:data+=gce(transparent)
+    if transparent is not None or disposal is not None:data+=gce(transparent,0 if disposal is None else disposal,delay)
     x,y,w,h=(0,0,width,height) if frame is None else frame
     local_flags=(0 if local is None else 128|(len(local).bit_length()-2))|(64 if interlaced else 0)
     data+=b','+struct.pack('<HHHHB',x,y,w,h,local_flags)
@@ -66,6 +66,16 @@ def gif(width,height,indices,palette,*,minimum=2,local=None,transparent=None,ver
     sequence=lzw_codes(values,minimum,reset_every) if codes is None else codes
     packed,_=pack_codes(sequence,minimum)
     return list(data+bytes([minimum])+blocks(packed,block_size)+b';')
+
+
+def animation(width,height,palette,frames,*,background=0):
+    header=b'GIF89a'+struct.pack('<HHBBB',width,height,128|(len(palette).bit_length()-2),background,0)
+    header+=b''.join(color.to_bytes(4,'big')[:3] for color in palette)
+    bodies=[]
+    for frame in frames:
+        data=bytes(gif(width,height,palette=palette,background=background,**frame))
+        bodies.append(data[len(header):-1])
+    return list(header+b''.join(bodies)+b';')
 
 
 def fixtures():

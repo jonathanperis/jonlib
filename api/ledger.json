@@ -40474,23 +40474,31 @@
       "milestone": "image-codecs",
       "phase": 1,
       "sequence": 9,
-      "status": "not-started",
-      "jonlib": "Surface.load_image_anim_from_memory",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Image.Animation.decode_gif / Image.Animation.entries / Image.Animation.unload",
+      "mapping_state": "implemented",
+      "scope": "Owned GIF RGBA8 frame sequences with logical canvas dimensions, exact frame count/order, offsets/interlacing, native palette/control persistence and disposal 0/1 retain or 2 pre-frame restoration. Explicit frame/output-pixel budgets bound retained frames; entries and unload consume ownership. Delays are discarded as in the reference API.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Disposal 3: pinned native two_back points before its allocated frame buffer",
+        "Generic non-GIF memory fallback and native contiguous-buffer ABI",
+        "Permissive malformed recovery, original metadata and complete target/resource/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "src/gif_animation.bend",
+        "tools/gif_animation_probe.py",
+        "tools/gif_probe.py",
+        "docs/GIF-ANIMATION.md",
+        "docs/evidence/gif-animation.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -40505,7 +40513,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-format decode/encode fixtures, metadata, truncated/malformed data, dimensions and resource limits.",
-      "next_step": "Derive LoadImageAnimFromMemory semantics from the linked source, add a reference fixture, then implement Surface.load_image_anim_from_memory.",
+      "next_step": "Close documented gaps and unverified gates for LoadImageAnimFromMemory.",
       "priority": 209
     },
     {

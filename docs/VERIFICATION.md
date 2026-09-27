@@ -50,7 +50,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 104 have
+- The pinned core header inventory contains 600 unique public functions; 105 have
   explicitly scoped Jonlib mappings. The raymath ledger additionally maps 142
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
@@ -2221,3 +2221,48 @@ four proofs, eleven harness/planning tests and project checks. GPU filesystem IO
 and remaining targets were not exercised.
 
 Regression scan: 80 callers checked, 31 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `3a9bbe6`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36314847272)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36314847235)
+passed, including GIF geometry/interlacing and native background fills.
+
+## Bounded owned GIF animation memory decoding
+
+`Image.Animation.decode_gif` returns ordered, independently owned RGBA8 Surfaces
+with logical canvas dimensions and a frame count. Caller frame/pixel budgets are
+checked before retaining each frame. `entries` consumes the animation to expose
+its frames; `unload` consumes it for disposal. Native delays are discarded by the
+reference API and are not added to this mapping.
+
+Disposal 0/1 retains the canvas; disposal 2 restores the affected rectangle from
+its pre-frame snapshot. Transparent pixels preserve prior canvas content on later
+frames. The implementation retains global/local palette and control persistence,
+including native background fill restoring a global entry's opacity for a later
+frame without a new control extension. That state distinction was identified in
+review and is covered by an actual native multi-frame fixture.
+
+The animation gate passes 9 native animations / 24 frames / 382 pixels on CPU,
+JavaScript and forced Metal, checking every frame/count/dimension. Ten error/budget
+controls cover exact limits, exhaustion, zero/oversized requests, invalid later
+frames and termination. Two ownership controls verify independent frame mutation
+and consuming disposal. First-frame GIF retains all 41 images / 5,410 pixels and
+23 controls; shared dispatch retains 534 memory and 59 file cases, including the
+existing descriptor-closure cycles. See
+[evidence/gif-animation.json](evidence/gif-animation.json).
+
+Scoped drift review: I115 MATCH (owned animation, budgets and retain/restore);
+A3 HOLD through native sequence checks and independent frame mutation; A4/A5 HOLD
+through source/native backend gates; A6 HOLD in [GIF-ANIMATION.md](GIF-ANIMATION.md);
+V2 HOLD through complete `LoadImageAnimFromMemory` output; V3 HOLD through validated
+frame geometry, budgets and bounded snapshot/render indices. Disposal 3 remains
+excluded because the pinned native path computes a pointer preceding its output
+allocation. Generic non-GIF fallback, file animation loading, metadata/native ABI,
+malformed recovery and complete resource/platform/performance remain gaps.
+
+The ledger adds one partial mapping for `raylib:function:LoadImageAnimFromMemory`:
+**105 core + 142 math partial functions**, still zero complete. All 261 scenarios /
+40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal with current ledger metadata.
+All four proofs, eleven harness/planning tests and project checks pass. GPU file
+IO and remaining targets were not exercised.
+
+Regression scan: 101 callers checked, 47 assertions checked, 1 flagged/fixed.
