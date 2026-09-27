@@ -73,6 +73,7 @@ See [supported payloads, extension aliases and bounds](docs/IMAGE-FILES.md).
 - Native RGB float nearest/default-filtered resizing, including RGBA8 quantization and retained rejected owners.
 - RGB float canvas/POT operations preserving native sample movement, zero-fill quirks and same-size no-ops.
 - RGB float tint/invert/contrast/brightness/replacement with native quantization, clamping and alpha behavior.
+- Direct RGB float conversion to byte/integer formats and grayscale with verified packed-rounding boundaries.
 - RGB float RAW file loading/writing with native header selection, exact words and retained owners on rejected writes.
 - Bounded raw DEFLATE decompression with native empty-block semantics.
 - PNG decoding across supported 1/2/4/8/16-bit formats, Adam7 and native-default CgBI.

@@ -51,6 +51,8 @@ factory inputs, retained owners and the RGBA8 bridge.
 The separate [RGB float bridge](FLOAT-RGB.md) supports owned format-9 conversion
 to/from Surface without changing the `Image.Formatted` format-1..7 domain.
 Its [raw-byte interface](FLOAT-RGB-BYTES.md) preserves non-NaN format-9 words.
+`Image.FloatRGB.to_formatted` additionally converts finite `[0,1]` floats directly
+to formats 1..7 with native luminance/packed rounding, avoiding RGBA8 pre-quantization.
 Other float/half/compressed formats, mipmaps, other configured alpha thresholds,
 big-endian/native pointer layouts and full target/resource/performance evidence
 remain open.

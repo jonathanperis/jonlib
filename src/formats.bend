@@ -75,7 +75,10 @@ def decode(format: U32, +word: U32) -> Normal:
         byte_norm(((word >> 16n) .&. 255 : U32)), byte_norm((word >> 24n : U32))}
 
 def level(value: F32, limit: F32) -> U32:
-  F32.to_u32(F32.floor((value * limit + 0.5 : F32)))
+  +scaled = (value * limit : F32)
+  +base = F32.floor(scaled)
+  # Native round receives the rounded F32 product; adding half in F32 can round twice.
+  (F32.to_u32(base) + Bool.to_u32((scaled - base >= 0.5 : F32)) : U32)
 
 def luminance(r: F32, g: F32, b: F32) -> U32:
   F32.to_u32(((r * 0.299 + g * 0.587 + b * 0.114) * 255.0 : F32))
