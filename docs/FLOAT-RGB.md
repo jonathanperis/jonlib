@@ -30,6 +30,20 @@ Non-NaN float words, including signed zero, subnormals, infinities and values
 outside `[0,1]`, are supported. See
 [evidence/float-rgb-transforms.json](evidence/float-rgb-transforms.json).
 
+## Rectangular extraction and crop
+
+`Image.FloatRGB.extract(image, rectangle)` returns `(source, Maybe<region>)`,
+retaining the source and creating an independent region for a positive integral
+in-bounds rectangle. Rejected rectangles return the source with `None`.
+
+`Image.FloatRGB.crop(image, rectangle)` returns
+`Result<&1, &1, Image.FloatRGB & Surface.Error, Image.FloatRGB>`. Integral crops
+are clipped using the existing Surface rules. Positive clipped regions preserve
+exact sample words; an origin strictly beyond the image returns the unchanged
+owner, matching native behavior. Other unsupported rectangles retain the owner
+with `InvalidRectangle`. Fractional/native-invalid geometry remains outside this
+profile. See [evidence/float-rgb-crop.json](evidence/float-rgb-crop.json).
+
 ## Large owned exports
 
 Surface colors, FloatRGB entries and packed/formatted image exports use a shared
@@ -43,6 +57,7 @@ or changing the compiler/runtime. Output lengths, order and ownership are retain
 ```sh
 python3 tools/float_rgb_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 python3 tools/float_rgb_transform_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+python3 tools/float_rgb_crop_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 ```
 
 Configure checkout variables as in [README.md](../README.md#requirements).
@@ -65,3 +80,5 @@ and complete resource/platform/performance coverage remain gaps.
 The orientation gate compares 43 native cases / 14,953 pixels on CPU/JS/Metal,
 including rectangular/thin shapes, exact non-NaN words, repeated quarter-turns
 and mixed operation chains. An independent mutation check verifies cloned owners.
+The rectangle gate adds 15 native cases / 167 pixels, eight complete retained-
+owner checks and independent extracted-region mutation on CPU/JS/Metal.

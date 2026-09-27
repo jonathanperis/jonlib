@@ -2613,3 +2613,33 @@ harness/planning tests and project checks pass. Remaining targets, NaN payload
 parity and complete resource/performance coverage were not exercised.
 
 Regression scan: 26 callers checked, 8 assertions checked, 0 flagged/fixed.
+
+## RGB float rectangular extraction and crop
+
+`Image.FloatRGB.extract` retains its source and returns an independent positive
+integral in-bounds region. `crop` uses the established clipped integral profile,
+preserving native unchanged-source behavior for origins strictly beyond the
+image. Unsupported rectangles return their source owners. Surface and FloatRGB
+now share the same clipping arithmetic before their typed sampling paths.
+
+The gate passes 15 native rectangles / 167 pixels, eight complete retained-owner
+cases and independent extracted-region mutation on CPU/JS/Metal. It covers full,
+inner, edge and thin regions, clipped negative origins, oversized extents and
+strictly-outside no-ops. All returned metadata and sample words match actual
+`ImageFromImage`/`ImageCrop` format-9 output. See
+[evidence/float-rgb-crop.json](evidence/float-rgb-crop.json).
+
+Scoped review: I128 MATCH (regions, clipping and retained failures); A3 HOLD through
+source/region checks; A4/A5 HOLD through source/native backend gates; A6 HOLD in
+[FLOAT-RGB.md](FLOAT-RGB.md); V2 HOLD through complete native rectangle output;
+V3 HOLD through integral/in-bounds validation and established Region indices.
+Fractional/native-invalid geometry, NaN payload parity, mipmaps and full resource/
+platform/performance remain gaps. Two existing partial mappings expand without
+changing completion counts.
+
+All 261 scenarios / 40,101 words pass CPU-1/CPU-2/JavaScript/forced Metal, including
+retained Surface crop/region contracts. All four proofs, eleven harness/planning
+tests and project checks pass. Remaining targets and broader geometry/resource/
+performance domains were not exercised.
+
+Regression scan: 13 callers checked, 14 assertions checked, 0 flagged/fixed.
