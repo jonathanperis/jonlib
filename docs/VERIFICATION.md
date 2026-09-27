@@ -1623,3 +1623,43 @@ GPU file IO and the remaining platform/resource/performance domains were not
 exercised by this increment.
 
 Regression scan: 41 callers checked, 20 assertions checked, 0 flagged/fixed.
+
+Hosted confirmation for `42392a2`: [Checks](https://github.com/jonathanperis/jonlib/actions/runs/36289416753)
+and [Ubuntu/macOS Conformance](https://github.com/jonathanperis/jonlib/actions/runs/36289416808)
+passed, including shared dispatch and 16-bit PNM. The packed-TGA commit `5df21d1`
+was published through merge `fe4fd44`, preserving the independently updated
+`# Jonlib` README title from `96a61b9`.
+
+## Indexed TGA palettes
+
+The decoder now supports indexed types 1/9 with 8/16-bit indices and
+8/15/16/24/32-bit palette encodings. Palette-start follows the observed native
+byte skip after the image ID; out-of-range indices select palette entry zero.
+RGB555 palettes remain opaque, while 32-bit entries retain their supplied alpha.
+Empty/unsupported palettes and incomplete palette/index/packet data return typed
+errors. Output dimensions and packet limits retain their previous bounds.
+
+The TGA gate passes 48 native images / 1,123 pixels, 23 typed-error controls and
+all 11 exact exports / 3,447 bytes on CPU, JavaScript and forced Metal. New inputs
+cover every palette format/index width, raw/RLE transitions, ID and offset skips,
+index recovery, alpha and a 257-entry palette with values above the 8-bit range.
+All earlier direct-color/grayscale/packed fixtures remain in the gate.
+
+Shared dispatch passes 204 memory token/content pairs plus five controls on
+CPU/JS/Metal; file dispatch passes 41 cases, three boundaries and 100 low-descriptor
+cycles on CPU/JS. Both include an indexed stream. Source/input/native hashes are
+in [evidence/tga-palettes.json](evidence/tga-palettes.json).
+
+Scoped review: I99 MATCH (`src/tga.bend`, checked palette loading and sample
+selection); A4/A5 HOLD through source/native lane gates; A6 HOLD in [TGA.md](TGA.md);
+V2 HOLD through actual linked pixel/export output, including explicit native index
+recovery; V3 HOLD through checked dimensions, finite palette reads, bounded packets
+and existing output indexing. Original metadata, remaining variants and full
+resource/platform/performance parity remain gaps. The API ledger broadens the
+same two partial loading mappings and records zero full-parity completions.
+
+The full 261-scenario / 40,101-word CPU-1/CPU-2/JavaScript/forced-Metal corpus
+passes, with all four proofs, ten harness/planning tests and project checks.
+GPU file IO and broader resource/platform/performance coverage remain unverified.
+
+Regression scan: 53 callers checked, 27 assertions checked, 0 flagged/fixed.
