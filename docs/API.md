@@ -146,6 +146,8 @@ is outside this API's contract.
 | `Surface.decode_psd_for(reference, bytes)` | Raw/PackBits RGB/alpha PSD profiles with explicit fused/uncontracted white-matte arithmetic. `decode_psd` selects uncontracted; see [PSD.md](PSD.md). |
 | `Surface.decode_pic(bytes)` | Raw/pure-RLE/mixed-RLE Softimage PIC packets, native clipping/defaults/overwrite order and checked bounds; see [PIC.md](PIC.md). |
 | `Surface.decode_gif(bytes)` | First-frame GIF with in-canvas rectangles, interlacing, native background fills, palettes/transparency and bounded LZW; see [GIF.md](GIF.md). |
+| `Image.Animation.decode_gif(bytes, maximum_frames, maximum_pixels)` | Owned GIF frame sequence with caller budgets and native retain/restore disposal profiles; see [GIF-ANIMATION.md](GIF-ANIMATION.md). |
+| `Image.Animation.entries(animation)` / `unload(animation)` | Consume the animation to return `(width, height, count, List<Surface>)` or dispose of the owned frames. |
 | `Surface.decode_image_for(reference, file_type, bytes)` / `Surface.load_image_for(reference, path)` | Shared dispatch with `J.Image.Decode.Reference`; affects PSD matte arithmetic and retains existing bounds/error/closure behavior. Convenience calls select `J.UncontractedDecode{}`. |
 | `Surface.decode_png` | Bounded non-interlaced/Adam7 PNG and native-default CgBI decoding at supported 1/2/4/8/16-bit combinations; filtering, transparency and normalization in [PNG.md](PNG.md). |
 | `Surface.to_png`, `write_png` | Consuming RGBA8 memory/file exports with byte-exact native default filtering, quality-8 compression and checksums; see [PNG-EXPORT.md](PNG-EXPORT.md). |

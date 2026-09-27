@@ -34,7 +34,8 @@ outside the profile return `UnsupportedImageSize`. Incomplete palettes/sub-block
 return `TruncatedImageData`. Invalid LZW, missing/extra pixels or palette indices
 outside the selected table return `InvalidImageStream`.
 
-Animation/disposal/timing, original metadata, zero-area/native malformed
+Bounded owned animations with retain/restore disposal are documented in
+[GIF-ANIMATION.md](GIF-ANIMATION.md). Original metadata, zero-area/native malformed
 malformed recovery and full resource/platform/performance coverage remain gaps.
 
 ## Verification

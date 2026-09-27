@@ -40,13 +40,41 @@ def palette.load(present: Bool, flags: U32, data: +List<U32>) -> Result<&2, &2, 
     case False{}: Done{Palette{Nil{}, data}}
     case True{}: palette(U32.to_nat((2 << U32.to_nat((flags .&. 7 : U32)) : U32)), data, Nil{})
 
+def palette.transparent(selected: Maybe<&2, U32>, index: U32) -> Bool:
+  match selected:
+    case None{}: False{}
+    case Some{value}: U32.is_eq(value, index)
+
+def palette.alpha(colors: +List<U32>, +index: U32, +selected: Maybe<&2, U32>, values: +List<U32>) -> +List<U32>:
+  match colors:
+    case Nil{}: List.reverse(&2, U32, values)
+    case Con{color, rest}:
+      alpha = Bool.pick(U32, palette.transparent(selected, index), 0, 255)
+      palette.alpha(rest, (index + 1 : U32), selected, Con{((color .&. 4294967040) .|. alpha : U32), values})
+
+def palette.opaque(colors: +List<U32>, +index: U32, +selected: U32, values: +List<U32>) -> +List<U32>:
+  match colors:
+    case Nil{}: List.reverse(&2, U32, values)
+    case Con{+color, rest}:
+      palette.opaque(rest, (index + 1 : U32), selected, Con{Bool.pick(U32, U32.is_eq(index, selected), (color .|. 255 : U32), color), values})
+
+def palette.background(used: Bool, index: U32, palette: +List<U32>) -> +List<U32>:
+  match used:
+    case False{}: palette
+    case True{}: palette.opaque(palette, 0, index, Nil{})
+
+def palette.local(selected: Maybe<&2, U32>, result: Result<&2, &2, Error, Palette>) -> Result<&2, &2, Error, Palette>:
+  match result:
+    case Fail{error}: Fail{error}
+    case Done{Palette{colors, data}}: Done{Palette{palette.alpha(colors, 0, selected, Nil{}), data}}
+
 type Header is Data:
-  Header{width: U32, height: U32, palette: +List<U32>, background: U32, transparent: Maybe<&2, U32>, data: +List<U32>}
+  Header{width: U32, height: U32, palette: +List<U32>, background: U32, transparent: Maybe<&2, U32>, disposal: U32, data: +List<U32>}
 
 def header.palette(width: U32, height: U32, background: U32, result: Result<&2, &2, Error, Palette>) -> Result<&2, &2, Error, Header>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{Palette{colors, data}}: Done{Header{width, height, colors, background, None{}, data}}
+    case Done{Palette{colors, data}}: Done{Header{width, height, colors, background, None{}, 0, data}}
 
 def header.sized(valid: Bool, width: U32, height: U32, +flags: U32, background: U32, data: +List<U32>) -> Result<&2, &2, Error, Header>:
   match valid:
@@ -106,47 +134,49 @@ type Region is Data:
   Region{x: U32, y: U32, width: U32, height: U32, interlaced: Bool}
 
 type Frame is Data:
-  Frame{width: U32, height: U32, region: Region, background: U32, palette: +List<U32>, transparent: Maybe<&2, U32>, minimum: U32, data: +List<U32>}
+  Frame{width: U32, height: U32, region: Region, background: U32, palette: +List<U32>, transparent: Maybe<&2, U32>, minimum: U32, data: +List<U32>, following: Header}
 
 type Search is Data:
   Seeking{header: Header}
   Found{frame: Frame}
+  End{}
 
-def extension.data(width: U32, height: U32, palette: +List<U32>, background: U32, transparent: Maybe<&2, U32>, result: Maybe<&2, Blocks>) -> Result<&2, &2, Error, Search>:
+def extension.data(width: U32, height: U32, palette: +List<U32>, background: U32, transparent: Maybe<&2, U32>, disposal: U32, result: Maybe<&2, Blocks>) -> Result<&2, &2, Error, Search>:
   match result:
     case None{}: Fail{Truncated{}}
-    case Some{Blocks{_, data}}: Done{Seeking{Header{width, height, palette, background, transparent, data}}}
+    case Some{Blocks{_, data}}: Done{Seeking{Header{width, height, palette, background, transparent, disposal, data}}}
 
 def extension.control(width: U32, height: U32, palette: +List<U32>, background: U32, data: +List<U32>) -> Result<&2, &2, Error, Search>:
   match data:
-    case Con{4, Con{flags, Con{_, Con{_, Con{index, rest}}}}}:
-      transparent = Bool.pick(Maybe<&2, U32>, U32.is_ne((flags .&. 1 : U32), 0), Some{index}, None{})
-      extension.data(width, height, palette, background, transparent, collect(rest))
+    case Con{4, Con{+flags, Con{_, Con{_, Con{index, rest}}}}}:
+      +transparent = Bool.pick(Maybe<&2, U32>, U32.is_ne((flags .&. 1 : U32), 0), Some{index}, None{})
+      extension.data(width, height, palette.alpha(palette, 0, transparent, Nil{}), background, transparent, ((flags >> 2n) .&. 7 : U32), collect(rest))
     case _: Fail{BadHeader{}}
 
-def extension(label: U32, width: U32, height: U32, palette: +List<U32>, background: U32, transparent: Maybe<&2, U32>, data: +List<U32>) -> Result<&2, &2, Error, Search>:
+def extension(label: U32, width: U32, height: U32, palette: +List<U32>, background: U32, transparent: Maybe<&2, U32>, disposal: U32, data: +List<U32>) -> Result<&2, &2, Error, Search>:
   match label:
     case 249: extension.control(width, height, palette, background, data)
-    case _: extension.data(width, height, palette, background, transparent, collect(data))
+    case _: extension.data(width, height, palette, background, transparent, disposal, collect(data))
 
-def frame.blocks(valid: Bool, width: U32, height: U32, region: Region, background: U32, palette: +List<U32>, transparent: Maybe<&2, U32>, minimum: U32, result: Maybe<&2, Blocks>) -> Result<&2, &2, Error, Search>:
-  match valid result:
-    case False{} _: Fail{BadHeader{}}
-    case True{} None{}: Fail{Truncated{}}
-    case True{} Some{Blocks{bytes, _}}: Done{Found{Frame{width, height, region, background, palette, transparent, minimum, bytes}}}
+def frame.blocks(valid: Bool, width: U32, height: U32, region: Region, background: U32, palette: +List<U32>, transparent: Maybe<&2, U32>, minimum: U32, following: Header, result: Maybe<&2, Blocks>) -> Result<&2, &2, Error, Search>:
+  match valid following result:
+    case False{} _ _: Fail{BadHeader{}}
+    case True{} _ None{}: Fail{Truncated{}}
+    case True{} Header{cw, ch, global, bg, selected, disposal, _} Some{Blocks{bytes, rest}}:
+      Done{Found{Frame{width, height, region, background, palette, transparent, minimum, bytes, Header{cw, ch, global, bg, selected, disposal, rest}}}}
 
-def frame.data(width: U32, height: U32, region: Region, background: U32, transparent: Maybe<&2, U32>, result: Result<&2, &2, Error, Palette>) -> Result<&2, &2, Error, Search>:
+def frame.data(width: U32, height: U32, region: Region, background: U32, transparent: Maybe<&2, U32>, following: Header, result: Result<&2, &2, Error, Palette>) -> Result<&2, &2, Error, Search>:
   match result:
     case Fail{error}: Fail{error}
     case Done{Palette{Nil{}, _}}: Fail{BadHeader{}}
     case Done{Palette{colors, Con{+minimum, data}}}:
-      frame.blocks(((minimum >= 2) && (minimum <= 8) : U32), width, height, region, background, colors, transparent, minimum, collect(data))
+      frame.blocks(((minimum >= 2) && (minimum <= 8) : U32), width, height, region, background, colors, transparent, minimum, following, collect(data))
     case _: Fail{BadHeader{}}
 
-def frame.palette(local: Bool, width: U32, height: U32, region: Region, background: U32, flags: U32, palette: +List<U32>, transparent: Maybe<&2, U32>, data: +List<U32>) -> Result<&2, &2, Error, Search>:
+def frame.palette(local: Bool, width: U32, height: U32, region: Region, background: U32, flags: U32, palette: +List<U32>, +transparent: Maybe<&2, U32>, following: Header, data: +List<U32>) -> Result<&2, &2, Error, Search>:
   match local:
-    case False{}: frame.data(width, height, region, background, transparent, Done{Palette{palette, data}})
-    case True{}: frame.data(width, height, region, background, transparent, palette.load(True{}, flags, data))
+    case False{}: frame.data(width, height, region, background, transparent, following, Done{Palette{palette, data}})
+    case True{}: frame.data(width, height, region, background, transparent, following, palette.local(transparent, palette.load(True{}, flags, data)))
 
 def background.color(result: Maybe<&2, U32>) -> Maybe<&2, U32>:
   match result:
@@ -160,51 +190,44 @@ def background(used: Bool, index: U32, palette: +List<U32>) -> Maybe<&2, U32>:
     case False{}: Some{0}
     case True{}: background.color(List.get(&2, U32, palette, U32.to_nat(index)))
 
-def frame.valid(valid: Bool, width: U32, height: U32, region: Region, +flags: U32, palette: +List<U32>, transparent: Maybe<&2, U32>, data: +List<U32>, background: Maybe<&2, U32>) -> Result<&2, &2, Error, Search>:
+def frame.valid(valid: Bool, width: U32, height: U32, region: Region, +flags: U32, palette: +List<U32>, transparent: Maybe<&2, U32>, following: Header, data: +List<U32>, background: Maybe<&2, U32>) -> Result<&2, &2, Error, Search>:
   match valid background:
-    case True{} Some{color}: frame.palette(U32.is_ne((flags .&. 128 : U32), 0), width, height, region, color, flags, palette, transparent, data)
+    case True{} Some{color}: frame.palette(U32.is_ne((flags .&. 128 : U32), 0), width, height, region, color, flags, palette, transparent, following, data)
     case _ _: Fail{BadHeader{}}
 
-def frame(+width: U32, +height: U32, +palette: +List<U32>, +bgindex: U32, transparent: Maybe<&2, U32>, data: +List<U32>) -> Result<&2, &2, Error, Search>:
+def frame(+width: U32, +height: U32, +palette: +List<U32>, +bgindex: U32, +transparent: Maybe<&2, U32>, disposal: U32, data: +List<U32>) -> Result<&2, &2, Error, Search>:
   match data:
     case Con{xl, Con{xh, Con{yl, Con{yh, Con{wl, Con{wh, Con{hl, Con{hh, Con{+flags, rest}}}}}}}}}:
       +x = (xl .|. (xh << 8n) : U32)
       +y = (yl .|. (yh << 8n) : U32)
       +w = (wl .|. (wh << 8n) : U32)
       +h = (hl .|. (hh << 8n) : U32)
-      needed = U32.is_ne(bgindex, 0) && ((w * h < width * height) : U32)
+      +needed = U32.is_ne(bgindex, 0) && ((w * h < width * height) : U32)
       frame.valid(((w > 0) && (h > 0) && (x + w <= width) && (y + h <= height) : U32), width, height,
-        Region{x, y, w, h, U32.is_ne((flags .&. 64 : U32), 0)}, flags, palette, transparent, rest, background(needed, bgindex, palette))
+        Region{x, y, w, h, U32.is_ne((flags .&. 64 : U32), 0)}, flags, palette, transparent,
+        Header{width, height, palette.background(needed, bgindex, palette), 0, transparent, disposal, Nil{}}, rest, background(needed, bgindex, palette))
     case _: Fail{BadHeader{}}
 
 def scan.step(header: Header) -> Result<&2, &2, Error, Search>:
   match header:
-    case Header{width, height, palette, background, transparent, Con{33, Con{label, data}}}: extension(label, width, height, palette, background, transparent, data)
-    case Header{width, height, palette, background, transparent, Con{44, data}}: frame(width, height, palette, background, transparent, data)
+    case Header{width, height, palette, background, transparent, disposal, Con{33, Con{label, data}}}: extension(label, width, height, palette, background, transparent, disposal, data)
+    case Header{width, height, palette, background, transparent, disposal, Con{44, data}}: frame(width, height, palette, background, transparent, disposal, data)
+    case Header{_, _, _, _, _, _, Con{59, _}}: Done{End{}}
     case _: Fail{BadHeader{}}
 
-def scan(n: Nat, state: Result<&2, &2, Error, Search>) -> Result<&2, &2, Error, Frame>:
+def scan(n: Nat, state: Result<&2, &2, Error, Search>) -> Result<&2, &2, Error, Search>:
   match n state:
     case _ Fail{error}: Fail{error}
-    case _ Done{Found{frame}}: Done{frame}
+    case _ Done{Found{frame}}: Done{Found{frame}}
+    case _ Done{End{}}: Done{End{}}
     case 0n _: Fail{BadHeader{}}
     case 1n+rest Done{Seeking{header}}: scan(rest, scan.step(header))
 
-def scanned(result: Result<&2, &2, Error, Header>) -> Result<&2, &2, Error, Frame>:
+def scanned(result: Result<&2, &2, Error, Header>) -> Result<&2, &2, Error, Search>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{Header{width, height, palette, background, transparent, +data}}:
-      scan(byte_count(data, 0n), Done{Seeking{Header{width, height, palette, background, transparent, data}}})
-
-def transparent(selected: Maybe<&2, U32>, index: U32) -> Bool:
-  match selected:
-    case None{}: False{}
-    case Some{value}: U32.is_eq(value, index)
-
-def color(clear: Bool, result: Maybe<&2, U32>) -> Maybe<&2, U32>:
-  match result:
-    case None{}: None{}
-    case Some{rgba}: Some{Bool.pick(U32, clear, 0, rgba)}
+    case Done{Header{width, height, palette, background, transparent, disposal, +data}}:
+      scan(byte_count(data, 0n), Done{Seeking{Header{width, height, palette, background, transparent, disposal, data}}})
 
 type Rendering is Type:
   Rendering{indices: Array<U32>, pixels: Array<U32>}
@@ -229,42 +252,58 @@ def position(+index: U32, canvas_width: U32, region: Region) -> U32:
   Region{x, y, +width, height, interlaced} = region
   ((y + row.index(interlaced, (index / width : U32), height)) * canvas_width + x + index % width : U32)
 
-def render.write(index: U32, indices: Array<U32>, pixels: Array<U32>, result: Maybe<&2, U32>) -> Result<&1, &1, Error, Rendering>:
+def render.write(preserve: Bool, index: U32, indices: Array<U32>, pixels: Array<U32>, rgba: U32) -> Rendering:
+  match preserve:
+    case True{}: Rendering{indices, pixels}
+    case False{}: Rendering{indices, Array.set(U32, pixels, index, rgba)}
+
+def render.color(preserve: Bool, index: U32, indices: Array<U32>, pixels: Array<U32>, result: Maybe<&2, U32>) -> Result<&1, &1, Error, Rendering>:
   match result:
     case None{}: Fail{BadStream{}}
-    case Some{rgba}: Done{Rendering{indices, Array.set(U32, pixels, index, rgba)}}
+    case Some{+rgba}:
+      +clear = ((rgba .&. 255) <= 128 : U32)
+      Done{render.write(preserve && clear, index, indices, pixels, Bool.pick(U32, clear, 0, rgba))}
 
-def render.read(index: U32, palette: +List<U32>, selected: Maybe<&2, U32>, pixels: Array<U32>, result: Array<U32> & U32) -> Result<&1, &1, Error, Rendering>:
+def render.read(preserve: Bool, index: U32, palette: +List<U32>, pixels: Array<U32>, result: Array<U32> & U32) -> Result<&1, &1, Error, Rendering>:
   (indices, +value) = result
-  render.write(index, indices, pixels, color(transparent(selected, value), List.get(&2, U32, palette, U32.to_nat(value))))
+  render.color(preserve, index, indices, pixels, List.get(&2, U32, palette, U32.to_nat(value)))
 
-def render(n: Nat, +index: U32, +width: U32, +region: Region, +palette: +List<U32>, +selected: Maybe<&2, U32>, result: Result<&1, &1, Error, Rendering>) -> Result<&1, &1, Error, Rendering>:
+def render(n: Nat, +index: U32, +width: U32, +region: Region, +palette: +List<U32>, +preserve: Bool, result: Result<&1, &1, Error, Rendering>) -> Result<&1, &1, Error, Rendering>:
   match n result:
     case _ Fail{error}: Fail{error}
     case 0n _: result
     case 1n+rest Done{Rendering{indices, pixels}}:
-      render(rest, (index + 1 : U32), width, region, palette, selected,
-        render.read(position(index, width, region), palette, selected, pixels, Array.get(U32, indices, index)))
+      render(rest, (index + 1 : U32), width, region, palette, preserve,
+        render.read(preserve, position(index, width, region), palette, pixels, Array.get(U32, indices, index)))
 
-def image(width: U32, height: U32, result: Result<&1, &1, Error, Rendering>) -> Result<&1, &1, Error, Image>:
+def render.finished(result: Result<&1, &1, Error, Rendering>) -> Result<&1, &1, Error, Array<U32>>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{Rendering{_, pixels}}: Done{Image{width, height, pixels}}
+    case Done{Rendering{_, pixels}}: Done{pixels}
 
-def decoded(+width: U32, +height: U32, region: Region, background: U32, palette: +List<U32>, selected: Maybe<&2, U32>, result: Maybe<Array<U32>>) -> Result<&1, &1, Error, Image>:
+def draw.decoded(width: U32, region: Region, palette: +List<U32>, preserve: Bool, pixels: Array<U32>, result: Maybe<Array<U32>>) -> Result<&1, &1, Error, Array<U32>>:
   match region result:
     case _ None{}: Fail{BadStream{}}
     case Region{x, y, +w, +h, interlaced} Some{indices}:
-      +count = (width * height : U32)
-      depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
-      image(width, height, render(U32.to_nat((w * h : U32)), 0, width, Region{x, y, w, h, interlaced}, palette, selected,
-        Done{Rendering{indices, Array.new(U32, depth, background)}}))
+      render.finished(render(U32.to_nat((w * h : U32)), 0, width, Region{x, y, w, h, interlaced}, palette, preserve, Done{Rendering{indices, pixels}}))
 
-def start(result: Result<&2, &2, Error, Frame>) -> Result<&1, &1, Error, Image>:
+def draw(frame: Frame, preserve: Bool, pixels: Array<U32>) -> Result<&1, &1, Error, Array<U32>>:
+  Frame{width, _, Region{x, y, +w, +h, interlaced}, _, palette, _, minimum, data, _} = frame
+  draw.decoded(width, Region{x, y, w, h, interlaced}, palette, preserve, pixels, Lzw.decode(minimum, (w * h : U32), data))
+
+def image(width: U32, height: U32, result: Result<&1, &1, Error, Array<U32>>) -> Result<&1, &1, Error, Image>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{Frame{width, height, Region{x, y, +w, +h, interlaced}, background, palette, selected, minimum, data}}:
-      decoded(width, height, Region{x, y, w, h, interlaced}, background, palette, selected, Lzw.decode(minimum, (w * h : U32), data))
+    case Done{pixels}: Done{Image{width, height, pixels}}
+
+def start(result: Result<&2, &2, Error, Search>) -> Result<&1, &1, Error, Image>:
+  match result:
+    case Fail{error}: Fail{error}
+    case Done{Found{Frame{+width, +height, region, +background, palette, selected, minimum, data, following}}}:
+      +count = (width * height : U32)
+      depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
+      image(width, height, draw(Frame{width, height, region, background, palette, selected, minimum, data, following}, False{}, Array.new(U32, depth, background)))
+    case _: Fail{BadHeader{}}
 
 def checked(valid: Bool, data: +List<U32>) -> Result<&1, &1, Error, Image>:
   match valid:

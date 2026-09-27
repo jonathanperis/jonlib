@@ -243,6 +243,18 @@
     "api_id": "raylib:function:LoadImageRaw",
     "milestone": "image-codecs"
   },
+  "LoadImageAnimFromMemory": {
+    "jonlib": "Image.Animation.decode_gif / Image.Animation.entries / Image.Animation.unload",
+    "status": "profile-covered",
+    "scope": "Owned GIF RGBA8 frame sequences with logical canvas dimensions, exact frame count/order, offsets/interlacing, native palette/control persistence and disposal 0/1 retain or 2 pre-frame restoration. Explicit frame/output-pixel budgets bound retained frames; entries and unload consume ownership. Delays are discarded as in the reference API.",
+    "gaps": [
+      "Disposal 3: pinned native two_back points before its allocated frame buffer",
+      "Generic non-GIF memory fallback and native contiguous-buffer ABI",
+      "Permissive malformed recovery, original metadata and complete target/resource/performance coverage"
+    ],
+    "api_id": "raylib:function:LoadImageAnimFromMemory",
+    "milestone": "image-codecs"
+  },
   "LoadImageFromMemory": {
     "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif",
     "status": "profile-covered",
