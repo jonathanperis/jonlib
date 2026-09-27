@@ -1163,6 +1163,42 @@ def Image.Formatted.png.file_bytes(image: Image.Formatted) -> +List<U32>:
   +channels = Image.Formatted.png.channels(format)
   Image.Formatted.png.file_routed((channels > 0 : U32), width, height, format, channels, pixels)
 
+def Image.FloatRGB.png.word(channel: U32, value: M.Vector3) -> U32:
+  match channel value:
+    case 0 M.Vector3{r, _, _}: F32.bits(r)
+    case 1 M.Vector3{_, g, _}: F32.bits(g)
+    case _ M.Vector3{_, _, b}: F32.bits(b)
+
+def Image.FloatRGB.png.read(+index: U32, output: Array<U32>, result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Array<U32>:
+  (source, value) = result
+  (source, Array.set(U32, output, index, Image.FloatRGB.png.word((index % 3 : U32), value)))
+
+def Image.FloatRGB.png.words(n: Nat, +index: U32, state: Array<M.Vector3> & Array<U32>) -> Array<U32>:
+  match n state:
+    case 0n Tuple{_, output}: output
+    case 1n+rest Tuple{source, output}:
+      Image.FloatRGB.png.words(rest, (index + 1 : U32), Image.FloatRGB.png.read(index, output, Array.get(M.Vector3, source, (index / 3 : U32))))
+
+def Image.FloatRGB.png.checked(+width: U32, +height: U32, state: Array<M.Vector3> & Bool) -> Result<&1, &1, Image.FloatRGB, +List<U32>>:
+  match state:
+    case Tuple{pixels, False{}}: Fail{FloatRGB{width, height, pixels}}
+    case Tuple{pixels, True{}}:
+      # Native memory export reads four byte channels from the raw storage prefix.
+      +count = (width * height : U32)
+      Done{PngEncode.formatted(width, height, 4, Image.FloatRGB.png.words(U32.to_nat(count), 0, (pixels, Array.new(U32, Surface.capacity(count), 0))))}
+
+def Image.FloatRGB.to_png(image: Image.FloatRGB) -> Result<&1, &1, Image.FloatRGB, +List<U32>>:
+  FloatRGB{+width, +height, pixels} = image
+  Image.FloatRGB.png.checked(width, height, Image.FloatRGB.checked.pixels(~Image.FloatRGB.raw.pixel_valid, U32.to_nat((width * height : U32)), 0, (pixels, True{})))
+
+def Image.FloatRGB.png.file_converted(result: Result<&1, &1, Image.FloatRGB, Surface>) -> Result<&1, &1, Image.FloatRGB, +List<U32>>:
+  match result:
+    case Fail{image}: Fail{image}
+    case Done{surface}: Done{Surface.to_png(surface)}
+
+def Image.FloatRGB.png.file_bytes(image: Image.FloatRGB) -> Result<&1, &1, Image.FloatRGB, +List<U32>>:
+  Image.FloatRGB.png.file_converted(Image.FloatRGB.to_surface(image))
+
 def Surface.dither.checked(valid: Bool, surface: Surface, +r: U32, +g: U32, +b: U32, +a: U32) -> Result<&1, &1, Surface & Surface.Error, Image.Packed16>:
   match valid surface:
     case False{} _: Fail{(surface, InvalidDitherBits{})}
@@ -2941,17 +2977,20 @@ type Image.FloatRGB.WriteError is Type:
   FloatRGBSampleError{image: Image.FloatRGB}
   FloatRGBFileError{code: U32, message: String}
 
-def Image.FloatRGB.raw.file.written(result: Result<&1, &1, U32 & String, Unit>) -> IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>):
+def Image.FloatRGB.file.written(result: Result<&1, &1, U32 & String, Unit>) -> IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>):
   match result:
     case Fail{Tuple{code, message}}: IO.pure(Result<&1, &1, Image.FloatRGB.WriteError, Unit>, Fail{FloatRGBFileError{code, message}})
     case Done{unit}: IO.pure(Result<&1, &1, Image.FloatRGB.WriteError, Unit>, Done{unit})
 
-def Image.FloatRGB.raw.file.write(path: String, result: Result<&1, &1, Image.FloatRGB, +List<U32>>) -> IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>):
+def Image.FloatRGB.file.write(path: String, result: Result<&1, &1, Image.FloatRGB, +List<U32>>) -> IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>):
   match result:
     case Fail{image}: IO.pure(Result<&1, &1, Image.FloatRGB.WriteError, Unit>, Fail{FloatRGBSampleError{image}})
     case Done{bytes}:
       IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.FloatRGB.WriteError, Unit>,
-        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Surface.qoi.opened(bytes)), Image.FloatRGB.raw.file.written)
+        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Surface.qoi.opened(bytes)), Image.FloatRGB.file.written)
 
 def Image.FloatRGB.write_raw(image: Image.FloatRGB, path: String) -> IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>):
-  Image.FloatRGB.raw.file.write(path, Image.FloatRGB.to_bytes(image))
+  Image.FloatRGB.file.write(path, Image.FloatRGB.to_bytes(image))
+
+def Image.FloatRGB.write_png(image: Image.FloatRGB, path: String) -> IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>):
+  Image.FloatRGB.file.write(path, Image.FloatRGB.png.file_bytes(image))

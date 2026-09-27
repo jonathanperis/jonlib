@@ -281,9 +281,9 @@
     "milestone": "image-codecs"
   },
   "ExportImage": {
-    "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.write_png/write_raw / Image.FloatRGB.write_raw",
+    "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.write_png/write_raw / Image.FloatRGB.write_raw/write_png",
     "status": "profile-covered",
-    "scope": "QOI/BMP/TGA/default PNG from owned RGBA8; PNG/RAW files from formats 1..7; exact non-NaN RGB float RAW words with validated owners and typed file errors. Float RAW files match native loaded storage, with actual ExportImage comparisons on normalized inputs where auxiliary color casts are defined. PNG retains direct channels/native packed expansion. File handles close on completion/failure.",
+    "scope": "QOI/BMP/TGA/default PNG from RGBA8; PNG/RAW from formats 1..7; non-NaN RGB float RAW words and finite [0,1] RGB float PNG through native LoadImageColors normalization. Exact native bytes, pre-open rejected-owner preservation, typed errors and closed handles are verified. Float RAW native exports use defined normalized auxiliary casts.",
     "gaps": [
       "Other formats/options and generic extension dispatch; NaN parity and native out-of-range auxiliary casts",
       "Native callbacks/allocation ABI and complete targets/integration/performance"
@@ -292,11 +292,11 @@
     "milestone": "image-codecs"
   },
   "ExportImageToMemory": {
-    "jonlib": "Surface.to_png / Image.Formatted.to_png",
+    "jonlib": "Surface.to_png / Image.Formatted.to_png / Image.FloatRGB.to_png",
     "status": "profile-covered",
-    "scope": "Exact default PNG bytes from RGBA8 surfaces or native byte formats 1/2/4/7, preserving channel counts/color types, filter distances, quality-8 compression and checksums. Rejected packed formats retain the original owner. Full native memory/file bytes and normalized round trips are compared.",
+    "scope": "Exact default PNG from RGBA8, byte formats 1/2/4/7 and non-NaN RGB floats. Float memory export preserves native raw little-endian storage-prefix interpretation, distinct from normalized file export. Byte channels, filtering, compression/checksums and rejected-owner behavior remain verified through complete encoded/decoded output.",
     "gaps": [
-      "Packed/float source formats, configured writer flags and generic extension dispatch",
+      "Packed/other float source formats, NaN parity, configured flags and generic dispatch",
       "Native pointer/output-size/allocator ABI and ownership correspondence",
       "Complete integration/target/resource/performance coverage"
     ],
