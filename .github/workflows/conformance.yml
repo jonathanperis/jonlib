@@ -21,7 +21,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04, macos-15]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 35
+    timeout-minutes: 45
     env:
       BEND_NO_TELEMETRY: '1'
       CC: clang
@@ -246,6 +246,11 @@ jobs:
           python3 tools/float_rgb_raster_export_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify native byte and float image-as-code text and file ownership
+        run: >-
+          python3 tools/image_code_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Verify image-memory token and content dispatch
         run: >-
           python3 tools/image_memory_probe.py
@@ -303,10 +308,25 @@ jobs:
           cp .build/trig-probe/results.json .build/trig-probe/gradient-results.json
           python3 tools/trig_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend" --rotation
           cp .build/trig-probe/results.json .build/trig-probe/rotation-results.json
+      - name: Verify native complete RGBA8 mipmap chains
+        run: >-
+          python3 tools/mipmap_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Verify finite-normal fused arithmetic
         run: >-
           python3 tools/fused_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+      - name: Verify native RGBA8 Gaussian blur
+        run: >-
+          python3 tools/blur_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify native RGBA8 kernel convolution
+        run: >-
+          python3 tools/convolution_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Record unresolved perspective rounding evidence
         run: >-
           python3 tools/perspective_probe.py
@@ -315,6 +335,36 @@ jobs:
         run: >-
           python3 tools/inverse_trig_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+      - name: Verify native bounded Base64 utilities
+        run: >-
+          python3 tools/base64_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify native CRC32 and MD5 values
+        run: >-
+          python3 tools/checksum_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify native SHA-1 and SHA-256 values
+        run: >-
+          python3 tools/sha_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify native sdefl Huffman dependency
+        run: >-
+          python3 tools/sdeflate_huffman_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify native quality-8 LZ sequences and frequencies
+        run: >-
+          python3 tools/sdeflate_probe.py --stage lz
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify exact native raw compression and decompression
+        run: >-
+          python3 tools/sdeflate_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Upload scoped conformance evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -340,6 +390,15 @@ jobs:
             .build/filter-probe/results.json
             .build/resize/results.json
             .build/resize/images-results.json
+            .build/mipmap-probe/results.json
+            .build/blur-probe/results.json
+            .build/convolution-probe/results.json
+            .build/base64-probe/results.json
+            .build/checksum-probe/results.json
+            .build/sha-probe/results.json
+            .build/sdeflate-huffman-probe/results.json
+            .build/sdeflate-lz-probe/results.json
+            .build/sdeflate-probe/results.json
             .build/trig-probe/results.json
             .build/trig-probe/gradient-results.json
             .build/trig-probe/rotation-results.json
@@ -380,6 +439,7 @@ jobs:
             .build/image-colors-probe/results.json
             .build/float-rgb-png-probe/results.json
             .build/float-rgb-raster-export-probe/results.json
+            .build/image-code-probe/results.json
             .build/psd-matte-probe/results.json
             .build/inflate-probe/results.json
             .build/png-probe/results.json

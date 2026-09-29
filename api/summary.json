@@ -6,16 +6,16 @@
     "blocked": 5,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1613,
-    "partial": 266
+    "not-started": 1602,
+    "partial": 277
   },
   "core_functions": {
     "total": 600,
     "blocked": 1,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 493,
-    "partial": 106
+    "not-started": 482,
+    "partial": 117
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 5,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 678,
-    "partial": 248
+    "not-started": 667,
+    "partial": 259
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 1,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 921,
-      "partial": 115
+      "not-started": 910,
+      "partial": 126
     },
     "raymath.h": {
       "total": 254,
@@ -164,8 +164,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 48,
-      "partial": 1
+      "not-started": 41,
+      "partial": 8
     },
     {
       "id": "random",
@@ -209,8 +209,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 4,
-      "partial": 50
+      "not-started": 2,
+      "partial": 52
     },
     {
       "id": "resampling",
@@ -224,8 +224,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 1,
-      "partial": 6
+      "not-started": 0,
+      "partial": 7
     },
     {
       "id": "image-codecs",
@@ -240,8 +240,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 1,
-      "partial": 7
+      "not-started": 0,
+      "partial": 8
     },
     {
       "id": "collision",

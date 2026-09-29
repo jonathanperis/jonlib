@@ -1,0 +1,20 @@
+{
+  "date": "2026-09-28",
+  "profile": "Bounded native RGBA8 square-kernel convolution with flat-index sampling and defined unsigned-byte alpha casts",
+  "source_sha256": {
+    "jonlib.bend": "26b78ce80dc06ad0b17c1a2566034b10f03dbb601e626d57bc95d424c92fb530",
+    "src/convolution.bend": "74781e8c97ab9be2e7ea68bb5dd410d73d347b79645298dbccfe79432d3fbfd6",
+    "tools/convolution_probe.py": "c9008fe51cd80794b14ee3f2a145c5f5c04333171b8897b5c6a555d4eda46cff"
+  },
+  "inputs_sha256": "93e5e050cd6e5522b31f507b9d6cd39f3cb55a235f79fa8353a91b841ad91396",
+  "reference_sha256": "fbb3e4bdfc832ff9dd3b1989956105294ab7d09d8e3aec966b88f8d29c6b64ec",
+  "native_cases": 39,
+  "pixels_per_lane": 34650,
+  "retained_owner_controls": 9,
+  "passed": true,
+  "lanes": ["cpu", "javascript", "metal"],
+  "full_corpus": {"passed": true, "scenarios": 261, "output_words_per_lane": 40101, "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"]},
+  "proof_verdict": "All terms check.",
+  "harness_test_methods": 11,
+  "limits": ["Checked RGBA8 sources, square kernels of 0..225 entries and zero or finite coefficient magnitude 2^-16..16", "Final F32 alpha*255 must be strictly between -1 and 256", "Other formats/mipmaps, native allocation ABI and complete resource/platform/performance coverage"]
+}

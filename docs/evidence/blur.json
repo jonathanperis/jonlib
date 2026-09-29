@@ -1,0 +1,20 @@
+{
+  "date": "2026-09-28",
+  "profile": "Native default four-iteration RGBA8 Gaussian-blur approximation with checked U32 size and retained rejected owners",
+  "source_sha256": {
+    "jonlib.bend": "77199c82b8335ec2b9f4238205a407c829fb7a67d6f40b88fe97c54810277798",
+    "src/blur.bend": "31fe7dd4165b5a2cd772f7f2ee615c8dcff5a3b564d1547c706d08b84a2b2c25",
+    "tools/blur_probe.py": "43f2c7a6f607bf08ba89119b7e89dc32375a3dd31809fa40e26d76cb35361141"
+  },
+  "inputs_sha256": "234191b80946f3eba409d6d39ccfd60a5d5b49c86f994ae2232f7fa53f0432ec",
+  "reference_sha256": "3d901c70ceec5bf55756c608cd5be304bb47d145823950c01491714a72463c97",
+  "native_cases": 27,
+  "pixels_per_lane": 117151,
+  "retained_owner_controls": 3,
+  "passed": true,
+  "lanes": ["cpu", "javascript", "metal"],
+  "full_corpus": {"passed": true, "scenarios": 261, "output_words_per_lane": 40101, "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"]},
+  "proof_verdict": "All terms check.",
+  "harness_test_methods": 11,
+  "limits": ["Only checked single-level RGBA8 sources and U32 blur sizes 0..min(width,height)", "Other formats/mipmaps and configured iteration counts", "Native invalid-size domains and complete resource/platform/performance coverage"]
+}

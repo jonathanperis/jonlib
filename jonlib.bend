@@ -25,12 +25,53 @@ import ./src/pic.bend as Pic
 import ./src/gif.bend as Gif
 import ./src/gif_animation.bend as GifAnimation
 import ./src/hdr.bend as Hdr
+import ./src/image_code.bend as ImageCode
+import ./src/blur.bend as Blur
+import ./src/convolution.bend as Convolution
+import ./src/base64.bend as Base64Codec
+import ./src/checksum.bend as Checksums
+import ./src/sha.bend as Sha
 import ./src/inflate.bend as Inflate
+import ./src/sdeflate.bend as Sdeflate
 import ./src/png.bend as Png
 import ./src/png_encode.bend as PngEncode
 
 def Compression.decompress(bytes: +List<U32>, maximum: U32) -> Maybe<List<U32>>:
   Inflate.decompress(True{}, bytes, maximum)
+
+def Compression.compress(bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
+  Sdeflate.compress(bytes)
+
+type Base64.Encoded is Data:
+  Base64Encoded{size: U32, text: String}
+
+def Base64.encoded(result: Maybe<&2, Base64Codec.Encoded>) -> Maybe<&2, Base64.Encoded>:
+  match result:
+    case None{}: None{}
+    case Some{Base64Codec.Encoded{size, text}}: Some{Base64Encoded{size, text}}
+
+def Base64.encode(bytes: +List<U32>) -> Maybe<&2, Base64.Encoded>:
+  Base64.encoded(Base64Codec.encode(bytes))
+
+def Base64.decode(text: String) -> Maybe<&2, +List<U32>>:
+  Base64Codec.decode(text)
+
+def Checksum.crc32.checked(size: Maybe<&2, U32>, bytes: +List<U32>) -> Maybe<&2, U32>:
+  match size:
+    case None{}: None{}
+    case Some{_}: Some{(PngEncode.crc(bytes, 4294967295) .^. 4294967295 : U32)}
+
+def Checksum.crc32(+bytes: +List<U32>) -> Maybe<&2, U32>:
+  Checksum.crc32.checked(Checksums.input_size(bytes, 0, True{}), bytes)
+
+def Checksum.md5(bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
+  Checksums.md5(bytes)
+
+def Checksum.sha1(bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
+  Sha.hash(False{}, bytes)
+
+def Checksum.sha256(bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
+  Sha.hash(True{}, bytes)
 
 type Spline.Reference is Data:
   UncontractedSpline{}
@@ -528,6 +569,7 @@ type Surface.Error is Data:
   InvalidRectangle{}
   UnsafeNearestMapping{}
   InvalidDitherBits{}
+  InvalidKernel{}
 
 type Image.Packed16 is Type:
   Packed16{width: U32, height: U32, format: U32, pixels: Array<U32>}
@@ -1468,6 +1510,28 @@ def Surface.alpha_clear(surface: Surface, color: U32, threshold: F32) -> Surface
 def Surface.alpha_premultiply(surface: Surface) -> Surface:
   Surface.color.transform(surface, AlphaPremultiply{})
 
+def Surface.blur_gaussian.premultiplied(size: U32, surface: Surface) -> Surface:
+  Surface{+width, +height, pixels} = surface
+  Surface{width, height, Blur.blur(width, height, size, pixels)}
+
+def Surface.blur_gaussian.checked(valid: Bool, surface: Surface, size: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match valid:
+    case False{}: Fail{(surface, InvalidSize{})}
+    case True{}: Done{Surface.blur_gaussian.premultiplied(size, Surface.alpha_premultiply(surface))}
+
+def Surface.blur_gaussian(surface: Surface, +size: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface{+width, +height, pixels} = surface
+  Surface.blur_gaussian.checked(((size <= width) && (size <= height) : U32), Surface{width, height, pixels}, size)
+
+def Surface.convolution.result(width: U32, height: U32, result: Result<&1, &1, Array<U32>, Array<U32>>) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match result:
+    case Fail{source}: Fail{(Surface{width, height, source}, InvalidKernel{})}
+    case Done{output}: Done{Surface{width, height, output}}
+
+def Surface.kernel_convolution(surface: Surface, kernel: +List<F32>) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface{+width, +height, pixels} = surface
+  Surface.convolution.result(width, height, Convolution.apply(width, height, kernel, pixels))
+
 def Surface.mask.pixel(destination: Array<U32> & U32, source: Array<U32> & U32, at: U32) -> Array<U32> & Array<U32>:
   (dst, color) = destination
   (mask, value) = source
@@ -2272,6 +2336,37 @@ def Surface.copy(surface: Surface) -> Surface & Surface:
   Surface{w, h, pixels} = surface
   Surface.copy.result(w, h, Array.clone(U32, pixels))
 
+type Image.Mipmaps is Type:
+  Mipmaps{count: U32, levels: List<Surface>}
+
+def Surface.mipmaps.copied(reversed: List<Surface>, pair: Surface & Surface) -> Surface & List<Surface>:
+  (source, Surface{+width, +height, pixels}) = pair
+  +w = U32.max(1, (width / 2 : U32))
+  +h = U32.max(1, (height / 2 : U32))
+  (Surface{w, h, Resample.resize(width, height, w, h, pixels)}, Con{source, reversed})
+
+def Surface.mipmaps.step(state: Surface & List<Surface>) -> Surface & List<Surface>:
+  (surface, reversed) = state
+  Surface.mipmaps.copied(reversed, Surface.copy(surface))
+
+def Surface.mipmaps.levels(n: Nat, state: Surface & List<Surface>) -> List<Surface>:
+  match n state:
+    case 0n Tuple{surface, reversed}: List.reverse(&1, Surface, Con{surface, reversed})
+    case 1n+rest _: Surface.mipmaps.levels(rest, Surface.mipmaps.step(state))
+
+# Altered adaptation of raylib ImageMipmaps; each level resizes the preceding one.
+def Surface.mipmaps(surface: Surface) -> Image.Mipmaps:
+  Surface{+width, +height, pixels} = surface
+  +steps = U32.log2(U32.max(width, height))
+  Mipmaps{(1 + U32.from_nat(steps) : U32), Surface.mipmaps.levels(steps, (Surface{width, height, pixels}, Nil{}))}
+
+def Image.Mipmaps.entries(chain: Image.Mipmaps) -> U32 & List<Surface>:
+  Mipmaps{count, levels} = chain
+  (count, levels)
+
+def Image.Mipmaps.unload(chain: Image.Mipmaps) -> Unit:
+  Unit{}
+
 def Surface.channel.copied(pair: Surface & Surface, selected: F32) -> Surface & Surface:
   (source, copy) = pair
   shift = U32.to_nat((24 - 8 * F32.to_u32(F32.clamp(selected, 0.0, 3.0)) : U32))
@@ -3006,3 +3101,70 @@ def Image.FloatRGB.write_bmp(image: Image.FloatRGB, path: String) -> IO(Result<&
 
 def Image.FloatRGB.write_tga(image: Image.FloatRGB, path: String) -> IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>):
   Image.FloatRGB.file.write(path, Image.FloatRGB.to_tga(image))
+
+def Image.Formatted.code.exported(name: String, size: U32, result: (U32 & U32) & (U32 & List<U32>)) -> String:
+  ((width, height), (format, bytes)) = result
+  ImageCode.encode(~&1, name, width, height, format, size, bytes)
+
+def Image.Formatted.code.checked(valid: Bool, name: Maybe<&2, String>, size: U32, image: Image.Formatted) -> Result<&1, &1, Image.Formatted, String>:
+  match valid name:
+    case True{} Some{text}: Done{Image.Formatted.code.exported(text, size, Image.Formatted.export(image))}
+    case _ _: Fail{image}
+
+def Image.Formatted.to_code(image: Image.Formatted, path: String) -> Result<&1, &1, Image.Formatted, String>:
+  FormattedImage{+width, +height, +format, pixels} = image
+  +size = (width * height * (Pixel.bits_per_pixel(format) / 8) : U32)
+  Image.Formatted.code.checked((size <= 65536 : U32), ImageCode.name(path), size, FormattedImage{width, height, format, pixels})
+
+type Image.Formatted.CodeWriteError is Type:
+  CodeSourceError{image: Image.Formatted}
+  CodeFileError{code: U32, message: String}
+
+def Image.Formatted.code.written(result: Result<&1, &1, U32 & String, Unit>) -> IO(Result<&1, &1, Image.Formatted.CodeWriteError, Unit>):
+  match result:
+    case Fail{Tuple{code, message}}: IO.pure(Result<&1, &1, Image.Formatted.CodeWriteError, Unit>, Fail{CodeFileError{code, message}})
+    case Done{unit}: IO.pure(Result<&1, &1, Image.Formatted.CodeWriteError, Unit>, Done{unit})
+
+def Image.Formatted.code.write(path: String, result: Result<&1, &1, Image.Formatted, String>) -> IO(Result<&1, &1, Image.Formatted.CodeWriteError, Unit>):
+  match result:
+    case Fail{image}: IO.pure(Result<&1, &1, Image.Formatted.CodeWriteError, Unit>, Fail{CodeSourceError{image}})
+    case Done{text}:
+      IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.Formatted.CodeWriteError, Unit>,
+        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Surface.ppm.opened(text)), Image.Formatted.code.written)
+
+def Image.Formatted.write_code(image: Image.Formatted, +path: String) -> IO(Result<&1, &1, Image.Formatted.CodeWriteError, Unit>):
+  Image.Formatted.code.write(path, Image.Formatted.to_code(image, path))
+
+def Image.FloatRGB.code.exported(name: String, width: U32, height: U32, size: U32, result: Result<&1, &1, Image.FloatRGB, +List<U32>>) -> Result<&1, &1, Image.FloatRGB, String>:
+  match result:
+    case Fail{image}: Fail{image}
+    case Done{bytes}: Done{ImageCode.encode(~&2, name, width, height, 9, size, bytes)}
+
+def Image.FloatRGB.code.checked(valid: Bool, name: Maybe<&2, String>, +width: U32, +height: U32, size: U32, pixels: Array<M.Vector3>) -> Result<&1, &1, Image.FloatRGB, String>:
+  match valid name:
+    case True{} Some{text}: Image.FloatRGB.code.exported(text, width, height, size, Image.FloatRGB.to_bytes(FloatRGB{width, height, pixels}))
+    case _ _: Fail{FloatRGB{width, height, pixels}}
+
+def Image.FloatRGB.to_code(image: Image.FloatRGB, path: String) -> Result<&1, &1, Image.FloatRGB, String>:
+  FloatRGB{+width, +height, pixels} = image
+  +size = (width * height * 12 : U32)
+  Image.FloatRGB.code.checked((size <= 65536 : U32), ImageCode.name(path), width, height, size, pixels)
+
+type Image.FloatRGB.CodeWriteError is Type:
+  FloatCodeSourceError{image: Image.FloatRGB}
+  FloatCodeFileError{code: U32, message: String}
+
+def Image.FloatRGB.code.written(result: Result<&1, &1, U32 & String, Unit>) -> IO(Result<&1, &1, Image.FloatRGB.CodeWriteError, Unit>):
+  match result:
+    case Fail{Tuple{code, message}}: IO.pure(Result<&1, &1, Image.FloatRGB.CodeWriteError, Unit>, Fail{FloatCodeFileError{code, message}})
+    case Done{unit}: IO.pure(Result<&1, &1, Image.FloatRGB.CodeWriteError, Unit>, Done{unit})
+
+def Image.FloatRGB.code.write(path: String, result: Result<&1, &1, Image.FloatRGB, String>) -> IO(Result<&1, &1, Image.FloatRGB.CodeWriteError, Unit>):
+  match result:
+    case Fail{image}: IO.pure(Result<&1, &1, Image.FloatRGB.CodeWriteError, Unit>, Fail{FloatCodeSourceError{image}})
+    case Done{text}:
+      IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.FloatRGB.CodeWriteError, Unit>,
+        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Surface.ppm.opened(text)), Image.FloatRGB.code.written)
+
+def Image.FloatRGB.write_code(image: Image.FloatRGB, +path: String) -> IO(Result<&1, &1, Image.FloatRGB.CodeWriteError, Unit>):
+  Image.FloatRGB.code.write(path, Image.FloatRGB.to_code(image, path))

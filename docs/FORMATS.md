@@ -18,6 +18,7 @@ separate compatibility gaps.
 | `Image.Formatted.export(image)` | Consumes ownership and returns `((width, height), (format, bytes))`, with every native-order byte and no storage padding. |
 | `Image.Formatted.to_png(image)` | Default PNG memory export for byte formats 1/2/4/7; unsupported packed formats retain their owner in `Fail`. See [PNG-EXPORT.md](PNG-EXPORT.md). |
 | `Image.Formatted.write_png(image, path)` | Default PNG file export for all seven checked formats, preserving native packed-color expansion. See [PNG-EXPORT.md](PNG-EXPORT.md). |
+| `Image.Formatted.to_code(image, path)` / `write_code(image, path)` | Exact native image-as-code text and typed file export for bounded payloads/ASCII names. See [IMAGE-CODE.md](IMAGE-CODE.md). |
 
 Create owners with the checked factory or Surface bridge. Manually inconsistent
 `FormattedImage{width, height, format, pixels}` values are outside the contract.

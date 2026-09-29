@@ -1,6 +1,6 @@
 # Verification record
 
-Latest expansion: 2026-09-26. Host: Apple M1 / macOS 27.0. Bun 1.3.12 and Apple clang 21.0.0.
+Latest expansion: 2026-09-29. Host: Apple M1 / macOS 27.0. Bun 1.3.12 and Apple clang 21.0.0.
 The current base revision and exact compiler overlay are pinned in `toolchain.json`.
 
 ## Executed checks
@@ -50,7 +50,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 - Five alpha-border observations compare exact rectangles and preserve the
   observed pixels. Alpha-crop post-size hints are checked against the actual C
   oracle; a deliberately wrong hint is rejected before candidate execution.
-- The pinned core header inventory contains 600 unique public functions; 106 have
+- The pinned core header inventory contains 600 unique public functions; 117 have
   explicitly scoped Jonlib mappings. The raymath ledger additionally maps 142
   functions. Every mapping remains partial; all six completion gates are still required.
 - The bounded trigonometry gate matches all 721 integral directions in -360..360
@@ -2958,3 +2958,308 @@ proofs, eleven harness/planning tests and project checks pass. GPU filesystem IO
 and broader source/target/resource/performance domains were not exercised.
 
 Regression scan: 17 callers checked, 19 assertions checked, 0 flagged/fixed.
+
+## Native image-as-code export
+
+`Image.Formatted.to_code/write_code` preserve the complete native header template,
+credits, uppercase basename/extension rules, metadata and unpadded hex formatting.
+The initial profile supports formats 1..7, payloads through 65,536 bytes and
+non-NUL ASCII basenames through 200 characters. Rejected inputs retain their
+owners before opening files; typed file errors preserve Base details and close
+opened handles.
+
+The gate passes thirteen native files / 428,861 text bytes and seven retained-owner
+controls on CPU/JS/Metal, including the largest payload and accepted basename,
+native first-byte/twentieth-byte line breaks, leading/multiple dots and backslash
+selection. CPU/JS additionally compare every actual file, preserve a sentinel on
+rejected writes and pass 100 low-descriptor success/error cycles. See
+[evidence/image-code.json](evidence/image-code.json).
+
+Regression review found the proposed 255-character name could overrun native
+`ExportImageAsCode`'s `payload*6+2000` allocation for a one-byte image. An ASan-linked
+native reproducer confirmed heap-buffer-overflow in the exporter. The accepted
+200-character profile leaves at least 134 bytes inside that estimate; the original
+255-character case is now a rejected-input regression, and the accepted reference
+executable runs with ASan. The earlier full-corpus run preceded this domain fix
+and does not verify the corrected source. Details are in
+[evidence/image-code-native-overflow.json](evidence/image-code-native-overflow.json).
+
+Scoped drift review: I139 MATCH (`src/image_code.bend` and formatted wrappers);
+C1/C3/C6 HOLD through Bend-only source gates and preserved provenance; A3 HOLD
+through complete rejected owners, file preservation and closure; A4/A5 HOLD
+through exact native text on CPU/JS/Metal; A6 HOLD in [IMAGE-CODE.md](IMAGE-CODE.md);
+V2 HOLD through the narrowed defined native domain and sanitizer gate; V3 HOLD
+through existing checked storage and bounded payloads. The ledger adds one
+partial mapping for `raylib:function:ExportImageAsCode`: **107 core + 142 math**
+partial functions, still zero complete. Broader filename/payload/Unicode domains,
+configured line widths, GPU file IO and complete native-ABI/resource/platform/
+performance coverage remain gaps.
+
+The [79f7220 hosted run](https://github.com/jonathanperis/jonlib/actions/runs/36340369070)
+hit the 35-minute aggregate deadline on both platforms, during filtered resizing
+on Ubuntu and image-memory dispatch on macOS. No step failed before cancellation;
+later steps were skipped. The aggregate budget is now 45 minutes. I123 MATCH for
+the configuration; full hosted acceptance remains pending on the next publication.
+
+The corrected source passes all 261 scenarios / 40,101 words on CPU-1/CPU-2/
+JavaScript/forced Metal. All four proofs, eleven harness/planning tests and project
+checks pass. GPU file IO and broader path/source/target/resource/performance
+domains were not exercised; the 45-minute hosted checkpoint remains pending.
+
+Regression scan: 29 callers checked, 19 assertions checked, 2 flagged/fixed.
+
+## RGB float image-as-code export
+
+`Image.FloatRGB.to_code/write_code` extend the native `ExportImageAsCode` profile
+to format 9. They preserve dimensions, format metadata and all twelve raw
+little-endian bytes per pixel, including signed zero, subnormals and infinities.
+NaN samples and unsupported path/payload requests return the original owner;
+`FloatCodeSourceError` retains it before file opening, while `FloatCodeFileError`
+preserves Base code/message details. The formatter now accepts either affine
+formatted bytes or reusable float bytes through its quantity parameter.
+
+The combined gate compares **17 native files / 884,733 text bytes** on CPU,
+JavaScript and forced Metal. All thirteen previous formatted-image cases remain,
+with four format-9 cases spanning sign/exponent classes, deterministic raw words
+and the largest accepted float payload (65,532 bytes). Ten rejected-owner controls
+cover paths, payloads and a NaN after a valid pixel. CPU/JS compare every actual
+file, verify sentinel preservation, compare native Base file-error details and
+run 100 success/source-error/file-error cycles under a 64-descriptor limit.
+The accepted native oracle remains linked with AddressSanitizer.
+
+Scoped acceptance: A3 PASS for retained owners and bounded storage; A4 PASS for
+Bend-only source and exact CPU/JS output; A5 PASS for pure forced-Metal output;
+A6 PASS through [IMAGE-CODE.md](IMAGE-CODE.md), public API docs and the generated
+ledger. GPU file IO, NaN payload parity, larger/Unicode paths and complete
+native-ABI/resource/platform/performance domains remain gaps. This extends the
+existing partial `raylib:function:ExportImageAsCode` mapping; counts remain
+**107 core + 142 math partial functions, zero complete**.
+
+Regression review corrected the evidence counter to include all five IO failure
+controls; the unchanged comparisons passed again on all three lanes.
+
+The full current-source gate passes **261 scenarios / 40,101 output words per
+lane** on CPU-1, CPU-2, JavaScript and forced Metal, plus ownership/transform/decode
+contracts, the three native-matching PPM examples and CPU/JS QOI file round trips.
+All four proofs report `All terms check.`; all eleven harness/planning tests and
+project checks pass. Current source hashes and focused/full-gate summaries are
+recorded in [evidence/image-code.json](evidence/image-code.json). Hosted execution
+of this uncommitted batch, including the inherited 45-minute job allowance,
+remains unverified.
+
+Regression scan: 32 callers checked, 31 assertions checked, 1 flagged/fixed.
+
+## Owned RGBA8 mipmap chains
+
+`Surface.mipmaps` consumes a checked single-level RGBA8 surface and preserves
+native `ImageMipmaps` base-to-1x1 ordering. Each level resizes the preceding level,
+with floor-halved dimensions clamped to one. `Image.Mipmaps.entries/unload`
+provide consuming observation/disposal of independently owned levels.
+
+The native gate passes **14 chains / 72 levels / 61,127 pixels per lane** on CPU,
+JavaScript and forced Metal. It covers 1x1, POT/NPOT, odd/thin, both 4096-pixel axes,
+a 33,153-pixel base, hidden RGB/alpha and three independent-level mutation cases.
+The default resizer's implementation is unchanged. See
+[MIPMAPS.md](MIPMAPS.md) and [evidence/mipmaps.json](evidence/mipmaps.json).
+
+Scoped acceptance: A3 PASS through complete counts/dimensions/pixels and independent
+owners; A4/A5 PASS through exact native CPU/JS/Metal comparisons and Bend-only
+source gates; A6 PASS through API/provenance/compatibility docs and the generated
+ledger; A26 PASS within the declared RGBA8 profile. The function mapping raises
+core partial coverage from 107 to **108**, with 142 math partial functions and
+zero complete. Existing native chains, other formats, texture integration and
+complete native-ABI/resource/platform/performance remain gaps.
+
+Regression review updated the previously single-level-only Image type mapping
+and qualified broader mipmap gaps without claiming downstream integration.
+The full mipmap checkpoint passes all 261 scenarios / 40,101 output words per
+lane on CPU-1/CPU-2/JavaScript/forced Metal, plus contracts, three PPM examples
+and CPU/JS QOI file round trips. All four proofs, eleven harness/planning tests
+and project checks pass. Hosted execution of the uncommitted checkpoint remains
+unverified.
+Regression scan: 18 callers checked, 8 assertions checked, 2 flagged/fixed.
+
+## Native RGBA8 Gaussian blur
+
+`Surface.blur_gaussian` preserves the pinned four-pass-pair box approximation,
+byte premultiplication, remove-before-add sliding sums, horizontal F32 values,
+per-vertical-pass byte truncation and reverse premultiplication. Checked U32
+sizes 0..min(width,height) include the native nonidentity zero-size behavior;
+larger requests retain the original with `InvalidSize` before allocation.
+
+The native gate passes **27 cases / 117,151 pixels per lane** and three retained
+owners on CPU/JavaScript/forced Metal. Regression review replaced a redundant
+both-axes size rejection with a width-only rejection, complementing the existing
+height-only and maximum-U32 controls. The complete gate passed again unchanged
+in its valid native inputs/comparisons. See [BLUR.md](BLUR.md) and
+[evidence/blur.json](evidence/blur.json).
+
+Scoped A3/A4/A5/A6/A26 acceptance PASS within this profile through complete native
+pixels, independent axis guards, retained owners, source boundaries and public
+documentation. The full checkpoint also passes 261 scenarios / 40,101 output
+words per lane on CPU-1/CPU-2/JavaScript/forced Metal, all contracts/examples/file
+round trips, four proofs, eleven harness/planning tests and project checks.
+The ledger advances to **109 core + 142 math partial functions, zero complete**.
+Other source formats/mipmaps, configured iterations, undefined native requests,
+hosted execution and complete native-ABI/resource/platform/performance remain gaps.
+
+Regression scan: 28 callers checked, 7 assertions checked, 1 flagged/fixed.
+
+## Bounded native RGBA8 kernel convolution
+
+`Surface.kernel_convolution` retains native flat unsigned-index sampling, including
+row-edge wrapping, odd/even anchors, normalized F32 products and row-major sums.
+RGB clamps independently; alpha conversion is accepted only in the defined
+unsigned-byte truncation domain. Unsupported kernel shapes/coefficients or late
+alpha failures return the complete unchanged source with `InvalidKernel`.
+
+The focused native gate passes **39 cases / 34,650 pixels per lane** and nine
+retained-owner controls on CPU/JavaScript/forced Metal. Empty/identity/box/signed
+kernels, the 225-coefficient boundary, all channel bytes, large sources and both
+positive/negative alpha boundaries are compared completely. See
+[CONVOLUTION.md](CONVOLUTION.md) and [evidence/convolution.json](evidence/convolution.json).
+
+Scoped A3/A4/A5/A6/A26 acceptance PASS within the documented profile. The ledger
+advances to **110 core + 142 math partial functions, zero complete**. Wider
+kernels/coefficient domains, undefined native alpha casts, other formats/mipmaps,
+hosted execution and complete native-ABI/resource/platform/performance remain gaps.
+The exhaustive transform error consumer and public error-constructor list include
+`InvalidKernel`; workflow review retains the original perspective diagnostic as
+a separate step from the new convolution gate.
+The full checkpoint passes 261 scenarios / 40,101 output words per lane on
+CPU-1/CPU-2/JavaScript/forced Metal, including the updated exhaustive error consumer,
+all contracts/examples/file round trips, four proofs, eleven harness/planning tests
+and project checks. Hosted execution remains unverified.
+
+Regression scan: 31 callers checked, 8 assertions checked, 1 flagged/fixed.
+
+## Bounded native Base64 utilities
+
+`Base64.encode` preserves native alphabet/padding and the NUL-inclusive output
+size while returning logical Bend text without its C terminator. `Base64.decode`
+preserves first-NUL termination and ignored unused padding bits for nonempty
+structured inputs, rejecting malformed/empty/oversized requests. Empty native
+decoding is excluded because its padding scan reads before the input buffer.
+
+The focused gate passes **30 native cases / 2,754,389 output bytes per lane**
+and fourteen rejection controls on CPU/JavaScript/forced Metal, including the
+1 MiB byte/output boundary. Full native text, size and decoded bytes are compared;
+the undefined malformed domains are candidate-only controls. See
+[BASE64.md](BASE64.md) and [evidence/base64.json](evidence/base64.json).
+
+Scoped A4/A5/A6 acceptance PASS for these pure profiles. The ledger advances from
+110 to **112 core partial functions**, alongside 142 math partial functions and
+zero complete. Native malformed recovery, larger domains, pointer/allocation ABI,
+hosted execution and complete resource/platform/performance remain gaps.
+
+Regression scan: 24 callers checked, 8 assertions checked, 0 flagged/fixed.
+
+The Base64 checkpoint additionally passes the full 261-scenario / 40,101-word
+corpus on CPU-1/CPU-2/JavaScript/forced Metal, all contracts/examples/file round
+trips, four proofs, eleven harness/planning tests and project checks.
+
+## Native CRC32 and MD5 values
+
+`Checksum.crc32/md5` validate immutable byte inputs through 1 MiB, preserve native
+CRC complements and MD5 little-endian padding/rounds, and return immutable scalar
+or four-word values. The CRC recurrence is reused without changing PNG export.
+
+The focused gate passes **281 native/standard vectors** covering 1,194,258 input
+bytes and three rejected-input controls on CPU/JavaScript/forced Metal. Every
+single byte, standard/empty messages, padding/block boundaries, deterministic
+random data and maximum input are included. All native results independently
+match standard zlib/hashlib results. Five bounded programs per lane retain the
+complete ordered comparison. See [CHECKSUMS.md](CHECKSUMS.md) and
+[evidence/checksums.json](evidence/checksums.json).
+
+Scoped A4/A5/A6 acceptance PASS for these profiles. Core partial coverage advances
+from 112 to **114**, with 142 math partial functions and zero complete. Larger
+inputs, big-endian native MD5, static-buffer/pointer ABI, hosted execution and
+complete resource/platform/performance remain gaps. Workflow YAML parses and
+retains every committed verification step alongside the new utility gates.
+The full checkpoint passes 261 scenarios / 40,101 output words per lane on
+CPU-1/CPU-2/JavaScript/forced Metal, all contracts/examples/file round trips,
+four proofs, eleven harness/planning tests and project checks.
+
+Regression scan: 34 callers checked, 10 assertions checked, 0 flagged/fixed.
+
+## Native SHA-1/SHA-256 values
+
+`Checksum.sha1/sha256` return exactly five/eight native-order U32 words from
+checked byte inputs through 1 MiB. The SHA-256 implementation retains the pinned
+four-byte padding-size rule and its overwritten marker/data at lengths 56..59
+modulo 64. Standard SHA-256 is not substituted for these native outputs.
+
+The focused gate passes **409 vectors / 1,202,386 input bytes** and three invalid
+controls on CPU/JavaScript/forced Metal. It retains eleven native-versus-standard
+SHA-256 differences, including all eight 0..127-byte counterexamples. Every
+candidate word is compared with actual native output; independent standard
+SHA-1 and nonquirk SHA-256 checks provide additional controls. See [SHA.md](SHA.md)
+and [evidence/sha.json](evidence/sha.json).
+
+Scoped A4/A5/A6 acceptance PASS. The full checkpoint passes 261 scenarios /
+40,101 output words per lane on CPU-1/CPU-2/JavaScript/forced Metal, all
+contracts/examples/file round trips, four proofs, eleven harness/planning tests
+and project checks. Workflow parsing confirms every committed gate is retained.
+The ledger advances to **116 core + 142 math partial functions, zero complete**.
+Larger domains, other native compiler/integer-width profiles, static-pointer ABI,
+hosted execution and complete resource/platform/performance remain gaps.
+
+Regression scan: 41 callers checked, 13 assertions checked, 0 flagged/fixed.
+
+## Native sdefl Huffman dependency
+
+The private builder matches all 103 native tables / 11,814 symbol entries on
+CPU, JavaScript and forced Metal, including retained frequencies, every length
+and every reversed code word. The input and implementation/probe hashes match
+the retained passing report. Zero/single-symbol cases, packed ordering, queue
+ties and length-limit redistribution were reviewed against the pinned header.
+See [COMPRESSION.md](COMPRESSION.md) and
+[evidence/sdeflate-huffman.json](evidence/sdeflate-huffman.json).
+
+Scoped A4/A5/A6 acceptance PASS for this internal dependency. It does not expose
+`Compression.compress` or add public partial/completed coverage. LZ parsing,
+block emission and actual native compressed-byte comparisons remain pending.
+The unchanged full-corpus and proof evidence remains applicable at this
+checkpoint; hosted execution remains unverified.
+
+Regression scan: 4 callers checked, 4 assertions checked, 0 flagged/fixed.
+
+## Native quality-8 raw compression
+
+`Compression.compress` preserves native quality-8 LZ parsing, Huffman/precode
+runs, dynamic/stored cost selection, raw-block splitting/alignment and final
+flushes. Empty input returns zero bytes. Inputs are valid byte lists through
+1 MiB, with at most 87,380 retained sequences per block; sequence exhaustion
+returns `None` before append instead of reproducing the retained native overflow.
+
+Both focused gates pass 40 native inputs and four rejection controls on CPU,
+JavaScript and forced Metal. The private gate compares 51 blocks, 12,084 ordered
+sequences and every frequency (40,641 words per lane), exercising length symbols
+258..285 and distance symbols 0..29. Instrumented native output is byte-identical
+to actual linked `CompressData`. The public gate compares all 1,931,853 compressed
+bytes per lane and all 4,497,358 source bytes through nonempty zlib/Bend decoder
+round trips. [COMPRESSION.md](COMPRESSION.md) links both evidence records.
+
+Maximum incompressible input produces a stream beyond the public decoder's
+separate 1-MiB compressed-input cap. The gate checks that public rejection, then
+uses the unchanged internal decoder with a validated native output bound. This
+is not broader public decompression coverage. Empty output is not decoded as a
+DEFLATE stream. Other domains, native allocation ABI, complete integration/
+resource/performance/targets and hosted execution remain gaps.
+
+Scoped review: I147/I148 MATCH; C3/C6/C19 HOLD through Bend-only source, retained
+MIT provenance and local-only work; A4/A5/A6 HOLD in the exercised profiles;
+V2 HOLD through unchanged actual native bytes and independent zlib; V3 HOLD
+through bounded input/match/sequence accesses. The ledger advances from 116 to
+117 core partial functions, with 142 math partial functions and zero complete.
+
+Regression review inspected 92 Bend function/constructor consumer contexts,
+five generated-program contexts, two workflow commands and the native diagnostic
+entry, plus eighteen comparison/rejection sites. It corrected two findings:
+invalid-input controls initially bypassed the public compressor, and the precode
+count helper did not explicitly retain its native four-entry minimum. The final
+affected focused gates pass after those corrections; no expectations/tolerances
+were weakened. Four proofs and eleven harness/planning tests pass.
+
+Regression scan: 100 callers checked, 18 assertions checked, 2 flagged/fixed.

@@ -38,5 +38,8 @@ validation traversal. See
 [evidence/float-rgb-bytes.json](evidence/float-rgb-bytes.json).
 
 Raw float file loading/writing is documented in [RAW-FILES.md](RAW-FILES.md#rgb-float-files).
+Native image-as-code text export preserves these raw words through
+`Image.FloatRGB.to_code/write_code`; see [IMAGE-CODE.md](IMAGE-CODE.md) for the
+bounded path/payload profile and retained-owner errors.
 NaN payload interoperability, other float/half layouts,
 native pointer ABI and complete resource/platform/performance remain gaps.

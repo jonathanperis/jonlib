@@ -32,7 +32,7 @@ originally established the CPU/JS baseline; current CI applies the declared over
 A current run's precise inputs, source hashes and lane outcomes are in
 `.build/conformance.json`. The authoritative [API dashboard](PROGRESS.md) covers
 the complete release-header/support inventory. The 600-entry
-`.build/api-inventory.json` is its legacy core view, mapping 106 reference APIs to
+`.build/api-inventory.json` is its legacy core view, mapping 117 reference APIs to
 these scoped operations/contracts. Jonmath's companion ledger additionally maps
 142 functions from `raymath.h`. Remaining functions retain explicit planned work.
 These counts are an inventory, not a percentage of full parity.
@@ -55,6 +55,9 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | `ImageCrop` | `Surface.crop` | Integral clipping with positive result and outside-origin no-op; typed failure preserves original |
 | `ImageResizeNN` | `Surface.resize_nn` | Exact +1 fixed-point ratios; valid flat source mappings; invalid/unsafe requests preserve original |
 | `ImageResize` | `Surface.resize` | Partial RGBA8 profile: default filters, exact normalization, alpha-aware output and owner-preserving invalid-size errors |
+| `ImageMipmaps` | `Surface.mipmaps`, `Image.Mipmaps.entries/unload` | Owned RGBA8 base-to-1x1 levels with sequential default filtering and independent storage; native complete-level comparison |
+| `ImageBlurGaussian` | `Surface.blur_gaussian` | Native four-iteration RGBA8 box approximation, premultiply/unpremultiply quantization, bounded sizes and retained rejected owners |
+| `ImageKernelConvolution` | `Surface.kernel_convolution` | Bounded square RGBA8 kernels, native flat-index row wrapping and arithmetic; original owner retained for unsupported kernels/alpha casts |
 | Vector wrappers, outlines, thick lines, fans/strips and vertex-colored triangles | `Surface.draw_*` families | Exact scoped pixel comparisons, including truncation, winding and quantized vertex weights |
 | `LoadImageColors` / `GetImageColor` | `Surface.colors` / `Surface.get` | Full export passing; direct reads/ownership/out-of-bounds behavior contract-checked |
 | `ImageCopy` | `Surface.copy` | Independent mutation and original-pixel preservation contract-checked |
@@ -106,8 +109,13 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | Native formatted/float color observations | `Image.Formatted.colors/get` / `Image.FloatRGB.colors/get` | Exact packed integer expansion/float truncation, bounded point reads and retained rejected owners |
 | RGB float PNG export | `Image.FloatRGB.to_png/write_png` | Exact native raw-storage memory prefix versus normalized file colors, retained rejected owners and closed handles |
 | RGB float BMP/TGA file export | `Image.FloatRGB.to_bmp/to_tga/write_bmp/write_tga` | Exact native normalized file bytes/pixels, explicit codec selection and retained rejected owners |
+| Image-as-code export | `Image.Formatted.to_code/write_code`, `Image.FloatRGB.to_code/write_code` | Exact native banner/name/metadata/hex text from formats 1..7 and non-NaN format-9 words, bounded payloads and retained rejected owners with closed handles |
 | RGB float RAW file IO | `Image.FloatRGB.load_raw/write_raw` | Native fitting-header/fallback selection, exact format-9 words and typed domain/file failures with closed handles on CPU/JS |
 | Raw DEFLATE | `Compression.decompress` | Stored/fixed/dynamic blocks and bounded copies; native empty-stored-block completion differs explicitly from the internal PNG-oriented path |
+| Native raw compression | `Compression.compress` | Exact quality-8 sdefl bytes, empty zero-byte output, bounded native sequence budget and full CPU/JS/Metal byte comparisons; public decoder input cap remains separate |
+| Base64 utilities | `Base64.encode/decode` | Native alphabet/padding, NUL-inclusive encoded size and bounded logical decoded bytes, with explicit malformed-input rejection |
+| CRC32 and MD5 | `Checksum.crc32/md5` | Native CRC value and four MD5 words with bounded byte validation, little-endian MD5 input profile and immutable results |
+| SHA-1 and SHA-256 | `Checksum.sha1/sha256` | Exact native five/eight-word values, retaining the reference's SHA-256 padding quirk at lengths 56..59 modulo 64 |
 | PNG decoding | `Surface.decode_png` | Non-interlaced/Adam7 1/2/4/8/16-bit and native-default CgBI profiles; filtering/scattering, palette/tRNS, framing and bounded errors |
 | PNG export | `Surface.to_png/write_png`, `Image.Formatted.to_png/write_png` | Exact default byte-format memory and format-1..7 file output; native packed expansion, channel/header preservation, rejection and normalized round trips |
 | Scalar/Vector2/Vector3/Vector4 raymath | Jonmath `Math` and vector functions | Exact results for the explicit uncontracted-F32 profile; exceptional/contracted variants remain open |
@@ -134,7 +142,7 @@ initial correctness foundation, not the production tiled rendering pipeline.
 CUDA, Windows, browser graphics, live windows and live audio were not verified
 in this milestone. Source and fixture domains are finite and explicitly
 bounded; passing fixtures is not exhaustive proof of every supported input.
-Filled-triangle fractional vertices, other pixel formats, mipmaps, additional
+Filled-triangle fractional vertices, other pixel formats, broader mipmap integration, additional
 codecs and the complete numerical/platform matrix remain open requirements.
 The mapped APIs must not be reported as fully completed
 raylib APIs. See [RESAMPLING.md](RESAMPLING.md) for the distinction between

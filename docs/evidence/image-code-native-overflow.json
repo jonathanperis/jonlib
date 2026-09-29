@@ -1,0 +1,14 @@
+{
+  "date":"2026-09-27",
+  "raylib_revision":"dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "api":"ExportImageAsCode",
+  "source":"src/rtextures.c",
+  "reproducer":{"width":1,"height":1,"format":1,"bytes":[0],"basename":"253 lowercase a characters followed by .h","basename_length":255},
+  "native_allocation_formula":"dataSize*6 + 2000",
+  "allocated_bytes":2006,
+  "unsanitized_output_bytes":2072,
+  "required_bytes_with_nul":2073,
+  "sanitizer":{"compiler_flags":["-O1","-g","-fsanitize=address"],"result":"heap-buffer-overflow","operation":"WRITE","detected_write_bytes":253,"stack_function":"ExportImageAsCode","allocation_function":"calloc"},
+  "accepted_profile_allocation_bound":{"maximum_header_bytes":1863,"maximum_payload_text_bytes":"6*payloadBytes + 2","nul_bytes":1,"native_fixed_allowance":2000,"minimum_margin_bytes":134},
+  "resolution":"Initial basename profile capped at 200 characters; 255-character case retained as rejected input; accepted native reference executable is linked with AddressSanitizer."
+}
