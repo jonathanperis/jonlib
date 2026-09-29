@@ -1,0 +1,28 @@
+{
+  "date": "2026-09-28",
+  "profile": "Bounded native SHA-1/SHA-256 words, retaining raylib's four-byte SHA-256 padding-size rule",
+  "source_sha256": {
+    "jonlib.bend": "fad9d436d0c6b0fc4914064ff207a2d85a0b904fde5129ce2b5b7464459823a3",
+    "src/sha.bend": "7c04d280c0db10902b13fe594a663568ed74d969c514870e3addb154643e0929",
+    "tools/sha_probe.py": "9a20317a2bcb6ecc7ca853d2c462157c72b04afa8d376508890257ea534e13dc"
+  },
+  "inputs_sha256": "187813b909346b62e1ed477e7c2890fa805c230ac321e4d1a99a761dd1dcefb3",
+  "reference_sha256": "98d42e2de17833e92c58805b627715eabf5ecb9e9c36c8911b62ef8e71210ec7",
+  "native_cases": 409,
+  "input_bytes": 1202386,
+  "sha256_standard_differences": 11,
+  "profile_counterexample_lengths": [56, 57, 58, 59, 120, 121, 122, 123],
+  "counterexample_56": {
+    "input": "byte i = (73*i+11)%256",
+    "native": "2c5f29559d2cfd998fa1172d913d53fb411003f9c38cf28edd78973119a264ee",
+    "standard": "e5c03138cbcae90c29577557922f8779d8612f591afce5e0835b496137445117"
+  },
+  "invalid_controls": 3,
+  "passed": true,
+  "lanes": ["cpu", "javascript", "metal"],
+  "batch_limit": 64,
+  "full_corpus": {"passed": true, "scenarios": 261, "output_words_per_lane": 40101, "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"]},
+  "proof_verdict": "All terms check.",
+  "harness_test_methods": 11,
+  "limits": ["Valid byte lists of at most 1048576 bytes", "Native SHA-256 differs from standard SHA-256 at lengths 56..59 modulo 64", "Other native compiler/integer-width profiles, static-pointer ABI and complete resource/platform/performance coverage"]
+}

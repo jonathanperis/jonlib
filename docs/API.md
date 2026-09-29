@@ -50,6 +50,14 @@ Owned byte/integer image conversion and Surface bridges are documented in
 [FORMATS.md](FORMATS.md).
 Bounded raw DEFLATE and its reference-specific empty-block behavior are documented
 in [DEFLATE.md](DEFLATE.md).
+Native Base64 text, NUL-inclusive encoded sizes and bounded decoding are
+documented in [BASE64.md](BASE64.md).
+Bounded native CRC32 and four-word MD5 results are documented in
+[CHECKSUMS.md](CHECKSUMS.md).
+Native SHA-1/SHA-256 word lists, including the reference SHA-256 padding quirk,
+are documented in [SHA.md](SHA.md).
+Bounded quality-8 raw compression, including empty-input and native sequence-limit
+behavior, is documented in [COMPRESSION.md](COMPRESSION.md).
 
 ## Owned RGBA8 surfaces
 
@@ -123,11 +131,14 @@ is outside this API's contract.
 | `Surface.dither(surface, r_bits, g_bits, b_bits, a_bits)` | Returns an owned `Image.Packed16` or original source with `InvalidDitherBits`; channel widths 0..8 totaling at most 16. Exact raw format/export rules in [PIXELS.md](PIXELS.md). |
 | `Surface.alpha_clear(surface, color, threshold)` | Finite threshold 0..1, converted to an inclusive alpha-byte cutoff; replaces all RGBA bytes at matching pixels. |
 | `Surface.alpha_premultiply(surface)` | Reference F32 alpha multiplication of RGB, including transparent-black conversion; retains alpha. |
+| `Surface.blur_gaussian(surface, size)` | Native four-iteration RGBA8 box approximation with premultiplied alpha and per-pass byte truncation. U32 size 0..min(width,height); invalid sizes retain the original with `InvalidSize`. See [BLUR.md](BLUR.md). |
+| `Surface.kernel_convolution(surface, kernel)` | Native bounded RGBA8 square-kernel filtering, flat-index edge behavior and unclamped alpha. Unsupported kernels/results retain the original with `InvalidKernel`. See [CONVOLUTION.md](CONVOLUTION.md). |
 | `Surface.alpha_mask(destination, mask)` | Same-size RGBA8 mask converted to reference grayscale values, replacing destination alpha while preserving the original mask. Returns the two-owner Result; mismatched dimensions return both originals with `InvalidSize`. |
 | `Surface.alpha_border(surface, threshold) -> Surface & Rectangle` | Retains the original and finds pixels with alpha strictly above the truncated threshold byte. Finite threshold 0..1; empty selections return `(0,0,0,0)`. |
 | `Surface.alpha_crop(surface, threshold) -> Surface` | Crops to nonempty alpha bounds; empty selections retain the original image and dimensions unchanged. |
 | `Surface.colors(surface) -> List<U32>` | Consumes the image and exports exactly width × height packed pixels, row-major. |
 | `Surface.copy(surface) -> Surface & Surface` | Returns the original and an independently owned pixel copy. |
+| `Surface.mipmaps(surface)` / `Image.Mipmaps.entries/unload` | Consume RGBA8 into an owned base-to-1x1 chain using sequential default filtering; exact level counts, dimensions and pixels are documented in [MIPMAPS.md](MIPMAPS.md). |
 | `Surface.flip_horizontal/flip_vertical(surface) -> Surface` | Reorders whole RGBA pixels; dimensions and alpha bytes are preserved. |
 | `Surface.rotate_cw(surface)` / `rotate_ccw(surface)` | Quarter-turn rotations preserving exact RGBA bytes and swapping width/height. |
 | `Surface.rotate_degrees(surface, degrees)` / `rotate_degrees_for(reference, surface, degrees)` | Single-owner Result; integral degrees -360..360, reference bilinear sampling and truncated output dimensions. Invalid angles/output sizes preserve the original owner. See [ROTATION.md](ROTATION.md). |
@@ -174,6 +185,8 @@ is outside this API's contract.
 | `Image.Formatted.write_png` | Consuming PNG file export for checked formats 1..7, with native byte-channel or packed-color expansion; see [PNG-EXPORT.md](PNG-EXPORT.md). |
 | `Image.FloatRGB.to_png` / `write_png` | Preserve native raw-prefix memory PNG versus normalized-color file PNG, with retained rejected owners and typed file errors; see [PNG-EXPORT.md](PNG-EXPORT.md#rgb-float-memoryfile-distinction). |
 | `Image.FloatRGB.to_bmp/to_tga` / `write_bmp/write_tga` | Native normalized BMP/TGA file bytes and explicit typed writers, preserving rejected owners; see [FLOAT-RASTER-EXPORT.md](FLOAT-RASTER-EXPORT.md). |
+| `Image.Formatted.to_code(image, path)` / `write_code(image, path)` | Exact native image-as-code text, basename/hex/newline rules and typed owner-preserving failures; see [IMAGE-CODE.md](IMAGE-CODE.md). |
+| `Image.FloatRGB.to_code(image, path)` / `write_code(image, path)` | Native format-9 image-as-code text from exact non-NaN sample bytes, bounded paths/payloads and typed owner-preserving failures; see [IMAGE-CODE.md](IMAGE-CODE.md). |
 
 Drawing coordinates and rectangle extents are represented as **F32 but must be
 finite integers in -32767..32767**. Radius is **0..32767**. This permits negative
@@ -268,8 +281,9 @@ degenerate behavior.
 
 ### Transform failures
 
-`Surface.Error` has `InvalidSize`, `InvalidRectangle`, `UnsafeNearestMapping`
-and `InvalidDitherBits` constructors. A failed crop/resize/dither returns `(original, error)` in `Fail`; failed
+`Surface.Error` has `InvalidSize`, `InvalidRectangle`, `UnsafeNearestMapping`,
+`InvalidDitherBits` and `InvalidKernel` constructors. Failed crop/resize/dither,
+blur or convolution returns `(original, error)` in `Fail`; failed
 region drawing returns `((destination, source), error)`. Callers can recover and
 reuse these owners. `Done` carries the resulting surface or pair.
 

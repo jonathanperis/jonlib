@@ -13,6 +13,8 @@ native-style float-to-byte truncation, then normalize the result back to floats.
   every RGBA byte (`ImageResizeNN` profile).
 - `Surface.resize`: default filtered RGBA8 resizing with Catmull-Rom upsampling,
   Mitchell downsampling and alpha-aware filtering (`ImageResize` profile).
+- `Surface.mipmaps`: owned RGBA8 levels produced by repeated default downsampling,
+  retaining native odd/thin dimensions and base pixels; see [MIPMAPS.md](MIPMAPS.md).
 - `Surface.draw_image_region`: unscaled, in-bounds integral source rectangles,
   destination clipping, tint and alpha, returning both image owners.
 
@@ -80,7 +82,7 @@ The final local CPU/JavaScript/forced-Metal runs pass all three stages; the
 durable summary is [evidence/default-resize.json](evidence/default-resize.json).
 
 The implementation retains a full seven-channel intermediate buffer. Memory
-and speed parity, additional formats/mipmaps, dimensions beyond the Surface
+and speed parity, additional formats and mipmap integration, dimensions beyond the Surface
 profile, other GPU models and complete platform integration remain unverified.
 
 ## Reproducible precision experiment
@@ -122,7 +124,7 @@ also exposed non-tail list construction/counting limits on JS and the device VM;
 bounded-stack traversals preserve the same coefficient and accumulation order.
 
 The cropped/scaled integration now passes the shared reference fixtures.
-Further work includes formats/mipmaps, additional numerical domains and
+Further work includes additional formats and mipmap integration, numerical domains and
 performance/resource parity. The current queue is in [PROGRESS.md](PROGRESS.md).
 
 Source: [raylib 6.0 resizer core](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/external/stb_image_resize2.h).

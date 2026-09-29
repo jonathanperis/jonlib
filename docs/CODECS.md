@@ -5,6 +5,8 @@ Supported image-file suffix/content selection and bounded IO are documented in
 
 Headerless byte/integer image files are supported through the owned formatted
 image APIs; see [RAW-FILES.md](RAW-FILES.md) for exact loading/export contracts.
+Native image-as-code headers are documented in [IMAGE-CODE.md](IMAGE-CODE.md),
+including the exact text format, naming rules and bounded owned file export.
 
 BMP memory decoding and exact RGBA8 V4 export are documented in [BMP.md](BMP.md),
 including supported headers, native alpha/offset rules and rejected variants.

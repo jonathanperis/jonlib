@@ -34,7 +34,8 @@ cluster/site gates remain unverified.
 3. Efficient command buffers and tiled rendering, measured against equivalent
    raylib scenes; avoid using the current correctness-oriented image loops as
    an assumed high-performance architecture.
-4. Extend the [working QOI codec](CODECS.md) to BMP/PNG and subsequent formats;
+4. Close gaps in the [working image codec profiles](CODECS.md), including
+   remaining codecs, original-format metadata and broader pixel layouts;
    build text/fonts and PCM WAV support with their own reference gates.
 5. Port selected upstream examples to Bend and compare deterministic outputs.
 

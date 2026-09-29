@@ -1,5 +1,8 @@
 # Bounded raw DEFLATE decompression
 
+The separate native compressor implementation work is tracked in
+[COMPRESSION.md](COMPRESSION.md).
+
 `Compression.decompress(bytes: +List<U32>, maximum: U32) -> Maybe<List<U32>>`
 adapts the pinned `DecompressData` API to an immutable compressed input and owned
 decompressed output. The returned list contains exactly the resulting bytes.

@@ -3516,11 +3516,11 @@
       "phase": 0,
       "sequence": 0,
       "status": "partial",
-      "jonlib": "Surface / Image.Formatted / Image.Packed16",
+      "jonlib": "Surface / Image.Formatted / Image.Packed16 / Image.FloatRGB / Image.Mipmaps",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 surfaces, byte/integer format images and raw 16-bit dithering outputs, dimensions 1..4096; one mip level.",
+      "scope": "Owned RGBA8 surfaces, byte/integer format images, raw 16-bit dithering outputs and RGB float storage, dimensions 1..4096. Image.Mipmaps owns complete RGBA8 base-to-1x1 levels; the other image owners retain a single level.",
       "gaps": [
-        "Remaining image formats, mipmaps and full dimension domain",
+        "Remaining image formats, existing/other-format mipmap chains and full dimension domain",
         "Native allocation ABI and complete integration/target/resource/performance gates"
       ],
       "blocker": null,
@@ -3536,6 +3536,9 @@
         "docs/API.md",
         "docs/FORMATS.md",
         "docs/PIXELS.md",
+        "docs/FLOAT-RGB.md",
+        "docs/MIPMAPS.md",
+        "docs/evidence/mipmaps.json",
         "tests/transforms.bend"
       ],
       "gate_evidence": {},
@@ -32588,23 +32591,37 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.compress_data",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Compression.compress",
+      "mapping_state": "implemented",
+      "scope": "Immutable valid byte lists of 0..1048576 bytes and at most 87380 retained sequences per 262144-byte block. Native quality-8 little-endian hashes, chain/lazy parsing, frequencies, Huffman/precode construction, dynamic/stored cost selection and exact raw bytes; empty input returns zero bytes. Invalid requests or sequence-budget exhaustion return None. Complete actual native bytes and nonempty internal-decoder/zlib round trips pass on CPU/JS/forced Metal, including maximum incompressible input. The public decoder still rejects compressed results exceeding its separate 1-MiB input cap.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Larger input domains, big-endian hash profiles and native sequence-overflow domains",
+        "Public decompression of compressed results larger than 1 MiB",
+        "Native pointer/allocator/output-parameter ABI and complete integration/target/resource/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "src/sdeflate.bend",
+        "src/sdeflate_lz.bend",
+        "src/sdeflate_huffman.bend",
+        "tools/sdeflate_probe.py",
+        "tools/sdeflate_huffman_probe.py",
+        "docs/COMPRESSION.md",
+        "docs/evidence/sdeflate-compression.json",
+        "docs/evidence/sdeflate-lz.json",
+        "docs/evidence/sdeflate-huffman.json",
+        "docs/evidence/sdeflate-sequence-overflow.json",
+        "LICENSES/sdefl.txt"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -32615,7 +32632,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive CompressData semantics from the linked source, add a reference fixture, then implement File.compress_data.",
+      "next_step": "Close documented gaps and unverified gates for CompressData.",
       "priority": 204
     },
     {
@@ -32700,23 +32717,29 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.encode_data_base64",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Base64.encode / Base64.Encoded",
+      "mapping_state": "implemented",
+      "scope": "Immutable valid byte lists up to 1048576 bytes, including empty input. Exact native RFC4648 text/alphabet/padding and NUL-inclusive size in Base64Encoded; Bend text excludes its terminator. Invalid bytes/oversized inputs return None. Complete native text/size comparisons pass on CPU/JS/forced Metal, including the maximum input.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Larger input domains and native pointer/allocator/output-parameter ABI",
+        "Complete resource/platform/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "src/base64.bend",
+        "tools/base64_probe.py",
+        "docs/BASE64.md",
+        "docs/evidence/base64.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -32727,7 +32750,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive EncodeDataBase64 semantics from the linked source, add a reference fixture, then implement File.encode_data_base64.",
+      "next_step": "Close documented gaps and unverified gates for EncodeDataBase64.",
       "priority": 204
     },
     {
@@ -32753,23 +32776,29 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.decode_data_base64",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Base64.decode",
+      "mapping_state": "implemented",
+      "scope": "Nonempty ASCII alphabet groups of four with zero/one/two final padding characters, first-NUL termination and ignored unused padding bits. Exact native logical bytes, capped at 1048576, returned as an immutable list. Malformed/empty/oversized requests return None; the native empty-input before-buffer read is not reproduced. Complete native bytes and rejection controls pass on CPU/JS/forced Metal.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native permissive malformed recovery, empty-input undefined behavior and larger outputs",
+        "Native pointer/allocator/output-parameter ABI and complete resource/platform/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "src/base64.bend",
+        "tools/base64_probe.py",
+        "docs/BASE64.md",
+        "docs/evidence/base64.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -32780,7 +32809,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive DecodeDataBase64 semantics from the linked source, add a reference fixture, then implement File.decode_data_base64.",
+      "next_step": "Close documented gaps and unverified gates for DecodeDataBase64.",
       "priority": 204
     },
     {
@@ -32806,23 +32835,29 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.compute_crc32",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Checksum.crc32",
+      "mapping_state": "implemented",
+      "scope": "Immutable valid byte lists of 0..1048576 bytes; native CRC32 initial/final complements using the existing verified PNG recurrence. Unsupported bytes/lengths return None. Native U32 values match independent standard CRC32 across all single bytes, block/size boundaries and maximum input on CPU/JS/forced Metal.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Larger domains and native pointer/data-size ABI",
+        "Complete resource/platform/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/checksum_probe.py",
+        "docs/CHECKSUMS.md",
+        "docs/evidence/checksums.json",
+        "src/png_encode.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -32833,7 +32868,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive ComputeCRC32 semantics from the linked source, add a reference fixture, then implement File.compute_crc32.",
+      "next_step": "Close documented gaps and unverified gates for ComputeCRC32.",
       "priority": 204
     },
     {
@@ -32859,23 +32894,30 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.compute_md5",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Checksum.md5",
+      "mapping_state": "implemented",
+      "scope": "Immutable valid byte lists of 0..1048576 bytes, including empty input. Native little-endian padding/message words, modulo-U32 rounds and exactly four returned U32 words in native array order. Unsupported bytes/lengths return None before allocation. Native and independent standard digests match all single-byte, padding/block/random/max-size fixtures on CPU/JS/forced Metal.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Larger domains and big-endian native behavior",
+        "Native mutable static-buffer/pointer/allocation ABI",
+        "Complete resource/platform/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "src/checksum.bend",
+        "tools/checksum_probe.py",
+        "docs/CHECKSUMS.md",
+        "docs/evidence/checksums.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -32886,7 +32928,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive ComputeMD5 semantics from the linked source, add a reference fixture, then implement File.compute_md5.",
+      "next_step": "Close documented gaps and unverified gates for ComputeMD5.",
       "priority": 204
     },
     {
@@ -32912,23 +32954,30 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.compute_sha1",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Checksum.sha1",
+      "mapping_state": "implemented",
+      "scope": "Immutable valid byte lists of 0..1048576 bytes, including empty input. Native big-endian padding/message schedule, modulo-U32 rounds and exactly five native-order hash words; invalid inputs return None before allocation. Actual native and standard SHA-1 values match on CPU/JS/forced Metal across complete byte/padding/block/random/max-size fixtures.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Larger domains and other native compiler profiles",
+        "Native mutable static-pointer/output-buffer ABI",
+        "Complete resource/platform/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "src/sha.bend",
+        "tools/sha_probe.py",
+        "docs/SHA.md",
+        "docs/evidence/sha.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -32939,7 +32988,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive ComputeSHA1 semantics from the linked source, add a reference fixture, then implement File.compute_sha1.",
+      "next_step": "Close documented gaps and unverified gates for ComputeSHA1.",
       "priority": 204
     },
     {
@@ -32965,23 +33014,30 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.compute_sha256",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Checksum.sha256",
+      "mapping_state": "implemented",
+      "scope": "Immutable valid byte lists of 0..1048576 bytes; exactly eight native-order U32 hash words with native schedules/rounds and the dataSize+4 padding rule. Preserves the native nonstandard results at lengths 56..59 modulo 64, including eleven retained counterexamples; every candidate word is compared with actual linked ComputeSHA256 on CPU/JS/forced Metal. Invalid inputs return None before allocation.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Larger domains and other native integer-width/compiler profiles",
+        "Native mutable static-pointer/output-buffer ABI",
+        "Complete resource/platform/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "src/sha.bend",
+        "tools/sha_probe.py",
+        "docs/SHA.md",
+        "docs/evidence/sha.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -32992,7 +33048,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive ComputeSHA256 semantics from the linked source, add a reference fixture, then implement File.compute_sha256.",
+      "next_step": "Close documented gaps and unverified gates for ComputeSHA256.",
       "priority": 204
     },
     {
@@ -41034,23 +41090,32 @@
       "milestone": "image-codecs",
       "phase": 1,
       "sequence": 9,
-      "status": "not-started",
-      "jonlib": "Surface.export_image_as_code",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Image.Formatted.to_code / Image.Formatted.write_code / Image.FloatRGB.to_code / Image.FloatRGB.write_code",
+      "mapping_state": "implemented",
+      "scope": "Checked formats 1..7 and non-NaN RGB float format 9 with payload at most 65536 bytes and non-NUL ASCII paths whose basenames have 1..200 characters. Exact native banner/credits, uppercase basename/last-extension rules, dimensions/format/count, raw little-endian sample bytes, unpadded hex and default line breaks. Unsupported sources/requests retain owners before opening; typed Base errors, handle closure and an ASan-checked native oracle are verified on CPU/JS, with pure text generation on forced Metal.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "NaN payload parity, wider payload/path/Unicode/truncation domains, native long-name buffer overflow and other source formats",
+        "Configured line widths and native allocation/ownership ABI",
+        "Complete target/resource/integration/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "src/image_code.bend",
+        "tools/image_code_probe.py",
+        "docs/IMAGE-CODE.md",
+        "docs/evidence/image-code.json",
+        "docs/evidence/image-code-native-overflow.json",
+        "THIRD_PARTY_NOTICES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -41066,7 +41131,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-format decode/encode fixtures, metadata, truncated/malformed data, dimensions and resource limits.",
-      "next_step": "Derive ExportImageAsCode semantics from the linked source, add a reference fixture, then implement Surface.export_image_as_code.",
+      "next_step": "Close documented gaps and unverified gates for ExportImageAsCode.",
       "priority": 209
     },
     {
@@ -42400,23 +42465,30 @@
       "milestone": "images",
       "phase": 1,
       "sequence": 7,
-      "status": "not-started",
-      "jonlib": "Surface.image_blur_gaussian",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Surface.blur_gaussian",
+      "mapping_state": "implemented",
+      "scope": "Checked RGBA8 surfaces and U32 blur size 0..min(width,height). Native byte-premultiplied alpha, four horizontal/vertical sliding-window iterations, remove-before-add sums, edge divisors, per-vertical-pass byte truncation and reverse premultiplication. Zero size retains native quantization; excessive requests return the original with InvalidSize. Exact native pixels and rejected owners pass on CPU/JS/forced Metal.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Other source formats/mipmaps and configured iteration counts",
+        "Negative/excessive native blur sizes and native allocation ABI",
+        "Complete resource/platform/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "src/blur.bend",
+        "tools/blur_probe.py",
+        "docs/BLUR.md",
+        "docs/evidence/blur.json"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -42430,7 +42502,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
-      "next_step": "Derive ImageBlurGaussian semantics from the linked source, add a reference fixture, then implement Surface.image_blur_gaussian.",
+      "next_step": "Close documented gaps and unverified gates for ImageBlurGaussian.",
       "priority": 207
     },
     {
@@ -42456,23 +42528,31 @@
       "milestone": "images",
       "phase": 1,
       "sequence": 7,
-      "status": "not-started",
-      "jonlib": "Surface.image_kernel_convolution",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Surface.kernel_convolution",
+      "mapping_state": "implemented",
+      "scope": "Checked RGBA8 surfaces and immutable square F32 kernels of 0..225 entries; coefficients zero or finite magnitude 2^-16..16. Native flat unsigned-index sampling/row wrapping, odd/even anchoring, normalized channel multiplication, ordered accumulation, RGB clamping and unclamped defined alpha conversion. Unsupported kernels or alpha casts return the unchanged original with InvalidKernel, including late failures. Complete native pixels and retained owners pass on CPU/JS/forced Metal.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Wider kernels/coefficient domains and undefined native alpha casts",
+        "Other source formats/mipmaps and native allocation ABI",
+        "Complete resource/platform/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "src/convolution.bend",
+        "tools/convolution_probe.py",
+        "docs/CONVOLUTION.md",
+        "docs/evidence/convolution.json",
+        "tests/transforms.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -42486,7 +42566,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
-      "next_step": "Derive ImageKernelConvolution semantics from the linked source, add a reference fixture, then implement Surface.image_kernel_convolution.",
+      "next_step": "Close documented gaps and unverified gates for ImageKernelConvolution.",
       "priority": 207
     },
     {
@@ -42710,23 +42790,30 @@
       "milestone": "resampling",
       "phase": 1,
       "sequence": 8,
-      "status": "not-started",
-      "jonlib": "Surface.image_mipmaps",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Surface.mipmaps / Image.Mipmaps.entries / Image.Mipmaps.unload",
+      "mapping_state": "implemented",
+      "scope": "Checked single-level RGBA8 surfaces, dimensions 1..4096. Complete owned base-to-1x1 levels, preserving the base and resizing each preceding level with native default filtering. Exact count/dimensions/all pixels, odd/thin/4096-axis boundaries and independent level mutation pass on CPU/JS/forced Metal.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Existing partial/full native chains and non-RGBA8 source formats",
+        "Contiguous C allocation/pointer ABI and texture integration",
+        "Complete resource/platform/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mipmap_probe.py",
+        "docs/MIPMAPS.md",
+        "docs/evidence/mipmaps.json",
+        "docs/RESAMPLING.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -42740,7 +42827,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact reference pixels for cropping/scaling/filtering, alpha/hidden RGB, edge extension, coefficient rounding and source preservation.",
-      "next_step": "Derive ImageMipmaps semantics from the linked source, add a reference fixture, then implement Surface.image_mipmaps.",
+      "next_step": "Close documented gaps and unverified gates for ImageMipmaps.",
       "priority": 208
     },
     {

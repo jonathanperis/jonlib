@@ -29,8 +29,9 @@ it is not automatically a requirement to reproduce crashes or memory corruption.
 
 ## Where we are
 
-The working foundation includes owned RGBA8 surfaces, basic drawing, color
-blending, image flips/copies, Base.Image conversion and headless export. It has
+The working foundation includes owned RGBA8, byte/integer and RGB float images,
+drawing/composition/transforms, mipmaps, blur/convolution, image codecs and file
+exports, bounded compression/data utilities and extensive Jonmath profiles. It has
 exact raylib-reference comparisons on CPU/JS/Metal, hosted Linux/macOS checks,
 and an explicit compiler overlay fixing the observed Metal dispatch failure.
 
@@ -80,9 +81,8 @@ small part of a later phase forward when needed by an example or a runtime gap.
    numerical-precision gaps. F32-only convenience signatures are not a reason
    to discard required signed/wider-number behavior.
 
-The latest batches add **scaled/fractional source-clipped composition, the
-remaining non-text image drawing families, color/alpha transforms, quarter-turn
-rotations, checkerboards, QOI memory/file IO, scalar math and Vector2 arithmetic**.
+The latest local batches add **image-as-code export, owned RGBA8 mipmaps,
+Gaussian blur/convolution, Base64/checksums and native quality-8 raw compression**.
 All remain scoped profiles. The [resampling record](RESAMPLING.md),
 [codec profile](CODECS.md), [math profile](MATH.md) and generated
 [progress queue](PROGRESS.md) give the current evidence and next dependencies.

@@ -1,0 +1,22 @@
+{
+  "date": "2026-09-28",
+  "profile": "Bounded native Base64 text and NUL-inclusive encoded sizes, plus nonempty structured decoding with C-string termination",
+  "source_sha256": {
+    "jonlib.bend": "417d5208dd713d9a605544cc6798dc96128b0cfa2a18fc4d060b50305c4e8944",
+    "src/base64.bend": "474a19514fc0e73422358b326842f42b23fe649acb4b7af3f5da54afd1de7b85",
+    "tools/base64_probe.py": "982f77bc7cc8f64a4aee6607db943b679330f0331f3f53ca36c61fa84c3580a7"
+  },
+  "inputs_sha256": "263133134570eef6a19a1197b013ed48a1d8f367aa75d31592e06a5ab4227e06",
+  "reference_sha256": "d0b66be357d295c6aa250e866c146477632056b0dcc8e354ef16517f0a9bc095",
+  "native_cases": 30,
+  "encoded_cases": 13,
+  "decoded_cases": 17,
+  "output_bytes_per_lane": 2754389,
+  "invalid_controls": 14,
+  "passed": true,
+  "lanes": ["cpu", "javascript", "metal"],
+  "full_corpus": {"passed": true, "scenarios": 261, "output_words_per_lane": 40101, "lanes": ["cpu-1", "cpu-2", "javascript", "gpu-forced"]},
+  "proof_verdict": "All terms check.",
+  "harness_test_methods": 11,
+  "limits": ["At most 1048576 input/decoded bytes", "Empty decoding and malformed native recovery remain outside the profile", "Native pointer/allocation ABI and complete resource/platform/performance coverage"]
+}

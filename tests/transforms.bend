@@ -22,6 +22,8 @@ def failed(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>, expec
           U32.is_eq(expected, 2) && pixels_kept(J.Surface.colors(surface))
         case J.InvalidDitherBits{}:
           False{}
+        case J.InvalidKernel{}:
+          False{}
 
 def invalid(created: Maybe<J.Surface>, operation: U32) -> Bool:
   match created:

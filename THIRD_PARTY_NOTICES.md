@@ -29,6 +29,21 @@ identify the original sources and their required attribution.
   Sphere/box predicates adapt `rmodels.c`; vector/matrix/quaternion operations adapt `raymath.h`.
   General bilinear rotation, power-of-two canvases and channel extraction adapt
   `rtextures.c`; these remain modified Bend implementations with explicit profiles.
+  `src/image_code.bend` adapts `ExportImageAsCode`, retaining the generated
+  upstream banner and credits for exact text parity.
+  Owned mipmap-chain generation in `jonlib.bend` adapts `ImageMipmaps` from
+  `rtextures.c`, preserving sequential default resampling and dimension order.
+  `src/blur.bend` adapts `ImageBlurGaussian` from the same source, retaining its
+  sliding-window order, default iteration count and per-pass byte quantization.
+  `src/convolution.bend` adapts `ImageKernelConvolution`, preserving flattened
+  indexing and accumulation order while rejecting undefined alpha casts.
+  `src/base64.bend` adapts the Base64 utilities in `rcore.c`, retaining native
+  alphabet/padding and size conventions within the declared input profile.
+  `src/checksum.bend` adapts `ComputeMD5` from `rcore.c`, retaining its constants,
+  round order, padding and little-endian word layout. The CRC32 utility reuses
+  the existing PNG recurrence with the reference initial/final complements.
+  `src/sha.bend` adapts the same source's `ComputeSHA1` and `ComputeSHA256`,
+  including the pinned SHA-256 padding-size behavior.
   `src/cellular.bend` also adapts `GenImageCellular`, retaining seed order and
   quantization while selecting capped integer squared distances before square root.
   `src/dither.bend` adapts the same source's Floyd-Steinberg dithering and raw
@@ -58,6 +73,20 @@ identify the original sources and their required attribution.
 - `tools/resize_conformance.py` inserts observation-only logging into a local
   diagnostic copy of the pinned header. Kernel and whole-image reference probes
   additionally execute the unmodified upstream header and raylib library.
+
+## sdefl
+
+- Author: Micha Mettke, copyright 2020-2023.
+- Source: `src/external/sdefl.h` at the pinned raylib revision.
+- Jonlib selects the MIT alternative, retained in [LICENSES/sdefl.txt](LICENSES/sdefl.txt).
+- `src/sdeflate_huffman.bend` is an altered Bend adaptation of the native
+  canonical-Huffman construction, with owned arrays and equivalent packed-key
+  sorting. `src/sdeflate_lz.bend` adapts quality-8 hash-chain parsing, lazy matches,
+  sequences and frequencies; `src/sdeflate.bend` adapts precode generation,
+  dynamic/stored selection and raw block emission to owned Bend values.
+- `tools/sdeflate_probe.py` adds observation-only hooks to a task-local header
+  copy. Its complete compressed output must match actual linked `CompressData`
+  before sequence/frequency observations are used as parity evidence.
 
 ## QOI
 

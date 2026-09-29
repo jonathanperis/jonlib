@@ -45,6 +45,12 @@ See [supported payloads, extension aliases and bounds](docs/IMAGE-FILES.md).
 - Checked region extraction/cropping, source-rectangle drawing and exact fixed-point nearest-neighbor resizing.
 - Default filtered RGBA8 resize with precision-correct coefficient normalization
   and alpha-aware Catmull-Rom/Mitchell filtering.
+- Owned RGBA8 mipmap chains with sequential default filtering and independent levels.
+- Native RGBA8 Gaussian-blur approximation with reference alpha and byte quantization.
+- Bounded native RGBA8 kernel convolution with exact edge/indexing and alpha-cast rules.
+- Native Base64 encoding/decoding with explicit NUL-inclusive sizes and bounded inputs.
+- Native CRC32 and MD5 values with bounded byte inputs and complete digest-word comparisons.
+- Native SHA-1/SHA-256 values, retaining the pinned SHA-256 padding quirk.
 - Scaled/source-clipped image composition, including bounded fractional rectangles.
 - Vector drawing variants, outlines, thick lines, fans/strips and vertex-colored triangles.
 - RGBA8 color/alpha transforms, checkerboards and quarter-turn rotations.
@@ -74,8 +80,11 @@ See [supported payloads, extension aliases and bounds](docs/IMAGE-FILES.md).
 - RGB float canvas/POT operations preserving native sample movement, zero-fill quirks and same-size no-ops.
 - RGB float tint/invert/contrast/brightness/replacement with native quantization, clamping and alpha behavior.
 - Direct RGB float conversion to byte/integer formats and grayscale with verified packed-rounding boundaries.
+- Native byte/integer and RGB float image-as-code text export with exact naming, raw-byte formatting and owned file-error handling.
 - RGB float RAW file loading/writing with native header selection, exact words and retained owners on rejected writes.
 - Bounded raw DEFLATE decompression with native empty-block semantics.
+- Byte-exact native quality-8 raw compression with bounded inputs and explicit
+  rejection of the retained native sequence-buffer overflow domain.
 - PNG decoding across supported 1/2/4/8/16-bit formats, Adam7 and native-default CgBI.
 - Byte-exact default PNG export: byte-format memory output and all seven checked image formats through file export.
 - Bounded PNG/BMP/TGA/PGM/PPM/QOI file loading with native supported suffix/content detection.
