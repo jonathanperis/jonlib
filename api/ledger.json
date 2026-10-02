@@ -40619,13 +40619,13 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Image.FloatRGB.decode_hdr",
+      "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Image.FloatRGB.decode_hdr / Image.Formatted.decode_qoi",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 decoding for QOI/BMP/TGA/PNM/PSD/PIC/PNG and first-frame GIF, plus separate raw/scanline-RLE Radiance RGBE FloatRGB images preserving native F32 bits including subnormals. HDR retains LF headers, bounded dimensions, checked RLE counts/row widths and native later-row raw reset to the canvas origin. RGBA8 dispatch retains native tokens/content detection, GIF geometry/background/LZW, PIC packet/clipping rules, profiled PSD matte arithmetic, BMP/TGA/PNM sample/header/palette behavior and packed/8/16-bit/Adam7/CgBI PNG. QOI remains separately selected.",
+      "scope": "Owned RGBA8 decoding for QOI/BMP/TGA/PNM/PSD/PIC/PNG and first-frame GIF, plus separate raw/scanline-RLE Radiance RGBE FloatRGB images preserving native F32 bits including subnormals. HDR retains LF headers, bounded dimensions, checked RLE counts/row widths and native later-row raw reset to the canvas origin. RGBA8 dispatch retains native tokens/content detection, GIF geometry/background/LZW, PIC packet/clipping rules, profiled PSD matte arithmetic, BMP/TGA/PNM sample/header/palette behavior and packed/8/16-bit/Adam7/CgBI PNG. QOI remains separately selected. Dedicated Image.Formatted.decode_qoi preserves native QOI RGB888 (4) or RGBA8888 (7) metadata and every row-major byte, with one mip level, dimensions 1..4096 and the existing strict stream/error contract. Surface convenience and generic dispatch remain RGBA8-normalized.",
       "gaps": [
         "JPEG and other payload codecs; shared float dispatch and HDR conversion",
         "Nondefault external stb decoder flags, PSD out-of-range matte casts and permissive incomplete/excess raster recovery",
-        "Original pixel-format metadata, additional native arithmetic/platform profiles and remaining dispatch families",
+        "Original pixel-format metadata for the other normalized codec paths, shared formatted/float dispatch, additional native arithmetic/platform profiles and remaining dispatch families",
         "Other permissive malformed-stream recovery and complete targets/integration/performance"
       ],
       "blocker": null,
@@ -40680,7 +40680,12 @@
         "docs/PSD.md",
         "docs/PIC.md",
         "docs/GIF.md",
-        "docs/HDR.md"
+        "docs/HDR.md",
+        "src/qoi.bend",
+        "tools/qoi_format_probe.py",
+        "tests/test_qoi_format_harness.py",
+        "docs/FORMATS.md",
+        "docs/evidence/qoi-formatted.json"
       ],
       "gate_evidence": {},
       "target_results": {},

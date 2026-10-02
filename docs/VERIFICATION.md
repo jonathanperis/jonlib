@@ -4269,3 +4269,76 @@ ABI and full platform/integration/resource/performance parity remain open.
 
 Full results, reviews and hashes are in
 [durable evidence](evidence/formatted-tga-export.json).
+
+## Format-preserving QOI memory loading (2026-10-02)
+
+The dedicated `Image.Formatted.decode_qoi` closes the native QOI original-format
+memory gap within the existing partial `LoadImageFromMemory` entry. Its owned
+single-mip result is RGB888 (4) for channel-3 headers and RGBA8888 (7) for
+channel-4 headers, preserving dimensions and all native-order bytes. Existing
+Surface memory/file entrypoints and generic dispatch remain normalized RGBA8.
+No formatted file wrapper or generic formatted dispatcher is added.
+
+The focused probe compares **121 native images / 35,615 pixels**, with **126,736
+original-format bytes** and **142,460 separately normalized bytes**. Raw format,
+width, height, actual mipmap count and every byte are emitted by actual linked
+pinned `LoadImageFromMemory` before any normalization. Four native uppercase
+calls and eight safe invalid-header rejections bring the native output to 254
+observations. Invalid native buffers and declared lengths are at least 22 bytes;
+no undersized pointer access or large allocation request is used as an oracle.
+
+Each CPU-one-thread, CPU-two-thread and JavaScript lane checks **638 observations
+/ 554,344 bytes**: direct native-format export, independent Surface bridge,
+legacy decoder and generic dispatch for every accepted image; uppercase,
+explicit decode-reference, checked-factory and rejected-get owner observations
+for the four hidden-alpha/cache discriminators; and **67 exact typed failures
+through both memory entrypoints**. The probe checks RGB logical words' zero
+high bytes and reuses immutable input lists for independent affine decodes.
+All original five QOI fixtures are reused without post-decode mutations.
+
+Inputs cover both header channels/colorspaces, all opcode families, cache
+collisions/initial and empty slots/alpha-sensitive hashing, literal tag
+precedence, all 64 DIFF encodings, LUMA boundaries and wrapping, full RGB/alpha
+byte ramps, exact/overflowing runs, noncanonical repeated INDEX acceptance,
+non-power-of-two shapes, both 4096-axis endpoints, seeded mixtures and a
+nonuniform 5,103-pixel image. Typed failures retain byte-validation precedence,
+header/size bounds, stage-dependent truncation, strict markers and run overflow.
+Every chunked output is length/metadata/type/framing checked; malformed,
+missing, truncated or extra output fails the gate. A fresh native build and run
+namespace plus source/tool/program/output hashes prevent stale evidence reuse.
+
+The complete proof verdict is `All terms check.` for **110 laws**, including
+five scoped QOI format/packing/empty-traversal laws. This is not a universal
+codec proof. All **432 Python tests** pass without skips; 11 focused
+harness tests cover native observation ordering, safe rejected buffers, complete
+byte/metadata/framing comparison, ownership routes and fixture discriminators.
+
+Fresh canonical clean-loader conformance passes **261/261 scenarios and all
+40,101 pixel/numeric words** on CPU-one-thread, CPU-two-thread and JavaScript.
+Fresh independent native angle qualification selects `Glibc241AngleRn`; frozen
+math fixtures, reference calls and tolerances remain unchanged. Ownership,
+transform and decode contracts, three PPM examples and legacy QOI file
+roundtrip/missing/malformed/oversize controls pass. These are regression results
+for the existing APIs, not a new formatted file-loading claim.
+
+Supplementary unchanged gates pass on CPU/JavaScript: all **534 native memory
+token/content pairs plus five typed controls**; **59 native file cases, three
+boundaries and 100 low-descriptor cycles**; and **165 complete native format
+pair/chain/bridge cases, 45 factory controls and 173,303 exact bytes**. Each
+report carries the same final library-source hashes. Two parallel supplementary
+compile attempts ended nonzero without diagnostics and were not counted as
+results; serial retries passed unchanged, with exact subprocess receipts and
+the incomplete attempt records retained in the evidence. Their original
+termination cause was not established.
+
+Only `raylib:function:LoadImageFromMemory` changes mapping/scope/gaps/evidence,
+remaining partial. Core totals remain 117 partial / zero complete; all other
+API statuses and `LoadImage` stay unchanged. CI gains the memory-only QOI gate
+and artifact retention while preserving all prior tests, matrix entries,
+permissions and oracle settings. These local results establish Linux x86_64
+CPU/JavaScript behavior; new hosted/macOS, Metal/GPU, Windows, big-endian,
+maximum-area resource, pointer ABI and full performance/integration evidence
+remain open. Native malformed-stream permissiveness is not claimed.
+
+Full scoped results and regression receipts are in
+[the evidence report](evidence/qoi-formatted.json).

@@ -11,7 +11,7 @@ type Error is Data:
   BadStream{}
 
 type Image is Type:
-  Image{width: U32, height: U32, pixels: Array<U32>}
+  Image{width: U32, height: U32, channels: U32, pixels: Array<U32>}
 
 type Header is Data:
   Header{width: U32, height: U32, channels: U32, data: +List<U32>}
@@ -135,18 +135,18 @@ def loop(n: Nat, +i: U32, +channels: U32, state: Result<&1, &1, Error, State>) -
     case 1n+k Done{State{data, cache, pixel, repeat, output}}:
       loop(k, (i + 1 : U32), channels, write(i, channels, next(repeat, data, cache, pixel, output)))
 
-def image(width: U32, height: U32, result: Result<&1, &1, Error, Array<U32>>) -> Result<&1, &1, Error, Image>:
+def image(width: U32, height: U32, channels: U32, result: Result<&1, &1, Error, Array<U32>>) -> Result<&1, &1, Error, Image>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{pixels}: Done{Image{width, height, pixels}}
+    case Done{pixels}: Done{Image{width, height, channels, pixels}}
 
-def sized(valid: Bool, +width: U32, +height: U32, channels: U32, data: +List<U32>) -> Result<&1, &1, Error, Image>:
+def sized(valid: Bool, +width: U32, +height: U32, +channels: U32, data: +List<U32>) -> Result<&1, &1, Error, Image>:
   match valid:
     case False{}: Fail{BadSize{}}
     case True{}:
       +count = (width * height : U32)
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
-      image(width, height, loop(U32.to_nat(count), 0, channels, Done{State{data, Array.new(U32, 6n, 0), 255, 0, Array.new(U32, depth, 0)}}))
+      image(width, height, channels, loop(U32.to_nat(count), 0, channels, Done{State{data, Array.new(U32, 6n, 0), 255, 0, Array.new(U32, depth, 0)}}))
 
 def start(header: Result<&2, &2, Error, Header>) -> Result<&1, &1, Error, Image>:
   match header:

@@ -207,6 +207,11 @@ jobs:
           python3 tools/formatted_tga_export_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify native QOI formats and exact memory bytes
+        run: >-
+          python3 tools/qoi_format_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       # Angle-bearing canonical/Metal generation now requires fresh qualification.
       # Native reference/compiler children explicitly use a clean loader profile.
       # setup-python and Bend keep their inherited environment; no global unset.
@@ -607,6 +612,7 @@ jobs:
             .build/modern-angle-probe/
             .build/formatted-bmp-export-probe/
             .build/formatted-tga-export-probe/
+            .build/qoi-format-probe/
             .build/bmp-probe/results.json
             .build/tga-probe/results.json
             .build/pnm-probe/results.json
