@@ -121,9 +121,14 @@ jobs:
           python3 tools/raw_pixel_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
-      - name: Verify owned image-format conversions
+      - name: Verify owned byte/integer and bounded R32 conversions
         run: >-
           python3 tools/image_format_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify bounded R32 ownership and image consumers
+        run: >-
+          python3 tools/r32_image_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Verify raw image files and descriptor closure
@@ -424,6 +429,7 @@ jobs:
             .build/pixel-probe/results.json
             .build/raw-pixel-probe/results.json
             .build/image-format-probe/results.json
+            .build/r32-image-probe/results.json
             .build/raw-file-probe/results.json
             .build/bmp-probe/results.json
             .build/tga-probe/results.json

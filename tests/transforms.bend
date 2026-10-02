@@ -237,7 +237,7 @@ def formatted_rejected(result: Result<&1, &1, J.Image.Formatted & J.Pixel.Error,
 def formatted_created(result: Maybe<J.Image.Formatted>) -> Bool:
   match result:
     case None{}: False{}
-    case Some{image}: formatted_rejected(J.Image.Formatted.convert(image, 8))
+    case Some{image}: formatted_rejected(J.Image.Formatted.convert(image, 9))
 
 def formatted_roundtrip(result: Maybe<J.Surface>) -> Bool:
   match result:

@@ -110,11 +110,16 @@ Adding one half in F32 first can round twice: words `0x3d088888` (limit 15) and
 Grayscale retains direct uncontracted F32 luminance order and byte truncation.
 See [evidence/float-rgb-formats.json](evidence/float-rgb-formats.json).
 
-`Image.Formatted.to_float_rgb(image)` consumes any checked format-1..7 owner and
+`Image.Formatted.to_float_rgb(image)` consumes any checked format-1..8 owner and
 returns native format-9 RGB float storage. Grayscale replicates into RGB; alpha is
 discarded. Packed channels use the native reciprocal-multiply expansion directly,
 preserving float bits that an intermediate RGBA8 conversion would lose. See
 [evidence/formatted-float.json](evidence/formatted-float.json).
+
+The [bounded R32 extension](R32.md) maps its single sample to the red component
+and exact positive zeros for green/blue, rather than grayscale replication.
+The reverse format-9 → format-8 conversion is still explicitly unsupported.
+The earlier byte/integer evidence above does not establish R32 on other targets.
 
 ## Large owned exports
 

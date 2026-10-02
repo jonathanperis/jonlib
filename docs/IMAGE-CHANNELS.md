@@ -1,7 +1,8 @@
 # Owned grayscale channel extraction
 
 `Image.Formatted.from_channel(image, selected)` returns
-`Image.Formatted & Maybe<Image.Formatted>` for source formats 1..7.
+`Image.Formatted & Maybe<Image.Formatted>` for source formats 1..8, with the
+checked [R32 domain](R32.md) for format 8.
 `Image.FloatRGB.from_channel(image, selected)` returns
 `Image.FloatRGB & Maybe<Image.Formatted>` for finite `[0,1]` RGB float sources.
 
@@ -13,7 +14,7 @@ values in -32767..32767.
 ## Native selection and arithmetic
 
 - Negative selectors become zero.
-- Grayscale always selects its sole channel.
+- Grayscale and R32 always select their sole channel.
 - Gray-alpha selects gray for zero and alpha for any positive selector.
 - RGB565, RGB888 and RGB float select red when the selector exceeds two.
 - RGBA layouts select alpha when the selector exceeds three.

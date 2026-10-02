@@ -364,11 +364,12 @@
   "ExportImage": {
     "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.write_png/write_raw / Image.FloatRGB.write_raw/write_png/write_bmp/write_tga / Surface.write_image",
     "status": "profile-covered",
-    "scope": "QOI/BMP/TGA/default PNG from RGBA8; PNG/RAW from formats 1..7; non-NaN RGB float RAW words and finite [0,1] RGB float PNG/BMP/TGA through native LoadImageColors normalization. Exact bytes/pixels, explicit codec selection, pre-open rejected-owner preservation, typed errors and closed handles are verified. Float RAW native exports use defined normalized auxiliary casts. RGBA8 filename-selected PNG/BMP/TGA/QOI/RAW uses native ASCII-case-insensitive last-dot dispatch, unchanged rejected owners before opening files, and typed file errors.",
+    "scope": "QOI/BMP/TGA/default PNG from RGBA8; PNG/RAW from formats 1..7; non-NaN RGB float RAW words and finite [0,1] RGB float PNG/BMP/TGA through native LoadImageColors normalization. Exact bytes/pixels, explicit codec selection, pre-open rejected-owner preservation, typed errors and closed handles are verified. Float RAW native exports use defined normalized auxiliary casts. RGBA8 filename-selected PNG/BMP/TGA/QOI/RAW uses native ASCII-case-insensitive last-dot dispatch, unchanged rejected owners before opening files, and typed file errors. Checked normalized R32 format-8 owners additionally support exact RAW bytes and native red-only PNG file colors.",
     "gaps": [
       "Other formats/options and extension dispatch for non-Surface owners; NaN parity and native out-of-range auxiliary casts",
       "Native callbacks/allocation ABI and complete targets/integration/performance",
-      "Failing-device, short-write and close-error equivalence; Base close has no error result"
+      "Failing-device, short-write and close-error equivalence; Base close has no error result",
+      "R32 broader domains and complete target/contraction profiles; this extension has current-host CPU/JS evidence only"
     ],
     "api_id": "raylib:function:ExportImage",
     "milestone": "image-codecs"
@@ -388,11 +389,12 @@
   "ExportImageAsCode": {
     "jonlib": "Image.Formatted.to_code / Image.Formatted.write_code / Image.FloatRGB.to_code / Image.FloatRGB.write_code",
     "status": "profile-covered",
-    "scope": "Checked formats 1..7 and non-NaN RGB float format 9 with payload at most 65536 bytes and non-NUL ASCII paths whose basenames have 1..200 characters. Exact native banner/credits, uppercase basename/last-extension rules, dimensions/format/count, raw little-endian sample bytes, unpadded hex and default line breaks. Unsupported sources/requests retain owners before opening; typed Base errors, handle closure and an ASan-checked native oracle are verified on CPU/JS, with pure text generation on forced Metal.",
+    "scope": "Checked formats 1..7 and non-NaN RGB float format 9 with payload at most 65536 bytes and non-NUL ASCII paths whose basenames have 1..200 characters. Exact native banner/credits, uppercase basename/last-extension rules, dimensions/format/count, raw little-endian sample bytes, unpadded hex and default line breaks. Unsupported sources/requests retain owners before opening; typed Base errors, handle closure and an ASan-checked native oracle are verified on CPU/JS, with pure text generation on forced Metal. Checked normalized R32 format-8 owners additionally preserve exact sample bytes and native format/count metadata in generated text and files.",
     "gaps": [
       "NaN payload parity, wider payload/path/Unicode/truncation domains, native long-name buffer overflow and other source formats",
       "Configured line widths and native allocation/ownership ABI",
-      "Complete target/resource/integration/performance coverage"
+      "Complete target/resource/integration/performance coverage",
+      "R32 broader domains and complete target/contraction profiles; this extension has current-host CPU/JS evidence only"
     ],
     "api_id": "raylib:function:ExportImageAsCode",
     "milestone": "image-codecs"
@@ -519,10 +521,11 @@
   "ImageFromChannel": {
     "jonlib": "Surface.from_channel / Image.Formatted.from_channel / Image.FloatRGB.from_channel",
     "status": "profile-covered",
-    "scope": "Retained sources and independent grayscale output: Surface returns normalized RGBA8; formats 1..7 and finite [0,1] RGB float return native format-1 storage. Bounded integral selectors retain native per-format redirection, packed reciprocal normalization and F32 byte truncation. Unsupported typed requests preserve original owners.",
+    "scope": "Retained sources and independent grayscale output: Surface returns normalized RGBA8; formats 1..7 and finite [0,1] RGB float return native format-1 storage. Bounded integral selectors retain native per-format redirection, packed reciprocal normalization and F32 byte truncation. Unsupported typed requests preserve original owners. Checked normalized R32 format 8 redirects every valid selector to its sole sample, retaining exact source words and producing independent format-1 output.",
     "gaps": [
       "Other selector/source domains, formats and mipmaps",
-      "Complete native ABI/resource/target/performance coverage"
+      "Complete native ABI/resource/target/performance coverage",
+      "R32 broader domains and complete target/contraction profiles; this extension has current-host CPU/JS evidence only"
     ],
     "api_id": "raylib:function:ImageFromChannel",
     "milestone": "images"
@@ -530,11 +533,13 @@
   "ImageFormat": {
     "jonlib": "Image.Formatted.convert / Surface.to_formatted / Image.Formatted.to_surface / Image.Formatted.to_float_rgb / Surface.to_float_rgb / Image.FloatRGB.to_surface / Image.FloatRGB.from_bytes / Image.FloatRGB.to_bytes / Image.FloatRGB.to_formatted",
     "status": "profile-covered",
-    "scope": "Owned formats 1..7 and bidirectional format-9 RGB float bridges with native direct normalization, packed reciprocal expansion, alpha discard and finite [0,1] float encoding/luminance/rounding. Exact non-NaN raw words, returned unsupported float owners, thresholds/no-ops and stack-bounded native-order exports are retained.",
+    "scope": "Owned formats 1..7 and bidirectional format-9 RGB float bridges with native direct normalization, packed reciprocal expansion, alpha discard and finite [0,1] float encoding/luminance/rounding. Exact non-NaN raw words, returned unsupported float owners, thresholds/no-ops and stack-bounded native-order exports are retained. Bounded format-8 R32 stores exact finite [0,1] words including positive subnormals and both zero signs; formats 1..8 convert with uncontracted F32 luminance, red-only R32 normalization, bit-preserving no-ops and direct 8-to-9 RGB float transport.",
     "gaps": [
       "Other float/half/compressed formats, mipmaps and other thresholds/endianness",
       "NaN payload interoperability, out-of-domain float casts and native allocation ABI",
-      "Complete integration/target/resource/performance coverage"
+      "Complete integration/target/resource/performance coverage",
+      "R32 broader domains and complete target/contraction profiles; this extension has current-host CPU/JS evidence only",
+      "Format-9 to R32, native R32 RAW loading and raw-bit memory PNG remain unsupported"
     ],
     "api_id": "raylib:function:ImageFormat",
     "milestone": "pixels"
@@ -798,9 +803,10 @@
   "LoadImageColors": {
     "jonlib": "Surface.colors / Image.Formatted.colors / Image.FloatRGB.colors",
     "status": "profile-covered",
-    "scope": "Owned RGBA8, formats 1..7 and finite [0,1] RGB floats to complete row-major RGBA color lists. Native packed integer expansion and float truncation are preserved; unsupported float samples return the original owner.",
+    "scope": "Owned RGBA8, formats 1..7 and finite [0,1] RGB floats to complete row-major RGBA color lists. Native packed integer expansion and float truncation are preserved; unsupported float samples return the original owner. Bounded format-8 R32 additionally produces native red-only colors with opaque alpha.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Full input/format domain and all applicable platform/performance gates remain open.",
+      "R32 broader domains and complete target/contraction profiles; this extension has current-host CPU/JS evidence only"
     ],
     "api_id": "raylib:function:LoadImageColors",
     "milestone": "pixels"
@@ -840,9 +846,10 @@
   "GetImageColor": {
     "jonlib": "Surface.get / Image.Formatted.get / Image.FloatRGB.get",
     "status": "contract-checked",
-    "scope": "Owned RGBA8, formats 1..7 and finite [0,1] selected RGB float pixels. U32 coordinates are checked before access; out-of-bounds/unsupported pixels return None with the original owner. Native packed integer expansion and float truncation remain distinct from other pixel/format APIs.",
+    "scope": "Owned RGBA8, formats 1..7 and finite [0,1] selected RGB float pixels. U32 coordinates are checked before access; out-of-bounds/unsupported pixels return None with the original owner. Native packed integer expansion and float truncation remain distinct from other pixel/format APIs. Checked normalized R32 format-8 points additionally produce native red-only colors, distinct from low-level GetPixelColor grayscale replication.",
     "gaps": [
-      "Full input/format domain and all applicable platform/performance gates remain open."
+      "Full input/format domain and all applicable platform/performance gates remain open.",
+      "R32 broader domains and complete target/contraction profiles; this extension has current-host CPU/JS evidence only"
     ],
     "api_id": "raylib:function:GetImageColor",
     "milestone": "images"
