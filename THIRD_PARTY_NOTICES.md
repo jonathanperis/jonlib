@@ -37,6 +37,8 @@ identify the original sources and their required attribution.
   `Image.Formatted.to_qoi` / `write_qoi` additionally adapt the QOI-specific
   original-format RGB888/RGBA8888 export gate from `rtextures.c`, with integer
   channel packing, retained unsupported owners and typed closed-handle IO.
+  `Image.Formatted.decode_pnm` adapts `LoadImageFromMemory`'s PNM component-to-format
+  selection from `rtextures.c`, preserving grayscale/RGB888 in owned Bend storage.
   Owned mipmap-chain generation in `jonlib.bend` adapts `ImageMipmaps` from
   `rtextures.c`, preserving sequential default resampling and dimension order.
   `src/blur.bend` adapts `ImageBlurGaussian` from the same source, retaining its
@@ -122,6 +124,10 @@ tooling; no stb implementation is linked into the Bend candidate.
 The formatted TGA channel-aware writer adapts `stb_image_write.h` lines 532–603
 and the raylib `ExportImage`/`LoadImageColors` routing, retaining its row-bounded
 RLE scan and component ordering in owned Bend arrays.
+The PNM formatted-memory adapter retains the altered `src/pnm.bend` reader's
+checked header/byte/size rules and little-endian 16-to-8-bit reduction, adapting
+`stb_image.h`'s `stbi__pnm_load` and `stbi__convert_16_to_8` behavior with integer
+packing. It preserves native grayscale/RGB888 output rather than source depth.
 The upstream Softimage PIC reader credits Tom Seddon.
 The upstream GIF reader credits Jean-Marc Lienher, with simplification by stb.
 The upstream Radiance RGBE HDR reader credits Nicolas Schulz.

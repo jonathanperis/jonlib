@@ -13,7 +13,10 @@ including supported headers, native alpha/offset rules and rejected variants.
 TGA true-color/grayscale/indexed raw/RLE decoding and exact default RLE export are
 documented in [TGA.md](TGA.md).
 Binary 8/16-bit P5/P6 decoding and native sample/maxval/separator rules are documented in
-[PNM.md](PNM.md).
+[PNM.md](PNM.md), including the dedicated `Image.Formatted.decode_pnm` memory
+factory preserving native grayscale (1) or RGB888 (4) output. Its samples remain
+8-bit after the pinned native 16-bit-input reduction; source sample depth is
+not preserved. Surface PNM decoding remains RGBA8-normalized.
 Raw/PackBits RGB/alpha PSD planes, explicit matte profiles and metadata bounds are documented in
 [PSD.md](PSD.md).
 Raw/pure-RLE/mixed-RLE Softimage PIC packets, white defaults and channel overwrite order are
@@ -58,8 +61,10 @@ wrapping channel differences, cache collisions and run-boundary handling. RGB
 headers are normalized to opaque RGBA8 by the Surface entrypoints. Their reference
 check performs the same explicit `LoadImageFromMemory` followed by
 `ImageFormat(RGBA8)` adaptation. The dedicated formatted memory and file entrypoints
-preserve native QOI formats. Original-format metadata in the other normalized
-codec paths, shared formatted/float dispatch and other payload codecs remain gaps.
+preserve native QOI formats. The separate PNM memory factory preserves native
+format 1/4 with reduced 8-bit output. Original-format metadata in the remaining
+normalized codecs, PNM formatted file loading, shared formatted/float dispatch
+and other payload codecs remain gaps.
 
 `Image.DecodeError` distinguishes `InvalidImageHeader`, `InvalidImageByte`,
 `UnsupportedImageSize`, `TruncatedImageData` and `InvalidImageStream`.
@@ -174,8 +179,8 @@ python3 tools/qoi_file_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$R
 python3 -m unittest discover -s tests -p test_qoi_file_harness.py -v
 ```
 
-Generic formatted/float dispatch and original formats for the other normalized
-codecs remain open, as do GPU IO, macOS/Windows/browser file qualification,
+Generic formatted/float dispatch, PNM formatted file loading and original formats
+for the remaining normalized codecs remain open, as do GPU IO, macOS/Windows/browser file qualification,
 big-endian targets, special/concurrently changing files, maximum-area allocation
 and complete integration/resource/performance coverage.
 

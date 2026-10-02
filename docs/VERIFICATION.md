@@ -4562,3 +4562,89 @@ is made. Non-Surface suffix dispatch, wider source owners/options, JPEG/KTX,
 native ABI/callbacks, failing-device/short-write/close equivalence and complete
 integration/resource/target/performance coverage remain open. Focused QOI
 success does not settle unrelated native-angle or aggregate qualification.
+
+## Format-preserving PNM memory loading (2026-10-02)
+
+`Image.Formatted.decode_pnm` adds a dedicated P5/P6 memory factory in the partial
+`raylib:function:LoadImageFromMemory` entry. It preserves native grayscale (1)
+or RGB888 (4), width/height in 1..4096 and an implicit single mip level. Both
+8-bit and 16-bit PNM inputs produce the actual native route's reduced **8-bit**
+output: little-endian wide samples retain their second stored byte, without
+rescaling to maxval. Integer repacking avoids grayscale luminance conversion.
+The existing checked byte/header/size/truncation rules and Surface RGBA8
+normalization remain unchanged. See [PNM.md](PNM.md) for the complete contract.
+
+The focused local Linux x86-64 gate passes **96 native images / 64,482 pixels**,
+with **120,514 raw native-format bytes** and **257,928 separately normalized
+bytes** before alias totals. Actual pinned `LoadImageFromMemory` emits native
+width/height/mipmaps/format and every raw byte before normalization. Selected
+PGM/PPM lower/uppercase aliases bring the native output to **234 observations**.
+Only independently validated, bounded, complete accepted fixtures reach native;
+**73 typed controls** run through both checked candidate APIs alone.
+
+Each CPU-one-thread, CPU-two-thread and JavaScript lane passes **710 records /
+885,750 compared bytes** in **23 batches**, comprising **361,542 raw** and
+**524,208 normalized bytes**, with zero differences. Independent raw output,
+Surface bridges, legacy normalized decoding and dispatch, factory exports and
+threaded in-bounds/rejected point-read owners are compared. Logical grayscale
+high 24 bits and RGB high bytes remain zero; export excludes storage padding.
+Candidate mipmaps are the owner's implicit contract, not a measured field.
+
+Fixtures retain all 30 historical accepted streams and add both kinds/depths,
+1x1 and padded shapes, both 4096-axis endpoints, 5,103-pixel nonuniform images,
+full byte ramps, distinct RGB boundary values and wide-sample first/second-byte
+discriminators. Maxvals 1/15/100/255/256/257/1000/65535, samples above maxval,
+all six maxval separators, CRLF/raster whitespace/hash, leading zeros, comments
+and ignored tails retain the native checked profile. Strict field/type/order/
+byte-length framing and exact typed-error precedence fail closed.
+
+The reference is a fresh isolated Memory/Release archive with verified
+`CUSTOMIZE_BUILD=ON` and `SUPPORT_FILEFORMAT_PNM=ON`; pinned default raylib
+configuration disables PNM. GNU 14.2.0 builds the archive and Clang 19.1.7
+builds the reference; Bun 1.3.12 drives the pinned Bend overlay. Compiled native
+qualification establishes little-endian format-1/4 and second-byte retention.
+Source/toolchain/build/input/output hashes, compiler/archive identities and
+clean-loader child-environment receipts are sealed and rechecked without
+changing parent loader variables. An initial CMake-cache whitespace-parser
+failure stopped before native archive build. Its failed report is retained;
+a corrected parser, expanded guardrail and fresh full-suite/probe retry pass.
+
+The complete proof verdict is `All terms check.` for **132 laws**: 127 preserved
+plus five scoped channel/packing/empty-traversal structural laws, not a universal
+codec proof. All **495 Python tests**, including **23 focused harness tests**,
+pass without skips. The fresh unchanged formatted QOI memory regression passes
+**121 images, 67 typed controls and 638 observations / 554,344 compared bytes**
+per CPU-one-thread/CPU-two-thread/JavaScript lane.
+
+Fresh canonical clean-loader conformance passes **261 scenarios / 40,101
+pixel/numeric words** on CPU-one-thread, CPU-two-thread and JavaScript against
+the frozen API metadata. Strict full-record replay also checks **333 QOI bytes
+and 23 palette words per lane**. Ownership, transform and decode contracts,
+three PPM examples and legacy QOI roundtrip/missing/malformed/oversize file
+controls pass. The final full unit suite again passes all **495 tests**.
+
+The unchanged normalized PNM gate passes **30 native images / 8,844 pixels and
+16 typed controls** on CPU/JavaScript. The unchanged generic memory-dispatch
+gate passes **534 token/content pairs (462 native loads) plus five typed
+controls**, with all nine batches complete in each CPU/JavaScript lane. The
+unchanged generic file-dispatch gate passes **59 native file cases, three
+boundary controls and 100 low-descriptor cycles at fd limit 64 per lane** on
+CPU/JavaScript. These three scripts run in a verified clear inherited loader
+context using the freshly built canonical archive; its PNM configuration,
+compiler and archive hashes are retained. They establish regressions for the
+existing Surface APIs and do not claim PNM formatted-file loading. Historical
+Surface evidence remains separate and does not qualify the new formatted
+adapter on GPU/Metal.
+
+CI invokes `tools/pnm_format_probe.py --reference-env clean-loader` beside the
+QOI memory gate with the same pinned checkout paths, and retains its scoped
+run artifacts. All prior steps, matrix entries, permissions, timeout and oracle
+settings remain in place. This wiring does not establish an exact-commit hosted
+pass. Only `LoadImageFromMemory` changes mapping/scope/gaps/evidence, remaining
+partial; all other API statuses stay unchanged. PNM formatted files, generic
+formatted/float dispatch, big-endian, GPU/Metal, Windows/browser and other unrun
+targets, maximum-area allocation, native pointer/OOM parity and representative
+integration/resource/performance qualification remain open. No API is complete.
+
+Focused results, provenance, proof/test summaries, prior failure and final
+regression receipts are in [the durable evidence](evidence/pnm-formatted.json).

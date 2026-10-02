@@ -478,6 +478,25 @@ law formatted_qoi_pixels_zero:
   for pixels: Array<U32>
   {J.Image.Formatted.qoi.pixels(0n, index, channels, pixels) == pixels : Array<U32>}
 
+# Scoped PNM metadata/packing structural facts, not a universal codec proof.
+law formatted_pnm_gray_format:
+  {J.Image.Formatted.pnm.format(1) == 1 : U32}
+
+law formatted_pnm_rgb_format:
+  {J.Image.Formatted.pnm.format(3) == 4 : U32}
+
+law formatted_pnm_gray_word:
+  {J.Image.Formatted.pnm.word(1, 2155905279) == 128 : U32}
+
+law formatted_pnm_rgb_word:
+  {J.Image.Formatted.pnm.word(3, 305420031) == 5649426 : U32}
+
+law formatted_pnm_pixels_zero:
+  for index: U32
+  for channels: U32
+  for pixels: Array<U32>
+  {J.Image.Formatted.pnm.pixels(0n, index, channels, pixels) == pixels : Array<U32>}
+
 # Pure file-boundary facts; these do not prove host IO, allocation or closure.
 law qoi_file_limit:
   {J.Image.file.limit(J.QoiFile{}) == 83886102 : U32}
