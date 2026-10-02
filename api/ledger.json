@@ -61577,6 +61577,7 @@
       "scope": "Finite normal/zero uncontracted cross/dot arithmetic with explicit Apple/GNU atan2f profiles and exact signed quadrant outputs.",
       "gaps": [
         "Exceptional/subnormal and contracted domains",
+        "Modern glibc angle kernel/FMA remains unimplemented; isolated exact narrowing prerequisite does not change current consumers or parity",
         "Other libm/target/performance coverage"
       ],
       "blocker": null,
@@ -61593,6 +61594,9 @@
         "tools/angle_probe.py",
         "tools/float64_ops_probe.py",
         "docs/MATH.md",
+        "docs/ANGLE-PLAN.md",
+        "docs/BINARY64-NARROW.md",
+        "docs/evidence/binary64-narrow.json",
         "jonmath.bend"
       ],
       "gate_evidence": {},
@@ -61639,6 +61643,7 @@
       "scope": "Reference endpoint differences and negated atan2f with explicit numerical profiles, including signed-zero directions.",
       "gaps": [
         "Exceptional/subnormal and contracted domains",
+        "Modern glibc angle kernel/FMA remains unimplemented; isolated exact narrowing prerequisite does not change current consumers or parity",
         "Other libm/target/performance coverage"
       ],
       "blocker": null,
@@ -61654,6 +61659,9 @@
         "tests/fixtures/images.json",
         "tools/angle_probe.py",
         "docs/MATH.md",
+        "docs/ANGLE-PLAN.md",
+        "docs/BINARY64-NARROW.md",
+        "docs/evidence/binary64-narrow.json",
         "jonmath.bend"
       ],
       "gate_evidence": {},
@@ -63622,6 +63630,7 @@
       "scope": "Uncontracted cross-product length/dot order followed by explicit Apple/GNU atan2f profile; exact parallel, opposite and zero-vector fixtures.",
       "gaps": [
         "Exceptional/subnormal and contracted domains",
+        "Modern glibc angle kernel/FMA remains unimplemented; isolated exact narrowing prerequisite does not change current consumers or parity",
         "Other libm/target/performance coverage"
       ],
       "blocker": null,
@@ -63637,6 +63646,9 @@
         "tests/fixtures/images.json",
         "tools/angle_probe.py",
         "docs/MATH.md",
+        "docs/ANGLE-PLAN.md",
+        "docs/BINARY64-NARROW.md",
+        "docs/evidence/binary64-narrow.json",
         "jonmath.bend"
       ],
       "gate_evidence": {},

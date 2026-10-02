@@ -49,3 +49,10 @@ Jonlib image/geometry operations keep their `J` namespace. The math declarations
 have a single implementation in `jonmath.bend`; the migration changes module/type
 ownership and imports, not their arithmetic or reference profiles. Existing native
 expected results and proof propositions remain the verification gates.
+
+## Private arithmetic support
+
+`src/binary64_narrow.bend` provides the isolated checked finite64-word to
+nearest-even binary32-word prerequisite described in [BINARY64-NARROW.md](BINARY64-NARROW.md).
+It is not re-exported by Jonmath/Jonlib and has no current library consumers.
+Existing Float64/projection/resize conversion contracts are unchanged.

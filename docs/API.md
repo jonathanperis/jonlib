@@ -309,3 +309,12 @@ rendering, allocation, hardware or compiler behavior is formally proven.
 `to_image` currently builds a complete power-of-two quadtree. `to_ppm` builds
 the complete output string in memory. These are correct small-image adapters;
 large real-time frames and streaming encoders need later performance work.
+
+
+### Private future-angle prerequisite
+
+The isolated [finite binary64 narrowing helper](BINARY64-NARROW.md) accepts words
+and returns checked nearest-even binary32 words with gradual underflow. It has
+no current public consumer and does not extend any API in this document. Its
+additional structural/concrete laws do not constitute a universal arithmetic
+proof or modern-angle implementation.

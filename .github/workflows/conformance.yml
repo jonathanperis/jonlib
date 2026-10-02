@@ -92,6 +92,10 @@ jobs:
           python3 tools/native_math_profile_probe.py
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
           --clang clang
+      - name: Verify isolated exact finite binary64 narrowing
+        run: >-
+          python3 tools/binary64_narrow_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
       - name: Verify native angle profiles and supporting wide arithmetic
         run: |
           python3 tools/float64_ops_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend"
@@ -429,6 +433,15 @@ jobs:
             .build/trig-probe/rotation-results.json
             .build/fused-probe/results.json
             .build/perspective-probe/results.json
+            .build/binary64-narrow-probe/results.json
+            .build/binary64-narrow-probe/inputs.json
+            .build/binary64-narrow-probe/expected.json
+            .build/binary64-narrow-probe/native-metadata.json
+            .build/binary64-narrow-probe/native-input.txt
+            .build/binary64-narrow-probe/reference.c
+            .build/binary64-narrow-probe/*.bend
+            .build/binary64-narrow-probe/*.stdout
+            .build/binary64-narrow-probe/*.stderr
             .build/float64-ops-probe/results.json
             .build/angle-probe/results.json
             .build/native-profile-diagnostic/results.json
