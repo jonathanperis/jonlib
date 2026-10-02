@@ -125,6 +125,8 @@ ROTATION_ANGLES = {('Matrix',name):3 if name in ('rotate_xyz','rotate_zyx') else
 ROTATION_ANGLES.update({('Vector2','rotate'):1, ('Vector3','rotate_by_axis_angle'):1,
                         ('Quaternion','from_axis_angle'):1, ('Quaternion','from_euler'):3})
 ANGLE_QUERIES = {('Vector2','angle'),('Vector2','line_angle'),('Vector3','angle')}
+EXTREMA_QUERIES = {(namespace, function) for namespace in ('Vector2','Vector3','Vector4') for function in ('min','max')}
+EXTREMA_QUERIES.update({('Vector2','clamp'),('Vector3','clamp')})
 MATRIX_FIELDS = tuple(f'm{row+4*column}' for row in range(4) for column in range(4))
 ARGUMENT_SIZES = {'v':2, 't':3, 'q':4, 'c':4, 'm':16, 'b':6, 'r':4, 's':1, 'i':1, 'd':1}
 VECTOR_APIS = {'vector_value':('Vector2',2,VECTOR2_APIS), 'vector3_value':('Vector3',3,VECTOR3_APIS),
@@ -967,7 +969,28 @@ def f32(value):
     return f'F32.neg({literal})' if math.copysign(1.0, value) < 0 else literal
 
 
-def bend_source(cases, gpu=False):
+def has_extrema(cases):
+    return any(op['op'] in VECTOR_APIS and
+               (VECTOR_APIS[op['op']][0], op.get('function')) in EXTREMA_QUERIES
+               for case in cases for op in case['operations'])
+
+
+def qualify_extrema(raylib_source, library):
+    # Import locally: the qualifier receives the unchanged canonical generators,
+    # parser and runner instead of importing them through a circular dependency.
+    if __package__:
+        from .extrema_reference import qualify
+    else:
+        from extrema_reference import qualify
+    return qualify(raylib_source, library, BUILD,
+                   c_source=c_source, cases_from=cases_from, parse_output=parse_output, run=run)
+
+
+def bend_source(cases, gpu=False, extrema_reference=None):
+    if extrema_reference is not None and extrema_reference not in ('AccurateGradient', 'GnuGradient'):
+        raise ValueError('Unknown extrema reference profile')
+    if has_extrema(cases) and extrema_reference is None:
+        raise ValueError('Extrema require fresh canonical literal-raymath profile qualification')
     lines = ['import Base', 'import ../jonlib.bend as J', 'import ../jonmath.bend as M', '',
              'def emit(name: String, image: J.Surface, extra: String) -> IO(Unit):',
              '  J.Surface{+w, +h, pixels} = image',
@@ -1147,7 +1170,10 @@ def bend_source(cases, gpu=False):
                 _, signature, result = apis[op['function']]
                 profiled = namespace=='Spline' or op['function'] in ('clamp','min','max') or (namespace,op['function']) in ROTATION_ANGLES or (namespace,op['function']) in ANGLE_QUERIES
                 function_name = op['function']+'_for' if profiled else op['function']
-                profile = (f'J.{spline_reference()}{{}}, ' if namespace=='Spline' else f'M.{gradient_reference()}{{}}, ') if profiled else ''
+                if (namespace, op['function']) in EXTREMA_QUERIES:
+                    profile = f'M.{extrema_reference}{{}}, '
+                else:
+                    profile = (f'J.{spline_reference()}{{}}, ' if namespace=='Spline' else f'M.{gradient_reference()}{{}}, ') if profiled else ''
                 module = 'M' if namespace in ('Math','Vector2','Vector3','Vector4','Matrix','Quaternion','Float64') else 'J'
                 expression = f'{module}.{namespace}.{function_name}({profile}{vector_arguments(signature,op["args"],bend=True)})'
                 if result == 'buffer':
@@ -1395,7 +1421,7 @@ def main():
     report['progression'] = json.loads((ROOT / 'api/summary.json').read_text())['core_functions']
     report['verification_sources'] = {
         str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
-        for path in (ROOT / 'tools/conformance.py', ROOT / 'tests/contracts.bend',
+        for path in (ROOT / 'tools/conformance.py', ROOT / 'tools/extrema_reference.py', ROOT / 'tests/contracts.bend',
                      ROOT / 'tests/transforms.bend', ROOT / 'tests/transforms_gpu.bend', ROOT / 'examples/transforms.bend',
                      ROOT / 'tests/decoding.bend', ROOT / 'tests/decoding_gpu.bend',
                      ROOT / 'tests/io_decoding.bend',
@@ -1445,6 +1471,13 @@ def main():
     reference_text = run([BUILD / 'reference'])
     (BUILD / 'reference.jsonl').write_text(reference_text)
     reference = parse_output(reference_text, cases)
+    extrema_reference = None
+    if has_extrema(cases):
+        qualification = qualify_extrema(args.raylib_source, cmake / 'raylib/libraylib.a')
+        extrema_reference = qualification['selected_profile']
+        report['extrema_reference'] = qualification
+        report_path.write_text(json.dumps(report, indent=2) + '\n')
+        print(f'Literal-raymath extrema profile: {extrema_reference} (fresh native qualification)', flush=True)
     if any(op['op']=='vector3_value' and op['function']=='unproject' for case in cases for op in case['operations']):
         report['unprojection_rejections'] = verify_unproject_rejections(args.raylib_source, cmake/'raylib/libraylib.a')
         print('unprojection: singular and zero-W native oracle controls rejected',flush=True)
@@ -1476,7 +1509,7 @@ def main():
         generated_c = BUILD/f'candidate-{batch}.c'
         binary = BUILD/f'candidate-{batch}'
         javascript = BUILD/f'candidate-{batch}.js'
-        source.write_text(bend_source(selected))
+        source.write_text(bend_source(selected, extrema_reference=extrema_reference))
         print(f'Building candidate batch {batch+1}: {len(selected)} scenarios...',flush=True)
         build = dict(start=start,scenarios=len(selected),phase='emit-c')
         report['candidate_batches'].append(build)
@@ -1496,7 +1529,7 @@ def main():
             report_path.write_text(json.dumps(report,indent=2)+'\n')
             gpu_source = BUILD/f'candidate-gpu-{batch}.bend'
             gpu_binary = BUILD/f'candidate-gpu-{batch}'
-            gpu_source.write_text(bend_source(selected,gpu=True))
+            gpu_source.write_text(bend_source(selected,gpu=True,extrema_reference=extrema_reference))
             run([*cli,gpu_source,'-o',gpu_binary],timeout=600)
             lanes['gpu-forced'].append([gpu_binary,'--gpu','on'])
         build.update(cpu_js_build_seconds=host_build_seconds,phase='complete')

@@ -210,3 +210,55 @@ switching profiles, suppressing builtins, replacing expected bits, or accepting
 one-step differences. Any new supported profile needs an explicit contract and
 native/Bend evidence across its declared inputs and targets. Existing canonical
 gates, profiles and exact comparisons remain unchanged.
+
+## Explicit qualification of literal extrema
+
+The conformance harness now qualifies extrema independently of gradient/angle
+profile selection. When Vector2/3/4 min/max or Vector2/3 component clamp appears,
+`tools/extrema_reference.py` builds a fresh, independent native control corpus
+before emitting any Bend candidate. It does not inspect conformance-fixture
+outcomes or try Bend profiles to find one that passes.
+
+The fixed corpus exhausts `{-1,-0,+0,+1}` ordered pairs and clamp triples in
+uniform vectors and each isolated component among finite mixed-lane sentinels:
+832 vector observations / 2,368 result words across all eight APIs. Predeclared
+bit truth tables encode only the existing accurate and GNU zero contracts.
+Exactly one common profile must match every observation. Second-operand ties,
+mixed/unknown/ambiguous behavior, missing components and malformed output fail
+closed. The generator rejects relevant queries without an explicit qualified
+selection; there is no libc-based fallback for them.
+
+Controls run through the unchanged canonical fixture validator, C generator,
+decimal literal formatter, static-inline raymath calls, image observations and
+parser. They use the exact canonical compiler command, including `-O2` and
+`-fno-builtin-atan2f`; no additional min/max flags are introduced. The report
+records compiler identity, commands, header/library/control/source hashes,
+complete native observations and the selected profile. Every run invalidates
+stale success and removes its stale generated executable before compilation.
+
+The selected contract is logged and passed explicitly only to the eight extrema
+APIs. Gradients, rotations, angles, scalar clamp and magnitude clamps retain their
+prior selection. Jonmath, all canonical native fixture inputs and expected
+outputs, and the exact comparator remain unchanged. The native-pointer/runtime
+contexts diagnosed above remain different, deliberately unqualified contexts.
+
+The report is `.build/extrema-reference/results.json`; `qualified: true` means
+only that one declared contract matches the controlled native reference context.
+`parity_established` remains false. A separate preflight cannot prove optimizer
+behavior in every surrounding translation unit, so the unchanged full native/
+Bend bitwise comparison is still the acceptance authority. This qualification
+does not establish a new glibc 2.41 angle profile or an overall conformance pass.
+
+Metal prefix diagnostics also qualify freshly when their prefix contains these
+queries and then require the pinned `--raylib-source` checkout. Image-only
+callers need no extrema qualification. Qualification on one host is not evidence
+for another compiler, architecture or execution target.
+
+The [checked-in qualification and lane evidence](evidence/qualified-literal-extrema.json)
+records the Clang 19 Linux result: the accurate contract uniquely matches all
+2,368 native control words, while the GNU contract differs on 76. With that
+explicit selection, the five original extrema/clamp scenario failures disappear
+on CPU one-thread, CPU two-thread and JavaScript. Each lane matches 260 of the
+unchanged 261 scenarios; the angle scenario remains an exact mismatch and the
+canonical gate still fails. These counts describe this corpus, not library-wide
+parity or an API-completion percentage.

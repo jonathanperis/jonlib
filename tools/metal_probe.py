@@ -12,7 +12,7 @@ import platform
 import re
 import subprocess
 
-from conformance import BUILD, ROOT, bend_source, cases_from, checkout, compare, parse_output, run, source_gate
+from conformance import BUILD, ROOT, bend_source, cases_from, checkout, compare, has_extrema, parse_output, qualify_extrema, run, source_gate
 
 
 def outline_circle(source):
@@ -28,6 +28,7 @@ def outline_circle(source):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--bend-source', type=Path, default=Path.home() / 'Projetos/bendlang/bend')
+    parser.add_argument('--raylib-source', type=Path, default=Path.home() / 'Projetos/raysan5/raylib')
     parser.add_argument('--counts', type=int, nargs='+', default=[20, 24, 26])
     parser.add_argument('--outline-circle', action='store_true', help='Also test one explicitly experimental no-inline generated-C change')
     args = parser.parse_args()
@@ -46,9 +47,16 @@ def main():
                   experimental_outlining=args.outline_circle, results=[])
     report_path = BUILD / 'metal-probe.json'
     report_path.write_text(json.dumps(report, indent=2) + '\n')
+    extrema_reference = None
+    if has_extrema(cases[:max(args.counts)]):
+        checkout(args.raylib_source, lock['raylib']['revision'])
+        qualification = qualify_extrema(args.raylib_source, BUILD / 'raylib/raylib/libraylib.a')
+        extrema_reference = qualification['selected_profile']
+        report['extrema_reference'] = qualification
+        report_path.write_text(json.dumps(report, indent=2) + '\n')
     for count in args.counts:
         source = BUILD / f'metal-prefix-{count}.bend'
-        source.write_text(bend_source(cases[:count], gpu=True))
+        source.write_text(bend_source(cases[:count], gpu=True, extrema_reference=extrema_reference))
         c_file = BUILD / f'metal-prefix-{count}.c'
         run(['bun', args.bend_source / 'bend2/main.ts', source, '-o', c_file])
         original = c_file.read_text()

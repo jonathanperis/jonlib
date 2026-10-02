@@ -9,11 +9,13 @@ Profile: **rgba8-cpu-images-v1**, with domains defined in [API.md](API.md).
 ## Verified evidence
 
 The 2026-10-02 Debian x86-64 recheck (Clang 19.1.7 / glibc 2.41) is **not an
-aggregate pass**: all three CPU-one-thread, CPU-two-thread and JavaScript lanes
-reproduce the same six numerical-profile scenario mismatches (one angle scenario,
-five signed-zero extrema/clamp scenarios). No oracle outputs or tolerances were
-changed. [Native host-profile diagnosis](NATIVE-MATH-PROFILES.md) separates the
-libm-version and compiler-evaluation differences. The new suffix-selected export
+aggregate pass**. After independent native qualification explicitly selects the
+existing accurate zero-tie contract for literal extrema, all three CPU-one-thread,
+CPU-two-thread and JavaScript lanes match 260 of 261 scenarios. The five original
+signed-zero scenario failures are resolved; the GNU/Sun versus glibc 2.41 angle
+scenario still fails. No oracle outputs, fixtures, library algorithms or tolerances
+were changed by this qualification. [Native host-profile diagnosis](NATIVE-MATH-PROFILES.md)
+separates the libm-version and compiler-evaluation differences. The new suffix-selected export
 gate passes independently on CPU/JS; the historical Apple evidence below is not
 a claim that the new file-dispatch API has been verified on Metal or every host.
 

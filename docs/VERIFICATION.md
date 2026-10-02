@@ -3,7 +3,8 @@
 Latest additional host check: 2026-10-02, Debian x86-64 / glibc 2.41, Clang
 19.1.7 (reference drivers and Bend CPU output), GCC 14.2.0 (CMake's raylib
 library compiler), Bun 1.3.12. See the suffix-export, R32 and native-profile records
-below; aggregate parity on this host remains blocked by six numerical scenarios.
+below; after explicit extrema qualification, aggregate parity on this host
+remains blocked by the GNU/Sun versus glibc 2.41 angle scenario.
 
 Latest expansion: 2026-09-29. Host: Apple M1 / macOS 27.0. Bun 1.3.12 and Apple clang 21.0.0.
 The current base revision and exact compiler overlay are pinned in `toolchain.json`.
@@ -3353,3 +3354,48 @@ input, harness and generated-program hashes. Ledger delta from `1482e1e` advance
 the partial scopes of ImageFormat, LoadImageColors, GetImageColor,
 ImageFromChannel, ExportImage and ExportImageAsCode. Totals stay 117/600 core
 partial, 142 math partial and zero complete. No remote publication was performed.
+
+## 2026-10-02: explicitly qualified literal-extrema reference
+
+The remaining signed-zero investigation identified a harness configuration error:
+extrema/clamps inherited the Linux/GNU gradient selection even though their
+literal C evaluation followed the already-implemented accurate zero contract.
+An independent native corpus now qualifies that capability explicitly before any
+Bend candidate is emitted. Its 832 vectors / 2,368 component words cover all
+ordered zero/finite pairs and clamp triples in uniform and mixed-lane contexts,
+across Vector2/3/4 min/max and Vector2/3 component clamp.
+
+The qualifier compares native observations with two predefined documented bit
+contracts. It neither examines conformance-fixture outcomes nor tries Bend
+candidates to select a passing result. This host uniquely selects
+`AccurateGradient`: zero control mismatches versus 76 for `GnuGradient`. Unknown,
+mixed or ambiguous behavior fails closed. Compiler commands, identities,
+header/library/control/source hashes and all observations are recorded afresh.
+Reports cannot reuse stale success, and stale generated executables are removed
+before compilation. The declaration is contextual qualification, not parity.
+
+The complete 261-scenario corpus was rebuilt in 17 batches and compared on CPU
+one-thread, CPU two-thread and JavaScript. Each lane now matches 260 scenarios;
+all five earlier extrema/clamp failures are resolved. The exact angle mismatch
+remains `3fc90fdb` native versus `3fc90fda` Bend. The canonical gate correctly
+continues to fail; no tolerance or expected value was changed.
+
+Independent review verified all complete lane result objects and hashes, the
+qualification run IDs and source provenance. It also confirmed that native C
+generation, decimal literals, fixtures, compiler flags, parsers, comparator,
+other profile selectors and every Bend source remain unchanged from `b9a3384`.
+Only the eight intended extrema APIs receive the freshly qualified existing
+contract. Image-only callers remain unchanged; Metal prefix diagnostics obtain
+fresh qualification when they include extrema, but no Metal run is claimed.
+
+All 73 Python tests pass, including 19 qualification and four integration tests
+for both contracts, malformed/incomplete observations, mixed/unsupported behavior,
+stale state, compiler failures and unchanged unrelated profile routing. The proof
+CLI returns `All terms check.` Project and generated-ledger checks pass. This
+does not establish arbitrary runtime/native-pointer, other compiler/architecture
+or GPU behavior, nor a modern glibc angle implementation.
+
+[Qualification and actual-lane evidence](evidence/qualified-literal-extrema.json)
+records this correction. Eight existing partial Jonmath entries gain the scoped
+host evidence; availability/completion totals remain unchanged. No remote
+publication was performed.
