@@ -197,14 +197,14 @@ class R32ImageHarnessTests(unittest.TestCase):
         shapes = self.probe['schemas'](ops)
         owner = self.probe['image_row'](case)
         packed_owner = self.probe['image_row'](packed)
-        rows = [[255,0,0,127],owner,packed_owner,list(struct.pack('<6I',1,1,9,0x80000000,1,0x3f400000))]
+        rows = [[255,0,0,127],owner,packed_owner,list(struct.pack('<6I',1,1,9,0x80000000,0x80000001,0x3f400000))]
         parse = self.probe['parse_rows']
         self.assertEqual(parse(chunks(rows),shapes),rows)
         invalid = [rows[:-1],rows+[rows[-1]],[None,*rows[1:]],[[0],*rows[1:]],
                    [rows[0],owner[:-1],*rows[2:]],[rows[0],owner[:-1]+[0],*rows[2:]],
                    [rows[0],owner,packed_owner[:-1]+[0],rows[-1]],
                    [rows[0],owner,owner,rows[-1]],
-                   [rows[0],owner,packed_owner,list(struct.pack('<6I',1,1,9,0,1,0x3f400000))]]
+                   [rows[0],owner,packed_owner,list(struct.pack('<6I',1,1,9,0,0x80000001,0x3f400000))]]
         for values in invalid:
             with self.subTest(values=values),self.assertRaises(ValueError):
                 parse(chunks(values),shapes)
@@ -316,7 +316,7 @@ class R32ImageHarnessTests(unittest.TestCase):
                     self.assertIn('raw_load_rejected',source)
                     self.assertNotIn('normalized!(',source)
                 self.assertIn('J.UnsupportedPixelFormat{}',source)
-                self.assertIn('FloatRGB to format8 expanded beyond this slice',source)
+                self.assertIn('Out-of-domain FloatRGB to format8 must retain owner',source)
                 self.assertIn('case Some{Done{bytes}}: observe_png(width, height, Some{bytes})',source)
                 self.assertLess(source.index('def observe_png('),source.index('def observe_memory('))
                 self.assertIn('Packed memory PNG must retain UnsupportedPixelFormat owner',source)

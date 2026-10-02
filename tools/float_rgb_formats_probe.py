@@ -37,7 +37,8 @@ def fixtures():
     gray_data=list(struct.pack('<'+'I'*len(gray),*gray))
     cases += [dict(width=32,height=32,bytes=gray_data,target=target) for target in (1,2)]
     original=list(struct.pack('<fff',0.5,0.25,0.75))
-    controls=[dict(width=1,height=1,bytes=original,target=target) for target in (0,8,9)]
+    cases.append(dict(width=1,height=1,bytes=original,target=8))
+    controls=[dict(width=1,height=1,bytes=original,target=target) for target in (0,9)]
     controls.append(dict(width=1,height=1,bytes=list(struct.pack('<fff',2.0,0.5,0.75)),target=3))
     return cases,controls
 
@@ -63,7 +64,7 @@ def main():
     source=work/'reference.c';source.write_text('\n'.join(lines+['}'])+'\n');binary=work/'reference'
     run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary]);text=run([binary]);expected=parse_results(text)
     if len(expected)!=len(cases)+len(controls):raise ValueError('Incomplete native direct-format results')
-    sizes={1:1,2:2,3:2,4:3,5:2,6:2,7:4,9:12}
+    sizes={1:1,2:2,3:2,4:3,5:2,6:2,7:4,8:4,9:12}
     for i,(case,row) in enumerate(zip([*cases,*controls],expected)):
         target=case['target'] if i<len(cases) else 9
         if row[:12]!=list(struct.pack('<III',case['width'],case['height'],target)) or len(row)!=12+case['width']*case['height']*sizes[target]:raise ValueError('Native format metadata differs')

@@ -42056,13 +42056,12 @@
       "status": "partial",
       "jonlib": "Image.Formatted.convert / Surface.to_formatted / Image.Formatted.to_surface / Image.Formatted.to_float_rgb / Surface.to_float_rgb / Image.FloatRGB.to_surface / Image.FloatRGB.from_bytes / Image.FloatRGB.to_bytes / Image.FloatRGB.to_formatted",
       "mapping_state": "implemented",
-      "scope": "Owned formats 1..7 and bidirectional format-9 RGB float bridges with native direct normalization, packed reciprocal expansion, alpha discard and finite [0,1] float encoding/luminance/rounding. Exact non-NaN raw words, returned unsupported float owners, thresholds/no-ops and stack-bounded native-order exports are retained. Bounded format-8 R32 stores exact finite [0,1] words including positive subnormals and both zero signs; formats 1..8 convert with uncontracted F32 luminance, red-only R32 normalization, bit-preserving no-ops and direct 8-to-9 RGB float transport.",
+      "scope": "Owned formats 1..7 and bidirectional format-9 RGB float bridges with native direct normalization, packed reciprocal expansion, alpha discard and finite [0,1] float encoding/luminance/rounding. Exact non-NaN raw words, returned unsupported float owners, thresholds/no-ops and stack-bounded native-order exports are retained. Bounded format-8 R32 stores exact finite [0,1] words including positive subnormals and both zero signs; formats 1..8 convert with uncontracted F32 luminance, red-only R32 normalization, bit-preserving no-ops and direct 8-to-9 RGB float transport. Bounded format-9 to R32 now uses the same direct uncontracted F32 luminance with complete retained-owner failures; current-host CPU/JS checks include non-identity chains and full 33024-pixel traversal.",
       "gaps": [
         "Other float/half/compressed formats, mipmaps and other thresholds/endianness",
         "NaN payload interoperability, out-of-domain float casts and native allocation ABI",
         "Complete integration/target/resource/performance coverage",
-        "R32 broader domains and complete target/contraction profiles; this extension has current-host CPU/JS evidence only",
-        "Format-9 to R32 remains unsupported"
+        "R32 broader domains and complete target/contraction profiles; this extension has current-host CPU/JS evidence only"
       ],
       "blocker": null,
       "gates": {
@@ -42089,7 +42088,9 @@
         "docs/evidence/formatted-float.json",
         "docs/R32.md",
         "tools/r32_image_probe.py",
-        "docs/evidence/r32-image-format.json"
+        "docs/evidence/r32-image-format.json",
+        "tools/float_rgb_r32_probe.py",
+        "docs/evidence/float-rgb-r32.json"
       ],
       "gate_evidence": {},
       "target_results": {},

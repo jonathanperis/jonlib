@@ -2,7 +2,7 @@
 """Check exact R32 observations, ownership, distinct memory/file PNG and rejections.
 
 Pure operations run on CPU/JS and optionally forced Metal. File IO runs only on
-CPU/JS. Packed memory PNG, formatted format-9 loading, FloatRGB->R32 and GetPixelColor remain
+CPU/JS. Packed memory PNG, formatted format-9 loading, out-of-domain FloatRGB->R32 and GetPixelColor remain
 explicit Jonlib rejection contracts, not assertions of native equivalence.
 """
 import argparse
@@ -76,7 +76,7 @@ def schemas(ops):
             'point_reject': lambda:[dict(kind='exact',value=[0]),owner],
             'channel_reject': lambda:[owner],
             'independent': lambda:[owner,dict(kind='exact',value=list(struct.pack('<III',1,1,1))+[0])],
-            'float_reject': lambda:[dict(kind='exact',value=list(struct.pack('<6I',1,1,9,0x80000000,1,0x3f400000)))],
+            'float_reject': lambda:[dict(kind='exact',value=list(struct.pack('<6I',1,1,9,0x80000000,0x80000001,0x3f400000)))],
             'pixel_reject': lambda:[dict(kind='exact',value=[1])],
         }[kind]()
         result.extend(dict(row,operation=index,operation_kind=kind) for row in rows)
@@ -247,7 +247,7 @@ def reference_program(ops, directory):
         elif kind == 'point_reject':
             lines.append('byte(0);end();emit(image);')
         elif kind == 'float_reject':
-            lines.append('{unsigned words[]={0x80000000,1,0x3f400000};Image image={words,1,1,1,9};emit(image);}')
+            lines.append('{unsigned words[]={0x80000000,0x80000001,0x3f400000};Image image={words,1,1,1,9};emit(image);}')
         elif kind == 'pixel_reject':
             lines.append('byte(1);end();')
         else:
@@ -426,11 +426,11 @@ def observe_code(result: Maybe<Result<&1, &1, J.Image.Formatted, String>>) -> IO
     case Some{Done{text}}: emit_bytes(~&1, text_bytes(text, Nil{}))
     case _: IO.die(Unit, 1, "R32 code export rejected")
 def reject_float() -> Result<&1, &1, J.Image.FloatRGB, J.Image.Formatted>:
-  J.Image.FloatRGB.to_formatted(J.FloatRGB{1, 1, Array.new(M.Vector3, 0n, M.Vector3{H.float_bits(2147483648), H.float_bits(1), 0.75})}, 8)
+  J.Image.FloatRGB.to_formatted(J.FloatRGB{1, 1, Array.new(M.Vector3, 0n, M.Vector3{H.float_bits(2147483648), H.float_bits(2147483649), 0.75})}, 8)
 def observe_float_reject(result: Result<&1, &1, J.Image.FloatRGB, J.Image.Formatted>) -> IO(Unit):
   match result:
     case Fail{image}: float_image(image)
-    case _: IO.die(Unit, 1, "FloatRGB to format8 expanded beyond this slice")
+    case _: IO.die(Unit, 1, "Out-of-domain FloatRGB to format8 must retain owner")
 def pixel_result(result: Result<&2, &2, J.Pixel.Error, U32>) -> Bool:
   match result:
     case Fail{J.UnsupportedPixelFormat{}}: True{}
@@ -567,7 +567,7 @@ def main():
                                 decoded_bytes=len(profile['decoded_rgba']),
                                 decoded_sha256=hashlib.sha256(bytes(profile['decoded_rgba'])).hexdigest())
                                 for kind,profile in profiles.items()} for name,profiles in png_profiles.items()},
-                  raw_loading='checked R32; unsupported formatted format 9 controls',float_rgb_target8='unsupported',pixel_get_color8='unsupported',
+                  raw_loading='checked R32; unsupported formatted format 9 controls',float_rgb_target8='finite [0,1]; negative subnormal retained-owner control',pixel_get_color8='unsupported',
                   sources=source_gate(),inputs_sha256=hashlib.sha256(json.dumps(ops).encode()).hexdigest(),
                   reference_sha256=hashlib.sha256(text.encode()).hexdigest(),
                   reference_program_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
