@@ -37,7 +37,7 @@
   },
   "source_sha256": {
     "toolchain.json": "74c20ac3f303ef6f823209a1474b1591dd0bef87e35a4cd616e021605d6f3595",
-    "tools/conformance.py": "39c44a0735367b22e337eb1c94525f81be67315384136f3cc131ce181f1fcb3f",
+    "tools/conformance.py": "e51550efdce5e24ef3a1c47146c0f750b5d643e1657547b8faa5f921f849bac7",
     "tools/angle_probe.py": "85ffda615b5366df1c1775eeeb87d5a666646be2d3f37fa80d231dcf510fcf49",
     "tools/reference/modern_atan2f_glibc241.c": "96f9c81b6e870c256cc0757f6d88f5290ed35db8d5b640b9e757d6feca96ae38",
     "tools/reference/modern_atan2f_shim.h": "6732fbd385ba61b72f0309448910961e26d4bb6c49be2cd31544765158b546f0",

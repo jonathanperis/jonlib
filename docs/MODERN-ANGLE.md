@@ -8,12 +8,14 @@ is the pinned source's round-to-nearest-even result for every finite input pair,
 including both signed zeros, every subnormal and extreme finite ratios. Any
 NaN or infinity is rejected before promotion or reduction.
 
-This implementation is **private, with exact scoped CPU/JavaScript evidence**. No existing
-image/math API imports it. Apple and GNU/Sun kernels, public defaults, selectors,
-fixtures, expected words and tolerances are unchanged. The canonical native-angle
-failure remains a failure. This is not an `Angle.Reference` introduction or a
-public-profile promotion. Exceptions, errno, NaN payloads, other rounding modes,
-GPU execution, performance and vector-wrapper domain expansion are excluded.
+This implementation remains a **private scalar adapter, with exact scoped
+CPU/JavaScript evidence**. The new explicitly selected checked public angle
+wrappers consume it through `src/checked_angle.bend`; see
+[CHECKED-ANGLES.md](CHECKED-ANGLES.md). Apple and GNU/Sun kernels, old defaults and
+selectors, fixtures, expected words and tolerances are unchanged. The wrapper
+contract is narrower than the finite scalar contract and native selection requires
+fresh independent qualification. Exceptions, errno, NaN payloads, other rounding
+modes, GPU execution, performance and broader wrapper domains remain excluded.
 
 ## Source identity and adaptation
 
@@ -208,8 +210,9 @@ source/toolchain/input/program/native/build/output artifacts when consumed and
 again at acceptance. Programs are generated and run in bounded serial chunks
 on CPU-one-thread, CPU-two-thread and JavaScript.
 
-A finite scalar kernel does not establish vector dot/cross/subtraction/length
-intermediate domains, wrapper output profiles, public native-profile selection,
-forced-device resource behavior or performance. `ANGLE_QUERIES` continues its
-existing routing until a separate independently qualified angle-selector slice.
-See [ANGLE-PLAN.md](ANGLE-PLAN.md) for the remaining integration and device work.
+A finite scalar kernel alone does not establish vector intermediate/output
+domains, native-profile selection, forced-device behavior or performance. The
+separate [checked angle integration](CHECKED-ANGLES.md) now supplies staged
+wrapper checks and independently qualified canonical routing; its evidence is
+separate from this unchanged scalar gate. Device/resource and performance work
+remain in [ANGLE-PLAN.md](ANGLE-PLAN.md).

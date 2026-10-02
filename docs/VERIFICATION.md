@@ -4023,7 +4023,7 @@ forced-device/resource validation and performance remain separate work. No GPU,
 all-target, full finite-pair exhaustive execution, exception/errno, other-rounding
 or NaN-payload claim is made.
 
-## Standalone native angle qualification
+## 2026-10-02: historical standalone qualifier-only checkpoint
 
 The independently frozen [native angle qualification gate](ANGLE-QUALIFICATION.md)
 now verifies 76 scalar controls, 205 canonical/runtime wrapper controls and
@@ -4031,3 +4031,62 @@ now verifies 76 scalar controls, 205 canonical/runtime wrapper controls and
 It uniquely observes the modern contract on the recorded Linux host; historical
 source contracts are not newly host-qualified. Public routing, old algorithms,
 canonical fixtures and the final-angle-only wrapper validation gap are unchanged.
+
+## 2026-10-02: explicitly checked angle references and qualified routing
+
+The three existing partial raymath angle entries now also map to explicit
+`Angle.Reference` checked APIs. `Apple2007AngleRn`, `Sun239AngleRn` and
+`Glibc241AngleRn` identify source/numerical contracts. Existing defaults and
+`*_for(Gradient.Reference, ...)` meanings are unchanged. All 1,884 statuses,
+117/600 core partial entries, 142 math partial entries and zero completed APIs
+are unchanged. The [contract](CHECKED-ANGLES.md) specifies staged normal/zero
+intermediates and output, finite original components, true line negation and
+propagated checked scalar failure.
+
+The dedicated gate passes **428 raw wrapper controls plus 45 separate synthetic
+helpers per lane**, on CPU-one-thread, CPU-two-thread and JavaScript. It compares
+actual original native wrapper values, an independently pinned scalar source,
+exact-rational intermediates/rejection stages, all three public checked profiles
+and unchanged legacy/default results. There are 310 accepted values and 118
+checked rejections per profile, with 311 legacy-eligible rows; the 69 Apple/Sun
+wrapper differences are distinct from the retained 178 historical scalar
+native/Sun differences. All 1,086 historical scalar records remain unchanged.
+
+Independent review reparses all 1,419 candidate records, regenerates all eight
+programs, and checks 72 source hashes, 98 candidate artifacts, 15 raw-native
+artifacts and 78 qualification artifacts. One generated-Bend dispatch binding
+error was caught by the first execution attempt, corrected by a parameter-matched
+helper without input/oracle changes, and followed by the entire passing gate.
+The final focused run took 202.412 seconds; this is local harness timing only.
+
+The full unchanged canonical corpus passes **261/261 scenarios and all 40,101
+pixel/numeric words on each lane**, including the formerly unequal angle cell.
+The new qualified modern route returns `3fc90fdb`; the old Sun route still
+returns its historical `3fc90fda`. Every other record field also matches, including
+333 QOI bytes and 23 palette words per lane. Trailing ownership, transformation,
+decoding, PPM and QOI file/error controls pass. Separate rejected-angle cases
+followed by clear or overwrite fail nonzero without a success row on all three
+lanes. No pixel sentinel is used, and public Surface errors are unchanged.
+
+Native qualification is fresh before candidate emission. Independent review
+confirms the manifest refresh changes only the conformance source-context pin
+and enclosing digest; the 76 scalar controls, 205 wrapper controls and 1,654
+frozen intermediate words are unchanged. Native prechecks leave the original
+raymath numeric calls, compiler flags, fixture schema/data, pixel locations and
+exact comparisons untouched. CLI admission additionally clears every explicit
+unambiguous output destination before parsing, including late/duplicate paths;
+264 admission cases exercise the stale-report boundary.
+
+The full Python suite passes 340 tests. The complete `PROOF.bend` checks 95 laws,
+including 11 scoped structural rejection/propagation/default-preservation laws.
+No universal transcendental or arithmetic proof is claimed. All 44 pre-existing
+`src` Bend modules and Jonlib are unchanged. Their prior private narrowing, FMA,
+add/subtract, normal-operation, gradual-multiplication and modern-scalar gates
+retain their earlier evidence; those full private corpora were not rerun in this
+integration. The affected legacy angle and wide-arithmetic regressions were rerun.
+
+The [integration record](evidence/checked-angles.json) links the separate native,
+wrapper, canonical and review evidence. No new GPU, hosted, all-target, exhaustive
+finite-input or performance-parity claim is made. Linux glibc ELF provenance is
+the currently supported qualification context; Darwin angle-bearing canonical
+and Metal-prefix execution fails unsupported before candidate generation.

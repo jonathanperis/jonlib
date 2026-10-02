@@ -8,35 +8,38 @@ Profile: **rgba8-cpu-images-v1**, with domains defined in [API.md](API.md).
 
 ## Verified evidence
 
-The 2026-10-02 Debian x86-64 recheck (Clang 19.1.7 / glibc 2.41) is **not an
-aggregate pass**. After independent native qualification explicitly selects the
-existing accurate zero-tie contract for literal extrema, all three CPU-one-thread,
-CPU-two-thread and JavaScript lanes match 260 of 261 scenarios. The five original
-signed-zero scenario failures are resolved; the GNU/Sun versus glibc 2.41 angle
-scenario still fails. No oracle outputs, fixtures, library algorithms or tolerances
-were changed by this qualification. [Native host-profile diagnosis](NATIVE-MATH-PROFILES.md)
-separates the libm-version and compiler-evaluation differences. The new suffix-selected export
-gate passes independently on CPU/JS; the historical Apple evidence below is not
-a claim that the new file-dispatch API has been verified on Metal or every host.
+The 2026-10-02 Debian x86-64 checked-angle integration (Clang 19.1.7 /
+glibc 2.41) passes the complete unchanged **261 scenarios / 40,101 output words**
+on CPU-one-thread, CPU-two-thread and JavaScript. Every field also matches,
+including 333 QOI bytes and 23 palette words per lane. Independent native
+qualification selects `AccurateGradient` for literal extrema and the separate
+`Glibc241AngleRn` for checked angles. Original raymath calls, fixtures, pixel
+locations, compiler flags and exact comparisons are unchanged.
 
-The isolated [binary64 narrowing prerequisite](BINARY64-NARROW.md) has independent
-exact rational/native and CPU-one-thread/CPU-two-thread/JavaScript evidence. It
-has no library consumers and does not change this aggregate failure or any
-public API status. The separately checked [bounded binary64 FMA](BINARY64-FMA.md)
-has the same private status and no existing image/math API consumers; it does
-not broaden existing arithmetic contracts. The independent [bounded add/subtract helper](BINARY64-ADD-SUB.md)
-also remains private with no existing consumers. The [checked normal operations
-and word adapters](BINARY64-OPS.md) add independent bounded multiply/divide,
-exact promotion/packing and raw stepping evidence, with the same private status.
-The [direct gradual-output product](BINARY64-GRADUAL-MULTIPLY.md) adds a separate
-asymmetric normal-input contract with subnormal and signed-zero results, also
-without public consumers or API promotion. The new [private modern scalar
-kernel](MODERN-ANGLE.md) consumes these unchanged helpers and passes its separate
-8,317-case three-lane source/trace gate. It is not publicly routed and does not
-change the canonical failure. No device evidence is claimed for the kernel or
-these prerequisites.
+The old-profile checkpoint had 260/261 scenarios and remains a historical
+failure: native `3fc90fdb` versus legacy Sun `3fc90fda` at
+`vector2-angle-profiles` pixel `(6,0)`. The new explicit checked route closes
+that mismatch without retargeting the old profile. Existing Apple/GNU scalar
+algorithms and public defaults/`*_for` meanings are unchanged. See
+[CHECKED-ANGLES.md](CHECKED-ANGLES.md) for the new finite-input, staged
+normal/zero-wrapper contract and [NATIVE-MATH-PROFILES.md](NATIVE-MATH-PROFILES.md)
+for the prior host-profile diagnosis.
 
-The current local Apple M1/macOS corpus contains **261 deterministic scenarios /
+The five private arithmetic prerequisites and [modern scalar kernel](MODERN-ANGLE.md)
+are unchanged and now serve the explicitly selected checked angle wrappers.
+Their independent prior arithmetic/scalar evidence remains scoped to those
+recorded runs; it is not represented as a new exhaustive rerun. New wrapper,
+qualification and canonical evidence is separate. No new GPU, hosted, universal
+input or performance result is claimed. Current angle-bearing canonical/Metal
+entrypoints require supported Linux ELF provenance; Darwin/Windows contexts
+fail unsupported before candidate generation rather than inferring a profile.
+Existing legacy APIs remain available.
+
+The suffix-selected export gate's separate CPU/JS evidence and the historical
+Apple evidence below do not establish new file-dispatch or modern checked-angle
+Metal/Apple coverage.
+
+The historical local Apple M1/macOS corpus contains **261 deterministic scenarios /
 40,101 checked output words per lane**, matching native CPU (one and two threads), JavaScript
 and forced Metal. Most words are RGBA pixels; 1,878 are exact numeric/collision
 result-bit probe cells. QOI export bytes and full palette observations are

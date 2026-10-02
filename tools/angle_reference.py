@@ -23,7 +23,7 @@ import uuid
 ROOT = Path(__file__).resolve().parents[1]
 REFERENCE = ROOT / 'tools/reference'
 MANIFEST = REFERENCE / 'angle_qualification_v1.json'
-MANIFEST_SHA256 = '31fe9fa37f986e51534509065d67eca0a74a58aae3831923d8d13d2cbe64d416'
+MANIFEST_SHA256 = '2fda8deee025162997a352940cfd8476e0538313fb3b705b4616fad184553e11'
 CANONICAL_FLAGS = ['-std=c11', '-O2', '-fno-builtin-atan2f']
 MODERN_FLAGS = ['-std=c11', '-O2', '-frounding-math', '-fno-fast-math',
                 '-ffp-contract=off', '-fno-lto', '-fno-builtin-atan2f', '-fno-builtin-fma']
@@ -482,44 +482,75 @@ def main(argv=None):
     parser.add_argument('--build-dir', type=Path, default=ROOT/'.build')
     parser.add_argument('--profile')
     parser.add_argument('--timeout', type=int, default=120)
-    # One parser owns option semantics. Its explicitly supplied namespace also
-    # retains the last destination action actually executed before error/help.
-    # Parsing uses only Path/int conversions; no source is read or built here.
     args = argparse.Namespace(build_dir=ROOT/'.build')
+    admissions = {}
 
-    def admit(error=None):
-        path = args.build_dir.resolve()/'angle-reference/results.json'
+    def admit(build_dir):
+        path = build_dir.resolve()/'angle-reference/results.json'
+        if path in admissions: return path,admissions[path]
         path.parent.mkdir(parents=True,exist_ok=True)
         report = dict(schema=1,run_id=uuid.uuid4().hex,phase='argument-validation',qualified=False,
                       selected_profile=None,parity_established=False,candidate_executed=False,
                       started_at=datetime.now(timezone.utc).isoformat(),error=None)
-        if error is not None:
-            if isinstance(error,SystemExit) and error.code == 0:
-                report.update(phase='help',completed_at=datetime.now(timezone.utc).isoformat())
-            else:
-                report.update(error=dict(type=type(error).__name__,message=str(error)),
-                              failed_at=datetime.now(timezone.utc).isoformat())
         path.write_text(json.dumps(report,indent=2)+'\n')
+        admissions[path] = report
         return path,report
 
+    def finish_admission(error):
+        # Never replace qualify()'s richer report or another run's report.
+        for path,admission in admissions.items():
+            current = strict_json(path.read_text())
+            if current.get('run_id') != admission['run_id']: continue
+            if isinstance(error,SystemExit) and error.code == 0:
+                admission.update(phase='help',completed_at=datetime.now(timezone.utc).isoformat())
+            else:
+                admission.update(error=dict(type=type(error).__name__,message=str(error)),
+                                 failed_at=datetime.now(timezone.utc).isoformat())
+            path.write_text(json.dumps(admission,indent=2)+'\n')
+
+    # Admission is intentionally broader than the executed argparse prefix.
+    # Scan ALL exact destination options before '--', even after malformed or
+    # help options; typed parsing must not leave a requested late report stale.
+    # Invalidate every explicit duplicate destination. '=' makes its value
+    # unambiguous (including dash-prefixed paths); spaced values cannot be
+    # option-like under argparse's actual token classifier. This includes its
+    # negative-number, '-' and space-containing dash-prefixed value rules.
+    # Abbreviations and tokens after '--' never designate an output directory.
+    destinations = []
+    for index, token in enumerate(argv):
+        if token == '--': break
+        if token.startswith('--build-dir='):
+            destinations.append(Path(token.split('=',1)[1]))
+        elif token == '--build-dir' and index+1 < len(argv):
+            value = argv[index+1]
+            if value != '--' and parser._parse_optional(value) is None:
+                destinations.append(Path(value))
+    if not destinations: destinations = [args.build_dir]
+    admission_errors = []
+    for destination in destinations:
+        try: admit(destination)
+        except (OSError,ValueError) as error: admission_errors.append(error)
+    # Attempt every recognizable destination before surfacing an unwritable
+    # one; no failed admission may proceed to native/source/candidate work.
+    if admission_errors:
+        finish_admission(admission_errors[0])
+        raise admission_errors[0]
     try:
         parser.parse_args(argv,namespace=args)
         if args.timeout <= 0: parser.error('--timeout must be positive')
     except BaseException as error:
-        admit(error)
+        # Also clear the parser-selected/default location if parsing ended
+        # before reaching an explicitly requested late destination.
+        admit(args.build_dir)
+        finish_admission(error)
         raise
-    path,admission = admit()
+    path,admission = admit(args.build_dir)
     try:
         from conformance import c_source, cases_from, parse_output
         report = qualify(args.raylib_source, args.library, args.build_dir, c_source=c_source,
                          cases_from=cases_from, parse_output=parse_output, requested_profile=args.profile, timeout=args.timeout)
     except BaseException as error:
-        # qualify() maintains its richer report once admitted. Do not overwrite it.
-        current = strict_json(path.read_text())
-        if current.get('run_id') == admission['run_id']:
-            admission.update(error=dict(type=type(error).__name__,message=str(error)),
-                             failed_at=datetime.now(timezone.utc).isoformat())
-            path.write_text(json.dumps(admission,indent=2)+'\n')
+        finish_admission(error)
         raise
     print(json.dumps({key:report[key] for key in ('qualified','selected_profile','parity_established','candidate_executed')}))
 

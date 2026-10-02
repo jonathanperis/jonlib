@@ -2,10 +2,12 @@
 
 `tools/angle_reference.py` is a **standalone, native-only qualification gate**.
 It selects one versioned numerical behavior contract from independently frozen
-controls. It does not run Bend, introduce `Angle.Reference`, change public
-Apple/GNU algorithms or defaults, route canonical queries, alter fixtures or
-change exact comparisons. The unchanged canonical corpus still has the recorded
-260/261 result: the remaining native-angle mismatch is unresolved publicly.
+controls. It does not run Bend, change public Apple/GNU algorithms or defaults,
+alter fixtures or change exact comparisons. The separate
+[checked angle integration](CHECKED-ANGLES.md) introduces the public reference
+and consumes a fresh qualification before canonical candidate generation. The
+historical old-profile canonical result was 260/261; integration results must be
+established separately, without reinterpreting that earlier failure.
 
 A successful qualification means **this fixed corpus matches one contract in the
 recorded native contexts**. It is neither a proof for all input pairs nor a claim
@@ -188,8 +190,8 @@ Every CLI invocation invalidates the chosen old report, including informational
 `--help`; a help-only report remains unqualified and records no numerical run.
 
 Before source reads/builds, results are persisted as unqualified with a null
-selection and a fresh run ID/timestamp. CLI argument failures also invalidate the
-chosen output report. Every admitted failure retains that state and diagnostics;
+selection and a fresh run ID/timestamp. CLI argument failures also invalidate all admitted explicit destinations
+and the parser-selected/default output report. Every admitted failure retains that state and diagnostics;
 stale executables are removed before each compile, and a successful compiler
 must produce a fresh nonempty artifact. Observation parsing rejects missing,
 extra, reordered or duplicate IDs/keys, wrong shapes/types and altered words.
@@ -209,9 +211,23 @@ independent discriminator families as expected. Neither historical platform was
 newly host-qualified. Independent review and regression results are recorded in
 [the review record](evidence/angle-qualification-review.json).
 
-The documented public wrapper domain requires normal/zero **intermediates**.
-The existing canonical validator only checks the **final angle** for normal/zero
-status. This pre-existing enforcement gap remains visible and unchanged; the
-standalone controls do not close it or expand the domain. Public `Angle.Reference`,
-checked wrapper integration, final canonical parity, forced-device evidence and
-performance remain separate work. All 1,884 API statuses remain unchanged.
+The integration has a separate [fresh receipt](evidence/checked-angle-qualification.json)
+for the updated canonical source context. Independent review approved only the
+manifest's conformance source hash and enclosing manifest-digest refresh; all
+76 scalar controls, 205 wrapper controls, 1,654 intermediates, profile words,
+derivation families and source provenance remain unchanged. The new
+[wrapper/canonical evidence](CHECKED-ANGLES.md) is separate from the earlier
+isolated qualifier snapshot and its historical review record.
+
+The new checked public wrappers and canonical prechecks enforce normal/zero
+**intermediates** as well as outputs. The standalone controls are unchanged;
+the deliberate conformance source-context pin refresh is reviewed separately
+from their frozen numerical derivation. Native prechecks do not replace original
+raymath numeric calls. Canonical parity, wrapper differential evidence and
+qualification remain distinct records. Forced-device evidence and performance
+remain open. All 1,884 API statuses remain unchanged.
+
+The current Linux ELF metadata restriction also applies to angle-bearing
+canonical and Metal-prefix entrypoints: unsupported Darwin/Windows provenance
+fails before candidate generation. Existing public legacy APIs remain available;
+historical Apple/Metal evidence is not a fresh qualification of the new route.

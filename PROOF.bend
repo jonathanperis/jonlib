@@ -273,3 +273,36 @@ def Laws.modern_angle_positive_y_negative_zero_x():
 
 def Laws.modern_angle_negative_zeros():
   {==}
+
+def Laws.checked_angle_scalar_none():
+  {==}
+
+def Laws.checked_angle_normal_reject(stage, value):
+  {==}
+
+def Laws.checked_angle_sqrt_reject(value):
+  {==}
+
+def Laws.checked_angle_maybe_failure(stage):
+  {==}
+
+def Laws.checked_angle_vector2_input_reject(profile, x, y, u, v):
+  {==}
+
+def Laws.checked_angle_line_input_reject(profile, x, y, u, v):
+  {==}
+
+def Laws.checked_angle_vector3_input_reject(profile, x, y, z, u, v, w):
+  {==}
+
+def Laws.angle_vector2_default_preserved(left, right):
+  {==}
+
+def Laws.angle_line_default_preserved(left, right):
+  {==}
+
+def Laws.angle_vector3_default_preserved(left, right):
+  {==}
+
+def Laws.checked_angle_scalar_some(word):
+  {==}

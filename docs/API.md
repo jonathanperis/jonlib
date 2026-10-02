@@ -38,6 +38,8 @@ the unsigned bit pattern returned by `ColorToInt`.
 
 The public scalar and Vector2 operations are listed in [MATH.md](MATH.md),
 including their explicit uncontracted-F32 profile and remaining numeric gaps.
+The three checked `*_with_reference` angle APIs use the separate
+`M.Angle.Reference` and return `Maybe<F32>`; see [CHECKED-ANGLES.md](CHECKED-ANGLES.md).
 Pure geometry queries are listed in [COLLISION.md](COLLISION.md), including
 strict rectangle edges and inclusive circle tangency.
 Spline point queries and their explicit arithmetic profiles are listed in
@@ -67,6 +69,10 @@ Reusable local constructor bindings need a type annotation, for example
 `Rectangle` is `Data` with F32 `x`, `y`, `width`, `height` fields. The current
 crop/extraction/region-drawing profile requires integral rectangle values;
 `draw_image_rect` and the documented rectangle wrappers also support fractional fields.
+
+`M.Angle.Reference` has `M.Apple2007AngleRn{}`, `M.Sun239AngleRn{}` and
+`M.Glibc241AngleRn{}` constructors. They name numerical contracts; fresh native
+qualification is separate. Existing `Gradient.Reference` APIs retain their meanings.
 
 `M.Vector3{x, y, z}` is immutable `Data` with three F32 fields.
 `M.Vector4{x, y, z, w}` provides four immutable F32 fields.

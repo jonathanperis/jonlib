@@ -4,7 +4,8 @@
 import Base
 import ./src/trig.bend as Trig
 import ./src/float64.bend as Float64Numeric
-import ./src/angle.bend as Angle
+import ./src/angle.bend as LegacyAngle
+import ./src/checked_angle.bend as CheckedAngle
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -46,6 +47,19 @@ def Float64.internal.difference(left: Float64, right: Float64) -> F32:
 type Gradient.Reference is Data:
   AccurateGradient{}
   GnuGradient{}
+
+# Source/numerical contracts, independent of the historical gradient selector.
+# There is intentionally no implicit angle default or Gradient conversion.
+type Angle.Reference is Data:
+  Apple2007AngleRn{}
+  Sun239AngleRn{}
+  Glibc241AngleRn{}
+
+def Angle.internal.profile(reference: Angle.Reference) -> U32:
+  match reference:
+    case Apple2007AngleRn{}: 0
+    case Sun239AngleRn{}: 1
+    case Glibc241AngleRn{}: 2
 
 def Gradient.gnu(reference: Gradient.Reference) -> Bool:
   match reference:
@@ -169,7 +183,7 @@ def Vector2.cross_product(left: Vector2, right: Vector2) -> F32:
   (x * v - y * u : F32)
 
 def Vector2.angle_for(reference: Gradient.Reference, +left: Vector2, +right: Vector2) -> F32:
-  Angle.atan2(Gradient.gnu(reference), Vector2.cross_product(left, right), Vector2.dot_product(left, right))
+  LegacyAngle.atan2(Gradient.gnu(reference), Vector2.cross_product(left, right), Vector2.dot_product(left, right))
 
 def Vector2.angle(left: Vector2, right: Vector2) -> F32:
   Vector2.angle_for(AccurateGradient{}, left, right)
@@ -177,10 +191,21 @@ def Vector2.angle(left: Vector2, right: Vector2) -> F32:
 def Vector2.line_angle_for(reference: Gradient.Reference, start: Vector2, end: Vector2) -> F32:
   Vector2{x, y} = start
   Vector2{u, v} = end
-  F32.neg(Angle.atan2(Gradient.gnu(reference), (v - y : F32), (u - x : F32)))
+  F32.neg(LegacyAngle.atan2(Gradient.gnu(reference), (v - y : F32), (u - x : F32)))
 
 def Vector2.line_angle(start: Vector2, end: Vector2) -> F32:
   Vector2.line_angle_for(AccurateGradient{}, start, end)
+
+# Finite original components, normal/zero staged intermediates and result.
+def Vector2.angle_with_reference(reference: Angle.Reference, left: Vector2, right: Vector2) -> Maybe<F32>:
+  Vector2{x, y} = left
+  Vector2{u, v} = right
+  CheckedAngle.maybe(CheckedAngle.vector2(Angle.internal.profile(reference), x, y, u, v))
+
+def Vector2.line_angle_with_reference(reference: Angle.Reference, start: Vector2, end: Vector2) -> Maybe<F32>:
+  Vector2{x, y} = start
+  Vector2{u, v} = end
+  CheckedAngle.maybe(CheckedAngle.line(Angle.internal.profile(reference), x, y, u, v))
 
 def Vector2.lerp(left: Vector2, right: Vector2, +amount: F32) -> Vector2:
   Vector2{x, y} = left
@@ -487,10 +512,15 @@ def Vector3.length(vector: Vector3) -> F32:
   F32.sqrt(Vector3.length_sqr(vector))
 
 def Vector3.angle_for(reference: Gradient.Reference, +left: Vector3, +right: Vector3) -> F32:
-  Angle.atan2(Gradient.gnu(reference), Vector3.length(Vector3.cross_product(left, right)), Vector3.dot_product(left, right))
+  LegacyAngle.atan2(Gradient.gnu(reference), Vector3.length(Vector3.cross_product(left, right)), Vector3.dot_product(left, right))
 
 def Vector3.angle(left: Vector3, right: Vector3) -> F32:
   Vector3.angle_for(AccurateGradient{}, left, right)
+
+def Vector3.angle_with_reference(reference: Angle.Reference, left: Vector3, right: Vector3) -> Maybe<F32>:
+  Vector3{x, y, z} = left
+  Vector3{u, v, w} = right
+  CheckedAngle.maybe(CheckedAngle.vector3(Angle.internal.profile(reference), x, y, z, u, v, w))
 
 def Vector3.distance(left: Vector3, right: Vector3) -> F32:
   F32.sqrt(Vector3.distance_sqr(left, right))

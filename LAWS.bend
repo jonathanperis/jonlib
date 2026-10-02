@@ -1,4 +1,5 @@
 import Base
+import ./src/checked_angle.bend as CA
 import ./src/modern_angle.bend as MA
 import ./jonlib.bend as J
 import ./jonmath.bend as M
@@ -345,3 +346,66 @@ law modern_angle_positive_y_negative_zero_x:
 
 law modern_angle_negative_zeros:
   {MA.checked(2147483648,2147483648) == Some{3226013659} : Maybe<U32>}
+
+# Checked angle wrapper laws prove staged rejection/propagation and preserved
+# defaults, not universal transcendental accuracy or all native host behavior.
+law checked_angle_scalar_none:
+  {CA.scalar_result(None{}) == Fail{31} : Result<&2, &2, U32, F32>}
+
+law checked_angle_normal_reject:
+  for stage: U32
+  for value: F32
+  {CA.normal.route(False{}, stage, value) == Fail{stage} : Result<&2, &2, U32, F32>}
+
+law checked_angle_sqrt_reject:
+  for value: F32
+  {CA.sqrt.valid(False{}, value) == Fail{24} : Result<&2, &2, U32, F32>}
+
+law checked_angle_maybe_failure:
+  for stage: U32
+  {CA.maybe(Fail{stage}) == None{} : Maybe<F32>}
+
+law checked_angle_vector2_input_reject:
+  for profile: U32
+  for x: F32
+  for y: F32
+  for u: F32
+  for v: F32
+  {CA.vector2.valid(False{}, profile, x, y, u, v) == Fail{1} : Result<&2, &2, U32, F32>}
+
+law checked_angle_line_input_reject:
+  for profile: U32
+  for x: F32
+  for y: F32
+  for u: F32
+  for v: F32
+  {CA.line.valid(False{}, profile, x, y, u, v) == Fail{1} : Result<&2, &2, U32, F32>}
+
+law checked_angle_vector3_input_reject:
+  for profile: U32
+  for x: F32
+  for y: F32
+  for z: F32
+  for u: F32
+  for v: F32
+  for w: F32
+  {CA.vector3.valid(False{}, profile, x, y, z, u, v, w) == Fail{1} : Result<&2, &2, U32, F32>}
+
+law angle_vector2_default_preserved:
+  for +left: M.Vector2
+  for +right: M.Vector2
+  {M.Vector2.angle(left, right) == M.Vector2.angle_for(M.AccurateGradient{}, left, right) : F32}
+
+law angle_line_default_preserved:
+  for +left: M.Vector2
+  for +right: M.Vector2
+  {M.Vector2.line_angle(left, right) == M.Vector2.line_angle_for(M.AccurateGradient{}, left, right) : F32}
+
+law angle_vector3_default_preserved:
+  for +left: M.Vector3
+  for +right: M.Vector3
+  {M.Vector3.angle(left, right) == M.Vector3.angle_for(M.AccurateGradient{}, left, right) : F32}
+
+law checked_angle_scalar_some:
+  for word: U32
+  {CA.scalar_result(Some{word}) == CA.normal(32, CA.from_word(word)) : Result<&2, &2, U32, F32>}
