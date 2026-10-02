@@ -98,7 +98,7 @@ See [evidence/float-rgb-color.json](evidence/float-rgb-color.json).
 ## Direct byte/integer formats and grayscale
 
 `Image.FloatRGB.to_formatted(image, target)` returns
-`Result<&1, &1, Image.FloatRGB, Image.Formatted>` for targets 1..7. It uses native
+`Result<&1, &1, Image.FloatRGB, Image.Formatted>` for targets 1..8. It uses native
 normalized F32 channels directly with alpha one; it does not first truncate to
 RGBA8. `Image.FloatRGB.color_grayscale(image)` selects target 1, preserving the
 native change to grayscale storage. Unsupported targets or samples outside
@@ -118,7 +118,16 @@ preserving float bits that an intermediate RGBA8 conversion would lose. See
 
 The [bounded R32 extension](R32.md) maps its single sample to the red component
 and exact positive zeros for green/blue, rather than grayscale replication.
-The reverse format-9 → format-8 conversion is still explicitly unsupported.
+Format 9 → format 8 uses the same direct uncontracted F32 luminance, without
+clamping or RGBA8 quantization. All three source components must remain finite
+`[0,1]`; a potentially representable result does not admit wider HDR inputs.
+Targets 0 and 9 remain unsupported, and `color_grayscale` still returns format 1.
+Because coefficients are positive, rounded operations are monotone; the rounded
+maximum at `(1,1,1)` is exactly one. Signed-zero/subnormal results remain valid
+checked R32 samples. The `9→8→9` and `8→9→8` chains are not identities: R32
+normalization retains only red, and re-encoding applies luminance again.
+The dedicated current-host CPU/JS gate is `tools/float_rgb_r32_probe.py`; it
+qualifies the native archive independently before comparing every native byte.
 The earlier byte/integer evidence above does not establish R32 on other targets.
 
 ## Large owned exports
@@ -149,6 +158,7 @@ python3 tools/float_rgb_resize_probe.py --bend-source "$BEND_SOURCE" --raylib-so
 python3 tools/float_rgb_canvas_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 python3 tools/float_rgb_color_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 python3 tools/float_rgb_formats_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+python3 tools/float_rgb_r32_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
 python3 tools/formatted_float_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
 ```
 
@@ -184,9 +194,18 @@ owners on CPU/JS/Metal, including ignored fills and same-size offset no-ops.
 The color gate compares 44 native cases / 17,050 pixels and six retained-owner
 controls on CPU/JS/Metal, including clamping, alpha matching, chains and nonfinite/
 fractional parameter rejection.
-Direct formats add nine native cases / 5,758 pixels, 530 packed-boundary values,
+The original byte/integer evidence adds nine native cases / 5,758 pixels, 530 packed-boundary values,
 1,024 targeted grayscale-boundary pixels and four retained owners on CPU/JS/Metal.
 The 109 byte/integer format regressions remain passing after correcting shared rounding.
 The reverse bridge compares seven source formats / 1,792 pixels and fourteen
 native float/return-chain results on CPU/JS/Metal, covering every channel level
 and alpha pattern in the source layouts.
+
+The bounded format-9 → R32 extension compares 17 native conversion cases /
+39,481 pixels, 75 complete retained owners and 27 same-backend direct NaN
+controls on CPU/JS. Every one of 194 observations and 182,019 output bytes per
+lane is checked. Existing direct-format regression coverage now has ten native
+cases / 5,759 pixels and three retained owners: its former valid target-8
+rejection became a native success. The historical Metal evidence above is not
+new GPU evidence for this extension. See
+[evidence/float-rgb-r32.json](evidence/float-rgb-r32.json).

@@ -1173,7 +1173,7 @@ def Image.FloatRGB.formatted.target(valid: Bool, image: Image.FloatRGB, format: 
       Image.FloatRGB.formatted.checked(width, height, format, Image.FloatRGB.checked.pixels(~Image.FloatRGB.pixel.valid, U32.to_nat((width * height : U32)), 0, (pixels, True{})))
 
 def Image.FloatRGB.to_formatted(image: Image.FloatRGB, +format: U32) -> Result<&1, &1, Image.FloatRGB, Image.Formatted>:
-  Image.FloatRGB.formatted.target(((format >= 1) && (format <= 7) : U32), image, format)
+  Image.FloatRGB.formatted.target(((format >= 1) && (format <= 8) : U32), image, format)
 
 def Image.FloatRGB.color_grayscale(image: Image.FloatRGB) -> Result<&1, &1, Image.FloatRGB, Image.Formatted>:
   Image.FloatRGB.to_formatted(image, 1)

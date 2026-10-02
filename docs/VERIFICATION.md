@@ -3446,3 +3446,74 @@ or performance parity is claimed for this extension.
 limits. ExportImageToMemory gains this partial scope, and ImageFormat's tracking
 removes the now-closed memory-PNG dependency gap. Counts remain 117/600 core
 partial, 142 math partial and zero complete. No remote publication was performed.
+
+## 2026-10-02: bounded RGB-float to R32 conversion
+
+`Image.FloatRGB.to_formatted` now accepts target 8 for the existing finite
+`[0,1]` RGB input domain. The sole library change is the target bound 7→8;
+the bitwise validator, retained-owner failures and existing uncontracted
+left-associated F32 luminance encoder are unchanged. No clamp, FMA substitution
+or RGBA8 quantization was introduced. Signed zeros and positive subnormals remain
+accepted, while negative nonzero, above-one and nonfinite components remain
+rejected even if their weighted result could fit. Grayscale remains format 1;
+targets 0 and 9 are still unsupported by this bridge.
+
+The standalone gate rebuilds the pinned native archive and qualifies its actual
+arithmetic before emitting candidates. Its 36,279 direct-input pixels have zero
+uncontracted-control mismatches and 462 differences from the explicit fused
+control. This qualifies the exercised host profile; it does not select a profile
+by trying Bend candidates. Expected conversion bytes come only from pinned native
+`ImageFormat`, including the non-identity `9→8→9` and `8→9→8` chains.
+
+CPU/JS each pass 17 native cases / 39,481 input pixels, 75 exact retained-owner
+controls and 27 same-backend direct NaN controls: 194 complete observations and
+182,019 output bytes per lane. Cases include all eight zero-sign combinations,
+unit corners, predecessors of one, subnormal/normal boundaries, packed/grayscale
+threshold inputs, a contraction discriminator, seeded exponent-spread triples,
+rectangular/thin shapes and full 33,024-pixel traversal. Every rejected non-NaN
+source word and dimension is checked in both the original returned owner and an
+independently used copy. Invalid values occupy each component at early, middle
+and final positions; unsupported targets include U32 maximum. The NaN checks do
+not claim raw-payload interoperability.
+
+Fifteen serial batches of at most eight operations per lane retain all inputs
+and observations. Strict counts, types, framing, dimensions, formats, output
+domains and byte lengths prevent missing/extra/truncated results from passing.
+All stdout, input manifests, source/harness/generated-program hashes and native
+archive/build hashes are retained. The focused CI gate runs before the separately
+known-failing canonical gate; artifact selection excludes large RAW/sparse files.
+
+All affected regressions pass on CPU/JS: 165 image-format cases across all 64
+format pairs and 45 factory controls, ten direct RGB-float format cases / 5,759
+pixels with three retained owners, fourteen reverse-bridge results, and the
+existing large RGB-float/byte bridge. The former valid target-8 direct-format
+rejection is now a native success. The R32 consumer gate retains all 88 pure
+observations, nine exact files, memory/file PNG distinctions and two unsupported
+format-9 pre-open RAW controls; its former target-8 rejection now uses a genuine
+negative subnormal. Independent replay reproduces every consumer output hash
+and file comparison.
+
+Independent read-only review found a C qualification portability risk from
+reading a byte array through a float pointer. The final qualifier uses `memcpy`
+loads into declared float locals and asserts binary32/32-bit word layout. Review
+then reparsed all 30 focused candidate stdout files and checked 40 library sources,
+seven harness files, the input manifest, 32 generated programs, all stdout and
+native archive/cache/flags/header/textures hashes. No library arithmetic change
+was needed.
+
+All 96 Python tests pass, as do syntax, generated-ledger, Clang catalog audit and
+project checks. The final proof verdict is `All terms check.` Existing contracts,
+transforms, decoding and QOI file round-trip/error checks pass on CPU/JS; native
+PPM examples match every reference pixel. The full 261-scenario corpus was rebuilt
+in 17 batches; CPU one-thread,
+CPU two-thread and JavaScript each still match 260 scenarios. The only mismatch
+is the documented angle result `3fc90fdb` native versus `3fc90fda` Bend. Aggregate
+conformance remains failed; no expected values, tolerances, fixtures, angle or
+extrema selectors were changed.
+
+[Durable evidence](evidence/float-rgb-r32.json) records these scoped results.
+The ledger delta from `1688305` changes only `raylib:function:ImageFormat`,
+partial → partial. Totals remain 117/600 core partial, 142 math partial and zero
+complete. Wider HDR, other numerical/target profiles, GPU/hosted execution and
+full integration/resource/performance coverage remain open. No remote
+publication was performed.
