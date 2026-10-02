@@ -262,3 +262,7 @@ on CPU one-thread, CPU two-thread and JavaScript. Each lane matches 260 of the
 unchanged 261 scenarios; the angle scenario remains an exact mismatch and the
 canonical gate still fails. These counts describe this corpus, not library-wide
 parity or an API-completion percentage.
+
+The remaining angle work is staged in [ANGLE-PLAN.md](ANGLE-PLAN.md), including
+the immutable MIT algorithm source, reusable binary64 arithmetic prerequisites,
+a separate angle reference type and exact CPU/JS/device qualification gates.
