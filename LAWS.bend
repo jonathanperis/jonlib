@@ -1,4 +1,5 @@
 import Base
+import ./src/modern_angle.bend as MA
 import ./jonlib.bend as J
 import ./jonmath.bend as M
 import ./src/binary64_narrow.bend as N
@@ -289,3 +290,58 @@ law gradual_multiply_internal_k106_half_window:
 
 law gradual_multiply_internal_minimum_normal_half_window:
   {G.gradual(0,F.Words{8388607,4294967292}) == F.Words{1048576,0} : F.Words}
+
+# Private modern atan2: explicit failure propagation and finite zero branches.
+# These are scoped laws, not a universal transcendental-correctness theorem.
+law modern_angle_reject_before_arithmetic:
+  for y: U32
+  for x: U32
+  {MA.traced.valid(False{},y,x) == MA.Packet{MA.Failed{1,[y,x]},4096,0,0,Nil{}} : MA.Packet}
+
+law modern_angle_add_failure:
+  for id: U32
+  for words: +List<U32>
+  for other: MA.Value
+  {MA.add(10,MA.Failed{id,words},other) == MA.Failed{id,words} : MA.Value}
+
+law modern_angle_multiply_failure:
+  for id: U32
+  for words: +List<U32>
+  for other: MA.Value
+  {MA.mul(20,MA.Failed{id,words},other) == MA.Failed{id,words} : MA.Value}
+
+law modern_angle_fma_failure:
+  for id: U32
+  for words: +List<U32>
+  for b: MA.Value
+  for c: MA.Value
+  {MA.fma(81,MA.Failed{id,words},b,c) == MA.Failed{id,words} : MA.Value}
+
+law modern_angle_failed_narrow:
+  for id: U32
+  for words: +List<U32>
+  {MA.narrow(MA.Failed{id,words}) == None{} : Maybe<U32>}
+
+law modern_angle_reject_infinite_y:
+  {MA.checked(2139095040,1065353216) == None{} : Maybe<U32>}
+
+law modern_angle_reject_nan_x:
+  {MA.checked(0,2143289344) == None{} : Maybe<U32>}
+
+law modern_angle_zero_positive_axis:
+  {MA.checked(0,1065353216) == Some{0} : Maybe<U32>}
+
+law modern_angle_negative_zero_positive_axis:
+  {MA.checked(2147483648,1065353216) == Some{2147483648} : Maybe<U32>}
+
+law modern_angle_positive_zeros:
+  {MA.checked(0,0) == Some{0} : Maybe<U32>}
+
+law modern_angle_negative_y_zero_x:
+  {MA.checked(2147483648,0) == Some{2147483648} : Maybe<U32>}
+
+law modern_angle_positive_y_negative_zero_x:
+  {MA.checked(0,2147483648) == Some{1078530011} : Maybe<U32>}
+
+law modern_angle_negative_zeros:
+  {MA.checked(2147483648,2147483648) == Some{3226013659} : Maybe<U32>}

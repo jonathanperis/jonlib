@@ -1,5 +1,12 @@
 # Private checked normal binary64 operations and word adapters
 
+Current integration note: the new [private modern scalar adapter](MODERN-ANGLE.md)
+consumes this helper under the same checked contract. Historical “no consumer”
+statements and future-kernel/remaining-work sections below describe the isolated
+prerequisite checkpoint. No existing public image/math consumer, helper
+implementation or public contract changes. The current scalar adapter status is
+recorded separately at the link above.
+
 `src/binary64_ops.bend` provides isolated, checked canonical high/low U32
 boundaries around the unchanged `float64_ops.bend` multiplication and division.
 Results are `Maybe<binary64_fma.Words>`, rounded once to nearest, ties to even.

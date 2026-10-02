@@ -1,5 +1,12 @@
 # Private directly rounded binary64-to-binary32 words
 
+Current integration note: the new [private modern scalar adapter](MODERN-ANGLE.md)
+consumes this helper under the same checked contract. Historical “no consumer”
+statements and future-kernel/remaining-work sections below describe the isolated
+prerequisite checkpoint. No existing public image/math consumer, helper
+implementation or public contract changes. The current scalar adapter status is
+recorded separately at the link above.
+
 `src/binary64_narrow.bend` is an isolated prerequisite for the future modern
 angle profile. `checked(high: U32, low: U32) -> Maybe<U32>` consumes the canonical
 IEEE binary64 encoding and returns the binary32 **word**, rounded once to nearest,

@@ -1,5 +1,12 @@
 # Private bounded binary64 addition and subtraction
 
+Current integration note: the new [private modern scalar adapter](MODERN-ANGLE.md)
+consumes this helper under the same checked contract. Historical “no consumer”
+statements and future-kernel/remaining-work sections below describe the isolated
+prerequisite checkpoint. No existing public image/math consumer, helper
+implementation or public contract changes. The current scalar adapter status is
+recorded separately at the link above.
+
 `src/binary64_add_sub.bend` provides the private entry points
 `checked_add(ah, al, bh, bl)` and `checked_sub(ah, al, bh, bl)`, each returning
 `Maybe<binary64_fma.Words>`. Arguments are canonical IEEE binary64 high/low U32

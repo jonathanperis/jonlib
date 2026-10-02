@@ -3916,3 +3916,109 @@ artifact hashes. It verified 212 retained regression artifacts, 76 audit-command
 input/output records, 68 canonical build artifacts and every canonical field,
 PPM pixel and QOI byte. The gradual-division wording and first-difference-only
 supplementary audit were corrected. No blocking findings remain.
+
+
+## 2026-10-02: private pinned finite modern atan2 scalar kernel
+
+`src/modern_angle.bend` is a complete finite-input RN-even adaptation of the
+pinned MIT glibc 2.41 scalar source, using the five unchanged private binary64
+prerequisites. The [contract](MODERN-ANGLE.md) separates raw scalar inputs from
+public vector-wrapper domains. No public consumer, default, selector, fixture,
+expected word, tolerance or compiler changed. All 45 pre-existing library sources
+remain byte-for-byte unchanged. Three angle entries receive private evidence/gap
+updates only; all 1,884 API statuses remain unchanged, with 117/600 core partial,
+142 math partial and zero complete. The canonical mismatch remains a strict
+failure rather than being rerouted to the new code.
+
+The entire rational expression tree, both fallbacks, all 32 compensated
+coefficient pairs, FMA residuals, literal gradual tiny product, unsigned raw-word
+stepping and final narrowing/re-promotion correction are implemented. All 102
+binary64 constant roles are checked against an independently frozen source table.
+The full MIT notice and altered-source provenance are retained. The exact
+original C file, separate instrumented adaptation and compatibility shims are
+hashed independently; no LGPL testcase table is copied and no native arithmetic
+hook appears in the Bend candidate.
+
+All **8,317 source-defined observations** match CPU-one-thread, CPU-two-thread
+and JavaScript, including final64/final32 words, branch masks, reduction metadata
+and 121,148 ordered binary64 checkpoints per lane. Each lane checks 567,870 framed
+U32 words across 33 serial programs of at most 256 inputs. All 8,263 finite cases
+succeed without arithmetic-domain rejection; all 54 nonfinite pairs are rejected
+before promotion. Result classes include 8,065 normals, 78 subnormals and 120
+signed zeros. The complete historical 1,086-input prefix and all 178 historical
+native/Sun differing ID/output records are pinned unchanged.
+
+Actual coverage includes 6,077 rational paths, 2,156 shortcuts, 30 early-zero
+returns, 718 tiny decrements and 269 compensated general fallbacks. General final
+scaling takes the upward branch 16 times and downward 253 times. Tiny products
+include 710 normal values, four subnormals and four negative zeros, preserving
+the exact literal operation. All reduction indices, magnitude orders and sign
+quadrants are covered. Independently reviewed written RN arguments exclude tiny
+increment, tiny nonboundary and the final correction guard's false side for this
+finite-input contract. Their code remains implemented; direct synthetic controls
+exercise them without claiming actual source hits or an exhaustive theorem.
+
+The separate **28-control** helper gate passes all three lanes: ten successful
+raw/helper values and eighteen explicit primitive-rejection or propagation
+records, including deterministic dependency-left failure precedence. These 379
+framed U32 words per lane are not added to reachable scalar coverage. No failure
+substitutes an old profile, clamped value or zero.
+
+Pinned original/adapted/native glibc 2.41 outputs agree for every finite corpus
+input. Separate Clang 19.1.7 and GCC 14.2.0 native builds agree on every full record,
+including branches and checkpoints. Same-process qualification checks layouts,
+no excess precision, true FMA, direct narrowing, gradual arithmetic, RN-even and
+FTZ/DAZ before and after execution. Final MXCSR is 8114; exception status bits
+are outside the contract. Libc package-manager identity is explicitly unavailable;
+runtime version and loaded atan2/FMA library hashes are retained. Native libm
+is diagnostic and never defines or selects the pinned-source expectation.
+
+Native-only bounded input discovery reproduces all nineteen retained rare-path
+seeds from 100 million uniform trials and 100,000 midpoint/continued-fraction
+proposals. The latter produces 17,809 general hits, including 541 upward cases;
+sixteen seeds are retained before sign/swap expansion. A separate 50-million-trial
+tiny search sees 6,250,036 boundary cases and no nonboundary case. These searches
+are not additional Bend parity observations; the exclusion arguments are written
+bounds, not inferences from absent hits. Source snapshots and complete search
+outputs survive. The unused 200-million-trial exploration is not an acceptance
+dependency.
+
+All **271 Python tests** pass, including 32 new focused methods for malformed,
+missing, duplicate/reordered, wrong-type, coefficient-mutation, qualification,
+coverage-loss, stale-output and source/library/compiler drift failures. Complete
+`PROOF.bend` checks **84 laws**: 71 existing plus five structural failure/rejection
+laws and eight concrete special/zero controls. The written coefficient/domain
+checker passes its exact finite facts. None of these is a universal atan2,
+arithmetic or kernel-reachability machine proof.
+
+Every arithmetic prerequisite is freshly rerun: narrowing 40,276, FMA 11,038,
+add/subtract 47,464, normal operations/adapters 36,176 and gradual multiplication
+30,861, totaling **165,815 observations per lane**. Legacy binary64 operations,
+F32 FMA, GNU/Sun angle and inverse-trig gates pass. The existing native-angle
+probe still fails with exactly its 178 historical differences.
+
+The canonical reference archive is clean-rebuilt with its unchanged cached
+configuration; old generated reference/candidate programs and outputs are removed.
+A fresh 17-batch canonical run and complete all-field/word audit again give
+**260/261 scenarios per lane**, checking every one of the 40,101 words. The sole
+difference remains `vector2-angle-profiles` pixel `(6,0)`, native `3fc90fdb`
+versus Bend `3fc90fda`. Aggregate conformance remains failed. Trailing ownership,
+transformation, decoding, all PPM example pixels, QOI bytes/roundtrips and
+missing/malformed/oversized-file controls pass; fresh-file replay removes prior
+PPM/QOI outputs before checking regenerated data.
+
+The focused report rechecks 66 source/dependency and 408 artifact hashes.
+Independent read-only review regenerated every focused input/program/expectation,
+replayed all retained lane records and checked exact constants, written bounds,
+native contexts and unchanged sources. Final regression/metadata review and
+clearance are recorded in [durable evidence](evidence/modern-angle.json).
+The generic 256-input serial benchmark used approximately 971 MiB peak child RSS
+and 15.06 seconds compilation; the full focused gate took 562.703 seconds. These
+are scoped local harness observations, not runtime/device performance parity.
+The CI workflow includes the new focused gate before the still-strict public
+native-angle failure; no hosted execution is claimed.
+
+Public Angle.Reference/native qualification, vector intermediate/output domains,
+forced-device/resource validation and performance remain separate work. No GPU,
+all-target, full finite-pair exhaustive execution, exception/errno, other-rounding
+or NaN-payload claim is made.

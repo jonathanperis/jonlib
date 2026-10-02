@@ -1,4 +1,5 @@
 import Base
+import ./src/modern_angle.bend as MA
 import ./LAWS.bend as Laws
 import ./jonlib.bend as J
 import ./jonmath.bend as M
@@ -224,4 +225,51 @@ def Laws.gradual_multiply_internal_k106_half_window():
   {==}
 
 def Laws.gradual_multiply_internal_minimum_normal_half_window():
+  {==}
+
+def Laws.modern_angle_reject_before_arithmetic(y, x):
+  {==}
+
+def Laws.modern_angle_add_failure(id, words, other):
+  match other:
+    case MA.Good{w}: {==}
+    case MA.Failed{op, args}: {==}
+
+def Laws.modern_angle_multiply_failure(id, words, other):
+  match other:
+    case MA.Good{w}: {==}
+    case MA.Failed{op, args}: {==}
+
+def Laws.modern_angle_fma_failure(id, words, b, c):
+  match b c:
+    case MA.Good{bw} MA.Good{cw}: {==}
+    case MA.Good{bw} MA.Failed{op,args}: {==}
+    case MA.Failed{op,args} MA.Good{cw}: {==}
+    case MA.Failed{op,args} MA.Failed{op2,args2}: {==}
+
+def Laws.modern_angle_failed_narrow(id, words):
+  {==}
+
+def Laws.modern_angle_reject_infinite_y():
+  {==}
+
+def Laws.modern_angle_reject_nan_x():
+  {==}
+
+def Laws.modern_angle_zero_positive_axis():
+  {==}
+
+def Laws.modern_angle_negative_zero_positive_axis():
+  {==}
+
+def Laws.modern_angle_positive_zeros():
+  {==}
+
+def Laws.modern_angle_negative_y_zero_x():
+  {==}
+
+def Laws.modern_angle_positive_y_negative_zero_x():
+  {==}
+
+def Laws.modern_angle_negative_zeros():
   {==}

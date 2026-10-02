@@ -1,0 +1,39 @@
+/* Correctly-rounded arctangent function of two binary32 values.
+
+Copyright (c) 2022-2024 Alexei Sibidanov and Paul Zimmermann.
+
+The original version of this file was copied from the CORE-MATH
+project (file src/binary32/atan2/atan2f.c, revision 7835c5d).
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*/
+
+Provenance: glibc 2.41 release commit
+74f59e9271cbb4071671e5a474e7d4f1622b186f
+sysdeps/ieee754/flt-32/e_atan2f.c
+Git blob: 82a0151293cda9cf89d6a18b6f8b35d4fdaeddd4
+SHA-256: 96f9c81b6e870c256cc0757f6d88f5290ed35db8d5b640b9e757d6feca96ae38
+Source: https://github.com/bminor/glibc/blob/74f59e9271cbb4071671e5a474e7d4f1622b186f/sysdeps/ieee754/flt-32/e_atan2f.c
+
+modern_atan2f_glibc241.c is unmodified. modern_atan2f_adapted.c is an altered,
+finite-input-only, raw-word-instrumented tooling adaptation. It retains the
+original finite arithmetic sequence and explicit true FMA calls. The source
+identifies CORE-MATH revision 7835c5d; that abbreviated revision is not an
+independently verified complete upstream commit ID. No glibc test file is copied.

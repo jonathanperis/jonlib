@@ -112,6 +112,10 @@ jobs:
         run: >-
           python3 tools/binary64_gradual_multiply_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+      - name: Verify private pinned finite modern atan2 kernel
+        run: |
+          python3 tools/modern_angle_bounds.py
+          python3 tools/modern_angle_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend"
       - name: Verify native angle profiles and supporting wide arithmetic
         run: |
           python3 tools/float64_ops_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend"

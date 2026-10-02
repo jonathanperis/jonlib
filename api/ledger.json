@@ -61577,7 +61577,7 @@
       "scope": "Finite normal/zero uncontracted cross/dot arithmetic with explicit Apple/GNU atan2f profiles and exact signed quadrant outputs.",
       "gaps": [
         "Exceptional/subnormal and contracted domains",
-        "Modern glibc angle kernel and checked-domain integration remain unimplemented; isolated bounded FMA/add/subtract/multiply/divide, separate gradual-output multiplication, exact word adapters and narrowing do not change current consumers or parity",
+        "Private finite glibc 2.41 scalar kernel is verified separately; public Angle.Reference/native qualification and vector-wrapper domain integration remain open, so existing consumers and canonical parity are unchanged",
         "Other libm/target/performance coverage"
       ],
       "blocker": null,
@@ -61605,7 +61605,14 @@
         "docs/evidence/binary64-ops.json",
         "docs/BINARY64-GRADUAL-MULTIPLY.md",
         "docs/evidence/binary64-gradual-multiply.json",
-        "jonmath.bend"
+        "jonmath.bend",
+        "src/modern_angle.bend",
+        "tools/modern_angle_probe.py",
+        "tools/modern_angle_reference.py",
+        "tools/modern_angle_bounds.py",
+        "docs/MODERN-ANGLE.md",
+        "docs/MODERN-ANGLE-BOUNDS.md",
+        "docs/evidence/modern-angle.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -61651,7 +61658,7 @@
       "scope": "Reference endpoint differences and negated atan2f with explicit numerical profiles, including signed-zero directions.",
       "gaps": [
         "Exceptional/subnormal and contracted domains",
-        "Modern glibc angle kernel and checked-domain integration remain unimplemented; isolated bounded FMA/add/subtract/multiply/divide, separate gradual-output multiplication, exact word adapters and narrowing do not change current consumers or parity",
+        "Private finite glibc 2.41 scalar kernel is verified separately; public Angle.Reference/native qualification and vector-wrapper domain integration remain open, so existing consumers and canonical parity are unchanged",
         "Other libm/target/performance coverage"
       ],
       "blocker": null,
@@ -61678,7 +61685,14 @@
         "docs/evidence/binary64-ops.json",
         "docs/BINARY64-GRADUAL-MULTIPLY.md",
         "docs/evidence/binary64-gradual-multiply.json",
-        "jonmath.bend"
+        "jonmath.bend",
+        "src/modern_angle.bend",
+        "tools/modern_angle_probe.py",
+        "tools/modern_angle_reference.py",
+        "tools/modern_angle_bounds.py",
+        "docs/MODERN-ANGLE.md",
+        "docs/MODERN-ANGLE-BOUNDS.md",
+        "docs/evidence/modern-angle.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -63646,7 +63660,7 @@
       "scope": "Uncontracted cross-product length/dot order followed by explicit Apple/GNU atan2f profile; exact parallel, opposite and zero-vector fixtures.",
       "gaps": [
         "Exceptional/subnormal and contracted domains",
-        "Modern glibc angle kernel and checked-domain integration remain unimplemented; isolated bounded FMA/add/subtract/multiply/divide, separate gradual-output multiplication, exact word adapters and narrowing do not change current consumers or parity",
+        "Private finite glibc 2.41 scalar kernel is verified separately; public Angle.Reference/native qualification and vector-wrapper domain integration remain open, so existing consumers and canonical parity are unchanged",
         "Other libm/target/performance coverage"
       ],
       "blocker": null,
@@ -63673,7 +63687,14 @@
         "docs/evidence/binary64-ops.json",
         "docs/BINARY64-GRADUAL-MULTIPLY.md",
         "docs/evidence/binary64-gradual-multiply.json",
-        "jonmath.bend"
+        "jonmath.bend",
+        "src/modern_angle.bend",
+        "tools/modern_angle_probe.py",
+        "tools/modern_angle_reference.py",
+        "tools/modern_angle_bounds.py",
+        "docs/MODERN-ANGLE.md",
+        "docs/MODERN-ANGLE-BOUNDS.md",
+        "docs/evidence/modern-angle.json"
       ],
       "gate_evidence": {},
       "target_results": {},
