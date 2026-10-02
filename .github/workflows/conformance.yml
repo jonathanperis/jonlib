@@ -115,12 +115,12 @@ jobs:
       - name: Verify private pinned finite modern atan2 kernel
         run: |
           python3 tools/modern_angle_bounds.py
-          python3 tools/modern_angle_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          python3 tools/modern_angle_probe.py --reference-loader-policy clean-loader --bend-source "${{ github.workspace }}/.build/dependencies/bend"
       - name: Qualify frozen native angle contract (Linux ELF metadata profile)
         if: runner.os == 'Linux'
         run: |
           python3 tools/angle_manifest_audit.py
-          python3 tools/angle_reference.py --raylib-source "${{ github.workspace }}/.build/dependencies/raylib" --library .build/raylib/raylib/libraylib.a
+          python3 tools/angle_reference.py --reference-loader-policy clean-loader --raylib-source "${{ github.workspace }}/.build/dependencies/raylib" --library .build/raylib/raylib/libraylib.a
       # The checked-wrapper gate currently exercises the freshly qualified modern
       # Linux ELF profile. A different numerical contract is not silently retargeted.
       - name: Verify checked modern angle wrappers (qualified Linux context)
@@ -128,7 +128,7 @@ jobs:
         run: |
           profile=$(python3 -c 'import json; print(json.load(open(".build/angle-reference/results.json"))["selected_profile"])')
           if [ "$profile" = Glibc241AngleRn ]; then
-            python3 tools/checked_angle_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend" --raylib-source "${{ github.workspace }}/.build/dependencies/raylib" --library .build/raylib/raylib/libraylib.a
+            python3 tools/checked_angle_probe.py --reference-loader-policy clean-loader --bend-source "${{ github.workspace }}/.build/dependencies/bend" --raylib-source "${{ github.workspace }}/.build/dependencies/raylib" --library .build/raylib/raylib/libraylib.a
           else
             echo "Modern checked-wrapper host gate unsupported for qualified $profile; no modern host pass claimed"
           fi
@@ -141,6 +141,10 @@ jobs:
           sys.path.insert(0, 'tools')
           import modern_angle_reference as historical
           import conformance
+          import reference_environment
+          # Legacy source stays byte-identical. Its inherited context is separate
+          # from the qualified clean context and still faces all frozen checks.
+          legacy_env = reference_environment.ReferenceEnvironment()
           modern = False
           if platform.system() == 'Linux':
               receipt = json.loads(pathlib.Path('.build/angle-reference/results.json').read_text())
@@ -153,7 +157,8 @@ jobs:
           work = pathlib.Path('.build/angle-probe')
           if work.exists():
               shutil.rmtree(work)
-          result = subprocess.run(command, capture_output=True, text=True)
+          result = subprocess.run(command, capture_output=True, text=True, env=legacy_env.child())
+          legacy_env.assert_unchanged()
           print(result.stdout, end='')
           print(result.stderr, file=sys.stderr, end='')
           if not modern:
@@ -171,7 +176,7 @@ jobs:
               assert set(report['lanes']) == {'cpu'} and report['lanes']['cpu']['passed'] is False
               assert report['lanes']['cpu']['mismatch_count'] == 178
               assert report['sources'] == library_sources
-              native = list(map(int, subprocess.check_output([str(work/'reference')], text=True).split()))
+              native = list(map(int, subprocess.check_output([str(work/'reference')], text=True, env=legacy_env.child()).split()))
               output = subprocess.check_output([str(work/'candidate-cpu'), '--threads', '1'], text=True)
               old = [word for line in output.splitlines() for word in json.loads(line)]
               assert len(native) == len(old) == 1086
@@ -180,6 +185,10 @@ jobs:
               assert historical.hash_json(rows) == historical.HISTORICAL_RESULTS_SHA256
               assert historical.hash_json(differences) == historical.HISTORICAL_DIFFERENCES_SHA256
               print('Legacy contract preserved: 1086 exact historical records, 178 native differences; this is not legacy native parity')
+          legacy_env.assert_unchanged()
+          (work/'loader-context.json').write_text(json.dumps(dict(
+              scope='separate legacy compatibility; not clean-context qualification',
+              reference_environment=legacy_env.receipt()), indent=2)+'\n')
           assert conformance.source_gate() == library_sources
           assert historical.assert_pins() == harness_sources
           PYTHON
@@ -199,11 +208,11 @@ jobs:
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       # Angle-bearing canonical/Metal generation now requires fresh qualification.
-      # Darwin provenance is not implemented: such runs fail closed rather than
-      # inheriting historical Apple/Metal evidence or an OS-inferred selector.
+      # Native reference/compiler children explicitly use a clean loader profile.
+      # setup-python and Bend keep their inherited environment; no global unset.
       - name: Build and compare every pixel
         run: >-
-          python3 tools/conformance.py
+          python3 tools/conformance.py --reference-loader-policy clean-loader
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Verify owned random streams, sequences and post-noise state

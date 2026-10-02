@@ -15,6 +15,11 @@ import platform
 import time
 import struct
 
+if __package__:
+    from . import reference_environment
+else:
+    import reference_environment
+
 UNARY_IMAGE_APIS = {'flip_horizontal':'ImageFlipHorizontal', 'flip_vertical':'ImageFlipVertical',
                     'rotate_cw':'ImageRotateCW', 'rotate_ccw':'ImageRotateCCW', 'color_invert':'ImageColorInvert',
                     'alpha_premultiply':'ImageAlphaPremultiply', 'color_grayscale':'ImageColorGrayscale'}
@@ -162,8 +167,8 @@ BUILD = ROOT / ".build"
 ENV = dict(os.environ, BEND_NO_TELEMETRY="1")
 
 
-def run(command, cwd=ROOT, timeout=240):
-    result = subprocess.run([str(x) for x in command], cwd=cwd, env=ENV,
+def run(command, cwd=ROOT, timeout=240, *, env=None):
+    result = subprocess.run([str(x) for x in command], cwd=cwd, env=ENV if env is None else env,
                             capture_output=True, text=True, timeout=timeout)
     if result.returncode:
         raise RuntimeError(f"Command failed: {' '.join(map(str, command))}\n"
@@ -1017,15 +1022,17 @@ def has_extrema(cases):
                for case in cases for op in case['operations'])
 
 
-def qualify_extrema(raylib_source, library):
+def qualify_extrema(raylib_source, library, *, reference_env=None):
     # Import locally: the qualifier receives the unchanged canonical generators,
     # parser and runner instead of importing them through a circular dependency.
     if __package__:
         from .extrema_reference import qualify
     else:
         from extrema_reference import qualify
+    environment = reference_environment.select(reference_env)
     return qualify(raylib_source, library, BUILD,
-                   c_source=c_source, cases_from=cases_from, parse_output=parse_output, run=run)
+                   c_source=c_source, cases_from=cases_from, parse_output=parse_output,
+                   run=lambda command: run(command, env=environment.child()))
 
 
 def has_angles(cases):
@@ -1034,15 +1041,17 @@ def has_angles(cases):
                for case in cases for op in case['operations'])
 
 
-def qualify_angles(raylib_source, library):
+def qualify_angles(raylib_source, library, *, reference_env=None):
     # Always execute the independent gate now. Never load an earlier receipt or
     # infer the contract from the host name, gradient profile or candidate output.
     if __package__:
         from .angle_reference import qualify
     else:
         from angle_reference import qualify
+    environment = reference_environment.select(reference_env)
     qualification = qualify(raylib_source, library, BUILD,
-                            c_source=c_source, cases_from=cases_from, parse_output=parse_output)
+                            c_source=c_source, cases_from=cases_from, parse_output=parse_output,
+                            reference_env=environment)
     if (type(qualification) is not dict or qualification.get('qualified') is not True or
             qualification.get('schema') != 1 or qualification.get('contract') != 'native-angle-qualification-v1' or
             qualification.get('phase') != 'qualified' or
@@ -1058,6 +1067,7 @@ def qualify_angles(raylib_source, library):
             any(type(context) is not dict or not context for context in contexts.values()) or
             type(artifacts) is not dict or artifacts.get(str(source)) != hashlib.sha256(source.read_bytes()).hexdigest()):
         raise ValueError('Angles require complete fresh qualification contexts and source identity')
+    environment.assert_receipt(qualification.get('reference_environment'))
     return qualification
 
 
@@ -1480,20 +1490,21 @@ def inventory(header):
             for entry in declarations]
 
 
-def verify_native_rejection(raylib_source, library, case, exit_code, message):
+def verify_native_rejection(raylib_source, library, case, exit_code, message, *, reference_env=None):
     cases = cases_from(dict(schema=1, cases=[case]))
-    verify_native_source_rejection(raylib_source, library, case['id'], c_source(cases), exit_code, message)
+    verify_native_source_rejection(raylib_source, library, case['id'], c_source(cases), exit_code, message, reference_env=reference_env)
 
 
-def verify_native_source_rejection(raylib_source, library, name, text, exit_code, message):
+def verify_native_source_rejection(raylib_source, library, name, text, exit_code, message, *, reference_env=None):
+    environment = reference_environment.select(reference_env)
     source = BUILD/f'{name}.c'
     binary = BUILD/name
     source.write_text(text)
     binary.unlink(missing_ok=True)
-    run(['clang','-std=c11','-O2','-fno-builtin-atan2f','-I'+str(raylib_source/'src'),source,library,'-lm','-o',binary])
+    run(['clang','-std=c11','-O2','-fno-builtin-atan2f','-I'+str(raylib_source/'src'),source,library,'-lm','-o',binary], env=environment.child())
     if not binary.is_file() or binary.stat().st_size == 0:
         raise ValueError(f'{name}: compiler did not produce a fresh native rejection control')
-    rejected = subprocess.run([str(binary)],cwd=ROOT,env=ENV,capture_output=True,text=True,timeout=240)
+    rejected = subprocess.run([str(binary)],cwd=ROOT,env=environment.child(),capture_output=True,text=True,timeout=240)
     if rejected.returncode != exit_code or message not in rejected.stderr or rejected.stdout.strip():
         raise ValueError(f'{name}: native invalid-domain control did not fail closed')
 
@@ -1514,25 +1525,25 @@ def native_angle_output_control_source():
     return '\n'.join(lines)+'\n'
 
 
-def verify_angle_rejections(raylib_source, library):
+def verify_angle_rejections(raylib_source, library, *, reference_env=None):
     control = dict(id='angle-invalid-intermediate', width=1, height=1, background=[0,0,0,0],
                    operations=[dict(op='vector_value', function='line_angle', x=0, y=0, args=[0,0,1,1e-40]),
                                dict(op='clear', color=[0,0,0,0]),
                                dict(op='pixel', x=0, y=0, color=[1,2,3,4])])
-    verify_native_rejection(raylib_source, library, control, 10, 'invalid angle intermediate domain')
+    verify_native_rejection(raylib_source, library, control, 10, 'invalid angle intermediate domain', reference_env=reference_env)
     verify_native_source_rejection(raylib_source, library, 'angle-invalid-output',
-                                   native_angle_output_control_source(), 10, 'invalid angle result')
+                                   native_angle_output_control_source(), 10, 'invalid angle result', reference_env=reference_env)
     return 2
 
 
-def verify_unproject_rejections(raylib_source, library):
+def verify_unproject_rejections(raylib_source, library, *, reference_env=None):
     identity = [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]
     controls = [([0,0,0], [0]*16),
                 ([0,0,1], [1,0,0,0,0,1,0,0,0,0,1,0,0,0,1,1])]
     for index, (point, projection) in enumerate(controls):
         case = dict(id=f'unproject-invalid-{index}', width=3, height=1, background=[0,0,0,0],
                     operations=[dict(op='vector3_value', function='unproject', x=0, y=0, args=point+projection+identity)])
-        verify_native_rejection(raylib_source, library, case, 8, 'invalid unprojection')
+        verify_native_rejection(raylib_source, library, case, 8, 'invalid unprojection', reference_env=reference_env)
     return len(controls)
 
 
@@ -1542,10 +1553,14 @@ def main():
     parser.add_argument('--raylib-source', type=Path, default=Path.home() / 'Projetos/raysan5/raylib')
     parser.add_argument('--fixtures', type=Path, default=ROOT / 'tests/fixtures/images.json')
     parser.add_argument('--gpu', action='store_true', help='Build and force the native GPU lane; failure is fatal')
-    args = parser.parse_args()
+    reference_environment.add_argument(parser)
     BUILD.mkdir(exist_ok=True)
     report = dict(passed=False, lanes={}, profile='rgba8-cpu-images-v1')
     report_path = BUILD / 'conformance.json'
+    report_path.write_text(json.dumps(report, indent=2) + '\n')
+    args = parser.parse_args()
+    environment = reference_environment.ReferenceEnvironment(args.reference_loader_policy)
+    report['reference_environment'] = environment.receipt()
     report_path.write_text(json.dumps(report, indent=2) + '\n')
     started = time.monotonic()
     lock = json.loads((ROOT / 'toolchain.json').read_text())
@@ -1555,7 +1570,7 @@ def main():
     report['toolchain'] = lock
     report['host'] = dict(system=platform.system(), machine=platform.machine(),
                           bun=run(['bun', '--version']).strip(),
-                          clang=run(['clang', '--version']).splitlines()[0])
+                          clang=run(['clang', '--version'], env=environment.child()).splitlines()[0])
     report['sources'] = source_gate()
     api = inventory((args.raylib_source / 'src/raylib.h').read_text())
     (BUILD / 'api-inventory.json').write_text(json.dumps(api, indent=2) + '\n')
@@ -1563,7 +1578,7 @@ def main():
     report['progression'] = json.loads((ROOT / 'api/summary.json').read_text())['core_functions']
     report['verification_sources'] = {
         str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
-        for path in (ROOT / 'tools/conformance.py', ROOT / 'tools/extrema_reference.py', ROOT / 'tools/angle_reference.py', ROOT / 'tests/contracts.bend',
+        for path in (ROOT / 'tools/conformance.py', ROOT / 'tools/extrema_reference.py', ROOT / 'tools/angle_reference.py', ROOT / 'tools/reference_environment.py', ROOT / 'tests/contracts.bend',
                      ROOT / 'tests/transforms.bend', ROOT / 'tests/transforms_gpu.bend', ROOT / 'examples/transforms.bend',
                      ROOT / 'tests/decoding.bend', ROOT / 'tests/decoding_gpu.bend',
                      ROOT / 'tests/io_decoding.bend',
@@ -1605,39 +1620,41 @@ def main():
     print('Building pinned raylib reference...', flush=True)
     run(['cmake', '-S', args.raylib_source, '-B', cmake, '-DPLATFORM=Memory',
          '-DCMAKE_BUILD_TYPE=Release', '-DBUILD_EXAMPLES=OFF', '-DCUSTOMIZE_BUILD=ON',
-         '-DSUPPORT_MODULE_RAUDIO=OFF', '-DSUPPORT_RPRAND_GENERATOR=ON', '-DUSE_EXTERNAL_GLFW=OFF'])
-    run(['cmake', '--build', cmake, '--parallel', '4'])
+         '-DSUPPORT_MODULE_RAUDIO=OFF', '-DSUPPORT_RPRAND_GENERATOR=ON', '-DUSE_EXTERNAL_GLFW=OFF'], env=environment.child())
+    run(['cmake', '--build', cmake, '--parallel', '4'], env=environment.child())
     (BUILD / 'reference.c').write_text(c_source(cases))
     run(['clang', '-std=c11', '-O2', '-fno-builtin-atan2f', '-I' + str(args.raylib_source / 'src'),
-         BUILD / 'reference.c', cmake / 'raylib/libraylib.a', '-lm', '-o', BUILD / 'reference'])
-    reference_text = run([BUILD / 'reference'])
+         BUILD / 'reference.c', cmake / 'raylib/libraylib.a', '-lm', '-o', BUILD / 'reference'], env=environment.child())
+    reference_text = run([BUILD / 'reference'], env=environment.child())
     (BUILD / 'reference.jsonl').write_text(reference_text)
     reference = parse_output(reference_text, cases)
+    report['reference_artifacts'] = {name: hashlib.sha256((BUILD/name).read_bytes()).hexdigest()
+                                     for name in ('reference.c', 'reference', 'reference.jsonl')}
     extrema_reference = None
     if has_extrema(cases):
-        qualification = qualify_extrema(args.raylib_source, cmake / 'raylib/libraylib.a')
+        qualification = qualify_extrema(args.raylib_source, cmake / 'raylib/libraylib.a', reference_env=environment)
         extrema_reference = qualification['selected_profile']
         report['extrema_reference'] = qualification
         report_path.write_text(json.dumps(report, indent=2) + '\n')
         print(f'Literal-raymath extrema profile: {extrema_reference} (fresh native qualification)', flush=True)
     angle_reference = None
     if has_angles(cases):
-        qualification = qualify_angles(args.raylib_source, cmake / 'raylib/libraylib.a')
+        qualification = qualify_angles(args.raylib_source, cmake / 'raylib/libraylib.a', reference_env=environment)
         angle_reference = qualification['selected_profile']
         report['angle_reference'] = qualification
         report_path.write_text(json.dumps(report, indent=2) + '\n')
         print(f'Native angle profile: {angle_reference} (fresh independent qualification)', flush=True)
     if any(op['op']=='vector3_value' and op['function']=='unproject' for case in cases for op in case['operations']):
-        report['unprojection_rejections'] = verify_unproject_rejections(args.raylib_source, cmake/'raylib/libraylib.a')
+        report['unprojection_rejections'] = verify_unproject_rejections(args.raylib_source, cmake/'raylib/libraylib.a', reference_env=environment)
         print('unprojection: singular and zero-W native oracle controls rejected',flush=True)
     if any(op['op']=='matrix_value' and op['function'] in ('frustum','ortho') for case in cases for op in case['operations']):
         control = dict(id='projection-invalid-result', width=16, height=1, background=[0,0,0,0],
                        operations=[dict(op='matrix_value',function='ortho',x=0,y=0,args=[-1e38,1e38,-1,1,0,1])])
-        verify_native_rejection(args.raylib_source, cmake/'raylib/libraylib.a', control, 9, 'invalid projection result')
+        verify_native_rejection(args.raylib_source, cmake/'raylib/libraylib.a', control, 9, 'invalid projection result', reference_env=environment)
         report['projection_rejections'] = 1
         print('projection: subnormal-output native oracle control rejected',flush=True)
     if has_angles(cases):
-        report['angle_rejections'] = verify_angle_rejections(args.raylib_source, cmake/'raylib/libraylib.a')
+        report['angle_rejections'] = verify_angle_rejections(args.raylib_source, cmake/'raylib/libraylib.a', reference_env=environment)
         print('angles: intermediate and output-only native oracle controls rejected',flush=True)
     exports = [row for row in reference if 'qoi' in row]
     report['qoi_exports'] = dict(scenarios=len(exports), bytes=sum(len(row['qoi']) for row in exports))
@@ -1746,6 +1763,10 @@ def main():
             raise ValueError('QOI file error contract failed')
     report['qoi_file_roundtrip'] = dict(passed=True, lanes=['cpu','javascript'], path='.build/qoi-roundtrip.qoi', error_cases=['missing-file','malformed-file','oversized-file'])
     print('QOI file export/load: CPU/JS bytes and decoded pixels match raylib', flush=True)
+    environment.assert_receipt(report['reference_environment'])
+    for name, digest in report['verification_sources'].items():
+        if hashlib.sha256((ROOT/name).read_bytes()).hexdigest() != digest:
+            raise ValueError('Verification source drift: '+name)
     report['passed'] = True
     report['elapsed_seconds'] = round(time.monotonic() - started, 3)
     report_path.write_text(json.dumps(report, indent=2) + '\n')

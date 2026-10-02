@@ -18,6 +18,7 @@ import subprocess
 import sys
 import time
 
+import reference_environment
 import modern_angle_reference as reference
 from binary64_narrow_oracle import nearest as narrow64
 from conformance import BUILD, ROOT, checkout, source_gate
@@ -26,7 +27,7 @@ CHUNK = 256
 LANES = ('cpu-1', 'cpu-2', 'javascript')
 FIELDS = ('y', 'x')
 DEPENDENCIES = ('src/modern_angle.bend', 'tools/modern_angle_probe.py',
-                'tools/modern_angle_reference.py', 'tools/angle_probe.py',
+                'tools/modern_angle_reference.py', 'tools/angle_probe.py', 'tools/reference_environment.py',
                 'tools/binary64_narrow_oracle.py', 'tools/modern_angle_bounds.py', 'tests/test_modern_angle.py',
                 'tools/conformance.py', 'LAWS.bend', 'PROOF.bend', 'toolchain.json')
 MAX_EVENTS = 128
@@ -227,12 +228,12 @@ def write_json(path, value):
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + '\n')
 
 
-def execute(command, work, name, timeout=600, env=None):
+def execute(command, work, name, timeout=600, env=None, reference_env=None):
     command = [str(part) for part in command]
     for suffix in ('stdout', 'stderr'):
         (work/(name+'.'+suffix)).unlink(missing_ok=True)
     try:
-        process = subprocess.run(command, cwd=ROOT, env=dict(os.environ, BEND_NO_TELEMETRY='1', **(env or {})),
+        process = subprocess.run(command, cwd=ROOT, env=reference_env.child() if reference_env is not None else dict(os.environ, BEND_NO_TELEMETRY='1', **(env or {})),
                                  text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
     except subprocess.TimeoutExpired as error:
         for suffix, data in (('stdout', error.stdout), ('stderr', error.stderr)):
@@ -253,12 +254,12 @@ def compile_fresh(command, outputs, work, name, env=None):
         raise ValueError('Compiler succeeded without all fresh nonempty outputs')
 
 
-def compiler_identity(command, work, name):
+def compiler_identity(command, work, name, *, reference_env=None):
     resolved = shutil.which(str(command))
     if resolved is None:
         raise ValueError(f'Missing compiler/runtime: {command}')
     path = Path(resolved).resolve()
-    return dict(path=str(path), sha256=digest(path), version=execute([command, '--version'], work, name).strip())
+    return dict(path=str(path), sha256=digest(path), version=execute([command, '--version'], work, name, reference_env=reference_env).strip())
 
 
 def candidate_environment(compiler):
@@ -285,11 +286,11 @@ def assert_unchanged(before, lock):
         raise ValueError('Source/harness/toolchain drift during probe')
 
 
-def final_source_gate(hashes, bend_source, lock, compilers=None, work=None):
+def final_source_gate(hashes, bend_source, lock, compilers=None, work=None, *, reference_env=None):
     assert_unchanged(hashes, lock)
     checkout(bend_source, lock['bend']['revision'], lock['bend'].get('patch'))
     for name, (command, expected) in (compilers or {}).items():
-        if compiler_identity(command, work, name+'-final-version') != expected:
+        if compiler_identity(command, work, name+'-final-version', reference_env=reference_env if name=='compiler' else None) != expected:
             raise ValueError('Compiler/runtime executable drift during probe')
 
 
@@ -550,8 +551,8 @@ def main() -> IO(Unit):
     return header
 
 
-def assert_runtime_libraries(native):
-    reference.recheck_runtime_libraries(native)
+def assert_runtime_libraries(native, *, reference_env=None):
+    reference.recheck_runtime_libraries(native, reference_env=reference_env)
 
 
 def run_synthetic(report, work, cli, environment, bun):
@@ -580,14 +581,17 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--bend-source', type=Path, required=True)
     parser.add_argument('--clang', default='clang')
+    reference_environment.add_argument(parser)
     parser.add_argument('--native-only', action='store_true', help='qualify pinned/host source only; never reports candidate pass')
-    args = parser.parse_args()
     work = BUILD/'modern-angle-probe'; work.mkdir(parents=True, exist_ok=True)
     report_path = work/'results.json'
     report = dict(schema=1, passed=False, lanes={}, chunks=[], artifacts={}, phase='initializing')
     write_json(report_path, report)
+    args = parser.parse_args()
     start = time.monotonic()
     try:
+        reference_env = reference_environment.ReferenceEnvironment(args.reference_loader_policy)
+        report['reference_environment'] = reference_env.receipt()
         lock = strict_json((ROOT/'toolchain.json').read_text())
         checkout(args.bend_source, lock['bend']['revision'], lock['bend'].get('patch'))
         reference.assert_pins()
@@ -596,7 +600,7 @@ def main():
         execute([sys.executable, ROOT/'tools/modern_angle_bounds.py'], work, 'bounds')
         retain_artifacts(report, work, ['bounds.stdout', 'bounds.stderr'])
         bun = compiler_identity('bun', work, 'bun-version')
-        compiler = compiler_identity(args.clang, work, 'compiler-version')
+        compiler = compiler_identity(args.clang, work, 'compiler-version', reference_env=reference_env)
         if bun['version'] != lock['bun']['version']:
             raise ValueError('Bun version does not match pinned toolchain')
         environment = candidate_environment(compiler)
@@ -618,11 +622,11 @@ def main():
                       gpu='not run; no device claim',
                       host=dict(platform=platform.platform(), machine=platform.machine(), libc=platform.libc_ver(), python=platform.python_version()))
         write_json(report_path, report)
-        native, records = reference.native_reference(rows, work/'native-reference', compiler['path'])
+        native, records = reference.native_reference(rows, work/'native-reference', compiler['path'], reference_env=reference_env)
         merge_native_artifacts(report, native, work)
         assert_artifacts_unchanged(report, work)
         reference.validate_metadata(native['environment'])
-        assert_runtime_libraries(native)
+        assert_runtime_libraries(native, reference_env=reference_env)
         merge_native_artifacts(report, native, work)
         expected = expected_records(rows, records)
         report['native'] = native
@@ -637,9 +641,9 @@ def main():
         write_json(report_path, report)
         print(f'Pinned native source qualified: {len(rows)} ordered observations', flush=True)
         if args.native_only:
-            final_source_gate(hashes, args.bend_source, lock, compilers, work)
+            final_source_gate(hashes, args.bend_source, lock, compilers, work, reference_env=reference_env)
             reference.assert_pins()
-            assert_runtime_libraries(native)
+            assert_runtime_libraries(native, reference_env=reference_env)
             merge_native_artifacts(report, native, work)
             assert_artifacts_unchanged(report, work)
             retain_artifacts(report, work, [f'{prefix}-final-version.{suffix}' for prefix in ('compiler', 'bun') for suffix in ('stdout', 'stderr')])
@@ -678,9 +682,9 @@ def main():
             print(f'chunk {batch+1}: {len(selected)} words/branches/traces match CPU-1/CPU-2/JS', flush=True)
         if set(totals) != set(LANES) or any(value != len(rows) for value in totals.values()):
             raise ValueError('Incomplete lane coverage')
-        final_source_gate(hashes, args.bend_source, lock, compilers, work)
+        final_source_gate(hashes, args.bend_source, lock, compilers, work, reference_env=reference_env)
         reference.assert_pins()
-        assert_runtime_libraries(native)
+        assert_runtime_libraries(native, reference_env=reference_env)
         merge_native_artifacts(report, native, work)
         assert_artifacts_unchanged(report, work)
         retain_artifacts(report, work, [f'{prefix}-final-version.{suffix}' for prefix in ('compiler', 'bun') for suffix in ('stdout', 'stderr')])
