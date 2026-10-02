@@ -1186,6 +1186,13 @@ def Image.Formatted.png.channels(format: U32) -> U32:
     case 7: 4
     case _: 0
 
+# ExportImageToMemory reads the four raw bytes of each R32 sample as RGBA.
+# Keep this separate from file export, which obtains red-only normalized colors.
+def Image.Formatted.png.memory_channels(format: U32) -> U32:
+  match format:
+    case 8: 4
+    case _: Image.Formatted.png.channels(format)
+
 def Image.Formatted.png.checked(valid: Bool, channels: U32, image: Image.Formatted) -> Result<&1, &1, Image.Formatted & Pixel.Error, +List<U32>>:
   match valid image:
     case False{} _: Fail{(image, UnsupportedPixelFormat{})}
@@ -1193,7 +1200,7 @@ def Image.Formatted.png.checked(valid: Bool, channels: U32, image: Image.Formatt
 
 def Image.Formatted.to_png(image: Image.Formatted) -> Result<&1, &1, Image.Formatted & Pixel.Error, +List<U32>>:
   FormattedImage{width, height, +format, pixels} = image
-  +channels = Image.Formatted.png.channels(format)
+  +channels = Image.Formatted.png.memory_channels(format)
   Image.Formatted.png.checked((channels > 0 : U32), channels, FormattedImage{width, height, format, pixels})
 
 def Image.Formatted.png.file_routed(direct: Bool, +width: U32, +height: U32, format: U32, channels: U32, pixels: Array<U32>) -> +List<U32>:

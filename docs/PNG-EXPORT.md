@@ -4,8 +4,8 @@
 |---|---|
 | `Surface.to_png(surface) -> +List<U32>` | Consumes canonical RGBA8 ownership and returns every PNG byte, matching native `ExportImageToMemory(image, ".png")` under the default writer settings. |
 | `Surface.write_png(surface, path)` | Consumes ownership and returns `IO(Result<&1, &1, U32 & String, Unit>)` through the established Base byte-write/close path. PNG is selected explicitly, independently of the path extension. |
-| `Image.Formatted.to_png(image)` | Returns `Result<&1, &1, Image.Formatted & Pixel.Error, +List<U32>>` for native byte formats 1/2/4/7. Success consumes ownership; unsupported packed formats return the original image with `UnsupportedPixelFormat`. |
-| `Image.Formatted.write_png(image, path)` | Consumes any checked format-1..7 owner and returns the established `IO(Result<&1, &1, U32 & String, Unit>)` file contract. Byte sources retain their channels; packed sources use native file-export expansion. |
+| `Image.Formatted.to_png(image)` | Returns `Result<&1, &1, Image.Formatted & Pixel.Error, +List<U32>>` for native byte formats 1/2/4/7 and checked R32 raw-byte RGBA export. Success consumes ownership; unsupported packed formats return the original image with `UnsupportedPixelFormat`. |
+| `Image.Formatted.write_png(image, path)` | Consumes any checked format-1..8 owner and returns the established `IO(Result<&1, &1, U32 & String, Unit>)` file contract. Byte sources retain their channels; packed sources use native expansion and R32 uses red-only normalization. |
 | `Image.FloatRGB.to_png(image)` | Returns `Result<&1, &1, Image.FloatRGB, +List<U32>>`, preserving native format-9 memory export's raw-storage-prefix interpretation. Non-NaN float words are supported; rejection returns the owner. |
 | `Image.FloatRGB.write_png(image, path)` | Returns `IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>)`. Finite `[0,1]` samples follow native normalized file export; unsupported samples retain their owner before opening the file. |
 
@@ -129,10 +129,21 @@ and rejected writes preserve an existing sentinel file. Metal evidence covers
 pure encoding/decoding, not filesystem IO. See
 [evidence/float-rgb-png.json](evidence/float-rgb-png.json).
 
-## Bounded R32 file export
+## Bounded R32 memory/file distinction
 
 Checked format-8 owners additionally support `Image.Formatted.write_png` through
-native red-only normalized colors. Memory `to_png` remains rejected with its
-owner retained; it does not silently substitute normalized file colors for the
-native raw-bit memory path. See [R32.md](R32.md). Earlier evidence counts on this
-page do not establish R32 behavior on Metal or additional hosts.
+native red-only normalized colors. Memory `to_png` instead feeds each stored
+four-byte R32 word directly to the default four-channel encoder, matching native
+`ExportImageToMemory`. It produces an 8-bit RGBA PNG of those bytes, not a float
+PNG. For a `0.5` sample, memory decodes to `0000003f` and file output to
+`7f0000ff`. The two channel selectors are deliberately separate: enabling the
+memory path must not make file export use raw words. See [R32.md](R32.md).
+The checked finite `[0,1]` owner domain is unchanged, including signed zeros and
+positive subnormals. Packed formats 3/5/6 continue to fail with retained owners.
+Earlier evidence counts on this page do not establish the R32 extension on
+Metal or additional hosts.
+
+[R32 memory evidence](evidence/r32-memory-png.json) compares every encoded and
+decoded byte on CPU/JS, including signed zeros, positive subnormals and 1,119
+threshold samples. The old byte/packed PNG gate and RGB-float memory/file gate
+also pass after the split between memory and file channel selection.

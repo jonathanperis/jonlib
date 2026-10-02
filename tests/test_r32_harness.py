@@ -9,6 +9,7 @@ import struct
 import sys
 import tempfile
 import unittest
+import zlib
 from contextlib import redirect_stdout
 from unittest.mock import patch
 
@@ -29,6 +30,15 @@ def chunks(rows):
         lines.extend(json.dumps(row[i:i+256]) for i in range(0,len(row),256))
         lines.append('"end"')
     return '\n'.join(lines)
+
+
+def png_row(width, height, rgba):
+    """Synthetic parser fixture only; native codec parity always uses raylib output."""
+    def chunk(kind, payload):
+        return struct.pack('>I',len(payload))+kind+payload+struct.pack('>I',zlib.crc32(kind+payload))
+    raster = b''.join(b'\0'+bytes(rgba[y*width*4:(y+1)*width*4]) for y in range(height))
+    return list(b'\x89PNG\r\n\x1a\n'+chunk(b'IHDR',struct.pack('>IIBBBBB',width,height,8,6,0,0,0))+
+                chunk(b'IDAT',zlib.compress(raster))+chunk(b'IEND',b''))
 
 
 class ImageFormatR32HarnessTests(unittest.TestCase):
@@ -169,20 +179,32 @@ class R32ImageHarnessTests(unittest.TestCase):
         cases = self.probe['fixtures']();ops = self.probe['operations'](cases)
         self.assertTrue(all(len(c['bytes']) == c['width']*c['height']*4 and max(c['width'],c['height']) <= 4096 for c in cases))
         self.assertEqual({op['selected'] for op in ops if op['kind'] == 'channel'},{-32767,0,1,2,3,32767})
-        self.assertTrue({'float','colors','points','png','code','raw','memory_reject','convert_reject','channel_reject','point_reject','independent','float_reject','pixel_reject'} <= {op['kind'] for op in ops})
+        self.assertTrue({'float','colors','points','png','code','raw','memory_png','packed_memory_reject','convert_reject','channel_reject','point_reject','independent','float_reject','pixel_reject'} <= {op['kind'] for op in ops})
         self.assertEqual(sum(op['kind'] == 'channel' for op in ops),len(cases)*6)
+        self.assertEqual([op['case'] for op in ops if op['kind'] == 'memory_png'],cases)
+        self.assertEqual({op['case']['format'] for op in ops if op['kind'] == 'packed_memory_reject'},{3,5,6})
+        self.assertEqual(len(self.probe['schemas'](ops)),88)
+        words = set(struct.unpack('<'+'I'*(len(cases[2]['bytes'])//4),bytes(cases[2]['bytes'])))
+        self.assertEqual(words,set(self.probe['r32_words']()))
+        self.assertTrue({0,0x80000000,1,2,0x007fffff,0x00800000,0x3effffff,0x3f000000,0x3f000001,0x3f800000} <= words)
+        self.assertTrue(any(c['height'] > 1 for c in cases))
+        self.assertTrue(any(c['width'] & (c['width']-1) for c in cases))
 
     def test_parser_strictly_checks_counts_bytes_headers_and_retained_owner(self):
         case = dict(id='half',width=1,height=1,bytes=[0,0,0,63])
-        ops = [dict(kind='points',case=case),dict(kind='memory_reject',case=case),dict(kind='float_reject')]
+        packed = dict(id='packed-3',width=1,height=1,format=3,bytes=[0x31,0xf8])
+        ops = [dict(kind='points',case=case),dict(kind='packed_memory_reject',case=packed),dict(kind='float_reject')]
         shapes = self.probe['schemas'](ops)
         owner = self.probe['image_row'](case)
-        rows = [[255,0,0,127],owner,owner,list(struct.pack('<6I',1,1,9,0x80000000,1,0x3f400000))]
+        packed_owner = self.probe['image_row'](packed)
+        rows = [[255,0,0,127],owner,packed_owner,list(struct.pack('<6I',1,1,9,0x80000000,1,0x3f400000))]
         parse = self.probe['parse_rows']
         self.assertEqual(parse(chunks(rows),shapes),rows)
         invalid = [rows[:-1],rows+[rows[-1]],[None,*rows[1:]],[[0],*rows[1:]],
                    [rows[0],owner[:-1],*rows[2:]],[rows[0],owner[:-1]+[0],*rows[2:]],
-                   [rows[0],owner,owner,list(struct.pack('<6I',1,1,9,0,1,0x3f400000))]]
+                   [rows[0],owner,packed_owner[:-1]+[0],rows[-1]],
+                   [rows[0],owner,owner,rows[-1]],
+                   [rows[0],owner,packed_owner,list(struct.pack('<6I',1,1,9,0,1,0x3f400000))]]
         for values in invalid:
             with self.subTest(values=values),self.assertRaises(ValueError):
                 parse(chunks(values),shapes)
@@ -196,7 +218,7 @@ class R32ImageHarnessTests(unittest.TestCase):
         case = dict(id='half',width=1,height=1,bytes=[0,0,0,63])
         ops = [dict(kind='float',case=case),dict(kind='channel',case=case,selected=3),dict(kind='png',case=case),dict(kind='code',case=case)]
         shapes = self.probe['schemas'](ops)
-        png = list(b'\x89PNG\r\n\x1a\n'+struct.pack('>I4sII',13,b'IHDR',1,1)+bytes(9))
+        png = png_row(1,1,[127,0,0,255])
         rows = [list(struct.pack('<6I',1,1,9,0x3f000000,0,0)),self.probe['image_row'](case),
                 list(struct.pack('<III',1,1,1))+[127],png,[127,0,0,255],list(b'#define HALF_FORMAT   8\n')]
         parse = self.probe['parse_rows']
@@ -208,10 +230,53 @@ class R32ImageHarnessTests(unittest.TestCase):
             with self.subTest(index=index),self.assertRaises(ValueError):
                 parse(chunks(bad),shapes)
 
+    def test_memory_png_success_is_raw_bytes_and_file_png_is_normalized(self):
+        case = dict(id='half',width=1,height=1,bytes=[0,0,0,63])
+        ops = [dict(kind=kind,case=case) for kind in ('memory_png','png')]
+        shapes = self.probe['schemas'](ops)
+        rows = [png_row(1,1,case['bytes']),case['bytes'],png_row(1,1,[127,0,0,255]),[127,0,0,255]]
+        parse = self.probe['parse_rows'];profiles = self.probe['png_observations']
+        self.assertEqual(parse(chunks(rows),shapes),rows)
+        observed = profiles(ops,rows)['half']
+        self.assertEqual(observed['memory_png']['decoded_rgba'],[0,0,0,63])
+        self.assertEqual(observed['png']['decoded_rgba'],[127,0,0,255])
+        for changed in (rows[:-1],rows+[rows[-1]],[],[rows[2],rows[3],rows[0],rows[1]]):
+            with self.subTest(changed=changed),self.assertRaises(ValueError):
+                parse(chunks(changed),shapes)
+        for decoded in ([0,0,0],[0,0,0,63,0],[0,0,0,0],[127,0,0,255]):
+            with self.subTest(decoded=decoded),self.assertRaises(ValueError):
+                parse(chunks([rows[0],decoded,*rows[2:]]),shapes)
+        for decoded in ([127,0,0],[127,1,0,255],[127,0,0,63],[128,0,0,255]):
+            with self.subTest(decoded=decoded),self.assertRaises(ValueError):
+                profiles(ops,[*rows[:3],decoded])
+        with self.assertRaisesRegex(ValueError,'PNG observation result count'):
+            profiles(ops,rows[:-1])
+        # Valid PNG containers with a wrong memory/file interpretation still fail
+        # the complete native-byte comparison, even if claimed decode rows match.
+        wrong_encoded = [rows[2],rows[1],rows[0],rows[3]]
+        self.assertEqual(parse(chunks(wrong_encoded),shapes),wrong_encoded)
+        self.assertEqual(self.probe['differences'](rows,wrong_encoded),[0,2])
+
+    def test_png_parser_rejects_truncation_extra_chunks_crc_and_wrong_profile(self):
+        png = png_row(1,1,[0,0,0,63]);shape = [dict(kind='png',width=1,height=1)]
+        parse = self.probe['parse_rows']
+        for changed in (png[:33],png[:-1],png+[0],png+png[-12:],png_row(2,1,[0]*8),
+                        png[:29]+[png[29]^1]+png[30:],png[:25]+[2]+png[26:]):
+            with self.subTest(changed=changed),self.assertRaises(ValueError):
+                parse(chunks([changed]),shape)
+        for text in ('[]\n"end"',chunks([png])+'\n"end"',chunks([png]).removesuffix('\n"end"')):
+            with self.subTest(text=text),self.assertRaises(ValueError):
+                parse(text,shape)
+        case = self.probe['fixtures']()[2]
+        encoded = png_row(case['width'],case['height'],case['bytes'])
+        self.assertGreater(len(encoded),256)
+        rows = [encoded,case['bytes']]
+        self.assertEqual(parse(chunks(rows),self.probe['schemas']([dict(kind='memory_png',case=case)])),rows)
+
     def test_exports_are_complete_exact_files_and_count_checked(self):
         case = dict(id='half',width=1,height=1,bytes=[0,0,0,63])
-        ops = [dict(kind=kind,case=case) for kind in ('png','code','raw')]
-        rows = [[1,2,3],[127,0,0,255],[4,5,6],case['bytes']]
+        ops = [dict(kind=kind,case=case) for kind in ('memory_png','png','code','raw')]
+        rows = [[9,8,7],case['bytes'],[1,2,3],[127,0,0,255],[4,5,6],case['bytes']]
         files = self.probe['file_expectations'](ops,rows)
         self.assertEqual(files,{'half.png':bytes([1,2,3]),'half.h':bytes([4,5,6]),'half.raw':bytes(case['bytes'])})
         with self.assertRaisesRegex(ValueError,'file reference result count'):
@@ -244,6 +309,7 @@ class R32ImageHarnessTests(unittest.TestCase):
                     self.assertNotIn('load_raw(',source)
                     self.assertIn('normalized!(',source)
                     self.assertIn('independent!(',source)
+                    self.assertIn('memory!(',source)
                 else:
                     self.assertIn('J.Image.Formatted.write_png(',source)
                     self.assertIn('J.Image.Formatted.load_raw(',source)
@@ -251,11 +317,34 @@ class R32ImageHarnessTests(unittest.TestCase):
                     self.assertNotIn('normalized!(',source)
                 self.assertIn('J.UnsupportedPixelFormat{}',source)
                 self.assertIn('FloatRGB to format8 expanded beyond this slice',source)
+                self.assertIn('case Some{Done{bytes}}: observe_png(width, height, Some{bytes})',source)
+                self.assertLess(source.index('def observe_png('),source.index('def observe_memory('))
+                self.assertIn('Packed memory PNG must retain UnsupportedPixelFormat owner',source)
         reference = self.probe['reference_program'](ops,Path('/tmp/r32'))
-        self.assertNotIn('ExportImageToMemory(',reference)
+        self.assertEqual(reference.count('ExportImageToMemory(image,".png",&size)'),3)
+        self.assertEqual(reference.count('LoadImageFromMemory(".png",png,size)'),3)
+        self.assertEqual(reference.count('MemFree(png)'),3)
+        self.assertIn('memcmp(decoded.data,image.data,image.width*image.height*4)',reference)
+        packed = [op for op in ops if op['kind'] == 'packed_memory_reject']
+        self.assertNotIn('ExportImageToMemory(',self.probe['reference_program'](packed,Path('/tmp/r32')))
+        self.assertEqual(reference.count('if(!ExportImage(image,'),6)
+        self.assertEqual(reference.count('if(!ExportImageAsCode(image,'),3)
         self.assertNotIn('GetPixelColor(',reference)
         self.assertNotIn('LoadImageRaw(',reference)
         self.assertEqual(len(self.probe['io_shapes'](ops)),11)
+
+    def test_batches_preserve_every_operation_file_and_exactly_two_raw_controls(self):
+        cases = self.probe['fixtures']();ops = self.probe['operations'](cases)
+        batches = self.probe['operation_batches'](ops)
+        self.assertEqual([op for batch in batches for op in batch],ops)
+        self.assertTrue(all(1 <= len(batch) <= 8 for batch in batches))
+        sources = [self.probe['candidate_program'](batch,'cpu',Path('/tmp/r32'),
+                   index == len(batches)-1,cases[0]) for index,batch in enumerate(batches)]
+        self.assertEqual(sum(source.count('J.Image.Formatted.load_raw(') for source in sources),2)
+        self.assertTrue(all('J.Image.Formatted.load_raw(' not in source for source in sources[:-1]))
+        self.assertIn('/tmp/r32/half.raw',sources[-1])
+        self.assertEqual(sum(len(self.probe['io_shapes'](batch,index == len(batches)-1)) for index,batch in enumerate(batches)),11)
+        self.assertEqual(sum(len(self.probe['schemas'](batch)) for batch in batches),88)
 
     def test_stale_success_is_invalidated_before_provenance_for_both_probes(self):
         for name,directory_name in (('image_format_probe.py','image-format-probe'),('r32_image_probe.py','r32-image-probe')):
@@ -285,8 +374,74 @@ class R32ImageHarnessTests(unittest.TestCase):
             result = json.loads((work/'r32-image-probe/results.json').read_text())
             self.assertFalse(result['passed'])
             self.assertEqual(len(result['reference_program_sha256']),64)
-            self.assertEqual(len(result['lanes']['cpu']['candidate_program_sha256']),64)
+            self.assertEqual(len(result['lanes']['cpu']['batches'][0]['candidate_program_sha256']),64)
+            self.assertEqual(len(result['lanes']['cpu']['batches'][0]['candidate_sha256']),64)
             self.assertTrue(all(len(value) == 64 for value in result['harness_sha256'].values()))
+
+    def test_memory_png_report_records_hashes_and_rejects_source_or_harness_drift(self):
+        main = self.probe['main']
+        case = dict(id='half',width=1,height=1,bytes=[0,0,0,63])
+        ops = [dict(kind='memory_png',case=case)]
+        rows = [png_row(1,1,case['bytes']),case['bytes']]
+        for drift in (None,'source','harness'):
+            with self.subTest(drift=drift),tempfile.TemporaryDirectory() as directory:
+                work = Path(directory)
+                source_snapshots = iter([{}, {'jonlib.bend':'b'*64} if drift == 'source' else {}])
+                harness_snapshots = iter([{'probe':'a'*64},{'probe':('b' if drift == 'harness' else 'a')*64}])
+                def fake_run(command,**kwargs):
+                    if Path(command[0]).name == 'reference':
+                        return chunks(rows)
+                    if Path(command[0]).name.startswith('candidate-cpu-') or (command[0] == 'bun' and len(command) == 2):
+                        return chunks(rows+[[1],[1]])
+                    return ''
+                overrides = dict(BUILD=work,checkout=lambda *a:None,source_gate=lambda:next(source_snapshots),
+                                 harness_hashes=lambda:next(harness_snapshots),run=fake_run,
+                                 fixtures=lambda:[case],operations=lambda c:ops)
+                with patch.dict(main.__globals__,overrides),patch('sys.argv',['probe','--bend-source',str(work/'bend'),'--raylib-source',str(work/'raylib')]),patch('subprocess.run',side_effect=AssertionError('Unexpected subprocess')),redirect_stdout(io.StringIO()):
+                    if drift:
+                        with self.assertRaisesRegex(ValueError,'source/harness changed'):
+                            main()
+                    else:
+                        main()
+                report = json.loads((work/'r32-image-probe/results.json').read_text())
+                self.assertEqual(report['passed'],drift is None)
+                self.assertEqual(report['memory_png_images'],1)
+                self.assertEqual(report['png_profiles']['half']['memory_png']['decoded_bytes'],4)
+                for lane in ('cpu','javascript'):
+                    self.assertEqual(report['lanes'][lane]['result_count'],4)
+                    self.assertEqual(len(report['lanes'][lane]['batches'][0]['candidate_program_sha256']),64)
+                    self.assertEqual(len(report['lanes'][lane]['candidate_sha256']),64)
+                self.assertEqual(len(report['reference_program_sha256']),64)
+                self.assertEqual(len(report['reference_sha256']),64)
+
+    def test_bad_batch_count_cannot_be_cancelled_by_another_batch_or_stale_binary(self):
+        main = self.probe['main']
+        case = dict(id='half',width=1,height=1,bytes=[0,0,0,63])
+        ops = [dict(kind='memory_png',case=case)]*2
+        rows = [png_row(1,1,case['bytes']),case['bytes']]
+        for first_rows in (rows[:-1],rows+[case['bytes']]):
+            with self.subTest(count=len(first_rows)),tempfile.TemporaryDirectory() as directory:
+                work = Path(directory);probe = work/'r32-image-probe';probe.mkdir()
+                stale = probe/'candidate-cpu-0';stale.write_text('stale executable')
+                commands = []
+                def fake_run(command,**kwargs):
+                    commands.append(command)
+                    if Path(command[0]).name == 'reference':
+                        return chunks(rows*2)
+                    if command[0] == 'bun' and '-o' in command:
+                        self.assertFalse(stale.exists())
+                    if Path(command[0]).name == 'candidate-cpu-0':
+                        return chunks(first_rows)
+                    return ''
+                overrides = dict(BUILD=work,BATCH_OPERATIONS=1,checkout=lambda *a:None,source_gate=lambda:{},
+                                 run=fake_run,fixtures=lambda:[case],operations=lambda c:ops)
+                with patch.dict(main.__globals__,overrides),patch('sys.argv',['probe','--bend-source',str(work/'bend'),'--raylib-source',str(work/'raylib')]),patch('subprocess.run',side_effect=AssertionError('Unexpected subprocess')):
+                    with self.assertRaisesRegex(ValueError,'result count'):
+                        main()
+                report = json.loads((probe/'results.json').read_text())
+                self.assertFalse(report['passed'])
+                self.assertEqual(len(report['lanes']['cpu']['batches']),1)
+                self.assertFalse(any('candidate-cpu-1' in str(part) for command in commands for part in command))
 
 
 if __name__ == '__main__':

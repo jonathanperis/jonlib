@@ -377,11 +377,12 @@
   "ExportImageToMemory": {
     "jonlib": "Surface.to_png / Image.Formatted.to_png / Image.FloatRGB.to_png",
     "status": "profile-covered",
-    "scope": "Exact default PNG from RGBA8, byte formats 1/2/4/7 and non-NaN RGB floats. Float memory export preserves native raw little-endian storage-prefix interpretation, distinct from normalized file export. Byte channels, filtering, compression/checksums and rejected-owner behavior remain verified through complete encoded/decoded output.",
+    "scope": "Exact default PNG from RGBA8, byte formats 1/2/4/7 and non-NaN RGB floats. Float memory export preserves native raw little-endian storage-prefix interpretation, distinct from normalized file export. Byte channels, filtering, compression/checksums and rejected-owner behavior remain verified through complete encoded/decoded output. Checked normalized R32 format 8 preserves all four little-endian sample bytes as native RGBA memory PNG, distinct from red-only normalized file PNG; packed formats 3/5/6 retain rejection owners.",
     "gaps": [
       "Packed/other float source formats, NaN parity, configured flags and generic dispatch",
       "Native pointer/output-size/allocator ABI and ownership correspondence",
-      "Complete integration/target/resource/performance coverage"
+      "Complete integration/target/resource/performance coverage",
+      "R32 storage remains finite [0,1]; new R32 memory path has current-host CPU/JS evidence only"
     ],
     "api_id": "raylib:function:ExportImageToMemory",
     "milestone": "image-codecs"
@@ -539,7 +540,7 @@
       "NaN payload interoperability, out-of-domain float casts and native allocation ABI",
       "Complete integration/target/resource/performance coverage",
       "R32 broader domains and complete target/contraction profiles; this extension has current-host CPU/JS evidence only",
-      "Format-9 to R32, native R32 RAW loading and raw-bit memory PNG remain unsupported"
+      "Format-9 to R32 and native R32 RAW loading remain unsupported"
     ],
     "api_id": "raylib:function:ImageFormat",
     "milestone": "pixels"

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Check exact R32 image observations, ownership, file PNG and scoped rejections.
+"""Check exact R32 observations, ownership, distinct memory/file PNG and rejections.
 
 Pure operations run on CPU/JS and optionally forced Metal. File IO runs only on
-CPU/JS. Memory PNG, raw loading, FloatRGB->R32 and GetPixelColor remain explicit
-Jonlib rejection contracts, not assertions of native support or equivalence.
+CPU/JS. Packed memory PNG, raw loading, FloatRGB->R32 and GetPixelColor remain
+explicit Jonlib rejection contracts, not assertions of native equivalence.
 """
 import argparse
 import hashlib
@@ -12,6 +12,7 @@ import re
 from pathlib import Path
 import struct
 import sys
+import zlib
 
 from bmp_probe import bend_bytes
 from byte_probe import BEND_EMITTER, parse_results
@@ -20,6 +21,8 @@ from image_format_probe import r32_words, word_bytes
 
 
 SELECTORS = (-32767, 0, 1, 2, 3, 32767)
+# Bound compiler emission memory without trimming fixtures or observations.
+BATCH_OPERATIONS = 8
 
 
 def fixtures():
@@ -36,8 +39,10 @@ def operations(cases):
         for kind in ('float','colors','points'):
             result.append(dict(kind=kind,case=case))
         result.extend(dict(kind='channel',case=case,selected=selected) for selected in SELECTORS)
-        for kind in ('png','code','raw','memory_reject','convert_reject'):
+        for kind in ('png','code','raw','memory_png','convert_reject'):
             result.append(dict(kind=kind,case=case))
+    result.extend(dict(kind='packed_memory_reject',case=dict(id=f'packed-{format}',
+                  width=1,height=1,format=format,bytes=[0x31,0xf8])) for format in (3,5,6))
     source = cases[1]
     result.extend(dict(kind='point_reject',case=source,x=x,y=y) for x,y in
                   ((source['width'],0),(0,source['height']),(0xffffffff,0)))
@@ -47,8 +52,8 @@ def operations(cases):
     return result
 
 
-def image_row(case, format=8):
-    return list(struct.pack('<III',case['width'],case['height'],format))+case['bytes']
+def image_row(case):
+    return list(struct.pack('<III',case['width'],case['height'],case.get('format',8)))+case['bytes']
 
 
 def schemas(ops):
@@ -63,9 +68,10 @@ def schemas(ops):
             'points': lambda:[dict(kind='bytes',size=4*case['width']*case['height']),owner],
             'channel': lambda:[owner,image(1,1)],
             'png': lambda:[dict(kind='png',width=case['width'],height=case['height']),dict(kind='bytes',size=4*case['width']*case['height'])],
+            'memory_png': lambda:[dict(kind='png',width=case['width'],height=case['height']),dict(kind='exact',value=case['bytes'])],
             'code': lambda:[dict(kind='code')],
             'raw': lambda:[dict(kind='exact',value=case['bytes'])],
-            'memory_reject': lambda:[owner],
+            'packed_memory_reject': lambda:[owner],
             'convert_reject': lambda:[owner],
             'point_reject': lambda:[dict(kind='exact',value=[0]),owner],
             'channel_reject': lambda:[owner],
@@ -75,6 +81,29 @@ def schemas(ops):
         }[kind]()
         result.extend(dict(row,operation=index,operation_kind=kind) for row in rows)
     return result
+
+
+def valid_png(row, width, height):
+    """Validate the complete pinned-writer RGBA8 container, including chunk CRCs."""
+    data = bytes(row)
+    if data[:8] != b'\x89PNG\r\n\x1a\n':
+        return False
+    offset, parts = 8, []
+    while offset < len(data):
+        if len(data)-offset < 12:
+            return False
+        size = struct.unpack_from('>I',data,offset)[0]
+        end = offset+12+size
+        if end > len(data):
+            return False
+        kind, payload = data[offset+4:offset+8], data[offset+8:end-4]
+        if zlib.crc32(kind+payload) != struct.unpack_from('>I',data,end-4)[0]:
+            return False
+        parts.append((kind,payload))
+        offset = end
+    return (len(parts) == 3 and [kind for kind,_ in parts] == [b'IHDR',b'IDAT',b'IEND']
+            and parts[0][1] == struct.pack('>IIBBBBB',width,height,8,6,0,0,0)
+            and bool(parts[1][1]) and parts[2][1] == b'')
 
 
 def parse_rows(text, expected_shapes):
@@ -93,7 +122,7 @@ def parse_rows(text, expected_shapes):
         elif kind == 'image':
             valid = row[:12] == list(struct.pack('<III',shape['width'],shape['height'],shape['format'])) and len(row) == 12+shape['size']
         elif kind == 'png':
-            valid = len(row) >= 33 and bytes(row[:8]) == b'\x89PNG\r\n\x1a\n' and bytes(row[12:16]) == b'IHDR' and bytes(row[16:24]) == struct.pack('>II',shape['width'],shape['height'])
+            valid = valid_png(row,shape['width'],shape['height'])
         elif kind == 'code':
             valid = bool(row) and all(v < 128 for v in row) and re.search(rb'_FORMAT\s+8\b', bytes(row)) is not None
         else:
@@ -107,6 +136,29 @@ def differences(expected, actual):
     if len(expected) != len(actual):
         raise ValueError('Incomplete R32 comparison result count')
     return [i for i,(a,b) in enumerate(zip(expected,actual)) if a != b]
+
+
+def png_observations(ops, rows):
+    """Summarize native PNG observations and guard the raw/normalized distinction."""
+    if len(rows) != len(schemas(ops)):
+        raise ValueError('Incomplete R32 PNG observation result count')
+    result, cursor = {}, 0
+    for op in ops:
+        kind, case = op['kind'], op.get('case')
+        if kind in ('png','memory_png'):
+            encoded, decoded = rows[cursor:cursor+2]
+            if kind == 'memory_png' and decoded != case['bytes']:
+                raise ValueError('R32 memory PNG changed raw little-endian sample bytes')
+            if kind == 'png' and (len(decoded) != 4*case['width']*case['height'] or
+                                any(decoded[i:i+3] != [0,0,255] for i in range(1,len(decoded),4))):
+                raise ValueError('R32 file PNG is not normalized red-only RGBA8')
+            result.setdefault(case['id'],{})[kind] = dict(encoded_bytes=len(encoded),decoded_rgba=decoded)
+        cursor += len(schemas([op]))
+    if 'half' in result and {'png','memory_png'} <= result['half'].keys():
+        half = result['half']
+        if half['memory_png']['decoded_rgba'] != [0,0,0,63] or half['png']['decoded_rgba'] != [127,0,0,255]:
+            raise ValueError('R32 memory/file PNG half-sample discriminator differs')
+    return result
 
 
 def file_expectations(ops, rows):
@@ -157,7 +209,7 @@ def reference_program(ops, directory):
         kind, case = op['kind'], op.get('case')
         if case:
             lines.extend(('{','unsigned char data[]={'+','.join(map(str,case['bytes']))+'};',
-                f'Image image={{malloc(sizeof(data)),{case["width"]},{case["height"]},1,8}};',
+                f'Image image={{malloc(sizeof(data)),{case["width"]},{case["height"]},1,{case.get("format",8)}}};',
                 'if(!image.data)return 4;memcpy(image.data,data,sizeof(data));'))
         if kind == 'float':
             lines.append('ImageFormat(&image,9);emit(image);')
@@ -176,12 +228,16 @@ def reference_program(ops, directory):
             lines.append(f'if(!ExportImage(image,{path}))return 7;file({path});')
             lines.append(f'Image decoded=LoadImage({path});if(!decoded.data||decoded.width!=image.width||decoded.height!=image.height)return 8;ImageFormat(&decoded,7);')
             lines.append('Color *colors=LoadImageColors(image);if(!colors||memcmp(colors,decoded.data,image.width*image.height*4))return 9;bytes(decoded.data,image.width*image.height*4);UnloadImageColors(colors);UnloadImage(decoded);')
+        elif kind == 'memory_png':
+            lines.append('int size=0;unsigned char *png=ExportImageToMemory(image,".png",&size);if(!png||size<=0)return 11;bytes(png,size);')
+            lines.append('Image decoded=LoadImageFromMemory(".png",png,size);if(!decoded.data||decoded.width!=image.width||decoded.height!=image.height)return 12;ImageFormat(&decoded,7);')
+            lines.append('if(memcmp(decoded.data,image.data,image.width*image.height*4))return 13;bytes(decoded.data,image.width*image.height*4);UnloadImage(decoded);MemFree(png);')
         elif kind in ('code','raw'):
             suffix = 'h' if kind == 'code' else 'raw'
             path = json.dumps(str(directory/(case['id']+'.'+suffix)))
             call = 'ExportImageAsCode' if kind == 'code' else 'ExportImage'
             lines.append(f'if(!{call}(image,{path}))return 10;file({path});')
-        elif kind in ('memory_reject','convert_reject','channel_reject'):
+        elif kind in ('packed_memory_reject','convert_reject','channel_reject'):
             # These are deliberately narrower Jonlib contracts; native source bytes
             # establish retained-owner expectations without invoking unsafe controls.
             lines.append('emit(image);')
@@ -316,10 +372,10 @@ def memory(result: Maybe<J.Image.Formatted>) -> Maybe<Result<&1, &1, J.Image.For
   match result:
     case None{}: None{}
     case Some{image}: Some{J.Image.Formatted.to_png(image)}
-def observe_memory(result: Maybe<Result<&1, &1, J.Image.Formatted & J.Pixel.Error, +List<U32>>>) -> IO(Unit):
+def observe_memory_reject(result: Maybe<Result<&1, &1, J.Image.Formatted & J.Pixel.Error, +List<U32>>>) -> IO(Unit):
   match result:
     case Some{Fail{Tuple{image, J.UnsupportedPixelFormat{}}}}: formatted(J.Image.Formatted.export(image))
-    case _: IO.die(Unit, 1, "R32 memory PNG must retain UnsupportedPixelFormat owner")
+    case _: IO.die(Unit, 1, "Packed memory PNG must retain UnsupportedPixelFormat owner")
 def conversion(result: Maybe<J.Image.Formatted>) -> Maybe<Result<&1, &1, J.Image.Formatted & J.Pixel.Error, J.Image.Formatted>>:
   match result:
     case None{}: None{}
@@ -354,6 +410,10 @@ def observe_png(width: U32, height: U32, result: Maybe<&2, +List<U32>>) -> IO(Un
       do IO<Unit>:
         emit_bytes(~&2, bytes)
         decoded(width, height, J.Surface.decode_pngBANG(bytes))
+def observe_memory(width: U32, height: U32, result: Maybe<Result<&1, &1, J.Image.Formatted & J.Pixel.Error, +List<U32>>>) -> IO(Unit):
+  match result:
+    case Some{Done{bytes}}: observe_png(width, height, Some{bytes})
+    case _: IO.die(Unit, 1, "R32 memory PNG source rejected")
 def code(path: String, result: Maybe<J.Image.Formatted>) -> Maybe<Result<&1, &1, J.Image.Formatted, String>>:
   match result:
     case None{}: None{}
@@ -399,10 +459,10 @@ def raw_load_rejected(result: Result<&1, &1, J.Image.RawLoadError, J.Image.Forma
 
 
 def image_expr(case):
-    return f'J.Image.Formatted.from_bytes({case["width"]}, {case["height"]}, 8, {bend_bytes(case["bytes"])})'
+    return f'J.Image.Formatted.from_bytes({case["width"]}, {case["height"]}, {case.get("format",8)}, {bend_bytes(case["bytes"])})'
 
 
-def candidate_program(ops, lane, directory):
+def candidate_program(ops, lane, directory, raw_load_controls=True, raw_load_case=None):
     bang = '!' if lane == 'metal' else ''
     body = BEND_PREAMBLE.replace('BANG',bang)
     if lane != 'metal':
@@ -424,8 +484,10 @@ def candidate_program(ops, lane, directory):
             line = f'observe_channel(False{{}}, independent{bang}({image}))'
         elif kind == 'point_reject':
             line = f'observe_missing(get{bang}({op["x"]}, {op["y"]}, {image}))'
-        elif kind == 'memory_reject':
-            line = f'observe_memory(memory{bang}({image}))'
+        elif kind == 'memory_png':
+            line = f'observe_memory({case["width"]}, {case["height"]}, memory{bang}({image}))'
+        elif kind == 'packed_memory_reject':
+            line = f'observe_memory_reject(memory{bang}({image}))'
         elif kind == 'convert_reject':
             line = f'observe_conversion(conversion{bang}({image}))'
         elif kind == 'png':
@@ -450,15 +512,26 @@ def candidate_program(ops, lane, directory):
                 body += f'    save({number}, {path}, {image_expr(case)})\n'
         # Test both a present valid R32 payload and an absent path: request rejection
         # must happen before file opening, and does not claim native load parity.
-        first = next(op['case'] for op in ops if op.get('case'))
-        for name in (first['id']+'.raw','absent-r32.raw'):
-            path = json.dumps(str(directory/name))
-            body += f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_raw({path}, 1, 1, 8, 0), raw_load_rejected)\n'
+        if raw_load_controls:
+            first = raw_load_case or next(op['case'] for op in ops if op.get('case'))
+            for name in (first['id']+'.raw','absent-r32.raw'):
+                path = json.dumps(str(directory/name))
+                body += f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_raw({path}, 1, 1, 8, 0), raw_load_rejected)\n'
     return body
 
 
-def io_shapes(ops):
-    return [dict(kind='exact',value=[1]) for _ in range(sum(op['kind'] in ('png','raw','code') for op in ops)+2)]
+def io_shapes(ops, raw_load_controls=True):
+    return [dict(kind='exact',value=[1]) for _ in range(sum(op['kind'] in ('png','raw','code') for op in ops)+2*raw_load_controls)]
+
+
+def operation_batches(ops):
+    return [ops[index:index+BATCH_OPERATIONS] for index in range(0,len(ops),BATCH_OPERATIONS)]
+
+
+def harness_hashes():
+    return {name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in
+            ('tools/r32_image_probe.py','tools/image_format_probe.py','tools/bmp_probe.py',
+             'tools/byte_probe.py','tools/conformance.py','tests/test_r32_harness.py')}
 
 
 def main():
@@ -480,36 +553,75 @@ def main():
     binary = work/'reference'
     run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary])
     text = run([binary]);expected = parse_rows(text,shapes);files = file_expectations(ops,expected)
+    png_profiles = png_observations(ops,expected)
     verify_files(reference_dir,files)
     report = dict(passed=False,source_format=8,fixtures=len(cases),source_pixels=sum(c['width']*c['height'] for c in cases),
                   pure_operations=len(ops),pure_results=len(expected),file_exports=len(files),
-                  memory_png='UnsupportedPixelFormat with exact retained owner',
+                  memory_png='native raw little-endian R32 bytes as RGBA8',
+                  file_png='native normalized red-only RGBA8',
+                  memory_png_images=sum(op['kind'] == 'memory_png' for op in ops),
+                  packed_memory_rejections=sum(op['kind'] == 'packed_memory_reject' for op in ops),
+                  png_profiles={name:{kind:dict(encoded_bytes=profile['encoded_bytes'],
+                                decoded_bytes=len(profile['decoded_rgba']),
+                                decoded_sha256=hashlib.sha256(bytes(profile['decoded_rgba'])).hexdigest())
+                                for kind,profile in profiles.items()} for name,profiles in png_profiles.items()},
                   raw_loading='unsupported',float_rgb_target8='unsupported',pixel_get_color8='unsupported',
                   sources=source_gate(),inputs_sha256=hashlib.sha256(json.dumps(ops).encode()).hexdigest(),
                   reference_sha256=hashlib.sha256(text.encode()).hexdigest(),
                   reference_program_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
-                  harness_sha256={name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in
-                                  ('tools/r32_image_probe.py','tools/image_format_probe.py','tools/bmp_probe.py','tools/byte_probe.py','tools/conformance.py','tests/test_r32_harness.py')},lanes={})
+                  harness_sha256=harness_hashes(),lanes={})
     for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
         directory = work/lane;prepare_files(directory,files)
-        source = work/f'{lane}.bend';source.write_text(candidate_program(ops,lane,directory))
-        report['lanes'][lane] = dict(passed=False,candidate_program_sha256=hashlib.sha256(source.read_bytes()).hexdigest())
-        report_path.write_text(json.dumps(report,indent=2)+'\n')
-        binary = work/('candidate.js' if lane == 'javascript' else 'candidate-'+lane)
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command = ['bun',binary] if lane == 'javascript' else [binary,*(['--gpu','on'] if lane == 'metal' else [])]
+        report['lanes'][lane] = dict(passed=False,batches=[])
+        batches = operation_batches(ops)
+        pure_rows,io_rows,output_texts = [],[],[]
+        operation_cursor,result_cursor = 0,0
+        for index,batch in enumerate(batches):
+            raw_controls = index == len(batches)-1
+            batch_shapes = schemas(batch)
+            extra_shapes = [] if lane == 'metal' else io_shapes(batch,raw_controls)
+            source = work/f'{lane}-{index}.bend'
+            source.write_text(candidate_program(batch,lane,directory,raw_controls,cases[0]))
+            evidence = dict(passed=False,operation_start=operation_cursor,operations=len(batch),
+                            pure_results=len(batch_shapes),io_results=len(extra_shapes),
+                            candidate_program_sha256=hashlib.sha256(source.read_bytes()).hexdigest())
+            report['lanes'][lane]['batches'].append(evidence)
+            report_path.write_text(json.dumps(report,indent=2)+'\n')
+            binary = work/f'candidate-{lane}-{index}{".js" if lane == "javascript" else ""}'
+            binary.unlink(missing_ok=True)
+            run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
+            command = ['bun',binary] if lane == 'javascript' else [binary,*(['--gpu','on'] if lane == 'metal' else [])]
+            actual_text = run(command)
+            evidence['candidate_sha256'] = hashlib.sha256(actual_text.encode()).hexdigest()
+            report_path.write_text(json.dumps(report,indent=2)+'\n')
+            actual = parse_rows(actual_text,batch_shapes+extra_shapes)
+            wanted = expected[result_cursor:result_cursor+len(batch_shapes)]+[shape['value'] for shape in extra_shapes]
+            delta = differences(wanted,actual)
+            evidence.update(passed=not delta,result_count=len(actual),different_results=delta)
+            report_path.write_text(json.dumps(report,indent=2)+'\n')
+            if delta:
+                raise ValueError(f'{lane} batch {index}: R32 exact native differences {delta[:10]}')
+            pure_rows.extend(actual[:len(batch_shapes)])
+            io_rows.extend(actual[len(batch_shapes):])
+            output_texts.append(actual_text)
+            operation_cursor += len(batch)
+            result_cursor += len(batch_shapes)
+        actual = pure_rows+io_rows
         extra_shapes = [] if lane == 'metal' else io_shapes(ops)
-        actual = parse_rows(run(command),shapes+extra_shapes)
+        png_observations(ops,pure_rows)
         wanted = expected+[shape['value'] for shape in extra_shapes]
         delta = differences(wanted,actual)
         if lane != 'metal':
             verify_files(directory,files)
         report['lanes'][lane].update(passed=not delta,result_count=len(actual),different_results=delta,
+                                    candidate_sha256=hashlib.sha256('\n'.join(output_texts).encode()).hexdigest(),
                                     file_exports=0 if lane == 'metal' else len(files),file_io=lane != 'metal')
         report_path.write_text(json.dumps(report,indent=2)+'\n')
         if delta:
             raise ValueError(f'{lane}: R32 exact native differences {delta[:10]}')
         print(f'{lane}: {len(expected)} exact R32 pure observations and {0 if lane == "metal" else len(files)} complete file exports passed',flush=True)
+    if source_gate() != report['sources'] or harness_hashes() != report['harness_sha256']:
+        raise ValueError('R32 source/harness changed during verification')
     report['passed'] = True;report_path.write_text(json.dumps(report,indent=2)+'\n')
 
 
