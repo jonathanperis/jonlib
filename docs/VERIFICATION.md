@@ -4342,3 +4342,118 @@ remain open. Native malformed-stream permissiveness is not claimed.
 
 Full scoped results and regression receipts are in
 [the evidence report](evidence/qoi-formatted.json).
+
+## Format-preserving QOI file loading (2026-10-02)
+
+`Image.Formatted.load_qoi(path)` adds a dedicated original-format ordinary-file
+factory within the existing partial `LoadImage` entry. The two-function adapter
+reuses `Image.file.bytes` and `Image.Formatted.decode_qoi`; it neither reparses
+QOI nor changes the decoder, Surface adapters or generic dispatch. QOI is
+selected explicitly regardless of filename. Success creates one affine RGB888
+(4) or RGBA8888 (7) owner, preserving dimensions, the implicit one-mip contract
+and every raw R,G,B[,A] byte. The previous memory-only entry remains historical;
+its evidence is not repurposed as file evidence.
+
+A fresh pinned native build compares **135 accepted ordinary files / 35,657
+pixels**, preserving **126,883 original-format bytes** and independently
+observing **142,628 normalized bytes**. These are the existing 121 compact
+memory fixtures materialized as files plus 14 RGB/RGBA filename discriminators.
+The native routes are **129 actual `LoadImage(path)` calls** for `.qoi`/`.QOI`
+names and **6 explicit `LoadFileData` → `LoadImageFromMemory(".qoi", ...)` calls**
+for mixed-case, suffixless and misleading suffixes. Native dimensions, actual
+mipmaps, format and complete raw bytes are emitted before `ImageFormat`; no
+normalization serves as the original-format oracle. Eight safe complete small
+invalid-header files bring native observations to **278**. Short positive-length
+or sparse-large files are never passed to native QOI or native `LoadFileData`.
+
+Each **CPU-one-thread, CPU-two-thread and JavaScript** lane passes **287 strictly
+framed observations / 138,007 compared bytes** in batches of at most 64 actions.
+All accepted files use the actual new public file call and consumed formatted
+export. Nineteen representative cases are independently reopened for the
+Surface bridge/explicit Surface loader; recognized names additionally exercise
+generic/default and both decode-reference routes. Six unsupported generic
+filename selections retain their exact failure, distinct from the successful
+explicit helper. RGB logical words' high bytes remain zero. Both QOI channel
+counts and colorspaces, every opcode family, hidden-alpha cache behavior,
+non-power-of-two shapes, 4096-axis endpoints and the nonuniform 81×63 image
+remain in the file corpus without substituting expected output.
+
+The **69 ordinary-file typed controls** include all header-prefix lengths,
+header/size/operand/marker/run errors, non-QOI raster data, missing paths/parents,
+a populated directory, two cap+1 sparse files (including a misleading suffix)
+and one 4 GiB sparse file. The inclusive QOI encoded-byte cap remains
+**83,886,102**: successfully reported cap+1 sizes yield `UnsupportedImageSize`
+before reading, whereas **4,294,967,296** bytes yield the host `EOVERFLOW` file
+error. Exact synthetic code/message propagation, invalid-byte wrapping and
+zero/exact/short/long complete-length checks are independently exercised.
+No physical byte-greater-than-255 fixture or nondeterministic short-read race
+is claimed. The local directory rejection was at read, code 21.
+
+A separate boundary program performs **100 sequential cycles under
+`RLIMIT_NOFILE=64`**, checking exact outcomes for RGB/RGBA success, decoder
+failure, directory/read failure, cap rejection, size overflow and two
+real-opened-handle stage controls. Those stages inject short-read/read-error
+results into the real shared close continuation; they are labeled internal
+boundary checks. The terminal marker follows one final raw-byte-checked valid
+load. The shared source establishes close-before-result-processing/decoding;
+low-descriptor repetition detects accumulated ordinary leaks in these runs.
+Pinned Base discards close errors, so this does not establish successful OS
+close reporting, new close-error parity or a universal no-leak theorem.
+
+Fresh-child peak RSS for sparse/closure CPU-1/CPU-2/JavaScript was
+**9,568,256 / 9,568,256 / 82,685,952 bytes**, below the predeclared 256 MiB ceiling.
+An isolated candidate-only **1,048,577-byte** full read reaches
+`InvalidImageHeader`, discriminating the QOI cap from the 1 MiB raster/HDR cap.
+Its peaks were **27,000,832 / 27,131,904 / 161,636,352 bytes**, below a separate
+fixed 1 GiB ceiling. Runtime and compilation memory are not combined. These
+post-run checks are not live memory limits; strict runtime timeouts and the
+unchanged pre-read guard are retained. The **193.281-second** focused duration
+is local harness evidence, not a throughput or maximum-area guarantee.
+
+The run seals **433 artifacts**, including **99 dependency/tool files**,
+complete fixture recipes/manifests, generated programs, outputs and **34
+successful subprocess receipts**. Source/tool drift checks run throughout and
+at the end; sparse holes are represented by logical sizes and tiny prefixes,
+never full-file hashes. Fresh run/native-build namespaces and pre-validation
+stale-pass invalidation prevent reuse of old results. CI adds the new gate and
+narrow report/manifest/program/log globs, explicitly excluding sparse fixtures;
+all previous lanes, matrix entries, permissions and oracle settings remain.
+
+Complete pinned `PROOF.bend` returns `All terms check.` for **115 laws**, with
+all 110 previous laws retained and five new pure cap/length facts. These laws
+do not prove host IO, allocation or closure. All **443 Python tests** pass with
+zero skips under the activated toolchain, including 11 new focused harness
+tests. An earlier unactivated discovery skipped one clang-dependent test; the
+complete activated rerun is the qualification result.
+
+Fresh serial regressions also pass against the same final library-source
+hashes: the unchanged formatted QOI memory gate checks **121 images, 67 typed
+failures through both memory entrypoints, and 638 observations / 554,344 bytes
+per lane**. Canonical clean-loader conformance checks **261/261 scenarios /
+40,101 pixel/numeric words** on all three lanes; an additional strict replay
+checks every field's type/cardinality/value, **333 QOI bytes and 23 palette
+words per lane**. Fresh native qualification selects `AccurateGradient` and
+`Glibc241AngleRn`, without changing frozen math calls, fixtures or tolerances.
+All trailing ownership/transform/decode contracts, three PPM examples and
+legacy QOI file roundtrip/missing/malformed/oversize controls pass. Existing
+Surface file loading passes **59 native cases, three boundaries and 100 fd64
+cycles** on CPU/JavaScript; the dedicated HDR file gate passes **26 files /
+18,035 pixels, five controls and 100 closure cycles** on those lanes. Heavy
+compilation was serialized. The five canonical native invalid-domain control
+processes terminate with their expected rejection codes; every other recorded
+regression subprocess succeeds.
+
+Only **`raylib:function:LoadImage`** changes mapping/scope/gaps/evidence, remaining
+partial; all 1,884 entry statuses and existing gate statuses are unchanged.
+Core totals remain **117 partial / zero complete**, a zero-started/zero-completed
+native-API delta. `LoadImageFromMemory`, RAW loading, image types and export
+statuses are untouched. The implementation narrows one original-format file
+gap without claiming complete `LoadImage` coverage.
+
+These are local Linux x86-64 CPU/Bun file results. macOS/hosted qualification for
+the new gate, GPU IO, Windows/browser JavaScript, big-endian/native pointer ABI,
+maximum-area allocation, concurrently changing/special files, generic formatted
+or float dispatch, other original codec formats and complete integration/resource/
+performance coverage remain open. No new hosted or GPU result is inferred from
+older Surface or memory runs. Full scoped results, hashes and regression
+receipts are in [the file evidence report](evidence/qoi-formatted-files.json).

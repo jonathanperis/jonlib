@@ -355,3 +355,18 @@ def Laws.formatted_qoi_rgba_word():
 
 def Laws.formatted_qoi_pixels_zero(index, channels, pixels):
   {==}
+
+def Laws.qoi_file_limit():
+  {==}
+
+def Laws.image_file_complete_empty():
+  {==}
+
+def Laws.image_file_complete_exact():
+  {==}
+
+def Laws.image_file_complete_short():
+  {==}
+
+def Laws.image_file_complete_long():
+  {==}

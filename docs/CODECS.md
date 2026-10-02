@@ -37,22 +37,27 @@ ownership adapters are exposed through `jonlib.bend`:
 | API | Contract |
 |---|---|
 | `Image.Formatted.decode_qoi(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Image.Formatted>` with original RGB888 (4) or RGBA8888 (7) storage and one mip level. Dimensions 1..4096; strict checked bytes/streams. |
+| `Image.Formatted.load_qoi(path: String)` | Returns `IO(Result<&1, &1, Image.LoadError, Image.Formatted>)`; explicit QOI selection regardless of suffix, preserving the memory decoder's format 4/7 owner. See [file loading](#format-preserving-qoi-file-loading). |
 | `Surface.decode_qoi(bytes: +List<U32>)` | Returns `Result<Image.DecodeError, Surface>`; byte values must be 0..255. Accepts valid RGB/RGBA QOI, dimensions 1..4096. |
 | `Surface.to_qoi(surface)` | Consumes the Surface and returns immutable encoded bytes. Header channels are 4 and colorspace is 0. |
 | `Surface.load_qoi(path)` | Base byte-file IO returning `IO(Result<Image.LoadError, Surface>)`. |
 | `Surface.write_qoi(surface, path)` | Consumes the Surface, writes QOI through Base byte IO, and returns the same file-error contract as `write_ppm`. |
 
-Result signatures above abbreviate the explicit affine quantities shown in the
-source. Opened files are closed on success, read/write failure, decode failure
-and size rejection. File loading rejects sizes greater than **83,886,102 bytes**,
-the maximum QOI stream size for the current 4096×4096 Surface profile.
+Some Result signatures above abbreviate the explicit affine quantities shown in
+the source. File paths call `File.close` after read/write results and on size
+failure/rejection; reads close before their results are processed or decoded.
+Base returns no close error. QOI file loading admits reported sizes through
+**83,886,102 bytes**, equal to `14 + 5*(4096*4096) + 8`; this is an encoded-byte
+admission cap, not a runtime-memory or maximum-image success guarantee.
+Reported sizes above the cap are rejected before payload reads. Sizes above
+U32_MAX instead fail the pinned Base size call; see [file errors](IMAGE-FILES.md#format-preserving-qoi-file-loading).
 
 Decoding supports RGB, RGBA, index, difference, luma and run chunks, including
 wrapping channel differences, cache collisions and run-boundary handling. RGB
 headers are normalized to opaque RGBA8 by the Surface entrypoints. Their reference
 check performs the same explicit `LoadImageFromMemory` followed by
-`ImageFormat(RGBA8)` adaptation. The dedicated formatted memory entrypoint below
-preserves native QOI formats. Original-format metadata in the other normalized
+`ImageFormat(RGBA8)` adaptation. The dedicated formatted memory and file entrypoints
+preserve native QOI formats. Original-format metadata in the other normalized
 codec paths, shared formatted/float dispatch and other payload codecs remain gaps.
 
 `Image.DecodeError` distinguishes `InvalidImageHeader`, `InvalidImageByte`,
@@ -77,9 +82,9 @@ The immutable byte list can be reused for independent decodes. Success returns
 one affine pixel owner, consumed by export or a Surface bridge; failure returns
 only the existing typed error. Cache/output temporaries are dropped on failure.
 Neither native pointer/allocation ABI nor allocation-failure parity is claimed.
-`Surface.decode_qoi`, generic Surface memory dispatch and existing file loaders
-retain their RGBA8-normalized contracts. This slice adds no formatted file
-loader or generic formatted decoder dispatch.
+`Surface.decode_qoi`, generic Surface memory dispatch and Surface file loaders
+retain their RGBA8-normalized contracts. The dedicated formatted file wrapper
+is documented separately below; generic formatted decoder dispatch remains a gap.
 
 Channel count affects the output only. Full alpha remains in the decoder's
 previous pixel and cache hash even in channel-3 streams containing RGBA chunks;
@@ -126,6 +131,52 @@ controls have complete >=22-byte backing buffers and declared lengths, safe
 invalid headers and no large allocation request: the pinned wrapper reads
 `fileData[12]` before the QOI decoder's minimum-length guard. Short/overflow
 stream controls execute only in checked Jonlib.
+
+## Format-preserving QOI file loading
+
+`Image.Formatted.load_qoi(path: String)` returns
+`IO(Result<&1, &1, Image.LoadError, Image.Formatted>)`. It reads an ordinary,
+non-changing file through the shared QOI-capped boundary and passes its complete
+bytes directly to `Image.Formatted.decode_qoi` after the close call. It takes no
+input owner, reference profile, dimensions or channel argument. Success creates
+one affine format-4 or format-7 owner with the same dimensions, exact bytes,
+implicit single mip level and metadata-only colorspace handling as the memory
+decoder. Failures return only `ImageFileError{code, message}` or one
+`ImageDecodeError{error}` wrapper, without a partial owner.
+
+Selection is explicit: `.qoi`, `.QOI`, `.QoI`, no suffix and a misleading `.png`
+suffix all select QOI. There is no sniffing or retry with another codec, so
+non-QOI raster content named `.qoi` fails QOI header validation. The inclusive
+83,886,102-byte cap, U32 size-overflow distinction, exact read-length check,
+decoder error ordering and close-error limitation are specified in
+[IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-qoi-file-loading).
+
+The separate [file evidence](evidence/qoi-formatted-files.json) passes on local
+Linux x86-64 CPU-one-thread, CPU-two-thread and JavaScript. It compares **135
+accepted ordinary files / 35,657 pixels / 126,883 native-format bytes** before
+normalization: **129 actual native `LoadImage(path)` calls** for `.qoi`/`.QOI`
+and **6 explicit-selection references** using `LoadFileData(path)` followed by
+`LoadImageFromMemory(".qoi", ...)` under other suffixes. Those reference routes
+are distinct; suffix-independent helper behavior does not extend native
+`LoadImage` dispatch. Complete metadata/raw-byte observations, independent
+Surface regressions and **69 typed controls** yield **287 observations / 138,007
+compared bytes per lane**. The historical formatted-memory evidence remains
+memory-only; this file result is independently qualified.
+
+The [file verification record](VERIFICATION.md#format-preserving-qoi-file-loading-2026-10-02)
+and [resource/closure details](IMAGE-FILES.md#formatted-qoi-file-evidence) record
+100 low-descriptor cycles through eight actual-handle paths, a final successful
+load, and the separately measured 1,048,577-byte full-read stress case.
+
+```sh
+python3 tools/qoi_file_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+python3 -m unittest discover -s tests -p test_qoi_file_harness.py -v
+```
+
+Generic formatted/float dispatch and original formats for the other normalized
+codecs remain open, as do GPU IO, macOS/Windows/browser file qualification,
+big-endian targets, special/concurrently changing files, maximum-area allocation
+and complete integration/resource/performance coverage.
 
 ## Reference and verification
 
