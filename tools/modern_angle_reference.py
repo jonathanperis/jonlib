@@ -6,10 +6,12 @@ finite adaptation are independently compiled into separate symbols. Native libm
 is diagnostic only: it never defines or selects this pinned-source profile.
 """
 import argparse
+import copy
 from collections import Counter
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import platform
 import random
@@ -18,6 +20,9 @@ import shutil
 import struct
 import subprocess
 import time
+import uuid
+
+import runtime_image
 
 from angle_probe import GNU_CONTROL, samples as old_samples
 
@@ -66,11 +71,12 @@ def double_words(value):
 
 
 def source_paths():
-    return [Path(__file__).resolve(), ROOT/'tools/angle_probe.py',
+    return [Path(__file__).resolve(), ROOT/'tools/angle_probe.py', ROOT/'tools/runtime_image.py',
             ROOT/'LICENSES/core-math-atan2f.txt',
             *(REFERENCE/name for name in ('modern_atan2f_glibc241.c',
                 'modern_atan2f_adapted.c','modern_atan2f_shim.h',
                 'modern_atan2f_trace.h','modern_atan2f_driver.c',
+                'runtime_image.h','runtime_image.c','runtime_image_macho.h','runtime_image_macho.c',
                 'modern_atan2f_general_cases.json','modern_atan2f_historical.json','modern_atan2f_README.md'))]
 
 
@@ -206,12 +212,57 @@ def compiler_identity(compiler):
     if not path: raise ValueError('C compiler not found: '+str(compiler))
     path=Path(path).resolve()
     version=subprocess.run([str(path),'--version'],check=True,capture_output=True,text=True).stdout
-    return dict(path=str(path),sha256=sha256(path),version=version)
+    identity=dict(path=str(path),sha256=sha256(path),version=version)
+    if platform.system()=='Darwin':
+        target=subprocess.run([str(path),'-dumpmachine'],check=True,capture_output=True,text=True).stdout.strip()
+        if not target: raise ValueError('Missing Darwin compiler target')
+        identity['target']=target
+    return identity
+
+
+def darwin_toolchain_snapshot(work, label):
+    work=Path(work)
+    commands=(('os-build',['/usr/bin/sw_vers','-buildVersion']),
+              ('sdk-path',['xcrun','--sdk','macosx','--show-sdk-path']),
+              ('sdk-version',['xcrun','--sdk','macosx','--show-sdk-version']))
+    values={key:_run(command,work,label+'-'+key).strip() for key,command in commands}
+    if not values['os-build'] or not values['sdk-version'] or not Path(values['sdk-path']).is_absolute():
+        raise ValueError('Missing Darwin SDK/OS identity')
+    sdk_settings=Path(values['sdk-path'])/'SDKSettings.json'
+    settings_hash=sha256(sdk_settings)
+    context=dict(os_build=values['os-build'],sdk_path=values['sdk-path'],sdk_version=values['sdk-version'],
+        sdk_settings_sha256=settings_hash,sdk_role='xcrun-selected SDK; actual compiler invocation retained separately')
+    artifacts={str(sdk_settings):settings_hash}
+    for key,_ in commands:
+        for suffix in ('.stdout','.stderr','.command.json'):
+            p=work/(label+'-'+key+suffix);artifacts[str(p)]=sha256(p)
+    return context,artifacts
+
+
+def recheck_darwin_toolchain(native,work,label):
+    if platform.system()!='Darwin': return
+    if compiler_identity(native['compiler']['path'])!=native['compiler']:
+        raise ValueError('Darwin compiler/target identity drift')
+    context,artifacts=darwin_toolchain_snapshot(work,label)
+    if context!=native['darwin_toolchain']: raise ValueError('Darwin OS/SDK identity drift')
+    for name,digest in artifacts.items():
+        if name in native['artifacts'] and native['artifacts'][name]!=digest:
+            raise ValueError('Darwin context artifact drift')
+    if compiler_identity(native['compiler']['path'])!=native['compiler']:
+        raise ValueError('Darwin compiler/target identity drift after context observation')
+    for name,digest in native['artifacts'].items():
+        if sha256(name)!=digest: raise ValueError('Darwin source/toolchain/artifact drift: '+name)
+    native['artifacts'].update(artifacts)
 
 
 def build_native(work,compiler='clang'):
     work=Path(work).resolve(); work.mkdir(parents=True,exist_ok=True)
     pins=assert_pins(); identity=compiler_identity(compiler)
+    if platform.system()=='Darwin' and any(os.environ.get(key) is not None for key in runtime_image.DARWIN_LOADER_NAMES):
+        raise ValueError('Darwin loader overrides are outside the supported profile')
+    darwin_toolchain=None;context_artifacts={}
+    if platform.system()=='Darwin':
+        darwin_toolchain,context_artifacts=darwin_toolchain_snapshot(work,'darwin-initial')
     include=work/'include'; include.mkdir(exist_ok=True)
     (include/'libm-alias-finite.h').write_text('#define libm_alias_finite(a,b)\n')
     (include/'math_config.h').write_text('#include "modern_atan2f_shim.h"\n')
@@ -220,16 +271,26 @@ def build_native(work,compiler='clang'):
     command=[identity['path'],*FLAGS,'-I'+str(REFERENCE),'-I'+str(include),
              '-D__ieee754_atan2f=modern_atan2f_original',
              *(REFERENCE/name for name in ('modern_atan2f_glibc241.c','modern_atan2f_adapted.c','modern_atan2f_driver.c')),
+             *([REFERENCE/'runtime_image.c', REFERENCE/'runtime_image_macho.c'] if platform.system()=='Darwin' else []),
              '-lm',*(['-ldl'] if platform.system()=='Linux' else []),'-o',binary]
     _run(command,work,'native-compile')
     if compiler_identity(compiler)!=identity or assert_pins()!=pins: raise ValueError('Compiler/source drift during native compilation')
     qualification=validate_metadata(_strict_json(_run([binary,'--qualify'],work,'native-preflight').strip()))
     preflight_final_environment=_final_context(work/'native-preflight.stderr')
-    preflight_libraries={key:dict(path=str(Path(qualification[key]).resolve()),sha256=sha256(Path(qualification[key]).resolve())) for key in ('atan2_library','fma_library')}
-    artifacts={**pins,**{str(p):sha256(p) for p in include.iterdir()},str(binary):sha256(binary)}
+    validate_process_identity(qualification, preflight_final_environment)
+    preflight_libraries=runtime_libraries(qualification)
+    artifacts={**pins,**context_artifacts,**{str(p):sha256(p) for p in include.iterdir()},str(binary):sha256(binary)}
+    if platform.system()=='Darwin':
+        _run([*command[:-2],'-###','-o',binary],work,'darwin-compiler-invocation')
+        for suffix in ('.stdout','.stderr','.command.json'):
+            p=work/('darwin-compiler-invocation'+suffix);artifacts[str(p)]=sha256(p)
+        final_context,final_artifacts=darwin_toolchain_snapshot(work,'darwin-preflight-final')
+        if final_context!=darwin_toolchain: raise ValueError('Darwin OS/SDK changed during compilation')
+        artifacts.update(final_artifacts)
     return dict(binary=binary,compiler=identity,flags=FLAGS.copy(),source_commit=SOURCE_COMMIT,
+                darwin_toolchain=darwin_toolchain,
                 source_blob=SOURCE_BLOB,source_sha256=SOURCE_SHA256,constants_sha256=CONSTANTS_SHA256,
-                artifacts=artifacts,preflight_libraries=preflight_libraries,preflight_final_environment=preflight_final_environment,system=platform.system(),machine=platform.machine())
+                artifacts=artifacts,preflight_environment=qualification,preflight_libraries=preflight_libraries,preflight_final_environment=preflight_final_environment,system=platform.system(),machine=platform.machine())
 
 
 def _strict_json(text):
@@ -247,6 +308,7 @@ def validate_metadata(meta):
     required={'kind','rounding','initial_rounding','control','ftz','daz','binary32','binary64',
               'excess_precision','fma_controls','narrow_controls','gradual_controls',
               'atan2_library','fma_library','literal_atan2','pointer_atan2','original_atan2'}
+    if platform.system()=='Darwin': required |= {'runtime_images','x87_control','symbol_path','loader_overrides'}
     if type(meta) is not dict or set(meta) not in (required,required|{'libc','libc_version'}):
         raise ValueError('Malformed native qualification metadata')
     expected=dict(kind='qualification',rounding='FE_TONEAREST',ftz=False,daz=False,
@@ -265,6 +327,7 @@ def validate_metadata(meta):
     else: raise ValueError('Unsupported architecture qualification')
     for key in ('atan2_library','fma_library'):
         if type(meta[key]) is not str or not Path(meta[key]).is_absolute(): raise ValueError('Missing library identity')
+    if platform.system()=='Darwin': validate_darwin_metadata(meta, paths=meta)
     for key in ('literal_atan2','pointer_atan2','original_atan2'):
         if not _u32(meta[key]): raise ValueError('Malformed literal/pointer control')
     if 'libc' in meta and (type(meta['libc']) is not str or type(meta['libc_version']) is not str):
@@ -274,6 +337,7 @@ def validate_metadata(meta):
 
 def validate_final_context(meta):
     keys={'kind','rounding','rounding_code','control','ftz','daz'}
+    if platform.system()=='Darwin': keys |= {'runtime_images','x87_control','symbol_path','loader_overrides'}
     if type(meta) is not dict or set(meta)!=keys: raise ValueError('Malformed final native context')
     if meta['kind']!='final-context' or meta['rounding']!='FE_TONEAREST' or type(meta['rounding_code']) is not int or meta['rounding_code']!=0:
         raise ValueError('Final native rounding changed')
@@ -285,7 +349,84 @@ def validate_final_context(meta):
         forbidden=(1<<24)|(1<<19)|(3<<22)|3
     else: raise ValueError('Unsupported final architecture qualification')
     if meta['control']&forbidden: raise ValueError('Final native control state changed')
+    if platform.system()=='Darwin': validate_darwin_metadata(meta)
     return meta
+
+
+def validate_darwin_metadata(meta, paths=None):
+    images=runtime_image.validate_images(meta['runtime_images'],paths)
+    host={'arm64':'aarch64','aarch64':'aarch64','x86_64':'x86_64'}.get(platform.machine().lower())
+    if host is None or images['atan2_library']['architecture']!=host:
+        raise ValueError('Darwin image/host architecture mismatch')
+    if type(meta['x87_control']) is not int or not 0<=meta['x87_control']<=65535:
+        raise ValueError('Malformed Darwin x87 control')
+    if (host=='x86_64' and meta['x87_control']&(3<<10)) or (host=='aarch64' and meta['x87_control']!=0):
+        raise ValueError('Unsupported Darwin x87 control')
+    if meta['symbol_path']!='volatile-pointers-equal-dlsym-default':
+        raise ValueError('Unproven Darwin function pointers')
+    overrides=meta['loader_overrides']
+    if type(overrides) is not dict or set(overrides)!=set(runtime_image.DARWIN_LOADER_NAMES) or any(value is not None for value in overrides.values()):
+        raise ValueError('Unsupported Darwin loader overrides')
+
+
+def validate_process_identity(initial, final):
+    if platform.system()=='Darwin':
+        for key in ('runtime_images','x87_control','symbol_path','loader_overrides'):
+            if initial[key]!=final[key]: raise ValueError('Native process image/control changed: '+key)
+        mask=~63 if platform.machine().lower()=='x86_64' else -1
+        if initial['control']&mask != final['control']&mask:
+            raise ValueError('Native process floating-point controls changed')
+
+
+def validate_cross_process(first, second):
+    if platform.system()=='Darwin':
+        def stable(meta):
+            result=copy.deepcopy(meta)
+            result['runtime_images']=runtime_image.stable_images(result['runtime_images'])
+            if platform.machine().lower()=='x86_64': result['control'] &= ~63
+            return result
+        if stable(first)!=stable(second):
+            raise ValueError('Mixed native Darwin process contexts')
+
+
+def runtime_libraries(environment):
+    if platform.system()=='Darwin':
+        return runtime_image.enrich_images(environment['runtime_images'])
+    return {key:dict(path=str(Path(environment[key]).resolve()),sha256=sha256(Path(environment[key]).resolve()))
+            for key in ('atan2_library','fma_library')}
+
+
+def recheck_runtime_libraries(native):
+    """Fresh native process re-attests cache-backed code after candidate work.
+
+    An old receipt, OS name or missing on-disk image can never authorize success.
+    The original compiler/source/binary snapshots are checked before execution.
+    """
+    libraries=native.get('libraries')
+    if type(libraries) is not dict or set(libraries)!={'atan2_library','fma_library'}:
+        raise ValueError('Missing qualified runtime library identities')
+    if platform.system()!='Darwin':
+        for info in libraries.values():
+            if type(info) is not dict or set(info)!={'path','sha256'} or type(info['path']) is not str or not Path(info['path']).is_absolute():
+                raise ValueError('Malformed runtime library identity')
+            if sha256(info['path'])!=info['sha256']: raise ValueError('Qualified runtime library drift during probe')
+        return
+    binary=Path(native['binary'])
+    if not binary.is_absolute() or str(binary) not in native['artifacts']:
+        raise ValueError('Missing attestation executable identity')
+    for name,digest in native['artifacts'].items():
+        if sha256(name)!=digest: raise ValueError('Native attestation artifact drift: '+name)
+    label='runtime-recheck-'+uuid.uuid4().hex
+    environment=validate_metadata(_strict_json(_run([binary,'--qualify'],binary.parent,label).strip()))
+    final=_final_context(binary.parent/(label+'.stderr'))
+    validate_process_identity(environment,final)
+    validate_cross_process(native['environment'],environment)
+    if runtime_libraries(environment)!=libraries:
+        raise ValueError('Qualified Darwin runtime image drift during probe')
+    recheck_darwin_toolchain(native,binary.parent,label+'-darwin')
+    native.setdefault('runtime_rechecks',[]).append(dict(label=label,initial=environment,final=final))
+    for suffix in ('.stdout','.stderr','.command.json'):
+        path=binary.parent/(label+suffix);native['artifacts'][str(path)]=sha256(path)
 
 
 def _final_context(path):
@@ -374,10 +515,9 @@ def native_reference(rows,work,compiler='clang'):
     output=_run([build['binary']],work,'native-run',input_text=input_text)
     environment,records=parse_native(output,rows)
     final_environment=_final_context(work/'native-run.stderr')
-    libraries={}
-    for key in ('atan2_library','fma_library'):
-        path=Path(environment[key]).resolve()
-        libraries[key]=dict(path=str(path),sha256=sha256(path))
+    validate_process_identity(environment,final_environment)
+    validate_cross_process(build['preflight_environment'],environment)
+    libraries=runtime_libraries(environment)
     if libraries!=build['preflight_libraries']: raise ValueError('Runtime library identity changed after qualification')
     package=None
     if platform.system()=='Linux' and shutil.which('dpkg-query'):
@@ -389,6 +529,7 @@ def native_reference(rows,work,compiler='clang'):
         raise ValueError('Compiler/source drift during native execution')
     for name,digest in build['artifacts'].items():
         if sha256(name)!=digest: raise ValueError('Native artifact drift: '+name)
+    recheck_darwin_toolchain(build,work,'darwin-native-final')
     historical=[(bits(y),bits(x)) for y,x in old_samples()]
     prefix=[(r['y'],r['x']) for r in rows[:1086]]
     baseline={}
@@ -434,9 +575,11 @@ def native_search(work,compiler,mode,budget):
         raise ValueError('Compiler/source drift during native input generation')
     for path,digest in build['artifacts'].items():
         if sha256(path)!=digest: raise ValueError('Search artifact drift: '+path)
-    for key,library in build['preflight_libraries'].items():
-        if str(Path(environment[key]).resolve())!=library['path'] or sha256(library['path'])!=library['sha256']:
-            raise ValueError('Search library identity drift')
+    validate_process_identity(environment,final_environment)
+    validate_cross_process(build['preflight_environment'],environment)
+    if runtime_libraries(environment)!=build['preflight_libraries']:
+        raise ValueError('Search library identity drift')
+    recheck_darwin_toolchain(build,work,'darwin-search-final')
     metadata={**build,'binary':str(build['binary']),'mode':mode,'budget':budget,'seed':SEED,
               'environment':environment,'final_environment':final_environment,
               'retained_observations':len(records),'candidate_run':False,'passed':False,

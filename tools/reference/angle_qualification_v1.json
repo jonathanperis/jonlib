@@ -46,7 +46,13 @@
     "LICENSES/sun-math.txt": "85adc03253d4df322be7a2b6d620c6158157bb44a6d6e6b61d454384bcda979c",
     "LICENSES/core-math-atan2f.txt": "f3faa1cbceb8622faa4f43726145d534680425881f934725f25f84b5f6a26d06",
     "tools/angle_manifest_audit.py": "729a675a296f9fe5d8cc930ef6e9bc7033bafaf72e37c10cd8fe153251ed359a",
-    "tools/reference/angle_qualification_context.c": "147980aa2f696b8dc4030d9aaa15f288a188fc84e5b08826aebb438ed2eb604f"
+    "tools/reference/angle_qualification_context.c": "147980aa2f696b8dc4030d9aaa15f288a188fc84e5b08826aebb438ed2eb604f",
+    "tools/runtime_image.py": "cb0d6472298d41ce60a4610a0c6e58de4213f2fd2f6a6ecb26b8f68a0cd97729",
+    "tools/reference/angle_qualification_darwin_context.c": "db95f22848950a354e88465045a22a5e3b3923c5cdb72b3b8217d1662717061c",
+    "tools/reference/runtime_image.h": "7d7b67badeb8ae56ca381511302acc0c07af25ec9f3bfea5ffc7e5e405da304f",
+    "tools/reference/runtime_image.c": "7a071dc8624e60275289e759c8084013f27c086fa45b9107269c3464d4286ee6",
+    "tools/reference/runtime_image_macho.h": "5e2c2c12d404d3eba90e509a3f508fb27a2aed6cec67626713d320f1c6db623f",
+    "tools/reference/runtime_image_macho.c": "f54553193f3dd82517a5a04f0060d9ea4de170dbe1d1f84504c5fa81ba527682"
   },
   "raylib": {
     "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",

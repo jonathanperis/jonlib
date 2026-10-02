@@ -216,3 +216,15 @@ separate [checked angle integration](CHECKED-ANGLES.md) now supplies staged
 wrapper checks and independently qualified canonical routing; its evidence is
 separate from this unchanged scalar gate. Device/resource and performance work
 remain in [ANGLE-PLAN.md](ANGLE-PLAN.md).
+
+## Darwin runtime-image provenance
+
+The native harness now shares the [Darwin Mach-O provenance backend](RUNTIME-IMAGE-PROVENANCE.md)
+with independent angle qualification. Both actual `atan2f` and `fma` pointers
+have initial/final loaded-image UUID and immutable mapped-code SHA-256 evidence.
+Cache-backed images require active-cache membership and UUID; ordinary files
+retain additional realpath/stat/full-file hash checks. Probe checkpoints run a
+fresh attestation using the original hash-checked executable, so cache-only
+paths are never treated as readable files. Numerical source, flags, controls,
+corpus and expected words are unchanged. Local Linux/native/synthetic regressions
+pass; actual Darwin compilation and runtime qualification await hosted evidence.

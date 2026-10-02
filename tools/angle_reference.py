@@ -20,10 +20,15 @@ import subprocess
 import sys
 import uuid
 
+if __package__:
+    from . import runtime_image
+else:
+    import runtime_image
+
 ROOT = Path(__file__).resolve().parents[1]
 REFERENCE = ROOT / 'tools/reference'
 MANIFEST = REFERENCE / 'angle_qualification_v1.json'
-MANIFEST_SHA256 = '2fda8deee025162997a352940cfd8476e0538313fb3b705b4616fad184553e11'
+MANIFEST_SHA256 = 'a08d1448072694532e24945bf32558b8d7f7b07c87571f5952cab6fa76126cd6'
 CANONICAL_FLAGS = ['-std=c11', '-O2', '-fno-builtin-atan2f']
 MODERN_FLAGS = ['-std=c11', '-O2', '-frounding-math', '-fno-fast-math',
                 '-ffp-contract=off', '-fno-lto', '-fno-builtin-atan2f', '-fno-builtin-fma']
@@ -160,8 +165,12 @@ def validate_context(meta, phase):
     fields = {'kind', 'profile', 'architecture', 'endian', 'binary32', 'binary64', 'eval_method',
               'rounding', 'nearest', 'control', 'x87_control', 'libc_version', 'symbol', 'symbol_path',
               'library_path', 'library_realpath', 'library_build_id', 'library_stat', 'loader_overrides'}
+    darwin = type(meta) is dict and meta.get('profile') == 'darwin-macho-runtime-image-v1'
+    if darwin:
+        fields -= {'libc_version', 'library_path', 'library_realpath', 'library_build_id', 'library_stat'}
+        fields.add('runtime_image')
     if type(meta) is not dict or set(meta) != fields: raise ValueError('Malformed process context')
-    expected = dict(kind=phase+'-context', profile='linux-glibc-elf-runtime-image-v1', endian='little',
+    expected = dict(kind=phase+'-context', profile='darwin-macho-runtime-image-v1' if darwin else 'linux-glibc-elf-runtime-image-v1', endian='little',
                     binary32=True, binary64=True, eval_method=0, rounding=0, nearest=True,
                     symbol='atan2f', symbol_path='volatile-pointer-equals-dlsym-default')
     for key, value in expected.items():
@@ -176,6 +185,14 @@ def validate_context(meta, phase):
         if meta['control'] & ((1<<24)|(1<<19)|(3<<22)|3) or meta['x87_control'] != 0:
             raise ValueError('Unsupported FPCR context')
     else: raise ValueError('Unsupported architecture metadata profile')
+    if darwin:
+        image = runtime_image.validate_image(meta['runtime_image'])
+        if image['architecture'] != meta['architecture']: raise ValueError('Mixed context/image architectures')
+        if type(meta['loader_overrides']) is not dict or set(meta['loader_overrides']) != set(runtime_image.DARWIN_LOADER_NAMES):
+            raise ValueError('Missing Darwin loader override observations')
+        if any(v is not None for v in meta['loader_overrides'].values()):
+            raise ValueError('Darwin loader overrides are outside the supported metadata profile')
+        return meta
     if type(meta['libc_version']) is not str or not re.fullmatch(r'\d+\.\d+(?:\.\d+)?', meta['libc_version']):
         raise ValueError('Unknown glibc runtime version')
     for key in ('library_path', 'library_realpath'):
@@ -325,7 +342,13 @@ def qualify(raylib_source, library, build_dir, *, c_source, cases_from, parse_ou
             raise ValueError(label+': successful compiler did not produce a fresh nonempty artifact')
         track(binary)
     def enrich_context(context, label):
-        meta = context['initial']; path = Path(meta['library_realpath'])
+        meta = context['initial']
+        expected_profile = 'darwin-macho-runtime-image-v1' if darwin else 'linux-glibc-elf-runtime-image-v1'
+        if meta['profile'] != expected_profile: raise ValueError('Process metadata platform mismatch')
+        if meta['profile'] == 'darwin-macho-runtime-image-v1':
+            context['library'] = runtime_image.enrich_image(meta['runtime_image'], track)
+            return context
+        path = Path(meta['library_realpath'])
         if Path(meta['library_path']).resolve() != path or path.resolve() != path: raise ValueError('Loaded library realpath mismatch')
         st = path.stat()
         if [st.st_dev, st.st_ino, st.st_size, st.st_mtime_ns//10**9, st.st_mtime_ns%10**9] != meta['library_stat']:
@@ -354,14 +377,22 @@ def qualify(raylib_source, library, build_dir, *, c_source, cases_from, parse_ou
         report['profiles'] = manifest['profiles']
         if requested_profile is not None and requested_profile not in PROFILES:
             raise ValueError('Unknown explicitly requested angle profile')
-        if platform.system() != 'Linux' or platform.machine().lower() not in ('x86_64', 'aarch64'):
-            raise ValueError('Unsupported platform: only Linux glibc ELF runtime-image metadata is implemented')
-        if any(os.environ.get(name) is not None for name in LOADER_NAMES):
+        darwin = platform.system() == 'Darwin'
+        if platform.system() not in ('Linux','Darwin') or platform.machine().lower() not in ('x86_64', 'aarch64', *(['arm64'] if darwin else [])):
+            raise ValueError('Unsupported platform: Linux glibc ELF or Darwin Mach-O runtime-image metadata required')
+        loader_names = runtime_image.DARWIN_LOADER_NAMES if darwin else LOADER_NAMES
+        if any(os.environ.get(name) is not None for name in loader_names):
             raise ValueError('Loader overrides are outside the supported profile')
         raylib_source, library = Path(raylib_source).resolve(), Path(library).resolve()
         for relative, digest in manifest['source_sha256'].items():
             if track(ROOT/relative) != digest: raise ValueError('Frozen source/toolchain drift: '+relative)
-        track(__file__); track(REFERENCE/'angle_qualification_context.c')
+        track(__file__); track(ROOT/'tools/runtime_image.py')
+        context_source = REFERENCE/('angle_qualification_darwin_context.c' if darwin else 'angle_qualification_context.c')
+        track(context_source)
+        native_identity_sources = []
+        if darwin:
+            for name in ('runtime_image.h','runtime_image.c','runtime_image_macho.h','runtime_image_macho.c'): track(REFERENCE/name)
+            native_identity_sources = [REFERENCE/'runtime_image.c', REFERENCE/'runtime_image_macho.c']
         for callback in (c_source, cases_from, parse_output):
             file = inspect.getsourcefile(callback)
             if file is None or Path(file).resolve() != ROOT/'tools/conformance.py':
@@ -389,33 +420,54 @@ def qualify(raylib_source, library, build_dir, *, c_source, cases_from, parse_ou
                                   pinned_source_flags=MODERN_FLAGS)
         # Package metadata has an explicit policy: runtime images need not belong
         # to a package database. Unknown failures do not become guessed versions.
-        package_path = shutil.which('dpkg-query')
-        if not package_path: raise ValueError('Unsupported package metadata backend: dpkg-query required')
-        package_output, _ = execute([package_path, '-W', '-f=${binary:Package} ${Version} ${Architecture}\\n'], 'package-inventory')
-        package_lines = [line for line in package_output.splitlines() if re.match(r'^libc6(?::\S+)?\s', line)]
-        if len(package_lines) > 1: raise ValueError('Ambiguous libc6 package metadata')
-        report['package'] = dict(profile='runtime-image-not-package-membership-v1',
-                                 status='package-record-present' if package_lines else 'not-in-successful-dpkg-inventory',
-                                 package_record=package_lines[0] if package_lines else None,
-                                 required_runtime_version='observed separately in every native process')
+        if darwin:
+            os_build, _ = execute(['/usr/bin/sw_vers', '-buildVersion'], 'darwin-os-build')
+            sdk_path, _ = execute(['xcrun', '--sdk', 'macosx', '--show-sdk-path'], 'darwin-sdk-path')
+            sdk_version, _ = execute(['xcrun', '--sdk', 'macosx', '--show-sdk-version'], 'darwin-sdk-version')
+            if not os_build.strip() or not sdk_version.strip() or not Path(sdk_path.strip()).is_absolute():
+                raise ValueError('Missing Darwin OS/SDK identity')
+            sdk_settings = Path(sdk_path.strip())/'SDKSettings.json'
+            report['darwin_toolchain'] = dict(os_build=os_build.strip(), sdk_path=sdk_path.strip(),
+                sdk_version=sdk_version.strip(), sdk_settings_sha256=track(sdk_settings),
+                sdk_role='xcrun-selected SDK; actual compiler invocation retained separately')
+            report['package'] = dict(profile='darwin-runtime-image-not-package-membership-v1',
+                status='actual-loaded-image-and-active-cache-identity-required')
+        else:
+            package_path = shutil.which('dpkg-query')
+            if not package_path: raise ValueError('Unsupported package metadata backend: dpkg-query required')
+            package_output, _ = execute([package_path, '-W', '-f=${binary:Package} ${Version} ${Architecture}\\n'], 'package-inventory')
+            package_lines = [line for line in package_output.splitlines() if re.match(r'^libc6(?::\S+)?\s', line)]
+            if len(package_lines) > 1: raise ValueError('Ambiguous libc6 package metadata')
+            report['package'] = dict(profile='runtime-image-not-package-membership-v1',
+                                     status='package-record-present' if package_lines else 'not-in-successful-dpkg-inventory',
+                                     package_record=package_lines[0] if package_lines else None,
+                                     required_runtime_version='observed separately in every native process')
         document = control_document(manifest); cases = cases_from(copy.deepcopy(document))
         if canonical_json(cases) != canonical_json(document['cases']): raise ValueError('Canonical validator changed frozen controls')
         doc_path=work/'controls.json'; doc_path.write_text(canonical_json(document)+'\n'); track(doc_path)
         canonical = work/'canonical.c'; canonical.write_text(c_source(copy.deepcopy(cases))); track(canonical)
         report['canonical_source_sha256'] = sha256(canonical)
         context_object = work/'context.o'
-        compile_source([compiler_path, *CANONICAL_FLAGS, '-c', REFERENCE/'angle_qualification_context.c', '-o', context_object], context_object, 'context-compile')
+        compile_source([compiler_path, *CANONICAL_FLAGS, '-c', context_source, '-o', context_object], context_object, 'context-compile')
+        identity_objects = []
+        for source in native_identity_sources:
+            obj = work/(source.stem+'.o')
+            compile_source([compiler_path, *CANONICAL_FLAGS, '-c', source, '-o', obj], obj, source.stem+'-compile')
+            identity_objects.append(obj)
+        if darwin:
+            execute([compiler_path, *CANONICAL_FLAGS, '-###', '-c', context_source, '-o', context_object], 'darwin-compiler-invocation')
+        link_flags = ['-lm'] + ([] if darwin else ['-ldl'])
         binaries = {}
         for name, source_text in (('pointer', scalar_source(manifest['scalar_controls'])),
                                    ('intermediate-mirror', mirror_source(manifest['wrapper_controls'])),
                                    ('runtime-wrapper', runtime_wrapper_source(manifest['wrapper_controls']))):
             source = work/(name+'.c'); source.write_text(source_text); track(source)
             binary = work/name
-            compile_source([compiler_path, *CANONICAL_FLAGS, '-I'+str(raylib_source/'src'), source, context_object, '-lm', '-ldl', '-o', binary], binary, name+'-compile')
+            compile_source([compiler_path, *CANONICAL_FLAGS, '-I'+str(raylib_source/'src'), source, context_object, *identity_objects, *link_flags, '-o', binary], binary, name+'-compile')
             binaries[name] = binary
         binary = work/'canonical'
         compile_source([compiler_path, *CANONICAL_FLAGS, '-I'+str(raylib_source/'src'), canonical,
-                        library, context_object, '-lm', '-ldl', '-o', binary], binary, 'canonical-compile')
+                        library, context_object, *identity_objects, *link_flags, '-o', binary], binary, 'canonical-compile')
         binaries['canonical'] = binary
         include = work/'include'; include.mkdir(exist_ok=True)
         for name, content in (('libm-alias-finite.h', '#define libm_alias_finite(a,b)\n'),
@@ -425,7 +477,7 @@ def qualify(raylib_source, library, build_dir, *, c_source, cases_from, parse_ou
         pinned_binary=work/'pinned'
         compile_source([compiler_path, *MODERN_FLAGS, '-I'+str(REFERENCE), '-I'+str(include),
                         '-D__ieee754_atan2f=aq_pinned_atan2f', REFERENCE/'modern_atan2f_glibc241.c',
-                        pinned_source, context_object, '-lm', '-ldl', '-o', pinned_binary], pinned_binary, 'pinned-compile')
+                        pinned_source, context_object, *identity_objects, *link_flags, '-o', pinned_binary], pinned_binary, 'pinned-compile')
         pinned = strict_scalar(observe(pinned_binary, 'pinned-run'), manifest['scalar_controls'])
         if any(row['result'] != control['expected']['Glibc241AngleRn'] for row, control in zip(pinned, manifest['scalar_controls'])):
             raise ValueError('Independently compiled pinned modern source contradicts frozen expectation')
@@ -445,6 +497,7 @@ def qualify(raylib_source, library, build_dir, *, c_source, cases_from, parse_ou
         for context in report['contexts'].values():
             stable = copy.deepcopy(context['initial']); stable.pop('kind')
             if stable['architecture'] == 'x86_64': stable['control'] &= ~63
+            if 'runtime_image' in stable: stable['runtime_image'] = runtime_image.stable_image(stable['runtime_image'])
             stable_contexts.append(stable)
         if any(value != stable_contexts[0] for value in stable_contexts[1:]):
             raise ValueError('Mixed process floating-point/loader contexts')
@@ -456,6 +509,12 @@ def qualify(raylib_source, library, build_dir, *, c_source, cases_from, parse_ou
         if requested_profile is not None and matches != [requested_profile]:
             raise ValueError('Explicit requested profile does not match qualified native contract')
         # Identity is checked again at acceptance, not merely recorded once.
+        if darwin:
+            for command,label,expected in ((['/usr/bin/sw_vers','-buildVersion'],'final-darwin-os-build',os_build),
+                    (['xcrun','--sdk','macosx','--show-sdk-path'],'final-darwin-sdk-path',sdk_path),
+                    (['xcrun','--sdk','macosx','--show-sdk-version'],'final-darwin-sdk-version',sdk_version)):
+                actual,_=execute(command,label)
+                if actual!=expected: raise ValueError('Darwin OS/SDK identity drift')
         if compiler_path.resolve() != compiler_real: raise ValueError('Compiler resolution drift')
         for path, digest in snapshots.items():
             if sha256(path) != digest: raise ValueError('Source/toolchain/artifact drift: '+path)
