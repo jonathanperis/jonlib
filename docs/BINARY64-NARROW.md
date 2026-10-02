@@ -90,7 +90,8 @@ metadata, stale outputs and source/toolchain drift.
 `LAWS.bend`/`PROOF.bend` additionally check jam's zero/successor structure and the
 special rejection branch, plus six concrete arithmetic equalities for half-minimum,
 above-half-minimum, min-normal carry, overflow carry, negative zero and an odd tie.
-The complete verdict includes all four pre-existing laws. These structural and
+The recorded narrowing checkpoint's complete verdict includes all four
+pre-existing laws. These structural and
 concrete proofs are **not** a universal IEEE rounding theorem. Rational tests and
 the mathematical bounds above supply complementary evidence, not exhaustive
 execution of all finite64 words. No GPU, hosted execution, timing guarantee or
@@ -101,7 +102,8 @@ strictly failed at the separately documented angle scenario.
 
 See [ANGLE-PLAN.md](ANGLE-PLAN.md). A
 [private bounded binary64 FMA](BINARY64-FMA.md) is now implemented separately.
-Audited signed-zero addition/subtraction, general packing/stepping and full kernel
+A [private bounded add/subtract helper](BINARY64-ADD-SUB.md) now supplies audited
+signed-zero arithmetic separately. General packing/stepping and full kernel
 integration of reachable compensated-cancellation bounds remain open. Four product
 limbs retain 106 bits but do not by themselves
 solve arbitrary FMA alignment/cancellation. The entire pinned modern scalar kernel,

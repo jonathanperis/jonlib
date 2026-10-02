@@ -3657,3 +3657,81 @@ failures. No expected results, tolerances, reference profiles or compiler source
 were changed. GPU, hosted execution, exhaustive input coverage and performance
 parity remain unverified. [Durable evidence](evidence/binary64-fma.json) records
 this private checkpoint.
+
+
+## 2026-10-02: isolated bounded binary64 add/subtract prerequisite
+
+The private `src/binary64_add_sub.bend` accepts canonical high/low binary64 words
+for addition and subtraction, with each operand restricted to signed zero or a
+normal exponent in `[-900,130]`. All other encodings fail closed before arithmetic.
+It retains exact magnitudes through cancellation on a `2^-952` lattice in 34 U32
+limbs, then rounds once to nearest-even. Addition keeps a common zero sign,
+mixed zeros and nonzero cancellation give +0, and subtraction inverts the right
+sign. Its standalone bound is below `2^1084` lattice units, with no nonzero result
+underflow or overflow. [BINARY64-ADD-SUB.md](BINARY64-ADD-SUB.md) records the bounds
+and the explicitly inspected width-independent FMA helpers reused internally.
+
+All **42 existing library sources remain byte-for-byte unchanged**. The helper
+has no existing image/math API consumers, no public re-export and no API status
+promotion. Existing resize zero semantics, conversion/projection contracts,
+angle selectors, fixtures, expected values and tolerances are unchanged. The
+checked rectangle is not closed under chaining; kernel integration must establish
+every subsequent operand's domain separately.
+
+The independent exact `Fraction` oracle computes rational sums/differences and
+binary-searches binary64 neighbors; it does not mirror the candidate accumulator
+or pack. A separately qualified C oracle uses volatile runtime operations and
+`memcpy`, with Clang 19.1.7 flags excluding fast math, contraction and LTO and
+requiring rounding semantics and no excess evaluation precision. All 24 exact
+native controls pass, including subnormal controls outside the candidate domain.
+`FE_TONEAREST`, MXCSR 8064 and explicit FTZ/DAZ checks qualify this x86-64 run.
+
+CPU-one-thread, CPU-two-thread and JavaScript each pass **47,464 complete exact
+observations**, comprising 23,732 add and 23,732 subtract cases, 46,648 accepted
+results and 816 rejections. The 186 programs are serial and bounded to 256
+operations and 16 records per line. Every input exponent/sign/position/operation,
+zero order, tie parity, normalization shift, significand bit and selected
+carry/borrow/cancellation/gap boundary is represented. Minimum-binade adjacency
+is stratified over all significand bit/carry boundaries, not exhaustive over its
+`2^52` significands. Every lane checks all 237,320 framed U32 output words.
+
+The gate strictly checks IDs, operation kinds, tags, types, counts and shapes;
+invalidates old success, logs and compiler outputs; and pins source/input/program/
+binary/output artifacts as they are consumed. Final source/toolchain/runtime and
+artifact revalidation passes, with 52 source/dependency and 2,066 artifact hashes.
+All **169 Python tests** pass, including 34 focused malformed-output, native
+qualification, compiler-selection, stale-output and drift tests.
+
+The full `PROOF.bend` verdict is `All terms check.` for **34 laws**: 23 pre-existing,
+two new structural branch/definition laws and nine concrete zero/cancellation/
+tie/floor/carry equalities. These are not a universal arithmetic correctness
+theorem. The standalone integer bounds, limited proofs and exact differential
+corpus are separate evidence.
+
+The unchanged narrowing and bounded FMA gates re-pass 40,276 and 11,038
+observations respectively on all three lanes. Existing float64 multiply/divide,
+F32 FMA and GNU/Sun angle controls pass, as does the current 572-word inverse-trig
+diagnostic on CPU/JS. The native-angle gate remains strictly failed with 178
+first-lane differences. Canonical conformance was freshly rebuilt in 17 batches
+and audited completely after its fail-fast exit: all three lanes check 40,101
+words and match 260/261 scenarios. The only mismatch remains
+`vector2-angle-profiles`, pixel `(6,0)`, native `3fc90fdb` versus Bend `3fc90fda`.
+
+Trailing ownership, transform and decoding contracts pass on CPU/JS. All three
+PPM examples match reference pixels, and QOI bytes, roundtrips and file-error
+controls pass. A separate replay removes previous PPM/QOI output files first,
+then confirms that fresh executions recreate the exact expected outputs.
+
+Generated-ledger, independent Clang catalog, syntax and project checks pass.
+Independent read-only review regenerated all 47,464 inputs and expectations and
+186 programs, replayed all native/candidate outputs, checked all source/focused
+artifact hashes and 208 retained regression artifacts, and cross-checked every
+accepted result with separately expressed host operations. It found no blocking
+findings. All 42 prior library sources and all 1,884 API statuses are unchanged.
+Three angle entries gain prerequisite evidence and updated gaps only; statuses
+remain partial, with 117/600 core partial, 142 math partial and zero complete.
+CI runs this focused gate before the known native-angle/canonical failure.
+The modern scalar kernel, stepping, reachable-domain integration, tiny-branch
+underflow handling and forced-device/resource evidence remain open. No GPU,
+hosted, exhaustive or performance-parity claim is made. The
+[durable evidence](evidence/binary64-add-sub.json) records this private checkpoint.

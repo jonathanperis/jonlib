@@ -318,3 +318,9 @@ and returns checked nearest-even binary32 words with gradual underflow. It has
 no current public consumer and does not extend any API in this document. Its
 additional structural/concrete laws do not constitute a universal arithmetic
 proof or modern-angle implementation.
+
+The [bounded FMA](BINARY64-FMA.md) and [bounded add/subtract](BINARY64-ADD-SUB.md)
+helpers have the same private status. They establish only their checked arithmetic
+contracts, with no existing image/math API consumer, public API promotion or
+angle-profile change. The add/subtract implementation reuses private FMA
+primitives under its own reviewed bounds.

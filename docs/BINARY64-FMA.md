@@ -20,7 +20,10 @@ Exact cancellation of opposite nonzero values returns +0. The entry point does
 not consult the host rounding mode and makes no exception, errno, NaN-payload,
 other-rounding-mode or general gradual-underflow FMA claim.
 
-This module has **no existing library consumers** and is not a public API.
+This module is not a public API and has **no existing image/math API consumers**.
+The separate private [add/subtract prerequisite](BINARY64-ADD-SUB.md) now imports
+its width-independent internal primitives under explicitly reviewed invariants;
+this does not promote those primitives to supported entry points.
 Existing `float64_ops`, `float64`, `resize_numeric`, binary64 narrowing, F32 FMA,
 angle kernels, profile selectors and expected results remain unchanged. Its
 successful verification does not resolve the current strict native angle failure.
@@ -119,10 +122,10 @@ checks. Candidate CPU builds explicitly select the recorded supported Clang via
 `CC`, overriding unrelated ambient compiler settings. Twenty-five focused Python
 tests exercise the oracle, framing, malformed records,
 qualification, compiler selection, stale compilation outputs and drift checks.
-All 135 repository Python tests pass.
+The recorded FMA checkpoint passed all 135 repository Python tests.
 
-The complete `PROOF.bend` entry point checks the 13 existing laws plus ten new
-laws: shift zero/successor structure, explicit rejection, and seven concrete
+At the recorded FMA checkpoint, the complete `PROOF.bend` entry point checked
+the 13 existing laws plus ten new laws: shift zero/successor structure, explicit rejection, and seven concrete
 arithmetic equalities. These proofs do not establish arbitrary product,
 accumulator or rounding correctness. The mathematical argument, independent
 oracle corpus and regression evidence complement those limited proofs.
@@ -134,8 +137,9 @@ is claimed.
 
 ## Remaining scope
 
-See [ANGLE-PLAN.md](ANGLE-PLAN.md). The full pinned modern scalar kernel, its
-fallbacks, separately audited add/subtract and stepping, wrapper domains, native
-reference qualification and forced-device/resource evidence remain future work.
+See [ANGLE-PLAN.md](ANGLE-PLAN.md). A [private bounded add/subtract prerequisite](BINARY64-ADD-SUB.md) is now
+implemented separately. The full pinned modern scalar kernel, its fallbacks,
+stepping, wrapper domains, native reference qualification and forced-device/resource
+evidence remain future work.
 This rectangle excludes arbitrary binary64 underflow and subnormal inputs; it
 must not be silently widened or substituted for existing numeric contracts.

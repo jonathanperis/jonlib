@@ -3,6 +3,7 @@ import ./jonlib.bend as J
 import ./jonmath.bend as M
 import ./src/binary64_narrow.bend as N
 import ./src/binary64_fma.bend as F
+import ./src/binary64_add_sub.bend as A
 
 law clear_dimensions:
   for +width: U32
@@ -99,3 +100,46 @@ law bounded_fma_odd_tie:
 
 law bounded_fma_lattice_floor:
   {F.checked(782237696, 1, 782237696, 1, 2639265792, 2) == Some{F.Words{382730240, 0}} : Maybe<F.Words>}
+
+# Bounded add/sub: branch/definition structure and selected concrete results,
+# not a universal accumulator or IEEE rounding theorem.
+law bounded_add_sub_reject:
+  for ah: U32
+  for al: U32
+  for bh: U32
+  for bl: U32
+  {A.checked.valid(False{}, ah, al, bh, bl) == None{} : Maybe<F.Words>}
+
+law bounded_sub_sign_inversion:
+  for ah: U32
+  for al: U32
+  for bh: U32
+  for bl: U32
+  {A.checked_sub(ah, al, bh, bl) == A.checked_add(ah, al, (bh .^. 2147483648 : U32), bl) : Maybe<F.Words>}
+
+law bounded_add_negative_zeros:
+  {A.checked_add(2147483648, 0, 2147483648, 0) == Some{F.Words{2147483648, 0}} : Maybe<F.Words>}
+
+law bounded_add_mixed_zeros:
+  {A.checked_add(0, 0, 2147483648, 0) == Some{F.Words{0, 0}} : Maybe<F.Words>}
+
+law bounded_sub_negative_zero:
+  {A.checked_sub(2147483648, 0, 0, 0) == Some{F.Words{2147483648, 0}} : Maybe<F.Words>}
+
+law bounded_sub_equal_negative_zeros:
+  {A.checked_sub(2147483648, 0, 2147483648, 0) == Some{F.Words{0, 0}} : Maybe<F.Words>}
+
+law bounded_add_cancellation:
+  {A.checked_add(1072693248, 0, 3220176896, 0) == Some{F.Words{0, 0}} : Maybe<F.Words>}
+
+law bounded_add_even_tie:
+  {A.checked_add(1072693248, 0, 1017118720, 0) == Some{F.Words{1072693248, 0}} : Maybe<F.Words>}
+
+law bounded_add_odd_tie:
+  {A.checked_add(1072693248, 1, 1017118720, 0) == Some{F.Words{1072693248, 2}} : Maybe<F.Words>}
+
+law bounded_sub_lattice_floor:
+  {A.checked_sub(128974848, 1, 128974848, 0) == Some{F.Words{74448896, 0}} : Maybe<F.Words>}
+
+law bounded_add_largest_carry:
+  {A.checked_add(1210056703, 4294967295, 1210056703, 4294967295) == Some{F.Words{1211105279, 4294967295}} : Maybe<F.Words>}

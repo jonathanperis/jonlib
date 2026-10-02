@@ -100,6 +100,10 @@ jobs:
         run: >-
           python3 tools/binary64_fma_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+      - name: Verify isolated bounded binary64 addition and subtraction
+        run: >-
+          python3 tools/binary64_add_sub_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
       - name: Verify native angle profiles and supporting wide arithmetic
         run: |
           python3 tools/float64_ops_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend"
@@ -455,6 +459,15 @@ jobs:
             .build/binary64-fma-probe/*.bend
             .build/binary64-fma-probe/*.stdout
             .build/binary64-fma-probe/*.stderr
+            .build/binary64-add-sub-probe/results.json
+            .build/binary64-add-sub-probe/inputs.json
+            .build/binary64-add-sub-probe/expected.json
+            .build/binary64-add-sub-probe/native-metadata.json
+            .build/binary64-add-sub-probe/native-input.txt
+            .build/binary64-add-sub-probe/reference.c
+            .build/binary64-add-sub-probe/*.bend
+            .build/binary64-add-sub-probe/*.stdout
+            .build/binary64-add-sub-probe/*.stderr
             .build/float64-ops-probe/results.json
             .build/angle-probe/results.json
             .build/native-profile-diagnostic/results.json

@@ -56,3 +56,9 @@ expected results and proof propositions remain the verification gates.
 nearest-even binary32-word prerequisite described in [BINARY64-NARROW.md](BINARY64-NARROW.md).
 It is not re-exported by Jonmath/Jonlib and has no current library consumers.
 Existing Float64/projection/resize conversion contracts are unchanged.
+
+`src/binary64_fma.bend` and `src/binary64_add_sub.bend` are separate private
+bounded arithmetic prerequisites. The latter reuses the former's internal
+word/list primitives under its own 34-limb invariants; neither is exported by
+Jonlib/Jonmath or used by existing image/math APIs. See [BINARY64-FMA.md](BINARY64-FMA.md)
+and [BINARY64-ADD-SUB.md](BINARY64-ADD-SUB.md) for the checked domains and proof limits.

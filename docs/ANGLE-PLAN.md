@@ -74,12 +74,19 @@ A second isolated prerequisite is the private checked
 [`binary64_fma.bend`](../src/binary64_fma.bend), with an explicit asymmetric
 normal/zero domain and exact signed accumulation before a single RN-even pack.
 [Its independent contract and evidence](BINARY64-FMA.md) do not establish full
-kernel reachability or general binary64 FMA. Audited add/subtract and word
-stepping remain next arithmetic milestones. Direct F32 narrowing is available
-as the isolated prerequisite above; integrating it into a modern angle kernel
-remains future work. Keep old projection/resize contracts unchanged. Establish
-the kernel's reachable exponent bounds; support gradual underflow wherever it is
-reachable instead of assuming it away.
+kernel reachability or general binary64 FMA.
+
+The third isolated prerequisite is private checked
+[`binary64_add_sub.bend`](../src/binary64_add_sub.bend). Its independent
+[bounded contract](BINARY64-ADD-SUB.md) accepts signed zero or normal exponents
+`[-900,130]`, keeps exact terms through cancellation and rounds once with correct
+zero signs. It has no existing library consumers. Word stepping and integration
+of these prerequisites into the full modern kernel remain future work. Keep old
+projection/resize contracts unchanged. Establish the kernel's reachable exponent
+bounds; support gradual underflow wherever it is reachable instead of assuming
+it away. In particular the tiny branch's `z*e` can produce subnormals and negative
+zero; a literal port needs gradual-underflow multiplication, or a separately
+justified RN result-bit comparison predicate with its narrower claims.
 
 A pure-Bend implementation is technically possible. A compiler/runtime change
 is not a prerequisite; a host-specific atan2 hook is not a portable solution.
