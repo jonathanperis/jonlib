@@ -142,7 +142,7 @@ See [ANGLE-PLAN.md](ANGLE-PLAN.md). [Checked normal operations and word adapters
 now provide isolated packing/promotion/raw-stepping support. The complete pinned
 modern scalar kernel and its two fallbacks, wrapper domains, independent native-profile
 qualification and forced-device/resource evidence remain open. The tiny branch's
-`z*e` multiplication genuinely reaches subnormal and signed-zero results; a
-literal port requires gradual underflow, or an independently justified narrower
-RN result-bit predicate. This helper must not be wired into existing consumers
-as a side effect of this prerequisite.
+`z*e` multiplication genuinely reaches subnormal and signed-zero results; the
+private [gradual-output product](BINARY64-GRADUAL-MULTIPLY.md) now supplies that
+isolated arithmetic, without establishing full-kernel integration. This helper
+must not be wired into existing consumers as a side effect of this prerequisite.

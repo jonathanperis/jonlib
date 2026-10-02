@@ -108,6 +108,10 @@ jobs:
         run: >-
           python3 tools/binary64_ops_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+      - name: Verify isolated gradual-output binary64 multiplication
+        run: >-
+          python3 tools/binary64_gradual_multiply_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
       - name: Verify native angle profiles and supporting wide arithmetic
         run: |
           python3 tools/float64_ops_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend"
@@ -542,3 +546,12 @@ jobs:
             .build/image-file-probe/results.json
             .build/image-export-probe/results.json
             .build/image-memory-probe/results.json
+            .build/binary64-gradual-multiply-probe/results.json
+            .build/binary64-gradual-multiply-probe/inputs.json
+            .build/binary64-gradual-multiply-probe/expected.json
+            .build/binary64-gradual-multiply-probe/native-metadata.json
+            .build/binary64-gradual-multiply-probe/native-input.txt
+            .build/binary64-gradual-multiply-probe/reference.c
+            .build/binary64-gradual-multiply-probe/*.bend
+            .build/binary64-gradual-multiply-probe/*.stdout
+            .build/binary64-gradual-multiply-probe/*.stderr

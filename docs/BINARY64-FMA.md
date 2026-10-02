@@ -23,7 +23,9 @@ other-rounding-mode or general gradual-underflow FMA claim.
 This module is not a public API and has **no existing image/math API consumers**.
 The separate private [add/subtract prerequisite](BINARY64-ADD-SUB.md) now imports
 its width-independent internal primitives under explicitly reviewed invariants;
-this does not promote those primitives to supported entry points.
+the private [gradual-output product](BINARY64-GRADUAL-MULTIPLY.md) separately
+reuses its exact product/window primitives. Neither use promotes those
+primitives to supported entry points.
 Existing `float64_ops`, `float64`, `resize_numeric`, binary64 narrowing, F32 FMA,
 angle kernels, profile selectors and expected results remain unchanged. Its
 successful verification does not resolve the current strict native angle failure.
@@ -139,8 +141,9 @@ is claimed.
 
 See [ANGLE-PLAN.md](ANGLE-PLAN.md). A [private bounded add/subtract prerequisite](BINARY64-ADD-SUB.md) is now
 implemented separately, as are the [checked normal operations and word adapters](BINARY64-OPS.md).
-The full pinned modern scalar kernel, its fallbacks, tiny-product gradual
-underflow, checked-domain integration, wrapper domains, native qualification
+A private [gradual-output product](BINARY64-GRADUAL-MULTIPLY.md) now provides
+the isolated tiny-product arithmetic. The full pinned modern scalar kernel,
+its fallbacks, checked-domain integration, wrapper domains, native qualification
 and forced-device/resource evidence remain future work.
 This rectangle excludes arbitrary binary64 underflow and subnormal inputs; it
 must not be silently widened or substituted for existing numeric contracts.

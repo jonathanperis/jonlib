@@ -92,8 +92,9 @@ provides checked nearest-even binary32 words, including gradual underflow. It
 does not change existing API consumers or the current native-angle failure;
 private [bounded FMA](BINARY64-FMA.md) and [add/subtract](BINARY64-ADD-SUB.md)
 prerequisites are also isolated, as are the [checked normal multiply/divide and
-word adapters](BINARY64-OPS.md). The complete modern angle kernel, gradual tiny
-product, primitive-domain integration and device/resource evidence remain Phase 1 work.
+word adapters](BINARY64-OPS.md) and [gradual-output product](BINARY64-GRADUAL-MULTIPLY.md).
+The complete modern angle kernel, primitive-domain integration and device/resource
+evidence remain Phase 1 work.
 
 ## Compiler and runtime workstream
 

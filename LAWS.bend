@@ -5,6 +5,7 @@ import ./src/binary64_narrow.bend as N
 import ./src/binary64_fma.bend as F
 import ./src/binary64_add_sub.bend as A
 import ./src/binary64_ops.bend as O
+import ./src/binary64_gradual_multiply.bend as G
 import ./src/resize_numeric.bend as Resize
 
 law clear_dimensions:
@@ -215,3 +216,76 @@ law words_power_minimum:
 
 law words_power_reject_zero:
   {O.checked_power(0) == None{} : Maybe<F.Words>}
+
+# Gradual-output multiplication: two structural branches and concrete controls.
+# Internal raw-window ties are not claims about reachable significand pairs.
+# These laws are not a universal product or rounding theorem.
+law gradual_multiply_reject:
+  for ah: U32
+  for al: U32
+  for bh: U32
+  for bl: U32
+  {G.checked.valid(False{}, ah, al, bh, bl) == None{} : Maybe<F.Words>}
+
+law gradual_multiply_zero_branch:
+  for sign: U32
+  for biased_sum: U32
+  for ah: U32
+  for al: U32
+  for bh: U32
+  for bl: U32
+  {G.calculate.zero(True{}, sign, biased_sum, ah, al, bh, bl) == F.Words{sign, 0} : F.Words}
+
+law gradual_multiply_negative_zero:
+  {G.checked(2147483648,0,1072693248,0) == Some{F.Words{2147483648, 0}} : Maybe<F.Words>}
+
+law gradual_multiply_negative_zero_pair:
+  {G.checked(2147483648,0,2147483648,0) == Some{F.Words{0, 0}} : Maybe<F.Words>}
+
+law gradual_multiply_invalid_first_with_zero:
+  {G.checked(0,1,0,0) == None{} : Maybe<F.Words>}
+
+law gradual_multiply_invalid_second_with_zero:
+  {G.checked(0,0,0,1) == None{} : Maybe<F.Words>}
+
+law gradual_multiply_half_minimum:
+  {G.checked(782237696,0,235929600,0) == Some{F.Words{0, 0}} : Maybe<F.Words>}
+
+law gradual_multiply_above_half:
+  {G.checked(782237696,0,235929600,1) == Some{F.Words{0, 1}} : Maybe<F.Words>}
+
+law gradual_multiply_odd_tie:
+  {G.checked(782237696,0,237502464,0) == Some{F.Words{0, 2}} : Maybe<F.Words>}
+
+law gradual_multiply_even_tie:
+  {G.checked(782237696,0,238288896,0) == Some{F.Words{0, 2}} : Maybe<F.Words>}
+
+law gradual_multiply_minimum_normal_tie:
+  {G.checked(782237696,0,291504127,4294967295) == Some{F.Words{1048576, 0}} : Maybe<F.Words>}
+
+law gradual_multiply_already_normal:
+  {G.checked(782761984,0,290979840,0) == Some{F.Words{1179648, 0}} : Maybe<F.Words>}
+
+law gradual_multiply_k107_zero:
+  {G.checked(783286271,4294967295,234881023,4294967295) == Some{F.Words{0, 0}} : Maybe<F.Words>}
+
+law gradual_multiply_k192_negative_zero:
+  {G.checked(783286271,4294967295,2293235711,4294967295) == Some{F.Words{2147483648, 0}} : Maybe<F.Words>}
+
+law gradual_multiply_once_rounded_subnormal:
+  {G.checked(782237696,1,290455552,4) == Some{F.Words{524288, 3}} : Maybe<F.Words>}
+
+law gradual_multiply_once_rounded_minimum_normal_edge:
+  {G.checked(782237696,1,291504127,4294967293) == Some{F.Words{1048575, 4294967295}} : Maybe<F.Words>}
+
+law gradual_multiply_once_rounded_half_minimum_edge:
+  {G.checked(782237696,1,235929599,4294967295) == Some{F.Words{0, 1}} : Maybe<F.Words>}
+
+law gradual_multiply_normal_carry:
+  {G.checked(1073217536,0,1073042773,1431655765) == Some{F.Words{1073741824, 0}} : Maybe<F.Words>}
+
+law gradual_multiply_internal_k106_half_window:
+  {G.gradual(0,F.Words{0,4}) == F.Words{0,0} : F.Words}
+
+law gradual_multiply_internal_minimum_normal_half_window:
+  {G.gradual(0,F.Words{8388607,4294967292}) == F.Words{1048576,0} : F.Words}
