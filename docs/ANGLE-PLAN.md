@@ -48,6 +48,13 @@ Unknown reference contexts must fail closed before candidate execution.
 
 ## Reusable arithmetic prerequisite
 
+The first isolated prerequisite is now implemented in
+[`binary64_narrow.bend`](../src/binary64_narrow.bend): checked finite binary64
+words directly narrowed once to binary32 words, including gradual underflow and
+signed overflow. [Its contract and evidence](BINARY64-NARROW.md) are separate from
+the old normal-only conversion paths. It has no library consumers; the modern
+angle profile and strict canonical failure remain unchanged.
+
 The pinned Bend compiler has F32 arithmetic and exact bit construction, but no
 F64 or FMA primitive. Its host atan2 lowering does not establish this profile.
 Existing private arithmetic is in `resize_numeric.bend`, `float64.bend`,
@@ -65,8 +72,9 @@ Existing private arithmetic is in `resize_numeric.bend`, `float64.bend`,
 
 The next concrete implementation milestone is a private, reusable integer-limb
 layer for single-rounding binary64 FMA, exact packing/unpacking and word stepping,
-audited signed-zero addition/cancellation, and direct F32 rounding including
-subnormal/zero results. Keep old projection/resize contracts unchanged. Establish
+and audited signed-zero addition/cancellation. Direct F32 narrowing is available
+as the isolated prerequisite above; integrating it into a modern angle kernel
+remains future work. Keep old projection/resize contracts unchanged. Establish
 the kernel's reachable exponent bounds; support gradual underflow wherever it is
 reachable instead of assuming it away.
 

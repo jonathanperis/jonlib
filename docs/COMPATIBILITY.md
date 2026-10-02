@@ -19,6 +19,11 @@ separates the libm-version and compiler-evaluation differences. The new suffix-s
 gate passes independently on CPU/JS; the historical Apple evidence below is not
 a claim that the new file-dispatch API has been verified on Metal or every host.
 
+The isolated [binary64 narrowing prerequisite](BINARY64-NARROW.md) has independent
+exact rational/native and CPU-one-thread/CPU-two-thread/JavaScript evidence. It
+has no library consumers and does not change this aggregate failure or any
+public API status. No device evidence is claimed for this helper.
+
 The current local Apple M1/macOS corpus contains **261 deterministic scenarios /
 40,101 checked output words per lane**, matching native CPU (one and two threads), JavaScript
 and forced Metal. Most words are RGBA pixels; 1,878 are exact numeric/collision

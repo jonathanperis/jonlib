@@ -3517,3 +3517,69 @@ partial → partial. Totals remain 117/600 core partial, 142 math partial and ze
 complete. Wider HDR, other numerical/target profiles, GPU/hosted execution and
 full integration/resource/performance coverage remain open. No remote
 publication was performed.
+
+## 2026-10-02: isolated exact finite binary64 narrowing prerequisite
+
+The new private `src/binary64_narrow.bend` accepts canonical binary64 high/low
+words and returns a checked nearest-even binary32 word. Every finite input is
+accepted, including binary64 subnormals and signed zero; binary32 underflow is
+gradual and overflow produces signed infinity. Exponent 2047 is rejected. It uses
+only two integer limbs and one direct rounding decision. There are no current
+library consumers, and all existing conversion, projection, angle and extrema
+sources/selectors are unchanged. [BINARY64-NARROW.md](BINARY64-NARROW.md) derives the
+exponent partitions, jam invariant and carries and defines the limited contract.
+
+The primary oracle decodes exact Python Fractions and binary-searches adjacent
+binary32 values, including the conceptual overflow endpoint. A separately
+qualified volatile runtime C cast agrees on all 35,324 direct inputs. Its Clang
+19.1.7 flags disable fast math/contraction and enable rounding-mode semantics;
+FE_TONEAREST and MXCSR 8064 establish no directed rounding, FTZ or DAZ on this
+Debian x86-64 run. Unsupported native contexts fail closed.
+
+CPU-one-thread, CPU-two-thread and JavaScript each pass **40,276 complete exact
+observations**, serialized in 79 programs of at most 512 operations and lines of
+at most 32. Coverage includes every finite64 exponent in both signs, subnormal
+binades, even/odd ties with adjacent64 words, min-normal and overflow carries,
+limb boundaries, exponent-stratified random words, 12 nonfinite rejections,
+3,692 separate existing-promotion roundtrips, 1,188 jam-invariant controls and
+72 guard/round/sticky controls. No output cells or cases were dropped.
+
+The runner checks framing, IDs, tags, counts, types and payloads; retains all
+stdout/stderr; hashes inputs, exact expectations, source/harness files, native
+metadata and generated programs/binaries; invalidates old success and compiled
+outputs; and revalidates the compiler pin/overlay and source hashes at acceptance.
+Independent read-only review closed stale compiled-output reuse and final compiler
+revalidation gaps, then checked all 885 artifact hashes and 48 source/harness
+hashes. It independently recomputed the expectations and reparsed all 120,828
+candidate observations and 35,324 native observations without differences.
+
+All **110 Python tests** pass, including 14 new oracle/malformed/stale-output/
+drift tests. The complete proof CLI returns `All terms check.` for the four
+pre-existing laws and nine new structural/concrete laws. These establish selected
+branches, recursion equations and six concrete boundary values, **not a universal
+IEEE rounding theorem**. Existing CPU/JS float64 multiply/divide (512 results),
+fused F32 multiply-add (2,056 results) and GNU/Sun angle controls (1,086 inputs)
+pass unchanged. The current inverse-trig diagnostic has zero differences in 572
+words on each CPU/JS lane; this does not promote a general inverse-trig API.
+The unchanged native-angle probe still reports 178 differences on its first CPU
+lane and fails strictly.
+
+The complete canonical corpus was rebuilt in 17 batches and explicitly audited
+on CPU-one-thread, CPU-two-thread and JavaScript after its fail-fast exit. Each
+lane matches 260/261 scenarios and checks all 40,101 words. Its sole mismatch is
+still `vector2-angle-profiles`, pixel `(6,0)`: native `3fc90fdb`, Bend `3fc90fda`.
+The aggregate gate remains failed. No expected results, tolerances, fixtures or
+reference selectors were changed.
+
+The trailing contracts, transforms and decoding checks also pass on CPU/JS.
+All three PPM examples match native pixels, and QOI file bytes, roundtrips and
+missing/malformed/oversized-file controls pass on CPU/JS.
+
+Syntax, project metadata, generated-ledger and independent Clang catalog checks
+pass. Three angle ledger entries gain prerequisite evidence and explicit
+remaining gaps only; statuses stay partial, totals remain 117/600 core partial,
+142 math partial and zero complete. The focused CI gate is placed before the
+known native-angle/canonical failures. GPU, hosted execution and performance
+parity are unverified. Binary64 FMA, cancellation bounds and the full modern
+angle profile remain open. [Durable evidence](evidence/binary64-narrow.json)
+records the scoped checkpoint; no remote publication was performed.

@@ -87,6 +87,11 @@ All remain scoped profiles. The [resampling record](RESAMPLING.md),
 [codec profile](CODECS.md), [math profile](MATH.md) and generated
 [progress queue](PROGRESS.md) give the current evidence and next dependencies.
 
+The isolated [direct binary64 narrowing prerequisite](BINARY64-NARROW.md) now
+provides checked nearest-even binary32 words, including gradual underflow. It
+does not change existing API consumers or the current native-angle failure;
+binary64 FMA and the complete modern angle kernel remain Phase 1 work.
+
 ## Compiler and runtime workstream
 
 Keep generic OS/device mechanisms in Bend's platform boundary and the game
