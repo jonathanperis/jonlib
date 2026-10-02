@@ -475,3 +475,19 @@ law formatted_qoi_pixels_zero:
   for channels: U32
   for pixels: Array<U32>
   {J.Image.Formatted.qoi.pixels(0n, index, channels, pixels) == pixels : Array<U32>}
+
+# Pure file-boundary facts; these do not prove host IO, allocation or closure.
+law qoi_file_limit:
+  {J.Image.file.limit(J.QoiFile{}) == 83886102 : U32}
+
+law image_file_complete_empty:
+  {J.Image.file.complete(0n, Nil{}) == True{} : Bool}
+
+law image_file_complete_exact:
+  {J.Image.file.complete(2n, [1, 2]) == True{} : Bool}
+
+law image_file_complete_short:
+  {J.Image.file.complete(2n, [1]) == False{} : Bool}
+
+law image_file_complete_long:
+  {J.Image.file.complete(1n, [1, 2]) == False{} : Bool}
