@@ -12,7 +12,7 @@ type Error is Data:
   Truncated{}
 
 type Image is Type:
-  Image{width: U32, height: U32, pixels: Array<U32>}
+  Image{width: U32, height: U32, channels: U32, pixels: Array<U32>}
 
 def space(+byte: U32) -> Bool:
   U32.is_eq(byte, 32) || ((byte >= 9) && (byte <= 13) : U32)
@@ -115,18 +115,18 @@ def pixels(n: Nat, +index: U32, +channels: U32, +wide: Bool, state: Result<&1, &
     case 1n+rest Done{State{data, output}}:
       pixels(rest, (index + 1 : U32), channels, wide, write(index, U32.is_eq(channels, 1), output, samples(U32.to_nat(channels), wide, 0n, 0, data)))
 
-def image(width: U32, height: U32, result: Result<&1, &1, Error, Array<U32>>) -> Result<&1, &1, Error, Image>:
+def image(width: U32, height: U32, channels: U32, result: Result<&1, &1, Error, Array<U32>>) -> Result<&1, &1, Error, Image>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{output}: Done{Image{width, height, output}}
+    case Done{output}: Done{Image{width, height, channels, output}}
 
-def start.valid(valid: Bool, +width: U32, +height: U32, channels: U32, wide: Bool, data: +List<U32>) -> Result<&1, &1, Error, Image>:
+def start.valid(valid: Bool, +width: U32, +height: U32, +channels: U32, wide: Bool, data: +List<U32>) -> Result<&1, &1, Error, Image>:
   match valid:
     case False{}: Fail{Truncated{}}
     case True{}:
       +count = (width * height : U32)
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
-      image(width, height, pixels(U32.to_nat(count), 0, channels, wide, Done{State{data, Array.new(U32, depth, 0)}}))
+      image(width, height, channels, pixels(U32.to_nat(count), 0, channels, wide, Done{State{data, Array.new(U32, depth, 0)}}))
 
 def start(result: Result<&2, &2, Error, Header>) -> Result<&1, &1, Error, Image>:
   match result:

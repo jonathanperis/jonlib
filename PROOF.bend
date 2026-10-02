@@ -356,6 +356,21 @@ def Laws.formatted_qoi_rgba_word():
 def Laws.formatted_qoi_pixels_zero(index, channels, pixels):
   {==}
 
+def Laws.formatted_pnm_gray_format():
+  {==}
+
+def Laws.formatted_pnm_rgb_format():
+  {==}
+
+def Laws.formatted_pnm_gray_word():
+  {==}
+
+def Laws.formatted_pnm_rgb_word():
+  {==}
+
+def Laws.formatted_pnm_pixels_zero(index, channels, pixels):
+  {==}
+
 def Laws.qoi_file_limit():
   {==}
 

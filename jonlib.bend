@@ -802,7 +802,7 @@ def Surface.pnm.error(error: Pnm.Error) -> Image.DecodeError:
 def Surface.pnm.result(result: Result<&1, &1, Pnm.Error, Pnm.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
   match result:
     case Fail{error}: Fail{Surface.pnm.error(error)}
-    case Done{Pnm.Image{w, h, pixels}}: Done{Surface{w, h, pixels}}
+    case Done{Pnm.Image{w, h, _, pixels}}: Done{Surface{w, h, pixels}}
 
 def Surface.decode_pnm(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   Surface.pnm.result(Pnm.decode(bytes))
@@ -1100,6 +1100,34 @@ def Image.Formatted.qoi.result(result: Result<&1, &1, Qoi.Error, Qoi.Image>) -> 
 
 def Image.Formatted.decode_qoi(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
   Image.Formatted.qoi.result(Qoi.decode(bytes))
+
+# PNM magic retains native gray/RGB storage after the decoder's 8-bit reduction.
+# Extract integer samples directly; a floating luminance round trip can alter gray.
+def Image.Formatted.pnm.format(channels: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(channels, 1), 1, 4)
+
+def Image.Formatted.pnm.word(channels: U32, +pixel: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(channels, 1), (pixel >> 24n : U32), (Formats.swap(pixel) .&. 16777215 : U32))
+
+def Image.Formatted.pnm.write(index: U32, channels: U32, read: Array<U32> & U32) -> Array<U32>:
+  (pixels, pixel) = read
+  Array.set(U32, pixels, index, Image.Formatted.pnm.word(channels, pixel))
+
+def Image.Formatted.pnm.pixels(n: Nat, +index: U32, +channels: U32, pixels: Array<U32>) -> Array<U32>:
+  match n:
+    case 0n: pixels
+    case 1n+rest:
+      Image.Formatted.pnm.pixels(rest, (index + 1 : U32), channels, Image.Formatted.pnm.write(index, channels, Array.get(U32, pixels, index)))
+
+def Image.Formatted.pnm.result(result: Result<&1, &1, Pnm.Error, Pnm.Image>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
+  match result:
+    case Fail{error}: Fail{Surface.pnm.error(error)}
+    case Done{Pnm.Image{+width, +height, +channels, pixels}}:
+      Done{FormattedImage{width, height, Image.Formatted.pnm.format(channels),
+        Image.Formatted.pnm.pixels(U32.to_nat((width * height : U32)), 0, channels, pixels)}}
+
+def Image.Formatted.decode_pnm(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
+  Image.Formatted.pnm.result(Pnm.decode(bytes))
 
 def Image.Formatted.created(width: U32, height: U32, format: U32, result: Maybe<Array<U32>>) -> Maybe<Image.Formatted>:
   match result:

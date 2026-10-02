@@ -11,6 +11,7 @@ separate compatibility gaps.
 | API | Contract |
 |---|---|
 | `Image.Formatted.from_bytes(width, height, format, bytes) -> Maybe<Image.Formatted>` | Checks supported dimensions/format, byte values 0..255, exact required byte count and the R32 sample domain before allocation. |
+| `Image.Formatted.decode_pnm(bytes)` | Checked P5/P6 memory factory preserving native grayscale (1) or RGB888 (4), exact reduced 8-bit samples and implicit single-mip dimensions; existing checked little-endian parsing and typed errors. This does not preserve 16-bit source sample depth. See [PNM.md](PNM.md#format-preserving-pnm-memory-loading). |
 | `Image.Formatted.decode_qoi(bytes)` | Checked QOI owner factory preserving native RGB888 (4) or RGBA8888 (7), single-mip metadata and exact bytes; existing typed decode errors. See [CODECS.md](CODECS.md#format-preserving-qoi-memory-loading). |
 | `Image.Formatted.load_qoi(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` | Checked ordinary-file QOI owner factory with explicit suffix-independent selection, native format 4/7, exact bytes and an implicit single mip level; shared inclusive 83,886,102-byte cap and typed file/decode errors. See [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-qoi-file-loading). |
 | `Surface.to_formatted(surface) -> Image.Formatted` | Consumes canonical RGBA8 Surface storage and produces format 7 with exact byte order. |
@@ -26,7 +27,8 @@ separate compatibility gaps.
 | `Image.Formatted.to_qoi(image) -> Result<&1, &1, Image.Formatted & Pixel.Error, +List<U32>>` / `write_qoi(image, path) -> IO(Result<&1, &1, Image.Formatted.QoiWriteError, Unit>)` | Explicit native QOI file bytes for original RGB888 (4) / RGBA8888 (7), header channels 3/4; other checked formats retain their exact owner before IO. Accepted writes consume the owner and close acquired handles. Local Linux x86-64 CPU-1/CPU-2/JavaScript evidence is recorded in [FORMATTED-QOI-EXPORT.md](FORMATTED-QOI-EXPORT.md). |
 | `Image.Formatted.to_code(image, path)` / `write_code(image, path)` | Exact native image-as-code text and typed file export for bounded payloads/ASCII names. See [IMAGE-CODE.md](IMAGE-CODE.md). |
 
-Create owners with the checked byte factory, QOI memory/file loaders or Surface bridge. Manually inconsistent
+Create owners with the checked byte factory, dedicated PNM memory or QOI memory/file
+loaders, or Surface bridge. Manually inconsistent
 `FormattedImage{width, height, format, pixels}` values are outside the contract.
 `Image.Formatted.load_raw` (formats 1..7) and `write_raw` provide file boundaries with explicit
 header/error/closure behavior, documented in [RAW-FILES.md](RAW-FILES.md).
