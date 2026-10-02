@@ -324,3 +324,8 @@ helpers have the same private status. They establish only their checked arithmet
 contracts, with no existing image/math API consumer, public API promotion or
 angle-profile change. The add/subtract implementation reuses private FMA
 primitives under its own reviewed bounds.
+
+The [checked normal multiply/divide and word adapters](BINARY64-OPS.md) likewise
+remain private. Their separate pair-guarded domains, exact finite F32 promotion,
+normal/zero packing and unsigned raw-word steps do not widen existing APIs or
+supply the tiny branch's gradual-underflow multiplication.

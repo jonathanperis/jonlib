@@ -61577,7 +61577,7 @@
       "scope": "Finite normal/zero uncontracted cross/dot arithmetic with explicit Apple/GNU atan2f profiles and exact signed quadrant outputs.",
       "gaps": [
         "Exceptional/subnormal and contracted domains",
-        "Modern glibc angle kernel, stepping and gradual-underflow tiny-branch handling remain unimplemented; isolated bounded FMA/add/subtract and exact narrowing do not change current consumers or parity",
+        "Modern glibc angle kernel, checked-domain integration and gradual-underflow tiny-branch handling remain unimplemented; isolated bounded FMA/add/subtract/multiply/divide, exact word adapters and narrowing do not change current consumers or parity",
         "Other libm/target/performance coverage"
       ],
       "blocker": null,
@@ -61601,6 +61601,8 @@
         "docs/evidence/binary64-fma.json",
         "docs/BINARY64-ADD-SUB.md",
         "docs/evidence/binary64-add-sub.json",
+        "docs/BINARY64-OPS.md",
+        "docs/evidence/binary64-ops.json",
         "jonmath.bend"
       ],
       "gate_evidence": {},
@@ -61647,7 +61649,7 @@
       "scope": "Reference endpoint differences and negated atan2f with explicit numerical profiles, including signed-zero directions.",
       "gaps": [
         "Exceptional/subnormal and contracted domains",
-        "Modern glibc angle kernel, stepping and gradual-underflow tiny-branch handling remain unimplemented; isolated bounded FMA/add/subtract and exact narrowing do not change current consumers or parity",
+        "Modern glibc angle kernel, checked-domain integration and gradual-underflow tiny-branch handling remain unimplemented; isolated bounded FMA/add/subtract/multiply/divide, exact word adapters and narrowing do not change current consumers or parity",
         "Other libm/target/performance coverage"
       ],
       "blocker": null,
@@ -61670,6 +61672,8 @@
         "docs/evidence/binary64-fma.json",
         "docs/BINARY64-ADD-SUB.md",
         "docs/evidence/binary64-add-sub.json",
+        "docs/BINARY64-OPS.md",
+        "docs/evidence/binary64-ops.json",
         "jonmath.bend"
       ],
       "gate_evidence": {},
@@ -63638,7 +63642,7 @@
       "scope": "Uncontracted cross-product length/dot order followed by explicit Apple/GNU atan2f profile; exact parallel, opposite and zero-vector fixtures.",
       "gaps": [
         "Exceptional/subnormal and contracted domains",
-        "Modern glibc angle kernel, stepping and gradual-underflow tiny-branch handling remain unimplemented; isolated bounded FMA/add/subtract and exact narrowing do not change current consumers or parity",
+        "Modern glibc angle kernel, checked-domain integration and gradual-underflow tiny-branch handling remain unimplemented; isolated bounded FMA/add/subtract/multiply/divide, exact word adapters and narrowing do not change current consumers or parity",
         "Other libm/target/performance coverage"
       ],
       "blocker": null,
@@ -63661,6 +63665,8 @@
         "docs/evidence/binary64-fma.json",
         "docs/BINARY64-ADD-SUB.md",
         "docs/evidence/binary64-add-sub.json",
+        "docs/BINARY64-OPS.md",
+        "docs/evidence/binary64-ops.json",
         "jonmath.bend"
       ],
       "gate_evidence": {},

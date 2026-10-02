@@ -4,6 +4,8 @@ import ./jonmath.bend as M
 import ./src/binary64_narrow.bend as N
 import ./src/binary64_fma.bend as F
 import ./src/binary64_add_sub.bend as A
+import ./src/binary64_ops.bend as O
+import ./src/resize_numeric.bend as Resize
 
 law clear_dimensions:
   for +width: U32
@@ -143,3 +145,73 @@ law bounded_sub_lattice_floor:
 
 law bounded_add_largest_carry:
   {A.checked_add(1210056703, 4294967295, 1210056703, 4294967295) == Some{F.Words{1211105279, 4294967295}} : Maybe<F.Words>}
+
+# Checked normal ops and raw adapters: structural branches and concrete vectors.
+# These establish neither universal rounding nor a kernel-reachability theorem.
+law checked_multiply_reject:
+  for ah: U32
+  for al: U32
+  for bh: U32
+  for bl: U32
+  {O.checked_multiply.valid(False{}, ah, al, bh, bl) == None{} : Maybe<F.Words>}
+
+law checked_divide_reject:
+  for ah: U32
+  for al: U32
+  for bh: U32
+  for bl: U32
+  {O.checked_divide.valid(False{}, ah, al, bh, bl) == None{} : Maybe<F.Words>}
+
+law checked_decode_reject:
+  for high: U32
+  for low: U32
+  {O.checked_decode.valid(False{}, high, low) == None{} : Maybe<Resize.Double>}
+
+
+
+
+law checked_multiply_negative_zero:
+  {O.checked_multiply(2147483648, 0, 1072693248, 0) == Some{F.Words{2147483648, 0}} : Maybe<F.Words>}
+
+law checked_multiply_zero_invalid:
+  {O.checked_multiply(0, 0, 2146435072, 0) == None{} : Maybe<F.Words>}
+
+law checked_divide_negative_zero:
+  {O.checked_divide(0, 0, 3220176896, 0) == Some{F.Words{2147483648, 0}} : Maybe<F.Words>}
+
+law checked_divide_zero_denominator:
+  {O.checked_divide(0, 0, 2147483648, 0) == None{} : Maybe<F.Words>}
+
+
+
+
+
+law words_increment_negative_carry:
+  {O.increment(3220176896, 4294967295) == F.Words{3220176897, 0} : F.Words}
+
+law words_decrement_negative_borrow:
+  {O.decrement(3220176896, 0) == F.Words{3220176895, 4294967295} : F.Words}
+
+law words_zero_equality:
+  {O.numerical_equal(0, 0, 2147483648, 0) == True{} : Bool}
+
+law checked_promote_reject_infinity:
+  {O.checked_promote(2139095040) == None{} : Maybe<F.Words>}
+
+law checked_identity_negative_zero:
+  {O.checked_identity(2147483648, 0) == Some{F.Words{2147483648, 0}} : Maybe<F.Words>}
+
+law checked_identity_reject_subnormal:
+  {O.checked_identity(0, 1) == None{} : Maybe<F.Words>}
+
+law checked_finite_subnormal:
+  {O.checked_finite(0, 1) == Some{F.Words{0, 1}} : Maybe<F.Words>}
+
+law words_negative_magnitude:
+  {O.magnitude_order(3220176896, 1, 1072693248, 0) == 2 : U32}
+
+law words_power_minimum:
+  {O.checked_power(1) == Some{F.Words{1048576, 0}} : Maybe<F.Words>}
+
+law words_power_reject_zero:
+  {O.checked_power(0) == None{} : Maybe<F.Words>}

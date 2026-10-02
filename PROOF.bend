@@ -107,3 +107,61 @@ def Laws.bounded_sub_lattice_floor():
 
 def Laws.bounded_add_largest_carry():
   {==}
+
+def Laws.checked_multiply_reject(ah, al, bh, bl):
+  {==}
+
+def Laws.checked_divide_reject(ah, al, bh, bl):
+  {==}
+
+def Laws.checked_decode_reject(high, low):
+  {==}
+
+
+
+
+def Laws.checked_multiply_negative_zero():
+  {==}
+
+def Laws.checked_multiply_zero_invalid():
+  {==}
+
+def Laws.checked_divide_negative_zero():
+  {==}
+
+def Laws.checked_divide_zero_denominator():
+  {==}
+
+
+
+
+
+def Laws.words_increment_negative_carry():
+  {==}
+
+def Laws.words_decrement_negative_borrow():
+  {==}
+
+def Laws.words_zero_equality():
+  {==}
+
+def Laws.checked_promote_reject_infinity():
+  {==}
+
+def Laws.checked_identity_negative_zero():
+  {==}
+
+def Laws.checked_identity_reject_subnormal():
+  {==}
+
+def Laws.checked_finite_subnormal():
+  {==}
+
+def Laws.words_negative_magnitude():
+  {==}
+
+def Laws.words_power_minimum():
+  {==}
+
+def Laws.words_power_reject_zero():
+  {==}
