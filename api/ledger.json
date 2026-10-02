@@ -61577,7 +61577,7 @@
       "scope": "Finite normal/zero uncontracted cross/dot arithmetic with explicit Apple/GNU atan2f profiles and exact signed quadrant outputs.",
       "gaps": [
         "Exceptional/subnormal and contracted domains",
-        "Private finite glibc 2.41 scalar kernel is verified separately; public Angle.Reference/native qualification and vector-wrapper domain integration remain open, so existing consumers and canonical parity are unchanged",
+        "Private finite glibc 2.41 scalar kernel and standalone native corpus qualification are verified separately; public Angle.Reference/routing and vector-wrapper domain enforcement remain open, so existing consumers and canonical parity are unchanged",
         "Other libm/target/performance coverage"
       ],
       "blocker": null,
@@ -61612,7 +61612,13 @@
         "tools/modern_angle_bounds.py",
         "docs/MODERN-ANGLE.md",
         "docs/MODERN-ANGLE-BOUNDS.md",
-        "docs/evidence/modern-angle.json"
+        "docs/evidence/modern-angle.json",
+        "tools/angle_reference.py",
+        "tools/angle_manifest_audit.py",
+        "tools/reference/angle_qualification_v1.json",
+        "docs/ANGLE-QUALIFICATION.md",
+        "docs/evidence/angle-qualification.json",
+        "docs/evidence/angle-qualification-review.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -61658,7 +61664,7 @@
       "scope": "Reference endpoint differences and negated atan2f with explicit numerical profiles, including signed-zero directions.",
       "gaps": [
         "Exceptional/subnormal and contracted domains",
-        "Private finite glibc 2.41 scalar kernel is verified separately; public Angle.Reference/native qualification and vector-wrapper domain integration remain open, so existing consumers and canonical parity are unchanged",
+        "Private finite glibc 2.41 scalar kernel and standalone native corpus qualification are verified separately; public Angle.Reference/routing and vector-wrapper domain enforcement remain open, so existing consumers and canonical parity are unchanged",
         "Other libm/target/performance coverage"
       ],
       "blocker": null,
@@ -61692,7 +61698,13 @@
         "tools/modern_angle_bounds.py",
         "docs/MODERN-ANGLE.md",
         "docs/MODERN-ANGLE-BOUNDS.md",
-        "docs/evidence/modern-angle.json"
+        "docs/evidence/modern-angle.json",
+        "tools/angle_reference.py",
+        "tools/angle_manifest_audit.py",
+        "tools/reference/angle_qualification_v1.json",
+        "docs/ANGLE-QUALIFICATION.md",
+        "docs/evidence/angle-qualification.json",
+        "docs/evidence/angle-qualification-review.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -63660,7 +63672,7 @@
       "scope": "Uncontracted cross-product length/dot order followed by explicit Apple/GNU atan2f profile; exact parallel, opposite and zero-vector fixtures.",
       "gaps": [
         "Exceptional/subnormal and contracted domains",
-        "Private finite glibc 2.41 scalar kernel is verified separately; public Angle.Reference/native qualification and vector-wrapper domain integration remain open, so existing consumers and canonical parity are unchanged",
+        "Private finite glibc 2.41 scalar kernel and standalone native corpus qualification are verified separately; public Angle.Reference/routing and vector-wrapper domain enforcement remain open, so existing consumers and canonical parity are unchanged",
         "Other libm/target/performance coverage"
       ],
       "blocker": null,
@@ -63694,7 +63706,13 @@
         "tools/modern_angle_bounds.py",
         "docs/MODERN-ANGLE.md",
         "docs/MODERN-ANGLE-BOUNDS.md",
-        "docs/evidence/modern-angle.json"
+        "docs/evidence/modern-angle.json",
+        "tools/angle_reference.py",
+        "tools/angle_manifest_audit.py",
+        "tools/reference/angle_qualification_v1.json",
+        "docs/ANGLE-QUALIFICATION.md",
+        "docs/evidence/angle-qualification.json",
+        "docs/evidence/angle-qualification-review.json"
       ],
       "gate_evidence": {},
       "target_results": {},

@@ -168,3 +168,12 @@ evidence, regenerate checklists and pass the drift/completion gates.
 The immediate product milestone is a real 2D application built from the image,
 texture, text, input and audio foundations. That is an intermediate milestone;
 the destination remains the full, versioned parity matrix.
+
+## Standalone native angle qualification
+
+The independently frozen [native angle qualification gate](ANGLE-QUALIFICATION.md)
+now verifies 76 scalar controls, 205 canonical/runtime wrapper controls and
+1,654 ordered intermediate words before any future angle-candidate generation.
+It uniquely observes the modern contract on the recorded Linux host; historical
+source contracts are not newly host-qualified. Public routing, old algorithms,
+canonical fixtures and the final-angle-only wrapper validation gap are unchanged.

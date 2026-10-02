@@ -116,6 +116,11 @@ jobs:
         run: |
           python3 tools/modern_angle_bounds.py
           python3 tools/modern_angle_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+      - name: Qualify frozen native angle contract (Linux ELF metadata profile)
+        if: runner.os == 'Linux'
+        run: |
+          python3 tools/angle_manifest_audit.py
+          python3 tools/angle_reference.py --raylib-source "${{ github.workspace }}/.build/dependencies/raylib" --library .build/raylib/raylib/libraylib.a
       - name: Verify native angle profiles and supporting wide arithmetic
         run: |
           python3 tools/float64_ops_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend"
@@ -492,6 +497,7 @@ jobs:
             .build/binary64-ops-probe/*.stderr
             .build/angle-probe/results.json
             .build/native-profile-diagnostic/results.json
+            .build/angle-reference/
             .build/extrema-reference/results.json
             .build/extrema-reference/controls.json
             .build/extrema-reference/observations.jsonl

@@ -348,3 +348,12 @@ component divisors. Exceptional/subnormal behavior, contracted builds, remaining
 raymath functions and the full target/performance matrix remain open. These
 are partial mappings, not completed raymath APIs. See the
 [progress dashboard](PROGRESS.md) and [verification record](VERIFICATION.md).
+
+## Standalone native angle qualification
+
+The independently frozen [native angle qualification gate](ANGLE-QUALIFICATION.md)
+now verifies 76 scalar controls, 205 canonical/runtime wrapper controls and
+1,654 ordered intermediate words before any future angle-candidate generation.
+It uniquely observes the modern contract on the recorded Linux host; historical
+source contracts are not newly host-qualified. Public routing, old algorithms,
+canonical fixtures and the final-angle-only wrapper validation gap are unchanged.
