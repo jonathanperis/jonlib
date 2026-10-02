@@ -22,7 +22,9 @@ a claim that the new file-dispatch API has been verified on Metal or every host.
 The isolated [binary64 narrowing prerequisite](BINARY64-NARROW.md) has independent
 exact rational/native and CPU-one-thread/CPU-two-thread/JavaScript evidence. It
 has no library consumers and does not change this aggregate failure or any
-public API status. No device evidence is claimed for this helper.
+public API status. The separately checked [bounded binary64 FMA](BINARY64-FMA.md)
+has the same private, no-consumer status; it does not broaden existing arithmetic
+contracts. No device evidence is claimed for either helper.
 
 The current local Apple M1/macOS corpus contains **261 deterministic scenarios /
 40,101 checked output words per lane**, matching native CPU (one and two threads), JavaScript

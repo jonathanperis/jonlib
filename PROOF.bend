@@ -44,3 +44,33 @@ def Laws.binary64_negative_zero():
 
 def Laws.binary64_odd_halfway():
   {==}
+
+def Laws.bounded_fma_shift_zero(value):
+  {==}
+
+def Laws.bounded_fma_shift_successor(count, value):
+  {==}
+
+def Laws.bounded_fma_reject(ah, al, bh, bl, ch, cl):
+  {==}
+
+def Laws.bounded_fma_negative_zero():
+  {==}
+
+def Laws.bounded_fma_mixed_zero():
+  {==}
+
+def Laws.bounded_fma_exact_cancellation():
+  {==}
+
+def Laws.bounded_fma_product_residual():
+  {==}
+
+def Laws.bounded_fma_even_tie():
+  {==}
+
+def Laws.bounded_fma_odd_tie():
+  {==}
+
+def Laws.bounded_fma_lattice_floor():
+  {==}

@@ -2,6 +2,7 @@ import Base
 import ./jonlib.bend as J
 import ./jonmath.bend as M
 import ./src/binary64_narrow.bend as N
+import ./src/binary64_fma.bend as F
 
 law clear_dimensions:
   for +width: U32
@@ -57,3 +58,44 @@ law binary64_negative_zero:
 
 law binary64_odd_halfway:
   {N.checked(916979712, 0) == Some{2} : Maybe<U32>}
+
+# Private bounded FMA: structural statements and concrete equalities only.
+# These do not constitute a universal arithmetic correctness theorem.
+law bounded_fma_shift_zero:
+  for value: F.Words
+  {F.Words.shl(0n, value) == value : F.Words}
+
+law bounded_fma_shift_successor:
+  for count: Nat
+  for value: F.Words
+  {F.Words.shl(1n+count, value) == F.Words.shl(count, F.Words.shl1(value)) : F.Words}
+
+law bounded_fma_reject:
+  for ah: U32
+  for al: U32
+  for bh: U32
+  for bl: U32
+  for ch: U32
+  for cl: U32
+  {F.checked.valid(False{}, ah, al, bh, bl, ch, cl) == None{} : Maybe<F.Words>}
+
+law bounded_fma_negative_zero:
+  {F.checked(2147483648, 0, 0, 0, 2147483648, 0) == Some{F.Words{2147483648, 0}} : Maybe<F.Words>}
+
+law bounded_fma_mixed_zero:
+  {F.checked(0, 0, 0, 0, 2147483648, 0) == Some{F.Words{0, 0}} : Maybe<F.Words>}
+
+law bounded_fma_exact_cancellation:
+  {F.checked(1072693248, 0, 1072693248, 0, 3220176896, 0) == Some{F.Words{0, 0}} : Maybe<F.Words>}
+
+law bounded_fma_product_residual:
+  {F.checked(1072693248, 1, 1072693247, 4294967294, 3220176896, 0) == Some{F.Words{3111124992, 0}} : Maybe<F.Words>}
+
+law bounded_fma_even_tie:
+  {F.checked(1072693248, 0, 1072693248, 0, 1017118720, 0) == Some{F.Words{1072693248, 0}} : Maybe<F.Words>}
+
+law bounded_fma_odd_tie:
+  {F.checked(1072693248, 0, 1072693248, 1, 1017118720, 0) == Some{F.Words{1072693248, 2}} : Maybe<F.Words>}
+
+law bounded_fma_lattice_floor:
+  {F.checked(782237696, 1, 782237696, 1, 2639265792, 2) == Some{F.Words{382730240, 0}} : Maybe<F.Words>}
