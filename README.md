@@ -67,7 +67,7 @@ owner-preserving rejection before a file is opened.
 - Owned seeded random streams and reference-exact white-noise images.
 - Radial and one-cycle linear gradient profiles with balanced owned-array generation.
 - QOI decoding/encoding and real byte-file loading/export, with typed failures.
-- CORE indexed/RGB24 and 40/56/108/124-byte BMP profiles with native palette, bitfield and alpha behavior; exact RGBA8 V4 export, checked formatted [24-bit/V4 BMP export](docs/FORMATTED-BMP-EXPORT.md) for formats 1..8, and owned raw image-file IO.
+- CORE indexed/RGB24 and 40/56/108/124-byte BMP profiles with native palette, bitfield and alpha behavior; exact RGBA8 V4 export, checked formatted [24-bit/V4 BMP export](docs/FORMATTED-BMP-EXPORT.md) for formats 1..8, checked formatted [RLE TGA export](docs/FORMATTED-TGA-EXPORT.md) for formats 1..8, and owned raw image-file IO.
 - TGA raw/RLE true-color, grayscale and indexed decoding with byte-exact default RLE export.
 - Binary 8/16-bit PGM/PPM decoding with native header, maxval and little-endian sample behavior.
 - Raw/PackBits PSD decoding with native channels/alpha, explicit matte arithmetic, depth rules, defaults and metadata skipping.

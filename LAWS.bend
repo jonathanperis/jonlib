@@ -10,6 +10,7 @@ import ./src/binary64_ops.bend as O
 import ./src/binary64_gradual_multiply.bend as G
 import ./src/resize_numeric.bend as Resize
 import ./src/bmp.bend as Bmp
+import ./src/tga.bend as Tga
 
 law clear_dimensions:
   for +width: U32
@@ -430,3 +431,28 @@ law bmp_terminal_row:
   for padding: Nat
   for bytes: +List<U32>
   {Bmp.encode24.row(True{}, padding, bytes) == Bmp.encode24.padding(padding, bytes) : +List<U32>}
+
+# Scoped TGA routing/structural laws; not a universal codec or numeric proof.
+law formatted_tga_gray_channels:
+  {J.Image.Formatted.tga.channels(1) == 1 : U32}
+
+law formatted_tga_gray_alpha_channels:
+  {J.Image.Formatted.tga.channels(2) == 2 : U32}
+
+law formatted_tga_rgb_channels:
+  {J.Image.Formatted.tga.channels(4) == 3 : U32}
+
+law formatted_tga_rgba_channels:
+  {J.Image.Formatted.tga.channels(7) == 4 : U32}
+
+law tga_values_zero:
+  for channels: U32
+  for colors: +List<U32>
+  for bytes: +List<U32>
+  {Tga.encode.values(0n, channels, colors, bytes) == bytes : +List<U32>}
+
+law tga_row_zero:
+  for channels: U32
+  for colors: +List<U32>
+  for bytes: +List<U32>
+  {Tga.encode.row(0n, channels, (colors, bytes)) == bytes : +List<U32>}

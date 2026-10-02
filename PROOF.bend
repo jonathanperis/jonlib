@@ -318,3 +318,25 @@ def Laws.bmp_nonterminal_row(padding, bytes):
 
 def Laws.bmp_terminal_row(padding, bytes):
   {==}
+
+def Laws.formatted_tga_gray_channels():
+  {==}
+
+def Laws.formatted_tga_gray_alpha_channels():
+  {==}
+
+def Laws.formatted_tga_rgb_channels():
+  {==}
+
+def Laws.formatted_tga_rgba_channels():
+  {==}
+
+def Laws.tga_values_zero(channels, colors, bytes):
+  match colors:
+    case Nil{}: {==}
+    case Con{_, _}: {==}
+
+def Laws.tga_row_zero(channels, colors, bytes):
+  match colors:
+    case Nil{}: {==}
+    case Con{_, _}: {==}

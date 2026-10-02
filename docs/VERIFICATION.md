@@ -4181,3 +4181,91 @@ artifacts, 128 command receipts and the frozen native qualification. Final typed
 focused replay rechecks all 677 artifacts and 603 seals; regression review checks
 819 artifacts and 564 source-hash observations. No review blockers remain. Full retained
 results and hashes are in [durable evidence](evidence/formatted-bmp-export.json).
+
+
+## 2026-10-02: checked formatted TGA file bytes and explicit writer
+
+`Image.Formatted.to_tga` and `write_tga` add exact native `ExportImage` output
+for checked single-mip formats **1..8**, dimensions **1..4096** per axis and
+bounded R32 samples. Both consume the source; explicit file IO retains Base's
+exact error code/message and the existing close-on-write-attempt behavior. This
+is not an `ExportImageToMemory` mapping or broader filename dispatch.
+
+Native channel routing is preserved: grayscale/gray-alpha use type 11 at 8/16
+bits; RGB uses type 10 at 24 bits; packed/RGBA/R32 use type 10 at 32 bits.
+Headers, bottom-up row order, BGRA/BGR component order and row-reset RLE packets
+match every native byte. The raw scan's two-positions-back comparison, 128 cap,
+ABA/ABBC behavior, alpha equality and post-expansion R32 run collapse remain
+explicit controls. Packed expansion uses `LoadImageColors`, including RGB565
+maximum `(248,252,248,255)`, rather than normalized `ImageFormat` conversion.
+Existing Surface/FloatRGB output and legacy decode behavior remain unchanged.
+[The contract](FORMATTED-TGA-EXPORT.md) details ownership, IO adaptation and bounds.
+
+The clean-rebuilt pinned native archive passes nine layout/color controls. Its
+packed/R32 source buffers establish effective types through typed assignments
+from `memcpy`-filled scalar locals, then compare every raw input byte. Actual
+native `ExportImage(.tga)` defines the oracle; native decoded metadata is checked
+before normalization. Independent strict Python decoding enforces exact headers,
+packet payloads, row boundaries, orientation, pixel counts and complete EOF.
+
+The focused gate passes **304 complete images / 619,451 pixels per lane** on
+CPU-one-thread, CPU-two-thread and JavaScript, comparing **2,212,918 encoded
+bytes and 2,477,804 decoded RGBA bytes** per lane, including pure output, actual
+sentinel-replacing `.dat` files and both native/Jonlib decoding. All formats cover
+widths 1..4, run/raw lengths 1/2/3/127/128/129/130/255/256/257, identical consecutive
+rows, three-row orientation, 4096-pixel axes, 33,024-pixel full traversals and
+seeded mixed packets. Alpha-only/hidden RGB, packed boundaries and R32 truncation
+neighbors/zeros/subnormals are included. The 513×513 control exports **1,055,259
+bytes**, exceeding the generic raster loader's independent 1 MiB cap.
+
+Each lane also passes **3,200 typed formatted IO checks** under a 64-descriptor
+limit: 800 successes, 800 exact ENOENT, 800 exact EISDIR, and 800 exact EFBIG
+failures under `RLIMIT_FSIZE=0` with ignored `SIGXFSZ`. Four direct Base calls
+supply exact code/message baselines. Open-error sentinels and post-open truncation
+are checked, with per-lane final files retained. Native ignored short-write/close
+failures are explicitly outside return-parity claims.
+
+The report retains **2,298 seals, 2,462 artifact hashes and 136 source/dependency
+hashes**. Independent review regenerated all fixtures/programs, replayed every
+native/three-lane record, checked all 168 command receipts and all hashes, and
+used a second independent strict decoder for every retained export. No builds
+or candidate binaries were rerun in that replay. The measured **417.396-second**
+focused duration is local harness evidence, not performance parity.
+
+All **391 Python tests** pass, including **32 new focused tests** with malformed
+headers/packets/metadata/chunks, full-tail mutations, stale outputs, exact CLI
+admission ordering and mocked end-to-end evidence/provenance failures. Every
+explicit unambiguous build destination is invalidated before typed/help/option
+errors, while preserving argparse's negative/dash-space paths and `--` semantics.
+Fresh run namespaces avoid both stale execution and arbitrary-directory deletion.
+Complete `PROOF.bend` checks **105 laws**, six new scoped routing/empty-traversal
+laws beyond the previous 99. This is not a universal codec or numeric proof.
+
+The unchanged canonical corpus freshly passes **261/261 scenarios and every one
+of 40,101 pixel/numeric words** on CPU-one-thread, CPU-two-thread and JavaScript.
+The supplementary audit checks all field types/cardinalities and values, 333 QOI
+bytes and 23 palette words per lane. Fresh native qualification still selects
+`Glibc241AngleRn`; frozen source controls, fixtures, original raymath calls and
+comparison tolerances are unchanged. Trailing ownership/transform/decode gates,
+three fresh PPM examples, QOI roundtrip/file-error controls and per-lane generated
+file snapshots pass.
+
+Fourteen existing image gates pass against exact final library-source hashes:
+legacy TGA, formatted BMP, BMP, FloatRGB raster export, formatted PNG, FloatRGB
+PNG, image format conversion, R32 image consumers, colors, channels, RAW files,
+suffix-selected exports, file loading and all 534 memory token/content pairs.
+Independent replay checks **1,517 retained regression artifacts**. Jonmath and
+all 44 non-TGA support modules remain byte-for-byte unchanged; private arithmetic
+corpora retain prior scoped evidence and were not rerun for this codec addition.
+
+Only **`raylib:function:ExportImage`** changes mapping/scope/gaps/evidence and stays
+partial. All 1,884 API statuses remain unchanged: 117/600 core partial, 142 math
+partial and zero complete. `ExportImageToMemory` is unchanged. CI gains the
+focused TGA gate before aggregate conformance and retains its full evidence;
+modern-angle evidence retention and a 120-minute timeout accommodate the existing
+gates without changing any case, matrix entry or permission. No new hosted or
+GPU run is claimed. Formatted QOI/JPEG/KTX, non-Surface dispatch, wider profiles,
+ABI and full platform/integration/resource/performance parity remain open.
+
+Full results, reviews and hashes are in
+[durable evidence](evidence/formatted-tga-export.json).

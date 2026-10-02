@@ -189,25 +189,30 @@ def encode.packet(colors: +List<U32>) -> Packet:
       Packet{encode.scan(126n, 2, repeat, Con{first, Con{second, rest}}, rest, None{}), repeat}
     case _: Packet{1, False{}}
 
-def encode.color(+pixel: U32, bytes: +List<U32>) -> +List<U32>:
-  Con{(pixel .&. 255 : U32), Con{(pixel >> 24n : U32), Con{((pixel >> 16n) .&. 255 : U32), Con{((pixel >> 8n) .&. 255 : U32), bytes}}}}
+# Canonical pixels use 0xRRGGBBAA. Output is accumulated in reverse.
+def encode.color(channels: U32, +pixel: U32, bytes: +List<U32>) -> +List<U32>:
+  match channels:
+    case 1: Con{(pixel >> 24n : U32), bytes}
+    case 2: Con{(pixel .&. 255 : U32), Con{(pixel >> 24n : U32), bytes}}
+    case 3: Con{(pixel >> 24n : U32), Con{((pixel >> 16n) .&. 255 : U32), Con{((pixel >> 8n) .&. 255 : U32), bytes}}}
+    case _: Con{(pixel .&. 255 : U32), Con{(pixel >> 24n : U32), Con{((pixel >> 16n) .&. 255 : U32), Con{((pixel >> 8n) .&. 255 : U32), bytes}}}}
 
-def encode.values(n: Nat, colors: +List<U32>, bytes: +List<U32>) -> +List<U32>:
+def encode.values(n: Nat, +channels: U32, colors: +List<U32>, bytes: +List<U32>) -> +List<U32>:
   match n colors:
     case 0n _: bytes
     case _ Nil{}: bytes
-    case 1n+rest Con{pixel, tail}: encode.values(rest, tail, encode.color(pixel, bytes))
+    case 1n+rest Con{pixel, tail}: encode.values(rest, channels, tail, encode.color(channels, pixel, bytes))
 
-def encode.step(+colors: +List<U32>, bytes: +List<U32>, packet: Packet) -> +List<U32> & +List<U32>:
+def encode.step(+channels: U32, +colors: +List<U32>, bytes: +List<U32>, packet: Packet) -> +List<U32> & +List<U32>:
   Packet{+count, +repeat} = packet
   code = Bool.pick(U32, repeat, (count + 127 : U32), (count - 1 : U32))
-  (List.drop(&2, U32, colors, U32.to_nat(count)), encode.values(U32.to_nat(Bool.pick(U32, repeat, 1, count)), colors, Con{code, bytes}))
+  (List.drop(&2, U32, colors, U32.to_nat(count)), encode.values(U32.to_nat(Bool.pick(U32, repeat, 1, count)), channels, colors, Con{code, bytes}))
 
-def encode.row(n: Nat, state: +List<U32> & +List<U32>) -> +List<U32>:
+def encode.row(n: Nat, +channels: U32, state: +List<U32> & +List<U32>) -> +List<U32>:
   match n state:
     case 0n Tuple{_, bytes}: bytes
     case _ Tuple{Nil{}, bytes}: bytes
-    case 1n+rest Tuple{+colors, bytes}: encode.row(rest, encode.step(colors, bytes, encode.packet(colors)))
+    case 1n+rest Tuple{+colors, bytes}: encode.row(rest, channels, encode.step(channels, colors, bytes, encode.packet(colors)))
 
 def encode.read(values: +List<U32>, read: Array<U32> & U32) -> Array<U32> & +List<U32>:
   (pixels, value) = read
@@ -218,16 +223,25 @@ def encode.collect(n: Nat, +index: U32, state: Array<U32> & +List<U32>) -> Array
     case 0n Tuple{pixels, values}: (pixels, List.reverse(&2, U32, values))
     case 1n+rest Tuple{pixels, values}: encode.collect(rest, (index + 1 : U32), encode.read(values, Array.get(U32, pixels, index)))
 
-def encode.collected(width: U32, bytes: +List<U32>, result: Array<U32> & +List<U32>) -> Array<U32> & +List<U32>:
+def encode.collected(channels: U32, width: U32, bytes: +List<U32>, result: Array<U32> & +List<U32>) -> Array<U32> & +List<U32>:
   (pixels, colors) = result
-  (pixels, encode.row(U32.to_nat(width), (colors, bytes)))
+  (pixels, encode.row(U32.to_nat(width), channels, (colors, bytes)))
 
-def encode.rows(n: Nat, +y: U32, +width: U32, state: Array<U32> & +List<U32>) -> +List<U32>:
+def encode.rows(n: Nat, +channels: U32, +y: U32, +width: U32, state: Array<U32> & +List<U32>) -> +List<U32>:
   match n state:
     case 0n Tuple{_, bytes}: List.reverse(&2, U32, bytes)
     case 1n+rest Tuple{pixels, bytes}:
-      encode.rows(rest, (y - 1 : U32), width, encode.collected(width, bytes, encode.collect(U32.to_nat(width), (y * width : U32), (pixels, Nil{}))))
+      encode.rows(rest, channels, (y - 1 : U32), width, encode.collected(channels, width, bytes, encode.collect(U32.to_nat(width), (y * width : U32), (pixels, Nil{}))))
 
-def encode(+width: U32, +height: U32, pixels: Array<U32>) -> +List<U32>:
-  header = {[8,32,(height >> 8n : U32),(height .&. 255 : U32),(width >> 8n : U32),(width .&. 255 : U32),0,0,0,0,0,0,0,0,0,10,0,0] : +List<U32>}
-  encode.rows(U32.to_nat(height), (height - 1 : U32), width, (pixels, header))
+# Internal caller supplies checked channels 1..4 and formatted-normalized pixels
+# (unused channels determined by emitted ones), matching native equality.
+# Per-row packet selection is unchanged from pinned stb_image_write RLE.
+def encode.channels(+width: U32, +height: U32, +channels: U32, pixels: Array<U32>) -> +List<U32>:
+  alpha = Bool.pick(U32, U32.is_eq(channels, 2) || U32.is_eq(channels, 4), 8, 0)
+  kind = Bool.pick(U32, U32.is_lt(channels, 3), 11, 10)
+  header = {[alpha,(channels * 8 : U32),(height >> 8n : U32),(height .&. 255 : U32),(width >> 8n : U32),(width .&. 255 : U32),0,0,0,0,0,0,0,0,0,kind,0,0] : +List<U32>}
+  encode.rows(U32.to_nat(height), channels, (height - 1 : U32), width, (pixels, header))
+
+# Preserve the existing Surface/FloatRGB four-channel encoding exactly.
+def encode(width: U32, height: U32, pixels: Array<U32>) -> +List<U32>:
+  encode.channels(width, height, 4, pixels)

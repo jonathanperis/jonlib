@@ -61,7 +61,7 @@ encoded bytes even when decoded pixels remain identical.
 
 The output is compared with real `ExportImage(..., ".tga")` files, including
 ABA/ABBC patterns, 128/129/130-pixel boundaries, cross-row repeated colors and
-seeded mixed packets. Nondefault exporter flags and other source formats remain gaps.
+seeded mixed packets. Nondefault exporter flags and wider source formats remain gaps.
 The dedicated writer selects TGA independently of the file extension.
 
 ## Verification
@@ -86,3 +86,8 @@ See [evidence/tga-depths.json](evidence/tga-depths.json) for hashes and lane out
 The altered stb implementation retains the selected MIT notice in
 [LICENSES/stb-image.txt](../LICENSES/stb-image.txt). Full platform/resource/
 performance parity remains open.
+
+Checked formats 1..8 have separate consuming `Image.Formatted.to_tga/write_tga`
+entry points preserving native channel routing and packed/R32 expansion; see
+[FORMATTED-TGA-EXPORT.md](FORMATTED-TGA-EXPORT.md). Surface decoder/encoder and
+FloatRGB scope are unchanged.
