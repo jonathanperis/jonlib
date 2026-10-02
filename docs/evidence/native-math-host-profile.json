@@ -1,0 +1,166 @@
+{
+  "diagnostic_completed": true,
+  "parity_established": false,
+  "not_canonical_gate": true,
+  "host": {
+    "system": "Linux",
+    "machine": "x86_64",
+    "libc": [
+      "glibc",
+      "2.41"
+    ]
+  },
+  "samples": 1086,
+  "inputs_sha256": "e97e8ae61b081cbf56aaedf449be5e40795523ee73deba21649e297d20d499fb",
+  "fixture_scenarios": [
+    "vector2-angle-profiles",
+    "vector4-extrema",
+    "vector3-extrema",
+    "vector3-clamp-components",
+    "vector2-extrema",
+    "vector2-clamp-components"
+  ],
+  "source_sha256": {
+    "tools/native_math_profile_probe.py": "bee3fcca13aa4f40f45bfea5c8e554b438775bd75a095ba4135430be0fb667da",
+    "tools/angle_probe.py": "85ffda615b5366df1c1775eeeb87d5a666646be2d3f37fa80d231dcf510fcf49",
+    "tools/conformance.py": "094a59488eeeb85107ad3a125e790d6849807494168f4021d57c51b9d963f340",
+    "src/angle.bend": "8d34870d5d5f01bdae7bf35c09aaf1b063c7e6368bcf20d143ca556d357fbc1d",
+    "jonmath.bend": "b23ccb4021fdbceabb687ef06abae6872038338e3b15f3dfce6ed6e13bbeb9d9",
+    "toolchain.json": "74c20ac3f303ef6f823209a1474b1591dd0bef87e35a4cd616e021605d6f3595",
+    "tests/fixtures/images.json": "c731edc80bea76bc1accb119a21361987256e3ddc10ecde2106a6e79f58bb12a"
+  },
+  "date": "2026-10-02",
+  "raylib": {
+    "declared_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+    "header_sha256": "2b8b88f5b3f748e3cf8bdbfb8b7da23a76c755dc40f9c6e455bfc09b3669d028",
+    "observed_git_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+  },
+  "modes": {
+    "clang-o0": {
+      "completed": true,
+      "compiler_version": "Debian clang version 19.1.7 (3+b1)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /workspace/scratch/61c86f431823/jonlib-toolchain/clang/bin",
+      "flags": [
+        "-std=c11",
+        "-O0",
+        "-ffp-contract=off"
+      ],
+      "host": {
+        "glibc": "2.41",
+        "rounding_mode": "FE_TONEAREST",
+        "atan2_library": "/lib/x86_64-linux-gnu/libm.so.6",
+        "fmin_library": "/lib/x86_64-linux-gnu/libm.so.6",
+        "fmax_library": "/lib/x86_64-linux-gnu/libm.so.6"
+      },
+      "samples_observed": 1086,
+      "sun_control_vs_native_mismatch_count": 178,
+      "direct_volatile_vs_native_mismatch_count": 0
+    },
+    "clang-o2": {
+      "completed": true,
+      "compiler_version": "Debian clang version 19.1.7 (3+b1)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /workspace/scratch/61c86f431823/jonlib-toolchain/clang/bin",
+      "flags": [
+        "-std=c11",
+        "-O2",
+        "-ffp-contract=off"
+      ],
+      "host": {
+        "glibc": "2.41",
+        "rounding_mode": "FE_TONEAREST",
+        "atan2_library": "/lib/x86_64-linux-gnu/libm.so.6",
+        "fmin_library": "/lib/x86_64-linux-gnu/libm.so.6",
+        "fmax_library": "/lib/x86_64-linux-gnu/libm.so.6"
+      },
+      "samples_observed": 1086,
+      "sun_control_vs_native_mismatch_count": 178,
+      "direct_volatile_vs_native_mismatch_count": 0
+    },
+    "clang-o2-native": {
+      "completed": true,
+      "compiler_version": "Debian clang version 19.1.7 (3+b1)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /workspace/scratch/61c86f431823/jonlib-toolchain/clang/bin",
+      "flags": [
+        "-std=c11",
+        "-O2",
+        "-fno-builtin-atan2f",
+        "-fno-builtin-fminf",
+        "-fno-builtin-fmaxf",
+        "-ffp-contract=off"
+      ],
+      "host": {
+        "glibc": "2.41",
+        "rounding_mode": "FE_TONEAREST",
+        "atan2_library": "/lib/x86_64-linux-gnu/libm.so.6",
+        "fmin_library": "/lib/x86_64-linux-gnu/libm.so.6",
+        "fmax_library": "/lib/x86_64-linux-gnu/libm.so.6"
+      },
+      "samples_observed": 1086,
+      "sun_control_vs_native_mismatch_count": 178,
+      "direct_volatile_vs_native_mismatch_count": 0
+    },
+    "clang-o2-strict": {
+      "completed": true,
+      "compiler_version": "Debian clang version 19.1.7 (3+b1)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /workspace/scratch/61c86f431823/jonlib-toolchain/clang/bin",
+      "flags": [
+        "-std=c11",
+        "-O2",
+        "-ffp-model=strict",
+        "-ffp-contract=off"
+      ],
+      "host": {
+        "glibc": "2.41",
+        "rounding_mode": "FE_TONEAREST",
+        "atan2_library": "/lib/x86_64-linux-gnu/libm.so.6",
+        "fmin_library": "/lib/x86_64-linux-gnu/libm.so.6",
+        "fmax_library": "/lib/x86_64-linux-gnu/libm.so.6"
+      },
+      "samples_observed": 1086,
+      "sun_control_vs_native_mismatch_count": 178,
+      "direct_volatile_vs_native_mismatch_count": 0
+    },
+    "gcc-o2": {
+      "completed": true,
+      "compiler_version": "gcc (Debian 14.2.0-19) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+      "flags": [
+        "-std=c11",
+        "-O2",
+        "-ffp-contract=off"
+      ],
+      "host": {
+        "glibc": "2.41",
+        "rounding_mode": "FE_TONEAREST",
+        "atan2_library": "/lib/x86_64-linux-gnu/libm.so.6",
+        "fmin_library": "/lib/x86_64-linux-gnu/libm.so.6",
+        "fmax_library": "/lib/x86_64-linux-gnu/libm.so.6"
+      },
+      "samples_observed": 1086,
+      "sun_control_vs_native_mismatch_count": 178,
+      "direct_volatile_vs_native_mismatch_count": 0
+    },
+    "gcc-o2-native": {
+      "completed": true,
+      "compiler_version": "gcc (Debian 14.2.0-19) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+      "flags": [
+        "-std=c11",
+        "-O2",
+        "-fno-builtin-atan2f",
+        "-fno-builtin-fminf",
+        "-fno-builtin-fmaxf",
+        "-ffp-contract=off"
+      ],
+      "host": {
+        "glibc": "2.41",
+        "rounding_mode": "FE_TONEAREST",
+        "atan2_library": "/lib/x86_64-linux-gnu/libm.so.6",
+        "fmin_library": "/lib/x86_64-linux-gnu/libm.so.6",
+        "fmax_library": "/lib/x86_64-linux-gnu/libm.so.6"
+      },
+      "samples_observed": 1086,
+      "sun_control_vs_native_mismatch_count": 178,
+      "direct_volatile_vs_native_mismatch_count": 0
+    }
+  },
+  "limits": [
+    "Native C diagnosis only, not Bend execution or a parity pass",
+    "Host-specific numerical profiles; other libc/compiler/architecture/rounding combinations remain unverified",
+    "Exact inputs and all output bits retained by reproducible tool under .build/native-profile-diagnostic"
+  ]
+}

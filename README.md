@@ -34,6 +34,9 @@ import ./jonmath.bend as M
 Image decoding supports shared memory/file dispatch through
 `J.Surface.decode_image(file_type, bytes)` and `J.Surface.load_image(path)`.
 See [supported payloads, extension aliases and bounds](docs/IMAGE-FILES.md).
+`J.Surface.write_image(surface, path)` selects PNG/BMP/TGA/QOI/RAW output by
+[case-insensitive filename suffix](docs/IMAGE-EXPORT.md), with typed errors and
+owner-preserving rejection before a file is opened.
 
 ## Implemented
 

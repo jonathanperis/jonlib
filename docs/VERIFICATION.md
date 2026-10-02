@@ -1,5 +1,10 @@
 # Verification record
 
+Latest additional host check: 2026-10-02, Debian x86-64 / glibc 2.41, Clang
+19.1.7 (reference drivers and Bend CPU output), GCC 14.2.0 (CMake's raylib
+library compiler), Bun 1.3.12. See the suffix-export and native-profile record
+below; aggregate parity on this host remains blocked by six numerical scenarios.
+
 Latest expansion: 2026-09-29. Host: Apple M1 / macOS 27.0. Bun 1.3.12 and Apple clang 21.0.0.
 The current base revision and exact compiler overlay are pinned in `toolchain.json`.
 
@@ -3263,3 +3268,44 @@ affected focused gates pass after those corrections; no expectations/tolerances
 were weakened. Four proofs and eleven harness/planning tests pass.
 
 Regression scan: 100 callers checked, 18 assertions checked, 2 flagged/fixed.
+
+## 2026-10-02: suffix-selected export and native host diagnosis
+
+`Surface.write_image` adds filename-selected RGBA8 PNG/BMP/TGA/QOI/RAW export.
+The dedicated CPU/JS gate passes 70 cases, including 67 actual native-oracle
+cases, 41 complete files / 3,803 encoded bytes, 686 round-trip pixels, 19 retained
+unsupported owners, and 10 file-open failures. JPEG/JPEG-alias/KTX are explicit
+candidate-only rejection controls, not native-parity claims. Mixed-case suffixes,
+whole-path last-dot behavior, exact sentinels and native RAW order are checked.
+
+Each lane passes 100 low-descriptor cycles with 16 operations per cycle and
+compares all five final closure files to native output. Additional runs with
+`RLIMIT_FSIZE=0`, ignored `SIGXFSZ` and a 64-descriptor limit induce 500 post-open
+`EFBIG` write errors and 100 unsupported-owner rejections per lane. The expected
+specific error code rules out a false pass caused by leaked descriptors and
+`EMFILE`. Failed-write files are truncated to zero; unsupported sentinels remain
+unchanged. Base's typed errors remain a documented language adaptation;
+native failing-device/short-write/close-error equivalence is not claimed.
+
+The final library proof verdict is `All terms check.` Existing contracts,
+transforms and decoding suites pass independently on CPU/JS. All 34 Python
+harness/planning/diagnostic tests pass, as do generated-ledger and project checks.
+Independent read-only review checked ownership, suffix selection, actual
+persisted files, source/program hashes and false-positive controls. Its open-error
+coverage observation led to the mandatory post-open error runs above.
+
+The full corpus was rebuilt and executed on CPU one-thread, CPU two-thread and
+JavaScript. All retain exactly the original six mismatching scenarios: one angle
+and five signed-zero extrema/clamp scenarios. The canonical gate remains failed;
+no expected results, numerical tolerances or comparator gates were changed.
+The native-only diagnostic completes six compiler modes and finds 178/1,086
+Sun-control/glibc angle differences per mode, plus distinct constant-folded,
+runtime-builtin and native-libm zero ties. This is diagnosis, not new numerical
+parity. New export behavior has no GPU or hosted execution claim.
+
+Durable records: [export dispatch](evidence/image-export-dispatch.json) and
+[native host profiles](evidence/native-math-host-profile.json), with reproducer
+and interpretation in [NATIVE-MATH-PROFILES.md](NATIVE-MATH-PROFILES.md).
+Ledger delta from `a25f14b`: only `raylib:function:ExportImage`, partial → partial,
+with narrower dispatch gaps; totals remain 117/600 core partial, 142 math partial
+and zero complete. No remote publication was performed.

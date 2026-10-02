@@ -8,6 +8,15 @@ Profile: **rgba8-cpu-images-v1**, with domains defined in [API.md](API.md).
 
 ## Verified evidence
 
+The 2026-10-02 Debian x86-64 recheck (Clang 19.1.7 / glibc 2.41) is **not an
+aggregate pass**: all three CPU-one-thread, CPU-two-thread and JavaScript lanes
+reproduce the same six numerical-profile scenario mismatches (one angle scenario,
+five signed-zero extrema/clamp scenarios). No oracle outputs or tolerances were
+changed. [Native host-profile diagnosis](NATIVE-MATH-PROFILES.md) separates the
+libm-version and compiler-evaluation differences. The new suffix-selected export
+gate passes independently on CPU/JS; the historical Apple evidence below is not
+a claim that the new file-dispatch API has been verified on Metal or every host.
+
 The current local Apple M1/macOS corpus contains **261 deterministic scenarios /
 40,101 checked output words per lane**, matching native CPU (one and two threads), JavaScript
 and forced Metal. Most words are RGBA pixels; 1,878 are exact numeric/collision
@@ -118,6 +127,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | SHA-1 and SHA-256 | `Checksum.sha1/sha256` | Exact native five/eight-word values, retaining the reference's SHA-256 padding quirk at lengths 56..59 modulo 64 |
 | PNG decoding | `Surface.decode_png` | Non-interlaced/Adam7 1/2/4/8/16-bit and native-default CgBI profiles; filtering/scattering, palette/tRNS, framing and bounded errors |
 | PNG export | `Surface.to_png/write_png`, `Image.Formatted.to_png/write_png` | Exact default byte-format memory and format-1..7 file output; native packed expansion, channel/header preservation, rejection and normalized round trips |
+| Suffix-selected RGBA8 export | `Surface.write_image` | Native ASCII-insensitive PNG/BMP/TGA/QOI/RAW suffix selection, exact file bytes, retained unsupported owners and typed Base IO adaptation; see [IMAGE-EXPORT.md](IMAGE-EXPORT.md) |
 | Scalar/Vector2/Vector3/Vector4 raymath | Jonmath `Math` and vector functions | Exact results for the explicit uncontracted-F32 profile; exceptional/contracted variants remain open |
 | Vector angle queries | `Vector2.angle/line_angle`, `Vector3.angle` and `_for` variants | Explicit Apple/GNU numerical profiles with exact native/control probes and signed quadrant behavior |
 | Quaternion arithmetic/metrics/interpolation | `Quaternion` functions | Shared Vector4 representation; exact Hamilton products, zero normalization/inversion, NLERP and sign-equivalent equality |

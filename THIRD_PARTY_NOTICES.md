@@ -31,6 +31,9 @@ identify the original sources and their required attribution.
   `rtextures.c`; these remain modified Bend implementations with explicit profiles.
   `src/image_code.bend` adapts `ExportImageAsCode`, retaining the generated
   upstream banner and credits for exact text parity.
+  `Surface.write_image` adapts `ExportImage` suffix selection from `rtextures.c`
+  and `IsFileExtension`/`GetFileExtension` from `rcore.c`, using Bend-owned
+  error results and the existing closed-handle file writers.
   Owned mipmap-chain generation in `jonlib.bend` adapts `ImageMipmaps` from
   `rtextures.c`, preserving sequential default resampling and dimension order.
   `src/blur.bend` adapts `ImageBlurGaussian` from the same source, retaining its

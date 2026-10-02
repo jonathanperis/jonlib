@@ -2798,6 +2798,21 @@ def Image.file.token(+path: String) -> String:
 def Image.file.kind(path: String) -> Image.FileKind:
   Image.memory.kind(Image.file.token(path))
 
+# ExportImage uses ASCII-insensitive suffixes, unlike LoadImageFromMemory.
+# Adapted from raylib 6.0 rtextures.c / rcore.c; retain the native last-dot rule.
+def Image.export.selected(png: Bool, bmp: Bool, tga: Bool, qoi: Bool, raw: Bool) -> U32:
+  match png bmp tga qoi raw:
+    case True{} _ _ _ _: 1
+    case _ True{} _ _ _: 2
+    case _ _ True{} _ _: 3
+    case _ _ _ True{} _: 4
+    case _ _ _ _ True{}: 5
+    case _ _ _ _ _: 0
+
+def Image.export.kind(path: String) -> U32:
+  +token = String.to_lower(Image.file.token(path))
+  Image.export.selected(String.eq(token, ".png"), String.eq(token, ".bmp"), String.eq(token, ".tga"), String.eq(token, ".qoi"), String.eq(token, ".raw"))
+
 def Image.file.limit(kind: Image.FileKind) -> U32:
   match kind:
     case QoiFile{}: 83886102
@@ -2974,6 +2989,27 @@ def Image.Formatted.raw_bytes(image: Image.Formatted) -> +List<U32>:
 def Image.Formatted.write_raw(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
     File.open(path, "w"), Surface.qoi.opened(Image.Formatted.raw_bytes(image)))
+
+type Image.ExportError is Type:
+  UnsupportedImageExport{surface: Surface}
+  ImageExportFileError{code: U32, message: String}
+
+def Image.export.written(result: Result<&1, &1, U32 & String, Unit>) -> IO(Result<&1, &1, Image.ExportError, Unit>):
+  match result:
+    case Fail{Tuple{code, message}}: IO.pure(Result<&1, &1, Image.ExportError, Unit>, Fail{ImageExportFileError{code, message}})
+    case Done{unit}: IO.pure(Result<&1, &1, Image.ExportError, Unit>, Done{unit})
+
+def Image.export.write(kind: U32, surface: Surface, path: String) -> IO(Result<&1, &1, Image.ExportError, Unit>):
+  match kind:
+    case 1: IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.ExportError, Unit>, Surface.write_png(surface, path), Image.export.written)
+    case 2: IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.ExportError, Unit>, Surface.write_bmp(surface, path), Image.export.written)
+    case 3: IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.ExportError, Unit>, Surface.write_tga(surface, path), Image.export.written)
+    case 4: IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.ExportError, Unit>, Surface.write_qoi(surface, path), Image.export.written)
+    case 5: IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.ExportError, Unit>, Image.Formatted.write_raw(Surface.to_formatted(surface), path), Image.export.written)
+    case _: IO.pure(Result<&1, &1, Image.ExportError, Unit>, Fail{UnsupportedImageExport{surface}})
+
+def Surface.write_image(surface: Surface, +path: String) -> IO(Result<&1, &1, Image.ExportError, Unit>):
+  Image.export.write(Image.export.kind(path), surface, path)
 
 def Image.Formatted.write_png(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,

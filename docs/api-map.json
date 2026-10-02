@@ -362,12 +362,13 @@
     "milestone": "image-codecs"
   },
   "ExportImage": {
-    "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.write_png/write_raw / Image.FloatRGB.write_raw/write_png/write_bmp/write_tga",
+    "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.write_png/write_raw / Image.FloatRGB.write_raw/write_png/write_bmp/write_tga / Surface.write_image",
     "status": "profile-covered",
-    "scope": "QOI/BMP/TGA/default PNG from RGBA8; PNG/RAW from formats 1..7; non-NaN RGB float RAW words and finite [0,1] RGB float PNG/BMP/TGA through native LoadImageColors normalization. Exact bytes/pixels, explicit codec selection, pre-open rejected-owner preservation, typed errors and closed handles are verified. Float RAW native exports use defined normalized auxiliary casts.",
+    "scope": "QOI/BMP/TGA/default PNG from RGBA8; PNG/RAW from formats 1..7; non-NaN RGB float RAW words and finite [0,1] RGB float PNG/BMP/TGA through native LoadImageColors normalization. Exact bytes/pixels, explicit codec selection, pre-open rejected-owner preservation, typed errors and closed handles are verified. Float RAW native exports use defined normalized auxiliary casts. RGBA8 filename-selected PNG/BMP/TGA/QOI/RAW uses native ASCII-case-insensitive last-dot dispatch, unchanged rejected owners before opening files, and typed file errors.",
     "gaps": [
-      "Other formats/options and generic extension dispatch; NaN parity and native out-of-range auxiliary casts",
-      "Native callbacks/allocation ABI and complete targets/integration/performance"
+      "Other formats/options and extension dispatch for non-Surface owners; NaN parity and native out-of-range auxiliary casts",
+      "Native callbacks/allocation ABI and complete targets/integration/performance",
+      "Failing-device, short-write and close-error equivalence; Base close has no error result"
     ],
     "api_id": "raylib:function:ExportImage",
     "milestone": "image-codecs"
