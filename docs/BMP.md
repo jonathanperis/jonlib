@@ -1,4 +1,4 @@
-# BMP memory decoding and RGBA8 export
+# BMP memory decoding and checked image export
 
 | API | Contract |
 |---|---|
@@ -73,7 +73,10 @@ RGBA8 export follows the actual native `ExportImage(..., ".bmp")` path: a
 122-byte file/V4 header, canonical masks, bottom-up BGRA rows and no row padding
 for 32-bit pixels. All header fields and pixels are compared byte-for-byte.
 The explicit BMP writer selects the format independently of the path extension.
-Other source-format export profiles and native callbacks/allocation ABI remain gaps.
+Checked `Image.Formatted` formats 1..8 additionally export native 24-bit or V4
+bytes with source-specific channel rules; see
+[FORMATTED-BMP-EXPORT.md](FORMATTED-BMP-EXPORT.md). Wider source formats and native
+callbacks/allocation ABI remain gaps.
 
 ## Verification
 

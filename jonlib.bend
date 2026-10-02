@@ -1213,6 +1213,19 @@ def Image.Formatted.png.file_bytes(image: Image.Formatted) -> +List<U32>:
   +channels = Image.Formatted.png.channels(format)
   Image.Formatted.png.file_routed((channels > 0 : U32), width, height, format, channels, pixels)
 
+# Pure convenience for ExportImage's BMP file bytes, not ExportImageToMemory.
+# Native formats 1/2/4 select 24-bit output; every other checked format selects
+# V4 using LoadImageColors expansion, which differs from ImageFormat for packed
+# channels. The checked owner's dimensions bound the V4 file to 67,108,986 bytes.
+def Image.Formatted.bmp.routed(direct: Bool, +width: U32, +height: U32, format: U32, pixels: Array<U32>) -> +List<U32>:
+  match direct:
+    case True{}: Bmp.encode24(width, height, format, pixels)
+    case False{}: Bmp.encode(width, height, Formats.packed_colors(U32.to_nat((width * height : U32)), 0, format, pixels))
+
+def Image.Formatted.to_bmp(image: Image.Formatted) -> +List<U32>:
+  FormattedImage{width, height, +format, pixels} = image
+  Image.Formatted.bmp.routed(U32.is_eq(format, 1) || U32.is_eq(format, 2) || U32.is_eq(format, 4), width, height, format, pixels)
+
 def Image.FloatRGB.png.word(channel: U32, value: M.Vector3) -> U32:
   match channel value:
     case 0 M.Vector3{r, _, _}: F32.bits(r)
@@ -3024,6 +3037,10 @@ def Surface.write_image(surface: Surface, +path: String) -> IO(Result<&1, &1, Im
 def Image.Formatted.write_png(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
     File.open(path, "w"), Surface.qoi.opened(Image.Formatted.png.file_bytes(image)))
+
+def Image.Formatted.write_bmp(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
+  IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
+    File.open(path, "w"), Surface.qoi.opened(Image.Formatted.to_bmp(image)))
 
 # Called only after checked request parameters, a complete read and handle closure.
 # A failed factory here therefore identifies unsupported sample values.

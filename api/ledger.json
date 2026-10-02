@@ -40951,11 +40951,11 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.write_png/write_raw / Image.FloatRGB.write_raw/write_png/write_bmp/write_tga / Surface.write_image",
+      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.to_bmp/write_bmp/write_png/write_raw / Image.FloatRGB.write_raw/write_png/write_bmp/write_tga / Surface.write_image",
       "mapping_state": "implemented",
-      "scope": "QOI/BMP/TGA/default PNG from RGBA8; PNG/RAW from formats 1..7; non-NaN RGB float RAW words and finite [0,1] RGB float PNG/BMP/TGA through native LoadImageColors normalization. Exact bytes/pixels, explicit codec selection, pre-open rejected-owner preservation, typed errors and closed handles are verified. Float RAW native exports use defined normalized auxiliary casts. RGBA8 filename-selected PNG/BMP/TGA/QOI/RAW uses native ASCII-case-insensitive last-dot dispatch, unchanged rejected owners before opening files, and typed file errors. Checked normalized R32 format-8 owners additionally support exact RAW bytes and native red-only PNG file colors.",
+      "scope": "QOI/BMP/TGA/default PNG from RGBA8; PNG/RAW from formats 1..7; non-NaN RGB float RAW words and finite [0,1] RGB float PNG/BMP/TGA through native LoadImageColors normalization. Exact bytes/pixels, explicit codec selection, pre-open rejected-owner preservation, typed errors and closed handles are verified. Float RAW native exports use defined normalized auxiliary casts. RGBA8 filename-selected PNG/BMP/TGA/QOI/RAW uses native ASCII-case-insensitive last-dot dispatch, unchanged rejected owners before opening files, and typed file errors. Checked normalized R32 format-8 owners additionally support exact RAW bytes and native red-only PNG file colors. Checked formats 1..8 additionally provide consuming pure BMP file bytes and explicit BMP file IO: native 24-bit grayscale/gray-alpha/RGB888 versus V4 LoadImageColors packed/RGBA/R32 paths, including exact header/padding/channel rules and Base error-code/message preservation.",
       "gaps": [
-        "Other formats/options and extension dispatch for non-Surface owners; NaN parity and native out-of-range auxiliary casts",
+        "Formatted TGA/QOI/JPEG/KTX and other formats/options; extension dispatch for non-Surface owners; NaN parity and native out-of-range auxiliary casts",
         "Native callbacks/allocation ABI and complete targets/integration/performance",
         "Failing-device, short-write and close-error equivalence; Base close has no error result",
         "R32 broader domains and complete target/contraction profiles; this extension has current-host CPU/JS evidence only"
@@ -40995,7 +40995,11 @@
         "docs/R32.md",
         "tools/image_format_probe.py",
         "tools/r32_image_probe.py",
-        "docs/evidence/r32-image-format.json"
+        "docs/evidence/r32-image-format.json",
+        "tools/formatted_bmp_export_probe.py",
+        "tests/test_formatted_bmp_export.py",
+        "docs/FORMATTED-BMP-EXPORT.md",
+        "docs/evidence/formatted-bmp-export.json"
       ],
       "gate_evidence": {},
       "target_results": {},

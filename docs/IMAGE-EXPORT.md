@@ -60,6 +60,9 @@ unsupported requests. These controls use task-owned regular files and cannot
 pass merely by exhausting descriptors (`EMFILE`). This verifies Base failure
 handling, not equivalence to native exporters' failing-device behavior.
 
+Explicit [formatted BMP export](FORMATTED-BMP-EXPORT.md) separately supports
+checked formats 1..8 without adding filename dispatch to those owners.
+
 JPEG/KTX, dispatch for other image owner types, other source formats, configured
 encoder options, callbacks/native allocation ABI, and complete target,
 integration, resource and performance gates remain open. GPU file IO is not
