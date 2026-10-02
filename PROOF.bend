@@ -165,3 +165,63 @@ def Laws.words_power_minimum():
 
 def Laws.words_power_reject_zero():
   {==}
+
+def Laws.gradual_multiply_reject(ah, al, bh, bl):
+  {==}
+
+def Laws.gradual_multiply_zero_branch(sign, biased_sum, ah, al, bh, bl):
+  {==}
+
+def Laws.gradual_multiply_negative_zero():
+  {==}
+
+def Laws.gradual_multiply_negative_zero_pair():
+  {==}
+
+def Laws.gradual_multiply_invalid_first_with_zero():
+  {==}
+
+def Laws.gradual_multiply_invalid_second_with_zero():
+  {==}
+
+def Laws.gradual_multiply_half_minimum():
+  {==}
+
+def Laws.gradual_multiply_above_half():
+  {==}
+
+def Laws.gradual_multiply_odd_tie():
+  {==}
+
+def Laws.gradual_multiply_even_tie():
+  {==}
+
+def Laws.gradual_multiply_minimum_normal_tie():
+  {==}
+
+def Laws.gradual_multiply_already_normal():
+  {==}
+
+def Laws.gradual_multiply_k107_zero():
+  {==}
+
+def Laws.gradual_multiply_k192_negative_zero():
+  {==}
+
+def Laws.gradual_multiply_once_rounded_subnormal():
+  {==}
+
+def Laws.gradual_multiply_once_rounded_minimum_normal_edge():
+  {==}
+
+def Laws.gradual_multiply_once_rounded_half_minimum_edge():
+  {==}
+
+def Laws.gradual_multiply_normal_carry():
+  {==}
+
+def Laws.gradual_multiply_internal_k106_half_window():
+  {==}
+
+def Laws.gradual_multiply_internal_minimum_normal_half_window():
+  {==}

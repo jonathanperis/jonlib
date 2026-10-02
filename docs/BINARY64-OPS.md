@@ -175,6 +175,7 @@ primitive domains, native-profile qualification and wrapper/device/resource
 evidence remain open. In particular tiny-branch `z*e` can underflow into binary64
 subnormals and signed zero. These normal-result operations reject the relevant
 out-of-domain operands/pairs; they must not silently substitute an already-rounded
-product for a future directly rounded gradual-underflow implementation. Existing
-angle profiles, fixtures, expectations, tolerances and their strict canonical
-mismatch remain unchanged. See [ANGLE-PLAN.md](ANGLE-PLAN.md).
+product for directly rounded gradual-underflow arithmetic. The separate
+[gradual-output product](BINARY64-GRADUAL-MULTIPLY.md) now provides that isolated
+arithmetic on a different checked rectangle. Existing angle profiles, fixtures,
+expectations, tolerances and their strict canonical mismatch remain unchanged. See [ANGLE-PLAN.md](ANGLE-PLAN.md).

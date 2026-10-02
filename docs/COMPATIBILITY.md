@@ -28,7 +28,9 @@ not broaden existing arithmetic contracts. The independent [bounded add/subtract
 also remains private with no existing consumers. The [checked normal operations
 and word adapters](BINARY64-OPS.md) add independent bounded multiply/divide,
 exact promotion/packing and raw stepping evidence, with the same private status.
-No device evidence is claimed for these prerequisites.
+The [direct gradual-output product](BINARY64-GRADUAL-MULTIPLY.md) adds a separate
+asymmetric normal-input contract with subnormal and signed-zero results, also
+without consumers or API promotion. No device evidence is claimed for these prerequisites.
 
 The current local Apple M1/macOS corpus contains **261 deterministic scenarios /
 40,101 checked output words per lane**, matching native CPU (one and two threads), JavaScript

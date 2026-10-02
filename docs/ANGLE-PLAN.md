@@ -92,12 +92,18 @@ zero, nonzero denominator `[-149,127]`, and nonzero `Ea <= Eb`. These standalone
 contracts are not closed under arbitrary chaining or a kernel-reachability proof.
 No existing consumers or public profiles change.
 
+The fifth isolated prerequisite is private checked
+[`binary64_gradual_multiply.bend`](../src/binary64_gradual_multiply.bend). Its
+[standalone contract](BINARY64-GRADUAL-MULTIPLY.md) accepts `a` signed zero or
+normal `[-277,0]` and `b` signed zero or normal `[-885,0]`, with one directly
+rounded normal/subnormal/XOR-zero output. It rejects nonzero subnormal inputs
+and has no consumers. This supplies literal tiny-branch `z*e` arithmetic;
+it does not establish a full kernel or replace the narrower normal multiply.
+
 Integration of these prerequisites into the full modern kernel remains future
-work. Keep old projection/resize contracts unchanged. Establish the kernel's
-reachable exponent bounds; support gradual underflow wherever it is reachable instead of assuming
-it away. In particular the tiny branch's `z*e` can produce subnormals and negative
-zero; a literal port needs gradual-underflow multiplication, or a separately
-justified RN result-bit comparison predicate with its narrower claims.
+work. Keep old projection/resize contracts unchanged. Establish every reachable
+operand domain and operation order, including cancellation and both fallbacks,
+instead of treating standalone rectangles as arbitrary chaining guarantees.
 
 A pure-Bend implementation is technically possible. A compiler/runtime change
 is not a prerequisite; a host-specific atan2 hook is not a portable solution.

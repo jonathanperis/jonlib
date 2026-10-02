@@ -329,3 +329,8 @@ The [checked normal multiply/divide and word adapters](BINARY64-OPS.md) likewise
 remain private. Their separate pair-guarded domains, exact finite F32 promotion,
 normal/zero packing and unsigned raw-word steps do not widen existing APIs or
 supply the tiny branch's gradual-underflow multiplication.
+
+The separate [gradual-output product](BINARY64-GRADUAL-MULTIPLY.md) now supplies
+that private arithmetic prerequisite for its asymmetric normal-input domain.
+It rounds once to normal/subnormal/signed-zero words and has no existing API
+consumer; it does not widen the normal helpers or implement the angle kernel.

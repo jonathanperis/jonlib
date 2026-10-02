@@ -105,10 +105,11 @@ See [ANGLE-PLAN.md](ANGLE-PLAN.md). A
 A [private bounded add/subtract helper](BINARY64-ADD-SUB.md) now supplies audited
 signed-zero arithmetic separately. [Checked normal multiply/divide and word
 adapters](BINARY64-OPS.md) now provide bounded packing, exact finite promotion
-and raw stepping separately. Full kernel integration, tiny-product gradual
-underflow and reachable compensated-cancellation bounds remain open. Four product
-limbs retain 106 bits but do not by themselves
-solve arbitrary FMA alignment/cancellation. The entire pinned modern scalar kernel,
+and raw stepping separately. A separate
+[gradual-output product](BINARY64-GRADUAL-MULTIPLY.md) supplies isolated tiny-product
+arithmetic. Full kernel integration and reachable compensated-cancellation
+qualification remain open. Four product limbs retain 106 bits but do not by
+themselves solve arbitrary FMA alignment/cancellation. The entire pinned modern scalar kernel,
 its two fallbacks, a separate qualified angle selector, wrapper domains and
 forced-device evidence are still required. This helper must not be wired into
 existing projection/resize paths as a side effect of that work.

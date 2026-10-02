@@ -3827,3 +3827,92 @@ artifacts, and verified 76 canonical audit-command input/output records. It also
 replayed the preserved 98,778 narrowing/FMA/add/subtract observations per lane
 and checked their 3,455 artifact hashes. No blocking findings remain.
 [Durable evidence](evidence/binary64-ops.json) records this private checkpoint.
+
+
+## 2026-10-02: isolated gradual-output binary64 multiplication
+
+`src/binary64_gradual_multiply.bend` adds a private checked multiplication on
+canonical high/low U32 words. Operand `a` is signed zero or normal with exponent
+`[-277,0]`; `b` is signed zero or normal `[-885,0]`. Both are validated before
+zero shortcuts. Nonzero subnormal inputs, specials and out-of-range normals
+are rejected, including invalid-with-zero. Results are once-rounded RN-even
+normal/subnormal/XOR-signed-zero words. [The contract](BINARY64-GRADUAL-MULTIPLY.md)
+states standalone bounds and reuse invariants; this is not generic binary64
+subnormal-input arithmetic or a full angle-kernel implementation.
+
+The unchanged FMA helper supplies an exact 106-bit product and width-independent
+window operations. Normal products use its existing normal pack. Gradual
+products are rounded directly on the `2^-1074` lattice and encoded from that
+integer; no preliminary 53-bit rounding or FMA substitution occurs. The branch
+at exponent sum `-1023` correctly handles already-normal results and carry into
+minimum normal. Below half minimum subnormal, the result retains XOR sign.
+
+All **44 pre-existing library sources remain byte-for-byte unchanged**. No
+consumer, selector, fixture, expected result, tolerance or compiler changed.
+Only three angle entries receive prerequisite evidence and gap updates; all
+1,884 API statuses are unchanged, including 117/600 core partial, 142 math
+partial and zero complete. CI runs the isolated focused gate before the known
+native-angle/canonical failure.
+
+The independent `Fraction` product/adjacent-neighbor oracle and separately
+qualified volatile C multiplication agree on **30,861 observations**: 30,509
+accepted and 352 rejected. Native qualification passes 63 fixed controls,
+including signed zeros, parity/transition ties, DAZ-sensitive subnormal-to-normal
+and FTZ-sensitive normal-to-subnormal products, and all double-rounding witnesses.
+Clang 19.1.7, explicit no-fast-math/contraction/LTO flags, IEEE layout/evaluation,
+RN-even and control-register checks are retained. MXCSR is 8064 before preflight
+and 8114 after it, differing only in status flags. No exception-flag contract is
+claimed. Unsupported native architectures/modes fail closed.
+
+CPU-one-thread, CPU-two-thread and JavaScript each match every observation in
+121 serial programs of at most 256 operations and 16 framed records per line.
+The actual output classes are 14,850 normals, 8,657 subnormals and 7,002 signed
+zeros. Every allowed exponent/sign/operand position and both product-top bits
+are sampled, along with all gradual shifts, significand bits/holes, limb
+boundaries, tie parities and adjacent operands, zero signs and invalid classes.
+`k=53..106` exercises the final window; `k=107..192` exercises the zero fast path.
+The corpus includes all three double-rounding witnesses and negative mirrors,
+and four exact products reached in the separate tiny-kernel bounds research.
+It does not execute the full kernel. The impossible accepted-product `k=106`
+exact half tie is tested only as an explicitly internal synthetic control.
+
+Strict framing checks all IDs, kinds, tags, U32 types, counts and payloads.
+Old success/compiled outputs are invalidated; consumed inputs, programs,
+binaries, native/candidate stdout and source/toolchain identities are hashed
+and rechecked. The focused gate retains 54 source/dependency and 1,351 artifact
+hashes. All **239 Python tests** pass, including 30 new oracle, malformed-input/
+output, qualification, stale-output and drift tests. Complete `PROOF.bend`
+checks **71 laws**: 51 existing, two new structural branches, sixteen concrete
+checked results/rejections and two internal raw-window equalities. These are
+limited proofs, not a universal arithmetic or kernel-reachability theorem.
+
+Preserved narrowing/FMA/add-subtract/normal-operation gates re-pass 40,276,
+11,038, 47,464 and 36,176 observations respectively on all three lanes, totaling
+134,954 per lane. Legacy binary64 multiply/divide, F32 FMA, GNU/Sun angle and
+inverse-trig gates pass. Native-angle remains the documented strict first-lane
+failure with 178 differences. The canonical suite is freshly rebuilt in 17
+batches after removing prior generated outputs. Its supplementary audit checks
+all fields and all 40,101 pixel/numeric words on CPU-one-thread, CPU-two-thread
+and JavaScript, not merely the first difference per scenario. Each lane still
+has exactly one unequal word: `vector2-angle-profiles` pixel `(6,0)`, native
+`3fc90fdb` versus Bend `3fc90fda`; 260/261 scenarios match and aggregate
+conformance remains failed.
+
+Trailing ownership, transformation and decoding contracts pass on CPU/JS.
+The three PPM examples match every reference pixel. QOI bytes, roundtrips and
+missing/malformed/oversized-file controls pass; a separate replay removes prior
+PPM/QOI outputs and verifies fresh files. Generated-ledger, independent Clang
+catalog, syntax and project checks pass. Full modern scalar kernel/fallbacks,
+checked-domain integration, native-profile qualification, wrapper domains and
+forced-device/resource evidence remain open. No GPU, hosted, exhaustive-input
+or performance-parity claim is made. [Durable evidence](evidence/binary64-gradual-multiply.json)
+records this private checkpoint.
+
+Independent read-only review regenerated and replayed all 30,861 focused inputs,
+121 programs and three lanes, verified 1,351 focused artifact/54 source hashes,
+and cross-checked expectations with separate integer-rational rounding. It also
+replayed 134,954 preserved observations per lane and verified 5,037 arithmetic
+artifact hashes. It verified 212 retained regression artifacts, 76 audit-command
+input/output records, 68 canonical build artifacts and every canonical field,
+PPM pixel and QOI byte. The gradual-division wording and first-difference-only
+supplementary audit were corrected. No blocking findings remain.
