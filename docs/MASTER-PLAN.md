@@ -90,7 +90,9 @@ All remain scoped profiles. The [resampling record](RESAMPLING.md),
 The isolated [direct binary64 narrowing prerequisite](BINARY64-NARROW.md) now
 provides checked nearest-even binary32 words, including gradual underflow. It
 does not change existing API consumers or the current native-angle failure;
-binary64 FMA and the complete modern angle kernel remain Phase 1 work.
+private [bounded FMA](BINARY64-FMA.md) and [add/subtract](BINARY64-ADD-SUB.md)
+prerequisites are also isolated. The complete modern angle kernel, stepping,
+wrapper integration and device/resource evidence remain Phase 1 work.
 
 ## Compiler and runtime workstream
 

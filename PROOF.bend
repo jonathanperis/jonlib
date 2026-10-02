@@ -74,3 +74,36 @@ def Laws.bounded_fma_odd_tie():
 
 def Laws.bounded_fma_lattice_floor():
   {==}
+
+def Laws.bounded_add_sub_reject(ah, al, bh, bl):
+  {==}
+
+def Laws.bounded_sub_sign_inversion(ah, al, bh, bl):
+  {==}
+
+def Laws.bounded_add_negative_zeros():
+  {==}
+
+def Laws.bounded_add_mixed_zeros():
+  {==}
+
+def Laws.bounded_sub_negative_zero():
+  {==}
+
+def Laws.bounded_sub_equal_negative_zeros():
+  {==}
+
+def Laws.bounded_add_cancellation():
+  {==}
+
+def Laws.bounded_add_even_tie():
+  {==}
+
+def Laws.bounded_add_odd_tie():
+  {==}
+
+def Laws.bounded_sub_lattice_floor():
+  {==}
+
+def Laws.bounded_add_largest_carry():
+  {==}
