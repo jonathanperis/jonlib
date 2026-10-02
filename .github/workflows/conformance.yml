@@ -77,6 +77,11 @@ jobs:
           subprocess.run(['git', '-C', str(source), 'apply', '--check', str(patch)], check=True)
           subprocess.run(['git', '-C', str(source), 'apply', str(patch)], check=True)
           PY
+      - name: Record native math host profiles (diagnostic, not parity)
+        run: >-
+          python3 tools/native_math_profile_probe.py
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+          --clang clang
       - name: Verify native angle profiles and supporting wide arithmetic
         run: |
           python3 tools/float64_ops_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend"
@@ -261,6 +266,11 @@ jobs:
           python3 tools/image_file_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify suffix-selected RGBA8 export and descriptor closure
+        run: >-
+          python3 tools/image_export_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Independently audit the public API catalog
         run: >-
           python3 tools/api_plan.py check --clang-audit
@@ -406,6 +416,7 @@ jobs:
             .build/perspective-probe/results.json
             .build/float64-ops-probe/results.json
             .build/angle-probe/results.json
+            .build/native-profile-diagnostic/results.json
             .build/inverse-trig-probe/results.json
             .build/random-probe/results.json
             .build/perlin-probe/results.json
@@ -446,4 +457,5 @@ jobs:
             .build/deflate-probe/results.json
             .build/png-export-probe/results.json
             .build/image-file-probe/results.json
+            .build/image-export-probe/results.json
             .build/image-memory-probe/results.json

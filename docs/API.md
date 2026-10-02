@@ -181,6 +181,7 @@ is outside this API's contract.
 | `Surface.decode_image_for(reference, file_type, bytes)` / `Surface.load_image_for(reference, path)` | Shared dispatch with `J.Image.Decode.Reference`; affects PSD matte arithmetic and retains existing bounds/error/closure behavior. Convenience calls select `J.UncontractedDecode{}`. |
 | `Surface.decode_png` | Bounded non-interlaced/Adam7 PNG and native-default CgBI decoding at supported 1/2/4/8/16-bit combinations; filtering, transparency and normalization in [PNG.md](PNG.md). |
 | `Surface.to_png`, `write_png` | Consuming RGBA8 memory/file exports with byte-exact native default filtering, quality-8 compression and checksums; see [PNG-EXPORT.md](PNG-EXPORT.md). |
+| `Surface.write_image(surface, path)` | ASCII-case-insensitive PNG/BMP/TGA/QOI/RAW suffix dispatch; pre-open unsupported-suffix errors retain the owner, selected file operations consume it and return typed IO errors; see [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
 | `Image.Formatted.to_png` | Consuming PNG memory export preserving byte-format 1/2/3/4-channel data; unsupported packed formats return the original owner. See [PNG-EXPORT.md](PNG-EXPORT.md). |
 | `Image.Formatted.write_png` | Consuming PNG file export for checked formats 1..7, with native byte-channel or packed-color expansion; see [PNG-EXPORT.md](PNG-EXPORT.md). |
 | `Image.FloatRGB.to_png` / `write_png` | Preserve native raw-prefix memory PNG versus normalized-color file PNG, with retained rejected owners and typed file errors; see [PNG-EXPORT.md](PNG-EXPORT.md#rgb-float-memoryfile-distinction). |

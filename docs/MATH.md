@@ -49,6 +49,11 @@ for total internal reflection and otherwise applies the original formula.
 `min_for(reference, left, right)` and `max_for(reference, left, right)` share the
 same explicit zero-tie contract. `min` and `max` select the accurate profile.
 
+The GNU label is a declared numerical profile, not a guarantee for every glibc
+version/compiler evaluation path. Debian glibc 2.41 / Clang 19 reproduces
+different constant-folded and native-libm zero ties, plus broader `atan2f`
+differences. See [native host-profile diagnosis](NATIVE-MATH-PROFILES.md).
+
 `rotate_for(reference, vector, radians)` uses the explicit trigonometric reference
 profile; `rotate` selects the accurate profile. The current profile covers finite
 radians within one cycle and preserves reference operation order. See
