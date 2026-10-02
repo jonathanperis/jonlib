@@ -91,3 +91,7 @@ both the owner and an existing output file, while a directory write checks the
 file-error variant. One hundred load/domain/truncation/read/size/write cycles run
 under the same descriptor limit. Prior byte/integer raw-file gates remain passing.
 See [evidence/float-rgb-raw-files.json](evidence/float-rgb-raw-files.json).
+
+The checked [R32](R32.md) extension can write exact format-8 bytes through
+`Image.Formatted.write_raw`; `Image.Formatted.load_raw(..., 8)` remains rejected.
+This does not broaden the loader formats recorded above.

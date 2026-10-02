@@ -128,3 +128,11 @@ under a 64-descriptor limit. Two pure rejection checks retain source samples,
 and rejected writes preserve an existing sentinel file. Metal evidence covers
 pure encoding/decoding, not filesystem IO. See
 [evidence/float-rgb-png.json](evidence/float-rgb-png.json).
+
+## Bounded R32 file export
+
+Checked format-8 owners additionally support `Image.Formatted.write_png` through
+native red-only normalized colors. Memory `to_png` remains rejected with its
+owner retained; it does not silently substitute normalized file colors for the
+native raw-bit memory path. See [R32.md](R32.md). Earlier evidence counts on this
+page do not establish R32 behavior on Metal or additional hosts.

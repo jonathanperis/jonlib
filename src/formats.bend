@@ -1,6 +1,6 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of raylib 6.0 ImageFormat/LoadImageDataNormalized;
-# notice retained in LICENSES/raylib.txt. Byte/integer formats only.
+# notice retained in LICENSES/raylib.txt. Byte/integer and normalized R32 formats.
 import Base
 
 type Normal is Data:
@@ -17,6 +17,28 @@ def valid(bytes: +List<U32>, +remaining: U32, ok: Bool) -> Bool:
     case _ False{}: False{}
     case Nil{} True{}: U32.is_eq(remaining, 0)
     case Con{byte, rest} True{}: valid(rest, (remaining - 1 : U32), ((remaining > 0) && (byte <= 255) : U32))
+
+# The checked R32 profile is finite [0,1], preserving both zero signs and
+# positive subnormals. Bit checks avoid host floating-point classification.
+def r32.word_valid(+word: U32) -> Bool:
+  (word <= 1065353216 : U32) || U32.is_eq(word, 2147483648)
+
+def r32.bytes_valid(bytes: +List<U32>, ok: Bool) -> Bool:
+  match bytes ok:
+    case _ False{}: False{}
+    case Nil{} True{}: True{}
+    case Con{a, Con{b, Con{c, Con{d, rest}}}} True{}:
+      r32.bytes_valid(rest, r32.word_valid((a .|. (b << 8n) .|. (c << 16n) .|. (d << 24n) : U32)))
+    case _ _: False{}
+
+def domain_valid(format: U32, bytes: +List<U32>) -> Bool:
+  match format:
+    case 8: r32.bytes_valid(bytes, True{})
+    case _: True{}
+
+def r32.value(value: U32) -> F32:
+  U32{word} = value
+  F32{word}
 
 def read_word(n: Nat, +shift: Nat, value: U32, bytes: +List<U32>) -> Maybe<&2, Word>:
   match n bytes:
@@ -70,6 +92,7 @@ def decode(format: U32, +word: U32) -> Normal:
     case 6:
       Normal{packed_norm((word >> 12n : U32), 15.0), packed_norm(((word >> 8n) .&. 15 : U32), 15.0),
         packed_norm(((word >> 4n) .&. 15 : U32), 15.0), packed_norm((word .&. 15 : U32), 15.0)}
+    case 8: Normal{r32.value(word), 0.0, 0.0, 1.0}
     case _:
       Normal{byte_norm((word .&. 255 : U32)), byte_norm(((word >> 8n) .&. 255 : U32)),
         byte_norm(((word >> 16n) .&. 255 : U32)), byte_norm((word >> 24n : U32))}
@@ -92,6 +115,7 @@ def encode(normal: Normal, format: U32) -> U32:
     case 4: (F32.to_u32((r * 255.0 : F32)) .|. (F32.to_u32((g * 255.0 : F32)) << 8n) .|. (F32.to_u32((b * 255.0 : F32)) << 16n) : U32)
     case 5: ((level(r, 31.0) << 11n) .|. (level(g, 31.0) << 6n) .|. (level(b, 31.0) << 1n) .|. Bool.to_u32((a > 50.0 / 255.0 : F32)) : U32)
     case 6: ((level(r, 15.0) << 12n) .|. (level(g, 15.0) << 8n) .|. (level(b, 15.0) << 4n) .|. level(a, 15.0) : U32)
+    case 8: F32.bits((r * 0.299 + g * 0.587 + b * 0.114 : F32))
     case _: (F32.to_u32((r * 255.0 : F32)) .|. (F32.to_u32((g * 255.0 : F32)) << 8n) .|. (F32.to_u32((b * 255.0 : F32)) << 16n) .|. (F32.to_u32((a * 255.0 : F32)) << 24n) : U32)
 
 def converted(index: U32, from: U32, to: U32, read: Array<U32> & U32) -> Array<U32>:
@@ -133,11 +157,12 @@ def image_color(format: U32, +word: U32) -> U32:
     case 4: (swap(word) .|. 255 : U32)
     case 5: packed_rgba(5, word)
     case 6: packed_rgba(6, word)
+    case 8: ((F32.to_u32((r32.value(word) * 255.0 : F32)) << 24n) .|. 255 : U32)
     case _: swap(word)
 
 def packed_color.write(index: U32, format: U32, read: Array<U32> & U32) -> Array<U32>:
   (pixels, word) = read
-  Array.set(U32, pixels, index, packed_rgba(format, word))
+  Array.set(U32, pixels, index, image_color(format, word))
 
 def packed_colors(n: Nat, +index: U32, +format: U32, pixels: Array<U32>) -> Array<U32>:
   match n:

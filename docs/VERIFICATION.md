@@ -2,7 +2,7 @@
 
 Latest additional host check: 2026-10-02, Debian x86-64 / glibc 2.41, Clang
 19.1.7 (reference drivers and Bend CPU output), GCC 14.2.0 (CMake's raylib
-library compiler), Bun 1.3.12. See the suffix-export and native-profile record
+library compiler), Bun 1.3.12. See the suffix-export, R32 and native-profile records
 below; aggregate parity on this host remains blocked by six numerical scenarios.
 
 Latest expansion: 2026-09-29. Host: Apple M1 / macOS 27.0. Bun 1.3.12 and Apple clang 21.0.0.
@@ -3309,3 +3309,47 @@ and interpretation in [NATIVE-MATH-PROFILES.md](NATIVE-MATH-PROFILES.md).
 Ledger delta from `a25f14b`: only `raylib:function:ExportImage`, partial → partial,
 with narrower dispatch gaps; totals remain 117/600 core partial, 142 math partial
 and zero complete. No remote publication was performed.
+
+## 2026-10-02: bounded R32 format and image consumers
+
+`Image.Formatted` now accepts native format 8 within finite `[0,1]`, including
+both zero signs and positive subnormals. Conversion uses native red-only
+normalization and uncontracted F32 luminance; same-format and zero-target requests
+preserve every word. Wider R32 samples, reverse RGB-float conversion, RAW loading
+of format 8 and native raw-bit memory PNG remain unsupported. File PNG uses
+red-only normalized colors, while RAW/code exports preserve exact sample bytes.
+
+CPU/JS evidence covers all 64 format pairs, 165 native cases, 1,119 boundary
+samples, 45 rejected-factory controls and 173,303 compared bytes per lane. A
+33,024-pixel exact import covers signed zeros/subnormals and guards against the
+non-tail validator recursion spotted during static review. The final validator is
+tail-recursive. This stress case exposed Base's recursive `List.show`;
+the harness now uses strictly framed 256-byte chunks while comparing the same
+complete native byte arrays. Neither inputs nor expected values were reduced.
+
+The consumer gate passes 82 pure observations and nine complete native
+PNG/RAW/code files per CPU/JS lane, plus two explicit unsupported-RAW-load checks.
+It checks retained words, point/bulk colors, sole-channel selection, direct RGB
+float red words and unsupported-owner behavior. Independent review also added a
+valid 12-byte format-9 factory control so unsupported-format rejection cannot
+pass merely through a wrong payload length.
+
+All 50 Python tests, project/ledger checks and existing structural proofs pass.
+Existing contracts, transforms and decoding pass on CPU/JS. The unchanged PNG
+export gate passes 37 PNGs / 171,574 encoded and 172,340 round-trip bytes per lane;
+the suffix-export gate retains all 41 exact files and its open/post-open/closure
+controls. One final probe compilation exited without diagnostics during
+overlapping check-only work; an isolated serial rerun passed without changing
+library code, profiles, inputs or comparisons. Its cause is not established.
+
+The full 261-scenario corpus was rebuilt and run on CPU one-thread, CPU two-thread
+and JavaScript. Exactly the same six host numerical-profile scenario mismatches
+remain. There is no new GPU runtime or hosted evidence. The current x86 native
+raylib object uses separate multiply/add instructions; fused luminance profiles
+on other native targets remain explicitly open.
+
+[Durable R32 evidence](evidence/r32-image-format.json) records final source,
+input, harness and generated-program hashes. Ledger delta from `1482e1e` advances
+the partial scopes of ImageFormat, LoadImageColors, GetImageColor,
+ImageFromChannel, ExportImage and ExportImageAsCode. Totals stay 117/600 core
+partial, 142 math partial and zero complete. No remote publication was performed.

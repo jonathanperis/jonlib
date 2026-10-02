@@ -84,3 +84,8 @@ compare every written file, verify a rejected write preserves a sentinel, and ru
 errors are compared with the original Base error code and message. Metal covers pure text
 generation; fixture file IO remains on the CPU. See
 [evidence/image-code.json](evidence/image-code.json).
+
+Checked [R32](R32.md) owners can also export their exact little-endian sample
+words and native format-8 metadata through `Image.Formatted.to_code/write_code`.
+The normalized R32 factory domain still applies. Earlier format/GPU evidence
+on this page does not establish the new R32 profile on additional targets.

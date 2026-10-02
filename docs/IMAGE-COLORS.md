@@ -1,7 +1,9 @@
 # Native bulk and point image colors
 
-`Image.Formatted.colors(image)` consumes a checked format-1..7 image and returns
+`Image.Formatted.colors(image)` consumes a checked format-1..8 image and returns
 every packed RGBA8 color as `List<U32>`, in row-major order.
+Bounded [R32](R32.md) samples produce red-only colors with opaque alpha;
+this does not implement the distinct low-level `GetPixelColor` R32 behavior.
 `Image.FloatRGB.colors(image)` returns
 `Result<&1, &1, Image.FloatRGB, List<U32>>`: finite `[0,1]` RGB is truncated through
 native F32 `component*255`, with opaque alpha; unsupported samples return the

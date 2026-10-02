@@ -1089,11 +1089,12 @@ def Image.Formatted.checked(valid: Bool, +width: U32, +height: U32, +format: U32
   match valid:
     case False{}: None{}
     case True{}:
-      Image.Formatted.validated(Formats.valid(bytes, (width * height * (Pixel.bits_per_pixel(format) / 8) : U32), True{}), width, height, format, bytes)
+      Image.Formatted.validated(Formats.valid(bytes, (width * height * (Pixel.bits_per_pixel(format) / 8) : U32), True{})
+        && Formats.domain_valid(format, bytes), width, height, format, bytes)
 
 def Image.Formatted.from_bytes(+width: U32, +height: U32, +format: U32, bytes: +List<U32>) -> Maybe<Image.Formatted>:
   Image.Formatted.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096)
-    && (format >= 1) && (format <= 7) : U32), width, height, format, bytes)
+    && (format >= 1) && (format <= 8) : U32), width, height, format, bytes)
 
 def Surface.to_formatted(surface: Surface) -> Image.Formatted:
   Surface{+width, +height, pixels} = surface
@@ -1112,7 +1113,7 @@ def Image.Formatted.converted(valid: Bool, image: Image.Formatted, +target: U32)
       Done{Image.Formatted.routed(U32.is_eq(target, 0) || U32.is_eq(target, format), FormattedImage{width, height, format, pixels}, target)}
 
 def Image.Formatted.convert(image: Image.Formatted, +target: U32) -> Result<&1, &1, Image.Formatted & Pixel.Error, Image.Formatted>:
-  Image.Formatted.converted((target <= 7 : U32), image, target)
+  Image.Formatted.converted((target <= 8 : U32), image, target)
 
 def Image.Formatted.export(image: Image.Formatted) -> (U32 & U32) & (U32 & List<U32>):
   FormattedImage{+width, +height, +format, pixels} = image
@@ -2381,6 +2382,7 @@ def Image.channel.index(format: U32, +selected: U32) -> U32:
     case 2: Bool.pick(U32, U32.is_eq(selected, 0), 0, 3)
     case 3: Bool.pick(U32, (selected > 2 : U32), 0, selected)
     case 4: Bool.pick(U32, (selected > 2 : U32), 0, selected)
+    case 8: 0
     case 9: Bool.pick(U32, (selected > 2 : U32), 0, selected)
     case _: Bool.pick(U32, (selected > 3 : U32), 3, selected)
 
