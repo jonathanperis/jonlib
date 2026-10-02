@@ -266,3 +266,12 @@ parity or an API-completion percentage.
 The remaining angle work is staged in [ANGLE-PLAN.md](ANGLE-PLAN.md), including
 the immutable MIT algorithm source, reusable binary64 arithmetic prerequisites,
 a separate angle reference type and exact CPU/JS/device qualification gates.
+
+## Standalone native angle qualification
+
+The independently frozen [native angle qualification gate](ANGLE-QUALIFICATION.md)
+now verifies 76 scalar controls, 205 canonical/runtime wrapper controls and
+1,654 ordered intermediate words before any future angle-candidate generation.
+It uniquely observes the modern contract on the recorded Linux host; historical
+source contracts are not newly host-qualified. Public routing, old algorithms,
+canonical fixtures and the final-angle-only wrapper validation gap are unchanged.

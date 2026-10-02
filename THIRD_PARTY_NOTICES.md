@@ -204,3 +204,17 @@ No upstream NOTICE file was present at the base revision. This overlay is not
 an upstream-approved Bend release. See [patches/README.md](patches/README.md) for
 provenance and application instructions. Distributions containing Bend runtime
 artifacts must also retain their applicable Apache-2.0 notices.
+
+## Native angle qualification source controls
+
+`tools/reference/angle_sources/sun_e_atan2f.c` and `sun_s_atanf.c` are exact
+Sun-permission originals from glibc 2.39 commit
+`ef321e23c20eebc6d6fb4044425c00e6df27b05f`. Their original notices and the existing
+[Sun notice](LICENSES/sun-math.txt) are retained. The modern reference remains the
+unchanged MIT file identified above. Qualification metadata and rational audit
+helpers are original tooling; none is linked into the Bend library.
+
+The independently derived Apple control facts cite the pinned July 2007 source,
+its author and SHA-256 in the manifest. This slice does not redistribute that
+source or the local assembly adaptation because a covering license was not
+verified. See [qualification provenance](docs/ANGLE-QUALIFICATION.md).

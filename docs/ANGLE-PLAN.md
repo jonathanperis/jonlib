@@ -173,3 +173,12 @@ preservation, deep fallback execution, limb carries/shifts, batching, stack boun
 and device resources. Existing Metal results for older profiles do not cover this
 new arithmetic/kernel. Report correctness and performance separately: portable
 limb arithmetic and the 32-term fallback can be expensive.
+
+## Standalone native angle qualification
+
+The independently frozen [native angle qualification gate](ANGLE-QUALIFICATION.md)
+now verifies 76 scalar controls, 205 canonical/runtime wrapper controls and
+1,654 ordered intermediate words before any future angle-candidate generation.
+It uniquely observes the modern contract on the recorded Linux host; historical
+source contracts are not newly host-qualified. Public routing, old algorithms,
+canonical fixtures and the final-angle-only wrapper validation gap are unchanged.
