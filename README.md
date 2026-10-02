@@ -66,7 +66,7 @@ owner-preserving rejection before a file is opened.
 - Normalized/HSV color conversions and quaternion Hamilton-product foundations.
 - Owned seeded random streams and reference-exact white-noise images.
 - Radial and one-cycle linear gradient profiles with balanced owned-array generation.
-- QOI decoding/encoding and real byte-file loading/export, with typed failures.
+- QOI decoding/encoding and real byte-file loading/export, with typed failures; explicit [formatted QOI export](docs/FORMATTED-QOI-EXPORT.md) accepts original RGB888/RGBA8888 and retains unsupported owners before IO, verified on local Linux CPU/JavaScript.
 - CORE indexed/RGB24 and 40/56/108/124-byte BMP profiles with native palette, bitfield and alpha behavior; exact RGBA8 V4 export, checked formatted [24-bit/V4 BMP export](docs/FORMATTED-BMP-EXPORT.md) for formats 1..8, checked formatted [RLE TGA export](docs/FORMATTED-TGA-EXPORT.md) for formats 1..8, and owned raw image-file IO.
 - TGA raw/RLE true-color, grayscale and indexed decoding with byte-exact default RLE export.
 - Binary 8/16-bit PGM/PPM decoding with native header, maxval and little-endian sample behavior.

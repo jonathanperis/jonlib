@@ -38,6 +38,7 @@ ownership adapters are exposed through `jonlib.bend`:
 |---|---|
 | `Image.Formatted.decode_qoi(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Image.Formatted>` with original RGB888 (4) or RGBA8888 (7) storage and one mip level. Dimensions 1..4096; strict checked bytes/streams. |
 | `Image.Formatted.load_qoi(path: String)` | Returns `IO(Result<&1, &1, Image.LoadError, Image.Formatted>)`; explicit QOI selection regardless of suffix, preserving the memory decoder's format 4/7 owner. See [file loading](#format-preserving-qoi-file-loading). |
+| `Image.Formatted.to_qoi(image)` / `write_qoi(image, path)` | Explicit QOI export accepts original formats 4/7 only, with header channels 3/4; unsupported checked owners return unchanged before file IO. Accepted writes consume and close acquired handles. See the [formatted export contract and local CPU/JavaScript evidence](FORMATTED-QOI-EXPORT.md). |
 | `Surface.decode_qoi(bytes: +List<U32>)` | Returns `Result<Image.DecodeError, Surface>`; byte values must be 0..255. Accepts valid RGB/RGBA QOI, dimensions 1..4096. |
 | `Surface.to_qoi(surface)` | Consumes the Surface and returns immutable encoded bytes. Header channels are 4 and colorspace is 0. |
 | `Surface.load_qoi(path)` | Base byte-file IO returning `IO(Result<Image.LoadError, Surface>)`. |
@@ -177,6 +178,24 @@ Generic formatted/float dispatch and original formats for the other normalized
 codecs remain open, as do GPU IO, macOS/Windows/browser file qualification,
 big-endian targets, special/concurrently changing files, maximum-area allocation
 and complete integration/resource/performance coverage.
+
+## Checked formatted QOI export
+
+`Image.Formatted.to_qoi` and `write_qoi` preserve the native original-format
+export gate: only RGB888 (4) and RGBA8888 (7) succeed. Formats 1/2/3/5/6/8 are
+rejected before conversion or file IO with their exact owner. RGB uses canonical
+opaque alpha and header 3; RGBA keeps all channels and header 4. Both write
+colorspace 0. A decoded channel-3 source's discarded alpha and either source's
+original colorspace cannot be reconstructed by re-export.
+
+The [formatted export contract](FORMATTED-QOI-EXPORT.md) specifies exact bytes,
+typed owner/file errors, closed-handle behavior and the focused gate design.
+The [focused report](evidence/formatted-qoi-export.json) records a local Linux
+x86-64 CPU-1/CPU-2/JavaScript pass for 273 accepted and 22 rejected sources,
+comparing 1,415,214 encoded bytes per lane. Original-format decode bytes,
+retained owners, opcode boundaries and typed file/resource behavior have their
+own complete observations; older Surface and formatted-load evidence is not
+substituted for this new exporter.
 
 ## Reference and verification
 

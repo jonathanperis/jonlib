@@ -23,6 +23,7 @@ separate compatibility gaps.
 | `Image.Formatted.to_png(image)` | Default PNG memory export for byte formats 1/2/4/7 and raw four-byte R32 words; unsupported packed formats retain their owner in `Fail`. See [PNG-EXPORT.md](PNG-EXPORT.md). |
 | `Image.Formatted.write_png(image, path)` | Default PNG file export for checked formats 1..8, preserving native packed-color expansion and R32 red-only normalization. See [PNG-EXPORT.md](PNG-EXPORT.md). |
 | `Image.Formatted.to_bmp(image)` / `write_bmp(image, path)` | Exact native BMP file bytes for all checked formats 1..8, with consuming pure/typed-IO interfaces. See [FORMATTED-BMP-EXPORT.md](FORMATTED-BMP-EXPORT.md). |
+| `Image.Formatted.to_qoi(image) -> Result<&1, &1, Image.Formatted & Pixel.Error, +List<U32>>` / `write_qoi(image, path) -> IO(Result<&1, &1, Image.Formatted.QoiWriteError, Unit>)` | Explicit native QOI file bytes for original RGB888 (4) / RGBA8888 (7), header channels 3/4; other checked formats retain their exact owner before IO. Accepted writes consume the owner and close acquired handles. Local Linux x86-64 CPU-1/CPU-2/JavaScript evidence is recorded in [FORMATTED-QOI-EXPORT.md](FORMATTED-QOI-EXPORT.md). |
 | `Image.Formatted.to_code(image, path)` / `write_code(image, path)` | Exact native image-as-code text and typed file export for bounded payloads/ASCII names. See [IMAGE-CODE.md](IMAGE-CODE.md). |
 
 Create owners with the checked byte factory, QOI memory/file loaders or Surface bridge. Manually inconsistent

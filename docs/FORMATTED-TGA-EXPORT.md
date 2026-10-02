@@ -118,7 +118,12 @@ The checkpoint evidence is
 [formatted-tga-export.json](evidence/formatted-tga-export.json).
 
 No new GPU, hosted, other-platform, exhaustive-input or performance claim is
-made. Formatted QOI/JPEG/KTX, non-Surface suffix dispatch, wider formats/options,
+made. JPEG/KTX, non-Surface suffix dispatch, wider formats/options,
 native ABI and full integration/resource/platform/performance parity remain open.
 The altered source retains the complete [stb MIT notice](../LICENSES/stb-image.txt)
 and provenance in [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
+
+The separately qualified [checked formatted QOI export](FORMATTED-QOI-EXPORT.md)
+supports original RGB888/RGBA8888 and retains the six other checked formats
+before IO, matching native QOI rejection. Its local CPU/JavaScript evidence is
+independent of this profile and does not add non-Surface suffix dispatch.

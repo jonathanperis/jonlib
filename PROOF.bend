@@ -370,3 +370,39 @@ def Laws.image_file_complete_short():
 
 def Laws.image_file_complete_long():
   {==}
+
+def Laws.formatted_qoi_export_rgb_channels():
+  {==}
+
+def Laws.formatted_qoi_export_rgba_channels():
+  {==}
+
+def Laws.formatted_qoi_export_gray_rejected():
+  {==}
+
+def Laws.formatted_qoi_export_gray_alpha_rejected():
+  {==}
+
+def Laws.formatted_qoi_export_rgb565_rejected():
+  {==}
+
+def Laws.formatted_qoi_export_rgb5a1_rejected():
+  {==}
+
+def Laws.formatted_qoi_export_rgba4_rejected():
+  {==}
+
+def Laws.formatted_qoi_export_r32_rejected():
+  {==}
+
+def Laws.formatted_qoi_export_rgb_packing():
+  {==}
+
+def Laws.formatted_qoi_export_rgba_packing():
+  {==}
+
+def Laws.formatted_qoi_export_packing_empty(index, format, pixels):
+  {==}
+
+def Laws.qoi_surface_encoder_preserved(width, height, pixels):
+  {==}

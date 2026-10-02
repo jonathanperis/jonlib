@@ -4457,3 +4457,108 @@ or float dispatch, other original codec formats and complete integration/resourc
 performance coverage remain open. No new hosted or GPU result is inferred from
 older Surface or memory runs. Full scoped results, hashes and regression
 receipts are in [the file evidence report](evidence/qoi-formatted-files.json).
+
+
+## Checked formatted QOI export (2026-10-02)
+
+The [formatted QOI contract](FORMATTED-QOI-EXPORT.md) adds explicit
+`Image.Formatted.to_qoi` and `write_qoi` adapters for the existing checked owner
+domain. Original RGB888 (4) and RGBA8888 (7) select header channels 3/4; formats
+1/2/3/5/6/8 retain the exact owner before conversion or IO. Integer packing
+preserves source bytes, RGB internal alpha is opaque and colorspace is always
+zero. `QoiSourceError{image}` retains an unsupported owner;
+`QoiFileError{code,message}` preserves accepted Base failures. Every acquired
+writer handle is closed after the write attempt. The legacy Surface encoder
+retains header 4 and its existing opcode selection. The native QOI-specific
+original-format check, rather than generic `LoadImageColors` preparation,
+defines the accepted source domain.
+
+The [focused gate](../tools/formatted_qoi_export_probe.py) passes on local
+Linux x86-64 **CPU-one-thread, CPU-two-thread and JavaScript**: **295 source
+cases (273 accepted / 22 rejected), 382,078 total source pixels, 1,415,214
+encoded bytes and 1,373,353 decoded original-format bytes**. Each lane checks
+**1,409 tagged records** in batches of at most 16 cases. Complete candidate pure
+bytes and actual sentinel-replacing `.dat` files match actual native
+`ExportImage(.qoi)`. Native decoded metadata and every raw byte are observed
+before normalization, alongside separate Surface observations and formatted
+memory/file decoding. An independent strict parser validates header/operands,
+run bounds, complete pixel count, exact marker and EOF; it does not synthesize
+expected bytes through a second encoder.
+
+Parsed native output exercises **all six QOI opcode families, 63 DIFF opcodes
+and all 64 INDEX slots**. Zero-delta DIFF correctly selects RUN. Twelve
+isolated just-outside DIFF controls require LUMA fallback; the corpus also
+covers the LUMA threshold/residual matrix, wrapping, cache collisions, alpha-
+only changes, hidden RGB, initial/noninitial runs through 125 pixels, run
+crossing across rows, padded capacities, both 4096-axis bounds, full 33,024-pixel
+traversals and seeded mixtures. Paired RGB/opaque-RGBA files differ only at
+header byte 12. Factory, Surface bridge and decoded/loaded owners preserve
+original-format semantics; channel-3 hidden alpha is discarded and input
+colorspace 1 canonicalizes to 0. The 513×513 changing-alpha RGBA stress file is
+**1,315,867 bytes**, exceeding the generic raster-loader cap while staying in
+direct-byte/QOI-specific verification.
+
+Rejected formats use correctly typed native packed/R32 backing, preserving
+all source bytes before and after native `ExportImage`. R32 native controls
+stay within finite `[0,1]`, including signed zeros/subnormals and safe truncation
+neighbors. No malformed backing or undefined out-of-domain casts reach native.
+Pure/writer rejections retain metadata and every byte through reuse chains,
+with existing sentinels unchanged and absent outputs absent.
+
+Each lane passes **801 accepted-source and 7,200 retained-source repeated IO
+calls**. The ordinary `RLIMIT_NOFILE=64` program performs 100 cycles per
+accepted format for success, ENOENT and EISDIR, with interleaved exact-owner
+rejections and a final successful write. A separate zero-file-size-limit run
+with ignored SIGXFSZ forces 100 post-open EFBIG calls per accepted format and
+checks zero-byte truncation. Exact direct-Base code/message baselines are
+required; EMFILE cannot pass as EFBIG. These checks support acquired-handle
+closure on the recorded lanes, without claiming native failing-device,
+short-write or close-error equivalence; Base exposes no close result.
+
+The reference uses a **fresh GNU 14.2.0 raylib archive**, **Clang 19.1.7** native
+oracle and **Bun 1.3.12** tooling, with the exact pinned Bend overlay. Nine
+native qualification controls include signed-char wrapping. The focused run
+retains **1,979 sealed artifacts, 2,217 artifact hashes and 140 library/dependency
+source hashes**, including native QOI/rtextures sources, full inputs, generated
+code/binaries, logs and receipts. Strict framing/cardinalities/types, source/tool
+drift checks, fresh namespaces and failed-report admission before argument
+validation prevent partial or stale success. The **331.715-second** focused
+duration is local harness timing, not a performance claim.
+
+Complete pinned `PROOF.bend` reports `All terms check.` for **127 laws**, keeping
+all previous 115 and adding twelve scoped export facts: routing for all eight
+formats, RGB/RGBA integer sample packing, zero-length packing and equality of
+the Surface encoder wrapper with channel 4. These facts do not prove universal
+codec correctness, file IO, allocation or closure. All **472 Python tests**,
+including **29 focused guardrail tests**, pass.
+
+Fresh implementation regressions pass for the existing formatted QOI memory
+gate (**121 images, 67 typed controls, 638 records / 554,344 compared bytes per
+lane**), formatted QOI file gate (**135 files, 69 typed controls, 287 records /
+138,007 compared bytes per lane**, plus fd64 closure and separate large-read
+controls), and Surface suffix-export gate (**41 complete files / 3,803 encoded
+bytes**, retained-source/error and repeated IO controls). The final canonical
+run, bound to the measured ledger and regenerated metadata, passes **261
+scenarios / 40,101 words** on CPU-1/CPU-2/JavaScript. Independent strict replay
+checks every field, type and length, including **333 QOI bytes / 23 palette
+words per lane**. All trailing CPU/JS contract, transform, decoding, PPM example
+and QOI file-roundtrip checks complete successfully. Its **495.265-second**
+duration is a local harness observation, not performance parity. Earlier runs
+remain explicitly preliminary; the final aggregate receipt is complete. These
+distinct receipts are retained in
+[formatted-qoi-export.json](evidence/formatted-qoi-export.json).
+
+The ledger delta against `186ba887c4bdd8a9cc672019abc1a01ac37d3b69` is confined
+to **`raylib:function:ExportImage`** mapping/scope/gaps/evidence, remaining
+partial. All existing entry and gate statuses are unchanged, including
+`ExportImageToMemory`. Core totals remain **117 partial / zero complete**, and
+Jonmath remains **142 partial / zero complete**: zero newly started or completed
+native APIs. The blanket unqualified formatted-QOI gap is replaced by the
+recorded checked-owner slice. CI invokes the focused gate and retains its build
+artifacts without removing any existing lane, matrix, permission or oracle.
+
+No new hosted/GPU, maximum-allocation, exhaustive-input or performance claim
+is made. Non-Surface suffix dispatch, wider source owners/options, JPEG/KTX,
+native ABI/callbacks, failing-device/short-write/close equivalence and complete
+integration/resource/target/performance coverage remain open. Focused QOI
+success does not settle unrelated native-angle or aggregate qualification.

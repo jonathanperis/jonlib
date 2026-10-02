@@ -1,5 +1,5 @@
 # Jonlib - original additions zlib, Copyright (c) 2026 Jonathan Peris.
-# QOI decoding adapted from Dominic Szablewski's MIT-licensed qoi.h in raylib 6.0.
+# QOI decoding/encoding adapted from Dominic Szablewski's MIT-licensed qoi.h in raylib 6.0.
 # Altered owned Bend implementation; see LICENSES/qoi.txt and THIRD_PARTY_NOTICES.md.
 import Base
 
@@ -227,7 +227,12 @@ def encode.loop(n: Nat, +i: U32, state: Array<U32> & Encoder) -> +List<U32>:
     case 1n+k Tuple{pixels, encoder}:
       encode.loop(k, (i + 1 : U32), encode.step(Array.get(U32, pixels, i), encoder))
 
-def encode(+width: U32, +height: U32, pixels: Array<U32>) -> +List<U32>:
-  prefix = {[0,4, (height .&. 255 : U32), ((height >> 8n) .&. 255 : U32), ((height >> 16n) .&. 255 : U32), (height >> 24n : U32),
+# Private channel-aware entry: channels is 3 or 4, pixels are canonical RGBA
+# words and channel-3 pixels must have alpha 255. This does not discard alpha.
+def encode.channels(+width: U32, +height: U32, channels: U32, pixels: Array<U32>) -> +List<U32>:
+  prefix = {[0,channels, (height .&. 255 : U32), ((height >> 8n) .&. 255 : U32), ((height >> 16n) .&. 255 : U32), (height >> 24n : U32),
     (width .&. 255 : U32), ((width >> 8n) .&. 255 : U32), ((width >> 16n) .&. 255 : U32), (width >> 24n : U32), 102,105,111,113] : +List<U32>}
   encode.loop(U32.to_nat((width * height : U32)), 0, (pixels, Encoder{Array.new(U32, 6n, 0), 255, 0, prefix}))
+
+def encode(width: U32, height: U32, pixels: Array<U32>) -> +List<U32>:
+  encode.channels(width, height, 4, pixels)

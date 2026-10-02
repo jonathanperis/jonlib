@@ -11,6 +11,8 @@ import ./src/binary64_gradual_multiply.bend as G
 import ./src/resize_numeric.bend as Resize
 import ./src/bmp.bend as Bmp
 import ./src/tga.bend as Tga
+import ./src/qoi.bend as Qoi
+import ./src/formats.bend as Formats
 
 law clear_dimensions:
   for +width: U32
@@ -491,3 +493,46 @@ law image_file_complete_short:
 
 law image_file_complete_long:
   {J.Image.file.complete(1n, [1, 2]) == False{} : Bool}
+
+# Scoped QOI export routing/packing facts, not a universal encoder or IO theorem.
+law formatted_qoi_export_rgb_channels:
+  {J.Image.Formatted.qoi.channels(4) == 3 : U32}
+
+law formatted_qoi_export_rgba_channels:
+  {J.Image.Formatted.qoi.channels(7) == 4 : U32}
+
+law formatted_qoi_export_gray_rejected:
+  {J.Image.Formatted.qoi.channels(1) == 0 : U32}
+
+law formatted_qoi_export_gray_alpha_rejected:
+  {J.Image.Formatted.qoi.channels(2) == 0 : U32}
+
+law formatted_qoi_export_rgb565_rejected:
+  {J.Image.Formatted.qoi.channels(3) == 0 : U32}
+
+law formatted_qoi_export_rgb5a1_rejected:
+  {J.Image.Formatted.qoi.channels(5) == 0 : U32}
+
+law formatted_qoi_export_rgba4_rejected:
+  {J.Image.Formatted.qoi.channels(6) == 0 : U32}
+
+law formatted_qoi_export_r32_rejected:
+  {J.Image.Formatted.qoi.channels(8) == 0 : U32}
+
+law formatted_qoi_export_rgb_packing:
+  {Formats.image_color(4, 5649426) == 305420031 : U32}
+
+law formatted_qoi_export_rgba_packing:
+  {Formats.image_color(7, 2018915346) == 305419896 : U32}
+
+law formatted_qoi_export_packing_empty:
+  for index: U32
+  for format: U32
+  for pixels: Array<U32>
+  {Formats.packed_colors(0n, index, format, pixels) == pixels : Array<U32>}
+
+law qoi_surface_encoder_preserved:
+  for width: U32
+  for height: U32
+  for pixels: Array<U32>
+  {Qoi.encode(width, height, pixels) == Qoi.encode.channels(width, height, 4, pixels) : +List<U32>}

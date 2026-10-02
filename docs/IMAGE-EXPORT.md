@@ -70,3 +70,14 @@ claimed by CPU/JS execution.
 
 Explicit [formatted TGA export](FORMATTED-TGA-EXPORT.md) separately supports
 checked formats 1..8. It does not broaden suffix-selected `Surface.write_image`.
+
+Explicit [formatted QOI export](FORMATTED-QOI-EXPORT.md) accepts only original
+RGB888 (4) and RGBA8888 (7), matching the native QOI-specific format check.
+Other checked formats return the unchanged owner before file IO, even when the
+path itself would fail to open. Accepted sources preserve channels 3/4 and use
+colorspace 0, with typed file errors and closed acquired handles. This pure/file
+adapter does not add non-Surface filename dispatch or `ExportImageToMemory`
+coverage. The [focused report](evidence/formatted-qoi-export.json) records
+273 accepted and 22 rejected cases with complete native file-byte comparison,
+original-format decode observations and repeated typed IO controls on local
+Linux x86-64 CPU-1/CPU-2/JavaScript. No new hosted or GPU result is inferred.

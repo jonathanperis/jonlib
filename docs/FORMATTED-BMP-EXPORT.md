@@ -99,7 +99,7 @@ artifact hashes; its 143.298-second local harness runtime is not performance par
 
 The checkpoint evidence is [formatted-bmp-export.json](evidence/formatted-bmp-export.json).
 No new GPU, hosted, other-platform, exhaustive-input or performance evidence
-is implied. Formatted QOI/JPEG/KTX, non-Surface suffix dispatch, broader
+is implied. JPEG/KTX, non-Surface suffix dispatch, broader
 float/half/compressed formats, options, native callbacks/allocation ABI and
 complete integration/resource/performance parity remain open.
 
@@ -108,3 +108,8 @@ The BMP source retains its altered stb provenance and the complete
 
 Checked formatted TGA export is now a separate bounded contract in
 [FORMATTED-TGA-EXPORT.md](FORMATTED-TGA-EXPORT.md).
+
+The separately qualified [checked formatted QOI export](FORMATTED-QOI-EXPORT.md)
+supports original RGB888/RGBA8888 and retains the six other checked formats
+before IO, matching native QOI rejection. Its local CPU/JavaScript evidence is
+independent of this profile and does not add non-Surface suffix dispatch.
