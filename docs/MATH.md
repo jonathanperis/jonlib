@@ -53,6 +53,9 @@ The GNU label is a declared numerical profile, not a guarantee for every glibc
 version/compiler evaluation path. Debian glibc 2.41 / Clang 19 reproduces
 different constant-folded and native-libm zero ties, plus broader `atan2f`
 differences. See [native host-profile diagnosis](NATIVE-MATH-PROFILES.md).
+The conformance harness qualifies literal extrema separately using an independent
+native corpus and logs the chosen existing contract. It does not infer zero ties
+from the gradient/angle profile or alter these public library operations.
 
 `rotate_for(reference, vector, radians)` uses the explicit trigonometric reference
 profile; `rotate` selects the accurate profile. The current profile covers finite

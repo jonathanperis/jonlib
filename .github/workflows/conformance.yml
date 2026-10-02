@@ -422,6 +422,9 @@ jobs:
             .build/float64-ops-probe/results.json
             .build/angle-probe/results.json
             .build/native-profile-diagnostic/results.json
+            .build/extrema-reference/results.json
+            .build/extrema-reference/controls.json
+            .build/extrema-reference/observations.jsonl
             .build/inverse-trig-probe/results.json
             .build/random-probe/results.json
             .build/perlin-probe/results.json

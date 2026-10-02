@@ -62161,9 +62161,10 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.min_for / jonmath.Vector2.min",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component minima with explicit reference signed-zero behavior.",
+      "scope": "Finite F32 component minima with explicit reference signed-zero behavior. Canonical literal-raymath tests explicitly qualify the existing zero-tie contract using independent native controls; Clang 19 Linux selects AccurateGradient and exact CPU/JS fixture comparisons confirm that context.",
       "gaps": [
-        "Exceptional/subnormal and full platform/performance coverage"
+        "Exceptional/subnormal and full platform/performance coverage",
+        "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts"
       ],
       "blocker": null,
       "gates": {
@@ -62177,7 +62178,12 @@
       "evidence": [
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "tools/extrema_reference.py",
+        "tests/test_extrema_reference.py",
+        "tests/test_extrema_integration.py",
+        "docs/NATIVE-MATH-PROFILES.md",
+        "docs/evidence/qualified-literal-extrema.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -62220,9 +62226,10 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.max_for / jonmath.Vector2.max",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component maxima with explicit reference signed-zero behavior.",
+      "scope": "Finite F32 component maxima with explicit reference signed-zero behavior. Canonical literal-raymath tests explicitly qualify the existing zero-tie contract using independent native controls; Clang 19 Linux selects AccurateGradient and exact CPU/JS fixture comparisons confirm that context.",
       "gaps": [
-        "Exceptional/subnormal and full platform/performance coverage"
+        "Exceptional/subnormal and full platform/performance coverage",
+        "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts"
       ],
       "blocker": null,
       "gates": {
@@ -62236,7 +62243,12 @@
       "evidence": [
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "tools/extrema_reference.py",
+        "tests/test_extrema_reference.py",
+        "tests/test_extrema_integration.py",
+        "docs/NATIVE-MATH-PROFILES.md",
+        "docs/evidence/qualified-literal-extrema.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -62460,9 +62472,10 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.clamp_for / jonmath.Vector2.clamp",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component clamp, including reversed bounds and explicit AccurateGradient/GnuGradient signed-zero selection.",
+      "scope": "Finite F32 component clamp, including reversed bounds and explicit AccurateGradient/GnuGradient signed-zero selection. Canonical literal-raymath tests explicitly qualify the existing zero-tie contract using independent native controls; Clang 19 Linux selects AccurateGradient and exact CPU/JS fixture comparisons confirm that context.",
       "gaps": [
-        "Exceptional/subnormal and full platform/performance coverage"
+        "Exceptional/subnormal and full platform/performance coverage",
+        "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts"
       ],
       "blocker": null,
       "gates": {
@@ -62476,7 +62489,12 @@
       "evidence": [
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "tools/extrema_reference.py",
+        "tests/test_extrema_reference.py",
+        "tests/test_extrema_integration.py",
+        "docs/NATIVE-MATH-PROFILES.md",
+        "docs/evidence/qualified-literal-extrema.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -64434,9 +64452,10 @@
       "status": "partial",
       "jonlib": "jonmath.Vector3.min_for / jonmath.Vector3.min",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component minima with explicit reference signed-zero selection.",
+      "scope": "Finite F32 component minima with explicit reference signed-zero selection. Canonical literal-raymath tests explicitly qualify the existing zero-tie contract using independent native controls; Clang 19 Linux selects AccurateGradient and exact CPU/JS fixture comparisons confirm that context.",
       "gaps": [
-        "Exceptional/subnormal and complete target/performance coverage"
+        "Exceptional/subnormal and complete target/performance coverage",
+        "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts"
       ],
       "blocker": null,
       "gates": {
@@ -64450,7 +64469,12 @@
       "evidence": [
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "tools/extrema_reference.py",
+        "tests/test_extrema_reference.py",
+        "tests/test_extrema_integration.py",
+        "docs/NATIVE-MATH-PROFILES.md",
+        "docs/evidence/qualified-literal-extrema.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -64493,9 +64517,10 @@
       "status": "partial",
       "jonlib": "jonmath.Vector3.max_for / jonmath.Vector3.max",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component maxima with explicit reference signed-zero selection.",
+      "scope": "Finite F32 component maxima with explicit reference signed-zero selection. Canonical literal-raymath tests explicitly qualify the existing zero-tie contract using independent native controls; Clang 19 Linux selects AccurateGradient and exact CPU/JS fixture comparisons confirm that context.",
       "gaps": [
-        "Exceptional/subnormal and complete target/performance coverage"
+        "Exceptional/subnormal and complete target/performance coverage",
+        "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts"
       ],
       "blocker": null,
       "gates": {
@@ -64509,7 +64534,12 @@
       "evidence": [
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "tools/extrema_reference.py",
+        "tests/test_extrema_reference.py",
+        "tests/test_extrema_integration.py",
+        "docs/NATIVE-MATH-PROFILES.md",
+        "docs/evidence/qualified-literal-extrema.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -64798,10 +64828,11 @@
       "status": "partial",
       "jonlib": "jonmath.Vector3.clamp_for / jonmath.Vector3.clamp",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component clamp with explicit AccurateGradient/GnuGradient signed-zero ties and reference bound ordering.",
+      "scope": "Finite F32 component clamp with explicit AccurateGradient/GnuGradient signed-zero ties and reference bound ordering. Canonical literal-raymath tests explicitly qualify the existing zero-tie contract using independent native controls; Clang 19 Linux selects AccurateGradient and exact CPU/JS fixture comparisons confirm that context.",
       "gaps": [
         "Exceptional/subnormal domains",
-        "Full target/performance coverage"
+        "Full target/performance coverage",
+        "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts"
       ],
       "blocker": null,
       "gates": {
@@ -64815,7 +64846,12 @@
       "evidence": [
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "tools/extrema_reference.py",
+        "tests/test_extrema_reference.py",
+        "tests/test_extrema_integration.py",
+        "docs/NATIVE-MATH-PROFILES.md",
+        "docs/evidence/qualified-literal-extrema.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -65990,9 +66026,10 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.min_for / jonmath.Vector4.min",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component minima with explicit reference signed-zero selection.",
+      "scope": "Finite F32 component minima with explicit reference signed-zero selection. Canonical literal-raymath tests explicitly qualify the existing zero-tie contract using independent native controls; Clang 19 Linux selects AccurateGradient and exact CPU/JS fixture comparisons confirm that context.",
       "gaps": [
-        "Exceptional/subnormal and full target/performance coverage"
+        "Exceptional/subnormal and full target/performance coverage",
+        "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts"
       ],
       "blocker": null,
       "gates": {
@@ -66006,7 +66043,12 @@
       "evidence": [
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "tools/extrema_reference.py",
+        "tests/test_extrema_reference.py",
+        "tests/test_extrema_integration.py",
+        "docs/NATIVE-MATH-PROFILES.md",
+        "docs/evidence/qualified-literal-extrema.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -66049,9 +66091,10 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.max_for / jonmath.Vector4.max",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component maxima with explicit reference signed-zero selection.",
+      "scope": "Finite F32 component maxima with explicit reference signed-zero selection. Canonical literal-raymath tests explicitly qualify the existing zero-tie contract using independent native controls; Clang 19 Linux selects AccurateGradient and exact CPU/JS fixture comparisons confirm that context.",
       "gaps": [
-        "Exceptional/subnormal and full target/performance coverage"
+        "Exceptional/subnormal and full target/performance coverage",
+        "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts"
       ],
       "blocker": null,
       "gates": {
@@ -66065,7 +66108,12 @@
       "evidence": [
         "tests/fixtures/images.json",
         "docs/MATH.md",
-        "jonmath.bend"
+        "jonmath.bend",
+        "tools/extrema_reference.py",
+        "tests/test_extrema_reference.py",
+        "tests/test_extrema_integration.py",
+        "docs/NATIVE-MATH-PROFILES.md",
+        "docs/evidence/qualified-literal-extrema.json"
       ],
       "gate_evidence": {},
       "target_results": {},
