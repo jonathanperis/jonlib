@@ -72,6 +72,7 @@ def error_code(error: J.Image.RawLoadError) -> U32:
     case J.InvalidRawRequest{}: 2
     case J.TruncatedRawImage{}: 3
     case J.RawFileTooLarge{}: 4
+    case J.InvalidRawSamples{}: 5
 def emitted(+width: U32, +height: U32, result: Result<&1, &1, J.Image.FloatRGB, +List<U32>>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "valid float byte export rejected")
