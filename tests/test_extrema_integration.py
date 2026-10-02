@@ -48,9 +48,9 @@ class ExtremaIntegrationTests(unittest.TestCase):
         ], gradient_linear={'direction': 45, 'outer': [255, 255, 255, 255]})
         native = c_source(cases)
         with patch('tools.conformance.gradient_reference', return_value='GnuGradient'):
-            source = bend_source(cases, extrema_reference='AccurateGradient')
+            source = bend_source(cases, extrema_reference='AccurateGradient', angle_reference='Glibc241AngleRn')
         self.assertIn('M.Vector2.min_for(M.AccurateGradient{}, ', source)
-        self.assertIn('M.Vector2.angle_for(M.GnuGradient{}, ', source)
+        self.assertIn('M.Vector2.angle_with_reference(M.Glibc241AngleRn{}, ', source)
         self.assertIn('M.Vector2.rotate_for(M.GnuGradient{}, ', source)
         self.assertIn('J.Surface.create_gradient_linear_for(M.GnuGradient{}, ', source)
         self.assertIn('M.Vector2.clamp_value(', source)

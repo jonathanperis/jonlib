@@ -125,6 +125,7 @@ ROTATION_ANGLES = {('Matrix',name):3 if name in ('rotate_xyz','rotate_zyx') else
 ROTATION_ANGLES.update({('Vector2','rotate'):1, ('Vector3','rotate_by_axis_angle'):1,
                         ('Quaternion','from_axis_angle'):1, ('Quaternion','from_euler'):3})
 ANGLE_QUERIES = {('Vector2','angle'),('Vector2','line_angle'),('Vector3','angle')}
+ANGLE_REFERENCES = ('Apple2007AngleRn', 'Sun239AngleRn', 'Glibc241AngleRn')
 EXTREMA_QUERIES = {(namespace, function) for namespace in ('Vector2','Vector3','Vector4') for function in ('min','max')}
 EXTREMA_QUERIES.update({('Vector2','clamp'),('Vector3','clamp')})
 MATRIX_FIELDS = tuple(f'm{row+4*column}' for row in range(4) for column in range(4))
@@ -673,13 +674,52 @@ def vector_arguments(signature, values, bend=False):
     return ', '.join(result)
 
 
+def native_angle_guards():
+    """Preconditions only: the original raymath call remains the numeric oracle."""
+    lines = [
+        'static unsigned angle_magnitude(float value) { unsigned bits; memcpy(&bits,&value,4); return bits & 0x7fffffffu; }',
+        'static int angle_finite(float value) { return angle_magnitude(value)<0x7f800000u; }',
+        'static int angle_normal_or_zero(float value) { unsigned m=angle_magnitude(value); return m==0 || (m>=0x00800000u && m<0x7f800000u); }',
+    ]
+    programs = {
+        'Vector2Angle': ('Vector2', ('x', 'y'), [
+            ('p0', 'left.x*right.x'), ('p1', 'left.y*right.y'), ('dot', 'p0+p1'),
+            ('q0', 'left.x*right.y'), ('q1', 'left.y*right.x'), ('det', 'q0-q1')]),
+        'Vector2LineAngle': ('Vector2', ('x', 'y'), [
+            ('dy', 'right.y-left.y'), ('dx', 'right.x-left.x')]),
+        'Vector3Angle': ('Vector3', ('x', 'y', 'z'), [
+            ('cx0', 'left.y*right.z'), ('cx1', 'left.z*right.y'),
+            ('cy0', 'left.z*right.x'), ('cy1', 'left.x*right.z'),
+            ('cz0', 'left.x*right.y'), ('cz1', 'left.y*right.x'),
+            ('cx', 'cx0-cx1'), ('cy', 'cy0-cy1'), ('cz', 'cz0-cz1'),
+            ('sx', 'cx*cx'), ('sy', 'cy*cy'), ('sz', 'cz*cz'),
+            ('sxy', 'sx+sy'), ('square', 'sxy+sz'), ('length', 'sqrtf(square)'),
+            ('p0', 'left.x*right.x'), ('p1', 'left.y*right.y'), ('p2', 'left.z*right.z'),
+            ('dxy', 'p0+p1'), ('dot', 'dxy+p2')]),
+    }
+    for name, (vector, fields, stages) in programs.items():
+        lines += [f'static int angle_valid_{name}({vector} left, {vector} right) {{']
+        finite = ' && '.join(f'angle_finite({side}.{field})' for side in ('left', 'right') for field in fields)
+        lines += [f'if(!({finite})) return 0;']
+        for name, expression in stages:
+            if name == 'length':
+                # Classify square above, then reject negative nonzero values
+                # before the first sqrt evaluation. Either zero sign is valid.
+                lines += ['if(square<0.0f) return 0;']
+            lines += [f'float {name}={expression};', f'if(!angle_normal_or_zero({name})) return 0;']
+        lines += ['return 1;', '}']
+    return lines
+
+
 def c_source(cases):
     lines = ['#include "raylib.h"', '#include <stdio.h>', '#include <string.h>', '#include <stdint.h>',
              '#pragma STDC FP_CONTRACT OFF', '#define RAYMATH_STATIC_INLINE', '#include "raymath.h"',
              'static Color float_bits(float value) { unsigned int bits; memcpy(&bits, &value, 4); return GetColor(bits); }',
              'static double promote_f32(float value) { return (double)value; }',
-             'static float narrow_f64(double value) { return (float)value; }',
-             'int main(void) {',
+             'static float narrow_f64(double value) { return (float)value; }']
+    if has_angles(cases):
+        lines += native_angle_guards()
+    lines += ['int main(void) {',
              'SetTraceLogLevel(LOG_NONE);']
     if any(op['op']=='to_pot' for case in cases for op in case['operations']):
         lines += ['for (int n=1;n<=4096;n++) { int expected=1; while(expected<n) expected*=2;',
@@ -861,7 +901,9 @@ def c_source(cases):
                     lines += ['}']
                 else:
                     if (namespace,op['function']) in ANGLE_QUERIES:
-                        lines += ['{', f'float angle={expression};',
+                        guard = f'angle_valid_{function}({vector_arguments(signature,op["args"])})'
+                        lines += ['{', f'if(!{guard}) {{ fprintf(stderr,"invalid angle intermediate domain\\n"); return 10; }}',
+                                  f'float angle={expression};',
                                   'if(!isfinite(angle) || (angle!=0.0f && !isnormal(angle))) { fprintf(stderr,"invalid angle result\\n"); return 10; }',
                                   f'ImageDrawPixel(&image, {op["x"]}, {op["y"]}, float_bits(angle));', '}']
                     else:
@@ -986,12 +1028,65 @@ def qualify_extrema(raylib_source, library):
                    c_source=c_source, cases_from=cases_from, parse_output=parse_output, run=run)
 
 
-def bend_source(cases, gpu=False, extrema_reference=None):
+def has_angles(cases):
+    return any(op['op'] in VECTOR_APIS and
+               (VECTOR_APIS[op['op']][0], op.get('function')) in ANGLE_QUERIES
+               for case in cases for op in case['operations'])
+
+
+def qualify_angles(raylib_source, library):
+    # Always execute the independent gate now. Never load an earlier receipt or
+    # infer the contract from the host name, gradient profile or candidate output.
+    if __package__:
+        from .angle_reference import qualify
+    else:
+        from angle_reference import qualify
+    qualification = qualify(raylib_source, library, BUILD,
+                            c_source=c_source, cases_from=cases_from, parse_output=parse_output)
+    if (type(qualification) is not dict or qualification.get('qualified') is not True or
+            qualification.get('schema') != 1 or qualification.get('contract') != 'native-angle-qualification-v1' or
+            qualification.get('phase') != 'qualified' or
+            type(qualification.get('run_id')) is not str or not re.fullmatch('[0-9a-f]{32}', qualification['run_id']) or
+            type(qualification.get('selected_profile')) is not str or
+            qualification['selected_profile'] not in ANGLE_REFERENCES or
+            qualification.get('matching_profiles') != [qualification['selected_profile']]):
+        raise ValueError('Angles require a fresh uniquely qualified native contract')
+    contexts = qualification.get('contexts')
+    artifacts = qualification.get('artifacts')
+    source = Path(__file__).resolve()
+    if (type(contexts) is not dict or set(contexts) != {'pinned-run', 'pointer-run', 'canonical-run', 'runtime-wrapper-run', 'mirror-run'} or
+            any(type(context) is not dict or not context for context in contexts.values()) or
+            type(artifacts) is not dict or artifacts.get(str(source)) != hashlib.sha256(source.read_bytes()).hexdigest()):
+        raise ValueError('Angles require complete fresh qualification contexts and source identity')
+    return qualification
+
+
+def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
+    """Pure internal generator; selections are caller-supplied contract names.
+
+    Executable entrypoints must obtain angle_reference from qualify_angles in
+    this invocation. A name accepted here is not a qualification receipt.
+    """
     if extrema_reference is not None and extrema_reference not in ('AccurateGradient', 'GnuGradient'):
         raise ValueError('Unknown extrema reference profile')
     if has_extrema(cases) and extrema_reference is None:
         raise ValueError('Extrema require fresh canonical literal-raymath profile qualification')
+    if angle_reference is not None and (type(angle_reference) is not str or angle_reference not in ANGLE_REFERENCES):
+        raise ValueError('Unknown angle reference profile')
+    if has_angles(cases) and angle_reference is None:
+        raise ValueError('Angles require fresh independent native qualification')
     lines = ['import Base', 'import ../jonlib.bend as J', 'import ../jonmath.bend as M', '',
+             'type Harness.Error is Type:',
+             '  SurfaceRejected{error: J.Surface.Error}',
+             '  AngleRejected{case_id: String, operation: U32}', '',
+             'def lift_surface(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Result<&1, &1, J.Surface & Harness.Error, J.Surface>:',
+             '  match result:',
+             '    case Fail{Tuple{surface, error}}: Fail{(surface, SurfaceRejected{error})}',
+             '    case Done{surface}: Done{surface}', '',
+             'def write_angle(surface: J.Surface, x: F32, y: F32, case_id: String, operation: U32, value: Maybe<F32>) -> Result<&1, &1, J.Surface & Harness.Error, J.Surface>:',
+             '  match value:',
+             '    case None{}: Fail{(surface, AngleRejected{case_id, operation})}',
+             '    case Some{angle}: Done{J.Surface.draw_pixel(surface, x, y, F32.bits(angle))}', '',
              'def emit(name: String, image: J.Surface, extra: String) -> IO(Unit):',
              '  J.Surface{+w, +h, pixels} = image',
              '  IO.print("{\\"id\\":\\"" ++ name ++ "\\",\\"width\\":" ++ U32.show(w)',
@@ -1023,12 +1118,12 @@ def bend_source(cases, gpu=False, extrema_reference=None):
         '  first = write_vector3(surface, x, y, translation)',
         '  second = write_vector4(first, (x + 3.0 : F32), y, rotation)',
         '  write_vector3(second, (x + 7.0 : F32), y, scale)',
-        'def write_float_buffer(n: Nat, surface: J.Surface, +x: F32, +y: F32, values: +List<F32>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:',
+        'def write_float_buffer(n: Nat, surface: J.Surface, +x: F32, +y: F32, values: +List<F32>) -> Result<&1, &1, J.Surface & Harness.Error, J.Surface>:',
         '  match n values:',
         '    case 0n Nil{}: Done{surface}',
         '    case 1n+k Con{value, rest}:',
         '      write_float_buffer(k, J.Surface.draw_pixel(surface, x, y, F32.bits(value)), (x + 1.0 : F32), y, rest)',
-        '    case _ _: Fail{(surface, J.InvalidSize{})}',
+        '    case _ _: Fail{(surface, SurfaceRejected{J.InvalidSize{}})}',
         'def write_vector_pair(surface: J.Surface, +x: F32, +y: F32, pair: M.Vector3 & M.Vector3) -> J.Surface:',
         '  (left, right) = pair',
         '  first = write_vector3(surface, x, y, left)',
@@ -1074,17 +1169,20 @@ def bend_source(cases, gpu=False, extrema_reference=None):
         '  match capacity:',
         '    case None{}: emit_observed(border, name, encoded, surface, "")',
         f'    case Some{{maximum}}: emit_palette_result(border, name, encoded, J.Surface.load_palette{"!" if gpu else ""}(surface, maximum))',
-        'def emit_result(name: String, encoded: Bool, border: Maybe<&2, F32>, palette: Maybe<&2, U32>, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):',
-        '  match result:', '    case Fail{_}:',
+        'def emit_result(name: String, encoded: Bool, border: Maybe<&2, F32>, palette: Maybe<&2, U32>, result: Result<&1, &1, J.Surface & Harness.Error, J.Surface>) -> IO(Unit):',
+        '  match result:',
+        '    case Fail{Tuple{_, AngleRejected{case_id, operation}}}:',
+        '      IO.die(Unit, 1, "angle fixture rejected: " ++ case_id ++ " operation " ++ U32.show(operation))',
+        '    case Fail{Tuple{_, SurfaceRejected{_}}}:',
         '      IO.die(Unit, 1, "valid transform fixture was rejected")',
         '    case Done{surface}:', '      emit_palette(palette, border, name, encoded, surface)', '',
-        'def extracted(keep: Bool, pair: J.Surface & Maybe<J.Surface>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:',
+        'def extracted(keep: Bool, pair: J.Surface & Maybe<J.Surface>) -> Result<&1, &1, J.Surface & Harness.Error, J.Surface>:',
         '  match pair:', '    case Tuple{source, None{}}:',
-        '      Fail{(source, J.InvalidRectangle{})}', '    case Tuple{source, Some{region}}:',
+        '      Fail{(source, SurfaceRejected{J.InvalidRectangle{}})}', '    case Tuple{source, Some{region}}:',
         '      Done{Bool.pick(J.Surface, keep, source, region)}', '',
-        'def composed(keep: Bool, result: Result<&1, &1, (J.Surface & J.Surface) & J.Surface.Error, J.Surface & J.Surface>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:',
+        'def composed(keep: Bool, result: Result<&1, &1, (J.Surface & J.Surface) & J.Surface.Error, J.Surface & J.Surface>) -> Result<&1, &1, J.Surface & Harness.Error, J.Surface>:',
         '  match result:', '    case Fail{Tuple{Tuple{destination, source}, error}}:',
-        '      Fail{(Bool.pick(J.Surface, keep, source, destination), error)}',
+        '      Fail{(Bool.pick(J.Surface, keep, source, destination), SurfaceRejected{error})}',
         '    case Done{Tuple{destination, source}}:',
         '      Done{Bool.pick(J.Surface, keep, source, destination)}', '',
     ]
@@ -1104,8 +1202,8 @@ def bend_source(cases, gpu=False, extrema_reference=None):
             for k, pixel in enumerate(source['pixels']):
                 lines += [f'  p{k+1} = Array.set(U32, p{k}, {k}, {rgba(pixel)})']
             lines += [f'  J.Surface{{{source["width"]}, {source["height"]}, p{len(source["pixels"])}}}', '']
-        lines += [f'def draw_{i}(surface: J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:',
-                  '  do Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:']
+        lines += [f'def draw_{i}(surface: J.Surface) -> Result<&1, &1, J.Surface & Harness.Error, J.Surface>:',
+                  '  do Result<&1, &1, J.Surface & Harness.Error, J.Surface>:']
         previous = 'surface'
         for j, op in enumerate(case["operations"]):
             kind = op["op"]
@@ -1118,7 +1216,7 @@ def bend_source(cases, gpu=False, extrema_reference=None):
             if kind in ('rotate_degrees','to_pot'):
                 draw = f'J.Surface.rotate_degrees_for(M.{gradient_reference()}{{}}, {previous}, {f32(op["degrees"])})' if kind=='rotate_degrees' else f'J.Surface.to_pot({previous}, {rgba(op["color"])})'
                 previous = f's{j}'
-                lines += [f'    {previous} : J.Surface <- {draw}']
+                lines += [f'    {previous} : J.Surface <- lift_surface({draw})']
                 continue
             if kind in ('alpha_crop','resize_canvas'):
                 if kind == 'alpha_crop':
@@ -1126,7 +1224,8 @@ def bend_source(cases, gpu=False, extrema_reference=None):
                 else:
                     draw = f'J.Surface.resize_canvas({previous}, {op["width"]}, {op["height"]}, {f32(op["x"])}, {f32(op["y"])}, {rgba(op["color"])})'
                 previous = f's{j}'
-                lines += [f'    {previous} : J.Surface {"=" if kind == "alpha_crop" else "<-"} {draw}']
+                lines += [f'    {previous} : J.Surface = {draw}' if kind == 'alpha_crop' else
+                          f'    {previous} : J.Surface <- lift_surface({draw})']
                 continue
             if kind == 'alpha_mask':
                 draw = f'J.Surface.alpha_mask({previous}, source_{i}_{j}())'
@@ -1162,20 +1261,29 @@ def bend_source(cases, gpu=False, extrema_reference=None):
                     if kind == 'extract':
                         draw = f'extracted({"True{}" if op.get("observe_source") else "False{}"}, {draw})'
                 previous = f's{j}'
-                lines += [f'    {previous} : J.Surface <- {draw}']
+                lines += [f'    {previous} : J.Surface <- {draw}' if kind == 'extract' else
+                          f'    {previous} : J.Surface <- lift_surface({draw})']
                 continue
             args = [previous]
             if kind in VECTOR_APIS:
                 namespace, dimensions, apis = VECTOR_APIS[kind]
                 _, signature, result = apis[op['function']]
-                profiled = namespace=='Spline' or op['function'] in ('clamp','min','max') or (namespace,op['function']) in ROTATION_ANGLES or (namespace,op['function']) in ANGLE_QUERIES
+                angle = (namespace, op['function']) in ANGLE_QUERIES
+                profiled = namespace=='Spline' or op['function'] in ('clamp','min','max') or (namespace,op['function']) in ROTATION_ANGLES
                 function_name = op['function']+'_for' if profiled else op['function']
-                if (namespace, op['function']) in EXTREMA_QUERIES:
+                if angle:
+                    function_name = op['function']+'_with_reference'
+                    profile = f'M.{angle_reference}{{}}, '
+                elif (namespace, op['function']) in EXTREMA_QUERIES:
                     profile = f'M.{extrema_reference}{{}}, '
                 else:
                     profile = (f'J.{spline_reference()}{{}}, ' if namespace=='Spline' else f'M.{gradient_reference()}{{}}, ') if profiled else ''
                 module = 'M' if namespace in ('Math','Vector2','Vector3','Vector4','Matrix','Quaternion','Float64') else 'J'
                 expression = f'{module}.{namespace}.{function_name}({profile}{vector_arguments(signature,op["args"],bend=True)})'
+                if angle:
+                    previous = f's{j}'
+                    lines += [f'    {previous} : J.Surface <- write_angle({args[0]}, {f32(op["x"])}, {f32(op["y"])}, "{case["id"]}", {j}, {expression})']
+                    continue
                 if result == 'buffer':
                     previous = f's{j}'
                     lines += [f'    {previous} : J.Surface <- write_float_buffer({dimensions}n, {args[0]}, {f32(op["x"])}, {f32(op["y"])}, {expression})']
@@ -1374,13 +1482,47 @@ def inventory(header):
 
 def verify_native_rejection(raylib_source, library, case, exit_code, message):
     cases = cases_from(dict(schema=1, cases=[case]))
-    source = BUILD/f'{case["id"]}.c'
-    binary = BUILD/case['id']
-    source.write_text(c_source(cases))
+    verify_native_source_rejection(raylib_source, library, case['id'], c_source(cases), exit_code, message)
+
+
+def verify_native_source_rejection(raylib_source, library, name, text, exit_code, message):
+    source = BUILD/f'{name}.c'
+    binary = BUILD/name
+    source.write_text(text)
+    binary.unlink(missing_ok=True)
     run(['clang','-std=c11','-O2','-fno-builtin-atan2f','-I'+str(raylib_source/'src'),source,library,'-lm','-o',binary])
+    if not binary.is_file() or binary.stat().st_size == 0:
+        raise ValueError(f'{name}: compiler did not produce a fresh native rejection control')
     rejected = subprocess.run([str(binary)],cwd=ROOT,env=ENV,capture_output=True,text=True,timeout=240)
-    if rejected.returncode != exit_code or message not in rejected.stderr:
-        raise ValueError(f'{case["id"]}: native invalid-domain control did not fail closed')
+    if rejected.returncode != exit_code or message not in rejected.stderr or rejected.stdout.strip():
+        raise ValueError(f'{name}: native invalid-domain control did not fail closed')
+
+
+def native_angle_output_control_source():
+    # A dedicated raw native control, intentionally outside the shared fixture
+    # bounds: both differences are normal but the final angle is subnormal.
+    lines = ['#include "raylib.h"', '#include <stdio.h>', '#include <string.h>',
+             '#pragma STDC FP_CONTRACT OFF', '#define RAYMATH_STATIC_INLINE', '#include "raymath.h"']
+    lines += native_angle_guards()
+    lines += ['int main(void) {',
+              'volatile Vector2 input_start={0.0f,0.0f}, input_end={0x1p127f,1.0f};',
+              'Vector2 start=input_start, end=input_end;',
+              'if(!angle_valid_Vector2LineAngle(start,end)) { fprintf(stderr,"unexpected angle intermediate rejection\\n"); return 11; }',
+              'float angle=Vector2LineAngle(start,end);',
+              'if(!isfinite(angle) || (angle!=0.0f && !isnormal(angle))) { fprintf(stderr,"invalid angle result\\n"); return 10; }',
+              'puts("unexpected angle acceptance"); return 0;', '}']
+    return '\n'.join(lines)+'\n'
+
+
+def verify_angle_rejections(raylib_source, library):
+    control = dict(id='angle-invalid-intermediate', width=1, height=1, background=[0,0,0,0],
+                   operations=[dict(op='vector_value', function='line_angle', x=0, y=0, args=[0,0,1,1e-40]),
+                               dict(op='clear', color=[0,0,0,0]),
+                               dict(op='pixel', x=0, y=0, color=[1,2,3,4])])
+    verify_native_rejection(raylib_source, library, control, 10, 'invalid angle intermediate domain')
+    verify_native_source_rejection(raylib_source, library, 'angle-invalid-output',
+                                   native_angle_output_control_source(), 10, 'invalid angle result')
+    return 2
 
 
 def verify_unproject_rejections(raylib_source, library):
@@ -1421,7 +1563,7 @@ def main():
     report['progression'] = json.loads((ROOT / 'api/summary.json').read_text())['core_functions']
     report['verification_sources'] = {
         str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
-        for path in (ROOT / 'tools/conformance.py', ROOT / 'tools/extrema_reference.py', ROOT / 'tests/contracts.bend',
+        for path in (ROOT / 'tools/conformance.py', ROOT / 'tools/extrema_reference.py', ROOT / 'tools/angle_reference.py', ROOT / 'tests/contracts.bend',
                      ROOT / 'tests/transforms.bend', ROOT / 'tests/transforms_gpu.bend', ROOT / 'examples/transforms.bend',
                      ROOT / 'tests/decoding.bend', ROOT / 'tests/decoding_gpu.bend',
                      ROOT / 'tests/io_decoding.bend',
@@ -1478,6 +1620,13 @@ def main():
         report['extrema_reference'] = qualification
         report_path.write_text(json.dumps(report, indent=2) + '\n')
         print(f'Literal-raymath extrema profile: {extrema_reference} (fresh native qualification)', flush=True)
+    angle_reference = None
+    if has_angles(cases):
+        qualification = qualify_angles(args.raylib_source, cmake / 'raylib/libraylib.a')
+        angle_reference = qualification['selected_profile']
+        report['angle_reference'] = qualification
+        report_path.write_text(json.dumps(report, indent=2) + '\n')
+        print(f'Native angle profile: {angle_reference} (fresh independent qualification)', flush=True)
     if any(op['op']=='vector3_value' and op['function']=='unproject' for case in cases for op in case['operations']):
         report['unprojection_rejections'] = verify_unproject_rejections(args.raylib_source, cmake/'raylib/libraylib.a')
         print('unprojection: singular and zero-W native oracle controls rejected',flush=True)
@@ -1487,12 +1636,9 @@ def main():
         verify_native_rejection(args.raylib_source, cmake/'raylib/libraylib.a', control, 9, 'invalid projection result')
         report['projection_rejections'] = 1
         print('projection: subnormal-output native oracle control rejected',flush=True)
-    if any(op['op'] in VECTOR_APIS and (VECTOR_APIS[op['op']][0],op['function']) in ANGLE_QUERIES for case in cases for op in case['operations']):
-        control = dict(id='angle-invalid-result',width=1,height=1,background=[0,0,0,0],
-                       operations=[dict(op='vector_value',function='line_angle',x=0,y=0,args=[0,0,1,1e-40])])
-        verify_native_rejection(args.raylib_source,cmake/'raylib/libraylib.a',control,10,'invalid angle result')
-        report['angle_rejections'] = 1
-        print('angles: subnormal-output native oracle control rejected',flush=True)
+    if has_angles(cases):
+        report['angle_rejections'] = verify_angle_rejections(args.raylib_source, cmake/'raylib/libraylib.a')
+        print('angles: intermediate and output-only native oracle controls rejected',flush=True)
     exports = [row for row in reference if 'qoi' in row]
     report['qoi_exports'] = dict(scenarios=len(exports), bytes=sum(len(row['qoi']) for row in exports))
     report['angle_reference_evaluation'] = 'native atan2f; builtin folding disabled'
@@ -1509,7 +1655,7 @@ def main():
         generated_c = BUILD/f'candidate-{batch}.c'
         binary = BUILD/f'candidate-{batch}'
         javascript = BUILD/f'candidate-{batch}.js'
-        source.write_text(bend_source(selected, extrema_reference=extrema_reference))
+        source.write_text(bend_source(selected, extrema_reference=extrema_reference, angle_reference=angle_reference))
         print(f'Building candidate batch {batch+1}: {len(selected)} scenarios...',flush=True)
         build = dict(start=start,scenarios=len(selected),phase='emit-c')
         report['candidate_batches'].append(build)
@@ -1529,7 +1675,7 @@ def main():
             report_path.write_text(json.dumps(report,indent=2)+'\n')
             gpu_source = BUILD/f'candidate-gpu-{batch}.bend'
             gpu_binary = BUILD/f'candidate-gpu-{batch}'
-            gpu_source.write_text(bend_source(selected,gpu=True,extrema_reference=extrema_reference))
+            gpu_source.write_text(bend_source(selected,gpu=True,extrema_reference=extrema_reference,angle_reference=angle_reference))
             run([*cli,gpu_source,'-o',gpu_binary],timeout=600)
             lanes['gpu-forced'].append([gpu_binary,'--gpu','on'])
         build.update(cpu_js_build_seconds=host_build_seconds,phase='complete')

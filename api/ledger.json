@@ -61572,13 +61572,14 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector2.angle_for / jonmath.Vector2.angle",
+      "jonlib": "jonmath.Vector2.angle_for / jonmath.Vector2.angle / jonmath.Vector2.angle_with_reference",
       "mapping_state": "implemented",
-      "scope": "Finite normal/zero uncontracted cross/dot arithmetic with explicit Apple/GNU atan2f profiles and exact signed quadrant outputs.",
+      "scope": "Finite original components with staged normal/zero uncontracted dot/determinant intermediates and checked result; explicit Apple2007AngleRn, Sun239AngleRn and Glibc241AngleRn source contracts; legacy defaults/_for unchanged.",
       "gaps": [
-        "Exceptional/subnormal and contracted domains",
-        "Private finite glibc 2.41 scalar kernel and standalone native corpus qualification are verified separately; public Angle.Reference/routing and vector-wrapper domain enforcement remain open, so existing consumers and canonical parity are unchanged",
-        "Other libm/target/performance coverage"
+        "Nonzero subnormal wrapper intermediates/output are rejected; nonfinite input behavior is rejection only, not native exceptional parity",
+        "Other rounding modes, contracted/FMA wrapper variants, errno, exceptions and NaN payload semantics",
+        "Fresh host qualification currently supports only Linux glibc ELF; Apple/Sun historical source contracts do not newly qualify those hosts",
+        "Forced-device, other native targets, full-domain and performance coverage"
       ],
       "blocker": null,
       "gates": {
@@ -61618,7 +61619,16 @@
         "tools/reference/angle_qualification_v1.json",
         "docs/ANGLE-QUALIFICATION.md",
         "docs/evidence/angle-qualification.json",
-        "docs/evidence/angle-qualification-review.json"
+        "docs/evidence/angle-qualification-review.json",
+        "src/checked_angle.bend",
+        "tools/checked_angle_probe.py",
+        "tests/test_angle_integration.py",
+        "docs/CHECKED-ANGLES.md",
+        "tests/test_checked_angle.py",
+        "docs/evidence/checked-angles.json",
+        "docs/evidence/checked-angle-wrappers.json",
+        "docs/evidence/checked-angle-canonical.json",
+        "docs/evidence/checked-angle-qualification.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -61659,13 +61669,14 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector2.line_angle_for / jonmath.Vector2.line_angle",
+      "jonlib": "jonmath.Vector2.line_angle_for / jonmath.Vector2.line_angle / jonmath.Vector2.line_angle_with_reference",
       "mapping_state": "implemented",
-      "scope": "Reference endpoint differences and negated atan2f with explicit numerical profiles, including signed-zero directions.",
+      "scope": "Finite original endpoints with staged normal/zero endpoint differences, selected scalar output and signed-zero-preserving negation; independent checked Angle.Reference; legacy defaults/_for unchanged.",
       "gaps": [
-        "Exceptional/subnormal and contracted domains",
-        "Private finite glibc 2.41 scalar kernel and standalone native corpus qualification are verified separately; public Angle.Reference/routing and vector-wrapper domain enforcement remain open, so existing consumers and canonical parity are unchanged",
-        "Other libm/target/performance coverage"
+        "Nonzero subnormal wrapper intermediates/output are rejected; nonfinite input behavior is rejection only, not native exceptional parity",
+        "Other rounding modes, contracted/FMA wrapper variants, errno, exceptions and NaN payload semantics",
+        "Fresh host qualification currently supports only Linux glibc ELF; Apple/Sun historical source contracts do not newly qualify those hosts",
+        "Forced-device, other native targets, full-domain and performance coverage"
       ],
       "blocker": null,
       "gates": {
@@ -61704,7 +61715,16 @@
         "tools/reference/angle_qualification_v1.json",
         "docs/ANGLE-QUALIFICATION.md",
         "docs/evidence/angle-qualification.json",
-        "docs/evidence/angle-qualification-review.json"
+        "docs/evidence/angle-qualification-review.json",
+        "src/checked_angle.bend",
+        "tools/checked_angle_probe.py",
+        "tests/test_angle_integration.py",
+        "docs/CHECKED-ANGLES.md",
+        "tests/test_checked_angle.py",
+        "docs/evidence/checked-angles.json",
+        "docs/evidence/checked-angle-wrappers.json",
+        "docs/evidence/checked-angle-canonical.json",
+        "docs/evidence/checked-angle-qualification.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -63667,13 +63687,14 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector3.angle_for / jonmath.Vector3.angle",
+      "jonlib": "jonmath.Vector3.angle_for / jonmath.Vector3.angle / jonmath.Vector3.angle_with_reference",
       "mapping_state": "implemented",
-      "scope": "Uncontracted cross-product length/dot order followed by explicit Apple/GNU atan2f profile; exact parallel, opposite and zero-vector fixtures.",
+      "scope": "Finite original components with staged normal/zero cross products, differences, squares, left-associated sums, guarded sqrt and dot products; explicit checked Angle.Reference and unchanged legacy defaults/_for.",
       "gaps": [
-        "Exceptional/subnormal and contracted domains",
-        "Private finite glibc 2.41 scalar kernel and standalone native corpus qualification are verified separately; public Angle.Reference/routing and vector-wrapper domain enforcement remain open, so existing consumers and canonical parity are unchanged",
-        "Other libm/target/performance coverage"
+        "Nonzero subnormal wrapper intermediates/output are rejected; nonfinite input behavior is rejection only, not native exceptional parity",
+        "Other rounding modes, contracted/FMA wrapper variants, errno, exceptions and NaN payload semantics",
+        "Fresh host qualification currently supports only Linux glibc ELF; Apple/Sun historical source contracts do not newly qualify those hosts",
+        "Forced-device, other native targets, full-domain and performance coverage"
       ],
       "blocker": null,
       "gates": {
@@ -63712,7 +63733,16 @@
         "tools/reference/angle_qualification_v1.json",
         "docs/ANGLE-QUALIFICATION.md",
         "docs/evidence/angle-qualification.json",
-        "docs/evidence/angle-qualification-review.json"
+        "docs/evidence/angle-qualification-review.json",
+        "src/checked_angle.bend",
+        "tools/checked_angle_probe.py",
+        "tests/test_angle_integration.py",
+        "docs/CHECKED-ANGLES.md",
+        "tests/test_checked_angle.py",
+        "docs/evidence/checked-angles.json",
+        "docs/evidence/checked-angle-wrappers.json",
+        "docs/evidence/checked-angle-canonical.json",
+        "docs/evidence/checked-angle-qualification.json"
       ],
       "gate_evidence": {},
       "target_results": {},

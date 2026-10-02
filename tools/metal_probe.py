@@ -12,7 +12,7 @@ import platform
 import re
 import subprocess
 
-from conformance import BUILD, ROOT, bend_source, cases_from, checkout, compare, has_extrema, parse_output, qualify_extrema, run, source_gate
+from conformance import BUILD, ROOT, bend_source, cases_from, checkout, compare, has_angles, has_extrema, parse_output, qualify_angles, qualify_extrema, run, source_gate
 
 
 def outline_circle(source):
@@ -48,15 +48,23 @@ def main():
     report_path = BUILD / 'metal-probe.json'
     report_path.write_text(json.dumps(report, indent=2) + '\n')
     extrema_reference = None
-    if has_extrema(cases[:max(args.counts)]):
+    angle_reference = None
+    selected = cases[:max(args.counts)]
+    if has_extrema(selected) or has_angles(selected):
         checkout(args.raylib_source, lock['raylib']['revision'])
+    if has_extrema(selected):
         qualification = qualify_extrema(args.raylib_source, BUILD / 'raylib/raylib/libraylib.a')
         extrema_reference = qualification['selected_profile']
         report['extrema_reference'] = qualification
         report_path.write_text(json.dumps(report, indent=2) + '\n')
+    if has_angles(selected):
+        qualification = qualify_angles(args.raylib_source, BUILD / 'raylib/raylib/libraylib.a')
+        angle_reference = qualification['selected_profile']
+        report['angle_reference'] = qualification
+        report_path.write_text(json.dumps(report, indent=2) + '\n')
     for count in args.counts:
         source = BUILD / f'metal-prefix-{count}.bend'
-        source.write_text(bend_source(cases[:count], gpu=True, extrema_reference=extrema_reference))
+        source.write_text(bend_source(cases[:count], gpu=True, extrema_reference=extrema_reference, angle_reference=angle_reference))
         c_file = BUILD / f'metal-prefix-{count}.c'
         run(['bun', args.bend_source / 'bend2/main.ts', source, '-o', c_file])
         original = c_file.read_text()

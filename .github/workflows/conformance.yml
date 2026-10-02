@@ -121,15 +121,76 @@ jobs:
         run: |
           python3 tools/angle_manifest_audit.py
           python3 tools/angle_reference.py --raylib-source "${{ github.workspace }}/.build/dependencies/raylib" --library .build/raylib/raylib/libraylib.a
-      - name: Verify native angle profiles and supporting wide arithmetic
+      # The checked-wrapper gate currently exercises the freshly qualified modern
+      # Linux ELF profile. A different numerical contract is not silently retargeted.
+      - name: Verify checked modern angle wrappers (qualified Linux context)
+        if: runner.os == 'Linux'
+        run: |
+          profile=$(python3 -c 'import json; print(json.load(open(".build/angle-reference/results.json"))["selected_profile"])')
+          if [ "$profile" = Glibc241AngleRn ]; then
+            python3 tools/checked_angle_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend" --raylib-source "${{ github.workspace }}/.build/dependencies/raylib" --library .build/raylib/raylib/libraylib.a
+          else
+            echo "Modern checked-wrapper host gate unsupported for qualified $profile; no modern host pass claimed"
+          fi
+      - name: Verify unchanged legacy angle contracts and supporting arithmetic
         run: |
           python3 tools/float64_ops_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend"
-          python3 tools/angle_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          python3 tools/angle_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend" --gnu-control
+          python3 - <<'PYTHON'
+          import hashlib, json, pathlib, platform, shutil, subprocess, sys
+          sys.path.insert(0, 'tools')
+          import modern_angle_reference as historical
+          import conformance
+          modern = False
+          if platform.system() == 'Linux':
+              receipt = json.loads(pathlib.Path('.build/angle-reference/results.json').read_text())
+              assert receipt['qualified'] is True
+              modern = receipt['selected_profile'] == 'Glibc241AngleRn'
+          command = [sys.executable, 'tools/angle_probe.py', '--bend-source', '${{ github.workspace }}/.build/dependencies/bend']
+          harness_sources = historical.assert_pins()
+          library_sources = conformance.source_gate()
+          # Remove all old generated probe artifacts before this invocation.
+          work = pathlib.Path('.build/angle-probe')
+          if work.exists():
+              shutil.rmtree(work)
+          result = subprocess.run(command, capture_output=True, text=True)
+          print(result.stdout, end='')
+          print(result.stderr, file=sys.stderr, end='')
+          if not modern:
+              assert result.returncode == 0, 'Legacy native-angle gate failed'
+          else:
+              # The unchanged strict old Sun/native probe must still fail with
+              # precisely the frozen historical differences, never arbitrary failure.
+              assert result.returncode == 1, 'Legacy failure is not the expected mismatch verdict'
+              assert 'ValueError: cpu: atan2 mismatch:' in result.stderr
+              assert 'Command failed:' not in result.stderr
+              work = pathlib.Path('.build/angle-probe')
+              report = json.loads((work/'results.json').read_text())
+              assert report['passed'] is False and report['profile'] == 'gnu' and report['reference'] == 'native-libm'
+              assert report['samples'] == 1086 and report['inputs_sha256'] == historical.OLD_INPUTS_SHA256
+              assert set(report['lanes']) == {'cpu'} and report['lanes']['cpu']['passed'] is False
+              assert report['lanes']['cpu']['mismatch_count'] == 178
+              assert report['sources'] == library_sources
+              native = list(map(int, subprocess.check_output([str(work/'reference')], text=True).split()))
+              output = subprocess.check_output([str(work/'candidate-cpu'), '--threads', '1'], text=True)
+              old = [word for line in output.splitlines() for word in json.loads(line)]
+              assert len(native) == len(old) == 1086
+              rows = [[i, historical.bits(y), historical.bits(x), native[i], old[i]] for i, (y,x) in enumerate(historical.old_samples())]
+              differences = [row for row in rows if row[-1] != row[-2]]
+              assert historical.hash_json(rows) == historical.HISTORICAL_RESULTS_SHA256
+              assert historical.hash_json(differences) == historical.HISTORICAL_DIFFERENCES_SHA256
+              print('Legacy contract preserved: 1086 exact historical records, 178 native differences; this is not legacy native parity')
+          assert conformance.source_gate() == library_sources
+          assert historical.assert_pins() == harness_sources
+          PYTHON
       - name: Check standalone Jonmath imports
         run: |
           bun "${{ github.workspace }}/.build/dependencies/bend/bend2/main.ts" examples/math.bend -o .build/jonmath-example -o .build/jonmath-example.js
           ./.build/jonmath-example --gpu off
           bun .build/jonmath-example.js
+      # Angle-bearing canonical/Metal generation now requires fresh qualification.
+      # Darwin provenance is not implemented: such runs fail closed rather than
+      # inheriting historical Apple/Metal evidence or an OS-inferred selector.
       - name: Build and compare every pixel
         run: >-
           python3 tools/conformance.py
@@ -495,7 +556,9 @@ jobs:
             .build/binary64-ops-probe/*.bend
             .build/binary64-ops-probe/*.stdout
             .build/binary64-ops-probe/*.stderr
-            .build/angle-probe/results.json
+            .build/angle-probe/
+            .build/angle-probe-gnu/results.json
+            .build/checked-angle-probe/
             .build/native-profile-diagnostic/results.json
             .build/angle-reference/
             .build/extrema-reference/results.json

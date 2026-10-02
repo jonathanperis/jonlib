@@ -27,7 +27,8 @@ Jonmath depends on Base and the numerical support modules; Jonlib imports Jonmat
 Both modules use the same vector/matrix values.
 
 Jonmath owns `Vector2`, `Vector3`, `Vector4`, `Matrix`, `Matrix.Decomposition`,
-`Float64` and the shared `Gradient.Reference` numerical profile. Construct values
+`Float64`, the shared `Gradient.Reference` numerical profile, and the separate
+`Angle.Reference` checked-angle profile. Construct values
 with `M.Vector2{...}`, `M.Matrix{...}`, `M.Float64{...}` and `M.Decomposed{...}`.
 Profile constructors are `M.AccurateGradient{}` and `M.GnuGradient{}`. Jonlib owns
 `J.Rectangle`, `J.BoundingBox`, `J.Surface` and its core-specific types; a bounding
@@ -54,13 +55,14 @@ expected results and proof propositions remain the verification gates.
 
 `src/binary64_narrow.bend` provides the isolated checked finite64-word to
 nearest-even binary32-word prerequisite described in [BINARY64-NARROW.md](BINARY64-NARROW.md).
-It is not re-exported by Jonmath/Jonlib and has no current library consumers.
+It is not re-exported by Jonmath/Jonlib; the modern scalar adapter consumes it.
 Existing Float64/projection/resize conversion contracts are unchanged.
 
 `src/binary64_fma.bend` and `src/binary64_add_sub.bend` are separate private
 bounded arithmetic prerequisites. The latter reuses the former's internal
 word/list primitives under its own 34-limb invariants; neither is exported by
-Jonlib/Jonmath or used by existing image/math APIs. See [BINARY64-FMA.md](BINARY64-FMA.md)
+Jonlib/Jonmath. The modern scalar adapter consumes them, while old image/math
+consumers are unchanged. See [BINARY64-FMA.md](BINARY64-FMA.md)
 and [BINARY64-ADD-SUB.md](BINARY64-ADD-SUB.md) for the checked domains and proof limits.
 
 
@@ -69,4 +71,6 @@ pinned glibc 2.41 RN-even algorithm. It consumes the checked arithmetic helpers
 without re-exporting them or changing any existing API's profile. Its entry point
 accepts raw F32 words and returns a checked F32 result word; diagnostic traces are
 also private. See [MODERN-ANGLE.md](MODERN-ANGLE.md) for verification status,
-source provenance, exact operation order and remaining public/device work.
+source provenance and exact operation order. The new checked public angle
+wrappers consume it through `src/checked_angle.bend`; see
+[CHECKED-ANGLES.md](CHECKED-ANGLES.md). Device work remains separate.

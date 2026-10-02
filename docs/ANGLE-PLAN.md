@@ -1,11 +1,11 @@
 # Modern native angle profile: staged implementation plan
 
-Status: the complete [private finite scalar adapter](MODERN-ANGLE.md) is implemented
-with exact scoped CPU/JavaScript verification. Public profile/selector integration is **not implemented
-or passing parity**. The existing Apple and GNU/Sun algorithms, public defaults
-and `_for` meanings remain unchanged.
-The current glibc 2.41 angle mismatch remains a strict failure; see
-[NATIVE-MATH-PROFILES.md](NATIVE-MATH-PROFILES.md).
+Status: the complete [private finite scalar adapter](MODERN-ANGLE.md) has exact
+scoped CPU/JavaScript evidence. The separate [checked public integration](CHECKED-ANGLES.md)
+adds explicit source references, staged wrapper domains and fresh native selection.
+Existing Apple/GNU algorithms, public defaults and `_for` meanings remain unchanged.
+The historical old-profile glibc 2.41 mismatch remains documented in
+[NATIVE-MATH-PROFILES.md](NATIVE-MATH-PROFILES.md); new-route results have separate evidence.
 
 ## Immutable algorithm source and notices
 
@@ -35,12 +35,11 @@ release pin above is the verified source, not an invented upstream pin.
 
 ## Separate API and contract
 
-Introduce an angle-specific reference type, separate from `Gradient.Reference`.
-A proposed versioned constructor is `Glibc241AngleRn{}` under `Angle.Reference`;
-final public names remain to be reviewed. New angle entry points can accept that
-type while the existing `_for` entry points continue to mean exactly what they
-mean today. Never retarget the GNU/Sun profile or the gradient selector to make
-the new host pass.
+The new [checked angle API](CHECKED-ANGLES.md) introduces `Angle.Reference`,
+separate from `Gradient.Reference`, with `Apple2007AngleRn{}`, `Sun239AngleRn{}`
+and `Glibc241AngleRn{}`. The three new `*_with_reference` entry points return
+`Maybe<F32>` while existing defaults and `_for` entry points retain their exact
+meaning. Neither the GNU/Sun profile nor the gradient selector is retargeted.
 
 The initial new contract should be explicitly round-to-nearest-even result-bit
 parity. Other rounding modes, errno, floating-point exceptions and NaN payload
@@ -54,8 +53,8 @@ The first isolated prerequisite is now implemented in
 [`binary64_narrow.bend`](../src/binary64_narrow.bend): checked finite binary64
 words directly narrowed once to binary32 words, including gradual underflow and
 signed overflow. [Its contract and evidence](BINARY64-NARROW.md) are separate from
-the old normal-only conversion paths. It has no library consumers; the modern
-angle profile and strict canonical failure remain unchanged.
+the old normal-only conversion paths. It is now consumed by the private modern scalar adapter; old conversion
+consumers and their contracts are unchanged.
 
 The pinned Bend compiler has F32 arithmetic and exact bit construction, but no
 F64 or FMA primitive. Its host atan2 lowering does not establish this profile.
@@ -82,7 +81,7 @@ The third isolated prerequisite is private checked
 [`binary64_add_sub.bend`](../src/binary64_add_sub.bend). Its independent
 [bounded contract](BINARY64-ADD-SUB.md) accepts signed zero or normal exponents
 `[-900,130]`, keeps exact terms through cancellation and rounds once with correct
-zero signs. It has no existing library consumers.
+zero signs. It is now consumed by the modern scalar adapter.
 
 The fourth isolated prerequisite is private checked
 [`binary64_ops.bend`](../src/binary64_ops.bend), with [separate documented domains](BINARY64-OPS.md)
@@ -99,12 +98,13 @@ The fifth isolated prerequisite is private checked
 [standalone contract](BINARY64-GRADUAL-MULTIPLY.md) accepts `a` signed zero or
 normal `[-277,0]` and `b` signed zero or normal `[-885,0]`, with one directly
 rounded normal/subnormal/XOR-zero output. It rejects nonzero subnormal inputs
-and has no consumers. This supplies literal tiny-branch `z*e` arithmetic;
+and is consumed by the modern scalar adapter. This supplies literal tiny-branch `z*e` arithmetic;
 it does not establish a full kernel or replace the narrower normal multiply.
 
 The new private scalar adapter integrates these prerequisites; its full
 verification and written operand-domain analysis are recorded separately in
-[MODERN-ANGLE.md](MODERN-ANGLE.md). Public integration remains future work. Keep old projection/resize contracts unchanged. Establish every reachable
+[MODERN-ANGLE.md](MODERN-ANGLE.md). The checked public integration is separate;
+old projection/resize contracts remain unchanged. Establish every reachable
 operand domain and operation order, including cancellation and both fallbacks,
 instead of treating standalone rectangles as arbitrary chaining guarantees.
 
@@ -163,7 +163,8 @@ tables or dropped hard paths are acceptable.
   probes and the unchanged complete canonical corpus
 
 A corpus pass is evidence, not an exhaustive proof over every F32 pair. The
-current strict failure remains until the new profile actually passes its gates.
+old-profile strict failure remains historical; the new checked route has separate
+passing scoped evidence in [CHECKED-ANGLES.md](CHECKED-ANGLES.md).
 
 ## Device and operational completion
 
@@ -177,8 +178,10 @@ limb arithmetic and the 32-term fallback can be expensive.
 ## Standalone native angle qualification
 
 The independently frozen [native angle qualification gate](ANGLE-QUALIFICATION.md)
-now verifies 76 scalar controls, 205 canonical/runtime wrapper controls and
-1,654 ordered intermediate words before any future angle-candidate generation.
-It uniquely observes the modern contract on the recorded Linux host; historical
-source contracts are not newly host-qualified. Public routing, old algorithms,
-canonical fixtures and the final-angle-only wrapper validation gap are unchanged.
+checks 76 scalar controls, 205 canonical/runtime wrapper controls and
+1,654 ordered intermediate words before angle-candidate generation. The new
+[checked angle integration](CHECKED-ANGLES.md) consumes the fresh qualified
+selection and enforces each intermediate domain. Old algorithms/defaults and
+canonical fixtures remain unchanged. Historical Apple/Sun source contracts are
+not newly host-qualified; Darwin angle-bearing canonical/Metal runs currently
+fail unsupported provenance rather than inferring an angle profile.

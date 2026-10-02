@@ -327,9 +327,15 @@ python3 tools/angle_probe.py --bend-source "$BEND_SOURCE" --gpu
 python3 tools/angle_probe.py --bend-source "$BEND_SOURCE" --gnu-control --gpu
 ```
 
-The current angle profile covers finite inputs with normal/zero intermediates
-and outputs. Exceptional/subnormal arithmetic and other libm/contracted variants
-remain gaps. Runtime probe batches are bounded while each lane is compiled once.
+The new explicit `Angle.Reference` checked entry points enforce finite original
+components and normal/zero intermediates and outputs. `Vector2.angle_with_reference`,
+`Vector2.line_angle_with_reference` and `Vector3.angle_with_reference` return
+`Maybe<F32>` and take `Apple2007AngleRn{}`, `Sun239AngleRn{}` or `Glibc241AngleRn{}`.
+Subnormal inputs are accepted when all derived operations satisfy the bounded
+contract; nonzero subnormal intermediates/output and nonfinite inputs reject.
+The legacy functions above retain their prior unchecked contract and defaults.
+See [CHECKED-ANGLES.md](CHECKED-ANGLES.md) for exact staged arithmetic, source
+contracts, fresh native qualification, error propagation and remaining gaps.
 
 ## Floating-point contract and evidence
 
@@ -352,8 +358,10 @@ are partial mappings, not completed raymath APIs. See the
 ## Standalone native angle qualification
 
 The independently frozen [native angle qualification gate](ANGLE-QUALIFICATION.md)
-now verifies 76 scalar controls, 205 canonical/runtime wrapper controls and
-1,654 ordered intermediate words before any future angle-candidate generation.
-It uniquely observes the modern contract on the recorded Linux host; historical
-source contracts are not newly host-qualified. Public routing, old algorithms,
-canonical fixtures and the final-angle-only wrapper validation gap are unchanged.
+checks 76 scalar controls, 205 canonical/runtime wrapper controls and
+1,654 ordered intermediate words before angle-candidate generation. The new
+[checked angle integration](CHECKED-ANGLES.md) consumes the fresh qualified
+selection and enforces each intermediate domain. Old algorithms/defaults and
+canonical fixtures remain unchanged. Historical Apple/Sun source contracts are
+not newly host-qualified; Darwin angle-bearing canonical/Metal runs currently
+fail unsupported provenance rather than inferring an angle profile.

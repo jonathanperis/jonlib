@@ -89,13 +89,15 @@ All remain scoped profiles. The [resampling record](RESAMPLING.md),
 
 The isolated [direct binary64 narrowing prerequisite](BINARY64-NARROW.md) now
 provides checked nearest-even binary32 words, including gradual underflow. It
-does not change existing API consumers or the current native-angle failure;
+does not alter old conversion consumers;
 private [bounded FMA](BINARY64-FMA.md) and [add/subtract](BINARY64-ADD-SUB.md)
 prerequisites are also isolated, as are the [checked normal multiply/divide and
 word adapters](BINARY64-OPS.md) and [gradual-output product](BINARY64-GRADUAL-MULTIPLY.md).
 The [complete private finite modern angle kernel](MODERN-ANGLE.md) now consumes
-these unchanged helpers with separate source/trace verification. Public angle
-selection, vector-wrapper integration and device/resource evidence remain Phase 1 work.
+these unchanged helpers with separate source/trace verification. The
+[checked angle integration](CHECKED-ANGLES.md) adds public references, guarded
+wrappers and fresh native selection. Device/resource and wider-domain evidence
+remain Phase 1 work.
 
 ## Compiler and runtime workstream
 
@@ -172,8 +174,10 @@ the destination remains the full, versioned parity matrix.
 ## Standalone native angle qualification
 
 The independently frozen [native angle qualification gate](ANGLE-QUALIFICATION.md)
-now verifies 76 scalar controls, 205 canonical/runtime wrapper controls and
-1,654 ordered intermediate words before any future angle-candidate generation.
-It uniquely observes the modern contract on the recorded Linux host; historical
-source contracts are not newly host-qualified. Public routing, old algorithms,
-canonical fixtures and the final-angle-only wrapper validation gap are unchanged.
+checks 76 scalar controls, 205 canonical/runtime wrapper controls and
+1,654 ordered intermediate words before angle-candidate generation. The new
+[checked angle integration](CHECKED-ANGLES.md) consumes the fresh qualified
+selection and enforces each intermediate domain. Old algorithms/defaults and
+canonical fixtures remain unchanged. Historical Apple/Sun source contracts are
+not newly host-qualified; Darwin angle-bearing canonical/Metal runs currently
+fail unsupported provenance rather than inferring an angle profile.

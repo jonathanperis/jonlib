@@ -318,4 +318,113 @@ class AngleQualificationTests(unittest.TestCase):
         generation.assert_not_called()
 
 
+class AngleCliAdmissionTests(unittest.TestCase):
+    """Order-independent admission, without native or Bend execution."""
+    def setUp(self):
+        import os
+        self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
+        self.root=Path(self.temp.name);self.before=Path.cwd();os.chdir(self.root)
+        self.addCleanup(os.chdir,self.before)
+        self.default=self.root/'default/.build'
+        self.base=['--raylib-source','unused-source','--library','unused-library']
+        self.calls=[]
+
+    def seed(self,destination):
+        path=Path(destination).resolve()/'angle-reference/results.json'
+        path.parent.mkdir(parents=True,exist_ok=True)
+        path.write_text(json.dumps(dict(qualified=True,selected_profile='stale')))
+        return path
+
+    def fake_qualify(self,source,library,build_dir,**kwargs):
+        path=build_dir.resolve()/'angle-reference/results.json'
+        admitted=json.loads(path.read_text())
+        self.assertFalse(admitted['qualified']);self.assertIsNone(admitted['selected_profile'])
+        self.calls.append((source,library,build_dir,kwargs))
+        if kwargs['requested_profile']=='invalid':raise ValueError('invalid requested profile')
+        result=dict(run_id='fresh-qualification',qualified=True,selected_profile='Glibc241AngleRn',parity_established=False,candidate_executed=False)
+        path.write_text(json.dumps(result))
+        return result
+
+    def invoke(self,argv,expected_error=True):
+        import contextlib,io,sys
+        self.calls=[]
+        with patch.object(angle,'ROOT',self.root/'default'),patch.object(angle,'qualify',side_effect=self.fake_qualify),patch.dict(sys.modules,{'conformance':conformance}),contextlib.redirect_stdout(io.StringIO()),contextlib.redirect_stderr(io.StringIO()):
+            if expected_error:
+                with self.assertRaises((SystemExit,ValueError,OSError)):angle.main(argv)
+            else:angle.main(argv)
+
+    def unqualified(self,path):
+        report=json.loads(path.read_text())
+        self.assertFalse(report['qualified']);self.assertIsNone(report['selected_profile'])
+        self.assertFalse(report['candidate_executed'])
+
+    def test_late_destination_all_fault_order_and_value_forms(self):
+        # 8 faults x 2 placements x 7 accepted spaced values x 2 forms =224.
+        faults=[['--timeout','oops'],['--timeout','0'],['--profile','invalid'],['--unknown'],['--timeout'],['--profile'],['--library'],['--raylib-source']]
+        values=['ordinary','-1','-1.2','-','-named directory','--named directory','folder with spaces']
+        count=0
+        for fault in faults:
+            for value in values:
+                for destination in (['--build-dir',value],['--build-dir='+value]):
+                    for before in (True,False):
+                        with self.subTest(fault=fault,value=value,equals=len(destination)==1,before=before):
+                            path=self.seed(value);self.seed(self.default)
+                            ordered=fault+destination if before else destination+fault
+                            self.invoke(self.base+ordered)
+                            self.unqualified(path);count+=1
+        self.assertEqual(count,224)
+
+    def test_all_explicit_duplicate_destinations_are_invalidated(self):
+        for first_form in (['--build-dir','first'],['--build-dir=first']):
+            for last_form in (['--build-dir','-named directory'],['--build-dir=-named directory']):
+                for fault in (['--timeout','oops'],['--profile','invalid'],['--unknown'],['--help']):
+                    first=self.seed('first');last=self.seed('-named directory')
+                    self.invoke(self.base+fault+first_form+last_form)
+                    self.unqualified(first);self.unqualified(last)
+
+    def test_help_terminator_abbreviations_and_option_tokens(self):
+        cases=[
+            (['--help','--build-dir','late'],True),
+            (['--build-dir','late','--help'],True),
+            (['--timeout','oops','--','--build-dir','late'],False),
+            (['--','--help','--build-dir=late'],False),
+            (['--build-d','late','--unknown'],False),
+            (['--build-d=late','--unknown'],False),
+            (['--build','late','--unknown'],False),
+            (['--build-dir','--unknown'],False),
+            (['--build-dir','--help'],False),
+            (['--build-dir','--','late'],False),
+        ]
+        for argv,requested in cases:
+            with self.subTest(argv=argv):
+                path=self.seed('late');self.seed(self.default)
+                self.invoke(self.base+argv)
+                if requested:self.unqualified(path)
+                else:self.assertTrue(json.loads(path.read_text())['qualified'])
+                self.assertFalse((self.root/'--unknown').exists())
+                self.assertFalse((self.root/'--help').exists())
+        # '=' explicitly declares a dash-prefixed directory, unlike spaced
+        # option tokens. It must be invalidated even after an earlier error.
+        path=self.seed('--unknown')
+        self.invoke(self.base+['--timeout','oops','--build-dir=--unknown'])
+        self.unqualified(path)
+
+    def test_valid_cli_uses_full_parser_and_last_destination(self):
+        for value in ['positive','-1','-1.2','-','-named directory','--named directory']:
+            for form in (['--build-dir',value],['--build-dir='+value]):
+                first=self.seed('first');last=self.seed(value)
+                self.invoke(self.base+['--build-dir','first',*form,'--profile','Glibc241AngleRn','--timeout','7'],False)
+                self.assertEqual(len(self.calls),1)
+                self.assertEqual(self.calls[0][2],Path(value))
+                self.assertEqual(self.calls[0][3]['timeout'],7)
+                self.assertTrue(json.loads(last.read_text())['qualified'])
+                self.unqualified(first)
+
+    def test_unwritable_early_destination_still_invalidates_late_one(self):
+        blocked=self.root/'not-a-directory';blocked.write_text('existing file')
+        late=self.seed('late')
+        self.invoke(self.base+['--build-dir',str(blocked),'--build-dir','late'])
+        self.unqualified(late);self.assertEqual(self.calls,[])
+
+
 if __name__=='__main__':unittest.main()
