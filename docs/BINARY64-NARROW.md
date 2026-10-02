@@ -99,9 +99,11 @@ strictly failed at the separately documented angle scenario.
 
 ## Remaining modern-angle prerequisites
 
-See [ANGLE-PLAN.md](ANGLE-PLAN.md). Exact binary64 FMA, audited signed-zero
-addition/cancellation, packing/stepping and reachable compensated-cancellation
-bounds are still open. Four product limbs retain 106 bits but do not by themselves
+See [ANGLE-PLAN.md](ANGLE-PLAN.md). A
+[private bounded binary64 FMA](BINARY64-FMA.md) is now implemented separately.
+Audited signed-zero addition/subtraction, general packing/stepping and full kernel
+integration of reachable compensated-cancellation bounds remain open. Four product
+limbs retain 106 bits but do not by themselves
 solve arbitrary FMA alignment/cancellation. The entire pinned modern scalar kernel,
 its two fallbacks, a separate qualified angle selector, wrapper domains and
 forced-device evidence are still required. This helper must not be wired into
