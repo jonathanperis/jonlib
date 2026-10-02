@@ -1226,6 +1226,20 @@ def Image.Formatted.to_bmp(image: Image.Formatted) -> +List<U32>:
   FormattedImage{width, height, +format, pixels} = image
   Image.Formatted.bmp.routed(U32.is_eq(format, 1) || U32.is_eq(format, 2) || U32.is_eq(format, 4), width, height, format, pixels)
 
+# Pure convenience for ExportImage's TGA file bytes, not ExportImageToMemory.
+# Compare after LoadImageColors expansion: distinct R32 words can collapse into
+# the same color. The checked dimensions bound output to 83,886,098 bytes.
+def Image.Formatted.tga.channels(format: U32) -> U32:
+  match format:
+    case 1: 1
+    case 2: 2
+    case 4: 3
+    case _: 4
+
+def Image.Formatted.to_tga(image: Image.Formatted) -> +List<U32>:
+  FormattedImage{+width, +height, +format, pixels} = image
+  Tga.encode.channels(width, height, Image.Formatted.tga.channels(format), Formats.packed_colors(U32.to_nat((width * height : U32)), 0, format, pixels))
+
 def Image.FloatRGB.png.word(channel: U32, value: M.Vector3) -> U32:
   match channel value:
     case 0 M.Vector3{r, _, _}: F32.bits(r)
@@ -3041,6 +3055,10 @@ def Image.Formatted.write_png(image: Image.Formatted, path: String) -> IO(Result
 def Image.Formatted.write_bmp(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
     File.open(path, "w"), Surface.qoi.opened(Image.Formatted.to_bmp(image)))
+
+def Image.Formatted.write_tga(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
+  IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
+    File.open(path, "w"), Surface.qoi.opened(Image.Formatted.to_tga(image)))
 
 # Called only after checked request parameters, a complete read and handle closure.
 # A failed factory here therefore identifies unsupported sample values.

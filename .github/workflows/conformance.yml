@@ -21,7 +21,7 @@ jobs:
       matrix:
         os: [ubuntu-24.04, macos-15]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+    timeout-minutes: 120
     env:
       BEND_NO_TELEMETRY: '1'
       CC: clang
@@ -191,6 +191,11 @@ jobs:
       - name: Verify checked formatted BMP bytes and typed IO
         run: >-
           python3 tools/formatted_bmp_export_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify checked formatted TGA bytes and typed IO
+        run: >-
+          python3 tools/formatted_tga_export_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       # Angle-bearing canonical/Metal generation now requires fresh qualification.
@@ -590,7 +595,9 @@ jobs:
             .build/r32-raw-file-probe/*-resource.json
             .build/r32-raw-file-probe/*.bend
             .build/r32-raw-file-probe/reference.c
+            .build/modern-angle-probe/
             .build/formatted-bmp-export-probe/
+            .build/formatted-tga-export-probe/
             .build/bmp-probe/results.json
             .build/tga-probe/results.json
             .build/pnm-probe/results.json

@@ -112,6 +112,9 @@ Barrett and contributors. Jonlib selects their MIT alternative, retained in
 byte validation, preserves the exercised native pixel/export rules, and rejects
 unsupported or truncated inputs. The native headers are used only by reference
 tooling; no stb implementation is linked into the Bend candidate.
+The formatted TGA channel-aware writer adapts `stb_image_write.h` lines 532–603
+and the raylib `ExportImage`/`LoadImageColors` routing, retaining its row-bounded
+RLE scan and component ordering in owned Bend arrays.
 The upstream Softimage PIC reader credits Tom Seddon.
 The upstream GIF reader credits Jean-Marc Lienher, with simplification by stb.
 The upstream Radiance RGBE HDR reader credits Nicolas Schulz.

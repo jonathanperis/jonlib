@@ -67,3 +67,6 @@ JPEG/KTX, dispatch for other image owner types, other source formats, configured
 encoder options, callbacks/native allocation ABI, and complete target,
 integration, resource and performance gates remain open. GPU file IO is not
 claimed by CPU/JS execution.
+
+Explicit [formatted TGA export](FORMATTED-TGA-EXPORT.md) separately supports
+checked formats 1..8. It does not broaden suffix-selected `Surface.write_image`.
