@@ -415,6 +415,15 @@ def merge_native_artifacts(report, native, work):
         try:
             relative = str(path.resolve().relative_to(work.resolve()))
         except ValueError:
+            context=native.get('darwin_toolchain')
+            sdk_settings=None
+            if native.get('system')=='Darwin' and type(context) is dict and type(context.get('sdk_path')) is str and Path(context['sdk_path']).is_absolute():
+                sdk_settings=(Path(context['sdk_path'])/'SDKSettings.json').resolve()
+            if path.resolve()==sdk_settings:
+                if expected!=context.get('sdk_settings_sha256') or digest(path)!=expected:
+                    raise ValueError('Darwin SDK settings artifact drift')
+                report.setdefault('native_context_artifacts',{})[str(path)]=expected
+                continue
             if path.resolve() not in {value.resolve() for value in reference.source_paths()}:
                 raise ValueError('Native generated artifact outside evidence directory') from None
             if digest(path) != expected:
@@ -542,14 +551,7 @@ def main() -> IO(Unit):
 
 
 def assert_runtime_libraries(native):
-    libraries = native.get('libraries')
-    if type(libraries) is not dict or set(libraries) != {'atan2_library', 'fma_library'}:
-        raise ValueError('Missing qualified runtime library identities')
-    for info in libraries.values():
-        if type(info) is not dict or set(info) != {'path', 'sha256'} or type(info['path']) is not str or not Path(info['path']).is_absolute():
-            raise ValueError('Malformed runtime library identity')
-        if digest(info['path']) != info['sha256']:
-            raise ValueError('Qualified runtime library drift during probe')
+    reference.recheck_runtime_libraries(native)
 
 
 def run_synthetic(report, work, cli, environment, bun):
@@ -621,6 +623,7 @@ def main():
         assert_artifacts_unchanged(report, work)
         reference.validate_metadata(native['environment'])
         assert_runtime_libraries(native)
+        merge_native_artifacts(report, native, work)
         expected = expected_records(rows, records)
         report['native'] = native
         report['branch_coverage'] = validate_coverage(records)
@@ -637,6 +640,7 @@ def main():
             final_source_gate(hashes, args.bend_source, lock, compilers, work)
             reference.assert_pins()
             assert_runtime_libraries(native)
+            merge_native_artifacts(report, native, work)
             assert_artifacts_unchanged(report, work)
             retain_artifacts(report, work, [f'{prefix}-final-version.{suffix}' for prefix in ('compiler', 'bun') for suffix in ('stdout', 'stderr')])
             report.update(phase='native-only-complete', elapsed_seconds=round(time.monotonic()-start, 3))
@@ -677,6 +681,7 @@ def main():
         final_source_gate(hashes, args.bend_source, lock, compilers, work)
         reference.assert_pins()
         assert_runtime_libraries(native)
+        merge_native_artifacts(report, native, work)
         assert_artifacts_unchanged(report, work)
         retain_artifacts(report, work, [f'{prefix}-final-version.{suffix}' for prefix in ('compiler', 'bun') for suffix in ('stdout', 'stderr')])
         report.update(passed=True, phase='complete', elapsed_seconds=round(time.monotonic()-start, 3))

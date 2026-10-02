@@ -7,6 +7,9 @@
 #include <inttypes.h>
 #include <fenv.h>
 #include <dlfcn.h>
+#ifdef __APPLE__
+#include "runtime_image.h"
+#endif
 #include "modern_atan2f_shim.h"
 #include "modern_atan2f_trace.h"
 #ifdef __GLIBC__
@@ -42,9 +45,34 @@ static int context_ok(void) {
   return !(c & ((1ull<<24)|(1ull<<19)|(3ull<<22)|3ull));
 #endif
 }
+#ifdef __APPLE__
+static unsigned short x87_control(void) {
+#if defined(__x86_64__)
+  unsigned short value; __asm__ volatile("fnstcw %0":"=m"(value)); return value;
+#else
+  return 0;
+#endif
+}
+static int runtime_images(FILE *out) {
+  if (dlsym(RTLD_DEFAULT,"atan2f")!=(void *)native_atan2 ||
+      dlsym(RTLD_DEFAULT,"fma")!=(void *)ma_runtime_fma) return 0;
+  fprintf(out,",\"x87_control\":%u,\"symbol_path\":\"volatile-pointers-equal-dlsym-default\",\"loader_overrides\":",x87_control());
+  if (!jon_runtime_loader_write_json(out)) return 0;
+  fputs(",\"runtime_images\":{\"atan2_library\":",out);
+  if (!jon_runtime_image_write_json(out,(void *)native_atan2)) return 0;
+  fputs(",\"fma_library\":",out);
+  if (!jon_runtime_image_write_json(out,(void *)ma_runtime_fma)) return 0;
+  fputc('}',out);
+  return 1;
+}
+#endif
 static int finish_context(void) {
   if (!context_ok()) return 12;
-  fprintf(stderr,"{\"kind\":\"final-context\",\"rounding\":\"FE_TONEAREST\",\"rounding_code\":%d,\"control\":%" PRIu64 ",\"ftz\":false,\"daz\":false}\n",fegetround(),control_word());
+  fprintf(stderr,"{\"kind\":\"final-context\",\"rounding\":\"FE_TONEAREST\",\"rounding_code\":%d,\"control\":%" PRIu64 ",\"ftz\":false,\"daz\":false",fegetround(),control_word());
+#ifdef __APPLE__
+  if (!runtime_images(stderr)) return 13;
+#endif
+  fputs("}\n",stderr);
   return 0;
 }
 static int qualify(void) {
@@ -88,6 +116,9 @@ static int qualify(void) {
     fegetround(),control_word(),ai.dli_fname,fi.dli_fname,asuint(atan2f(1.0f,-1e-20f)),asuint(native_atan2(y,x)),asuint(original_atan2(y,x)));
 #ifdef __GLIBC__
   printf(",\"libc\":\"glibc\",\"libc_version\":\"%s\"",gnu_get_libc_version());
+#endif
+#ifdef __APPLE__
+  if (!runtime_images(stdout)) return 13;
 #endif
   puts("}");
   return 0;

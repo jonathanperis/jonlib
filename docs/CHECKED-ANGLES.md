@@ -4,7 +4,9 @@ Jonmath exposes a separate `Angle.Reference` with `Apple2007AngleRn{}`,
 `Sun239AngleRn{}` and `Glibc241AngleRn{}`. These name versioned source/numerical
 contracts, not an automatically detected host and not universal transcendental
 accuracy. Native selection is an independent [qualification](ANGLE-QUALIFICATION.md).
-The current metadata implementation supports Linux glibc ELF only; historical
+The metadata implementation has explicit Linux glibc ELF and Darwin Mach-O
+file/shared-cache backends; see [runtime-image provenance](RUNTIME-IMAGE-PROVENANCE.md).
+Darwin implementation/synthetic tests are not a Darwin host pass. Historical
 Apple/Sun source evidence is not fresh qualification of those hosts.
 
 The new entry points are:

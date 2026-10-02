@@ -150,11 +150,16 @@ Neither helper sets or normalizes the floating-point environment. Required data:
 - Explicit observations of only `LD_PRELOAD`, `LD_LIBRARY_PATH`, `LD_AUDIT`,
   `LD_BIND_NOW`, `GLIBC_TUNABLES`, `LD_HWCAP_MASK`, `LD_ASSUME_KERNEL`
 
-The current explicit metadata profile is **Linux glibc ELF runtime-image v1**
-on x86-64/AArch64 with no listed loader overrides. Unknown/unreadable required
-metadata or any other platform fails unsupported; it does not guess defaults or
-infer a profile from an OS/version name. AArch64 has implemented checks but no
-new host evidence in this slice. Darwin/Windows provenance is not implemented.
+The explicit metadata profiles are **Linux glibc ELF runtime-image v1** and
+**Darwin Mach-O runtime-image v1**, on x86-64/AArch64 with no observed supported
+loader overrides. The Darwin implementation distinguishes ordinary-file images
+from active shared-cache images and retains loaded Mach-O UUID plus a bounded
+immutable mapped-code SHA-256 in both cases. It never requires a cache-only
+path to exist on disk. See [runtime-image provenance](RUNTIME-IMAGE-PROVENANCE.md)
+for schemas, public Apple APIs, bounds and verification limits. Unknown or
+unreadable metadata still fails unsupported; no numerical profile is inferred
+from OS/version. Darwin runtime/SDK execution remains pending hosted evidence;
+Windows provenance is not implemented.
 
 A successful `dpkg-query` inventory supplies the libc6 package record when one
 exists. This runtime-image profile deliberately does **not** require package
@@ -227,7 +232,8 @@ raymath numeric calls. Canonical parity, wrapper differential evidence and
 qualification remain distinct records. Forced-device evidence and performance
 remain open. All 1,884 API statuses remain unchanged.
 
-The current Linux ELF metadata restriction also applies to angle-bearing
-canonical and Metal-prefix entrypoints: unsupported Darwin/Windows provenance
-fails before candidate generation. Existing public legacy APIs remain available;
-historical Apple/Metal evidence is not a fresh qualification of the new route.
+Angle-bearing canonical and Metal-prefix entrypoints consume the same fresh
+qualification. The Darwin backend does not bypass any native controls or
+establish device parity. Unsupported metadata and Windows still fail before
+candidate generation. Existing public legacy APIs remain available; historical
+Apple/Metal evidence is not a fresh qualification of the new route.
