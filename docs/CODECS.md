@@ -36,6 +36,7 @@ ownership adapters are exposed through `jonlib.bend`:
 
 | API | Contract |
 |---|---|
+| `Image.Formatted.decode_qoi(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Image.Formatted>` with original RGB888 (4) or RGBA8888 (7) storage and one mip level. Dimensions 1..4096; strict checked bytes/streams. |
 | `Surface.decode_qoi(bytes: +List<U32>)` | Returns `Result<Image.DecodeError, Surface>`; byte values must be 0..255. Accepts valid RGB/RGBA QOI, dimensions 1..4096. |
 | `Surface.to_qoi(surface)` | Consumes the Surface and returns immutable encoded bytes. Header channels are 4 and colorspace is 0. |
 | `Surface.load_qoi(path)` | Base byte-file IO returning `IO(Result<Image.LoadError, Surface>)`. |
@@ -48,9 +49,11 @@ the maximum QOI stream size for the current 4096×4096 Surface profile.
 
 Decoding supports RGB, RGBA, index, difference, luma and run chunks, including
 wrapping channel differences, cache collisions and run-boundary handling. RGB
-headers are normalized to opaque RGBA8. The reference check performs the same
-explicit `LoadImageFromMemory` followed by `ImageFormat(RGBA8)` adaptation.
-Original-format metadata and other image codecs remain gaps.
+headers are normalized to opaque RGBA8 by the Surface entrypoints. Their reference
+check performs the same explicit `LoadImageFromMemory` followed by
+`ImageFormat(RGBA8)` adaptation. The dedicated formatted memory entrypoint below
+preserves native QOI formats. Original-format metadata in the other normalized
+codec paths, shared formatted/float dispatch and other payload codecs remain gaps.
 
 `Image.DecodeError` distinguishes `InvalidImageHeader`, `InvalidImageByte`,
 `UnsupportedImageSize`, `TruncatedImageData` and `InvalidImageStream`.
@@ -58,6 +61,71 @@ Original-format metadata and other image codecs remain gaps.
 `ImageDecodeError{error}`. The decoder rejects truncated chunks, runs beyond the
 declared pixel count and missing/invalid end markers. It does not reproduce
 the C decoder's permissive recovery of some malformed streams.
+
+## Format-preserving QOI memory loading
+
+`Image.Formatted.decode_qoi(bytes: +List<U32>)` returns
+`Result<&1, &1, Image.DecodeError, Image.Formatted>`. A header with channels 3
+produces format **4 (RGB888)**; channels 4 produces format **7 (RGBA8888)**.
+Both retain width/height in 1..4096 and the formatted owner's implicit single
+mip level. Export returns exactly `width*height*channels` row-major bytes in
+R,G,B[,A] order, with no array padding. RGB logical U32 words have a zero high
+byte; RGBA words retain every alpha byte. The decoder uses integer byte packing,
+without normalized floating-point conversion.
+
+The immutable byte list can be reused for independent decodes. Success returns
+one affine pixel owner, consumed by export or a Surface bridge; failure returns
+only the existing typed error. Cache/output temporaries are dropped on failure.
+Neither native pointer/allocation ABI nor allocation-failure parity is claimed.
+`Surface.decode_qoi`, generic Surface memory dispatch and existing file loaders
+retain their RGBA8-normalized contracts. This slice adds no formatted file
+loader or generic formatted decoder dispatch.
+
+Channel count affects the output only. Full alpha remains in the decoder's
+previous pixel and cache hash even in channel-3 streams containing RGBA chunks;
+later RGB/DIFF/LUMA/INDEX chunks retain the native state behavior. Colorspace
+header values 0 and 1 are metadata-only and do not transform bytes. Initial
+opaque black differs from the zero-initialized transparent cache. Consecutive
+identical INDEX chunks remain accepted by both decoders, although canonical
+QOI encoders prohibit them.
+
+All byte values are checked before parsing; a value above 255 anywhere yields
+`InvalidImageByte`, even alongside an invalid header. An incomplete/invalid
+header, unsupported channels or colorspace yields `InvalidImageHeader`.
+Structurally valid zero or >4096 dimensions yield `UnsupportedImageSize` before
+allocation. Missing opcode operands yield `TruncatedImageData`; exact
+classification follows the parser stage. If marker bytes are absorbed as short
+operands, completion instead yields `InvalidImageStream`. Exactly the requested
+pixel count, no outstanding run and precisely the eight-byte QOI end marker
+are required. Trailing bytes, extra opcodes, missing/corrupt markers and run
+overflow are rejected. Native permissive malformed-stream recovery remains
+excluded. Memory decoding adds no encoded-file cap: validation still traverses
+the entire supplied immutable list, including arbitrarily long rejected input.
+
+The [scoped evidence](evidence/qoi-formatted.json) records complete native raw
+metadata/bytes before any normalization, and independent Surface/bridge and
+lower/upper-case dispatch comparisons. The probe runs CPU one-thread, CPU
+two-thread and JavaScript, checks RGB high-byte ownership invariants and factory
+exports, and compares exact typed failures through both entrypoints. The fixture
+matrix covers all opcode families, hidden-alpha/cache collisions, initial/empty
+cache distinctions, all 64 DIFF encodings, LUMA boundaries, full byte/alpha ramps,
+run boundaries, padded shapes, both 4096-axis endpoints and a nonuniform
+5,103-pixel image. GPU/Metal, Windows, big-endian and maximum-area allocation
+are not established by these results. Earlier Surface GPU evidence does not
+qualify the new formatted path.
+
+```sh
+python3 tools/qoi_format_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+python3 -m unittest discover -s tests -p test_qoi_format_harness.py -v
+```
+
+The native gate uses actual pinned `LoadImageFromMemory`, observes `image.data`
+as format 4/7 and verifies actual `image.mipmaps==1` before `ImageFormat`.
+Only then does it emit separately normalized regression bytes. Native invalid
+controls have complete >=22-byte backing buffers and declared lengths, safe
+invalid headers and no large allocation request: the pinned wrapper reads
+`fileData[12]` before the QOI decoder's minimum-length guard. Short/overflow
+stream controls execute only in checked Jonlib.
 
 ## Reference and verification
 

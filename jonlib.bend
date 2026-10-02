@@ -743,7 +743,7 @@ def Surface.qoi.error(error: Qoi.Error) -> Image.DecodeError:
 def Surface.qoi.result(result: Result<&1, &1, Qoi.Error, Qoi.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
   match result:
     case Fail{error}: Fail{Surface.qoi.error(error)}
-    case Done{Qoi.Image{width, height, pixels}}: Done{Surface{width, height, pixels}}
+    case Done{Qoi.Image{width, height, _, pixels}}: Done{Surface{width, height, pixels}}
 
 def Surface.decode_qoi(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   Surface.qoi.result(Qoi.decode(bytes))
@@ -1071,6 +1071,35 @@ def Image.FloatRGB.to_bytes(image: Image.FloatRGB) -> Result<&1, &1, Image.Float
 
 type Image.Formatted is Type:
   FormattedImage{width: U32, height: U32, format: U32, pixels: Array<U32>}
+
+# QOI channel metadata selects native storage; decoding/cache state stays RGBA.
+# Pack with integers rather than an ImageFormat floating-point round trip.
+def Image.Formatted.qoi.format(channels: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(channels, 3), 4, 7)
+
+def Image.Formatted.qoi.word(channels: U32, pixel: U32) -> U32:
+  +word = Formats.swap(pixel)
+  Bool.pick(U32, U32.is_eq(channels, 3), (word .&. 16777215 : U32), word)
+
+def Image.Formatted.qoi.write(index: U32, channels: U32, read: Array<U32> & U32) -> Array<U32>:
+  (pixels, pixel) = read
+  Array.set(U32, pixels, index, Image.Formatted.qoi.word(channels, pixel))
+
+def Image.Formatted.qoi.pixels(n: Nat, +index: U32, +channels: U32, pixels: Array<U32>) -> Array<U32>:
+  match n:
+    case 0n: pixels
+    case 1n+rest:
+      Image.Formatted.qoi.pixels(rest, (index + 1 : U32), channels, Image.Formatted.qoi.write(index, channels, Array.get(U32, pixels, index)))
+
+def Image.Formatted.qoi.result(result: Result<&1, &1, Qoi.Error, Qoi.Image>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
+  match result:
+    case Fail{error}: Fail{Surface.qoi.error(error)}
+    case Done{Qoi.Image{+width, +height, +channels, pixels}}:
+      Done{FormattedImage{width, height, Image.Formatted.qoi.format(channels),
+        Image.Formatted.qoi.pixels(U32.to_nat((width * height : U32)), 0, channels, pixels)}}
+
+def Image.Formatted.decode_qoi(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
+  Image.Formatted.qoi.result(Qoi.decode(bytes))
 
 def Image.Formatted.created(width: U32, height: U32, format: U32, result: Maybe<Array<U32>>) -> Maybe<Image.Formatted>:
   match result:

@@ -11,6 +11,7 @@ separate compatibility gaps.
 | API | Contract |
 |---|---|
 | `Image.Formatted.from_bytes(width, height, format, bytes) -> Maybe<Image.Formatted>` | Checks supported dimensions/format, byte values 0..255, exact required byte count and the R32 sample domain before allocation. |
+| `Image.Formatted.decode_qoi(bytes)` | Checked QOI owner factory preserving native RGB888 (4) or RGBA8888 (7), single-mip metadata and exact bytes; existing typed decode errors. See [CODECS.md](CODECS.md#format-preserving-qoi-memory-loading). |
 | `Surface.to_formatted(surface) -> Image.Formatted` | Consumes canonical RGBA8 Surface storage and produces format 7 with exact byte order. |
 | `Image.Formatted.convert(image, target)` | Returns `Result<&1, &1, Image.Formatted & Pixel.Error, Image.Formatted>`. Same-format and target-zero requests return the original image. Unsupported targets return the original owner with `UnsupportedPixelFormat`. |
 | `Image.Formatted.to_surface(image) -> Surface` | Consumes the image and performs the reference conversion to RGBA8, then adapts byte order to Surface's `0xRRGGBBAA` words. |
@@ -23,7 +24,7 @@ separate compatibility gaps.
 | `Image.Formatted.to_bmp(image)` / `write_bmp(image, path)` | Exact native BMP file bytes for all checked formats 1..8, with consuming pure/typed-IO interfaces. See [FORMATTED-BMP-EXPORT.md](FORMATTED-BMP-EXPORT.md). |
 | `Image.Formatted.to_code(image, path)` / `write_code(image, path)` | Exact native image-as-code text and typed file export for bounded payloads/ASCII names. See [IMAGE-CODE.md](IMAGE-CODE.md). |
 
-Create owners with the checked factory or Surface bridge. Manually inconsistent
+Create owners with the checked byte factory, QOI decoder or Surface bridge. Manually inconsistent
 `FormattedImage{width, height, format, pixels}` values are outside the contract.
 `Image.Formatted.load_raw` (formats 1..7) and `write_raw` provide file boundaries with explicit
 header/error/closure behavior, documented in [RAW-FILES.md](RAW-FILES.md).

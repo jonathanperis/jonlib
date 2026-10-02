@@ -456,3 +456,22 @@ law tga_row_zero:
   for colors: +List<U32>
   for bytes: +List<U32>
   {Tga.encode.row(0n, channels, (colors, bytes)) == bytes : +List<U32>}
+
+# Scoped QOI metadata/packing laws; not a universal decoding theorem.
+law formatted_qoi_rgb_format:
+  {J.Image.Formatted.qoi.format(3) == 4 : U32}
+
+law formatted_qoi_rgba_format:
+  {J.Image.Formatted.qoi.format(4) == 7 : U32}
+
+law formatted_qoi_rgb_word:
+  {J.Image.Formatted.qoi.word(3, 305419896) == 5649426 : U32}
+
+law formatted_qoi_rgba_word:
+  {J.Image.Formatted.qoi.word(4, 305419896) == 2018915346 : U32}
+
+law formatted_qoi_pixels_zero:
+  for index: U32
+  for channels: U32
+  for pixels: Array<U32>
+  {J.Image.Formatted.qoi.pixels(0n, index, channels, pixels) == pixels : Array<U32>}

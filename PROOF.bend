@@ -340,3 +340,18 @@ def Laws.tga_row_zero(channels, colors, bytes):
   match colors:
     case Nil{}: {==}
     case Con{_, _}: {==}
+
+def Laws.formatted_qoi_rgb_format():
+  {==}
+
+def Laws.formatted_qoi_rgba_format():
+  {==}
+
+def Laws.formatted_qoi_rgb_word():
+  {==}
+
+def Laws.formatted_qoi_rgba_word():
+  {==}
+
+def Laws.formatted_qoi_pixels_zero(index, channels, pixels):
+  {==}

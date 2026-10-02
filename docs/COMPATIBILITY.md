@@ -116,6 +116,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | `ImageFlipHorizontal/Vertical` | `Surface.flip_horizontal/flip_vertical` | Exact explicit and seeded full-image comparisons |
 | `ImageRotateCW/CCW` | `Surface.rotate_cw/rotate_ccw` | Exact RGBA bytes, non-square dimensions and transform sequencing |
 | `ImageRotate` / `ImageToPOT` | `Surface.rotate_degrees_for/to_pot` | Checked general rotation with reference bilinear sampling; exhaustive supported POT-axis reference validation and exact fill/copy fixtures |
+| Format-preserving QOI memory loading | `Image.Formatted.decode_qoi` | Native format 4/7, dimensions/single-mip metadata and every raw byte observed before normalization; strict typed errors and affine owner checks on CPU-1/CPU-2/JavaScript. GPU/file/generic formatted dispatch remain unverified; see [CODECS.md](CODECS.md#format-preserving-qoi-memory-loading). |
 | QOI loading/export | `Surface.decode_qoi/to_qoi/load_qoi/write_qoi` | Valid-stream RGBA8 profile, all opcodes, exact export bytes, typed malformed-input errors and real CPU/JS file round trips |
 | BMP decoding/export | `Surface.decode_bmp/to_bmp/write_bmp` | CORE indexed/RGB24 and 40/56/108/124-byte profiles; native palette-count, mask, alpha and offset rules, plus exact exports |
 | Checked formatted BMP export | `Image.Formatted.to_bmp/write_bmp` | Exact native 24-bit/V4 bytes for checked formats 1..8, packed native expansion, R32 truncation, consuming typed IO and closed handles; see [FORMATTED-BMP-EXPORT.md](FORMATTED-BMP-EXPORT.md) |
