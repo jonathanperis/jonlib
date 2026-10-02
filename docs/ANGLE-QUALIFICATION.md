@@ -183,7 +183,8 @@ checked out, or repaired by this gate. The default report and full command,
 source, binary, stdout/stderr and observation artifacts are under
 `.build/angle-reference/`. Commands are individually timeout-bounded. Use separate
 `--build-dir` directories for concurrent runs; a shared output directory is a
-serial-use interface. `--help` is informational and does not invalidate reports.
+serial-use interface. Only full option names are accepted (no CLI abbreviations).
+`--help` is informational and does not invalidate reports.
 
 Before source reads/builds, results are persisted as unqualified with a null
 selection and a fresh run ID/timestamp. CLI argument failures also invalidate the

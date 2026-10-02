@@ -274,6 +274,16 @@ class AngleQualificationTests(unittest.TestCase):
                 angle.main(['--build-dir',str(self.root),*args])
             self.failed()
 
+    def test_cli_abbreviation_cannot_select_uninvalidated_output(self):
+        import contextlib,io
+        default=self.root/'default'
+        for option in ('--build-d','--build'):
+            with patch.object(angle,'ROOT',default),contextlib.redirect_stderr(io.StringIO()),self.assertRaises(SystemExit):
+                angle.main([option,str(self.root),'--raylib-source','unused','--library','unused','--unknown'])
+            result=json.loads((default/'.build/angle-reference/results.json').read_text())
+            self.assertFalse(result['qualified']);self.assertIsNone(result['selected_profile'])
+            self.assertEqual(result['error']['type'],'SystemExit')
+
     def test_no_candidate_command_in_success_or_failure_paths(self):
         self.qualify()
         self.assertFalse(any('bun' in c[0] or any(str(a).endswith('.bend') for a in c) for c in self.commands))

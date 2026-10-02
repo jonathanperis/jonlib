@@ -13,14 +13,15 @@
     "strict framing and types",
     "stale native outputs",
     "source and toolchain drift",
-    "invalid CLI admission"
+    "invalid CLI admission",
+    "abbreviated CLI destination and option-terminator admission"
   ],
   "python_tests": {
-    "total": 292,
-    "focused_new": 21,
+    "total": 293,
+    "focused_new": 22,
     "passed": true,
     "log": ".build/angle-qualification-all-python.log",
-    "sha256": "f0a478444b224519ad2ef29278c34a5f7c2648f52e66071290a74b0f87e27af3"
+    "sha256": "fa4e07cae2e48837eae78b364cd288f8382eda91de0debf716a1ebf4c5b174bd"
   },
   "proof": {
     "passed": true,
@@ -50,9 +51,9 @@
   "native": {
     "qualified": true,
     "selected_profile": "Glibc241AngleRn",
-    "run_id": "0b650a6f21144387acdca12f48ac2f1a",
+    "run_id": "986810fd65b94ce5b27fde493162dc01",
     "manifest_sha256": "31fe9fa37f986e51534509065d67eca0a74a58aae3831923d8d13d2cbe64d416",
-    "report_sha256": "60e2ddec41bfe590f011dc2242f4a9c86bc0f4fc1bd057acb4c086e32387f20a",
+    "report_sha256": "8c0549a8d1951e34b5a044ef415ff82f052690a66bef129c507acf09e5dbc5b8",
     "mismatches": {
       "Apple2007AngleRn": 29,
       "Sun239AngleRn": 42,
@@ -71,10 +72,16 @@
     "report_sha256": "f05b9171244269fe5046cfa2b703084b2ed97a41e20a4dd8a3daff5968ebd3ad"
   },
   "reviewed_source_sha256": {
-    "tools/angle_reference.py": "ee8549284b4a6264055c464381160624cbf0cdc6d8f856394190fec12c5c4e63",
+    "tools/angle_reference.py": "5413a8b72b8ed4eddffb79d8f7619d22651b9b39d64d9c5b50c2b2395005a9b6",
     "tools/angle_manifest_audit.py": "729a675a296f9fe5d8cc930ef6e9bc7033bafaf72e37c10cd8fe153251ed359a",
     "tools/reference/angle_qualification_context.c": "147980aa2f696b8dc4030d9aaa15f288a188fc84e5b08826aebb438ed2eb604f",
     "tools/reference/angle_qualification_v1.json": "31fe9fa37f986e51534509065d67eca0a74a58aae3831923d8d13d2cbe64d416",
-    "tests/test_angle_reference.py": "76f279966d1f16fe36d47a2cca366fb324314445ff45a24e3fc5483fd1c5f0dc"
+    "tests/test_angle_reference.py": "eae329d9fa0d3219e98f0ac53c86bda62a21bc16da4bd5b765c6d188956d74d0"
+  },
+  "final_evidence_review": {
+    "native_artifact_hashes": 78,
+    "retained_derivation_artifact_hashes": 28,
+    "all_matched": true,
+    "cli_admission_fix": "Full option names only; destination scan stops at --"
   }
 }

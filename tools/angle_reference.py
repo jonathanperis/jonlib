@@ -480,6 +480,7 @@ def main(argv=None):
     # A malformed invocation must not leave a stale successful qualification.
     build_dir = ROOT/'.build'
     for index, arg in enumerate(argv):
+        if arg == '--': break
         if arg.startswith('--build-dir='): build_dir = Path(arg.split('=',1)[1])
         elif arg == '--build-dir' and index+1 < len(argv) and not argv[index+1].startswith('-'):
             build_dir = Path(argv[index+1])
@@ -490,7 +491,7 @@ def main(argv=None):
                          selected_profile=None,parity_established=False,candidate_executed=False,
                          started_at=datetime.now(timezone.utc).isoformat(),error=None)
         path.write_text(json.dumps(admission,indent=2)+'\n')
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument('--raylib-source', type=Path, required=True)
     parser.add_argument('--library', type=Path, required=True)
     parser.add_argument('--build-dir', type=Path, default=ROOT/'.build')
