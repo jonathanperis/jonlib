@@ -1269,6 +1269,27 @@ def Image.Formatted.to_tga(image: Image.Formatted) -> +List<U32>:
   FormattedImage{+width, +height, +format, pixels} = image
   Tga.encode.channels(width, height, Image.Formatted.tga.channels(format), Formats.packed_colors(U32.to_nat((width * height : U32)), 0, format, pixels))
 
+# ExportImage's QOI branch accepts only the original RGB888/RGBA8888 format.
+# Reject before conversion or IO; in particular preserve every checked R32 bit.
+# Accepted colors use integer packing, with opaque alpha for RGB888. This maps
+# file export bytes, not ExportImageToMemory (whose native dispatch is PNG-only).
+def Image.Formatted.qoi.channels(format: U32) -> U32:
+  match format:
+    case 4: 3
+    case 7: 4
+    case _: 0
+
+def Image.Formatted.qoi.checked(valid: Bool, channels: U32, image: Image.Formatted) -> Result<&1, &1, Image.Formatted & Pixel.Error, +List<U32>>:
+  match valid image:
+    case False{} _: Fail{(image, UnsupportedPixelFormat{})}
+    case True{} FormattedImage{+width, +height, format, pixels}:
+      Done{Qoi.encode.channels(width, height, channels, Formats.packed_colors(U32.to_nat((width * height : U32)), 0, format, pixels))}
+
+def Image.Formatted.to_qoi(image: Image.Formatted) -> Result<&1, &1, Image.Formatted & Pixel.Error, +List<U32>>:
+  FormattedImage{width, height, +format, pixels} = image
+  +channels = Image.Formatted.qoi.channels(format)
+  Image.Formatted.qoi.checked((channels > 0 : U32), channels, FormattedImage{width, height, format, pixels})
+
 def Image.FloatRGB.png.word(channel: U32, value: M.Vector3) -> U32:
   match channel value:
     case 0 M.Vector3{r, _, _}: F32.bits(r)
@@ -3099,6 +3120,26 @@ def Image.Formatted.write_bmp(image: Image.Formatted, path: String) -> IO(Result
 def Image.Formatted.write_tga(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
     File.open(path, "w"), Surface.qoi.opened(Image.Formatted.to_tga(image)))
+
+type Image.Formatted.QoiWriteError is Type:
+  QoiSourceError{image: Image.Formatted}
+  QoiFileError{code: U32, message: String}
+
+def Image.Formatted.qoi.written(result: Result<&1, &1, U32 & String, Unit>) -> IO(Result<&1, &1, Image.Formatted.QoiWriteError, Unit>):
+  match result:
+    case Fail{Tuple{code, message}}: IO.pure(Result<&1, &1, Image.Formatted.QoiWriteError, Unit>, Fail{QoiFileError{code, message}})
+    case Done{unit}: IO.pure(Result<&1, &1, Image.Formatted.QoiWriteError, Unit>, Done{unit})
+
+def Image.Formatted.qoi.file_bytes(path: String, result: Result<&1, &1, Image.Formatted & Pixel.Error, +List<U32>>) -> IO(Result<&1, &1, Image.Formatted.QoiWriteError, Unit>):
+  match result:
+    case Fail{Tuple{image, _}}: IO.pure(Result<&1, &1, Image.Formatted.QoiWriteError, Unit>, Fail{QoiSourceError{image}})
+    case Done{bytes}:
+      IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.Formatted.QoiWriteError, Unit>,
+        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
+          File.open(path, "w"), Surface.qoi.opened(bytes)), Image.Formatted.qoi.written)
+
+def Image.Formatted.write_qoi(image: Image.Formatted, path: String) -> IO(Result<&1, &1, Image.Formatted.QoiWriteError, Unit>):
+  Image.Formatted.qoi.file_bytes(path, Image.Formatted.to_qoi(image))
 
 # Called only after checked request parameters, a complete read and handle closure.
 # A failed factory here therefore identifies unsupported sample values.

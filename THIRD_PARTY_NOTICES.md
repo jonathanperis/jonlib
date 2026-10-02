@@ -34,6 +34,9 @@ identify the original sources and their required attribution.
   `Surface.write_image` adapts `ExportImage` suffix selection from `rtextures.c`
   and `IsFileExtension`/`GetFileExtension` from `rcore.c`, using Bend-owned
   error results and the existing closed-handle file writers.
+  `Image.Formatted.to_qoi` / `write_qoi` additionally adapt the QOI-specific
+  original-format RGB888/RGBA8888 export gate from `rtextures.c`, with integer
+  channel packing, retained unsupported owners and typed closed-handle IO.
   Owned mipmap-chain generation in `jonlib.bend` adapts `ImageMipmaps` from
   `rtextures.c`, preserving sequential default resampling and dimension order.
   `src/blur.bend` adapts `ImageBlurGaussian` from the same source, retaining its
@@ -95,8 +98,12 @@ identify the original sources and their required attribution.
 
 `src/qoi.bend` is an altered Bend adaptation of the codec in raylib's pinned
 `src/external/qoi.h`, by Dominic Szablewski. It uses owned arrays and immutable
-input bytes, bounds allocations to the Surface profile, normalizes RGB output
-to RGBA8, implements reference QOI encoding and reports malformed streams explicitly. QOI's MIT notice and license
+input bytes, bounds allocations to the checked image profile, normalizes RGB
+to RGBA8 for Surface callers and preserves RGB888/RGBA8888 for formatted callers.
+Its channel-aware encoder preserves native RGB/RGBA headers and opcode rules;
+Surface encoding retains a four-channel header. The formatted adapter rejects
+unsupported original formats, canonicalizes RGB alpha to opaque and emits
+colorspace zero. Malformed streams are reported explicitly. QOI's MIT notice and license
 are retained in [LICENSES/qoi.txt](LICENSES/qoi.txt). The standalone C implementation
 is used only by reference tooling; it is not linked into Jonlib's implementation.
 

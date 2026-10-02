@@ -207,6 +207,11 @@ jobs:
           python3 tools/formatted_tga_export_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify checked formatted QOI bytes, source rejection and typed IO
+        run: >-
+          python3 tools/formatted_qoi_export_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Verify native QOI formats and exact memory bytes
         run: >-
           python3 tools/qoi_format_probe.py
@@ -617,6 +622,7 @@ jobs:
             .build/modern-angle-probe/
             .build/formatted-bmp-export-probe/
             .build/formatted-tga-export-probe/
+            .build/formatted-qoi-export-probe/
             .build/qoi-format-probe/
             .build/qoi-file-probe/results.json
             .build/qoi-file-probe/run-*/inputs.json
