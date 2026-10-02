@@ -355,3 +355,35 @@ def encode(+width: U32, +height: U32, pixels: Array<U32>) -> +List<U32>:
   fields = F.bytes(~&2, [(122 + width * height * 4 : U32), 0, 122, 108, width, height, 2097153, 3, 0, 0, 0, 0, 0,
     16711680, 65280, 255, 4278190080, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 4n, Nil{})
   Con{66, Con{77, List.append(&2, U32, fields, encode.pixels(U32.to_nat((width * height : U32)), 0, width, height, (pixels, Nil{})))}}
+
+# Altered stb_image_write comp=1/2/3 BMP path. Gray-alpha discards alpha;
+# grayscale expands to BGR, and each bottom-up row ends in zero padding.
+def encode24.padding(n: Nat, bytes: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: bytes
+    case 1n+rest: encode24.padding(rest, Con{0, bytes})
+
+def encode24.row(end: Bool, padding: Nat, bytes: +List<U32>) -> +List<U32>:
+  match end:
+    case False{}: bytes
+    case True{}: encode24.padding(padding, bytes)
+
+def encode24.read(end: Bool, padding: Nat, format: U32, bytes: +List<U32>, read: Array<U32> & U32) -> Array<U32> & +List<U32>:
+  (pixels, word) = read
+  +rgba = F.image_color(format, word)
+  (pixels, encode24.row(end, padding, Con{(rgba >> 24n : U32), Con{((rgba >> 16n) .&. 255 : U32), Con{((rgba >> 8n) .&. 255 : U32), bytes}}}))
+
+def encode24.pixels(n: Nat, +index: U32, +width: U32, +height: U32, +format: U32, +padding: Nat, state: Array<U32> & +List<U32>) -> +List<U32>:
+  match n state:
+    case 0n Tuple{_, bytes}: List.reverse(&2, U32, bytes)
+    case 1n+rest Tuple{pixels, bytes}:
+      at = ((height - 1 - index / width) * width + index % width : U32)
+      encode24.pixels(rest, (index + 1 : U32), width, height, format, padding,
+        encode24.read(U32.is_eq((index % width : U32), (width - 1 : U32)), padding, format, bytes, Array.get(U32, pixels, at)))
+
+def encode24(+width: U32, +height: U32, format: U32, pixels: Array<U32>) -> +List<U32>:
+  # Checked owners bound each axis to 1..4096: the largest file is 50,331,702
+  # bytes and width*height <= 16,777,216, so every U32 size/index stays in range.
+  +padding = ((0 - width * 3) .&. 3 : U32)
+  fields = F.bytes(~&2, [(54 + (width * 3 + padding) * height : U32), 0, 54, 40, width, height, 1572865, 0, 0, 0, 0, 0, 0], 4n, Nil{})
+  Con{66, Con{77, List.append(&2, U32, fields, encode24.pixels(U32.to_nat((width * height : U32)), 0, width, height, format, U32.to_nat(padding), (pixels, Nil{})))}}

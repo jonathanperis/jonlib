@@ -306,3 +306,15 @@ def Laws.angle_vector3_default_preserved(left, right):
 
 def Laws.checked_angle_scalar_some(word):
   {==}
+
+def Laws.bmp_padding_zero(bytes):
+  {==}
+
+def Laws.bmp_padding_successor(count, bytes):
+  {==}
+
+def Laws.bmp_nonterminal_row(padding, bytes):
+  {==}
+
+def Laws.bmp_terminal_row(padding, bytes):
+  {==}

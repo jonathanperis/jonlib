@@ -4090,3 +4090,94 @@ wrapper, canonical and review evidence. No new GPU, hosted, all-target, exhausti
 finite-input or performance-parity claim is made. Linux glibc ELF provenance is
 the currently supported qualification context; Darwin angle-bearing canonical
 and Metal-prefix execution fails unsupported before candidate generation.
+
+
+## 2026-10-02: checked formatted BMP file bytes and explicit writer
+
+`Image.Formatted.to_bmp` and `write_bmp` add exact native `ExportImage` BMP
+output for checked single-mip formats **1..8**, dimensions **1..4096** on each
+axis. The pure API consumes its owner into immutable bytes; the explicit writer
+consumes it on success and IO failure, preserves Base's exact error code/message
+and uses the existing closed-handle byte writer. This is not a mapping to native
+`ExportImageToMemory`, which has no BMP dispatch.
+
+Native grayscale, gray-alpha and RGB888 use a 54-byte INFO header, bottom-up
+24-bit BGR and zero row padding. Gray-alpha discards alpha without compositing.
+RGB565/RGB5A1/RGBA4/RGBA8888 and checked R32 use the existing 122-byte V4 writer
+with canonical masks and bottom-up BGRA. Packed expansion is `LoadImageColors`,
+not `ImageFormat`; RGB565 maximum is `(248,252,248,255)`. R32 is red-only F32
+truncation with opaque alpha, including both zeros and positive subnormals.
+The existing Surface and FloatRGB encoders and all old public defaults remain
+unchanged. [The contract](FORMATTED-BMP-EXPORT.md) states complete header,
+ownership, arithmetic-bound and IO-adaptation rules.
+
+The clean-rebuilt pinned native archive passes nine fixed layout/color controls.
+Native packed/R32 inputs use aligned allocations with effective types established
+by typed stores after `memcpy` into declared scalars; an exact full-payload
+comparison rejects any raw-word normalization before `ExportImage`. This avoids
+C aliasing assumptions and retains signed-zero/subnormal words.
+
+The focused gate passes **78 complete images / 331,465 pixels per lane** on
+CPU-one-thread, CPU-two-thread and JavaScript. Every lane compares **1,221,952
+encoded bytes and 1,325,860 decoded RGBA bytes**, including an independent Python
+BMP decoder and 78 actual candidate files with `.dat` suffixes. All formats cover
+widths 1/2/3/4 with unequal rows, thin rectangles, 4096-pixel axes and 33,024-pixel
+full traversals. Additional cases cover six alpha variants with identical gray,
+packed bit boundaries/maxima/alpha-only/seeded words, R32 truncation neighbors,
+signed zero/subnormal samples and fully transparent RGBA.
+
+Each lane also passes **3,200 formatted IO checks** under a 64-descriptor limit:
+800 repeated successful writes, 800 missing-parent failures, 800 directory-open
+failures and 800 post-open failures under `RLIMIT_FSIZE=0` with ignored `SIGXFSZ`.
+Four direct Base operations establish the lane's exact code/message baselines.
+The post-open cases require **EFBIG**, so descriptor exhaustion/EMFILE cannot
+masquerade as correct failure handling. Files may be truncated on failure; native
+stb short-write/close-return equivalence is not claimed.
+
+Strict metadata/chunk framing, counts, types, input dimensions, exact file sizes,
+header/padding checks and fresh sentinels reject incomplete/stale output. Inputs,
+generated programs, binaries, raw stdout/stderr and command receipts are sealed
+when created and rechecked before commands and final success. The report retains
+**603 sealed artifacts, 677 artifact hashes and 136 source/dependency hashes**.
+An initial IO-harness affine annotation error was caught and corrected; review
+then corrected qualifier/native-input effective types. The entire focused gate
+was rerun after both fixes without changing cases or expected bytes. Its final
+143.298-second runtime is a local harness observation, not performance parity.
+
+All **359 Python tests** pass, including 19 new focused fixture/parser, malformed
+metadata/chunk, stale-result/compiler-output, immutable-drift and IO guardrails.
+Complete `PROOF.bend` checks **99 laws**: the prior 95 plus four structural
+padding/row laws. Byte/channel arithmetic remains exact differential evidence,
+not a universal codec or numeric theorem.
+
+The unchanged canonical corpus freshly passes **261/261 scenarios and all 40,101
+words on each of CPU-one-thread, CPU-two-thread and JavaScript**, with all record
+fields, 333 QOI bytes and 23 palette words checked separately. Fresh native
+qualification still selects `Glibc241AngleRn`; its frozen manifest/source pins,
+fixtures, original raymath calls and comparisons are unchanged. Trailing
+ownership/transform/decode contracts, three freshly generated PPM examples and
+QOI bytes/roundtrip/file-error checks pass.
+
+Twelve existing CPU/JS image gates also pass: BMP (98 decode cases, 46 errors and
+three exports), FloatRGB BMP/TGA, formatted PNG, FloatRGB PNG, all 64 format pairs
+(165 cases), R32 image consumers, colors, channels, RAW files, suffix-selected
+exports, file loading and all 534 memory token/content pairs. Final source checks
+retain Jonmath and all 44 existing non-BMP support modules byte-for-byte. Private
+arithmetic/full scalar corpora retain their prior scoped evidence and were not
+rerun for this additive codec change.
+
+Only **`raylib:function:ExportImage`** changes mapping/scope/gaps/evidence and stays
+partial. All 1,884 API statuses remain unchanged, including 117/600 core partial,
+142 math partial and zero complete. `ExportImageToMemory` is unchanged. CI runs
+the focused BMP gate before aggregate conformance, but no new hosted or GPU run
+is claimed. Formatted TGA/QOI/JPEG/KTX, non-Surface suffix dispatch, wider float
+formats, native callbacks/allocation ABI and complete platform/integration/
+resource/performance coverage remain open.
+
+Independent source/harness and retained-evidence review verifies the exact native
+channel routing, ownership/error behavior, regenerated inputs/programs and
+complete focused observations. The canonical audit independently replays 330
+artifacts, 128 command receipts and the frozen native qualification. Final typed
+focused replay rechecks all 677 artifacts and 603 seals; regression review checks
+819 artifacts and 564 source-hash observations. No review blockers remain. Full retained
+results and hashes are in [durable evidence](evidence/formatted-bmp-export.json).

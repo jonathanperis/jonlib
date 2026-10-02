@@ -118,6 +118,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | `ImageRotate` / `ImageToPOT` | `Surface.rotate_degrees_for/to_pot` | Checked general rotation with reference bilinear sampling; exhaustive supported POT-axis reference validation and exact fill/copy fixtures |
 | QOI loading/export | `Surface.decode_qoi/to_qoi/load_qoi/write_qoi` | Valid-stream RGBA8 profile, all opcodes, exact export bytes, typed malformed-input errors and real CPU/JS file round trips |
 | BMP decoding/export | `Surface.decode_bmp/to_bmp/write_bmp` | CORE indexed/RGB24 and 40/56/108/124-byte profiles; native palette-count, mask, alpha and offset rules, plus exact exports |
+| Checked formatted BMP export | `Image.Formatted.to_bmp/write_bmp` | Exact native 24-bit/V4 bytes for checked formats 1..8, packed native expansion, R32 truncation, consuming typed IO and closed handles; see [FORMATTED-BMP-EXPORT.md](FORMATTED-BMP-EXPORT.md) |
 | TGA decoding/export | `Surface.decode_tga/to_tga/write_tga` | Native raw/RLE type/depth selection and indexed profiles; RGB555/alpha, palette skips/index recovery, exact exports and bounded errors |
 | Binary PGM/PPM decoding | `Surface.decode_pnm` | P5/P6 8/16-bit samples, native little-endian narrowing and maxval/separator/comment rules; full dimension-boundary pixels |
 | PSD decoding | `Surface.decode_psd_for` and shared `_for` dispatch | Version-1 RGB mode, 0..16 channels, raw/PackBits and explicit matte profiles; native alpha/defaults/depth rules and bounded packets/metadata |

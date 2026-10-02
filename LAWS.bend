@@ -9,6 +9,7 @@ import ./src/binary64_add_sub.bend as A
 import ./src/binary64_ops.bend as O
 import ./src/binary64_gradual_multiply.bend as G
 import ./src/resize_numeric.bend as Resize
+import ./src/bmp.bend as Bmp
 
 law clear_dimensions:
   for +width: U32
@@ -409,3 +410,23 @@ law angle_vector3_default_preserved:
 law checked_angle_scalar_some:
   for word: U32
   {CA.scalar_result(Some{word}) == CA.normal(32, CA.from_word(word)) : Result<&2, &2, U32, F32>}
+
+# BMP structural padding laws; byte/channel arithmetic is differential evidence.
+law bmp_padding_zero:
+  for bytes: +List<U32>
+  {Bmp.encode24.padding(0n, bytes) == bytes : +List<U32>}
+
+law bmp_padding_successor:
+  for count: Nat
+  for bytes: +List<U32>
+  {Bmp.encode24.padding(1n+count, bytes) == Bmp.encode24.padding(count, Con{0, bytes}) : +List<U32>}
+
+law bmp_nonterminal_row:
+  for padding: Nat
+  for bytes: +List<U32>
+  {Bmp.encode24.row(False{}, padding, bytes) == bytes : +List<U32>}
+
+law bmp_terminal_row:
+  for padding: Nat
+  for bytes: +List<U32>
+  {Bmp.encode24.row(True{}, padding, bytes) == Bmp.encode24.padding(padding, bytes) : +List<U32>}

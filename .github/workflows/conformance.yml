@@ -188,6 +188,11 @@ jobs:
           bun "${{ github.workspace }}/.build/dependencies/bend/bend2/main.ts" examples/math.bend -o .build/jonmath-example -o .build/jonmath-example.js
           ./.build/jonmath-example --gpu off
           bun .build/jonmath-example.js
+      - name: Verify checked formatted BMP bytes and typed IO
+        run: >-
+          python3 tools/formatted_bmp_export_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       # Angle-bearing canonical/Metal generation now requires fresh qualification.
       # Darwin provenance is not implemented: such runs fail closed rather than
       # inheriting historical Apple/Metal evidence or an OS-inferred selector.
@@ -585,6 +590,7 @@ jobs:
             .build/r32-raw-file-probe/*-resource.json
             .build/r32-raw-file-probe/*.bend
             .build/r32-raw-file-probe/reference.c
+            .build/formatted-bmp-export-probe/
             .build/bmp-probe/results.json
             .build/tga-probe/results.json
             .build/pnm-probe/results.json
