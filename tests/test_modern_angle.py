@@ -267,7 +267,7 @@ class ModernAngleTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             compiler = dict(path='/compiler', version='clang version 19.1.7', sha256='compiler')
             bun = dict(path='/bun', version='1.3.12', sha256='bun')
-            identity = lambda command, *args: bun if command == 'bun' else compiler
+            identity = lambda command, *args, **kwargs: bun if command == 'bun' else compiler
             native = {'environment': {}, 'artifacts': {'reference': 'a'*64}}
             with patch.object(probe, 'BUILD', Path(directory)), patch.object(probe, 'checkout'), \
                     patch.object(reference, 'assert_pins'), patch.object(probe, 'source_hashes', return_value={}), \
@@ -408,7 +408,8 @@ class ModernAngleTests(unittest.TestCase):
     def test_runtime_libraries_rechecked_after_all_candidate_work(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory)/'libm.so'; path.write_text('qualified')
-            native = {'libraries': {key: dict(path=str(path), sha256=probe.digest(path)) for key in ('atan2_library', 'fma_library')}}
+            native = {'reference_environment': reference.reference_environment.ReferenceEnvironment().receipt(),
+                      'libraries': {key: dict(path=str(path), sha256=probe.digest(path)) for key in ('atan2_library', 'fma_library')}}
             probe.assert_runtime_libraries(native)
             path.write_text('drift')
             with self.assertRaisesRegex(ValueError, 'library drift'): probe.assert_runtime_libraries(native)

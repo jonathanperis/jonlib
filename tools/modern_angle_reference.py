@@ -23,6 +23,7 @@ import time
 import uuid
 
 import runtime_image
+import reference_environment
 
 from angle_probe import GNU_CONTROL, samples as old_samples
 
@@ -71,7 +72,7 @@ def double_words(value):
 
 
 def source_paths():
-    return [Path(__file__).resolve(), ROOT/'tools/angle_probe.py', ROOT/'tools/runtime_image.py',
+    return [Path(__file__).resolve(), ROOT/'tools/angle_probe.py', ROOT/'tools/runtime_image.py', ROOT/'tools/reference_environment.py',
             ROOT/'LICENSES/core-math-atan2f.txt',
             *(REFERENCE/name for name in ('modern_atan2f_glibc241.c',
                 'modern_atan2f_adapted.c','modern_atan2f_shim.h',
@@ -189,13 +190,14 @@ def samples():
     return rows
 
 
-def _run(command,work,label,*,input_text=None,timeout=120):
+def _run(command,work,label,*,input_text=None,timeout=120,reference_env=None):
     """Keep full stdout/stderr and command/status even on nonzero/timeout."""
     work=Path(work); work.mkdir(parents=True,exist_ok=True)
     command=[str(x) for x in command]
     record=dict(command=command,timeout=timeout,started=time.time())
     try:
-        result=subprocess.run(command,input=input_text,text=True,capture_output=True,timeout=timeout)
+        result=subprocess.run(command,input=input_text,text=True,capture_output=True,timeout=timeout,
+                              env=None if reference_env is None else reference_env.child())
         stdout,stderr=result.stdout,result.stderr; record['returncode']=result.returncode
     except subprocess.TimeoutExpired as error:
         def decode(value): return value.decode(errors='replace') if isinstance(value,bytes) else (value or '')
@@ -207,25 +209,25 @@ def _run(command,work,label,*,input_text=None,timeout=120):
     return stdout
 
 
-def compiler_identity(compiler):
+def compiler_identity(compiler, *, reference_env=None):
     path=shutil.which(str(compiler))
     if not path: raise ValueError('C compiler not found: '+str(compiler))
     path=Path(path).resolve()
-    version=subprocess.run([str(path),'--version'],check=True,capture_output=True,text=True).stdout
+    version=subprocess.run([str(path),'--version'],check=True,capture_output=True,text=True,env=None if reference_env is None else reference_env.child()).stdout
     identity=dict(path=str(path),sha256=sha256(path),version=version)
     if platform.system()=='Darwin':
-        target=subprocess.run([str(path),'-dumpmachine'],check=True,capture_output=True,text=True).stdout.strip()
+        target=subprocess.run([str(path),'-dumpmachine'],check=True,capture_output=True,text=True,env=None if reference_env is None else reference_env.child()).stdout.strip()
         if not target: raise ValueError('Missing Darwin compiler target')
         identity['target']=target
     return identity
 
 
-def darwin_toolchain_snapshot(work, label):
+def darwin_toolchain_snapshot(work, label, *, reference_env=None):
     work=Path(work)
     commands=(('os-build',['/usr/bin/sw_vers','-buildVersion']),
               ('sdk-path',['xcrun','--sdk','macosx','--show-sdk-path']),
               ('sdk-version',['xcrun','--sdk','macosx','--show-sdk-version']))
-    values={key:_run(command,work,label+'-'+key).strip() for key,command in commands}
+    values={key:_run(command,work,label+'-'+key,reference_env=reference_env).strip() for key,command in commands}
     if not values['os-build'] or not values['sdk-version'] or not Path(values['sdk-path']).is_absolute():
         raise ValueError('Missing Darwin SDK/OS identity')
     sdk_settings=Path(values['sdk-path'])/'SDKSettings.json'
@@ -239,30 +241,31 @@ def darwin_toolchain_snapshot(work, label):
     return context,artifacts
 
 
-def recheck_darwin_toolchain(native,work,label):
+def recheck_darwin_toolchain(native,work,label,*,reference_env=None):
     if platform.system()!='Darwin': return
-    if compiler_identity(native['compiler']['path'])!=native['compiler']:
+    if compiler_identity(native['compiler']['path'],reference_env=reference_env)!=native['compiler']:
         raise ValueError('Darwin compiler/target identity drift')
-    context,artifacts=darwin_toolchain_snapshot(work,label)
+    context,artifacts=darwin_toolchain_snapshot(work,label,reference_env=reference_env)
     if context!=native['darwin_toolchain']: raise ValueError('Darwin OS/SDK identity drift')
     for name,digest in artifacts.items():
         if name in native['artifacts'] and native['artifacts'][name]!=digest:
             raise ValueError('Darwin context artifact drift')
-    if compiler_identity(native['compiler']['path'])!=native['compiler']:
+    if compiler_identity(native['compiler']['path'],reference_env=reference_env)!=native['compiler']:
         raise ValueError('Darwin compiler/target identity drift after context observation')
     for name,digest in native['artifacts'].items():
         if sha256(name)!=digest: raise ValueError('Darwin source/toolchain/artifact drift: '+name)
     native['artifacts'].update(artifacts)
 
 
-def build_native(work,compiler='clang'):
+def build_native(work,compiler='clang',*,reference_env=None):
+    reference_env=reference_environment.select(reference_env)
     work=Path(work).resolve(); work.mkdir(parents=True,exist_ok=True)
-    pins=assert_pins(); identity=compiler_identity(compiler)
-    if platform.system()=='Darwin' and any(os.environ.get(key) is not None for key in runtime_image.DARWIN_LOADER_NAMES):
-        raise ValueError('Darwin loader overrides are outside the supported profile')
+    pins=assert_pins(); identity=compiler_identity(compiler,reference_env=reference_env)
+    if platform.system()=='Darwin':
+        reference_env.require_clear(runtime_image.DARWIN_LOADER_NAMES)
     darwin_toolchain=None;context_artifacts={}
     if platform.system()=='Darwin':
-        darwin_toolchain,context_artifacts=darwin_toolchain_snapshot(work,'darwin-initial')
+        darwin_toolchain,context_artifacts=darwin_toolchain_snapshot(work,'darwin-initial',reference_env=reference_env)
     include=work/'include'; include.mkdir(exist_ok=True)
     (include/'libm-alias-finite.h').write_text('#define libm_alias_finite(a,b)\n')
     (include/'math_config.h').write_text('#include "modern_atan2f_shim.h"\n')
@@ -273,21 +276,22 @@ def build_native(work,compiler='clang'):
              *(REFERENCE/name for name in ('modern_atan2f_glibc241.c','modern_atan2f_adapted.c','modern_atan2f_driver.c')),
              *([REFERENCE/'runtime_image.c', REFERENCE/'runtime_image_macho.c'] if platform.system()=='Darwin' else []),
              '-lm',*(['-ldl'] if platform.system()=='Linux' else []),'-o',binary]
-    _run(command,work,'native-compile')
-    if compiler_identity(compiler)!=identity or assert_pins()!=pins: raise ValueError('Compiler/source drift during native compilation')
-    qualification=validate_metadata(_strict_json(_run([binary,'--qualify'],work,'native-preflight').strip()))
+    _run(command,work,'native-compile',reference_env=reference_env)
+    if compiler_identity(compiler,reference_env=reference_env)!=identity or assert_pins()!=pins: raise ValueError('Compiler/source drift during native compilation')
+    qualification=validate_metadata(_strict_json(_run([binary,'--qualify'],work,'native-preflight',reference_env=reference_env).strip()))
     preflight_final_environment=_final_context(work/'native-preflight.stderr')
     validate_process_identity(qualification, preflight_final_environment)
     preflight_libraries=runtime_libraries(qualification)
     artifacts={**pins,**context_artifacts,**{str(p):sha256(p) for p in include.iterdir()},str(binary):sha256(binary)}
     if platform.system()=='Darwin':
-        _run([*command[:-2],'-###','-o',binary],work,'darwin-compiler-invocation')
+        _run([*command[:-2],'-###','-o',binary],work,'darwin-compiler-invocation',reference_env=reference_env)
         for suffix in ('.stdout','.stderr','.command.json'):
             p=work/('darwin-compiler-invocation'+suffix);artifacts[str(p)]=sha256(p)
-        final_context,final_artifacts=darwin_toolchain_snapshot(work,'darwin-preflight-final')
+        final_context,final_artifacts=darwin_toolchain_snapshot(work,'darwin-preflight-final',reference_env=reference_env)
         if final_context!=darwin_toolchain: raise ValueError('Darwin OS/SDK changed during compilation')
         artifacts.update(final_artifacts)
     return dict(binary=binary,compiler=identity,flags=FLAGS.copy(),source_commit=SOURCE_COMMIT,
+                reference_environment=reference_env.receipt(),
                 darwin_toolchain=darwin_toolchain,
                 source_blob=SOURCE_BLOB,source_sha256=SOURCE_SHA256,constants_sha256=CONSTANTS_SHA256,
                 artifacts=artifacts,preflight_environment=qualification,preflight_libraries=preflight_libraries,preflight_final_environment=preflight_final_environment,system=platform.system(),machine=platform.machine())
@@ -396,12 +400,14 @@ def runtime_libraries(environment):
             for key in ('atan2_library','fma_library')}
 
 
-def recheck_runtime_libraries(native):
+def recheck_runtime_libraries(native,*,reference_env=None):
     """Fresh native process re-attests cache-backed code after candidate work.
 
     An old receipt, OS name or missing on-disk image can never authorize success.
     The original compiler/source/binary snapshots are checked before execution.
     """
+    reference_env=reference_environment.select(reference_env)
+    reference_env.assert_receipt(native.get('reference_environment'))
     libraries=native.get('libraries')
     if type(libraries) is not dict or set(libraries)!={'atan2_library','fma_library'}:
         raise ValueError('Missing qualified runtime library identities')
@@ -417,13 +423,13 @@ def recheck_runtime_libraries(native):
     for name,digest in native['artifacts'].items():
         if sha256(name)!=digest: raise ValueError('Native attestation artifact drift: '+name)
     label='runtime-recheck-'+uuid.uuid4().hex
-    environment=validate_metadata(_strict_json(_run([binary,'--qualify'],binary.parent,label).strip()))
+    environment=validate_metadata(_strict_json(_run([binary,'--qualify'],binary.parent,label,reference_env=reference_env).strip()))
     final=_final_context(binary.parent/(label+'.stderr'))
     validate_process_identity(environment,final)
     validate_cross_process(native['environment'],environment)
     if runtime_libraries(environment)!=libraries:
         raise ValueError('Qualified Darwin runtime image drift during probe')
-    recheck_darwin_toolchain(native,binary.parent,label+'-darwin')
+    recheck_darwin_toolchain(native,binary.parent,label+'-darwin',reference_env=reference_env)
     native.setdefault('runtime_rechecks',[]).append(dict(label=label,initial=environment,final=final))
     for suffix in ('.stdout','.stderr','.command.json'):
         path=binary.parent/(label+suffix);native['artifacts'][str(path)]=sha256(path)
@@ -505,14 +511,15 @@ def parse_native(text,rows):
     return environment,records
 
 
-def native_reference(rows,work,compiler='clang'):
-    work=Path(work).resolve(); build=build_native(work,compiler)
+def native_reference(rows,work,compiler='clang',*,reference_env=None):
+    reference_env=reference_environment.select(reference_env)
+    work=Path(work).resolve(); build=build_native(work,compiler,reference_env=reference_env)
     if any(type(r) is not dict or any(not _u32(r.get(k)) for k in ('id','y','x')) for r in rows):
         raise ValueError('Invalid reference input')
     if len({r['id'] for r in rows})!=len(rows): raise ValueError('Duplicate reference row IDs')
     input_text=''.join(f'{r["id"]} {r["y"]:08x} {r["x"]:08x}\n' for r in rows)
     (work/'native-input.txt').write_text(input_text)
-    output=_run([build['binary']],work,'native-run',input_text=input_text)
+    output=_run([build['binary']],work,'native-run',input_text=input_text,reference_env=reference_env)
     environment,records=parse_native(output,rows)
     final_environment=_final_context(work/'native-run.stderr')
     validate_process_identity(environment,final_environment)
@@ -522,14 +529,15 @@ def native_reference(rows,work,compiler='clang'):
     package=None
     if platform.system()=='Linux' and shutil.which('dpkg-query'):
         try:
-            package=dict(available=True,identity=_run(['dpkg-query','-W','-f=${Package} ${Version} ${Architecture}\\n','libc6'],work,'libc-package').strip())
+            package=dict(available=True,identity=_run(['dpkg-query','-W','-f=${Package} ${Version} ${Architecture}\\n','libc6'],work,'libc-package',reference_env=reference_env).strip())
         except RuntimeError:
             package=dict(available=False,reason=(work/'libc-package.stderr').read_text().strip())
-    if compiler_identity(compiler)!=build['compiler'] or assert_pins()!={str(p):build['artifacts'][str(p)] for p in source_paths()}:
+    if compiler_identity(compiler,reference_env=reference_env)!=build['compiler'] or assert_pins()!={str(p):build['artifacts'][str(p)] for p in source_paths()}:
         raise ValueError('Compiler/source drift during native execution')
     for name,digest in build['artifacts'].items():
         if sha256(name)!=digest: raise ValueError('Native artifact drift: '+name)
-    recheck_darwin_toolchain(build,work,'darwin-native-final')
+    recheck_darwin_toolchain(build,work,'darwin-native-final',reference_env=reference_env)
+    reference_env.assert_receipt(build['reference_environment'])
     historical=[(bits(y),bits(x)) for y,x in old_samples()]
     prefix=[(r['y'],r['x']) for r in rows[:1086]]
     baseline={}
@@ -559,19 +567,20 @@ def native_reference(rows,work,compiler='clang'):
     return metadata,records
 
 
-def native_search(work,compiler,mode,budget):
+def native_search(work,compiler,mode,budget,*,reference_env=None):
+    reference_env=reference_environment.select(reference_env)
     limits={'uniform':200000000,'boundary':1000000,'tiny':200000000}
     options={'uniform':'--search','boundary':'--search-boundary','tiny':'--search-tiny'}
     if mode not in limits or type(budget) is not int or not 0<budget<=limits[mode]:
         raise ValueError('Search mode/budget outside bounded domain')
-    work=Path(work).resolve(); build=build_native(work,compiler)
+    work=Path(work).resolve(); build=build_native(work,compiler,reference_env=reference_env)
     label='native-'+mode+'-search'
-    output=_run([build['binary'],options[mode],str(budget),str(SEED)],work,label,timeout=180)
+    output=_run([build['binary'],options[mode],str(budget),str(SEED)],work,label,timeout=180,reference_env=reference_env)
     values=[_strict_json(line) for line in output.splitlines()[1:]]
     rows=[{key:r[key] for key in ('id','y','x')} for r in values]
     environment,records=parse_native(output,rows)
     final_environment=_final_context(work/(label+'.stderr'))
-    if compiler_identity(compiler)!=build['compiler'] or assert_pins()!={str(p):build['artifacts'][str(p)] for p in source_paths()}:
+    if compiler_identity(compiler,reference_env=reference_env)!=build['compiler'] or assert_pins()!={str(p):build['artifacts'][str(p)] for p in source_paths()}:
         raise ValueError('Compiler/source drift during native input generation')
     for path,digest in build['artifacts'].items():
         if sha256(path)!=digest: raise ValueError('Search artifact drift: '+path)
@@ -579,7 +588,8 @@ def native_search(work,compiler,mode,budget):
     validate_cross_process(build['preflight_environment'],environment)
     if runtime_libraries(environment)!=build['preflight_libraries']:
         raise ValueError('Search library identity drift')
-    recheck_darwin_toolchain(build,work,'darwin-search-final')
+    recheck_darwin_toolchain(build,work,'darwin-search-final',reference_env=reference_env)
+    reference_env.assert_receipt(build['reference_environment'])
     metadata={**build,'binary':str(build['binary']),'mode':mode,'budget':budget,'seed':SEED,
               'environment':environment,'final_environment':final_environment,
               'retained_observations':len(records),'candidate_run':False,'passed':False,
@@ -596,19 +606,21 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--work',type=Path,default=ROOT/'.build/modern-angle-reference')
     parser.add_argument('--compiler',default='clang')
+    reference_environment.add_argument(parser)
     search=parser.add_mutually_exclusive_group()
     search.add_argument('--search-trials',type=int,default=0)
     search.add_argument('--search-boundaries',type=int,default=0)
     search.add_argument('--search-tiny',type=int,default=0)
     args=parser.parse_args()
+    reference_env=reference_environment.ReferenceEnvironment(args.reference_loader_policy)
     if args.search_boundaries or args.search_trials or args.search_tiny:
         mode='boundary' if args.search_boundaries else 'tiny' if args.search_tiny else 'uniform'
         budget=args.search_boundaries or args.search_trials or args.search_tiny
-        metadata=native_search(args.work,args.compiler,mode,budget)
+        metadata=native_search(args.work,args.compiler,mode,budget,reference_env=reference_env)
         print(json.dumps(dict(native_only=True,candidate_run=False,passed=False,mode=mode,budget=budget,
                               retained_observations=metadata['retained_observations'],coverage=metadata['coverage'])))
     else:
-        metadata,records=native_reference(samples(),args.work,args.compiler)
+        metadata,records=native_reference(samples(),args.work,args.compiler,reference_env=reference_env)
         (args.work/'native-records.json').write_text(json.dumps(records)+'\n')
         print(json.dumps(dict(native_qualified=True,candidate_run=False,passed=False,
                               observations=len(records),coverage=metadata['coverage'],

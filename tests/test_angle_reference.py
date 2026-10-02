@@ -131,10 +131,11 @@ class AngleQualificationTests(unittest.TestCase):
         self.work=self.root/'angle-reference';self.work.mkdir();self.report_path=self.work/'results.json'
         self.report_path.write_text(json.dumps(dict(qualified=True,selected_profile='stale')))
         self.profile='Glibc241AngleRn';self.failure=None;self.mutate=None;self.commands=[];self.states=[]
-        self.outputs={};self.bad_meta=None;self.new_binary=True
+        self.outputs={};self.bad_meta=None;self.new_binary=True;self.parent_loader={};self.environments=[]
 
     def runner(self,command,**kwargs):
         self.commands.append(command);self.states.append(json.loads(self.report_path.read_text()))
+        self.environments.append(kwargs.get('env'))
         label=Path(command[0]).name;out='';err=''
         if self.failure=='setup' and label=='git':raise RuntimeError('setup failed')
         if '--version' in command:out='mock clang 19.1.7\n'
@@ -164,7 +165,7 @@ class AngleQualificationTests(unittest.TestCase):
 
     def qualify(self,**kwargs):
         def which(name):return str(self.compiler) if name=='clang' else '/mock/bin/'+name
-        with patch.object(angle,'load_manifest',return_value=copy.deepcopy(self.manifest)),patch.object(angle.shutil,'which',side_effect=which),patch.object(angle.platform,'system',return_value='Linux'),patch.object(angle.platform,'machine',return_value='x86_64'),patch.dict(angle.os.environ,{k:v for k,v in angle.os.environ.items() if k not in angle.LOADER_NAMES},clear=True):
+        with patch.object(angle,'load_manifest',return_value=copy.deepcopy(self.manifest)),patch.object(angle.shutil,'which',side_effect=which),patch.object(angle.platform,'system',return_value='Linux'),patch.object(angle.platform,'machine',return_value='x86_64'),patch.dict(angle.os.environ,{**{k:v for k,v in angle.os.environ.items() if k not in angle.reference_environment.LOADER_NAMES},**self.parent_loader},clear=True):
             return angle.qualify(self.raylib,self.library,self.root,c_source=conformance.c_source,cases_from=conformance.cases_from,parse_output=conformance.parse_output,runner=self.runner,**kwargs)
 
     def failed(self):
@@ -181,6 +182,47 @@ class AngleQualificationTests(unittest.TestCase):
             self.assertTrue(all(not state['qualified'] and state['selected_profile'] is None for state in self.states))
             self.assertEqual(result['package']['status'],'not-in-successful-dpkg-inventory')
             self.assertEqual((self.work/'canonical.c').read_text(),conformance.c_source(conformance.cases_from(angle.control_document(self.manifest))))
+
+    def test_loader_strict_default_rejects_setup_python_and_empty_overrides(self):
+        for value in ('/opt/hostedtoolcache/Python/3.12.14/x64/lib', ''):
+            self.parent_loader={'LD_LIBRARY_PATH':value}
+            with self.assertRaisesRegex(ValueError,'Loader overrides'): self.qualify()
+            result=self.failed()
+            self.assertEqual(result['reference_environment']['policy'],'inherited')
+            self.assertEqual(result['reference_environment']['parent_loader']['LD_LIBRARY_PATH'],value)
+            self.assertEqual(self.commands,[])
+
+    def test_clean_loader_reaches_every_native_and_compiler_child(self):
+        self.parent_loader={key:'declared-parent-override' for key in angle.reference_environment.LOADER_NAMES}
+        result=self.qualify(reference_loader_policy='clean-loader')
+        self.assertTrue(result['qualified'])
+        self.assertEqual(result['reference_environment']['parent_loader'],self.parent_loader)
+        self.assertTrue(all(value is None for value in result['reference_environment']['effective_child_loader'].values()))
+        self.assertTrue(self.environments)
+        self.assertTrue(all(env==self.environments[0] for env in self.environments))
+        self.assertTrue(all(key not in self.environments[0] for key in angle.reference_environment.LOADER_NAMES))
+        self.assertIn(str(angle.ROOT/'tools/reference_environment.py'),result['artifacts'])
+
+    def test_unknown_loader_policy_never_preserves_success(self):
+        for policy in ('', 'auto', 'setup-python', True, None):
+            with self.assertRaisesRegex(ValueError,'Unknown reference loader policy'):
+                self.qualify(reference_loader_policy=policy)
+            self.failed()
+        self.assertEqual(self.commands,[])
+
+    def test_clean_policy_does_not_ignore_remaining_native_override(self):
+        self.parent_loader={'LD_LIBRARY_PATH':'/harmless/python-lib'}
+        self.bad_meta=lambda initial,final,label: initial['loader_overrides'].update(LD_LIBRARY_PATH='')
+        with self.assertRaisesRegex(ValueError,'Loader overrides'):
+            self.qualify(reference_loader_policy='clean-loader')
+        self.failed()
+
+    def test_parent_loader_drift_rejects_after_final_native_observation(self):
+        self.parent_loader={'LD_LIBRARY_PATH':'/harmless/python-lib'}
+        self.mutate=lambda label: angle.os.environ.__setitem__('LD_AUDIT','changed') if label=='intermediate-mirror' else None
+        with self.assertRaisesRegex(ValueError,'loader context drift'):
+            self.qualify(reference_loader_policy='clean-loader')
+        self.failed()
 
     def test_explicit_profile_cannot_bypass_qualification(self):
         for requested in ('Apple2007AngleRn','unknown'):
@@ -419,6 +461,25 @@ class AngleCliAdmissionTests(unittest.TestCase):
                 self.assertEqual(self.calls[0][3]['timeout'],7)
                 self.assertTrue(json.loads(last.read_text())['qualified'])
                 self.unqualified(first)
+
+    def test_loader_policy_admission_all_orders_and_explicit_default(self):
+        faults=[['--reference-loader-policy','unknown'],['--reference-loader-policy'],
+                ['--reference-loader-pol','clean-loader'],['--help']]
+        for fault in faults:
+            for destination in (['--build-dir','policy-late'],['--build-dir=policy-late']):
+                for before in (True,False):
+                    path=self.seed('policy-late');self.seed(self.default)
+                    self.invoke(self.base+(fault+destination if before else destination+fault))
+                    self.unqualified(path)
+                    self.assertEqual(self.calls,[])
+        for policy in (None,'inherited','clean-loader'):
+            for before in (True,False):
+                option=[] if policy is None else ['--reference-loader-policy',policy]
+                destination=['--build-dir','policy-late']
+                self.seed('policy-late')
+                with patch.dict(angle.os.environ,{'LD_LIBRARY_PATH':'/opt/hostedtoolcache/Python/3.12.14/x64/lib'}):
+                    self.invoke(self.base+(option+destination if before else destination+option),False)
+                self.assertEqual(self.calls[0][3]['reference_loader_policy'],policy or 'inherited')
 
     def test_unwritable_early_destination_still_invalidates_late_one(self):
         blocked=self.root/'not-a-directory';blocked.write_text('existing file')

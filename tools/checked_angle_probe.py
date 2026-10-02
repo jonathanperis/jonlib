@@ -25,6 +25,7 @@ import time
 import uuid
 
 import angle_manifest_audit as rational
+import reference_environment
 import angle_reference as qualification
 import conformance
 import modern_angle_probe as common
@@ -42,7 +43,7 @@ STAGES = ({1, 2, *range(10, 16), 31, 32}, {1, 2, 10, 11, 31, 32, 33},
 FLAGS = ['-std=c11', '-O2', '-frounding-math', '-fno-fast-math',
          '-ffp-contract=off', '-fno-lto', '-fno-builtin-atan2f', '-fno-builtin-fma']
 DEPENDENCIES = ('tools/checked_angle_probe.py', 'tests/test_checked_angle.py',
-                'tools/angle_reference.py', 'tools/angle_manifest_audit.py',
+                'tools/angle_reference.py', 'tools/angle_manifest_audit.py', 'tools/reference_environment.py',
                 'tools/modern_angle_probe.py', 'tools/modern_angle_reference.py',
                 'tools/conformance.py', 'toolchain.json', 'LAWS.bend', 'PROOF.bend')
 word = common.word
@@ -559,14 +560,14 @@ def write_json(path,value):
     temporary.replace(path)
 
 
-def execute(command,work,name,timeout=600,env=None,report=None):
+def execute(command,work,name,timeout=600,env=None,report=None,reference_env=None):
     command=[str(part) for part in command]
     record=dict(name=name,argv=command,completed=False)
     if report is not None: report.setdefault('commands',[]).append(record)
     for suffix in ('stdout','stderr'): (work/(name+'.'+suffix)).unlink(missing_ok=True)
     stdout=stderr=''
     try:
-        process=subprocess.run(command,cwd=ROOT,env=dict(os.environ,BEND_NO_TELEMETRY='1',**(env or {})),
+        process=subprocess.run(command,cwd=ROOT,env=reference_env.child() if reference_env is not None else dict(os.environ,BEND_NO_TELEMETRY='1',**(env or {})),
                                text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=timeout)
         stdout,stderr=process.stdout,process.stderr
         if type(stdout) is not str or type(stderr) is not str: raise ValueError('Command output must be text')
@@ -644,7 +645,9 @@ def check_context(stderr,receipt):
     return context
 
 
-def native_reference(rows,work,receipt,timeout=600,report=None):
+def native_reference(rows,work,receipt,timeout=600,report=None,*,reference_env=None):
+    environment=reference_environment.select(reference_env)
+    environment.assert_receipt(receipt.get('reference_environment'))
     work.mkdir(parents=True,exist_ok=True)
     report={} if report is None else report
     pinned.assert_pins()
@@ -661,9 +664,9 @@ def native_reference(rows,work,receipt,timeout=600,report=None):
         ('wrapper-compile',[compiler,*FLAGS,'-I'+str(Path(receipt['raylib']['source'])/'src'),source,context,scalar,'-lm','-ldl','-o',binary],[binary]))
     retain_artifacts(report,work,['raw-wrappers.c','include/libm-alias-finite.h','include/math_config.h'])
     for name,command,outputs in commands:
-        compile_fresh(command,outputs,work,name,timeout=timeout,report=report)
+        compile_fresh(command,outputs,work,name,timeout=timeout,report=report,reference_env=environment)
         retain_artifacts(report,work,[*(str(path.relative_to(work)) for path in outputs),name+'.stdout',name+'.stderr'])
-    output=execute([binary],work,'native-run',timeout=timeout,report=report)
+    output=execute([binary],work,'native-run',timeout=timeout,report=report,reference_env=environment)
     retain_artifacts(report,work,['native-run.stdout','native-run.stderr'])
     report['context']=check_context((work/'native-run.stderr').read_text(),receipt)
     report['flags']=FLAGS
@@ -707,6 +710,8 @@ def run_candidates(rows,native,cases,work,cli,environment,bun,report,timeout=600
 
 def run(args,report,report_path):
     work=report_path.parent; start=time.monotonic()
+    reference_env=reference_environment.ReferenceEnvironment(getattr(args,'reference_loader_policy','inherited'))
+    report['reference_environment']=reference_env.receipt()
     lock=strict_json((ROOT/'toolchain.json').read_text())
     conformance.checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'))
     sources=source_hashes(lock)
@@ -714,9 +719,9 @@ def run(args,report,report_path):
     if bun['version']!=lock['bun']['version']: raise ValueError('Bun version differs from pinned toolchain')
     receipt=qualification.qualify(args.raylib_source,args.library,work,c_source=conformance.c_source,
                 cases_from=conformance.cases_from,parse_output=conformance.parse_output,
-                requested_profile='Glibc241AngleRn',timeout=args.timeout)
+                requested_profile='Glibc241AngleRn',timeout=args.timeout,reference_env=reference_env)
     assert_qualification(receipt,report['started_at'])
-    compiler=common.compiler_identity(receipt['compiler']['path'],work,'compiler-version')
+    compiler=common.compiler_identity(receipt['compiler']['path'],work,'compiler-version',reference_env=reference_env)
     if compiler['sha256']!=receipt['compiler']['sha256'] or compiler['version']!=receipt['compiler']['version']:
         raise ValueError('Compiler identity differs from fresh native qualification')
     environment=common.candidate_environment(compiler)
@@ -733,7 +738,7 @@ def run(args,report,report_path):
         input_sha256=digest(work/'inputs.json'))
     write_json(report_path,report)
     native_report={}; report['raw_native']=native_report
-    native=native_reference(rows,work/'raw-native',receipt,args.timeout,native_report)
+    native=native_reference(rows,work/'raw-native',receipt,args.timeout,native_report,reference_env=reference_env)
     report['coverage']=validate_coverage(rows,native)
     write_json(report_path,report)
     if not args.native_only:
@@ -742,10 +747,11 @@ def run(args,report,report_path):
     if source_hashes(lock)!=sources: raise ValueError('Source/harness/toolchain drift during gate')
     conformance.checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'))
     for name,command,expected in (('bun','bun',bun),('compiler',receipt['compiler']['path'],compiler)):
-        if common.compiler_identity(command,work,name+'-final-version')!=expected:
+        if common.compiler_identity(command,work,name+'-final-version',reference_env=reference_env if name=='compiler' else None)!=expected:
             raise ValueError('Compiler/runtime executable drift')
     if Path(shutil.which('clang') or '').absolute()!=Path(receipt['compiler']['path']) or Path(receipt['compiler']['path']).resolve()!=Path(receipt['compiler']['realpath']):
         raise ValueError('Qualified compiler path resolution drift')
+    reference_env.assert_receipt(receipt['reference_environment'])
     assert_receipt_artifacts(receipt); assert_artifacts_unchanged(native_report,work/'raw-native')
     assert_artifacts_unchanged(report,work)
     retain_artifacts(report,work,[name+'-final-version.'+suffix for name in ('bun','compiler') for suffix in ('stdout','stderr')])
@@ -783,6 +789,7 @@ def main(argv=None):
     parser.add_argument('--build-dir',type=Path,default=ROOT/'.build/checked-angle-probe')
     parser.add_argument('--timeout',type=int,default=600)
     parser.add_argument('--native-only',action='store_true')
+    reference_environment.add_argument(parser)
     args=argparse.Namespace(build_dir=ROOT/'.build/checked-angle-probe')
     def admit(error=None):
         path=admission_directory.resolve()/'results.json'; path.parent.mkdir(parents=True,exist_ok=True)

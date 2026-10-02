@@ -25,9 +25,10 @@ def scene(operations=None):
         operations=operations or [operation()])]))
 
 
-def receipt(profile='Glibc241AngleRn'):
+def receipt(profile='Glibc241AngleRn',policy='inherited'):
     return dict(schema=1, contract='native-angle-qualification-v1',
                 qualified=True, phase='qualified', selected_profile=profile,
+                reference_environment=c.reference_environment.ReferenceEnvironment(policy).receipt(),
                 matching_profiles=[profile], run_id='0123456789abcdef0123456789abcdef',
                 contexts={label: dict(mock_validated=True) for label in
                           ('pinned-run', 'pointer-run', 'canonical-run', 'runtime-wrapper-run', 'mirror-run')},
@@ -167,7 +168,7 @@ class NativeAngleDomainTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'fresh native rejection'):
                     c.verify_native_source_rejection(Path('/raylib'), Path('/library'), 'rejection', 'C', 10, 'invalid angle')
                 execute.assert_not_called()
-            def compile_control(command):
+            def compile_control(command, **kwargs):
                 self.assertFalse(binary.exists())
                 Path(command[-1]).write_text('fresh')
                 self.assertEqual(command[1:4], ['-std=c11', '-O2', '-fno-builtin-atan2f'])
@@ -205,19 +206,20 @@ class AngleQualificationRoutingTests(unittest.TestCase):
         with patch.object(angle, 'qualify', side_effect=ValueError('stale source')), self.assertRaisesRegex(ValueError, 'stale source'):
             c.qualify_angles(Path('/raylib'), Path('/library'))
 
-    def run_main_until_candidate(self, gate_result=None, gate_error=None, gpu=False):
+    def run_main_until_candidate(self, gate_result=None, gate_error=None, gpu=False, policy=None):
         with tempfile.TemporaryDirectory() as temp, ExitStack() as stack:
             work = Path(temp); raylib = work/'raylib'; (raylib/'src').mkdir(parents=True)
             (raylib/'src/raylib.h').write_text('mock header')
             cases = scene(); fixture = work/'fixtures.json'
             fixture.write_text(json.dumps(dict(schema=1,cases=cases)))
             reference = json.dumps(dict(id='checked-angle',width=4,height=2,pixels=[0]*8))+'\n'
-            calls = []
+            calls = []; self.executions=[]
             original = c.bend_source
             def generate(*args, **kwargs):
                 calls.append(kwargs.copy())
                 return original(*args, **kwargs)
             def run(command, **kwargs):
+                self.executions.append((command,kwargs))
                 if '--check-only' in command: return 'All terms check.'
                 if '--version' in command: return 'mock version'
                 if Path(command[0]).name == 'reference': return reference
@@ -235,11 +237,11 @@ class AngleQualificationRoutingTests(unittest.TestCase):
             stack.enter_context(patch.object(c, 'verify_angle_rejections', return_value=2))
             generator = stack.enter_context(patch.object(c, 'bend_source', side_effect=generate))
             gate = stack.enter_context(patch.object(angle, 'qualify', return_value=gate_result, side_effect=gate_error))
-            argv = ['conformance', '--fixtures', str(fixture), '--raylib-source', str(raylib)] + (['--gpu'] if gpu else [])
+            argv = ['conformance', '--fixtures', str(fixture), '--raylib-source', str(raylib)] + (['--gpu'] if gpu else []) + (['--reference-loader-policy',policy] if policy else [])
             stack.enter_context(patch.object(sys, 'argv', argv))
             (work/'conformance.json').write_text(json.dumps(dict(passed=True,angle_reference=receipt('Sun239AngleRn'))))
             (work/'candidate-0.bend').write_text('stale candidate')
-            expected = StopAfterCandidates if gate_error is None and gate_result == receipt() else ValueError
+            expected = StopAfterCandidates if gate_error is None and gate_result == receipt(policy=policy or 'inherited') else ValueError
             with self.assertRaises(expected): c.main()
             gate.assert_called_once()
             report = json.loads((work/'conformance.json').read_text())
@@ -256,6 +258,25 @@ class AngleQualificationRoutingTests(unittest.TestCase):
             self.assertEqual([call['angle_reference'] for call in calls], ['Glibc241AngleRn']*(2 if gpu else 1))
             self.assertEqual([call.get('gpu', False) for call in calls], [False, True] if gpu else [False])
             self.assertEqual(report['angle_reference'], receipt())
+
+    def test_full_canonical_native_compiler_and_execution_use_clean_snapshot(self):
+        with patch.dict(c.os.environ,{'LD_LIBRARY_PATH':'/opt/hostedtoolcache/Python/3.12.14/x64/lib'}):
+            result=receipt(policy='clean-loader')
+            _,report=self.run_main_until_candidate(gate_result=result,policy='clean-loader')
+            native=[(command,kwargs) for command,kwargs in self.executions
+                    if str(command[0]) in ('clang','cmake') or Path(command[0]).name=='reference']
+            self.assertEqual(len(native),5)
+            self.assertTrue(all('LD_LIBRARY_PATH' not in kwargs['env'] for _,kwargs in native))
+            self.assertTrue(all(kwargs['env']==native[0][1]['env'] for _,kwargs in native))
+            candidate=[kwargs for command,kwargs in self.executions if command[0]=='bun']
+            self.assertTrue(candidate);self.assertTrue(all('env' not in kwargs for kwargs in candidate))
+            self.assertEqual(c.os.environ['LD_LIBRARY_PATH'],'/opt/hostedtoolcache/Python/3.12.14/x64/lib')
+            self.assertEqual(report['reference_environment'],result['reference_environment'])
+
+    def test_mixed_loader_receipt_cannot_authorize_candidate(self):
+        result=receipt();result['reference_environment']['policy']='clean-loader'
+        with patch.object(angle,'qualify',return_value=result),self.assertRaisesRegex(ValueError,'Mixed reference'):
+            c.qualify_angles(Path('/raylib'),Path('/library'))
 
     def test_failed_unknown_or_mixed_qualification_cannot_emit_candidate(self):
         for result in (dict(receipt(), qualified=False), dict(receipt(), selected_profile='unknown'),
@@ -274,10 +295,17 @@ class AngleQualificationRoutingTests(unittest.TestCase):
                 work = Path(temp)
                 (work/'scenarios.json').write_text(json.dumps(cases))
                 (work/'reference.jsonl').write_text(json.dumps(rows[0])+'\n')
+                for name in ('reference.c','reference'): (work/name).write_text('native fixture')
+                # Prefix diagnosis remains available after a failed candidate lane.
+                (work/'conformance.json').write_text(json.dumps(dict(passed=False,
+                    reference_environment=receipt()['reference_environment'],
+                    reference_artifacts={name:hashlib.sha256((work/name).read_bytes()).hexdigest()
+                        for name in ('reference.c','reference','reference.jsonl')})))
                 generator = Mock(side_effect=StopAfterCandidates())
                 qualifier = Mock(side_effect=ValueError('unqualified') if fail else None, return_value=receipt())
                 stack.enter_context(patch.dict(env, BUILD=work, checkout=Mock(), cases_from=Mock(return_value=cases),
-                                               source_gate=Mock(return_value={}), qualify_angles=qualifier, bend_source=generator))
+                                               source_gate=Mock(return_value={}), qualify_angles=qualifier, bend_source=generator,
+                                               run=Mock(return_value=(work/'reference.jsonl').read_text())))
                 stack.enter_context(patch.object(env['platform'], 'system', return_value='Darwin'))
                 stack.enter_context(patch.object(sys, 'argv', ['metal-probe', '--counts', '1']))
                 with self.assertRaises(ValueError if fail else StopAfterCandidates): main()

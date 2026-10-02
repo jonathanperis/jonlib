@@ -126,7 +126,7 @@ class RuntimeImageTests(unittest.TestCase):
             root=Path(tmp);sdk=root/'MacOSX.sdk';sdk.mkdir();settings=sdk/'SDKSettings.json';settings.write_text('{}')
             values={'-buildVersion':'TEST-BUILD','--show-sdk-path':str(sdk),'--show-sdk-version':'15.0'}
             calls=[]
-            def run(command,work,label):
+            def run(command,work,label,**kwargs):
                 calls.append(command)
                 value=values[command[-1]]
                 for suffix in ('.stdout','.stderr','.command.json'):
@@ -167,10 +167,11 @@ class RuntimeImageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp,patch.object(modern.platform,'system',return_value='Darwin'),patch.object(modern.platform,'machine',return_value='arm64'):
             binary=Path(tmp)/'reference';binary.write_text('attestation binary fixture')
             environment=modern_context()
-            native=dict(binary=str(binary),environment=environment,artifacts={str(binary):modern.sha256(binary)},
+            native=dict(binary=str(binary),environment=environment,
+                        reference_environment=modern.reference_environment.ReferenceEnvironment().receipt(),artifacts={str(binary):modern.sha256(binary)},
                         libraries=image.enrich_images(environment['runtime_images']))
             calls=[]
-            def run(command,work,label):
+            def run(command,work,label,**kwargs):
                 calls.append(command)
                 final=modern_final(environment)
                 (Path(work)/(label+'.stderr')).write_text(json.dumps(final)+'\n')

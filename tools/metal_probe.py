@@ -11,6 +11,7 @@ from pathlib import Path
 import platform
 import re
 import subprocess
+import reference_environment
 
 from conformance import BUILD, ROOT, bend_source, cases_from, checkout, compare, has_angles, has_extrema, parse_output, qualify_angles, qualify_extrema, run, source_gate
 
@@ -26,9 +27,12 @@ def outline_circle(source):
 
 
 def main():
+    BUILD.mkdir(parents=True, exist_ok=True)
+    (BUILD/'metal-probe.json').write_text(json.dumps(dict(passed=False, phase='argument-validation'))+'\n')
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--bend-source', type=Path, default=Path.home() / 'Projetos/bendlang/bend')
     parser.add_argument('--raylib-source', type=Path, default=Path.home() / 'Projetos/raysan5/raylib')
+    reference_environment.add_argument(parser)
     parser.add_argument('--counts', type=int, nargs='+', default=[20, 24, 26])
     parser.add_argument('--outline-circle', action='store_true', help='Also test one explicitly experimental no-inline generated-C change')
     args = parser.parse_args()
@@ -47,18 +51,33 @@ def main():
                   experimental_outlining=args.outline_circle, results=[])
     report_path = BUILD / 'metal-probe.json'
     report_path.write_text(json.dumps(report, indent=2) + '\n')
+    environment = reference_environment.ReferenceEnvironment(args.reference_loader_policy)
+    report['reference_environment'] = environment.receipt()
+    report_path.write_text(json.dumps(report, indent=2) + '\n')
     extrema_reference = None
     angle_reference = None
     selected = cases[:max(args.counts)]
     if has_extrema(selected) or has_angles(selected):
+        prior = json.loads((BUILD/'conformance.json').read_text())
+        # A failed candidate/GPU lane is precisely what this diagnostic may
+        # investigate. Bind completed native artifacts, not the candidate verdict.
+        environment.assert_receipt(prior.get('reference_environment'))
+        artifacts = prior.get('reference_artifacts')
+        if type(artifacts) is not dict or set(artifacts) != {'reference.c','reference','reference.jsonl'}:
+            raise ValueError('Missing canonical reference artifact identity')
+        for name, digest in artifacts.items():
+            if hashlib.sha256((BUILD/name).read_bytes()).hexdigest() != digest:
+                raise ValueError('Canonical reference artifact drift')
+        if run([BUILD/'reference'], env=environment.child()) != (BUILD/'reference.jsonl').read_text():
+            raise ValueError('Fresh native reference differs from recorded canonical observations')
         checkout(args.raylib_source, lock['raylib']['revision'])
     if has_extrema(selected):
-        qualification = qualify_extrema(args.raylib_source, BUILD / 'raylib/raylib/libraylib.a')
+        qualification = qualify_extrema(args.raylib_source, BUILD / 'raylib/raylib/libraylib.a', reference_env=environment)
         extrema_reference = qualification['selected_profile']
         report['extrema_reference'] = qualification
         report_path.write_text(json.dumps(report, indent=2) + '\n')
     if has_angles(selected):
-        qualification = qualify_angles(args.raylib_source, BUILD / 'raylib/raylib/libraylib.a')
+        qualification = qualify_angles(args.raylib_source, BUILD / 'raylib/raylib/libraylib.a', reference_env=environment)
         angle_reference = qualification['selected_profile']
         report['angle_reference'] = qualification
         report_path.write_text(json.dumps(report, indent=2) + '\n')
@@ -96,6 +115,7 @@ def main():
                 report_path.write_text(json.dumps(report, indent=2) + '\n')
                 print(f'{count} scenarios / {variant} / GPU {gpu}: '
                       + ('exact pixel match' if record['passed'] else f'FAIL (exit {result.returncode})'), flush=True)
+    environment.assert_receipt(report['reference_environment'])
     report['passed'] = all(result['passed'] for result in report['results'])
     report_path.write_text(json.dumps(report, indent=2) + '\n')
     print('Diagnostic evidence: .build/metal-probe.json')

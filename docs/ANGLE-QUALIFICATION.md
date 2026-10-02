@@ -237,3 +237,46 @@ qualification. The Darwin backend does not bypass any native controls or
 establish device parity. Unsupported metadata and Windows still fail before
 candidate generation. Existing public legacy APIs remain available; historical
 Apple/Metal evidence is not a fresh qualification of the new route.
+
+## Explicit reference-child loader policy
+
+The default `--reference-loader-policy inherited` retains the caller's loader
+variables and the strict native qualification still rejects an observed
+supported override, including an empty string. An explicit
+`--reference-loader-policy clean-loader` instead snapshots the parent environment
+and removes exactly the named Linux and Darwin loader variables from native
+reference/compiler children. It does not change the Python process, its startup
+library search path, the global environment, Bend children, compiler flags,
+arithmetic, library selection code, or numerical acceptance rules. There is no
+Python-installation-path allowlist or automatically inferred policy.
+
+Each report records the chosen policy, the parent's named loader variables, and
+the effective child's named loader variables. Other environment values remain
+in the in-memory snapshot and are never included in the receipt. Every child
+receives a full replacement environment; merging it back into the parent would
+reintroduce removed keys and is forbidden. Named parent loader drift, a changed
+receipt/policy, or any remaining native override rejects. All existing native
+initial/final loader, fenv, runtime-image and cross-process checks remain active.
+
+The standalone qualifier, complete canonical C compilation/execution, extrema
+and native rejection controls, and checked-wrapper native processes share the
+selected snapshot within their invocation. Modern source preflight, corpus,
+search, compiler identity and Darwin runtime/toolchain rechecks also propagate
+it. Compiler/source snapshots include the policy helper. Metal-prefix diagnostics
+bind the earlier canonical reference's policy and artifact hashes and freshly
+rerun that reference before qualifying; a failed candidate lane does not itself
+prevent diagnosis. This wiring adds no Darwin or device pass by inference.
+
+CI opts into `clean-loader` explicitly for the relevant commands. GitHub's
+`actions/setup-python` may need its inherited `LD_LIBRARY_PATH` for Python itself
+to start, so unsetting it for the whole workflow is not equivalent. The unchanged
+legacy scalar probe remains separately labelled inherited-context compatibility
+evidence: its parent snapshot and direct native rerun are consistent, and its
+1,086 frozen records / 178 expected modern-native differences remain mandatory.
+It is not used as a qualification of the clean child context.
+
+For reproduction, add `--reference-loader-policy clean-loader` to the commands
+above when that explicit child profile is desired. See the
+[CI loader-policy repair record](evidence/reference-loader-policy.json) for the
+original Ubuntu failure and separately scoped fresh local verification. Historical
+numerical derivation and qualification receipts are not rewritten by this repair.

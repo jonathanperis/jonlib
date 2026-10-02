@@ -37,7 +37,7 @@
   },
   "source_sha256": {
     "toolchain.json": "74c20ac3f303ef6f823209a1474b1591dd0bef87e35a4cd616e021605d6f3595",
-    "tools/conformance.py": "e51550efdce5e24ef3a1c47146c0f750b5d643e1657547b8faa5f921f849bac7",
+    "tools/conformance.py": "6c029e4c717ebc33ebe3e8bda5d5dc3d42fc0c2624aff76f5bfa0c493e7b39b1",
     "tools/angle_probe.py": "85ffda615b5366df1c1775eeeb87d5a666646be2d3f37fa80d231dcf510fcf49",
     "tools/reference/modern_atan2f_glibc241.c": "96f9c81b6e870c256cc0757f6d88f5290ed35db8d5b640b9e757d6feca96ae38",
     "tools/reference/modern_atan2f_shim.h": "6732fbd385ba61b72f0309448910961e26d4bb6c49be2cd31544765158b546f0",
@@ -52,7 +52,8 @@
     "tools/reference/runtime_image.h": "7d7b67badeb8ae56ca381511302acc0c07af25ec9f3bfea5ffc7e5e405da304f",
     "tools/reference/runtime_image.c": "7a071dc8624e60275289e759c8084013f27c086fa45b9107269c3464d4286ee6",
     "tools/reference/runtime_image_macho.h": "5e2c2c12d404d3eba90e509a3f508fb27a2aed6cec67626713d320f1c6db623f",
-    "tools/reference/runtime_image_macho.c": "f54553193f3dd82517a5a04f0060d9ea4de170dbe1d1f84504c5fa81ba527682"
+    "tools/reference/runtime_image_macho.c": "f54553193f3dd82517a5a04f0060d9ea4de170dbe1d1f84504c5fa81ba527682",
+    "tools/reference_environment.py": "3e73fd4f449baa229c55fc4d5b1884224a53d4a67ea588eb306d58c0ee3de792"
   },
   "raylib": {
     "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",

@@ -132,3 +132,22 @@ permissions, absent cache membership/UUID, code drift, ASLR, mixed contexts,
 fenv failures, stale executables and numerical mismatch. They are protocol tests,
 not fabricated Apple numerical or host evidence. No workflow, Bend source,
 fixture, public API status or historical evidence receipt is changed here.
+
+## Reference-child environment selection
+
+The [explicit loader policy](ANGLE-QUALIFICATION.md#explicit-reference-child-loader-policy)
+is independent of the Linux ELF and Darwin Mach-O metadata profiles. The native
+validators and metadata C sources are unchanged: a supported override observed
+in either initial or final native context still rejects. `clean-loader` removes
+the union of the already named Linux/Darwin loader keys only in native-reference
+and compiler children; `inherited` remains the default. Reports distinguish the
+parent's named loader context from the effective child context. The policy never
+asserts that Python itself was started without loader overrides.
+
+This repair refreshes only the canonical conformance source pin, adds the new
+policy helper pin and refreshes the enclosing manifest digest. Every prior
+non-conformance source pin and every frozen numerical/provenance expectation is
+unchanged. The earlier digest above identifies that earlier evidence snapshot;
+current pins are in `tools/reference/angle_qualification_v1.json`. The repair's
+[separate verification record](evidence/reference-loader-policy.json) does not
+turn local Linux/synthetic results into fresh hosted Ubuntu or Darwin evidence.

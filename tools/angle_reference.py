@@ -21,20 +21,20 @@ import sys
 import uuid
 
 if __package__:
-    from . import runtime_image
+    from . import runtime_image, reference_environment
 else:
     import runtime_image
+    import reference_environment
 
 ROOT = Path(__file__).resolve().parents[1]
 REFERENCE = ROOT / 'tools/reference'
 MANIFEST = REFERENCE / 'angle_qualification_v1.json'
-MANIFEST_SHA256 = 'a08d1448072694532e24945bf32558b8d7f7b07c87571f5952cab6fa76126cd6'
+MANIFEST_SHA256 = '41121c8492467aa23f8c00cba35a551f17a9041468f348cec925feaafca1fb27'
 CANONICAL_FLAGS = ['-std=c11', '-O2', '-fno-builtin-atan2f']
 MODERN_FLAGS = ['-std=c11', '-O2', '-frounding-math', '-fno-fast-math',
                 '-ffp-contract=off', '-fno-lto', '-fno-builtin-atan2f', '-fno-builtin-fma']
 PROFILES = ('Apple2007AngleRn', 'Sun239AngleRn', 'Glibc241AngleRn')
-LOADER_NAMES = ('LD_PRELOAD', 'LD_LIBRARY_PATH', 'LD_AUDIT', 'LD_BIND_NOW',
-                'GLIBC_TUNABLES', 'LD_HWCAP_MASK', 'LD_ASSUME_KERNEL')
+LOADER_NAMES = reference_environment.LINUX_LOADER_NAMES
 
 
 def sha256(path):
@@ -295,7 +295,8 @@ def strict_mirror(text, controls):
 
 
 def qualify(raylib_source, library, build_dir, *, c_source, cases_from, parse_output,
-            requested_profile=None, runner=subprocess.run, timeout=120):
+            requested_profile=None, runner=subprocess.run, timeout=120,
+            reference_loader_policy='inherited', reference_env=None):
     work = Path(build_dir).resolve() / 'angle-reference'; work.mkdir(parents=True, exist_ok=True)
     report_path = work / 'results.json'
     report = dict(schema=1, contract='native-angle-qualification-v1', run_id=uuid.uuid4().hex,
@@ -319,7 +320,7 @@ def qualify(raylib_source, library, build_dir, *, c_source, cases_from, parse_ou
         report['commands'].append(record); report['phase'] = label; persist()
         stdout = stderr = ''
         try:
-            result = runner(command, capture_output=True, text=True, timeout=timeout)
+            result = runner(command, capture_output=True, text=True, timeout=timeout, env=environment.child())
             stdout, stderr = result.stdout, result.stderr
             if type(stdout) is not str or type(stderr) is not str: raise ValueError('Command output must be text')
             record['returncode'] = result.returncode
@@ -366,6 +367,8 @@ def qualify(raylib_source, library, build_dir, *, c_source, cases_from, parse_ou
         report['contexts'][label] = context; persist()
         return stdout
     try:
+        environment = reference_environment.select(reference_env, reference_loader_policy)
+        report['reference_environment'] = environment.receipt(); persist()
         manifest = load_manifest(); track(MANIFEST)
         if __package__:
             from .angle_manifest_audit import audit
@@ -381,8 +384,7 @@ def qualify(raylib_source, library, build_dir, *, c_source, cases_from, parse_ou
         if platform.system() not in ('Linux','Darwin') or platform.machine().lower() not in ('x86_64', 'aarch64', *(['arm64'] if darwin else [])):
             raise ValueError('Unsupported platform: Linux glibc ELF or Darwin Mach-O runtime-image metadata required')
         loader_names = runtime_image.DARWIN_LOADER_NAMES if darwin else LOADER_NAMES
-        if any(os.environ.get(name) is not None for name in loader_names):
-            raise ValueError('Loader overrides are outside the supported profile')
+        environment.require_clear(loader_names)
         raylib_source, library = Path(raylib_source).resolve(), Path(library).resolve()
         for relative, digest in manifest['source_sha256'].items():
             if track(ROOT/relative) != digest: raise ValueError('Frozen source/toolchain drift: '+relative)
@@ -524,6 +526,7 @@ def qualify(raylib_source, library, build_dir, *, c_source, cases_from, parse_ou
         if compiler_path.resolve() != compiler_real: raise ValueError('Compiler resolution drift at acceptance')
         for path, digest in snapshots.items():
             if sha256(path) != digest: raise ValueError('Source/toolchain/artifact drift at acceptance: '+path)
+        environment.assert_receipt(report['reference_environment'])
         report.update(qualified=True, selected_profile=matches[0], phase='qualified',
                       completed_at=datetime.now(timezone.utc).isoformat(), artifacts=snapshots)
         persist(); return report
@@ -540,6 +543,7 @@ def main(argv=None):
     parser.add_argument('--library', type=Path, required=True)
     parser.add_argument('--build-dir', type=Path, default=ROOT/'.build')
     parser.add_argument('--profile')
+    reference_environment.add_argument(parser)
     parser.add_argument('--timeout', type=int, default=120)
     args = argparse.Namespace(build_dir=ROOT/'.build')
     admissions = {}
@@ -607,7 +611,8 @@ def main(argv=None):
     try:
         from conformance import c_source, cases_from, parse_output
         report = qualify(args.raylib_source, args.library, args.build_dir, c_source=c_source,
-                         cases_from=cases_from, parse_output=parse_output, requested_profile=args.profile, timeout=args.timeout)
+                         cases_from=cases_from, parse_output=parse_output, requested_profile=args.profile, timeout=args.timeout,
+                         reference_loader_policy=args.reference_loader_policy)
     except BaseException as error:
         finish_admission(error)
         raise
