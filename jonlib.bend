@@ -2987,6 +2987,7 @@ def Image.FloatRGB.load_hdr(path: String) -> IO(Result<&1, &1, Image.LoadError, 
 type Image.RawLoadError is Type:
   RawFileError{code: U32, message: String}
   InvalidRawRequest{}
+  InvalidRawSamples{}
   TruncatedRawImage{}
   RawFileTooLarge{}
 
@@ -3024,9 +3025,11 @@ def Image.Formatted.write_png(image: Image.Formatted, path: String) -> IO(Result
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
     File.open(path, "w"), Surface.qoi.opened(Image.Formatted.png.file_bytes(image)))
 
+# Called only after checked request parameters, a complete read and handle closure.
+# A failed factory here therefore identifies unsupported sample values.
 def Image.raw.decoded(result: Maybe<Image.Formatted>) -> Result<&1, &1, Image.RawLoadError, Image.Formatted>:
   match result:
-    case None{}: Fail{TruncatedRawImage{}}
+    case None{}: Fail{InvalidRawSamples{}}
     case Some{image}: Done{image}
 
 def Image.raw.complete(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, Image.RawLoadError, +List<U32>>:
@@ -3097,7 +3100,7 @@ def Image.raw.parameters(valid: Bool, path: String, +width: U32, +height: U32, +
 
 def Image.Formatted.load_raw(path: String, +width: U32, +height: U32, +format: U32, header_size: U32) -> IO(Result<&1, &1, Image.RawLoadError, Image.Formatted>):
   Image.raw.parameters(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096)
-    && (format >= 1) && (format <= 7) : U32), path, width, height, format, header_size)
+    && (format >= 1) && (format <= 8) : U32), path, width, height, format, header_size)
 
 def Image.FloatRGB.raw.file.created(result: Maybe<Image.FloatRGB>) -> Result<&1, &1, Image.RawLoadError, Image.FloatRGB>:
   match result:

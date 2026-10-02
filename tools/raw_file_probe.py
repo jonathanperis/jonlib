@@ -46,7 +46,7 @@ def main():
     read_error = work/'read-error';read_error.mkdir(exist_ok=True)
     (read_error/'entry').write_bytes(b'x')
     controls = [dict(name='bad-size',path=str(missing.relative_to(ROOT)),width=0,height=1,format=7,header=0,error='request'),
-                dict(name='bad-format',path=str(missing.relative_to(ROOT)),width=1,height=1,format=8,header=0,error='request'),
+                dict(name='bad-format',path=str(missing.relative_to(ROOT)),width=1,height=1,format=9,header=0,error='request'),
                 dict(name='bad-header',path=str(missing.relative_to(ROOT)),width=1,height=1,format=7,header=2147483647,error='request'),
                 dict(name='large-file',path=str(oversized.relative_to(ROOT)),width=1,height=1,format=7,header=0,error='large'),
                 dict(name='read-error',path=str(read_error.relative_to(ROOT)),width=1,height=1,format=1,header=0,error='file')]
@@ -77,6 +77,7 @@ def error_name(error: J.Image.RawLoadError) -> String:
   match error:
     case J.RawFileError{_, _}: "file"
     case J.InvalidRawRequest{}: "request"
+    case J.InvalidRawSamples{}: "samples"
     case J.TruncatedRawImage{}: "truncated"
     case J.RawFileTooLarge{}: "large"
 def emit(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):

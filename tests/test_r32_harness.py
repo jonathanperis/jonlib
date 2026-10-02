@@ -342,7 +342,10 @@ class R32ImageHarnessTests(unittest.TestCase):
                    index == len(batches)-1,cases[0]) for index,batch in enumerate(batches)]
         self.assertEqual(sum(source.count('J.Image.Formatted.load_raw(') for source in sources),2)
         self.assertTrue(all('J.Image.Formatted.load_raw(' not in source for source in sources[:-1]))
-        self.assertIn('/tmp/r32/half.raw',sources[-1])
+        self.assertIn('/tmp/r32/present-format9.raw',sources[-1])
+        self.assertIn('/tmp/r32/absent-format9.raw',sources[-1])
+        self.assertEqual(sources[-1].count(', 1, 1, 9, 0), raw_load_rejected)'),2)
+        self.assertNotIn(', 1, 1, 8, 0), raw_load_rejected)',sources[-1])
         self.assertEqual(sum(len(self.probe['io_shapes'](batch,index == len(batches)-1)) for index,batch in enumerate(batches)),11)
         self.assertEqual(sum(len(self.probe['schemas'](batch)) for batch in batches),88)
 

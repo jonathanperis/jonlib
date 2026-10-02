@@ -6,7 +6,9 @@
 `IO(Result<&1, &1, Image.RawLoadError, Image.Formatted>)`.
 
 The current profile supports ordinary, non-changing files and byte/integer
-formats 1..7. Dimensions are 1..4096. The U32 header size plus required image
+formats 1..7 plus checked R32 format 8. R32 words are little-endian finite
+values in `[0,1]`, preserving both zero signs and positive subnormals exactly.
+Dimensions are 1..4096. The U32 header size plus required image
 bytes must fit a nonnegative signed C int, and the file size must not exceed
 2,147,483,647 bytes. Invalid request parameters are rejected before opening.
 
@@ -24,9 +26,15 @@ A short read is rejected rather than filled with synthetic pixels.
 `Image.RawLoadError` distinguishes:
 
 - `InvalidRawRequest`: unsupported dimensions/format or unsafe header arithmetic.
+- `InvalidRawSamples`: a complete selected R32 payload contains a negative
+  nonzero sample, a value above one, infinity or NaN; reported after closure.
 - `TruncatedRawImage`: too few file/payload bytes.
 - `RawFileTooLarge`: a reported file size exceeds the profile's signed-int bound.
 - `RawFileError{code, message}`: the original Base open/size/read error.
+
+Format 9 remains an `InvalidRawRequest` in the formatted loader, before opening;
+use the separate RGB float loader below. Sample validation examines only the
+selected payload, so ignored headers/tails may contain arbitrary bytes.
 
 Concurrent modifications, special-file semantics, native callbacks and wider
 parameter/format domains remain gaps.
@@ -65,6 +73,7 @@ is not implemented. The caller retains width, height and format separately.
 
 ```sh
 python3 tools/raw_file_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+python3 tools/r32_raw_file_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
 python3 tools/float_rgb_raw_file_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
 ```
 
@@ -92,6 +101,23 @@ file-error variant. One hundred load/domain/truncation/read/size/write cycles ru
 under the same descriptor limit. Prior byte/integer raw-file gates remain passing.
 See [evidence/float-rgb-raw-files.json](evidence/float-rgb-raw-files.json).
 
-The checked [R32](R32.md) extension can write exact format-8 bytes through
-`Image.Formatted.write_raw`; `Image.Formatted.load_raw(..., 8)` remains rejected.
-This does not broaden the loader formats recorded above.
+The checked [R32](R32.md) loading gate adds 22 native cases (16 successful
+loads and six missing/truncated inputs) and 38 typed controls, including 31
+out-of-domain payloads. It compares 154,736 payload bytes per lane, including
+all 1,119 threshold words and a 33,024-pixel signed-zero/subnormal file.
+Exact-fit headers, ignored invalid headers/tails, non-fitting offsets and the
+largest safe header preserve the native selected bytes. A matching large file
+with an invalid final word checks complete tail-recursive validation.
+
+A candidate-only 64 MiB sparse file selects a negative-zero word at a 32 MiB
+header offset, with a 256 MiB peak-runtime-RSS ceiling to guard against whole-file
+byte-list materialization. It is not passed to the native whole-file loader.
+
+Every successful load is written and reloaded with exact metadata and bytes.
+One hundred success/sample/truncation/read/size cycles run per CPU/JS lane under
+the same 64-descriptor limit. Native observations call `LoadImageRaw` and
+`SaveFileData` directly, without incidental float-to-byte casts. Invalid sample
+rejection is the explicit checked-owner adaptation, not a native rejection
+claim. [Current-host evidence](evidence/r32-raw-files.json) retains final source,
+input, program and output hashes. Other numerical/platform/resource domains
+remain partial.

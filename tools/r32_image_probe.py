@@ -2,7 +2,7 @@
 """Check exact R32 observations, ownership, distinct memory/file PNG and rejections.
 
 Pure operations run on CPU/JS and optionally forced Metal. File IO runs only on
-CPU/JS. Packed memory PNG, raw loading, FloatRGB->R32 and GetPixelColor remain
+CPU/JS. Packed memory PNG, formatted format-9 loading, FloatRGB->R32 and GetPixelColor remain
 explicit Jonlib rejection contracts, not assertions of native equivalence.
 """
 import argparse
@@ -178,6 +178,9 @@ def prepare_files(directory, files):
     directory.mkdir(parents=True,exist_ok=True)
     for name in files:
         (directory/name).unlink(missing_ok=True)
+    (directory/'present-format9.raw').write_bytes(struct.pack('<fff',0.25,0.5,0.75))
+    if (directory/'absent-format9.raw').exists():
+        raise ValueError('Task-owned missing format-9 fixture unexpectedly exists')
 
 
 def verify_files(directory, files):
@@ -510,13 +513,12 @@ def candidate_program(ops, lane, directory, raw_load_controls=True, raw_load_cas
                 number,suffix = {'png':(0,'png'),'raw':(1,'raw'),'code':(2,'h')}[kind]
                 path = json.dumps(str(directory/(case['id']+'.'+suffix)))
                 body += f'    save({number}, {path}, {image_expr(case)})\n'
-        # Test both a present valid R32 payload and an absent path: request rejection
+        # Test a present payload and an absent path with unsupported format 9: rejection
         # must happen before file opening, and does not claim native load parity.
         if raw_load_controls:
-            first = raw_load_case or next(op['case'] for op in ops if op.get('case'))
-            for name in (first['id']+'.raw','absent-r32.raw'):
+            for name in ('present-format9.raw','absent-format9.raw'):
                 path = json.dumps(str(directory/name))
-                body += f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_raw({path}, 1, 1, 8, 0), raw_load_rejected)\n'
+                body += f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_raw({path}, 1, 1, 9, 0), raw_load_rejected)\n'
     return body
 
 
@@ -565,7 +567,7 @@ def main():
                                 decoded_bytes=len(profile['decoded_rgba']),
                                 decoded_sha256=hashlib.sha256(bytes(profile['decoded_rgba'])).hexdigest())
                                 for kind,profile in profiles.items()} for name,profiles in png_profiles.items()},
-                  raw_loading='unsupported',float_rgb_target8='unsupported',pixel_get_color8='unsupported',
+                  raw_loading='checked R32; unsupported formatted format 9 controls',float_rgb_target8='unsupported',pixel_get_color8='unsupported',
                   sources=source_gate(),inputs_sha256=hashlib.sha256(json.dumps(ops).encode()).hexdigest(),
                   reference_sha256=hashlib.sha256(text.encode()).hexdigest(),
                   reference_program_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),

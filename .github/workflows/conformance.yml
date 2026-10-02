@@ -77,6 +77,11 @@ jobs:
           subprocess.run(['git', '-C', str(source), 'apply', '--check', str(patch)], check=True)
           subprocess.run(['git', '-C', str(source), 'apply', str(patch)], check=True)
           PY
+      - name: Verify checked R32 RAW loading and bounded resource use
+        run: >-
+          python3 tools/r32_raw_file_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Record native math host profiles (diagnostic, not parity)
         run: >-
           python3 tools/native_math_profile_probe.py
@@ -434,6 +439,12 @@ jobs:
             .build/image-format-probe/results.json
             .build/r32-image-probe/results.json
             .build/raw-file-probe/results.json
+            .build/r32-raw-file-probe/results.json
+            .build/r32-raw-file-probe/inputs.json
+            .build/r32-raw-file-probe/*.stdout
+            .build/r32-raw-file-probe/*-resource.json
+            .build/r32-raw-file-probe/*.bend
+            .build/r32-raw-file-probe/reference.c
             .build/bmp-probe/results.json
             .build/tga-probe/results.json
             .build/pnm-probe/results.json

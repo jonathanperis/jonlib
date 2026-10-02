@@ -40418,9 +40418,9 @@
       "status": "partial",
       "jonlib": "Image.Formatted.load_raw / Image.FloatRGB.load_raw",
       "mapping_state": "implemented",
-      "scope": "Ordinary non-changing files, formats 1..7 and non-NaN RGB F32 format 9, dimensions 1..4096. Shared bounded positional reads preserve native fitting-header/fallback-to-zero selection, exact payload words, signed-int bounds, typed errors and handle closure before decoding. Unsupported float NaNs report InvalidRawRequest after closure.",
+      "scope": "Ordinary non-changing files, formats 1..7 and non-NaN RGB F32 format 9, dimensions 1..4096. Shared bounded positional reads preserve native fitting-header/fallback-to-zero selection, exact payload words, signed-int bounds, typed errors and handle closure before decoding. Unsupported float NaNs report InvalidRawRequest after closure. Formatted format 8 additionally loads checked finite [0,1] R32, preserving both zero signs and positive subnormals. InvalidRawSamples distinguishes complete out-of-domain payloads after closure; formatted format 9 stays a pre-open InvalidRawRequest.",
       "gaps": [
-        "Other formats, NaN payload parity, signed/out-of-range parameters and concurrent/special files",
+        "Other formats, broader R32 domains, format-9 NaN payload parity, signed/out-of-range parameters and concurrent/special files",
         "Native callbacks/allocation ABI and complete target/integration/performance coverage"
       ],
       "blocker": null,
@@ -40438,7 +40438,12 @@
         "tests/decoding.bend",
         "docs/RAW-FILES.md",
         "docs/FLOAT-RGB-BYTES.md",
-        "docs/evidence/float-rgb-raw-files.json"
+        "docs/evidence/float-rgb-raw-files.json",
+        "tools/r32_raw_file_probe.py",
+        "tests/test_r32_raw_harness.py",
+        "tools/r32_image_probe.py",
+        "docs/R32.md",
+        "docs/evidence/r32-raw-files.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42057,7 +42062,7 @@
         "NaN payload interoperability, out-of-domain float casts and native allocation ABI",
         "Complete integration/target/resource/performance coverage",
         "R32 broader domains and complete target/contraction profiles; this extension has current-host CPU/JS evidence only",
-        "Format-9 to R32 and native R32 RAW loading remain unsupported"
+        "Format-9 to R32 remains unsupported"
       ],
       "blocker": null,
       "gates": {
