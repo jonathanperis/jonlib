@@ -91,8 +91,9 @@ The isolated [direct binary64 narrowing prerequisite](BINARY64-NARROW.md) now
 provides checked nearest-even binary32 words, including gradual underflow. It
 does not change existing API consumers or the current native-angle failure;
 private [bounded FMA](BINARY64-FMA.md) and [add/subtract](BINARY64-ADD-SUB.md)
-prerequisites are also isolated. The complete modern angle kernel, stepping,
-wrapper integration and device/resource evidence remain Phase 1 work.
+prerequisites are also isolated, as are the [checked normal multiply/divide and
+word adapters](BINARY64-OPS.md). The complete modern angle kernel, gradual tiny
+product, primitive-domain integration and device/resource evidence remain Phase 1 work.
 
 ## Compiler and runtime workstream
 

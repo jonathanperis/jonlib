@@ -3735,3 +3735,95 @@ The modern scalar kernel, stepping, reachable-domain integration, tiny-branch
 underflow handling and forced-device/resource evidence remain open. No GPU,
 hosted, exhaustive or performance-parity claim is made. The
 [durable evidence](evidence/binary64-add-sub.json) records this private checkpoint.
+
+
+## 2026-10-02: checked normal binary64 operations and exact word adapters
+
+The isolated `src/binary64_ops.bend` adds checked raw-word boundaries around the
+unchanged normal multiply/divide implementation, exact normal/zero packing,
+finite F32 promotion including subnormals, finite construction, sign negation,
+magnitude comparison, finite numerical equality, modular raw-word carry/borrow
+steps and checked exponent construction. [BINARY64-OPS.md](BINARY64-OPS.md) records
+the contracts, invariants, bounds and independent evidence.
+
+Multiply inputs are signed zero or normal exponents `[-554,127]`, with nonzero
+pair exponent sum `[-833,127]`. Division accepts numerator zero or normal
+`[-225,127]`, a nonzero normal denominator `[-149,127]`, and nonzero `Ea<=Eb`.
+All other arithmetic inputs are rejected before any zero shortcut. Results are
+RN-even normal words (multiply exponent `[-833,128]`, divide `[-353,0]`) or
+sign-XOR zero. Small integral exponent bookkeeping is exact in F32; significands
+remain integer limbs. This is a standalone bounded contract, not general
+binary64 arithmetic or a mechanically verified kernel-reachability theorem.
+
+All **43 prior library source files remain byte-for-byte unchanged**. No existing
+image/math API consumer, selector, fixture, expectation, tolerance or compiler
+source changed. No public API was promoted. Raw stepping is unsigned encoding
+addition/subtraction, not numerical `nextafter`. Finite equality treats ±0 as
+equal and rejects nonfinite equality; finite construction does not make
+subnormals valid arithmetic inputs. The tiny gradual-product path and full
+modern angle kernel remain open.
+
+The independent exact `Fraction` oracle computes products/quotients and searches
+rational binary64 neighbors. It does not reproduce the candidate's product,
+quotient loop or pack. Direct finite F32 promotion is checked against exact
+rational words and native casts rather than only narrowing roundtrips. The
+separate volatile C oracle passes 32 layout/rounding/zero/subnormal/promotion
+controls, with Clang 19.1.7, `FE_TONEAREST`, MXCSR 8064 and explicit FTZ/DAZ rejection.
+Compiler flags prohibit fast math, contraction and LTO, require rounding semantics
+and the source rejects excess evaluation precision.
+
+CPU-one-thread, CPU-two-thread and JavaScript each pass **36,176 complete exact
+observations**, 35,064 accepted and 1,112 rejected: 11,892 multiply, 6,152 divide,
+4,124 normal decode/encode identities, 4,124 finite constructions, 2,852 direct
+promotions, 1,914 magnitude comparisons, 1,914 finite equalities, 384 each of
+negation/increment/decrement and 2,052 exponent constructions. The 142 serial
+programs have at most 256 observations and 16 records per line; every lane checks
+all 180,880 framed U32 output words. Every allowed exponent/sign/operand position,
+zero sign/order, product tie parity and neighbors, limb/significand/carry/sticky
+boundary, division normalization order, exponent/pair guard limit and rejected
+class is represented. All finite F32 exponents and subnormal leading positions
+are covered directly. Sixty-four directed quotient near-midpoints lie exactly
+`1/(2*N)` ulps on either side, covering both neighbor parities. Exact midpoint
+ties between adjacent normals cannot arise in this checked division domain; synthetic
+oracle rounder ties are labeled as internal controls.
+
+Strict framing checks counts, kinds, IDs, tags, U32 types and payload shape.
+Old success and compiled outputs are invalidated. Source/compiler/runtime,
+input/program/binary and retained stdout/stderr hashes are pinned when consumed
+and rechecked at acceptance. The focused report retains 53 source/dependency
+hashes and 1582 artifact hashes. All **209 Python tests** pass, including
+40 new oracle, malformed-input/output, qualification, compiler-selection,
+stale-output and drift tests.
+
+The complete `PROOF.bend` verdict is `All terms check.` for **51 laws**, with
+three new structural rejection laws and fourteen concrete rejection/zero/word
+boundary equalities. F32 arithmetic/bit primitives are opaque to this checker;
+nonzero arithmetic and successful promotion are exact differential evidence,
+not presented as mechanically proved numeric results. There is no universal
+arithmetic or kernel theorem claim.
+
+Existing narrowing, FMA and add/subtract gates re-pass 40,276, 11,038 and 47,464
+observations on all three lanes. Existing float64 multiply/divide, F32 FMA,
+GNU/Sun angle and inverse-trig controls pass. Native-angle remains a strict
+178-difference first-lane failure. Canonical conformance is freshly rebuilt in
+17 batches and fully audited after fail-fast: every CPU-one-thread, CPU-two-thread
+and JavaScript lane checks all 40,101 words, with 260/261 scenarios passing.
+The sole mismatch remains `vector2-angle-profiles`, pixel `(6,0)`, native
+`3fc90fdb` versus Bend `3fc90fda`. The aggregate remains failed.
+
+Trailing ownership/transform/decoding contracts pass on CPU/JS. All three PPM
+examples match reference pixels; QOI bytes, roundtrips and missing/malformed/
+oversized-file controls pass. A separate replay removes existing output files
+and verifies that fresh executions recreate each expected PPM/QOI result.
+Generated-ledger, independent Clang catalog, syntax and project checks pass.
+Only prerequisite evidence/gaps change in the three angle entries; all 1,884
+API statuses remain unchanged, with 117/600 core partial, 142 math partial and
+zero complete. CI runs this focused gate before the known native-angle/canonical
+failure. No GPU, hosted, exhaustive or performance-parity claim is made.
+Independent read-only review recomputed every expectation with separate
+integer-rational rounding, regenerated all 142 programs, replayed every native
+and three-lane observation, checked all focused hashes and 217 retained regression
+artifacts, and verified 76 canonical audit-command input/output records. It also
+replayed the preserved 98,778 narrowing/FMA/add/subtract observations per lane
+and checked their 3,455 artifact hashes. No blocking findings remain.
+[Durable evidence](evidence/binary64-ops.json) records this private checkpoint.

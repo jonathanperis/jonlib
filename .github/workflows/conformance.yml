@@ -104,6 +104,10 @@ jobs:
         run: >-
           python3 tools/binary64_add_sub_probe.py
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+      - name: Verify isolated checked normal binary64 operations and words
+        run: >-
+          python3 tools/binary64_ops_probe.py
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
       - name: Verify native angle profiles and supporting wide arithmetic
         run: |
           python3 tools/float64_ops_probe.py --bend-source "${{ github.workspace }}/.build/dependencies/bend"
@@ -469,6 +473,15 @@ jobs:
             .build/binary64-add-sub-probe/*.stdout
             .build/binary64-add-sub-probe/*.stderr
             .build/float64-ops-probe/results.json
+            .build/binary64-ops-probe/results.json
+            .build/binary64-ops-probe/inputs.json
+            .build/binary64-ops-probe/expected.json
+            .build/binary64-ops-probe/native-metadata.json
+            .build/binary64-ops-probe/native-input.txt
+            .build/binary64-ops-probe/reference.c
+            .build/binary64-ops-probe/*.bend
+            .build/binary64-ops-probe/*.stdout
+            .build/binary64-ops-probe/*.stderr
             .build/angle-probe/results.json
             .build/native-profile-diagnostic/results.json
             .build/extrema-reference/results.json

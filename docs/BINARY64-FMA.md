@@ -138,8 +138,9 @@ is claimed.
 ## Remaining scope
 
 See [ANGLE-PLAN.md](ANGLE-PLAN.md). A [private bounded add/subtract prerequisite](BINARY64-ADD-SUB.md) is now
-implemented separately. The full pinned modern scalar kernel, its fallbacks,
-stepping, wrapper domains, native reference qualification and forced-device/resource
-evidence remain future work.
+implemented separately, as are the [checked normal operations and word adapters](BINARY64-OPS.md).
+The full pinned modern scalar kernel, its fallbacks, tiny-product gradual
+underflow, checked-domain integration, wrapper domains, native qualification
+and forced-device/resource evidence remain future work.
 This rectangle excludes arbitrary binary64 underflow and subnormal inputs; it
 must not be silently widened or substituted for existing numeric contracts.

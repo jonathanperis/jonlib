@@ -103,8 +103,10 @@ strictly failed at the separately documented angle scenario.
 See [ANGLE-PLAN.md](ANGLE-PLAN.md). A
 [private bounded binary64 FMA](BINARY64-FMA.md) is now implemented separately.
 A [private bounded add/subtract helper](BINARY64-ADD-SUB.md) now supplies audited
-signed-zero arithmetic separately. General packing/stepping and full kernel
-integration of reachable compensated-cancellation bounds remain open. Four product
+signed-zero arithmetic separately. [Checked normal multiply/divide and word
+adapters](BINARY64-OPS.md) now provide bounded packing, exact finite promotion
+and raw stepping separately. Full kernel integration, tiny-product gradual
+underflow and reachable compensated-cancellation bounds remain open. Four product
 limbs retain 106 bits but do not by themselves
 solve arbitrary FMA alignment/cancellation. The entire pinned modern scalar kernel,
 its two fallbacks, a separate qualified angle selector, wrapper domains and

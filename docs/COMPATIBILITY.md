@@ -25,8 +25,10 @@ has no library consumers and does not change this aggregate failure or any
 public API status. The separately checked [bounded binary64 FMA](BINARY64-FMA.md)
 has the same private status and no existing image/math API consumers; it does
 not broaden existing arithmetic contracts. The independent [bounded add/subtract helper](BINARY64-ADD-SUB.md)
-also remains private with no existing consumers. No device evidence is claimed
-for these prerequisites.
+also remains private with no existing consumers. The [checked normal operations
+and word adapters](BINARY64-OPS.md) add independent bounded multiply/divide,
+exact promotion/packing and raw stepping evidence, with the same private status.
+No device evidence is claimed for these prerequisites.
 
 The current local Apple M1/macOS corpus contains **261 deterministic scenarios /
 40,101 checked output words per lane**, matching native CPU (one and two threads), JavaScript

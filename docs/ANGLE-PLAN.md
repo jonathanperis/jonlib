@@ -80,10 +80,21 @@ The third isolated prerequisite is private checked
 [`binary64_add_sub.bend`](../src/binary64_add_sub.bend). Its independent
 [bounded contract](BINARY64-ADD-SUB.md) accepts signed zero or normal exponents
 `[-900,130]`, keeps exact terms through cancellation and rounds once with correct
-zero signs. It has no existing library consumers. Word stepping and integration
-of these prerequisites into the full modern kernel remain future work. Keep old
-projection/resize contracts unchanged. Establish the kernel's reachable exponent
-bounds; support gradual underflow wherever it is reachable instead of assuming
+zero signs. It has no existing library consumers.
+
+The fourth isolated prerequisite is private checked
+[`binary64_ops.bend`](../src/binary64_ops.bend), with [separate documented domains](BINARY64-OPS.md)
+for normal multiply/divide, exact normal/zero packing and finite F32 promotion.
+It also supplies finite construction, sign inversion, magnitude/equality and
+raw unsigned word stepping. Multiplication accepts input exponents `[-554,127]`
+with nonzero pair sum `[-833,127]`; division accepts numerator `[-225,127]` or
+zero, nonzero denominator `[-149,127]`, and nonzero `Ea <= Eb`. These standalone
+contracts are not closed under arbitrary chaining or a kernel-reachability proof.
+No existing consumers or public profiles change.
+
+Integration of these prerequisites into the full modern kernel remains future
+work. Keep old projection/resize contracts unchanged. Establish the kernel's
+reachable exponent bounds; support gradual underflow wherever it is reachable instead of assuming
 it away. In particular the tiny branch's `z*e` can produce subnormals and negative
 zero; a literal port needs gradual-underflow multiplication, or a separately
 justified RN result-bit comparison predicate with its narrower claims.
