@@ -17,11 +17,11 @@
     "abbreviated CLI destination and option-terminator admission"
   ],
   "python_tests": {
-    "total": 293,
-    "focused_new": 22,
+    "total": 295,
+    "focused_new": 24,
     "passed": true,
     "log": ".build/angle-qualification-all-python.log",
-    "sha256": "fa4e07cae2e48837eae78b364cd288f8382eda91de0debf716a1ebf4c5b174bd"
+    "sha256": "137455f876e7eacedd7264f0410bd0e6b2674fcd0afe717fab82fda55d608110"
   },
   "proof": {
     "passed": true,
@@ -51,9 +51,9 @@
   "native": {
     "qualified": true,
     "selected_profile": "Glibc241AngleRn",
-    "run_id": "986810fd65b94ce5b27fde493162dc01",
+    "run_id": "8f27354a2c5c4608ab86be9a5a21c763",
     "manifest_sha256": "31fe9fa37f986e51534509065d67eca0a74a58aae3831923d8d13d2cbe64d416",
-    "report_sha256": "8c0549a8d1951e34b5a044ef415ff82f052690a66bef129c507acf09e5dbc5b8",
+    "report_sha256": "c1263b58ae92425b0d8d777adc99604e1b6e1406fb2fdb41c6b2a31e7d198f88",
     "mismatches": {
       "Apple2007AngleRn": 29,
       "Sun239AngleRn": 42,
@@ -72,16 +72,231 @@
     "report_sha256": "f05b9171244269fe5046cfa2b703084b2ed97a41e20a4dd8a3daff5968ebd3ad"
   },
   "reviewed_source_sha256": {
-    "tools/angle_reference.py": "5413a8b72b8ed4eddffb79d8f7619d22651b9b39d64d9c5b50c2b2395005a9b6",
+    "tools/angle_reference.py": "49065cc2f194ac8679b80b137c63ef7709fb5c8a10c9326862e480a317a2ae48",
     "tools/angle_manifest_audit.py": "729a675a296f9fe5d8cc930ef6e9bc7033bafaf72e37c10cd8fe153251ed359a",
     "tools/reference/angle_qualification_context.c": "147980aa2f696b8dc4030d9aaa15f288a188fc84e5b08826aebb438ed2eb604f",
     "tools/reference/angle_qualification_v1.json": "31fe9fa37f986e51534509065d67eca0a74a58aae3831923d8d13d2cbe64d416",
-    "tests/test_angle_reference.py": "eae329d9fa0d3219e98f0ac53c86bda62a21bc16da4bd5b765c6d188956d74d0"
+    "tests/test_angle_reference.py": "52567e3c56880ee5304bc8cae5de29e6f4bc79a9722fff130f59354ca03bbd3a"
   },
   "final_evidence_review": {
     "native_artifact_hashes": 78,
-    "retained_derivation_artifact_hashes": 28,
     "all_matched": true,
-    "cli_admission_fix": "Full option names only; destination scan stops at --"
+    "cli_admission_fix": "One argparse pass with explicit Namespace; selected destination invalidated for success, parser errors and help, before source reads/builds"
+  },
+  "verification_context": {
+    "kind": "isolated qualifier-only snapshot",
+    "base_commit": "d912f7382765a29a1394218ccb16a441a6869653",
+    "worktree": "/tmp/jonlib-angle-admission-review",
+    "qualification_source": "baseline source plus final CLI-admission fixes",
+    "concurrent_integration_tree_validated": false,
+    "reason": "Public integration had begun in the shared working tree; these results intentionally do not cover its uncommitted changes"
+  },
+  "independent_cli_matrix": {
+    "cases": 33,
+    "passed": true,
+    "rows": [
+      {
+        "case": "help-long",
+        "expected_destination": "default",
+        "exit": 0,
+        "passed": true
+      },
+      {
+        "case": "help-short",
+        "expected_destination": "default",
+        "exit": 0,
+        "passed": true
+      },
+      {
+        "case": "help-custom",
+        "expected_destination": "x",
+        "exit": 0,
+        "passed": true
+      },
+      {
+        "case": "help-before-custom",
+        "expected_destination": "default",
+        "exit": 0,
+        "passed": true
+      },
+      {
+        "case": "help-after-terminator",
+        "expected_destination": "default",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "custom-help-after-terminator",
+        "expected_destination": "x",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "exact-unknown",
+        "expected_destination": "x",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "equal-unknown",
+        "expected_destination": "x",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "abbrev-d",
+        "expected_destination": "default",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "abbrev-build",
+        "expected_destination": "default",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "abbrev-equal",
+        "expected_destination": "default",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "terminator-destination",
+        "expected_destination": "default",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "duplicate-destination",
+        "expected_destination": "y",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "duplicate-equal",
+        "expected_destination": "y",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "missing-destination",
+        "expected_destination": "default",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "missing-destination-value",
+        "expected_destination": "default",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "missing-library",
+        "expected_destination": "x",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "bad-timeout",
+        "expected_destination": "x",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "zero-timeout",
+        "expected_destination": "x",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "invalid-profile",
+        "expected_destination": "x",
+        "exit": "admitted",
+        "passed": true
+      },
+      {
+        "case": "empty-equals",
+        "expected_destination": "cwd",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "negative-numeric-directory",
+        "expected_destination": "-1",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "negative-numeric-equals",
+        "expected_destination": "-1",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "duplicate-negative-directory",
+        "expected_destination": "-1",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "negative-nonnumeric-directory",
+        "expected_destination": "default",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "negative-nonnumeric-equals",
+        "expected_destination": "-x",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "help-with-missing-profile",
+        "expected_destination": "x",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "early-type-error",
+        "expected_destination": "default",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "late-type-error",
+        "expected_destination": "x",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "unknown-before-output",
+        "expected_destination": "x",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "exact-dashdash-equal",
+        "expected_destination": "--",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "missing-output-after-prior",
+        "expected_destination": "x",
+        "exit": 2,
+        "passed": true
+      },
+      {
+        "case": "help-before-terminator",
+        "expected_destination": "x",
+        "exit": 0,
+        "passed": true
+      }
+    ],
+    "artifacts": {
+      ".build/angle-cli-admission-review/review_cli_matrix.py": "bd9385ec93108edc792ff2f8e9817f7bdf6fd0b891cefb4104197f54e178bbeb",
+      ".build/angle-cli-admission-review/cli-matrix-results.json": "e287581992fa6814150cc6359c87491b84b6530a4d7d3117b970a7c5a6c7b765"
+    }
   }
 }

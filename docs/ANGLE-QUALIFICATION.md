@@ -184,7 +184,8 @@ source, binary, stdout/stderr and observation artifacts are under
 `.build/angle-reference/`. Commands are individually timeout-bounded. Use separate
 `--build-dir` directories for concurrent runs; a shared output directory is a
 serial-use interface. Only full option names are accepted (no CLI abbreviations).
-`--help` is informational and does not invalidate reports.
+Every CLI invocation invalidates the chosen old report, including informational
+`--help`; a help-only report remains unqualified and records no numerical run.
 
 Before source reads/builds, results are persisted as unqualified with a null
 selection and a fresh run ID/timestamp. CLI argument failures also invalidate the
@@ -199,7 +200,11 @@ candidate generation. No candidate execution exists in this standalone tool.
 
 On the recorded Linux x86-64 Clang 19.1.7/glibc 2.41 host, all controls uniquely
 select `Glibc241AngleRn`. The [complete retained report](evidence/angle-qualification.json)
-records all observations and provenance. The Sun and Apple contracts fail their
+records all observations and provenance. Final CLI-admission verification ran
+in an isolated checkout of `d912f73` plus the admission fixes while public
+integration proceeded separately. Its 295-test/proof/native results validate
+that qualifier-only snapshot, not the concurrently edited integration tree.
+The Sun and Apple contracts fail their
 independent discriminator families as expected. Neither historical platform was
 newly host-qualified. Independent review and regression results are recorded in
 [the review record](evidence/angle-qualification-review.json).

@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "contract": "native-angle-qualification-v1",
-  "run_id": "986810fd65b94ce5b27fde493162dc01",
-  "started_at": "2026-10-02T09:00:18.264290+00:00",
+  "run_id": "8f27354a2c5c4608ab86be9a5a21c763",
+  "started_at": "2026-10-02T09:08:12.937018+00:00",
   "phase": "qualified",
   "qualified": true,
   "selected_profile": "Glibc241AngleRn",
@@ -20,9 +20,9 @@
       ],
       "phase": "raylib-revision",
       "completed": true,
-      "started_at": "2026-10-02T09:00:18.357277+00:00",
+      "started_at": "2026-10-02T09:08:13.081414+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:18.359904+00:00"
+      "finished_at": "2026-10-02T09:08:13.084247+00:00"
     },
     {
       "argv": [
@@ -37,9 +37,9 @@
       ],
       "phase": "raylib-status",
       "completed": true,
-      "started_at": "2026-10-02T09:00:18.360047+00:00",
+      "started_at": "2026-10-02T09:08:13.084424+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:18.363604+00:00"
+      "finished_at": "2026-10-02T09:08:13.088540+00:00"
     },
     {
       "argv": [
@@ -48,9 +48,9 @@
       ],
       "phase": "compiler-version",
       "completed": true,
-      "started_at": "2026-10-02T09:00:18.363887+00:00",
+      "started_at": "2026-10-02T09:08:13.088748+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:18.388177+00:00"
+      "finished_at": "2026-10-02T09:08:13.120342+00:00"
     },
     {
       "argv": [
@@ -59,9 +59,9 @@
       ],
       "phase": "compiler-target",
       "completed": true,
-      "started_at": "2026-10-02T09:00:18.388436+00:00",
+      "started_at": "2026-10-02T09:08:13.120737+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:18.413420+00:00"
+      "finished_at": "2026-10-02T09:08:13.153033+00:00"
     },
     {
       "argv": [
@@ -71,9 +71,9 @@
       ],
       "phase": "package-inventory",
       "completed": true,
-      "started_at": "2026-10-02T09:00:18.413946+00:00",
+      "started_at": "2026-10-02T09:08:13.153569+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:18.415951+00:00"
+      "finished_at": "2026-10-02T09:08:13.156790+00:00"
     },
     {
       "argv": [
@@ -82,15 +82,15 @@
         "-O2",
         "-fno-builtin-atan2f",
         "-c",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/tools/reference/angle_qualification_context.c",
+        "/tmp/jonlib-angle-admission-review/tools/reference/angle_qualification_context.c",
         "-o",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/context.o"
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/context.o"
       ],
       "phase": "context-compile",
       "completed": true,
-      "started_at": "2026-10-02T09:00:18.425085+00:00",
+      "started_at": "2026-10-02T09:08:13.167110+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:18.525093+00:00"
+      "finished_at": "2026-10-02T09:08:13.276719+00:00"
     },
     {
       "argv": [
@@ -99,18 +99,18 @@
         "-O2",
         "-fno-builtin-atan2f",
         "-I/workspace/scratch/61c86f431823/jonlib-toolchain/raylib/src",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pointer.c",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/context.o",
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/pointer.c",
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/context.o",
         "-lm",
         "-ldl",
         "-o",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pointer"
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/pointer"
       ],
       "phase": "pointer-compile",
       "completed": true,
-      "started_at": "2026-10-02T09:00:18.527808+00:00",
+      "started_at": "2026-10-02T09:08:13.279263+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:18.622940+00:00"
+      "finished_at": "2026-10-02T09:08:13.402241+00:00"
     },
     {
       "argv": [
@@ -119,18 +119,18 @@
         "-O2",
         "-fno-builtin-atan2f",
         "-I/workspace/scratch/61c86f431823/jonlib-toolchain/raylib/src",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/intermediate-mirror.c",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/context.o",
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/intermediate-mirror.c",
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/context.o",
         "-lm",
         "-ldl",
         "-o",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/intermediate-mirror"
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/intermediate-mirror"
       ],
       "phase": "intermediate-mirror-compile",
       "completed": true,
-      "started_at": "2026-10-02T09:00:18.623956+00:00",
+      "started_at": "2026-10-02T09:08:13.402730+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:18.851666+00:00"
+      "finished_at": "2026-10-02T09:08:13.680249+00:00"
     },
     {
       "argv": [
@@ -139,18 +139,18 @@
         "-O2",
         "-fno-builtin-atan2f",
         "-I/workspace/scratch/61c86f431823/jonlib-toolchain/raylib/src",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/runtime-wrapper.c",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/context.o",
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/runtime-wrapper.c",
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/context.o",
         "-lm",
         "-ldl",
         "-o",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/runtime-wrapper"
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/runtime-wrapper"
       ],
       "phase": "runtime-wrapper-compile",
       "completed": true,
-      "started_at": "2026-10-02T09:00:18.852414+00:00",
+      "started_at": "2026-10-02T09:08:13.680723+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:19.156389+00:00"
+      "finished_at": "2026-10-02T09:08:14.007942+00:00"
     },
     {
       "argv": [
@@ -159,19 +159,19 @@
         "-O2",
         "-fno-builtin-atan2f",
         "-I/workspace/scratch/61c86f431823/jonlib-toolchain/raylib/src",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/canonical.c",
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/canonical.c",
         "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/raylib/raylib/libraylib.a",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/context.o",
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/context.o",
         "-lm",
         "-ldl",
         "-o",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/canonical"
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/canonical"
       ],
       "phase": "canonical-compile",
       "completed": true,
-      "started_at": "2026-10-02T09:00:19.157030+00:00",
+      "started_at": "2026-10-02T09:08:14.008378+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:20.267674+00:00"
+      "finished_at": "2026-10-02T09:08:15.421948+00:00"
     },
     {
       "argv": [
@@ -184,32 +184,32 @@
         "-fno-lto",
         "-fno-builtin-atan2f",
         "-fno-builtin-fma",
-        "-I/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/tools/reference",
-        "-I/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/include",
+        "-I/tmp/jonlib-angle-admission-review/tools/reference",
+        "-I/tmp/jonlib-angle-admission-review/.build/angle-reference/include",
         "-D__ieee754_atan2f=aq_pinned_atan2f",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/tools/reference/modern_atan2f_glibc241.c",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pinned.c",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/context.o",
+        "/tmp/jonlib-angle-admission-review/tools/reference/modern_atan2f_glibc241.c",
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/pinned.c",
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/context.o",
         "-lm",
         "-ldl",
         "-o",
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pinned"
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/pinned"
       ],
       "phase": "pinned-compile",
       "completed": true,
-      "started_at": "2026-10-02T09:00:20.270092+00:00",
+      "started_at": "2026-10-02T09:08:15.423463+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:20.418089+00:00"
+      "finished_at": "2026-10-02T09:08:15.587886+00:00"
     },
     {
       "argv": [
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pinned"
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/pinned"
       ],
       "phase": "pinned-run",
       "completed": true,
-      "started_at": "2026-10-02T09:00:20.418706+00:00",
+      "started_at": "2026-10-02T09:08:15.588269+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:20.420527+00:00"
+      "finished_at": "2026-10-02T09:08:15.589733+00:00"
     },
     {
       "argv": [
@@ -219,19 +219,19 @@
       ],
       "phase": "pinned-run-library-notes",
       "completed": true,
-      "started_at": "2026-10-02T09:00:20.421809+00:00",
+      "started_at": "2026-10-02T09:08:15.590936+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:20.423634+00:00"
+      "finished_at": "2026-10-02T09:08:15.592741+00:00"
     },
     {
       "argv": [
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pointer"
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/pointer"
       ],
       "phase": "pointer-run",
       "completed": true,
-      "started_at": "2026-10-02T09:00:20.424667+00:00",
+      "started_at": "2026-10-02T09:08:15.593910+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:20.427000+00:00"
+      "finished_at": "2026-10-02T09:08:15.595805+00:00"
     },
     {
       "argv": [
@@ -241,19 +241,19 @@
       ],
       "phase": "pointer-run-library-notes",
       "completed": true,
-      "started_at": "2026-10-02T09:00:20.428339+00:00",
+      "started_at": "2026-10-02T09:08:15.597257+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:20.430335+00:00"
+      "finished_at": "2026-10-02T09:08:15.599242+00:00"
     },
     {
       "argv": [
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/canonical"
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/canonical"
       ],
       "phase": "canonical-run",
       "completed": true,
-      "started_at": "2026-10-02T09:00:20.431693+00:00",
+      "started_at": "2026-10-02T09:08:15.600482+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:20.433753+00:00"
+      "finished_at": "2026-10-02T09:08:15.602581+00:00"
     },
     {
       "argv": [
@@ -263,19 +263,19 @@
       ],
       "phase": "canonical-run-library-notes",
       "completed": true,
-      "started_at": "2026-10-02T09:00:20.435586+00:00",
+      "started_at": "2026-10-02T09:08:15.604051+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:20.437640+00:00"
+      "finished_at": "2026-10-02T09:08:15.606556+00:00"
     },
     {
       "argv": [
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/runtime-wrapper"
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/runtime-wrapper"
       ],
       "phase": "runtime-wrapper-run",
       "completed": true,
-      "started_at": "2026-10-02T09:00:20.441582+00:00",
+      "started_at": "2026-10-02T09:08:15.610857+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:20.445404+00:00"
+      "finished_at": "2026-10-02T09:08:15.613843+00:00"
     },
     {
       "argv": [
@@ -285,19 +285,19 @@
       ],
       "phase": "runtime-wrapper-run-library-notes",
       "completed": true,
-      "started_at": "2026-10-02T09:00:20.447732+00:00",
+      "started_at": "2026-10-02T09:08:15.616165+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:20.450643+00:00"
+      "finished_at": "2026-10-02T09:08:15.618998+00:00"
     },
     {
       "argv": [
-        "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/intermediate-mirror"
+        "/tmp/jonlib-angle-admission-review/.build/angle-reference/intermediate-mirror"
       ],
       "phase": "mirror-run",
       "completed": true,
-      "started_at": "2026-10-02T09:00:20.455512+00:00",
+      "started_at": "2026-10-02T09:08:15.623603+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:20.459460+00:00"
+      "finished_at": "2026-10-02T09:08:15.628219+00:00"
     },
     {
       "argv": [
@@ -307,9 +307,9 @@
       ],
       "phase": "mirror-run-library-notes",
       "completed": true,
-      "started_at": "2026-10-02T09:00:20.463442+00:00",
+      "started_at": "2026-10-02T09:08:15.631683+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:20.467403+00:00"
+      "finished_at": "2026-10-02T09:08:15.635492+00:00"
     },
     {
       "argv": [
@@ -321,9 +321,9 @@
       ],
       "phase": "final-raylib-revision",
       "completed": true,
-      "started_at": "2026-10-02T09:00:20.480090+00:00",
+      "started_at": "2026-10-02T09:08:15.648744+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:20.485889+00:00"
+      "finished_at": "2026-10-02T09:08:15.658002+00:00"
     },
     {
       "argv": [
@@ -338,9 +338,9 @@
       ],
       "phase": "final-raylib-status",
       "completed": true,
-      "started_at": "2026-10-02T09:00:20.489253+00:00",
+      "started_at": "2026-10-02T09:08:15.663794+00:00",
       "returncode": 0,
-      "finished_at": "2026-10-02T09:00:20.496553+00:00"
+      "finished_at": "2026-10-02T09:08:15.673160+00:00"
     }
   ],
   "contexts": {
@@ -8123,85 +8123,85 @@
       "differences": []
     }
   },
-  "completed_at": "2026-10-02T09:00:20.504837+00:00",
+  "completed_at": "2026-10-02T09:08:15.682931+00:00",
   "artifacts": {
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/tools/reference/angle_qualification_v1.json": "31fe9fa37f986e51534509065d67eca0a74a58aae3831923d8d13d2cbe64d416",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/tools/angle_manifest_audit.py": "729a675a296f9fe5d8cc930ef6e9bc7033bafaf72e37c10cd8fe153251ed359a",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/toolchain.json": "74c20ac3f303ef6f823209a1474b1591dd0bef87e35a4cd616e021605d6f3595",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/tools/conformance.py": "39c44a0735367b22e337eb1c94525f81be67315384136f3cc131ce181f1fcb3f",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/tools/angle_probe.py": "85ffda615b5366df1c1775eeeb87d5a666646be2d3f37fa80d231dcf510fcf49",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/tools/reference/modern_atan2f_glibc241.c": "96f9c81b6e870c256cc0757f6d88f5290ed35db8d5b640b9e757d6feca96ae38",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/tools/reference/modern_atan2f_shim.h": "6732fbd385ba61b72f0309448910961e26d4bb6c49be2cd31544765158b546f0",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/tools/reference/angle_sources/sun_e_atan2f.c": "75fa11d1fb67e1a2c11af4e1aca80bc29e1db55d8e3e8dfa6ae5caa3af141f69",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/tools/reference/angle_sources/sun_s_atanf.c": "cc8a6b8845df93191e1ec3c4c95e8fc58daae14b52bfe795c2c81b0989ee4646",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/LICENSES/sun-math.txt": "85adc03253d4df322be7a2b6d620c6158157bb44a6d6e6b61d454384bcda979c",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/LICENSES/core-math-atan2f.txt": "f3faa1cbceb8622faa4f43726145d534680425881f934725f25f84b5f6a26d06",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/tools/reference/angle_qualification_context.c": "147980aa2f696b8dc4030d9aaa15f288a188fc84e5b08826aebb438ed2eb604f",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/tools/angle_reference.py": "5413a8b72b8ed4eddffb79d8f7619d22651b9b39d64d9c5b50c2b2395005a9b6",
+    "/tmp/jonlib-angle-admission-review/tools/reference/angle_qualification_v1.json": "31fe9fa37f986e51534509065d67eca0a74a58aae3831923d8d13d2cbe64d416",
+    "/tmp/jonlib-angle-admission-review/tools/angle_manifest_audit.py": "729a675a296f9fe5d8cc930ef6e9bc7033bafaf72e37c10cd8fe153251ed359a",
+    "/tmp/jonlib-angle-admission-review/toolchain.json": "74c20ac3f303ef6f823209a1474b1591dd0bef87e35a4cd616e021605d6f3595",
+    "/tmp/jonlib-angle-admission-review/tools/conformance.py": "39c44a0735367b22e337eb1c94525f81be67315384136f3cc131ce181f1fcb3f",
+    "/tmp/jonlib-angle-admission-review/tools/angle_probe.py": "85ffda615b5366df1c1775eeeb87d5a666646be2d3f37fa80d231dcf510fcf49",
+    "/tmp/jonlib-angle-admission-review/tools/reference/modern_atan2f_glibc241.c": "96f9c81b6e870c256cc0757f6d88f5290ed35db8d5b640b9e757d6feca96ae38",
+    "/tmp/jonlib-angle-admission-review/tools/reference/modern_atan2f_shim.h": "6732fbd385ba61b72f0309448910961e26d4bb6c49be2cd31544765158b546f0",
+    "/tmp/jonlib-angle-admission-review/tools/reference/angle_sources/sun_e_atan2f.c": "75fa11d1fb67e1a2c11af4e1aca80bc29e1db55d8e3e8dfa6ae5caa3af141f69",
+    "/tmp/jonlib-angle-admission-review/tools/reference/angle_sources/sun_s_atanf.c": "cc8a6b8845df93191e1ec3c4c95e8fc58daae14b52bfe795c2c81b0989ee4646",
+    "/tmp/jonlib-angle-admission-review/LICENSES/sun-math.txt": "85adc03253d4df322be7a2b6d620c6158157bb44a6d6e6b61d454384bcda979c",
+    "/tmp/jonlib-angle-admission-review/LICENSES/core-math-atan2f.txt": "f3faa1cbceb8622faa4f43726145d534680425881f934725f25f84b5f6a26d06",
+    "/tmp/jonlib-angle-admission-review/tools/reference/angle_qualification_context.c": "147980aa2f696b8dc4030d9aaa15f288a188fc84e5b08826aebb438ed2eb604f",
+    "/tmp/jonlib-angle-admission-review/tools/angle_reference.py": "49065cc2f194ac8679b80b137c63ef7709fb5c8a10c9326862e480a317a2ae48",
     "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/raylib/raylib/libraylib.a": "38bf6b2fbfcfd6c776ddddcdb9d5d77a3f0a188653d6ba0905e3dd0aae3695cc",
     "/workspace/scratch/61c86f431823/jonlib-toolchain/raylib/src/raymath.h": "2b8b88f5b3f748e3cf8bdbfb8b7da23a76c755dc40f9c6e455bfc09b3669d028",
     "/workspace/scratch/61c86f431823/jonlib-toolchain/raylib/src/raylib.h": "047e7255f93f8c34039cab906ad76136706b5c7b4c5b5b065d84141963ee9b6b",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/raylib-revision.stdout": "ee0beb9db6b7f2f7a4927a7458e6816529bb0edd6da00b65991c206edfbe4643",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/raylib-revision.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/raylib-status.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/raylib-status.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/compiler-version.stdout": "810d36b5efad68bc6dd67699cfd0ff54f1621de63273c409889fa15856242df9",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/compiler-version.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/compiler-target.stdout": "1c7da408e283702561a445e700b61c0f55a082230a3cfe323208841221274a6a",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/compiler-target.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/raylib-revision.stdout": "ee0beb9db6b7f2f7a4927a7458e6816529bb0edd6da00b65991c206edfbe4643",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/raylib-revision.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/raylib-status.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/raylib-status.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/compiler-version.stdout": "810d36b5efad68bc6dd67699cfd0ff54f1621de63273c409889fa15856242df9",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/compiler-version.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/compiler-target.stdout": "1c7da408e283702561a445e700b61c0f55a082230a3cfe323208841221274a6a",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/compiler-target.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "/workspace/scratch/61c86f431823/jonlib-toolchain/clang/bin/clang": "0a3c55936ac43954fbe4914e6e73b577ca9e35e75d89ef13d3e28c187f41ca1a",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/package-inventory.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/package-inventory.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/controls.json": "1a22680c261e088bd8b134c36b90ddc78315eedcc27a7a4cac624e31059b8add",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/canonical.c": "cd623f54054c8918759f15ef4438a8877fff37b58e0a9d1709651b5ac9ed36fd",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/context-compile.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/context-compile.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/context.o": "abb954d22a886199f590d4bf61053a42b16dd212edcf910ca7654731bace686e",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pointer.c": "35057f6628f7b960e37649ab4c3df808fde56c9760e065bc93b34e7c2225085c",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pointer-compile.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pointer-compile.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pointer": "dd22f909642f749a45471bb922906b5a459bb912bf72c13c68caa0ffb00e4be5",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/intermediate-mirror.c": "5bd9685cde0557d90e7aafe2e593db163f55638bc3e1a649c1cf240fe5db66a4",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/intermediate-mirror-compile.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/intermediate-mirror-compile.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/intermediate-mirror": "939590631502e08a9c554dafba24062b484818999bd7786378acd972e2915c35",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/runtime-wrapper.c": "fbdeefc5d8a14643de99afb0678c354965103b9a6e09b6fabc55087a9aea259f",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/runtime-wrapper-compile.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/runtime-wrapper-compile.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/runtime-wrapper": "a7f44537a2bb982b796e437e19119e7466c78e1a03cc890cf85c8fdc388e1dbf",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/canonical-compile.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/canonical-compile.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/canonical": "cdaf96aaa99a9db3270f7a6a6a10dd850005284d4f258b9fff5a4f862ef391d8",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/include/libm-alias-finite.h": "4aa3075172842c13808468c1334313dd81dd851f4de0819cb24e6d2fc28b32f0",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/include/math_config.h": "c4bd91bd6209e6550d5d22cf7b42fb4d1b3bb3f21c228e6b143904f721b834c3",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pinned.c": "43f4b1f16632413f92e269839775809c0a7216e9dc4abcc59c71310a9c97426e",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pinned-compile.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pinned-compile.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pinned": "997573cdbaaac36ad0768c169fa7444c2d9e33492f7d79e1191c6d0a506cd9d2",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pinned-run.stdout": "7318f849e45a0637774d8544dff13d3bb1ff0583e1e2e65e4a3d12a0666b2c26",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pinned-run.stderr": "0fe5ddc91b459e73bcb323b14fd72807a1b7de9599bafc4b69d2492bba1132cc",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/package-inventory.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/package-inventory.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/controls.json": "1a22680c261e088bd8b134c36b90ddc78315eedcc27a7a4cac624e31059b8add",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/canonical.c": "cd623f54054c8918759f15ef4438a8877fff37b58e0a9d1709651b5ac9ed36fd",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/context-compile.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/context-compile.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/context.o": "abb954d22a886199f590d4bf61053a42b16dd212edcf910ca7654731bace686e",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/pointer.c": "35057f6628f7b960e37649ab4c3df808fde56c9760e065bc93b34e7c2225085c",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/pointer-compile.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/pointer-compile.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/pointer": "dd22f909642f749a45471bb922906b5a459bb912bf72c13c68caa0ffb00e4be5",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/intermediate-mirror.c": "5bd9685cde0557d90e7aafe2e593db163f55638bc3e1a649c1cf240fe5db66a4",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/intermediate-mirror-compile.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/intermediate-mirror-compile.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/intermediate-mirror": "939590631502e08a9c554dafba24062b484818999bd7786378acd972e2915c35",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/runtime-wrapper.c": "fbdeefc5d8a14643de99afb0678c354965103b9a6e09b6fabc55087a9aea259f",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/runtime-wrapper-compile.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/runtime-wrapper-compile.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/runtime-wrapper": "a7f44537a2bb982b796e437e19119e7466c78e1a03cc890cf85c8fdc388e1dbf",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/canonical-compile.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/canonical-compile.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/canonical": "cdaf96aaa99a9db3270f7a6a6a10dd850005284d4f258b9fff5a4f862ef391d8",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/include/libm-alias-finite.h": "4aa3075172842c13808468c1334313dd81dd851f4de0819cb24e6d2fc28b32f0",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/include/math_config.h": "c4bd91bd6209e6550d5d22cf7b42fb4d1b3bb3f21c228e6b143904f721b834c3",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/pinned.c": "43f4b1f16632413f92e269839775809c0a7216e9dc4abcc59c71310a9c97426e",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/pinned-compile.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/pinned-compile.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/pinned": "997573cdbaaac36ad0768c169fa7444c2d9e33492f7d79e1191c6d0a506cd9d2",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/pinned-run.stdout": "7318f849e45a0637774d8544dff13d3bb1ff0583e1e2e65e4a3d12a0666b2c26",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/pinned-run.stderr": "0fe5ddc91b459e73bcb323b14fd72807a1b7de9599bafc4b69d2492bba1132cc",
     "/usr/lib/x86_64-linux-gnu/libm.so.6": "6d567d53e895273ca14a1f9dc164fc6c8d39aed2f60aa46a733c2784228915f3",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pinned-run-library-notes.stdout": "ad7366e5416a4da300435f47d67dec02cd7e933ff0d928f0cb6ead575460c274",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pinned-run-library-notes.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pointer-run.stdout": "7318f849e45a0637774d8544dff13d3bb1ff0583e1e2e65e4a3d12a0666b2c26",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pointer-run.stderr": "0fe5ddc91b459e73bcb323b14fd72807a1b7de9599bafc4b69d2492bba1132cc",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pointer-run-library-notes.stdout": "ad7366e5416a4da300435f47d67dec02cd7e933ff0d928f0cb6ead575460c274",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/pointer-run-library-notes.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/canonical-run.stdout": "60461a08006423f8b64b7311351e44230424e6540e9a911014a04929062694cb",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/canonical-run.stderr": "0fe5ddc91b459e73bcb323b14fd72807a1b7de9599bafc4b69d2492bba1132cc",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/canonical-run-library-notes.stdout": "ad7366e5416a4da300435f47d67dec02cd7e933ff0d928f0cb6ead575460c274",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/canonical-run-library-notes.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/runtime-wrapper-run.stdout": "60461a08006423f8b64b7311351e44230424e6540e9a911014a04929062694cb",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/runtime-wrapper-run.stderr": "0fe5ddc91b459e73bcb323b14fd72807a1b7de9599bafc4b69d2492bba1132cc",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/runtime-wrapper-run-library-notes.stdout": "ad7366e5416a4da300435f47d67dec02cd7e933ff0d928f0cb6ead575460c274",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/runtime-wrapper-run-library-notes.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/mirror-run.stdout": "426cec3123de0da1007d81d5843f7444b045f2fe5925c9875eb78cd38833ccd3",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/mirror-run.stderr": "bd314d2811fdb037e2d6cac07ee24dc62595334f6fddf35e65e75a09c75e435b",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/mirror-run-library-notes.stdout": "ad7366e5416a4da300435f47d67dec02cd7e933ff0d928f0cb6ead575460c274",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/mirror-run-library-notes.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/final-raylib-revision.stdout": "ee0beb9db6b7f2f7a4927a7458e6816529bb0edd6da00b65991c206edfbe4643",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/final-raylib-revision.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/final-raylib-status.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/angle-reference/final-raylib-status.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/pinned-run-library-notes.stdout": "ad7366e5416a4da300435f47d67dec02cd7e933ff0d928f0cb6ead575460c274",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/pinned-run-library-notes.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/pointer-run.stdout": "7318f849e45a0637774d8544dff13d3bb1ff0583e1e2e65e4a3d12a0666b2c26",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/pointer-run.stderr": "0fe5ddc91b459e73bcb323b14fd72807a1b7de9599bafc4b69d2492bba1132cc",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/pointer-run-library-notes.stdout": "ad7366e5416a4da300435f47d67dec02cd7e933ff0d928f0cb6ead575460c274",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/pointer-run-library-notes.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/canonical-run.stdout": "60461a08006423f8b64b7311351e44230424e6540e9a911014a04929062694cb",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/canonical-run.stderr": "0fe5ddc91b459e73bcb323b14fd72807a1b7de9599bafc4b69d2492bba1132cc",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/canonical-run-library-notes.stdout": "ad7366e5416a4da300435f47d67dec02cd7e933ff0d928f0cb6ead575460c274",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/canonical-run-library-notes.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/runtime-wrapper-run.stdout": "60461a08006423f8b64b7311351e44230424e6540e9a911014a04929062694cb",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/runtime-wrapper-run.stderr": "0fe5ddc91b459e73bcb323b14fd72807a1b7de9599bafc4b69d2492bba1132cc",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/runtime-wrapper-run-library-notes.stdout": "ad7366e5416a4da300435f47d67dec02cd7e933ff0d928f0cb6ead575460c274",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/runtime-wrapper-run-library-notes.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/mirror-run.stdout": "426cec3123de0da1007d81d5843f7444b045f2fe5925c9875eb78cd38833ccd3",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/mirror-run.stderr": "bd314d2811fdb037e2d6cac07ee24dc62595334f6fddf35e65e75a09c75e435b",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/mirror-run-library-notes.stdout": "ad7366e5416a4da300435f47d67dec02cd7e933ff0d928f0cb6ead575460c274",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/mirror-run-library-notes.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/final-raylib-revision.stdout": "ee0beb9db6b7f2f7a4927a7458e6816529bb0edd6da00b65991c206edfbe4643",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/final-raylib-revision.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/final-raylib-status.stdout": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/tmp/jonlib-angle-admission-review/.build/angle-reference/final-raylib-status.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   }
 }

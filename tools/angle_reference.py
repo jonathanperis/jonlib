@@ -476,40 +476,50 @@ def qualify(raylib_source, library, build_dir, *, c_source, cases_from, parse_ou
 
 def main(argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
-    # Resolve only the report destination before full argument validation.
-    # A malformed invocation must not leave a stale successful qualification.
-    build_dir = ROOT/'.build'
-    for index, arg in enumerate(argv):
-        if arg == '--': break
-        if arg.startswith('--build-dir='): build_dir = Path(arg.split('=',1)[1])
-        elif arg == '--build-dir' and index+1 < len(argv) and not argv[index+1].startswith('-'):
-            build_dir = Path(argv[index+1])
-    admission = None
-    if '--help' not in argv and '-h' not in argv:
-        path = Path(build_dir).resolve()/'angle-reference/results.json'; path.parent.mkdir(parents=True,exist_ok=True)
-        admission = dict(schema=1,run_id=uuid.uuid4().hex,phase='argument-validation',qualified=False,
-                         selected_profile=None,parity_established=False,candidate_executed=False,
-                         started_at=datetime.now(timezone.utc).isoformat(),error=None)
-        path.write_text(json.dumps(admission,indent=2)+'\n')
     parser = argparse.ArgumentParser(description=__doc__, allow_abbrev=False)
     parser.add_argument('--raylib-source', type=Path, required=True)
     parser.add_argument('--library', type=Path, required=True)
     parser.add_argument('--build-dir', type=Path, default=ROOT/'.build')
     parser.add_argument('--profile')
     parser.add_argument('--timeout', type=int, default=120)
+    # One parser owns option semantics. Its explicitly supplied namespace also
+    # retains the last destination action actually executed before error/help.
+    # Parsing uses only Path/int conversions; no source is read or built here.
+    args = argparse.Namespace(build_dir=ROOT/'.build')
+
+    def admit(error=None):
+        path = args.build_dir.resolve()/'angle-reference/results.json'
+        path.parent.mkdir(parents=True,exist_ok=True)
+        report = dict(schema=1,run_id=uuid.uuid4().hex,phase='argument-validation',qualified=False,
+                      selected_profile=None,parity_established=False,candidate_executed=False,
+                      started_at=datetime.now(timezone.utc).isoformat(),error=None)
+        if error is not None:
+            if isinstance(error,SystemExit) and error.code == 0:
+                report.update(phase='help',completed_at=datetime.now(timezone.utc).isoformat())
+            else:
+                report.update(error=dict(type=type(error).__name__,message=str(error)),
+                              failed_at=datetime.now(timezone.utc).isoformat())
+        path.write_text(json.dumps(report,indent=2)+'\n')
+        return path,report
+
     try:
-        args = parser.parse_args(argv)
+        parser.parse_args(argv,namespace=args)
         if args.timeout <= 0: parser.error('--timeout must be positive')
+    except BaseException as error:
+        admit(error)
+        raise
+    path,admission = admit()
+    try:
         from conformance import c_source, cases_from, parse_output
         report = qualify(args.raylib_source, args.library, args.build_dir, c_source=c_source,
                          cases_from=cases_from, parse_output=parse_output, requested_profile=args.profile, timeout=args.timeout)
     except BaseException as error:
         # qualify() maintains its richer report once admitted. Do not overwrite it.
-        if admission is not None:
-            current = strict_json(path.read_text())
-            if current.get('run_id') == admission['run_id']:
-                admission.update(error=dict(type=type(error).__name__,message=str(error)),failed_at=datetime.now(timezone.utc).isoformat())
-                path.write_text(json.dumps(admission,indent=2)+'\n')
+        current = strict_json(path.read_text())
+        if current.get('run_id') == admission['run_id']:
+            admission.update(error=dict(type=type(error).__name__,message=str(error)),
+                             failed_at=datetime.now(timezone.utc).isoformat())
+            path.write_text(json.dumps(admission,indent=2)+'\n')
         raise
     print(json.dumps({key:report[key] for key in ('qualified','selected_profile','parity_established','candidate_executed')}))
 
