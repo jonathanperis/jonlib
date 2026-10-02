@@ -284,6 +284,31 @@ class AngleQualificationTests(unittest.TestCase):
             self.assertFalse(result['qualified']);self.assertIsNone(result['selected_profile'])
             self.assertEqual(result['error']['type'],'SystemExit')
 
+    def test_help_tokens_never_preserve_stale_authorization(self):
+        import contextlib,io
+        for args in (['--','--help'],['--profile','--help'],['--help']):
+            self.report_path.write_text(json.dumps(dict(qualified=True,selected_profile='stale')))
+            with contextlib.redirect_stderr(io.StringIO()),contextlib.redirect_stdout(io.StringIO()),self.assertRaises(SystemExit):
+                angle.main(['--build-dir',str(self.root),'--raylib-source','unused','--library','unused',*args])
+            result=json.loads(self.report_path.read_text())
+            self.assertFalse(result['qualified']);self.assertIsNone(result['selected_profile'])
+            if args==['--help']:
+                self.assertEqual(result['phase'],'help');self.assertIsNone(result['error'])
+
+    def test_negative_numeric_cli_destination_uses_actual_parser_state(self):
+        import contextlib,io,os
+        previous=Path.cwd()
+        try:
+            os.chdir(self.root)
+            target=self.root/'-1/angle-reference/results.json';target.parent.mkdir(parents=True)
+            for prefix in ([],['--build-dir',str(self.root)]):
+                target.write_text(json.dumps(dict(qualified=True,selected_profile='stale')))
+                with contextlib.redirect_stderr(io.StringIO()),self.assertRaises(SystemExit):
+                    angle.main([*prefix,'--build-dir','-1','--raylib-source','unused','--library','unused','--unknown'])
+                result=json.loads(target.read_text())
+                self.assertFalse(result['qualified']);self.assertIsNone(result['selected_profile'])
+        finally:os.chdir(previous)
+
     def test_no_candidate_command_in_success_or_failure_paths(self):
         self.qualify()
         self.assertFalse(any('bun' in c[0] or any(str(a).endswith('.bend') for a in c) for c in self.commands))
