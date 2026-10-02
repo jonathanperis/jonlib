@@ -18,7 +18,7 @@ separate compatibility gaps.
 | `Image.Formatted.from_channel(image, selected)` | Retains the owner and returns `Maybe<Image.Formatted>` with an independent native grayscale channel; see [IMAGE-CHANNELS.md](IMAGE-CHANNELS.md). |
 | `Image.Formatted.colors(image)` / `get(image, x, y)` | Native bulk colors consume the owner; point reads retain it with a bounded `Maybe` result. Packed expansion follows `LoadImageColors`/`GetImageColor`; see [IMAGE-COLORS.md](IMAGE-COLORS.md). |
 | `Image.Formatted.export(image)` | Consumes ownership and returns `((width, height), (format, bytes))`, with every native-order byte and no storage padding. |
-| `Image.Formatted.to_png(image)` | Default PNG memory export for byte formats 1/2/4/7; unsupported packed/R32 formats retain their owner in `Fail`. See [PNG-EXPORT.md](PNG-EXPORT.md). |
+| `Image.Formatted.to_png(image)` | Default PNG memory export for byte formats 1/2/4/7 and raw four-byte R32 words; unsupported packed formats retain their owner in `Fail`. See [PNG-EXPORT.md](PNG-EXPORT.md). |
 | `Image.Formatted.write_png(image, path)` | Default PNG file export for checked formats 1..8, preserving native packed-color expansion and R32 red-only normalization. See [PNG-EXPORT.md](PNG-EXPORT.md). |
 | `Image.Formatted.to_code(image, path)` / `write_code(image, path)` | Exact native image-as-code text and typed file export for bounded payloads/ASCII names. See [IMAGE-CODE.md](IMAGE-CODE.md). |
 

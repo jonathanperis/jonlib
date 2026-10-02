@@ -89,7 +89,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 | Pixel sizes / raw dithering | `Pixel.data_size`, `Surface.dither`, `Image.Packed16` | Exact all-format size boundaries and raw packed words/metadata; native byte-allocation ABI remains a gap |
 | Byte/integer pixel access | `Pixel.get_color/set_color` | Exhaustive two-byte reads, exact full write buffers, strict alpha threshold and native RGB5A1 read quirk |
 | Byte/integer image-format conversion | `Image.Formatted` and Surface bridges | All 49 format pairs, no-ops and chains checked as complete native-order bytes; normalized channel rules retained |
-| Bounded R32 image format | `Image.Formatted` format 8 | Checked finite `[0,1]` words, exact signed-zero/subnormal storage, uncontracted luminance and red-only normalization; explicit reverse-float/raw-load/memory-PNG and unverified-target gaps in [R32.md](R32.md) |
+| Bounded R32 image format | `Image.Formatted` format 8 | Checked finite `[0,1]` words, exact signed-zero/subnormal storage, uncontracted luminance and red-only normalization; distinct raw-bit memory PNG and normalized file PNG, with reverse-float/raw-load and unverified-target gaps in [R32.md](R32.md) |
 | Raw image files | `Image.Formatted.load_raw/write_raw` | Exact native payload/export bytes, header-offset rules, typed failures and low-descriptor closure checks on CPU/JS |
 | Image-file loading | `Surface.load_image/load_qoi` | Native supported suffix/content detection, complete reads, typed errors and low-descriptor closure checks on CPU/JS |
 | Image memory dispatch | `Surface.decode_image` | Native extension-token/content selection across implemented codecs; shared raster aliases, QOI separation and typed invalid controls on CPU/JS/Metal |

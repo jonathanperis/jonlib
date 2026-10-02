@@ -3399,3 +3399,50 @@ or GPU behavior, nor a modern glibc angle implementation.
 records this correction. Eight existing partial Jonmath entries gain the scoped
 host evidence; availability/completion totals remain unchanged. No remote
 publication was performed.
+
+## 2026-10-02: bounded R32 memory PNG
+
+`Image.Formatted.to_png` now supports checked R32 owners through a separate
+memory-channel selector. It preserves the native interpretation of each raw
+little-endian sample word as four RGBA bytes. File PNG retains its previous
+red-only normalization; sample `0.5` decodes as `0000003f` in memory and
+`7f0000ff` in a file. Packed formats 3/5/6 still reject with unchanged owners.
+The R32 sample domain and the unsupported RAW-loader/reverse-float boundaries
+did not change.
+
+CPU/JS pass 88 pure observations plus nine exact native files and two RAW-load
+rejection controls: 99 results per lane over all 1,132 R32 pixels. Memory PNG
+compares 1,263 encoded / 4,528 raw decoded bytes; file PNG separately compares
+370 encoded / 4,528 normalized decoded bytes. The half-sample discriminator,
+signed zeros, subnormals, multirow geometry, non-power-of-two widths and every
+threshold sample remain covered. PNG structure, dimensions, RGBA8 profile,
+chunk CRCs and complete byte arrays are checked.
+
+A generated forward reference was corrected before candidate execution.
+Subsequent monolithic emission ended with SIGKILL (`-9`) after 33.702 seconds at
+6,764,868 KiB maximum RSS, without compiler diagnostics. Typechecking passed;
+the exact kill cause is unproven because cgroup telemetry was not exposed.
+The harness now emits eight contiguous serial batches of at most eight
+operations. No library, oracle, input, domain or tolerance was changed by this
+batching. Each batch is validated before advancing, and stale binaries are
+removed before compilation. Exactly two RAW-load controls remain in the final
+batch. Missing/extra results cannot cancel across batches.
+
+Independent review verified all generated source/harness/library hashes and
+all native/candidate file bytes. A subsequent replay of the existing native and
+all 16 candidate binaries retained raw stdout and reproduced every recorded
+output hash, all 99 results per lane and all exact comparisons.
+
+All 78 Python tests pass. The existing byte/packed PNG regression passes 37 PNGs
+/ 171,574 encoded and 172,340 round-trip bytes on CPU/JS. Existing RGB-float PNG
+regressions pass six memory and five file profiles, including rejected-owner and
+IO controls. Transform contracts and the full proof CLI pass. Project/ledger
+checks and source/hash consistency checks pass. The rebuilt 261-scenario corpus
+still has only the documented angle mismatch on CPU one-thread, CPU two-thread
+and JavaScript; aggregate conformance remains failed. No GPU/hosted execution
+or performance parity is claimed for this extension.
+
+[Durable evidence](evidence/r32-memory-png.json) records the final reports and
+limits. ExportImageToMemory gains this partial scope, and ImageFormat's tracking
+removes the now-closed memory-PNG dependency gap. Counts remain 117/600 core
+partial, 142 math partial and zero complete. No remote publication was performed.
