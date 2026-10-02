@@ -1,5 +1,12 @@
 # Private directly rounded binary64 product with gradual output
 
+Current integration note: the new [private modern scalar adapter](MODERN-ANGLE.md)
+consumes this helper under the same checked contract. Historical “no consumer”
+statements and future-kernel/remaining-work sections below describe the isolated
+prerequisite checkpoint. No existing public image/math consumer, helper
+implementation or public contract changes. The current scalar adapter status is
+recorded separately at the link above.
+
 `src/binary64_gradual_multiply.bend` provides private
 `checked(ah,al,bh,bl) -> Maybe<binary64_fma.Words>` on canonical high/low U32
 words. The exact real product is rounded **once**, nearest with ties to even.

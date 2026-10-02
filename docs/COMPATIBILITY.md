@@ -30,7 +30,11 @@ and word adapters](BINARY64-OPS.md) add independent bounded multiply/divide,
 exact promotion/packing and raw stepping evidence, with the same private status.
 The [direct gradual-output product](BINARY64-GRADUAL-MULTIPLY.md) adds a separate
 asymmetric normal-input contract with subnormal and signed-zero results, also
-without consumers or API promotion. No device evidence is claimed for these prerequisites.
+without public consumers or API promotion. The new [private modern scalar
+kernel](MODERN-ANGLE.md) consumes these unchanged helpers and passes its separate
+8,317-case three-lane source/trace gate. It is not publicly routed and does not
+change the canonical failure. No device evidence is claimed for the kernel or
+these prerequisites.
 
 The current local Apple M1/macOS corpus contains **261 deterministic scenarios /
 40,101 checked output words per lane**, matching native CPU (one and two threads), JavaScript

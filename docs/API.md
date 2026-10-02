@@ -334,3 +334,8 @@ The separate [gradual-output product](BINARY64-GRADUAL-MULTIPLY.md) now supplies
 that private arithmetic prerequisite for its asymmetric normal-input domain.
 It rounds once to normal/subnormal/signed-zero words and has no existing API
 consumer; it does not widen the normal helpers or implement the angle kernel.
+
+
+The new [private modern finite atan2 adapter](MODERN-ANGLE.md) consumes these
+helpers without introducing a public angle API or changing an existing selector.
+Scalar finite-input support does not expand vector intermediate/output domains.

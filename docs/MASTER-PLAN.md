@@ -93,8 +93,9 @@ does not change existing API consumers or the current native-angle failure;
 private [bounded FMA](BINARY64-FMA.md) and [add/subtract](BINARY64-ADD-SUB.md)
 prerequisites are also isolated, as are the [checked normal multiply/divide and
 word adapters](BINARY64-OPS.md) and [gradual-output product](BINARY64-GRADUAL-MULTIPLY.md).
-The complete modern angle kernel, primitive-domain integration and device/resource
-evidence remain Phase 1 work.
+The [complete private finite modern angle kernel](MODERN-ANGLE.md) now consumes
+these unchanged helpers with separate source/trace verification. Public angle
+selection, vector-wrapper integration and device/resource evidence remain Phase 1 work.
 
 ## Compiler and runtime workstream
 

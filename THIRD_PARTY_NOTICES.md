@@ -150,6 +150,27 @@ notices and the selected license are retained in [LICENSES/arm-math.txt](LICENSE
   altered implementations; floating-point exception-state behavior is outside
   the current numeric profile.
 
+## Modern finite arctangent kernel
+
+`src/modern_angle.bend` is an altered private Bend adaptation of the complete
+finite-input RN-even scalar algorithm in
+[glibc 2.41 e_atan2f.c](https://github.com/bminor/glibc/blob/74f59e9271cbb4071671e5a474e7d4f1622b186f/sysdeps/ieee754/flt-32/e_atan2f.c),
+Copyright (c) 2022–2024 Alexei Sibidanov and Paul Zimmermann. The original file
+identifies CORE-MATH revision `7835c5d`; this abbreviation is not an independently
+verified full commit ID. The verified glibc release pin is
+`74f59e9271cbb4071671e5a474e7d4f1622b186f`, Git blob
+`82a0151293cda9cf89d6a18b6f8b35d4fdaeddd4`, SHA-256
+`96f9c81b6e870c256cc0757f6d88f5290ed35db8d5b640b9e757d6feca96ae38`.
+
+The complete MIT notice is retained in the Bend file, the tooling original and
+adaptation, and [LICENSES/core-math-atan2f.txt](LICENSES/core-math-atan2f.txt).
+`tools/reference/modern_atan2f_glibc241.c` is the unmodified pinned source;
+`modern_atan2f_adapted.c` adds observation-only branch/intermediate traces and a
+finite-input boundary for reference tooling. Their shims, compile flags and
+separate hashes are recorded by `tools/modern_angle_reference.py`. Neither C
+implementation is linked into the Bend candidate. No glibc LGPL testcase table
+is copied; controls are independently generated. See [the private contract](docs/MODERN-ANGLE.md).
+
 ## stb_perlin
 
 `src/perlin.bend` is an altered Bend adaptation of stb_perlin.h v0.5 from pinned

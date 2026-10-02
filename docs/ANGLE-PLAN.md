@@ -1,7 +1,9 @@
 # Modern native angle profile: staged implementation plan
 
-Status: researched design, **not implemented or passing parity**. The existing
-Apple and GNU/Sun algorithms, public defaults and `_for` meanings remain unchanged.
+Status: the complete [private finite scalar adapter](MODERN-ANGLE.md) is implemented
+with exact scoped CPU/JavaScript verification. Public profile/selector integration is **not implemented
+or passing parity**. The existing Apple and GNU/Sun algorithms, public defaults
+and `_for` meanings remain unchanged.
 The current glibc 2.41 angle mismatch remains a strict failure; see
 [NATIVE-MATH-PROFILES.md](NATIVE-MATH-PROFILES.md).
 
@@ -100,8 +102,9 @@ rounded normal/subnormal/XOR-zero output. It rejects nonzero subnormal inputs
 and has no consumers. This supplies literal tiny-branch `z*e` arithmetic;
 it does not establish a full kernel or replace the narrower normal multiply.
 
-Integration of these prerequisites into the full modern kernel remains future
-work. Keep old projection/resize contracts unchanged. Establish every reachable
+The new private scalar adapter integrates these prerequisites; its full
+verification and written operand-domain analysis are recorded separately in
+[MODERN-ANGLE.md](MODERN-ANGLE.md). Public integration remains future work. Keep old projection/resize contracts unchanged. Establish every reachable
 operand domain and operation order, including cancellation and both fallbacks,
 instead of treating standalone rectangles as arbitrary chaining guarantees.
 

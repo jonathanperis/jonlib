@@ -1,0 +1,200 @@
+{
+  "source_sha256": "96f9c81b6e870c256cc0757f6d88f5290ed35db8d5b640b9e757d6feca96ae38",
+  "generator": "modern_atan2f_driver.c --search; xorshift64-star; seed 0xA74A241",
+  "seed": 175415873,
+  "trials": 100000000,
+  "general_hits": 3,
+  "candidate_execution": false,
+  "cases": [
+    {
+      "y": "3f226a9f",
+      "x": "3ff7087c",
+      "discovery_y": "3f226a9f",
+      "discovery_x": "bff7087c",
+      "trial": 13611179,
+      "discovery_mask": 1413,
+      "pinned": "4034bc34"
+    },
+    {
+      "y": "3f97d5de",
+      "x": "3fe90127",
+      "discovery_y": "bf97d5de",
+      "discovery_x": "3fe90127",
+      "trial": 68861861,
+      "discovery_mask": 1413,
+      "pinned": "bf13d8e6"
+    },
+    {
+      "y": "3f3c140f",
+      "x": "3fed8040",
+      "discovery_y": "3f3c140f",
+      "discovery_x": "3fed8040",
+      "trial": 76679123,
+      "discovery_mask": 1413,
+      "pinned": "3ec107ca"
+    },
+    {
+      "y": "4b4f49bb",
+      "x": "4b412b84",
+      "discovery_y": "4b4f49bb",
+      "discovery_x": "4b412b84",
+      "midpoint_trial": 180,
+      "discovery_mask": 901,
+      "pinned": "3f52155a"
+    },
+    {
+      "y": "4b57d4a5",
+      "x": "4b6bd1b0",
+      "discovery_y": "4b57d4a5",
+      "discovery_x": "4b6bd1b0",
+      "midpoint_trial": 460,
+      "discovery_mask": 901,
+      "pinned": "3f3dbd59"
+    },
+    {
+      "y": "4ade9a86",
+      "x": "4b32078d",
+      "discovery_y": "4ade9a86",
+      "discovery_x": "4b32078d",
+      "midpoint_trial": 463,
+      "discovery_mask": 901,
+      "pinned": "3f0f0933"
+    },
+    {
+      "y": "4b1fe2de",
+      "x": "4b33bbdf",
+      "discovery_y": "4b1fe2de",
+      "discovery_x": "4b33bbdf",
+      "midpoint_trial": 1012,
+      "discovery_mask": 901,
+      "pinned": "3f3a1e3b"
+    },
+    {
+      "y": "4a92ccb4",
+      "x": "4b4dec03",
+      "discovery_y": "4a92ccb4",
+      "discovery_x": "4b4dec03",
+      "midpoint_trial": 1116,
+      "discovery_mask": 901,
+      "pinned": "3eaf4fad"
+    },
+    {
+      "y": "4a74ce14",
+      "x": "4b63cbcf",
+      "discovery_y": "4a74ce14",
+      "discovery_x": "4b63cbcf",
+      "midpoint_trial": 1177,
+      "discovery_mask": 901,
+      "pinned": "3e86624f"
+    },
+    {
+      "y": "4b377df9",
+      "x": "4b249c10",
+      "discovery_y": "4b377df9",
+      "discovery_x": "4b249c10",
+      "midpoint_trial": 1313,
+      "discovery_mask": 901,
+      "pinned": "3f56ef51"
+    },
+    {
+      "y": "4b0baf71",
+      "x": "4b5d3f03",
+      "discovery_y": "4b0baf71",
+      "discovery_x": "4b5d3f03",
+      "midpoint_trial": 1398,
+      "discovery_mask": 901,
+      "pinned": "3f102b19"
+    },
+    {
+      "y": "4a1c7ed4",
+      "x": "4a0dda60",
+      "discovery_y": "4a1c7ed4",
+      "discovery_x": "4a0dda60",
+      "midpoint_trial": 1,
+      "discovery_mask": 1413,
+      "pinned": "3f559daa"
+    },
+    {
+      "y": "49bb41c8",
+      "x": "4a19b1e8",
+      "discovery_y": "49bb41c8",
+      "discovery_x": "4a19b1e8",
+      "midpoint_trial": 11,
+      "discovery_mask": 1413,
+      "pinned": "3f0c11b2"
+    },
+    {
+      "y": "4b225ba9",
+      "x": "4b3ff7a6",
+      "discovery_y": "4b225ba9",
+      "discovery_x": "4b3ff7a6",
+      "midpoint_trial": 23,
+      "discovery_mask": 1413,
+      "pinned": "3f33b803"
+    },
+    {
+      "y": "4b2771d7",
+      "x": "4b682b7b",
+      "discovery_y": "4b2771d7",
+      "discovery_x": "4b682b7b",
+      "midpoint_trial": 26,
+      "discovery_mask": 1413,
+      "pinned": "3f1ff471"
+    },
+    {
+      "y": "4b3fe283",
+      "x": "4b23081a",
+      "discovery_y": "4b3fe283",
+      "discovery_x": "4b23081a",
+      "midpoint_trial": 30,
+      "discovery_mask": 1413,
+      "pinned": "3f5dd3f4"
+    },
+    {
+      "y": "4aef204e",
+      "x": "4b09d302",
+      "discovery_y": "4aef204e",
+      "discovery_x": "4b09d302",
+      "midpoint_trial": 37,
+      "discovery_mask": 1413,
+      "pinned": "3f36edfa"
+    },
+    {
+      "y": "4b224069",
+      "x": "4b617eec",
+      "discovery_y": "4b224069",
+      "discovery_x": "4b617eec",
+      "midpoint_trial": 42,
+      "discovery_mask": 1413,
+      "pinned": "3f1fabcd"
+    },
+    {
+      "y": "4b01bdf5",
+      "x": "4b4e8c56",
+      "discovery_y": "4b01bdf5",
+      "discovery_x": "4b4e8c56",
+      "midpoint_trial": 48,
+      "discovery_mask": 1413,
+      "pinned": "3f0f9454"
+    }
+  ],
+  "uniform_searches": [
+    {
+      "trials": 100000000,
+      "seed": 175415873,
+      "general_hits": 3
+    },
+    {
+      "trials": 200000000,
+      "seed": 443851329,
+      "general_hits": 11
+    }
+  ],
+  "boundary_search": {
+    "midpoints": 100000,
+    "seed": 175415873,
+    "general_hits": 17809,
+    "correction_up_hits": 541,
+    "generator": "binary32 angle midpoint; tanl; bounded integer continued-fraction convergents, numerator/denominator <=0xffffff; no candidate feedback"
+  }
+}

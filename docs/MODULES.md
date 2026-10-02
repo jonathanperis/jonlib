@@ -62,3 +62,11 @@ bounded arithmetic prerequisites. The latter reuses the former's internal
 word/list primitives under its own 34-limb invariants; neither is exported by
 Jonlib/Jonmath or used by existing image/math APIs. See [BINARY64-FMA.md](BINARY64-FMA.md)
 and [BINARY64-ADD-SUB.md](BINARY64-ADD-SUB.md) for the checked domains and proof limits.
+
+
+`src/modern_angle.bend` is a separate private finite-input scalar adapter for the
+pinned glibc 2.41 RN-even algorithm. It consumes the checked arithmetic helpers
+without re-exporting them or changing any existing API's profile. Its entry point
+accepts raw F32 words and returns a checked F32 result word; diagnostic traces are
+also private. See [MODERN-ANGLE.md](MODERN-ANGLE.md) for verification status,
+source provenance, exact operation order and remaining public/device work.

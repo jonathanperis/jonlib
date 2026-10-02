@@ -1,5 +1,12 @@
 # Private bounded binary64 fused multiply-add
 
+Current integration note: the new [private modern scalar adapter](MODERN-ANGLE.md)
+consumes this helper under the same checked contract. Historical “no consumer”
+statements and future-kernel/remaining-work sections below describe the isolated
+prerequisite checkpoint. No existing public image/math consumer, helper
+implementation or public contract changes. The current scalar adapter status is
+recorded separately at the link above.
+
 `src/binary64_fma.bend` provides the private entry point
 `checked(ah, al, bh, bl, ch, cl) -> Maybe<Words>`, where every argument is a U32
 and `Words{high, low}` is the canonical IEEE binary64 result encoding. The exact
