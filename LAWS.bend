@@ -558,3 +558,55 @@ law qoi_surface_encoder_preserved:
   for height: U32
   for pixels: Array<U32>
   {Qoi.encode(width, height, pixels) == Qoi.encode.channels(width, height, 4, pixels) : +List<U32>}
+
+# Scoped TGA decode metadata/integer packing; not a universal codec proof.
+law tga_native_gray8:
+  {Tga.native.channels(8, False{}) == 1 : U32}
+
+law tga_native_packed15:
+  {Tga.native.channels(15, True{}) == 3 : U32}
+
+law tga_native_packed16:
+  {Tga.native.channels(16, False{}) == 3 : U32}
+
+law tga_native_grayalpha16:
+  {Tga.native.channels(16, True{}) == 2 : U32}
+
+law tga_native_rgb24:
+  {Tga.native.channels(24, True{}) == 3 : U32}
+
+law tga_native_rgba32:
+  {Tga.native.channels(32, False{}) == 4 : U32}
+
+law formatted_tga_decode_format1:
+  {J.Image.Formatted.tga.format(1) == 1 : U32}
+
+law formatted_tga_decode_format2:
+  {J.Image.Formatted.tga.format(2) == 2 : U32}
+
+law formatted_tga_decode_format4:
+  {J.Image.Formatted.tga.format(3) == 4 : U32}
+
+law formatted_tga_decode_format7:
+  {J.Image.Formatted.tga.format(4) == 7 : U32}
+
+law formatted_tga_decode_gray:
+  {J.Image.Formatted.tga.word(1, 2155905279) == 128 : U32}
+
+law formatted_tga_decode_grayalpha:
+  {J.Image.Formatted.tga.word(2, 305419896) == 30738 : U32}
+
+law formatted_tga_decode_rgb:
+  {J.Image.Formatted.tga.word(3, 305419896) == 5649426 : U32}
+
+law formatted_tga_decode_rgba:
+  {J.Image.Formatted.tga.word(4, 305419896) == 2018915346 : U32}
+
+law formatted_tga_decode_zero_alpha:
+  {J.Image.Formatted.tga.word(2, 2172748032) == 129 : U32}
+
+law formatted_tga_decode_pixels_zero:
+  for index: U32
+  for channels: U32
+  for pixels: Array<U32>
+  {J.Image.Formatted.tga.pixels(0n, index, channels, pixels) == pixels : Array<U32>}

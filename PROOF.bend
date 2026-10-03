@@ -424,3 +424,51 @@ def Laws.formatted_qoi_export_packing_empty(index, format, pixels):
 
 def Laws.qoi_surface_encoder_preserved(width, height, pixels):
   {==}
+
+def Laws.tga_native_gray8():
+  {==}
+
+def Laws.tga_native_packed15():
+  {==}
+
+def Laws.tga_native_packed16():
+  {==}
+
+def Laws.tga_native_grayalpha16():
+  {==}
+
+def Laws.tga_native_rgb24():
+  {==}
+
+def Laws.tga_native_rgba32():
+  {==}
+
+def Laws.formatted_tga_decode_format1():
+  {==}
+
+def Laws.formatted_tga_decode_format2():
+  {==}
+
+def Laws.formatted_tga_decode_format4():
+  {==}
+
+def Laws.formatted_tga_decode_format7():
+  {==}
+
+def Laws.formatted_tga_decode_gray():
+  {==}
+
+def Laws.formatted_tga_decode_grayalpha():
+  {==}
+
+def Laws.formatted_tga_decode_rgb():
+  {==}
+
+def Laws.formatted_tga_decode_rgba():
+  {==}
+
+def Laws.formatted_tga_decode_zero_alpha():
+  {==}
+
+def Laws.formatted_tga_decode_pixels_zero(index, channels, pixels):
+  {==}

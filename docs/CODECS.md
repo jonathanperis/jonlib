@@ -11,7 +11,9 @@ including the exact text format, naming rules and bounded owned file export.
 BMP memory decoding and exact RGBA8 V4 export are documented in [BMP.md](BMP.md),
 including supported headers, native alpha/offset rules and rejected variants.
 TGA true-color/grayscale/indexed raw/RLE decoding and exact default RLE export are
-documented in [TGA.md](TGA.md).
+documented in [TGA.md](TGA.md), including dedicated `Image.Formatted.decode_tga`
+memory loading preserving native format-1/2/4/7 output. Surface TGA decoding
+remains RGBA8-normalized.
 Binary 8/16-bit P5/P6 decoding and native sample/maxval/separator rules are documented in
 [PNM.md](PNM.md), including the dedicated `Image.Formatted.decode_pnm` memory
 factory preserving native grayscale (1) or RGB888 (4) output. Its samples remain
@@ -61,10 +63,11 @@ wrapping channel differences, cache collisions and run-boundary handling. RGB
 headers are normalized to opaque RGBA8 by the Surface entrypoints. Their reference
 check performs the same explicit `LoadImageFromMemory` followed by
 `ImageFormat(RGBA8)` adaptation. The dedicated formatted memory and file entrypoints
-preserve native QOI formats. The separate PNM memory factory preserves native
-format 1/4 with reduced 8-bit output. Original-format metadata in the remaining
-normalized codecs, PNM formatted file loading, shared formatted/float dispatch
-and other payload codecs remain gaps.
+preserve native QOI formats. The separate PNM memory factory and dedicated
+`Image.Formatted.load_pnm` file loader preserve native format 1/4 with reduced
+8-bit output. The dedicated TGA memory factory preserves format 1/2/4/7.
+Original-format metadata in the remaining normalized codecs, formatted TGA file
+loading, shared formatted/float dispatch and other payload codecs remain gaps.
 
 `Image.DecodeError` distinguishes `InvalidImageHeader`, `InvalidImageByte`,
 `UnsupportedImageSize`, `TruncatedImageData` and `InvalidImageStream`.

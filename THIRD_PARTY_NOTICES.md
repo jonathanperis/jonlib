@@ -124,6 +124,10 @@ tooling; no stb implementation is linked into the Bend candidate.
 The formatted TGA channel-aware writer adapts `stb_image_write.h` lines 532–603
 and the raylib `ExportImage`/`LoadImageColors` routing, retaining its row-bounded
 RLE scan and component ordering in owned Bend arrays.
+The formatted TGA memory adapter preserves the altered reader's checked rules,
+adapting `stb_image.h` lines 5739–5753 and 5905–5922 for native output channels.
+Indexed output uses palette depth independently of input index width; integer
+packing retains native gray/gray-alpha/expanded RGB/RGBA output.
 The PNM formatted-memory adapter retains the altered `src/pnm.bend` reader's
 checked header/byte/size rules and little-endian 16-to-8-bit reduction, adapting
 `stb_image.h`'s `stbi__pnm_load` and `stbi__convert_16_to_8` behavior with integer
