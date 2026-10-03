@@ -4899,3 +4899,41 @@ core/formatted **65m33s/52m11s**. This predates TGA memory and does not qualify
 the new integrated 80-gate tip. Final exact-commit hosted checks/artifacts remain
 required; no new GPU/Metal, Windows/browser, big-endian, maximum-area allocation
 or representative performance qualification is claimed. No API becomes complete.
+
+## Format-preserving TGA file loading (2026-10-03)
+
+The [new focused evidence](evidence/tga-formatted-files.json) qualifies the
+dedicated `Image.Formatted.load_tga` wrapper on local Linux x86-64 CPU-one-thread,
+CPU-two-thread and JavaScript. It preserves native formats 1/2/4/7 through the
+unchanged inclusive 1 MiB RasterFile boundary and checked TGA memory decoder.
+Only partial `raylib:function:LoadImage` expands; no API becomes complete.
+
+The focused gate passes 225 accepted ordinary files, 154 candidate-only controls,
+1,283 primary records / 854,352 bytes per lane, plus complete 1,209-record closure,
+four sparse and four exact-cap observations. All 169 accepted memory streams are
+reused byte-for-byte as files. Actual raw native metadata/bytes precede separate
+normalization. Fresh archive settings, tool/compiler provenance, path/input/
+source/artifact identities, exact ordered partitions and all resource ceilings
+are sealed and independently checked. Full contracts, metrics and limitations
+are in [image file loading](IMAGE-FILES.md#tga-file-verification).
+
+On the same unchanged runtime sources, formatted TGA memory, PNM files, QOI
+files, formatted TGA export and canonical records also pass independent complete
+replay. Canonical checks all 261 scenarios / 40,101 words / 333 QOI bytes / 23
+palette words per lane and rejects nine mutated records. Surface TGA and generic
+memory/file gates pass fresh source/report/exit/fixture checks; their inherited
+full stdout was not retained, so no independent full-output replay is claimed.
+The pre-CI source freeze passed 645 Python tests without skips and all 149 laws
+with `All terms check.`. After the reviewed CI/docs delta, the final pinned-PATH
+suite passes **647 tests with zero skips**, all 149 laws, project/API/syntax
+checks and independent workflow byte/object preservation. The final checks are
+recorded separately in the new evidence report. These structural laws are not a
+universal codec/IO proof.
+
+The reviewed CI addition retains the 79-gate frozen baseline and earlier TGA
+memory gate, then appends TGA file loading and its precise sparse-artifact
+exclusions on both OS workers. The already verified 80-gate `abc55e2b` hosted run
+is historical to the memory checkpoint; fresh exact-tip 81-gate hosted
+qualification remains required. GPU/Metal IO, Windows/browser, big-endian,
+maximum decoded-area/heap, OOM/native pointer ABI, concurrent/special files and
+full performance qualification remain gaps.

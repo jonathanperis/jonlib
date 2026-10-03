@@ -1,8 +1,9 @@
-# TGA memory decoding and default RLE export
+# TGA memory/file decoding and default RLE export
 
 | API | Contract |
 |---|---|
 | `Image.Formatted.decode_tga(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Image.Formatted>` with owned native format-1/2/4/7 pixels and an implicit single mip. |
+| `Image.Formatted.load_tga(path: String)` | Returns `IO(Result<&1, &1, Image.LoadError, Image.Formatted>)`; explicit TGA selection, inclusive 1 MiB encoded-file cap and the same native-format memory domain. |
 | `Surface.decode_tga(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Surface>` containing owned normalized RGBA8 pixels. |
 | `Surface.to_tga(surface) -> +List<U32>` | Consumes RGBA8 and emits the pinned exporter's exact default RLE bytes. |
 | `Surface.write_tga(surface, path)` | Consumes RGBA8 and returns `IO(Result<&1, &1, U32 & String, Unit>)` through Base byte-file writing and closure. |
@@ -95,12 +96,81 @@ return `InvalidImageHeader`; dimensions outside 1..4096 return
 loading and pixel allocation. These checked adaptations do not claim parity
 with permissive native malformed-stream recovery.
 
-Only partial `raylib:function:LoadImageFromMemory` expands. Formatted TGA file
-loading, generic formatted/float dispatch, remaining codec formats, nondefault
-stb flags, dimensions above 4096, native pointer/allocation/OOM behavior and
-maximum-area/resource/performance qualification remain open. CPU/JavaScript
-verification cannot establish GPU/Metal, Windows/browser, other hosts or hosted
-CI coverage. No API is complete.
+The memory-only increment expanded partial `raylib:function:LoadImageFromMemory`.
+The separate file wrapper below expands partial `raylib:function:LoadImage`.
+Generic formatted/float dispatch, remaining codec formats, nondefault stb flags,
+dimensions above 4096, native pointer/allocation/OOM behavior and maximum-area/
+resource/performance qualification remain open. CPU/JavaScript verification
+cannot establish GPU/Metal, Windows/browser, other hosts or hosted CI coverage.
+No API is complete.
+
+## Format-preserving TGA file loading
+
+`Image.Formatted.load_tga(path)` selects the formatted TGA decoder explicitly,
+independently of the suffix. Uppercase/mixed-case, misleading, arbitrary and
+absent suffixes do not alter the codec or cap. It accepts only the checked TGA
+domain above; it does not sniff other codecs, retry a decoder or use generic
+formatted dispatch. Existing normalized Surface APIs remain unchanged.
+
+The two-function wrapper follows `Image.Formatted.load_pnm`: a dedicated
+continuation receives `Image.file.bytes(path, Image.file.limit(RasterFile{}))`
+and adapts `Image.Formatted.decode_tga` through `Image.file.decoded`. The shared
+reader admits **1,048,576 encoded bytes, inclusive**, rejects larger reported
+U32 sizes before reading, performs one read whose length must exactly match the
+reported size, and calls close before processing its result or decoding.
+Open/size/read errors preserve the Base code and message; above-U32 sizes retain
+Base's overflow file error. Decoder errors are wrapped exactly once. Base does
+not report close failures. Full ordering and error details are in the
+[file contract](IMAGE-FILES.md#format-preserving-tga-file-loading).
+
+Success returns one affine format-1/2/4/7 owner with width/height 1..4096 and one
+implicit mip level. Input sample/index width remains separate from output
+channels; palette depth selects indexed output. Raw export, high-bit invariants,
+point-read ownership, conversion and disposal use the unchanged formatted
+memory-owner contract above. Failure returns no partial owner or open File.
+
+The cap bounds admitted encoded input, not decoded area, total heap, allocation
+success or throughput. RLE compression does not turn it into a maximum-area
+qualification. Concurrent/special files, native callbacks, native allocation
+ABI/OOM behavior, additional platforms and full resource/performance coverage
+remain outside the slice. Fresh local formatted-file verification is recorded below.
+The memory reconstruction and integration results below are historical
+evidence for their recorded sources, not new validation of this file wrapper.
+
+### Fresh local file verification
+
+The [source-scoped file report](evidence/tga-formatted-files.json) qualifies
+**225 accepted real files / 61,913 pixels**: all 169 memory streams unchanged,
+plus 56 tiny filename variants across formats 1/2/4/7. There are **197 actual
+`LoadImage`** references and **28 separately labelled explicit TGA references**.
+The fresh isolated archive explicitly enables and verifies TGA/PNG/BMP/GIF
+aliases; every accepted header, complete raster and on-disk byte sequence is
+validated before native access. Native `.tga` still selects shared stb content
+detection; other-codec and malformed controls remain outside this TGA oracle.
+
+Each CPU-one-thread, CPU-two-thread and JavaScript lane passes **1,283 primary
+records / 854,352 bytes** in 41 exact ordered partitions. Public formatted loads
+are reopened for raw bytes, threaded point/high-bit ownership checks and the
+consuming Surface bridge. Separate normalized/generic regressions preserve their
+real routing contracts. **154 checked-only file controls** retain all 144
+byte-safe memory controls; non-byte U32 values stay synthetic or memory-only.
+
+The 100-cycle fd64 lane checks **1,209 individually framed records**, covering
+four successful layouts and eight acquired-handle failure/stage paths per cycle,
+eight synthetic checks and a final valid load. All three lanes pass sparse
+cap-plus-one/misleading-name/256 MiB/U32-overflow checks and an independently
+native-observed valid exact-cap file with a fully validated ignored tail. Fixed
+runtime RSS ceilings are enforced separately from compilation. Complete raw
+native/candidate replay, all 1,643 seals, 187 owned/reaped command receipts and
+nine resource receipts passed independent audit; these are scoped runtime and
+source-order facts, not a universal IO or OS-close-success proof.
+
+The formatted TGA memory/PNM-file/QOI-file/TGA-export and canonical regressions
+also pass on this unchanged library source. Surface TGA and generic memory/file
+reports, sources and exits pass; their inherited harnesses do not retain full
+stdout for an independent full-record replay. The new 81-gate CI addition still
+requires its own exact-commit hosted run; the historical 80-gate memory checkpoint
+is separately recorded in [CI runtime](CI-RUNTIME.md).
 
 ## Reconstructed formatted-memory verification
 
