@@ -1,5 +1,12 @@
 # Shared image fixtures (schema 1)
 
+`conformance-before-runtime-split.yml` is a separate CI test fixture: the exact
+Conformance workflow at reviewed checkpoint
+`36f5d0b5a811297b349c45aa6ddc3a9a067ac8d3`, before the runtime split. Its SHA-256
+is fixed in `test_conformance_workflow.py`. It is evidence for preserving setup,
+gate payloads, ordering and upload scope, not an executable workflow or an image
+fixture. See [the CI contract](../../docs/CI-RUNTIME.md) before changing it.
+
 `images.json` is the common input to both raylib and Bend code generation.
 Each case has a unique lowercase/hyphenated `id`, `width`, `height`, a four-byte
 RGBA `background`, and an ordered `operations` array.

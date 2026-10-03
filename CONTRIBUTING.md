@@ -71,7 +71,7 @@ becomes a conformance test. Consult asset-specific licenses before adding files.
   explicitly applies the hash-checked compiler patch, checks the law/contracts/
   examples and 16 upstream compiler regressions, records the default-filter
   precision diagnostic, and uploads evidence for 14 days. Diagnostic variants
-  are not treated as passing Bend implementations. Both jobs re-extract the
+  are not treated as passing Bend implementations. Both core workers re-extract the
   complete API catalog and independently audit C functions/C++ overloads with Clang.
   The filtered-resize gate also checks exact normalization/kernel bits and
   529 real raylib image outputs, including the retained precision counterexamples.
@@ -79,6 +79,11 @@ becomes a conformance test. Consult asset-specific licenses before adding files.
   and exact scalar/Vector2 results under the declared uncontracted-F32 profile.
   A separate gate checks the bounded gradient trigonometry profile against the
   runner's actual `sinf`/`cosf` results.
+- Each platform has independent **core** and **formatted images** workers with
+  the same pinned setup and 120-minute timeout. The prior `CPU and JavaScript`
+  check names are fail-closed aggregates requiring every worker on both platforms.
+  Evidence names include the platform and shard. See [CI runtime and gate
+  preservation](docs/CI-RUNTIME.md) for ownership, artifact scope and estimates.
 - Actions are pinned to immutable commits; dependency revisions come from
   `toolchain.json`. Workflows use read-only repository permissions.
 - Hosted conformance does not claim Metal/CUDA or live window/audio validation.
