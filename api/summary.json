@@ -575,7 +575,7 @@
       "name": "LoadImageFromMemory",
       "milestone": "image-codecs",
       "status": "partial",
-      "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Image.FloatRGB.decode_hdr / Image.Formatted.decode_qoi / Image.Formatted.decode_pnm",
+      "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Image.FloatRGB.decode_hdr / Image.Formatted.decode_qoi / Image.Formatted.decode_pnm / Image.Formatted.decode_tga",
       "next_step": "Close documented gaps and unverified gates for LoadImageFromMemory.",
       "milestone_dependencies": [
         "files",

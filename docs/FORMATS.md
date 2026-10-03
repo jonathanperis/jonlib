@@ -11,6 +11,7 @@ separate compatibility gaps.
 | API | Contract |
 |---|---|
 | `Image.Formatted.from_bytes(width, height, format, bytes) -> Maybe<Image.Formatted>` | Checks supported dimensions/format, byte values 0..255, exact required byte count and the R32 sample domain before allocation. |
+| `Image.Formatted.decode_tga(bytes)` | Checked TGA memory factory preserving native format 1/2/4/7, exact bytes and implicit single mip; indexed output follows palette depth independently of index width. See [TGA.md](TGA.md#format-preserving-tga-memory-loading). |
 | `Image.Formatted.decode_pnm(bytes)` | Checked P5/P6 memory factory preserving native grayscale (1) or RGB888 (4), exact reduced 8-bit samples and implicit single-mip dimensions; existing checked little-endian parsing and typed errors. This does not preserve 16-bit source sample depth. See [PNM.md](PNM.md#format-preserving-pnm-memory-loading). |
 | `Image.Formatted.decode_qoi(bytes)` | Checked QOI owner factory preserving native RGB888 (4) or RGBA8888 (7), single-mip metadata and exact bytes; existing typed decode errors. See [CODECS.md](CODECS.md#format-preserving-qoi-memory-loading). |
 | `Image.Formatted.load_qoi(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` | Checked ordinary-file QOI owner factory with explicit suffix-independent selection, native format 4/7, exact bytes and an implicit single mip level; shared inclusive 83,886,102-byte cap and typed file/decode errors. See [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-qoi-file-loading). |

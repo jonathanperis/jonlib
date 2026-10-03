@@ -48,6 +48,14 @@ FORMATTED_PATHS = (
     '.build/qoi-file-probe/run-*/*.command.json',
     '.build/qoi-file-probe/run-*/*.resource.json',
 )
+# Explicitly reviewed additions are separate from the immutable 79-gate baseline.
+ADDED_FORMATTED_GATES = ('''      - name: Verify native TGA formats and exact memory bytes
+        run: >-
+          python3 tools/tga_format_probe.py --reference-env clean-loader
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+''',)
+ADDED_FORMATTED_PATHS = ('.build/tga-format-probe/',)
 PLATFORMS = (('Ubuntu', 'ubuntu-24.04'), ('Mac', 'macos-15'))
 WORKERS = ('coreUbuntu', 'coreMac', 'formattedUbuntu', 'formattedMac')
 RESULT_VARIABLES = ('CORE_UBUNTU_RESULT', 'CORE_MAC_RESULT',
@@ -133,6 +141,10 @@ def validate_workflow(text):
     formatted = [step for step in gates if gate_name(step) in FORMATTED_GATES]
     core = [step for step in gates if gate_name(step) not in FORMATTED_GATES]
     require(tuple(map(gate_name, formatted)) == FORMATTED_GATES, 'Formatted ownership changed')
+    require(len(core) == 72 and len(formatted) == 7, 'Original gate counts changed')
+    reviewed_gates = gates + list(ADDED_FORMATTED_GATES)
+    formatted = formatted + list(ADDED_FORMATTED_GATES)
+    require(len(reviewed_gates) == 80 and len(formatted) == 8, 'Reviewed added gate count changed')
     upload_header, old_paths = upload_parts(upload)
     require(len(old_paths) == len(set(old_paths)) == 156, 'Expected 156 distinct baseline paths')
     paths_by_shard = {
@@ -142,6 +154,10 @@ def validate_workflow(text):
     require(len(paths_by_shard['core']) == 140, 'Expected 140 core paths')
     require(Counter(paths_by_shard['core'] + paths_by_shard['formatted']) == Counter(old_paths),
             'Artifact partitions must be the disjoint baseline union')
+    paths_by_shard['formatted'].extend(ADDED_FORMATTED_PATHS)
+    reviewed_paths = old_paths + list(ADDED_FORMATTED_PATHS)
+    require(len(paths_by_shard['formatted']) == 17 and len(reviewed_paths) == 157,
+            'Reviewed added artifact count changed')
     for suffix, platform in PLATFORMS:
         actual_gates = []
         actual_paths = []
@@ -167,8 +183,8 @@ def validate_workflow(text):
             expected_upload += ''.join('            ' + path + '\n' for path in paths_by_shard[shard])
             require(steps[-1] == expected_upload, job_id + ': upload settings, name or paths changed')
             actual_paths.extend(upload_parts(steps[-1])[1])
-        require(Counter(actual_gates) == Counter(gates), platform + ': gate payload multiset changed')
-        require(Counter(actual_paths) == Counter(old_paths), platform + ': artifact path multiset changed')
+        require(Counter(actual_gates) == Counter(reviewed_gates), platform + ': gate payload multiset changed')
+        require(Counter(actual_paths) == Counter(reviewed_paths), platform + ': artifact path multiset changed')
         require(jobs['conformance' + suffix] == AGGREGATE.replace('__PLATFORM__', platform),
                 platform + ': fail-closed compatibility aggregate changed')
 
@@ -223,6 +239,35 @@ class ConformanceWorkflowTests(unittest.TestCase):
                 mutated_job = jobs[job_id].replace(steps[7], replacement, 1)
                 with self.subTest(mutation=label, job=job_id), self.assertRaises(ValueError):
                     validate_workflow(structural_text(self.text).replace(jobs[job_id], mutated_job, 1))
+
+    def test_reviewed_tga_addition_is_mandatory_exact_and_scoped_on_both_platforms(self):
+        _, jobs = workflow_parts(self.text)
+        gate = ADDED_FORMATTED_GATES[0]
+        path = '            ' + ADDED_FORMATTED_PATHS[0] + '\n'
+        for suffix, _ in PLATFORMS:
+            job_id = 'formatted' + suffix
+            job = jobs[job_id]
+            _, steps = job_parts(job)
+            self.assertEqual(len(steps[7:-1]), 8)
+            self.assertEqual(steps[-2], gate)
+            self.assertEqual(upload_parts(steps[-1])[1][-1], ADDED_FORMATTED_PATHS[0])
+            mutations = {
+                'missing TGA gate': job.replace(gate, '', 1),
+                'duplicate TGA gate': job.replace(gate, gate * 2, 1),
+                'altered TGA command': job.replace('tools/tga_format_probe.py', 'tools/tga_probe.py', 1),
+                'missing TGA loader flag': job.replace('tools/tga_format_probe.py --reference-env clean-loader', 'tools/tga_format_probe.py', 1),
+                'altered TGA loader flag': job.replace('tools/tga_format_probe.py --reference-env clean-loader', 'tools/tga_format_probe.py --reference-env inherited', 1),
+                'optional TGA gate': job.replace(gate, gate.replace('        run:', '        continue-on-error: true\n        run:'), 1),
+                'reordered TGA gate': job.replace(steps[-3] + gate, gate + steps[-3], 1),
+                'missing TGA artifact': job.replace(path, '', 1),
+                'altered TGA artifact': job.replace(path, '            .build/tga-format-probe/results.json\n', 1),
+                'broader TGA artifact': job.replace(path, '            .build/\n', 1),
+            }
+            for label, mutated_job in mutations.items():
+                with self.subTest(job=job_id, mutation=label):
+                    self.assertNotEqual(job, mutated_job)
+                    with self.assertRaises(ValueError):
+                        validate_workflow(structural_text(self.text).replace(job, mutated_job, 1))
 
     def test_both_actual_aggregate_shells_fail_closed_for_all_four_results(self):
         _, jobs = workflow_parts(self.text)

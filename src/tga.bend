@@ -13,10 +13,20 @@ type Error is Data:
   BadStream{}
 
 type Image is Type:
-  Image{width: U32, height: U32, pixels: Array<U32>}
+  Image{width: U32, height: U32, native_channels: U32, pixels: Array<U32>}
 
 type Header is Data:
-  Header{width: U32, height: U32, top: Bool, rle: Bool, channels: U32, packed: Bool, palette: +List<U32>, data: +List<U32>}
+  Header{width: U32, height: U32, top: Bool, rle: Bool, channels: U32, native_channels: U32, packed: Bool, palette: +List<U32>, data: +List<U32>}
+
+# Native output channels are distinct from input sample/index byte width.
+# Indexed images use palette depth with gray=False, never the index width.
+def native.channels(bits: U32, gray: Bool) -> U32:
+  match bits:
+    case 8: 1
+    case 15: 3
+    case 16: Bool.pick(U32, gray, 2, 3)
+    case 24: 3
+    case _: 4
 
 def rgba.bytes(channels: U32, +word: U32) -> U32:
   match channels:
@@ -68,20 +78,20 @@ def palette.spec(indexed: Bool, skip: U32, count: U32, +bits: U32) -> ColorMap:
     case False{}: NoColorMap{}
     case True{}: ColorMap{skip, count, ((bits + 7) / 8 : U32), U32.is_eq(bits, 15) || U32.is_eq(bits, 16)}
 
-def header.palette(width: U32, height: U32, top: Bool, rle: Bool, channels: U32, packed: Bool, result: Result<&2, &2, Error, Palette>) -> Result<&2, &2, Error, Header>:
+def header.palette(width: U32, height: U32, top: Bool, rle: Bool, channels: U32, native_channels: U32, packed: Bool, result: Result<&2, &2, Error, Palette>) -> Result<&2, &2, Error, Header>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{Palette{colors, data}}: Done{Header{width, height, top, rle, channels, packed, colors, data}}
+    case Done{Palette{colors, data}}: Done{Header{width, height, top, rle, channels, native_channels, packed, colors, data}}
 
-def header.sized(valid: Bool, width: U32, height: U32, top: Bool, rle: Bool, channels: U32, packed: Bool, map: ColorMap, id: U32, bytes: +List<U32>) -> Result<&2, &2, Error, Header>:
+def header.sized(valid: Bool, width: U32, height: U32, top: Bool, rle: Bool, channels: U32, native_channels: U32, packed: Bool, map: ColorMap, id: U32, bytes: +List<U32>) -> Result<&2, &2, Error, Header>:
   match valid:
     case False{}: Fail{BadSize{}}
-    case True{}: header.palette(width, height, top, rle, channels, packed, palette.load(map, List.drop(&2, U32, bytes, U32.to_nat(id))))
+    case True{}: header.palette(width, height, top, rle, channels, native_channels, packed, palette.load(map, List.drop(&2, U32, bytes, U32.to_nat(id))))
 
-def header.checked(valid: Bool, +width: U32, +height: U32, top: Bool, rle: Bool, channels: U32, packed: Bool, map: ColorMap, id: U32, bytes: +List<U32>) -> Result<&2, &2, Error, Header>:
+def header.checked(valid: Bool, +width: U32, +height: U32, top: Bool, rle: Bool, channels: U32, native_channels: U32, packed: Bool, map: ColorMap, id: U32, bytes: +List<U32>) -> Result<&2, &2, Error, Header>:
   match valid:
     case False{}: Fail{BadHeader{}}
-    case True{}: header.sized(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32), width, height, top, rle, channels, packed, map, id, bytes)
+    case True{}: header.sized(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32), width, height, top, rle, channels, native_channels, packed, map, id, bytes)
 
 def header(bytes: +List<U32>) -> Result<&2, &2, Error, Header>:
   match bytes:
@@ -96,7 +106,8 @@ def header(bytes: +List<U32>) -> Result<&2, &2, Error, Header>:
       mapped = indexed && (count > 0 : U32) && (U32.is_eq(kind, 1) || U32.is_eq(kind, 9)) && (U32.is_eq(bits, 8) || U32.is_eq(bits, 16))
         && (U32.is_eq(entry_bits, 8) || U32.is_eq(entry_bits, 15) || U32.is_eq(entry_bits, 16) || U32.is_eq(entry_bits, 24) || U32.is_eq(entry_bits, 32))
       header.checked(direct || mapped, (wl .|. (wh << 8n) : U32), (hl .|. (hh << 8n) : U32),
-        ((descriptor .&. 32) > 0 : U32), (kind >= 8 : U32), ((bits + 7) / 8 : U32), packed,
+        ((descriptor .&. 32) > 0 : U32), (kind >= 8 : U32), ((bits + 7) / 8 : U32),
+        native.channels(Bool.pick(U32, indexed, entry_bits, bits), gray && Bool.not(indexed)), packed,
         palette.spec(indexed, (sl .|. (sh << 8n) : U32), count, entry_bits), id, data)
     case _: Fail{BadHeader{}}
 
@@ -142,23 +153,23 @@ def write(index: U32, pixels: Array<U32>, result: Result<&2, &2, Error, Cursor>)
     case Fail{error}: Fail{error}
     case Done{Cursor{data, left, repeat, +pixel}}: Done{State{Cursor{data, left, repeat, pixel}, Array.set(U32, pixels, index, pixel)}}
 
-def pixels(n: Nat, +index: U32, +width: U32, +height: U32, +top: Bool, +rle: Bool, +channels: U32, +packed: Bool, +palette: +List<U32>, state: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, Image>:
+def pixels(n: Nat, +index: U32, +width: U32, +height: U32, +top: Bool, +rle: Bool, +channels: U32, +native_channels: U32, +packed: Bool, +palette: +List<U32>, state: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, Image>:
   match n state:
     case _ Fail{error}: Fail{error}
-    case 0n Done{State{_, output}}: Done{Image{width, height, output}}
+    case 0n Done{State{_, output}}: Done{Image{width, height, native_channels, output}}
     case 1n+rest Done{State{Cursor{data, +left, repeat, pixel}, output}}:
       +y = (index / width : U32)
       at = (Bool.pick(U32, top, y, (height - 1 - y : U32)) * width + index % width : U32)
-      pixels(rest, (index + 1 : U32), width, height, top, rle, channels, packed, palette,
+      pixels(rest, (index + 1 : U32), width, height, top, rle, channels, native_channels, packed, palette,
         write(at, output, next(rle, U32.is_eq(left, 0), repeat, (width * height - index : U32), channels, packed, palette, left, pixel, data)))
 
 def start(result: Result<&2, &2, Error, Header>) -> Result<&1, &1, Error, Image>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{Header{+width, +height, top, rle, channels, packed, palette, data}}:
+    case Done{Header{+width, +height, top, rle, channels, native_channels, packed, palette, data}}:
       +count = (width * height : U32)
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
-      pixels(U32.to_nat(count), 0, width, height, top, rle, channels, packed, palette, Done{State{Cursor{data, 0, False{}, 0}, Array.new(U32, depth, 0)}})
+      pixels(U32.to_nat(count), 0, width, height, top, rle, channels, native_channels, packed, palette, Done{State{Cursor{data, 0, False{}, 0}, Array.new(U32, depth, 0)}})
 
 def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, Error, Image>:
   match valid:

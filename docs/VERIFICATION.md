@@ -4742,3 +4742,160 @@ focused audit verifies every one of 1,179 sealed artifacts, 103 successful
 process-group receipts and all 626 primary + 1,009 boundary + four sparse + one
 exact-cap records per lane with its own strict parser. Its script, command and
 result are preserved with the validation evidence.
+
+## Reconstructed format-preserving TGA memory loading (2026-10-03)
+
+This batch is a new reconstruction on published baseline `d3b93896`, not a
+recovery of the lost local checkpoint or its runtime receipts. It extends only
+partial `raylib:function:LoadImageFromMemory` through `Image.Formatted.decode_tga`.
+Native output channels are separate from input sample/index byte width; direct
+type/depth or indexed palette depth selects formats 1/2/4/7. Integer packing
+preserves gray, gray-alpha, expanded RGB888 and RGBA8888 bytes, while the existing
+checked TGA decoder and Surface RGBA8 behavior remain unchanged. See the
+[contract](TGA.md#format-preserving-tga-memory-loading) and explicit
+[obligation-to-test/probe/receipt matrix](TGA-REBUILD-COVERAGE.md).
+
+The fresh focused Linux x86-64 gate passes **169 native images / 61,857 pixels**,
+**155 checked-only controls**, and **377 actual native observations**. Actual
+width/height/mipmaps/format and **155,600 raw bytes** precede separate observations
+of **247,428 normalized bytes**, with selected uppercase alias reloads. Every
+CPU-one-thread, CPU-two-thread and JavaScript lane passes **1,311 records /
+1,024,632 bytes**, split into **466,800 raw / 557,832 normalized bytes**. No
+malformed control reaches native or is counted as a native rejection.
+
+All 64 published accepted streams and 23 published controls are preserved. The
+matrix covers all four layouts, gray/alpha ramps, packed16/gray-alpha16 and
+palette-depth/index-width discriminators, ignored direct palette fields,
+vertical orientation, ignored descriptor bits, zero alpha, RGB555 expansion,
+palette byte skips/fallback, maximal IDs/tails, raw/repeat 127/128/129 packets and
+cross-row runs. Every layout includes 1x1, padded 3x5, both 4096-axis boundaries
+and nonuniform 81x63 images. Factory output, high-bit invariants, retained
+in-bounds/out-of-bounds point-read owners, consuming bridges and unchanged
+Surface/dispatch observations are independently compared. Candidate mipmaps are
+an implicit owner contract, not a measured field.
+
+The first fresh attempt stopped after 19 passing batches (**608 records per
+lane**) when compiler batch 19 exited **-9** with empty output. Generated source
+was 406,854 bytes, and host memory had been observed around 8.3/9.7 GiB; OOM is
+not proven. No timeout or comparison mismatch occurred. Failure remained
+fail-closed, its process group was gone, and the direct child was reaped.
+The independent reviewer verified its **868 seals** and complete partial output.
+The failed report and exact reviewed source have a separate portable archive.
+
+The independently reviewed repair changes execution grouping only: **43 ordered
+partitions**, at most **32 actions / 196,608 source bytes** each, with an observed
+maximum of **185,894 bytes**. All actions, roles, fixture/control inputs, oracle,
+compiler, domain limits and the **600-second timeout** remain unchanged. The
+entire gate reruns from a new native build. Input/reference hashes match the
+failed capture, the full action digest is preserved, and former batches 0–19
+regenerate identically before regrouping. Partition schema, order, coverage,
+source/action hashes and per-lane byte totals fail closed.
+
+The reference archive is a fresh isolated Memory/Release build with verified
+`SUPPORT_FILEFORMAT_TGA=ON`, `CUSTOMIZE_BUILD=ON`, `PLATFORM_MEMORY` and
+`EXTERNAL_CONFIG_FLAGS`; pinned raylib disables TGA by default. Native
+qualification checks actual channel/depth/index behavior before reference
+capture. GNU 14.2.0 builds the archive, Clang 19.1.7 builds the reference, and
+pinned Bun 1.3.12 drives the exact Bend overlay. Native child loaders are cleaned
+without mutating the parent. All **1,224 seals** and **181 successful owned-process
+receipts** are independently checked. A separate strict parser replays every
+native/candidate record and byte. Real harmless descendant tests qualify
+bounded process-group cleanup without touching an unrelated process; success,
+nonzero, timeout and interruption paths preserve their receipts.
+
+The full proof says `All terms check.` for **148 laws = 132 published + 16 scoped
+TGA facts**, not a universal codec proof. The complete Python suite passes
+**544 tests = 495 published + 49 newly reconstructed TGA tests**, without skips.
+This count is not compared as equivalent to the lost combined tree's 582 tests:
+that total also included separate PNM-file and CI work. Exact lost source/test/
+fixture identity is unavailable; the coverage matrix maps its retained
+obligations to fresh tests instead. All **149 published test/tool/workflow/pin/
+overlay files** remain unchanged, as do Jonmath and all 44 other support modules.
+
+Fresh canonical clean-loader conformance and independent strict replay pass
+**261 scenarios / 40,101 pixel/numeric words / 333 QOI bytes / 23 palette words**
+per CPU-one-thread, CPU-two-thread and JavaScript lane. All 17 compile batches,
+ownership/transform/decode contracts, PPM examples and QOI file/error checks
+pass against unchanged published fixtures. The independent audit and its source
+are included in portable receipt backups.
+
+Unchanged Surface TGA passes **64 images / 1,219 pixels**, **23 typed controls**,
+**11 exact exports / 3,447 bytes** and actual file output on CPU/JavaScript.
+Generic memory dispatch passes all **534 token/content pairs (462 native loads)
+plus five controls**, with nine completed batches per CPU/JavaScript lane.
+Generic file dispatch passes **59 native cases, three boundaries and 100 fd64
+cycles** per lane. These legacy scripts run as clean-loader children against
+the fresh canonical TGA/PNM-enabled archive and remain preservation evidence;
+they do not add formatted TGA file loading.
+
+The unchanged formatted TGA export gate passes **304 images / 619,451 pixels**,
+**2,212,918 encoded / 2,477,804 decoded bytes**, all **38 batches**, and **3,200
+typed IO checks** per CPU-one-thread, CPU-two-thread and JavaScript lane.
+FloatRGB BMP/TGA export passes **12 files**, **3,918 encoded / 4,064 decoded
+bytes**, two retained rejected-owner controls, two IO-error controls and
+100 fd64 closure iterations on CPU/JavaScript. Native archive/config hashes
+remain stable across the complete serial regression run. The Surface TGA,
+generic memory/file and FloatRGB runners do not retain their raw result stdout;
+the formatted TGA export runner does retain sealed byte streams. Its independent
+review replays the full output, retained files and IO records and rehashes all
+**2,298 seals**. The four older runners are explicitly limited to verified
+source/report/exit/manifest evidence. This distinction is retained alongside the
+independent full record/byte replays of the focused and canonical gates. No export
+scope expands.
+
+All results here qualify the isolated TGA-only source rooted at `d3b93896`.
+They do not alone qualify a subsequent combined PNM/CI/TGA integration; changed
+library hashes require fresh integrated focused/proof/canonical verification.
+
+Only one API ledger entry changes scope/mapping/gaps/evidence; its status stays
+partial and no complete API is claimed. The unrelated PNM-file gap is preserved
+on this TGA-only branch until its separate verified integration. Generic
+formatted/float dispatch, formatted TGA file IO, remaining codecs, nondefault
+flags, wider dimensions, native pointer/allocation/OOM behavior, maximum-area
+resources and complete integration/performance/target coverage remain open.
+Workflows are unchanged. Exact-commit hosted CI, GPU/Metal, Windows/browser and
+other unrun hosts are not qualified here. Full fresh receipts and the retained
+first failure are in [the reconstruction evidence](evidence/tga-formatted-rebuilt.json).
+
+
+## Fresh combined TGA memory and PNM file integration (2026-10-03)
+
+The approved isolated TGA checkpoint `f6a48cd` is integrated onto published main
+`0c663c9a`, preserving its PNM file wrapper and all original conformance gates.
+[Fresh integrated evidence](evidence/tga-integrated-validation.json) records the
+new source hashes, complete reports, independent replay and validation scripts.
+[The integration record](TGA-INTEGRATION.md) states exact merge and scope limits.
+
+The combined suite passes **585 Python tests** and all **149 proof laws** with
+`All terms check.` Syntax, project/API drift and whitespace checks pass. TGA
+passes **169 native images / 155 checked controls / 1,311 observations /
+1,024,632 compared bytes per CPU-1/CPU-2/JavaScript lane**. All 43 source-bounded
+partitions remain; the shorter worktree import path makes the fresh maximum
+185,890 bytes. Independent replay validates all 1,224 seals and 181 receipts.
+PNM files freshly pass **156 native files / 74 controls / 626 primary records /
+129,072 bytes per lane**, plus all closure, sparse and exact-cap records and
+resource ceilings; independent replay verifies 1,179 seals and 103 receipts.
+
+Fresh canonical clean-loader conformance and strict complete-record replay pass
+**261 scenarios / 40,101 words / 333 QOI bytes / 23 palette words per lane**.
+Both strict replays exercise nine negative controls. Complete contracts,
+transforms, decoding, examples and QOI file/error checks pass. Every reference
+archive is new and the pinned toolchain/overlay is unchanged. Earlier broad
+Surface/generic-memory/file/formatted-TGA/FloatRGB receipts remain scoped to
+the isolated source; they are not new integrated reruns.
+
+The mandatory TGA-memory gate follows the original seven formatted gates on
+both platforms. The frozen baseline, original 79 payloads/156 paths, four
+workers, setups/pins/environments/budgets and both direct-four-dependency
+fail-closed aggregates remain exact. The new totals are 72/eight gates and
+140/17 artifact paths per core/formatted worker; all 4,802 shell truth-table
+invocations remain, with explicit added-gate/loader/artifact mutation coverage.
+
+The [published 79-gate PNM/split run](https://github.com/jonathanperis/jonlib/actions/runs/37130692849)
+at exact commit `0c663c9a85a8560199ccef89f76251ea05cfce8b` passed Checks,
+all four workers and both aggregates with all four evidence artifacts. Observed
+worker durations are Ubuntu core/formatted **81m53s/47m21s** and macOS
+core/formatted **65m33s/52m11s**. This predates TGA memory and does not qualify
+the new integrated 80-gate tip. Final exact-commit hosted checks/artifacts remain
+required; no new GPU/Metal, Windows/browser, big-endian, maximum-area allocation
+or representative performance qualification is claimed. No API becomes complete.
