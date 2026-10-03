@@ -4932,8 +4932,87 @@ universal codec/IO proof.
 
 The reviewed CI addition retains the 79-gate frozen baseline and earlier TGA
 memory gate, then appends TGA file loading and its precise sparse-artifact
-exclusions on both OS workers. The already verified 80-gate `abc55e2b` hosted run
-is historical to the memory checkpoint; fresh exact-tip 81-gate hosted
-qualification remains required. GPU/Metal IO, Windows/browser, big-endian,
+exclusions on both OS workers. The [81-gate hosted run](https://github.com/jonathanperis/jonlib/actions/runs/37145573468)
+at exact published commit `08dd860ebd24c8d1f49eb130d848764723e1f5c7` is verified
+successful on 2026-10-03: Checks, all four workers, both aggregates and all four
+distinct nonempty evidence artifacts pass. That result is historical to the
+TGA-file checkpoint and does not qualify the subsequent BMP increment.
+GPU/Metal IO, Windows/browser, big-endian,
 maximum decoded-area/heap, OOM/native pointer ABI, concurrent/special files and
 full performance qualification remain gaps.
+
+## Format-preserving BMP memory loading (2026-10-03)
+
+The dedicated `Image.Formatted.decode_bmp` source adds RGB888 (4)/RGBA8888 (7)
+metadata and integer-packed raw output to the unchanged checked BMP decoder.
+Only partial `raylib:function:LoadImageFromMemory` expands. The command is:
+
+```sh
+python3 tools/bmp_format_probe.py --reference-env clean-loader \
+  --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+```
+
+The dedicated fail-closed harness preserves all 98 accepted historical BMP
+streams and 46 typed controls. Independent native admission checks complete
+headers, effective masks, palette counts and indices, native double gaps,
+orientation and padded rows. Actual `LoadImageFromMemory` dimensions, format,
+mipmaps and every native byte are captured before separate normalization.
+Candidate observations include complete raw output, checked-factory and
+export/import round trips, logical high-bit invariants, valid/invalid point
+reads with retained owners, consuming Surface bridges, normalized Surface
+decoding and selected generic dispatch. Malformed controls stay candidate-only.
+
+The oracle uses a fresh BMP-enabled Memory build, verified cache and compilation
+definitions, tiny RGB/RGBA/mask qualification, pinned source and tool identities,
+clean-loader child receipts and post-run seals. Exact generated-source partitions
+must remain ordered and exhaustive, at most 196,608 UTF-8 bytes and 32 actions.
+Every record has strict framing, schema, scalar types, exact lengths and order;
+owned process groups are terminated and reaped on interruption or timeout.
+
+The [focused evidence record](evidence/bmp-formatted-memory.json) records fresh
+local Linux x86-64 CPU-1/CPU-2/JavaScript passes: **224 native images, 597 typed
+controls, 2,850 complete records and 873,268 bytes per lane**. Actual raw metadata
+and 132,367 raw bytes precede 156,756 separate normalized bytes; uppercase aliases
+are separately retained. All 91 partitions pass, with a largest source of
+193,198 bytes. The gate takes **1,765.059 seconds (29m25s)** on this host, with
+373 successful per-command receipts retaining timings, timeouts and owned-group
+cleanup. This is a gate-duration measurement, not an application benchmark.
+
+Independent complete replay passes the new formatted BMP gate, all 78 formatted
+BMP exports / 331,465 decoded pixels, and all 261 canonical records / 40,101 words /
+333 QOI bytes / 23 palette words per lane, including optional alpha borders.
+It checks 2,839 source/artifact identities and rejects all 61 adversarial controls;
+the separate strict canonical replay rejects nine mutations. Fresh Surface BMP,
+generic memory/file, FloatRGB raster export, image-format and color/owner gates
+pass their unchanged complete in-process comparisons and source/report/exit/
+fixture checks. These older harnesses do not retain full native/candidate stdout,
+so no independent full-output replay is claimed for them. The unchanged exporter
+retains full byte output and seals, but its older inner receipts lack individual
+timing/cleanup fields; its reviewed outer serial receipt supplies stage timing
+and owned-process-group cleanup.
+
+The frozen matrix completes 17 serial stages plus the focused gate, **710 Python
+tests without skips**, all **158 scoped laws** with the complete pinned
+`All terms check.` verdict, syntax and project/API checks. Independent source,
+runtime and regression reviews find no remaining defects. These structural laws
+are not a universal decoder/IO proof. Historical Surface evidence alone is not
+used to establish the new raw metadata behavior.
+
+The separately sealed final CI/documentation snapshot passes **715 Python tests
+without skips**, all 158 laws and project/API/syntax checks. All 462 repository
+files, the checker and independent workflow validator are bound during testing;
+compiled library/probe/oracle identities remain unchanged. Independent workflow
+review restores the entire predecessor byte-for-byte and verifies the four
+original worker bodies unchanged. Two dedicated BMP workers add the 82nd gate on
+both OS platforms, each retaining the 120-minute budget and exact setup pins.
+Both compatibility aggregates directly require all six workers to succeed.
+Six distinct nonempty evidence artifacts are separately required when verifying
+the final hosted run. All 4,802 original and 98 additional shell truth-table cases
+pass; the exact six-way conjunction is checked over 235,298 assignments. Raw-byte
+workflow loading also rejects line-ending-only drift. Final evidence/prose
+summaries are reviewed separately against retained tested metadata, avoiding
+self-referential receipt hashes. Exact-tip hosted qualification remains pending.
+GPU/Metal, Windows/browser, big-endian, maximum decoded area/heap, native pointer/
+allocation/OOM semantics and representative performance remain unqualified.
+The memory API has no encoded-input cap; the finite oracle budgets do not
+introduce the separate file layer's 1 MiB cap.

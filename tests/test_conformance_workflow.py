@@ -21,6 +21,9 @@ ROOT = Path(__file__).resolve().parents[1]
 BASELINE = ROOT / 'tests/fixtures/conformance-before-runtime-split.yml'
 WORKFLOW = ROOT / '.github/workflows/conformance.yml'
 BASELINE_SHA256 = '610acab9fa0ca7fa6c3db8b93a828693c47e8ac202d89f76f0246053c45b84f9'
+# Exact 81-gate workflow at 08dd860ebd24c8d1f49eb130d848764723e1f5c7.
+# This adds a preservation anchor without replacing the original baseline.
+BMP_PREDECESSOR_SHA256 = '34fa72b91f6e4ab3e7e555c51e621364bf1b68e1dba4945db2442ad8e463ce7e'
 FORMATTED_GATES = (
     'Verify checked formatted BMP bytes and typed IO',
     'Verify checked formatted TGA bytes and typed IO',
@@ -68,13 +71,24 @@ ADDED_FORMATTED_PATHS = (
     '!.build/tga-file-probe/run-*/fixtures/larger-file.tga',
     '!.build/tga-file-probe/run-*/fixtures/host-size-overflow.tga',
 )
+BMP_GATES = ('''      - name: Verify native BMP formats and exact memory bytes
+        run: >-
+          python3 tools/bmp_format_probe.py --reference-env clean-loader
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+''',)
+BMP_PATHS = ('.build/bmp-format-probe/',)
 PLATFORMS = (('Ubuntu', 'ubuntu-24.04'), ('Mac', 'macos-15'))
-WORKERS = ('coreUbuntu', 'coreMac', 'formattedUbuntu', 'formattedMac')
-RESULT_VARIABLES = ('CORE_UBUNTU_RESULT', 'CORE_MAC_RESULT',
-                    'FORMATTED_UBUNTU_RESULT', 'FORMATTED_MAC_RESULT')
+ORIGINAL_WORKERS = ('coreUbuntu', 'coreMac', 'formattedUbuntu', 'formattedMac')
+BMP_WORKERS = ('bmpUbuntu', 'bmpMac')
+WORKERS = (*ORIGINAL_WORKERS, *BMP_WORKERS)
+ORIGINAL_RESULT_VARIABLES = ('CORE_UBUNTU_RESULT', 'CORE_MAC_RESULT',
+                             'FORMATTED_UBUNTU_RESULT', 'FORMATTED_MAC_RESULT')
+BMP_RESULT_VARIABLES = ('BMP_UBUNTU_RESULT', 'BMP_MAC_RESULT')
+RESULT_VARIABLES = (*ORIGINAL_RESULT_VARIABLES, *BMP_RESULT_VARIABLES)
 AGGREGATE = '''    name: CPU and JavaScript (__PLATFORM__)
     if: ${{ always() }}
-    needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac]
+    needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac, bmpUbuntu, bmpMac]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -85,13 +99,18 @@ AGGREGATE = '''    name: CPU and JavaScript (__PLATFORM__)
           CORE_MAC_RESULT: ${{ needs.coreMac.result }}
           FORMATTED_UBUNTU_RESULT: ${{ needs.formattedUbuntu.result }}
           FORMATTED_MAC_RESULT: ${{ needs.formattedMac.result }}
+          BMP_UBUNTU_RESULT: ${{ needs.bmpUbuntu.result }}
+          BMP_MAC_RESULT: ${{ needs.bmpMac.result }}
         run: |
           set -eu
           printf 'Core Ubuntu: %s; core macOS: %s; formatted Ubuntu: %s; formatted macOS: %s\\n' "${CORE_UBUNTU_RESULT:-missing}" "${CORE_MAC_RESULT:-missing}" "${FORMATTED_UBUNTU_RESULT:-missing}" "${FORMATTED_MAC_RESULT:-missing}"
+          printf 'BMP Ubuntu: %s; BMP macOS: %s\\n' "${BMP_UBUNTU_RESULT:-missing}" "${BMP_MAC_RESULT:-missing}"
           test "${CORE_UBUNTU_RESULT:-}" = success
           test "${CORE_MAC_RESULT:-}" = success
           test "${FORMATTED_UBUNTU_RESULT:-}" = success
           test "${FORMATTED_MAC_RESULT:-}" = success
+          test "${BMP_UBUNTU_RESULT:-}" = success
+          test "${BMP_MAC_RESULT:-}" = success
 '''
 
 
@@ -154,9 +173,10 @@ def validate_workflow(text):
     core = [step for step in gates if gate_name(step) not in FORMATTED_GATES]
     require(tuple(map(gate_name, formatted)) == FORMATTED_GATES, 'Formatted ownership changed')
     require(len(core) == 72 and len(formatted) == 7, 'Original gate counts changed')
-    reviewed_gates = gates + list(ADDED_FORMATTED_GATES)
+    reviewed_gates = gates + list(ADDED_FORMATTED_GATES) + list(BMP_GATES)
     formatted = formatted + list(ADDED_FORMATTED_GATES)
-    require(len(reviewed_gates) == 81 and len(formatted) == 9, 'Reviewed added gate count changed')
+    require(len(reviewed_gates) == 82 and len(formatted) == 9 and len(BMP_GATES) == 1,
+            'Reviewed added gate count changed')
     upload_header, old_paths = upload_parts(upload)
     require(len(old_paths) == len(set(old_paths)) == 156, 'Expected 156 distinct baseline paths')
     paths_by_shard = {
@@ -167,8 +187,9 @@ def validate_workflow(text):
     require(Counter(paths_by_shard['core'] + paths_by_shard['formatted']) == Counter(old_paths),
             'Artifact partitions must be the disjoint baseline union')
     paths_by_shard['formatted'].extend(ADDED_FORMATTED_PATHS)
-    reviewed_paths = old_paths + list(ADDED_FORMATTED_PATHS)
-    require(len(paths_by_shard['formatted']) == 22 and len(reviewed_paths) == 162,
+    paths_by_shard['bmp'] = list(BMP_PATHS)
+    reviewed_paths = old_paths + list(ADDED_FORMATTED_PATHS) + list(BMP_PATHS)
+    require(len(paths_by_shard['formatted']) == 22 and len(reviewed_paths) == 163,
             'Reviewed added artifact count changed')
     for suffix, platform in PLATFORMS:
         actual_gates = []
@@ -176,6 +197,7 @@ def validate_workflow(text):
         for shard, name, expected_gates in (
             ('core', 'Core CPU and JavaScript', core),
             ('formatted', 'Formatted images CPU and JavaScript', formatted),
+            ('bmp', 'BMP memory CPU and JavaScript', list(BMP_GATES)),
         ):
             job_id = shard + suffix
             settings, steps = job_parts(jobs[job_id])
@@ -204,10 +226,31 @@ def validate_workflow(text):
 
 class ConformanceWorkflowTests(unittest.TestCase):
     def setUp(self):
-        self.text = WORKFLOW.read_text()
+        self.text = WORKFLOW.read_bytes().decode('utf-8')
 
     def test_exact_reviewed_gate_setup_settings_and_artifact_partition(self):
         validate_workflow(self.text)
+
+    def test_removing_only_reviewed_bmp_additions_restores_exact_predecessor_bytes(self):
+        # Independent raw-text comparison: do not reuse the structural parser
+        # or strip comments/whitespace from the four preserved workers.
+        start = self.text.index('  bmpUbuntu:\n')
+        end = self.text.index('  # Keep both prior required-check names', start)
+        stripped = self.text[:start] + self.text[end:]
+        additions = (
+            ('directly require all six workers.', 'directly require all four workers.', 1),
+            ('needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac, bmpUbuntu, bmpMac]',
+             'needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac]', 2),
+            ('          BMP_UBUNTU_RESULT: ${{ needs.bmpUbuntu.result }}\n', '', 2),
+            ('          BMP_MAC_RESULT: ${{ needs.bmpMac.result }}\n', '', 2),
+            ('          printf \'BMP Ubuntu: %s; BMP macOS: %s\\n\' "${BMP_UBUNTU_RESULT:-missing}" "${BMP_MAC_RESULT:-missing}"\n', '', 2),
+            ('          test "${BMP_UBUNTU_RESULT:-}" = success\n', '', 2),
+            ('          test "${BMP_MAC_RESULT:-}" = success\n', '', 2),
+        )
+        for addition, original, count in additions:
+            self.assertEqual(stripped.count(addition), count)
+            stripped = stripped.replace(addition, original)
+        self.assertEqual(hashlib.sha256(stripped.encode()).hexdigest(), BMP_PREDECESSOR_SHA256)
 
     def test_guard_rejects_weakened_or_changed_workflows(self):
         # Exercise the guard itself so permissive extraction cannot make a
@@ -227,7 +270,7 @@ class ConformanceWorkflowTests(unittest.TestCase):
             'lost upload': ('.build/pnm-file-probe/run-*/*.resource.json\n', ''),
             'sparse upload': ('.build/pnm-file-probe/results.json', '.build/pnm-file-probe/**'),
             'artifact collision': ('name: conformance-ubuntu-24.04-formatted', 'name: conformance-ubuntu-24.04-core'),
-            'lost dependency': ('needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac]', 'needs: [coreUbuntu, formattedUbuntu]'),
+            'lost dependency': ('needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac, bmpUbuntu, bmpMac]', 'needs: [coreUbuntu, formattedUbuntu]'),
             'matrix reduction': ('${{ needs.coreUbuntu.result }}', '${{ needs.core.result }}'),
             'wrong dependency result': ('${{ needs.formattedMac.result }}', '${{ needs.formattedUbuntu.result }}'),
             'skipped aggregate': ('if: ${{ always() }}', 'if: ${{ success() }}'),
@@ -346,6 +389,80 @@ class ConformanceWorkflowTests(unittest.TestCase):
                         with self.assertRaises(ValueError):
                             validate_workflow(structural_text(self.text).replace(job, mutated_job, 1))
 
+    def test_bmp_workers_are_independent_mandatory_exact_and_scoped(self):
+        _, jobs = workflow_parts(self.text)
+        gate, = BMP_GATES
+        path = '            ' + BMP_PATHS[0] + '\n'
+        for suffix, platform in PLATFORMS:
+            job_id = 'bmp' + suffix
+            job = jobs[job_id]
+            _, steps = job_parts(job)
+            _, formatted_steps = job_parts(jobs['formatted' + suffix])
+            self.assertEqual(steps[:7], formatted_steps[:7])
+            self.assertEqual(steps[7:-1], [gate])
+            self.assertEqual(upload_parts(steps[-1])[1], list(BMP_PATHS))
+            mutations = {
+                'wrong BMP platform': job.replace('runs-on: ' + platform, 'runs-on: other'),
+                'optional BMP worker': '    continue-on-error: true\n' + job,
+                'skipped BMP worker': '    if: false\n' + job,
+                'dependent BMP worker': '    needs: formatted' + suffix + '\n' + job,
+                'BMP matrix': '    strategy:\n      matrix:\n        os: [' + platform + ']\n' + job,
+                'changed BMP timeout': job.replace('timeout-minutes: 120', 'timeout-minutes: 180'),
+                'changed BMP environment': job.replace('CC: clang', 'CC: gcc'),
+                'changed BMP permissions': '    permissions: write-all\n' + job,
+                'missing BMP setup': job.replace(steps[0], '', 1),
+                'changed BMP setup pin': job.replace('actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1', 'actions/checkout@main', 1),
+                'missing BMP gate': job.replace(gate, '', 1),
+                'duplicate BMP gate': job.replace(gate, gate * 2, 1),
+                'changed BMP command': job.replace('tools/bmp_format_probe.py', 'tools/bmp_probe.py', 1),
+                'missing BMP loader flag': job.replace('--reference-env clean-loader', '', 1),
+                'changed BMP loader flag': job.replace('--reference-env clean-loader', '--reference-env inherited', 1),
+                'changed BMP Bend source': job.replace(gate, gate.replace('/.build/dependencies/bend', '/.build/dependencies/other-bend'), 1),
+                'changed BMP raylib source': job.replace(gate, gate.replace('/.build/dependencies/raylib', '/.build/dependencies/other-raylib'), 1),
+                'optional BMP gate': job.replace(gate, gate.replace('        run:', '        continue-on-error: true\n        run:'), 1),
+                'skipped BMP gate': job.replace(gate, gate.replace('        run:', '        if: false\n        run:'), 1),
+                'bypassed BMP failure': job.replace(gate, gate.rstrip('\n') + ' || true\n', 1),
+                'BMP gate before setup': job.replace(steps[6] + gate, gate + steps[6], 1),
+                'missing BMP artifact': job.replace(path, '', 1),
+                'duplicate BMP artifact': job.replace(path, path * 2, 1),
+                'incomplete BMP receipts': job.replace(path, '            .build/bmp-format-probe/results.json\n', 1),
+                'broader BMP artifact': job.replace(path, '            .build/\n', 1),
+                'excluded BMP receipts': job.replace(path, path + '            !.build/bmp-format-probe/run-*/*.resource.json\n', 1),
+                'BMP artifact collision': job.replace('conformance-' + platform + '-bmp', 'conformance-' + platform + '-formatted', 1),
+                'optional BMP upload': job.replace('if: always()', 'if: success()', 1),
+                'changed BMP upload pin': job.replace('actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a', 'actions/upload-artifact@main', 1),
+                'changed BMP retention': job.replace('retention-days: 14', 'retention-days: 1', 1),
+            }
+            for label, mutated_job in mutations.items():
+                with self.subTest(job=job_id, mutation=label):
+                    self.assertNotEqual(job, mutated_job)
+                    with self.assertRaises(ValueError):
+                        validate_workflow(structural_text(self.text).replace(job, mutated_job, 1))
+
+    def test_both_aggregates_require_each_of_six_direct_workers(self):
+        _, jobs = workflow_parts(self.text)
+        for suffix, _ in PLATFORMS:
+            job = jobs['conformance' + suffix]
+            for variable, worker in zip(RESULT_VARIABLES, WORKERS):
+                dependencies = 'needs: [' + ', '.join(WORKERS) + ']'
+                fewer = 'needs: [' + ', '.join(item for item in WORKERS if item != worker) + ']'
+                result = '          ' + variable + ': ${{ needs.' + worker + '.result }}\n'
+                test = '          test "${' + variable + ':-}" = success\n'
+                mutations = {
+                    'missing direct dependency': job.replace(dependencies, fewer, 1),
+                    'missing result': job.replace(result, '', 1),
+                    'wrong result': job.replace(result, result.replace('needs.' + worker, 'needs.otherWorker'), 1),
+                    'assumed success': job.replace(result, '          ' + variable + ': success\n', 1),
+                    'missing success test': job.replace(test, '', 1),
+                    'bypassed success test': job.replace(test, test.rstrip('\n') + ' || true\n', 1),
+                    'allowed empty result': job.replace(test, test.replace(':-}', ':-success}'), 1),
+                }
+                for label, mutated_job in mutations.items():
+                    with self.subTest(aggregate=suffix, worker=worker, mutation=label):
+                        self.assertNotEqual(job, mutated_job)
+                        with self.assertRaises(ValueError):
+                            validate_workflow(structural_text(self.text).replace(job, mutated_job, 1))
+
     def test_both_actual_aggregate_shells_fail_closed_for_all_four_results(self):
         _, jobs = workflow_parts(self.text)
         statuses = ('success', 'failure', 'cancelled', 'skipped', '', 'unknown', None)
@@ -365,7 +482,8 @@ class ConformanceWorkflowTests(unittest.TestCase):
             for results in itertools.product(statuses, repeat=4):
                 with self.subTest(aggregate=suffix, results=results):
                     env = dict(base_env)
-                    env.update((variable, result) for variable, result in zip(RESULT_VARIABLES, results)
+                    env.update((variable, 'success') for variable in BMP_RESULT_VARIABLES)
+                    env.update((variable, result) for variable, result in zip(ORIGINAL_RESULT_VARIABLES, results)
                                if result is not None)
                     result = subprocess.run(['bash', '--noprofile', '--norc', '-e', '-o',
                                              'pipefail', '-c', script], env=env,
@@ -373,6 +491,71 @@ class ConformanceWorkflowTests(unittest.TestCase):
                     self.assertEqual(result.returncode == 0,
                                      all(value == 'success' for value in results),
                                      result.stdout + result.stderr)
+
+    def test_both_actual_aggregate_shells_fail_closed_for_all_bmp_results(self):
+        _, jobs = workflow_parts(self.text)
+        statuses = ('success', 'failure', 'cancelled', 'skipped', '', 'unknown', None)
+        base_env = {key: value for key, value in os.environ.items()
+                    if key not in (*RESULT_VARIABLES, 'BASH_ENV')}
+        base_env.update((variable, 'success') for variable in ORIGINAL_RESULT_VARIABLES)
+        for suffix, _ in PLATFORMS:
+            _, steps = job_parts(jobs['conformance' + suffix])
+            _, separator, body = steps[0].partition('        run: |\n')
+            self.assertTrue(separator)
+            self.assertTrue(all(line.startswith('          ') for line in body.splitlines()))
+            script = '\n'.join(line[10:] for line in body.splitlines()) + '\n'
+            for results in itertools.product(statuses, repeat=2):
+                with self.subTest(aggregate=suffix, results=results):
+                    env = dict(base_env)
+                    env.update((variable, result) for variable, result in zip(BMP_RESULT_VARIABLES, results)
+                               if result is not None)
+                    result = subprocess.run(['bash', '--noprofile', '--norc', '-e', '-o',
+                                             'pipefail', '-c', script], env=env,
+                                            capture_output=True, text=True, timeout=5)
+                    self.assertEqual(result.returncode == 0,
+                                     all(value == 'success' for value in results),
+                                     result.stdout + result.stderr)
+
+    def test_six_way_conjunction_structure_and_exhaustive_truth_table(self):
+        # The actual scripts must consist only of set -eu, two literal printf
+        # diagnostics and six straight-line test commands. Under errexit this
+        # grammar is a conjunction: no conditional/function/OR can mask failure.
+        # Extract the tested variables from the actual script, then exhaust all
+        # 117,649 six-result assignments per aggregate in-process. The original
+        # 4,802 shell cases and 98 new BMP-pair shell cases independently exercise
+        # real Bash, including missing/empty values, without 235,298 processes.
+        validate_workflow(self.text)
+        _, jobs = workflow_parts(self.text)
+        statuses = ('success', 'failure', 'cancelled', 'skipped', '', 'unknown', None)
+        diagnostics = [
+            'set -eu',
+            'printf \'Core Ubuntu: %s; core macOS: %s; formatted Ubuntu: %s; formatted macOS: %s\\n\' "${CORE_UBUNTU_RESULT:-missing}" "${CORE_MAC_RESULT:-missing}" "${FORMATTED_UBUNTU_RESULT:-missing}" "${FORMATTED_MAC_RESULT:-missing}"',
+            'printf \'BMP Ubuntu: %s; BMP macOS: %s\\n\' "${BMP_UBUNTU_RESULT:-missing}" "${BMP_MAC_RESULT:-missing}"',
+        ]
+        for suffix, _ in PLATFORMS:
+            _, steps = job_parts(jobs['conformance' + suffix])
+            _, separator, body = steps[0].partition('        run: |\n')
+            self.assertTrue(separator)
+            self.assertTrue(all(line.startswith('          ') for line in body.splitlines()))
+            lines = [line[10:] for line in body.splitlines()]
+            self.assertEqual(lines[:3], diagnostics)
+            variables = []
+            for line in lines[3:]:
+                match = re.fullmatch(r'test "\$\{([A-Z_]+):-\}" = success', line)
+                self.assertIsNotNone(match, 'Non-conjunctive aggregate command: ' + line)
+                variables.append(match.group(1))
+            self.assertEqual(tuple(variables), RESULT_VARIABLES)
+            assignments = passing = 0
+            for results in itertools.product(statuses, repeat=6):
+                env = {variable: result for variable, result in zip(RESULT_VARIABLES, results)
+                       if result is not None}
+                actual = all(env.get(variable, '') == 'success' for variable in variables)
+                expected = all(value == 'success' for value in results)
+                self.assertEqual(actual, expected, (suffix, results))
+                assignments += 1
+                passing += actual
+            self.assertEqual(assignments, 117649)
+            self.assertEqual(passing, 1)
 
 
 if __name__ == '__main__':

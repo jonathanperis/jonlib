@@ -389,8 +389,11 @@ All affected formatted and canonical regressions pass on the same unchanged
 library source. Historical memory and PNM evidence is preserved separately.
 Inherited Surface TGA and generic dispatch harnesses have fresh source/report/
 exit checks, but do not retain full stdout for independent full-record replay.
-The added mandatory file CI gate still needs a fresh exact-tip hosted run;
-there is no new GPU/Metal, Windows/browser, big-endian or maximum-area result.
+The [81-gate hosted run](https://github.com/jonathanperis/jonlib/actions/runs/37145573468)
+for exact published TGA-file commit `08dd860ebd24c8d1f49eb130d848764723e1f5c7`
+passes Checks, all four workers, both aggregates and all four distinct nonempty
+artifacts. This historical result does not qualify the subsequent BMP memory
+increment; there is no new GPU/Metal, Windows/browser, big-endian or maximum-area result.
 
 ```sh
 python3 tools/tga_file_probe.py --reference-env clean-loader --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"

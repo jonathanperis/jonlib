@@ -763,7 +763,7 @@ def Surface.bmp.error(error: Bmp.Error) -> Image.DecodeError:
 def Surface.bmp.result(result: Result<&1, &1, Bmp.Error, Bmp.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
   match result:
     case Fail{error}: Fail{Surface.bmp.error(error)}
-    case Done{Bmp.Image{w, h, pixels}}: Done{Surface{w, h, pixels}}
+    case Done{Bmp.Image{w, h, _, pixels}}: Done{Surface{w, h, pixels}}
 
 def Surface.decode_bmp(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   Surface.bmp.result(Bmp.decode(bytes))
@@ -1100,6 +1100,35 @@ def Image.Formatted.qoi.result(result: Result<&1, &1, Qoi.Error, Qoi.Image>) -> 
 
 def Image.Formatted.decode_qoi(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
   Image.Formatted.qoi.result(Qoi.decode(bytes))
+
+# BMP retains native components from the effective alpha-mask layout. Indexed,
+# RGB555 and RGB888 inputs expand to RGB; alpha repair never changes metadata.
+def Image.Formatted.bmp.format(channels: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(channels, 3), 4, 7)
+
+def Image.Formatted.bmp.word(channels: U32, pixel: U32) -> U32:
+  +word = Formats.swap(pixel)
+  Bool.pick(U32, U32.is_eq(channels, 3), (word .&. 16777215 : U32), word)
+
+def Image.Formatted.bmp.write(index: U32, channels: U32, read: Array<U32> & U32) -> Array<U32>:
+  (pixels, pixel) = read
+  Array.set(U32, pixels, index, Image.Formatted.bmp.word(channels, pixel))
+
+def Image.Formatted.bmp.pixels(n: Nat, +index: U32, +channels: U32, pixels: Array<U32>) -> Array<U32>:
+  match n:
+    case 0n: pixels
+    case 1n+rest:
+      Image.Formatted.bmp.pixels(rest, (index + 1 : U32), channels, Image.Formatted.bmp.write(index, channels, Array.get(U32, pixels, index)))
+
+def Image.Formatted.bmp.result(result: Result<&1, &1, Bmp.Error, Bmp.Image>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
+  match result:
+    case Fail{error}: Fail{Surface.bmp.error(error)}
+    case Done{Bmp.Image{+width, +height, +channels, pixels}}:
+      Done{FormattedImage{width, height, Image.Formatted.bmp.format(channels),
+        Image.Formatted.bmp.pixels(U32.to_nat((width * height : U32)), 0, channels, pixels)}}
+
+def Image.Formatted.decode_bmp(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
+  Image.Formatted.bmp.result(Bmp.decode(bytes))
 
 # PNM magic retains native gray/RGB storage after the decoder's 8-bit reduction.
 # Extract integer samples directly; a floating luminance round trip can alter gray.

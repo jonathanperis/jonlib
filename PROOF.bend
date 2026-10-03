@@ -472,3 +472,30 @@ def Laws.formatted_tga_decode_zero_alpha():
 
 def Laws.formatted_tga_decode_pixels_zero(index, channels, pixels):
   {==}
+
+def Laws.bmp_native_absent_alpha():
+  {==}
+
+def Laws.bmp_native_alpha_field(mask, shift, multiplier, shrink):
+  {==}
+
+def Laws.bmp_native_layout_alpha(red, green, blue, alpha):
+  {==}
+
+def Laws.formatted_bmp_decode_rgb_format():
+  {==}
+
+def Laws.formatted_bmp_decode_rgba_format():
+  {==}
+
+def Laws.formatted_bmp_decode_rgb_word():
+  {==}
+
+def Laws.formatted_bmp_decode_rgba_word():
+  {==}
+
+def Laws.formatted_bmp_decode_zero_alpha():
+  {==}
+
+def Laws.formatted_bmp_decode_pixels_zero(index, channels, pixels):
+  {==}
