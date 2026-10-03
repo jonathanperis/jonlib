@@ -40324,9 +40324,9 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.load_image / Surface.load_image_for / Surface.load_qoi / Image.FloatRGB.load_hdr / Image.Formatted.load_qoi",
+      "jonlib": "Surface.load_image / Surface.load_image_for / Surface.load_qoi / Image.FloatRGB.load_hdr / Image.Formatted.load_qoi / Image.Formatted.load_pnm",
       "mapping_state": "implemented",
-      "scope": "Bounded ordinary-file loading with native last-dot suffix/token/content selection across implemented RGBA8 BMP/PNG/TGA/PNM/PSD/PIC/GIF profiles, separate QOI selection and explicit Radiance HDR float loading. FloatRGB.load_hdr preserves native RGB F32 bits with a 1 MiB cap and filename-independent codec selection. Dedicated Image.Formatted.load_qoi selects QOI independently of filename and preserves native RGB888 (4) or RGBA8888 (7) single-mip dimensions and every raw byte within the existing 1..4096 decoder domain and inclusive 83,886,102-byte file cap. All paths share complete reads, close-before-decode calls and typed file/decode errors; Base does not report close failures. Existing Surface loaders remain RGBA8-normalized. Surface.load_image_for propagates explicit PSD matte arithmetic; convenience Surface calls are uncontracted.",
+      "scope": "Bounded ordinary-file loading with native last-dot suffix/token/content selection across implemented RGBA8 BMP/PNG/TGA/PNM/PSD/PIC/GIF profiles, separate QOI selection and explicit Radiance HDR float loading. FloatRGB.load_hdr preserves native RGB F32 bits with a 1 MiB cap and filename-independent codec selection. Dedicated Image.Formatted.load_qoi selects QOI independently of filename and preserves native RGB888 (4) or RGBA8888 (7) single-mip dimensions and every raw byte within the existing 1..4096 decoder domain and inclusive 83,886,102-byte file cap. All paths share complete reads, close-before-decode calls and typed file/decode errors; Base does not report close failures. Existing Surface loaders remain RGBA8-normalized. Surface.load_image_for propagates explicit PSD matte arithmetic; convenience Surface calls are uncontracted. Dedicated Image.Formatted.load_pnm selects binary P5/P6 independently of filename, preserving native grayscale (1) or RGB888 (4), implicit single-mip dimensions and exact reduced 8-bit samples in the checked little-endian profile. Its inclusive 1,048,576-byte cap reuses RasterFile; complete reads, typed Base code/message and close-before-decode ordering are retained. Local Linux x86-64 CPU-one-thread/CPU-two-thread/JavaScript qualify actual LoadImage versus explicit-selection references, checked-only malformed controls, sparse pre-read rejection, U32-size overflow, 100 fd64 cycles across ten acquired paths and an accepted exact-cap full read.",
       "gaps": [
         "JPEG and other payload codecs, generic formatted/float dispatch, remaining families and larger files/decoder domains",
         "Original pixel-format metadata for the other normalized codec paths, additional native arithmetic profiles and reference callbacks",
@@ -40376,7 +40376,13 @@
         "docs/CODECS.md",
         "tools/qoi_file_probe.py",
         "tests/test_qoi_file_harness.py",
-        "docs/evidence/qoi-formatted-files.json"
+        "docs/evidence/qoi-formatted-files.json",
+        "tools/pnm_file_probe.py",
+        "tests/test_pnm_file_harness.py",
+        "docs/PNM.md",
+        "docs/FORMATS.md",
+        "docs/evidence/pnm-formatted-files.json",
+        "docs/VERIFICATION.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -40628,7 +40634,7 @@
       "gaps": [
         "JPEG and other payload codecs; shared float dispatch and HDR conversion",
         "Nondefault external stb decoder flags, PSD out-of-range matte casts and permissive incomplete/excess raster recovery",
-        "Original pixel-format metadata for remaining normalized codecs, PNM formatted file loading, shared formatted/float dispatch and remaining dispatch families",
+        "Original pixel-format metadata for remaining normalized codecs, shared formatted/float dispatch and remaining dispatch families",
         "Big-endian and additional native arithmetic/platform profiles; GPU/Metal, Windows/browser and exact-commit hosted qualification",
         "Other permissive malformed-stream recovery, dimensions above 4096, arbitrary input-length resource behavior, native pointer/allocation ABI and OOM parity",
         "Maximum-area allocation, representative latency/throughput/memory and complete targets/integration/performance"

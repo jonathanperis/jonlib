@@ -1,4 +1,4 @@
-# Binary PGM/PPM memory decoding
+# Binary PGM/PPM decoding
 
 The dedicated memory APIs accept the same checked binary P5 grayscale or P6 RGB
 input, with dimensions 1..4096 and a declared maximum sample value (`maxval`) in
@@ -53,7 +53,9 @@ traverses the entire immutable input list.
 The native supported `.ppm`, `.pgm`, `.PPM` and `.PGM` tokens select the shared
 PNM-capable raster decoder. Payload magic determines channels: P5 under `.ppm`
 is still grayscale and P6 under `.pgm` is still RGB. This does not add arbitrary
-mixed-case memory tokens or a formatted file-dispatch contract. The explicit
+mixed-case memory tokens or a generic formatted file dispatcher. The dedicated
+`Image.Formatted.load_pnm(path)` instead selects P5/P6 explicitly, independent
+of suffix, using the shared inclusive 1 MiB raster file cap. The explicit
 memory factories have no filename or extension argument. The separate
 `Surface.to_ppm` exporter writes inspectable P3 text; the native PNM loader does
 not accept ASCII P1..P3 or binary PBM P4. Shared RGBA8 memory/file dispatch is documented in
@@ -76,8 +78,10 @@ must thread the owner through both in-bounds and rejected reads. Export and
 and generic Surface dispatch retain their opaque RGBA8-normalized behavior.
 
 This increment belongs only to the partial `raylib:function:LoadImageFromMemory`
-entry. PNM formatted file loading, generic formatted/float dispatch, other
-original codec formats and full-depth sample APIs remain open. It does not
+entry. The separate PNM
+[formatted file increment](IMAGE-FILES.md#format-preserving-pnm-file-loading)
+expands only partial `LoadImage`. Generic formatted/float dispatch, other original
+codec formats and full-depth sample APIs remain open. The memory increment does not
 expand `LoadImage`, `ImageFormat`, `ExportImage`, the image types or PNM
 configuration-control completion. Big-endian and nondefault stb flag profiles,
 permissive malformed recovery, larger dimensions, native pointer/allocation ABI,
@@ -163,3 +167,15 @@ Invalid discarded bytes are still rejected. Shared memory/file gates include a
 16-bit PPM payload. Hashes and historical lane results are in
 [evidence/pnm-16bit.json](evidence/pnm-16bit.json). The altered stb reader retains
 the MIT notice in [LICENSES/stb-image.txt](../LICENSES/stb-image.txt).
+
+## Format-preserving PNM file loading
+
+`Image.Formatted.load_pnm(path)` applies this same owned format-1/4 decoder to
+ordinary files, without consulting the suffix. Its inclusive encoded-input cap
+is 1,048,576 bytes, inherited from `RasterFile`. The shared boundary closes each
+acquired handle before processing the read result or decoding; distinct Base
+open/size/read errors preserve their code and message. Exact-read mismatch and
+decoder errors are wrapped once. See the complete
+[file contract](IMAGE-FILES.md#format-preserving-pnm-file-loading) and
+[new reconstruction evidence](evidence/pnm-formatted-files.json).
+The existing memory evidence above remains historical and separate.

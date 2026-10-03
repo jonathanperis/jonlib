@@ -168,3 +168,16 @@ Fallible Bend operations propagate failures to the IO entry point, where they
 fail the test; returning an unchanged image cannot conceal a rejected transform.
 This is a finite conformance
 corpus, not exhaustive mathematical proof of the coordinate/size domain.
+
+## Reconstructed format-preserving PNM files
+
+`tools/pnm_file_probe.py` reuses the 96 complete PNM-memory fixtures verbatim and
+adds 60 suffix/channel/depth variants. Each run writes real files into its unique
+`.build/pnm-file-probe/run-*` directory. All 74 invalid/file controls are checked
+only; none enters native. Native references distinguish actual `LoadImage` from
+explicit PNM selection, and observe raw metadata/bytes before normalization.
+Exact-cap tail, sparse rejection and ten-path fd64 repetition are separate
+resource observations. The safety parser never supplies expected decoded bytes.
+Fresh source-sealed evidence is in
+[the reconstructed report](../../docs/evidence/pnm-formatted-files.json),
+not the lost original PNM-file checkpoint's receipt.

@@ -371,6 +371,9 @@ def Laws.formatted_pnm_rgb_word():
 def Laws.formatted_pnm_pixels_zero(index, channels, pixels):
   {==}
 
+def Laws.raster_file_limit():
+  {==}
+
 def Laws.qoi_file_limit():
   {==}
 

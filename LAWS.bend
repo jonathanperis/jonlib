@@ -498,6 +498,9 @@ law formatted_pnm_pixels_zero:
   {J.Image.Formatted.pnm.pixels(0n, index, channels, pixels) == pixels : Array<U32>}
 
 # Pure file-boundary facts; these do not prove host IO, allocation or closure.
+law raster_file_limit:
+  {J.Image.file.limit(J.RasterFile{}) == 1048576 : U32}
+
 law qoi_file_limit:
   {J.Image.file.limit(J.QoiFile{}) == 83886102 : U32}
 
