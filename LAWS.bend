@@ -610,3 +610,42 @@ law formatted_tga_decode_pixels_zero:
   for channels: U32
   for pixels: Array<U32>
   {J.Image.Formatted.tga.pixels(0n, index, channels, pixels) == pixels : Array<U32>}
+
+# Scoped BMP effective-layout metadata and packing, not a universal codec proof.
+law bmp_native_absent_alpha:
+  {Bmp.native.alpha(Bmp.ChannelValue{255}) == 3 : U32}
+
+law bmp_native_alpha_field:
+  for mask: U32
+  for shift: Nat
+  for multiplier: U32
+  for shrink: Nat
+  {Bmp.native.alpha(Bmp.ChannelField{mask, shift, multiplier, shrink}) == 4 : U32}
+
+law bmp_native_layout_alpha:
+  for red: Bmp.Channel
+  for green: Bmp.Channel
+  for blue: Bmp.Channel
+  for +alpha: Bmp.Channel
+  {Bmp.native.channels(Bmp.Layout{red, green, blue, alpha}) == Bmp.native.alpha(alpha) : U32}
+
+law formatted_bmp_decode_rgb_format:
+  {J.Image.Formatted.bmp.format(3) == 4 : U32}
+
+law formatted_bmp_decode_rgba_format:
+  {J.Image.Formatted.bmp.format(4) == 7 : U32}
+
+law formatted_bmp_decode_rgb_word:
+  {J.Image.Formatted.bmp.word(3, 305419896) == 5649426 : U32}
+
+law formatted_bmp_decode_rgba_word:
+  {J.Image.Formatted.bmp.word(4, 305419896) == 2018915346 : U32}
+
+law formatted_bmp_decode_zero_alpha:
+  {J.Image.Formatted.bmp.word(4, 2172748032) == 8487297 : U32}
+
+law formatted_bmp_decode_pixels_zero:
+  for index: U32
+  for channels: U32
+  for pixels: Array<U32>
+  {J.Image.Formatted.bmp.pixels(0n, index, channels, pixels) == pixels : Array<U32>}

@@ -128,6 +128,11 @@ The formatted TGA memory adapter preserves the altered reader's checked rules,
 adapting `stb_image.h` lines 5739–5753 and 5905–5922 for native output channels.
 Indexed output uses palette depth independently of input index width; integer
 packing retains native gray/gray-alpha/expanded RGB/RGBA output.
+The formatted BMP memory adapter preserves the altered reader's checked rules,
+adapting `stb_image.h` lines 5422–5443, 5482–5515, 5584–5591, 5707–5710 and
+5728–5730 with raylib `rtextures.c` lines 461–471. Effective alpha-mask layout
+retains native RGB/RGBA metadata independently of source bit depth or alpha
+repair; integer packing preserves exact component bytes in owned Bend arrays.
 The PNM formatted-memory adapter retains the altered `src/pnm.bend` reader's
 checked header/byte/size rules and little-endian 16-to-8-bit reduction, adapting
 `stb_image.h`'s `stbi__pnm_load` and `stbi__convert_16_to_8` behavior with integer

@@ -13,7 +13,7 @@ type Error is Data:
   BadStream{}
 
 type Image is Type:
-  Image{width: U32, height: U32, pixels: Array<U32>}
+  Image{width: U32, height: U32, channels: U32, pixels: Array<U32>}
 
 type Words is Data:
   Words{values: +List<U32>, rest: +List<U32>}
@@ -24,6 +24,17 @@ type Channel is Data:
 
 type Layout is Data:
   Layout{red: Channel, green: Channel, blue: Channel, alpha: Channel}
+
+# Effective alpha layout determines native components before pixel decoding or
+# BI_RGB repair. A present field above the input word still contributes alpha.
+def native.alpha(channel: Channel) -> U32:
+  match channel:
+    case ChannelValue{_}: 3
+    case ChannelField{_, _, _, _}: 4
+
+def native.channels(layout: Layout) -> U32:
+  Layout{_, _, _, alpha} = layout
+  native.alpha(alpha)
 
 type Mode is Data:
   IndexedMode{bits: U32, entry_bytes: U32, bias: U32}
@@ -237,23 +248,23 @@ def opaque(n: Nat, +index: U32, pixels: Array<U32>) -> Array<U32>:
     case 0n: pixels
     case 1n+rest: opaque(rest, (index + 1 : U32), opaque.write(index, Array.get(U32, pixels, index)))
 
-def finish.alpha(restore: Bool, +width: U32, +height: U32, pixels: Array<U32>) -> Image:
+def finish.alpha(restore: Bool, +width: U32, +height: U32, channels: U32, pixels: Array<U32>) -> Image:
   match restore:
-    case False{}: Image{width, height, pixels}
-    case True{}: Image{width, height, opaque(U32.to_nat((width * height : U32)), 0, pixels)}
+    case False{}: Image{width, height, channels, pixels}
+    case True{}: Image{width, height, channels, opaque(U32.to_nat((width * height : U32)), 0, pixels)}
 
-def finish(width: U32, height: U32, restore: Bool, state: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, Image>:
+def finish(width: U32, height: U32, channels: U32, restore: Bool, state: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, Image>:
   match state:
     case Fail{error}: Fail{error}
-    case Done{State{_, pixels, alpha}}: Done{finish.alpha(restore && U32.is_eq(alpha, 0), width, height, pixels)}
+    case Done{State{_, pixels, alpha}}: Done{finish.alpha(restore && U32.is_eq(alpha, 0), width, height, channels, pixels)}
 
-def start.valid(valid: Bool, +width: U32, +height: U32, top: Bool, bytes: U32, layout: Layout, restore: Bool, padding: U32, data: +List<U32>) -> Result<&1, &1, Error, Image>:
+def start.valid(valid: Bool, +width: U32, +height: U32, top: Bool, bytes: U32, +layout: Layout, restore: Bool, padding: U32, data: +List<U32>) -> Result<&1, &1, Error, Image>:
   match valid:
     case False{}: Fail{Truncated{}}
     case True{}:
       +count = (width * height : U32)
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
-      finish(width, height, restore, pixels(U32.to_nat(count), 0, width, height, top, bytes, layout, U32.to_nat(padding), Done{State{data, Array.new(U32, depth, 0), 0}}))
+      finish(width, height, native.channels(layout), restore, pixels(U32.to_nat(count), 0, width, height, top, bytes, layout, U32.to_nat(padding), Done{State{data, Array.new(U32, depth, 0), 0}}))
 
 def start.color(+width: U32, +height: U32, top: Bool, +bytes: U32, layout: Layout, restore: Bool, gap: U32, +data: +List<U32>) -> Result<&1, &1, Error, Image>:
   +row = (width * bytes : U32)
@@ -288,7 +299,7 @@ def indexed.read(index: U32, bits: U32, shift: Nat, palette: +List<U32>, padding
 def indexed.pixels(n: Nat, +index: U32, +width: U32, +height: U32, +top: Bool, +bits: U32, +palette: +List<U32>, +padding: Nat, state: Result<&1, &1, Error, Indexed>) -> Result<&1, &1, Error, Image>:
   match n state:
     case _ Fail{error}: Fail{error}
-    case 0n Done{Indexed{_, _, output}}: Done{Image{width, height, output}}
+    case 0n Done{Indexed{_, _, output}}: Done{Image{width, height, 3, output}}
     case 1n+rest Done{Indexed{data, byte, output}}:
       +x = (index % width : U32)
       +y = (index / width : U32)

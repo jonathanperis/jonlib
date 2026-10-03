@@ -11,6 +11,7 @@ separate compatibility gaps.
 | API | Contract |
 |---|---|
 | `Image.Formatted.from_bytes(width, height, format, bytes) -> Maybe<Image.Formatted>` | Checks supported dimensions/format, byte values 0..255, exact required byte count and the R32 sample domain before allocation. |
+| `Image.Formatted.decode_bmp(bytes)` | Checked BMP memory factory preserving native RGB888 (4) or RGBA8888 (7), exact bytes and implicit one mip; effective alpha layout selects channels independently of source bit depth or pixel opacity. See [BMP.md](BMP.md#format-preserving-bmp-memory-loading). |
 | `Image.Formatted.decode_tga(bytes)` | Checked TGA memory factory preserving native format 1/2/4/7, exact bytes and implicit single mip; indexed output follows palette depth independently of index width. See [TGA.md](TGA.md#format-preserving-tga-memory-loading). |
 | `Image.Formatted.decode_pnm(bytes)` | Checked P5/P6 memory factory preserving native grayscale (1) or RGB888 (4), exact reduced 8-bit samples and implicit single-mip dimensions; existing checked little-endian parsing and typed errors. This does not preserve 16-bit source sample depth. See [PNM.md](PNM.md#format-preserving-pnm-memory-loading). |
 | `Image.Formatted.decode_qoi(bytes)` | Checked QOI owner factory preserving native RGB888 (4) or RGBA8888 (7), single-mip metadata and exact bytes; existing typed decode errors. See [CODECS.md](CODECS.md#format-preserving-qoi-memory-loading). |
@@ -29,8 +30,8 @@ separate compatibility gaps.
 | `Image.Formatted.to_qoi(image) -> Result<&1, &1, Image.Formatted & Pixel.Error, +List<U32>>` / `write_qoi(image, path) -> IO(Result<&1, &1, Image.Formatted.QoiWriteError, Unit>)` | Explicit native QOI file bytes for original RGB888 (4) / RGBA8888 (7), header channels 3/4; other checked formats retain their exact owner before IO. Accepted writes consume the owner and close acquired handles. Local Linux x86-64 CPU-1/CPU-2/JavaScript evidence is recorded in [FORMATTED-QOI-EXPORT.md](FORMATTED-QOI-EXPORT.md). |
 | `Image.Formatted.to_code(image, path)` / `write_code(image, path)` | Exact native image-as-code text and typed file export for bounded payloads/ASCII names. See [IMAGE-CODE.md](IMAGE-CODE.md). |
 
-Create owners with the checked byte factory, dedicated PNM memory or QOI memory/file
-loaders, or Surface bridge. Manually inconsistent
+Create owners with the checked byte factory, dedicated BMP/PNM/TGA/QOI memory
+loaders, supported QOI/PNM/TGA file loaders, or Surface bridge. Manually inconsistent
 `FormattedImage{width, height, format, pixels}` values are outside the contract.
 `Image.Formatted.load_raw` (formats 1..7) and `write_raw` provide file boundaries with explicit
 header/error/closure behavior, documented in [RAW-FILES.md](RAW-FILES.md).
@@ -41,6 +42,13 @@ every raw byte are observed before normalization. Its file-boundary, resource
 and unrun-target scope is recorded in [IMAGE-FILES.md](IMAGE-FILES.md#formatted-qoi-file-evidence)
 and the [verification entry](VERIFICATION.md#format-preserving-qoi-file-loading-2026-10-02);
 historical formatted-memory evidence does not qualify file IO by itself.
+
+The dedicated BMP memory factory has [fresh local Linux x86-64 evidence](evidence/bmp-formatted-memory.json)
+on CPU-1/CPU-2/JavaScript: 224 images, 597 controls and 2,850 complete observations /
+873,268 compared bytes per lane. Native format 4/7 follows effective alpha-mask
+layout, including zero-alpha repair and above-word 16-bit masks. This preserves
+the complete existing checked BMP memory domain, with no encoded-memory cap;
+file loading and generic formatted dispatch remain outside this increment.
 
 ## Conversion arithmetic
 

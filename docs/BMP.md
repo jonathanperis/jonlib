@@ -3,6 +3,7 @@
 | API | Contract |
 |---|---|
 | `Surface.decode_bmp(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Surface>` with normalized RGBA8 pixels. |
+| `Image.Formatted.decode_bmp(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Image.Formatted>` preserving native RGB888 (4) or RGBA8888 (7), implicit one mip and exact row-major bytes. |
 | `Surface.to_bmp(surface) -> +List<U32>` | Consumes RGBA8 ownership and emits exact native V4/32-bit BMP bytes. |
 | `Surface.write_bmp(surface, path)` | Consumes ownership and returns `IO(Result<&1, &1, U32 & String, Unit>)` through the established Base byte-write/close path. |
 
@@ -17,7 +18,7 @@
   that count. Offsets 41..808 cover the accepted count/remainder range. This
   preserves the pinned reader's rule rather than standard CORE palette sizing.
 - Width and absolute height are 1..4096; positive height is bottom-up and negative
-  height is top-down. Output is always top-down row-major RGBA8.
+  height is top-down. Output is always top-down row-major; Surface normalizes to RGBA8.
 - A 40-byte INFO header supports uncompressed (`BI_RGB`) 1/4/8-bit indexed and
   16/24/32-bit true-color pixels, plus 16/32-bit `BI_BITFIELDS`. INFO bitfields
   read three RGB masks immediately after the DIB; those 12 bytes count toward the
@@ -62,10 +63,81 @@ An index beyond the loaded palette returns `InvalidImageStream`; the native
 reader's uninitialized palette reads are outside the supported profile.
 File-size/reserved header fields do not override actual input availability.
 
-Original-format metadata
-and the native decoder's permissive recovery of truncated input remain gaps.
+The native decoder's permissive recovery of truncated input remains a gap.
 Shared memory/file dispatch uses this profile through `Surface.decode_image`
 and `Surface.load_image`; see [IMAGE-FILES.md](IMAGE-FILES.md).
+
+## Format-preserving BMP memory loading
+
+The dedicated `Image.Formatted.decode_bmp` factory uses the entire checked
+decoding profile above without broadening accepted headers, masks, dimensions or
+errors. The effective native alpha-mask layout selects the output component
+count before decoding and alpha repair. This metadata passes through the owned
+decoder result; integer packing emits three-byte RGB888 (format 4) or four-byte
+RGBA8888 (format 7), excluding backing-array padding. The owner has one implicit
+mip level. Neither source bit depth, observed opacity nor an `ImageFormat`
+floating conversion determines storage.
+
+- CORE, indexed palettes, RGB555 and RGB24 normally produce RGB888. Reserved
+  palette bytes do not create an alpha channel
+- INFO/56-byte `BI_BITFIELDS` produces RGB888 even for 32-bit source words,
+  because the effective mask list has no alpha field. The four discarded
+  56-byte embedded masks have no metadata effect
+- `BI_RGB` 32-bit produces RGBA8888 even when all-zero source alpha is repaired
+  to opaque. If any alpha sample is nonzero, the original alpha bytes survive
+- V4/V5 nonzero effective alpha masks produce RGBA8888, including 16-bit input
+  with alpha masks above its input word and consequently zero decoded alpha.
+  Explicit bitfield alpha never receives the `BI_RGB` 32-bit repair. Absent
+  effective alpha produces RGB888
+- Ignored `BI_RGB` masks remain ignored: default 32-bit alpha is present,
+  default 24-bit alpha is absent, and V4/V5 16-bit retains its alpha mask
+
+The pinned stb 24-bit/`0xff000000` alpha special case is unreachable under this
+checked domain: 24-bit bitfields are rejected and accepted 24-bit `BI_RGB`
+default selection removes alpha. No new acceptance is inferred from that branch.
+
+Byte validation retains first precedence across the whole supplied list,
+including ignored fields, palette bytes, gaps, row padding and trailing data.
+Header, size, truncation and invalid-index precedence is unchanged. This memory
+API has no encoded-input length cap; the file layer's separate 1 MiB raster cap
+is not imported. Fixture budgets are oracle safety limits, not API limits.
+
+`Image.Formatted.export` consumes the result and exposes dimensions, format and
+all logical native-order bytes; `get` retains the exact owner for valid and
+invalid coordinates. The existing `from_bytes` round trip and consuming
+`to_surface` bridge apply. `Surface.decode_bmp`, generic normalized memory/file
+dispatch, exporters and the existing formatted TGA/PNM/QOI loaders retain their
+contracts. No generic formatted dispatcher or BMP file factory is added.
+
+Qualification is recorded in the [focused evidence](evidence/bmp-formatted-memory.json),
+separately from historical Surface evidence below.
+Fresh local Linux x86-64 CPU-1/CPU-2/JavaScript runs pass 224 accepted images,
+597 candidate-only typed controls, and 2,850 complete observations / 873,268 bytes
+per lane. All 98 historical accepted streams and 46 controls remain byte-for-byte
+unchanged. Metadata/alpha/channel ramps, both orientations, odd rows, 4096-by-1,
+1-by-4096 and moderate shapes supplement the complete inherited checked corpus.
+The actual native oracle emits 132,367 raw bytes and 156,756 normalized bytes,
+with uppercase-alias observations retained separately. It qualifies all 12 tiny
+RGB/RGBA/mask routing discriminators before the broad oracle runs.
+
+All 91 ordered partitions remain within 32 actions and 196,608 generated UTF-8
+bytes; the largest is 193,198 bytes. The fresh focused run took 1,765.059 seconds.
+Independent full-output replay checks all focused, formatted-BMP-export and
+canonical records, rejects 61 adversarial controls, and verifies 2,839 source/
+artifact identities. The frozen matrix passes 710 Python tests without skips,
+all 158 structural laws with the complete proof verdict, project/API checks and
+the affected unchanged regression gates. Older Surface/generic/FloatRGB/format/
+color harnesses retain report/source/exit evidence, but do not retain complete
+stdout for an independent post-run replay. Their limits are explicit in the
+[verification record](VERIFICATION.md#format-preserving-bmp-memory-loading-2026-10-03).
+
+Only partial `raylib:function:LoadImageFromMemory` gains scope; no API becomes
+complete. GPU/Metal, Windows/browser, big-endian, maximum decoded area/heap,
+native pointer/allocation/OOM behavior and full performance remain open. The
+separately sealed final tree passes 715 Python tests without skips, all 158 laws,
+project/API and independent workflow-preservation checks. It adds two dedicated
+BMP workers while preserving all 81 earlier gates and requiring all six workers;
+exact-tip hosted qualification remains pending.
 
 ## Export
 
