@@ -43,11 +43,12 @@ suffix. `Image.Formatted.load_qoi(path)` selects QOI the same way and preserves
 native RGB888/RGBA8888 storage instead of returning a normalized Surface; its
 [dedicated contract](#format-preserving-qoi-file-loading) is below. These
 operations share the checked IO boundary.
-`Image.Formatted.load_pnm(path)` and `Image.Formatted.load_tga(path)` likewise
-select their named codecs independently of suffixes, preserving the respective
-native output formats with the inclusive 1 MiB raster-file cap. Their dedicated
-[PNM](#format-preserving-pnm-file-loading) and
-[TGA](#format-preserving-tga-file-loading) contracts are below.
+`Image.Formatted.load_pnm(path)`, `Image.Formatted.load_tga(path)` and
+`Image.Formatted.load_bmp(path)` likewise select their named codecs independently
+of suffixes, preserving the respective native output formats with the inclusive
+1 MiB raster-file cap. Their dedicated [PNM](#format-preserving-pnm-file-loading),
+[TGA](#format-preserving-tga-file-loading) and
+[BMP](#format-preserving-bmp-file-loading) contracts are below.
 The same byte-file boundary serves [owned animation loading](GIF-ANIMATION.md#file-loading),
 whose native GIF suffix selection additionally accepts mixed letter case.
 `Image.FloatRGB.load_hdr(path)` also shares that boundary, selecting the
@@ -394,10 +395,209 @@ for exact published TGA-file commit `08dd860ebd24c8d1f49eb130d848764723e1f5c7`
 passes Checks, all four workers, both aggregates and all four distinct nonempty
 artifacts. This historical result does not qualify the subsequent BMP memory
 increment; there is no new GPU/Metal, Windows/browser, big-endian or maximum-area result.
+The BMP-memory increment now has its own passing
+[82-gate hosted run](https://github.com/jonathanperis/jonlib/actions/runs/37152040429)
+at `82a81b12e61ede4ec2d9901baddd4bf773651a5d`, including Checks, all six workers,
+both aggregates and six distinct nonempty artifacts. Neither historical result
+qualifies the new BMP-file increment; its exact-tip 83-gate hosted qualification
+remains pending.
 
 ```sh
 python3 tools/tga_file_probe.py --reference-env clean-loader --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
 python3 -m unittest discover -s tests -p test_tga_file_harness.py -v
+```
+
+## Format-preserving BMP file loading
+
+`Image.Formatted.load_bmp(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)`
+is an explicit BMP loader for ordinary, non-changing files. It ignores filename
+suffixes: `.bmp`, `.BMP`, `.BmP`, arbitrary or misleading suffixes such as `.qoi`,
+suffixless names, spaces, multiple dots and directory-qualified dotfiles all
+select BMP. It does not sniff or retry another codec. Generic Surface
+suffix/content dispatch and every existing memory decoder retain their contracts.
+
+Like the dedicated PNM/TGA loaders, it has exactly two IO functions. The public
+entry passes `Image.file.bytes(path, Image.file.limit(RasterFile{}))` to
+`Image.Formatted.bmp.file.loaded`. That continuation receives bytes or a load
+error, never an open File. It propagates failures unchanged or adapts
+`Image.Formatted.decode_bmp` through `Image.file.decoded`. The shared raster cap
+is **1,048,576 encoded bytes, inclusive**, regardless of filename. No shared
+reader, decoder or format-conversion implementation changes are required.
+
+Operation/error precedence is fixed:
+
+1. Open the path. Failures preserve `ImageFileError{code, message}`. Even missing
+   paths with unsupported or misleading suffixes reach opening without prior
+   suffix rejection. No handle is acquired on open failure.
+2. Obtain size. A successfully reported size above the raster cap through
+   **4,294,967,295** returns `ImageDecodeError{UnsupportedImageSize{}}` before any
+   payload read. Pinned Base reports a host overflow file error for sizes above
+   U32_MAX; this remains `ImageFileError{code, message}`. Size failures and size
+   rejection both call `File.close` before returning. The exact cap is admitted
+   for reading, but the bytes must still satisfy the unchanged BMP decoder.
+3. Perform the existing single bounded read of the reported size. Call
+   `File.close` before processing the read result. A read failure retains Base's
+   code/message; short or synthetic long returned lists relative to the reported
+   size yield `ImageDecodeError{TruncatedImageData{}}` before decoding. There is
+   no retry or streaming loop. A physically truncated file whose actual reported
+   length is read completely instead reaches the decoder.
+4. Decode with the unchanged `Image.Formatted.decode_bmp`, wrapping each exact
+   error once as `ImageDecodeError{error}`. Full-list byte validation comes first,
+   including ignored fields, gaps, padding and tails. Next, incomplete base
+   headers or unsupported base fields, planes, bit depth, compression or offset
+   return `InvalidImageHeader`. Once those checks pass, unsupported width or
+   height returns `UnsupportedImageSize` **before extended-header completion or
+   effective-mask validation**. With supported dimensions, incomplete extended
+   headers or invalid effective masks return `InvalidImageHeader`. Required
+   palette and effective-raster completeness then precede index decoding:
+   incomplete required data returns `TruncatedImageData`, and an index outside
+   the loaded palette returns `InvalidImageStream`. Thus unsupported dimensions
+   take precedence over incomplete or invalid masks; the controls
+   `bad-size-before-incomplete-masks` and `bad-size-before-invalid-mask` both
+   return `UnsupportedImageSize`. Ordinary files supply only 0..255 bytes, so
+   `InvalidImageByte` is an internal-stage control rather than an ordinary-file
+   payload case.
+
+Success returns one affine owner with width and height **1..4096**, one implicit
+mip and native RGB888 **4** or RGBA8888 **7**. Export consumes it and returns
+exactly `width*height*channels` top-down row-major R,G,B[,A] bytes, excluding
+backing-array padding. RGB888 logical words have a zero high byte. Point reads
+retain the exact owner on accepted and rejected coordinates; export and the
+Surface bridge consume it. Failure returns no partial image or File owner.
+Conversion and disposal use the existing [formatted owner API](FORMATS.md).
+
+The complete [BMP memory profile](BMP.md#format-preserving-bmp-memory-loading)
+is inherited unchanged: CORE indexed/RGB24 and INFO/56/V4/V5 headers;
+1/4/8-bit indexed, RGB555/24/32 and checked 16/32-bit bitfields; native palette
+counts and CORE bias/remainders; ignored palette/embedded masks; external-mask
+placement; V4/V5 defaults; native highest-bit/population mask alignment and
+replication; bottom-up/top-down orientation; doubled true-color gaps, row
+padding and valid ignored tails. Effective alpha layout determines channels
+before pixel decoding and alpha repair. `BI_RGB` 32-bit all-zero alpha repair
+preserves RGBA metadata, while explicit alpha masks retain zero alpha. The
+native 24-bit/`0xff000000` special case remains unreachable under this domain.
+No floating `ImageFormat` conversion or observed-opacity heuristic is added.
+
+Close ordering concerns calls, not OS-close success: pinned `Base.File.close`
+returns `IO(Unit)`, its C implementation discards the close result and its
+JavaScript implementation catches close exceptions. There is no close-error
+variant or successful-close guarantee. Synthetic size/read controls may use
+real acquired handles but cannot establish actual concurrent short-read behavior;
+low-descriptor repetition can detect leaks only in the paths it exercises.
+
+The encoded cap is not a maximum decoded-area, total-heap, allocation-success or
+performance guarantee. Concurrent/changing or special files, callbacks, native
+pointer/allocation ABI and OOM parity, GPU/Metal file IO, additional platforms
+and full integration/resource/performance remain open. This adds no generic
+formatted dispatcher and broadens only partial `raylib:function:LoadImage`;
+`LoadImageFromMemory` and all completed API counts are unchanged.
+
+### BMP file verification
+
+The [new source-scoped report](evidence/bmp-formatted-files.json) records a passing
+local Linux x86-64 CPU-one-thread/CPU-two-thread/JavaScript gate: **294 accepted
+files / 39,259 pixels**. All **224 prior accepted memory streams** remain
+byte-for-byte unchanged, with **70** additional one-pixel filename variants
+covering both native output layouts. The native oracle uses **272 actual
+`LoadImage` calls** and **22 `LoadFileData` plus `LoadImageFromMemory(".bmp")`
+explicit-selection calls**. Its **588 primary records** capture **132,612 raw
+format-4/7 bytes** before **157,036 separately normalized bytes**. Native success
+checks actual dimensions, `mipmaps==1`, format and raw byte length; candidate
+single-mip metadata follows the owner's implicit type contract rather than a
+stored or measured mip-count field.
+
+The fresh isolated native archive qualifies little-endian storage and all
+**12 tiny RGB/RGBA/effective-alpha routing vectors** before the broad oracle.
+Its actual CMake cache and compiled definitions enable all **eight** required
+raster alias macros: BMP, PNG, TGA, JPG, GIF, PIC, PNM and PSD. Whole-path last-dot
+qualification independently distinguishes a literal `.bmp`, `dir/.bmp` and
+`dir.bmp/leaf`; filename routing is checked against those native rules. The
+alias build does not expand Jonlib's supported payload codecs. Only complete,
+independently safety-checked BMP assets enter the accepted native oracle.
+
+Each candidate lane checks **2,184 primary observations / 602,588 bytes** in
+**69 complete ordered partitions**, at most **32 actions** and **196,608 generated
+UTF-8 bytes** each; the largest generated partition is **26,853 bytes**. Every
+accepted public formatted load is independently reopened for raw export,
+point/high-bit ownership checks and the consuming Surface bridge. Explicit
+normalized byte loading and applicable generic Surface/profile routes remain
+separate observations. **229 file controls plus 379 synthetic/internal controls
+make 608 candidate-only controls**; malformed, oversized and special controls
+never enter the accepted native oracle. The synthetic controls include values
+that ordinary byte files cannot contain and do not broaden the public contract.
+
+The boundary gate emits **1,009 strict records / 703 compared bytes** per lane:
+eight synthetic checks, **100 cycles over ten acquired-handle paths** under
+`RLIMIT_NOFILE=64`, then an independently checked final valid load. The repeated
+paths include RGB and RGBA success, decode failure, directory/read failure,
+pre-read cap rejection, U32-size overflow and injected short/read-error/
+size-error/long-result stages. Injected stages use real acquired handles and
+check exact error code/message preservation; they are not observations of
+actual concurrent short reads. The observed local populated-directory failure
+occurs at read with code 21 (`Is a directory`). Every boundary frame and the
+strict terminal are retained and independently replayed.
+
+Four separate sparse controls cover cap+1, misleading-suffix cap+1, a larger
+sparse file and Base U32-size overflow. Each lane additionally passes four
+exact-cap raw/owner/bridge/normalized-Surface records totaling **14 bytes**. The
+accepted **1,048,576-byte** BMP has its own native raw/normalized reference and a
+fully validated ignored byte tail; its format-4 pixel is `[13, 92, 171]`. These
+observations establish exact-cap admission for the exercised file, without
+turning the encoded cap into a maximum-area or heap guarantee.
+
+Compilation is separate from runtime RSS measurement. Fixed post-run acceptance
+ceilings are **256 MiB** for boundary/sparse runs and **1 GiB** for exact-cap
+reads. They are measured acceptance criteria, not live allocation limits,
+maximum-area results or performance guarantees:
+
+| Lane | Boundary RSS / seconds | Sparse RSS / seconds | Exact-cap RSS / seconds |
+|---|---:|---:|---:|
+| CPU-one-thread | 9,699,328 / 0.389 | 9,699,328 / 0.341 | 27,250,688 / 0.576 |
+| CPU-two-thread | 9,699,328 / 0.398 | 9,699,328 / 0.340 | 27,262,976 / 0.563 |
+| JavaScript | 101,462,016 / 0.451 | 50,315,264 / 0.370 | 270,422,016 / 1.057 |
+
+RSS units are bytes. The complete focused gate took **1,658.848 seconds**;
+that is gate elapsed time, not an application benchmark. Independent full-byte
+replay verifies all primary, boundary, sparse and exact-cap records, **2,210
+source/artifact seals**, **299 exact successful inner command receipts**,
+fresh native compiler/archive/alias provenance and all nine fd64/RSS receipts.
+The separate outer audit verifies the complete progress/terminal output, exit
+status and owned/reaped process group. The replay does not rerun the runtime or
+read/hash sparse holes. Nineteen synthetic parser mutation controls are rejected;
+these remain separate from the 608 candidate runtime controls.
+
+All affected formatted and canonical regressions also pass against the same
+frozen library source. The independent regression audit verifies **5,204
+artifacts** and rejects **61 main adversarial controls** plus **16 TGA parser
+controls**. It replays complete BMP-memory/export and canonical output, every
+TGA/PNM file primary/resource/closure frame, and QOI file primary/retained-resource
+frames. Individual repeated QOI closure-loop checks have source/report/exit
+evidence only; the older Surface BMP, generic dispatch, FloatRGB raster export,
+image-format and color/owner harnesses likewise lack complete retained stdout
+for independent full-output replay. Exact boundaries are recorded in
+[VERIFICATION.md](VERIFICATION.md#format-preserving-bmp-file-loading-2026-10-03).
+
+The frozen matrix passes **21 serial stages** plus the focused BMP-file gate,
+**794 Python tests without skips**, all **158 scoped laws** with the complete
+`All terms check.` verdict, and syntax/project/API checks. The separately sealed
+final CI/documentation snapshot passes **798 Python tests without skips**, all
+158 laws and project/API/syntax checks. Compiled library, probe and oracle
+identities remain unchanged. Its independent workflow-preservation check retains
+all 82 prior gates and the six-worker aggregates, adding only the new file gate
+and precise sparse-artifact exclusions. Final evidence/prose summaries are
+checked separately against retained tested metadata to avoid self-referential
+receipt hashes. These scoped laws do not establish universal decoder or IO
+correctness.
+
+The exact-tip hosted **83-gate** qualification remains pending. Historical TGA
+file and BMP memory checkpoints do not qualify this file increment. No new
+GPU/Metal IO, macOS/Windows/browser, big-endian, maximum decoded-area/heap,
+concurrent/special-file, OS-close-error, native pointer/allocation/OOM or full
+integration/performance result is established by this local run.
+
+```sh
+python3 tools/bmp_file_probe.py --reference-env clean-loader --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+python3 -m unittest discover -s tests -p test_bmp_file_harness.py -v
 ```
 
 ## Verification

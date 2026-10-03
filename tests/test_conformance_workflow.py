@@ -9,6 +9,7 @@ run-block bytes, expressions, action pins, and all settings are not.
 
 from collections import Counter
 import hashlib
+import fnmatch
 import itertools
 import os
 from pathlib import Path
@@ -24,6 +25,8 @@ BASELINE_SHA256 = '610acab9fa0ca7fa6c3db8b93a828693c47e8ac202d89f76f0246053c45b8
 # Exact 81-gate workflow at 08dd860ebd24c8d1f49eb130d848764723e1f5c7.
 # This adds a preservation anchor without replacing the original baseline.
 BMP_PREDECESSOR_SHA256 = '34fa72b91f6e4ab3e7e555c51e621364bf1b68e1dba4945db2442ad8e463ce7e'
+# Exact 82-gate workflow at 82a81b12e61ede4ec2d9901baddd4bf773651a5d.
+BMP_FILE_PREDECESSOR_SHA256 = '809c8d6c02b715b44cfa013a1c2644ac5d15cf0a8b1d8dc5d2f5745ce5c5e4f1'
 FORMATTED_GATES = (
     'Verify checked formatted BMP bytes and typed IO',
     'Verify checked formatted TGA bytes and typed IO',
@@ -78,6 +81,19 @@ BMP_GATES = ('''      - name: Verify native BMP formats and exact memory bytes
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
 ''',)
 BMP_PATHS = ('.build/bmp-format-probe/',)
+ADDED_BMP_FILE_GATES = ('''      - name: Verify format-preserving BMP file loading and bounded closure
+        run: >-
+          python3 tools/bmp_file_probe.py --reference-env clean-loader
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+''',)
+ADDED_BMP_FILE_PATHS = (
+    '.build/bmp-file-probe/',
+    '!.build/bmp-file-probe/run-*/fixtures/cap-plus-one.bmp',
+    '!.build/bmp-file-probe/run-*/fixtures/cap-plus-one.qoi',
+    '!.build/bmp-file-probe/run-*/fixtures/larger-file.bmp',
+    '!.build/bmp-file-probe/run-*/fixtures/host-size-overflow.bmp',
+)
 PLATFORMS = (('Ubuntu', 'ubuntu-24.04'), ('Mac', 'macos-15'))
 ORIGINAL_WORKERS = ('coreUbuntu', 'coreMac', 'formattedUbuntu', 'formattedMac')
 BMP_WORKERS = ('bmpUbuntu', 'bmpMac')
@@ -173,9 +189,10 @@ def validate_workflow(text):
     core = [step for step in gates if gate_name(step) not in FORMATTED_GATES]
     require(tuple(map(gate_name, formatted)) == FORMATTED_GATES, 'Formatted ownership changed')
     require(len(core) == 72 and len(formatted) == 7, 'Original gate counts changed')
-    reviewed_gates = gates + list(ADDED_FORMATTED_GATES) + list(BMP_GATES)
+    reviewed_gates = gates + list(ADDED_FORMATTED_GATES) + list(BMP_GATES) + list(ADDED_BMP_FILE_GATES)
     formatted = formatted + list(ADDED_FORMATTED_GATES)
-    require(len(reviewed_gates) == 82 and len(formatted) == 9 and len(BMP_GATES) == 1,
+    require(len(reviewed_gates) == 83 and len(formatted) == 9
+            and len(BMP_GATES) == len(ADDED_BMP_FILE_GATES) == 1,
             'Reviewed added gate count changed')
     upload_header, old_paths = upload_parts(upload)
     require(len(old_paths) == len(set(old_paths)) == 156, 'Expected 156 distinct baseline paths')
@@ -187,9 +204,10 @@ def validate_workflow(text):
     require(Counter(paths_by_shard['core'] + paths_by_shard['formatted']) == Counter(old_paths),
             'Artifact partitions must be the disjoint baseline union')
     paths_by_shard['formatted'].extend(ADDED_FORMATTED_PATHS)
-    paths_by_shard['bmp'] = list(BMP_PATHS)
-    reviewed_paths = old_paths + list(ADDED_FORMATTED_PATHS) + list(BMP_PATHS)
-    require(len(paths_by_shard['formatted']) == 22 and len(reviewed_paths) == 163,
+    paths_by_shard['bmp'] = list(BMP_PATHS) + list(ADDED_BMP_FILE_PATHS)
+    reviewed_paths = old_paths + list(ADDED_FORMATTED_PATHS) + list(BMP_PATHS) + list(ADDED_BMP_FILE_PATHS)
+    require(len(paths_by_shard['formatted']) == 22 and len(paths_by_shard['bmp']) == 6
+            and len(reviewed_paths) == 168,
             'Reviewed added artifact count changed')
     for suffix, platform in PLATFORMS:
         actual_gates = []
@@ -197,7 +215,7 @@ def validate_workflow(text):
         for shard, name, expected_gates in (
             ('core', 'Core CPU and JavaScript', core),
             ('formatted', 'Formatted images CPU and JavaScript', formatted),
-            ('bmp', 'BMP memory CPU and JavaScript', list(BMP_GATES)),
+            ('bmp', 'BMP memory CPU and JavaScript', list(BMP_GATES) + list(ADDED_BMP_FILE_GATES)),
         ):
             job_id = shard + suffix
             settings, steps = job_parts(jobs[job_id])
@@ -224,6 +242,19 @@ def validate_workflow(text):
 
 
 
+def remove_reviewed_bmp_file_additions(text):
+    # Raw replacement only: preserve every other byte, including comments and
+    # line endings. The separate anchor tests protect both predecessor stages.
+    for gate in ADDED_BMP_FILE_GATES:
+        require(text.count(gate) == 2, 'Expected one exact BMP-file gate per platform')
+        text = text.replace(gate, '')
+    for path in ADDED_BMP_FILE_PATHS:
+        line = '            ' + path + '\n'
+        require(text.count(line) == 2, 'Expected one exact BMP-file upload path per platform')
+        text = text.replace(line, '')
+    return text
+
+
 class ConformanceWorkflowTests(unittest.TestCase):
     def setUp(self):
         self.text = WORKFLOW.read_bytes().decode('utf-8')
@@ -231,12 +262,25 @@ class ConformanceWorkflowTests(unittest.TestCase):
     def test_exact_reviewed_gate_setup_settings_and_artifact_partition(self):
         validate_workflow(self.text)
 
+    def test_removing_only_reviewed_bmp_file_additions_restores_exact_82_gate_bytes(self):
+        stripped = remove_reviewed_bmp_file_additions(self.text)
+        self.assertEqual(hashlib.sha256(stripped.encode('utf-8')).hexdigest(),
+                         BMP_FILE_PREDECESSOR_SHA256)
+
+    def test_raw_workflow_preservation_rejects_crlf(self):
+        changed = self.text.replace('\n', '\r\n')
+        with self.assertRaises(ValueError):
+            validate_workflow(changed)
+        with self.assertRaises(ValueError):
+            remove_reviewed_bmp_file_additions(changed)
+
     def test_removing_only_reviewed_bmp_additions_restores_exact_predecessor_bytes(self):
         # Independent raw-text comparison: do not reuse the structural parser
         # or strip comments/whitespace from the four preserved workers.
-        start = self.text.index('  bmpUbuntu:\n')
-        end = self.text.index('  # Keep both prior required-check names', start)
-        stripped = self.text[:start] + self.text[end:]
+        predecessor = remove_reviewed_bmp_file_additions(self.text)
+        start = predecessor.index('  bmpUbuntu:\n')
+        end = predecessor.index('  # Keep both prior required-check names', start)
+        stripped = predecessor[:start] + predecessor[end:]
         additions = (
             ('directly require all six workers.', 'directly require all four workers.', 1),
             ('needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac, bmpUbuntu, bmpMac]',
@@ -399,8 +443,8 @@ class ConformanceWorkflowTests(unittest.TestCase):
             _, steps = job_parts(job)
             _, formatted_steps = job_parts(jobs['formatted' + suffix])
             self.assertEqual(steps[:7], formatted_steps[:7])
-            self.assertEqual(steps[7:-1], [gate])
-            self.assertEqual(upload_parts(steps[-1])[1], list(BMP_PATHS))
+            self.assertEqual(steps[7:-1], [gate, *ADDED_BMP_FILE_GATES])
+            self.assertEqual(upload_parts(steps[-1])[1], list(BMP_PATHS) + list(ADDED_BMP_FILE_PATHS))
             mutations = {
                 'wrong BMP platform': job.replace('runs-on: ' + platform, 'runs-on: other'),
                 'optional BMP worker': '    continue-on-error: true\n' + job,
@@ -438,6 +482,88 @@ class ConformanceWorkflowTests(unittest.TestCase):
                     self.assertNotEqual(job, mutated_job)
                     with self.assertRaises(ValueError):
                         validate_workflow(structural_text(self.text).replace(job, mutated_job, 1))
+
+    def test_reviewed_bmp_file_addition_is_mandatory_exact_and_scoped_on_both_platforms(self):
+        _, jobs = workflow_parts(self.text)
+        memory_gate, = BMP_GATES
+        gate, = ADDED_BMP_FILE_GATES
+        path = '            ' + ADDED_BMP_FILE_PATHS[0] + '\n'
+        for suffix, _ in PLATFORMS:
+            job_id = 'bmp' + suffix
+            job = jobs[job_id]
+            _, steps = job_parts(job)
+            self.assertEqual(steps[7:-1], [memory_gate, gate])
+            self.assertEqual(upload_parts(steps[-1])[1], list(BMP_PATHS) + list(ADDED_BMP_FILE_PATHS))
+            mutations = {
+                'missing BMP-file gate': job.replace(gate, '', 1),
+                'duplicate BMP-file gate': job.replace(gate, gate * 2, 1),
+                'altered BMP-file command': job.replace('tools/bmp_file_probe.py', 'tools/bmp_format_probe.py', 1),
+                'missing BMP-file loader flag': job.replace('tools/bmp_file_probe.py --reference-env clean-loader', 'tools/bmp_file_probe.py', 1),
+                'altered BMP-file loader flag': job.replace('tools/bmp_file_probe.py --reference-env clean-loader', 'tools/bmp_file_probe.py --reference-env inherited', 1),
+                'optional BMP-file gate': job.replace(gate, gate.replace('        run:', '        continue-on-error: true\n        run:'), 1),
+                'skipped BMP-file gate': job.replace(gate, gate.replace('        run:', '        if: false\n        run:'), 1),
+                'bypassed BMP-file failure': job.replace(gate, gate.rstrip('\n') + ' || true\n', 1),
+                'changed BMP-file Bend source': job.replace(gate, gate.replace('/.build/dependencies/bend', '/.build/dependencies/other-bend'), 1),
+                'changed BMP-file raylib source': job.replace(gate, gate.replace('/.build/dependencies/raylib', '/.build/dependencies/other-raylib'), 1),
+                'reordered BMP-file gate': job.replace(memory_gate + gate, gate + memory_gate, 1),
+                'missing BMP-file artifact': job.replace(path, '', 1),
+                'duplicate BMP-file artifact': job.replace(path, path * 2, 1),
+                'altered BMP-file artifact': job.replace(path, '            .build/bmp-file-probe/results.json\n', 1),
+                'broader BMP-file artifact': job.replace(path, '            .build/\n', 1),
+            }
+            for label, mutated_job in mutations.items():
+                with self.subTest(job=job_id, mutation=label):
+                    self.assertNotEqual(job, mutated_job)
+                    with self.assertRaises(ValueError):
+                        validate_workflow(structural_text(self.text).replace(job, mutated_job, 1))
+
+    def test_bmp_file_upload_excludes_only_sparse_fixture_bodies_on_both_platforms(self):
+        _, jobs = workflow_parts(self.text)
+        excluded_paths = ADDED_BMP_FILE_PATHS[1:]
+        self.assertEqual(len(excluded_paths), 4)
+        root = '.build/bmp-file-probe/'
+        retained = (
+            'results.json', 'run-example/fixtures/exact-cap.bmp',
+            'run-example/fixtures/c3-single.bmp', 'run-example/inputs.json',
+            'run-example/qualification.c', 'run-example/reference.c',
+            'run-example/candidate.bend', 'run-example/candidate.stdout',
+            'run-example/candidate.stderr', 'run-example/candidate.command.json',
+            'run-example/candidate.resource.json', 'run-example/native/libraylib.a',
+        )
+        for suffix, _ in PLATFORMS:
+            job_id = 'bmp' + suffix
+            job = jobs[job_id]
+            _, steps = job_parts(job)
+            paths = upload_parts(steps[-1])[1]
+            self.assertEqual(len(paths), 6)
+            self.assertIn(root, paths)
+            self.assertEqual([path for path in paths if path.startswith('!')], list(excluded_paths))
+            # Only exact sparse filenames are excluded. Positive ordinary-file
+            # coverage guards against dropping cap, recipe or replay evidence.
+            for relative in retained:
+                candidate = root + relative
+                self.assertFalse(any(fnmatch.fnmatchcase(candidate, excluded[1:])
+                                     for excluded in excluded_paths), candidate)
+            for excluded in excluded_paths:
+                candidate = excluded[1:].replace('run-*', 'run-example')
+                self.assertTrue(fnmatch.fnmatchcase(candidate, excluded[1:]))
+                path = '            ' + excluded + '\n'
+                mutations = {
+                    'missing sparse exclusion': job.replace(path, '', 1),
+                    'duplicate sparse exclusion': job.replace(path, path * 2, 1),
+                    'included sparse body': job.replace(path, path.replace('!.build/', '.build/'), 1),
+                    'excluded ordinary exact cap': job.replace(path, '            !.build/bmp-file-probe/run-*/fixtures/exact-cap.bmp\n', 1),
+                    'excluded all fixtures': job.replace(path, '            !.build/bmp-file-probe/run-*/fixtures/\n', 1),
+                    'excluded fixture recipes': job.replace(path, '            !.build/bmp-file-probe/run-*/inputs.json\n', 1),
+                    'excluded command receipts': job.replace(path, '            !.build/bmp-file-probe/run-*/*.command.json\n', 1),
+                    'excluded resource receipts': job.replace(path, '            !.build/bmp-file-probe/run-*/*.resource.json\n', 1),
+                    'excluded all BMP bodies': job.replace(path, '            !.build/bmp-file-probe/run-*/fixtures/*.bmp\n', 1),
+                }
+                for label, mutated_job in mutations.items():
+                    with self.subTest(job=job_id, exclusion=excluded, mutation=label):
+                        self.assertNotEqual(job, mutated_job)
+                        with self.assertRaises(ValueError):
+                            validate_workflow(structural_text(self.text).replace(job, mutated_job, 1))
 
     def test_both_aggregates_require_each_of_six_direct_workers(self):
         _, jobs = workflow_parts(self.text)

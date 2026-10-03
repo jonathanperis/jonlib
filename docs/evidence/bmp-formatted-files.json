@@ -1,0 +1,933 @@
+{
+  "schema": 1,
+  "profile": "native-bmp-formatted-files-v1",
+  "status": "locally-qualified-hosted-pending",
+  "passed": true,
+  "passed_scope": "Local Linux x86-64 frozen runtime matrix and independent complete retained-output replay; final tree and exact-tip hosted qualification are separately scoped",
+  "base_revision": "82a81b12e61ede4ec2d9901baddd4bf773651a5d",
+  "host": {
+    "system": "Linux",
+    "machine": "x86_64"
+  },
+  "toolchain": {
+    "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+        "path": "patches/bend-metal-dispatch.patch",
+        "sha256": "d4fbe3723f78bbcd456d4937b8f52f48454e7748d86799b22a95165a04cd9879",
+        "files": {
+          ".gitignore": "8915b2338d9a3dd712510d95efbec55daa5f2d5a50f825f7cffbb791f3883024",
+          "bend2/comp.ts": "0095ff214fdf353b3644923a46050507cd2caf09e0da212e446d9fb3dab531a6",
+          "tests/run/metal_inline_budget.bend": "13a2696795e014f55d3d196cc3a4c3691e4e44d2e71f2fed55e04fe6fd4c87f7"
+        }
+      }
+    },
+    "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+    },
+    "bun": {
+      "version": "1.3.12"
+    },
+    "profile": "rgba8-cpu-images-v1"
+  },
+  "changed_api": {
+    "id": "raylib:function:LoadImage",
+    "before": "partial",
+    "after": "partial",
+    "new_scope": "Image.Formatted.load_bmp preserving native RGB888 (4) or RGBA8888 (7), implicit one mip and complete row-major bytes across the existing checked BMP domain within the inclusive raster file cap",
+    "aggregate_completion_delta": 0,
+    "other_api_scope_changes": []
+  },
+  "contract": {
+    "codec_selection": "Explicit BMP independent of every filename suffix; no generic formatted dispatcher or decoder expansion",
+    "encoded_file_cap_inclusive": 1048576,
+    "dimensions_per_axis": [
+      1,
+      4096
+    ],
+    "original_memory_streams_preserved": 224,
+    "legacy_accepted_streams_preserved": 98,
+    "original_byte_safe_controls": 218,
+    "original_nonbyte_controls_synthetic_only": 379,
+    "size_overflow": "Pinned Base file error above U32_MAX; successful cap+1 through U32_MAX rejected before reading",
+    "read_and_close": "One exact-length read; short/long lists rejected; close calls precede processing and decode; Base ignores close errors",
+    "max_area_or_heap_parity_claimed": false,
+    "memory_scope_changed": false
+  },
+  "runtime_source_sha256": {
+    "src/bmp.bend": "77b3692e44dac97c4d5815b0222fce85033d8c01a83b1b560214762e378a070b",
+    "jonlib.bend": "969e82d239c74eec4b2dabe5d03891f548ecbc9c6abe697becdd6853d945b692",
+    "LAWS.bend": "c66b6b856ec2d937dbc581361434bbe171311a675eee56c788276b54dc46a3ad",
+    "PROOF.bend": "34ad454f4cf274db31068ae8077fc04d844db26d811115716b4a50b27d009d58",
+    "tools/bmp_file_probe.py": "4182370058872696f83d577c22552d8adb30577d8a3814be619688f266ab4187",
+    "tests/test_bmp_file_harness.py": "1a94fd6a3caa4e24eed280dd9bec3f3424ced1dc6c743972000fc8b92e7a4d9e",
+    "tools/bmp_format_probe.py": "1df9f718d9057a2015476dee351e23211e3217e160f5fa0899c9fee7f3042093"
+  },
+  "focused": {
+    "report": ".build/bmp-file-probe/results.json",
+    "sha256": "28636e8c59ac00d855132dbbed70e607440e158ccb01f3ec9aa57e5e5dafce8e",
+    "command": [
+      "python3",
+      "tools/bmp_file_probe.py",
+      "--reference-env",
+      "clean-loader",
+      "--bend-source",
+      "$BEND_SOURCE",
+      "--raylib-source",
+      "$RAYLIB_SOURCE"
+    ],
+    "cases": 294,
+    "pixels": 39259,
+    "typed_controls": 608,
+    "file_controls": 229,
+    "synthetic_controls": 379,
+    "native_rejections": 0,
+    "native_routes": {
+      "LoadImage": 272,
+      "explicit-bmp": 22
+    },
+    "native_observations": 588,
+    "native_raw_bytes": 132612,
+    "native_normalized_bytes": 157036,
+    "observations_per_lane": 2184,
+    "compared_bytes_per_lane": 602588,
+    "source_byte_limit": 196608,
+    "batch_size": 32,
+    "partition_strategy": "ordered-greedy-generated-source-v1",
+    "elapsed_seconds": 1658.848,
+    "partitions": 69,
+    "maximum_generated_source_bytes": 26853,
+    "lanes": {
+      "cpu-1": {
+        "passed": true,
+        "partitions": 69,
+        "boundary": {
+          "passed": true,
+          "maximum_rss_bytes": 9699328,
+          "elapsed_seconds": 0.389,
+          "descriptor_limit": 64,
+          "maximum_rss_acceptance_bytes": 268435456,
+          "observations": 1009,
+          "compared_bytes": 703,
+          "actions_sha256": "20c0db33139bd1c8abad8bcdeeb33b9c1d80c4bf971583496c9e42f1ebdfdb2c",
+          "stdout_sha256": "09585917b59376edead6e63257d3699dc6136e643dcadafe80bd0a2b82f01fcd"
+        },
+        "sparse": {
+          "passed": true,
+          "maximum_rss_bytes": 9699328,
+          "elapsed_seconds": 0.341,
+          "descriptor_limit": 64,
+          "maximum_rss_acceptance_bytes": 268435456,
+          "observations": 4,
+          "compared_bytes": 0,
+          "actions_sha256": "e54c605237a5ad7a860231b6b2952fd9f924cfc71e388ebbca9f134c60d01507",
+          "stdout_sha256": "ad97a65000bb702680928d81ac050ad3e46be79490528a8284a52e0b4a91c28e"
+        },
+        "exact_cap": {
+          "passed": true,
+          "maximum_rss_bytes": 27250688,
+          "elapsed_seconds": 0.576,
+          "descriptor_limit": 64,
+          "maximum_rss_acceptance_bytes": 1073741824,
+          "observations": 4,
+          "compared_bytes": 14,
+          "actions_sha256": "df888d8dd51f3e9854ec50c1d6aa441cf4f24cf17391c8e8b7a34dfa5792e433",
+          "stdout_sha256": "bb94a2e779433646210274135ac7707163faa2212934b9192a9cc5425f5934e8"
+        }
+      },
+      "cpu-2": {
+        "passed": true,
+        "partitions": 69,
+        "boundary": {
+          "passed": true,
+          "maximum_rss_bytes": 9699328,
+          "elapsed_seconds": 0.398,
+          "descriptor_limit": 64,
+          "maximum_rss_acceptance_bytes": 268435456,
+          "observations": 1009,
+          "compared_bytes": 703,
+          "actions_sha256": "20c0db33139bd1c8abad8bcdeeb33b9c1d80c4bf971583496c9e42f1ebdfdb2c",
+          "stdout_sha256": "09585917b59376edead6e63257d3699dc6136e643dcadafe80bd0a2b82f01fcd"
+        },
+        "sparse": {
+          "passed": true,
+          "maximum_rss_bytes": 9699328,
+          "elapsed_seconds": 0.34,
+          "descriptor_limit": 64,
+          "maximum_rss_acceptance_bytes": 268435456,
+          "observations": 4,
+          "compared_bytes": 0,
+          "actions_sha256": "e54c605237a5ad7a860231b6b2952fd9f924cfc71e388ebbca9f134c60d01507",
+          "stdout_sha256": "ad97a65000bb702680928d81ac050ad3e46be79490528a8284a52e0b4a91c28e"
+        },
+        "exact_cap": {
+          "passed": true,
+          "maximum_rss_bytes": 27262976,
+          "elapsed_seconds": 0.563,
+          "descriptor_limit": 64,
+          "maximum_rss_acceptance_bytes": 1073741824,
+          "observations": 4,
+          "compared_bytes": 14,
+          "actions_sha256": "df888d8dd51f3e9854ec50c1d6aa441cf4f24cf17391c8e8b7a34dfa5792e433",
+          "stdout_sha256": "bb94a2e779433646210274135ac7707163faa2212934b9192a9cc5425f5934e8"
+        }
+      },
+      "javascript": {
+        "passed": true,
+        "partitions": 69,
+        "boundary": {
+          "passed": true,
+          "maximum_rss_bytes": 101462016,
+          "elapsed_seconds": 0.451,
+          "descriptor_limit": 64,
+          "maximum_rss_acceptance_bytes": 268435456,
+          "observations": 1009,
+          "compared_bytes": 703,
+          "actions_sha256": "20c0db33139bd1c8abad8bcdeeb33b9c1d80c4bf971583496c9e42f1ebdfdb2c",
+          "stdout_sha256": "09585917b59376edead6e63257d3699dc6136e643dcadafe80bd0a2b82f01fcd"
+        },
+        "sparse": {
+          "passed": true,
+          "maximum_rss_bytes": 50315264,
+          "elapsed_seconds": 0.37,
+          "descriptor_limit": 64,
+          "maximum_rss_acceptance_bytes": 268435456,
+          "observations": 4,
+          "compared_bytes": 0,
+          "actions_sha256": "e54c605237a5ad7a860231b6b2952fd9f924cfc71e388ebbca9f134c60d01507",
+          "stdout_sha256": "ad97a65000bb702680928d81ac050ad3e46be79490528a8284a52e0b4a91c28e"
+        },
+        "exact_cap": {
+          "passed": true,
+          "maximum_rss_bytes": 270422016,
+          "elapsed_seconds": 1.057,
+          "descriptor_limit": 64,
+          "maximum_rss_acceptance_bytes": 1073741824,
+          "observations": 4,
+          "compared_bytes": 14,
+          "actions_sha256": "df888d8dd51f3e9854ec50c1d6aa441cf4f24cf17391c8e8b7a34dfa5792e433",
+          "stdout_sha256": "bb94a2e779433646210274135ac7707163faa2212934b9192a9cc5425f5934e8"
+        }
+      }
+    },
+    "qualification": {
+      "little_endian": true,
+      "bmp_enabled": true,
+      "effective_alpha_routing": true,
+      "formats": [
+        4,
+        7
+      ]
+    },
+    "qualification_cases": 12,
+    "native_build": {
+      "mode": "fresh-isolated-build",
+      "configuration": {
+        "PLATFORM": "Memory",
+        "CMAKE_BUILD_TYPE": "Release",
+        "CUSTOMIZE_BUILD": "ON",
+        "SUPPORT_FILEFORMAT_BMP": "ON",
+        "SUPPORT_MODULE_RAUDIO": "OFF",
+        "BUILD_EXAMPLES": "OFF",
+        "USE_EXTERNAL_GLFW": "OFF"
+      },
+      "compiler": {
+        "CMAKE_C_COMPILER": "/usr/bin/cc",
+        "CMAKE_C_COMPILER_ID": "GNU",
+        "CMAKE_C_COMPILER_VERSION": "14.2.0"
+      },
+      "compiler_version": "cc (Debian 14.2.0-19) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+      "artifacts": {
+        "/workspace/scratch/61c86f431823/jonlib-bmp-files/.build/bmp-file-probe/run-30149e15f9ab413c9c9a6c5938cf03fc/raylib-build/CMakeCache.txt": "aca84c97a3201349dd8ee6251bfef67f57c5187bb1a4c0406cf5160bb8febb78",
+        "/workspace/scratch/61c86f431823/jonlib-bmp-files/.build/bmp-file-probe/run-30149e15f9ab413c9c9a6c5938cf03fc/raylib-build/raylib/CMakeFiles/raylib.dir/flags.make": "ed7adeb39fb1806faa3dc10d7d1d777de3a98e67f205848f16efd828054c64fe",
+        "/workspace/scratch/61c86f431823/jonlib-bmp-files/.build/bmp-file-probe/run-30149e15f9ab413c9c9a6c5938cf03fc/raylib-build/CMakeFiles/3.31.6/CMakeCCompiler.cmake": "4cac2d2dfcf7bc3431de8e7b8fca6469f4b3d3fab7bc6d51dec0a318f44e1234",
+        "/usr/bin/cc": "a23ecab8ff08f09ad8c80602c2c5df7f49e09c25905cb8975902e101bf72635f",
+        "/workspace/scratch/61c86f431823/jonlib-bmp-files/.build/bmp-file-probe/run-30149e15f9ab413c9c9a6c5938cf03fc/raylib-build/raylib/libraylib.a": "38bf6b2fbfcfd6c776ddddcdb9d5d77a3f0a188653d6ba0905e3dd0aae3695cc"
+      },
+      "file_aliases": {
+        "enabled_macros": [
+          "SUPPORT_FILEFORMAT_BMP",
+          "SUPPORT_FILEFORMAT_PNG",
+          "SUPPORT_FILEFORMAT_TGA",
+          "SUPPORT_FILEFORMAT_JPG",
+          "SUPPORT_FILEFORMAT_GIF",
+          "SUPPORT_FILEFORMAT_PIC",
+          "SUPPORT_FILEFORMAT_PNM",
+          "SUPPORT_FILEFORMAT_PSD"
+        ],
+        "recognized_tokens": [
+          ".BMP",
+          ".GIF",
+          ".JPEG",
+          ".JPG",
+          ".PGM",
+          ".PIC",
+          ".PNG",
+          ".PPM",
+          ".PSD",
+          ".TGA",
+          ".bmp",
+          ".gif",
+          ".jpeg",
+          ".jpg",
+          ".pgm",
+          ".pic",
+          ".png",
+          ".ppm",
+          ".psd",
+          ".tga"
+        ],
+        "extension_rule": "last dot of entire path; index zero excluded"
+      }
+    },
+    "reference_environment": {
+      "schema": 1,
+      "policy": "clean-loader",
+      "scope": "native-reference-and-compiler-children-only",
+      "parent_loader": {
+        "LD_PRELOAD": null,
+        "LD_LIBRARY_PATH": null,
+        "LD_AUDIT": null,
+        "LD_BIND_NOW": null,
+        "GLIBC_TUNABLES": null,
+        "LD_HWCAP_MASK": null,
+        "LD_ASSUME_KERNEL": null,
+        "DYLD_INSERT_LIBRARIES": null,
+        "DYLD_LIBRARY_PATH": null,
+        "DYLD_FRAMEWORK_PATH": null,
+        "DYLD_FALLBACK_LIBRARY_PATH": null,
+        "DYLD_FALLBACK_FRAMEWORK_PATH": null,
+        "DYLD_VERSIONED_LIBRARY_PATH": null,
+        "DYLD_VERSIONED_FRAMEWORK_PATH": null,
+        "DYLD_ROOT_PATH": null,
+        "DYLD_IMAGE_SUFFIX": null,
+        "DYLD_SHARED_REGION": null,
+        "DYLD_SHARED_CACHE_DIR": null,
+        "DYLD_SHARED_CACHE_DONT_VALIDATE": null,
+        "DYLD_FORCE_FLAT_NAMESPACE": null,
+        "DYLD_BIND_AT_LAUNCH": null
+      },
+      "effective_child_loader": {
+        "LD_PRELOAD": null,
+        "LD_LIBRARY_PATH": null,
+        "LD_AUDIT": null,
+        "LD_BIND_NOW": null,
+        "GLIBC_TUNABLES": null,
+        "LD_HWCAP_MASK": null,
+        "LD_ASSUME_KERNEL": null,
+        "DYLD_INSERT_LIBRARIES": null,
+        "DYLD_LIBRARY_PATH": null,
+        "DYLD_FRAMEWORK_PATH": null,
+        "DYLD_FALLBACK_LIBRARY_PATH": null,
+        "DYLD_FALLBACK_FRAMEWORK_PATH": null,
+        "DYLD_VERSIONED_LIBRARY_PATH": null,
+        "DYLD_VERSIONED_FRAMEWORK_PATH": null,
+        "DYLD_ROOT_PATH": null,
+        "DYLD_IMAGE_SUFFIX": null,
+        "DYLD_SHARED_REGION": null,
+        "DYLD_SHARED_CACHE_DIR": null,
+        "DYLD_SHARED_CACHE_DONT_VALIDATE": null,
+        "DYLD_FORCE_FLAT_NAMESPACE": null,
+        "DYLD_BIND_AT_LAUNCH": null
+      }
+    },
+    "oracle_source_ranges": {
+      "src/rtextures.c": {
+        "sha256": "90e41879349d58a779c101dbf78e5b5cf8d46241590268a74e6156ad33312e4c",
+        "ranges": [
+          {
+            "first": 461,
+            "last": 471,
+            "sha256": "5b91ad23dd33ef30b5c44dfa36c659ba761d64721b9549027da6ca608aa55c61"
+          }
+        ]
+      },
+      "src/external/stb_image.h": {
+        "sha256": "594c2fe35d49488b4382dbfaec8f98366defca819d916ac95becf3e75f4200b3",
+        "ranges": [
+          {
+            "first": 5422,
+            "last": 5443,
+            "sha256": "a436e57077e93d68c2ba51abde60e8fbafd740b2db51e408038f84798057c298"
+          },
+          {
+            "first": 5482,
+            "last": 5515,
+            "sha256": "781a799ed6837a211fb04061badbf8136e240040c6c6e746c301e18672bc0d66"
+          },
+          {
+            "first": 5584,
+            "last": 5591,
+            "sha256": "6909f34f1a620340be2d54c937e54dac04c877c0d78d349115564c8e36d2996c"
+          },
+          {
+            "first": 5707,
+            "last": 5710,
+            "sha256": "83980fbc416ebc158aca651d4dbcbc0a99af3210b180a347e375022ebdf6b69f"
+          },
+          {
+            "first": 5728,
+            "last": 5730,
+            "sha256": "ece1b2bacc25833f188f43ccd682c08831b62e80697131845fd32edebdffb4e6"
+          }
+        ]
+      }
+    },
+    "source_boundary_contract": {
+      "kind": "source-order evidence plus separately observed runtime controls; not an IO proof",
+      "close_guarantee": "File.close is called; Base cannot report OS close failure",
+      "source_sha256": "969e82d239c74eec4b2dabe5d03891f548ecbc9c6abe697becdd6853d945b692",
+      "definitions": {
+        "Image.file.limit": {
+          "source": "def Image.file.limit(kind: Image.FileKind) -> U32:\n  match kind:\n    case QoiFile{}: 83886102\n    case _: 1048576\n",
+          "sha256": "348e86abf954318afae8c51e275c4e5ebe68340ce064add6b6aeb39aa1efae6e"
+        },
+        "Image.file.complete": {
+          "source": "def Image.file.complete(n: Nat, bytes: +List<U32>) -> Bool:\n  match n bytes:\n    case 0n Nil{}: True{}\n    case 1n+rest Con{_, tail}: Image.file.complete(rest, tail)\n    case _ _: False{}\n",
+          "sha256": "ccda3ffe2c9cd6b31ca9ac8a504adfc8a4dbb845d3b3d8a80d84a8dd8486b5f8"
+        },
+        "Image.file.payload": {
+          "source": "def Image.file.payload(size: U32, result: Result<&1, &1, U32 & String, +List<U32>>) -> Result<&1, &1, Image.LoadError, +List<U32>>:\n  match result:\n    case Fail{Tuple{code, message}}: Fail{ImageFileError{code, message}}\n    case Done{+bytes}: Image.file.loaded(Image.file.complete(U32.to_nat(size), bytes), bytes)\n",
+          "sha256": "f2054d9d89ea52a6d5a9de4443274f73b17c9eecd323d2e2bfb8bbdf8e795743"
+        },
+        "Image.file.read": {
+          "source": "def Image.file.read(size: U32, result: File & Result<&1, &1, U32 & String, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, +List<U32>>):\n  (file, status) = result\n  do IO<Result<&1, &1, Image.LoadError, +List<U32>>>:\n    Unit <- File.close(file)\n    IO.pure(Result<&1, &1, Image.LoadError, +List<U32>>, Image.file.payload(size, status))\n",
+          "sha256": "350524dd93bf9d0e164a0e68416fe1c1abd61e732c8d0cec3832874895dbafbf"
+        },
+        "Image.file.bounded": {
+          "source": "def Image.file.bounded(valid: Bool, file: File, +size: U32) -> IO(Result<&1, &1, Image.LoadError, +List<U32>>):\n  match valid:\n    case False{}:\n      do IO<Result<&1, &1, Image.LoadError, +List<U32>>>:\n        Unit <- File.close(file)\n        IO.pure(Result<&1, &1, Image.LoadError, +List<U32>>, Fail{ImageDecodeError{UnsupportedImageSize{}}})\n    case True{}:\n      IO.bind(File & Result<&1, &1, U32 & String, +List<U32>>, Result<&1, &1, Image.LoadError, +List<U32>>,\n        File.read_bytes(file, size), Image.file.read(size))\n",
+          "sha256": "bac958358b0a6c84367a6f4fbb0d5d992ef34bb5d9c2bb368d8e67769caa5c6b"
+        },
+        "Image.file.sized": {
+          "source": "def Image.file.sized(limit: U32, result: File & Result<&1, &1, U32 & String, U32>) -> IO(Result<&1, &1, Image.LoadError, +List<U32>>):\n  match result:\n    case Tuple{file, Fail{error}}: Image.file.read(0, (file, Fail{error}))\n    case Tuple{file, Done{+size}}: Image.file.bounded((size <= limit : U32), file, size)\n",
+          "sha256": "6ba5551aae13c291ec8bc257379a16a5244fe152eb96af08805f6aa694c18e4d"
+        },
+        "Image.file.opened": {
+          "source": "def Image.file.opened(limit: U32, opened: Result<&1, &1, U32 & String, File>) -> IO(Result<&1, &1, Image.LoadError, +List<U32>>):\n  match opened:\n    case Fail{Tuple{code, message}}: IO.pure(Result<&1, &1, Image.LoadError, +List<U32>>, Fail{ImageFileError{code, message}})\n    case Done{file}:\n      IO.bind(File & Result<&1, &1, U32 & String, U32>, Result<&1, &1, Image.LoadError, +List<U32>>, File.size(file), Image.file.sized(limit))\n",
+          "sha256": "108250379a5d39807792bd5a1d8d3b2dfbee930172eeb9c33c9dd064cb91f108"
+        },
+        "Image.file.bytes": {
+          "source": "def Image.file.bytes(path: String, limit: U32) -> IO(Result<&1, &1, Image.LoadError, +List<U32>>):\n  IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, Image.LoadError, +List<U32>>, File.open(path, \"r\"), Image.file.opened(limit))\n",
+          "sha256": "1c4ff92b7f34dc46ea7e5ec1156f9f349ddde835f8478282a00f1552b8a083fa"
+        },
+        "Image.file.decoded": {
+          "source": "def Image.file.decoded(-A: Type, result: Result<&1, &1, Image.DecodeError, A>) -> Result<&1, &1, Image.LoadError, A>:\n  match result:\n    case Fail{error}: Fail{ImageDecodeError{error}}\n    case Done{image}: Done{image}\n",
+          "sha256": "cd92509691e11e1ae00eae861ff4827fc5793a971645bc480b04cedf3c99c72f"
+        },
+        "Image.Formatted.bmp.file.loaded": {
+          "source": "def Image.Formatted.bmp.file.loaded(result: Result<&1, &1, Image.LoadError, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>):\n  match result:\n    case Fail{error}: IO.pure(Result<&1, &1, Image.LoadError, Image.Formatted>, Fail{error})\n    case Done{bytes}:\n      IO.pure(Result<&1, &1, Image.LoadError, Image.Formatted>, Image.file.decoded(Image.Formatted, Image.Formatted.decode_bmp(bytes)))\n",
+          "sha256": "95d22e7abde239660995658a2fbbc93fd2f9bb2df6568f884f387b846798ff2f"
+        },
+        "Image.Formatted.load_bmp": {
+          "source": "def Image.Formatted.load_bmp(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>):\n  IO.bind(Result<&1, &1, Image.LoadError, +List<U32>>, Result<&1, &1, Image.LoadError, Image.Formatted>,\n    Image.file.bytes(path, Image.file.limit(RasterFile{})), Image.Formatted.bmp.file.loaded)\n",
+          "sha256": "02a2201250df539e3a97d3dcfca431b8a6629f6c34d345a9e784cc2400622248"
+        }
+      }
+    },
+    "resource_plans": {
+      "boundary": {
+        "observations": 1009,
+        "compared_bytes": 703,
+        "actions_sha256": "20c0db33139bd1c8abad8bcdeeb33b9c1d80c4bf971583496c9e42f1ebdfdb2c"
+      },
+      "sparse": {
+        "observations": 4,
+        "compared_bytes": 0,
+        "actions_sha256": "e54c605237a5ad7a860231b6b2952fd9f924cfc71e388ebbca9f134c60d01507"
+      },
+      "exact_cap": {
+        "observations": 4,
+        "compared_bytes": 14,
+        "actions_sha256": "df888d8dd51f3e9854ec50c1d6aa441cf4f24cf17391c8e8b7a34dfa5792e433"
+      }
+    },
+    "exact_cap": {
+      "size": 1048576,
+      "native_reference": {
+        "id": "exact-cap-accepted",
+        "role": "raw",
+        "width": 1,
+        "height": 1,
+        "mipmaps": 1,
+        "format": 4,
+        "bytes": [
+          13,
+          92,
+          171
+        ]
+      }
+    },
+    "closure": {
+      "closure_checks": true,
+      "iterations": 100,
+      "paths_per_iteration": 10,
+      "synthetic_checks": 8,
+      "records": 1009
+    },
+    "candidate_mipmaps": "implicit single-mip type contract, not stored/measured",
+    "sealed_artifacts": 2210,
+    "command_receipts": 299,
+    "timings": {
+      "compile": {
+        "commands": 72,
+        "elapsed_seconds": 1539.250089,
+        "maximum_seconds": 33.434949
+      },
+      "primary_candidate_cpu": {
+        "commands": 138,
+        "elapsed_seconds": 0.719884,
+        "maximum_seconds": 0.046737
+      },
+      "primary_candidate_javascript": {
+        "commands": 69,
+        "elapsed_seconds": 5.522039,
+        "maximum_seconds": 0.455663
+      }
+    }
+  },
+  "regressions": {
+    "bmp-format-probe": {
+      "report": ".build/bmp-format-probe/results.json",
+      "sha256": "7375cb658a3a58c90a92f2791cfc58b8d8c28e524111d10104df623798794a24",
+      "metrics": {
+        "passed": true,
+        "profile": "native-bmp-formatted-memory-v1",
+        "reconstruction": "fresh implementation; no previous runtime evidence reused",
+        "run_directory": "/workspace/scratch/61c86f431823/jonlib-bmp-files/.build/bmp-format-probe/run-5bc5b79cebaf47f1a4cbebabb12e7213",
+        "base_revision": "82a81b12e61ede4ec2d9901baddd4bf773651a5d",
+        "cases": 224,
+        "pixels": 39189,
+        "typed_controls": 597,
+        "native_rejections": 0,
+        "batch_size": 32,
+        "source_byte_limit": 196608,
+        "partition_strategy": "ordered-greedy-generated-source-v1",
+        "candidate_mipmaps": "implicit single-mip type contract, not stored/measured",
+        "clang_version": "Debian clang version 19.1.7 (3+b1)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/toolchain/clang-19.1.7/usr/lib/llvm-19/bin",
+        "native_observations": 526,
+        "native_raw_bytes": 132367,
+        "native_normalized_bytes": 156756,
+        "native_all_observed_bytes": 295672,
+        "observations_per_lane": 2850,
+        "compared_bytes_per_lane": 873268,
+        "raw_compared_bytes_per_lane": 529468,
+        "normalized_compared_bytes_per_lane": 343800,
+        "planned_batches": 91,
+        "elapsed_seconds": 1745.854
+      }
+    },
+    "formatted-bmp-export-probe": {
+      "report": ".build/formatted-bmp-export-probe/results.json",
+      "sha256": "a9161d32f83fcbb7004190264a7b402efd1fc90053765b888048690f49cd90b0",
+      "metrics": {
+        "passed": true,
+        "images": 78,
+        "pixels": 331465,
+        "encoded_bytes": 1221952,
+        "decoded_bytes": 1325860,
+        "elapsed_seconds": 131.668
+      }
+    },
+    "bmp-probe": {
+      "report": ".build/bmp-probe/results.json",
+      "sha256": "c7017f6f9d4c03b0e200df55c94b34c55498f5a6ab8ccc5522489950e58ec623",
+      "metrics": {
+        "passed": true,
+        "decode_cases": 98,
+        "error_cases": 46,
+        "export_cases": 3,
+        "decoded_pixels": 10076,
+        "export_bytes": 410
+      }
+    },
+    "image-memory-probe": {
+      "report": ".build/image-memory-probe/results.json",
+      "sha256": "13ece3b8edd95c8593e2281ef87fcbfa810f02fbcfb4b0d2eddf8687b4552283",
+      "metrics": {
+        "passed": true,
+        "native_cases": 534,
+        "loaded_cases": 462,
+        "invalid_controls": 5,
+        "batch_size": 64,
+        "decode_reference": "UncontractedDecode"
+      }
+    },
+    "image-file-probe": {
+      "report": ".build/image-file-probe/results.json",
+      "sha256": "499267be3452ad79f0236db04b3b6efe584c8c671dd4fd49d6c417edeb508253",
+      "metrics": {
+        "passed": true,
+        "reference_cases": 59,
+        "boundary_controls": 3,
+        "closure_iterations": 100,
+        "file_descriptor_limit": 64,
+        "decode_reference": "UncontractedDecode"
+      }
+    },
+    "tga-file-probe": {
+      "report": ".build/tga-file-probe/results.json",
+      "sha256": "5e278483dc682a15ce567448a487941b137c94e3f1942b2ed41f4d4ae6c12261",
+      "metrics": {
+        "passed": true,
+        "profile": "native-tga-formatted-files-v1",
+        "evidence_origin": "NEW source-scoped file run; earlier memory evidence remains separate",
+        "run_directory": "/workspace/scratch/61c86f431823/jonlib-bmp-files/.build/tga-file-probe/run-fa52913b5aa34b4fa5c6406c9ebad133",
+        "base_revision": "82a81b12e61ede4ec2d9901baddd4bf773651a5d",
+        "cases": 225,
+        "pixels": 61913,
+        "typed_controls": 154,
+        "native_rejections": 0,
+        "batch_size": 32,
+        "candidate_mipmaps": "implicit single-mip type contract, not stored/measured",
+        "file_descriptor_limit": 64,
+        "clang_version": "Debian clang version 19.1.7 (3+b1)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/toolchain/clang-19.1.7/usr/lib/llvm-19/bin",
+        "exact-cap-reference_sha256": "86f4adb152885b2d262d1d7102476dcdbce09f678ebc7aae4e05b96b4f2079ad",
+        "native_observations": 450,
+        "native_raw_bytes": 155740,
+        "native_normalized_bytes": 247652,
+        "observations_per_lane": 1283,
+        "compared_bytes_per_lane": 854352,
+        "elapsed_seconds": 1131.88
+      }
+    },
+    "pnm-file-probe": {
+      "report": ".build/pnm-file-probe/results.json",
+      "sha256": "139a5461fcde098ebc15fbfde9792578df2c1e388747a1aefc5e7791587ab152",
+      "metrics": {
+        "passed": true,
+        "profile": "native-pnm-formatted-files-reconstructed-v1",
+        "evidence_origin": "NEW reconstruction run; lost historical report is not verification",
+        "run_directory": "/workspace/scratch/61c86f431823/jonlib-bmp-files/.build/pnm-file-probe/run-37a4fa7251634ed0beb03a09079321d3",
+        "base_revision": "82a81b12e61ede4ec2d9901baddd4bf773651a5d",
+        "cases": 156,
+        "pixels": 64542,
+        "typed_controls": 74,
+        "native_rejections": 0,
+        "batch_size": 32,
+        "candidate_mipmaps": "implicit single-mip type contract, not stored/measured",
+        "file_descriptor_limit": 64,
+        "clang_version": "Debian clang version 19.1.7 (3+b1)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/toolchain/clang-19.1.7/usr/lib/llvm-19/bin",
+        "exact-cap-reference_sha256": "88a3a2adaa4d2f2bd50164bdb67b1596d84e52eb33e708de0d20ac0d47db3145",
+        "native_observations": 312,
+        "native_raw_bytes": 120634,
+        "native_normalized_bytes": 258168,
+        "observations_per_lane": 626,
+        "compared_bytes_per_lane": 129072,
+        "elapsed_seconds": 654.515
+      }
+    },
+    "qoi-file-probe": {
+      "report": ".build/qoi-file-probe/results.json",
+      "sha256": "f8a5a6364cd8d8425e26e27a12f11e0a4da24f8866c54293c7ea4fb4a9747041",
+      "metrics": {
+        "passed": true,
+        "run_directory": "/workspace/scratch/61c86f431823/jonlib-bmp-files/.build/qoi-file-probe/run-a63140025b3c47349d29e62605266f1f",
+        "profile": "native-qoi-formatted-files-v1",
+        "base_revision": "82a81b12e61ede4ec2d9901baddd4bf773651a5d",
+        "cases": 135,
+        "pixels": 35657,
+        "typed_controls": 69,
+        "native_rejections": 8,
+        "batch_size": 64,
+        "closure_iterations": 100,
+        "closure_paths_per_iteration": 8,
+        "file_descriptor_limit": 64,
+        "maximum_sparse_runtime_rss_bytes": 268435456,
+        "maximum_stress_runtime_rss_bytes": 1073741824,
+        "native_observations": 278,
+        "native_raw_bytes": 126883,
+        "native_normalized_bytes": 142628,
+        "observations_per_lane": 287,
+        "compared_bytes_per_lane": 138007,
+        "elapsed_seconds": 178.318
+      }
+    },
+    "float-rgb-raster-export-probe": {
+      "report": ".build/float-rgb-raster-export-probe/results.json",
+      "sha256": "17744385b18a959e645eb5da782ccf2fff006dc85849b63445821a5215f119fe",
+      "metrics": {
+        "passed": true,
+        "images": 12,
+        "encoded_bytes": 3918,
+        "decoded_bytes": 4064,
+        "rejected_owner_controls": 2,
+        "io_error_controls": 2,
+        "closure_iterations": 100,
+        "file_descriptor_limit": 64
+      }
+    },
+    "image-format-probe": {
+      "report": ".build/image-format-probe/results.json",
+      "sha256": "74d76276ecf6c0bd93fe9e1fdcb08e1b7a05c7f9d14ebf4383735349c5c886d5",
+      "metrics": {
+        "passed": true,
+        "format_pairs": 64,
+        "cases": 165,
+        "factory_controls": 45,
+        "r32_boundary_samples": 1119,
+        "checked_bytes": 173303
+      }
+    },
+    "image-colors-probe": {
+      "report": ".build/image-colors-probe/results.json",
+      "sha256": "b2b527bce511f014e8db9a12cff47f9f256720852c7d5580f03ebe529e124b7c",
+      "metrics": {
+        "passed": true,
+        "source_formats": 8,
+        "pixels": 2561,
+        "point_controls": 6,
+        "bulk_rejected_owners": 1
+      }
+    }
+  },
+  "canonical": {
+    "report": ".build/conformance.json",
+    "sha256": "03c1cb466e4f25b4e183561c9658176c2d294f01e56f010ca400810614a6df3a",
+    "strict_report": ".build/bmp-file-validation/strict-replay-final.json",
+    "strict_sha256": "d23f941221c918ffff282eb9cff4021d80c06c5b90ae1711062ef2cdd529b101",
+    "lanes": {
+      "cpu-1": {
+        "passed": true,
+        "sha256": "a5c97ff42b88db3dea665b48df0b45e920266002139c6d46008f187dcae7d575",
+        "scenarios": 261,
+        "words": 40101,
+        "qoi_bytes": 333,
+        "palette_words": 23
+      },
+      "cpu-2": {
+        "passed": true,
+        "sha256": "a5c97ff42b88db3dea665b48df0b45e920266002139c6d46008f187dcae7d575",
+        "scenarios": 261,
+        "words": 40101,
+        "qoi_bytes": 333,
+        "palette_words": 23
+      },
+      "javascript": {
+        "passed": true,
+        "sha256": "a5c97ff42b88db3dea665b48df0b45e920266002139c6d46008f187dcae7d575",
+        "scenarios": 261,
+        "words": 40101,
+        "qoi_bytes": 333,
+        "palette_words": 23
+      }
+    },
+    "negative_controls": 9,
+    "optional_field_mutants": [
+      "qoi",
+      "palette",
+      "alpha_border"
+    ]
+  },
+  "serial_validation": {
+    "report": ".build/bmp-file-validation/serial.json",
+    "sha256": "094aaf4e6986af47392afe92a07ace8b213a6518c9f117b2dddfef2f6197a54f",
+    "stages": 21,
+    "python_tests": 794,
+    "python_skips": 0,
+    "proof_laws": 158,
+    "proof_verdict": "All terms check.",
+    "stage_timings": [
+      {
+        "label": "bmp-memory",
+        "elapsed_seconds": 1745.947,
+        "exit_code": 0
+      },
+      {
+        "label": "native-configure",
+        "elapsed_seconds": 0.366,
+        "exit_code": 0
+      },
+      {
+        "label": "native-build",
+        "elapsed_seconds": 11.196,
+        "exit_code": 0
+      },
+      {
+        "label": "formatted-bmp-export",
+        "elapsed_seconds": 131.748,
+        "exit_code": 0
+      },
+      {
+        "label": "surface-bmp",
+        "elapsed_seconds": 21.254,
+        "exit_code": 0
+      },
+      {
+        "label": "generic-memory",
+        "elapsed_seconds": 314.276,
+        "exit_code": 0
+      },
+      {
+        "label": "generic-file",
+        "elapsed_seconds": 35.665,
+        "exit_code": 0
+      },
+      {
+        "label": "tga-formatted-files",
+        "elapsed_seconds": 1131.984,
+        "exit_code": 0
+      },
+      {
+        "label": "pnm-formatted-files",
+        "elapsed_seconds": 654.598,
+        "exit_code": 0
+      },
+      {
+        "label": "qoi-formatted-files",
+        "elapsed_seconds": 178.371,
+        "exit_code": 0
+      },
+      {
+        "label": "float-rgb-raster-export",
+        "elapsed_seconds": 18.804,
+        "exit_code": 0
+      },
+      {
+        "label": "image-format",
+        "elapsed_seconds": 22.499,
+        "exit_code": 0
+      },
+      {
+        "label": "image-colors",
+        "elapsed_seconds": 17.05,
+        "exit_code": 0
+      },
+      {
+        "label": "canonical",
+        "elapsed_seconds": 449.585,
+        "exit_code": 0
+      },
+      {
+        "label": "strict-canonical",
+        "elapsed_seconds": 0.266,
+        "exit_code": 0
+      },
+      {
+        "label": "python-suite-final",
+        "elapsed_seconds": 104.915,
+        "exit_code": 0
+      },
+      {
+        "label": "proof-final",
+        "elapsed_seconds": 11.879,
+        "exit_code": 0
+      },
+      {
+        "label": "syntax-final",
+        "elapsed_seconds": 0.033,
+        "exit_code": 0
+      },
+      {
+        "label": "project-final",
+        "elapsed_seconds": 0.265,
+        "exit_code": 0
+      },
+      {
+        "label": "api-final",
+        "elapsed_seconds": 1.769,
+        "exit_code": 0
+      },
+      {
+        "label": "diff-check-final",
+        "elapsed_seconds": 0.033,
+        "exit_code": 0
+      }
+    ]
+  },
+  "independent_audits": {
+    "focused": {
+      "report": ".build/bmp-file-validation/independent-focused-audit.json",
+      "sha256": "76d60b161f2a24e0619a04a42f2b91d923e27d42575c40a5982b4568aabfb3a1",
+      "script_sha256": "dc0dbc1f57e13d5b1ee5a149080927469e4e9b6657057aeb8ffcef4f9c31cba1",
+      "scope": "All native and candidate records plus every boundary, sparse and exact-cap frame, exact source/action regeneration, all command/resource receipts and source/input/tool/output seals"
+    },
+    "focused_outer": {
+      "report": ".build/bmp-file-validation/independent-focused-outer-audit.json",
+      "sha256": "adc116e9d218f6bba9eaa7f3c2d9fef86f415531b55f94683dc5a1e55ef0937a"
+    },
+    "regressions": {
+      "report": ".build/bmp-file-validation/independent-regression-final.json",
+      "sha256": "ed3c1c0bf94be1b5e012ee52c75a1961a7cca34b238d8e24275e8a7318470355",
+      "auditor_sources": {
+        ".build/bmp-file-validation/independent-regression-pnm.py": "6e37de40b0d82b1087e413e46fcb33f0fbf81d892db1363ff0ff3b194e231565",
+        ".build/bmp-file-validation/independent-regression-audit.py": "4a177201bd8f028d2537a4ed5bdc2d61d487490feac4e3b9b9578be81a42a965",
+        ".build/bmp-file-validation/independent-regression-qoi.py": "31f03e617d36a36a6c93548427d67318788b4178edb6080f88f75543b32c8514",
+        ".build/bmp-file-validation/independent-regression-tga.py": "e514a53d228adc1015a984b3102a5a9b07536247bbd07176f40d7cb1dc280af5",
+        ".build/bmp-file-validation/independent-regression-common.py": "55641368da1f1f03c69b27f969893f0e50db65be0a997d7439fbdb2197d004a0",
+        ".build/bmp-file-validation/independent-regression-legacy.py": "77ddf7d2835af0cf3c5f3a116ce52686edfc2ffd8277068951dfe08c5b5590f9"
+      },
+      "negative_controls": 61,
+      "audited_artifacts": 5204,
+      "elapsed_seconds": 9.755,
+      "full_retained_output_replay": [
+        "BMP memory",
+        "formatted BMP export",
+        "TGA formatted files including every closure frame",
+        "PNM formatted files including every closure frame",
+        "QOI formatted primary and retained resource output",
+        "canonical complete records including optional fields"
+      ],
+      "qoi_closure_limit": "QOI retains only final-image and terminal output after internally asserted repeated loops; individual repeated closure checks have source/report/exit evidence, not independent per-cycle frame replay",
+      "report_source_exit_only": [
+        "Surface BMP",
+        "generic memory dispatch",
+        "generic file dispatch",
+        "FloatRGB raster export",
+        "image-format conversion",
+        "image colors/owners"
+      ],
+      "report_only_limit": "These unchanged gates passed fresh in-process complete comparisons and source/report/exit/fixture checks; inherited harnesses do not retain full native/candidate stdout for independent full replay"
+    }
+  },
+  "final_tree": {
+    "status": "final-ci-documentation-snapshot-checked",
+    "passed": true,
+    "report": ".build/bmp-file-final-validation/final-checks.json",
+    "sha256": "8984a8604e7072d008c63c084d9a241aff3783dbd2787271cd62b680388c7189",
+    "checker_sha256": "319b7f8478343f38ad0dbeae5df1d85f30076b91fbbd4cbf822e8356494600a5",
+    "python_tests": 798,
+    "python_skips": 0,
+    "proof_laws": 158,
+    "proof_verdict": "All terms check.",
+    "tested_repository_files": 465,
+    "compiled_library_probe_oracle_unchanged": true,
+    "ci": {
+      "gates_per_os": 83,
+      "preserved_prior_gates_per_os": 82,
+      "workers": 6,
+      "aggregates": 2,
+      "distinct_artifacts": 6,
+      "artifact_patterns_per_os": 168,
+      "actual_shell_truth_table_cases": 4900,
+      "structural_truth_table_assignments": 235298,
+      "workflow_validator": {
+        "path": "/workspace/scratch/61c86f431823/bmp-file-ci-audit/validate_bmp_file_ci.py",
+        "sha256": "df1973c256c1115993fe28337a913e6a15a8cb23f4c65cc861c4d07ab1c0bf41"
+      }
+    },
+    "historical_hosted_receipt": {
+      "path": ".build/bmp-file-final-validation/historical-hosted-82a81b12.json",
+      "sha256": "633a42b880cee69b8fdd3fc00a47a854566eeb55dace683b994c6f99d2e4f6b6"
+    },
+    "summary_update_policy": "This final-result evidence/prose update is checked separately against retained tested metadata, avoiding self-referential report hashes. Exact final-tree review is retained with the recovery archive."
+  },
+  "hosted_qualification": {
+    "status": "pending exact-tip publication and all 83 mandatory gates per OS"
+  },
+  "unrun": [
+    "GPU/Metal",
+    "Windows/macOS/browser",
+    "big-endian",
+    "exact-commit hosted CI",
+    "maximum-area allocation/resource limits",
+    "representative performance",
+    "concurrent/special files",
+    "OS close-error reporting",
+    "generic formatted/float dispatch",
+    "native malformed recovery",
+    "native pointer/allocation ABI and OOM parity",
+    "complete cross-platform integration and representative resource/performance qualification"
+  ]
+}
