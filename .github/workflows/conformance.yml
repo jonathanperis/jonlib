@@ -1355,6 +1355,11 @@ jobs:
           python3 tools/tga_format_probe.py --reference-env clean-loader
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify format-preserving TGA file loading and bounded closure
+        run: >-
+          python3 tools/tga_file_probe.py --reference-env clean-loader
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Upload scoped conformance evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -1381,6 +1386,11 @@ jobs:
             .build/qoi-file-probe/run-*/*.command.json
             .build/qoi-file-probe/run-*/*.resource.json
             .build/tga-format-probe/
+            .build/tga-file-probe/
+            !.build/tga-file-probe/run-*/fixtures/cap-plus-one.tga
+            !.build/tga-file-probe/run-*/fixtures/cap-plus-one.qoi
+            !.build/tga-file-probe/run-*/fixtures/larger-file.tga
+            !.build/tga-file-probe/run-*/fixtures/host-size-overflow.tga
 
   formattedMac:
     name: Formatted images CPU and JavaScript (macos-15)
@@ -1481,6 +1491,11 @@ jobs:
           python3 tools/tga_format_probe.py --reference-env clean-loader
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify format-preserving TGA file loading and bounded closure
+        run: >-
+          python3 tools/tga_file_probe.py --reference-env clean-loader
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Upload scoped conformance evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -1507,6 +1522,11 @@ jobs:
             .build/qoi-file-probe/run-*/*.command.json
             .build/qoi-file-probe/run-*/*.resource.json
             .build/tga-format-probe/
+            .build/tga-file-probe/
+            !.build/tga-file-probe/run-*/fixtures/cap-plus-one.tga
+            !.build/tga-file-probe/run-*/fixtures/cap-plus-one.qoi
+            !.build/tga-file-probe/run-*/fixtures/larger-file.tga
+            !.build/tga-file-probe/run-*/fixtures/host-size-overflow.tga
 
   # Keep both prior required-check names and directly require all four workers.
   # Explicit results avoid matrix reduction ambiguity during partial reruns.

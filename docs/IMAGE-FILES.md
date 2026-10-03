@@ -43,6 +43,11 @@ suffix. `Image.Formatted.load_qoi(path)` selects QOI the same way and preserves
 native RGB888/RGBA8888 storage instead of returning a normalized Surface; its
 [dedicated contract](#format-preserving-qoi-file-loading) is below. These
 operations share the checked IO boundary.
+`Image.Formatted.load_pnm(path)` and `Image.Formatted.load_tga(path)` likewise
+select their named codecs independently of suffixes, preserving the respective
+native output formats with the inclusive 1 MiB raster-file cap. Their dedicated
+[PNM](#format-preserving-pnm-file-loading) and
+[TGA](#format-preserving-tga-file-loading) contracts are below.
 The same byte-file boundary serves [owned animation loading](GIF-ANIMATION.md#file-loading),
 whose native GIF suffix selection additionally accepts mixed letter case.
 `Image.FloatRGB.load_hdr(path)` also shares that boundary, selecting the
@@ -247,6 +252,149 @@ limits; no equivalence to lost test source is inferred from test counts.
 ```sh
 python3 tools/pnm_file_probe.py --reference-env clean-loader --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
 python3 -m unittest discover -s tests -p test_pnm_file_harness.py -v
+```
+
+## Format-preserving TGA file loading
+
+`Image.Formatted.load_tga(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)`
+is an explicit TGA loader for ordinary, non-changing files. Filename suffixes
+are not inspected: `.tga`, `.TGA`, `.TgA`, arbitrary or misleading suffixes such
+as `.qoi`, suffixless names, spaces, multiple dots and directory-qualified
+dotfiles all select the same TGA decoder. No content-based codec dispatch,
+fallback or caller-supplied cap is added. Generic Surface suffix/content
+selection and all existing PNM, QOI and TGA memory APIs remain unchanged.
+
+The wrapper has the same two-function IO shape as `Image.Formatted.load_pnm`:
+`Image.file.bytes(path, Image.file.limit(RasterFile{}))` supplies a dedicated
+continuation with bytes or a load error, never an open File. The continuation
+preserves load errors or calls `Image.Formatted.decode_tga`, adapting its result
+through `Image.file.decoded`. The shared cap is **1,048,576 encoded bytes,
+inclusive**, regardless of filename. No shared reader or decoder contract is
+enlarged.
+
+Operation/error precedence is fixed:
+
+1. Open the path. Failures retain `ImageFileError{code, message}`; even missing
+   paths with unsupported or misleading suffixes reach this stage without
+   prior suffix rejection. An open failure acquires no handle to close.
+2. Obtain size. A successfully reported size above the raster cap through
+   **4,294,967,295** returns `ImageDecodeError{UnsupportedImageSize{}}` before any
+   payload read. Sizes above U32_MAX retain the pinned Base overflow
+   `ImageFileError{code, message}` instead. Size failures and size rejections
+   call `File.close` before returning. The exact cap is admitted for reading;
+   acceptance of the bytes still depends on the TGA decoder.
+3. Perform the existing single bounded read for the reported size. Call
+   `File.close` before processing its result. Read errors preserve Base's code
+   and message. Short or synthetic long returned lists relative to the reported
+   size return `ImageDecodeError{TruncatedImageData{}}` before decoding. There
+   is no retry or streaming loop. A physically truncated file whose actual
+   reported size is fully read reaches the decoder instead.
+4. Decode the complete bytes using `Image.Formatted.decode_tga`, wrapping the
+   exact decoder error once as `ImageDecodeError{error}`. Empty, incomplete or
+   unsupported headers return `InvalidImageHeader`; otherwise unsupported
+   dimensions return `UnsupportedImageSize`; missing required ID/palette/
+   sample/packet data returns `TruncatedImageData`; an RLE packet count that
+   exceeds the remaining image returns `InvalidImageStream`. Header validation
+   precedes size, then palette loading and pixel allocation. The memory
+   decoder checks every supplied value, including ignored tails, as a byte
+   before header validation. `InvalidImageByte` is retained by the adapter but
+   requires an internal-stage control, because ordinary files supply only
+   0..255 values.
+
+Success returns one affine `Image.Formatted` owner with width/height **1..4096**,
+one implicit mip level and native grayscale **1**, gray-alpha **2**, expanded
+RGB888 **4** or RGBA8888 **7** storage. Export contains exactly
+`width*height*channels` top-down row-major bytes, excluding backing-array padding.
+Grayscale words have zero high 24 bits, gray-alpha zero high 16 bits and RGB888 a
+zero high byte. Point reads preserve ownership for accepted and rejected
+coordinates; export and the Surface bridge consume the owner. Failure returns
+no partial image or open File. Conversion and disposal use the existing
+[formatted owner API](FORMATS.md).
+
+The complete [TGA parsing and output profile](TGA.md) is inherited unchanged.
+Direct raw/RLE types 2/3/10/11 use their checked 8/15/16/24/32-bit sample rules;
+indexed types 1/9 use 8/16-bit indices and output channels selected from palette
+depth, independently of index width. RGB555 expands through integer arithmetic
+into format 4. Gray-alpha and BGRA keep zero alpha. ID skipping, vertical
+orientation, ignored horizontal-origin/alpha-count bits, palette-start byte
+skipping, entry-zero fallback, cross-row RLE and valid ignored tails retain the
+memory decoder's behavior. Explicit TGA selection never redirects a non-TGA
+payload to another codec based on its signature.
+
+Close ordering describes calls, not OS-close success: pinned `Base.File.close`
+returns `IO(Unit)`, its C implementation discards the close result and its
+JavaScript implementation catches exceptions. No close-error variant is added.
+Synthetic size/read controls can exercise stages using real acquired handles,
+but are not observations of actual concurrent short reads. Low-descriptor
+repetition can detect leaks in exercised paths without proving universal
+closure.
+
+The encoded cap is not a maximum decoded-area, total-heap, allocation-success or
+performance guarantee; compressed RLE input can represent substantially more
+pixel storage. Concurrent/changing or special files, callbacks, native pointer/
+allocation ABI and OOM parity, additional platforms and full integration/
+resource/performance coverage remain gaps. This dedicated helper expands only
+the existing partial `LoadImage` mapping, adds no generic formatted dispatcher
+and completes no native API.
+
+### TGA file verification
+
+The [new source-scoped report](evidence/tga-formatted-files.json) records a passing
+local Linux x86-64 CPU-one-thread/CPU-two-thread/JavaScript gate: **225 accepted
+files / 61,913 pixels**, including all 169 unchanged memory streams and 56 tiny
+filename variants. The native oracle uses **197 actual `LoadImage` calls** and
+**28 `LoadFileData` plus `LoadImageFromMemory(".tga")` explicit-selection calls**.
+Its **450 primary records** retain **155,740 raw format-1/2/4/7 bytes** before
+**247,652 separately normalized bytes**. A separate valid exact-cap 1 MiB file
+has its own native raw/normalized observation; its complete ignored byte tail
+is validated. Qualified dotfiles and parent-directory dots obey pinned native
+whole-path last-dot rules; a literal whole-path `.tga` remains distinct.
+
+Each lane checks **1,283 primary observations / 854,352 bytes** in 41 complete
+ordered partitions. Every accepted public formatted load is independently
+reopened for raw export, point/high-bit ownership checks and the consuming
+Surface bridge. Explicit normalized byte loading and applicable generic Surface
+routes are separate observations, not an invented `Surface.load_tga` API.
+**154 candidate-only controls** preserve all 144 byte-safe memory controls and
+add other-codec, missing, directory, sparse-cap and U32-overflow cases. No
+malformed, oversized or special control enters the accepted native TGA oracle.
+
+The boundary gate emits **1,209 strict records**: eight synthetic checks, 100
+cycles over 12 real acquired-handle paths, then an independently checked final
+valid load. All four successful layouts are covered. Injected read/size errors
+and short/long results use actual opened handles and check exact code/message
+preservation; these are internal-stage controls, not observed concurrent reads.
+Four separate sparse controls and four exact-cap load/owner/bridge/normalized
+observations also pass per lane. Process-group cleanup prevents timed-out
+compiler/runtime descendants from surviving, without increasing work timeouts.
+
+Compilation is separate from runtime RSS measurement. Fixed acceptance ceilings
+are 256 MiB for sparse/closure and 1 GiB for exact-cap reads; these are post-run
+measurements, not live allocation bounds or performance guarantees:
+
+| Lane | Closure peak RSS bytes | Sparse peak RSS bytes | Exact-cap peak RSS bytes |
+|---|---:|---:|---:|
+| CPU-one-thread | 9,568,256 | 9,568,256 | 27,246,592 |
+| CPU-two-thread | 9,568,256 | 9,568,256 | 27,275,264 |
+| JavaScript | 106,627,072 | 46,215,168 | 268,668,928 |
+
+Independent complete-byte replay verifies every primary/resource/closure frame,
+all 1,643 seals, 187 successful owned/reaped command receipts, native compiler/
+alias/clean-loader provenance and all nine fd64/RSS receipts. Sixteen adversarial
+parser replays are rejected. Source-order evidence records the unchanged
+pre-read rejection and close-before-decode calls without claiming OS-close
+success or an IO theorem.
+
+All affected formatted and canonical regressions pass on the same unchanged
+library source. Historical memory and PNM evidence is preserved separately.
+Inherited Surface TGA and generic dispatch harnesses have fresh source/report/
+exit checks, but do not retain full stdout for independent full-record replay.
+The added mandatory file CI gate still needs a fresh exact-tip hosted run;
+there is no new GPU/Metal, Windows/browser, big-endian or maximum-area result.
+
+```sh
+python3 tools/tga_file_probe.py --reference-env clean-loader --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+python3 -m unittest discover -s tests -p test_tga_file_harness.py -v
 ```
 
 ## Verification

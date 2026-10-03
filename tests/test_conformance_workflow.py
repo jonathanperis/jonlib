@@ -54,8 +54,20 @@ ADDED_FORMATTED_GATES = ('''      - name: Verify native TGA formats and exact me
           python3 tools/tga_format_probe.py --reference-env clean-loader
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+''', '''      - name: Verify format-preserving TGA file loading and bounded closure
+        run: >-
+          python3 tools/tga_file_probe.py --reference-env clean-loader
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
 ''',)
-ADDED_FORMATTED_PATHS = ('.build/tga-format-probe/',)
+ADDED_FORMATTED_PATHS = (
+    '.build/tga-format-probe/',
+    '.build/tga-file-probe/',
+    '!.build/tga-file-probe/run-*/fixtures/cap-plus-one.tga',
+    '!.build/tga-file-probe/run-*/fixtures/cap-plus-one.qoi',
+    '!.build/tga-file-probe/run-*/fixtures/larger-file.tga',
+    '!.build/tga-file-probe/run-*/fixtures/host-size-overflow.tga',
+)
 PLATFORMS = (('Ubuntu', 'ubuntu-24.04'), ('Mac', 'macos-15'))
 WORKERS = ('coreUbuntu', 'coreMac', 'formattedUbuntu', 'formattedMac')
 RESULT_VARIABLES = ('CORE_UBUNTU_RESULT', 'CORE_MAC_RESULT',
@@ -144,7 +156,7 @@ def validate_workflow(text):
     require(len(core) == 72 and len(formatted) == 7, 'Original gate counts changed')
     reviewed_gates = gates + list(ADDED_FORMATTED_GATES)
     formatted = formatted + list(ADDED_FORMATTED_GATES)
-    require(len(reviewed_gates) == 80 and len(formatted) == 8, 'Reviewed added gate count changed')
+    require(len(reviewed_gates) == 81 and len(formatted) == 9, 'Reviewed added gate count changed')
     upload_header, old_paths = upload_parts(upload)
     require(len(old_paths) == len(set(old_paths)) == 156, 'Expected 156 distinct baseline paths')
     paths_by_shard = {
@@ -156,7 +168,7 @@ def validate_workflow(text):
             'Artifact partitions must be the disjoint baseline union')
     paths_by_shard['formatted'].extend(ADDED_FORMATTED_PATHS)
     reviewed_paths = old_paths + list(ADDED_FORMATTED_PATHS)
-    require(len(paths_by_shard['formatted']) == 17 and len(reviewed_paths) == 157,
+    require(len(paths_by_shard['formatted']) == 22 and len(reviewed_paths) == 162,
             'Reviewed added artifact count changed')
     for suffix, platform in PLATFORMS:
         actual_gates = []
@@ -248,9 +260,9 @@ class ConformanceWorkflowTests(unittest.TestCase):
             job_id = 'formatted' + suffix
             job = jobs[job_id]
             _, steps = job_parts(job)
-            self.assertEqual(len(steps[7:-1]), 8)
-            self.assertEqual(steps[-2], gate)
-            self.assertEqual(upload_parts(steps[-1])[1][-1], ADDED_FORMATTED_PATHS[0])
+            self.assertEqual(len(steps[7:-1]), 9)
+            self.assertEqual(steps[-3], gate)
+            self.assertEqual(upload_parts(steps[-1])[1][-len(ADDED_FORMATTED_PATHS)], ADDED_FORMATTED_PATHS[0])
             mutations = {
                 'missing TGA gate': job.replace(gate, '', 1),
                 'duplicate TGA gate': job.replace(gate, gate * 2, 1),
@@ -258,7 +270,7 @@ class ConformanceWorkflowTests(unittest.TestCase):
                 'missing TGA loader flag': job.replace('tools/tga_format_probe.py --reference-env clean-loader', 'tools/tga_format_probe.py', 1),
                 'altered TGA loader flag': job.replace('tools/tga_format_probe.py --reference-env clean-loader', 'tools/tga_format_probe.py --reference-env inherited', 1),
                 'optional TGA gate': job.replace(gate, gate.replace('        run:', '        continue-on-error: true\n        run:'), 1),
-                'reordered TGA gate': job.replace(steps[-3] + gate, gate + steps[-3], 1),
+                'reordered TGA gate': job.replace(steps[-4] + gate, gate + steps[-4], 1),
                 'missing TGA artifact': job.replace(path, '', 1),
                 'altered TGA artifact': job.replace(path, '            .build/tga-format-probe/results.json\n', 1),
                 'broader TGA artifact': job.replace(path, '            .build/\n', 1),
@@ -268,6 +280,71 @@ class ConformanceWorkflowTests(unittest.TestCase):
                     self.assertNotEqual(job, mutated_job)
                     with self.assertRaises(ValueError):
                         validate_workflow(structural_text(self.text).replace(job, mutated_job, 1))
+
+    def test_reviewed_tga_file_addition_is_mandatory_exact_and_scoped_on_both_platforms(self):
+        _, jobs = workflow_parts(self.text)
+        memory_gate, gate = ADDED_FORMATTED_GATES
+        artifact = ADDED_FORMATTED_PATHS[1]
+        path = '            ' + artifact + '\n'
+        for suffix, _ in PLATFORMS:
+            job_id = 'formatted' + suffix
+            job = jobs[job_id]
+            _, steps = job_parts(job)
+            self.assertEqual(len(steps[7:-1]), 9)
+            self.assertEqual(steps[-3:-1], [memory_gate, gate])
+            self.assertEqual(upload_parts(steps[-1])[1][-5:], list(ADDED_FORMATTED_PATHS[1:]))
+            mutations = {
+                'missing TGA-file gate': job.replace(gate, '', 1),
+                'duplicate TGA-file gate': job.replace(gate, gate * 2, 1),
+                'altered TGA-file command': job.replace('tools/tga_file_probe.py', 'tools/tga_format_probe.py', 1),
+                'missing TGA-file loader flag': job.replace('tools/tga_file_probe.py --reference-env clean-loader', 'tools/tga_file_probe.py', 1),
+                'altered TGA-file loader flag': job.replace('tools/tga_file_probe.py --reference-env clean-loader', 'tools/tga_file_probe.py --reference-env inherited', 1),
+                'optional TGA-file gate': job.replace(gate, gate.replace('        run:', '        continue-on-error: true\n        run:'), 1),
+                'skipped TGA-file gate': job.replace(gate, gate.replace('        run:', '        if: false\n        run:'), 1),
+                'bypassed TGA-file failure': job.replace(gate, gate.rstrip('\n') + ' || true\n', 1),
+                'changed TGA-file Bend source': job.replace(gate, gate.replace('/.build/dependencies/bend', '/.build/dependencies/other-bend'), 1),
+                'changed TGA-file raylib source': job.replace(gate, gate.replace('/.build/dependencies/raylib', '/.build/dependencies/other-raylib'), 1),
+                'reordered TGA-file gate': job.replace(memory_gate + gate, gate + memory_gate, 1),
+                'missing TGA-file artifact': job.replace(path, '', 1),
+                'duplicate TGA-file artifact': job.replace(path, path * 2, 1),
+                'altered TGA-file artifact': job.replace(path, '            .build/tga-file-probe/results.json\n', 1),
+                'broader TGA-file artifact': job.replace(path, '            .build/\n', 1),
+            }
+            for label, mutated_job in mutations.items():
+                with self.subTest(job=job_id, mutation=label):
+                    self.assertNotEqual(job, mutated_job)
+                    with self.assertRaises(ValueError):
+                        validate_workflow(structural_text(self.text).replace(job, mutated_job, 1))
+
+    def test_tga_file_upload_excludes_only_sparse_fixture_bodies_on_both_platforms(self):
+        _, jobs = workflow_parts(self.text)
+        excluded_paths = ADDED_FORMATTED_PATHS[2:]
+        self.assertEqual(len(excluded_paths), 4)
+        for suffix, _ in PLATFORMS:
+            job_id = 'formatted' + suffix
+            job = jobs[job_id]
+            _, steps = job_parts(job)
+            paths = upload_parts(steps[-1])[1]
+            self.assertIn('.build/tga-file-probe/', paths)
+            self.assertEqual([path for path in paths if path.startswith('!')],
+                             list(excluded_paths))
+            for excluded in excluded_paths:
+                path = '            ' + excluded + '\n'
+                mutations = {
+                    'missing sparse exclusion': job.replace(path, '', 1),
+                    'duplicate sparse exclusion': job.replace(path, path * 2, 1),
+                    'included sparse body': job.replace(path, path.replace('!.build/', '.build/'), 1),
+                    'excluded ordinary exact cap': job.replace(path, '            !.build/tga-file-probe/run-*/fixtures/exact-cap.tga\n', 1),
+                    'excluded all fixtures': job.replace(path, '            !.build/tga-file-probe/run-*/fixtures/\n', 1),
+                    'excluded fixture recipes': job.replace(path, '            !.build/tga-file-probe/run-*/inputs.json\n', 1),
+                    'excluded command receipts': job.replace(path, '            !.build/tga-file-probe/run-*/*.command.json\n', 1),
+                    'excluded resource receipts': job.replace(path, '            !.build/tga-file-probe/run-*/*.resource.json\n', 1),
+                }
+                for label, mutated_job in mutations.items():
+                    with self.subTest(job=job_id, exclusion=excluded, mutation=label):
+                        self.assertNotEqual(job, mutated_job)
+                        with self.assertRaises(ValueError):
+                            validate_workflow(structural_text(self.text).replace(job, mutated_job, 1))
 
     def test_both_actual_aggregate_shells_fail_closed_for_all_four_results(self):
         _, jobs = workflow_parts(self.text)
