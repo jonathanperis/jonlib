@@ -5011,8 +5011,138 @@ the final hosted run. All 4,802 original and 98 additional shell truth-table cas
 pass; the exact six-way conjunction is checked over 235,298 assignments. Raw-byte
 workflow loading also rejects line-ending-only drift. Final evidence/prose
 summaries are reviewed separately against retained tested metadata, avoiding
-self-referential receipt hashes. Exact-tip hosted qualification remains pending.
+self-referential receipt hashes. The historical exact published commit
+`82a81b12e61ede4ec2d9901baddd4bf773651a5d` now passes
+[Checks](https://github.com/jonathanperis/jonlib/actions/runs/37152040438) and the
+[82-gate Conformance run](https://github.com/jonathanperis/jonlib/actions/runs/37152040429),
+verified on 2026-10-03 at 22:05 UTC. All six workers and both compatibility
+aggregates succeed, with six unique nonempty evidence artifacts. Whole-job
+durations are Ubuntu core/formatted/BMP 80m50s/85m03s/27m19s and macOS
+core/formatted/BMP 69m37s/77m23s/38m05s. This is a historical BMP-memory checkpoint;
+the new BMP-file increment's exact-tip 83-gate hosted qualification remains pending.
 GPU/Metal, Windows/browser, big-endian, maximum decoded area/heap, native pointer/
 allocation/OOM semantics and representative performance remain unqualified.
 The memory API has no encoded-input cap; the finite oracle budgets do not
 introduce the separate file layer's 1 MiB cap.
+
+## Format-preserving BMP file loading (2026-10-03)
+
+`Image.Formatted.load_bmp` adds only a dedicated continuation and public IO
+wrapper around the existing `Image.file.bytes(path,
+Image.file.limit(RasterFile{}))` boundary and unchanged formatted BMP decoder.
+Explicit selection ignores filename suffixes and preserves format 4/7, the
+1..4096 dimensions, one implicit mip, exact row-major bytes and existing typed
+errors. The inclusive 1 MiB encoded cap, Base U32-size overflow, single
+exact-length read and close-before-decode calls are unchanged. Pinned Base
+ignores close failures. Only partial `raylib:function:LoadImage` expands; no
+memory API scope or completed API count changes.
+
+```sh
+python3 tools/bmp_file_probe.py --reference-env clean-loader \
+  --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+```
+
+The [focused file report](evidence/bmp-formatted-files.json) passes on local
+Linux x86-64 CPU-one-thread, CPU-two-thread and JavaScript with the pinned Bend
+overlay and Bun 1.3.12. The corpus contains **294 accepted files / 39,259 pixels**,
+including all **224 unchanged memory streams** and 70 one-pixel filename variants.
+Its native routes are **272 actual `LoadImage` calls** and **22 explicit
+`LoadFileData` plus `LoadImageFromMemory(".bmp")` calls**. The **588 native
+records** retain **132,612 raw bytes** before **157,036 normalized bytes**.
+Candidate metadata uses the implicit single-mip owner contract. Every lane checks
+**608 candidate-only controls** (229 file, 379 synthetic/internal) and **2,184
+complete observations / 602,588 bytes** in 69 ordered partitions, with unchanged
+32-action / 196,608-byte source limits. Broad expected bytes come from native
+captures, not the Python admission checker.
+
+The fresh isolated native build checks actual cache/compiled settings for all
+eight raster alias macros, pinned source/compiler/archive identities,
+clean-loader receipts and little-endian format storage. It qualifies 12 tiny
+effective-alpha/native-channel vectors and native whole-path last-dot semantics
+before the accepted oracle. Both raw and normalized outputs, independently
+reopened owner/point/high-bit/bridge observations and applicable generic Surface
+regressions remain separately framed. All malformed/special/oversized controls
+remain outside the native accepted oracle.
+
+The boundary run uses fd64 for **100 cycles over ten acquired-handle paths**,
+plus eight synthetic checks and a final valid load: **1,009 fully retained
+records / 703 compared bytes per lane**. Four sparse records and four exact-cap
+raw/owner/bridge/normalized-Surface records (**14 bytes**) per lane are also fully
+retained and replayed. The accepted exact-cap BMP has a separately captured
+native reference and a validated full tail. Synthetic size/read stages use real
+handles but do not claim actual concurrent-read behavior. Source-order evidence
+and runtime controls show close-before-decode calls; they are not an IO theorem
+or a guarantee of OS-close success.
+
+Independent full-record replay verifies all three lanes and every resource
+frame, **2,210 seals**, **299 exact inner command receipts**, native provenance
+and all nine fd64/RSS receipts. A separate outer replay verifies the complete
+progress/terminal output, exit zero, owned process group and reaped leader.
+The independent parser rejects 19 adversarial protocol mutations. Replay is
+read-only artifact validation, not another runtime run; sparse holes are neither
+read nor hashed. The focused run took **1,658.848 seconds**. Runtime RSS and
+per-resource elapsed times are in [IMAGE-FILES.md](IMAGE-FILES.md#bmp-file-verification):
+boundary/sparse measurements pass a 256 MiB ceiling and exact-cap measurements
+pass a 1 GiB ceiling. These post-run criteria exclude compilation and establish
+no live heap limit, maximum-area allocation or application performance parity.
+
+The same-source frozen regression matrix completes **21 serial stages** plus
+the focused gate. The affected runs include formatted BMP memory, formatted BMP
+export, Surface BMP, generic memory/file dispatch, formatted TGA/PNM/QOI files,
+FloatRGB raster export, image formats, image colors/owners and canonical
+conformance. Fresh complete BMP-memory replay preserves 224 images, 597 controls
+and 873,268 bytes per lane; the formatted BMP exporter preserves all 78 images /
+331,465 decoded pixels. Canonical replay checks every one of the 261 scenarios /
+40,101 words, all 333 QOI bytes and 23 palette words per lane, including optional
+fields. The independent regression audit verifies **5,204 artifacts**, rejects
+**61 main adversarial controls** and separately rejects **16 TGA parser controls**.
+It checks exact commands, retained outputs and the frozen source identities;
+the audit itself runs no compiler, native reference or candidate.
+
+The TGA and PNM file regressions retain and independently replay every primary,
+resource and repeated-closure frame. QOI file replay covers complete retained
+primary/resource frames, including its final closure image and terminal, but
+individual repeated closure-loop iterations have source/report/exit evidence
+only. No independent per-cycle QOI frame replay is claimed. The unchanged
+Surface BMP, generic memory/file dispatch, FloatRGB raster export, image-format
+and color/owner gates pass fresh in-process complete comparisons and source/
+report/exit/fixture checks; their inherited harnesses do not retain full native/
+candidate stdout for independent full-output replay.
+
+Older receipt limitations remain explicit. Formatted BMP exporter inner receipts
+lack individual timing/cleanup fields; reviewed outer serial receipts supply
+stage timing and owned-group cleanup. Its ordinary repeated-output file is later
+overwritten by failure-control setup, so the audit retains the ordinary raw
+markers/report and separately checks the protected-directory sentinel and final
+post-open truncation. PNM receipts do not separately record process-group ID,
+leader reap or cleanup timing, despite complete retained frame replay. QOI inner
+receipts also lack per-command loader/process-group lifecycle and a separate
+archive-compiler seal; the sealed harness/outer receipt and cross-checked compiler
+identity supply that narrower provenance. Canonical ancillary proof/contract/IO
+checks remain integrated-report/outer-exit evidence; retained PPM/QOI files and
+the main canonical records are independently compared.
+
+The frozen suite passes **794 Python tests without skips**. The separately sealed
+additive CI/documentation snapshot passes **798 Python tests without skips**,
+all **158 scoped laws** with the complete pinned `All terms check.` verdict,
+plus syntax, project/API and whitespace checks. All 465 repository files, the
+checker and independent workflow validator are bound during final testing;
+compiled library, probe and oracle identities remain unchanged.
+
+Independent workflow preservation restores the complete 82-gate predecessor
+byte-for-byte, transitively retains the 81-gate anchor, and preserves all six
+workers and both direct-six-success aggregates. The two new BMP-file commands
+run immediately after BMP memory; each OS has **83 gates and 168 artifact
+patterns**, with only the four exact sparse bodies excluded from the new file
+artifact directory. All **4,900 existing actual shell truth-table cases** and
+**235,298 structural assignments** remain unchanged and pass. Final evidence/
+prose summaries are checked separately against retained tested metadata,
+avoiding self-referential receipt hashes. These structural laws do not establish
+universal decoder/IO correctness.
+
+Exact-tip hosted **83-gate** qualification remains pending. Historical hosted
+checkpoints do not qualify this source increment. GPU/Metal IO,
+macOS/Windows/browser, big-endian, maximum decoded area/heap, native pointer/
+allocation/OOM behavior, concurrent/special files, OS-close-error reporting,
+generic formatted/float dispatch and full integration/performance remain open.
+The unchanged BMP memory API still has no encoded-input cap.

@@ -4,8 +4,8 @@ The runtime split reviewed on 2026-10-02 preserves the workflow at checkpoint
 `36f5d0b5a811297b349c45aa6ddc3a9a067ac8d3`. It changes scheduling and artifact
 package names only; no library, probe, numeric fixture, tolerance, compiler,
 qualification, loader policy or resource ceiling changes are involved in that split.
-The later reviewed TGA-memory, TGA-file and BMP-memory additions are described
-separately below.
+The later reviewed TGA-memory, TGA-file, BMP-memory and BMP-file additions are
+described separately below.
 
 ## Worker ownership
 
@@ -19,14 +19,18 @@ Each of Ubuntu 24.04 and macOS 15 runs three independent workers:
   TGA-memory gate follows those seven original gates on both platforms, then a
   mandatory format-preserving TGA-file gate follows the memory gate.
 - **BMP memory CPU and JavaScript:** the mandatory native-format BMP memory
-  qualification gate alone, with its own fresh native build and complete
-  CPU-one-thread, CPU-two-thread and JavaScript comparisons.
+  qualification gate immediately followed by format-preserving BMP file loading.
+  Each gate has its own fresh native build and complete CPU-one-thread,
+  CPU-two-thread and JavaScript comparisons. The existing worker names stay exact.
 
 All 79 original gate step payloads still occur once per OS, byte-exact. The new
 TGA-memory and TGA-file gates brought each OS to 81 gates: 72 core and nine
 formatted. The new BMP-memory worker brings each OS to 82 gates: 72 core, nine
-formatted and one BMP. The four existing worker job IDs, names, complete setup/
-gate payloads and upload blocks are byte-identical to the 81-gate checkpoint.
+formatted and one BMP. The BMP-file addition brings each OS to 83 gates: 72 core,
+nine formatted and two BMP. The four core/formatted worker jobs remain
+byte-identical to the 81-gate checkpoint. All six worker IDs, names, settings,
+setup and existing gate payloads, plus both all-six compatibility aggregates,
+remain byte-identical to the 82-gate checkpoint.
 Original Linux-only conditions, profile guards, legacy historical assertions
 and clean-loader flags remain exact. Each worker independently repeats all seven original setup steps:
 pinned repository/Python/Bun actions, dependency pin extraction, fresh exact Bend
@@ -69,10 +73,16 @@ the TGA-file directory: `run-*/fixtures/cap-plus-one.tga`,
 This retains 22 formatted upload patterns, including those four exclusions.
 The new BMP artifacts include the entire `.build/bmp-format-probe/` directory,
 with all source, input, native-build, command, output and resource receipts.
-There are now 163 total upload patterns per OS: 140 core, 22 formatted and one
-BMP. No old pattern moves or changes. The ordinary 1 MiB `exact-cap.tga`,
-fixture recipes in `inputs.json`, command receipts and resource receipts remain
-included. The memory-only probes create no sparse fixture files.
+The BMP-file addition appends `.build/bmp-file-probe/` and four exact sparse-body
+exclusions: `run-*/fixtures/cap-plus-one.bmp`, `run-*/fixtures/cap-plus-one.qoi`,
+`run-*/fixtures/larger-file.bmp` and `run-*/fixtures/host-size-overflow.bmp`, all
+under `.build/bmp-file-probe/`. Those names are checked against the actual file
+harness controls. There are now 168 total upload patterns per OS: 140 core,
+22 formatted and six BMP, up from 163 at the memory-only checkpoint. No old
+pattern moves or changes. The ordinary 1 MiB `exact-cap.tga` and `exact-cap.bmp`,
+fixture recipes in `inputs.json`, source/native-build evidence, command/output
+receipts and resource receipts remain included. The memory-only probes create
+no sparse fixture files.
 The pinned upload action, `always()`, 14-day retention, hidden-file inclusion
 and missing-file warning settings are unchanged. PNM-file artifacts still
 contain only results, command and resource JSON; QOI-file uploads keep their
@@ -103,7 +113,7 @@ estimates above predate both TGA additions and exclude their full native
 builds, qualification and CPU-1/CPU-2/JavaScript comparisons, including the
 TGA-memory probe's 43 source-bounded partitions. Observed 80-gate memory-checkpoint
 runtimes are recorded below, followed by the verified 81-gate result. Those
-historical measurements do not qualify the new 82-gate tip; the 120-minute
+historical measurements do not qualify the new 83-gate tip; the 120-minute
 worker budgets are unchanged.
 
 The later unsplit PNM-memory checkpoint `d3b93896` completed hosted Conformance
@@ -166,18 +176,43 @@ measurement nor a macOS measurement. Adding that local duration to the observed
 sum, not an observed combined runtime or a cross-machine equivalence. Adding
 that gate to the existing formatted workers would consume substantial remaining budget and leave
 uncertain margin for platform variability, setup and upload. Instead, BMP runs
-alone in one additional worker per platform, with the same seven pinned setup
-steps, environment, permissions and 120-minute limit. No timeout, probe command,
+alone at the 82-gate checkpoint in one additional worker per platform, with the
+same seven pinned setup steps, environment, permissions and 120-minute limit. No timeout, probe command,
 resource ceiling, numeric tolerance or existing gate is weakened.
 
 Both new workers run
 `python3 tools/bmp_format_probe.py --reference-env clean-loader`
 with the original pinned Bend and raylib checkout arguments.
-All six workers must succeed directly in both compatibility aggregates. There
-is no new 82-gate hosted pass or runtime measurement yet. Final qualification
-requires a fresh exact-commit Checks result, all six workers, both aggregates
-and six distinct nonempty evidence artifacts. Local focused receipts and
-structural CI tests cannot substitute for those results.
+All six workers must succeed directly in both compatibility aggregates. The
+[historical 82-gate hosted run](https://github.com/jonathanperis/jonlib/actions/runs/37152040429)
+for exact commit `82a81b12e61ede4ec2d9901baddd4bf773651a5d` was verified successful
+on 2026-10-03: Checks, all six workers, both aggregates and six distinct nonempty
+artifacts passed. Observed Ubuntu core/formatted/BMP durations were **80m50s /
+85m03s / 27m19s**; macOS durations were **69m37s / 77m23s / 38m05s**. That result
+qualifies the memory checkpoint and does not qualify the subsequent file gate.
+
+## BMP-file addition and evidence boundary
+
+The additive BMP-file wiring starts from published 82-gate commit
+`82a81b12e61ede4ec2d9901baddd4bf773651a5d`. Both existing BMP workers run
+`python3 tools/bmp_file_probe.py --reference-env clean-loader` immediately after
+their unchanged BMP-memory gate, using the same pinned Bend and raylib source
+arguments. The existing `BMP memory CPU and JavaScript (<os>)` visible names
+and both all-six fail-closed aggregates are unchanged. Only the two file-gate
+blocks and five additional upload patterns per platform change in the workflow.
+The file gate performs its own qualification and CPU-1/CPU-2/JavaScript matrix;
+the preceding memory gate cannot substitute for any of these operations.
+
+Hosted qualification and worker durations for the new **83-gate** tip remain
+pending. The predecessor's verified 82-gate success above cannot qualify this
+file increment. The fresh local Linux frozen matrix measured the unchanged
+BMP-memory gate at **29m06s** and the new BMP-file gate at **27m39s**. Their
+**56m45s** sum is illustrative local evidence, not a hosted runtime prediction
+or a cross-machine equivalence. The existing 120-minute budgets stay unchanged.
+Qualification of the integrated BMP-file source requires its frozen local
+matrix, independent complete-record replay, proof and project/API checks,
+followed separately by fresh exact-commit hosted Checks, all six workers, both
+aggregates and all six distinct nonempty artifacts.
 
 ## Executable preservation contract
 
@@ -225,11 +260,27 @@ reject changed or missing setup, platforms, commands, loader/source arguments,
 budgets, environment, permissions, optional/skipped/dependent workers,
 bypassed failures, artifact collisions and incomplete or broadened uploads.
 Every one of the six dependency/result/test links is mutation-checked in both
-aggregates. Independently of the structural parser, removing only the two new
-BMP jobs and the explicitly reviewed aggregate additions must restore the
-complete 81-gate predecessor workflow bytes, SHA-256
+aggregates. BMP-file mutations separately reject missing, altered, duplicate,
+reordered, optional or skipped gates, bypassed failures, changed loader/source
+arguments, broadened uploads and missing/altered/duplicate sparse exclusions.
+Positive artifact checks retain ordinary `exact-cap.bmp`, fixture recipes,
+source/native-build files, command/output and resource receipts; mutations reject
+exclusions that remove them.
+
+Independently of the structural parser, removing only the two new BMP-file gates
+and five added upload patterns per OS must restore the complete 82-gate workflow
+bytes, SHA-256
+`809c8d6c02b715b44cfa013a1c2644ac5d15cf0a8b1d8dc5d2f5745ce5c5e4f1`.
+From those restored bytes, removing only the BMP worker jobs and the explicitly
+reviewed aggregate additions must still restore the complete 81-gate workflow,
+SHA-256
 `34fa72b91f6e4ab3e7e555c51e621364bf1b68e1dba4945db2442ad8e463ce7e`.
-The original baseline fixture remains unchanged.
+Both raw-byte anchors remain active; `read_bytes().decode('utf-8')` preserves
+line endings so a CRLF rewrite cannot evade the checks. The original baseline
+fixture, all 4,802 + 98 actual shell cases and all 235,298 six-way structural
+assignments remain unchanged. An independent before/after byte and parsed-YAML
+comparison additionally checks that only the two file-gate blocks and ten upload
+lines were added.
 
 Future intentional CI additions require explicit review and a corresponding
 update to this preservation contract; do not silently relax comparisons or

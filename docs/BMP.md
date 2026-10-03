@@ -1,9 +1,10 @@
-# BMP memory decoding and checked image export
+# BMP memory/file decoding and checked image export
 
 | API | Contract |
 |---|---|
 | `Surface.decode_bmp(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Surface>` with normalized RGBA8 pixels. |
 | `Image.Formatted.decode_bmp(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Image.Formatted>` preserving native RGB888 (4) or RGBA8888 (7), implicit one mip and exact row-major bytes. |
+| `Image.Formatted.load_bmp(path: String)` | Returns `IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` through the inclusive 1 MiB raster-file boundary, selecting BMP independently of the suffix and preserving the checked native format 4/7 memory result. |
 | `Surface.to_bmp(surface) -> +List<U32>` | Consumes RGBA8 ownership and emits exact native V4/32-bit BMP bytes. |
 | `Surface.write_bmp(surface, path)` | Consumes ownership and returns `IO(Result<&1, &1, U32 & String, Unit>)` through the established Base byte-write/close path. |
 
@@ -107,7 +108,8 @@ all logical native-order bytes; `get` retains the exact owner for valid and
 invalid coordinates. The existing `from_bytes` round trip and consuming
 `to_surface` bridge apply. `Surface.decode_bmp`, generic normalized memory/file
 dispatch, exporters and the existing formatted TGA/PNM/QOI loaders retain their
-contracts. No generic formatted dispatcher or BMP file factory is added.
+contracts. The separate [BMP file factory](#format-preserving-bmp-file-loading)
+reuses this decoder unchanged; no generic formatted dispatcher is added.
 
 Qualification is recorded in the [focused evidence](evidence/bmp-formatted-memory.json),
 separately from historical Surface evidence below.
@@ -136,8 +138,66 @@ complete. GPU/Metal, Windows/browser, big-endian, maximum decoded area/heap,
 native pointer/allocation/OOM behavior and full performance remain open. The
 separately sealed final tree passes 715 Python tests without skips, all 158 laws,
 project/API and independent workflow-preservation checks. It adds two dedicated
-BMP workers while preserving all 81 earlier gates and requiring all six workers;
-exact-tip hosted qualification remains pending.
+BMP workers while preserving all 81 earlier gates and requiring all six workers.
+The historical [82-gate hosted run](https://github.com/jonathanperis/jonlib/actions/runs/37152040429)
+for exact published commit `82a81b12e61ede4ec2d9901baddd4bf773651a5d` passes
+[Checks](https://github.com/jonathanperis/jonlib/actions/runs/37152040438), all six
+workers, both compatibility aggregates and all six distinct nonempty evidence
+artifacts. This qualifies that BMP-memory checkpoint; the subsequent BMP-file
+increment requires its own exact-tip hosted result.
+
+## Format-preserving BMP file loading
+
+`Image.Formatted.load_bmp(path: String)` returns
+`IO(Result<&1, &1, Image.LoadError, Image.Formatted>)`. It explicitly selects BMP
+for ordinary, non-changing files, independently of the path suffix. Lowercase,
+uppercase, mixed-case, suffixless and misleading names all use the same checked
+BMP decoder; there is no content-based fallback to another codec.
+
+The two-function wrapper passes
+`Image.file.bytes(path, Image.file.limit(RasterFile{}))` to a dedicated
+continuation. It preserves file/load errors and adapts the unchanged
+`Image.Formatted.decode_bmp` result through `Image.file.decoded`. The shared
+**1,048,576-byte inclusive** cap governs encoded input only. Open/size/read
+errors retain Base's code and message. Successfully reported sizes above the cap
+through U32_MAX are rejected before reading; larger sizes retain Base's overflow
+file error. One bounded read must return exactly the reported length. Close
+calls precede processing read results and decoding, including size/read failures
+and size rejection. Base ignores close errors, so this is call ordering rather
+than a guarantee of successful OS closure. The full ordered error contract is
+in [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-bmp-file-loading).
+
+Success preserves native RGB888 **4** or RGBA8888 **7**, width and height
+**1..4096**, one implicit mip and every top-down row-major output byte. Effective
+alpha-mask metadata, integer channel expansion and alpha repair remain unchanged.
+Byte validation precedes base-field checks, then dimensions, extended headers/
+effective masks, palette/raster completeness and indices. Unsupported dimensions
+therefore take precedence over incomplete or invalid effective masks.
+CORE palette bias/remainders, INFO/56-byte external masks, V4/V5 defaults,
+noncontiguous mask replication, doubled true-color gaps, padding and ignored
+valid tails are unchanged. The native 24-bit/`0xff000000` alpha special case
+remains unreachable; no new accepted BMP domain is inferred from it.
+
+The [new file evidence](evidence/bmp-formatted-files.json) records a passing local
+Linux x86-64 CPU-one-thread/CPU-two-thread/JavaScript gate: **294 accepted files /
+39,259 pixels**, preserving all **224 prior memory streams byte-for-byte** and
+adding 70 tiny filename variants. The native oracle uses **272 actual
+`LoadImage` calls** and **22 `LoadFileData` plus `LoadImageFromMemory(".bmp")`
+explicit-selection calls**. Its raw observations precede separate normalization;
+each candidate lane passes **608 candidate-only controls**, **2,184 complete
+observations / 602,588 bytes** and independently replayed boundary, sparse and
+exact-cap records. Full counts, measured resources and replay limits are in
+[IMAGE-FILES.md](IMAGE-FILES.md#bmp-file-verification) and the
+[verification record](VERIFICATION.md#format-preserving-bmp-file-loading-2026-10-03).
+
+This file increment expands only partial `raylib:function:LoadImage`.
+`LoadImageFromMemory`, the memory decoder's accepted domain and completed API
+counts do not change. Historical BMP memory evidence remains separate. Exact-tip
+hosted qualification for this file increment remains pending. GPU/Metal file IO,
+macOS/Windows/browser, big-endian, concurrent/special files, native allocation/
+pointer/OOM behavior, maximum decoded-area/heap and full integration/performance
+remain open; the encoded cap guarantees none of these.
+
 
 ## Export
 
