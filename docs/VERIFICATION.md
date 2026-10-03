@@ -4648,3 +4648,97 @@ integration/resource/performance qualification remain open. No API is complete.
 
 Focused results, provenance, proof/test summaries, prior failure and final
 regression receipts are in [the durable evidence](evidence/pnm-formatted.json).
+
+
+## Reconstructed format-preserving PNM file loading (2026-10-03)
+
+This is **new reconstruction evidence**, not recovery of the original
+`36f5d0b5a811297b349c45aa6ddc3a9a067ac8d3` runtime report. Exact recovered law,
+proof, README and ledger-scope text is kept separate from the newly reconstructed
+11-line `Image.Formatted.load_pnm` wrapper and file harness. The adapter uses the
+unchanged shared byte-file boundary with `RasterFile`'s inclusive 1,048,576-byte
+cap, closes before read-result processing/decode, and preserves the existing
+native-format PNM decoder's ownership and checked error behavior.
+
+The final-source [focused report](evidence/pnm-formatted-files.json) passes on
+local Linux x86-64 CPU-one-thread, CPU-two-thread and JavaScript. It checks
+**156 accepted files / 64,542 pixels**, **132 actual LoadImage paths plus 24
+explicit PNM native paths**, and **74 candidate-only controls**. Each lane
+passes **626 observations / 129,072 bytes** in 20 strictly framed batches.
+Native format-1/4 bytes total **120,634** before independently observed RGBA8
+normalization. The exact-cap valid file is a separate native/candidate reference.
+
+Each lane also passes **1,009 individually framed closure records**: eight
+synthetic stage checks, 100 fd64 cycles over ten acquired-handle paths and one
+final valid load. Separate measured sparse controls cover cap+1, misleading
+`.qoi`, 256 MiB and U32-size overflow. Exact-cap acceptance is measured separately
+with the unchanged 1 GiB ceiling; closure/all-sparse measurements use the unchanged
+256 MiB ceiling. Measured values appear in the
+[file contract](IMAGE-FILES.md#pnm-file-reconstruction-verification).
+The focused run takes 642.935 seconds.
+
+The new gate verifies a fresh isolated GNU 14.2.0 native archive with actual
+PNM-enabled CMake/compile definitions; Clang 19.1.7 reference/candidate tooling,
+pinned Bun 1.3.12, the declared Bend overlay, endian/raw-format qualification and
+clean-loader child receipts remain explicit. There are 496 dependency hashes
+and 1,179 sealed artifacts in the focused report. The local all-command recorder
+owns process groups so compiler/candidate descendants are killed and reaped on
+timeout/interruption; only the actual resource launcher claims fd64. Real
+negative tests cover SIGTERM-ignoring candidate and compiler grandchildren,
+stale or absent compiler output, failed startup and forged resource receipts.
+
+The first new attempt failed candidate compilation on an affine harness-helper
+annotation, before any candidate acceptance. A later attempt was invalidated by
+source sealing while the resource-lifecycle fix was being introduced. Another
+was explicitly interrupted before the bounded argument/setup/whole-process-tree
+audit. Those failed/interrupted receipts remain diagnostic, never a passing
+result for the changed harness. The final frozen-source run above completed
+from a new isolated build directory after all confirmed fixes.
+
+The [coverage matrix](PNM-FILE-RECONSTRUCTION.md) maps the recovered contract's
+behavioral, ownership, IO, framing, source, native-profile, resource and failure
+obligations to executable new/preserved checks. The lost 49-method file suite is
+not available for assertion-identity comparison; the new suite is organized into
+37 methods with numerous mutation subcases. Counts alone are not an equivalence
+claim. The 495 published baseline Python tests and their predicates are unchanged.
+
+The fresh full Python suite passes **532 tests** (495 preserved baseline plus
+37 new file methods), without skips. `python3 tools/check_project.py` passes and
+API regeneration exactly reproduces the recovered original ledger, API-map and
+raylib documentation blobs. The complete independent proof check returns
+`All terms check.` for **133 laws**, including the restored raster-cap law.
+Canonical conformance separately requires that same full proof verdict.
+
+`LoadImage` remains partial; no API completion count increases. GPU/Metal IO,
+macOS/Windows/browser, big-endian, maximum-area/OOM parity, native callback and
+allocation ABI, concurrent/special-file semantics, reported OS-close failures,
+generic formatted/float dispatch and complete performance/integration remain
+unqualified. Shared source/oracle/tolerance/toolchain pins and CI workflows are
+unchanged by this increment.
+
+
+Fresh regression results are retained in the
+[reconstruction validation record](evidence/pnm-files-reconstruction-validation.json):
+
+- Formatted PNM memory: 96 native images / 64,482 pixels, 73 candidate-only
+  controls, 710 records / 885,750 bytes per CPU-1/CPU-2/JavaScript lane
+- Canonical clean-loader conformance: 261 scenarios / 40,101 pixel/numeric words
+  per CPU-1/CPU-2/JavaScript lane, all ownership/transform/decode contracts,
+  three PPM examples and legacy QOI file round trips/errors
+- Validation-only strict replay: every complete ordered record and field matches,
+  including 333 QOI bytes and 23 palette words per lane. Nine negative controls
+  cover framing/types/order plus validly framed altered QOI, palette and alpha
+  border values. The canonical comparator/fixtures remain unchanged
+- Surface PNM: 30 images / 8,844 pixels and 16 typed controls on CPU/JavaScript
+- Generic memory dispatch: 534 token/content pairs (462 accepted native loads)
+  and five typed controls on CPU/JavaScript
+- Generic file dispatch: 59 native file cases, three boundary controls and
+  100 cycles at fd64 on CPU/JavaScript
+
+The canonical archive is freshly built in this worktree with PNM enabled;
+configuration/flag/archive hashes and clean-loader orchestration receipts are
+retained. Native PNM memory builds a separate fresh archive. The independent
+focused audit verifies every one of 1,179 sealed artifacts, 103 successful
+process-group receipts and all 626 primary + 1,009 boundary + four sparse + one
+exact-cap records per lane with its own strict parser. Its script, command and
+result are preserved with the validation evidence.

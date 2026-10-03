@@ -131,6 +131,124 @@ reads, callbacks, allocation ABI and concurrently changing/special files remain
 outside this profile. The dedicated helper adds no generic formatted dispatcher
 or new native API ID; `LoadImage` remains partial.
 
+## Format-preserving PNM file loading
+
+`Image.Formatted.load_pnm(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)`
+is an explicit binary P5/P6 loader. It does not inspect or interpret the suffix:
+`.pgm`, `.ppm`, uppercase/mixed-case names, `.pnm`, `.qoi`, arbitrary suffixes,
+suffixless names, spaces, multiple dots and directory-qualified dotfiles all
+select the same PNM codec. It neither sniffs another codec nor falls back to the
+generic Surface dispatcher. Existing generic suffix/content rules are unchanged.
+
+The wrapper consists of a dedicated continuation around the existing
+`Image.file.bytes` boundary and `Image.Formatted.decode_pnm` adapter. It shares
+`Image.file.limit(RasterFile{})`: **1,048,576 encoded bytes, inclusive**. The cap
+is independent of the filename, including misleading `.qoi` names. It is an
+encoded-input bound, not a heap, image-area or allocation-success guarantee.
+
+Operation/error precedence is fixed:
+
+1. Open the path. Missing paths, including unsupported or misleading suffixes,
+   retain `ImageFileError{code, message}`; no suffix rejection precedes opening.
+2. Obtain size. Successfully reported sizes greater than the raster cap through
+   U32_MAX return `ImageDecodeError{UnsupportedImageSize{}}` before any payload
+   read. Pinned Base size rejects files above 4,294,967,295 bytes with the host
+   overflow file error. Both size failures and size rejections close the handle.
+3. Perform the existing single bounded read. Call `File.close` before processing
+   its result. Read errors preserve the original code/message. Short or long
+   returned lists relative to the reported size yield
+   `ImageDecodeError{TruncatedImageData{}}`, without decoding or retrying.
+4. Decode complete bytes using the unchanged formatted PNM adapter, wrapping its
+   exact error once as `ImageDecodeError{error}`. Empty/bad headers, invalid
+   maxval or malformed delimiters return `InvalidImageHeader`; valid-header
+   unsupported dimensions return `UnsupportedImageSize`; incomplete raster
+   returns `TruncatedImageData`. Invalid U32 byte values are only internal-stage
+   controls, because ordinary byte files cannot contain them. PNM does not emit
+   `InvalidImageStream`, although the shared wrapper preserves that error.
+
+Success returns one affine owner: native P5 grayscale **1** or P6 RGB888 **4**,
+width/height 1..4096 and one implicit mip level. Export yields exactly
+`width*height*channels` row-major bytes, without padding. Logical grayscale
+words have zero high 24 bits; RGB words have a zero high byte. Threaded point
+reads preserve ownership on accepted and rejected coordinates. Conversion and
+export consume the owner. Failure returns no partial image or open file.
+
+The existing [PNM parsing and sample profile](PNM.md) is unchanged: P5/P6 magic
+determines channels, maxval 1..65535 selects sample width, samples are unscaled,
+exactly one whitespace delimiter is consumed and complete raster plus valid
+ignored tails is required. Wide samples retain the second stored byte in this
+pinned little-endian native profile. Output is always reduced 8-bit storage,
+never source 16-bit depth. ASCII P1..P3 and binary PBM P4 remain unsupported.
+
+Close calls are ordered, not promises of OS-close success: Base ignores close
+errors and exposes no new error variant. Synthetic size/read controls acquire
+real handles but inject the stage result; they are not actual concurrent
+short-read demonstrations. Ordinary low-descriptor repetition detects leaks in
+those exercised paths without proving universal closure. Concurrent/changing or
+special files, callbacks, original native allocation ABI, big-endian behavior,
+OOM parity, other platforms and full integration/performance remain gaps.
+
+### PNM file reconstruction verification
+
+The [reconstructed report](evidence/pnm-formatted-files.json) is a
+fresh run against this exact local source, distinct from the unavailable old
+PNM-file run. The matching recovered proof/README texts are historical source
+recovery, not runtime evidence. The primary matrix preserves all 96 prior
+accepted PNM streams and adds 60 one-pixel suffix/channel/depth combinations:
+**156 accepted files / 64,542 pixels**, with **132 actual LoadImage paths** and
+**24 explicit LoadFileData + LoadImageFromMemory(".ppm") paths**. Only complete,
+independently safety-checked assets reach native. All **74 malformed, size and
+file-error controls** remain candidate-only.
+
+Every native observation checks actual dimensions, mipmaps, format and raw byte
+count before a separate RGBA8 normalization. Candidate metadata uses its implicit
+single-mip contract. Additional reopened observations check high-bit invariants,
+threaded point ownership, the Surface bridge, explicit normalized PNM and generic
+Surface/profile regressions. Strict framing requires complete ordered records,
+exact fields/types, 0..255 byte chunks and exact lengths; extra/truncated output
+fails. No expected bytes are computed by the Python safety parser.
+
+A separate accepted **exact-cap** P5 file has one pixel plus a fully validated
+ignored tail. It receives its own native raw observation and public file load.
+Sparse cap+1, misleading-suffix cap+1, 256 MiB and U32-overflow controls distinguish
+pre-read rejection and file overflow. Each CPU-one-thread, CPU-two-thread and
+JavaScript lane performs **100 cycles at RLIMIT_NOFILE=64** across ten acquired
+handle paths. Eight synthetic checks plus the final independently verified valid
+load make **1,009 individually framed records per lane**, followed by a strict
+terminal. Sparse/closure RSS must stay below 256 MiB and exact-cap full-read RSS
+below 1 GiB; these are post-run acceptance ceilings, not live heap limits or
+performance claims. Compilation is measured separately from runtime RSS.
+
+The gate builds a fresh isolated native archive, explicitly enables PNM and
+verifies actual CMake/compile definitions. Native endian/format qualification,
+compiler/archive hashes, clean-loader child receipts and source/output sealing
+are required. The Python parent loader context is preserved. No stale archive
+or previous passed report can establish success. The exact-commit hosted CI and
+GPU/Metal file IO remain unqualified.
+
+
+The fresh final-source run passes all three lanes: **626 observations / 129,072
+bytes per lane**, including **120,634 primary native-format bytes** observed
+before normalization. Native normalized outputs separately total 258,168 bytes.
+The whole focused gate took **642.935 seconds**. Runtime measurements (separate
+from compilation) are:
+
+| Lane | Closure RSS / seconds | All-sparse RSS / seconds | Exact-cap RSS / seconds |
+|---|---:|---:|---:|
+| cpu-1 | 9,568,256 / 0.410 | 9,568,256 / 0.265 | 27,156,480 / 0.342 |
+| cpu-2 | 9,568,256 / 0.322 | 9,568,256 / 0.254 | 27,144,192 / 0.337 |
+| javascript | 96,501,760 / 0.379 | 51,593,216 / 0.284 | 166,961,152 / 0.505 |
+
+RSS units are bytes. These results qualify the measured ordinary-file cases only.
+The [obligation matrix](PNM-FILE-RECONSTRUCTION.md) records recovered versus
+reconstructed source, the different test organization and explicit remaining
+limits; no equivalence to lost test source is inferred from test counts.
+
+```sh
+python3 tools/pnm_file_probe.py --reference-env clean-loader --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+python3 -m unittest discover -s tests -p test_pnm_file_harness.py -v
+```
+
 ## Verification
 
 ```sh

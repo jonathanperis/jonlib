@@ -3090,6 +3090,17 @@ def Image.Formatted.load_qoi(path: String) -> IO(Result<&1, &1, Image.LoadError,
   IO.bind(Result<&1, &1, Image.LoadError, +List<U32>>, Result<&1, &1, Image.LoadError, Image.Formatted>,
     Image.file.bytes(path, Image.file.limit(QoiFile{})), Image.Formatted.qoi.file.loaded)
 
+# Explicit PNM selection shares the bounded, complete, close-before-decode file boundary.
+def Image.Formatted.pnm.file.loaded(result: Result<&1, &1, Image.LoadError, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>):
+  match result:
+    case Fail{error}: IO.pure(Result<&1, &1, Image.LoadError, Image.Formatted>, Fail{error})
+    case Done{bytes}:
+      IO.pure(Result<&1, &1, Image.LoadError, Image.Formatted>, Image.file.decoded(Image.Formatted, Image.Formatted.decode_pnm(bytes)))
+
+def Image.Formatted.load_pnm(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>):
+  IO.bind(Result<&1, &1, Image.LoadError, +List<U32>>, Result<&1, &1, Image.LoadError, Image.Formatted>,
+    Image.file.bytes(path, Image.file.limit(RasterFile{})), Image.Formatted.pnm.file.loaded)
+
 def Image.FloatRGB.file.loaded(result: Result<&1, &1, Image.LoadError, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, Image.FloatRGB>):
   match result:
     case Fail{error}: IO.pure(Result<&1, &1, Image.LoadError, Image.FloatRGB>, Fail{error})
