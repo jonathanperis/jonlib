@@ -222,6 +222,11 @@ jobs:
           python3 tools/pnm_format_probe.py --reference-env clean-loader
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Verify format-preserving PNM file loading and bounded closure
+        run: >-
+          python3 tools/pnm_file_probe.py --reference-env clean-loader
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Verify original-format QOI files and descriptor closure
         run: >-
           python3 tools/qoi_file_probe.py
@@ -630,6 +635,9 @@ jobs:
             .build/formatted-qoi-export-probe/
             .build/qoi-format-probe/
             .build/pnm-format-probe/
+            .build/pnm-file-probe/results.json
+            .build/pnm-file-probe/run-*/*.command.json
+            .build/pnm-file-probe/run-*/*.resource.json
             .build/qoi-file-probe/results.json
             .build/qoi-file-probe/run-*/inputs.json
             .build/qoi-file-probe/run-*/*.bend
