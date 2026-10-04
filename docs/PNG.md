@@ -4,7 +4,11 @@
 `Result<&1, &1, Image.DecodeError, Surface>` with owned normalized RGBA8 pixels.
 The dedicated `Image.Formatted.decode_png` memory factory preserves the native
 8-bit output format and bytes instead; its contract and local qualification
-are [specified below](#format-preserving-png-memory-loading).
+are [specified below](#format-preserving-png-memory-loading). The dedicated
+`Image.Formatted.load_png(path)` file adapter preserves the same native formats
+through the shared bounded, exact-read, close-before-decode IO boundary; its
+[separate file contract](IMAGE-FILES.md#format-preserving-png-file-loading)
+does not enlarge this memory domain.
 
 ## Current profile
 
@@ -203,9 +207,10 @@ without skips, all 177 laws, syntax/project/API checks, CI preservation and
 whitespace checks. Final-tree review is recorded separately from runtime
 evidence. New PNG 84-gate/eight-worker hosted qualification remains pending.
 
-Only partial `raylib:function:LoadImageFromMemory` scope expands; API completion
-counts do not change. This increment adds no formatted PNG file loader, generic
-formatted dispatch, other codec, new input domain or nondefault stb flag.
+Only partial `raylib:function:LoadImageFromMemory` scope expands in this memory
+increment; API completion counts do not change. Its evidence does not qualify
+the separately added [formatted PNG file loader](IMAGE-FILES.md#format-preserving-png-file-loading),
+generic formatted dispatch, another codec, a new input domain or nondefault stb flag.
 Historical Surface CPU/JavaScript/Metal results do not qualify the new formatted
 path. Native pointer/allocation ABI, allocation-failure parity, maximum-area
 success and representative performance remain unqualified, as do new hosted,
@@ -221,6 +226,35 @@ Lines 1190–1203 and 1260–1273 apply the final high-byte reduction to 16-bit
 results; lines 4993–4994 and 5222–5223 retain disabled CgBI conversion defaults.
 These source-derived rules define the contract; the separately linked runtime
 evidence establishes only the exercised local profile.
+
+## Separate formatted PNG file qualification
+
+`Image.Formatted.load_png(path)` adds exactly a wrapper and result continuation
+around the shared `RasterFile` reader and unchanged formatted decoder. Its
+[separate file evidence](evidence/png-formatted-files.json) passes on local Linux
+x86-64 CPU-one-thread, CPU-two-thread and server-side JavaScript: **370 files /
+86,119 pixels**, **143 file plus 76 continuation controls**, and **2,846 primary
+observations / 1,531,636 bytes per lane**. All 230 memory streams, 208 controls and
+the nested 193-stream/39-control legacy corpus remain exact. The shared inclusive
+1 MiB file cap, complete reads and close-before-decode calls neither enlarge nor
+replace the unchanged encoded/filtered memory limits.
+
+Actual native file routes measure format, mipmaps and raw bytes before separate
+normalization. Candidate mipmaps remain an implicit type contract. Native-byte
+factory reconstruction is gated by a separate public reopen; reopened loader
+exports supply the distinct raw-roundtrip observations. Complete independent
+replay covers every primary, closure, sparse and exact-cap frame; malformed and
+foreign-codec controls remain checked-only. See the full
+[file contract and resource limits](IMAGE-FILES.md#format-preserving-png-file-loading)
+and [28-stage runtime matrix](VERIFICATION.md#format-preserving-png-file-loading-2026-10-04).
+
+The historical memory evidence above is unchanged. Its earlier eight-worker
+hosted run timed out on macOS; the CI-only repaired 84-gate/ten-worker predecessor
+at `9cb5a7e7` passes [Conformance](https://github.com/jonathanperis/jonlib/actions/runs/37179587107).
+This later predecessor result does not qualify PNG-file IO. Final metadata/CI-tree
+checks remain separately recorded, and **85-gate/twelve-worker exact-tip PNG-file
+hosted qualification remains pending**. Only partial `LoadImage` scope expands;
+`LoadImageFromMemory`, API completion counts, pins and laws remain unchanged.
 
 ## Historical Surface verification
 

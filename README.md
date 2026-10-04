@@ -88,7 +88,7 @@ owner-preserving rejection before a file is opened.
 - Bounded raw DEFLATE decompression with native empty-block semantics.
 - Byte-exact native quality-8 raw compression with bounded inputs and explicit
   rejection of the retained native sequence-buffer overflow domain.
-- PNG decoding across supported 1/2/4/8/16-bit formats, Adam7 and native-default CgBI.
+- PNG decoding across supported 1/2/4/8/16-bit formats, Adam7 and native-default CgBI. Dedicated [formatted PNG file loading](docs/IMAGE-FILES.md#format-preserving-png-file-loading) selects PNG independently of suffixes, preserving native grayscale/gray-alpha/RGB888/RGBA8888 output with the shared inclusive 1 MiB cap, exact reads and close-before-decode calls; fresh local Linux CPU-one-thread/CPU-two-thread/JavaScript file qualification passes with independent complete-record replay. Exact-tip hosted qualification remains separate and pending.
 - Byte-exact default PNG export: byte-format memory output and all seven checked image formats through file export.
 - Bounded PNG/BMP/TGA/PGM/PPM/QOI file loading with native supported suffix/content detection.
 - Jonmath scalar/vector/matrix/quaternion profiles with exact reference arithmetic.

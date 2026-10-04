@@ -4,8 +4,8 @@ The runtime split reviewed on 2026-10-02 preserves the workflow at checkpoint
 `36f5d0b5a811297b349c45aa6ddc3a9a067ac8d3`. It changes scheduling and artifact
 package names only; no library, probe, numeric fixture, tolerance, compiler,
 qualification, loader policy or resource ceiling changes are involved in that split.
-The later reviewed TGA-memory, TGA-file, BMP-memory, BMP-file and PNG-memory
-additions are described separately below. The later scheduling-only TGA split
+The later reviewed TGA-memory, TGA-file, BMP-memory, BMP-file, PNG-memory and
+PNG-file additions are described separately below. The later scheduling-only TGA split
 starts from exact 84-gate checkpoint `7dcfdb98a51af5dc0aa28f3affb060f185762a52`
 after the observed macOS formatted-worker budget cancellation. It moves only
 the two existing TGA gates and their six upload patterns into independent workers.
@@ -13,7 +13,7 @@ No gate, setup, loader flag, artifact evidence or 120-minute budget is weakened.
 
 ## Worker ownership
 
-Each of Ubuntu 24.04 and macOS 15 runs five independent workers:
+Each of Ubuntu 24.04 and macOS 15 runs six independent workers:
 
 - **Core CPU and JavaScript:** the other 72 verification/diagnostic steps in
   their original order, including canonical conformance and all angle checks.
@@ -30,14 +30,22 @@ Each of Ubuntu 24.04 and macOS 15 runs five independent workers:
 - **PNG memory CPU and JavaScript:** the mandatory native-format PNG memory
   qualification gate, with its own fresh native build, qualification and complete
   CPU-one-thread, CPU-two-thread and JavaScript comparisons.
+- **PNG files CPU and JavaScript:** the mandatory format-preserving PNG-file
+  gate in its own independent worker, with its own fresh native build,
+  qualification and complete CPU-one-thread, CPU-two-thread and JavaScript
+  comparisons. It does not share the PNG-memory worker's budget or receipts.
 
 All 79 original gate step payloads still occur once per OS, byte-exact. The new
 TGA-memory and TGA-file gates brought each OS to 81 gates: 72 core and nine
 formatted. The new BMP-memory worker brings each OS to 82 gates: 72 core, nine
 formatted and one BMP. The BMP-file addition brings each OS to 83 gates: 72 core,
 nine formatted and two BMP. PNG memory brings each OS to **84 gates**: 72 core,
-nine formatted, two BMP and one PNG before the TGA scheduling split. The current
-84-gate layout is **72 core, seven formatted, two BMP, one PNG and two TGA**.
+nine formatted, two BMP and one PNG before the TGA scheduling split. The
+84-gate layout after that split is 72 core, seven formatted, two BMP, one PNG
+and two TGA. The separate PNG-file workers bring each OS to **85 gates**:
+**72 core, seven formatted, two BMP, one PNG memory, two TGA and one PNG file**.
+All ten existing worker bodies, their names, setup, 84 gate payloads and artifact
+settings/paths remain byte-identical to the ten-worker 84-gate checkpoint.
 At the PNG-memory checkpoint, the four core/formatted worker jobs remained
 byte-identical to the 81-gate checkpoint. All six pre-PNG worker jobs, including
 IDs, names, settings, setup, existing 83 gate payloads and artifacts, remained
@@ -46,14 +54,15 @@ all six core/BMP/PNG jobs byte-exact against the 84-gate predecessor. Each
 formatted job changes only by removing the exact two TGA gates and six paths.
 The BMP-file increment had preserved
 both all-six compatibility aggregates; PNG extends those same named aggregates
-to require all eight workers; the TGA scheduling split extends them to ten.
+to require all eight workers; the TGA scheduling split extends them to ten,
+and standalone PNG files extend them to twelve.
 Original Linux-only conditions, profile guards, legacy historical assertions
 and clean-loader flags remain exact. Each worker independently repeats all seven original setup steps:
 pinned repository/Python/Bun actions, dependency pin extraction, fresh exact Bend
 and raylib checkouts, and hash-checked compiler overlay application. Environments and
-120-minute timeouts are unchanged. Ten explicit jobs (`coreUbuntu`, `coreMac`,
+120-minute timeouts are unchanged. Twelve explicit jobs (`coreUbuntu`, `coreMac`,
 `formattedUbuntu`, `formattedMac`, `bmpUbuntu`, `bmpMac`, `pngUbuntu`, `pngMac`,
-`tgaUbuntu`, `tgaMac`) run without matrices,
+`tgaUbuntu`, `tgaMac`, `pngFileUbuntu`, `pngFileMac`) run without matrices,
 so one worker failure does not cancel another worker. No cache or result
 receipt replaces execution. Probes remain sequential within each workspace.
 
@@ -70,7 +79,7 @@ No build or qualification receipt crosses worker machines.
 
 The old visible names, `CPU and JavaScript (ubuntu-24.04)` and
 `CPU and JavaScript (macos-15)`, remain. Each is an `always()` aggregate requiring
-success directly from **all ten explicit worker IDs**. Neither aggregate uses
+success directly from **all twelve explicit worker IDs**. Neither aggregate uses
 a matrix-family result, including on partial reruns.
 The shell exits nonzero for failure, cancellation, skipped, empty, unknown or
 missing dependency results. This is deliberately stricter than prior per-OS
@@ -80,8 +89,8 @@ check name, not where parity probes execute. Worker names identify the actual
 platform and shard. There are no branch-protection or permission changes.
 
 Artifact names are `conformance-<os>-core`, `conformance-<os>-formatted`,
-`conformance-<os>-bmp`, `conformance-<os>-png` and `conformance-<os>-tga`.
-All ten packages have unique names. The original 156
+`conformance-<os>-bmp`, `conformance-<os>-png`, `conformance-<os>-tga` and
+`conformance-<os>-png-files`. All twelve packages have unique names. The original 156
 path patterns remain partitioned into 140 core and 16 formatted patterns,
 with no omissions or duplicates. The
 reviewed `.build/tga-format-probe/` and `.build/tga-file-probe/` additions are
@@ -102,11 +111,18 @@ harness controls. BMP files brought the total to 168 upload patterns per OS:
 140 core, 22 formatted and six BMP, up from 163 at the BMP-memory checkpoint.
 PNG adds the entire `.build/png-format-probe/` directory to its own artifact,
 including all source, inputs, native-build, command, output and resource receipts.
-This gives **169 patterns per OS**. The scheduling-only TGA split preserves that
+PNG memory gives **169 patterns per OS**. The scheduling-only TGA split preserves that
 exact multiset: 140 core, 16 formatted, six BMP, one PNG and six TGA. Only the
-six exact TGA patterns move; no upload pattern is added, dropped or altered.
-The ordinary
-1 MiB `exact-cap.tga` and `exact-cap.bmp`,
+six exact TGA patterns move; no upload pattern is added, dropped or altered
+by that scheduling change. The separate PNG-file artifacts contain five patterns:
+`.build/png-file-probe/` and four exact sparse-body exclusions,
+`run-*/fixtures/cap-plus-one.png`, `run-*/fixtures/cap-plus-one.qoi`,
+`run-*/fixtures/larger-file.png` and `run-*/fixtures/host-size-overflow.png`,
+all under `.build/png-file-probe/`. Those names are checked against the actual
+PNG-file harness controls. This brings the total to **174 patterns per OS**:
+140 core, 16 formatted, six BMP, one PNG memory, six TGA and five PNG-file
+patterns, in twelve artifacts. No existing pattern moves or changes. The ordinary
+1 MiB `exact-cap.tga`, `exact-cap.bmp` and `exact-cap.png`,
 fixture recipes in `inputs.json`, source/native-build evidence, command/output
 receipts and resource receipts remain included. The memory-only probes create
 no sparse fixture files.
@@ -140,7 +156,7 @@ estimates above predate both TGA additions and exclude their full native
 builds, qualification and CPU-1/CPU-2/JavaScript comparisons, including the
 TGA-memory probe's 43 source-bounded partitions. Observed 80-gate memory-checkpoint
 runtimes are recorded below, followed by the verified 81-gate result. Those
-historical measurements do not qualify the current ten-worker 84-gate tip;
+historical measurements do not qualify the current twelve-worker 85-gate tip;
 the 120-minute
 worker budgets are unchanged.
 
@@ -268,7 +284,8 @@ and qualifies its own native reference and performs its own CPU-1/CPU-2/JavaScri
 matrix. A prior worker's result cannot substitute for qualification or execution.
 Each new artifact contains the entire `.build/png-format-probe/` directory.
 At the PNG-memory checkpoint, both compatibility aggregates directly required
-all eight explicit worker IDs. The TGA scheduling split extends them to ten.
+all eight explicit worker IDs. The TGA scheduling split extends them to ten,
+and standalone PNG files extend them to twelve.
 
 The integrated **84-gate** hosted run
 [37172746027](https://github.com/jonathanperis/jonlib/actions/runs/37172746027)
@@ -287,13 +304,53 @@ motivate moving both unchanged TGA gates into their own workers rather than
 raising a timeout or weakening execution. They do not predict hosted timings
 for the new topology or guarantee its budget margin.
 
-The new scheduling-only split still has **84 gates per OS** and **169 upload
-patterns per OS**, now distributed over ten workers and ten artifacts. All seven
-setup steps are independently repeated in each new TGA worker. Neither local
-workflow tests nor the incomplete hosted run qualify the split: fresh exact-commit
-hosted Checks, all ten workers, both aggregates and all ten distinct nonempty
-artifacts are still required. No compiler, native probe, source implementation,
-fixture or numeric expectation changes are part of this CI-only patch.
+## Observed hosted TGA scheduling-fix checkpoint
+
+The scheduling-only split retains **84 gates per OS** and **169 upload patterns
+per OS**, distributed over ten workers and ten artifacts. Its exact commit
+`9cb5a7e7cabdb76005a76119616e33ca9516d73b` was verified successful on 2026-10-04:
+[Conformance run 37179587107](https://github.com/jonathanperis/jonlib/actions/runs/37179587107),
+[Checks run 37179587100](https://github.com/jonathanperis/jonlib/actions/runs/37179587100),
+all ten workers, both compatibility aggregates and all ten distinct nonempty
+artifacts passed; published main matched that commit. Observed Ubuntu
+core/formatted/BMP/PNG-memory/TGA worker durations were **79m32s / 45m22s /
+61m50s / 22m36s / 37m59s**; macOS durations were **60m01s / 47m07s / 49m27s /
+50m26s / 38m14s**. The raw verification receipt is retained with the
+scheduling-fix source/evidence backup. This result qualifies the 84-gate split,
+not the new PNG-file implementation or twelve-worker topology.
+
+## Standalone PNG-file planning and evidence boundary
+
+The PNG-file addition starts from that exact successful ten-worker checkpoint.
+The focused local Linux file gate measured **45m09s**, while the recorded local
+PNG-memory run measured **21m51s**. Those are local measurements, not hosted or
+macOS predictions. The observed macOS PNG-memory worker took **50m26s**, showing
+substantial cross-machine variability. Its timing ratio is not assumed to
+transfer to the file gate; stacking the two gates would leave unestablished
+headroom. Instead, PNG files receive separate `pngFileUbuntu` and `pngFileMac`
+workers named `PNG files CPU and JavaScript (<os>)`, each with its own unchanged
+120-minute limit and all seven independently repeated pinned setup steps.
+All ten old worker bodies remain byte-identical, including PNG-memory jobs.
+
+Both new workers run
+`python3 tools/png_file_probe.py --reference-env clean-loader`
+with the original pinned Bend and raylib source arguments. Each runs its own
+fresh native build, qualification and CPU-1/CPU-2/JavaScript matrix. Prior
+memory evidence does not substitute for file qualification or execution.
+Both compatibility aggregates keep their exact names and five-minute limits,
+and directly require all twelve workers with fail-closed straight-line tests.
+Each new artifact is named `conformance-<os>-png-files` and retains ordinary
+exact-cap input, fixture recipes and complete source/native-build, command,
+output and resource evidence while excluding only four exact sparse bodies.
+
+This CI-only patch changes no compiler, native probe, implementation, fixture,
+numeric expectation or resource ceiling. The new **85-gate** hosted result and
+worker runtimes remain pending. Local integration requires its frozen source
+matrix, independent complete-record replay, proof, project/API checks and the
+final restored-PATH Python suite with zero skips. Fresh exact-commit hosted
+Checks, all twelve workers, both aggregates and all twelve distinct nonempty
+artifacts must pass separately. The historical incomplete 7dcfdb98 run and
+successful 9cb5a7e7 run do not qualify this increment.
 
 ## Executable preservation contract
 
@@ -310,26 +367,34 @@ missing/wrong-platform workers, optional/skipped workers, broader uploads and
 weaker aggregates. Both actual aggregate shells from the workflow are executed
 for all 2,401 original four-input combinations of success, failure, cancelled,
 skipped, empty, unknown and missing result values (4,802 shell invocations),
-with both BMP, both PNG and both TGA results explicitly set to success. The existing
+with both BMP, both PNG, both TGA and both PNG-file results explicitly set to success. The existing
 98 actual-shell invocations exhaust both BMP result combinations with the
-original four, both PNG and both TGA results explicitly successful. Another
+original four, both PNG, both TGA and both PNG-file results explicitly successful. Another
 **98 actual-shell
 invocations** exhaust both PNG result combinations with the preceding six and
-both TGA results explicitly successful. Those **4,998 actual Bash invocations**
+both TGA and both PNG-file results explicitly successful. Those **4,998 actual Bash invocations**
 remain, plus **98 actual-shell TGA-pair cases** with all preceding eight results
-successful: **5,096 actual Bash invocations total**. The scripts are
-constrained to `set -eu`, four literal diagnostic prints and ten straight-line
+and both PNG-file results successful: **5,096 preserved actual Bash invocations**.
+A further **98 actual-shell PNG-file-pair cases** hold all preceding ten results
+successful, for **5,194 actual Bash invocations total**. The scripts are
+constrained to `set -eu`, five literal diagnostic prints and twelve straight-line
 success tests. That restricted grammar proves conjunction semantics. The original
 117,649 six-way assignments per aggregate (235,298 total) are still evaluated
-in-process with both PNG and both TGA results successful. In addition, all
+in-process with both PNG, both TGA and both PNG-file results successful. In addition, all
 **5,764,801 eight-way
 assignments per aggregate (11,529,602 total)** are exhaustively evaluated in-process;
-both TGA results are explicitly successful and these are not additional shell
+both TGA and both PNG-file results are explicitly successful; these are not additional shell
 invocations. The grammar factors into the old eight-result conjunction and the
 two-result TGA conjunction. All 49 TGA status pairs are checked against both
 possible old-eight outcomes; the checked factor counts cover **282,475,249
 ten-way assignments per aggregate** without iterating the whole Cartesian product
-or spawning more shells. Only ten explicit successes may pass. Structural checks
+or spawning more shells, with the new PNG-file pair successful. A separate
+twelve-way proof checks the closed conjunction grammar, each prior variable
+over all seven statuses, and all 49 PNG-file pairs against both possible old-ten
+outcomes. Weighted outcome counts cover **13,841,287,201 twelve-way assignments
+per aggregate** without iterating that Cartesian product or spawning additional
+shells. These are factorized proofs, not billions of executed cases. Only twelve
+explicit successes may pass. Structural checks
 require each result to name its corresponding direct
 dependency; no matrix reduction stands in for a worker.
 
@@ -350,13 +415,13 @@ omitted or duplicate exclusions, accidentally included sparse files, and
 over-broad exclusions that drop ordinary exact-cap evidence, fixture recipes
 or command/resource receipts. The original mutation suite and all 4,802
 aggregate-shell truth-table invocations remain intact, with both BMP, both PNG
-and both TGA results explicitly successful.
+and both TGA and both PNG-file results explicitly successful.
 
 BMP has a separate exact gate and full-receipt artifact contract. Mutations
 reject changed or missing setup, platforms, commands, loader/source arguments,
 budgets, environment, permissions, optional/skipped/dependent workers,
 bypassed failures, artifact collisions and incomplete or broadened uploads.
-Every one of the ten dependency/result/test links is mutation-checked in both
+Every one of the twelve dependency/result/test links is mutation-checked in both
 aggregates. BMP-file mutations separately reject missing, altered, duplicate,
 reordered, optional or skipped gates, bypassed failures, changed loader/source
 arguments, broadened uploads and missing/altered/duplicate sparse exclusions.
@@ -372,7 +437,23 @@ failures, artifact collisions and incomplete/broadened uploads. An independent
 closed shell-grammar check rejects missing tests, default-success substitution,
 OR lists, subshell masking, changed errexit, conditionals and injected commands.
 
-Independently of the structural parser, the TGA inverse extracts the exact gate
+The standalone PNG-file workers have explicit mandatory payload, setup,
+clean-loader, pinned-source, budget, permission, ordering and upload contracts.
+Mutations reject missing/duplicate/altered/optional/skipped gates and workers,
+bypassed failures, changed sources or pins, artifact collisions and missing,
+narrowed or broader upload roots. Sparse-body mutations reject missing,
+duplicate, included or over-broad exclusions. Positive retained-file checks and
+mutations protect exact-cap, ordinary inputs, fixture recipes, source/native
+builds and full command, output and resource receipts. All twelve direct
+worker/result/test links are checked, including cross-worker substitution and
+new-pair diagnostic injection. The historical ten-way grammar mutation tests
+remain active and extend to the new result variables.
+
+Independently of the structural parser, removing only the two PNG-file worker
+blocks and explicitly reviewed aggregate extensions must restore the complete
+84-gate ten-worker workflow at `9cb5a7e7cabdb76005a76119616e33ca9516d73b`, SHA-256
+`8bfab667d418967d2427f41079411c1ef8d2e6698068127cde4cd4a950eb6b91`.
+From those restored bytes, the unchanged TGA inverse extracts the exact gate
 and upload payloads from the two new TGA jobs, reinserts those bytes in their
 original formatted positions, and removes only the new jobs and explicit
 aggregate extensions. This restores the complete 84-gate predecessor bytes,
@@ -389,18 +470,17 @@ From those restored bytes, removing only the BMP worker jobs and the explicitly
 reviewed aggregate additions must still restore the complete 81-gate workflow,
 SHA-256
 `34fa72b91f6e4ab3e7e555c51e621364bf1b68e1dba4945db2442ad8e463ce7e`.
-All four predecessor raw-byte anchors remain active;
+All five predecessor raw-byte anchors remain active;
 `read_bytes().decode('utf-8')` preserves line endings so a CRLF rewrite cannot evade the checks. The original baseline
-fixture, all 4,802 + 98 + 98 actual shell cases, all 235,298 six-way structural
-assignments and all 11,529,602 eight-way structural assignments remain active.
-The additional TGA-pair shell cases do not replace any previous cases.
-An independent before/after byte and parsed-YAML
-comparison additionally checks that the only changes from the 84-gate workflow
-are the moved TGA payloads, the two TGA workers and reviewed aggregate extensions.
-It verifies the six unchanged parsed job objects and raw job hashes, exact
-formatted subtraction, all aggregate content after removing just the extensions,
-new-worker setup/gate/upload contracts, the full 84-gate/169-pattern multisets
-and complete restored predecessor bytes and parsed objects.
+fixture, all 5,096 prior Bash cases, all 235,298 six-way assignments, all
+11,529,602 eight-way assignments and the factorized ten-way checks retain their
+meaning with the new pair successful. The new 98 shell cases and factorized
+twelve-way proof are additive. Independent raw-byte and parsed-YAML comparison
+checks all ten old workers as identical objects and bytes, all existing aggregate
+content after removing only explicit extensions, and new-worker setup, gate and
+upload contracts. It verifies complete restored predecessor bytes and objects,
+all 84 old gates and 169 old patterns, and the new 85-gate/174-pattern totals.
+
 
 Future intentional CI additions require explicit review and a corresponding
 update to this preservation contract; do not silently relax comparisons or
@@ -412,8 +492,8 @@ For the original scheduling-only checkpoint, run the full Python harness, Python
 check and `tools/check_project.py`, and independently compare parsed workflow
 objects with the reviewed inventory. Numeric probes need not be rerun locally
 when their sources, fixtures and gate payloads are unchanged. Before calling
-hosted CI green, observe fresh exact-commit Checks, all ten current Conformance
-workers, both compatibility aggregates and the ten distinct evidence artifacts.
+hosted CI green, observe fresh exact-commit Checks, all twelve current Conformance
+workers, both compatibility aggregates and the twelve distinct evidence artifacts.
 
 The earlier TGA implementation integration was not a scheduling-only change.
 Its separate requirements include a fresh combined Python suite, complete proof,

@@ -16,6 +16,7 @@ separate compatibility gaps.
 | `Image.Formatted.decode_tga(bytes)` | Checked TGA memory factory preserving native format 1/2/4/7, exact bytes and implicit single mip; indexed output follows palette depth independently of index width. See [TGA.md](TGA.md#format-preserving-tga-memory-loading). |
 | `Image.Formatted.decode_pnm(bytes)` | Checked P5/P6 memory factory preserving native grayscale (1) or RGB888 (4), exact reduced 8-bit samples and implicit single-mip dimensions; existing checked little-endian parsing and typed errors. This does not preserve 16-bit source sample depth. See [PNM.md](PNM.md#format-preserving-pnm-memory-loading). |
 | `Image.Formatted.decode_qoi(bytes)` | Checked QOI owner factory preserving native RGB888 (4) or RGBA8888 (7), single-mip metadata and exact bytes; existing typed decode errors. See [CODECS.md](CODECS.md#format-preserving-qoi-memory-loading). |
+| `Image.Formatted.load_png(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` | Checked ordinary-file PNG owner factory with explicit suffix-independent selection, native formats 1/2/4/7 and exact 8-bit bytes; shared inclusive 1 MiB pre-read cap, one exact-length read, typed errors and close-before-decode calls. Existing PNG memory limits and parsing remain unchanged. Fresh local Linux CPU-1/CPU-2/JavaScript file qualification passes with independent complete primary/resource replay; exact-tip hosted qualification remains pending. See [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-png-file-loading) and [file evidence](evidence/png-formatted-files.json). |
 | `Image.Formatted.load_qoi(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` | Checked ordinary-file QOI owner factory with explicit suffix-independent selection, native format 4/7, exact bytes and an implicit single mip level; shared inclusive 83,886,102-byte cap and typed file/decode errors. See [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-qoi-file-loading). |
 | `Image.Formatted.load_pnm(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` | Checked ordinary-file P5/P6 owner factory with suffix-independent selection, native format 1/4 and exact reduced 8-bit samples; shared inclusive 1 MiB raster cap, complete reads and typed file/decode errors after close calls. See [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-pnm-file-loading). |
 | `Surface.to_formatted(surface) -> Image.Formatted` | Consumes canonical RGBA8 Surface storage and produces format 7 with exact byte order. |
@@ -32,7 +33,7 @@ separate compatibility gaps.
 | `Image.Formatted.to_code(image, path)` / `write_code(image, path)` | Exact native image-as-code text and typed file export for bounded payloads/ASCII names. See [IMAGE-CODE.md](IMAGE-CODE.md). |
 
 Create owners with the checked byte factory, dedicated BMP/PNG/PNM/TGA/QOI memory
-loaders, supported QOI/PNM/TGA/BMP file loaders, or Surface bridge. Manually inconsistent
+loaders, supported PNG/QOI/PNM/TGA/BMP file loaders, or Surface bridge. Manually inconsistent
 `FormattedImage{width, height, format, pixels}` values are outside the contract.
 `Image.Formatted.load_raw` (formats 1..7) and `write_raw` provide file boundaries with explicit
 header/error/closure behavior, documented in [RAW-FILES.md](RAW-FILES.md).
@@ -61,8 +62,16 @@ CPU-1/CPU-2/JavaScript: 230 images, 208 controls and 1,896 complete observations
 1,532,452 compared bytes per lane. Native format and raw bytes are captured
 before normalization; native mipmaps are observed as one, while the candidate
 owner has an implicit single-mip contract. Independent complete-output replay
-passes. Formatted PNG files, generic formatted dispatch, hosted/other-platform,
-maximum-area/resource and performance qualification remain open.
+passes. The dedicated [PNG file adapter](IMAGE-FILES.md#format-preserving-png-file-loading)
+has [separate passing local file evidence](evidence/png-formatted-files.json):
+370 files, 143 file plus 76 continuation controls, and 2,846 primary observations /
+1,531,636 compared bytes per lane, with every boundary/sparse/exact-cap frame
+independently replayed. Factory reconstruction uses native bytes after a separate
+successful public reopen; raw round trips use reopened loader exports. Memory
+evidence alone establishes no file IO, and predecessor hosted CI does not qualify
+the PNG-file increment.
+Generic formatted dispatch, hosted/other-platform, maximum-area/resource and
+performance qualification remain open.
 
 ## Conversion arithmetic
 
