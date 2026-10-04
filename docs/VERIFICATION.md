@@ -5343,8 +5343,13 @@ The CI-only repaired **84-gate/ten-worker** predecessor
 `9cb5a7e7cabdb76005a76119616e33ca9516d73b` passes
 [Checks](https://github.com/jonathanperis/jonlib/actions/runs/37179587100) and
 [Conformance](https://github.com/jonathanperis/jonlib/actions/runs/37179587107),
-with the same runtime sources. This is predecessor evidence only; the new PNG-file
-**85-gate/twelve-worker exact-tip qualification remains pending**.
+with the same runtime sources. The later PNG-file commit
+`e6ac05e6d1daf64d050e6da3f783ed60cc3130e1` now passes
+[Checks](https://github.com/jonathanperis/jonlib/actions/runs/37187107919) and
+[85-gate Conformance](https://github.com/jonathanperis/jonlib/actions/runs/37187107908),
+with all twelve workers, both aggregates and twelve unique nonempty artifacts.
+This is exact-commit PNG-file hosted evidence; it does not qualify the later PIC
+increment or unexecuted resource/platform domains.
 
 Only the existing partial `raylib:function:LoadImage` entry expands; it remains
 partial. `LoadImageFromMemory` stays byte-for-byte unchanged and no completed or
@@ -5354,3 +5359,133 @@ OS-close reporting, native pointer/allocation/OOM parity, maximum-area success,
 representative performance and full integration remain open. GPU/Metal file IO,
 macOS/Windows/browser, big-endian and other unexecuted PNG-file platforms remain
 unqualified by this local evidence.
+
+## Format-preserving PIC memory loading (2026-10-04)
+
+`Image.Formatted.decode_pic(bytes)` preserves native RGB888 (format 4) or
+RGBA8888 (format 7), dimensions 1..4096, implicit single-mip ownership and every
+row-major byte across the complete unchanged checked PIC domain. The shared
+reader ORs **all validated descriptor channel masks**. Any `0x10` bit selects
+RGBA, including alpha-only first/middle packets followed by RGB packets and
+all-opaque output. The input sample-size accumulator does not select output
+channels. White defaults, low-bit ignoring, ordered overwrites, raw/pure/mixed
+RLE, clipped pure runs, zero-count sample consumption and typed-error precedence
+are retained. Integer repacking reuses the affine pixel array and clears RGB's
+unused high byte. Surface/generic dispatch remain RGBA8-normalized. No encoded
+memory cap, file loader, generic formatted dispatch or decoder-domain expansion
+is added. See the [contract](PIC.md#format-preserving-pic-memory-loading) and
+[new evidence](evidence/pic-formatted-memory.json).
+
+```sh
+python3 tools/pic_format_probe.py --reference-env clean-loader \
+  --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+python3 tools/pic_format_audit.py .build/pic-format-probe/results.json
+python3 -m unittest discover -s tests -p test_pic_format_harness.py -v
+```
+
+The fresh local Linux x86-64 gate passes mandatory CPU-one-thread,
+CPU-two-thread and server-side JavaScript lanes with the pinned Bend/raylib
+revisions, exact declared overlay, Bun 1.3.12, Clang 19.1.7 observers and GNU
+14.2.0 native archive compiler. PIC is disabled in the default native build;
+a fresh isolated Memory archive explicitly enables it, and both the CMake
+cache and effective compiler flags are independently checked. Complete source
+ranges, archive identity and clean-loader child receipts are sealed.
+
+The pinned failed-PIC path can free/null its intermediate buffer and still
+enter 4-to-3 conversion. **Every malformed control stays checked-only.**
+Independently admitting complete actual bytes, including all descriptors,
+row controls, counts and selected samples, precedes every native call. Admission
+produces no expected pixels. Fixture pixel/byte and emitted-source limits are
+harness budgets, not public API caps or native malformed-recovery evidence.
+
+The focused corpus preserves all **33 legacy streams / 8,867 pixels and 24
+controls** exactly and extends to **101 streams / 37,306 pixels and 343 typed
+controls**. Actual native dimensions, format, `mipmaps == 1`, `GetPixelDataSize`
+and raw bytes precede separate RGBA normalization. **263 native observations**
+include **127,008 primary raw bytes and 149,224 normalized bytes**; selected
+uppercase alias observations bring the complete observed native payload to
+283,487 bytes. Candidate mipmaps are an implicit type contract rather than a
+stored or measured field.
+
+Every candidate lane passes **1,536 complete observations / 836,048 bytes**,
+including **508,032 raw and 328,016 normalized bytes**. Exact exports, native-byte
+factories, raw export/import round trips, retained point-read owners and logical
+high bits, consuming Surface bridges, legacy Surface/generic dispatch and both
+PSD arithmetic selectors remain separate observations. The selectors do not
+change PIC's integer semantics. The ordered complete plans contain **10 native
+and 51 candidate partitions**. The 32-action / 196,608-byte generated-source
+limits are retained; the largest native/candidate sources are 193,542/185,055
+bytes.
+
+Independent full-record replay verifies **231 command receipts and 1,417
+source/artifact seals**, with strict metadata, scalar types, full bytes,
+record order, terminal framing, exhaustive partitions and all three lanes. It
+uses the sealed fixture/source recipes without the harness comparators and
+runs no native/compiler/candidate processes. Harness tests separately reject
+missing, reordered, duplicate, extra and mutated rows, wrong raw metadata,
+re-sealed command/source/fixture changes, disabled PIC configuration and absent
+lanes/partitions. The focused report SHA-256 is
+`588e05c16d20ff062b5dce642848447ee2e811f158619fbb05bdc8d30b4f2186`;
+the independent replay SHA-256 is
+`3e85b52086cfd9c9b992cbb99bf00b956c12eaf1ae29a78d21a5ca6c70bef5ce`.
+The **1,023.403-second** gate is a verification duration, not a performance
+benchmark.
+
+The same-source regression matrix completes **30 ordered serial stages**, including
+Surface PIC/PNG, generic memory/file dispatch, animation fallback, PNG/FloatRGB
+PNG export, R32 consumers, image formats/colors, every formatted QOI/PNM/TGA/BMP/
+PNG memory/file gate, canonical conformance and strict full-row replay. All
+**1,053 Python tests pass without skips** and all **190 scoped laws** pass with
+the complete `All terms check.` verdict. All 177 original laws are retained;
+the 13 new PIC channel-union/packing equalities are not a universal decoder,
+allocation or IO proof. Syntax/project/API/whitespace stages also pass. The
+30 recorded stages total **12,789.728 seconds**, separately from the focused
+gate and read-only audit; this is verification time rather than performance
+evidence.
+
+The terminal independent regression audit verifies **474 frozen source files**
+and **44 prerequisite receipts** unchanged before and after its read-only audit,
+plus **12,093 distinct artifact seals**. Complete formatted regression replay
+covers **57,300 records / 24,387,789 bytes across three lanes**, **42 resource
+runs**, **2,032 inner and 30 terminal outer command receipts**. These regression
+totals exclude the separately bound focused PIC gate. Canonical replay verifies
+all **261 scenarios / 40,101 words, 333 QOI bytes and 23 palette words per lane**,
+including optional palette counts and alpha borders, and rejects 17 adversarial
+mutations.
+
+Ten older gates (Surface PIC/PNG, generic memory/file, animation fallback, PNG
+export, FloatRGB PNG, R32, image formats and image colors) retain successful
+report/source/artifact evidence rather than complete raw runtime replay.
+Canonical ancillary proof/contract/file checks use the integrated report and
+outer command receipt; retained PPM/QOI files are compared separately. QOI file
+closure retains its final image and terminal only: internal iterations were not
+emitted and cannot be independently replayed. These narrower observations are
+not promoted to full-record evidence by inclusion in the matrix. The audit
+reruns no native/compiler/candidate processes and does not read sparse holes.
+
+Only the existing partial `raylib:function:LoadImageFromMemory` mapping expands;
+no API becomes complete and aggregate completed/partially mapped counts stay
+unchanged. The `LoadImage` record receives only a separately checked historical
+hosted-qualification correction, with its mapping/status/domain unchanged. The
+PNG-file predecessor `e6ac05e6d1daf64d050e6da3f783ed60cc3130e1` passes
+[Checks](https://github.com/jonathanperis/jonlib/actions/runs/37187107919) and
+[85-gate Conformance](https://github.com/jonathanperis/jonlib/actions/runs/37187107908),
+including twelve workers, both aggregates and twelve unique nonempty artifacts.
+It does not qualify the PIC increment. The new **86-gate/twelve-worker exact-tip
+hosted qualification remains pending**. Final metadata/CI-tree checks are
+recorded separately from the frozen runtime snapshot.
+
+PIC formatted file loading, generic formatted/float dispatch, additional codec
+or decoder domains, nondefault flags, native malformed recovery, pointer/ABI,
+allocation/OOM and maximum-area success, representative performance and full
+integration remain gaps. New GPU/Metal, macOS/Windows/browser, big-endian and
+hosted PIC results remain unqualified.
+
+After terminal runtime qualification, the staged whitespace gate found two extra
+LF bytes at the end of `tests/test_pic_format_harness.py`. The final tree removes
+only those bytes; the original qualified file is retained, and its complete AST
+including source positions is identical. This is a verification-source formatting
+exception: 70 of the 71 frozen runtime/provenance entries remain byte-identical,
+with no library, probe or auditor changes. Prior qualification reports retain
+their original hashes; separate final-tree checks verify the exception and rerun
+the full Python, proof, CI and project checks. It requires no native rerun.

@@ -13,6 +13,7 @@ import ./src/bmp.bend as Bmp
 import ./src/tga.bend as Tga
 import ./src/qoi.bend as Qoi
 import ./src/png.bend as Png
+import ./src/pic.bend as Pic
 import ./src/formats.bend as Formats
 
 law clear_dimensions:
@@ -721,3 +722,47 @@ law formatted_png_decode_pixels_zero:
   for channels: U32
   for pixels: Array<U32>
   {J.Image.Formatted.png.pixels(0n, index, channels, pixels) == pixels : Array<U32>}
+
+# Scoped PIC packet-union and integer packing laws, not a decoder proof.
+law pic_native_mask_empty:
+  for mask: U32
+  {Pic.native.mask([], mask) == mask : U32}
+
+law pic_native_mask_union:
+  {Pic.native.mask([Pic.Packet{0, 128, 0}, Pic.Packet{1, 64, 0}, Pic.Packet{2, 32, 0}, Pic.Packet{0, 16, 0}], 0) == 240 : U32}
+
+law pic_native_rgb:
+  {Pic.native.channels([Pic.Packet{0, 224, 0}]) == 3 : U32}
+
+law pic_native_alpha_first:
+  {Pic.native.channels([Pic.Packet{0, 16, 0}, Pic.Packet{2, 224, 0}]) == 4 : U32}
+
+law pic_native_alpha_middle:
+  {Pic.native.channels([Pic.Packet{0, 128, 0}, Pic.Packet{1, 16, 0}, Pic.Packet{2, 224, 0}]) == 4 : U32}
+
+law pic_native_low_bits:
+  {Pic.native.channels([Pic.Packet{2, 15, 0}, Pic.Packet{1, 239, 0}]) == 3 : U32}
+
+law pic_native_alpha_low_bits:
+  {Pic.native.channels([Pic.Packet{2, 31, 0}, Pic.Packet{0, 239, 0}]) == 4 : U32}
+
+law formatted_pic_decode_rgb_format:
+  {J.Image.Formatted.pic.format(3) == 4 : U32}
+
+law formatted_pic_decode_rgba_format:
+  {J.Image.Formatted.pic.format(4) == 7 : U32}
+
+law formatted_pic_decode_rgb_word:
+  {J.Image.Formatted.pic.word(3, 305419896) == 5649426 : U32}
+
+law formatted_pic_decode_rgba_word:
+  {J.Image.Formatted.pic.word(4, 305419896) == 2018915346 : U32}
+
+law formatted_pic_decode_zero_alpha:
+  {J.Image.Formatted.pic.word(4, 2172748032) == 8487297 : U32}
+
+law formatted_pic_decode_pixels_zero:
+  for index: U32
+  for channels: U32
+  for pixels: Array<U32>
+  {J.Image.Formatted.pic.pixels(0n, index, channels, pixels) == pixels : Array<U32>}

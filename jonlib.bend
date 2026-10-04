@@ -837,7 +837,7 @@ def Surface.pic.error(error: Pic.Error) -> Image.DecodeError:
 def Surface.pic.result(result: Result<&1, &1, Pic.Error, Pic.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
   match result:
     case Fail{error}: Fail{Surface.pic.error(error)}
-    case Done{Pic.Image{w, h, pixels}}: Done{Surface{w, h, pixels}}
+    case Done{Pic.Image{w, h, _, pixels}}: Done{Surface{w, h, pixels}}
 
 def Surface.decode_pic(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   Surface.pic.result(Pic.decode(bytes))
@@ -1129,6 +1129,35 @@ def Image.Formatted.bmp.result(result: Result<&1, &1, Bmp.Error, Bmp.Image>) -> 
 
 def Image.Formatted.decode_bmp(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
   Image.Formatted.bmp.result(Bmp.decode(bytes))
+
+# PIC retains native components from the union of validated packet masks.
+# Keep the owned RGBA array and integer-pack it; opacity never selects format.
+def Image.Formatted.pic.format(channels: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(channels, 3), 4, 7)
+
+def Image.Formatted.pic.word(channels: U32, pixel: U32) -> U32:
+  +word = Formats.swap(pixel)
+  Bool.pick(U32, U32.is_eq(channels, 3), (word .&. 16777215 : U32), word)
+
+def Image.Formatted.pic.write(index: U32, channels: U32, read: Array<U32> & U32) -> Array<U32>:
+  (pixels, pixel) = read
+  Array.set(U32, pixels, index, Image.Formatted.pic.word(channels, pixel))
+
+def Image.Formatted.pic.pixels(n: Nat, +index: U32, +channels: U32, pixels: Array<U32>) -> Array<U32>:
+  match n:
+    case 0n: pixels
+    case 1n+rest:
+      Image.Formatted.pic.pixels(rest, (index + 1 : U32), channels, Image.Formatted.pic.write(index, channels, Array.get(U32, pixels, index)))
+
+def Image.Formatted.pic.result(result: Result<&1, &1, Pic.Error, Pic.Image>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
+  match result:
+    case Fail{error}: Fail{Surface.pic.error(error)}
+    case Done{Pic.Image{+width, +height, +channels, pixels}}:
+      Done{FormattedImage{width, height, Image.Formatted.pic.format(channels),
+        Image.Formatted.pic.pixels(U32.to_nat((width * height : U32)), 0, channels, pixels)}}
+
+def Image.Formatted.decode_pic(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
+  Image.Formatted.pic.result(Pic.decode(bytes))
 
 # PNM magic retains native gray/RGB storage after the decoder's 8-bit reduction.
 # Extract integer samples directly; a floating luminance round trip can alter gray.

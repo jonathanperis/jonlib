@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "profile": "native-png-formatted-files-v1",
-  "status": "locally-qualified-hosted-pending",
+  "status": "locally-and-hosted-qualified-recorded-scope",
   "passed": true,
   "passed_scope": "Frozen local Linux x86-64 file runtime and regression matrix; independent retained complete-output replay within the stated legacy/canonical/QOI limits. Later final metadata/CI-tree checks and exact-tip hosted qualification are recorded separately.",
   "local_matrix_completed_date": "2026-10-04",
@@ -1841,7 +1841,7 @@
     "scope": "Final documentation/CI-tree validation and publication receipts are separate from the completed frozen runtime qualification. This runtime evidence does not claim a later integrated-suite count or pass."
   },
   "hosted_qualification": {
-    "status": "pending-for-new-png-file-exact-tip",
+    "status": "passed-for-png-file-commit-e6ac05e6",
     "required_gate_count": 85,
     "required_workers": 12,
     "required_aggregates": 2,
@@ -1872,13 +1872,39 @@
         }
       ],
       "scope": "CI-only repair with unchanged predecessor runtime; does not qualify the new PNG-file increment"
+    },
+    "qualified_exact_tip": {
+      "commit": "e6ac05e6d1daf64d050e6da3f783ed60cc3130e1",
+      "gate_count": 85,
+      "workers": 12,
+      "aggregates": 2,
+      "unique_nonempty_artifacts": 12,
+      "receipt": {
+        "path": "/workspace/scratch/61c86f431823/publication-png-files/actions-verified-e6ac05e6.json",
+        "sha256": "a84f18adf17988e45b37b6aeab7924466c686d224cf455cbb31d86be27f69093"
+      },
+      "verified_at": "2026-10-04T09:13:15.635308+00:00",
+      "runs": [
+        {
+          "name": "Checks",
+          "id": 37187107919,
+          "conclusion": "success",
+          "url": "https://github.com/jonathanperis/jonlib/actions/runs/37187107919"
+        },
+        {
+          "name": "Conformance",
+          "id": 37187107908,
+          "conclusion": "success",
+          "url": "https://github.com/jonathanperis/jonlib/actions/runs/37187107908"
+        }
+      ],
+      "scope": "Exact PNG-file predecessor hosted result on Ubuntu 24.04 and macOS 15 CPU/JavaScript workers; does not qualify the later PIC increment"
     }
   },
   "unqualified": [
     "GPU/Metal",
-    "Windows/macOS/browser",
+    "Windows/browser and macOS domains outside the recorded hosted gates",
     "big-endian",
-    "exact-commit hosted CI",
     "maximum-area allocation/resource limits",
     "representative performance",
     "concurrent/special files",

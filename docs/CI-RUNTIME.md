@@ -5,7 +5,7 @@ The runtime split reviewed on 2026-10-02 preserves the workflow at checkpoint
 package names only; no library, probe, numeric fixture, tolerance, compiler,
 qualification, loader policy or resource ceiling changes are involved in that split.
 The later reviewed TGA-memory, TGA-file, BMP-memory, BMP-file, PNG-memory and
-PNG-file additions are described separately below. The later scheduling-only TGA split
+PNG-file and PIC-memory additions are described separately below. The later scheduling-only TGA split
 starts from exact 84-gate checkpoint `7dcfdb98a51af5dc0aa28f3affb060f185762a52`
 after the observed macOS formatted-worker budget cancellation. It moves only
 the two existing TGA gates and their six upload patterns into independent workers.
@@ -17,9 +17,12 @@ Each of Ubuntu 24.04 and macOS 15 runs six independent workers:
 
 - **Core CPU and JavaScript:** the other 72 verification/diagnostic steps in
   their original order, including canonical conformance and all angle checks.
-- **Formatted images CPU and JavaScript:** these seven original steps, in order:
+- **Formatted images CPU and JavaScript:** the seven original steps, in order:
   formatted BMP export, formatted TGA export, formatted QOI export, QOI memory,
-  PNM memory, PNM files, and QOI files. The visible worker names are unchanged.
+  PNM memory, PNM files, and QOI files, followed by native PIC memory. PIC builds
+  and qualifies its own PIC-enabled native archive and runs its complete
+  CPU-one-thread, CPU-two-thread and JavaScript comparisons. The visible worker
+  names are unchanged.
 - **TGA memory and files CPU and JavaScript:** the existing mandatory native-format
   TGA-memory gate immediately followed by the existing format-preserving TGA-file
   gate. Both complete gate payloads move unchanged out of formatted workers.
@@ -44,8 +47,14 @@ nine formatted, two BMP and one PNG before the TGA scheduling split. The
 84-gate layout after that split is 72 core, seven formatted, two BMP, one PNG
 and two TGA. The separate PNG-file workers bring each OS to **85 gates**:
 **72 core, seven formatted, two BMP, one PNG memory, two TGA and one PNG file**.
-All ten existing worker bodies, their names, setup, 84 gate payloads and artifact
-settings/paths remain byte-identical to the ten-worker 84-gate checkpoint.
+At the PNG-file increment, all ten existing worker bodies, their names, setup,
+84 gate payloads and artifact settings/paths remained byte-identical to the
+ten-worker 84-gate checkpoint. Native PIC memory then brings each OS to
+**86 gates: 72 core, eight formatted, two BMP, one PNG memory, two TGA and one
+PNG file**. Both formatted workers append only the PIC gate and one upload
+line; all 85 predecessor gate payloads, setup, settings, names and existing
+paths remain exact. The other ten worker bodies and both all-twelve aggregate
+bodies remain byte-identical to the 85-gate predecessor.
 At the PNG-memory checkpoint, the four core/formatted worker jobs remained
 byte-identical to the 81-gate checkpoint. All six pre-PNG worker jobs, including
 IDs, names, settings, setup, existing 83 gate payloads and artifacts, remained
@@ -70,6 +79,9 @@ The core retains the R32 native archive producers before angle qualification.
 The formatted worker's first BMP/TGA gates configure their own raylib build;
 subsequent QOI/PNM gates make their own native builds. Both relocated TGA gates
 make their own fresh native builds in their new independent workspace.
+The appended PIC-memory gate independently enables `SUPPORT_FILEFORMAT_PIC`,
+verifies its fresh archive configuration and qualifies that archive before
+comparison. It has no dependency on another worker or preceding gate receipt.
 The BMP and PNG workers likewise use fresh isolated native builds; they neither
 reuse other workers' libraries nor skip qualification.
 Canonical conformance continues to build and qualify its own reference.
@@ -99,7 +111,7 @@ Four exact exclusions follow
 the TGA-file directory: `run-*/fixtures/cap-plus-one.tga`,
 `run-*/fixtures/cap-plus-one.qoi`, `run-*/fixtures/larger-file.tga` and
 `run-*/fixtures/host-size-overflow.tga`, each under `.build/tga-file-probe/`.
-Formatted artifacts return to their original 16 patterns. TGA artifacts contain
+At the scheduling split, formatted artifacts returned to their original 16 patterns. TGA artifacts contain
 exactly the six moved patterns, including those four exclusions.
 The new BMP artifacts include the entire `.build/bmp-format-probe/` directory,
 with all source, input, native-build, command, output and resource receipts.
@@ -119,9 +131,15 @@ by that scheduling change. The separate PNG-file artifacts contain five patterns
 `run-*/fixtures/cap-plus-one.png`, `run-*/fixtures/cap-plus-one.qoi`,
 `run-*/fixtures/larger-file.png` and `run-*/fixtures/host-size-overflow.png`,
 all under `.build/png-file-probe/`. Those names are checked against the actual
-PNG-file harness controls. This brings the total to **174 patterns per OS**:
+PNG-file harness controls. That brings the total to **174 patterns per OS**:
 140 core, 16 formatted, six BMP, one PNG memory, six TGA and five PNG-file
-patterns, in twelve artifacts. No existing pattern moves or changes. The ordinary
+patterns, in twelve artifacts. PIC then appends `.build/pic-format-probe/`
+after all 16 existing formatted patterns, matching the probe default output
+directory. This brings the current total to **175 patterns per OS**:
+140 core, 17 formatted, six BMP, one PNG memory, six TGA and five PNG-file
+patterns, still in twelve artifacts. The full PIC directory retains source,
+inputs, native-build, command, output and resource evidence. No existing pattern
+moves or changes. The ordinary
 1 MiB `exact-cap.tga`, `exact-cap.bmp` and `exact-cap.png`,
 fixture recipes in `inputs.json`, source/native-build evidence, command/output
 receipts and resource receipts remain included. The memory-only probes create
@@ -156,7 +174,7 @@ estimates above predate both TGA additions and exclude their full native
 builds, qualification and CPU-1/CPU-2/JavaScript comparisons, including the
 TGA-memory probe's 43 source-bounded partitions. Observed 80-gate memory-checkpoint
 runtimes are recorded below, followed by the verified 81-gate result. Those
-historical measurements do not qualify the current twelve-worker 85-gate tip;
+historical measurements do not qualify the current twelve-worker 86-gate tip;
 the 120-minute
 worker budgets are unchanged.
 
@@ -343,14 +361,58 @@ Each new artifact is named `conformance-<os>-png-files` and retains ordinary
 exact-cap input, fixture recipes and complete source/native-build, command,
 output and resource evidence while excluding only four exact sparse bodies.
 
-This CI-only patch changes no compiler, native probe, implementation, fixture,
-numeric expectation or resource ceiling. The new **85-gate** hosted result and
-worker runtimes remain pending. Local integration requires its frozen source
-matrix, independent complete-record replay, proof, project/API checks and the
-final restored-PATH Python suite with zero skips. Fresh exact-commit hosted
-Checks, all twelve workers, both aggregates and all twelve distinct nonempty
-artifacts must pass separately. The historical incomplete 7dcfdb98 run and
-successful 9cb5a7e7 run do not qualify this increment.
+That CI-only patch changed no compiler, native probe, implementation, fixture,
+numeric expectation or resource ceiling. The **85-gate** hosted run
+[37187107908](https://github.com/jonathanperis/jonlib/actions/runs/37187107908)
+for exact commit `e6ac05e6d1daf64d050e6da3f783ed60cc3130e1` completed
+successfully on 2026-10-04, together with [Checks
+37187107919](https://github.com/jonathanperis/jonlib/actions/runs/37187107919).
+All twelve workers, both compatibility aggregates and all twelve unique,
+nonempty evidence artifacts were independently verified for that exact main
+commit. This closes the predecessor's hosted qualification; it does not qualify
+the later PIC-memory source or its 86-gate workflow. The frozen local PNG-file
+matrix, independent replay and separate final metadata/CI checks remain the
+historical local evidence described in [VERIFICATION.md](VERIFICATION.md).
+
+## PIC-memory planning and evidence boundary
+
+The additive PIC-memory wiring starts from exact twelve-worker 85-gate commit
+`e6ac05e6d1daf64d050e6da3f783ed60cc3130e1`. Its focused fresh local Linux
+PIC gate measured **1,023.403 seconds (about 17 minutes)**. This is a local
+planning measurement, neither a hosted nor macOS measurement. The historical successful `9cb5a7e7` scheduling-fix run
+measured the original seven-gate formatted workers at **45m22s on Ubuntu** and
+**47m07s on macOS**. The later exact green `e6ac05e6` run measured those
+formatted workers at **44m04s on Ubuntu** and **25m12s on macOS**. These observed
+variations support retaining explicit headroom while appending PIC in the
+existing formatted workers; adding local and hosted
+times does not establish a combined runtime, a hosted prediction or guaranteed
+budget margin. Both workers retain their original 120-minute limit.
+
+Both formatted workers run
+`python3 tools/pic_format_probe.py --reference-env clean-loader`
+with the original pinned Bend and raylib source arguments, immediately after
+all seven unchanged original gates and before evidence upload. The new gate
+performs its own fresh isolated native build with `SUPPORT_FILEFORMAT_PIC=ON`,
+verifies the build configuration and archive, and independently qualifies that
+archive before its complete CPU-1/CPU-2/JavaScript matrix. It cannot reuse
+another worker's build or rely on a preceding gate's qualification.
+
+The workflow changes only two PIC gate blocks and one full-directory upload
+line per platform. No worker, dependency, artifact package or aggregate body is
+added or renamed; all twelve worker IDs, both all-twelve aggregate bodies and
+all existing setup, permissions, environment, pins and timeouts remain exact.
+This CI-only change does not change implementation, probes, fixtures,
+expectations, tolerances or resource ceilings. It yields **86 gates and 175
+upload patterns per OS**, with twelve workers and twelve distinct artifacts.
+
+PIC's frozen local source matrix and independent complete-record replay passed,
+including 1,053 Python tests without skips, 190 scoped laws and project/API checks.
+The later final metadata/CI-tree snapshot is validated separately; it does not
+replace runtime evidence. Exact-commit hosted Checks, all twelve workers, both
+compatibility aggregates and all twelve nonempty artifacts must pass separately.
+No **86-gate** hosted result or combined formatted-worker runtime is claimed.
+The exact green 85-gate predecessor `e6ac05e6` remains separate from this PIC
+increment, as do the older incomplete `7dcfdb98` and successful `9cb5a7e7` runs.
 
 ## Executable preservation contract
 
@@ -404,7 +466,8 @@ Both TGA workers must run
 `tools/tga_format_probe.py --reference-env clean-loader` immediately after their
 seven pinned setup steps, immediately followed by
 `tools/tga_file_probe.py --reference-env clean-loader`. Formatted workers retain
-exactly their original seven gates and their original order.
+their original seven gates and their original order, followed only by the
+explicitly reviewed PIC gate.
 Both commands use the original pinned Bend and raylib source arguments. Mutation
 coverage rejects missing, duplicate, altered, reordered or optional TGA gates,
 missing/altered clean-loader flags, and missing, changed or broadened TGA artifact
@@ -449,7 +512,23 @@ worker/result/test links are checked, including cross-worker substitution and
 new-pair diagnostic injection. The historical ten-way grammar mutation tests
 remain active and extend to the new result variables.
 
-Independently of the structural parser, removing only the two PNG-file worker
+PIC has a separate exact gate and complete-directory artifact contract.
+Mutations reject missing, duplicate, altered, optional or skipped gates;
+changed loader or pinned-source arguments; bypassed failures; placement before
+any original gate; and missing, duplicate, stale, narrowed, broader or reordered
+upload paths. Its upload remains after all 16 original formatted patterns.
+Independent raw-byte and `BaseLoader` YAML validation rejects these mutations
+separately and compares each original worker and aggregate against the exact
+85-gate predecessor. The CI-only tests retain every historical actual-Bash,
+six/eight-way exhaustive and ten/twelve-way factorized test body byte-for-byte.
+
+Independently of the structural parser, removing only the two PIC gate blocks
+and one new upload line per OS must restore the complete 85-gate twelve-worker
+workflow at `e6ac05e6d1daf64d050e6da3f783ed60cc3130e1`, SHA-256
+`3b5f0be5c6ee604316f3e9015f72d4316b9792c3949bff91698053617cc7268e`.
+Both aggregate bodies are identical, and all 85 old gates and 174 old patterns
+remain exact; PIC alone produces the new 86-gate/175-pattern totals.
+From those restored bytes, removing only the two PNG-file worker
 blocks and explicitly reviewed aggregate extensions must restore the complete
 84-gate ten-worker workflow at `9cb5a7e7cabdb76005a76119616e33ca9516d73b`, SHA-256
 `8bfab667d418967d2427f41079411c1ef8d2e6698068127cde4cd4a950eb6b91`.
@@ -470,7 +549,7 @@ From those restored bytes, removing only the BMP worker jobs and the explicitly
 reviewed aggregate additions must still restore the complete 81-gate workflow,
 SHA-256
 `34fa72b91f6e4ab3e7e555c51e621364bf1b68e1dba4945db2442ad8e463ce7e`.
-All five predecessor raw-byte anchors remain active;
+All six predecessor raw-byte anchors remain active;
 `read_bytes().decode('utf-8')` preserves line endings so a CRLF rewrite cannot evade the checks. The original baseline
 fixture, all 5,096 prior Bash cases, all 235,298 six-way assignments, all
 11,529,602 eight-way assignments and the factorized ten-way checks retain their
@@ -479,7 +558,8 @@ twelve-way proof are additive. Independent raw-byte and parsed-YAML comparison
 checks all ten old workers as identical objects and bytes, all existing aggregate
 content after removing only explicit extensions, and new-worker setup, gate and
 upload contracts. It verifies complete restored predecessor bytes and objects,
-all 84 old gates and 169 old patterns, and the new 85-gate/174-pattern totals.
+all 84 old gates and 169 old patterns, and the intermediate 85-gate/174-pattern
+totals after reversing the PIC addition.
 
 
 Future intentional CI additions require explicit review and a corresponding
@@ -502,6 +582,6 @@ conformance and strict independent
 complete-record replay against the integrated source. Isolated reconstruction
 receipts remain historical to their recorded source hashes. Final exact-commit
 hosted Checks, all current workers and both aggregates are required separately.
-The BMP and PNG implementations also require their own frozen-source local matrices,
+The BMP, PNG and PIC implementations also require their own frozen-source local matrices,
 complete proof, independent replay and project/API checks before integration;
 CI wiring by itself does not establish library parity.

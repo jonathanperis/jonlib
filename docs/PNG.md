@@ -251,10 +251,15 @@ and [28-stage runtime matrix](VERIFICATION.md#format-preserving-png-file-loading
 The historical memory evidence above is unchanged. Its earlier eight-worker
 hosted run timed out on macOS; the CI-only repaired 84-gate/ten-worker predecessor
 at `9cb5a7e7` passes [Conformance](https://github.com/jonathanperis/jonlib/actions/runs/37179587107).
-This later predecessor result does not qualify PNG-file IO. Final metadata/CI-tree
-checks remain separately recorded, and **85-gate/twelve-worker exact-tip PNG-file
-hosted qualification remains pending**. Only partial `LoadImage` scope expands;
-`LoadImageFromMemory`, API completion counts, pins and laws remain unchanged.
+That predecessor result alone did not qualify PNG-file IO. The later PNG-file
+commit `e6ac05e6` now passes
+[Checks](https://github.com/jonathanperis/jonlib/actions/runs/37187107919) and
+[85-gate Conformance](https://github.com/jonathanperis/jonlib/actions/runs/37187107908),
+with twelve workers, both aggregates and twelve unique nonempty artifacts. Final
+metadata/CI-tree checks remain separate from frozen runtime evidence. This hosted
+result does not qualify the later PIC increment. In the PNG-file increment only
+partial `LoadImage` scope expanded; `LoadImageFromMemory`, API completion counts,
+pins and laws remained unchanged.
 
 ## Historical Surface verification
 
