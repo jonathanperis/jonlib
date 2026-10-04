@@ -12,7 +12,7 @@ type Error is Data:
   BadStream{}
 
 type Image is Type:
-  Image{width: U32, height: U32, pixels: Array<U32>}
+  Image{width: U32, height: U32, native_channels: U32, pixels: Array<U32>}
 
 type Word is Data:
   Word{value: U32, data: +List<U32>}
@@ -219,18 +219,18 @@ def rows(n: Nat, +y: U32, +width: U32, +packets: +List<Packet>, +fuel: Nat, stat
     case 0n _: state
     case 1n+rest _: rows(rest, (y + 1 : U32), width, packets, fuel, row(packets, (y * width : U32), width, fuel, state))
 
-def image(width: U32, height: U32, result: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, Image>:
+def image(width: U32, height: U32, native_channels: U32, result: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, Image>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{State{_, output}}: Done{Image{width, height, output}}
+    case Done{State{_, output}}: Done{Image{width, height, native_channels, output}}
 
-def start.valid(valid: Bool, +width: U32, +height: U32, packets: +List<Packet>, fuel: Nat, data: +List<U32>) -> Result<&1, &1, Error, Image>:
+def start.valid(valid: Bool, +width: U32, +height: U32, native_channels: U32, packets: +List<Packet>, fuel: Nat, data: +List<U32>) -> Result<&1, &1, Error, Image>:
   match valid:
     case False{}: Fail{Truncated{}}
     case True{}:
       +count = (width * height : U32)
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
-      image(width, height, rows(U32.to_nat(height), 0, width, packets, fuel, Done{State{data, Array.new(U32, depth, 4294967295)}}))
+      image(width, height, native_channels, rows(U32.to_nat(height), 0, width, packets, fuel, Done{State{data, Array.new(U32, depth, 4294967295)}}))
 
 def byte_count(data: +List<U32>, count: Nat) -> Nat:
   match data:
@@ -242,16 +242,27 @@ def raw(packets: +List<Packet>) -> Bool:
     case Nil{}: True{}
     case Con{Packet{kind, _, _}, rest}: U32.is_eq(kind, 0) && raw(rest)
 
-def start.kind(plain: Bool, +width: U32, +height: U32, packets: +List<Packet>, size: U32, +data: +List<U32>) -> Result<&1, &1, Error, Image>:
+def start.kind(plain: Bool, +width: U32, +height: U32, native_channels: U32, packets: +List<Packet>, size: U32, +data: +List<U32>) -> Result<&1, &1, Error, Image>:
   match plain:
-    case True{}: start.valid(enough(U32.to_nat((width * height * size : U32)), data), width, height, packets, 0n, data)
-    case False{}: start.valid(True{}, width, height, packets, byte_count(data, 0n), data)
+    case True{}: start.valid(enough(U32.to_nat((width * height * size : U32)), data), width, height, native_channels, packets, 0n, data)
+    case False{}: start.valid(True{}, width, height, native_channels, packets, byte_count(data, 0n), data)
+
+# Native output components are structural: alpha in ANY validated descriptor
+# selects RGBA, even when later RGB packets overwrite colors or alpha is opaque.
+# The separate size accumulator remains a selected-input-sample count.
+def native.mask(packets: +List<Packet>, mask: U32) -> U32:
+  match packets:
+    case Nil{}: mask
+    case Con{Packet{_, channels, _}, rest}: native.mask(rest, (mask .|. channels : U32))
+
+def native.channels(packets: +List<Packet>) -> U32:
+  Bool.pick(U32, U32.is_ne((native.mask(packets, 0) .&. 16 : U32), 0), 4, 3)
 
 def start(result: Result<&2, &2, Error, Header>) -> Result<&1, &1, Error, Image>:
   match result:
     case Fail{error}: Fail{error}
     case Done{Header{width, height, +packets, size, data}}:
-      start.kind(raw(packets), width, height, packets, size, data)
+      start.kind(raw(packets), width, height, native.channels(packets), packets, size, data)
 
 def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, Error, Image>:
   match valid:

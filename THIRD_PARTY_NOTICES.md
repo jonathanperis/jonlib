@@ -149,6 +149,13 @@ exact grayscale/gray-alpha/RGB/RGBA bytes in owned Bend storage.
 `tools/png_format_probe.py` executes the pinned unmodified reader only as an
 independent native reference; its admission checks and observation protocol do
 not link native PNG code into the Bend implementation.
+The PIC formatted-memory adapter retains the altered `src/pic.bend` reader's
+checked domain, adapting `stb_image.h` lines 6390–6416 and 6500–6538 with raylib
+`rtextures.c` lines 461–471. The union of every validated packet channel mask
+retains native RGB/RGBA metadata independently of output opacity or selected
+input-sample totals. Integer repacking reuses owned Bend storage. The unmodified
+native reader is only a reference; independently admitted complete inputs avoid
+its failed-decode null-source conversion path.
 The upstream Softimage PIC reader credits Tom Seddon.
 The upstream GIF reader credits Jean-Marc Lienher, with simplification by stb.
 The upstream Radiance RGBE HDR reader credits Nicolas Schulz.

@@ -336,9 +336,13 @@ hit the 120-minute limit. The repaired **84-gate/ten-worker** predecessor at
 `9cb5a7e7cabdb76005a76119616e33ca9516d73b` passes
 [Checks](https://github.com/jonathanperis/jonlib/actions/runs/37179587100) and
 [Conformance](https://github.com/jonathanperis/jonlib/actions/runs/37179587107).
-That CI-only change preserves runtime sources and does not qualify this PNG-file
-increment. New **85-gate/twelve-worker exact-tip hosted qualification remains
-pending**.
+That CI-only change preserves predecessor runtime sources. The later PNG-file
+commit `e6ac05e6d1daf64d050e6da3f783ed60cc3130e1` now passes
+[Checks](https://github.com/jonathanperis/jonlib/actions/runs/37187107919) and
+[85-gate Conformance](https://github.com/jonathanperis/jonlib/actions/runs/37187107908):
+twelve workers, both aggregates and twelve unique nonempty artifacts on the
+recorded Ubuntu/macOS CPU/JavaScript matrix. This historical result does not
+qualify the later PIC increment or unexecuted platform/resource domains.
 
 ```sh
 python3 tools/png_file_probe.py --reference-env clean-loader \

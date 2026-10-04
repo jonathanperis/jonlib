@@ -1,12 +1,11 @@
 {
   "schema": 1,
-  "profile": "native-png-formatted-files-v1",
-  "status": "locally-and-hosted-qualified-recorded-scope",
+  "profile": "native-pic-formatted-memory-v1",
+  "status": "locally-qualified-hosted-pending",
   "passed": true,
-  "passed_scope": "Frozen local Linux x86-64 file runtime and regression matrix; independent retained complete-output replay within the stated legacy/canonical/QOI limits. Later final metadata/CI-tree checks and exact-tip hosted qualification are recorded separately.",
+  "passed_scope": "Frozen local Linux x86-64 PIC memory runtime and 30-stage regression matrix; independent retained complete-output replay within the stated legacy/canonical/QOI limits. Later final metadata/CI-tree checks and exact-tip hosted qualification are separate.",
   "local_matrix_completed_date": "2026-10-04",
-  "base_revision": "7dcfdb98a51af5dc0aa28f3affb060f185762a52",
-  "integration_base_revision": "9cb5a7e7cabdb76005a76119616e33ca9516d73b",
+  "base_revision": "e6ac05e6d1daf64d050e6da3f783ed60cc3130e1",
   "host": {
     "system": "Linux",
     "machine": "x86_64"
@@ -35,23 +34,32 @@
     "profile": "rgba8-cpu-images-v1"
   },
   "changed_api": {
-    "id": "raylib:function:LoadImage",
+    "id": "raylib:function:LoadImageFromMemory",
     "before": "partial",
     "after": "partial",
-    "new_scope": "Image.Formatted.load_png: explicit suffix-independent ordinary-file PNG selection preserving native format 1/2/4/7 and exact reduced 8-bit storage across the unchanged checked memory domain",
+    "new_scope": "Image.Formatted.decode_pic: native RGB888/RGBA8888 metadata and owned integer-packed raw bytes across the complete unchanged checked PIC memory domain",
     "aggregate_completion_delta": 0,
     "partial_mapping_count_delta": 0,
     "other_api_scope_changes": [],
-    "LoadImageFromMemory_entry_unchanged": true,
-    "added_library_functions": [
-      "Image.Formatted.png.file.loaded",
-      "Image.Formatted.load_png"
-    ]
+    "historical_metadata_only_correction": {
+      "id": "raylib:function:LoadImage",
+      "purpose": "Record exact e6ac PNG-file 85-gate hosted success; no mapping/status/domain change",
+      "before_after_invariant_check": {
+        "passed": true,
+        "before_sha256": "dc9a24f0dbd76f3283b68036dbf3445f9767566a5fb6c7465b68bac2e8bdc8ea",
+        "after_sha256": "72e5d1d982d1ebaaa1630d66ad82722d488af074c5cf1b0aa74a11f9d9bf0fcf",
+        "changed_fields": [
+          "scope",
+          "gaps"
+        ],
+        "mapping_status_gates_evidence_identical": true,
+        "domain_prefix_exactly_unchanged": true,
+        "exact_reverse_of_two_qualification_replacements_restores_full_entry": true
+      }
+    }
   },
   "contract": {
     "formats": [
-      1,
-      2,
       4,
       7
     ],
@@ -61,43 +69,52 @@
     ],
     "mipmaps": "implicit single-mip type contract, not stored/measured",
     "native_mipmaps_measured": 1,
-    "encoded_file_cap_inclusive": 1048576,
-    "encoded_memory_cap_inclusive": 1048576,
-    "filtered_stream_cap_inclusive": 67108864,
-    "reader": "Unchanged RasterFile: pre-read cap admission, Base U32-size overflow, one exact-length read and File.close call before decoding; Base cannot report close failures",
-    "memory_domain_unchanged": true,
-    "decoder_shared_reader_pins_and_laws_unchanged": true,
-    "channel_selection": "Structural color type/tRNS, including sticky palette promotion; full-width 16-bit transparency comparison precedes reduction; native-default CgBI remains unchanged",
-    "factory_role": "native-byte factory reconstruction gated by a distinct successful public reopen; not a second loader-byte comparison",
-    "raw_roundtrip_role": "reopened loader bytes exported and reconstructed through from_bytes",
-    "max_area_or_heap_parity_claimed": false,
-    "generic_formatted_dispatch_added": false
+    "channel_selection": "Bitwise union of every validated descriptor mask; any 0x10 alpha bit selects RGBA regardless of descriptor order, later RGB packets, output opacity or selected input sample totals",
+    "sample_depth": 8,
+    "packet_types": [
+      0,
+      1,
+      2
+    ],
+    "packet_count": [
+      1,
+      10
+    ],
+    "decoder_domain_unchanged": true,
+    "encoded_memory_cap_added": false,
+    "integer_repacking_reuses_owned_array": true,
+    "rgb_unused_high_byte_cleared": true,
+    "global_byte_validation_and_typed_error_precedence_unchanged": true,
+    "normalized_surface_and_generic_dispatch_unchanged": true,
+    "formatted_file_loading_added": false,
+    "generic_formatted_dispatch_added": false,
+    "max_area_or_heap_parity_claimed": false
   },
   "runtime_source_sha256": {
-    "jonlib.bend": "f70e4b7408a593bb773541bac3ae87efe905626e316a82e04d81ecdb002b7d66",
-    "src/png.bend": "b1e21e44703bb58bd0cdc21ade772ab1bfe6cba5591e2205a8c40196b1780153",
-    "LAWS.bend": "62566d1c495a96490b107cd959c3569365c817c90f52829d5eeaa5ca46e66417",
-    "PROOF.bend": "089f4ca6b8a157e7ced36b3798fdbab5fa2f238603700c0d56b09f65dbc27fcb",
+    "jonlib.bend": "bcca1d9297430c1516aa777e31b58327ab6a2a22ee1c5dbb88b971d5fa5b5c09",
+    "src/pic.bend": "4c837ad968539a7bb126d40fe01134d0fc0518b322818c59edaa2e50cc5cfaa9",
+    "LAWS.bend": "eba27d46c5177ee06708295554b0a1d40b00b083f58e0b4e577d11c44eebcfdc",
+    "PROOF.bend": "c777b5b26bce777b7dc118b18aeb502851dfabd9589e69feea18fc1eb2cfdcb8",
     "toolchain.json": "74c20ac3f303ef6f823209a1474b1591dd0bef87e35a4cd616e021605d6f3595",
-    "tools/png_file_probe.py": "f2045a41fffc3e0c02d66ae06eb82bbd3a34750cd4be070ce6dd1e9b03f1c8a2",
-    "tests/test_png_file_harness.py": "80af12243705a75dfb8ee4aba206a1291ba34de9975cc61de93b620f4232b050",
-    "tools/png_format_probe.py": "95680a1ba3f37736748740e148077700774a9b52ee791f249e1ddfafd5d90678",
-    "tests/test_png_format_harness.py": "f9b25b3bba926dac79aaab845f3a297be137e7f0e4aa5d3df47ed46cba658e10"
+    "tools/pic_format_probe.py": "0124e9964ffdb47cec5319feffdd146f02ef2e6f0460f84d31fcad683fbe00bd",
+    "tools/pic_format_audit.py": "d2af0fd729456bfadda9cd1b0a6e745b84ba335a100158e9b00dc113f4e44c71",
+    "tests/test_pic_format_harness.py": "f4eb21318462112fe9752f2afe4316ff04bf3048adff626d6bce56c263d0d7a7"
   },
   "frozen_source_scope": {
-    "manifest_sha256": "9b0a76d11345ff3b04541df50d672c2be5887d9dd2003dd678d4bdaee3fb126f",
-    "source_files": 470,
-    "runtime_sources": 72,
-    "verification_sources": 154,
+    "manifest_sha256": "1b18cdd43040094e29d0361396b4170678a65d9770e4f013e961728a5eedc5f3",
+    "source_files": 474,
+    "runtime_sources": 71,
+    "verification_sources": 157,
     "verified_before_after_read_only_audit": true,
-    "meaning": "The 470-file pre-integration snapshot was unchanged during runtime/audit. Final documentation/CI edits are outside that snapshot; runtime sources remain separately sealed."
+    "meaning": "Full frozen pre-integration source snapshot; later docs and CI checks are recorded separately, with runtime sources kept sealed",
+    "prerequisite_receipts": 44
   },
   "focused": {
-    "path": ".build/png-file-probe/results.json",
-    "sha256": "cfacc90eaed785ef4689ce6b426b948e8f1c0eaa82369bae420f67b39223aee4",
+    "path": ".build/pic-format-probe/results.json",
+    "sha256": "588e05c16d20ff062b5dce642848447ee2e811f158619fbb05bdc8d30b4f2186",
     "command": [
       "python3",
-      "tools/png_file_probe.py",
+      "tools/pic_format_probe.py",
       "--reference-env",
       "clean-loader",
       "--bend-source",
@@ -105,57 +122,45 @@
       "--raylib-source",
       "$RAYLIB_SOURCE"
     ],
-    "cases": 370,
-    "pixels": 86119,
-    "typed_controls": 219,
-    "file_controls": 143,
-    "synthetic_controls": 76,
+    "cases": 101,
+    "pixels": 37306,
+    "typed_controls": 343,
     "native_rejections": 0,
-    "native_routes": {
-      "LoadImage": 326,
-      "explicit-png": 44
-    },
-    "native_observations": 740,
-    "native_raw_bytes": 207017,
-    "native_normalized_bytes": 344476,
-    "observations_per_lane": 2846,
-    "compared_bytes_per_lane": 1531636,
-    "raw_compared_bytes_per_lane": 828068,
-    "normalized_compared_bytes_per_lane": 703568,
+    "native_observations": 263,
+    "native_raw_bytes": 127008,
+    "native_normalized_bytes": 149224,
+    "native_all_observed_bytes": 283487,
+    "observations_per_lane": 1536,
+    "compared_bytes_per_lane": 836048,
+    "raw_compared_bytes_per_lane": 508032,
+    "normalized_compared_bytes_per_lane": 328016,
     "batch_size": 32,
     "source_byte_limit": 196608,
     "partition_strategy": "ordered-greedy-generated-source-v1",
-    "elapsed_seconds": 2708.808,
+    "elapsed_seconds": 1023.403,
     "qualification": {
       "little_endian": true,
-      "png_enabled": true,
-      "structural_channels": true,
-      "full_width_transparency": true,
-      "cgbi_defaults": true,
+      "pic_enabled": true,
+      "all_descriptor_channels": true,
+      "default_white": true,
+      "packet_overwrite": true,
+      "rle_rules": true,
       "formats": [
-        1,
-        2,
         4,
         7
       ]
     },
-    "native_partitions": 24,
-    "candidate_partitions": 90,
-    "maximum_generated_source_bytes": 138804,
-    "maximum_native_source_bytes": 12533,
-    "primary_totals_exclude_resource_records": true
+    "native_partitions": 10,
+    "candidate_partitions": 51,
+    "maximum_native_source_bytes": 193542,
+    "maximum_candidate_source_bytes": 185055,
+    "native_primary_vs_alias_totals": "native_raw_bytes and native_normalized_bytes cover one pair per case; native_all_observed_bytes additionally includes selected uppercase PIC aliases"
   },
   "corpus_preservation": {
-    "memory_accepted_streams": 230,
-    "memory_pixels": 85979,
-    "memory_controls": 208,
-    "memory_byte_valued_file_controls": 132,
-    "memory_nonbyte_continuation_controls": 76,
-    "legacy_accepted_streams": 193,
-    "legacy_pixels": 31677,
-    "legacy_controls": 39,
-    "filename_variants": 140,
-    "unchanged_bytes_and_u32_values": true
+    "legacy_accepted_streams": 33,
+    "legacy_pixels": 8867,
+    "legacy_controls": 24,
+    "unchanged_legacy_input_bytes_controls_and_order": true
   },
   "native_provenance": {
     "mode": "fresh-isolated-build",
@@ -163,50 +168,23 @@
       "PLATFORM": "Memory",
       "CMAKE_BUILD_TYPE": "Release",
       "CUSTOMIZE_BUILD": "ON",
-      "SUPPORT_FILEFORMAT_PNG": "ON",
+      "SUPPORT_FILEFORMAT_PIC": "ON",
       "SUPPORT_MODULE_RAUDIO": "OFF",
       "BUILD_EXAMPLES": "OFF",
       "USE_EXTERNAL_GLFW": "OFF"
     },
-    "file_aliases": {
-      "enabled_macros": [
-        "SUPPORT_FILEFORMAT_BMP",
-        "SUPPORT_FILEFORMAT_PNG",
-        "SUPPORT_FILEFORMAT_TGA",
-        "SUPPORT_FILEFORMAT_JPG",
-        "SUPPORT_FILEFORMAT_GIF",
-        "SUPPORT_FILEFORMAT_PIC",
-        "SUPPORT_FILEFORMAT_PNM",
-        "SUPPORT_FILEFORMAT_PSD"
-      ],
-      "recognized_tokens": [
-        ".BMP",
-        ".GIF",
-        ".JPEG",
-        ".JPG",
-        ".PGM",
-        ".PIC",
-        ".PNG",
-        ".PPM",
-        ".PSD",
-        ".TGA",
-        ".bmp",
-        ".gif",
-        ".jpeg",
-        ".jpg",
-        ".pgm",
-        ".pic",
-        ".png",
-        ".ppm",
-        ".psd",
-        ".tga"
-      ],
-      "extension_rule": "last dot of entire path; index zero excluded"
-    },
-    "archive_compiler": {
+    "compiler": {
       "CMAKE_C_COMPILER": "/usr/bin/cc",
       "CMAKE_C_COMPILER_ID": "GNU",
       "CMAKE_C_COMPILER_VERSION": "14.2.0"
+    },
+    "compiler_version": "cc (Debian 14.2.0-19) 14.2.0\nCopyright (C) 2024 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+    "artifacts": {
+      "/workspace/scratch/61c86f431823/jonlib-pic-memory/.build/pic-format-probe/run-f2c0fe7adf524c47bc6ee810e94e6f4d/raylib-build/CMakeCache.txt": "1052b6722c3b90767f87f2469be166633cadd18000c19072043b8db079aaff3c",
+      "/workspace/scratch/61c86f431823/jonlib-pic-memory/.build/pic-format-probe/run-f2c0fe7adf524c47bc6ee810e94e6f4d/raylib-build/raylib/CMakeFiles/raylib.dir/flags.make": "ed7adeb39fb1806faa3dc10d7d1d777de3a98e67f205848f16efd828054c64fe",
+      "/workspace/scratch/61c86f431823/jonlib-pic-memory/.build/pic-format-probe/run-f2c0fe7adf524c47bc6ee810e94e6f4d/raylib-build/CMakeFiles/3.31.6/CMakeCCompiler.cmake": "4cac2d2dfcf7bc3431de8e7b8fca6469f4b3d3fab7bc6d51dec0a318f44e1234",
+      "/usr/bin/cc": "a23ecab8ff08f09ad8c80602c2c5df7f49e09c25905cb8975902e101bf72635f",
+      "/workspace/scratch/61c86f431823/jonlib-pic-memory/.build/pic-format-probe/run-f2c0fe7adf524c47bc6ee810e94e6f4d/raylib-build/raylib/libraylib.a": "38bf6b2fbfcfd6c776ddddcdb9d5d77a3f0a188653d6ba0905e3dd0aae3695cc"
     },
     "observer_compiler": "Debian clang version 19.1.7 (3+b1)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/toolchain/clang-19.1.7/usr/lib/llvm-19/bin",
     "bun_version": "1.3.12",
@@ -215,19 +193,14 @@
         "sha256": "90e41879349d58a779c101dbf78e5b5cf8d46241590268a74e6156ad33312e4c",
         "ranges": [
           {
+            "first": 443,
+            "last": 446,
+            "sha256": "28af8ccf667ec42e0c824946d9131db27aac00d0ff05ff31d8de84d0259264d9"
+          },
+          {
             "first": 461,
             "last": 471,
             "sha256": "5b91ad23dd33ef30b5c44dfa36c659ba761d64721b9549027da6ca608aa55c61"
-          },
-          {
-            "first": 263,
-            "last": 293,
-            "sha256": "a4db60b35fa650b9de705dcc8e7d55e96d7829c6de3331f57bd80ad196acfef3"
-          },
-          {
-            "first": 411,
-            "last": 472,
-            "sha256": "362d0d944e7deb42547596946272b3ff43dd207dbae6478e13c568a0b07cc488"
           }
         ]
       },
@@ -235,59 +208,9 @@
         "sha256": "594c2fe35d49488b4382dbfaec8f98366defca819d916ac95becf3e75f4200b3",
         "ranges": [
           {
-            "first": 1190,
-            "last": 1203,
-            "sha256": "70791748f68ae8cd69e48b128904af29a71b3f721e68b6634792ed318a8c1b00"
-          },
-          {
-            "first": 1260,
-            "last": 1273,
-            "sha256": "c2753a259641a6dd37103dbc7b64533d1f2f2f91a75d5bfc0b6f4220ac3c3c7b"
-          },
-          {
-            "first": 4438,
-            "last": 4452,
-            "sha256": "1a17c8d6647b82ba4cbf805576f736ab1ecd875cf38962bc87cd53310bad5540"
-          },
-          {
-            "first": 4910,
-            "last": 4994,
-            "sha256": "9c0986ba2ee8773257c8dc33d5120b9e44d6f49085bc0c5bceb3e351f48f1192"
-          },
-          {
-            "first": 5119,
-            "last": 5126,
-            "sha256": "2478ed630ed29c6920f869464a00947107bc08ab02e31124ac4d9fff31c1488f"
-          },
-          {
-            "first": 5146,
-            "last": 5168,
-            "sha256": "a0286717715c339cbd9f5dfe093bef253c777b431e2f707a5c1000dcb5d22be9"
-          },
-          {
-            "first": 5210,
-            "last": 5234,
-            "sha256": "2a6fdcb3aa5556873a3f9f8b8db85224680ac356631ec53af3623a2d7fe002e4"
-          },
-          {
-            "first": 5284,
-            "last": 5286,
-            "sha256": "c418c2f8996bce239dc3fba65cb05c03c746d82cec40b3f069cb2ddc16fe7eec"
-          }
-        ]
-      },
-      "src/rcore.c": {
-        "sha256": "502c3656661d07aa117a1f4b97dbfdd4a9b12cda6ee8eb4ab7afd31b657b5dd2",
-        "ranges": [
-          {
-            "first": 1966,
-            "last": 2030,
-            "sha256": "438eab72f6e8edbd91f7bf800380d81db062cf10fa21ac0bfe70d60db70f5553"
-          },
-          {
-            "first": 2475,
-            "last": 2482,
-            "sha256": "a62f85176b310a9882ac56adbdd4132c24b534143fcbc2dc1741be84ce57cb1d"
+            "first": 6346,
+            "last": 6546,
+            "sha256": "55dd4f95fb0165db9a9fc3be68f684d19d3913df67706bd0996fcf477416344b"
           }
         ]
       }
@@ -343,652 +266,37 @@
         "DYLD_BIND_AT_LAUNCH": null
       }
     },
-    "native_content_admission": "unchanged PNG memory admission: actual signature/chunks/bounded raw-DEFLATE/filter/index scan; native suffix shares stb sniffing",
-    "native_build_artifact_sha256": {
-      "/workspace/scratch/61c86f431823/jonlib-png-files/.build/png-file-probe/run-df40307cbfa84787907bf005f07d0d69/raylib-build/CMakeCache.txt": "d95f848bde238ef690c3dde27989e958cbb397cfe1bd5ba7ff097edb4c63874a",
-      "/workspace/scratch/61c86f431823/jonlib-png-files/.build/png-file-probe/run-df40307cbfa84787907bf005f07d0d69/raylib-build/raylib/CMakeFiles/raylib.dir/flags.make": "ed7adeb39fb1806faa3dc10d7d1d777de3a98e67f205848f16efd828054c64fe",
-      "/workspace/scratch/61c86f431823/jonlib-png-files/.build/png-file-probe/run-df40307cbfa84787907bf005f07d0d69/raylib-build/CMakeFiles/3.31.6/CMakeCCompiler.cmake": "4cac2d2dfcf7bc3431de8e7b8fca6469f4b3d3fab7bc6d51dec0a318f44e1234",
-      "/usr/bin/cc": "a23ecab8ff08f09ad8c80602c2c5df7f49e09c25905cb8975902e101bf72635f",
-      "/workspace/scratch/61c86f431823/jonlib-png-files/.build/png-file-probe/run-df40307cbfa84787907bf005f07d0d69/raylib-build/raylib/libraylib.a": "38bf6b2fbfcfd6c776ddddcdb9d5d77a3f0a188653d6ba0905e3dd0aae3695cc"
-    }
-  },
-  "resources": {
-    "closure": {
-      "closure_checks": true,
-      "iterations": 100,
-      "paths_per_iteration": 12,
-      "synthetic_checks": 8,
-      "records": 1209
-    },
-    "file_descriptor_limit": 64,
-    "host_directory_observation": {
-      "stage": "read",
-      "code": 21,
-      "message": "Is a directory"
-    },
-    "plans": {
-      "boundary": {
-        "observations": 1209,
-        "compared_bytes": 1003,
-        "actions_sha256": "6925fc4302edba79f0d05898ea5c31c4436a94634d85b99b839fdb9e60193f58"
-      },
-      "sparse": {
-        "observations": 4,
-        "compared_bytes": 0,
-        "actions_sha256": "e8b37ebb0e4fdf07a64c4d0def27c5640c04364139491a0c92b1b4c033f6dd90"
-      },
-      "exact_cap": {
-        "observations": 6,
-        "compared_bytes": 20,
-        "actions_sha256": "c67f45d49af2169630acc291aaca3a874b95de6c9263ed273b6af2747acd6a69"
-      }
-    },
-    "exact_cap": {
-      "size": 1048576,
-      "native_reference": {
-        "id": "exact-cap-accepted",
-        "role": "raw",
-        "width": 1,
-        "height": 1,
-        "mipmaps": 1,
-        "format": 4,
-        "bytes": [
-          13,
-          74,
-          135
-        ]
-      },
-      "native_normalized": {
-        "id": "exact-cap-accepted",
-        "role": "normalized",
-        "width": 1,
-        "height": 1,
-        "mipmaps": 1,
-        "format": 7,
-        "bytes": [
-          13,
-          74,
-          135,
-          255
-        ]
-      }
-    },
-    "sparse_stat_prefix_recipes": [
-      {
-        "path": ".build/png-file-probe/run-df40307cbfa84787907bf005f07d0d69/fixtures/cap-plus-one.png",
-        "size": 1048577,
-        "prefix": [
-          137,
-          80,
-          78,
-          71,
-          13,
-          10,
-          26,
-          10,
-          0,
-          0,
-          0,
-          13,
-          73,
-          72,
-          68,
-          82,
-          0,
-          0,
-          0,
-          1,
-          0,
-          0,
-          0,
-          1,
-          8,
-          6,
-          0,
-          0,
-          0,
-          31,
-          21,
-          196,
-          137,
-          0,
-          0,
-          0,
-          13,
-          73,
-          68,
-          65,
-          84,
-          120,
-          156,
-          99,
-          224,
-          81,
-          178,
-          240,
-          3,
-          0,
-          1,
-          89,
-          0,
-          181,
-          70,
-          203,
-          42,
-          7,
-          0,
-          0,
-          0,
-          0,
-          73,
-          69,
-          78,
-          68,
-          174,
-          66,
-          96,
-          130
-        ],
-        "sparse_recipe": "tiny valid prefix then truncate; holes never loaded or hashed"
-      },
-      {
-        "path": ".build/png-file-probe/run-df40307cbfa84787907bf005f07d0d69/fixtures/cap-plus-one.qoi",
-        "size": 1048577,
-        "prefix": [
-          137,
-          80,
-          78,
-          71,
-          13,
-          10,
-          26,
-          10,
-          0,
-          0,
-          0,
-          13,
-          73,
-          72,
-          68,
-          82,
-          0,
-          0,
-          0,
-          1,
-          0,
-          0,
-          0,
-          1,
-          8,
-          6,
-          0,
-          0,
-          0,
-          31,
-          21,
-          196,
-          137,
-          0,
-          0,
-          0,
-          13,
-          73,
-          68,
-          65,
-          84,
-          120,
-          156,
-          99,
-          224,
-          81,
-          178,
-          240,
-          3,
-          0,
-          1,
-          89,
-          0,
-          181,
-          70,
-          203,
-          42,
-          7,
-          0,
-          0,
-          0,
-          0,
-          73,
-          69,
-          78,
-          68,
-          174,
-          66,
-          96,
-          130
-        ],
-        "sparse_recipe": "tiny valid prefix then truncate; holes never loaded or hashed"
-      },
-      {
-        "path": ".build/png-file-probe/run-df40307cbfa84787907bf005f07d0d69/fixtures/larger-file.png",
-        "size": 268435456,
-        "prefix": [
-          137,
-          80,
-          78,
-          71,
-          13,
-          10,
-          26,
-          10,
-          0,
-          0,
-          0,
-          13,
-          73,
-          72,
-          68,
-          82,
-          0,
-          0,
-          0,
-          1,
-          0,
-          0,
-          0,
-          1,
-          8,
-          6,
-          0,
-          0,
-          0,
-          31,
-          21,
-          196,
-          137,
-          0,
-          0,
-          0,
-          13,
-          73,
-          68,
-          65,
-          84,
-          120,
-          156,
-          99,
-          224,
-          81,
-          178,
-          240,
-          3,
-          0,
-          1,
-          89,
-          0,
-          181,
-          70,
-          203,
-          42,
-          7,
-          0,
-          0,
-          0,
-          0,
-          73,
-          69,
-          78,
-          68,
-          174,
-          66,
-          96,
-          130
-        ],
-        "sparse_recipe": "tiny valid prefix then truncate; holes never loaded or hashed"
-      },
-      {
-        "path": ".build/png-file-probe/run-df40307cbfa84787907bf005f07d0d69/fixtures/host-size-overflow.png",
-        "size": 4294967296,
-        "prefix": [
-          137,
-          80,
-          78,
-          71,
-          13,
-          10,
-          26,
-          10,
-          0,
-          0,
-          0,
-          13,
-          73,
-          72,
-          68,
-          82,
-          0,
-          0,
-          0,
-          1,
-          0,
-          0,
-          0,
-          1,
-          8,
-          6,
-          0,
-          0,
-          0,
-          31,
-          21,
-          196,
-          137,
-          0,
-          0,
-          0,
-          13,
-          73,
-          68,
-          65,
-          84,
-          120,
-          156,
-          99,
-          224,
-          81,
-          178,
-          240,
-          3,
-          0,
-          1,
-          89,
-          0,
-          181,
-          70,
-          203,
-          42,
-          7,
-          0,
-          0,
-          0,
-          0,
-          73,
-          69,
-          78,
-          68,
-          174,
-          66,
-          96,
-          130
-        ],
-        "sparse_recipe": "tiny valid prefix then truncate; holes never loaded or hashed"
-      }
-    ],
-    "limits": "RSS ceilings are post-run acceptance criteria excluding compilation, not live allocation limits, maximum-area/heap/OOM/OS-close guarantees or representative performance. Synthetic stage results are not actual concurrent short reads; sparse holes were neither loaded nor hashed.",
-    "lanes": {
-      "cpu-1": {
-        "passed": true,
-        "boundary": {
-          "passed": true,
-          "maximum_rss_bytes": 9830400,
-          "elapsed_seconds": 0.581,
-          "descriptor_limit": 64,
-          "maximum_rss_acceptance_bytes": 268435456,
-          "observations": 1209,
-          "compared_bytes": 1003,
-          "actions_sha256": "6925fc4302edba79f0d05898ea5c31c4436a94634d85b99b839fdb9e60193f58",
-          "stdout_sha256": "fc70a00627db60cb7fb9d51da5ad2448676d42724fb193570865e82952b5a619"
-        },
-        "sparse": {
-          "passed": true,
-          "maximum_rss_bytes": 9830400,
-          "elapsed_seconds": 0.436,
-          "descriptor_limit": 64,
-          "maximum_rss_acceptance_bytes": 268435456,
-          "observations": 4,
-          "compared_bytes": 0,
-          "actions_sha256": "e8b37ebb0e4fdf07a64c4d0def27c5640c04364139491a0c92b1b4c033f6dd90",
-          "stdout_sha256": "ad97a65000bb702680928d81ac050ad3e46be79490528a8284a52e0b4a91c28e"
-        },
-        "exact_cap": {
-          "passed": true,
-          "maximum_rss_bytes": 27299840,
-          "elapsed_seconds": 0.722,
-          "descriptor_limit": 64,
-          "maximum_rss_acceptance_bytes": 1073741824,
-          "observations": 6,
-          "compared_bytes": 20,
-          "actions_sha256": "c67f45d49af2169630acc291aaca3a874b95de6c9263ed273b6af2747acd6a69",
-          "stdout_sha256": "808a7b636a5694bbca3a47e454eba414fa125c6c773f0fe220f4ac1325ab5aef"
-        }
-      },
-      "cpu-2": {
-        "passed": true,
-        "boundary": {
-          "passed": true,
-          "maximum_rss_bytes": 9830400,
-          "elapsed_seconds": 0.597,
-          "descriptor_limit": 64,
-          "maximum_rss_acceptance_bytes": 268435456,
-          "observations": 1209,
-          "compared_bytes": 1003,
-          "actions_sha256": "6925fc4302edba79f0d05898ea5c31c4436a94634d85b99b839fdb9e60193f58",
-          "stdout_sha256": "fc70a00627db60cb7fb9d51da5ad2448676d42724fb193570865e82952b5a619"
-        },
-        "sparse": {
-          "passed": true,
-          "maximum_rss_bytes": 9830400,
-          "elapsed_seconds": 0.448,
-          "descriptor_limit": 64,
-          "maximum_rss_acceptance_bytes": 268435456,
-          "observations": 4,
-          "compared_bytes": 0,
-          "actions_sha256": "e8b37ebb0e4fdf07a64c4d0def27c5640c04364139491a0c92b1b4c033f6dd90",
-          "stdout_sha256": "ad97a65000bb702680928d81ac050ad3e46be79490528a8284a52e0b4a91c28e"
-        },
-        "exact_cap": {
-          "passed": true,
-          "maximum_rss_bytes": 27303936,
-          "elapsed_seconds": 0.696,
-          "descriptor_limit": 64,
-          "maximum_rss_acceptance_bytes": 1073741824,
-          "observations": 6,
-          "compared_bytes": 20,
-          "actions_sha256": "c67f45d49af2169630acc291aaca3a874b95de6c9263ed273b6af2747acd6a69",
-          "stdout_sha256": "808a7b636a5694bbca3a47e454eba414fa125c6c773f0fe220f4ac1325ab5aef"
-        }
-      },
-      "javascript": {
-        "passed": true,
-        "boundary": {
-          "passed": true,
-          "maximum_rss_bytes": 112336896,
-          "elapsed_seconds": 0.837,
-          "descriptor_limit": 64,
-          "maximum_rss_acceptance_bytes": 268435456,
-          "observations": 1209,
-          "compared_bytes": 1003,
-          "actions_sha256": "6925fc4302edba79f0d05898ea5c31c4436a94634d85b99b839fdb9e60193f58",
-          "stdout_sha256": "fc70a00627db60cb7fb9d51da5ad2448676d42724fb193570865e82952b5a619"
-        },
-        "sparse": {
-          "passed": true,
-          "maximum_rss_bytes": 52514816,
-          "elapsed_seconds": 0.509,
-          "descriptor_limit": 64,
-          "maximum_rss_acceptance_bytes": 268435456,
-          "observations": 4,
-          "compared_bytes": 0,
-          "actions_sha256": "e8b37ebb0e4fdf07a64c4d0def27c5640c04364139491a0c92b1b4c033f6dd90",
-          "stdout_sha256": "ad97a65000bb702680928d81ac050ad3e46be79490528a8284a52e0b4a91c28e"
-        },
-        "exact_cap": {
-          "passed": true,
-          "maximum_rss_bytes": 247644160,
-          "elapsed_seconds": 1.549,
-          "descriptor_limit": 64,
-          "maximum_rss_acceptance_bytes": 1073741824,
-          "observations": 6,
-          "compared_bytes": 20,
-          "actions_sha256": "c67f45d49af2169630acc291aaca3a874b95de6c9263ed273b6af2747acd6a69",
-          "stdout_sha256": "808a7b636a5694bbca3a47e454eba414fa125c6c773f0fe220f4ac1325ab5aef"
-        }
-      }
-    }
+    "pic_enabled_in_cache_and_effective_flags": true,
+    "admission": "strict global byte domain; actual PIC signature/header/all descriptors/all row packet controls and samples; malformed controls never native",
+    "malformed_native_reason": "Pinned failed-PIC path can free/null intermediate data and then enter 4-to-3 conversion; all malformed controls are checked-only",
+    "admission_does_not_compute_expected_pixels": true,
+    "resource_budgets": "32 actions and 196608 source bytes per partition; fixture limits 8192 pixels per case and 2000000 aggregate encoded bytes are harness-only, not API caps"
   },
   "independent_focused_replay": {
-    "path": ".build/png-file-validation/independent-focused-replay.json",
-    "sha256": "1fe8b4cdf5febbee1025e44af1939b264c585ab58c87286542fc4f9792bf343e",
-    "scope": "independent read-only complete-record PNG file replay; no native/compiler/candidate/subprocess execution",
-    "script_sha256": "75b88002fe8c14d9eb3221a7bb01f0bd14e3d9f99800a785e1274d904a343c47",
-    "outer_receipt_sha256": "fafd062d97ebeea01e5a410ef8f1039fbe8af86953818c31802680379012b101",
-    "verified_command_receipts": 429,
-    "verified_artifact_seals": 2699,
-    "negative_control_count": 121,
-    "negative_controls": [
-      "main-skipped-frame",
-      "main-reordered-frame",
-      "main-duplicate-frame",
-      "main-metadata-format",
-      "main-metadata-width",
-      "main-metadata-height",
-      "main-metadata-mipmaps",
-      "main-metadata-extra",
-      "main-boolean",
-      "main-wrong-byte",
-      "main-out-of-range",
-      "main-wrong-byte-count",
-      "main-trailing-blank",
-      "short-chunk-followed-by-chunk",
-      "candidate-skip-partition",
-      "candidate-reorder-partition",
-      "candidate-duplicate-partition",
-      "candidate-boolean-partition",
-      "candidate-source-budget",
-      "native-skip-partition",
-      "native-reorder-partition",
-      "native-duplicate-partition",
-      "native-boolean-partition",
-      "native-source-budget",
-      "main-stale-artifact-seal",
-      "command-command",
-      "command-process_group_owned",
-      "command-leader_reaped",
-      "command-process_group_id",
-      "command-exit_code",
-      "command-timeout_seconds",
-      "command-reference_environment",
-      "command-output-seal-inventory",
-      "missing-javascript-lane",
-      "missing-resource-lane",
-      "integer-lane-pass",
-      "boundary-frame-loss",
-      "boundary-frame-reorder",
-      "boundary-frame-duplicate",
-      "boundary-frame-value",
-      "boundary-frame-metadata",
-      "boundary-frame-boolean",
-      "boundary-terminal-closure_checks",
-      "boundary-terminal-iterations",
-      "boundary-terminal-records",
-      "boundary-terminal-paths_per_iteration",
-      "boundary-terminal-synthetic_checks",
-      "boundary-terminal-omitted",
-      "boundary-receipt-passed",
-      "boundary-receipt-descriptor_limit",
-      "boundary-receipt-maximum_rss_bytes",
-      "boundary-receipt-maximum_rss_acceptance_bytes",
-      "boundary-receipt-observations",
-      "boundary-receipt-compared_bytes",
-      "boundary-receipt-actions_sha256",
-      "boundary-receipt-stdout_sha256",
-      "boundary-receipt-elapsed_seconds",
-      "boundary-receipt-omission",
-      "boundary-usage-corruption",
-      "boundary-usage-boolean",
-      "boundary-usage-ceiling",
-      "boundary-usage-omission",
-      "boundary-usage-extra-field",
-      "boundary-usage-duplicate-field",
-      "boundary-usage-noncanonical-bytes",
-      "boundary-resource-seal",
-      "boundary-resource-command-chain",
-      "sparse-frame-loss",
-      "sparse-frame-reorder",
-      "sparse-frame-duplicate",
-      "sparse-frame-value",
-      "sparse-frame-metadata",
-      "sparse-frame-boolean",
-      "sparse-receipt-passed",
-      "sparse-receipt-descriptor_limit",
-      "sparse-receipt-maximum_rss_bytes",
-      "sparse-receipt-maximum_rss_acceptance_bytes",
-      "sparse-receipt-observations",
-      "sparse-receipt-compared_bytes",
-      "sparse-receipt-actions_sha256",
-      "sparse-receipt-stdout_sha256",
-      "sparse-receipt-elapsed_seconds",
-      "sparse-receipt-omission",
-      "sparse-usage-corruption",
-      "sparse-usage-boolean",
-      "sparse-usage-ceiling",
-      "sparse-usage-omission",
-      "sparse-usage-extra-field",
-      "sparse-usage-duplicate-field",
-      "sparse-usage-noncanonical-bytes",
-      "sparse-resource-seal",
-      "sparse-resource-command-chain",
-      "exact_cap-frame-loss",
-      "exact_cap-frame-reorder",
-      "exact_cap-frame-duplicate",
-      "exact_cap-frame-value",
-      "exact_cap-frame-metadata",
-      "exact_cap-frame-boolean",
-      "exact_cap-receipt-passed",
-      "exact_cap-receipt-descriptor_limit",
-      "exact_cap-receipt-maximum_rss_bytes",
-      "exact_cap-receipt-maximum_rss_acceptance_bytes",
-      "exact_cap-receipt-observations",
-      "exact_cap-receipt-compared_bytes",
-      "exact_cap-receipt-actions_sha256",
-      "exact_cap-receipt-stdout_sha256",
-      "exact_cap-receipt-elapsed_seconds",
-      "exact_cap-receipt-omission",
-      "exact_cap-usage-corruption",
-      "exact_cap-usage-boolean",
-      "exact_cap-usage-ceiling",
-      "exact_cap-usage-omission",
-      "exact_cap-usage-extra-field",
-      "exact_cap-usage-duplicate-field",
-      "exact_cap-usage-noncanonical-bytes",
-      "exact_cap-resource-seal",
-      "exact_cap-resource-command-chain",
-      "strict-json-117",
-      "strict-json-118",
-      "strict-json-119",
-      "strict-json-120"
+    "path": ".build/pic-memory-validation/independent-focused-replay.json",
+    "sha256": "3e85b52086cfd9c9b992cbb99bf00b956c12eaf1ae29a78d21a5ca6c70bef5ce",
+    "passed": true,
+    "scope": "All retained native/candidate full records, command identities, provenance and artifact inventory; no runtime execution or harness comparator reuse",
+    "auditor": "tools/pic_format_audit.py",
+    "verified_command_receipts": 231,
+    "verified_artifact_seals": 1417,
+    "candidate_lanes": [
+      "cpu-1",
+      "cpu-2",
+      "javascript"
     ],
-    "every_primary_and_resource_frame_replayed": true,
-    "harness_comparators_used": [],
-    "source_recipe_use": [
-      "fixtures",
-      "controls",
-      "synthetic_controls",
-      "tiny_png",
-      "memory.fixtures",
-      "memory.controls",
-      "memory.legacy_fixtures",
-      "qualification_program",
-      "reference_program",
-      "candidate_program",
-      "boundary_program"
-    ]
+    "candidate_observations_per_lane": 1536,
+    "candidate_bytes_per_lane": 836048,
+    "native_observations": 263,
+    "harness_negative_tests": "Malformed/duplicate/reordered/extra/mutated records and scalar types, absent lanes/partitions, changed commands/source/fixtures/overlay and disabled PIC configuration; individual tests are in test_pic_format_harness.py"
   },
   "serial_regressions": {
-    "path": ".build/png-file-validation/serial.json",
-    "sha256": "910ffb9680aa42c42a373b935be097c941956d7b8889898d07115e63285f9aaf",
-    "phase": "complete",
-    "ordered_stage_count": 28,
-    "ordered_stages": [
+    "path": ".build/pic-memory-validation/serial.json",
+    "sha256": "deb002e2f569c61a2f8220127e9965d07931542a491cd7b09af310dfd07cae05",
+    "passed": true,
+    "stage_count": 30,
+    "total_stage_elapsed_seconds": 12789.728,
+    "stages": [
       {
         "label": "native-configure",
         "command": [
@@ -1007,6 +315,7 @@
           "-DSUPPORT_FILEFORMAT_TGA=ON",
           "-DSUPPORT_FILEFORMAT_PNM=ON",
           "-DSUPPORT_FILEFORMAT_PNG=ON",
+          "-DSUPPORT_FILEFORMAT_PIC=ON",
           "-DUSE_EXTERNAL_GLFW=OFF"
         ],
         "exit_code": 0,
@@ -1024,7 +333,21 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 11.356
+        "elapsed_seconds": 11.669
+      },
+      {
+        "label": "surface-pic",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/pic_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 15.977
       },
       {
         "label": "surface-png",
@@ -1038,7 +361,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 35.437
+        "elapsed_seconds": 34.575
       },
       {
         "label": "generic-memory",
@@ -1052,7 +375,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 309.877
+        "elapsed_seconds": 314.996
       },
       {
         "label": "generic-file",
@@ -1066,7 +389,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 35.458
+        "elapsed_seconds": 35.324
       },
       {
         "label": "animation-fallback",
@@ -1080,7 +403,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 35.261
+        "elapsed_seconds": 34.129
       },
       {
         "label": "png-export",
@@ -1094,7 +417,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 28.184
+        "elapsed_seconds": 27.878
       },
       {
         "label": "float-rgb-png",
@@ -1108,7 +431,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 23.196
+        "elapsed_seconds": 22.323
       },
       {
         "label": "r32-images",
@@ -1122,7 +445,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 176.207
+        "elapsed_seconds": 181.737
       },
       {
         "label": "image-format",
@@ -1136,7 +459,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 22.958
+        "elapsed_seconds": 25.17
       },
       {
         "label": "image-colors",
@@ -1150,7 +473,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 18.023
+        "elapsed_seconds": 17.971
       },
       {
         "label": "qoi-formatted-memory",
@@ -1164,7 +487,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 298.423
+        "elapsed_seconds": 301.744
       },
       {
         "label": "qoi-formatted-files",
@@ -1178,7 +501,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 181.803
+        "elapsed_seconds": 181.455
       },
       {
         "label": "pnm-formatted-memory",
@@ -1194,7 +517,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 500.532
+        "elapsed_seconds": 497.207
       },
       {
         "label": "pnm-formatted-files",
@@ -1210,7 +533,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 656.553
+        "elapsed_seconds": 668.552
       },
       {
         "label": "tga-formatted-memory",
@@ -1226,7 +549,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 986.252
+        "elapsed_seconds": 999.496
       },
       {
         "label": "tga-formatted-files",
@@ -1242,7 +565,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 1123.667
+        "elapsed_seconds": 1140.878
       },
       {
         "label": "bmp-formatted-memory",
@@ -1258,7 +581,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 1727.613
+        "elapsed_seconds": 1760.21
       },
       {
         "label": "bmp-formatted-files",
@@ -1274,7 +597,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 1671.115
+        "elapsed_seconds": 1675.068
       },
       {
         "label": "png-formatted-memory",
@@ -1290,7 +613,23 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 1314.583
+        "elapsed_seconds": 1330.716
+      },
+      {
+        "label": "png-formatted-files",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/png_file_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib",
+          "--reference-env",
+          "clean-loader"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 2722.714
       },
       {
         "label": "canonical",
@@ -1306,13 +645,13 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 451.637
+        "elapsed_seconds": 462.344
       },
       {
         "label": "strict-canonical",
         "command": [
           "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
-          "/workspace/scratch/61c86f431823/jonlib-png-files/.build/png-file-validation/strict_replay_final.py"
+          "/workspace/scratch/61c86f431823/jonlib-pic-memory/.build/pic-memory-validation/strict_replay_final.py"
         ],
         "exit_code": 0,
         "complete": true,
@@ -1331,7 +670,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 291.528
+        "elapsed_seconds": 312.133
       },
       {
         "label": "proof-final",
@@ -1343,7 +682,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 12.679
+        "elapsed_seconds": 12.569
       },
       {
         "label": "syntax-final",
@@ -1367,7 +706,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 0.266
+        "elapsed_seconds": 0.265
       },
       {
         "label": "api-final",
@@ -1380,7 +719,7 @@
         ],
         "exit_code": 0,
         "complete": true,
-        "elapsed_seconds": 1.771
+        "elapsed_seconds": 1.868
       },
       {
         "label": "diff-check-final",
@@ -1394,15 +733,17 @@
         "elapsed_seconds": 0.065
       }
     ],
-    "python_tests": 966,
+    "python_tests": 1053,
     "skips": 0,
-    "proof_laws": 177,
-    "new_laws": 0,
+    "proof_laws": 190,
+    "preserved_laws": 177,
+    "new_laws": 13,
+    "proof_scope": "Scoped PIC packet-union and integer-packing equalities; no universal decoder, allocation or IO proof",
     "scope": "Frozen runtime snapshot; separate from later final metadata/CI source checks"
   },
   "independent_regression_audit": {
-    "path": ".build/png-file-validation/independent-regression-final.json",
-    "sha256": "04db397004adfb1407671983644930ce8fa426b87259b2e47728b1807df08564",
+    "path": ".build/pic-regression-audit/independent-regression-final.json",
+    "sha256": "dbdfc2d66070cf79230fe17bc1247e2c1c4eb2e327a798588d8b797b30557dc5",
     "scope": "Read-only retained evidence audit; no runtime execution",
     "coverage_summary": {
       "formatted_memory": {
@@ -1483,7 +824,7 @@
               "stress": {
                 "records": 1,
                 "bytes": 0,
-                "maximum_rss_bytes": 27176960,
+                "maximum_rss_bytes": 27152384,
                 "descriptor_limit": 64
               }
             },
@@ -1497,7 +838,7 @@
               "stress": {
                 "records": 1,
                 "bytes": 0,
-                "maximum_rss_bytes": 27176960,
+                "maximum_rss_bytes": 27000832,
                 "descriptor_limit": 64
               }
             },
@@ -1505,13 +846,13 @@
               "boundary": {
                 "records": 1,
                 "bytes": 9,
-                "maximum_rss_bytes": 82989056,
+                "maximum_rss_bytes": 82718720,
                 "descriptor_limit": 64
               },
               "stress": {
                 "records": 1,
                 "bytes": 0,
-                "maximum_rss_bytes": 160931840,
+                "maximum_rss_bytes": 161366016,
                 "descriptor_limit": 64
               }
             }
@@ -1544,7 +885,7 @@
               "exact_cap": {
                 "records": 1,
                 "bytes": 1,
-                "maximum_rss_bytes": 27140096,
+                "maximum_rss_bytes": 27172864,
                 "descriptor_limit": 64
               }
             },
@@ -1564,7 +905,7 @@
               "exact_cap": {
                 "records": 1,
                 "bytes": 1,
-                "maximum_rss_bytes": 27144192,
+                "maximum_rss_bytes": 27168768,
                 "descriptor_limit": 64
               }
             },
@@ -1572,19 +913,19 @@
               "boundary": {
                 "records": 1009,
                 "bytes": 401,
-                "maximum_rss_bytes": 92033024,
+                "maximum_rss_bytes": 91668480,
                 "descriptor_limit": 64
               },
               "sparse": {
                 "records": 4,
                 "bytes": 0,
-                "maximum_rss_bytes": 45596672,
+                "maximum_rss_bytes": 45559808,
                 "descriptor_limit": 64
               },
               "exact_cap": {
                 "records": 1,
                 "bytes": 1,
-                "maximum_rss_bytes": 162328576,
+                "maximum_rss_bytes": 162848768,
                 "descriptor_limit": 64
               }
             }
@@ -1617,7 +958,7 @@
               "exact_cap": {
                 "records": 4,
                 "bytes": 10,
-                "maximum_rss_bytes": 27287552,
+                "maximum_rss_bytes": 27250688,
                 "descriptor_limit": 64
               }
             },
@@ -1637,7 +978,7 @@
               "exact_cap": {
                 "records": 4,
                 "bytes": 10,
-                "maximum_rss_bytes": 27250688,
+                "maximum_rss_bytes": 27246592,
                 "descriptor_limit": 64
               }
             },
@@ -1645,19 +986,19 @@
               "boundary": {
                 "records": 1209,
                 "bytes": 1001,
-                "maximum_rss_bytes": 105635840,
+                "maximum_rss_bytes": 106123264,
                 "descriptor_limit": 64
               },
               "sparse": {
                 "records": 4,
                 "bytes": 0,
-                "maximum_rss_bytes": 46477312,
+                "maximum_rss_bytes": 46481408,
                 "descriptor_limit": 64
               },
               "exact_cap": {
                 "records": 4,
                 "bytes": 10,
-                "maximum_rss_bytes": 269037568,
+                "maximum_rss_bytes": 268120064,
                 "descriptor_limit": 64
               }
             }
@@ -1678,7 +1019,7 @@
               "boundary": {
                 "records": 1009,
                 "bytes": 703,
-                "maximum_rss_bytes": 9437184,
+                "maximum_rss_bytes": 9699328,
                 "descriptor_limit": 64
               },
               "sparse": {
@@ -1710,7 +1051,7 @@
               "exact_cap": {
                 "records": 4,
                 "bytes": 14,
-                "maximum_rss_bytes": 27258880,
+                "maximum_rss_bytes": 27373568,
                 "descriptor_limit": 64
               }
             },
@@ -1718,19 +1059,92 @@
               "boundary": {
                 "records": 1009,
                 "bytes": 703,
-                "maximum_rss_bytes": 101892096,
+                "maximum_rss_bytes": 101490688,
                 "descriptor_limit": 64
               },
               "sparse": {
                 "records": 4,
                 "bytes": 0,
-                "maximum_rss_bytes": 50446336,
+                "maximum_rss_bytes": 50024448,
                 "descriptor_limit": 64
               },
               "exact_cap": {
                 "records": 4,
                 "bytes": 14,
-                "maximum_rss_bytes": 270516224,
+                "maximum_rss_bytes": 270405632,
+                "descriptor_limit": 64
+              }
+            }
+          },
+          "closure_scope": "Every retained closure/resource record replayed"
+        },
+        "png": {
+          "primary_records_per_lane": 2846,
+          "primary_bytes_per_lane": 1531636,
+          "lanes": 3,
+          "native_observations": 740,
+          "native_raw_bytes": 207017,
+          "native_normalized_bytes": 344476,
+          "inner_command_receipts": 429,
+          "sealed_artifact_entries": 2699,
+          "resources": {
+            "cpu-1": {
+              "boundary": {
+                "records": 1209,
+                "bytes": 1003,
+                "maximum_rss_bytes": 9830400,
+                "descriptor_limit": 64
+              },
+              "sparse": {
+                "records": 4,
+                "bytes": 0,
+                "maximum_rss_bytes": 9830400,
+                "descriptor_limit": 64
+              },
+              "exact_cap": {
+                "records": 6,
+                "bytes": 20,
+                "maximum_rss_bytes": 27283456,
+                "descriptor_limit": 64
+              }
+            },
+            "cpu-2": {
+              "boundary": {
+                "records": 1209,
+                "bytes": 1003,
+                "maximum_rss_bytes": 9830400,
+                "descriptor_limit": 64
+              },
+              "sparse": {
+                "records": 4,
+                "bytes": 0,
+                "maximum_rss_bytes": 9830400,
+                "descriptor_limit": 64
+              },
+              "exact_cap": {
+                "records": 6,
+                "bytes": 20,
+                "maximum_rss_bytes": 27308032,
+                "descriptor_limit": 64
+              }
+            },
+            "javascript": {
+              "boundary": {
+                "records": 1209,
+                "bytes": 1003,
+                "maximum_rss_bytes": 113029120,
+                "descriptor_limit": 64
+              },
+              "sparse": {
+                "records": 4,
+                "bytes": 0,
+                "maximum_rss_bytes": 52899840,
+                "descriptor_limit": 64
+              },
+              "exact_cap": {
+                "records": 6,
+                "bytes": 20,
+                "maximum_rss_bytes": 247726080,
                 "descriptor_limit": 64
               }
             }
@@ -1738,15 +1152,15 @@
           "closure_scope": "Every retained closure/resource record replayed"
         }
       },
-      "primary_records_all_lanes": 35355,
-      "primary_bytes_all_lanes": 19783395,
-      "resource_runs": 33,
-      "resource_records_all_lanes": 9750,
-      "resource_bytes_all_lanes": 6417,
-      "total_formatted_records_all_lanes": 45105,
-      "total_formatted_bytes_all_lanes": 19789812,
-      "inner_command_receipts": 1603,
-      "outer_terminal_command_receipts": 28,
+      "primary_records_all_lanes": 43893,
+      "primary_bytes_all_lanes": 24378303,
+      "resource_runs": 42,
+      "resource_records_all_lanes": 13407,
+      "resource_bytes_all_lanes": 9486,
+      "total_formatted_records_all_lanes": 57300,
+      "total_formatted_bytes_all_lanes": 24387789,
+      "inner_command_receipts": 2032,
+      "outer_terminal_command_receipts": 30,
       "canonical_per_lane": {
         "scenarios": 261,
         "words": 40101,
@@ -1754,18 +1168,19 @@
         "palette_words": 23
       },
       "canonical_lanes": 3,
-      "legacy_report_source_artifact_only_stages": 9,
+      "legacy_report_source_artifact_only_stages": 10,
+      "focused_pic_scope": "Separate bound independent PIC full-byte audit is required before any regression passes; these totals exclude that focused gate",
       "limitations": [
-        "Nine older stages and canonical ancillary contracts/IO retain report/source/artifact evidence, not complete raw runtime outputs",
+        "Ten older stages and canonical ancillary contracts/IO retain report/source/artifact evidence, not complete raw runtime outputs",
         "QOI closure cycle observations were never retained; only final image, terminal and resource usage can be replayed",
         "No runtime execution was repeated; sparse holes were not read or hashed",
         "CPU-1, CPU-2 and server-side JavaScript evidence only; GPU, browser, Windows and big-endian behavior remain unqualified"
       ]
     },
-    "distinct_artifact_hashes": 11177,
+    "distinct_artifact_seals": 12093,
     "canonical": {
       "passed": true,
-      "report_sha256": "9a3d4b572005249be6ed565d8b9cf08047911ca307229668b3701d02a7eeff35",
+      "report_sha256": "829e1f89f15423b95f5bef78aa653e1d60b49635da0456c1d7c276e77d76885c",
       "lanes": {
         "cpu-1": {
           "passed": true,
@@ -1834,46 +1249,19 @@
       "canonical:alpha_border-value-drift",
       "canonical:alpha_border-boolean"
     ],
-    "focused_png_file_excluded_from_totals": true
+    "focused_pic_excluded_from_totals": true
   },
   "final_tree": {
     "status": "recorded-separately",
-    "scope": "Final documentation/CI-tree validation and publication receipts are separate from the completed frozen runtime qualification. This runtime evidence does not claim a later integrated-suite count or pass."
+    "scope": "Final documentation/CI-tree validation and publication receipts are separate from the frozen runtime qualification; no later suite result or count is inferred"
   },
   "hosted_qualification": {
-    "status": "passed-for-png-file-commit-e6ac05e6",
-    "required_gate_count": 85,
+    "status": "pending-for-new-pic-memory-exact-tip",
+    "required_gate_count": 86,
     "required_workers": 12,
     "required_aggregates": 2,
     "aggregate_requires_all_workers": true,
-    "predecessor_eight_worker_run": "Did not fully qualify; macOS formatted worker hit the 120-minute limit",
     "qualified_predecessor": {
-      "commit": "9cb5a7e7cabdb76005a76119616e33ca9516d73b",
-      "gate_count": 84,
-      "workers": 10,
-      "aggregates": 2,
-      "receipt": {
-        "path": ".build/png-file-ci-history/actions-verified-9cb5a7e7.json",
-        "sha256": "62cd9f5016d4857aff577bdcb76676213242ca327a09d09b3c2cc2fe83bfff8c"
-      },
-      "verified_at": "2026-10-04T06:40:57.339077+00:00",
-      "runs": [
-        {
-          "name": "Checks",
-          "id": 37179587100,
-          "conclusion": "success",
-          "url": "https://github.com/jonathanperis/jonlib/actions/runs/37179587100"
-        },
-        {
-          "name": "Conformance",
-          "id": 37179587107,
-          "conclusion": "success",
-          "url": "https://github.com/jonathanperis/jonlib/actions/runs/37179587107"
-        }
-      ],
-      "scope": "CI-only repair with unchanged predecessor runtime; does not qualify the new PNG-file increment"
-    },
-    "qualified_exact_tip": {
       "commit": "e6ac05e6d1daf64d050e6da3f783ed60cc3130e1",
       "gate_count": 85,
       "workers": 12,
@@ -1902,18 +1290,28 @@
     }
   },
   "unqualified": [
-    "GPU/Metal",
-    "Windows/browser and macOS domains outside the recorded hosted gates",
-    "big-endian",
-    "maximum-area allocation/resource limits",
-    "representative performance",
-    "concurrent/special files",
-    "OS close-error reporting",
-    "generic formatted/float dispatch",
-    "native malformed recovery",
-    "Native pointer/allocation ABI and OOM parity",
-    "Callbacks and nondefault external stb flags",
+    "PIC formatted file loading",
     "Generic formatted/float dispatch and additional codecs/domains",
-    "Complete integration and representative latency/throughput/memory"
-  ]
+    "Native malformed recovery and nondefault external stb flags",
+    "Native pointer/allocation ABI, OOM and maximum-area success",
+    "Representative latency/throughput/memory and complete integration",
+    "GPU/Metal",
+    "macOS/Windows/browser",
+    "Big-endian and other native profiles",
+    "Exact-commit PIC hosted qualification"
+  ],
+  "post_runtime_verification_formatting": {
+    "path": "tests/test_pic_format_harness.py",
+    "qualified_sha256": "f4eb21318462112fe9752f2afe4316ff04bf3048adff626d6bce56c263d0d7a7",
+    "final_sha256": "e5c2521de39826268cc27931dc83bb2845129bbf6b437937ba3fe7df2984ba87",
+    "removed_terminal_lf_bytes": 2,
+    "exact_change": "Remove only two trailing LF bytes; preserve one newline after the final statement",
+    "ast_including_locations_identical": true,
+    "original_qualified_bytes_preserved": true,
+    "library_probe_auditor_changed": false,
+    "qualification_source_seals_unchanged_except_test_formatting": true,
+    "continuity": "70 of 71 frozen runtime/provenance entries remain byte-identical; this test-only formatting exception is separately checked in final-tree validation",
+    "native_rerun_required": false,
+    "historical_reports_untouched": true
+  }
 }

@@ -556,3 +556,42 @@ def Laws.formatted_png_decode_zero_alpha():
 
 def Laws.formatted_png_decode_pixels_zero(index, channels, pixels):
   {==}
+
+def Laws.pic_native_mask_empty(mask):
+  {==}
+
+def Laws.pic_native_mask_union():
+  {==}
+
+def Laws.pic_native_rgb():
+  {==}
+
+def Laws.pic_native_alpha_first():
+  {==}
+
+def Laws.pic_native_alpha_middle():
+  {==}
+
+def Laws.pic_native_low_bits():
+  {==}
+
+def Laws.pic_native_alpha_low_bits():
+  {==}
+
+def Laws.formatted_pic_decode_rgb_format():
+  {==}
+
+def Laws.formatted_pic_decode_rgba_format():
+  {==}
+
+def Laws.formatted_pic_decode_rgb_word():
+  {==}
+
+def Laws.formatted_pic_decode_rgba_word():
+  {==}
+
+def Laws.formatted_pic_decode_zero_alpha():
+  {==}
+
+def Laws.formatted_pic_decode_pixels_zero(index, channels, pixels):
+  {==}

@@ -33,6 +33,8 @@ PNG_PREDECESSOR_SHA256 = '056713e25bab0092e22a4bfb1d68b687c821dbe77b8174b2932b7d
 TGA_SPLIT_PREDECESSOR_SHA256 = 'bf6f62710566b8c186548330d18437079349e00283f6ffc3842c63bd6de98b09'
 # Exact ten-worker 84-gate workflow at 9cb5a7e7cabdb76005a76119616e33ca9516d73b.
 PNG_FILE_PREDECESSOR_SHA256 = '8bfab667d418967d2427f41079411c1ef8d2e6698068127cde4cd4a950eb6b91'
+# Exact twelve-worker 85-gate workflow at e6ac05e6d1daf64d050e6da3f783ed60cc3130e1.
+PIC_PREDECESSOR_SHA256 = '3b5f0be5c6ee604316f3e9015f72d4316b9792c3949bff91698053617cc7268e'
 FORMATTED_GATES = (
     'Verify checked formatted BMP bytes and typed IO',
     'Verify checked formatted TGA bytes and typed IO',
@@ -120,6 +122,13 @@ PNG_FILE_PATHS = (
     '!.build/png-file-probe/run-*/fixtures/larger-file.png',
     '!.build/png-file-probe/run-*/fixtures/host-size-overflow.png',
 )
+PIC_GATES = ('''      - name: Verify native PIC formats and exact memory bytes
+        run: >-
+          python3 tools/pic_format_probe.py --reference-env clean-loader
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+''',)
+PIC_PATHS = ('.build/pic-format-probe/',)
 PLATFORMS = (('Ubuntu', 'ubuntu-24.04'), ('Mac', 'macos-15'))
 ORIGINAL_WORKERS = ('coreUbuntu', 'coreMac', 'formattedUbuntu', 'formattedMac')
 BMP_WORKERS = ('bmpUbuntu', 'bmpMac')
@@ -242,10 +251,10 @@ def validate_workflow(text):
     core = [step for step in gates if gate_name(step) not in FORMATTED_GATES]
     require(tuple(map(gate_name, formatted)) == FORMATTED_GATES, 'Formatted ownership changed')
     require(len(core) == 72 and len(formatted) == 7, 'Original gate counts changed')
-    reviewed_gates = gates + list(ADDED_FORMATTED_GATES) + list(BMP_GATES) + list(ADDED_BMP_FILE_GATES) + list(PNG_GATES) + list(PNG_FILE_GATES)
-    require(len(reviewed_gates) == 85 and len(formatted) == 7
+    reviewed_gates = gates + list(ADDED_FORMATTED_GATES) + list(BMP_GATES) + list(ADDED_BMP_FILE_GATES) + list(PNG_GATES) + list(PNG_FILE_GATES) + list(PIC_GATES)
+    require(len(reviewed_gates) == 86 and len(formatted) == 7
             and len(ADDED_FORMATTED_GATES) == 2
-            and len(BMP_GATES) == len(ADDED_BMP_FILE_GATES) == len(PNG_GATES) == len(PNG_FILE_GATES) == 1,
+            and len(BMP_GATES) == len(ADDED_BMP_FILE_GATES) == len(PNG_GATES) == len(PNG_FILE_GATES) == len(PIC_GATES) == 1,
             'Reviewed added gate count changed')
     upload_header, old_paths = upload_parts(upload)
     require(len(old_paths) == len(set(old_paths)) == 156, 'Expected 156 distinct baseline paths')
@@ -256,21 +265,22 @@ def validate_workflow(text):
     require(len(paths_by_shard['core']) == 140, 'Expected 140 core paths')
     require(Counter(paths_by_shard['core'] + paths_by_shard['formatted']) == Counter(old_paths),
             'Artifact partitions must be the disjoint baseline union')
+    paths_by_shard['formatted'] += list(PIC_PATHS)
     paths_by_shard['tga'] = list(ADDED_FORMATTED_PATHS)
     paths_by_shard['bmp'] = list(BMP_PATHS) + list(ADDED_BMP_FILE_PATHS)
     paths_by_shard['png'] = list(PNG_PATHS)
     paths_by_shard['pngFile'] = list(PNG_FILE_PATHS)
-    reviewed_paths = old_paths + list(ADDED_FORMATTED_PATHS) + list(BMP_PATHS) + list(ADDED_BMP_FILE_PATHS) + list(PNG_PATHS) + list(PNG_FILE_PATHS)
-    require(len(paths_by_shard['formatted']) == 16 and len(paths_by_shard['tga']) == 6 and len(paths_by_shard['bmp']) == 6
+    reviewed_paths = old_paths + list(ADDED_FORMATTED_PATHS) + list(BMP_PATHS) + list(ADDED_BMP_FILE_PATHS) + list(PNG_PATHS) + list(PNG_FILE_PATHS) + list(PIC_PATHS)
+    require(len(paths_by_shard['formatted']) == 17 and len(paths_by_shard['tga']) == 6 and len(paths_by_shard['bmp']) == 6
             and len(paths_by_shard['png']) == 1 and len(paths_by_shard['pngFile']) == 5
-            and len(reviewed_paths) == 174,
+            and len(PIC_PATHS) == 1 and len(reviewed_paths) == 175,
             'Reviewed added artifact count changed')
     for suffix, platform in PLATFORMS:
         actual_gates = []
         actual_paths = []
         for shard, name, expected_gates in (
             ('core', 'Core CPU and JavaScript', core),
-            ('formatted', 'Formatted images CPU and JavaScript', formatted),
+            ('formatted', 'Formatted images CPU and JavaScript', formatted + list(PIC_GATES)),
             ('bmp', 'BMP memory CPU and JavaScript', list(BMP_GATES) + list(ADDED_BMP_FILE_GATES)),
             ('png', 'PNG memory CPU and JavaScript', list(PNG_GATES)),
             ('tga', 'TGA memory and files CPU and JavaScript', list(ADDED_FORMATTED_GATES)),
@@ -427,6 +437,19 @@ def remove_reviewed_png_file_additions(text):
     return text
 
 
+def remove_reviewed_pic_additions(text):
+    # Independent raw inverse: remove only the two exact new gate payloads and
+    # one exact upload line per OS. Preserve every other byte and line ending.
+    for gate in PIC_GATES:
+        require(text.count(gate) == 2, 'Expected one exact PIC gate per platform')
+        text = text.replace(gate, '')
+    for path in PIC_PATHS:
+        line = '            ' + path + '\n'
+        require(text.count(line) == 2, 'Expected one exact PIC upload path per platform')
+        text = text.replace(line, '')
+    return text
+
+
 class ConformanceWorkflowTests(unittest.TestCase):
     def setUp(self):
         self.text = WORKFLOW.read_bytes().decode('utf-8')
@@ -434,13 +457,56 @@ class ConformanceWorkflowTests(unittest.TestCase):
     def test_exact_reviewed_gate_setup_settings_and_artifact_partition(self):
         validate_workflow(self.text)
 
+    def test_removing_only_reviewed_pic_additions_restores_exact_85_gate_bytes(self):
+        stripped = remove_reviewed_pic_additions(self.text)
+        self.assertEqual(hashlib.sha256(stripped.encode('utf-8')).hexdigest(),
+                         PIC_PREDECESSOR_SHA256)
+
+    def test_reviewed_pic_addition_is_mandatory_exact_and_scoped_on_both_platforms(self):
+        _, jobs = workflow_parts(self.text)
+        gate = PIC_GATES[0]
+        path = '            ' + PIC_PATHS[0] + '\n'
+        for suffix, _ in PLATFORMS:
+            job_id = 'formatted' + suffix
+            job = jobs[job_id]
+            _, steps = job_parts(job)
+            self.assertEqual(len(steps[7:-1]), 8)
+            self.assertEqual(tuple(map(gate_name, steps[7:-2])), FORMATTED_GATES)
+            self.assertEqual(steps[-2], gate)
+            self.assertEqual(upload_parts(steps[-1])[1], list(FORMATTED_PATHS) + list(PIC_PATHS))
+            mutations = {
+                'missing PIC gate': job.replace(gate, '', 1),
+                'duplicate PIC gate': job.replace(gate, gate * 2, 1),
+                'altered PIC command': job.replace('tools/pic_format_probe.py', 'tools/pic_probe.py', 1),
+                'missing PIC loader flag': job.replace('tools/pic_format_probe.py --reference-env clean-loader', 'tools/pic_format_probe.py', 1),
+                'altered PIC loader flag': job.replace('tools/pic_format_probe.py --reference-env clean-loader', 'tools/pic_format_probe.py --reference-env inherited', 1),
+                'optional PIC gate': job.replace(gate, gate.replace('        run:', '        continue-on-error: true\n        run:'), 1),
+                'skipped PIC gate': job.replace(gate, gate.replace('        run:', '        if: false\n        run:'), 1),
+                'bypassed PIC failure': job.replace(gate, gate.rstrip('\n') + ' || true\n', 1),
+                'changed PIC Bend source': job.replace(gate, gate.replace('/.build/dependencies/bend', '/.build/dependencies/other-bend'), 1),
+                'changed PIC raylib source': job.replace(gate, gate.replace('/.build/dependencies/raylib', '/.build/dependencies/other-raylib'), 1),
+                'reordered PIC gate': job.replace(steps[-3] + gate, gate + steps[-3], 1),
+                'PIC before original seven gates': job.replace(gate, '', 1).replace(steps[7], gate + steps[7], 1),
+                'missing PIC artifact': job.replace(path, '', 1),
+                'duplicate PIC artifact': job.replace(path, path * 2, 1),
+                'altered PIC artifact': job.replace(path, '            .build/pic-format-probe/results.json\n', 1),
+                'stale PIC artifact': job.replace(path, '            .build/pic-probe/\n', 1),
+                'broader PIC artifact': job.replace(path, '            .build/\n', 1),
+                'reordered PIC artifact': job.replace(path, '', 1).replace('            ' + FORMATTED_PATHS[0] + '\n', path + '            ' + FORMATTED_PATHS[0] + '\n', 1),
+            }
+            for label, mutated_job in mutations.items():
+                with self.subTest(job=job_id, mutation=label):
+                    self.assertNotEqual(job, mutated_job)
+                    with self.assertRaises(ValueError):
+                        validate_workflow(structural_text(self.text).replace(job, mutated_job, 1))
+
     def test_removing_only_reviewed_png_file_additions_restores_exact_84_gate_bytes(self):
-        stripped = remove_reviewed_png_file_additions(self.text)
+        stripped = remove_reviewed_png_file_additions(remove_reviewed_pic_additions(self.text))
         self.assertEqual(hashlib.sha256(stripped.encode('utf-8')).hexdigest(),
                          PNG_FILE_PREDECESSOR_SHA256)
 
     def test_reversing_only_tga_scheduling_restores_exact_84_gate_bytes(self):
-        restored = restore_reviewed_tga_split(remove_reviewed_png_file_additions(self.text))
+        restored = restore_reviewed_tga_split(remove_reviewed_png_file_additions(remove_reviewed_pic_additions(self.text)))
         self.assertEqual(hashlib.sha256(restored.encode('utf-8')).hexdigest(),
                          TGA_SPLIT_PREDECESSOR_SHA256)
 
@@ -451,8 +517,9 @@ class ConformanceWorkflowTests(unittest.TestCase):
             formatted, tga = jobs[formatted_id], jobs[tga_id]
             _, formatted_steps = job_parts(formatted)
             _, tga_steps = job_parts(tga)
-            self.assertEqual(tuple(map(gate_name, formatted_steps[7:-1])), FORMATTED_GATES)
-            self.assertEqual(upload_parts(formatted_steps[-1])[1], list(FORMATTED_PATHS))
+            self.assertEqual(tuple(map(gate_name, formatted_steps[7:-2])), FORMATTED_GATES)
+            self.assertEqual(formatted_steps[-2], PIC_GATES[0])
+            self.assertEqual(upload_parts(formatted_steps[-1])[1], list(FORMATTED_PATHS) + list(PIC_PATHS))
             for gate in ADDED_FORMATTED_GATES:
                 duplicated = formatted.replace(formatted_steps[-1], gate + formatted_steps[-1], 1)
                 changed = structural_text(self.text).replace(formatted, duplicated, 1)
@@ -480,12 +547,12 @@ class ConformanceWorkflowTests(unittest.TestCase):
                     validate_workflow(structural_text(self.text).replace(tga, jobs['tga' + other], 1))
 
     def test_removing_only_reviewed_png_additions_restores_exact_83_gate_bytes(self):
-        stripped = remove_reviewed_png_additions(restore_reviewed_tga_split(remove_reviewed_png_file_additions(self.text)))
+        stripped = remove_reviewed_png_additions(restore_reviewed_tga_split(remove_reviewed_png_file_additions(remove_reviewed_pic_additions(self.text))))
         self.assertEqual(hashlib.sha256(stripped.encode('utf-8')).hexdigest(),
                          PNG_PREDECESSOR_SHA256)
 
     def test_removing_only_reviewed_bmp_file_additions_restores_exact_82_gate_bytes(self):
-        stripped = remove_reviewed_bmp_file_additions(remove_reviewed_png_additions(restore_reviewed_tga_split(remove_reviewed_png_file_additions(self.text))))
+        stripped = remove_reviewed_bmp_file_additions(remove_reviewed_png_additions(restore_reviewed_tga_split(remove_reviewed_png_file_additions(remove_reviewed_pic_additions(self.text)))))
         self.assertEqual(hashlib.sha256(stripped.encode('utf-8')).hexdigest(),
                          BMP_FILE_PREDECESSOR_SHA256)
 
@@ -501,11 +568,13 @@ class ConformanceWorkflowTests(unittest.TestCase):
             remove_reviewed_bmp_file_additions(changed)
         with self.assertRaises(ValueError):
             remove_reviewed_png_file_additions(changed)
+        with self.assertRaises(ValueError):
+            remove_reviewed_pic_additions(changed)
 
     def test_removing_only_reviewed_bmp_additions_restores_exact_predecessor_bytes(self):
         # Independent raw-text comparison: do not reuse the structural parser
         # or strip comments/whitespace from the four preserved workers.
-        predecessor = remove_reviewed_bmp_file_additions(remove_reviewed_png_additions(restore_reviewed_tga_split(remove_reviewed_png_file_additions(self.text))))
+        predecessor = remove_reviewed_bmp_file_additions(remove_reviewed_png_additions(restore_reviewed_tga_split(remove_reviewed_png_file_additions(remove_reviewed_pic_additions(self.text)))))
         start = predecessor.index('  bmpUbuntu:\n')
         end = predecessor.index('  # Keep both prior required-check names', start)
         stripped = predecessor[:start] + predecessor[end:]
