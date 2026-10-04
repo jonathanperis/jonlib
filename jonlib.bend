@@ -917,7 +917,7 @@ def Surface.png.error(error: Png.Error) -> Image.DecodeError:
 def Surface.png.result(result: Result<&1, &1, Png.Error, Png.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
   match result:
     case Fail{error}: Fail{Surface.png.error(error)}
-    case Done{Png.Image{w, h, pixels}}: Done{Surface{w, h, pixels}}
+    case Done{Png.Image{w, h, _, pixels}}: Done{Surface{w, h, pixels}}
 
 def Surface.decode_png(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   Surface.png.result(Png.decode(bytes))
@@ -1193,6 +1193,42 @@ def Image.Formatted.tga.result(result: Result<&1, &1, Tga.Error, Tga.Image>) -> 
 
 def Image.Formatted.decode_tga(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
   Image.Formatted.tga.result(Tga.decode(bytes))
+
+# PNG retains native output components from structural color/tRNS metadata.
+# Pack reduced RGBA samples with integers, retaining gray and zero-alpha bytes.
+def Image.Formatted.png.format(channels: U32) -> U32:
+  match channels:
+    case 1: 1
+    case 2: 2
+    case 3: 4
+    case _: 7
+
+def Image.Formatted.png.word(channels: U32, +pixel: U32) -> U32:
+  match channels:
+    case 1: (pixel >> 24n : U32)
+    case 2: ((pixel >> 24n) .|. ((pixel .&. 255) << 8n) : U32)
+    case 3: (Formats.swap(pixel) .&. 16777215 : U32)
+    case _: Formats.swap(pixel)
+
+def Image.Formatted.png.write(index: U32, channels: U32, read: Array<U32> & U32) -> Array<U32>:
+  (pixels, pixel) = read
+  Array.set(U32, pixels, index, Image.Formatted.png.word(channels, pixel))
+
+def Image.Formatted.png.pixels(n: Nat, +index: U32, +channels: U32, pixels: Array<U32>) -> Array<U32>:
+  match n:
+    case 0n: pixels
+    case 1n+rest:
+      Image.Formatted.png.pixels(rest, (index + 1 : U32), channels, Image.Formatted.png.write(index, channels, Array.get(U32, pixels, index)))
+
+def Image.Formatted.png.result(result: Result<&1, &1, Png.Error, Png.Image>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
+  match result:
+    case Fail{error}: Fail{Surface.png.error(error)}
+    case Done{Png.Image{+width, +height, +native_channels, pixels}}:
+      Done{FormattedImage{width, height, Image.Formatted.png.format(native_channels),
+        Image.Formatted.png.pixels(U32.to_nat((width * height : U32)), 0, native_channels, pixels)}}
+
+def Image.Formatted.decode_png(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
+  Image.Formatted.png.result(Png.decode(bytes))
 
 def Image.Formatted.created(width: U32, height: U32, format: U32, result: Maybe<Array<U32>>) -> Maybe<Image.Formatted>:
   match result:

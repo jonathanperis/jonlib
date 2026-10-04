@@ -12,6 +12,7 @@ import ./src/resize_numeric.bend as Resize
 import ./src/bmp.bend as Bmp
 import ./src/tga.bend as Tga
 import ./src/qoi.bend as Qoi
+import ./src/png.bend as Png
 import ./src/formats.bend as Formats
 
 law clear_dimensions:
@@ -649,3 +650,74 @@ law formatted_bmp_decode_pixels_zero:
   for channels: U32
   for pixels: Array<U32>
   {J.Image.Formatted.bmp.pixels(0n, index, channels, pixels) == pixels : Array<U32>}
+
+# Scoped PNG structural metadata/packing laws, not a universal decoder proof.
+law png_native_gray:
+  {Png.native.channels(0, 1, None{}, False{}) == 1 : U32}
+
+law png_native_gray_key:
+  for key: Png.Key
+  {Png.native.channels(0, 1, Some{key}, False{}) == 2 : U32}
+
+law png_native_grayalpha:
+  {Png.native.channels(4, 2, None{}, False{}) == 2 : U32}
+
+law png_native_rgb:
+  {Png.native.channels(2, 3, None{}, False{}) == 3 : U32}
+
+law png_native_rgb_key:
+  for key: Png.Key
+  {Png.native.channels(2, 3, Some{key}, False{}) == 4 : U32}
+
+law png_native_palette:
+  {Png.native.channels(3, 1, None{}, False{}) == 3 : U32}
+
+law png_native_palette_trns:
+  {Png.native.channels(3, 1, None{}, True{}) == 4 : U32}
+
+law png_native_rgba:
+  {Png.native.channels(6, 4, None{}, False{}) == 4 : U32}
+
+law png_palette_trns_sticky_plte:
+  for +cfg: Png.Config
+  for +key: Maybe<&2, Png.Key>
+  for +compressed: +List<U32>
+  for +seen: Bool
+  for +raw: Bool
+  for +bytes: +List<U32>
+  {Png.more.plte(True{}, cfg, key, True{}, compressed, seen, raw, [1, 2, 3], bytes)
+    == Done{Png.More{bytes, Png.Parts{Some{cfg}, [16909311], key, True{}, compressed, seen, raw}}}
+    : Result<&2, &2, Png.Error, Png.Parsing>}
+
+law formatted_png_decode_format1:
+  {J.Image.Formatted.png.format(1) == 1 : U32}
+
+law formatted_png_decode_format2:
+  {J.Image.Formatted.png.format(2) == 2 : U32}
+
+law formatted_png_decode_format4:
+  {J.Image.Formatted.png.format(3) == 4 : U32}
+
+law formatted_png_decode_format7:
+  {J.Image.Formatted.png.format(4) == 7 : U32}
+
+law formatted_png_decode_gray:
+  {J.Image.Formatted.png.word(1, 2155905279) == 128 : U32}
+
+law formatted_png_decode_grayalpha:
+  {J.Image.Formatted.png.word(2, 305419896) == 30738 : U32}
+
+law formatted_png_decode_rgb:
+  {J.Image.Formatted.png.word(3, 305419896) == 5649426 : U32}
+
+law formatted_png_decode_rgba:
+  {J.Image.Formatted.png.word(4, 305419896) == 2018915346 : U32}
+
+law formatted_png_decode_zero_alpha:
+  {J.Image.Formatted.png.word(2, 2172748032) == 129 : U32}
+
+law formatted_png_decode_pixels_zero:
+  for index: U32
+  for channels: U32
+  for pixels: Array<U32>
+  {J.Image.Formatted.png.pixels(0n, index, channels, pixels) == pixels : Array<U32>}

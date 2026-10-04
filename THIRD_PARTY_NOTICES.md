@@ -39,6 +39,8 @@ identify the original sources and their required attribution.
   channel packing, retained unsupported owners and typed closed-handle IO.
   `Image.Formatted.decode_pnm` adapts `LoadImageFromMemory`'s PNM component-to-format
   selection from `rtextures.c`, preserving grayscale/RGB888 in owned Bend storage.
+  `Image.Formatted.decode_png` adapts the same source's lines 461–471 for native
+  component-to-format 1/2/4/7 selection and implicit single-mip owned storage.
   Owned mipmap-chain generation in `jonlib.bend` adapts `ImageMipmaps` from
   `rtextures.c`, preserving sequential default resampling and dimension order.
   `src/blur.bend` adapts `ImageBlurGaussian` from the same source, retaining its
@@ -137,6 +139,16 @@ The PNM formatted-memory adapter retains the altered `src/pnm.bend` reader's
 checked header/byte/size rules and little-endian 16-to-8-bit reduction, adapting
 `stb_image.h`'s `stbi__pnm_load` and `stbi__convert_16_to_8` behavior with integer
 packing. It preserves native grayscale/RGB888 output rather than source depth.
+The PNG formatted-memory adapter retains the altered `src/png.bend` reader's
+checked domain, adapting `stb_image.h` lines 5119–5234 and 5284–5286 for native
+component metadata, structural tRNS promotion and sticky palette channels across
+later PLTE. Lines 1190–1203 and 1260–1273 supply final 16-to-8-bit high-byte
+reduction after full-width transparency comparison; lines 4993–4994 and
+5222–5223 retain the disabled CgBI conversion defaults. Integer packing exposes
+exact grayscale/gray-alpha/RGB/RGBA bytes in owned Bend storage.
+`tools/png_format_probe.py` executes the pinned unmodified reader only as an
+independent native reference; its admission checks and observation protocol do
+not link native PNG code into the Bend implementation.
 The upstream Softimage PIC reader credits Tom Seddon.
 The upstream GIF reader credits Jean-Marc Lienher, with simplification by stb.
 The upstream Radiance RGBE HDR reader credits Nicolas Schulz.

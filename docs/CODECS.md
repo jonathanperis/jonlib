@@ -32,7 +32,14 @@ documented in [HDR.md](HDR.md).
 
 The raw [DEFLATE dependency](DEFLATE.md) is verified separately. Non-interlaced and
 Adam7 packed/8/16-bit PNG decoding, native-default CgBI, filters, transparency rules and limits are documented
-in [PNG.md](PNG.md).
+in [PNG.md](PNG.md). The dedicated `Image.Formatted.decode_png` memory factory
+preserves native format 1/2/4/7 and exact reduced 8-bit component bytes across
+that unchanged checked domain; structural tRNS selects alpha channels even for
+opaque output and remains sticky through later PLTE. Its dedicated
+[local Linux CPU-1/CPU-2/JavaScript evidence](evidence/png-formatted-memory.json)
+passes with complete raw-byte replay; hosted qualification remains pending.
+Surface PNG entrypoints remain RGBA8-normalized;
+see the [contract and limits](PNG.md#format-preserving-png-memory-loading).
 
 ## QOI
 
@@ -65,9 +72,12 @@ check performs the same explicit `LoadImageFromMemory` followed by
 `ImageFormat(RGBA8)` adaptation. The dedicated formatted memory and file entrypoints
 preserve native QOI formats. The separate PNM memory factory and dedicated
 `Image.Formatted.load_pnm` file loader preserve native format 1/4 with reduced
-8-bit output. The dedicated TGA memory factory preserves format 1/2/4/7.
-Original-format metadata in the remaining normalized codecs, formatted TGA file
+8-bit output. The dedicated TGA and PNG memory factories preserve format 1/2/4/7;
+the PNG factory's new raw-metadata evidence is independent of historical
+normalized Surface results.
+Original-format metadata in the remaining normalized codecs, formatted PNG file
 loading, shared formatted/float dispatch and other payload codecs remain gaps.
+Dedicated formatted TGA and BMP file loading retain their existing support.
 
 `Image.DecodeError` distinguishes `InvalidImageHeader`, `InvalidImageByte`,
 `UnsupportedImageSize`, `TruncatedImageData` and `InvalidImageStream`.
