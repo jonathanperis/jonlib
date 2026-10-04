@@ -43,10 +43,12 @@ suffix. `Image.Formatted.load_qoi(path)` selects QOI the same way and preserves
 native RGB888/RGBA8888 storage instead of returning a normalized Surface; its
 [dedicated contract](#format-preserving-qoi-file-loading) is below. These
 operations share the checked IO boundary.
-`Image.Formatted.load_pnm(path)`, `Image.Formatted.load_tga(path)` and
-`Image.Formatted.load_bmp(path)` likewise select their named codecs independently
+`Image.Formatted.load_png(path)`, `Image.Formatted.load_pnm(path)`,
+`Image.Formatted.load_tga(path)` and `Image.Formatted.load_bmp(path)` likewise
+select their named codecs independently
 of suffixes, preserving the respective native output formats with the inclusive
-1 MiB raster-file cap. Their dedicated [PNM](#format-preserving-pnm-file-loading),
+1 MiB raster-file cap. Their dedicated [PNG](#format-preserving-png-file-loading),
+[PNM](#format-preserving-pnm-file-loading),
 [TGA](#format-preserving-tga-file-loading) and
 [BMP](#format-preserving-bmp-file-loading) contracts are below.
 The same byte-file boundary serves [owned animation loading](GIF-ANIMATION.md#file-loading),
@@ -136,6 +138,222 @@ allocation success, throughput or a verified maximum-area image. Native partial
 reads, callbacks, allocation ABI and concurrently changing/special files remain
 outside this profile. The dedicated helper adds no generic formatted dispatcher
 or new native API ID; `LoadImage` remains partial.
+
+## Format-preserving PNG file loading
+
+`Image.Formatted.load_png(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)`
+is an explicit PNG loader for ordinary, non-changing files. It does not inspect
+the filename suffix: `.png`, `.PNG`, mixed case, arbitrary or misleading `.qoi`
+names, suffixless paths, spaces, multiple dots and directory-qualified dotfiles
+all select the same PNG decoder. No content-based codec fallback, generic
+formatted dispatcher or caller-supplied cap is added. Existing Surface dispatch,
+other formatted loaders and every memory decoder remain unchanged.
+
+The adapter consists of exactly a dedicated result continuation and the public
+wrapper. `Image.file.bytes(path, Image.file.limit(RasterFile{}))` supplies the
+continuation with bytes or a load error, never an open File. Load errors are
+preserved; complete bytes go to unchanged `Image.Formatted.decode_png`, whose
+result is wrapped once by `Image.file.decoded`. PNG file selection is explicit,
+even though the native `.png` dispatch belongs to stb's shared content-sniffing
+family and can decode non-PNG payloads. Those native successes do not enlarge
+this dedicated PNG contract.
+
+### Bounds, sequencing and typed errors
+
+The shared raster-file cap is **1,048,576 encoded bytes, inclusive**, independent
+of the filename. PNG's unchanged memory decoder separately enforces the same
+encoded cap, including ignored tails after IEND, and an inclusive
+**67,108,864-byte filtered-stream cap**. File admission is an earlier IO check;
+it neither introduces nor enlarges either memory limit. These are encoded and
+filtered-size bounds, not total-heap, maximum-area or allocation-success guarantees.
+
+1. Open the path before interpreting its contents. Open errors retain exact
+   `ImageFileError{code, message}` even for misleading or unsupported suffixes.
+   An open failure acquires no handle to close.
+2. Obtain its size. Successfully reported sizes above the raster cap through
+   **4,294,967,295** return `ImageDecodeError{UnsupportedImageSize{}}` before any
+   payload read. Pinned Base rejects larger host sizes with the overflow file
+   error, preserving its code and message. Size failures and size rejection
+   call `File.close` before returning. Exact-cap files are admitted for reading;
+   their contents must still satisfy the PNG decoder.
+3. Perform the existing single bounded read of the reported size, then call
+   `File.close` before processing its result. Read errors preserve Base's exact
+   code/message. Short or long returned lists yield
+   `ImageDecodeError{TruncatedImageData{}}` before decoding. There is no retry or
+   streaming loop. A physically truncated file whose reported size is read in
+   full instead reaches PNG decoding: truncated PNG structures produce
+   `InvalidImageHeader`, rather than the file reader's `TruncatedImageData`.
+4. Decode complete bytes through the unchanged checked PNG adapter and wrap its
+   typed error exactly once. The whole-input byte/count walk precedes header
+   parsing. An invalid U32 value yields `InvalidImageByte`; a valid first value
+   beyond the encoded cap yields `UnsupportedImageSize`. An invalid value at
+   that same excess position takes precedence, while values after an already
+   detected cap error are not inspected. Ordinary files contain only bytes;
+   nonbyte U32 values are continuation-only test controls.
+5. Invalid signatures, chunk structures and unsupported IHDR fields yield
+   `InvalidImageHeader`. Structurally accepted zero/oversized dimensions and
+   excessive filtered capacity yield `UnsupportedImageSize`, before inflation.
+   Invalid framing/DEFLATE, filters, exact raster lengths and palette indices
+   yield `InvalidImageStream`. Complete, byte-valued tails after IEND remain
+   ignored after whole-input validation.
+
+Close ordering describes calls, not OS-close success: Base's C implementation
+discards the close result and JavaScript catches close exceptions. No new
+close-error variant or universal closure guarantee is provided. Injected
+size/read/short/long controls acquire real handles but inject a stage result;
+they are not actual concurrent-short-read demonstrations.
+
+### Preserved native storage and ownership
+
+Success returns one affine `Image.Formatted` owner with dimensions **1..4096**,
+one implicit mip level and exact native reduced 8-bit storage:
+
+| PNG structure | Native format | Component order |
+|---|---|---|
+| Grayscale without tRNS | **1** | G |
+| Grayscale with tRNS, or gray-alpha | **2** | G,A |
+| RGB or palette without tRNS | **4** | R,G,B |
+| RGB or palette with tRNS, or RGBA | **7** | R,G,B,A |
+
+Channel promotion follows accepted PNG structure, independently of opacity or
+whether a transparency key matches. Empty, all-opaque and unused-entry palette
+tRNS still promote to RGBA. Promotion remains sticky through a later accepted
+PLTE, though that PLTE replaces colors and resets palette alpha. Existing-alpha
+images retain alpha channels even when opaque. Full 16-bit tRNS comparisons
+precede high-byte reduction; packed grayscale and indexed samples retain their
+existing expansion rules. All checked filter/Adam7/chunk rules and native-default
+CgBI raw DEFLATE without additional BGR conversion or unpremultiplication are
+inherited from the [memory contract](PNG.md#format-preserving-png-memory-loading).
+CRC and Adler quirks are unchanged, including completed streams without Adler.
+
+Export consumes the owner and returns exactly `width*height*channels` row-major
+component bytes, with no storage padding. Logical packed words have zero unused
+high bits for formats 1/2/4. Point reads retain ownership for accepted and rejected
+coordinates. The consuming Surface bridge matches existing normalized RGBA8 PNG
+output. Failure returns no partial image or open File. Native mipmaps are measured
+as one by the reference; candidate mipmaps are an implicit type contract.
+
+### PNG file verification boundary
+
+The [source-scoped PNG-file evidence](evidence/png-formatted-files.json) passes
+on local Linux x86-64 CPU-one-thread, CPU-two-thread and server-side JavaScript.
+The fresh isolated native archive explicitly enables PNG and all eight required
+raster-alias macros, with checked CMake/compiled definitions and pinned source,
+compiler/archive and clean-loader child receipts. Tiny structural-channel,
+full-width-transparency and native-default CgBI vectors qualify the reference
+before broad input execution. Native admission independently scans actual PNG
+signature/chunks, bounded DEFLATE, filters and palette indices. Malformed,
+oversized, foreign-codec and special-file controls remain candidate-only.
+
+The corpus contains **370 accepted files / 86,119 pixels**, retaining all
+**230 PNG memory streams / 85,979 pixels** byte-for-byte plus **140 one-pixel
+filename variants** across all four native output layouts. It retains all
+**208 memory controls** unchanged: **132 byte-valued** controls become files and
+**76 nonbyte U32** controls remain continuation-only. The nested historical
+**193 accepted streams / 31,677 pixels and 39 controls** also remain unchanged.
+The resulting **143 file controls plus 76 continuation controls** are distinct
+from replay-parser mutation tests. Lower/upper raster aliases, mixed/unsupported
+suffixes, suffixless/trailing-dot names, spaces, multiple dots, directory-qualified
+dotfiles and dotted parents exercise independent file selection.
+
+The native oracle uses **326 actual `LoadImage` calls** and **44 explicit
+`LoadFileData` plus `LoadImageFromMemory(".png")` calls**. Its **740 primary
+observations** capture **207,017 native raw bytes** before **344,476 separately
+normalized bytes**. The reference measures dimensions, format and
+`image.mipmaps == 1`; candidate mipmaps remain an implicit owner-type contract.
+Native `.png` dispatch belongs to stb's shared sniffing family, so native success
+on another codec would not establish this dedicated PNG contract.
+
+Each candidate lane checks **2,846 primary observations / 1,531,636 bytes**,
+including **828,068 raw and 703,568 normalized bytes**. Raw export, retained
+point/high-bit ownership checks, consuming Surface bridges, and applicable
+normalized/generic routes use distinct public reopens. Factory observations
+reconstruct the native byte vector after a separate successful public reopen;
+they are **not a second direct comparison of loader-exported bytes**. Raw
+export/import round trips instead reconstruct the reopened loader's exported
+bytes. All **24 native and 90 candidate partitions** are ordered and exhaustive,
+with at most **32 actions / 196,608 generated UTF-8 bytes** per partition. The
+largest candidate source is **138,804 bytes**; the largest native source is
+**12,533 bytes**.
+
+The boundary gate emits **1,209 records / 1,003 compared bytes** per lane:
+eight synthetic checks, **100 cycles over twelve acquired-handle paths** under
+`RLIMIT_NOFILE=64`, then a final valid load. The paths include all four native
+formats, checked decode failure, populated-directory/read failure, cap rejection,
+U32-size overflow and injected size/read/short/long-result stages. Exact Base
+code/messages survive the injected failures. The local directory failure occurs
+at read with code 21 (`Is a directory`). Every boundary frame and terminal is
+retained and independently replayed. This is finite leak detection and
+source-ordered close-call evidence, not proof of OS-close success or actual
+concurrent short-read behavior.
+
+Four separate sparse records cover **1,048,577 bytes** with ordinary/misleading
+suffixes, **268,435,456 bytes**, and **4,294,967,296-byte** Base-size overflow.
+Sparse holes are never loaded or hashed. An accepted **1,048,576-byte** PNG has
+its own raw/normalized native observation and a fully checked ignored byte tail.
+Its format-4 pixel is `[13, 74, 135]`; each candidate lane emits **six exact-cap
+records / 20 compared bytes**. These resource records are separate from the
+primary totals above.
+
+Compilation is excluded from runtime RSS measurement. Post-run acceptance
+ceilings are **256 MiB** for boundary/sparse runs and **1 GiB** for exact-cap
+reads. These are measured acceptance criteria, not live allocation limits:
+
+| Lane | Boundary RSS / seconds | Sparse RSS / seconds | Exact-cap RSS / seconds |
+|---|---:|---:|---:|
+| CPU-one-thread | 9,830,400 / 0.581 | 9,830,400 / 0.436 | 27,299,840 / 0.722 |
+| CPU-two-thread | 9,830,400 / 0.597 | 9,830,400 / 0.448 | 27,303,936 / 0.696 |
+| JavaScript | 112,336,896 / 0.837 | 52,514,816 / 0.509 | 247,644,160 / 1.549 |
+
+RSS units are bytes. The **2,708.808-second** focused gate is a verification
+duration, not a performance benchmark. Independent complete-record replay
+verifies **429 command receipts and 2,699 source/artifact seals**, every primary
+and resource frame, exact scalar/framing/partition/lane presence, and all nine
+fd64/RSS receipts. It rejects **121 adversarial replay mutations**. Replay uses
+sealed source/fixture recipes without harness comparators and does not rerun
+native, compiler or candidate processes.
+
+The separate same-source regression matrix passes **28 ordered serial stages**,
+**966 Python tests without skips** and all **177 scoped laws** with the complete
+`All terms check.` verdict, plus syntax/project/API/whitespace checks. Independent
+regression replay verifies **45,105 formatted records / 19,789,812 bytes across
+three lanes**, **33 resource runs**, **1,603 inner and 28 terminal outer command
+receipts**, and **11,177 distinct artifact hashes**. These totals exclude the
+focused PNG-file gate. Canonical replay covers every **261 scenarios / 40,101
+words, 333 QOI bytes and 23 palette words per lane**, including optional palette
+counts and alpha borders. Nine older gates and canonical ancillary checks retain
+report/source/artifact evidence rather than complete raw runtime replay. QOI
+closure retains its final image and terminal only; internal iterations were not
+emitted and are not independently replayed. See the detailed
+[verification boundary](VERIFICATION.md#format-preserving-png-file-loading-2026-10-04).
+
+These results bind the frozen runtime snapshot based on `7dcfdb98`; all **470
+frozen source files** were checked unchanged during the independent audit.
+Later documentation/CI-tree validation is recorded separately, without rewriting
+runtime receipts or claiming an unrun integrated test count. The predecessor's
+84-gate/eight-worker run did not fully qualify because its macOS formatted worker
+hit the 120-minute limit. The repaired **84-gate/ten-worker** predecessor at
+`9cb5a7e7cabdb76005a76119616e33ca9516d73b` passes
+[Checks](https://github.com/jonathanperis/jonlib/actions/runs/37179587100) and
+[Conformance](https://github.com/jonathanperis/jonlib/actions/runs/37179587107).
+That CI-only change preserves runtime sources and does not qualify this PNG-file
+increment. New **85-gate/twelve-worker exact-tip hosted qualification remains
+pending**.
+
+```sh
+python3 tools/png_file_probe.py --reference-env clean-loader \
+  --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+python3 -m unittest discover -s tests -p test_png_file_harness.py -v
+```
+
+Only partial `raylib:function:LoadImage` scope expands; no API completes and the
+`LoadImageFromMemory` domain does not change. Generic formatted/float dispatch,
+additional codecs, nondefault stb flags, callbacks, concurrent/special files,
+native pointer/allocation ABI and OOM parity, OS-close failure reporting,
+maximum-area allocation, representative performance and full integration remain
+open. GPU/Metal file IO, Windows/browser/big-endian and every platform without
+fresh file-specific execution remain unqualified.
+
 
 ## Format-preserving PNM file loading
 

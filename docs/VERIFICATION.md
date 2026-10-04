@@ -5245,3 +5245,112 @@ IO, generic formatted dispatch, other codecs, nondefault decoder flags, native
 pointer/allocation/OOM semantics, maximum-area success and representative
 performance remain outside this increment. New hosted, GPU/Metal,
 macOS/Windows/browser and big-endian qualification remain open.
+
+## Format-preserving PNG file loading (2026-10-04)
+
+`Image.Formatted.load_png(path)` explicitly selects PNG and returns native
+format 1/2/4/7 storage through the existing inclusive **1,048,576-byte**
+`RasterFile` boundary. The increment adds exactly a public wrapper and its result
+continuation. It changes no decoder, memory domain, shared reader, pin or law.
+The PNG memory decoder separately retains its inclusive 1 MiB encoded and 64 MiB
+filtered-stream caps, structural tRNS channel promotion, full-width transparency
+comparison, native-default CgBI and fail-fast errors. Complete reads, exact Base
+code/messages and close-before-decode calls are inherited unchanged. The cap is
+not a maximum-area, heap, allocation-success or OS-close guarantee. See the
+[file contract](IMAGE-FILES.md#format-preserving-png-file-loading).
+
+```sh
+python3 tools/png_file_probe.py --reference-env clean-loader \
+  --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+python3 -m unittest discover -s tests -p test_png_file_harness.py -v
+```
+
+The [new local evidence](evidence/png-formatted-files.json) passes on Linux
+x86-64 CPU-one-thread, CPU-two-thread and server-side JavaScript, with Bun 1.3.12,
+Clang 19.1.7 observers, GNU 14.2.0 native archive compilation and the pinned
+Bend/raylib revisions and declared overlay. Native file/decoder ranges, fresh
+PNG/eight-alias-enabled archive, compiler identities and clean-loader child
+receipts are bound before accepted PNG bytes are run. Malformed, non-PNG,
+oversized and special-file controls are checked-only, not native rejection
+parity.
+
+The focused corpus has **370 accepted files / 86,119 pixels**, including all
+**230 accepted memory streams / 85,979 pixels** unchanged plus 140 filename
+variants. All **208 memory controls** remain exact, split into 132 byte-valued
+file controls and 76 nonbyte continuation controls; the nested **193 legacy
+streams / 31,677 pixels and 39 controls** remain unchanged. The file corpus has
+**143 file plus 76 continuation controls** overall. **326 actual `LoadImage`
+calls and 44 `LoadFileData` + `LoadImageFromMemory(".png")` calls** produce **740
+native observations**, with **207,017 raw bytes before 344,476 normalized bytes**.
+Native mipmaps are actually observed as one; candidate mipmaps are an implicit
+type contract.
+
+Each lane passes **2,846 primary observations / 1,531,636 bytes** (**828,068 raw,
+703,568 normalized**) across 90 complete candidate partitions; native execution
+uses 24 partitions. Source/action limits are 196,608 UTF-8 bytes and 32 actions.
+Distinct reopens support raw exports, owners/high bits, Surface bridges and
+normalized/generic regressions. Factory observations reconstruct native bytes
+after a separately successful public reopen; they do not independently compare
+that reopen's bytes. Raw round trips use the reopened loader's own exported
+bytes. Every candidate primary record is independently replayed.
+
+Every lane separately passes **1,209 boundary records / 1,003 bytes**, including
+100 fd64 cycles across twelve acquired-handle paths and eight synthetic checks;
+**four sparse records**; and **six exact-cap records / 20 bytes**. Every resource
+frame and terminal is retained and independently replayed. The accepted exact-cap
+PNG contains a native RGB888 pixel `[13, 74, 135]` plus a validated ignored tail.
+The 256 MiB boundary/sparse and 1 GiB exact-cap RSS thresholds are post-run
+acceptance ceilings, not live allocation limits. Injected size/read/short/long
+stages exercise real acquired handles without claiming concurrent-short-read
+coverage; local populated-directory failure is a read error 21. Base does not
+report close failures.
+
+The focused report SHA-256 is
+`cfacc90eaed785ef4689ce6b426b948e8f1c0eaa82369bae420f67b39223aee4`.
+Independent replay verifies **429 command receipts / 2,699 artifact seals** and
+rejects **121 adversarial mutations**, including resource receipt, usage, frame
+and command-chain changes. It uses sealed source recipes without the harness
+comparators and does not run native/compiler/candidate processes or read sparse
+holes. The gate's **2,708.808-second** duration is not a benchmark.
+
+The same-source matrix passes **28 ordered serial stages**, **966 Python tests
+without skips**, all **177 scoped laws** with the complete `All terms check.`
+verdict, and syntax/project/API/whitespace checks. It reruns Surface PNG, generic
+memory/file dispatch, animation fallback, PNG/FloatRGB PNG export, R32 consumers,
+image formats/colors, all formatted QOI/PNM/TGA/BMP memory/file gates, PNG memory,
+and canonical conformance. No new laws or universal IO/decoder proof are claimed.
+
+The independent regression audit verifies **470 frozen source files** before
+and after its read-only audit and **11,177 distinct artifact hashes**. Its
+**45,105 formatted records / 19,789,812 bytes across three lanes**, **33 resource
+runs**, **1,603 inner and 28 terminal outer command receipts** exclude the focused
+PNG-file gate. Canonical replay compares all **261 scenarios / 40,101 words,
+333 QOI bytes and 23 palette words per lane**, including optional palette counts
+and alpha borders, and rejects 17 adversarial mutations. Nine older gates
+(Surface PNG, generic memory/file, animation fallback, PNG export, FloatRGB PNG,
+R32, image formats and image colors) retain report/source/artifact evidence,
+not complete raw runtime replay. Canonical ancillary proof/contract/IO checks
+likewise use the integrated report and outer receipt, with retained PPM/QOI files
+compared separately. QOI file closure retains only its final image and terminal;
+internal iterations were not emitted and cannot be independently replayed.
+
+Runtime qualification binds the frozen snapshot based on
+`7dcfdb98a51af5dc0aa28f3affb060f185762a52`. Final metadata/CI-tree checks and
+publication receipts are separate from that runtime evidence; no later integrated
+suite count is inferred. The earlier 84-gate/eight-worker hosted run did not
+fully qualify: the macOS formatted worker reached the 120-minute timeout.
+The CI-only repaired **84-gate/ten-worker** predecessor
+`9cb5a7e7cabdb76005a76119616e33ca9516d73b` passes
+[Checks](https://github.com/jonathanperis/jonlib/actions/runs/37179587100) and
+[Conformance](https://github.com/jonathanperis/jonlib/actions/runs/37179587107),
+with the same runtime sources. This is predecessor evidence only; the new PNG-file
+**85-gate/twelve-worker exact-tip qualification remains pending**.
+
+Only the existing partial `raylib:function:LoadImage` entry expands; it remains
+partial. `LoadImageFromMemory` stays byte-for-byte unchanged and no completed or
+partially mapped API count changes. Generic formatted/float dispatch, additional
+codecs/domains, nondefault flags, callbacks, concurrent/special-file behavior,
+OS-close reporting, native pointer/allocation/OOM parity, maximum-area success,
+representative performance and full integration remain open. GPU/Metal file IO,
+macOS/Windows/browser, big-endian and other unexecuted PNG-file platforms remain
+unqualified by this local evidence.
