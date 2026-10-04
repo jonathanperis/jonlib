@@ -499,3 +499,60 @@ def Laws.formatted_bmp_decode_zero_alpha():
 
 def Laws.formatted_bmp_decode_pixels_zero(index, channels, pixels):
   {==}
+
+def Laws.png_native_gray():
+  {==}
+
+def Laws.png_native_gray_key(key):
+  {==}
+
+def Laws.png_native_grayalpha():
+  {==}
+
+def Laws.png_native_rgb():
+  {==}
+
+def Laws.png_native_rgb_key(key):
+  {==}
+
+def Laws.png_native_palette():
+  {==}
+
+def Laws.png_native_palette_trns():
+  {==}
+
+def Laws.png_native_rgba():
+  {==}
+
+def Laws.png_palette_trns_sticky_plte(cfg, key, compressed, seen, raw, bytes):
+  {==}
+
+def Laws.formatted_png_decode_format1():
+  {==}
+
+def Laws.formatted_png_decode_format2():
+  {==}
+
+def Laws.formatted_png_decode_format4():
+  {==}
+
+def Laws.formatted_png_decode_format7():
+  {==}
+
+def Laws.formatted_png_decode_gray():
+  {==}
+
+def Laws.formatted_png_decode_grayalpha():
+  {==}
+
+def Laws.formatted_png_decode_rgb():
+  {==}
+
+def Laws.formatted_png_decode_rgba():
+  {==}
+
+def Laws.formatted_png_decode_zero_alpha():
+  {==}
+
+def Laws.formatted_png_decode_pixels_zero(index, channels, pixels):
+  {==}

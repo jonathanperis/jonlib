@@ -5019,7 +5019,7 @@ verified on 2026-10-03 at 22:05 UTC. All six workers and both compatibility
 aggregates succeed, with six unique nonempty evidence artifacts. Whole-job
 durations are Ubuntu core/formatted/BMP 80m50s/85m03s/27m19s and macOS
 core/formatted/BMP 69m37s/77m23s/38m05s. This is a historical BMP-memory checkpoint;
-the new BMP-file increment's exact-tip 83-gate hosted qualification remains pending.
+the later BMP-file increment now has its own 83-gate hosted qualification below.
 GPU/Metal, Windows/browser, big-endian, maximum decoded area/heap, native pointer/
 allocation/OOM semantics and representative performance remain unqualified.
 The memory API has no encoded-input cap; the finite oracle budgets do not
@@ -5140,9 +5140,108 @@ prose summaries are checked separately against retained tested metadata,
 avoiding self-referential receipt hashes. These structural laws do not establish
 universal decoder/IO correctness.
 
-Exact-tip hosted **83-gate** qualification remains pending. Historical hosted
-checkpoints do not qualify this source increment. GPU/Metal IO,
-macOS/Windows/browser, big-endian, maximum decoded area/heap, native pointer/
+The exact published BMP-file commit
+`1312479cf9cd8ae1acc35b17cd99d0a2be5366a8` passes
+[Checks](https://github.com/jonathanperis/jonlib/actions/runs/37161146340) and the
+[83-gate Conformance run](https://github.com/jonathanperis/jonlib/actions/runs/37161146356),
+verified on 2026-10-04 at 00:40 UTC. All six Ubuntu/macOS workers and both
+compatibility aggregates succeed, with six distinct nonempty evidence
+artifacts. This is the historical BMP-file checkpoint; it does not qualify the
+later PNG-memory increment. GPU/Metal IO, Windows/browser,
+big-endian, maximum decoded area/heap, native pointer/
 allocation/OOM behavior, concurrent/special files, OS-close-error reporting,
 generic formatted/float dispatch and full integration/performance remain open.
 The unchanged BMP memory API still has no encoded-input cap.
+
+## Format-preserving PNG memory loading (2026-10-04)
+
+`Image.Formatted.decode_png` adds a native format-1/2/4/7 owner contract over the
+entire existing checked PNG memory domain. Structural tRNS promotes channels
+independently of pixel opacity and remains set across a later accepted PLTE;
+full-width 16-bit transparency comparison precedes high-byte reduction. The
+existing 1..4096 dimensions, inclusive 1 MiB encoded and 64 MiB filtered-stream
+caps, color/depth/Adam7/filter/chunk rules, CgBI defaults and typed-error
+precedence are unchanged. See [the contract](PNG.md#format-preserving-png-memory-loading).
+
+```sh
+python3 tools/png_format_probe.py --reference-env clean-loader \
+  --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+```
+
+The [focused evidence](evidence/png-formatted-memory.json) passes on local Linux
+x86-64 CPU-one-thread, CPU-two-thread and JavaScript with Bun 1.3.12 and the
+pinned Bend base/overlay. Clang 19.1.7 builds the observers; GNU 14.2.0 builds
+the fresh native archive. The oracle verifies the actual PNG-enabled Memory
+configuration, pinned source/compiler/archive identities, clean-loader child
+receipts and tiny structural-channel, full-width-transparency and native-default
+CgBI vectors before reading accepted inputs.
+
+The corpus has **230 accepted images / 85,979 pixels and 208 typed controls**,
+including all **193 accepted legacy PNG streams / 31,677 pixels and 39 controls**
+unchanged. New cases distinguish absent, empty, opaque, unused-entry and
+nonmatching tRNS, including sticky promotion through later PLTE. Single/padded,
+4096-axis, moderate and byte-ramp cases cover all four layouts. An accepted
+exact-cap stream and checked excess/invalid-byte ordering controls preserve
+the existing inclusive encoded limit. Malformed controls run only in checked
+Jonlib; no unsafe native rejection corpus is introduced.
+
+Actual pinned `LoadImageFromMemory` dimensions, format, `image.mipmaps == 1`
+and every native raw byte precede separate normalization. The **485 native
+observations** contain **206,667 raw bytes and 343,916 normalized bytes** before
+selected uppercase alias observations. Each candidate lane passes **1,896
+complete observations / 1,532,452 compared bytes**, split into **826,668 raw
+and 705,784 normalized bytes**. Candidate mipmaps are an implicit owner-type
+contract, not a stored/measured field. Exact exports, checked factories,
+raw export/import round trips, retained point-read owners, logical high bits,
+consuming Surface bridges and normalized/dispatch regressions remain separate
+observations, including both existing decode-reference selectors.
+
+The **16 native and 60 candidate partitions** are ordered and exhaustive.
+Candidate partitions retain the 32-action / 196,608-byte source limits; the
+largest generated source is 164,038 bytes. Independent complete-output replay
+verifies **279 command receipts and 1,599 artifact seals**, rejecting **21
+adversarial mutations** across framing, scalar types, row/partition coverage,
+command identity, hashes and lane presence. It uses the sealed fixture/source
+recipes but does not reuse the harness comparators. Replay is read-only
+validation, not another compiler/native/candidate execution. The focused gate
+takes **1,310.912 seconds**, a verification duration rather than a performance
+benchmark.
+
+The same-source regression matrix completes **27 ordered serial stages**.
+It reruns Surface PNG, generic memory/file dispatch, animation fallback,
+PNG/FloatRGB PNG export, R32 consumers, image formats/colors, formatted
+QOI/PNM/TGA/BMP memory/file gates and canonical conformance. All **866 Python
+tests pass without skips**, all **177 scoped laws** pass with the complete
+pinned `All terms check.` verdict, and syntax/project/API/whitespace stages
+pass. The 19 new PNG laws are scoped metadata/packing equalities, not a
+universal decoder, allocation or IO proof.
+
+The independent final audit verifies **467 frozen source files and 9,015
+evidence hashes**. Complete retained formatted records are replayed; canonical
+replay matches all **261 scenarios / 40,101 words, 333 QOI bytes and 23 palette
+words per lane**, including optional palette counts and alpha borders, on all
+three lanes. Its strict canonical parser rejects 17 adversarial mutations.
+Nine older gates (Surface PNG, generic memory/file, animation fallback, PNG
+export, FloatRGB PNG, R32, image formats and image colors) retain successful
+report/source/artifact evidence rather than complete raw stdout replay.
+QOI file closure retains its final image and terminal after source-asserted
+iterations; individual internal closure iterations are not emitted or
+independently replayed. Canonical ancillary proof/contract/file checks use the
+integrated report and outer command receipt. These narrower observations do
+not become full-record evidence by inclusion in the matrix.
+
+The frozen runtime matrix above is complete. A separate integrated metadata/CI
+source snapshot passes **871 Python tests without skips**, all **177 laws**,
+syntax/project/API checks, CI preservation and whitespace checks; runtime
+sources remain unchanged. This result is separate from the earlier 866-test
+runtime snapshot. Final-tree review is recorded separately from runtime
+evidence. The new PNG-memory **84-gate/eight-worker hosted qualification remains
+pending**. The historical 83-gate BMP-file checkpoint at `1312479c` does not
+establish this increment's hosted or macOS behavior.
+
+Only the existing partial `raylib:function:LoadImageFromMemory` record expands.
+Completed and partially mapped API counts remain unchanged. Formatted PNG file
+IO, generic formatted dispatch, other codecs, nondefault decoder flags, native
+pointer/allocation/OOM semantics, maximum-area success and representative
+performance remain outside this increment. New hosted, GPU/Metal,
+macOS/Windows/browser and big-endian qualification remain open.

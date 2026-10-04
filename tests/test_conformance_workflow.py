@@ -27,6 +27,8 @@ BASELINE_SHA256 = '610acab9fa0ca7fa6c3db8b93a828693c47e8ac202d89f76f0246053c45b8
 BMP_PREDECESSOR_SHA256 = '34fa72b91f6e4ab3e7e555c51e621364bf1b68e1dba4945db2442ad8e463ce7e'
 # Exact 82-gate workflow at 82a81b12e61ede4ec2d9901baddd4bf773651a5d.
 BMP_FILE_PREDECESSOR_SHA256 = '809c8d6c02b715b44cfa013a1c2644ac5d15cf0a8b1d8dc5d2f5745ce5c5e4f1'
+# Exact 83-gate workflow at 1312479cf9cd8ae1acc35b17cd99d0a2be5366a8.
+PNG_PREDECESSOR_SHA256 = '056713e25bab0092e22a4bfb1d68b687c821dbe77b8174b2932b7db7208c082b'
 FORMATTED_GATES = (
     'Verify checked formatted BMP bytes and typed IO',
     'Verify checked formatted TGA bytes and typed IO',
@@ -94,17 +96,28 @@ ADDED_BMP_FILE_PATHS = (
     '!.build/bmp-file-probe/run-*/fixtures/larger-file.bmp',
     '!.build/bmp-file-probe/run-*/fixtures/host-size-overflow.bmp',
 )
+PNG_GATES = ('''      - name: Verify native PNG formats and exact memory bytes
+        run: >-
+          python3 tools/png_format_probe.py --reference-env clean-loader
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+''',)
+PNG_PATHS = ('.build/png-format-probe/',)
 PLATFORMS = (('Ubuntu', 'ubuntu-24.04'), ('Mac', 'macos-15'))
 ORIGINAL_WORKERS = ('coreUbuntu', 'coreMac', 'formattedUbuntu', 'formattedMac')
 BMP_WORKERS = ('bmpUbuntu', 'bmpMac')
-WORKERS = (*ORIGINAL_WORKERS, *BMP_WORKERS)
+PRE_PNG_WORKERS = (*ORIGINAL_WORKERS, *BMP_WORKERS)
+PNG_WORKERS = ('pngUbuntu', 'pngMac')
+WORKERS = (*PRE_PNG_WORKERS, *PNG_WORKERS)
 ORIGINAL_RESULT_VARIABLES = ('CORE_UBUNTU_RESULT', 'CORE_MAC_RESULT',
                              'FORMATTED_UBUNTU_RESULT', 'FORMATTED_MAC_RESULT')
 BMP_RESULT_VARIABLES = ('BMP_UBUNTU_RESULT', 'BMP_MAC_RESULT')
-RESULT_VARIABLES = (*ORIGINAL_RESULT_VARIABLES, *BMP_RESULT_VARIABLES)
+PRE_PNG_RESULT_VARIABLES = (*ORIGINAL_RESULT_VARIABLES, *BMP_RESULT_VARIABLES)
+PNG_RESULT_VARIABLES = ('PNG_UBUNTU_RESULT', 'PNG_MAC_RESULT')
+RESULT_VARIABLES = (*PRE_PNG_RESULT_VARIABLES, *PNG_RESULT_VARIABLES)
 AGGREGATE = '''    name: CPU and JavaScript (__PLATFORM__)
     if: ${{ always() }}
-    needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac, bmpUbuntu, bmpMac]
+    needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac, bmpUbuntu, bmpMac, pngUbuntu, pngMac]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -117,16 +130,21 @@ AGGREGATE = '''    name: CPU and JavaScript (__PLATFORM__)
           FORMATTED_MAC_RESULT: ${{ needs.formattedMac.result }}
           BMP_UBUNTU_RESULT: ${{ needs.bmpUbuntu.result }}
           BMP_MAC_RESULT: ${{ needs.bmpMac.result }}
+          PNG_UBUNTU_RESULT: ${{ needs.pngUbuntu.result }}
+          PNG_MAC_RESULT: ${{ needs.pngMac.result }}
         run: |
           set -eu
           printf 'Core Ubuntu: %s; core macOS: %s; formatted Ubuntu: %s; formatted macOS: %s\\n' "${CORE_UBUNTU_RESULT:-missing}" "${CORE_MAC_RESULT:-missing}" "${FORMATTED_UBUNTU_RESULT:-missing}" "${FORMATTED_MAC_RESULT:-missing}"
           printf 'BMP Ubuntu: %s; BMP macOS: %s\\n' "${BMP_UBUNTU_RESULT:-missing}" "${BMP_MAC_RESULT:-missing}"
+          printf 'PNG Ubuntu: %s; PNG macOS: %s\\n' "${PNG_UBUNTU_RESULT:-missing}" "${PNG_MAC_RESULT:-missing}"
           test "${CORE_UBUNTU_RESULT:-}" = success
           test "${CORE_MAC_RESULT:-}" = success
           test "${FORMATTED_UBUNTU_RESULT:-}" = success
           test "${FORMATTED_MAC_RESULT:-}" = success
           test "${BMP_UBUNTU_RESULT:-}" = success
           test "${BMP_MAC_RESULT:-}" = success
+          test "${PNG_UBUNTU_RESULT:-}" = success
+          test "${PNG_MAC_RESULT:-}" = success
 '''
 
 
@@ -189,10 +207,10 @@ def validate_workflow(text):
     core = [step for step in gates if gate_name(step) not in FORMATTED_GATES]
     require(tuple(map(gate_name, formatted)) == FORMATTED_GATES, 'Formatted ownership changed')
     require(len(core) == 72 and len(formatted) == 7, 'Original gate counts changed')
-    reviewed_gates = gates + list(ADDED_FORMATTED_GATES) + list(BMP_GATES) + list(ADDED_BMP_FILE_GATES)
+    reviewed_gates = gates + list(ADDED_FORMATTED_GATES) + list(BMP_GATES) + list(ADDED_BMP_FILE_GATES) + list(PNG_GATES)
     formatted = formatted + list(ADDED_FORMATTED_GATES)
-    require(len(reviewed_gates) == 83 and len(formatted) == 9
-            and len(BMP_GATES) == len(ADDED_BMP_FILE_GATES) == 1,
+    require(len(reviewed_gates) == 84 and len(formatted) == 9
+            and len(BMP_GATES) == len(ADDED_BMP_FILE_GATES) == len(PNG_GATES) == 1,
             'Reviewed added gate count changed')
     upload_header, old_paths = upload_parts(upload)
     require(len(old_paths) == len(set(old_paths)) == 156, 'Expected 156 distinct baseline paths')
@@ -205,9 +223,10 @@ def validate_workflow(text):
             'Artifact partitions must be the disjoint baseline union')
     paths_by_shard['formatted'].extend(ADDED_FORMATTED_PATHS)
     paths_by_shard['bmp'] = list(BMP_PATHS) + list(ADDED_BMP_FILE_PATHS)
-    reviewed_paths = old_paths + list(ADDED_FORMATTED_PATHS) + list(BMP_PATHS) + list(ADDED_BMP_FILE_PATHS)
+    paths_by_shard['png'] = list(PNG_PATHS)
+    reviewed_paths = old_paths + list(ADDED_FORMATTED_PATHS) + list(BMP_PATHS) + list(ADDED_BMP_FILE_PATHS) + list(PNG_PATHS)
     require(len(paths_by_shard['formatted']) == 22 and len(paths_by_shard['bmp']) == 6
-            and len(reviewed_paths) == 168,
+            and len(paths_by_shard['png']) == 1 and len(reviewed_paths) == 169,
             'Reviewed added artifact count changed')
     for suffix, platform in PLATFORMS:
         actual_gates = []
@@ -216,6 +235,7 @@ def validate_workflow(text):
             ('core', 'Core CPU and JavaScript', core),
             ('formatted', 'Formatted images CPU and JavaScript', formatted),
             ('bmp', 'BMP memory CPU and JavaScript', list(BMP_GATES) + list(ADDED_BMP_FILE_GATES)),
+            ('png', 'PNG memory CPU and JavaScript', list(PNG_GATES)),
         ):
             job_id = shard + suffix
             settings, steps = job_parts(jobs[job_id])
@@ -242,6 +262,53 @@ def validate_workflow(text):
 
 
 
+def aggregate_conjunction_variables(job):
+    # A closed grammar: no branches, functions, OR lists, substitutions,
+    # redirects, extra statements or changed errexit options are permitted.
+    _, steps = job_parts(job)
+    require(len(steps) == 1, 'Aggregate must contain exactly one shell step')
+    prefix, separator, body = steps[0].partition('        run: |\n')
+    require(bool(separator) and '        shell: bash\n' in prefix, 'Aggregate must use Bash')
+    require(all(line.startswith('          ') for line in body.splitlines()), 'Shell indentation changed')
+    lines = [line[10:] for line in body.splitlines()]
+    diagnostics = [
+        'set -eu',
+        'printf \'Core Ubuntu: %s; core macOS: %s; formatted Ubuntu: %s; formatted macOS: %s\\n\' "${CORE_UBUNTU_RESULT:-missing}" "${CORE_MAC_RESULT:-missing}" "${FORMATTED_UBUNTU_RESULT:-missing}" "${FORMATTED_MAC_RESULT:-missing}"',
+        'printf \'BMP Ubuntu: %s; BMP macOS: %s\\n\' "${BMP_UBUNTU_RESULT:-missing}" "${BMP_MAC_RESULT:-missing}"',
+        'printf \'PNG Ubuntu: %s; PNG macOS: %s\\n\' "${PNG_UBUNTU_RESULT:-missing}" "${PNG_MAC_RESULT:-missing}"',
+    ]
+    require(lines[:4] == diagnostics, 'Aggregate preamble/diagnostics changed')
+    variables = []
+    for line in lines[4:]:
+        match = re.fullmatch(r'test "\$\{([A-Z_]+):-\}" = success', line)
+        require(match is not None, 'Non-conjunctive aggregate command: ' + line)
+        variables.append(match.group(1))
+    require(tuple(variables) == RESULT_VARIABLES, 'All eight exact success tests are required')
+    return tuple(variables)
+
+
+def remove_reviewed_png_additions(text):
+    # Do not parse or normalize the preserved six workers. Remove only the new
+    # raw job blocks and the explicitly reviewed aggregate additions first.
+    start = text.index('  pngUbuntu:\n')
+    end = text.index('  # Keep both prior required-check names', start)
+    text = text[:start] + text[end:]
+    additions = (
+        ('directly require all eight workers.', 'directly require all six workers.', 1),
+        ('needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac, bmpUbuntu, bmpMac, pngUbuntu, pngMac]',
+         'needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac, bmpUbuntu, bmpMac]', 2),
+        ('          PNG_UBUNTU_RESULT: ${{ needs.pngUbuntu.result }}\n', '', 2),
+        ('          PNG_MAC_RESULT: ${{ needs.pngMac.result }}\n', '', 2),
+        ('          printf \'PNG Ubuntu: %s; PNG macOS: %s\\n\' "${PNG_UBUNTU_RESULT:-missing}" "${PNG_MAC_RESULT:-missing}"\n', '', 2),
+        ('          test "${PNG_UBUNTU_RESULT:-}" = success\n', '', 2),
+        ('          test "${PNG_MAC_RESULT:-}" = success\n', '', 2),
+    )
+    for addition, original, count in additions:
+        require(text.count(addition) == count, 'Unexpected PNG aggregate extension count')
+        text = text.replace(addition, original)
+    return text
+
+
 def remove_reviewed_bmp_file_additions(text):
     # Raw replacement only: preserve every other byte, including comments and
     # line endings. The separate anchor tests protect both predecessor stages.
@@ -262,8 +329,13 @@ class ConformanceWorkflowTests(unittest.TestCase):
     def test_exact_reviewed_gate_setup_settings_and_artifact_partition(self):
         validate_workflow(self.text)
 
+    def test_removing_only_reviewed_png_additions_restores_exact_83_gate_bytes(self):
+        stripped = remove_reviewed_png_additions(self.text)
+        self.assertEqual(hashlib.sha256(stripped.encode('utf-8')).hexdigest(),
+                         PNG_PREDECESSOR_SHA256)
+
     def test_removing_only_reviewed_bmp_file_additions_restores_exact_82_gate_bytes(self):
-        stripped = remove_reviewed_bmp_file_additions(self.text)
+        stripped = remove_reviewed_bmp_file_additions(remove_reviewed_png_additions(self.text))
         self.assertEqual(hashlib.sha256(stripped.encode('utf-8')).hexdigest(),
                          BMP_FILE_PREDECESSOR_SHA256)
 
@@ -272,12 +344,14 @@ class ConformanceWorkflowTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             validate_workflow(changed)
         with self.assertRaises(ValueError):
+            remove_reviewed_png_additions(changed)
+        with self.assertRaises(ValueError):
             remove_reviewed_bmp_file_additions(changed)
 
     def test_removing_only_reviewed_bmp_additions_restores_exact_predecessor_bytes(self):
         # Independent raw-text comparison: do not reuse the structural parser
         # or strip comments/whitespace from the four preserved workers.
-        predecessor = remove_reviewed_bmp_file_additions(self.text)
+        predecessor = remove_reviewed_bmp_file_additions(remove_reviewed_png_additions(self.text))
         start = predecessor.index('  bmpUbuntu:\n')
         end = predecessor.index('  # Keep both prior required-check names', start)
         stripped = predecessor[:start] + predecessor[end:]
@@ -314,7 +388,7 @@ class ConformanceWorkflowTests(unittest.TestCase):
             'lost upload': ('.build/pnm-file-probe/run-*/*.resource.json\n', ''),
             'sparse upload': ('.build/pnm-file-probe/results.json', '.build/pnm-file-probe/**'),
             'artifact collision': ('name: conformance-ubuntu-24.04-formatted', 'name: conformance-ubuntu-24.04-core'),
-            'lost dependency': ('needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac, bmpUbuntu, bmpMac]', 'needs: [coreUbuntu, formattedUbuntu]'),
+            'lost dependency': ('needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac, bmpUbuntu, bmpMac, pngUbuntu, pngMac]', 'needs: [coreUbuntu, formattedUbuntu]'),
             'matrix reduction': ('${{ needs.coreUbuntu.result }}', '${{ needs.core.result }}'),
             'wrong dependency result': ('${{ needs.formattedMac.result }}', '${{ needs.formattedUbuntu.result }}'),
             'skipped aggregate': ('if: ${{ always() }}', 'if: ${{ success() }}'),
@@ -483,6 +557,68 @@ class ConformanceWorkflowTests(unittest.TestCase):
                     with self.assertRaises(ValueError):
                         validate_workflow(structural_text(self.text).replace(job, mutated_job, 1))
 
+    def test_png_workers_are_independent_mandatory_exact_and_scoped(self):
+        _, jobs = workflow_parts(self.text)
+        gate, = PNG_GATES
+        path = '            ' + PNG_PATHS[0] + '\n'
+        for suffix, platform in PLATFORMS:
+            job_id = 'png' + suffix
+            job = jobs[job_id]
+            _, steps = job_parts(job)
+            _, formatted_steps = job_parts(jobs['formatted' + suffix])
+            self.assertEqual(steps[:7], formatted_steps[:7])
+            self.assertEqual(steps[7:-1], [gate])
+            self.assertEqual(upload_parts(steps[-1])[1], list(PNG_PATHS))
+            mutations = {
+                'wrong PNG platform': job.replace('runs-on: ' + platform, 'runs-on: other'),
+                'optional PNG worker': '    continue-on-error: true\n' + job,
+                'skipped PNG worker': '    if: false\n' + job,
+                'dependent PNG worker': '    needs: formatted' + suffix + '\n' + job,
+                'PNG matrix': '    strategy:\n      matrix:\n        os: [' + platform + ']\n' + job,
+                'changed PNG timeout': job.replace('timeout-minutes: 120', 'timeout-minutes: 180'),
+                'changed PNG environment': job.replace('CC: clang', 'CC: gcc'),
+                'changed PNG permissions': '    permissions: write-all\n' + job,
+                'missing PNG setup': job.replace(steps[0], '', 1),
+                'changed PNG setup pin': job.replace('actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1', 'actions/checkout@main', 1),
+                'missing PNG gate': job.replace(gate, '', 1),
+                'duplicate PNG gate': job.replace(gate, gate * 2, 1),
+                'changed PNG command': job.replace('tools/png_format_probe.py', 'tools/png_probe.py', 1),
+                'missing PNG loader flag': job.replace('--reference-env clean-loader', '', 1),
+                'changed PNG loader flag': job.replace('--reference-env clean-loader', '--reference-env inherited', 1),
+                'changed PNG Bend source': job.replace(gate, gate.replace('/.build/dependencies/bend', '/.build/dependencies/other-bend'), 1),
+                'changed PNG raylib source': job.replace(gate, gate.replace('/.build/dependencies/raylib', '/.build/dependencies/other-raylib'), 1),
+                'optional PNG gate': job.replace(gate, gate.replace('        run:', '        continue-on-error: true\n        run:'), 1),
+                'skipped PNG gate': job.replace(gate, gate.replace('        run:', '        if: false\n        run:'), 1),
+                'bypassed PNG failure': job.replace(gate, gate.rstrip('\n') + ' || true\n', 1),
+                'PNG gate before setup': job.replace(steps[6] + gate, gate + steps[6], 1),
+                'missing PNG artifact': job.replace(path, '', 1),
+                'duplicate PNG artifact': job.replace(path, path * 2, 1),
+                'incomplete PNG receipts': job.replace(path, '            .build/png-format-probe/results.json\n', 1),
+                'broader PNG artifact': job.replace(path, '            .build/\n', 1),
+                'excluded PNG receipts': job.replace(path, path + '            !.build/png-format-probe/run-*/*.resource.json\n', 1),
+                'PNG artifact collision': job.replace('conformance-' + platform + '-png', 'conformance-' + platform + '-formatted', 1),
+                'optional PNG upload': job.replace('if: always()', 'if: success()', 1),
+                'changed PNG upload pin': job.replace('actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a', 'actions/upload-artifact@main', 1),
+                'changed PNG retention': job.replace('retention-days: 14', 'retention-days: 1', 1),
+            }
+            for index, setup in enumerate(steps[:7]):
+                mutations['missing PNG setup step ' + str(index)] = job.replace(setup, '', 1)
+            for label, before, after in (
+                ('Python action', 'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97', 'actions/setup-python@main'),
+                ('Python version', "python-version: '3.12'", "python-version: '3.13'"),
+                ('Bun action', 'oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6', 'oven-sh/setup-bun@main'),
+                ('Bun version', '${{ steps.pins.outputs.bun }}', 'latest'),
+                ('Bend revision', '${{ steps.pins.outputs.bend }}', 'main'),
+                ('raylib revision', '${{ steps.pins.outputs.raylib }}', 'master'),
+                ('overlay hash', "if hashlib.sha256(patch.read_bytes()).hexdigest() != overlay['sha256']:", 'if False:'),
+            ):
+                mutations['changed PNG ' + label] = job.replace(before, after, 1)
+            for label, mutated_job in mutations.items():
+                with self.subTest(job=job_id, mutation=label):
+                    self.assertNotEqual(job, mutated_job)
+                    with self.assertRaises(ValueError):
+                        validate_workflow(structural_text(self.text).replace(job, mutated_job, 1))
+
     def test_reviewed_bmp_file_addition_is_mandatory_exact_and_scoped_on_both_platforms(self):
         _, jobs = workflow_parts(self.text)
         memory_gate, = BMP_GATES
@@ -565,7 +701,7 @@ class ConformanceWorkflowTests(unittest.TestCase):
                         with self.assertRaises(ValueError):
                             validate_workflow(structural_text(self.text).replace(job, mutated_job, 1))
 
-    def test_both_aggregates_require_each_of_six_direct_workers(self):
+    def test_both_aggregates_require_each_of_eight_direct_workers(self):
         _, jobs = workflow_parts(self.text)
         for suffix, _ in PLATFORMS:
             job = jobs['conformance' + suffix]
@@ -608,7 +744,7 @@ class ConformanceWorkflowTests(unittest.TestCase):
             for results in itertools.product(statuses, repeat=4):
                 with self.subTest(aggregate=suffix, results=results):
                     env = dict(base_env)
-                    env.update((variable, 'success') for variable in BMP_RESULT_VARIABLES)
+                    env.update((variable, 'success') for variable in (*BMP_RESULT_VARIABLES, *PNG_RESULT_VARIABLES))
                     env.update((variable, result) for variable, result in zip(ORIGINAL_RESULT_VARIABLES, results)
                                if result is not None)
                     result = subprocess.run(['bash', '--noprofile', '--norc', '-e', '-o',
@@ -623,7 +759,7 @@ class ConformanceWorkflowTests(unittest.TestCase):
         statuses = ('success', 'failure', 'cancelled', 'skipped', '', 'unknown', None)
         base_env = {key: value for key, value in os.environ.items()
                     if key not in (*RESULT_VARIABLES, 'BASH_ENV')}
-        base_env.update((variable, 'success') for variable in ORIGINAL_RESULT_VARIABLES)
+        base_env.update((variable, 'success') for variable in (*ORIGINAL_RESULT_VARIABLES, *PNG_RESULT_VARIABLES))
         for suffix, _ in PLATFORMS:
             _, steps = job_parts(jobs['conformance' + suffix])
             _, separator, body = steps[0].partition('        run: |\n')
@@ -642,39 +778,49 @@ class ConformanceWorkflowTests(unittest.TestCase):
                                      all(value == 'success' for value in results),
                                      result.stdout + result.stderr)
 
-    def test_six_way_conjunction_structure_and_exhaustive_truth_table(self):
-        # The actual scripts must consist only of set -eu, two literal printf
-        # diagnostics and six straight-line test commands. Under errexit this
-        # grammar is a conjunction: no conditional/function/OR can mask failure.
-        # Extract the tested variables from the actual script, then exhaust all
-        # 117,649 six-result assignments per aggregate in-process. The original
-        # 4,802 shell cases and 98 new BMP-pair shell cases independently exercise
-        # real Bash, including missing/empty values, without 235,298 processes.
-        validate_workflow(self.text)
+    def test_both_actual_aggregate_shells_fail_closed_for_all_png_results(self):
         _, jobs = workflow_parts(self.text)
         statuses = ('success', 'failure', 'cancelled', 'skipped', '', 'unknown', None)
-        diagnostics = [
-            'set -eu',
-            'printf \'Core Ubuntu: %s; core macOS: %s; formatted Ubuntu: %s; formatted macOS: %s\\n\' "${CORE_UBUNTU_RESULT:-missing}" "${CORE_MAC_RESULT:-missing}" "${FORMATTED_UBUNTU_RESULT:-missing}" "${FORMATTED_MAC_RESULT:-missing}"',
-            'printf \'BMP Ubuntu: %s; BMP macOS: %s\\n\' "${BMP_UBUNTU_RESULT:-missing}" "${BMP_MAC_RESULT:-missing}"',
-        ]
+        base_env = {key: value for key, value in os.environ.items()
+                    if key not in (*RESULT_VARIABLES, 'BASH_ENV')}
+        base_env.update((variable, 'success') for variable in PRE_PNG_RESULT_VARIABLES)
         for suffix, _ in PLATFORMS:
             _, steps = job_parts(jobs['conformance' + suffix])
             _, separator, body = steps[0].partition('        run: |\n')
             self.assertTrue(separator)
             self.assertTrue(all(line.startswith('          ') for line in body.splitlines()))
-            lines = [line[10:] for line in body.splitlines()]
-            self.assertEqual(lines[:3], diagnostics)
-            variables = []
-            for line in lines[3:]:
-                match = re.fullmatch(r'test "\$\{([A-Z_]+):-\}" = success', line)
-                self.assertIsNotNone(match, 'Non-conjunctive aggregate command: ' + line)
-                variables.append(match.group(1))
-            self.assertEqual(tuple(variables), RESULT_VARIABLES)
+            script = '\n'.join(line[10:] for line in body.splitlines()) + '\n'
+            for results in itertools.product(statuses, repeat=2):
+                with self.subTest(aggregate=suffix, results=results):
+                    env = dict(base_env)
+                    env.update((variable, result) for variable, result in zip(PNG_RESULT_VARIABLES, results)
+                               if result is not None)
+                    result = subprocess.run(['bash', '--noprofile', '--norc', '-e', '-o',
+                                             'pipefail', '-c', script], env=env,
+                                            capture_output=True, text=True, timeout=5)
+                    self.assertEqual(result.returncode == 0,
+                                     all(value == 'success' for value in results),
+                                     result.stdout + result.stderr)
+
+    def test_six_way_conjunction_structure_and_exhaustive_truth_table(self):
+        # The actual scripts must consist only of set -eu, three literal printf
+        # diagnostics and eight straight-line test commands. Under errexit this
+        # grammar is a conjunction: no conditional/function/OR can mask failure.
+        # Extract the tested variables from the actual script, then exhaust all
+        # 117,649 six-result assignments per aggregate in-process, with PNG
+        # successful. The original 4,802 shell cases and 98 BMP-pair shell cases
+        # independently exercise
+        # real Bash, including missing/empty values, without 235,298 processes.
+        validate_workflow(self.text)
+        _, jobs = workflow_parts(self.text)
+        statuses = ('success', 'failure', 'cancelled', 'skipped', '', 'unknown', None)
+        for suffix, _ in PLATFORMS:
+            variables = aggregate_conjunction_variables(jobs['conformance' + suffix])
             assignments = passing = 0
             for results in itertools.product(statuses, repeat=6):
-                env = {variable: result for variable, result in zip(RESULT_VARIABLES, results)
-                       if result is not None}
+                env = {variable: 'success' for variable in PNG_RESULT_VARIABLES}
+                env.update((variable, result) for variable, result in zip(PRE_PNG_RESULT_VARIABLES, results)
+                           if result is not None)
                 actual = all(env.get(variable, '') == 'success' for variable in variables)
                 expected = all(value == 'success' for value in results)
                 self.assertEqual(actual, expected, (suffix, results))
@@ -682,6 +828,56 @@ class ConformanceWorkflowTests(unittest.TestCase):
                 passing += actual
             self.assertEqual(assignments, 117649)
             self.assertEqual(passing, 1)
+
+    def test_eight_way_conjunction_structure_and_exhaustive_truth_table(self):
+        # Interpret only the independently checked straight-line equality
+        # grammar. This is exhaustive in-process evaluation, not shell runs.
+        validate_workflow(self.text)
+        _, jobs = workflow_parts(self.text)
+        statuses = ('success', 'failure', 'cancelled', 'skipped', '', 'unknown', None)
+        for suffix, _ in PLATFORMS:
+            variables = aggregate_conjunction_variables(jobs['conformance' + suffix])
+            indices = tuple(RESULT_VARIABLES.index(variable) for variable in variables)
+            assignments = passing = 0
+            for results in itertools.product(statuses, repeat=8):
+                # Both absent (None) and empty expand to '' under ${NAME:-}.
+                actual = all((results[index] or '') == 'success' for index in indices)
+                expected = results == ('success',) * 8
+                if actual != expected:
+                    self.fail('Eight-way conjunction mismatch: ' + repr((suffix, results)))
+                assignments += 1
+                passing += actual
+            self.assertEqual(assignments, 5764801)
+            self.assertEqual(passing, 1)
+
+    def test_eight_way_conjunction_grammar_rejects_masked_failure(self):
+        _, jobs = workflow_parts(self.text)
+        for suffix, _ in PLATFORMS:
+            job = jobs['conformance' + suffix]
+            mutations = {
+                'no errexit': job.replace('set -eu', 'set -u', 1),
+                'disable errexit': job.replace('set -eu', 'set -eu; set +e', 1),
+                'extra success': job + '          true\n',
+                'conditional group': job.replace('          set -eu\n', '          set -eu\n          if true; then\n', 1) + '          fi\n',
+                'diagnostic command substitution': job.replace('PNG Ubuntu: %s', 'PNG Ubuntu: $(true) %s', 1),
+            }
+            for variable in RESULT_VARIABLES:
+                test = '          test "${' + variable + ':-}" = success\n'
+                for label, altered in (
+                    ('missing', ''), ('bypass', test.rstrip('\n') + ' || true\n'),
+                    ('OR', test.rstrip('\n') + ' || exit 0\n'),
+                    ('default success', test.replace(':-}', ':-success}')),
+                    ('not failure', test.replace('= success', '!= failure')),
+                    ('subshell', '          (' + test.strip() + ') || true\n'),
+                ):
+                    mutations[label + ' ' + variable] = job.replace(test, altered, 1)
+            for label, changed in mutations.items():
+                with self.subTest(aggregate=suffix, mutation=label):
+                    self.assertNotEqual(job, changed)
+                    with self.assertRaises(ValueError):
+                        aggregate_conjunction_variables(changed)
+                    with self.assertRaises(ValueError):
+                        validate_workflow(structural_text(self.text).replace(job, changed, 1))
 
 
 if __name__ == '__main__':

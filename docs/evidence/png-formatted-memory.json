@@ -1,0 +1,814 @@
+{
+  "schema": 1,
+  "profile": "native-png-formatted-memory-v1",
+  "status": "locally-qualified-hosted-pending",
+  "passed": true,
+  "passed_scope": "Frozen local Linux x86-64 runtime matrix and independent complete retained-output replay; final metadata/CI-tree validation and exact-tip hosted qualification are recorded separately",
+  "local_matrix_completed_date": "2026-10-04",
+  "base_revision": "1312479cf9cd8ae1acc35b17cd99d0a2be5366a8",
+  "host": {
+    "system": "Linux",
+    "machine": "x86_64"
+  },
+  "toolchain": {
+    "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+        "path": "patches/bend-metal-dispatch.patch",
+        "sha256": "d4fbe3723f78bbcd456d4937b8f52f48454e7748d86799b22a95165a04cd9879",
+        "files": {
+          ".gitignore": "8915b2338d9a3dd712510d95efbec55daa5f2d5a50f825f7cffbb791f3883024",
+          "bend2/comp.ts": "0095ff214fdf353b3644923a46050507cd2caf09e0da212e446d9fb3dab531a6",
+          "tests/run/metal_inline_budget.bend": "13a2696795e014f55d3d196cc3a4c3691e4e44d2e71f2fed55e04fe6fd4c87f7"
+        }
+      }
+    },
+    "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+    },
+    "bun": {
+      "version": "1.3.12"
+    },
+    "profile": "rgba8-cpu-images-v1"
+  },
+  "changed_api": {
+    "id": "raylib:function:LoadImageFromMemory",
+    "before": "partial",
+    "after": "partial",
+    "new_scope": "Image.Formatted.decode_png preserving native grayscale (1), gray-alpha (2), RGB888 (4) and RGBA8888 (7), implicit one mip and exact reduced 8-bit row-major bytes across the entire existing checked PNG memory domain",
+    "aggregate_completion_delta": 0,
+    "other_api_scope_changes": []
+  },
+  "contract": {
+    "channel_selection": "Structural color type/tRNS, never observed opacity; palette tRNS presence remains sticky through empty/opaque/unused entries and later PLTE alpha resets",
+    "sixteen_bit": "Full-width tRNS comparison precedes high-byte sample/alpha reduction",
+    "cgbi": "Native defaults retain stored channel order and premultiplication; raw DEFLATE framing",
+    "legacy_accepted_streams_preserved": 193,
+    "legacy_pixels_preserved": 31677,
+    "legacy_typed_controls_preserved": 39,
+    "encoded_memory_cap_inclusive": 1048576,
+    "filtered_stream_cap_inclusive": 67108864,
+    "dimensions_per_axis": [
+      1,
+      4096
+    ],
+    "max_area_or_heap_parity_claimed": false,
+    "file_or_generic_formatted_dispatch_added": false
+  },
+  "runtime_source_sha256": {
+    "src/png.bend": "b1e21e44703bb58bd0cdc21ade772ab1bfe6cba5591e2205a8c40196b1780153",
+    "jonlib.bend": "96c1709acc6157c3a4ed2a43f492648f1c3e4a916b084663ac38fb4b3ad43d41",
+    "LAWS.bend": "62566d1c495a96490b107cd959c3569365c817c90f52829d5eeaa5ca46e66417",
+    "PROOF.bend": "089f4ca6b8a157e7ced36b3798fdbab5fa2f238603700c0d56b09f65dbc27fcb",
+    "tools/png_format_probe.py": "95680a1ba3f37736748740e148077700774a9b52ee791f249e1ddfafd5d90678",
+    "tests/test_png_format_harness.py": "f9b25b3bba926dac79aaab845f3a297be137e7f0e4aa5d3df47ed46cba658e10"
+  },
+  "focused": {
+    "path": ".build/png-format-probe/results.json",
+    "sha256": "50e5152ee6247f711f2642e36f802e82abd640719f6eb0a9ee37756bc929ea0b",
+    "command": [
+      "python3",
+      "tools/png_format_probe.py",
+      "--reference-env",
+      "clean-loader",
+      "--bend-source",
+      "$BEND_SOURCE",
+      "--raylib-source",
+      "$RAYLIB_SOURCE"
+    ],
+    "cases": 230,
+    "pixels": 85979,
+    "typed_controls": 208,
+    "native_rejections": 0,
+    "native_observations": 485,
+    "native_raw_bytes": 206667,
+    "native_normalized_bytes": 343916,
+    "native_all_observed_bytes": 553424,
+    "observations_per_lane": 1896,
+    "compared_bytes_per_lane": 1532452,
+    "raw_compared_bytes_per_lane": 826668,
+    "normalized_compared_bytes_per_lane": 705784,
+    "planned_batches": 60,
+    "source_byte_limit": 196608,
+    "batch_size": 32,
+    "partition_strategy": "ordered-greedy-generated-source-v1",
+    "elapsed_seconds": 1310.912,
+    "qualification": {
+      "little_endian": true,
+      "png_enabled": true,
+      "structural_channels": true,
+      "full_width_transparency": true,
+      "cgbi_defaults": true,
+      "formats": [
+        1,
+        2,
+        4,
+        7
+      ]
+    },
+    "maximum_generated_source_bytes": 164038,
+    "native_partitions": 16,
+    "maximum_native_source_bytes": 35872,
+    "output_format_image_counts": {
+      "1": 15,
+      "2": 85,
+      "4": 13,
+      "7": 117
+    },
+    "lanes": {
+      "cpu-1": {
+        "passed": true,
+        "partitions": 60
+      },
+      "cpu-2": {
+        "passed": true,
+        "partitions": 60
+      },
+      "javascript": {
+        "passed": true,
+        "partitions": 60
+      }
+    },
+    "candidate_mipmaps": "implicit single-mip type contract, not stored/measured"
+  },
+  "independent_focused_replay": {
+    "path": ".build/png-memory-validation/independent-focused-replay.json",
+    "sha256": "1411253033c1a533d33d2896f8c1acfa3cd4360e466897057046a60db1bdb92f",
+    "native_partitions": 16,
+    "candidate_partitions": 60,
+    "verified_command_receipts": 279,
+    "verified_artifact_seals": 1599,
+    "negative_controls": [
+      "wrong-format-correct-payload",
+      "skipped-row",
+      "reordered-rows",
+      "duplicate-row",
+      "boolean-metadata-integer",
+      "boolean-byte-integer",
+      "candidate-skip-partition",
+      "candidate-reorder-partition",
+      "candidate-duplicate-partition",
+      "candidate-boolean-partition",
+      "native-skip-partition",
+      "native-reorder-partition",
+      "native-duplicate-partition",
+      "native-boolean-partition",
+      "stale-artifact-hash",
+      "wrong-command-identity",
+      "missing-javascript-lane",
+      "strict-json-17",
+      "strict-json-18",
+      "strict-json-19",
+      "strict-json-20"
+    ],
+    "harness_comparators_used": [],
+    "scope": "independent read-only complete-output replay; no native/compiler/candidate execution"
+  },
+  "native_provenance": {
+    "archive_compiler": {
+      "CMAKE_C_COMPILER": "/usr/bin/cc",
+      "CMAKE_C_COMPILER_ID": "GNU",
+      "CMAKE_C_COMPILER_VERSION": "14.2.0"
+    },
+    "observer_compiler": "Debian clang version 19.1.7 (3+b1)\nTarget: x86_64-pc-linux-gnu\nThread model: posix\nInstalledDir: /workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/toolchain/clang-19.1.7/usr/lib/llvm-19/bin",
+    "bun_version": "1.3.12",
+    "configuration": {
+      "PLATFORM": "Memory",
+      "CMAKE_BUILD_TYPE": "Release",
+      "CUSTOMIZE_BUILD": "ON",
+      "SUPPORT_FILEFORMAT_PNG": "ON",
+      "SUPPORT_MODULE_RAUDIO": "OFF",
+      "BUILD_EXAMPLES": "OFF",
+      "USE_EXTERNAL_GLFW": "OFF"
+    },
+    "oracle_source_ranges": {
+      "src/rtextures.c": {
+        "sha256": "90e41879349d58a779c101dbf78e5b5cf8d46241590268a74e6156ad33312e4c",
+        "ranges": [
+          {
+            "first": 461,
+            "last": 471,
+            "sha256": "5b91ad23dd33ef30b5c44dfa36c659ba761d64721b9549027da6ca608aa55c61"
+          }
+        ]
+      },
+      "src/external/stb_image.h": {
+        "sha256": "594c2fe35d49488b4382dbfaec8f98366defca819d916ac95becf3e75f4200b3",
+        "ranges": [
+          {
+            "first": 1190,
+            "last": 1203,
+            "sha256": "70791748f68ae8cd69e48b128904af29a71b3f721e68b6634792ed318a8c1b00"
+          },
+          {
+            "first": 1260,
+            "last": 1273,
+            "sha256": "c2753a259641a6dd37103dbc7b64533d1f2f2f91a75d5bfc0b6f4220ac3c3c7b"
+          },
+          {
+            "first": 4438,
+            "last": 4452,
+            "sha256": "1a17c8d6647b82ba4cbf805576f736ab1ecd875cf38962bc87cd53310bad5540"
+          },
+          {
+            "first": 4910,
+            "last": 4994,
+            "sha256": "9c0986ba2ee8773257c8dc33d5120b9e44d6f49085bc0c5bceb3e351f48f1192"
+          },
+          {
+            "first": 5119,
+            "last": 5126,
+            "sha256": "2478ed630ed29c6920f869464a00947107bc08ab02e31124ac4d9fff31c1488f"
+          },
+          {
+            "first": 5146,
+            "last": 5168,
+            "sha256": "a0286717715c339cbd9f5dfe093bef253c777b431e2f707a5c1000dcb5d22be9"
+          },
+          {
+            "first": 5210,
+            "last": 5234,
+            "sha256": "2a6fdcb3aa5556873a3f9f8b8db85224680ac356631ec53af3623a2d7fe002e4"
+          },
+          {
+            "first": 5284,
+            "last": 5286,
+            "sha256": "c418c2f8996bce239dc3fba65cb05c03c746d82cec40b3f069cb2ddc16fe7eec"
+          }
+        ]
+      }
+    },
+    "reference_environment": {
+      "schema": 1,
+      "policy": "clean-loader",
+      "scope": "native-reference-and-compiler-children-only",
+      "parent_loader": {
+        "LD_PRELOAD": null,
+        "LD_LIBRARY_PATH": null,
+        "LD_AUDIT": null,
+        "LD_BIND_NOW": null,
+        "GLIBC_TUNABLES": null,
+        "LD_HWCAP_MASK": null,
+        "LD_ASSUME_KERNEL": null,
+        "DYLD_INSERT_LIBRARIES": null,
+        "DYLD_LIBRARY_PATH": null,
+        "DYLD_FRAMEWORK_PATH": null,
+        "DYLD_FALLBACK_LIBRARY_PATH": null,
+        "DYLD_FALLBACK_FRAMEWORK_PATH": null,
+        "DYLD_VERSIONED_LIBRARY_PATH": null,
+        "DYLD_VERSIONED_FRAMEWORK_PATH": null,
+        "DYLD_ROOT_PATH": null,
+        "DYLD_IMAGE_SUFFIX": null,
+        "DYLD_SHARED_REGION": null,
+        "DYLD_SHARED_CACHE_DIR": null,
+        "DYLD_SHARED_CACHE_DONT_VALIDATE": null,
+        "DYLD_FORCE_FLAT_NAMESPACE": null,
+        "DYLD_BIND_AT_LAUNCH": null
+      },
+      "effective_child_loader": {
+        "LD_PRELOAD": null,
+        "LD_LIBRARY_PATH": null,
+        "LD_AUDIT": null,
+        "LD_BIND_NOW": null,
+        "GLIBC_TUNABLES": null,
+        "LD_HWCAP_MASK": null,
+        "LD_ASSUME_KERNEL": null,
+        "DYLD_INSERT_LIBRARIES": null,
+        "DYLD_LIBRARY_PATH": null,
+        "DYLD_FRAMEWORK_PATH": null,
+        "DYLD_FALLBACK_LIBRARY_PATH": null,
+        "DYLD_FALLBACK_FRAMEWORK_PATH": null,
+        "DYLD_VERSIONED_LIBRARY_PATH": null,
+        "DYLD_VERSIONED_FRAMEWORK_PATH": null,
+        "DYLD_ROOT_PATH": null,
+        "DYLD_IMAGE_SUFFIX": null,
+        "DYLD_SHARED_REGION": null,
+        "DYLD_SHARED_CACHE_DIR": null,
+        "DYLD_SHARED_CACHE_DONT_VALIDATE": null,
+        "DYLD_FORCE_FLAT_NAMESPACE": null,
+        "DYLD_BIND_AT_LAUNCH": null
+      }
+    },
+    "artifact_seals": 1599
+  },
+  "serial_regressions": {
+    "path": ".build/png-memory-validation/serial.json",
+    "sha256": "9441a7ec552367ebf5e665d342f6bdef7f94c0df81c4d70ebc6385fb3c321198",
+    "ordered_stages": [
+      {
+        "label": "native-configure",
+        "command": [
+          "cmake",
+          "-S",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib",
+          "-B",
+          ".build/raylib",
+          "-DPLATFORM=Memory",
+          "-DCMAKE_BUILD_TYPE=Release",
+          "-DBUILD_EXAMPLES=OFF",
+          "-DCUSTOMIZE_BUILD=ON",
+          "-DSUPPORT_MODULE_RAUDIO=OFF",
+          "-DSUPPORT_RPRAND_GENERATOR=ON",
+          "-DSUPPORT_FILEFORMAT_BMP=ON",
+          "-DSUPPORT_FILEFORMAT_TGA=ON",
+          "-DSUPPORT_FILEFORMAT_PNM=ON",
+          "-DSUPPORT_FILEFORMAT_PNG=ON",
+          "-DUSE_EXTERNAL_GLFW=OFF"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 0.415
+      },
+      {
+        "label": "native-build",
+        "command": [
+          "cmake",
+          "--build",
+          ".build/raylib",
+          "--parallel",
+          "4"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 10.897
+      },
+      {
+        "label": "surface-png",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/png_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 33.923
+      },
+      {
+        "label": "generic-memory",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/image_memory_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 315.618
+      },
+      {
+        "label": "generic-file",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/image_file_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 34.893
+      },
+      {
+        "label": "animation-fallback",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/animation_file_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 35.581
+      },
+      {
+        "label": "png-export",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/png_export_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 27.455
+      },
+      {
+        "label": "float-rgb-png",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/float_rgb_png_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 22.476
+      },
+      {
+        "label": "r32-images",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/r32_image_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 174.636
+      },
+      {
+        "label": "image-format",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/image_format_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 22.305
+      },
+      {
+        "label": "image-colors",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/image_colors_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 16.5
+      },
+      {
+        "label": "qoi-formatted-memory",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/qoi_format_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 297.43
+      },
+      {
+        "label": "qoi-formatted-files",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/qoi_file_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 180.574
+      },
+      {
+        "label": "pnm-formatted-memory",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/pnm_format_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib",
+          "--reference-env",
+          "clean-loader"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 491.649
+      },
+      {
+        "label": "pnm-formatted-files",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/pnm_file_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib",
+          "--reference-env",
+          "clean-loader"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 662.646
+      },
+      {
+        "label": "tga-formatted-memory",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/tga_format_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib",
+          "--reference-env",
+          "clean-loader"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 990.68
+      },
+      {
+        "label": "tga-formatted-files",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/tga_file_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib",
+          "--reference-env",
+          "clean-loader"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 1120.796
+      },
+      {
+        "label": "bmp-formatted-memory",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/bmp_format_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib",
+          "--reference-env",
+          "clean-loader"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 1738.329
+      },
+      {
+        "label": "bmp-formatted-files",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/bmp_file_probe.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib",
+          "--reference-env",
+          "clean-loader"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 1664.938
+      },
+      {
+        "label": "canonical",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/conformance.py",
+          "--bend-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib",
+          "--reference-loader-policy",
+          "clean-loader"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 451.532
+      },
+      {
+        "label": "strict-canonical",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "/workspace/scratch/61c86f431823/jonlib-png-memory/.build/png-memory-validation/strict_replay_final.py"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 0.265
+      },
+      {
+        "label": "python-suite-final",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-v"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 131.586
+      },
+      {
+        "label": "proof-final",
+        "command": [
+          "bun",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/bend/bend2/main.ts",
+          "PROOF.bend",
+          "--check-only"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 13.078
+      },
+      {
+        "label": "syntax-final",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "-m",
+          "compileall",
+          "-q",
+          "tools",
+          "tests"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 0.165
+      },
+      {
+        "label": "project-final",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/check_project.py"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 0.266
+      },
+      {
+        "label": "api-final",
+        "command": [
+          "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+          "tools/api_plan.py",
+          "check",
+          "--raylib-source",
+          "/workspace/scratch/61c86f431823/github/jonathanperis/jonlib/.build/dependencies/raylib"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 1.871
+      },
+      {
+        "label": "diff-check-final",
+        "command": [
+          "git",
+          "diff",
+          "--check"
+        ],
+        "exit_code": 0,
+        "complete": true,
+        "elapsed_seconds": 0.065
+      }
+    ],
+    "stage_count": 27,
+    "total_stage_elapsed_seconds": 8440.569,
+    "python_tests": 866,
+    "skips": 0,
+    "proof_laws": 177
+  },
+  "independent_regression_audit": {
+    "path": ".build/png-memory-validation/independent-regression-final.json",
+    "sha256": "6af8a7c1304bd3358aff1e94b662febe07199b08b99069c5deffea3760429578",
+    "scope": "Read-only retained evidence audit; no runtime execution",
+    "immutable_evidence_hashes": 9015,
+    "frozen_source_counts": {
+      "sources": 467,
+      "runtime_sources": 70,
+      "verification_sources": 152,
+      "receipts": 29
+    },
+    "negative_controls": 17,
+    "canonical": {
+      "passed": true,
+      "full_actual_native_replay": true,
+      "lanes": {
+        "cpu-1": {
+          "passed": true,
+          "sha256": "a5c97ff42b88db3dea665b48df0b45e920266002139c6d46008f187dcae7d575",
+          "scenarios": 261,
+          "words": 40101,
+          "qoi_bytes": 333,
+          "palette_words": 23
+        },
+        "cpu-2": {
+          "passed": true,
+          "sha256": "a5c97ff42b88db3dea665b48df0b45e920266002139c6d46008f187dcae7d575",
+          "scenarios": 261,
+          "words": 40101,
+          "qoi_bytes": 333,
+          "palette_words": 23
+        },
+        "javascript": {
+          "passed": true,
+          "sha256": "a5c97ff42b88db3dea665b48df0b45e920266002139c6d46008f187dcae7d575",
+          "scenarios": 261,
+          "words": 40101,
+          "qoi_bytes": 333,
+          "palette_words": 23
+        }
+      },
+      "optional_fields_checked": [
+        "qoi",
+        "palette",
+        "palette_count",
+        "alpha_border"
+      ],
+      "limits": "Canonical main 261-row outputs fully retained/replayed; ancillary proof, contract, file/IO checks are verified from the integrated report and outer command receipt"
+    },
+    "evidence_limits": [
+      "Nine unchanged legacy gates are verified through fresh outer execution, frozen source/fixture identity, report counters and retained artifacts; their complete raw runtime output and inner command receipts were not retained",
+      "Canonical main records and retained example/QOI files are completely replayed; ancillary contracts, proof and IO are verified from the integrated report and outer invocation",
+      "Older QOI closure evidence retains final image/terminal observations; internal repeated paths are source assertions, not separately retained output records",
+      "Older QOI/PNM command/lifecycle provenance gaps remain explicitly scoped in the independent receipts; no new complete inner-lifecycle claim is inferred"
+    ]
+  },
+  "pre_integration_validation": {
+    "python_tests": 866,
+    "skips": 0,
+    "laws": 177,
+    "proof_verdict": "All terms check.",
+    "independent_source_review": {
+      "path": ".build/png-source-preflight/independent-source-review.json",
+      "sha256": "c0f510fae29df13702d530e1837bf9c8ec8c1b340dab7295d3118d025e2ff84d"
+    },
+    "independent_harness_review": {
+      "path": ".build/png-source-preflight/independent-harness-review.json",
+      "sha256": "9127587fbeb94fcd93d0d13dc22c4e4ccb48b0376af20f1dee77dca6cc38c557"
+    },
+    "legacy_identity": {
+      "path": ".build/png-source-preflight/legacy-png-identities.json",
+      "sha256": "12848a132f89700bcff5588a9b34c95f17dec5073cccb6816d8f8bfcb437b03c"
+    }
+  },
+  "ci": {
+    "current_declared_gates_per_os": 84,
+    "explicit_workers": 8,
+    "aggregate_policy": "Both preserved compatibility aggregates directly require all eight workers",
+    "prior_83_gate_checkpoint": {
+      "commit": "1312479cf9cd8ae1acc35b17cd99d0a2be5366a8",
+      "checks_run": 37161146340,
+      "conformance_run": 37161146356,
+      "url": "https://github.com/jonathanperis/jonlib/actions/runs/37161146356",
+      "status": "success",
+      "scope": "Historical BMP-file checkpoint; not qualification of this PNG increment"
+    },
+    "new_exact_tip_hosted_status": "pending"
+  },
+  "unqualified": [
+    "Formatted PNG file loading",
+    "Generic formatted or float dispatch",
+    "New codecs or wider checked PNG domain",
+    "Nondefault external stb flags",
+    "Native pointer/allocation ABI and allocation-failure parity",
+    "Maximum-area allocation/resource success",
+    "Representative performance",
+    "New hosted CPU/JavaScript result until exact-tip CI finishes",
+    "GPU/Metal/CUDA",
+    "Windows/browser/big-endian and unverified platform/backend targets"
+  ],
+  "post_runtime_integration_checks": {
+    "path": ".build/png-final-validation/results.json",
+    "sha256": "e245442ccc972f592cd454992ac00bf6341e069d4c7c9cc3cf863837456c44f9",
+    "passed": true,
+    "python_tests": 871,
+    "skips": 0,
+    "proof_laws": 177,
+    "checks": [
+      "python-suite",
+      "proof",
+      "syntax",
+      "project",
+      "api",
+      "api-delta",
+      "ci-preservation",
+      "diff-check"
+    ],
+    "scope": "Integrated runtime and CI code; final prose/ledger cleanup and final-tree review are recorded separately before commit"
+  }
+}

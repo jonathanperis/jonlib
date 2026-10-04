@@ -2,6 +2,9 @@
 
 `Surface.decode_png(bytes: +List<U32>)` returns
 `Result<&1, &1, Image.DecodeError, Surface>` with owned normalized RGBA8 pixels.
+The dedicated `Image.Formatted.decode_png` memory factory preserves the native
+8-bit output format and bytes instead; its contract and local qualification
+are [specified below](#format-preserving-png-memory-loading).
 
 ## Current profile
 
@@ -78,12 +81,148 @@ violations return `UnsupportedImageSize`. Invalid zlib/DEFLATE data, filter mode
 raster lengths or palette indices return `InvalidImageStream`. Bounds are checked
 before array indexing, and dimensions/filtered capacity before allocation.
 
-Nondefault external stb decoder flags, original-format metadata and broader
-malformed-input recovery remain gaps. Shared memory/file dispatch is documented
+Nondefault external stb decoder flags and broader malformed-input recovery
+remain gaps. Shared normalized memory/file dispatch is documented
 in [IMAGE-FILES.md](IMAGE-FILES.md). Exact default byte-format export is
 documented in [PNG-EXPORT.md](PNG-EXPORT.md).
 
-## Verification
+## Format-preserving PNG memory loading
+
+`Image.Formatted.decode_png(bytes: +List<U32>)` returns
+`Result<&1, &1, Image.DecodeError, Image.Formatted>`. It accepts the same checked
+PNG domain as `Surface.decode_png`: the color/depth combinations, Adam7 passes,
+filter arithmetic, CgBI defaults, chunk ordering, palette/key behavior and
+inclusive limits above are unchanged. It takes no format, channel or reference
+argument. Success creates one affine owner with the decoded width/height and
+an implicit single mip level; failure returns only the existing typed error.
+The immutable encoded list can be reused for independent decodes.
+
+Native output channels follow image structure rather than observed opacity:
+
+| PNG structure | Format | Row-major exported components |
+|---|---|---|
+| Grayscale (color 0), no tRNS | **1 (grayscale)** | G |
+| Grayscale with tRNS, or gray-alpha (color 4) | **2 (gray-alpha)** | G,A |
+| RGB (color 2) or palette (color 3), no tRNS | **4 (RGB888)** | R,G,B |
+| RGB/palette with tRNS, or RGBA (color 6) | **7 (RGBA8888)** | R,G,B,A |
+
+A valid tRNS key promotes grayscale/RGB even when no pixel matches. Palette
+tRNS promotes to RGBA even when its payload is empty, all supplied alphas are
+255, or only unused entries have nonopaque alpha. That promotion remains set
+across a later accepted PLTE, although PLTE replaces palette colors and resets
+their alpha bytes to 255. Repeated accepted tRNS chunks retain promotion. There
+is no opacity scan or inference from normalized pixels to choose the format.
+Existing-alpha color types retain their channels even if every alpha is 255;
+tRNS on those types remains invalid under the checked parser.
+
+Packed grayscale expands to 8-bit G values; indexed PNG exports palette colors,
+not indices. All 16-bit input is reduced to the high byte of each reconstructed
+sample after full-width tRNS comparison. This preserves the native 8-bit
+`LoadImageFromMemory` result, not source bit depth. CgBI uses raw DEFLATE with
+the pinned default conversion flags unchanged: no added BGR swap or
+unpremultiplication, including hidden color at zero alpha.
+
+`Image.Formatted.export` consumes the owner and returns
+`((width, height), (format, bytes))`, with exactly
+`width*height*channels` component bytes and no storage padding. Logical packed
+words use G, G/A, R/G/B or R/G/B/A in successive low bytes; unused upper bytes
+are zero. Integer packing avoids an F32 conversion or a grayscale luminance
+round trip. The consuming `Image.Formatted.to_surface` bridge produces the
+same normalized RGBA8 values as the existing Surface decoder.
+
+### Unchanged limits and error ordering
+
+Dimensions remain 1..4096 on each axis. The complete encoded list, including
+bytes after IEND, has the same **inclusive 1,048,576-byte cap**; the filtered
+scanline/pass stream has the same **inclusive 67,108,864-byte cap**. These are
+admission bounds, not a maximum-area allocation or runtime-memory guarantee.
+
+The input walk runs before signature/chunk parsing and stops at its first
+error. An out-of-range value gives `InvalidImageByte`; a valid byte at the first
+position beyond the encoded cap gives `UnsupportedImageSize`. If that first
+excess value is itself out of range, `InvalidImageByte` wins. Values after an
+already detected cap error are not inspected. Thus an invalid header does not
+override an earlier input-walk byte/size error.
+
+Invalid signatures, unsupported/truncated chunk structures and malformed IHDR
+fields yield `InvalidImageHeader`; a structurally accepted IHDR with zero or
+oversized dimensions yields `UnsupportedImageSize`. After chunk parsing, an
+oversized filtered-stream requirement yields `UnsupportedImageSize` before
+inflation. Invalid framing/DEFLATE, filters, exact raster lengths and palette
+indices yield `InvalidImageStream`. Trailing byte-valued data after a complete
+IEND remains ignored after whole-input validation. Existing checked rules can
+be stricter than native malformed-stream recovery; this factory changes none
+of those admissions or error precedences.
+
+### Local qualification
+
+The [focused evidence](evidence/png-formatted-memory.json) records a fresh local
+Linux x86-64 pass on CPU-one-thread, CPU-two-thread and JavaScript. The dedicated
+gate covers **230 accepted images / 85,979 pixels and 208 typed controls**,
+retaining all **193 historical accepted streams / 31,677 pixels and 39 typed
+controls** unchanged. Structural cases distinguish absent, empty, opaque,
+unused-entry and nonmatching tRNS, including later-PLTE resets. All four output
+layouts include single, padded, 4096-axis, moderate and byte-ramp images. The
+encoded-cap endpoint and byte/size precedence are checked without expanding
+the existing domain.
+
+Actual native dimensions, format, `image.mipmaps == 1` and every raw byte are
+captured before separate normalization. There are **485 native observations**,
+with **206,667 raw bytes and 343,916 normalized bytes** before the selected
+uppercase alias observations. Candidate mipmaps remain an implicit type
+contract, not a stored or independently measured field. Each lane passes
+**1,896 complete observations / 1,532,452 compared bytes** in 60 ordered
+partitions. Raw exports, checked factories, export/import round trips,
+retained point-read owners, logical high-bit checks, consuming Surface bridges
+and existing normalized/dispatch paths are observed separately. Malformed
+controls run only in checked Jonlib.
+
+```sh
+python3 tools/png_format_probe.py --reference-env clean-loader \
+  --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+python3 -m unittest discover -s tests -p test_png_format_harness.py -v
+```
+
+The fresh PNG-enabled Memory oracle verifies source/tool/compiler/archive
+identities, actual build configuration, clean-loader child receipts and tiny
+structural-channel/full-width-key/CgBI qualification vectors. Its 16 native
+partitions and 60 candidate partitions are ordered and exhaustive. Independent
+complete-output replay verifies **279 command receipts and 1,599 artifact
+seals** and rejects **21 adversarial mutations**, without executing the
+compiler, native reference or candidate again. The focused gate takes
+**1,310.912 seconds** on this host; this is a verification duration, not an
+application benchmark.
+
+The completed 2026-10-04 [serial verification record](VERIFICATION.md#format-preserving-png-memory-loading-2026-10-04)
+records 27 ordered stages, 866 Python tests without skips and 177 scoped laws.
+Its independent regression audit verifies 467 frozen sources and 9,015 evidence
+hashes. It distinguishes complete retained-record replay from nine older
+report/source/artifact-only harnesses and unrecorded QOI closure iterations.
+A separate integrated metadata/CI source snapshot passes 871 Python tests
+without skips, all 177 laws, syntax/project/API checks, CI preservation and
+whitespace checks. Final-tree review is recorded separately from runtime
+evidence. New PNG 84-gate/eight-worker hosted qualification remains pending.
+
+Only partial `raylib:function:LoadImageFromMemory` scope expands; API completion
+counts do not change. This increment adds no formatted PNG file loader, generic
+formatted dispatch, other codec, new input domain or nondefault stb flag.
+Historical Surface CPU/JavaScript/Metal results do not qualify the new formatted
+path. Native pointer/allocation ABI, allocation-failure parity, maximum-area
+success and representative performance remain unqualified, as do new hosted,
+GPU/Metal, macOS/Windows/browser and big-endian results for this path.
+
+### Native source contract
+
+The pinned `rtextures.c` lines 461–471 use `stbi_load_from_memory` with requested
+channels zero, set one mip and map returned components to formats 1/2/4/7.
+`stb_image.h` lines 5119–5234 and 5284–5286 retain tRNS-derived components,
+including palette promotion independently of alpha values or later PLTE.
+Lines 1190–1203 and 1260–1273 apply the final high-byte reduction to 16-bit
+results; lines 4993–4994 and 5222–5223 retain disabled CgBI conversion defaults.
+These source-derived rules define the contract; the separately linked runtime
+evidence establishes only the exercised local profile.
+
+## Historical Surface verification
 
 ```sh
 python3 tools/png_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu

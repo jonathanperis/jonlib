@@ -11,8 +11,12 @@ type Error is Data:
   BadSize{}
   BadStream{}
 
+# Native components are attached once after the unchanged RGBA reconstruction.
 type Image is Type:
-  Image{width: U32, height: U32, pixels: Array<U32>}
+  Image{width: U32, height: U32, channels: U32, pixels: Array<U32>}
+
+type Raster is Type:
+  Raster{width: U32, height: U32, pixels: Array<U32>}
 
 type Config is Data:
   Config{width: U32, height: U32, color: U32, channels: U32, bits: U32, interlaced: Bool}
@@ -77,7 +81,8 @@ type Key is Data:
   Key{red: U32, green: U32, blue: U32}
 
 type Parts is Data:
-  Parts{config: Maybe<&2, Config>, palette: +List<U32>, key: Maybe<&2, Key>, compressed: +List<U32>, seen: Bool, raw: Bool}
+  # Presence is sticky, including empty/opaque tRNS and a later PLTE reset.
+  Parts{config: Maybe<&2, Config>, palette: +List<U32>, key: Maybe<&2, Key>, palette_alpha: Bool, compressed: +List<U32>, seen: Bool, raw: Bool}
 
 type Parsing is Data:
   More{bytes: +List<U32>, parts: Parts}
@@ -123,61 +128,61 @@ def more.valid(valid: Bool, bytes: +List<U32>, parts: Parts) -> Result<&2, &2, E
 def more.config(bytes: +List<U32>, raw: Bool, result: Result<&2, &2, Error, Config>) -> Result<&2, &2, Error, Parsing>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{cfg}: Done{More{bytes, Parts{Some{cfg}, Nil{}, None{}, Nil{}, False{}, raw}}}
+    case Done{cfg}: Done{More{bytes, Parts{Some{cfg}, Nil{}, None{}, False{}, Nil{}, False{}, raw}}}
 
-def more.palette(cfg: Config, key: Maybe<&2, Key>, compressed: +List<U32>, seen: Bool, raw: Bool, bytes: +List<U32>, colors: Maybe<&2, +List<U32>>) -> Result<&2, &2, Error, Parsing>:
+def more.palette(cfg: Config, key: Maybe<&2, Key>, palette_alpha: Bool, compressed: +List<U32>, seen: Bool, raw: Bool, bytes: +List<U32>, colors: Maybe<&2, +List<U32>>) -> Result<&2, &2, Error, Parsing>:
   match colors:
     case None{}: Fail{BadHeader{}}
-    case Some{values}: Done{More{bytes, Parts{Some{cfg}, values, key, compressed, seen, raw}}}
+    case Some{values}: Done{More{bytes, Parts{Some{cfg}, values, key, palette_alpha, compressed, seen, raw}}}
 
-def more.plte(valid: Bool, cfg: Config, key: Maybe<&2, Key>, compressed: +List<U32>, seen: Bool, raw: Bool, payload: +List<U32>, bytes: +List<U32>) -> Result<&2, &2, Error, Parsing>:
+def more.plte(valid: Bool, cfg: Config, key: Maybe<&2, Key>, palette_alpha: Bool, compressed: +List<U32>, seen: Bool, raw: Bool, payload: +List<U32>, bytes: +List<U32>) -> Result<&2, &2, Error, Parsing>:
   match valid:
     case False{}: Fail{BadHeader{}}
-    case True{}: more.palette(cfg, key, compressed, seen, raw, bytes, palette(payload, Nil{}))
+    case True{}: more.palette(cfg, key, palette_alpha, compressed, seen, raw, bytes, palette(payload, Nil{}))
 
 def key.component(wide: Bool, high: U32, +low: U32, scale: U32) -> U32:
   Bool.pick(U32, wide, ((high << 8n) .|. low : U32), ((low * scale) .&. 255 : U32))
 
-def more.transparency(color: U32, +wide: Bool, +scale: U32, cfg: Config, colors: +List<U32>, compressed: +List<U32>, raw: Bool, payload: +List<U32>, bytes: +List<U32>) -> Result<&2, &2, Error, Parsing>:
+def more.transparency(color: U32, +wide: Bool, +scale: U32, cfg: Config, colors: +List<U32>, palette_alpha: Bool, compressed: +List<U32>, raw: Bool, payload: +List<U32>, bytes: +List<U32>) -> Result<&2, &2, Error, Parsing>:
   match color payload:
     case 0 Con{high, Con{value, Nil{}}}:
       +gray = key.component(wide, high, value, scale)
-      Done{More{bytes, Parts{Some{cfg}, colors, Some{Key{gray, gray, gray}}, compressed, False{}, raw}}}
+      Done{More{bytes, Parts{Some{cfg}, colors, Some{Key{gray, gray, gray}}, palette_alpha, compressed, False{}, raw}}}
     case 2 Con{rh, Con{r, Con{gh, Con{g, Con{bh, Con{b, Nil{}}}}}}}:
-      Done{More{bytes, Parts{Some{cfg}, colors, Some{Key{key.component(wide, rh, r, scale), key.component(wide, gh, g, scale), key.component(wide, bh, b, scale)}}, compressed, False{}, raw}}}
-    case 3 _: more.palette(cfg, None{}, compressed, False{}, raw, bytes, palette.alpha(colors, payload, Nil{}))
+      Done{More{bytes, Parts{Some{cfg}, colors, Some{Key{key.component(wide, rh, r, scale), key.component(wide, gh, g, scale), key.component(wide, bh, b, scale)}}, palette_alpha, compressed, False{}, raw}}}
+    case 3 _: more.palette(cfg, None{}, True{}, compressed, False{}, raw, bytes, palette.alpha(colors, payload, Nil{}))
     case _ _: Fail{BadHeader{}}
 
-def more.trns(valid: Bool, color: U32, wide: Bool, scale: U32, cfg: Config, colors: +List<U32>, compressed: +List<U32>, raw: Bool, payload: +List<U32>, bytes: +List<U32>) -> Result<&2, &2, Error, Parsing>:
+def more.trns(valid: Bool, color: U32, wide: Bool, scale: U32, cfg: Config, colors: +List<U32>, palette_alpha: Bool, compressed: +List<U32>, raw: Bool, payload: +List<U32>, bytes: +List<U32>) -> Result<&2, &2, Error, Parsing>:
   match valid:
     case False{}: Fail{BadHeader{}}
-    case True{}: more.transparency(color, wide, scale, cfg, colors, compressed, raw, payload, bytes)
+    case True{}: more.transparency(color, wide, scale, cfg, colors, palette_alpha, compressed, raw, payload, bytes)
 
 def complete(valid: Bool, parts: Parts) -> Result<&2, &2, Error, Parsing>:
   match valid:
     case False{}: Fail{BadHeader{}}
     case True{}: Done{Complete{parts}}
 
-def dispatch.kind(+kind: U32, +size: U32, cfg: Config, colors: +List<U32>, key: Maybe<&2, Key>, compressed: +List<U32>, +seen: Bool, raw: Bool, payload: +List<U32>, bytes: +List<U32>, color: U32, wide: Bool, scale: U32, indexed: Bool, has_palette: Bool) -> Result<&2, &2, Error, Parsing>:
+def dispatch.kind(+kind: U32, +size: U32, cfg: Config, colors: +List<U32>, key: Maybe<&2, Key>, palette_alpha: Bool, compressed: +List<U32>, +seen: Bool, raw: Bool, payload: +List<U32>, bytes: +List<U32>, color: U32, wide: Bool, scale: U32, indexed: Bool, has_palette: Bool) -> Result<&2, &2, Error, Parsing>:
   match kind:
     case 1229472850: Fail{BadHeader{}}
-    case 1347179589: more.plte(((size > 0) && (size <= 768) : U32) && U32.is_eq((size % 3 : U32), 0) && Bool.not(seen), cfg, key, compressed, seen, raw, payload, bytes)
-    case 1951551059: more.trns(Bool.not(seen) && (Bool.not(indexed) || has_palette), color, wide, scale, cfg, colors, compressed, raw, payload, bytes)
-    case 1229209940: more.valid(Bool.not(indexed) || has_palette, bytes, Parts{Some{cfg}, colors, key, reverse_into(payload, compressed), True{}, raw})
-    case 1229278788: complete(U32.is_eq(size, 0) && seen, Parts{Some{cfg}, colors, key, compressed, seen, raw})
-    case _: more.valid(((kind .&. 536870912) > 0 : U32), bytes, Parts{Some{cfg}, colors, key, compressed, seen, raw})
+    case 1347179589: more.plte(((size > 0) && (size <= 768) : U32) && U32.is_eq((size % 3 : U32), 0) && Bool.not(seen), cfg, key, palette_alpha, compressed, seen, raw, payload, bytes)
+    case 1951551059: more.trns(Bool.not(seen) && (Bool.not(indexed) || has_palette), color, wide, scale, cfg, colors, palette_alpha, compressed, raw, payload, bytes)
+    case 1229209940: more.valid(Bool.not(indexed) || has_palette, bytes, Parts{Some{cfg}, colors, key, palette_alpha, reverse_into(payload, compressed), True{}, raw})
+    case 1229278788: complete(U32.is_eq(size, 0) && seen, Parts{Some{cfg}, colors, key, palette_alpha, compressed, seen, raw})
+    case _: more.valid(((kind .&. 536870912) > 0 : U32), bytes, Parts{Some{cfg}, colors, key, palette_alpha, compressed, seen, raw})
 
-def dispatch(+cfg: Config, kind: U32, size: U32, +colors: +List<U32>, key: Maybe<&2, Key>, compressed: +List<U32>, seen: Bool, raw: Bool, payload: +List<U32>, bytes: +List<U32>) -> Result<&2, &2, Error, Parsing>:
+def dispatch(+cfg: Config, kind: U32, size: U32, +colors: +List<U32>, key: Maybe<&2, Key>, palette_alpha: Bool, compressed: +List<U32>, seen: Bool, raw: Bool, payload: +List<U32>, bytes: +List<U32>) -> Result<&2, &2, Error, Parsing>:
   Config{_, _, +color, _, +bits, _} = cfg
-  dispatch.kind(kind, size, cfg, colors, key, compressed, seen, raw, payload, bytes, color, U32.is_eq(bits, 16), (255 / ((1 << U32.to_nat(bits)) - 1) : U32), U32.is_eq(color, 3), Bool.not(List.is_empty(&2, U32, colors)))
+  dispatch.kind(kind, size, cfg, colors, key, palette_alpha, compressed, seen, raw, payload, bytes, color, U32.is_eq(bits, 16), (255 / ((1 << U32.to_nat(bits)) - 1) : U32), U32.is_eq(color, 3), Bool.not(List.is_empty(&2, U32, colors)))
 
 def parsed(parts: Parts, result: Maybe<&2, Chunk>) -> Result<&2, &2, Error, Parsing>:
   match parts result:
     case _ None{}: Fail{BadHeader{}}
-    case Parts{cfg, colors, key, compressed, seen, _} Some{Chunk{1130840649, _, _, rest}}: Done{More{rest, Parts{cfg, colors, key, compressed, seen, True{}}}}
-    case Parts{None{}, _, _, _, _, raw} Some{Chunk{1229472850, 13, payload, rest}}: more.config(rest, raw, config(Q.word(payload)))
-    case Parts{None{}, _, _, _, _, _} _: Fail{BadHeader{}}
-    case Parts{Some{cfg}, colors, key, compressed, seen, raw} Some{Chunk{kind, size, payload, rest}}: dispatch(cfg, kind, size, colors, key, compressed, seen, raw, payload, rest)
+    case Parts{cfg, colors, key, palette_alpha, compressed, seen, _} Some{Chunk{1130840649, _, _, rest}}: Done{More{rest, Parts{cfg, colors, key, palette_alpha, compressed, seen, True{}}}}
+    case Parts{None{}, _, _, _, _, _, raw} Some{Chunk{1229472850, 13, payload, rest}}: more.config(rest, raw, config(Q.word(payload)))
+    case Parts{None{}, _, _, _, _, _, _} _: Fail{BadHeader{}}
+    case Parts{Some{cfg}, colors, key, palette_alpha, compressed, seen, raw} Some{Chunk{kind, size, payload, rest}}: dispatch(cfg, kind, size, colors, key, palette_alpha, compressed, seen, raw, payload, rest)
 
 def parse(n: Nat, state: Result<&2, &2, Error, Parsing>) -> Result<&2, &2, Error, Parts>:
   match n state:
@@ -189,7 +194,7 @@ def parse(n: Nat, state: Result<&2, &2, Error, Parsing>) -> Result<&2, &2, Error
 def signature(size: U32, bytes: +List<U32>) -> Result<&2, &2, Error, Parts>:
   match bytes:
     case Con{137, Con{80, Con{78, Con{71, Con{13, Con{10, Con{26, Con{10, rest}}}}}}}}:
-      parse(U32.to_nat(size), Done{More{rest, Parts{None{}, Nil{}, None{}, Nil{}, False{}, False{}}}})
+      parse(U32.to_nat(size), Done{More{rest, Parts{None{}, Nil{}, None{}, False{}, Nil{}, False{}, False{}}}})
     case _: Fail{BadHeader{}}
 
 def difference(+a: U32, +b: U32) -> U32:
@@ -354,12 +359,12 @@ def pixels(n: Nat, +index: U32, +width: U32, +row: U32, +color: U32, +channels: 
       pixels(rest, (index + 1 : U32), width, row, color, channels, bits, palette, key,
         pixels.sample(U32.is_eq(bits, 16), index, color, channels, bits, shift, palette, key, output, at, samples))
 
-def image(width: U32, height: U32, result: Maybe<Array<U32>>) -> Result<&1, &1, Error, Image>:
+def image(width: U32, height: U32, result: Maybe<Array<U32>>) -> Result<&1, &1, Error, Raster>:
   match result:
     case None{}: Fail{BadStream{}}
-    case Some{output}: Done{Image{width, height, output}}
+    case Some{output}: Done{Raster{width, height, output}}
 
-def converted(+width: U32, +height: U32, color: U32, channels: U32, bits: U32, row: U32, palette: +List<U32>, key: Maybe<&2, Key>, samples: Maybe<Array<U32>>) -> Result<&1, &1, Error, Image>:
+def converted(+width: U32, +height: U32, color: U32, channels: U32, bits: U32, row: U32, palette: +List<U32>, key: Maybe<&2, Key>, samples: Maybe<Array<U32>>) -> Result<&1, &1, Error, Raster>:
   match samples:
     case None{}: Fail{BadStream{}}
     case Some{values}:
@@ -367,7 +372,7 @@ def converted(+width: U32, +height: U32, color: U32, channels: U32, bits: U32, r
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
       image(width, height, pixels(U32.to_nat(count), 0, width, row, color, channels, bits, palette, key, Some{Pixels{values, Array.new(U32, depth, 0)}}))
 
-def inflated(+width: U32, +height: U32, color: U32, +channels: U32, +bits: U32, palette: +List<U32>, key: Maybe<&2, Key>, data: Maybe<List<U32>>) -> Result<&1, &1, Error, Image>:
+def inflated(+width: U32, +height: U32, color: U32, +channels: U32, +bits: U32, palette: +List<U32>, key: Maybe<&2, Key>, data: Maybe<List<U32>>) -> Result<&1, &1, Error, Raster>:
   match data:
     case None{}: Fail{BadStream{}}
     case Some{bytes}:
@@ -417,10 +422,10 @@ def adam.scatter(n: Nat, +index: U32, +width: U32, +pass_width: U32, +pass: Pass
     case 0n Tuple{_, output}: output
     case 1n+rest _: adam.scatter(rest, (index + 1 : U32), width, pass_width, pass, adam.scatter.step(pass, index, width, pass_width, state))
 
-def adam.converted(data: List<U32>, output: Array<U32>, width: U32, pass: Pass, result: Result<&1, &1, Error, Image>) -> Result<&1, &1, Error, PassState>:
+def adam.converted(data: List<U32>, output: Array<U32>, width: U32, pass: Pass, result: Result<&1, &1, Error, Raster>) -> Result<&1, &1, Error, PassState>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{Image{+w, h, pixels}}: Done{PassState{data, adam.scatter(U32.to_nat((w * h : U32)), 0, width, w, pass, (pixels, output))}}
+    case Done{Raster{+w, h, pixels}}: Done{PassState{data, adam.scatter(U32.to_nat((w * h : U32)), 0, width, w, pass, (pixels, output))}}
 
 def adam.scanned(cfg: Config, pass: Pass, w: U32, h: U32, row: U32, palette: +List<U32>, key: Maybe<&2, Key>, output: Array<U32>, result: Maybe<Scan>) -> Result<&1, &1, Error, PassState>:
   Config{width, _, color, channels, bits, _} = cfg
@@ -449,13 +454,13 @@ def adam.loop(passes: +List<Pass>, +cfg: Config, +palette: +List<U32>, +key: May
     case Nil{} _: state
     case Con{pass, rest} Done{value}: adam.loop(rest, cfg, palette, key, adam.step(cfg, pass, palette, key, value))
 
-def adam.finish(width: U32, height: U32, result: Result<&1, &1, Error, PassState>) -> Result<&1, &1, Error, Image>:
+def adam.finish(width: U32, height: U32, result: Result<&1, &1, Error, PassState>) -> Result<&1, &1, Error, Raster>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{PassState{Nil{}, output}}: Done{Image{width, height, output}}
+    case Done{PassState{Nil{}, output}}: Done{Raster{width, height, output}}
     case _: Fail{BadStream{}}
 
-def adam.start(+width: U32, +height: U32, cfg: Config, palette: +List<U32>, key: Maybe<&2, Key>, data: Maybe<List<U32>>) -> Result<&1, &1, Error, Image>:
+def adam.start(+width: U32, +height: U32, cfg: Config, palette: +List<U32>, key: Maybe<&2, Key>, data: Maybe<List<U32>>) -> Result<&1, &1, Error, Raster>:
   match data:
     case None{}: Fail{BadStream{}}
     case Some{bytes}:
@@ -463,7 +468,7 @@ def adam.start(+width: U32, +height: U32, cfg: Config, palette: +List<U32>, key:
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
       adam.finish(width, height, adam.loop(adam.passes(), cfg, palette, key, Done{PassState{bytes, Array.new(U32, depth, 0)}}))
 
-def rendered(interlaced: Bool, +width: U32, +height: U32, color: U32, channels: U32, bits: U32, palette: +List<U32>, key: Maybe<&2, Key>, data: Maybe<List<U32>>) -> Result<&1, &1, Error, Image>:
+def rendered(interlaced: Bool, +width: U32, +height: U32, color: U32, channels: U32, bits: U32, palette: +List<U32>, key: Maybe<&2, Key>, data: Maybe<List<U32>>) -> Result<&1, &1, Error, Raster>:
   match interlaced:
     case False{}: inflated(width, height, color, channels, bits, palette, key, data)
     case True{}: adam.start(width, height, Config{width, height, color, channels, bits, True{}}, palette, key, data)
@@ -484,17 +489,33 @@ def inflate(raw: Bool, bytes: +List<U32>, limit: U32) -> Maybe<List<U32>>:
     case False{}: zlib(bytes, limit)
     case True{}: Z.decompress(False{}, bytes, limit)
 
-def decode.bounded(valid: Bool, width: U32, height: U32, color: U32, channels: U32, bits: U32, interlaced: Bool, palette: +List<U32>, key: Maybe<&2, Key>, compressed: +List<U32>, limit: U32, raw: Bool) -> Result<&1, &1, Error, Image>:
+# Native req_comp=0 output channels depend on structural tRNS, not opacity.
+def native.key(channels: U32, key: Maybe<&2, Key>) -> U32:
+  match key:
+    case None{}: channels
+    case Some{_}: (channels + 1 : U32)
+
+def native.channels(color: U32, channels: U32, key: Maybe<&2, Key>, palette_alpha: Bool) -> U32:
+  match color:
+    case 3: Bool.pick(U32, palette_alpha, 4, 3)
+    case _: native.key(channels, key)
+
+def decoded(channels: U32, result: Result<&1, &1, Error, Raster>) -> Result<&1, &1, Error, Image>:
+  match result:
+    case Fail{error}: Fail{error}
+    case Done{Raster{width, height, pixels}}: Done{Image{width, height, channels, pixels}}
+
+def decode.bounded(valid: Bool, native_channels: U32, width: U32, height: U32, color: U32, channels: U32, bits: U32, interlaced: Bool, palette: +List<U32>, key: Maybe<&2, Key>, compressed: +List<U32>, limit: U32, raw: Bool) -> Result<&1, &1, Error, Image>:
   match valid:
     case False{}: Fail{BadSize{}}
-    case True{}: rendered(interlaced, width, height, color, channels, bits, palette, key, inflate(raw, List.reverse(&2, U32, compressed), limit))
+    case True{}: decoded(native_channels, rendered(interlaced, width, height, color, channels, bits, palette, key, inflate(raw, List.reverse(&2, U32, compressed), limit)))
 
 def decode.parts(result: Result<&2, &2, Error, Parts>) -> Result<&1, &1, Error, Image>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{Parts{Some{Config{+width, +height, color, +channels, +bits, +interlaced}}, palette, key, compressed, _, raw}}:
+    case Done{Parts{Some{Config{+width, +height, +color, +channels, +bits, +interlaced}}, palette, +key, palette_alpha, compressed, _, raw}}:
       +limit = expected(interlaced, width, height, channels, bits)
-      decode.bounded((limit <= 67108864 : U32), width, height, color, channels, bits, interlaced, palette, key, compressed, limit, raw)
+      decode.bounded((limit <= 67108864 : U32), native.channels(color, channels, key, palette_alpha), width, height, color, channels, bits, interlaced, palette, key, compressed, limit, raw)
     case _: Fail{BadHeader{}}
 
 def input.error(valid_byte: Bool, valid_size: Bool) -> Maybe<&2, Error>:
