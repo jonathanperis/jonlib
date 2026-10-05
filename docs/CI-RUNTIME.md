@@ -481,6 +481,37 @@ verification timings, not benchmarks or guarantees of combined hosted runtime.
 They do not change any worker placement, body, pin, resource ceiling or timeout;
 new exact-tip hosted qualification remains pending.
 
+## Checks harness budget after PIC-file addition
+
+The [Checks job for the PIC-file checkpoint](https://github.com/jonathanperis/jonlib/actions/runs/37248734100/job/111571782959)
+at exact commit `066a63fa50903d9bafa50b9df271b96f86f89d3e` was cancelled on
+2026-10-05 after 10m16s with the configured ten-minute harness job budget.
+Its full unittest step ran for 10m10s before cancellation. The retained log
+contains **917 completed test-result rows, all `ok`**, with no completed
+`FAIL` or `ERROR` result; it contains no full-suite completion. The subsequent
+Python syntax and project checks were skipped. This is **incomplete hosted
+qualification**, not a passing Checks run.
+
+The PIC-file audit and harness tests occupy approximately **197 seconds**, and
+the PNG-file harness approximately **228 seconds**, between their surrounding
+completed test-result timestamps. These are observed log intervals, not isolated
+benchmarks or a guarantee of future hosted runtime.
+
+The repair changes only `jobs.harness.timeout-minutes` in
+`.github/workflows/checks.yml` from **10 to 20 minutes**. It preserves the
+`Checks` workflow and `Harness and project checks` required-check names,
+all action pins, permissions, concurrency and the exact full unittest-discovery,
+compileall and project-check commands. No tests, checks, tolerances, oracles or
+source/runtime bytes change. Conformance is unchanged, including all fourteen
+workers' 120-minute budgets and both aggregates' five-minute budgets.
+
+Twenty minutes is an explicit proposed operating budget; its sufficiency remains
+**pending fresh exact-commit hosted qualification**. Before calling the repaired
+tip green, observe successful Checks, all fourteen Conformance workers, both
+compatibility aggregates and all fourteen nonempty evidence artifacts at that
+same new commit. Neither the cancelled checkpoint nor unchanged-source local
+preflight results substitute for those hosted results.
+
 ## Executable preservation contract
 
 `tests/test_conformance_workflow.py` runs in the existing dependency-free
