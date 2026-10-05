@@ -5471,15 +5471,21 @@ PNG-file predecessor `e6ac05e6d1daf64d050e6da3f783ed60cc3130e1` passes
 [Checks](https://github.com/jonathanperis/jonlib/actions/runs/37187107919) and
 [85-gate Conformance](https://github.com/jonathanperis/jonlib/actions/runs/37187107908),
 including twelve workers, both aggregates and twelve unique nonempty artifacts.
-It does not qualify the PIC increment. The new **86-gate/twelve-worker exact-tip
-hosted qualification remains pending**. Final metadata/CI-tree checks are
-recorded separately from the frozen runtime snapshot.
+It does not qualify the PIC increment. The exact **86-gate/twelve-worker**
+PIC-memory checkpoint at `e481d3c257c6add2b9f756a583c648fcc5c92b7d` now passes
+[Checks](https://github.com/jonathanperis/jonlib/actions/runs/37202964891) and
+[Conformance](https://github.com/jonathanperis/jonlib/actions/runs/37202964890),
+including all twelve workers, both aggregates and twelve unique nonempty artifacts.
+Final metadata/CI-tree checks remain separate from the frozen runtime snapshot.
+This historical memory qualification does not qualify later PIC files or the new
+87-gate/fourteen-worker topology.
 
 PIC formatted file loading, generic formatted/float dispatch, additional codec
 or decoder domains, nondefault flags, native malformed recovery, pointer/ABI,
 allocation/OOM and maximum-area success, representative performance and full
-integration remain gaps. New GPU/Metal, macOS/Windows/browser, big-endian and
-hosted PIC results remain unqualified.
+integration remain gaps. GPU/Metal, Windows/browser, big-endian and unexecuted
+macOS domains remain unqualified; the recorded e481d3c Ubuntu/macOS memory gates
+are now qualified. Later PIC-file results require their own qualification.
 
 After terminal runtime qualification, the staged whitespace gate found two extra
 LF bytes at the end of `tests/test_pic_format_harness.py`. The final tree removes
@@ -5489,3 +5495,86 @@ exception: 70 of the 71 frozen runtime/provenance entries remain byte-identical,
 with no library, probe or auditor changes. Prior qualification reports retain
 their original hashes; separate final-tree checks verify the exception and rerun
 the full Python, proof, CI and project checks. It requires no native rerun.
+
+## Format-preserving PIC file loading (2026-10-04)
+
+`Image.Formatted.load_pic` adds explicit suffix-independent ordinary-file loading
+through exactly two adapter definitions. Removing that added section restores the
+entire previous `jonlib.bend` byte-for-byte. The checked PIC decoder, formatted
+memory adapter, shared byte-file boundary, all existing file loaders, compiler
+pins and 190 scoped laws remain unchanged. Only partial `LoadImage` expands;
+`LoadImageFromMemory` and aggregate completion counts do not change.
+
+The [file contract](IMAGE-FILES.md#format-preserving-pic-file-loading) preserves
+native RGB888/RGBA8888 storage and all-descriptor alpha selection. Its inclusive
+1 MiB pre-read cap is an IO restriction: PIC memory still accepts the retained
+1,048,577-byte positive stream. That exact stream is now a file-size control.
+
+The focused file gate and its independent replay tool are
+`tools/pic_file_probe.py` and `tools/pic_file_audit.py`. The fresh passing primary corpus
+is 170 files / 37,375 pixels, 203 file controls and 152 exact nonbyte continuations,
+with 148 actual `LoadImage` and 22 explicit PIC memory-from-file references.
+Each lane passes 1,724 primary records / 830,752 bytes, with 1,009 closure records /
+703 bytes, four sparse controls and six exact-cap records / 20 bytes separately.
+Independent replay checks every retained frame and byte. The
+[qualification record](evidence/pic-formatted-files.json) distinguishes source
+checks, fresh runtime results, independent replay and later hosted qualification.
+
+The file harness reuses the strongest reopened PNG-file ownership/resource
+architecture and unchanged complete PIC structural admission. All accepted
+native data is admitted from actual full encoded bytes before execution; malformed,
+oversized and special-file controls are never submitted to native's unsafe
+failed-PIC conversion. Raw metadata and full bytes precede distinct normalized
+observations. Strict complete-frame replay covers all three mandatory lanes,
+every resource observation, exact error messages, sealed sources/toolchains,
+partition order/budgets, fresh executable outputs and owned process cleanup.
+No Python decoder supplies pixel expectations.
+
+The frozen regression plan retains all 30 predecessor stages and adds the unchanged
+PIC-memory gate plus its independent replay before canonical conformance, for
+32 serial stages. It includes complete Python discovery with no skips, all 190
+scoped laws, syntax/project/API/whitespace and complete canonical records including
+optional fields. Older harnesses retain their report/source/artifact limitations;
+QOI's older closure retains final-image/terminal-only evidence. Prior evidence
+cannot establish new runtime or hosted parity for this file adapter.
+
+### Restored final-source qualification boundary
+
+An earlier PIC-file focus passed and was independently replayed before the
+execution workspace was replaced. Its exact report and raw evidence were restored
+from verified backups. A prior `--help` inspection had reset its report; recovery
+restored the archived bytes exactly and independently replayed every original
+frame and seal. Neither restoration is a new runtime execution. The later
+workspace replacement interrupted the original matrix, so no complete result is
+claimed for that attempt. The old Clang launcher body could not be recovered;
+its historical seal is preserved rather than rewritten to match the replacement.
+
+The current source integrates a reviewed help-only admission fix and the reviewed
+87-gate/fourteen-worker CI wiring before a new freeze. Successful argparse help
+exits without altering evidence; constructor/registration/parsing failures and
+other non-help invocations retain fail-closed destination admission. Native and
+candidate generators, fixture bytes, comparisons and the valid execution body
+are unchanged. A fresh focus and all 32 regression stages pass under the
+fully recorded current toolchain. Current-run source review, 1,198 zero-skip tests,
+the complete 190-law verdict and exact retained-artifact replay pass; historical
+receipts do not substitute for any current stage. Final metadata/tree checks and
+the new exact-tip hosted run remain separately qualified.
+
+The final read-only aggregate verifies all eight durable checkpoint chains and
+**61,908 formatted regression records / 26,895,933 bytes**, 42 resource runs and
+2,263 inner command receipts. These totals exclude the focused PIC-file gate.
+Canonical strict replay covers all 261 complete rows / 40,101 logical words per
+lane, including optional fields. Ten older stages and canonical ancillary checks
+retain report/source/artifact-only evidence; the QOI closure loop retains only
+its final image, terminal and resource measurements. No native/compiler process
+is rerun by the artifact auditors, and sparse holes are never read or hashed.
+
+Read-only audit adaptation attempts remain preserved: an exact schema-2 metadata
+key correction for PNG replay; a source-inventory check deferred until a temporary
+Python test tree was normally removed; and a separately versioned final-only
+authorization-summary reporting correction. The latter initially displayed the
+last enumerated stderr hash while admission and real authorization artifact seals
+were already correct. Its final v3 replay preserves all prior byte comparisons,
+coverage and limits, with 114 targeted rejection and 15 positive tests. The
+original/v2 outputs and prior archives are not rewritten. See the machine-readable
+[file evidence](evidence/pic-formatted-files.json) for exact receipts and scope.

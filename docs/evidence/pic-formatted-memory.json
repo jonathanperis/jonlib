@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "profile": "native-pic-formatted-memory-v1",
-  "status": "locally-qualified-hosted-pending",
+  "status": "locally-qualified-historical-hosted-checkpoint-recorded",
   "passed": true,
   "passed_scope": "Frozen local Linux x86-64 PIC memory runtime and 30-stage regression matrix; independent retained complete-output replay within the stated legacy/canonical/QOI limits. Later final metadata/CI-tree checks and exact-tip hosted qualification are separate.",
   "local_matrix_completed_date": "2026-10-04",
@@ -1256,7 +1256,7 @@
     "scope": "Final documentation/CI-tree validation and publication receipts are separate from the frozen runtime qualification; no later suite result or count is inferred"
   },
   "hosted_qualification": {
-    "status": "pending-for-new-pic-memory-exact-tip",
+    "status": "passed-at-exact-e481d3c-memory-checkpoint",
     "required_gate_count": 86,
     "required_workers": 12,
     "required_aggregates": 2,
@@ -1287,6 +1287,30 @@
         }
       ],
       "scope": "Exact PNG-file predecessor hosted result on Ubuntu 24.04 and macOS 15 CPU/JavaScript workers; does not qualify the later PIC increment"
+    },
+    "qualified_checkpoint": {
+      "commit": "e481d3c257c6add2b9f756a583c648fcc5c92b7d",
+      "gate_count": 86,
+      "workers": 12,
+      "aggregates": 2,
+      "unique_nonempty_artifacts": 12,
+      "verified_at": "2026-10-04T14:03:47.940856+00:00",
+      "receipt_sha256": "ac86083f6a212b761493915e19ec7a04bbadff938d9b3a8d2d01475b0876edb9",
+      "runs": [
+        {
+          "name": "Checks",
+          "id": 37202964891,
+          "conclusion": "success",
+          "url": "https://github.com/jonathanperis/jonlib/actions/runs/37202964891"
+        },
+        {
+          "name": "Conformance",
+          "id": 37202964890,
+          "conclusion": "success",
+          "url": "https://github.com/jonathanperis/jonlib/actions/runs/37202964890"
+        }
+      ],
+      "scope": "Historical exact PIC-memory source on recorded Ubuntu/macOS CPU/JavaScript gates only; does not qualify later PIC files or 87-gate topology"
     }
   },
   "unqualified": [
@@ -1296,9 +1320,8 @@
     "Native pointer/allocation ABI, OOM and maximum-area success",
     "Representative latency/throughput/memory and complete integration",
     "GPU/Metal",
-    "macOS/Windows/browser",
-    "Big-endian and other native profiles",
-    "Exact-commit PIC hosted qualification"
+    "Windows/browser and unexecuted macOS domains",
+    "Big-endian and other native profiles"
   ],
   "post_runtime_verification_formatting": {
     "path": "tests/test_pic_format_harness.py",

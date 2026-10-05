@@ -156,6 +156,10 @@ retains native RGB/RGBA metadata independently of output opacity or selected
 input-sample totals. Integer repacking reuses owned Bend storage. The unmodified
 native reader is only a reference; independently admitted complete inputs avoid
 its failed-decode null-source conversion path.
+The dedicated PIC file adapter reuses that unchanged checked decoder through
+the existing bounded Base IO reader. Its file reference tooling additionally
+anchors unmodified raylib `rtextures.c` file dispatch and `rcore.c` reads/token
+selection; no native code is linked into the Bend implementation.
 The upstream Softimage PIC reader credits Tom Seddon.
 The upstream GIF reader credits Jean-Marc Lienher, with simplification by stb.
 The upstream Radiance RGBE HDR reader credits Nicolas Schulz.

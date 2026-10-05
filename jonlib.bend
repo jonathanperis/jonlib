@@ -3264,6 +3264,17 @@ def Image.Formatted.load_png(path: String) -> IO(Result<&1, &1, Image.LoadError,
   IO.bind(Result<&1, &1, Image.LoadError, +List<U32>>, Result<&1, &1, Image.LoadError, Image.Formatted>,
     Image.file.bytes(path, Image.file.limit(RasterFile{})), Image.Formatted.png.file.loaded)
 
+# Explicit PIC selection shares the bounded, complete, close-before-decode file boundary.
+def Image.Formatted.pic.file.loaded(result: Result<&1, &1, Image.LoadError, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>):
+  match result:
+    case Fail{error}: IO.pure(Result<&1, &1, Image.LoadError, Image.Formatted>, Fail{error})
+    case Done{bytes}:
+      IO.pure(Result<&1, &1, Image.LoadError, Image.Formatted>, Image.file.decoded(Image.Formatted, Image.Formatted.decode_pic(bytes)))
+
+def Image.Formatted.load_pic(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>):
+  IO.bind(Result<&1, &1, Image.LoadError, +List<U32>>, Result<&1, &1, Image.LoadError, Image.Formatted>,
+    Image.file.bytes(path, Image.file.limit(RasterFile{})), Image.Formatted.pic.file.loaded)
+
 def Image.FloatRGB.file.loaded(result: Result<&1, &1, Image.LoadError, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, Image.FloatRGB>):
   match result:
     case Fail{error}: IO.pure(Result<&1, &1, Image.LoadError, Image.FloatRGB>, Fail{error})

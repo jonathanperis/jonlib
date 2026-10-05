@@ -44,13 +44,15 @@ native RGB888/RGBA8888 storage instead of returning a normalized Surface; its
 [dedicated contract](#format-preserving-qoi-file-loading) is below. These
 operations share the checked IO boundary.
 `Image.Formatted.load_png(path)`, `Image.Formatted.load_pnm(path)`,
-`Image.Formatted.load_tga(path)` and `Image.Formatted.load_bmp(path)` likewise
+`Image.Formatted.load_tga(path)`, `Image.Formatted.load_bmp(path)` and
+`Image.Formatted.load_pic(path)` likewise
 select their named codecs independently
 of suffixes, preserving the respective native output formats with the inclusive
 1 MiB raster-file cap. Their dedicated [PNG](#format-preserving-png-file-loading),
 [PNM](#format-preserving-pnm-file-loading),
 [TGA](#format-preserving-tga-file-loading) and
-[BMP](#format-preserving-bmp-file-loading) contracts are below.
+[BMP](#format-preserving-bmp-file-loading) and
+[PIC](#format-preserving-pic-file-loading) contracts are below.
 The same byte-file boundary serves [owned animation loading](GIF-ANIMATION.md#file-loading),
 whose native GIF suffix selection additionally accepts mixed letter case.
 `Image.FloatRGB.load_hdr(path)` also shares that boundary, selecting the
@@ -902,3 +904,131 @@ remain separate. No GPU IO, macOS/Windows/browser qualification, big-endian
 target, maximum-area resource, concurrent/special-file, OS-close-error,
 generic formatted/float dispatch or full integration/performance coverage is
 established by this local file run.
+
+## Format-preserving PIC file loading
+
+`Image.Formatted.load_pic(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)`
+is an explicit Softimage PIC loader for ordinary, non-changing files. It selects
+PIC independently of the suffix, including `.pic`, `.PIC`, mixed case, misleading
+`.qoi`, arbitrary or absent suffixes, spaces, multiple dots and qualified dotfiles.
+There is no content fallback, generic formatted dispatcher, arithmetic-profile
+argument or caller-selected cap. Only partial `LoadImage` expands.
+
+The adapter adds exactly a dedicated result continuation and public wrapper.
+`Image.file.bytes(path, Image.file.limit(RasterFile{}))` supplies complete bytes
+or an existing load error, never an open File. Load errors pass through unchanged;
+complete bytes go to unchanged `Image.Formatted.decode_pic`, and
+`Image.file.decoded` wraps its exact decode error once. The decoder, shared reader,
+Surface loaders and all other formatted loaders retain their existing domains.
+
+### PIC file bounds, sequencing and errors
+
+The encoded-file cap is **1,048,576 bytes, inclusive**, regardless of the filename.
+PIC memory decoding has **no encoded-input cap**. This wrapper adds the existing
+bounded-IO restriction; it neither shrinks memory decoding nor establishes a
+maximum decoded-area, heap, allocation-success or throughput guarantee.
+
+1. Open the requested path before decoding. Open errors preserve the exact Base
+   `ImageFileError{code, message}`, even for unsupported or misleading suffixes.
+   A failed open acquires no handle.
+2. Obtain size. Successfully reported sizes above the cap through **4,294,967,295**
+   return `ImageDecodeError{UnsupportedImageSize{}}` before reading payload bytes.
+   Pinned Base rejects larger host sizes with its overflow file error. Size
+   failures and size rejection both call `File.close` before returning.
+3. Perform the existing single bounded read of the reported size, then call
+   `File.close` before processing the read result. Preserve exact read errors.
+   Reject short or synthetic long byte lists as
+   `ImageDecodeError{TruncatedImageData{}}`; do not retry or stream. A physically
+   truncated file whose reported size is fully read reaches PIC decoding.
+4. Decode complete bytes with the unchanged checked PIC adapter. Global byte
+   validation precedes header validation. Invalid/incomplete magic, header or
+   descriptors yield `InvalidImageHeader`; structurally accepted zero/oversized
+   dimensions yield `UnsupportedImageSize`. Missing raw/RLE samples, controls
+   and counts yield `TruncatedImageData`, with the existing post-descriptor and
+   post-control rules. Mixed-RLE row overruns yield `InvalidImageStream` before
+   samples are read. Nonbyte U32 elements yield `InvalidImageByte`; they can be
+   tested through the continuation but cannot occur in ordinary byte files.
+
+Close ordering promises calls, not observed OS-close success: pinned Base C
+ignores `close()`'s result and JavaScript catches close exceptions. No close-error
+variant is introduced. Injected short/long/size/read controls acquire real
+handles but supply a stage result; they do not demonstrate concurrent short reads.
+
+### PIC storage and ownership
+
+Success returns one affine formatted owner with dimensions **1..4096**, one
+implicit mip and exact native row-major bytes in RGB888 (**format 4**, three
+components) or RGBA8888 (**format 7**, four components). The union of all validated
+packet masks selects alpha independently of opacity, packet order, later RGB
+packets and selected-input-sample totals. An opaque image with any declared alpha
+channel remains RGBA. Missing components stay white, ignored low mask bits do not
+select components, and later channel packets overwrite earlier values.
+
+Raw, pure-RLE and mixed-RLE rules, pure clipping, zero-count consumption and
+bounded no-progress streams remain unchanged. Export consumes ownership and
+returns exactly `width*height*components` bytes without padding; RGB logical words
+have zero unused high bits. Point reads retain the owner for accepted and rejected
+coordinates. The consuming Surface bridge preserves normalized RGBA8 output.
+Failure returns no partial image or open File.
+
+### PIC file verification boundary
+
+The focused commands are:
+
+```sh
+python3 tools/pic_file_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --reference-env clean-loader
+python3 tools/pic_file_audit.py .build/pic-file-probe/results.json
+```
+
+The gate requires complete CPU-one-thread, CPU-two-thread and JavaScript lanes.
+It preserves all 101 memory positives by scope: 100 file-eligible streams become
+accepted files, while the exact 1,048,577-byte valid stream becomes a pre-read
+size rejection. All 343 memory controls remain represented, split into 191
+byte-safe files and 152 exact nonbyte continuations. The original 33 streams /
+8,867 pixels and 24 controls remain unchanged.
+
+A 35-path matrix for each of the two native layouts produces 170 accepted files /
+37,375 pixels: 148 actual `LoadImage` references and 22 explicit `LoadFileData`
+plus `LoadImageFromMemory(".pic")` references. These counts pass in the fresh local three-lane run and its complete independent
+replay; see the [file evidence](evidence/pic-formatted-files.json).
+Native aliases are restricted to verified enabled exact lowercase/uppercase
+raster tokens. Native `GetFileExtension` uses the last dot of the entire path and
+excludes index zero; unsupported/mixed/QOI/suffixless names use explicit PIC
+references. The public loader ignores suffixes. A misleading `.qoi` name still
+uses the 1 MiB cap here; generic Surface QOI selection retains its larger cap.
+
+PIC is disabled in the default native build. A fresh isolated Memory archive
+explicitly enables PIC and all selected aliases, validating cache and effective
+compiler flags, compiler/pinned sources and clean-loader provenance. Actual
+width, height, format, mipmaps, pixel-data size and all native raw bytes are
+captured before separate normalization. Every accepted native input must pass
+an independent full structural walk of actual headers, descriptors, row controls,
+counts and samples; the scanner does not produce expected pixels. Malformed,
+oversized, sparse and directory controls never reach the unsafe native failed-PIC
+path, which can null/free output before 4-to-3 conversion.
+
+Reopened public files exercise raw export, retained point/word owners, consuming
+Surface bridges, native-byte factory reconstruction and loader-byte round trips.
+Normalized/generic observations stay separately identified. The resource gate
+retains every frame across 100 fd64 cycles through both success layouts, decode,
+directory-read, cap and overflow failures plus four acquired-handle injected
+stages, followed by a final successful load. A tiny accepted exact-cap PIC with
+valid ignored tail has its own actual native reference. Sparse cap+1 `.pic` and
+`.qoi`, 256 MiB and 2^32-byte files are verified only by stat and prefix, never by
+reading or hashing holes. Runtime RSS ceilings are 256 MiB for closure/sparse and
+1 GiB for exact-cap, separately measured from compilation.
+
+Generic formatted/float dispatch, native malformed recovery, maximum-area/OOM
+behavior, special/concurrent files, OS-close reporting, GPU/Metal IO, big-endian,
+Windows/browser and full platform/integration/performance coverage remain gaps.
+Historical memory, normalized Surface and prior hosted gates cannot qualify this
+new file scope.
+
+The final-source local gate passes **1,724 primary records / 830,752 bytes per
+lane**, plus every **1,009 boundary / four sparse / six exact-cap** observation.
+The fresh 32-stage regression matrix, 1,198 zero-skip Python tests and all 190
+existing laws pass. Complete retained-byte replay and source/tool checks are
+recorded separately from final metadata and the still-pending exact-tip hosted
+run. Measured resource maxima are 105,684,992 bytes for closure, 55,750,656 for
+sparse controls and 369,836,032 for exact-cap; these are finite runtime
+observations, not heap or allocation-success guarantees.
