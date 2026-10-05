@@ -44,7 +44,7 @@ missing count/sample data returns `TruncatedImageData`. Structural input-byte fu
 bounds zero-count runs. Raw and compressed packets can share a row and retain
 their ordered channel overwrites.
 
-Format-preserving file/generic dispatch, native malformed recovery and full
+Generic formatted dispatch, native malformed recovery and full
 resource/platform/performance coverage remain gaps. PSD arithmetic profiles do
 not affect PIC's integer channel operations.
 
@@ -121,7 +121,11 @@ row, control, count and selected-sample bytes without producing expected pixels.
 Its finite fixture/source/partition budgets are harness resource limits, not
 restrictions added to the public API.
 
-Format-preserving PIC file loading, shared formatted dispatch, maximum-area
+The separate [format-preserving PIC file loader](IMAGE-FILES.md#format-preserving-pic-file-loading)
+adds the existing inclusive 1 MiB bounded-IO restriction without changing this
+uncapped memory domain. Its [fresh local file evidence](evidence/pic-formatted-files.json)
+passes 170 files / 37,375 pixels with complete three-lane raw-byte/resource replay;
+exact-tip hosted file qualification remains pending. Shared formatted dispatch, maximum-area
 allocation, OOM/native pointer ABI, representative performance, GPU/Metal,
 big-endian and other platform/hosted qualification remain separate gaps.
 PSD arithmetic profiles and shared DEFLATE/arithmetic code are unchanged.
@@ -135,5 +139,8 @@ record against observed native raw bytes across 51 candidate partitions, with
 focused run is verification time, not a benchmark. All 177 prior laws are retained
 and 13 scoped channel/packing laws are added; these are not a universal decoder
 proof. See the [matrix and audit scope](VERIFICATION.md#format-preserving-pic-memory-loading-2026-10-04).
-Historical PNG-file hosted success does not qualify PIC; its new 86-gate hosted
-checkpoint remains pending.
+The exact [86-gate hosted PIC-memory checkpoint](https://github.com/jonathanperis/jonlib/actions/runs/37202964890)
+at `e481d3c257c6add2b9f756a583c648fcc5c92b7d` passes Checks, all twelve
+workers, both aggregates and twelve unique nonempty artifacts on the recorded
+Ubuntu/macOS CPU/JavaScript lanes. It does not qualify the later PIC-file scope
+or the new 87-gate/fourteen-worker topology.

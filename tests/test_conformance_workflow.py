@@ -35,6 +35,8 @@ TGA_SPLIT_PREDECESSOR_SHA256 = 'bf6f62710566b8c186548330d18437079349e00283f6ffc3
 PNG_FILE_PREDECESSOR_SHA256 = '8bfab667d418967d2427f41079411c1ef8d2e6698068127cde4cd4a950eb6b91'
 # Exact twelve-worker 85-gate workflow at e6ac05e6d1daf64d050e6da3f783ed60cc3130e1.
 PIC_PREDECESSOR_SHA256 = '3b5f0be5c6ee604316f3e9015f72d4316b9792c3949bff91698053617cc7268e'
+# Exact twelve-worker 86-gate workflow at e481d3c257c6add2b9f756a583c648fcc5c92b7d.
+PIC_FILE_PREDECESSOR_SHA256 = '60a3a85fce8531c38690eb2ccce7cf16157eeddce04e324778f4f58351935d7b'
 FORMATTED_GATES = (
     'Verify checked formatted BMP bytes and typed IO',
     'Verify checked formatted TGA bytes and typed IO',
@@ -129,6 +131,20 @@ PIC_GATES = ('''      - name: Verify native PIC formats and exact memory bytes
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
 ''',)
 PIC_PATHS = ('.build/pic-format-probe/',)
+PIC_FILE_GATES = ('''      - name: Verify format-preserving PIC file loading and bounded closure
+        run: |
+          python3 tools/pic_file_probe.py --reference-env clean-loader \\
+            --bend-source "${{ github.workspace }}/.build/dependencies/bend" \\
+            --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+          python3 tools/pic_file_audit.py .build/pic-file-probe/results.json
+''',)
+PIC_FILE_PATHS = (
+    '.build/pic-file-probe/',
+    '!.build/pic-file-probe/run-*/fixtures/cap-plus-one.pic',
+    '!.build/pic-file-probe/run-*/fixtures/cap-plus-one.qoi',
+    '!.build/pic-file-probe/run-*/fixtures/larger-file.pic',
+    '!.build/pic-file-probe/run-*/fixtures/host-size-overflow.pic',
+)
 PLATFORMS = (('Ubuntu', 'ubuntu-24.04'), ('Mac', 'macos-15'))
 ORIGINAL_WORKERS = ('coreUbuntu', 'coreMac', 'formattedUbuntu', 'formattedMac')
 BMP_WORKERS = ('bmpUbuntu', 'bmpMac')
@@ -138,7 +154,9 @@ PRE_TGA_WORKERS = (*PRE_PNG_WORKERS, *PNG_WORKERS)
 TGA_WORKERS = ('tgaUbuntu', 'tgaMac')
 PRE_PNG_FILE_WORKERS = (*PRE_TGA_WORKERS, *TGA_WORKERS)
 PNG_FILE_WORKERS = ('pngFileUbuntu', 'pngFileMac')
-WORKERS = (*PRE_PNG_FILE_WORKERS, *PNG_FILE_WORKERS)
+PRE_PIC_FILE_WORKERS = (*PRE_PNG_FILE_WORKERS, *PNG_FILE_WORKERS)
+PIC_FILE_WORKERS = ('picFileUbuntu', 'picFileMac')
+WORKERS = (*PRE_PIC_FILE_WORKERS, *PIC_FILE_WORKERS)
 ORIGINAL_RESULT_VARIABLES = ('CORE_UBUNTU_RESULT', 'CORE_MAC_RESULT',
                              'FORMATTED_UBUNTU_RESULT', 'FORMATTED_MAC_RESULT')
 BMP_RESULT_VARIABLES = ('BMP_UBUNTU_RESULT', 'BMP_MAC_RESULT')
@@ -148,10 +166,12 @@ PRE_TGA_RESULT_VARIABLES = (*PRE_PNG_RESULT_VARIABLES, *PNG_RESULT_VARIABLES)
 TGA_RESULT_VARIABLES = ('TGA_UBUNTU_RESULT', 'TGA_MAC_RESULT')
 PRE_PNG_FILE_RESULT_VARIABLES = (*PRE_TGA_RESULT_VARIABLES, *TGA_RESULT_VARIABLES)
 PNG_FILE_RESULT_VARIABLES = ('PNG_FILE_UBUNTU_RESULT', 'PNG_FILE_MAC_RESULT')
-RESULT_VARIABLES = (*PRE_PNG_FILE_RESULT_VARIABLES, *PNG_FILE_RESULT_VARIABLES)
+PRE_PIC_FILE_RESULT_VARIABLES = (*PRE_PNG_FILE_RESULT_VARIABLES, *PNG_FILE_RESULT_VARIABLES)
+PIC_FILE_RESULT_VARIABLES = ('PIC_FILE_UBUNTU_RESULT', 'PIC_FILE_MAC_RESULT')
+RESULT_VARIABLES = (*PRE_PIC_FILE_RESULT_VARIABLES, *PIC_FILE_RESULT_VARIABLES)
 AGGREGATE = '''    name: CPU and JavaScript (__PLATFORM__)
     if: ${{ always() }}
-    needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac, bmpUbuntu, bmpMac, pngUbuntu, pngMac, tgaUbuntu, tgaMac, pngFileUbuntu, pngFileMac]
+    needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac, bmpUbuntu, bmpMac, pngUbuntu, pngMac, tgaUbuntu, tgaMac, pngFileUbuntu, pngFileMac, picFileUbuntu, picFileMac]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -170,6 +190,8 @@ AGGREGATE = '''    name: CPU and JavaScript (__PLATFORM__)
           TGA_MAC_RESULT: ${{ needs.tgaMac.result }}
           PNG_FILE_UBUNTU_RESULT: ${{ needs.pngFileUbuntu.result }}
           PNG_FILE_MAC_RESULT: ${{ needs.pngFileMac.result }}
+          PIC_FILE_UBUNTU_RESULT: ${{ needs.picFileUbuntu.result }}
+          PIC_FILE_MAC_RESULT: ${{ needs.picFileMac.result }}
         run: |
           set -eu
           printf 'Core Ubuntu: %s; core macOS: %s; formatted Ubuntu: %s; formatted macOS: %s\\n' "${CORE_UBUNTU_RESULT:-missing}" "${CORE_MAC_RESULT:-missing}" "${FORMATTED_UBUNTU_RESULT:-missing}" "${FORMATTED_MAC_RESULT:-missing}"
@@ -177,6 +199,7 @@ AGGREGATE = '''    name: CPU and JavaScript (__PLATFORM__)
           printf 'PNG Ubuntu: %s; PNG macOS: %s\\n' "${PNG_UBUNTU_RESULT:-missing}" "${PNG_MAC_RESULT:-missing}"
           printf 'TGA Ubuntu: %s; TGA macOS: %s\\n' "${TGA_UBUNTU_RESULT:-missing}" "${TGA_MAC_RESULT:-missing}"
           printf 'PNG files Ubuntu: %s; PNG files macOS: %s\\n' "${PNG_FILE_UBUNTU_RESULT:-missing}" "${PNG_FILE_MAC_RESULT:-missing}"
+          printf 'PIC files Ubuntu: %s; PIC files macOS: %s\\n' "${PIC_FILE_UBUNTU_RESULT:-missing}" "${PIC_FILE_MAC_RESULT:-missing}"
           test "${CORE_UBUNTU_RESULT:-}" = success
           test "${CORE_MAC_RESULT:-}" = success
           test "${FORMATTED_UBUNTU_RESULT:-}" = success
@@ -189,6 +212,8 @@ AGGREGATE = '''    name: CPU and JavaScript (__PLATFORM__)
           test "${TGA_MAC_RESULT:-}" = success
           test "${PNG_FILE_UBUNTU_RESULT:-}" = success
           test "${PNG_FILE_MAC_RESULT:-}" = success
+          test "${PIC_FILE_UBUNTU_RESULT:-}" = success
+          test "${PIC_FILE_MAC_RESULT:-}" = success
 '''
 
 
@@ -251,10 +276,10 @@ def validate_workflow(text):
     core = [step for step in gates if gate_name(step) not in FORMATTED_GATES]
     require(tuple(map(gate_name, formatted)) == FORMATTED_GATES, 'Formatted ownership changed')
     require(len(core) == 72 and len(formatted) == 7, 'Original gate counts changed')
-    reviewed_gates = gates + list(ADDED_FORMATTED_GATES) + list(BMP_GATES) + list(ADDED_BMP_FILE_GATES) + list(PNG_GATES) + list(PNG_FILE_GATES) + list(PIC_GATES)
-    require(len(reviewed_gates) == 86 and len(formatted) == 7
+    reviewed_gates = gates + list(ADDED_FORMATTED_GATES) + list(BMP_GATES) + list(ADDED_BMP_FILE_GATES) + list(PNG_GATES) + list(PNG_FILE_GATES) + list(PIC_GATES) + list(PIC_FILE_GATES)
+    require(len(reviewed_gates) == 87 and len(formatted) == 7
             and len(ADDED_FORMATTED_GATES) == 2
-            and len(BMP_GATES) == len(ADDED_BMP_FILE_GATES) == len(PNG_GATES) == len(PNG_FILE_GATES) == len(PIC_GATES) == 1,
+            and len(BMP_GATES) == len(ADDED_BMP_FILE_GATES) == len(PNG_GATES) == len(PNG_FILE_GATES) == len(PIC_GATES) == len(PIC_FILE_GATES) == 1,
             'Reviewed added gate count changed')
     upload_header, old_paths = upload_parts(upload)
     require(len(old_paths) == len(set(old_paths)) == 156, 'Expected 156 distinct baseline paths')
@@ -270,10 +295,12 @@ def validate_workflow(text):
     paths_by_shard['bmp'] = list(BMP_PATHS) + list(ADDED_BMP_FILE_PATHS)
     paths_by_shard['png'] = list(PNG_PATHS)
     paths_by_shard['pngFile'] = list(PNG_FILE_PATHS)
-    reviewed_paths = old_paths + list(ADDED_FORMATTED_PATHS) + list(BMP_PATHS) + list(ADDED_BMP_FILE_PATHS) + list(PNG_PATHS) + list(PNG_FILE_PATHS) + list(PIC_PATHS)
+    paths_by_shard['picFile'] = list(PIC_FILE_PATHS)
+    reviewed_paths = old_paths + list(ADDED_FORMATTED_PATHS) + list(BMP_PATHS) + list(ADDED_BMP_FILE_PATHS) + list(PNG_PATHS) + list(PNG_FILE_PATHS) + list(PIC_PATHS) + list(PIC_FILE_PATHS)
     require(len(paths_by_shard['formatted']) == 17 and len(paths_by_shard['tga']) == 6 and len(paths_by_shard['bmp']) == 6
             and len(paths_by_shard['png']) == 1 and len(paths_by_shard['pngFile']) == 5
-            and len(PIC_PATHS) == 1 and len(reviewed_paths) == 175,
+            and len(PIC_PATHS) == 1 and len(paths_by_shard['picFile']) == 5
+            and len(reviewed_paths) == 180,
             'Reviewed added artifact count changed')
     for suffix, platform in PLATFORMS:
         actual_gates = []
@@ -285,6 +312,7 @@ def validate_workflow(text):
             ('png', 'PNG memory CPU and JavaScript', list(PNG_GATES)),
             ('tga', 'TGA memory and files CPU and JavaScript', list(ADDED_FORMATTED_GATES)),
             ('pngFile', 'PNG files CPU and JavaScript', list(PNG_FILE_GATES)),
+            ('picFile', 'PIC files CPU and JavaScript', list(PIC_FILE_GATES)),
         ):
             job_id = shard + suffix
             settings, steps = job_parts(jobs[job_id])
@@ -300,7 +328,7 @@ def validate_workflow(text):
             actual_gates.extend(steps[7:-1])
             expected_upload = upload_header.replace(
                 'name: conformance-${{ matrix.os }}\n',
-                'name: conformance-' + platform + '-' + ('png-files' if shard == 'pngFile' else shard) + '\n')
+                'name: conformance-' + platform + '-' + ({'pngFile': 'png-files', 'picFile': 'pic-files'}.get(shard, shard)) + '\n')
             expected_upload += ''.join('            ' + path + '\n' for path in paths_by_shard[shard])
             require(steps[-1] == expected_upload, job_id + ': upload settings, name or paths changed')
             actual_paths.extend(upload_parts(steps[-1])[1])
@@ -327,14 +355,15 @@ def aggregate_conjunction_variables(job):
         'printf \'PNG Ubuntu: %s; PNG macOS: %s\\n\' "${PNG_UBUNTU_RESULT:-missing}" "${PNG_MAC_RESULT:-missing}"',
         'printf \'TGA Ubuntu: %s; TGA macOS: %s\\n\' "${TGA_UBUNTU_RESULT:-missing}" "${TGA_MAC_RESULT:-missing}"',
         'printf \'PNG files Ubuntu: %s; PNG files macOS: %s\\n\' "${PNG_FILE_UBUNTU_RESULT:-missing}" "${PNG_FILE_MAC_RESULT:-missing}"',
+        'printf \'PIC files Ubuntu: %s; PIC files macOS: %s\\n\' "${PIC_FILE_UBUNTU_RESULT:-missing}" "${PIC_FILE_MAC_RESULT:-missing}"',
     ]
-    require(lines[:6] == diagnostics, 'Aggregate preamble/diagnostics changed')
+    require(lines[:7] == diagnostics, 'Aggregate preamble/diagnostics changed')
     variables = []
-    for line in lines[6:]:
+    for line in lines[7:]:
         match = re.fullmatch(r'test "\$\{([A-Z_]+):-\}" = success', line)
         require(match is not None, 'Non-conjunctive aggregate command: ' + line)
         variables.append(match.group(1))
-    require(tuple(variables) == RESULT_VARIABLES, 'All twelve exact success tests are required')
+    require(tuple(variables) == RESULT_VARIABLES, 'All fourteen exact success tests are required')
     return tuple(variables)
 
 
@@ -437,7 +466,27 @@ def remove_reviewed_png_file_additions(text):
     return text
 
 
+def remove_reviewed_pic_file_additions(text):
+    # Delete exactly the two added jobs and explicit aggregate extensions.
+    # The predecessor SHA checks every untouched byte, including comments.
+    start = text.index('  picFileUbuntu:\n')
+    end = text.index('  # Keep both prior required-check names', start)
+    text = text[:start] + text[end:]
+    additions = (
+        ('directly require all fourteen workers.', 'directly require all twelve workers.', 1),
+        ('needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac, bmpUbuntu, bmpMac, pngUbuntu, pngMac, tgaUbuntu, tgaMac, pngFileUbuntu, pngFileMac, picFileUbuntu, picFileMac]', 'needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac, bmpUbuntu, bmpMac, pngUbuntu, pngMac, tgaUbuntu, tgaMac, pngFileUbuntu, pngFileMac]', 2),
+        ('          PIC_FILE_UBUNTU_RESULT: ${{ needs.picFileUbuntu.result }}\n          PIC_FILE_MAC_RESULT: ${{ needs.picFileMac.result }}\n', '', 2),
+        ('          printf \'PIC files Ubuntu: %s; PIC files macOS: %s\\n\' "${PIC_FILE_UBUNTU_RESULT:-missing}" "${PIC_FILE_MAC_RESULT:-missing}"\n', '', 2),
+        ('          test "${PIC_FILE_UBUNTU_RESULT:-}" = success\n          test "${PIC_FILE_MAC_RESULT:-}" = success\n', '', 2),
+    )
+    for addition, original, count in additions:
+        require(text.count(addition) == count, 'Unexpected PIC-file aggregate extension count')
+        text = text.replace(addition, original)
+    return text
+
+
 def remove_reviewed_pic_additions(text):
+    text = remove_reviewed_pic_file_additions(text)
     # Independent raw inverse: remove only the two exact new gate payloads and
     # one exact upload line per OS. Preserve every other byte and line ending.
     for gate in PIC_GATES:
@@ -611,7 +660,7 @@ class ConformanceWorkflowTests(unittest.TestCase):
             'lost upload': ('.build/pnm-file-probe/run-*/*.resource.json\n', ''),
             'sparse upload': ('.build/pnm-file-probe/results.json', '.build/pnm-file-probe/**'),
             'artifact collision': ('name: conformance-ubuntu-24.04-formatted', 'name: conformance-ubuntu-24.04-core'),
-            'lost dependency': ('needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac, bmpUbuntu, bmpMac, pngUbuntu, pngMac, tgaUbuntu, tgaMac, pngFileUbuntu, pngFileMac]', 'needs: [coreUbuntu, formattedUbuntu]'),
+            'lost dependency': ('needs: [coreUbuntu, coreMac, formattedUbuntu, formattedMac, bmpUbuntu, bmpMac, pngUbuntu, pngMac, tgaUbuntu, tgaMac, pngFileUbuntu, pngFileMac, picFileUbuntu, picFileMac]', 'needs: [coreUbuntu, formattedUbuntu]'),
             'matrix reduction': ('${{ needs.coreUbuntu.result }}', '${{ needs.core.result }}'),
             'wrong dependency result': ('${{ needs.formattedMac.result }}', '${{ needs.formattedUbuntu.result }}'),
             'skipped aggregate': ('if: ${{ always() }}', 'if: ${{ success() }}'),
@@ -1122,7 +1171,7 @@ class ConformanceWorkflowTests(unittest.TestCase):
                         with self.assertRaises(ValueError):
                             validate_workflow(structural_text(self.text).replace(job, mutated_job, 1))
 
-    def test_both_aggregates_require_each_of_twelve_direct_workers(self):
+    def test_both_aggregates_require_each_of_fourteen_direct_workers(self):
         _, jobs = workflow_parts(self.text)
         for suffix, _ in PLATFORMS:
             job = jobs['conformance' + suffix]
@@ -1165,7 +1214,7 @@ class ConformanceWorkflowTests(unittest.TestCase):
             for results in itertools.product(statuses, repeat=4):
                 with self.subTest(aggregate=suffix, results=results):
                     env = dict(base_env)
-                    env.update((variable, 'success') for variable in (*BMP_RESULT_VARIABLES, *PNG_RESULT_VARIABLES, *TGA_RESULT_VARIABLES, *PNG_FILE_RESULT_VARIABLES))
+                    env.update((variable, 'success') for variable in (*BMP_RESULT_VARIABLES, *PNG_RESULT_VARIABLES, *TGA_RESULT_VARIABLES, *PNG_FILE_RESULT_VARIABLES, *PIC_FILE_RESULT_VARIABLES))
                     env.update((variable, result) for variable, result in zip(ORIGINAL_RESULT_VARIABLES, results)
                                if result is not None)
                     result = subprocess.run(['bash', '--noprofile', '--norc', '-e', '-o',
@@ -1180,7 +1229,7 @@ class ConformanceWorkflowTests(unittest.TestCase):
         statuses = ('success', 'failure', 'cancelled', 'skipped', '', 'unknown', None)
         base_env = {key: value for key, value in os.environ.items()
                     if key not in (*RESULT_VARIABLES, 'BASH_ENV')}
-        base_env.update((variable, 'success') for variable in (*ORIGINAL_RESULT_VARIABLES, *PNG_RESULT_VARIABLES, *TGA_RESULT_VARIABLES, *PNG_FILE_RESULT_VARIABLES))
+        base_env.update((variable, 'success') for variable in (*ORIGINAL_RESULT_VARIABLES, *PNG_RESULT_VARIABLES, *TGA_RESULT_VARIABLES, *PNG_FILE_RESULT_VARIABLES, *PIC_FILE_RESULT_VARIABLES))
         for suffix, _ in PLATFORMS:
             _, steps = job_parts(jobs['conformance' + suffix])
             _, separator, body = steps[0].partition('        run: |\n')
@@ -1204,7 +1253,7 @@ class ConformanceWorkflowTests(unittest.TestCase):
         statuses = ('success', 'failure', 'cancelled', 'skipped', '', 'unknown', None)
         base_env = {key: value for key, value in os.environ.items()
                     if key not in (*RESULT_VARIABLES, 'BASH_ENV')}
-        base_env.update((variable, 'success') for variable in (*PRE_PNG_RESULT_VARIABLES, *TGA_RESULT_VARIABLES, *PNG_FILE_RESULT_VARIABLES))
+        base_env.update((variable, 'success') for variable in (*PRE_PNG_RESULT_VARIABLES, *TGA_RESULT_VARIABLES, *PNG_FILE_RESULT_VARIABLES, *PIC_FILE_RESULT_VARIABLES))
         for suffix, _ in PLATFORMS:
             _, steps = job_parts(jobs['conformance' + suffix])
             _, separator, body = steps[0].partition('        run: |\n')
@@ -1228,7 +1277,7 @@ class ConformanceWorkflowTests(unittest.TestCase):
         statuses = ('success', 'failure', 'cancelled', 'skipped', '', 'unknown', None)
         base_env = {key: value for key, value in os.environ.items()
                     if key not in (*RESULT_VARIABLES, 'BASH_ENV')}
-        base_env.update((variable, 'success') for variable in (*PRE_TGA_RESULT_VARIABLES, *PNG_FILE_RESULT_VARIABLES))
+        base_env.update((variable, 'success') for variable in (*PRE_TGA_RESULT_VARIABLES, *PNG_FILE_RESULT_VARIABLES, *PIC_FILE_RESULT_VARIABLES))
         for suffix, _ in PLATFORMS:
             _, steps = job_parts(jobs['conformance' + suffix])
             _, separator, body = steps[0].partition('        run: |\n')
@@ -1252,7 +1301,7 @@ class ConformanceWorkflowTests(unittest.TestCase):
         statuses = ('success', 'failure', 'cancelled', 'skipped', '', 'unknown', None)
         base_env = {key: value for key, value in os.environ.items()
                     if key not in (*RESULT_VARIABLES, 'BASH_ENV')}
-        base_env.update((variable, 'success') for variable in PRE_PNG_FILE_RESULT_VARIABLES)
+        base_env.update((variable, 'success') for variable in (*PRE_PNG_FILE_RESULT_VARIABLES, *PIC_FILE_RESULT_VARIABLES))
         for suffix, _ in PLATFORMS:
             _, steps = job_parts(jobs['conformance' + suffix])
             _, separator, body = steps[0].partition('        run: |\n')
@@ -1272,12 +1321,12 @@ class ConformanceWorkflowTests(unittest.TestCase):
                                      result.stdout + result.stderr)
 
     def test_six_way_conjunction_structure_and_exhaustive_truth_table(self):
-        # The actual scripts must consist only of set -eu, five literal printf
-        # diagnostics and twelve straight-line test commands. Under errexit this
+        # The actual scripts must consist only of set -eu, six literal printf
+        # diagnostics and fourteen straight-line test commands. Under errexit this
         # grammar is a conjunction: no conditional/function/OR can mask failure.
         # Extract the tested variables from the actual script, then exhaust all
         # 117,649 six-result assignments per aggregate in-process, with PNG
-        # and TGA and PNG-file successful. The original 4,802 shell cases and 98 BMP-pair shell cases
+        # and TGA, PNG-file and PIC-file successful. The original 4,802 shell cases and 98 BMP-pair shell cases
         # independently exercise
         # real Bash, including missing/empty values, without 235,298 processes.
         validate_workflow(self.text)
@@ -1287,7 +1336,7 @@ class ConformanceWorkflowTests(unittest.TestCase):
             variables = aggregate_conjunction_variables(jobs['conformance' + suffix])
             assignments = passing = 0
             for results in itertools.product(statuses, repeat=6):
-                env = {variable: 'success' for variable in (*PNG_RESULT_VARIABLES, *TGA_RESULT_VARIABLES, *PNG_FILE_RESULT_VARIABLES)}
+                env = {variable: 'success' for variable in (*PNG_RESULT_VARIABLES, *TGA_RESULT_VARIABLES, *PNG_FILE_RESULT_VARIABLES, *PIC_FILE_RESULT_VARIABLES)}
                 env.update((variable, result) for variable, result in zip(PRE_PNG_RESULT_VARIABLES, results)
                            if result is not None)
                 actual = all(env.get(variable, '') == 'success' for variable in variables)
@@ -1310,7 +1359,7 @@ class ConformanceWorkflowTests(unittest.TestCase):
             assignments = passing = 0
             for results in itertools.product(statuses, repeat=8):
                 # Both absent (None) and empty expand to '' under ${NAME:-}.
-                actual = all(((results + ('success', 'success', 'success', 'success'))[index] or '') == 'success'
+                actual = all(((results + ('success', 'success', 'success', 'success', 'success', 'success'))[index] or '') == 'success'
                              for index in indices)
                 expected = results == ('success',) * 8
                 if actual != expected:
@@ -1354,7 +1403,7 @@ class ConformanceWorkflowTests(unittest.TestCase):
         _, jobs = workflow_parts(self.text)
         statuses = ('success', 'failure', 'cancelled', 'skipped', '', 'unknown', None)
         for suffix, _ in PLATFORMS:
-            variables = aggregate_conjunction_variables(jobs['conformance' + suffix])
+            variables = aggregate_conjunction_variables(jobs['conformance' + suffix])[:12]
             self.assertEqual(variables[:10], PRE_PNG_FILE_RESULT_VARIABLES)
             self.assertEqual(variables[10:], PNG_FILE_RESULT_VARIABLES)
             self.assertEqual(len(set(variables)), 12)
@@ -1429,6 +1478,240 @@ class ConformanceWorkflowTests(unittest.TestCase):
                     ('subshell', '          (' + test.strip() + ') || true\n'),
                 ):
                     mutations[label + ' ' + variable] = job.replace(test, altered, 1)
+            for label, changed in mutations.items():
+                with self.subTest(aggregate=suffix, mutation=label):
+                    self.assertNotEqual(job, changed)
+                    with self.assertRaises(ValueError):
+                        aggregate_conjunction_variables(changed)
+                    with self.assertRaises(ValueError):
+                        validate_workflow(structural_text(self.text).replace(job, changed, 1))
+
+
+    def test_removing_only_reviewed_pic_file_additions_restores_exact_86_gate_bytes(self):
+        restored = remove_reviewed_pic_file_additions(self.text)
+        self.assertEqual(hashlib.sha256(restored.encode('utf-8')).hexdigest(),
+                         PIC_FILE_PREDECESSOR_SHA256)
+        _, before = workflow_parts(restored)
+        _, after = workflow_parts(self.text)
+        for worker in PRE_PIC_FILE_WORKERS:
+            self.assertEqual(before[worker], after[worker])
+        with self.assertRaises(ValueError):
+            remove_reviewed_pic_file_additions(self.text.replace('\n', '\r\n'))
+
+    def test_pic_file_workers_are_independent_mandatory_exact_and_scoped(self):
+        _, jobs = workflow_parts(self.text)
+        gate, = PIC_FILE_GATES
+        path = '            ' + PIC_FILE_PATHS[0] + '\n'
+        for suffix, platform in PLATFORMS:
+            job_id = 'picFile' + suffix
+            job = jobs[job_id]
+            _, steps = job_parts(job)
+            _, formatted_steps = job_parts(jobs['formatted' + suffix])
+            self.assertEqual(steps[:7], formatted_steps[:7])
+            self.assertEqual(steps[7:-1], [gate])
+            self.assertEqual(upload_parts(steps[-1])[1], list(PIC_FILE_PATHS))
+            mutations = {
+                'wrong PIC-file platform': job.replace('runs-on: ' + platform, 'runs-on: other'),
+                'optional PIC-file worker': '    continue-on-error: true\n' + job,
+                'skipped PIC-file worker': '    if: false\n' + job,
+                'dependent PIC-file worker': '    needs: formatted' + suffix + '\n' + job,
+                'PIC-file matrix': '    strategy:\n      matrix:\n        os: [' + platform + ']\n' + job,
+                'changed PIC-file timeout': job.replace('timeout-minutes: 120', 'timeout-minutes: 180'),
+                'changed PIC-file environment': job.replace('CC: clang', 'CC: gcc'),
+                'changed PIC-file permissions': '    permissions: write-all\n' + job,
+                'missing PIC-file setup': job.replace(steps[0], '', 1),
+                'changed PIC-file setup pin': job.replace('actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1', 'actions/checkout@main', 1),
+                'missing PIC-file gate': job.replace(gate, '', 1),
+                'duplicate PIC-file gate': job.replace(gate, gate * 2, 1),
+                'changed PIC-file command': job.replace('tools/pic_file_probe.py', 'tools/pic_probe.py', 1),
+                'missing PIC-file loader flag': job.replace('--reference-env clean-loader', '', 1),
+                'changed PIC-file loader flag': job.replace('--reference-env clean-loader', '--reference-env inherited', 1),
+                'changed PIC-file Bend source': job.replace(gate, gate.replace('/.build/dependencies/bend', '/.build/dependencies/other-bend'), 1),
+                'changed PIC-file raylib source': job.replace(gate, gate.replace('/.build/dependencies/raylib', '/.build/dependencies/other-raylib'), 1),
+                'optional PIC-file gate': job.replace(gate, gate.replace('        run:', '        continue-on-error: true\n        run:'), 1),
+                'skipped PIC-file gate': job.replace(gate, gate.replace('        run:', '        if: false\n        run:'), 1),
+                'bypassed PIC-file failure': job.replace(gate, gate.rstrip('\n') + ' || true\n', 1),
+                'PIC-file gate before setup': job.replace(steps[6] + gate, gate + steps[6], 1),
+                'missing PIC-file artifact': job.replace(path, '', 1),
+                'duplicate PIC-file artifact': job.replace(path, path * 2, 1),
+                'incomplete PIC-file receipts': job.replace(path, '            .build/pic-file-probe/results.json\n', 1),
+                'broader PIC-file artifact': job.replace(path, '            .build/\n', 1),
+                'excluded PIC-file receipts': job.replace(path, path + '            !.build/pic-file-probe/run-*/*.resource.json\n', 1),
+                'PIC-file artifact collision': job.replace('conformance-' + platform + '-pic-files', 'conformance-' + platform + '-formatted', 1),
+                'optional PIC-file upload': job.replace('if: always()', 'if: success()', 1),
+                'changed PIC-file upload pin': job.replace('actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a', 'actions/upload-artifact@main', 1),
+                'changed PIC-file retention': job.replace('retention-days: 14', 'retention-days: 1', 1),
+            }
+            for index, setup in enumerate(steps[:7]):
+                mutations['missing PIC-file setup step ' + str(index)] = job.replace(setup, '', 1)
+            for label, before, after in (
+                ('Python action', 'actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97', 'actions/setup-python@main'),
+                ('Python version', "python-version: '3.12'", "python-version: '3.13'"),
+                ('Bun action', 'oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6', 'oven-sh/setup-bun@main'),
+                ('Bun version', '${{ steps.pins.outputs.bun }}', 'latest'),
+                ('Bend revision', '${{ steps.pins.outputs.bend }}', 'main'),
+                ('raylib revision', '${{ steps.pins.outputs.raylib }}', 'master'),
+                ('overlay hash', "if hashlib.sha256(patch.read_bytes()).hexdigest() != overlay['sha256']:", 'if False:'),
+            ):
+                mutations['changed PIC-file ' + label] = job.replace(before, after, 1)
+            for label, mutated_job in mutations.items():
+                with self.subTest(job=job_id, mutation=label):
+                    self.assertNotEqual(job, mutated_job)
+                    with self.assertRaises(ValueError):
+                        validate_workflow(structural_text(self.text).replace(job, mutated_job, 1))
+
+    def test_pic_file_upload_excludes_only_sparse_fixture_bodies_on_both_platforms(self):
+        _, jobs = workflow_parts(self.text)
+        excluded_paths = PIC_FILE_PATHS[1:]
+        self.assertEqual(len(excluded_paths), 4)
+        root = '.build/pic-file-probe/'
+        retained = (
+            'results.json', 'run-example/fixtures/exact-cap.pic',
+            'run-example/fixtures/c3-single.pic',
+            'run-example/fixtures/error-encoded-over-one-mib.pic', 'run-example/inputs.json',
+            'run-example/qualification.c', 'run-example/reference.c',
+            'run-example/candidate.bend', 'run-example/candidate.stdout',
+            'run-example/candidate.stderr', 'run-example/candidate.command.json',
+            'run-example/candidate.resource.json', 'run-example/native/libraylib.a',
+        )
+        for suffix, _ in PLATFORMS:
+            job_id = 'picFile' + suffix
+            job = jobs[job_id]
+            _, steps = job_parts(job)
+            paths = upload_parts(steps[-1])[1]
+            self.assertEqual(len(paths), 5)
+            self.assertIn(root, paths)
+            self.assertEqual([path for path in paths if path.startswith('!')], list(excluded_paths))
+            # Only exact sparse filenames are excluded. Positive ordinary-file
+            # coverage guards against dropping cap, recipe or replay evidence.
+            for relative in retained:
+                candidate = root + relative
+                self.assertFalse(any(fnmatch.fnmatchcase(candidate, excluded[1:])
+                                     for excluded in excluded_paths), candidate)
+            for excluded in excluded_paths:
+                candidate = excluded[1:].replace('run-*', 'run-example')
+                self.assertTrue(fnmatch.fnmatchcase(candidate, excluded[1:]))
+                path = '            ' + excluded + '\n'
+                mutations = {
+                    'missing sparse exclusion': job.replace(path, '', 1),
+                    'duplicate sparse exclusion': job.replace(path, path * 2, 1),
+                    'included sparse body': job.replace(path, path.replace('!.build/', '.build/'), 1),
+                    'excluded ordinary exact cap': job.replace(path, '            !.build/pic-file-probe/run-*/fixtures/exact-cap.pic\n', 1),
+                    'excluded all fixtures': job.replace(path, '            !.build/pic-file-probe/run-*/fixtures/\n', 1),
+                    'excluded fixture recipes': job.replace(path, '            !.build/pic-file-probe/run-*/inputs.json\n', 1),
+                    'excluded command receipts': job.replace(path, '            !.build/pic-file-probe/run-*/*.command.json\n', 1),
+                    'excluded resource receipts': job.replace(path, '            !.build/pic-file-probe/run-*/*.resource.json\n', 1),
+                    'excluded all PIC bodies': job.replace(path, '            !.build/pic-file-probe/run-*/fixtures/*.pic\n', 1),
+                    'excluded source evidence': job.replace(path, '            !.build/pic-file-probe/run-*/*.c\n', 1),
+                    'excluded candidate source': job.replace(path, '            !.build/pic-file-probe/run-*/*.bend\n', 1),
+                    'excluded native-build evidence': job.replace(path, '            !.build/pic-file-probe/run-*/native/\n', 1),
+                    'excluded output receipts': job.replace(path, '            !.build/pic-file-probe/run-*/*.stdout\n', 1),
+                    'excluded error receipts': job.replace(path, '            !.build/pic-file-probe/run-*/*.stderr\n', 1),
+                }
+                for label, mutated_job in mutations.items():
+                    with self.subTest(job=job_id, exclusion=excluded, mutation=label):
+                        self.assertNotEqual(job, mutated_job)
+                        with self.assertRaises(ValueError):
+                            validate_workflow(structural_text(self.text).replace(job, mutated_job, 1))
+
+    def test_pic_file_audit_is_mandatory_after_the_native_probe(self):
+        _, jobs = workflow_parts(self.text)
+        command = '          python3 tools/pic_file_audit.py .build/pic-file-probe/results.json\n'
+        for suffix, _ in PLATFORMS:
+            job = jobs['picFile' + suffix]
+            gate = PIC_FILE_GATES[0]
+            for label, changed in (
+                ('missing audit', job.replace(command, '', 1)),
+                ('bypassed audit', job.replace(command, command.rstrip('\n') + ' || true\n', 1)),
+                ('wrong audit report', job.replace(command, command.replace('pic-file-probe/', 'pic-format-probe/'), 1)),
+                ('audit before probe', job.replace(gate, gate.replace(command, '').replace('        run: |\n', '        run: |\n' + command), 1)),
+                ('excluded encoded-over-one-mib input', job + '            !.build/pic-file-probe/run-*/fixtures/error-encoded-over-one-mib.pic\n'),
+            ):
+                with self.subTest(platform=suffix, mutation=label):
+                    self.assertNotEqual(job, changed)
+                    with self.assertRaises(ValueError):
+                        validate_workflow(structural_text(self.text).replace(job, changed, 1))
+
+    def test_both_actual_aggregate_shells_fail_closed_for_all_pic_file_results(self):
+        _, jobs = workflow_parts(self.text)
+        statuses = ('success', 'failure', 'cancelled', 'skipped', '', 'unknown', None)
+        base_env = {key: value for key, value in os.environ.items()
+                    if key not in (*RESULT_VARIABLES, 'BASH_ENV')}
+        base_env.update((variable, 'success') for variable in PRE_PIC_FILE_RESULT_VARIABLES)
+        for suffix, _ in PLATFORMS:
+            _, steps = job_parts(jobs['conformance' + suffix])
+            _, separator, body = steps[0].partition('        run: |\n')
+            self.assertTrue(separator)
+            self.assertTrue(all(line.startswith('          ') for line in body.splitlines()))
+            script = '\n'.join(line[10:] for line in body.splitlines()) + '\n'
+            for results in itertools.product(statuses, repeat=2):
+                with self.subTest(aggregate=suffix, results=results):
+                    env = dict(base_env)
+                    env.update((variable, result) for variable, result in zip(PIC_FILE_RESULT_VARIABLES, results)
+                               if result is not None)
+                    result = subprocess.run(['bash', '--noprofile', '--norc', '-e', '-o',
+                                             'pipefail', '-c', script], env=env,
+                                            capture_output=True, text=True, timeout=5)
+                    self.assertEqual(result.returncode == 0,
+                                     all(value == 'success' for value in results),
+                                     result.stdout + result.stderr)
+
+    def test_fourteen_way_conjunction_structure_and_factorized_truth_table(self):
+        # The closed grammar proves an AND over fourteen unique direct results.
+        # Keep the separate old-eight exhaustive/old-twelve factorized test intact.
+        # Enumerate each old variable's seven statuses to derive the old-twelve
+        # counts, then enumerate all 49 new pairs against both old-twelve outcomes.
+        # Weight those outcomes by their counts: never loop over 7**14 rows.
+        validate_workflow(self.text)
+        _, jobs = workflow_parts(self.text)
+        statuses = ('success', 'failure', 'cancelled', 'skipped', '', 'unknown', None)
+        for suffix, _ in PLATFORMS:
+            variables = aggregate_conjunction_variables(jobs['conformance' + suffix])
+            self.assertEqual(variables[:12], PRE_PIC_FILE_RESULT_VARIABLES)
+            self.assertEqual(variables[12:], PIC_FILE_RESULT_VARIABLES)
+            self.assertEqual(len(set(variables)), 14)
+            old_assignments = old_passing = 1
+            for variable in variables[:12]:
+                outcomes = []
+                for status in statuses:
+                    env = {} if status is None else {variable: status}
+                    actual = env.get(variable, '') == 'success'
+                    self.assertEqual(actual, status == 'success')
+                    outcomes.append(actual)
+                self.assertEqual((len(outcomes), sum(outcomes)), (7, 1))
+                old_assignments *= len(outcomes)
+                old_passing *= sum(outcomes)
+            self.assertEqual((old_assignments, old_passing), (13841287201, 1))
+            pair_assignments = pair_passing = combined_assignments = combined_passing = 0
+            for pair in itertools.product(statuses, repeat=2):
+                env = {variable: value for variable, value in zip(variables[12:], pair)
+                       if value is not None}
+                new_success = all(env.get(variable, '') == 'success' for variable in variables[12:])
+                self.assertEqual(new_success, pair == ('success', 'success'))
+                for old_success, count in ((False, old_assignments - old_passing), (True, old_passing)):
+                    actual = old_success and new_success
+                    expected = old_success and pair == ('success', 'success')
+                    self.assertEqual(actual, expected, (suffix, old_success, pair))
+                    combined_assignments += count
+                    combined_passing += count if actual else 0
+                pair_assignments += 1
+                pair_passing += new_success
+            self.assertEqual((pair_assignments, pair_passing), (49, 1))
+            self.assertEqual((combined_assignments, combined_passing), (678223072849, 1))
+
+    def test_fourteen_way_grammar_rejects_new_pair_substitution(self):
+        _, jobs = workflow_parts(self.text)
+        for suffix, _ in PLATFORMS:
+            job = jobs['conformance' + suffix]
+            first = '          test "${PIC_FILE_UBUNTU_RESULT:-}" = success\n'
+            second = '          test "${PIC_FILE_MAC_RESULT:-}" = success\n'
+            mutations = {
+                'duplicate Ubuntu instead of Mac': job.replace(second, first, 1),
+                'duplicate Mac instead of Ubuntu': job.replace(first, second, 1),
+                'new pair reordered': job.replace(first + second, second + first, 1),
+                'old worker substituted': job.replace(first, first.replace('PIC_FILE_UBUNTU_RESULT', 'PNG_UBUNTU_RESULT'), 1),
+                'new diagnostic injection': job.replace('PIC files Ubuntu: %s', 'PIC files Ubuntu: $(true) %s', 1),
+            }
             for label, changed in mutations.items():
                 with self.subTest(aggregate=suffix, mutation=label):
                     self.assertNotEqual(job, changed)
