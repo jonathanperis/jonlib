@@ -1,0 +1,454 @@
+{
+  "schema": 1,
+  "profile": "native-pic-formatted-files-v1",
+  "repair": "case-insensitive fixture name collisions",
+  "base_revision": "acfe5131dcb34f90e51618dda8236d5db2320b74",
+  "status": "local-focused-qualified-hosted-pending",
+  "historical_hosted_failure": {
+    "run_url": "https://github.com/jonathanperis/jonlib/actions/runs/37250144769",
+    "job_id": 111576373355,
+    "host": "macOS 15 arm64",
+    "commit": "acfe5131dcb34f90e51618dda8236d5db2320b74",
+    "artifact_id": 11321530803,
+    "artifact_url": "https://github.com/jonathanperis/jonlib/actions/runs/37250144769/artifacts/11321530803",
+    "artifact_bytes": 16673612,
+    "artifact_sha256": "2edf11b81da1d95e7197acacff02f9c12f7597a5470f6d87631687bbc7cf6ec6",
+    "job_log_sha256": "6fbb651df0ecafe5cb69b1081ac074276cb0080620a941c345c9603100f94c5b",
+    "primary_batches_per_lane": 55,
+    "cases": 170,
+    "typed_controls": 355,
+    "compared_bytes_per_lane": 830752,
+    "numeric_and_resource_lanes_passed": true,
+    "independent_inventory_passed": false,
+    "missing_ordinary_fixtures": [
+      "path-c3-PNM.PNM",
+      "path-c3-QOI.QOI",
+      "path-c4-PNM.PNM",
+      "path-c4-QOI.QOI"
+    ],
+    "unexpected_ordinary_fixtures": [],
+    "sparse_artifact_bodies_intentionally_excluded": 4,
+    "scope": "Original failed host evidence is preserved; successful numeric lanes do not satisfy complete fixture inventory"
+  },
+  "static_corpus_identity": {
+    "base_revision": "acfe5131dcb34f90e51618dda8236d5db2320b74",
+    "comparison": "Generated fixture dictionaries compared to original source; only the four listed filename values differ",
+    "cases": 170,
+    "file_controls": 203,
+    "synthetic_controls": 152,
+    "routes": {
+      "LoadImage": 148,
+      "explicit-pic": 22
+    },
+    "changed_filenames": [
+      {
+        "id": "path-c3-PNM",
+        "before": "path-c3-PNM.PNM",
+        "after": "path-c3-PNM-upper.PNM"
+      },
+      {
+        "id": "path-c3-QOI",
+        "before": "path-c3-QOI.QOI",
+        "after": "path-c3-QOI-upper.QOI"
+      },
+      {
+        "id": "path-c4-PNM",
+        "before": "path-c4-PNM.PNM",
+        "after": "path-c4-PNM-upper.PNM"
+      },
+      {
+        "id": "path-c4-QOI",
+        "before": "path-c4-QOI.QOI",
+        "after": "path-c4-QOI-upper.QOI"
+      }
+    ],
+    "all_stable_ids_bytes_routes_flags_dimensions_preserved": true,
+    "all_whole_path_extensions_preserved": true,
+    "all_controls_preserved": true,
+    "scope": "Static source/corpus comparison, not native runtime evidence"
+  },
+  "admission": {
+    "scope": "All fixture namespaces before creation and during identity verification",
+    "casefold_scope": "Conservative Python casefold check; exercised ASCII corpus only, not universal Unicode normalization or Windows pathname equivalence",
+    "includes": [
+      "accepted files",
+      "ordinary error files",
+      "missing paths",
+      "directories",
+      "generated directory entries",
+      "sparse paths",
+      "exact-cap stress",
+      "parent spellings",
+      "file versus directory prefix conflicts"
+    ],
+    "preserves_exact_shared_directories": true,
+    "audit_implementation_unchanged": true,
+    "native_safety_comparator_and_resource_gates_unchanged": true
+  },
+  "targeted_tests": {
+    "harness_tests": 126,
+    "audit_tests": 16,
+    "skips": 0,
+    "harness_log_sha256": "18639fd8051eeaa340e9534b72af0638d71df29128d2b810ade6b1b7cf41e7db",
+    "audit_log_sha256": "0cd4fa636ff0a6c824e2138b7720efaec5f60c67e18380f5f43e1acd0128b03b",
+    "casefold_simulation_scope": "Source-only creation/inventory model plus aliased reads that the unchanged independent auditor rejects; no real macOS runtime claim"
+  },
+  "local_current_validation": {
+    "status": "full-preflight-and-fresh-recovery-focus-passed",
+    "preflight": {
+      "passed": true,
+      "python_tests": 1204,
+      "python_seconds": 478.87,
+      "skips": 0,
+      "python_log_sha256": "918a88b553364f41658e827d1e02175062c6f53c1c88ca2df4b1962676ac3d75",
+      "pinned_activation": "/workspace/scratch/61c86f431823/jonlib-pic-files-current/.build/pic-file-validation/tool-provenance/restored-env.sh",
+      "fresh_checks": [
+        {
+          "command": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "tools/check_project.py"
+          ],
+          "exit_code": 0,
+          "stdout_sha256": "d3d200a2a98e8692f262e4cd70822fb21a92cb77bb6ec3a3f974837202c00969",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "command": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "tools/api_plan.py",
+            "check"
+          ],
+          "exit_code": 0,
+          "stdout_sha256": "2510446e6560553c4010c1fff725f0852c37120136f6f43efc7a6d6de1045a9b",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "command": [
+            "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+            "-m",
+            "compileall",
+            "-q",
+            "tools",
+            "tests"
+          ],
+          "exit_code": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "command": [
+            "git",
+            "diff",
+            "--check"
+          ],
+          "exit_code": 0,
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "reviewed_source_hashes": {
+        "tools/pic_file_probe.py": "6a72b87009624dfebefc421fa8f10d9fd8deafe7016bebc0347b10e9b6e0393e",
+        "tests/test_pic_file_harness.py": "faf2abf3d9d94d2dd6616ed11852cba4cb8d434c9714e91ee8d645f8b4d1892a",
+        "tests/test_pic_file_audit.py": "aa7796d2a5b3b95cab62683b752ff484e0cc37cd6e8167003c7b3df53e3ac3e2"
+      },
+      "prior_incomplete_attempt": {
+        "preserved_log": "python-preflight-default-path-skipped.log",
+        "sha256": "c72df46ff2edc2479c3e8f88ed86d20cade5a0a12524d8a8ff1c2b79447e7fb9",
+        "tests": 1204,
+        "skips": 1,
+        "reason": "Default PATH did not expose pinned clang; superseded by the complete pinned-environment run"
+      },
+      "scope": "Fresh complete Python and syntax/project/API/whitespace checks; 27 unchanged runtime/proof stages retain separately verified historical evidence"
+    },
+    "preflight_receipt_sha256": "47b523baff9b2d877a45e026495fcfc0c4fe1ea431e64a728306e9950fff6f97",
+    "fresh_focus": {
+      "passed": true,
+      "base_revision": "acfe5131dcb34f90e51618dda8236d5db2320b74",
+      "scope": "Fresh local Linux x86-64 CPU-1/CPU-2/JavaScript focused execution and unchanged independent full-byte/file/resource audit; not hosted macOS qualification",
+      "host": {
+        "system": "Linux",
+        "machine": "x86_64"
+      },
+      "run_id": "run-55d93b3a4c484d74a0af2e2d81985556",
+      "source_manifest_sha256": "c756d1570d52d0031285210cdba1e125c375a6f027868e6d7a6749808dbb86a2",
+      "recovery_driver_manifest_sha256": "7050d1c1f7db50c48e3bf7f0ed59db164d965ddf693056fb2aa0c3a89bd692f7",
+      "summary_sha256": "e36dee2442edb805cc3b9f5c215ace556bb6967dac11a8b56291cfd09b86f2f3",
+      "report_sha256": "ac2818fd41eaf2c318700124232e2ccaf8273f08d17a91cd0de59c99217466e4",
+      "outer_focus_command_sha256": "ee8ea42bb9cab5ca14c5b7638e166d8ce5aaba0a48527178e45947dd71d83bcc",
+      "outer_audit_command_sha256": "2f524537174e7e8c7e3515d3b5204f1b49f2e578c4e3f2666a412e542d50858d",
+      "independent_audit_stdout_sha256": "11221660bc6c062a49da5f2956dac07180cfd006e8e9c670f296f972c7727ab4",
+      "elapsed_seconds": 1651.698,
+      "native_elapsed_seconds": 1642.21,
+      "native_batches": 11,
+      "primary_batches_per_lane": 55,
+      "cases": 170,
+      "file_controls": 203,
+      "synthetic_controls": 152,
+      "native_routes": {
+        "LoadImage": 148,
+        "explicit-pic": 22
+      },
+      "native_observations": 340,
+      "native_raw_bytes": 127250,
+      "native_normalized_bytes": 149500,
+      "observations_per_lane": 1724,
+      "compared_bytes_per_lane": 830752,
+      "raw_compared_bytes_per_lane": 509000,
+      "normalized_compared_bytes_per_lane": 321752,
+      "lanes": {
+        "cpu-1": {
+          "passed": true,
+          "primary_batches": 55,
+          "differences": 0,
+          "resources": {
+            "boundary": {
+              "passed": true,
+              "observations": 1009,
+              "maximum_rss_bytes": 9568256,
+              "maximum_rss_acceptance_bytes": 268435456,
+              "descriptor_limit": 64
+            },
+            "sparse": {
+              "passed": true,
+              "observations": 4,
+              "maximum_rss_bytes": 9568256,
+              "maximum_rss_acceptance_bytes": 268435456,
+              "descriptor_limit": 64
+            },
+            "exact_cap": {
+              "passed": true,
+              "observations": 6,
+              "maximum_rss_bytes": 27246592,
+              "maximum_rss_acceptance_bytes": 1073741824,
+              "descriptor_limit": 64
+            }
+          }
+        },
+        "cpu-2": {
+          "passed": true,
+          "primary_batches": 55,
+          "differences": 0,
+          "resources": {
+            "boundary": {
+              "passed": true,
+              "observations": 1009,
+              "maximum_rss_bytes": 9568256,
+              "maximum_rss_acceptance_bytes": 268435456,
+              "descriptor_limit": 64
+            },
+            "sparse": {
+              "passed": true,
+              "observations": 4,
+              "maximum_rss_bytes": 9568256,
+              "maximum_rss_acceptance_bytes": 268435456,
+              "descriptor_limit": 64
+            },
+            "exact_cap": {
+              "passed": true,
+              "observations": 6,
+              "maximum_rss_bytes": 27287552,
+              "maximum_rss_acceptance_bytes": 1073741824,
+              "descriptor_limit": 64
+            }
+          }
+        },
+        "javascript": {
+          "passed": true,
+          "primary_batches": 55,
+          "differences": 0,
+          "resources": {
+            "boundary": {
+              "passed": true,
+              "observations": 1009,
+              "maximum_rss_bytes": 104628224,
+              "maximum_rss_acceptance_bytes": 268435456,
+              "descriptor_limit": 64
+            },
+            "sparse": {
+              "passed": true,
+              "observations": 4,
+              "maximum_rss_bytes": 54865920,
+              "maximum_rss_acceptance_bytes": 268435456,
+              "descriptor_limit": 64
+            },
+            "exact_cap": {
+              "passed": true,
+              "observations": 6,
+              "maximum_rss_bytes": 372875264,
+              "maximum_rss_acceptance_bytes": 1073741824,
+              "descriptor_limit": 64
+            }
+          }
+        }
+      },
+      "closure": {
+        "closure_checks": true,
+        "iterations": 100,
+        "paths_per_iteration": 10,
+        "synthetic_checks": 8,
+        "records": 1009
+      },
+      "independent_audit": {
+        "cases": 170,
+        "compared_bytes_per_lane": 830752,
+        "file_controls": 203,
+        "lanes": [
+          "cpu-1",
+          "cpu-2",
+          "javascript"
+        ],
+        "native_observations": 340,
+        "observations_per_lane": 1724,
+        "passed": true,
+        "profile": "native-pic-formatted-files-v1",
+        "report_sha256": "ac2818fd41eaf2c318700124232e2ccaf8273f08d17a91cd0de59c99217466e4",
+        "resource_observations": {
+          "boundary": 1009,
+          "exact_cap": 6,
+          "sparse": 4
+        },
+        "synthetic_controls": 152
+      },
+      "interrupted_evidence_unchanged": true,
+      "interrupted_run_reused": false,
+      "remaining_scope": [
+        "GPU/Metal",
+        "Windows/macOS/browser",
+        "big-endian",
+        "exact-commit hosted CI",
+        "maximum-area allocation/resource limits",
+        "representative performance",
+        "concurrent/special files",
+        "OS close-error reporting",
+        "generic formatted/float dispatch",
+        "native malformed recovery"
+      ]
+    },
+    "interrupted_attempt": {
+      "status": "interrupted-unqualified-preserved",
+      "run_id": "run-48e30d15898747e4ae67377983847f3b",
+      "completed_primary_batches_per_lane": 14,
+      "summary_sha256": "a36cdb1c799caa2972f9e25b2ec3461b3533c09eb42c65d70dcd8196a585054d",
+      "report_sha256": "117e0d6f95038636fd305df24f0eb8d8cec7af6d9e5543867044d371a4a88ac1",
+      "terminal_receipt_present": false,
+      "reused_as_passing_evidence": false,
+      "scope": "Original incomplete focus remains unchanged. Qualification comes from the separate complete recovery run and its independent audit; no partial output splicing."
+    },
+    "closed_evidence": {
+      "manifest_sha256": "abbd906f62b9b5cc3bda1e735282800de71f18b34e882eded7ed1439b95b3548",
+      "archived_files": 1563,
+      "external_dependency_files": 486,
+      "sparse_bodies_excluded": 4,
+      "sparse_holes_read_or_hashed": false,
+      "parts": [
+        {
+          "bytes": 8844332,
+          "sha256": "767d80e2214e5e58c6d82c6ac2ab73d36e6965495b008ad3dffe3b9963ca1c42",
+          "files": 171,
+          "archive_byte_replay_passed": true,
+          "filename": "pic-casefold-recovery-focus-part01.tar.gz"
+        },
+        {
+          "bytes": 9845323,
+          "sha256": "e5f2d227908c4ac11892f40132272e3c926c0037a34c57e72bbcdb999d6f906f",
+          "files": 1293,
+          "archive_byte_replay_passed": true,
+          "filename": "pic-casefold-recovery-focus-part02.tar.gz"
+        },
+        {
+          "bytes": 1890228,
+          "sha256": "3db38d5f8498989787121606084d70a2bbf297e87420a08c03cbdfa48a8f2b50",
+          "files": 99,
+          "archive_byte_replay_passed": true,
+          "filename": "pic-casefold-recovery-focus-part03.tar.gz"
+        }
+      ],
+      "scope": "Closed local source, input, output, command and independent-audit evidence; sparse bodies represented only by bounded recipes. External dependencies retain exact separately archived identities."
+    }
+  },
+  "regression_evidence_reuse": {
+    "status": "dependency-and-retained-seals-verified",
+    "prior_record": "pic-formatted-files.json",
+    "scope": "Read-only identity/seal verification and dependency-scoped reuse, not a fresh 32-stage runtime run",
+    "receipt_sha256": "5e9af5f77890625d36c1926603a0baa4683ad9215e39dbf07416a0ebb4a7bd9b",
+    "dependency_receipt_sha256": "f36d2e841a03e198f490061c654aeae80cdf8f3840265b81124a9b432115fdf6",
+    "historical_stages_reused": [
+      "native-configure",
+      "native-build",
+      "surface-pic",
+      "surface-png",
+      "generic-memory",
+      "generic-file",
+      "animation-fallback",
+      "png-export",
+      "float-rgb-png",
+      "r32-images",
+      "image-format",
+      "image-colors",
+      "qoi-formatted-memory",
+      "qoi-formatted-files",
+      "pnm-formatted-memory",
+      "pnm-formatted-files",
+      "tga-formatted-memory",
+      "tga-formatted-files",
+      "bmp-formatted-memory",
+      "bmp-formatted-files",
+      "png-formatted-memory",
+      "png-formatted-files",
+      "pic-formatted-memory",
+      "pic-formatted-memory-audit",
+      "canonical",
+      "strict-canonical",
+      "proof-final"
+    ],
+    "stages_rerun": [
+      "api-final",
+      "diff-check-final",
+      "project-final",
+      "python-suite-final",
+      "syntax-final"
+    ],
+    "historical_artifact_seals_verified": 16311,
+    "historical_metadata_files_verified_from_frozen_archive": 11,
+    "original_source_archive_sha256": "0572a3194d1e3141a5a3c8266c17323267ad2e4b40e4d7d409f1d18551fafc4d",
+    "unchanged_tool_counts": {
+      "executables": 6,
+      "runtime_libraries": 5,
+      "packages": 8
+    },
+    "unchanged_dependency_sources": {
+      "bend": 1793,
+      "raylib": 1384
+    },
+    "changed_runtime_or_verification_files": [
+      "tests/test_pic_file_audit.py",
+      "tests/test_pic_file_harness.py",
+      "tools/pic_file_probe.py"
+    ],
+    "focused_pic_files": "Excluded from reuse; the separate complete fresh recovery and independent byte audit above establish local focused qualification"
+  },
+  "hosted_qualification": {
+    "status": "pending-new-exact-sha-full-matrix",
+    "workers": 14,
+    "aggregates": 2,
+    "required_unique_nonempty_artifacts": 14
+  },
+  "source_review": {
+    "passed": true,
+    "scope": "independent exact fixture/AST comparison and ASCII casefold namespace checks; not macOS execution",
+    "receipt_sha256": "c65650d9f9e405dbb13e57a9fd8355be981f726a2cd9eb7fe5be970c274f39c2",
+    "reviewed_hashes": {
+      "tools/pic_file_probe.py": "6a72b87009624dfebefc421fa8f10d9fd8deafe7016bebc0347b10e9b6e0393e",
+      "tests/test_pic_file_harness.py": "faf2abf3d9d94d2dd6616ed11852cba4cb8d434c9714e91ee8d645f8b4d1892a",
+      "tests/test_pic_file_audit.py": "aa7796d2a5b3b95cab62683b752ff484e0cc37cd6e8167003c7b3df53e3ac3e2"
+    }
+  },
+  "local_fixture_inventory": {
+    "passed": true,
+    "scope": "Actual Linux filesystem creation and exact independent file-inventory audit only; no native/candidate decode or macOS claim",
+    "ordinary_sealed_files": 367,
+    "casefold_distinct_physical_files": 372,
+    "sparse_holes_read_or_hashed": false,
+    "receipt_sha256": "613ca008498ead8cbfc78c6218660c0951b89b818d8d91d24ce807f4bdaf401b"
+  }
+}
