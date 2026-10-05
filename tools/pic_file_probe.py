@@ -81,6 +81,30 @@ def extension(path):
     return path[index:] if index>0 else ''
 
 
+def validate_fixture_names(cases):
+    """Reserve the whole fixture namespace before IO, also on casefolding hosts.
+
+    Include missing paths, directories and their generated entries: none may
+    alias an ordinary, sparse or stress file, or change a parent directory's
+    spelling. This is a conservative name check, not host qualification.
+    """
+    nodes={};claimed=set()
+    for c in cases:
+        entries=[(c['filename'],c.get('special')=='directory')]
+        if c.get('special')=='directory':entries.append((c['filename']+'/entry',False))
+        for filename,is_directory in entries:
+            parts=Path(filename).parts
+            if not parts:raise ValueError('Empty fixture path')
+            for index in range(1,len(parts)+1):
+                name=Path(*parts[:index]).as_posix();key=name.casefold()
+                directory=index<len(parts) or is_directory
+                if key in nodes and nodes[key]!=(name,directory):
+                    raise ValueError('Casefold fixture path collision: '+name)
+                nodes[key]=(name,directory)
+            if key in claimed:raise ValueError('Duplicate/casefold fixture name: '+filename)
+            claimed.add(key)
+
+
 def validate_cases(cases):
     if type(cases) is not list or not cases:raise ValueError('Empty native file cases')
     for c in cases:
@@ -96,7 +120,7 @@ def validate_cases(cases):
         if (c['route']=='LoadImage')!=recognized:raise ValueError('Native route does not match whole-path dispatch')
         if type(c['bytes']) is not list or len(c['bytes'])>PIC_CAP:raise ValueError('Oversized native fixture')
     memory.validate_cases([{k:c[k] for k in BASE_KEYS} for c in cases])
-    if len({c['filename'] for c in cases})!=len(cases):raise ValueError('Duplicate file fixture name')
+    validate_fixture_names(cases)
 
 
 def fixtures():
@@ -113,6 +137,9 @@ def fixtures():
         original=originals[f'c{channels}-single']
         for name,suffix in suffixes:
             ident=f'path-c{channels}-{name}';filename=ident+suffix
+            # Keep stable IDs and exact suffixes without aliasing lower-case
+            # fixtures on the case-insensitive hosted macOS filesystem.
+            if name in ('PNM','QOI'):filename=ident+'-upper'+suffix
             cases.append(dict(original,id=ident,filename=filename,route='LoadImage' if extension('fixtures/'+filename) in RECOGNIZED else 'explicit-pic',regress=True))
     validate_cases(cases);return cases
 
@@ -175,10 +202,15 @@ def validate_controls(cases):
                 size={'sparse':PIC_CAP+1,'large':256*1024*1024,'overflow':4294967296}[special]
                 if type(c['size']) is not int or c['size']!=size or c.get('prefix')!=tiny_pic() or any(type(v) is not int for v in c['prefix']):raise ValueError('Sparse file control recipe differs')
                 if c.get('sparse_recipe')!='tiny valid prefix then truncate; holes never loaded or hashed':raise ValueError('Sparse file control recipe missing')
+    validate_fixture_names(cases)
 
 
 def prepare_inputs(work,cases,invalid):
     validate_cases(cases);validate_controls(invalid);directory_stage=None
+    original=next(c for c in cases if c['id']=='c3-single')
+    stress=dict(original,id='exact-cap-accepted',filename='exact-cap.pic',regress=False)
+    stress['bytes']=original['bytes']+[i%256 for i in range(PIC_CAP-len(original['bytes']))]
+    validate_cases([stress]);validate_fixture_names(cases+invalid+[stress])
     for c in cases+invalid:
         path=work/'fixtures'/c['filename'];c['path']=str(path.relative_to(ROOT));special=c.get('special')
         if special=='missing':
@@ -199,15 +231,13 @@ def prepare_inputs(work,cases,invalid):
             with path.open('wb') as handle:handle.write(bytes(prefix));handle.truncate(size)
             c.update(size=size,prefix=prefix,sparse_recipe='tiny valid prefix then truncate; holes never loaded or hashed')
         else:path.write_bytes(bytes(c['bytes']))
-    original=next(c for c in cases if c['id']=='c3-single')
-    stress=dict(original,id='exact-cap-accepted',filename='exact-cap.pic',regress=False)
-    stress['bytes']=original['bytes']+[i%256 for i in range(PIC_CAP-len(original['bytes']))]
     path=work/'fixtures'/stress['filename'];stress['path']=str(path.relative_to(ROOT));path.write_bytes(bytes(stress['bytes']))
     validate_cases([stress]);return stress,directory_stage
 
 
 def verify_inputs(cases,invalid,stress):
     validate_cases(cases);validate_cases([stress]);validate_controls(invalid)
+    validate_fixture_names(cases+invalid+[stress])
     for c in cases+[stress]:
         path=ROOT/c['path']
         if not path.is_file() or path.read_bytes()!=bytes(c['bytes']):raise ValueError('Native file identity drift')

@@ -5578,3 +5578,42 @@ were already correct. Its final v3 replay preserves all prior byte comparisons,
 coverage and limits, with 114 targeted rejection and 15 positive tests. The
 original/v2 outputs and prior archives are not rewritten. See the machine-readable
 [file evidence](evidence/pic-formatted-files.json) for exact receipts and scope.
+
+### Case-insensitive PIC fixture inventory repair (2026-10-05)
+
+The subsequent hosted macOS job at `acfe5131dcb34f90e51618dda8236d5db2320b74`
+completed all 55 primary batches and boundary/sparse/exact-cap checks on its
+three CPU/JavaScript lanes, then correctly failed the independent auditor's
+complete fixture inventory check. Four upper-case `.PNM`/`.QOI` test filenames
+aliased their lower-case counterparts on that filesystem. Their encoded bytes
+were identical, so successful numeric comparisons did not establish distinct
+physical fixture coverage. The original failed job log, artifact and source
+identity remain historical evidence; the missing sparse bodies in the uploaded
+artifact were intentional and are separate from this inventory defect.
+
+The repair gives only those four physical filenames an additional `-upper`
+marker. All 170 stable IDs, bytes, exact suffix tokens, whole-path last-dot
+semantics, routes, 203 file controls and 152 synthetic controls are unchanged.
+Pre-write and verification admission now reject casefold collisions across
+accepted, error, missing, directory, sparse and exact-cap paths, including
+generated directory entries, parent spelling aliases and file/directory prefix
+conflicts. Exact shared parent directories remain permitted. The auditor's
+complete inventory equality, symlink rejection, native admission, comparison
+rules and resource ceilings are unchanged.
+
+A fresh complete Linux x86-64 run and the unchanged independent byte/file
+auditor passed on CPU-1, CPU-2 and JavaScript: 170 cases, 355 typed controls,
+55 primary partitions and 1,724 observations / 830,752 compared bytes per lane.
+Each lane also passed the 1,009-record closure sequence, four sparse controls
+and six exact-cap observations under the unchanged fd64 and RSS limits. The
+1,204-test Python preflight had zero skips. The earlier interrupted local attempt
+remains incomplete and unchanged; its partial output was not reused. Source and
+command receipts bind the complete recovery to the reviewed repair, while 27
+unaffected regression stages retain separately checked historical evidence.
+
+The [repair record](evidence/pic-file-casefold-repair.json) separates source-only
+ASCII casefold simulations, new local focused qualification and dependency-scoped
+reuse of historical regression evidence. Simulated reads are not macOS runtime
+qualification and do not cover every Unicode or Windows filename equivalence.
+The repair still requires a new exact-SHA hosted run with all 14 workers, both
+aggregates and 14 distinct nonempty artifacts before hosted qualification.

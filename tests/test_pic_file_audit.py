@@ -19,6 +19,33 @@ import pic_format_probe as memory
 from r32_raw_file_probe import RESOURCE_RUNNER
 
 
+class PicFileCasefoldInventoryTests(unittest.TestCase):
+    def test_same_bytes_through_casefold_alias_still_fail_exact_inventory(self):
+        # Simulate case-insensitive reads on a case-sensitive temporary tree.
+        # This tests the existing auditor, not macOS/native qualification.
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);work=root/'work';fixtures=work/'fixtures';fixtures.mkdir(parents=True)
+            cases=[];seals={};aliases={}
+            for channels in (3,4):
+                for suffix in ('pnm','qoi'):
+                    lower=f'path-c{channels}-{suffix}.{suffix}'
+                    upper=f'path-c{channels}-{suffix.upper()}.{suffix.upper()}'
+                    physical=fixtures/lower;physical.write_bytes(b'unchanged fixture bytes')
+                    aliases[fixtures/upper]=physical
+                    for name in (lower,upper):
+                        path=fixtures/name
+                        cases.append(dict(filename=name,path=str(path.relative_to(root)),bytes=list(physical.read_bytes())))
+                        seals[str(path)]=a.sha(physical.read_bytes())
+            stress=fixtures/'exact-cap.pic';stress.write_bytes(b'stress')
+            seals[str(stress)]=a.sha(stress.read_bytes())
+            inputs=dict(cases=cases,controls=[],exact_cap=dict(path=str(stress.relative_to(root)),bytes=list(stress.read_bytes())))
+            read_bytes=Path.read_bytes;is_file=Path.is_file
+            with patch.object(Path,'read_bytes',lambda path:read_bytes(aliases.get(path,path))),\
+                 patch.object(Path,'is_file',lambda path:is_file(aliases.get(path,path))):
+                with self.assertRaisesRegex(ValueError,'complete fixture file inventory'):
+                    a.verify_files(inputs,root,work,seals)
+
+
 class PicFileAuditTests(unittest.TestCase):
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.root=Path(self.tmp.name)

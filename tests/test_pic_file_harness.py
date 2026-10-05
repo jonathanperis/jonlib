@@ -118,6 +118,75 @@ class PicFileFixtureTests(unittest.TestCase):
             self.assertTrue(any(c['filename'].endswith('suffixless') for c in rows))
             self.assertTrue(any(c['filename'].endswith('.') for c in rows))
 
+    def test_uppercase_fixture_names_preserve_ids_bytes_routes_and_suffixes(self):
+        by_id={c['id']:c for c in self.cases}
+        for channels in (3,4):
+            for suffix in ('PNM','QOI'):
+                ident=f'path-c{channels}-{suffix}';upper=by_id[ident]
+                lower=by_id[ident.lower()]
+                self.assertEqual(upper['filename'],ident+'-upper.'+suffix)
+                self.assertEqual(f.extension('fixtures/'+upper['filename']),'.'+suffix)
+                self.assertEqual(upper['bytes'],lower['bytes'])
+                self.assertEqual(upper['route'],lower['route'])
+                self.assertEqual(upper['route'],'explicit-pic')
+                self.assertNotEqual(upper['filename'].casefold(),lower['filename'].casefold())
+
+    def test_casefold_name_collisions_fail_closed_within_each_corpus(self):
+        for suffix in ('pnm','qoi'):
+            lower=next(c for c in self.cases if c['id']=='path-c3-'+suffix)
+            upper=next(c for c in self.cases if c['id']=='path-c3-'+suffix.upper())
+            with self.assertRaisesRegex(ValueError,'[Cc]asefold'):
+                f.validate_cases([lower,dict(upper,filename=upper['id']+'.'+suffix.upper())])
+        ordinary=next(c for c in self.invalid if 'bytes' in c)
+        for filename in (ordinary['filename'],ordinary['filename'].upper()):
+            with self.assertRaisesRegex(ValueError,'[Cc]asefold'):
+                f.validate_controls([ordinary,dict(ordinary,id='different',filename=filename)])
+
+    def test_cross_corpus_and_exact_cap_collisions_reject_before_any_file_write(self):
+        ordinary=next(c for c in self.invalid if 'bytes' in c)
+        mutations=[([self.case],[dict(ordinary,filename=self.case['filename'].upper())]),
+                   ([dict(self.case,filename='EXACT-CAP.PIC')],[]),
+                   ([self.case],[dict(ordinary,filename='EXACT-CAP.PIC')])]
+        for cases,controls in mutations:
+            with self.subTest(filenames=[c['filename'] for c in cases+controls]),\
+                 tempfile.TemporaryDirectory() as directory,patch.object(f,'ROOT',Path(directory)):
+                work=Path(directory)/'work'
+                with self.assertRaisesRegex(ValueError,'[Cc]asefold'):f.prepare_inputs(work,cases,controls)
+                self.assertFalse(work.exists())
+
+    def test_casefold_namespace_covers_parent_directories_entries_and_missing_paths(self):
+        # This ASCII casefold model is conservative admission, not a claim
+        # about Unicode normalization or every Windows filename alias.
+        f.validate_fixture_names([dict(filename='shared/a.pic'),dict(filename='shared/b.pic')])
+        pairs=[(dict(filename='parent/a.pic'),dict(filename='PARENT/b.pic')),
+               (dict(filename='parent'),dict(filename='parent/b.pic')),
+               (dict(filename='parent/a.pic'),dict(filename='PARENT')),
+               (dict(filename='folder',special='directory'),dict(filename='folder/ENTRY')),
+               (dict(filename='folder',special='directory'),dict(filename='folder/entry/child')),
+               (dict(filename='absent.pic',special='missing'),dict(filename='ABSENT.PIC')),
+               (dict(filename='sparse.pic',special='sparse'),dict(filename='SPARSE.PIC'))]
+        for pair in pairs:
+            for rows in (list(pair),list(reversed(pair))):
+                with self.subTest(rows=rows),self.assertRaisesRegex(ValueError,'[Cc]asefold'):
+                    f.validate_fixture_names(rows)
+
+    def test_complete_fixture_inventory_survives_ascii_casefold_simulation(self):
+        stress=dict(filename='exact-cap.pic')
+        rows=self.cases+self.invalid+[stress]
+        f.validate_fixture_names(rows)
+        names=[c['filename'] for c in rows if c.get('special')!='missing']
+        names += [c['filename']+'/entry' for c in rows if c.get('special')=='directory']
+        # Model case-preserving, case-insensitive creation: a later spelling
+        # writes the first spelling's physical entry. Never a native host run.
+        def retained_names(names):
+            entries={}
+            for name in names:entries.setdefault(name.casefold(),name)
+            return set(entries.values())
+        self.assertEqual(retained_names(names),set(names))
+        legacy=[name.replace('-PNM-upper.PNM','-PNM.PNM').replace('-QOI-upper.QOI','-QOI.QOI') for name in names]
+        self.assertEqual(set(legacy)-retained_names(legacy),
+                         {f'path-c{channels}-{suffix}.{suffix}' for channels in (3,4) for suffix in ('PNM','QOI')})
+
     def test_native_schema_and_safety_mutations_fail_closed(self):
         changes=[dict(width=0),dict(width=4097),dict(width=True),dict(height=1.0),dict(channels=2),dict(extended=1),dict(regress=1),dict(id='unsafe"id'),dict(bytes=self.case['bytes'][:-1]),dict(bytes=[*self.case['bytes'],256]),dict(bytes=[*self.case['bytes'],True]),dict(bytes=[*self.case['bytes'],17.0]),dict(bytes=bytes(self.case['bytes'])),dict(special='sparse'),dict(native=True),dict(route='explicit-qoi'),dict(route='explicit-pic'),dict(route=True),dict(filename='image.QoI'),dict(filename='../image.pic'),dict(filename='/image.pic'),dict(filename='image\0.pic'),dict(filename=''),dict(filename=True),dict(path='\0'),dict(path=''),dict(path=True),dict(bytes=[0])]
         for change in changes:
