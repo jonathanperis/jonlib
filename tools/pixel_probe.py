@@ -1,58 +1,14 @@
 #!/usr/bin/env python3
 """Compare all-format size boundaries and complete raw ImageDither outputs."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
 import random
 
-from conformance import BUILD, ROOT, checkout, run, source_gate
+from conformance import source_gate
+import probekit
+from probekit import ProbeFailure
 
-
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True)
-    parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true')
-    args = parser.parse_args()
-    lock = json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'))
-    checkout(args.raylib_source,lock['raylib']['revision'])
-    work = BUILD/'pixel-probe';work.mkdir(parents=True,exist_ok=True)
-    report_path = work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    dimensions = [0,1,2,3,4,5,7,8,9,16,31,256,4096]
-    sizes = [(w,h,f) for w in dimensions for h in dimensions for f in [*range(26),2147483647]]
-    rng = random.Random(0xD17E)
-    patterns = [(1,1,[0xffffffff]),(4,1,[0x12345600,0x1234567f,0x12345680,0x123456ff]),
-                (1,5,[rng.getrandbits(32) for _ in range(5)]),
-                (7,5,[rng.getrandbits(32) for _ in range(35)]),
-                (3,3,[0xfaf9f780,0xfdfefc01,0xffffffff]*3),
-                (2,2,[0,0xff000000,0x00ff00ff,0x0000ff7f])]
-    layouts = [(5,6,5,0),(5,5,5,1),(4,4,4,4),(2,3,4,2),(8,8,0,0),(0,0,0,8),(0,0,0,0)]
-    cases = [(w,h,pixels,bits) for w,h,pixels in patterns for bits in layouts]
-    lines = ['#include "raylib.h"','#include <stdio.h>',
-             'static const unsigned sizes[][3]={'+','.join('{'+','.join(map(str,entry))+'}' for entry in sizes)+'};',
-             'int main(void){SetTraceLogLevel(LOG_NONE);printf("[");',
-             'for(unsigned i=0;i<sizeof(sizes)/sizeof(sizes[0]);i++)printf("%s%d",i?",":"",GetPixelDataSize(sizes[i][0],sizes[i][1],sizes[i][2]));',
-             'puts("]");']
-    for w,h,pixels,bits in cases:
-        lines += ['{',f'Image image=GenImageColor({w},{h},BLANK);',
-                  'unsigned input[]={'+','.join(str(value)+'u' for value in pixels)+'};',
-                  f'for(int i=0;i<{w*h};i++)((Color*)image.data)[i]=GetColor(input[i]);',
-                  f'ImageDither(&image,{",".join(map(str,bits))});',
-                  'printf("{\\"width\\":%d,\\"height\\":%d,\\"format\\":%d,\\"words\\":[",image.width,image.height,image.format);',
-                  f'for(int i=0;i<{w*h};i++)printf("%s%u",i?",":"",((unsigned short*)image.data)[i]);',
-                  'puts("]}");UnloadImage(image);','}']
-    source = work/'reference.c';source.write_text('\n'.join(lines+['}'])+'\n')
-    binary = work/'reference'
-    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary])
-    reference = [json.loads(line) for line in run([binary]).splitlines()]
-    if len(reference)!=len(cases)+1 or len(reference[0])!=len(sizes):raise ValueError('Incomplete pixel reference results')
-    report = dict(passed=False,size_cases=len(sizes),dither_cases=len(cases),
-                  packed_words=sum(w*h for w,h,_,_ in cases),sources=source_gate(),
-                  inputs_sha256=hashlib.sha256(json.dumps([sizes,cases]).encode()).hexdigest(),lanes={})
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        program = '''import Base
+PROGRAM = '''import Base
 import ../../jonlib.bend as J
 type Size is Data:
   Size{width: U32, height: U32, format: U32}
@@ -88,26 +44,65 @@ def observed(result: Maybe<J.Image.Packed16>) -> IO(Unit):
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
-        bang = '!' if lane=='metal' else ''
-        for start in range(0,len(sizes),64):
-            inputs = ','.join('Size{'+','.join(map(str,row))+'}' for row in sizes[start:start+64])
-            program += f'    IO.print(List.show(~&1, ~U32, ~U32.show, sizes{bang}([{inputs}], Nil{{}})))\n'
-        for w,h,pixels,bits in cases:
-            program += f'    observed(calculate{bang}({w}, {h}, ['+','.join(map(str,pixels))+'], '+','.join(map(str,bits))+'))\n'
-        source = work/f'{lane}.bend';source.write_text(program)
-        binary = work/('candidate.js' if lane=='javascript' else f'candidate-{lane}')
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command = ['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        rows = [json.loads(line) for line in run(command).splitlines()]
-        chunks = (len(sizes)+63)//64
-        actual = [[word for row in rows[:chunks] for word in row],*rows[chunks:]]
-        report['lanes'][lane] = dict(passed=actual==reference)
-        report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if actual!=reference:raise ValueError(f'{lane}: size/packed-dither metadata or content mismatch')
-        print(f'{lane}: {len(sizes)} size results and {len(cases)} complete packed dithering outputs match native raylib',flush=True)
-    report['passed'] = True
-    report_path.write_text(json.dumps(report,indent=2)+'\n')
 
+
+def fixtures():
+    dimensions = [0,1,2,3,4,5,7,8,9,16,31,256,4096]
+    sizes = [(w,h,f) for w in dimensions for h in dimensions for f in [*range(26),2147483647]]
+    rng = random.Random(0xD17E)
+    patterns = [(1,1,[0xffffffff]),(4,1,[0x12345600,0x1234567f,0x12345680,0x123456ff]),
+                (1,5,[rng.getrandbits(32) for _ in range(5)]),
+                (7,5,[rng.getrandbits(32) for _ in range(35)]),
+                (3,3,[0xfaf9f780,0xfdfefc01,0xffffffff]*3),
+                (2,2,[0,0xff000000,0x00ff00ff,0x0000ff7f])]
+    layouts = [(5,6,5,0),(5,5,5,1),(4,4,4,4),(2,3,4,2),(8,8,0,0),(0,0,0,8),(0,0,0,0)]
+    return sizes,[(w,h,pixels,bits) for w,h,pixels in patterns for bits in layouts]
+
+
+def reference_program(sizes, cases):
+    lines = ['#include "raylib.h"','#include <stdio.h>',
+             'static const unsigned sizes[][3]={'+','.join('{'+','.join(map(str,entry))+'}' for entry in sizes)+'};',
+             'int main(void){SetTraceLogLevel(LOG_NONE);printf("[");',
+             'for(unsigned i=0;i<sizeof(sizes)/sizeof(sizes[0]);i++)printf("%s%d",i?",":"",GetPixelDataSize(sizes[i][0],sizes[i][1],sizes[i][2]));',
+             'puts("]");']
+    for w,h,pixels,bits in cases:
+        lines += ['{',f'Image image=GenImageColor({w},{h},BLANK);',
+                  'unsigned input[]={'+','.join(str(value)+'u' for value in pixels)+'};',
+                  f'for(int i=0;i<{w*h};i++)((Color*)image.data)[i]=GetColor(input[i]);',
+                  f'ImageDither(&image,{",".join(map(str,bits))});',
+                  'printf("{\\"width\\":%d,\\"height\\":%d,\\"format\\":%d,\\"words\\":[",image.width,image.height,image.format);',
+                  f'for(int i=0;i<{w*h};i++)printf("%s%u",i?",":"",((unsigned short*)image.data)[i]);',
+                  'puts("]}");UnloadImage(image);','}']
+    return '\n'.join(lines+['}'])+'\n'
+
+
+def main():
+    probe = probekit.Probe('pixel',probekit.arguments(__doc__))
+    probe.report['sources'] = source_gate()
+    sizes,cases = fixtures()
+    text = probe.native(reference_program(sizes,cases))
+    reference = [json.loads(line) for line in text.splitlines()]
+    if len(reference)!=len(cases)+1 or len(reference[0])!=len(sizes):raise ProbeFailure('Incomplete pixel reference results')
+    # The candidate prints sizes in 64-entry chunks, then one packed dithering result per case.
+    actions = [('sizes',start) for start in range(0,len(sizes),64)]+[('dither',case) for case in cases]
+    expected = [reference[0][start:start+64] for start in range(0,len(sizes),64)]+reference[1:]
+
+    def render(selected,gpu):
+        bang = '!' if gpu else '';body = PROGRAM
+        for kind,value in selected:
+            if kind=='sizes':
+                inputs = ','.join('Size{'+','.join(map(str,row))+'}' for row in sizes[value:value+64])
+                body += f'    IO.print(List.show(~&1, ~U32, ~U32.show, sizes{bang}([{inputs}], Nil{{}})))\n'
+            else:
+                w,h,pixels,bits = value
+                body += f'    observed(calculate{bang}({w}, {h}, ['+','.join(map(str,pixels))+'], '+','.join(map(str,bits))+'))\n'
+        return body
+
+    probe.compare(expected,probe.candidates(render,actions,batch=len(actions)),
+                  describe=lambda index:f'{actions[index][0]} action {index}')
+    probe.finish(size_cases=len(sizes),dither_cases=len(cases),packed_words=sum(w*h for w,h,_,_ in cases),
+                 inputs_sha256=hashlib.sha256(json.dumps([sizes,cases]).encode()).hexdigest(),
+                 reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 if __name__ == '__main__':
     main()

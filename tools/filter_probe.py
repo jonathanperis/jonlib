@@ -3,37 +3,26 @@
 
 The stock library is always the reference. No variant changes conformance expectations.
 """
-import argparse
 import hashlib
 import json
-from pathlib import Path
 import random
 
-from conformance import BUILD, ROOT, checkout, run
+import probekit
+from probekit import ProbeFailure
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raylib-source', type=Path, default=Path.home() / 'Projetos/raysan5/raylib')
-    parser.add_argument('--cases', type=int, default=512)
-    args = parser.parse_args()
-    if args.cases < 1:
-        raise ValueError('At least one resize probe is required')
-    lock = json.loads((ROOT / 'toolchain.json').read_text())['raylib']
-    checkout(args.raylib_source, lock['revision'])
-    library = BUILD / 'raylib/raylib/libraylib.a'
-    if not library.is_file():
-        raise ValueError('Run tools/conformance.py first to build the pinned reference library')
-    work = BUILD / 'filter-probe'
-    work.mkdir(exist_ok=True)
+def fixtures(count):
     rng = random.Random(20260925)
     cases = []
-    for i in range(args.cases):
+    for i in range(count):
         w, h, nw, nh = [rng.randint(1, limit) for limit in (11, 9, 17, 15)]
         pixels = [[rng.randrange(256), rng.randrange(256), rng.randrange(256),
                    rng.choice([0, 1, 2, 64, 128, 254, 255])] for _ in range(w*h)]
         cases.append(dict(id=i, width=w, height=h, output_width=nw, output_height=nh, pixels=pixels))
-    (work / 'cases.json').write_text(json.dumps(cases, indent=2) + '\n')
+    return cases
+
+
+def reference_program(cases):
     c = [
         '#include "raylib.h"', '#include <stdio.h>', '#include <stdlib.h>', '#include <string.h>',
         '#define STB_IMAGE_RESIZE_STATIC', '#define STB_IMAGE_RESIZE_IMPLEMENTATION',
@@ -57,29 +46,39 @@ def main():
         pixels = ','.join(str(c) for pixel in case['pixels'] for c in pixel)
         c += ['{', f'unsigned char pixels[] = {{{pixels}}};',
               f'probe({case["id"]},{case["width"]},{case["height"]},{case["output_width"]},{case["output_height"]},pixels);', '}']
-    c += ['return 0;', '}']
-    source = work / 'probe.c'
-    source.write_text('\n'.join(c) + '\n')
-    report = dict(reference=lock, seed=20260925, cases=len(cases), variants={},
-                  header_sha256=hashlib.sha256((args.raylib_source / 'src/external/stb_image_resize2.h').read_bytes()).hexdigest(),
-                  inputs_sha256=hashlib.sha256((work / 'cases.json').read_bytes()).hexdigest())
+    return '\n'.join(c + ['return 0;', '}']) + '\n'
+
+
+def main():
+    args = probekit.arguments(__doc__, lambda parser: parser.add_argument('--cases', type=int, default=512), bend=False)
+    if args.cases < 1:
+        raise ProbeFailure('At least one resize probe is required')
+    probe = probekit.Probe('filter', args)
+    work = probe.work
+    cases = fixtures(args.cases)
+    (work / 'cases.json').write_text(json.dumps(cases, indent=2) + '\n')
+    source = reference_program(cases)
+    variants = {}
+    summary = dict(reference=probe.lock['raylib'], seed=20260925, cases=len(cases), variants=variants,
+                   header_sha256=hashlib.sha256((args.raylib_source / 'src/external/stb_image_resize2.h').read_bytes()).hexdigest(),
+                   inputs_sha256=hashlib.sha256((work / 'cases.json').read_bytes()).hexdigest())
     for name, flags in [('stock-control', []), ('float-normalization', ['-DFLOAT_NORMALIZATION'])]:
-        binary = work / name
-        run(['clang', '-std=c11', '-O3', '-fno-strict-aliasing', *flags,
-             '-I' + str(args.raylib_source / 'src'), source, library, '-lm', '-o', binary])
-        output = run([binary])
+        output = probe.native(source, name, extra_flags=['-O3', '-fno-strict-aliasing', *flags])
         rows = [json.loads(line) for line in output.splitlines()]
         if len(rows) != len(cases):
-            raise ValueError('Resize probe lost result rows')
+            raise ProbeFailure('Resize probe lost result rows')
         mismatches = [row for row in rows if row['different_channels']]
         (work / f'{name}.json').write_text(json.dumps(rows, indent=2) + '\n')
-        report['variants'][name] = dict(mismatching_cases=len(mismatches), different_channels=sum(row['different_channels'] for row in rows), first_mismatches=mismatches[:5])
+        variants[name] = dict(mismatching_cases=len(mismatches), different_channels=sum(row['different_channels'] for row in rows),
+                              first_mismatches=mismatches[:5], output_sha256=hashlib.sha256(output.encode()).hexdigest())
         if name == 'float-normalization':
-            report['counterexamples'] = [dict(input=cases[row['id']], mismatch=row) for row in mismatches[:5]]
-        print(name, report['variants'][name], flush=True)
+            summary['counterexamples'] = [dict(input=cases[row['id']], mismatch=row) for row in mismatches[:5]]
+        print(name, {k: v for k, v in variants[name].items() if k != 'output_sha256'}, flush=True)
+        # The one hard gate: the standalone stock core must reproduce linked raylib exactly.
         if name == 'stock-control' and mismatches:
-            raise ValueError('The standalone stock core did not match raylib; do not interpret the experiment')
-    (work / 'results.json').write_text(json.dumps(report, indent=2) + '\n')
+            raise ProbeFailure('The standalone stock core did not match raylib; do not interpret the experiment')
+    probe.report.update(summary)
+    probe.diagnostic(cases=len(cases), **{f'{name}_mismatching_cases': v['mismatching_cases'] for name, v in variants.items()})
     print('Diagnostic only; no filtered-resize API is marked compatible by this experiment.')
 
 
