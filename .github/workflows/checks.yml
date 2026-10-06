@@ -15,8 +15,12 @@ concurrency:
 
 jobs:
   harness:
-    name: Harness and project checks
-    runs-on: ubuntu-24.04
+    name: Harness and project checks (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

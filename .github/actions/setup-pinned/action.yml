@@ -1,0 +1,52 @@
+name: Set up pinned toolchain
+description: Python, the pinned Bun, and the pinned Bend (with the declared overlay) and raylib checkouts from toolchain.json.
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: '3.12'
+    - name: Read pinned dependencies
+      id: pins
+      shell: bash
+      run: |
+        python3 - <<'PY'
+        import json, os
+        from pathlib import Path
+        pins = json.loads(Path('toolchain.json').read_text())
+        with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+            print('bend=' + pins['bend']['revision'], file=output)
+            print('raylib=' + pins['raylib']['revision'], file=output)
+            print('bun=' + pins['bun']['version'], file=output)
+        PY
+    - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      with:
+        bun-version: ${{ steps.pins.outputs.bun }}
+    - name: Check out pinned Bend
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        repository: bendlang/bend
+        ref: ${{ steps.pins.outputs.bend }}
+        path: .build/dependencies/bend
+        persist-credentials: false
+    - name: Check out pinned raylib
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      with:
+        repository: raysan5/raylib
+        ref: ${{ steps.pins.outputs.raylib }}
+        path: .build/dependencies/raylib
+        persist-credentials: false
+    - name: Apply the declared Bend compiler overlay
+      shell: bash
+      run: |
+        python3 - <<'PY'
+        import hashlib, json, subprocess
+        from pathlib import Path
+        overlay = json.loads(Path('toolchain.json').read_text())['bend']['patch']
+        patch = Path(overlay['path']).resolve()
+        if hashlib.sha256(patch.read_bytes()).hexdigest() != overlay['sha256']:
+            raise SystemExit('Compiler patch hash mismatch')
+        source = Path('.build/dependencies/bend').resolve()
+        subprocess.run(['git', '-C', str(source), 'apply', '--check', str(patch)], check=True)
+        subprocess.run(['git', '-C', str(source), 'apply', str(patch)], check=True)
+        PY
