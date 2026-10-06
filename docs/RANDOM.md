@@ -6,7 +6,8 @@ low/high extraction order in `rprand.h`. Stream state is explicit and owned.
 
 - `Random.seed(seed: U32) -> Random.State` creates an independent stream.
 - `Random.value(state, minimum, maximum) -> Random.State & F32` returns the next
-  stream and an integral value. Bounds are integral F32 values in -32767..32767.
+  stream and an integral value. Bounds are finite F32 values in -32767..32767,
+  truncated toward zero like `GetRandomValue`'s `int` parameters.
   Endpoints are inclusive and reversed bounds are swapped. Equal bounds still
   consume one random draw.
 - `Random.next_u32(state) -> Random.State & U32` exposes the underlying stream

@@ -30,7 +30,7 @@ Pure Bend queries in `jonlib.bend`, adapted from pinned raylib `rshapes.c`:
 | `Collision.lines(start, end, other_start, other_end)` | `Maybe<&2, Vector2>`; inclusive segment endpoints, `None` for parallel/collinear lines or intersections outside either segment. |
 | `Collision.lines_for(arithmetic, start, end, other_start, other_end)` | Explicit `Collision.Arithmetic` selection described below. |
 | `Collision.point_triangle(point, first, second, third)` | Strictly positive barycentric weights; excludes edges and degenerate triangles. |
-| `Collision.point_line(point, first, second, threshold)` | Strict cross-product margin and inclusive dominant-axis bounds; integral F32 threshold. |
+| `Collision.point_line(point, first, second, threshold)` | Strict cross-product margin and inclusive dominant-axis bounds; F32 threshold truncated toward zero like the C `int`. |
 | `Collision.circle_line(center, radius, first, second)` | Closest point on the segment; near-zero segments use the reference epsilon fallback to the first endpoint. |
 | `Collision.point_poly(point, points)` | Reference odd/even ray crossings over an immutable `+List<Vector2>`; fewer than three vertices returns false. |
 
