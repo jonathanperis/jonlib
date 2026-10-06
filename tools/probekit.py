@@ -27,6 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / '.build'
 ENV = dict(os.environ, BEND_NO_TELEMETRY='1')
 CPU_LANES = ('cpu-1', 'cpu-2', 'javascript')
+COMPILE_TIMEOUT = 1800
 DEFAULT_RAYLIB_OPTIONS = ('PLATFORM=Memory', 'CMAKE_BUILD_TYPE=Release', 'BUILD_EXAMPLES=OFF',
                           'CUSTOMIZE_BUILD=ON', 'SUPPORT_MODULE_RAUDIO=OFF',
                           'SUPPORT_RPRAND_GENERATOR=ON', 'USE_EXTERNAL_GLFW=OFF')
@@ -148,14 +149,15 @@ class Probe:
         source, binary, script = (self.work / f'candidate-{index}.bend', self.work / f'candidate-{index}',
                                   self.work / f'candidate-{index}.js')
         source.write_text(render(False))
-        run([*cli, source, '-o', binary, '-o', script])
+        # Compile time grows with batch size and machine load; it is a budget, not a check.
+        run([*cli, source, '-o', binary, '-o', script], timeout=COMPILE_TIMEOUT)
         commands = {'cpu-1': [binary, '--gpu', 'off', '--threads', '1'],
                     'cpu-2': [binary, '--gpu', 'off', '--threads', '2'],
                     'javascript': ['bun', script]}
         if self.args.gpu:
             gpu_source, gpu_binary = self.work / f'candidate-{index}-gpu.bend', self.work / f'candidate-{index}-gpu'
             gpu_source.write_text(render(True))
-            run([*cli, gpu_source, '-o', gpu_binary])
+            run([*cli, gpu_source, '-o', gpu_binary], timeout=COMPILE_TIMEOUT)
             commands['gpu'] = [gpu_binary, '--gpu', 'on']
         return commands
 

@@ -184,7 +184,7 @@ controls run only in checked Jonlib.
 ```sh
 python3 tools/png_format_probe.py --reference-env clean-loader \
   --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
-python3 -m unittest discover -s tests -p test_png_format_harness.py -v
+python3 -m unittest discover -s tests -p test_formatted_probes.py -v
 ```
 
 The fresh PNG-enabled Memory oracle verifies source/tool/compiler/archive
