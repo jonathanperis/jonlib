@@ -31,7 +31,7 @@ now 72 core/eight formatted gates and 140 core/17 formatted artifact paths per
 OS. The new artifact is scoped to `.build/tga-format-probe/`, which has no sparse
 fixtures. The unchanged baseline and 4,802 aggregate-shell checks are retained;
 a new test method mutates the added gate, loader flag and artifact path on each
-platform. See [the complete CI contract](CI-RUNTIME.md).
+platform. See [the complete CI contract](CI.md).
 
 ## Fresh local results
 
@@ -74,7 +74,7 @@ recorded source hashes. They are not relabeled as new integrated reruns. The
 new focused and canonical reports above establish their own measured scope.
 
 Published main `0c663c9a` has a verified successful hosted 79-gate PNM/split run,
-with all four evidence artifacts, as recorded in [CI runtime](CI-RUNTIME.md).
+with all four evidence artifacts, as recorded in [CI runtime](CI.md).
 That result does not validate this new 80-gate TGA integration. Fresh
 exact-commit hosted Checks, all four workers, both compatibility aggregates and
 all four expected artifact packages are still required.
