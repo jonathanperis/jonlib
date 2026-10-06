@@ -4025,7 +4025,7 @@ or NaN-payload claim is made.
 
 ## 2026-10-02: historical standalone qualifier-only checkpoint
 
-The independently frozen [native angle qualification gate](ANGLE-QUALIFICATION.md)
+The independently frozen [native angle qualification gate](ANGLES.md)
 now verifies 76 scalar controls, 205 canonical/runtime wrapper controls and
 1,654 ordered intermediate words before any future angle-candidate generation.
 It uniquely observes the modern contract on the recorded Linux host; historical
@@ -4039,7 +4039,7 @@ The three existing partial raymath angle entries now also map to explicit
 `Glibc241AngleRn` identify source/numerical contracts. Existing defaults and
 `*_for(Gradient.Reference, ...)` meanings are unchanged. All 1,884 statuses,
 117/600 core partial entries, 142 math partial entries and zero completed APIs
-are unchanged. The [contract](CHECKED-ANGLES.md) specifies staged normal/zero
+are unchanged. The [contract](ANGLES.md) specifies staged normal/zero
 intermediates and output, finite original components, true line negation and
 propagated checked scalar failure.
 

@@ -19,7 +19,6 @@ import run_gates
 EXEMPT = {
     'byte_probe.py': 'shared Bend emitter helpers used by other probes',
     'metal_probe.py': 'forced-GPU check; hosted runners have no Metal device',
-    'checked_angle_probe.py': 'host-qualified glibc-2.41 wrapper check, superseded by the angle-gate rewrite',
 }
 WORKFLOW = ROOT / '.github/workflows/conformance.yml'
 

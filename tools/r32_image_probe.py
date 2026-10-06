@@ -5,19 +5,19 @@ Pure operations run on CPU/JS and optionally forced Metal. File IO runs only on
 CPU/JS. Packed memory PNG, formatted format-9 loading, out-of-domain FloatRGB->R32 and GetPixelColor remain
 explicit Jonlib rejection contracts, not assertions of native equivalence.
 """
-import argparse
 import hashlib
 import json
 import re
-from pathlib import Path
 import struct
 import sys
 import zlib
 
 from bmp_probe import bend_bytes
 from byte_probe import BEND_EMITTER, parse_results
-from conformance import BUILD, ROOT, checkout, f32, run, source_gate
+from conformance import f32
 from image_format_probe import r32_words, word_bytes
+import probekit
+from probekit import ProbeFailure
 
 
 SELECTORS = (-32767, 0, 1, 2, 3, 32767)
@@ -130,12 +130,6 @@ def parse_rows(text, expected_shapes):
         if not valid:
             raise ValueError(f'R32 output shape/owner differs at result {index} ({shape.get("operation_kind",kind)})')
     return rows
-
-
-def differences(expected, actual):
-    if len(expected) != len(actual):
-        raise ValueError('Incomplete R32 comparison result count')
-    return [i for i,(a,b) in enumerate(zip(expected,actual)) if a != b]
 
 
 def png_observations(ops, rows):
@@ -465,10 +459,11 @@ def image_expr(case):
     return f'J.Image.Formatted.from_bytes({case["width"]}, {case["height"]}, {case.get("format",8)}, {bend_bytes(case["bytes"])})'
 
 
-def candidate_program(ops, lane, directory, raw_load_controls=True, raw_load_case=None):
-    bang = '!' if lane == 'metal' else ''
+def candidate_program(ops, gpu, directory, raw_load_controls=True):
+    """Pure operations (forced '!' calls on GPU); CPU/JS also write files and run raw-load controls."""
+    bang = '!' if gpu else ''
     body = BEND_PREAMBLE.replace('BANG',bang)
-    if lane != 'metal':
+    if not gpu:
         body += BEND_IO
     body += 'def main() -> IO(Unit):\n  do IO<Unit>:\n'
     for op in ops:
@@ -506,7 +501,7 @@ def candidate_program(ops, lane, directory, raw_load_controls=True, raw_load_cas
         else:
             raise ValueError(f'Unknown R32 operation {kind}')
         body += '    '+line+'\n'
-    if lane != 'metal':
+    if not gpu:
         for op in ops:
             if op['kind'] in ('png','raw','code'):
                 kind, case = op['kind'], op['case']
@@ -522,109 +517,67 @@ def candidate_program(ops, lane, directory, raw_load_controls=True, raw_load_cas
     return body
 
 
-def io_shapes(ops, raw_load_controls=True):
-    return [dict(kind='exact',value=[1]) for _ in range(sum(op['kind'] in ('png','raw','code') for op in ops)+2*raw_load_controls)]
-
-
-def operation_batches(ops):
-    return [ops[index:index+BATCH_OPERATIONS] for index in range(0,len(ops),BATCH_OPERATIONS)]
-
-
-def harness_hashes():
-    return {name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in
-            ('tools/r32_image_probe.py','tools/image_format_probe.py','tools/bmp_probe.py',
-             'tools/byte_probe.py','tools/conformance.py','tests/test_r32_harness.py')}
+FILE_SUFFIX = {'png':'png','code':'h','raw':'raw'}
+RAW_CONTROLS = dict(kind='raw_load_controls')
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True)
-    parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true',help='Add forced Metal for pure operations only; file IO remains CPU/JS')
-    args = parser.parse_args()
-    work = BUILD/'r32-image-probe';work.mkdir(parents=True,exist_ok=True)
-    report_path = work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
+    probe = probekit.Probe('r32-image', probekit.arguments(__doc__))
     if sys.byteorder != 'little':
-        raise ValueError('Current R32 profile requires a little-endian reference')
-    lock = json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'))
-    checkout(args.raylib_source,lock['raylib']['revision'])
-    cases = fixtures();ops = operations(cases);shapes = schemas(ops)
+        raise ProbeFailure('Current R32 profile requires a little-endian reference')
+    work, cases = probe.work, fixtures()
+    ops = operations(cases)
     reference_dir = work/'reference-files';reference_dir.mkdir(exist_ok=True)
-    source = work/'reference.c';source.write_text(reference_program(ops,reference_dir))
-    binary = work/'reference'
-    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary])
-    text = run([binary]);expected = parse_rows(text,shapes);files = file_expectations(ops,expected)
+    text = probe.native(reference_program(ops,reference_dir))
+    expected = parse_rows(text,schemas(ops));files = file_expectations(ops,expected)
     png_profiles = png_observations(ops,expected)
     verify_files(reference_dir,files)
-    report = dict(passed=False,source_format=8,fixtures=len(cases),source_pixels=sum(c['width']*c['height'] for c in cases),
-                  pure_operations=len(ops),pure_results=len(expected),file_exports=len(files),
-                  memory_png='native raw little-endian R32 bytes as RGBA8',
-                  file_png='native normalized red-only RGBA8',
-                  memory_png_images=sum(op['kind'] == 'memory_png' for op in ops),
-                  packed_memory_rejections=sum(op['kind'] == 'packed_memory_reject' for op in ops),
-                  png_profiles={name:{kind:dict(encoded_bytes=profile['encoded_bytes'],
-                                decoded_bytes=len(profile['decoded_rgba']),
-                                decoded_sha256=hashlib.sha256(bytes(profile['decoded_rgba'])).hexdigest())
-                                for kind,profile in profiles.items()} for name,profiles in png_profiles.items()},
-                  raw_loading='checked R32; unsupported formatted format 9 controls',float_rgb_target8='finite [0,1]; negative subnormal retained-owner control',pixel_get_color8='unsupported',
-                  sources=source_gate(),inputs_sha256=hashlib.sha256(json.dumps(ops).encode()).hexdigest(),
-                  reference_sha256=hashlib.sha256(text.encode()).hexdigest(),
-                  reference_program_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
-                  harness_sha256=harness_hashes(),lanes={})
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        directory = work/lane;prepare_files(directory,files)
-        report['lanes'][lane] = dict(passed=False,batches=[])
-        batches = operation_batches(ops)
-        pure_rows,io_rows,output_texts = [],[],[]
-        operation_cursor,result_cursor = 0,0
-        for index,batch in enumerate(batches):
-            raw_controls = index == len(batches)-1
-            batch_shapes = schemas(batch)
-            extra_shapes = [] if lane == 'metal' else io_shapes(batch,raw_controls)
-            source = work/f'{lane}-{index}.bend'
-            source.write_text(candidate_program(batch,lane,directory,raw_controls,cases[0]))
-            evidence = dict(passed=False,operation_start=operation_cursor,operations=len(batch),
-                            pure_results=len(batch_shapes),io_results=len(extra_shapes),
-                            candidate_program_sha256=hashlib.sha256(source.read_bytes()).hexdigest())
-            report['lanes'][lane]['batches'].append(evidence)
-            report_path.write_text(json.dumps(report,indent=2)+'\n')
-            binary = work/f'candidate-{lane}-{index}{".js" if lane == "javascript" else ""}'
-            binary.unlink(missing_ok=True)
-            run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-            command = ['bun',binary] if lane == 'javascript' else [binary,*(['--gpu','on'] if lane == 'metal' else [])]
-            actual_text = run(command)
-            evidence['candidate_sha256'] = hashlib.sha256(actual_text.encode()).hexdigest()
-            report_path.write_text(json.dumps(report,indent=2)+'\n')
-            actual = parse_rows(actual_text,batch_shapes+extra_shapes)
-            wanted = expected[result_cursor:result_cursor+len(batch_shapes)]+[shape['value'] for shape in extra_shapes]
-            delta = differences(wanted,actual)
-            evidence.update(passed=not delta,result_count=len(actual),different_results=delta)
-            report_path.write_text(json.dumps(report,indent=2)+'\n')
-            if delta:
-                raise ValueError(f'{lane} batch {index}: R32 exact native differences {delta[:10]}')
-            pure_rows.extend(actual[:len(batch_shapes)])
-            io_rows.extend(actual[len(batch_shapes):])
-            output_texts.append(actual_text)
-            operation_cursor += len(batch)
-            result_cursor += len(batch_shapes)
-        actual = pure_rows+io_rows
-        extra_shapes = [] if lane == 'metal' else io_shapes(ops)
-        png_observations(ops,pure_rows)
-        wanted = expected+[shape['value'] for shape in extra_shapes]
-        delta = differences(wanted,actual)
-        if lane != 'metal':
-            verify_files(directory,files)
-        report['lanes'][lane].update(passed=not delta,result_count=len(actual),different_results=delta,
-                                    candidate_sha256=hashlib.sha256('\n'.join(output_texts).encode()).hexdigest(),
-                                    file_exports=0 if lane == 'metal' else len(files),file_io=lane != 'metal')
-        report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if delta:
-            raise ValueError(f'{lane}: R32 exact native differences {delta[:10]}')
-        print(f'{lane}: {len(expected)} exact R32 pure observations and {0 if lane == "metal" else len(files)} complete file exports passed',flush=True)
-    if source_gate() != report['sources'] or harness_hashes() != report['harness_sha256']:
-        raise ValueError('R32 source/harness changed during verification')
-    report['passed'] = True;report_path.write_text(json.dumps(report,indent=2)+'\n')
+    directory = work/'files';prepare_files(directory,files)
+    # One action per operation (its result rows); CPU/JS rows of file operations also
+    # carry the write status and the complete file this lane wrote. The final action
+    # stands for the two raw-load controls, which CPU/JS run after the last batch's writes.
+    actions,cpu,gpu,cursor = ops+[RAW_CONTROLS],[],[],0
+    for op in ops:
+        rows = expected[cursor:cursor+len(schemas([op]))];cursor += len(rows)
+        gpu.append(rows)
+        cpu.append(rows+([[1],list(files[f'{op["case"]["id"]}.{FILE_SUFFIX[op["kind"]]}'])] if op['kind'] in FILE_SUFFIX else []))
+    cpu.append([[1],[1]]);gpu.append(None)
+
+    def render(selected,gpu):
+        return candidate_program([a for a in selected if a is not RAW_CONTROLS],gpu,directory,RAW_CONTROLS in selected)
+
+    def parse_lane(text,selected,lane):
+        rows,grouped = parse_results(text),[]
+        for op in selected:
+            if op is not RAW_CONTROLS:
+                count = len(schemas([op]));grouped.append(rows[:count]);rows = rows[count:]
+        for index,op in enumerate(selected if lane != 'gpu' else ()):
+            if op is RAW_CONTROLS:
+                grouped.append(rows[:2]);rows = rows[2:]
+            elif op['kind'] in FILE_SUFFIX:
+                path = directory/f'{op["case"]["id"]}.{FILE_SUFFIX[op["kind"]]}'
+                # Read and remove the file so every lane must write it again.
+                grouped[index] += [rows[0] if rows else None,list(path.read_bytes()) if path.is_file() else None]
+                rows = rows[1:];path.unlink(missing_ok=True)
+        if lane == 'gpu' and RAW_CONTROLS in selected:
+            grouped.append(None)
+        if rows:
+            raise ProbeFailure(f'{lane}: {len(rows)} unexpected trailing R32 output rows')
+        return grouped
+
+    lanes = probe.candidates(render,actions,batch=BATCH_OPERATIONS,parse_lane=parse_lane)
+    describe = lambda i:f'{actions[i]["kind"]} {actions[i].get("case",{}).get("id","")}'
+    probe.compare(cpu,{lane:rows for lane,rows in lanes.items() if lane != 'gpu'},describe)
+    if 'gpu' in lanes:
+        probe.compare(gpu,{'gpu':lanes['gpu']},describe)
+    probe.finish(source_format=8,fixtures=len(cases),source_pixels=sum(c['width']*c['height'] for c in cases),
+                 pure_operations=len(ops),pure_results=len(expected),file_exports=len(files),
+                 memory_png_images=sum(op['kind'] == 'memory_png' for op in ops),
+                 packed_memory_rejections=sum(op['kind'] == 'packed_memory_reject' for op in ops),
+                 png_profiles={name:{kind:dict(encoded_bytes=profile['encoded_bytes'],decoded_bytes=len(profile['decoded_rgba']))
+                                     for kind,profile in profiles.items()} for name,profiles in png_profiles.items()},
+                 inputs_sha256=hashlib.sha256(json.dumps(ops).encode()).hexdigest(),
+                 reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__ == '__main__':

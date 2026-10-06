@@ -170,7 +170,7 @@ also pass on this unchanged library source. Surface TGA and generic memory/file
 reports, sources and exits pass; their inherited harnesses do not retain full
 stdout for an independent full-record replay. The new 81-gate CI addition still
 requires its own exact-commit hosted run; the historical 80-gate memory checkpoint
-is separately recorded in [CI runtime](CI-RUNTIME.md).
+is separately recorded in [CI runtime](CI.md).
 
 ## Reconstructed formatted-memory verification
 

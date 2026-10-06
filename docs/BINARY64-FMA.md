@@ -146,7 +146,7 @@ is claimed.
 
 ## Remaining scope
 
-See [ANGLE-PLAN.md](ANGLE-PLAN.md). A [private bounded add/subtract prerequisite](BINARY64-ADD-SUB.md) is now
+See [ANGLE-PLAN.md](ANGLES.md). A [private bounded add/subtract prerequisite](BINARY64-ADD-SUB.md) is now
 implemented separately, as are the [checked normal operations and word adapters](BINARY64-OPS.md).
 A private [gradual-output product](BINARY64-GRADUAL-MULTIPLY.md) now provides
 the isolated tiny-product arithmetic. The full pinned modern scalar kernel,

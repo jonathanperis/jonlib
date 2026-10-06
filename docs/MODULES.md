@@ -73,4 +73,4 @@ accepts raw F32 words and returns a checked F32 result word; diagnostic traces a
 also private. See [MODERN-ANGLE.md](MODERN-ANGLE.md) for verification status,
 source provenance and exact operation order. The new checked public angle
 wrappers consume it through `src/checked_angle.bend`; see
-[CHECKED-ANGLES.md](CHECKED-ANGLES.md). Device work remains separate.
+[CHECKED-ANGLES.md](ANGLES.md). Device work remains separate.

@@ -1,18 +1,13 @@
 #!/usr/bin/env python3
 """Native-only math profile diagnosis; completion is not a Jonlib parity pass."""
-import argparse
-from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
 import platform
-import shutil
 import struct
-import subprocess
-import sys
 
+import probekit
 from angle_probe import GNU_CONTROL, samples
-from conformance import BUILD, ROOT
 
 
 CASES = {
@@ -90,10 +85,6 @@ ENDPOINTS = [
     ('pi-poszero', 0., -1.), ('pi-negzero', -0., -1.),
     ('huge-ratio-neg', 1., -2**-70), ('near-half-neg-y', -1., -1e-20),
 ]
-
-
-def sha256(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def f32(value):
@@ -299,119 +290,40 @@ def parse_output(output, values, cases, expected_host=None):
                 direct_volatile_vs_native_differences=native_direct)
 
 
-def write_report(path, report):
-    temporary = path.with_suffix('.json.tmp')
-    temporary.write_text(json.dumps(report, indent=2)+'\n')
-    temporary.replace(path)
-
-
-def command(argv, log, timeout):
-    try:
-        result = subprocess.run([str(a) for a in argv], capture_output=True, text=True, timeout=timeout)
-        log.write_text(result.stdout+result.stderr)
-    except subprocess.TimeoutExpired as error:
-        # TimeoutExpired may retain bytes even in text mode.
-        decode = lambda value: value.decode(errors='replace') if isinstance(value, bytes) else value or ''
-        log.write_text(decode(error.stdout)+decode(error.stderr))
-        raise RuntimeError(f'Command timed out after {timeout}s; see {log}') from error
-    except OSError as error:
-        log.write_text(str(error)+'\n')
-        raise
-    if result.returncode:
-        raise RuntimeError(f'Command exited {result.returncode}; see {log}')
-    return result.stdout
-
-
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raylib-source', type=Path, required=True, help='Existing pinned raylib source; no checkout or installation')
-    parser.add_argument('--clang', default='clang', help='Existing Clang executable (four modes)')
-    parser.add_argument('--gcc', help='Optional existing GCC executable (two additional modes)')
-    parser.add_argument('--output', type=Path, default=BUILD/'native-profile-diagnostic')
-    parser.add_argument('--timeout', type=int, default=120, help='Seconds per compiler/run command')
-    args = parser.parse_args()
-    if args.timeout < 1:
-        parser.error('--timeout must be positive')
-    work = args.output.resolve()
-    work.mkdir(parents=True, exist_ok=True)
-    report_path = work/'results.json'
-    report = dict(schema=1, diagnostic_completed=False, parity_established=False,
-                  not_canonical_gate=True, started_utc=datetime.now(timezone.utc).isoformat(),
-                  host=dict(system=platform.system(), machine=platform.machine(), libc=platform.libc_ver()),
-                  variants={}, errors=[])
-    write_report(report_path, report)
-    try:
-        raylib = args.raylib_source.resolve()
-        header = raylib/'src/raymath.h'
-        pins = json.loads((ROOT/'toolchain.json').read_text())
-        report['raylib'] = dict(source=str(raylib), declared_revision=pins['raylib']['revision'],
-                                header_sha256=sha256(header), observed_git_revision=None)
-        # Archives may lack Git metadata. Never mistake a containing repository for this source.
-        if (raylib/'.git').exists():
-            revision = command(['git','-C',raylib,'rev-parse','HEAD'], work/'raylib-revision.log', args.timeout).strip()
-            report['raylib']['observed_git_revision'] = revision
-            if revision != pins['raylib']['revision']:
-                raise ValueError('Raylib checkout revision differs from toolchain.json')
-            changed = command(['git','-C',raylib,'status','--porcelain','--','src/raymath.h'],
-                              work/'raylib-header-status.log', args.timeout).strip()
-            if changed:
-                raise ValueError('Raylib raymath.h has uncommitted changes')
-        values = samples()
-        fixture_path = ROOT/'tests/fixtures/images.json'
-        cases = [case for case in json.loads(fixture_path.read_text())['cases'] if case['id'] in CASES]
-        if {case['id'] for case in cases} != CASES:
-            raise ValueError('Missing one or more diagnostic fixture scenarios')
-        report.update(samples=len(values), inputs_sha256=hashlib.sha256(json.dumps(values).encode()).hexdigest(),
-                      fixture_scenarios=[case['id'] for case in cases],
-                      source_sha256={str(path.relative_to(ROOT)):sha256(path) for path in [
-                          ROOT/'tools/native_math_profile_probe.py', ROOT/'tools/angle_probe.py',
-                          ROOT/'tools/conformance.py', ROOT/'src/angle.bend', ROOT/'jonmath.bend',
-                          ROOT/'toolchain.json', fixture_path]})
-        source = work/'diagnostic.c'
-        source.write_text(generate_source(values, cases))
-        report['generated_source'] = dict(path=str(source), sha256=sha256(source))
-        modes = [('clang-o0',args.clang,['-O0']), ('clang-o2',args.clang,['-O2']),
-                 ('clang-o2-native',args.clang,['-O2',*NATIVE_FLAGS]),
-                 ('clang-o2-strict',args.clang,['-O2','-ffp-model=strict'])]
-        if args.gcc:
-            modes += [('gcc-o2',args.gcc,['-O2']), ('gcc-o2-native',args.gcc,['-O2',*NATIVE_FLAGS])]
-        report['requested_modes'] = [mode[0] for mode in modes]
-        for name, compiler, flags in modes:
-            variant = dict(completed=False, compiler_requested=compiler, compiler_resolved=shutil.which(compiler),
-                           flags=['-std=c11',*flags,'-ffp-contract=off'])
-            report['variants'][name] = variant
-            write_report(report_path, report)
-            try:
-                version = command([compiler,'--version'],work/(name+'.version.log'),args.timeout)
-                variant['compiler_version'] = version.strip()
-                if not variant['compiler_version']:
-                    raise ValueError('Compiler identity is empty')
-                argv = [compiler,*variant['flags'],'-I',str(raylib/'src'),str(source),'-lm']
-                if platform.system() == 'Linux':
-                    argv += ['-ldl']
-                argv += ['-o',str(work/name)]
-                variant['build_command'] = argv
-                variant['run_command'] = [str(work/name)]
-                write_report(report_path, report)
-                command(argv,work/(name+'.compile.log'),args.timeout)
-                output = command(variant['run_command'],work/(name+'.tsv'),args.timeout)
-                variant.update(parse_output(output, values, cases, report['host']), completed=True)
-                print(f'{name}: {variant["sun_control_vs_native_mismatch_count"]}/{len(values)} native/Sun differences (diagnostic only)', flush=True)
-            except Exception as error:
-                variant['error'] = str(error)
-                report['errors'].append(f'{name}: {error}')
-                print(f'{name}: {error}', file=sys.stderr, flush=True)
-            write_report(report_path, report)
-        report['diagnostic_completed'] = all(v['completed'] for v in report['variants'].values())
-    except Exception as error:
-        report['errors'].append(str(error))
-        print(str(error), file=sys.stderr)
-    finally:
-        report['finished_utc'] = datetime.now(timezone.utc).isoformat()
-        write_report(report_path, report)
-    print(f'Report: {report_path}; parity_established=false', flush=True)
-    return 0 if report['diagnostic_completed'] else 1
+    def configure(parser):
+        parser.add_argument('--clang', default='clang', help='Existing Clang executable (four modes)')
+        parser.add_argument('--gcc', help='Optional existing GCC executable (two additional modes)')
+    args = probekit.arguments(__doc__, configure, bend=False)
+    probe = probekit.Probe('native-math-profile', args)
+    values = samples()
+    fixtures = json.loads((probekit.ROOT/'tests/fixtures/images.json').read_text())['cases']
+    cases = [case for case in fixtures if case['id'] in CASES]
+    if {case['id'] for case in cases} != CASES:
+        raise probekit.ProbeFailure('Missing one or more diagnostic fixture scenarios')
+    source = probe.work/'diagnostic.c'
+    source.write_text(generate_source(values, cases))
+    modes = [('clang-o0',args.clang,['-O0']), ('clang-o2',args.clang,['-O2']),
+             ('clang-o2-native',args.clang,['-O2',*NATIVE_FLAGS]),
+             ('clang-o2-strict',args.clang,['-O2','-ffp-model=strict'])]
+    if args.gcc:
+        modes += [('gcc-o2',args.gcc,['-O2']), ('gcc-o2-native',args.gcc,['-O2',*NATIVE_FLAGS])]
+    host = dict(system=platform.system(), machine=platform.machine(), libc=platform.libc_ver())
+    variants = {}
+    for name, compiler, flags in modes:
+        flags = ['-std=c11', *flags, '-ffp-contract=off']
+        probekit.run([compiler, *flags, '-I', args.raylib_source/'src', source, '-lm',
+                      *(['-ldl'] if platform.system() == 'Linux' else []), '-o', probe.work/name])
+        variants[name] = dict(flags=flags, compiler_version=probekit.run([compiler, '--version']).strip(),
+                              **parse_output(probekit.run([probe.work/name]), values, cases, host))
+        print(f'{name}: {variants[name]["sun_control_vs_native_mismatch_count"]}/{len(values)} '
+              'native/Sun differences (diagnostic only)', flush=True)
+    probe.report.update(host=host, variants=variants, fixture_scenarios=[case['id'] for case in cases],
+                        generated_source_sha256=hashlib.sha256(source.read_bytes()).hexdigest())
+    probe.diagnostic(samples=len(values), inputs_sha256=hashlib.sha256(json.dumps(values).encode()).hexdigest(),
+                     modes='/'.join(variants),
+                     sun_native_differences=sorted({v['sun_control_vs_native_mismatch_count'] for v in variants.values()}))
 
 
 if __name__ == '__main__':
-    raise SystemExit(main())
+    main()

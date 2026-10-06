@@ -5,60 +5,18 @@ Uses actual pinned ExportImage; never ExportImageToMemory or ImageFormat to
 prepare source pixels. CPU-1/CPU-2/JavaScript are separate exact lanes. No GPU
 claim. Native error-return parity is deliberately not claimed for short writes.
 """
-import argparse
-import errno
-from functools import partial
-import hashlib
 import json
 from pathlib import Path
 import random
 import re
-import platform
 import shutil
 import struct
-import subprocess
-import sys
-import time
-import uuid
 
+import formatted_export
+from formatted_export import BPP, COLOR_CONTROLS, SENTINEL, TYPED_PIXELS, strict_json
 from byte_probe import BEND_EMITTER
-from conformance import BUILD, ENV, ROOT, checkout, source_gate
-from image_export_probe import limit_handles, limit_write_failures
 from image_format_probe import r32_words
-from reference_environment import ReferenceEnvironment
-
-BPP = {1:1, 2:2, 3:2, 4:3, 5:2, 6:2, 7:4, 8:4}
-BATCH_SIZE = 16
-ITERATIONS = 100
-SENTINEL = b'old output must be replaced\x00\xff' * 11
-SEALED = {}
-
-
-def digest(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
-
-
-def seal(path):
-    path = str(Path(path).resolve())
-    observed = digest(path)
-    if path in SEALED and SEALED[path] != observed: raise ValueError('Sealed artifact drift: '+path)
-    SEALED[path] = observed
-
-
-def verify_sealed():
-    for path, expected in SEALED.items():
-        if not Path(path).is_file() or digest(path) != expected: raise ValueError('Sealed artifact drift: '+path)
-
-
-def strict_json(text):
-    def unique(pairs):
-        result = {}
-        for key, value in pairs:
-            if key in result: raise ValueError('Duplicate JSON field')
-            result[key] = value
-        return result
-    return json.loads(text, object_pairs_hook=unique)
-
+from probekit import ProbeFailure
 
 MARKER = b'\0\0\0\0\0\0\0\1'
 ACCEPTED = (4, 7)
@@ -270,18 +228,7 @@ C_PREFIX = r'''#include "raylib.h"
 #include <stdlib.h>
 #include <string.h>
 _Static_assert(CHAR_BIT==8 && sizeof(float)==4 && sizeof(unsigned)==4 && sizeof(unsigned short)==2 && FLT_RADIX==2 && FLT_MANT_DIG==24 && FLT_MAX_EXP==128, "8-bit bytes, 16-bit shorts and binary32 required");
-static void *typed_pixels(unsigned char *data,int size,int format){
-    void *storage=data;
-    if(format==3||format==5||format==6){
-        unsigned short *samples=malloc((size_t)size);if(!samples)exit(6);
-        for(int i=0;i<size/2;i++){unsigned short value;memcpy(&value,data+2*i,sizeof value);samples[i]=value;}
-        storage=samples;
-    }else if(format==8){
-        float *samples=malloc((size_t)size);if(!samples)exit(6);
-        for(int i=0;i<size/4;i++){float value;memcpy(&value,data+4*i,sizeof value);samples[i]=value;}
-        storage=samples;
-    }
-    if(memcmp(storage,data,(size_t)size))exit(7);
+'''+TYPED_PIXELS+r'''    if(memcmp(storage,data,(size_t)size))exit(7);
     return storage;
 }
 static void emit(const unsigned char *p,int n){for(int start=0;start<n;start+=256){putchar('[');for(int i=start;i<n&&i<start+256;i++)printf("%s%u",i==start?"":",",p[i]);puts("]");}puts("\"end\"");}
@@ -291,10 +238,7 @@ static void meta(const char *id,const char *role,Image image){
 static void observed(const char *id,const char *role,Image image){meta(id,role,image);emit(image.data,GetPixelDataSize(image.width,image.height,image.format));}
 '''
 QUALIFY = C_PREFIX+r'''int main(void){SetTraceLogLevel(LOG_NONE);unsigned little=1;if(*(unsigned char*)&little!=1||fegetround()!=FE_TONEAREST||(signed char)255!=-1||(signed char)-255!=1||(signed char)128!=-128)return 2;
-unsigned words[]={65535,65535,65535,0x3f000000,0,0x80000000,1,0x007fffff,0x3f800000};
-int formats[]={3,5,6,8,8,8,8,8,8};unsigned expected[]={0xf8fcf8ff,0xf8f8f8ff,0xffffffff,0x7f0000ff,255,255,255,255,0xff0000ff};
-for(int i=0;i<9;i++){unsigned short packed=(unsigned short)words[i];float sample;memcpy(&sample,&words[i],sizeof sample);Image image={formats[i]==8 ? (void *)&sample : (void *)&packed,1,1,1,formats[i]};Color *c=LoadImageColors(image);if(!c||((unsigned)c->r<<24|(unsigned)c->g<<16|(unsigned)c->b<<8|c->a)!=expected[i])return 3;UnloadImageColors(c);}
-puts("{\"controls\":9,\"little_endian\":true,\"round_to_nearest\":true,\"signed_char_wrap\":true}");return 0;}
+'''+COLOR_CONTROLS+r'''puts("{\"controls\":9,\"little_endian\":true,\"round_to_nearest\":true,\"signed_char_wrap\":true}");return 0;}
 '''
 
 
@@ -462,7 +406,7 @@ def candidate_program(cases,work):
             mode={'decode':1,'bridge':2}.get(origin,0)
             continuation=f'opened({ident}, {c["width"]}, {c["height"]}, {c["format"]}, {mode}, {len(data)+1}, {json.dumps(str(target))}, {json.dumps(str(work/"missing-parent"/"rejected.dat"))}, {json.dumps(str(work/"directory"))})'
             body+=f'    IO.bind(Result<&1, &1, U32 & String, File>, Unit, File.open({json.dumps(str(source))}, "r"), {continuation})\n'
-    return body.replace('import ../../jonlib.bend as J','import '+str(ROOT/'jonlib.bend')+' as J')
+    return body
 
 
 def io_program(work,failure):
@@ -520,12 +464,12 @@ def baseline(expected: U32, path: String, result: Result<&1, &1, U32 & String, U
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
-    paths=[(work/'post-open.dat',errno.EFBIG)] if failure else [(work/'repeated.dat',0),(work/'missing-parent'/'output.dat',errno.ENOENT),(work/'directory',errno.EISDIR)]
+    paths=formatted_export.io_targets(work,failure)
     for path,code in paths:body+=f'    IO.bind(Result<&1, &1, U32 & String, Unit>, Unit, direct({json.dumps(str(path))}), baseline({code}, {json.dumps(str(path))}))\n'
     if not failure:
         body+=f'    write(0, "", {json.dumps(str(work/"repeated.dat"))}, J.Image.Formatted.from_bytes(1, 1, 7, [17, 17, 17, 17]))\n'
         body+='    IO.print("{\\\"final_success\\\":true}")\n'
-    return body.replace('import ../../jonlib.bend as J','import '+str(ROOT/'jonlib.bend')+' as J')
+    return body
 
 
 def verify_io(text,work,failure):
@@ -543,178 +487,71 @@ def verify_io(text,work,failure):
     return dict(iterations=100,accepted_writes=200*count+(0 if failure else 1),rejected_writes=1800*count,file_descriptor_limit=64,exact_base_code_and_message=True,post_open=failure)
 
 
-def record_run(command, work, label, *, preexec=None, timeout=600, environment=None, receipt=None, require_output=False):
-    verify_sealed()
-    command = list(map(str,command))
-    outputs = [Path(command[i+1]) for i,arg in enumerate(command[:-1]) if arg=='-o']
-    for arg in command:
-        path=Path(arg)
-        if path.is_file() and path not in outputs: seal(path)
-    for path in outputs: path.unlink(missing_ok=True)
-    (work/(label+'.stdout')).unlink(missing_ok=True); (work/(label+'.stderr')).unlink(missing_ok=True)
-    proc = subprocess.run(command,cwd=ROOT,env=ENV if environment is None else environment,text=True,capture_output=True,timeout=timeout,preexec_fn=preexec)
-    (work/(label+'.stdout')).write_text(proc.stdout); (work/(label+'.stderr')).write_text(proc.stderr)
-    (work/(label+'.command.json')).write_text(json.dumps(dict(command=command,exit_code=proc.returncode,reference_environment=receipt),indent=2)+'\n')
-    if proc.returncode: raise ValueError(f'{label} exited {proc.returncode}: {proc.stderr[-2500:]}')
-    if require_output and not proc.stdout.strip(): raise ValueError('Process output missing: '+label)
-    if any(not p.is_file() or p.stat().st_size==0 for p in outputs): raise ValueError('Compiler output missing')
-    for path in [*outputs,work/(label+'.stdout'),work/(label+'.stderr'),work/(label+'.command.json')]: seal(path)
-    return proc.stdout
-
-
-def tracked_sources(args):
-    paths = [ROOT/'tools/formatted_qoi_export_probe.py',ROOT/'tools/byte_probe.py',ROOT/'tools/image_export_probe.py',ROOT/'tools/image_format_probe.py',ROOT/'tools/conformance.py',ROOT/'tools/reference_environment.py',ROOT/'tools/runtime_image.py',ROOT/'tests/test_formatted_qoi_export.py',ROOT/'toolchain.json',ROOT/'LAWS.bend',ROOT/'PROOF.bend']
-    paths += [args.raylib_source/'src'/p for p in ('rtextures.c','rcore.c','raylib.h','config.h','external/qoi.h')]
-    paths += [p for p in (args.bend_source/'bend2').rglob('*') if p.is_file() and p.suffix in ('.ts','.bend','.c','.js','.h')]
-    return dict(library=source_gate(),dependencies={str(p):digest(p) for p in paths})
-
-
-def report_directories(argv):
-    """Exact option tokens only; respect -- and argparse's value classification."""
-    result=[];index=0
-    rules=argparse.ArgumentParser(add_help=False,allow_abbrev=False)
-    while index<len(argv):
-        token=argv[index]
-        if token=='--': break
-        if token.startswith('--build-dir='):
-            result.append(Path(token.partition('=')[2]))
-        elif token=='--build-dir' and index+1<len(argv) and rules._parse_optional(argv[index+1]) is None:
-            index+=1;result.append(Path(argv[index]))
-        index+=1
-    return result or [BUILD/'formatted-qoi-export-probe']
-
-
-def admit_directories(argv):
-    paths=report_directories(argv)
-    for path in dict.fromkeys(p.resolve() for p in paths):
-        path.mkdir(parents=True,exist_ok=True)
-        (path/'results.json').write_text('{"passed":false,"phase":"argument-validation"}\n')
-    return paths[-1].resolve()
-
-
-def native_archive(args,work,record):
-    """Build a fresh isolated archive; bind its compiler/config/source receipts."""
-    cmake=work/'raylib-build';mode='fresh-isolated-build'
-    record(['cmake','-S',args.raylib_source,'-B',cmake,'-DPLATFORM=Memory','-DCMAKE_BUILD_TYPE=Release','-DBUILD_EXAMPLES=OFF','-DCUSTOMIZE_BUILD=ON','-DSUPPORT_MODULE_RAUDIO=OFF','-DSUPPORT_RPRAND_GENERATOR=ON','-DUSE_EXTERNAL_GLFW=OFF'],work,'configure')
-    record(['cmake','--build',cmake,'--clean-first','--parallel','4'],work,'native-build')
-    archive=cmake/'raylib/libraylib.a'
-    files=[archive,cmake/'CMakeCache.txt',cmake/'raylib/CMakeFiles/raylib.dir/flags.make']
-    compilers=list((cmake/'CMakeFiles').glob('*/CMakeCCompiler.cmake'))
-    if len(compilers)!=1:raise ValueError('Missing or ambiguous native compiler provenance')
-    files+=compilers
-    text=compilers[0].read_text()
-    fields={key:re.search(r'set\('+key+r' "([^"\n]+)"\)',text) for key in ('CMAKE_C_COMPILER','CMAKE_C_COMPILER_ID','CMAKE_C_COMPILER_VERSION')}
-    if any(value is None for value in fields.values()):raise ValueError('Incomplete native compiler provenance')
-    compiler={key:value.group(1) for key,value in fields.items()}
-    compiler_path=Path(compiler['CMAKE_C_COMPILER'])
-    if not compiler_path.is_file():raise ValueError('Native archive compiler no longer available')
-    files.append(compiler_path);hashes={str(p):digest(p) for p in files}
-    for path in files:seal(path)
-    return archive,dict(mode=mode,artifacts=hashes,compiler=compiler,qualification='fresh build from checked source pins and sealed source/config/compiler inputs')
-
-
-def verify_case_files(work,cases,rows,native=False):
+def verify_reference_files(work,cases,rows):
+    """Native files: accepted exports equal the emitted bytes; rejected sources leave the sentinel and create nothing."""
     for c,row in zip(cases,rows):
-        path=work/('reference-'+c['id']+'.qoi') if native else output_path(work,c)
+        path=work/('reference-'+c['id']+'.qoi')
         if c['format'] in ACCEPTED:
             if path.read_bytes()!=bytes(row['encoded']):raise ValueError('Real QOI file differs: '+c['id'])
         else:
             if path.read_bytes()!=SENTINEL:raise ValueError('Rejected source touched existing file')
-            extra=work/('reference-absent-'+c['id']+'.qoi') if native else Path(str(path)+'.qoi')
-            if native:
-                if extra.exists():raise ValueError('Rejected native source created absent file')
-            elif extra.read_bytes()!=SENTINEL:raise ValueError('Rejected source touched .qoi sentinel')
-            elif Path(str(extra)+'.absent.qoi').exists():raise ValueError('Rejected candidate source created absent file')
-    if not native and ((work/'missing-parent').exists() or (work/'directory'/'sentinel').read_bytes()!=SENTINEL):raise ValueError('Rejected source touched invalid path')
+            if (work/('reference-absent-'+c['id']+'.qoi')).exists():raise ValueError('Rejected native source created absent file')
+
+
+class Qoi:
+    """Accepted RGB/RGBA: source, complete file, decoded raw, Surface and reloaded owner; others: retained owner."""
+    name, batch = 'qoi', 16
+    qualification = (QUALIFY, dict(controls=9, little_endian=True, round_to_nearest=True, signed_char_wrap=True))
+    fixtures, reference_program, candidate_program = staticmethod(fixtures), staticmethod(reference_program), staticmethod(candidate_program)
+    parse_rows, io_program, verify_io = staticmethod(parse_rows), staticmethod(io_program), staticmethod(verify_io)
+
+    def prepare(self, work, cases):
+        shutil.rmtree(work/'missing-parent', ignore_errors=True)
+        (work/'directory').mkdir(exist_ok=True);(work/'directory'/'sentinel').write_bytes(SENTINEL)
+        (work/'rejected-sentinel.dat').write_bytes(SENTINEL)
+        for c in cases:
+            (work/(c['id']+'.raw')).write_bytes(bytes(c['data']))
+            if 'input' in c:
+                if decode_qoi(bytes(c['input']),c,canonical=False)['raw']!=c['data']:raise ProbeFailure('Noncanonical input raw owner differs')
+                (work/(c['id']+'.input.qoi')).write_bytes(bytes(c['input']))
+            if c['format'] in REJECTED:
+                (work/('reference-'+c['id']+'.qoi')).write_bytes(SENTINEL);(work/('reference-absent-'+c['id']+'.qoi')).unlink(missing_ok=True)
+
+    def check_reference(self, cases, rows, work):
+        verify_reference_files(work,cases,rows)
+        return dict(coverage=coverage(cases,rows))
+
+    def expected_file(self, case, row):
+        return row['encoded'] if case['format'] in ACCEPTED else [list(SENTINEL),list(SENTINEL),False]
+
+    def reset(self, work, cases):
+        for c in cases:
+            path=output_path(work,c);path.write_bytes(SENTINEL)
+            if c['format'] in REJECTED:Path(str(path)+'.qoi').write_bytes(SENTINEL);Path(str(path)+'.qoi.absent.qoi').unlink(missing_ok=True)
+
+    def observed(self, work, cases):
+        """Accepted: the complete file this lane wrote over the sentinel. Rejected: both sentinels untouched, no absent file."""
+        if (work/'missing-parent').exists() or (work/'directory'/'sentinel').read_bytes()!=SENTINEL:raise ProbeFailure('Rejected source touched invalid path')
+        read=lambda path:list(path.read_bytes()) if path.is_file() else None
+        files=[read(output_path(work,c)) if c['format'] in ACCEPTED else
+               [read(output_path(work,c)),read(Path(str(output_path(work,c))+'.qoi')),Path(str(output_path(work,c))+'.qoi.absent.qoi').exists()]
+               for c in cases]
+        self.reset(work,cases)
+        return files
+
+    def reset_io(self, work):
+        (work/'post-open.dat').write_bytes(SENTINEL);(work/'repeated.dat').write_bytes(SENTINEL)
+
+    def summary(self, cases, rows):
+        return dict(accepted=sum(c['format'] in ACCEPTED for c in cases),rejected=sum(c['format'] in REJECTED for c in cases),
+                    encoded_bytes=sum(len(r.get('encoded',[])) for r in rows),decoded_bytes=sum(len(r.get('decoded',[])) for r in rows))
+
+
+CODEC = Qoi()
 
 
 def main(argv=None):
-    argv=list(sys.argv[1:] if argv is None else argv);admitted=admit_directories(argv)
-    parser=argparse.ArgumentParser(description=__doc__,allow_abbrev=False)
-    parser.add_argument('--bend-source',type=Path,required=True);parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--build-dir',type=Path,default=BUILD/'formatted-qoi-export-probe')
-    parser.add_argument('--timeout',type=int,default=600)
-    args=parser.parse_args(argv);destination=args.build_dir.resolve()
-    if destination!=admitted:parser.error('Destination admission differs')
-    if args.timeout<=0:parser.error('--timeout must be positive')
-    SEALED.clear();record=partial(record_run,timeout=args.timeout);reference_env=ReferenceEnvironment('clean-loader')
-    native_record=partial(record,environment=reference_env.child(),receipt=reference_env.receipt())
-    report_path=destination/'results.json';work=destination/('run-'+uuid.uuid4().hex);work.mkdir()
-    started=time.monotonic();lock=json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'));checkout(args.raylib_source,lock['raylib']['revision'])
-    if sys.byteorder!='little':raise ValueError('Native checked-format profile requires little endian')
-    cases=fixtures();(work/'inputs.json').write_text(json.dumps(cases,sort_keys=True)+'\n');seal(work/'inputs.json')
-    tool_paths={tool:str(Path(shutil.which(tool)).absolute()) for tool in ('bun','clang','cmake')}
-    tool_realpaths={tool:str(Path(path).resolve()) for tool,path in tool_paths.items()}
-    for path in tool_paths.values():seal(path)
-    report=dict(passed=False,profile='checked-formatted-qoi-export-v1',run_directory=str(work),toolchain=lock,host=dict(system=platform.system(),machine=platform.machine()),tool_paths=tool_paths,tool_realpaths=tool_realpaths,images=len(cases),accepted=sum(c['format'] in ACCEPTED for c in cases),rejected=sum(c['format'] in REJECTED for c in cases),pixels=sum(c['width']*c['height'] for c in cases),sources=tracked_sources(args),reference_environment=reference_env.receipt(),lanes={},batch_size=BATCH_SIZE,unrun=['GPU/Metal','other hosts','maximum-area allocation/performance','native short-write/failing-device/close-error equivalence','generic formatted suffix dispatch'])
-    for path in [*(ROOT/p for p in report['sources']['library']),*(Path(p) for p in report['sources']['dependencies'])]:seal(path)
-    def save():report_path.write_text(json.dumps(report,indent=2)+'\n')
-    save();archive,report['native_build']=native_archive(args,work,native_record)
-    report['native_build']['sources']=report['sources'];report['native_build']['reference_environment']=reference_env.receipt();save()
-    report['clang_version']=native_record(['clang','--version'],work,'clang-version',require_output=True).strip()
-    report['bun_version']=record(['bun','--version'],work,'bun-version',require_output=True).strip()
-    if report['bun_version']!=lock['bun']['version']:raise ValueError('Bun version differs')
-    (work/'directory').mkdir();(work/'directory'/'sentinel').write_bytes(SENTINEL);seal(work/'directory'/'sentinel')
-    (work/'rejected-sentinel.dat').write_bytes(SENTINEL);seal(work/'rejected-sentinel.dat')
-    for c in cases:
-        path=work/(c['id']+'.raw');path.write_bytes(bytes(c['data']));seal(path)
-        if 'input' in c:
-            if decode_qoi(bytes(c['input']),c,canonical=False)['raw']!=c['data']:raise ValueError('Noncanonical input raw owner differs')
-            path=work/(c['id']+'.input.qoi');path.write_bytes(bytes(c['input']));seal(path)
-        if c['format'] in REJECTED:(work/('reference-'+c['id']+'.qoi')).write_bytes(SENTINEL)
-    for name,program in [('qualification',QUALIFY),('reference',reference_program(cases,work))]:
-        source=work/(name+'.c');source.write_text(program);seal(source);binary=work/name
-        native_record(['clang','-std=c11','-O2','-fno-fast-math','-ffp-contract=off','-I'+str(args.raylib_source/'src'),source,archive,'-lm','-o',binary],work,name+'-compile')
-        output=native_record([binary],work,name,require_output=True)
-        if name=='qualification':
-            expected=dict(controls=9,little_endian=True,round_to_nearest=True,signed_char_wrap=True);q=strict_json(output)
-            if type(q) is not dict or q!=expected or any(type(q[k]) is not type(v) for k,v in expected.items()):raise ValueError('Native archive qualification differs')
-            report['qualification']=q
-        else:
-            reference=parse_rows(output,cases);verify_case_files(work,cases,reference,native=True)
-            for c in cases:seal(work/('reference-'+c['id']+'.qoi'))
-    report['coverage']=coverage(cases,reference)
-    report['encoded_bytes']=sum(len(r.get('encoded',[])) for r in reference);report['decoded_bytes']=sum(len(r.get('decoded',[])) for r in reference)
-    for lane in ('cpu-1','cpu-2','javascript'):report['lanes'][lane]=dict(passed=False,batches=[])
-    save()
-    for start in range(0,len(cases),BATCH_SIZE):
-        batch=cases[start:start+BATCH_SIZE];index=start//BATCH_SIZE;source=work/f'candidate-{index}.bend';source.write_text(candidate_program(batch,work));seal(source)
-        binary=work/f'candidate-{index}';js=work/f'candidate-{index}.js'
-        record(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary,'-o',js],work,f'compile-{index}')
-        for lane in report['lanes']:
-            for c in batch:
-                path=output_path(work,c);path.write_bytes(SENTINEL)
-                if c['format'] in REJECTED:Path(str(path)+'.qoi').write_bytes(SENTINEL)
-            command=['bun',js] if lane=='javascript' else [binary,'--gpu','off','--threads',lane[-1]]
-            output=record(command,work,f'{lane}-{index}',preexec=limit_handles,require_output=True);rows=parse_rows(output,batch)
-            if rows!=reference[start:start+len(batch)]:raise ValueError(f'{lane} batch {index}: native QOI bytes or owner observations differ')
-            verify_case_files(work,batch,rows)
-            for c in batch:
-                retained=work/(lane+'-'+c['id']+'.dat');shutil.copyfile(output_path(work,c),retained);seal(retained)
-            report['lanes'][lane]['batches'].append(dict(start=start,images=len(batch),records=sum(len(roles(c)) for c in batch),passed=True));save()
-        print(f'QOI batch {index+1}: {len(batch)} complete native/owner observations passed on all three lanes',flush=True)
-    for failure in (False,True):
-        name='failure' if failure else 'ordinary';source=work/(name+'.bend');source.write_text(io_program(work,failure));seal(source);binary=work/name;js=work/(name+'.js')
-        record(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary,'-o',js],work,name+'-compile')
-        for lane in report['lanes']:
-            (work/'post-open.dat').write_bytes(SENTINEL);(work/'repeated.dat').write_bytes(SENTINEL)
-            command=['bun',js] if lane=='javascript' else [binary,'--gpu','off','--threads',lane[-1]]
-            output=record(command,work,lane+'-'+name,preexec=limit_write_failures if failure else limit_handles,require_output=True)
-            report['lanes'][lane][name]=verify_io(output,work,failure)
-            retained=work/(lane+'-'+name+'-final.dat');shutil.copyfile(work/('post-open.dat' if failure else 'repeated.dat'),retained);seal(retained)
-            report['lanes'][lane][name]['retained_file']=str(retained);save()
-    checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'));checkout(args.raylib_source,lock['raylib']['revision'])
-    reference_env.assert_receipt(report['reference_environment'])
-    if any(str(Path(shutil.which(tool)).absolute())!=tool_paths[tool] or str(Path(shutil.which(tool)).resolve())!=tool_realpaths[tool] for tool in tool_paths):raise ValueError('Tool executable path resolution drift')
-    if tracked_sources(args)!=report['sources'] or any(digest(p)!=h for p,h in report['native_build']['artifacts'].items()):raise ValueError('Source/toolchain/native build drift')
-    for lane in report['lanes']:
-        if sum(b['images'] for b in report['lanes'][lane]['batches'])!=len(cases):raise ValueError('Incomplete lane cases')
-        report['lanes'][lane]['passed']=True
-    verify_sealed();report['sealed_artifacts']=dict(SEALED)
-    report['artifacts']={(str(p.relative_to(ROOT)) if p.is_relative_to(ROOT) else str(p)):digest(p) for p in work.rglob('*') if p.is_file() and p!=report_path}
-    report.update(passed=True,elapsed_seconds=round(time.monotonic()-started,3));save()
-    print(f'PASS: {len(cases)} QOI source cases / {report["pixels"]} pixels; 801 accepted and 7200 retained-source IO checks per lane',flush=True)
+    formatted_export.main(CODEC, __doc__, argv)
 
 
 if __name__=='__main__':main()

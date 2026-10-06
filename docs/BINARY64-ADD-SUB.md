@@ -145,7 +145,7 @@ exhaustive input coverage or performance parity is claimed.
 
 ## Remaining kernel work
 
-See [ANGLE-PLAN.md](ANGLE-PLAN.md). [Checked normal operations and word adapters](BINARY64-OPS.md)
+See [ANGLE-PLAN.md](ANGLES.md). [Checked normal operations and word adapters](BINARY64-OPS.md)
 now provide isolated packing/promotion/raw-stepping support. The complete pinned
 modern scalar kernel and its two fallbacks, wrapper domains, independent native-profile
 qualification and forced-device/resource evidence remain open. The tiny branch's
