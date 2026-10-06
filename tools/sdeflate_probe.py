@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """Verify quality-8 raw compression and its private native LZ observations."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
 import random
 import struct
 import zlib
 
 from byte_probe import BEND_EMITTER, parse_results
-from conformance import BUILD, ROOT, checkout, run, source_gate
+from conformance import source_gate
+import probekit
+from probekit import ROOT, ProbeFailure
 
 
 def fixtures():
@@ -183,31 +183,7 @@ def main() -> IO(Unit):
 '''
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source', type=Path, required=True)
-    parser.add_argument('--raylib-source', type=Path, required=True)
-    parser.add_argument('--gpu', action='store_true')
-    parser.add_argument('--stage', choices=('lz', 'compression'), default='compression')
-    args = parser.parse_args()
-    lock = json.loads((ROOT / 'toolchain.json').read_text())
-    checkout(args.bend_source, lock['bend']['revision'], lock['bend'].get('patch'))
-    checkout(args.raylib_source, lock['raylib']['revision'])
-    work = BUILD / ('sdeflate-lz-probe' if args.stage == 'lz' else 'sdeflate-probe')
-    work.mkdir(parents=True, exist_ok=True)
-    report_path = work / 'results.json'
-    report_path.write_text(json.dumps(dict(passed=False)) + '\n')
-    cases = fixtures()
-    for i, case in enumerate(cases):
-        (work / f'{i}.dat').write_bytes(case['data'])
-    # Task-local observation hook only. Its complete bytes must equal the linked API.
-    original = (args.raylib_source / 'src/external/sdefl.h').read_text()
-    needle = '  int blk_len = blk_end - blk_begin;'
-    if original.count(needle) != 1:
-        raise ValueError('Native observation insertion point drift')
-    instrumented = original.replace(needle, '  observe(s, blk_begin, blk_end);\n' + needle)
-    (work / 'sdefl-observed.h').write_text(instrumented)
-    reference = '''#include "raylib.h"
+REFERENCE = '''#include "raylib.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -232,16 +208,28 @@ if(n!=count||memcmp(out,native,n))exit(6);if(n&&!SaveFileData(compressed_path,na
 free(state);free(out);MemFree(native);UnloadFileData(input);}
 int main(void){SetTraceLogLevel(LOG_NONE);
 '''
+
+
+def main():
+    args = probekit.arguments(__doc__, lambda parser: parser.add_argument('--stage', choices=('lz', 'compression'), default='compression'))
+    probe = probekit.Probe('sdeflate-lz' if args.stage == 'lz' else 'sdeflate', args)
+    probe.report['sources'] = source_gate()
+    work = probe.work
+    cases = fixtures()
+    for i, case in enumerate(cases):
+        (work / f'{i}.dat').write_bytes(case['data'])
+    # Task-local observation hook only. Its complete bytes must equal the linked API.
+    original = (args.raylib_source / 'src/external/sdefl.h').read_text()
+    needle = '  int blk_len = blk_end - blk_begin;'
+    if original.count(needle) != 1:
+        raise ProbeFailure('Native observation insertion point drift')
+    (work / 'sdefl-observed.h').write_text(original.replace(needle, '  observe(s, blk_begin, blk_end);\n' + needle))
+    reference = REFERENCE
     for i, case in enumerate(cases):
         if case['valid']:
             paths = [json.dumps(str((work / f'{i}.{suffix}').relative_to(ROOT))) for suffix in ('dat', 'observed', 'deflate')]
             reference += f'compare({",".join(paths)},{len(case["data"])});\n'
-    source = work / 'reference.c'
-    source.write_text(reference + '}\n')
-    binary = work / 'reference'
-    run(['clang', '-std=c11', '-O2', '-I' + str(args.raylib_source / 'src'), source,
-         BUILD / 'raylib/raylib/libraylib.a', '-lm', '-o', binary])
-    run([binary])
+    probe.native(reference + '}\n')
     expected = []
     compressed = []
     for i, case in enumerate(cases):
@@ -249,9 +237,9 @@ int main(void){SetTraceLogLevel(LOG_NONE);
             observed = (work / f'{i}.observed').read_bytes()
             raw = (work / f'{i}.deflate').read_bytes() if case['data'] else b''
             if case['data'] and zlib.decompress(raw, -15) != case['data']:
-                raise ValueError('Native compression failed independent decompression')
+                raise ProbeFailure('Native compression failed independent decompression')
             if not case['data'] and raw:
-                raise ValueError('Native empty compression changed')
+                raise ProbeFailure('Native empty compression changed')
             expected.append(list(observed))
             compressed.append(list(raw))
         else:
@@ -259,58 +247,39 @@ int main(void){SetTraceLogLevel(LOG_NONE);
             compressed.append(None)
     observation_hash = hashlib.sha256(json.dumps(expected).encode()).hexdigest()
     observation_words = sum(len(row) // 4 for row in expected if row is not None)
+    # Two out-of-range byte controls follow the fixtures; each compression action yields a [stream, decoded] pair.
     if args.stage == 'compression':
-        expected = [row for case, raw in zip(cases, compressed)
-                    for row in (raw, list(case['data']) if case['valid'] else None)]
-        expected += [None, None, None, None]
+        expected = [[raw, list(case['data']) if case['valid'] else None] for case, raw in zip(cases, compressed)]
+        expected += [[None, None], [None, None]]
     else:
         expected += [None, None]
-    report = dict(passed=False, native_cases=sum(c['valid'] for c in cases), invalid_controls=4,
-                  stage=args.stage,
-                  input_bytes=sum(len(c['data']) for c in cases if c['valid']), sources=source_gate(),
-                  inputs_sha256=hashlib.sha256(json.dumps([dict(c, data=c['data'].hex()) for c in cases]).encode()).hexdigest(),
-                  observations_sha256=observation_hash, observation_words=observation_words,
-                  compressed_bytes=sum(len(row) for row in compressed if row is not None),
-                  public_decoder_size_exclusions=sum(len(row) > 1048576 for row in compressed if row is not None),
-                  reference_sha256=hashlib.sha256(json.dumps(compressed).encode()).hexdigest(),
-                  instrumented_output_matches_linked_api=True, batch_limit=16, lanes={})
-    for lane in ('cpu', 'javascript', *(['metal'] if args.gpu else [])):
-        actual = []
-        report['lanes'][lane] = dict(passed=False, batches=[])
-        for batch, start in enumerate(range(0, len(cases), 16)):
-            selected = cases[start:start + 16]
-            body = (PROGRAM if args.stage == 'lz' else COMPRESSION_PROGRAM).replace('BANG', '!' if lane == 'metal' else '')
-            for i in range(start, start + len(selected)):
-                path = json.dumps(str((work / f'{i}.dat').relative_to(ROOT)))
-                body += f'    IO.bind(Result<&1, &1, J.Image.LoadError, +List<U32>>, Unit, J.Image.file.bytes({path}, 2097152), loaded)\n'
-            if start + len(selected) == len(cases):
-                for values in ('[256]', '[0, 4294967295]'):
-                    body += f'    observed(calculate{"!" if lane == "metal" else ""}({values}))\n'
-            record = dict(start=start, cases=len(selected), phase='compile')
-            report['lanes'][lane]['batches'].append(record)
-            report_path.write_text(json.dumps(report, indent=2) + '\n')
-            source = work / f'{lane}-{batch}.bend'
-            source.write_text(body)
-            binary = work / (f'{lane}-{batch}.js' if lane == 'javascript' else f'{lane}-{batch}')
-            run(['bun', args.bend_source / 'bend2/main.ts', source, '-o', binary], timeout=600)
-            record['phase'] = 'run'
-            report_path.write_text(json.dumps(report, indent=2) + '\n')
-            command = ['bun', binary] if lane == 'javascript' else [binary, *(['--gpu', 'on'] if lane == 'metal' else [])]
-            rows = parse_results(run(command))
-            count = (len(selected) + (2 if start + len(selected) == len(cases) else 0)) * (2 if args.stage == 'compression' else 1)
-            if len(rows) != count:
-                raise ValueError(f'{lane}: incomplete LZ batch {batch}')
-            actual.extend(rows)
-            record['phase'] = 'complete'
-        different = [i for i, (a, b) in enumerate(zip(expected, actual)) if a != b]
-        report['lanes'][lane].update(passed=actual == expected, different_cases=different)
-        report_path.write_text(json.dumps(report, indent=2) + '\n')
-        if actual != expected:
-            raise ValueError(f'{lane}: native {args.stage} differences {different}')
-        print(f'{lane}: {report["native_cases"]} complete native {args.stage} results and four rejection controls passed', flush=True)
-    report['passed'] = True
-    report_path.write_text(json.dumps(report, indent=2) + '\n')
+    actions = [('file', i) for i in range(len(cases))] + [('values', '[256]'), ('values', '[0, 4294967295]')]
 
+    def render(selected, gpu):
+        bang = '!' if gpu else ''
+        body = (PROGRAM if args.stage == 'lz' else COMPRESSION_PROGRAM).replace('BANG', bang)
+        for kind, value in selected:
+            if kind == 'file':
+                path = json.dumps(str((work / f'{value}.dat').relative_to(ROOT)))
+                body += f'    IO.bind(Result<&1, &1, J.Image.LoadError, +List<U32>>, Unit, J.Image.file.bytes({path}, 2097152), loaded)\n'
+            else:
+                body += f'    observed(calculate{bang}({value}))\n'
+        return body
+
+    def parse(text, selected):
+        rows = parse_results(text)
+        return rows if args.stage == 'lz' else [rows[i:i + 2] for i in range(0, len(rows), 2)]
+
+    probe.compare(expected, probe.candidates(render, actions, batch=16, parse=parse),
+                  describe=lambda index: f'case {cases[index]["id"]}' if index < len(cases) else f'control {actions[index][1]}')
+    probe.finish(native_cases=sum(c['valid'] for c in cases), invalid_controls=4, stage=args.stage,
+                 input_bytes=sum(len(c['data']) for c in cases if c['valid']),
+                 inputs_sha256=hashlib.sha256(json.dumps([dict(c, data=c['data'].hex()) for c in cases]).encode()).hexdigest(),
+                 observations_sha256=observation_hash, observation_words=observation_words,
+                 compressed_bytes=sum(len(row) for row in compressed if row is not None),
+                 public_decoder_size_exclusions=sum(len(row) > 1048576 for row in compressed if row is not None),
+                 reference_sha256=hashlib.sha256(json.dumps(compressed).encode()).hexdigest(),
+                 instrumented_output_matches_linked_api=True)
 
 if __name__ == '__main__':
     main()
