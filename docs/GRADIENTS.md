@@ -6,17 +6,17 @@ integral F32 values in **-360..360**, with a nonzero reference normalization
 extent. Invalid requests return `None`.
 
 `Surface.create_gradient_linear_for(reference, width, height, direction, start, end)`
-takes Jonmath's explicit `M.Gradient.Reference`:
+takes Jonmath's explicit `M.Libm`:
 
 | Profile | Numerical contract | Host-declared reference |
 |---|---|---|
-| `M.AccurateGradient{}` | macOS float libm `sinf`/`cosf` (double-rounded) | Darwin |
-| `M.GnuGradient{}` | Arm optimized-routines float polynomial used by GNU libm | Linux/glibc |
+| `M.AppleLibm{}` | macOS float libm `sinf`/`cosf` (double-rounded) | Darwin |
+| `M.Glibc239Libm{}` | Arm optimized-routines float polynomial used by GNU libm | Linux/glibc |
 
 `create_gradient_linear` is the accurate-profile convenience API. The
 conformance harness declares the profile per host family (Darwin or
 Linux/glibc); other host families need their own verified declaration. The same
-`Gradient.Reference` also selects the rotation, legacy angle and extrema
+`Libm` also selects the rotation, legacy angle and extrema
 profiles; extrema are selected separately from native controls (see
 [NATIVE-MATH-PROFILES.md](NATIVE-MATH-PROFILES.md)).
 

@@ -21,8 +21,8 @@ under `.png` yields its first frame, matching native fallback behavior; mixed
 `.GiF` is rejected by the memory-token path.
 
 `Image.Animation.decode_image_for(reference, ...)` selects explicit
-`J.Image.Decode.Reference` for PSD fallback ([PSD.md](PSD.md)). The convenience
-call selects `J.UncontractedDecode{}`.
+`M.Contraction` for PSD fallback ([PSD.md](PSD.md)). The convenience
+call selects `M.Uncontracted{}`.
 
 ## File loading
 

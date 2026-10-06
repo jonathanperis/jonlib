@@ -41159,7 +41159,7 @@
       "status": "partial",
       "jonlib": "Surface.create_gradient_linear_for / Surface.create_gradient_linear",
       "mapping_state": "implemented",
-      "scope": "RGBA8; dimensions 1..4096; integral directions -360..360 and nonzero reference extent; explicit AccurateGradient or GnuGradient numerical profile; balanced owned-array generation.",
+      "scope": "RGBA8; dimensions 1..4096; integral directions -360..360 and nonzero reference extent; explicit AppleLibm or Glibc239Libm numerical profile; balanced owned-array generation.",
       "gaps": [
         "Wider-angle platform libm rounding differences",
         "Other libm/reference profiles",
@@ -61411,7 +61411,7 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector2.angle_for / jonmath.Vector2.angle / jonmath.Vector2.angle_with_reference",
+      "jonlib": "jonmath.Vector2.angle_for / jonmath.Vector2.angle",
       "mapping_state": "implemented",
       "scope": "Finite original components with staged normal/zero uncontracted dot/determinant intermediates and checked result; explicit Apple2007AngleRn, Sun239AngleRn and Glibc241AngleRn source contracts; legacy defaults/_for unchanged.",
       "gaps": [
@@ -61482,9 +61482,9 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector2.line_angle_for / jonmath.Vector2.line_angle / jonmath.Vector2.line_angle_with_reference",
+      "jonlib": "jonmath.Vector2.line_angle_for / jonmath.Vector2.line_angle",
       "mapping_state": "implemented",
-      "scope": "Finite original endpoints with staged normal/zero endpoint differences, selected scalar output and signed-zero-preserving negation; independent checked Angle.Reference; legacy defaults/_for unchanged.",
+      "scope": "Finite original endpoints with staged normal/zero endpoint differences, selected scalar output and signed-zero-preserving negation; independent checked Libm; legacy defaults/_for unchanged.",
       "gaps": [
         "Nonzero subnormal wrapper intermediates/output are rejected; nonfinite input behavior is rejection only, not native exceptional parity",
         "Other rounding modes, contracted/FMA wrapper variants, errno, exceptions and NaN payload semantics",
@@ -62160,7 +62160,7 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.rotate_for / jonmath.Vector2.rotate",
       "mapping_state": "implemented",
-      "scope": "Bounded finite F32 radians within one cycle, explicit AccurateGradient/GnuGradient numerical reference, uncontracted component arithmetic.",
+      "scope": "Bounded finite F32 radians within one cycle, explicit AppleLibm/Glibc239Libm numerical reference, uncontracted component arithmetic.",
       "gaps": [
         "Wider-angle and exceptional/subnormal domains",
         "Other libm/contracted variants",
@@ -62341,7 +62341,7 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.clamp_for / jonmath.Vector2.clamp",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component clamp, including reversed bounds and explicit AccurateGradient/GnuGradient signed-zero selection.",
+      "scope": "Finite F32 component clamp, including reversed bounds and explicit AppleLibm/Glibc239Libm signed-zero selection.",
       "gaps": [
         "Exceptional/subnormal and full platform/performance coverage",
         "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts"
@@ -63475,9 +63475,9 @@
       "phase": 1,
       "sequence": 2,
       "status": "partial",
-      "jonlib": "jonmath.Vector3.angle_for / jonmath.Vector3.angle / jonmath.Vector3.angle_with_reference",
+      "jonlib": "jonmath.Vector3.angle_for / jonmath.Vector3.angle",
       "mapping_state": "implemented",
-      "scope": "Finite original components with staged normal/zero cross products, differences, squares, left-associated sums, guarded sqrt and dot products; explicit checked Angle.Reference and unchanged legacy defaults/_for.",
+      "scope": "Finite original components with staged normal/zero cross products, differences, squares, left-associated sums, guarded sqrt and dot products; explicit checked Libm and unchanged legacy defaults/_for.",
       "gaps": [
         "Nonzero subnormal wrapper intermediates/output are rejected; nonfinite input behavior is rejection only, not native exceptional parity",
         "Other rounding modes, contracted/FMA wrapper variants, errno, exceptions and NaN payload semantics",
@@ -64707,7 +64707,7 @@
       "status": "partial",
       "jonlib": "jonmath.Vector3.clamp_for / jonmath.Vector3.clamp",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component clamp with explicit AccurateGradient/GnuGradient signed-zero ties and reference bound ordering.",
+      "scope": "Finite F32 component clamp with explicit AppleLibm/Glibc239Libm signed-zero ties and reference bound ordering.",
       "gaps": [
         "Exceptional/subnormal domains",
         "Full target/performance coverage",

@@ -7,15 +7,15 @@ pixel format. All file loading goes through one bounded byte-file boundary.
 | API | Result |
 |---|---|
 | `Surface.decode_image(file_type, bytes)` | `Result<&1, &1, Image.DecodeError, Surface>`, normalized RGBA8 |
-| `Surface.decode_image_for(reference, file_type, bytes)` | same, with an explicit `Image.Decode.Reference` |
+| `Surface.decode_image_for(reference, file_type, bytes)` | same, with an explicit `M.Contraction` |
 | `Surface.load_image(path)` | `IO(Result<&1, &1, Image.LoadError, Surface>)`, normalized RGBA8 |
-| `Surface.load_image_for(reference, path)` | same, with an explicit `Image.Decode.Reference` |
+| `Surface.load_image_for(reference, path)` | same, with an explicit `M.Contraction` |
 | `Surface.load_qoi(path)` | explicit QOI, normalized RGBA8 |
 | `Image.Formatted.load_qoi/load_png/load_pnm/load_tga/load_bmp/load_pic(path)` | `IO(Result<&1, &1, Image.LoadError, Image.Formatted>)`, native format |
 
 `file_type` is an extension token such as `.png`, not a filename. The
-`Image.Decode.Reference` choices are `J.FusedDecode{}` and
-`J.UncontractedDecode{}`; they affect only PSD white-matte arithmetic (see
+`M.Contraction` choices are `M.Fused{}` and
+`M.Uncontracted{}`; they affect only PSD white-matte arithmetic (see
 [PSD.md](PSD.md)), and the convenience calls select uncontracted. The same
 boundary also serves [owned animation loading](GIF-ANIMATION.md), whose GIF
 suffix selection additionally accepts mixed letter case, and

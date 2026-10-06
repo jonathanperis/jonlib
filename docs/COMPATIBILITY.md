@@ -26,12 +26,12 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
   fallback is not GPU evidence. CUDA was not verified.
 - Host-dependent numerical behavior is an explicit, named profile, never an
   implicit host guess:
-  - checked vector angles: the `M.Angle.Reference` profile whose frozen native
+  - checked vector angles: the `M.Libm` profile whose frozen native
     `atan2f` controls match the host ([ANGLES.md](ANGLES.md));
   - literal extrema and Vector min/max/clamp signed zeros: native qualification
     in `tools/native_profiles.py`;
   - gradient, image-rotation and profiled math trigonometry (`*_for` with
-    `M.Gradient.Reference`): `AccurateGradient` on Darwin, `GnuGradient` on
+    `M.Libm`): `AppleLibm` on Darwin, `Glibc239Libm` on
     glibc Linux;
   - linked collision/noise/spline/decode multiply-add contraction: fused on
     Darwin arm64, uncontracted on Linux x86-64.
@@ -137,7 +137,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | CRC32 and MD5 | `Checksum.crc32/md5` | CRC value and four MD5 words, little-endian MD5 profile ([CHECKSUMS.md](CHECKSUMS.md)) | `checksum` |
 | SHA-1 and SHA-256 | `Checksum.sha1/sha256` | Five/eight native words, including the SHA-256 padding quirk ([SHA.md](SHA.md)) | `sha` |
 | Scalar/Vector2/Vector3/Vector4 raymath | Jonmath `Math` and vector functions | Explicit uncontracted-F32 profile ([MATH.md](MATH.md)) | `conformance`, `jonmath-example` |
-| Vector angle queries | `Vector2.angle/line_angle`, `Vector3.angle`, `_for` and `*_with_reference` | Legacy Apple/GNU profiles; checked angles per selected `M.Angle.Reference` ([ANGLES.md](ANGLES.md)) | `conformance`, `angle-kernels`, `angle-legacy`, `modern-angle-bounds` |
+| Vector angle queries | `Vector2.angle/line_angle`, `Vector3.angle`, `_for` and `*_with_reference` | Legacy Apple/GNU profiles; checked angles per selected `M.Libm` ([ANGLES.md](ANGLES.md)) | `conformance`, `angle-kernels`, `angle-legacy`, `modern-angle-bounds` |
 | Quaternion arithmetic/metrics/interpolation | `Quaternion` functions | Shared Vector4 representation; Hamilton products, zero normalization/inversion, NLERP, sign-equivalent equality | `conformance` |
 | Quaternion/matrix conversion and composition | `Quaternion.from_matrix/to_matrix/transform`, `Vector3.rotate_by_quaternion`, `Matrix.compose` | Branch/tie order, full matrices, non-unit/zero quaternions | `conformance` |
 | Decomposition, 3D constructors, unprojection | `Matrix.decompose`, quaternion constructors/spline, `Vector3.rotate_by_axis_angle/unproject` | Ten-field decomposition, bounded half-angle profiles, inverse ordering, invalid-domain controls | `conformance` |
@@ -156,7 +156,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 ## Known divergences and gaps
 
 - **Legacy angle profiles are not retargeted.** On glibc ≥ 2.41 hosts the legacy
-  Sun (`GnuGradient`) angle differs from native `atan2f`: fixture
+  Sun (`Glibc239Libm`) angle differs from native `atan2f`: fixture
   `vector2-angle-profiles` pixel `(6,0)` gives legacy `3fc90fda` versus native
   `3fc90fdb`. The checked `*_with_reference` route with `Glibc241AngleRn` matches.
   The arm64 Apple subnormal difference is described in [ANGLES.md](ANGLES.md).

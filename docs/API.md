@@ -40,8 +40,8 @@ the unsigned bit pattern returned by `ColorToInt`.
 
 The public scalar and Vector2 operations are listed in [MATH.md](MATH.md),
 including their explicit uncontracted-F32 profile and remaining numeric gaps.
-The three checked `*_with_reference` angle APIs use the separate
-`M.Angle.Reference` and return `Maybe<F32>`; see [ANGLES.md](ANGLES.md).
+The checked angle APIs take an explicit `M.Libm` and return `Maybe<F32>`; see
+[ANGLES.md](ANGLES.md).
 Pure geometry queries are listed in [COLLISION.md](COLLISION.md), including
 strict rectangle edges and inclusive circle tangency.
 Spline point queries and their explicit arithmetic profiles are listed in
@@ -72,9 +72,9 @@ Reusable local constructor bindings need a type annotation, for example
 crop/extraction/region-drawing profile requires integral rectangle values;
 `draw_image_rect` and the documented rectangle wrappers also support fractional fields.
 
-`M.Angle.Reference` has `M.Apple2007AngleRn{}`, `M.Sun239AngleRn{}` and
-`M.Glibc241AngleRn{}` constructors. They name numerical contracts, not host
-detection; see [ANGLES.md](ANGLES.md). Existing `Gradient.Reference` APIs retain their meanings.
+`M.Libm` has `M.AppleLibm{}`, `M.Glibc239Libm{}` and
+`M.Glibc241Libm{}` constructors. They name numerical contracts, not host
+detection; see [ANGLES.md](ANGLES.md). Existing `Libm` APIs retain their meanings.
 
 `M.Vector3{x, y, z}` is immutable `Data` with three F32 fields.
 `M.Vector4{x, y, z, w}` provides four immutable F32 fields.
@@ -107,7 +107,7 @@ is outside this API's contract.
 | `Surface.create_gradient_square(width, height, density, inner, outer) -> Maybe<Surface>` | Square gradient with dimensions 1..4096 and finite density 0..1. Invalid requests return `None`; density one produces the inner color, matching the reference clamp behavior. |
 | `Surface.create_gradient_radial(width, height, density, inner, outer)` | Same Maybe result, dimensions 1..4096 and density 0..1; reference radial RGBA interpolation with balanced generation. |
 | `Surface.create_gradient_linear(width, height, direction, start, end)` | Same Maybe result; integral directions -360..360. Rejects invalid sizes/directions and a zero reference normalization extent. Wider-angle libm parity remains open; see [GRADIENTS.md](GRADIENTS.md). |
-| `Surface.create_gradient_linear_for(reference, width, height, direction, start, end)` | Jonmath's explicit `M.Gradient.Reference`: `M.AccurateGradient{}` or `M.GnuGradient{}`. Selects reference numerical behavior; see [GRADIENTS.md](GRADIENTS.md). |
+| `Surface.create_gradient_linear_for(reference, width, height, direction, start, end)` | Jonmath's explicit `M.Libm`: `M.AppleLibm{}` or `M.Glibc239Libm{}`. Selects reference numerical behavior; see [GRADIENTS.md](GRADIENTS.md). |
 | `Surface.dimensions(surface) -> U32 & U32` | Consumes a surface and returns its dimensions. |
 | `Surface.clear(surface, color) -> Surface` | Replaces all pixels; preserves dimensions. |
 | `Surface.get(surface, x, y) -> Surface & Maybe<&2, U32>` | Returns ownership and the pixel; out-of-bounds U32 coordinates return `None`, never wrap. |
@@ -201,7 +201,7 @@ is outside this API's contract.
 | `Image.Formatted.colors/get` / `Image.FloatRGB.colors/get` | Native bulk and point RGBA observations with packed integer expansion, float truncation and retained point/error owners; see [IMAGE-COLORS.md](IMAGE-COLORS.md). |
 | `Image.Formatted.load_raw(path, width, height, format, header_size)` | Native RAW header selection for formats 1..7 and checked finite `[0,1]` R32 (8); exact words and metadata, bounded reads, closed handles and distinct `InvalidRawSamples` errors. Format 9 remains unsupported here. See [RAW-FILES.md](RAW-FILES.md). |
 | `Image.FloatRGB.load_raw(path, width, height, header_size)` / `write_raw(image, path)` | Native RAW header selection and exact non-NaN RGB words; typed load/write errors, closed handles and retained owners on NaN write rejection. See [RAW-FILES.md](RAW-FILES.md). |
-| `Surface.decode_image_for(reference, file_type, bytes)` / `Surface.load_image_for(reference, path)` | Shared dispatch with `J.Image.Decode.Reference`; affects PSD matte arithmetic and retains existing bounds/error/closure behavior. Convenience calls select `J.UncontractedDecode{}`. |
+| `Surface.decode_image_for(reference, file_type, bytes)` / `Surface.load_image_for(reference, path)` | Shared dispatch with `M.Contraction`; affects PSD matte arithmetic and retains existing bounds/error/closure behavior. Convenience calls select `M.Uncontracted{}`. |
 | `Surface.decode_png` | Bounded non-interlaced/Adam7 PNG and native-default CgBI decoding at supported 1/2/4/8/16-bit combinations; filtering, transparency and normalization in [PNG.md](PNG.md). |
 | `Surface.to_png`, `write_png` | Consuming RGBA8 memory/file exports with byte-exact native default filtering, quality-8 compression and checksums; see [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
 | `Surface.write_image(surface, path)` | ASCII-case-insensitive PNG/BMP/TGA/QOI/RAW suffix dispatch; pre-open unsupported-suffix errors retain the owner, selected file operations consume it and return typed IO errors; see [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |

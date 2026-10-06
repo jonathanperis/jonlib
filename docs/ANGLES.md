@@ -7,26 +7,28 @@ pretending one result is universal.
 
 ## Profiles
 
-`M.Angle.Reference` names three source contracts:
+`M.Libm` names the C math library whose last-bit behavior a result follows:
 
-| Profile | Source | Where it is the native behavior |
+| `M.Libm` | `atan2f` source contract | Native on |
 |---|---|---|
-| `Apple2007AngleRn{}` | Apple Libm Intel assembly (Eric Postpischil, July 2007), commit `17a5f9da` | macOS |
-| `Sun239AngleRn{}` | Sun float `atan`/`atan2` as shipped in glibc 2.39 (`tools/reference/angle_sources/`) | glibc ≤ 2.40 hosts (e.g. Ubuntu 24.04) |
-| `Glibc241AngleRn{}` | glibc 2.41 `e_atan2f.c` (MIT, `tools/reference/modern_atan2f_glibc241.c`) | glibc ≥ 2.41 hosts |
+| `AppleLibm{}` | Apple Libm Intel assembly (Eric Postpischil, July 2007), commit `17a5f9da` | macOS |
+| `Glibc239Libm{}` | Sun float `atan`/`atan2` as shipped in glibc 2.39 (`tools/reference/angle_sources/`) | glibc before 2.41 (e.g. Ubuntu 24.04) |
+| `Glibc241Libm{}` | glibc 2.41 `e_atan2f.c` (MIT, `tools/reference/modern_atan2f_glibc241.c`) | glibc 2.41 and later |
 
-A profile is a numerical contract, not host detection. The legacy
-`*_for(Gradient.Reference, …)` angle functions keep their signatures and
-meaning: `AccurateGradient` selects the Apple algorithm and `GnuGradient` the Sun
-algorithm. (These two parallel families are scheduled to be unified.)
+The same profile selects the other libm-dependent behavior (gradient and
+rotation `sinf`/`cosf`, `fminf`/`fmaxf` signed-zero ties); both glibc profiles
+share those. A profile is a numerical contract, not host detection.
 
 ## Checked entry points
 
 ```bend
-M.Vector2.angle_with_reference(reference, left, right) -> Maybe<F32>
-M.Vector2.line_angle_with_reference(reference, start, end) -> Maybe<F32>
-M.Vector3.angle_with_reference(reference, left, right) -> Maybe<F32>
+M.Vector2.angle_for(libm, left, right) -> Maybe<F32>
+M.Vector2.line_angle_for(libm, start, end) -> Maybe<F32>
+M.Vector3.angle_for(libm, left, right) -> Maybe<F32>
 ```
+
+The convenience forms `M.Vector2.angle`, `M.Vector2.line_angle` and
+`M.Vector3.angle` keep their unchecked `F32` result with the Apple algorithm.
 
 `Some` carries exact F32 bits. `None` rejects inputs outside the contract:
 every original component must be finite, and every source-order intermediate
