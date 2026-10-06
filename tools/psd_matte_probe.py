@@ -1,27 +1,14 @@
 #!/usr/bin/env python3
 """Compare all supported byte-channel/alpha pairs with native PSD and arithmetic models."""
-import argparse
 import hashlib
-import json
-from pathlib import Path
 
 from byte_probe import BEND_EMITTER, parse_results
-from conformance import BUILD, ROOT, checkout, image_decode_reference, run, source_gate
+from conformance import image_decode_reference
+import probekit
+from probekit import ProbeFailure
 
 
-def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True)
-    parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true')
-    args=parser.parse_args()
-    lock=json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'))
-    checkout(args.raylib_source,lock['raylib']['revision'])
-    work=BUILD/'psd-matte-probe';work.mkdir(parents=True,exist_ok=True)
-    report_path=work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    source=work/'reference.c'
-    source.write_text('''#include "raylib.h"
+REFERENCE='''#include "raylib.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,22 +46,10 @@ int main(void){
     emit(u,tested);emit(f,tested);emit(native,tested);
     UnloadImageColors(pixels);UnloadImage(image);free(bytes);free(u);free(f);free(native);
 }
-''')
-    binary=work/'reference'
-    run(['clang','-std=c11','-O2','-ffp-contract=off','-fno-builtin-fmaf','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary])
-    text=run([binary]);(work/'reference.jsonl').write_text(text)
-    reference=parse_results(text)
-    if len(reference)!=3 or any(len(values)!=33151 for values in reference):raise ValueError('Incomplete native matte results')
-    profile=image_decode_reference();selected=1 if profile=='FusedDecode' else 0
-    native_differences={name:sum(a!=b for a,b in zip(reference[index],reference[2]))
-                        for index,name in enumerate(('UncontractedDecode','FusedDecode'))}
-    report=dict(passed=False,pairs=33151,intermediate_alpha_pairs=32639,native_profile=profile,
-                model_disagreements=sum(a!=b for a,b in zip(reference[0],reference[1])),
-                native_model_mismatches=native_differences,
-                sources=source_gate(),reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
-    report_path.write_text(json.dumps(report,indent=2)+'\n')
-    if reference[selected]!=reference[2]:raise ValueError(f'Linked native PSD differs from declared {profile} arithmetic')
-    preamble='''import Base
+'''
+
+
+PREAMBLE='''import Base
 import ../../src/psd.bend as P
 def observed(+alpha: U32, result: Result<&2, &2, P.Error, U32>) -> U32:
   match result:
@@ -95,22 +70,30 @@ def alphas(n: Nat, +alpha: U32, +fused: Bool, values: List<U32>) -> List<U32>:
       +lower = Bool.pick(U32, U32.is_eq(alpha, 0) || U32.is_eq(alpha, 255), 0, (255 - alpha : U32))
       alphas(rest, (alpha + 1 : U32), fused, samples(U32.to_nat((256 - lower : U32)), lower, alpha, fused, values))
 '''+BEND_EMITTER
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        bang='!' if lane=='metal' else ''
-        program=preamble+'def main() -> IO(Unit):\n  do IO<Unit>:\n'
-        for fused in ('False','True'):program+=f'    emit_bytes(~&1, alphas{bang}(256n, 0, {fused}{{}}, Nil{{}}))\n'
-        source=work/f'{lane}.bend';source.write_text(program)
-        binary=work/('candidate.js' if lane=='javascript' else f'candidate-{lane}')
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        actual=parse_results(run(command));differences=[]
-        for mode,(a,b) in enumerate(zip(reference[:2],actual)):
-            differences.extend(dict(mode=mode,index=i,reference=x,candidate=y) for i,(x,y) in enumerate(zip(a,b)) if x!=y)
-        report['lanes'][lane]=dict(passed=actual==reference[:2],differences=differences[:8])
-        report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if actual!=reference[:2]:raise ValueError(f'{lane}: matte model differs: {differences[:4]}')
-        print(f'{lane}: all 33151 channel/alpha pairs match both models; native selects {profile}',flush=True)
-    report['passed']=True;report_path.write_text(json.dumps(report,indent=2)+'\n')
+
+
+def main():
+    probe=probekit.Probe('psd-matte',probekit.arguments(__doc__))
+    text=probe.native(REFERENCE,extra_flags=('-ffp-contract=off','-fno-builtin-fmaf'));(probe.work/'reference.jsonl').write_text(text)
+    reference=parse_results(text)
+    if len(reference)!=3 or any(len(values)!=33151 for values in reference):raise ProbeFailure('Incomplete native matte results')
+    profile=image_decode_reference();selected=1 if profile=='FusedDecode' else 0
+    native_differences={name:sum(a!=b for a,b in zip(reference[index],reference[2]))
+                        for index,name in enumerate(('UncontractedDecode','FusedDecode'))}
+    probe.report.update(native_profile=profile,native_model_mismatches=native_differences);probe.save()
+    if reference[selected]!=reference[2]:raise ProbeFailure(f'Linked native PSD differs from declared {profile} arithmetic')
+
+    def render(selected,gpu):
+        bang='!' if gpu else '';program=PREAMBLE+'def main() -> IO(Unit):\n  do IO<Unit>:\n'
+        for fused in selected:program+=f'    emit_bytes(~&1, alphas{bang}(256n, 0, {fused}{{}}, Nil{{}}))\n'
+        return program
+
+    modes=['False','True']
+    probe.compare(reference[:2],probe.candidates(render,modes,batch=2,parse=lambda text,selected:parse_results(text)),
+                  lambda i:f'{("Uncontracted","Fused")[i]} model')
+    probe.finish(pairs=33151,intermediate_alpha_pairs=32639,native_profile=profile,
+                 model_disagreements=sum(a!=b for a,b in zip(reference[0],reference[1])),
+                 reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__=='__main__':

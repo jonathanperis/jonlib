@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Compare bounded BMP pixels and complete RGBA8 export bytes with pinned raylib."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
 import struct
 
-from conformance import BUILD, ROOT, checkout, image_decode_reference, run, source_gate
+from conformance import image_decode_reference
+import probekit
+from probekit import ProbeFailure
 
 
 def bitmap(width, height, pixels, *, bpp=24, dib=40, compression=0, top=False, gap=0):
@@ -225,49 +225,7 @@ def bend_bytes(values):
     return f'input_bytes([{chunks}], Nil{{}})'
 
 
-def main(codec='bmp', fixture_factory=fixtures, native_extension=None):
-    parser=argparse.ArgumentParser(description=f'Compare {codec.upper()} decoding and RGBA8 export with raylib.')
-    parser.add_argument('--bend-source',type=Path,required=True)
-    parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true')
-    args=parser.parse_args()
-    lock=json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'))
-    checkout(args.raylib_source,lock['raylib']['revision'])
-    work=BUILD/f'{codec}-probe';work.mkdir(parents=True,exist_ok=True)
-    report_path=work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    inputs,malformed,outputs=fixture_factory()
-    extension=native_extension or codec
-    lines=['#include "raylib.h"','#include <stdio.h>',
-           'static void emit(Image image){if(!image.data){fputs("valid BMP rejected\\n",stderr);exit(2);} ImageFormat(&image,7);',
-           'printf("{\\"width\\":%d,\\"height\\":%d,\\"pixels\\":[",image.width,image.height);',
-           'Color *pixels=LoadImageColors(image);for(int i=0;i<image.width*image.height;i++)printf("%s%u",i?",":"",(unsigned)ColorToInt(pixels[i]));',
-           'puts("]}");UnloadImageColors(pixels);UnloadImage(image);}',
-           'int main(void){SetTraceLogLevel(LOG_NONE);']
-    lines.insert(2,'#include <stdlib.h>')
-    for case in inputs:
-        lines += ['{unsigned char bytes[]={'+','.join(map(str,case['bytes']))+'};emit(LoadImageFromMemory(".'+extension+'",bytes,sizeof(bytes)));}']
-    for case in outputs:
-        path=work/f'reference-{case["id"]}.{codec}'
-        lines += ['{',f'Image image=GenImageColor({case["width"]},{case["height"]},BLANK);',
-                  'unsigned pixels[]={'+','.join(str(v)+'u' for v in case['pixels'])+'};',
-                  f'for(int i=0;i<{len(case["pixels"])};i++)((Color*)image.data)[i]=GetColor(pixels[i]);',
-                  f'if(!ExportImage(image,{json.dumps(str(path))}))return 3;UnloadImage(image);',
-                  f'int size=0;unsigned char *bytes=LoadFileData({json.dumps(str(path))},&size);',
-                  'if(!bytes)return 4;putchar(\'[\');for(int i=0;i<size;i++)printf("%s%u",i?",":"",bytes[i]);puts("]");UnloadFileData(bytes);','}']
-    source=work/'reference.c';source.write_text('\n'.join(lines+['}'])+'\n')
-    binary=work/'reference'
-    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary])
-    reference=run([binary]);expected=[json.loads(line) for line in reference.splitlines()]
-    if len(expected)!=len(inputs)+len(outputs):raise ValueError(f'Incomplete native {codec.upper()} results')
-    expected = expected[:len(inputs)]+[c['error'] for c in malformed]+expected[len(inputs):]
-    report=dict(passed=False,decode_cases=len(inputs),error_cases=len(malformed),export_cases=len(outputs),
-                decoded_pixels=sum(len(row['pixels']) for row in expected[:len(inputs)]),export_bytes=sum(len(row) for row in expected[-len(outputs):]) if outputs else 0,
-                inputs_sha256=hashlib.sha256(json.dumps([inputs,malformed,outputs]).encode()).hexdigest(),
-                 reference_sha256=hashlib.sha256(reference.encode()).hexdigest(),sources=source_gate(),lanes={})
-    if codec=='psd':report['decode_reference']=image_decode_reference()
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        program='''import Base
+PROGRAM='''import Base
 import ../../jonlib.bend as J
 def reverse_into(values: +List<U32>, rest: +List<U32>) -> +List<U32>:
   match values:
@@ -306,29 +264,69 @@ def saved(result: Maybe<J.Surface>) -> IO(Unit):
     case Some{surface}: IO.try(Unit, J.Surface.write_bmp(surface, OUTPUT))
 def main() -> IO(Unit):
   do IO<Unit>:
-'''.replace('OUTPUT',json.dumps(str(work/f'{lane}-single.{codec}'))).replace('BMP',codec.upper()).replace('Surface.to_bmp',f'Surface.to_{codec}').replace('Surface.write_bmp',f'Surface.write_{codec}')
-        if not outputs:
-            program=program[:program.index('def fill(')]+'def main() -> IO(Unit):\n  do IO<Unit>:\n'
-        bang='!' if lane=='metal' else ''
-        function=f'decode_{codec}_for' if codec=='psd' else f'decode_{codec}'
-        profile=f'J.{image_decode_reference()}{{}}, ' if codec=='psd' else ''
-        for case in inputs:program+=f'    decoded(J.Surface.{function}{bang}({profile}{bend_bytes(case["bytes"])}))\n'
-        for case in malformed:program+=f'    IO.print(U32.show(error_code(J.Surface.{function}{bang}({profile}{bend_bytes(case["bytes"])}))))\n'
-        for case in outputs:program+=f'    IO.print(List.show(~&2, ~U32, ~U32.show, encoded{bang}({case["width"]}, {bend_bytes(case["pixels"])}, J.Surface.create({case["width"]}, {case["height"]}, 0))))\n'
-        if outputs and lane!='metal':program+='    saved(J.Surface.create(1, 1, 4294967295))\n'
-        source=work/f'{lane}.bend';source.write_text(program)
-        binary=work/('candidate.js' if lane=='javascript' else f'candidate-{lane}')
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        actual=[json.loads(line) for line in run(command).splitlines()]
-        differences=[dict(index=i,reference=a,candidate=b) for i,(a,b) in enumerate(zip(expected,actual)) if a!=b]
-        file_match=not outputs or lane=='metal' or (work/f'{lane}-single.{codec}').read_bytes()==(work/f'reference-rgba-single.{codec}').read_bytes()
-        report['lanes'][lane]=dict(passed=actual==expected and file_match,differences=differences[:2])
-        report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if actual!=expected or not file_match:raise ValueError(f'{lane}: {codec.upper()} results differ: {differences[:1]}')
-        print(f'{lane}: {len(inputs)} {codec.upper()} images, {len(malformed)} typed errors and {len(outputs)} exact exports passed',flush=True)
-    report['passed']=True
-    report_path.write_text(json.dumps(report,indent=2)+'\n')
+'''
+
+
+def reference_program(codec, extension, inputs, outputs, work):
+    lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
+           'static void emit(Image image){if(!image.data){fputs("valid BMP rejected\\n",stderr);exit(2);} ImageFormat(&image,7);',
+           'printf("{\\"width\\":%d,\\"height\\":%d,\\"pixels\\":[",image.width,image.height);',
+           'Color *pixels=LoadImageColors(image);for(int i=0;i<image.width*image.height;i++)printf("%s%u",i?",":"",(unsigned)ColorToInt(pixels[i]));',
+           'puts("]}");UnloadImageColors(pixels);UnloadImage(image);}',
+           'int main(void){SetTraceLogLevel(LOG_NONE);']
+    for case in inputs:
+        lines += ['{unsigned char bytes[]={'+','.join(map(str,case['bytes']))+'};emit(LoadImageFromMemory(".'+extension+'",bytes,sizeof(bytes)));}']
+    for case in outputs:
+        path=work/f'reference-{case["id"]}.{codec}'
+        lines += ['{',f'Image image=GenImageColor({case["width"]},{case["height"]},BLANK);',
+                  'unsigned pixels[]={'+','.join(str(v)+'u' for v in case['pixels'])+'};',
+                  f'for(int i=0;i<{len(case["pixels"])};i++)((Color*)image.data)[i]=GetColor(pixels[i]);',
+                  f'if(!ExportImage(image,{json.dumps(str(path))}))return 3;UnloadImage(image);',
+                  f'int size=0;unsigned char *bytes=LoadFileData({json.dumps(str(path))},&size);',
+                  'if(!bytes)return 4;putchar(\'[\');for(int i=0;i<size;i++)printf("%s%u",i?",":"",bytes[i]);puts("]");UnloadFileData(bytes);','}']
+    return '\n'.join(lines+['}'])+'\n'
+
+
+def main(codec='bmp', fixture_factory=fixtures, native_extension=None):
+    probe=probekit.Probe(codec,probekit.arguments(f'Compare {codec.upper()} decoding and RGBA8 export with raylib.'))
+    work=probe.work;inputs,malformed,outputs=fixture_factory()
+    reference=probe.native(reference_program(codec,native_extension or codec,inputs,outputs,work))
+    expected=[json.loads(line) for line in reference.splitlines()]
+    if len(expected)!=len(inputs)+len(outputs):raise ProbeFailure(f'Incomplete native {codec.upper()} results')
+    # The candidate also writes the 1x1 export to a file; its bytes must equal the native file.
+    single,written=work/f'reference-rgba-single.{codec}',work/f'candidate-single.{codec}'
+    expected=expected[:len(inputs)]+[c['error'] for c in malformed]+expected[len(inputs):]+([list(single.read_bytes())] if outputs else [])
+    actions=[('decode',c) for c in inputs]+[('error',c) for c in malformed]+[('export',c) for c in outputs]+([('file',dict(id='rgba-single'))] if outputs else [])
+    program=PROGRAM.replace('OUTPUT',json.dumps(str(written))).replace('BMP',codec.upper()).replace('Surface.to_bmp',f'Surface.to_{codec}').replace('Surface.write_bmp',f'Surface.write_{codec}')
+    if not outputs:program=program[:program.index('def fill(')]+'def main() -> IO(Unit):\n  do IO<Unit>:\n'
+    function=f'decode_{codec}_for' if codec=='psd' else f'decode_{codec}'
+    profile=f'J.{image_decode_reference()}{{}}, ' if codec=='psd' else ''
+
+    def render(selected,gpu):
+        bang='!' if gpu else '';body=program
+        for kind,case in selected:
+            if kind=='decode':body+=f'    decoded(J.Surface.{function}{bang}({profile}{bend_bytes(case["bytes"])}))\n'
+            elif kind=='error':body+=f'    IO.print(U32.show(error_code(J.Surface.{function}{bang}({profile}{bend_bytes(case["bytes"])}))))\n'
+            elif kind=='export':body+=f'    IO.print(List.show(~&2, ~U32, ~U32.show, encoded{bang}({case["width"]}, {bend_bytes(case["pixels"])}, J.Surface.create({case["width"]}, {case["height"]}, 0))))\n'
+            else:body+='    saved(J.Surface.create(1, 1, 4294967295))\n    IO.print("\\"file\\"")\n'
+        return body
+
+    def parse(text,selected):
+        rows=[json.loads(line) for line in text.splitlines()]
+        for i,row in enumerate(rows):
+            if row=='file':  # Swap the marker for the written bytes; remove the file so each lane rewrites it.
+                rows[i]=list(written.read_bytes()) if written.is_file() else None;written.unlink(missing_ok=True)
+        return rows
+
+    written.unlink(missing_ok=True)
+    probe.compare(expected,probe.candidates(render,actions,batch=len(actions),parse=parse),lambda i:f'{actions[i][0]} {actions[i][1]["id"]}')
+    summary=dict(decode_cases=len(inputs),error_cases=len(malformed),export_cases=len(outputs),
+                 decoded_pixels=sum(len(row['pixels']) for row in expected[:len(inputs)]),
+                 export_bytes=sum(map(len,expected[len(inputs)+len(malformed):len(inputs)+len(malformed)+len(outputs)])),
+                 inputs_sha256=hashlib.sha256(json.dumps([inputs,malformed,outputs]).encode()).hexdigest(),
+                 reference_sha256=hashlib.sha256(reference.encode()).hexdigest())
+    if codec=='psd':summary['decode_reference']=image_decode_reference()
+    probe.finish(**summary)
 
 
 if __name__=='__main__':
