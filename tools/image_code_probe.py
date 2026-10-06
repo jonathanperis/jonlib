@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 """Compare complete native image-as-code text, names and bounded text-file IO."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
-import subprocess
 import struct
 
 from byte_probe import BEND_EMITTER, parse_results
-from conformance import BUILD, ENV, ROOT, checkout, run, source_gate
 from formatted_float_probe import fixtures as formatted_fixtures
 from float_rgb_bytes_probe import fixtures as float_fixtures
-from image_file_probe import limit_handles
+from image_file_probe import FILE_DESCRIPTOR_LIMIT
+import probekit
+from probekit import ROOT, ProbeFailure
 
 
 def fixtures():
@@ -25,47 +23,7 @@ def fixtures():
     return cases
 
 
-def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True);parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true');args=parser.parse_args()
-    lock=json.loads((ROOT/'toolchain.json').read_text());checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'));checkout(args.raylib_source,lock['raylib']['revision'])
-    work=BUILD/'image-code-probe';work.mkdir(parents=True,exist_ok=True);report_path=work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    (work/'reference').mkdir(exist_ok=True);cases=fixtures()
-    lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-           'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
-           'int main(void){SetTraceLogLevel(LOG_NONE);']
-    for i,case in enumerate(cases):
-        path=work/(str(i)+'.raw');path.write_bytes(bytes(case['bytes']));output=work/'reference'/case['name']
-        lines += [f'{{Image image=LoadImageRaw({json.dumps(str(path.relative_to(ROOT)))},{case["width"]},{case["height"]},{case["format"]},0);if(!image.data)return 2;',
-                  f'if(!ExportImageAsCode(image,{json.dumps(str(output.relative_to(ROOT)))}))return 3;int n=0;unsigned char *text=LoadFileData({json.dumps(str(output.relative_to(ROOT)))},&n);if(!text)return 4;',
-                  'for(int j=0;j<n;j++)byte(text[j]);end();UnloadFileData(text);UnloadImage(image);}']
-    source=work/'reference.c';source.write_text('\n'.join(lines+['}'])+'\n');binary=work/'reference-runner'
-    run(['clang','-std=c11','-O2','-fsanitize=address','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary]);text=run([binary]);expected=parse_results(text)
-    if len(expected)!=len(cases):raise ValueError('Incomplete native code text output')
-    for case,values in zip(cases,expected):
-        if bytes(values)!=(work/'reference'/case['name']).read_bytes():raise ValueError('Native code text transport differs')
-        if len(values)+1>len(case['bytes'])*6+2000:raise ValueError('Native code text exceeds its allocation estimate')
-    if b'{ 0x0,\n' not in bytes(expected[10]) or b'0x14 };\n' not in bytes(expected[9]):raise ValueError('Native newline boundary fixture changed')
-    small=list(struct.pack('<III',1,1,7))+[1,2,3,4]
-    large_data=list(range(256))*257;large=work/'too-large.raw';large.write_bytes(bytes(large_data))
-    # 257 * 256 bytes is 65,792 bytes: the first excluded RGBA8 row width here.
-    large_expected=list(struct.pack('<III',257,64,7))+large_data
-    float_small=list(struct.pack('<IIIII',1,1,0x3f000000,0x3e800000,0x3f400000))
-    float_large_data=list(struct.pack('<III',0x80000000,1,0x7f800000))*5462
-    float_large=work/'float-too-large.raw';float_large.write_bytes(bytes(float_large_data))
-    float_large_expected=list(struct.pack('<II',2731,2))+float_large_data
-    wanted=expected+[small]*6+[large_expected,float_small,float_large_expected,[1]]
-    sentinel=work/'rejected.h';sentinel.write_bytes(b'unchanged');directory=work/'directory.h';directory.mkdir(exist_ok=True)
-    report=dict(passed=False,native_cases=len(cases),source_bytes=sum(len(c['bytes']) for c in cases),text_bytes=sum(map(len,expected)),
-                 formatted_cases=sum(c['format']!=9 for c in cases),float_cases=sum(c['format']==9 for c in cases),
-                 rejected_owner_controls=10,io_controls=5,closure_iterations=100,file_descriptor_limit=64,native_address_sanitizer=True,sources=source_gate(),
-                inputs_sha256=hashlib.sha256(json.dumps([cases,['','folder/','a'*199+'.h','caf\u00e9.h','\u0000bad.h','a'*253+'.h'],
-                    dict(width=257,height=64,format=7,bytes_sha256=hashlib.sha256(bytes(large_data)).hexdigest()),
-                    dict(width=2731,height=2,format=9,bytes_sha256=hashlib.sha256(bytes(float_large_data)).hexdigest()),'float-invalid-path-and-nan']).encode()).hexdigest(),
-                reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
-    program='''import Base
+PROGRAM='''import Base
 import ../../jonlib.bend as J
 import ../../jonmath.bend as M
 import ../../src/hdr.bend as H
@@ -207,41 +165,97 @@ def closure_loop(n: Nat) -> IO(Unit):
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        (work/lane).mkdir(exist_ok=True);bang='!' if lane=='metal' else '';body=program.replace('BANG',bang).replace('LONG_NAME',json.dumps('a'*199+'.h')).replace('OVERFLOW_NAME',json.dumps('a'*253+'.h'))
-        for key,path in [('SENTINEL',sentinel),('DIRECTORY',directory),('OUTPUT',work/lane/'closure.h')]:body=body.replace(key,json.dumps(str(path.relative_to(ROOT))))
-        for i,case in enumerate(cases):
-            path=json.dumps(str((work/(str(i)+'.raw')).relative_to(ROOT)));target=json.dumps(str((work/lane/case['name']).relative_to(ROOT)))
-            floating=case['format']==9;kind='FloatRGB' if floating else 'Formatted';prefix='float_' if floating else '';format_arg='' if floating else f'{case["format"]}, '
-            load=f'J.Image.{kind}.load_raw({path}, {case["width"]}, {case["height"]}, {format_arg}0)'
-            body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.{kind}>, Unit, {load}, {prefix}loaded({target}, False{{}}))\n'
-            if lane!='metal':body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.{kind}>, Unit, {load}, {prefix}saved({target}))\n'
-        for kind in range(6):body+=f'    observed(True{{}}, reject_path{bang}({kind}))\n'
-        large_load=f'J.Image.Formatted.load_raw({json.dumps(str(large.relative_to(ROOT)))}, 257, 64, 7, 0)'
-        body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, {large_load}, loaded("too_large.h", True{{}}))\n'
-        body+=f'    float_observed(True{{}}, J.Image.FloatRGB.to_code{bang}(float_small(), ""))\n'
-        float_large_load=f'J.Image.FloatRGB.load_raw({json.dumps(str(float_large.relative_to(ROOT)))}, 2731, 2, 0)'
-        body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>, Unit, {float_large_load}, float_loaded("too_large.h", True{{}}))\n'
-        body+=f'    emit_bytes(~&1, [Bool.to_u32(nan_rejected(J.Image.FloatRGB.to_code{bang}(float_nan(), "nan.h")))])\n'
-        if lane!='metal':
-            body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, {large_load}, reject_large_write)\n'
-            body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>, Unit, {float_large_load}, float_reject_large_write)\n    closure_loop(100n)\n'
-        source=work/f'{lane}.bend';source.write_text(body);binary=work/('candidate.js' if lane=='javascript' else 'candidate-'+lane)
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        if lane=='metal':output=run(command)
-        else:
-            process=subprocess.run(list(map(str,command)),cwd=ROOT,env=ENV,capture_output=True,text=True,timeout=240,preexec_fn=limit_handles)
-            if process.returncode:raise RuntimeError(f'{lane}: image-as-code IO run failed\n{process.stderr[-2000:]}')
-            output=process.stdout
-        actual=parse_results(output);target=wanted+([] if lane=='metal' else [large_expected,float_large_expected,[1]])
-        different=[i for i,(a,b) in enumerate(zip(target,actual)) if a!=b]
-        files_match=lane=='metal' or all((work/lane/c['name']).read_bytes()==(work/'reference'/c['name']).read_bytes() for c in cases)
-        preserved=sentinel.read_bytes()==b'unchanged'
-        report['lanes'][lane]=dict(passed=actual==target and files_match and preserved,different_cases=different,file_exports=0 if lane=='metal' else len(cases));report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if not report['lanes'][lane]['passed']:raise ValueError(f'{lane}: image-as-code differences {different}, files={files_match}, sentinel={preserved}')
-        print(f'{lane}: {len(cases)} ASan-checked native image-as-code files / {report["text_bytes"]} text bytes and {report["rejected_owner_controls"]} retained owners passed',flush=True)
-    report['passed']=True;report_path.write_text(json.dumps(report,indent=2)+'\n')
+# File-IO actions run only on CPU/JavaScript lanes (the forced-GPU program covers the pure conversions).
+HOST_ONLY=('large_write','float_large_write','closure')
+GPU_MARKER='"gpu"'
+
+
+def main():
+    probe=probekit.Probe('image-code',probekit.arguments(__doc__));work=probe.work
+    (work/'reference').mkdir(exist_ok=True);(work/'candidate').mkdir(exist_ok=True);cases=fixtures()
+    lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
+           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
+           'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+           'int main(void){SetTraceLogLevel(LOG_NONE);']
+    for i,case in enumerate(cases):
+        path=work/(str(i)+'.raw');path.write_bytes(bytes(case['bytes']));output=work/'reference'/case['name']
+        lines += [f'{{Image image=LoadImageRaw({json.dumps(str(path.relative_to(ROOT)))},{case["width"]},{case["height"]},{case["format"]},0);if(!image.data)return 2;',
+                  f'if(!ExportImageAsCode(image,{json.dumps(str(output.relative_to(ROOT)))}))return 3;int n=0;unsigned char *text=LoadFileData({json.dumps(str(output.relative_to(ROOT)))},&n);if(!text)return 4;',
+                  'for(int j=0;j<n;j++)byte(text[j]);end();UnloadFileData(text);UnloadImage(image);}']
+    text=probe.native('\n'.join(lines+['}'])+'\n',name='reference-runner',extra_flags=('-fsanitize=address',));expected=parse_results(text)
+    if len(expected)!=len(cases):raise ProbeFailure('Incomplete native code text output')
+    for case,values in zip(cases,expected):
+        if bytes(values)!=(work/'reference'/case['name']).read_bytes():raise ProbeFailure('Native code text transport differs')
+        if len(values)+1>len(case['bytes'])*6+2000:raise ProbeFailure('Native code text exceeds its allocation estimate')
+    if b'{ 0x0,\n' not in bytes(expected[10]) or b'0x14 };\n' not in bytes(expected[9]):raise ProbeFailure('Native newline boundary fixture changed')
+    small=list(struct.pack('<III',1,1,7))+[1,2,3,4]
+    large_data=list(range(256))*257;large=work/'too-large.raw';large.write_bytes(bytes(large_data))
+    # 257 * 256 bytes is 65,792 bytes: the first excluded RGBA8 row width here.
+    large_expected=list(struct.pack('<III',257,64,7))+large_data
+    float_small=list(struct.pack('<IIIII',1,1,0x3f000000,0x3e800000,0x3f400000))
+    float_large_data=list(struct.pack('<III',0x80000000,1,0x7f800000))*5462
+    float_large=work/'float-too-large.raw';float_large.write_bytes(bytes(float_large_data))
+    float_large_expected=list(struct.pack('<II',2731,2))+float_large_data
+    sentinel=work/'rejected.h';sentinel.write_bytes(b'unchanged');directory=work/'directory.h';directory.mkdir(exist_ok=True)
+    digest=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
+    # One action per observed result; 'case' also checks the written file, 'sentinel' the untouched rejected-write target.
+    actions=[('case',i) for i in range(len(cases))]+[('reject',kind) for kind in range(6)]+[('large',None),('float_small',None),('float_large',None),('nan',None)]
+    actions+=[(kind,None) for kind in HOST_ONLY]+[('sentinel',None)]
+    observed=[[row] for row in expected]+[[small]]*6+[[large_expected],[float_small],[float_large_expected],[[1]]]
+    host=observed+[[large_expected],[float_large_expected],[[1]]]+[True]
+    wanted=[[*group,digest(work/'reference'/cases[index]['name'])] if kind=='case' else group for (kind,index),group in zip(actions,host)]
+    gpu_wanted=observed+[None]*len(HOST_ONLY)+[True]
+    load=lambda path,width,height,format_arg,owner:f'J.Image.{owner}.load_raw({json.dumps(str(path.relative_to(ROOT)))}, {width}, {height}, {format_arg}0)'
+
+    def render(selected,gpu):
+        bang='!' if gpu else '';body=PROGRAM.replace('BANG',bang).replace('LONG_NAME',json.dumps('a'*199+'.h')).replace('OVERFLOW_NAME',json.dumps('a'*253+'.h'))
+        for key,path in [('SENTINEL',sentinel),('DIRECTORY',directory),('OUTPUT',work/'candidate'/'closure.h')]:body=body.replace(key,json.dumps(str(path.relative_to(ROOT))))
+        if gpu:body+=f'    IO.print({json.dumps(GPU_MARKER)})\n'
+        for kind,index in selected:
+            if gpu and kind in HOST_ONLY:continue
+            if kind=='case':
+                case=cases[index];target=json.dumps(str((work/'candidate'/case['name']).relative_to(ROOT)))
+                floating=case['format']==9;owner='FloatRGB' if floating else 'Formatted';prefix='float_' if floating else ''
+                source=load(work/(str(index)+'.raw'),case['width'],case['height'],'' if floating else f'{case["format"]}, ',owner)
+                body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.{owner}>, Unit, {source}, {prefix}loaded({target}, False{{}}))\n'
+                if not gpu:body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.{owner}>, Unit, {source}, {prefix}saved({target}))\n'
+            elif kind=='reject':body+=f'    observed(True{{}}, reject_path{bang}({index}))\n'
+            elif kind=='large':body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, {load(large,257,64,"7, ","Formatted")}, loaded("too_large.h", True{{}}))\n'
+            elif kind=='float_small':body+=f'    float_observed(True{{}}, J.Image.FloatRGB.to_code{bang}(float_small(), ""))\n'
+            elif kind=='float_large':body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>, Unit, {load(float_large,2731,2,"","FloatRGB")}, float_loaded("too_large.h", True{{}}))\n'
+            elif kind=='nan':body+=f'    emit_bytes(~&1, [Bool.to_u32(nan_rejected(J.Image.FloatRGB.to_code{bang}(float_nan(), "nan.h")))])\n'
+            elif kind=='large_write':body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, {load(large,257,64,"7, ","Formatted")}, reject_large_write)\n'
+            elif kind=='float_large_write':body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>, Unit, {load(float_large,2731,2,"","FloatRGB")}, float_reject_large_write)\n'
+            elif kind=='closure':body+='    closure_loop(100n)\n'
+        return body
+
+    def parse(output,selected):
+        """Group results per action; host lanes also report (then remove) each written code file."""
+        lines=output.splitlines();gpu=bool(lines) and lines[0]==GPU_MARKER
+        results=parse_results('\n'.join(lines[1:] if gpu else lines));rows=[]
+        for kind,index in selected:
+            if kind=='sentinel':rows.append(sentinel.read_bytes()==b'unchanged');continue
+            if gpu and kind in HOST_ONLY:rows.append(None);continue
+            if not results:raise ProbeFailure(f'image-code: missing result for {kind} {index}')
+            row=[results.pop(0)]
+            if kind=='case' and not gpu:
+                written=work/'candidate'/cases[index]['name'];row.append(digest(written) if written.is_file() else None);written.unlink(missing_ok=True)
+            rows.append(row)
+        if results:raise ProbeFailure(f'image-code: {len(results)} unexpected trailing results')
+        return rows
+
+    for case in cases:(work/'candidate'/case['name']).unlink(missing_ok=True)
+    lanes=probe.candidates(render,actions,batch=len(actions),fd_limit=FILE_DESCRIPTOR_LIMIT,parse=parse)
+    describe=lambda i:f'action {i} ({actions[i][0]} {cases[actions[i][1]]["name"] if actions[i][0]=="case" else actions[i][1]})'
+    probe.compare(wanted,{lane:rows for lane,rows in lanes.items() if lane!='gpu'},describe)
+    if 'gpu' in lanes:probe.compare(gpu_wanted,{'gpu':lanes['gpu']},describe)
+    probe.finish(native_cases=len(cases),source_bytes=sum(len(c['bytes']) for c in cases),text_bytes=sum(map(len,expected)),
+                 formatted_cases=sum(c['format']!=9 for c in cases),float_cases=sum(c['format']==9 for c in cases),
+                 rejected_owner_controls=10,io_controls=5,closure_iterations=100,file_descriptor_limit=FILE_DESCRIPTOR_LIMIT,native_address_sanitizer=True,
+                 inputs_sha256=hashlib.sha256(json.dumps([cases,['','folder/','a'*199+'.h','café.h','\u0000bad.h','a'*253+'.h'],
+                    dict(width=257,height=64,format=7,bytes_sha256=hashlib.sha256(bytes(large_data)).hexdigest()),
+                    dict(width=2731,height=2,format=9,bytes_sha256=hashlib.sha256(bytes(float_large_data)).hexdigest()),'float-invalid-path-and-nan']).encode()).hexdigest(),
+                 reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__=='__main__':
