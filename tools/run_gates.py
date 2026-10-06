@@ -91,6 +91,7 @@ def main(argv=None):
     parser.add_argument('--only', action='append', default=[], help='run only these gate ids')
     parser.add_argument('--plan', action='store_true', help='print the shard plan and exit')
     parser.add_argument('--record', type=Path, help='also write compact per-gate evidence into this directory')
+    parser.add_argument('--jobs', type=int, help='batches each probe compiles/runs concurrently (sets PROBEKIT_JOBS)')
     args = parser.parse_args(argv)
     index, count = map(int, args.shard.split('/'))
     if not 1 <= index <= count:
@@ -107,7 +108,8 @@ def main(argv=None):
     for gate in selected:
         print(f'::group::{gate["id"]}' if os.environ.get('GITHUB_ACTIONS') else f'== {gate["id"]}', flush=True)
         started, wall = time.monotonic(), time.time() - 1
-        result = subprocess.run(command(gate, args), cwd=ROOT, env=dict(os.environ, BEND_NO_TELEMETRY='1'))
+        env = dict(os.environ, BEND_NO_TELEMETRY='1', **({'PROBEKIT_JOBS': str(args.jobs)} if args.jobs else {}))
+        result = subprocess.run(command(gate, args), cwd=ROOT, env=env)
         elapsed = round(time.monotonic() - started, 1)
         passed = result.returncode == 0
         record = evidence(gate, wall, passed, elapsed, args.os)
