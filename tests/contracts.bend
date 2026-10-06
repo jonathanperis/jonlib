@@ -63,12 +63,17 @@ def image_matches(colors: List<U32>, +image: Image, +index: U32) -> Bool:
       Bool.and(U32.is_eq(image_pixel(3n, image, (index % 3 : U32), (index / 3 : U32)),
         (color >> 8n : U32)), image_matches(rest, image, (index + 1 : U32)))
 
+def compared(colors: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>, result: Result<&1, &1, J.Surface & J.Surface.Error, Image>) -> Bool:
+  match colors result:
+    case Done{values} Done{+image}:
+      image_matches(values, image, 0)
+        && U32.is_eq(image_pixel(3n, image, 7, 7), 0)
+        && U32.is_eq(image_pixel(3n, image, 3, 1), 0)
+    case _ _: False{}
+
 def converted(pair: J.Surface & J.Surface) -> Bool:
   (source, copy) = pair
-  +image = J.Surface.to_image(copy)
-  image_matches(J.Surface.colors(source), image, 0)
-    && U32.is_eq(image_pixel(3n, image, 7, 7), 0)
-    && U32.is_eq(image_pixel(3n, image, 3, 1), 0)
+  compared(J.Surface.colors(source), J.Surface.to_image(copy))
 
 def adapter(created: Maybe<J.Surface>) -> Bool:
   match created:
@@ -87,12 +92,17 @@ def text_length(text: String, +n: U32) -> U32:
     case SNil{}: n
     case SCon{_, rest}: text_length(rest, (n + 1 : U32))
 
+def ppm_length(result: Result<&1, &1, J.Surface & J.Surface.Error, String>) -> Bool:
+  match result:
+    case Fail{_}: False{}
+    case Done{text}: U32.is_eq(text_length(text, 0), 6291473)
+
 def large_ppm(created: Maybe<J.Surface>) -> Bool:
   match created:
     case None{}:
       False{}
     case Some{surface}:
-      U32.is_eq(text_length(J.Surface.to_ppm(surface), 0), 6291473)
+      ppm_length(J.Surface.to_ppm(surface))
 
 def sequence_sum(values: +List<F32>, +count: U32, +sum: U32) -> U32 & U32:
   match values:
