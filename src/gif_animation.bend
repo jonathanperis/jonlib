@@ -2,8 +2,8 @@
 # Altered Bend adaptation of pinned stb_image GIF retain/restore frame composition.
 # MIT notice: LICENSES/stb-image.txt. See THIRD_PARTY_NOTICES.md.
 import Base
+import ./codec.bend as C
 import ./gif.bend as G
-import ./qoi.bend as Q
 
 type Animation is Type:
   Animation{width: U32, height: U32, count: U32, frames: List<G.Image>}
@@ -53,64 +53,64 @@ def retained(width: U32, height: U32, region: G.Region, disposal: U32, following
   (canvas, copy) = result
   Continuing{following, Previous{canvas, saved, region, disposal}, (count + 1 : U32), remaining, Con{G.Image{width, height, copy}, frames}}
 
-def drawn(width: U32, height: U32, region: G.Region, disposal: U32, following: G.Header, count: U32, remaining: U32, frames: List<G.Image>, saved: Array<U32>, result: Result<&1, &1, G.Error, Array<U32>>) -> Result<&1, &1, G.Error, State>:
+def drawn(width: U32, height: U32, region: G.Region, disposal: U32, following: G.Header, count: U32, remaining: U32, frames: List<G.Image>, saved: Array<U32>, result: Result<&1, &1, C.Error, Array<U32>>) -> Result<&1, &1, C.Error, State>:
   match result:
     case Fail{error}: Fail{error}
     case Done{canvas}: Done{retained(width, height, region, disposal, following, count, remaining, frames, saved, Array.clone(U32, canvas))}
 
-def drawing(width: U32, height: U32, region: G.Region, disposal: U32, following: G.Header, +count: U32, remaining: U32, frames: List<G.Image>, frame: G.Frame, prepared: Prepared) -> Result<&1, &1, G.Error, State>:
+def drawing(width: U32, height: U32, region: G.Region, disposal: U32, following: G.Header, +count: U32, remaining: U32, frames: List<G.Image>, frame: G.Frame, prepared: Prepared) -> Result<&1, &1, C.Error, State>:
   Prepared{canvas, saved} = prepared
   drawn(width, height, region, disposal, following, count, remaining, frames, saved, G.draw(frame, (count > 0 : U32), canvas))
 
-def frame.checked(supported: Bool, budget: Bool, +width: U32, +height: U32, region: G.Region, background: U32, disposal: U32, following: G.Header, previous: Previous, count: U32, remaining: U32, frames: List<G.Image>, frame: G.Frame) -> Result<&1, &1, G.Error, State>:
+def frame.checked(supported: Bool, budget: Bool, +width: U32, +height: U32, region: G.Region, background: U32, disposal: U32, following: G.Header, previous: Previous, count: U32, remaining: U32, frames: List<G.Image>, frame: G.Frame) -> Result<&1, &1, C.Error, State>:
   match supported budget:
-    case False{} _: Fail{G.BadHeader{}}
-    case True{} False{}: Fail{G.BadSize{}}
+    case False{} _: Fail{C.BadHeader{}}
+    case True{} False{}: Fail{C.BadSize{}}
     case True{} True{}:
       drawing(width, height, region, disposal, following, count, (remaining - width * height : U32), frames, frame, prepare(width, height, background, previous))
 
-def frame(allowed: Bool, +width: U32, +height: U32, previous: Previous, count: U32, +remaining: U32, frames: List<G.Image>, frame: G.Frame) -> Result<&1, &1, G.Error, State>:
+def frame(allowed: Bool, +width: U32, +height: U32, previous: Previous, count: U32, +remaining: U32, frames: List<G.Image>, frame: G.Frame) -> Result<&1, &1, C.Error, State>:
   G.Frame{fw, fh, +region, +background, palette, selected, minimum, data, G.Header{cw, ch, global, bg, transparent, +disposal, tail}} = frame
   +following = {G.Header{cw, ch, global, bg, transparent, disposal, tail} : G.Header}
   frame.checked((disposal <= 2 : U32), allowed && (width * height <= remaining : U32), width, height, region, background, disposal,
     following, previous, count, remaining, frames, G.Frame{fw, fh, region, background, palette, selected, minimum, data, following})
 
-def finished(valid: Bool, width: U32, height: U32, count: U32, frames: List<G.Image>) -> Result<&1, &1, G.Error, State>:
+def finished(valid: Bool, width: U32, height: U32, count: U32, frames: List<G.Image>) -> Result<&1, &1, C.Error, State>:
   match valid:
-    case False{}: Fail{G.BadHeader{}}
+    case False{}: Fail{C.BadHeader{}}
     case True{}: Done{Complete{Animation{width, height, count, List.reverse(&1, G.Image, frames)}}}
 
-def step(allowed: Bool, width: U32, height: U32, previous: Previous, +count: U32, remaining: U32, frames: List<G.Image>, result: Result<&2, &2, G.Error, G.Search>) -> Result<&1, &1, G.Error, State>:
+def step(allowed: Bool, width: U32, height: U32, previous: Previous, +count: U32, remaining: U32, frames: List<G.Image>, result: Result<&2, &2, C.Error, G.Search>) -> Result<&1, &1, C.Error, State>:
   match result:
     case Fail{error}: Fail{error}
     case Done{G.End{}}: finished((count > 0 : U32), width, height, count, frames)
     case Done{G.Found{value}}: frame(allowed, width, height, previous, count, remaining, frames, value)
-    case _: Fail{G.BadHeader{}}
+    case _: Fail{C.BadHeader{}}
 
-def run(n: Nat, +width: U32, +height: U32, state: Result<&1, &1, G.Error, State>) -> Result<&1, &1, G.Error, Animation>:
+def run(n: Nat, +width: U32, +height: U32, state: Result<&1, &1, C.Error, State>) -> Result<&1, &1, C.Error, Animation>:
   match n state:
     case _ Fail{error}: Fail{error}
     case _ Done{Complete{animation}}: Done{animation}
-    case 0n _: Fail{G.BadSize{}}
+    case 0n _: Fail{C.BadSize{}}
     case Succ{+rest} Done{Continuing{header, previous, count, remaining, frames}}:
       run(rest, width, height, step(Nat.is_lt(0n, rest), width, height, previous, count, remaining, frames, G.scanned(Done{header})))
 
-def header(maximum_frames: U32, maximum_pixels: U32, result: Result<&2, &2, G.Error, G.Header>) -> Result<&1, &1, G.Error, Animation>:
+def header(maximum_frames: U32, maximum_pixels: U32, result: Result<&2, &2, C.Error, G.Header>) -> Result<&1, &1, C.Error, Animation>:
   match result:
     case Fail{error}: Fail{error}
     case Done{G.Header{+width, +height, palette, background, transparent, disposal, data}}:
       run(1n+U32.to_nat(maximum_frames), width, height,
         Done{Continuing{G.Header{width, height, palette, background, transparent, disposal, data}, Initial{}, 0, maximum_pixels, Nil{}}})
 
-def bytes(valid: Bool, maximum_frames: U32, maximum_pixels: U32, data: +List<U32>) -> Result<&1, &1, G.Error, Animation>:
+def bytes(valid: Bool, maximum_frames: U32, maximum_pixels: U32, data: +List<U32>) -> Result<&1, &1, C.Error, Animation>:
   match valid:
-    case False{}: Fail{G.BadByte{}}
+    case False{}: Fail{C.BadByte{}}
     case True{}: header(maximum_frames, maximum_pixels, G.header(data))
 
-def request(valid: Bool, maximum_frames: U32, maximum_pixels: U32, +data: +List<U32>) -> Result<&1, &1, G.Error, Animation>:
+def request(valid: Bool, maximum_frames: U32, maximum_pixels: U32, +data: +List<U32>) -> Result<&1, &1, C.Error, Animation>:
   match valid:
-    case False{}: Fail{G.BadSize{}}
-    case True{}: bytes(Q.valid_bytes(data, True{}), maximum_frames, maximum_pixels, data)
+    case False{}: Fail{C.BadSize{}}
+    case True{}: bytes(C.valid_bytes(data, True{}), maximum_frames, maximum_pixels, data)
 
-def decode(data: +List<U32>, +maximum_frames: U32, +maximum_pixels: U32) -> Result<&1, &1, G.Error, Animation>:
+def decode(data: +List<U32>, +maximum_frames: U32, +maximum_pixels: U32) -> Result<&1, &1, C.Error, Animation>:
   request(((maximum_frames > 0) && (maximum_pixels > 0) && (maximum_pixels <= 16777216) : U32), maximum_frames, maximum_pixels, data)
