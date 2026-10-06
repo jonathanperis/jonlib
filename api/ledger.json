@@ -39722,11 +39722,11 @@
       "phase": 1,
       "sequence": 25,
       "status": "partial",
-      "jonlib": "Collision.circles",
+      "jonlib": "Collision.circles_for / Collision.circles",
       "mapping_state": "implemented",
-      "scope": "Finite bounded F32 centers/radii, inclusive squared-distance tangency and reference signed-radius behavior.",
+      "scope": "Finite bounded F32 centers/radii, inclusive squared-distance tangency and reference signed-radius behavior. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
       "gaps": [
-        "Exceptional/subnormal and contracted variants",
+        "Exceptional/subnormal inputs and other contraction patterns",
         "Full target/performance coverage"
       ],
       "blocker": null,
@@ -39782,11 +39782,11 @@
       "phase": 1,
       "sequence": 25,
       "status": "partial",
-      "jonlib": "Collision.circle_rec",
+      "jonlib": "Collision.circle_rec_for / Collision.circle_rec",
       "mapping_state": "implemented",
-      "scope": "Finite bounded F32 circle/rectangle predicate preserving reference side and corner tests.",
+      "scope": "Finite bounded F32 circle/rectangle predicate preserving reference side and corner tests. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
       "gaps": [
-        "Exceptional/subnormal and contracted variants",
+        "Exceptional/subnormal inputs and other contraction patterns",
         "Full target/performance coverage"
       ],
       "blocker": null,
@@ -39843,11 +39843,11 @@
       "phase": 1,
       "sequence": 25,
       "status": "partial",
-      "jonlib": "Collision.circle_line",
+      "jonlib": "Collision.circle_line_for / Collision.circle_line",
       "mapping_state": "implemented",
-      "scope": "Finite bounded F32 circle/segment closest-point predicate with reference epsilon-degenerate endpoint fallback.",
+      "scope": "Finite bounded F32 circle/segment closest-point predicate with reference epsilon-degenerate endpoint fallback. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
       "gaps": [
-        "Exceptional/subnormal and contracted variants",
+        "Exceptional/subnormal inputs and other contraction patterns",
         "Full target/performance coverage"
       ],
       "blocker": null,
@@ -39964,11 +39964,11 @@
       "phase": 1,
       "sequence": 25,
       "status": "partial",
-      "jonlib": "Collision.point_circle",
+      "jonlib": "Collision.point_circle_for / Collision.point_circle",
       "mapping_state": "implemented",
-      "scope": "Finite bounded F32 point/circle squared-distance predicate with inclusive tangency.",
+      "scope": "Finite bounded F32 point/circle squared-distance predicate with inclusive tangency. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
       "gaps": [
-        "Exceptional/subnormal and contracted variants",
+        "Exceptional/subnormal inputs and other contraction patterns",
         "Full target/performance coverage"
       ],
       "blocker": null,
@@ -40024,11 +40024,11 @@
       "phase": 1,
       "sequence": 25,
       "status": "partial",
-      "jonlib": "Collision.point_triangle",
+      "jonlib": "Collision.point_triangle_for / Collision.point_triangle",
       "mapping_state": "implemented",
-      "scope": "Finite bounded F32 point/triangle predicate; strict barycentric interior and false for tested degenerate triangles.",
+      "scope": "Finite bounded F32 point/triangle predicate; strict barycentric interior and false for tested degenerate triangles. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
       "gaps": [
-        "Exceptional/subnormal and contracted variants",
+        "Exceptional/subnormal inputs and other contraction patterns",
         "Full target/performance coverage"
       ],
       "blocker": null,
@@ -40084,11 +40084,11 @@
       "phase": 1,
       "sequence": 25,
       "status": "partial",
-      "jonlib": "Collision.point_line",
+      "jonlib": "Collision.point_line_for / Collision.point_line",
       "mapping_state": "implemented",
-      "scope": "Finite bounded F32 point/segment predicate with integral threshold, strict cross-product margin and inclusive dominant-axis interval.",
+      "scope": "Finite bounded F32 point/segment predicate with integral threshold, strict cross-product margin and inclusive dominant-axis interval. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
       "gaps": [
-        "Exceptional/subnormal and contracted variants",
+        "Exceptional/subnormal inputs and other contraction patterns",
         "Full target/performance coverage"
       ],
       "blocker": null,
@@ -54644,11 +54644,11 @@
       "phase": 1,
       "sequence": 25,
       "status": "partial",
-      "jonlib": "Collision.spheres",
+      "jonlib": "Collision.spheres_for / Collision.spheres",
       "mapping_state": "implemented",
-      "scope": "Finite bounded sphere predicate using inclusive squared distance and the reference squared sum of signed radii.",
+      "scope": "Finite bounded sphere predicate using inclusive squared distance and the reference squared sum of signed radii. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
       "gaps": [
-        "Exceptional/subnormal and contracted variants",
+        "Exceptional/subnormal inputs and other contraction patterns",
         "Full target/performance coverage"
       ],
       "blocker": null,
@@ -54764,11 +54764,11 @@
       "phase": 1,
       "sequence": 25,
       "status": "partial",
-      "jonlib": "Collision.box_sphere",
+      "jonlib": "Collision.box_sphere_for / Collision.box_sphere",
       "mapping_state": "implemented",
-      "scope": "Finite bounded box/sphere predicate with reference component Clamp ordering and inclusive closest-point distance test.",
+      "scope": "Finite bounded box/sphere predicate with reference component Clamp ordering and inclusive closest-point distance test. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
       "gaps": [
-        "Exceptional/subnormal and contracted variants",
+        "Exceptional/subnormal inputs and other contraction patterns",
         "Full target/performance coverage"
       ],
       "blocker": null,

@@ -1,5 +1,6 @@
 import Base
 import ../jonlib.bend as J
+import ../jonmath.bend as M
 
 def rejected(value: Maybe<J.Surface>) -> Bool:
   match value:
@@ -79,6 +80,47 @@ def adapter(created: Maybe<J.Surface>) -> Bool:
       c = J.Surface.draw_pixel(b, 1.0, 3.0, 287454020)
       converted(J.Surface.copy(c))
 
+# Large inputs that once overflowed the JS lane's stack (per-pixel/per-value
+# non-tail recursion). Every helper here is tail-recursive on purpose.
+def text_length(text: String, +n: U32) -> U32:
+  match text:
+    case SNil{}: n
+    case SCon{_, rest}: text_length(rest, (n + 1 : U32))
+
+def large_ppm(created: Maybe<J.Surface>) -> Bool:
+  match created:
+    case None{}:
+      False{}
+    case Some{surface}:
+      U32.is_eq(text_length(J.Surface.to_ppm(surface), 0), 6291473)
+
+def sequence_sum(values: +List<F32>, +count: U32, +sum: U32) -> U32 & U32:
+  match values:
+    case Nil{}: (count, sum)
+    case Con{+value, rest}: sequence_sum(rest, (count + 1 : U32), (sum + F32.to_u32(value) : U32))
+
+def permutation(totals: U32 & U32) -> Bool:
+  (+count, +sum) = totals
+  U32.is_eq(count, 30000) && U32.is_eq(sum, 449985000)
+
+def large_sequence(result: J.Random.State & Result<&1, &1, J.Random.Sequence.Error, J.Random.Sequence>) -> Bool:
+  (_, outcome) = result
+  match outcome:
+    case Fail{_}:
+      False{}
+    case Done{sequence}:
+      permutation(sequence_sum(J.Random.Sequence.values(sequence), 0, 0))
+
+# Bottom edge sampled at every integer x, closed by (n,n) and (0,n).
+def comb(n: Nat, acc: +List<M.Vector2>) -> +List<M.Vector2>:
+  match n:
+    case 0n: Con{M.Vector2{0.0, 0.0}, acc}
+    case 1n+(+k): comb(k, Con{M.Vector2{U32.to_f32(U32.from_nat(1n+k)), 0.0}, acc})
+
+def large_polygon(+points: +List<M.Vector2>) -> Bool:
+  J.Collision.point_poly(M.Vector2{0.5, 0.5}, points)
+    && Bool.not(J.Collision.point_poly(M.Vector2{F32.neg(1.0), 0.5}, points))
+
 def verdict(ok: Bool) -> IO(Unit):
   match ok:
     case False{}:
@@ -95,4 +137,7 @@ def main() -> IO(Unit):
     && U32.is_eq(J.Color.red(16909060), 1)
     && U32.is_eq(J.Color.green(16909060), 2)
     && U32.is_eq(J.Color.blue(16909060), 3)
-    && U32.is_eq(J.Color.alpha(16909060), 4))
+    && U32.is_eq(J.Color.alpha(16909060), 4)
+    && large_ppm(J.Surface.create(1024, 1024, 66051))
+    && large_sequence(J.Random.load_sequence(J.Random.seed(7), 30000, 0.0, 29999.0, 100000000n))
+    && large_polygon(comb(60000n, Con{M.Vector2{60000.0, 60000.0}, Con{M.Vector2{0.0, 60000.0}, Nil{}}})))

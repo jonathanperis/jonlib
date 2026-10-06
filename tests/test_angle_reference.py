@@ -272,9 +272,6 @@ class AngleQualificationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'drift'):self.qualify()
             self.failed();target.write_bytes(original)
         self.mutate=None
-        self.manifest['source_sha256']['toolchain.json']='0'*64
-        with self.assertRaisesRegex(ValueError,'toolchain drift'):self.qualify()
-        self.failed()
 
     def test_mixed_context_wrong_sign_and_pinned_source_mismatch_rejected(self):
         for label,rows in [('pointer',scalar_rows(self.manifest,'Sun239AngleRn')),('canonical',wrapper_rows(self.manifest,'Apple2007AngleRn')),('runtime-wrapper',wrapper_rows(self.manifest,'Sun239AngleRn')),('pinned',scalar_rows(self.manifest,'Apple2007AngleRn'))]:

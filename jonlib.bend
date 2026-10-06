@@ -139,33 +139,51 @@ def Collision.multiply_add(arithmetic: Collision.Arithmetic, a: F32, b: F32, c: 
     case UncontractedCollision{}: (a * b + c : F32)
     case FusedCollision{}: Fused.multiply_add(a, b, c)
 
-def Collision.spheres(left: M.Vector3, radius: F32, right: M.Vector3, other_radius: F32) -> Bool:
+# dx*dx + dy*dy as the linked reference evaluates it: fma(dx, dx, dy*dy) when fused.
+def Collision.square_sum(+arithmetic: Collision.Arithmetic, +dx: F32, +dy: F32) -> F32:
+  Collision.multiply_add(arithmetic, dx, dx, (dy * dy : F32))
+
+# Vector3DistanceSqr inlined into rmodels.c: fma(dz, dz, fma(dx, dx, dy*dy)) when fused.
+def Collision.distance_sqr(+arithmetic: Collision.Arithmetic, left: M.Vector3, right: M.Vector3) -> F32:
+  M.Vector3{x, y, z} = left
+  M.Vector3{u, v, w} = right
+  +dz = (w - z : F32)
+  Collision.multiply_add(arithmetic, dz, dz, Collision.square_sum(arithmetic, (u - x : F32), (v - y : F32)))
+
+def Collision.spheres_for(+arithmetic: Collision.Arithmetic, left: M.Vector3, radius: F32, right: M.Vector3, other_radius: F32) -> Bool:
   +sum = (radius + other_radius : F32)
-  (M.Vector3.distance_sqr(left, right) <= sum * sum : F32)
+  (Collision.distance_sqr(arithmetic, left, right) <= sum * sum : F32)
+
+def Collision.spheres(left: M.Vector3, radius: F32, right: M.Vector3, other_radius: F32) -> Bool:
+  Collision.spheres_for(UncontractedCollision{}, left, radius, right, other_radius)
 
 def Collision.boxes(left: BoundingBox, right: BoundingBox) -> Bool:
   BoundingBox{M.Vector3{ax, ay, az}, M.Vector3{bx, by, bz}} = left
   BoundingBox{M.Vector3{cx, cy, cz}, M.Vector3{dx, dy, dz}} = right
   ((bx >= cx) && (ax <= dx) && (by >= cy) && (ay <= dy) && (bz >= cz) && (az <= dz) : F32)
 
-def Collision.box_sphere(box: BoundingBox, center: M.Vector3, +radius: F32) -> Bool:
+def Collision.box_sphere_for(+arithmetic: Collision.Arithmetic, box: BoundingBox, center: M.Vector3, +radius: F32) -> Bool:
   BoundingBox{M.Vector3{lx, ly, lz}, M.Vector3{ux, uy, uz}} = box
   M.Vector3{+x, +y, +z} = center
   closest = {M.Vector3{M.Math.clamp(x, lx, ux), M.Math.clamp(y, ly, uy), M.Math.clamp(z, lz, uz)} : M.Vector3}
-  (M.Vector3.distance_sqr(M.Vector3{x, y, z}, closest) <= radius * radius : F32)
+  (Collision.distance_sqr(arithmetic, M.Vector3{x, y, z}, closest) <= radius * radius : F32)
+
+def Collision.box_sphere(box: BoundingBox, center: M.Vector3, +radius: F32) -> Bool:
+  Collision.box_sphere_for(UncontractedCollision{}, box, center, radius)
 
 def Collision.recs(left: Rectangle, right: Rectangle) -> Bool:
   Rectangle{+x, +y, w, h} = left
   Rectangle{+u, +v, rw, rh} = right
   ((x < u + rw) && (x + w > u) && (y < v + rh) && (y + h > v) : F32)
 
-def Collision.circles(left: M.Vector2, radius: F32, right: M.Vector2, other_radius: F32) -> Bool:
+def Collision.circles_for(+arithmetic: Collision.Arithmetic, left: M.Vector2, radius: F32, right: M.Vector2, other_radius: F32) -> Bool:
   M.Vector2{x, y} = left
   M.Vector2{u, v} = right
-  +dx = (u - x : F32)
-  +dy = (v - y : F32)
   +sum = (radius + other_radius : F32)
-  (dx * dx + dy * dy <= sum * sum : F32)
+  (Collision.square_sum(arithmetic, (u - x : F32), (v - y : F32)) <= sum * sum : F32)
+
+def Collision.circles(left: M.Vector2, radius: F32, right: M.Vector2, other_radius: F32) -> Bool:
+  Collision.circles_for(UncontractedCollision{}, left, radius, right, other_radius)
 
 def Collision.rectangle.result(overlap: Bool, +x: F32, +y: F32, right: F32, bottom: F32) -> Rectangle:
   match overlap:
@@ -190,14 +208,15 @@ def Collision.point_rec(point: M.Vector2, rectangle: Rectangle) -> Bool:
   Rectangle{+rx, +ry, w, h} = rectangle
   ((x >= rx) && (x < rx + w) && (y >= ry) && (y < ry + h) : F32)
 
-def Collision.point_circle(point: M.Vector2, center: M.Vector2, +radius: F32) -> Bool:
+def Collision.point_circle_for(+arithmetic: Collision.Arithmetic, point: M.Vector2, center: M.Vector2, +radius: F32) -> Bool:
   M.Vector2{x, y} = point
   M.Vector2{cx, cy} = center
-  +dx = (x - cx : F32)
-  +dy = (y - cy : F32)
-  (dx * dx + dy * dy <= radius * radius : F32)
+  (Collision.square_sum(arithmetic, (x - cx : F32), (y - cy : F32)) <= radius * radius : F32)
 
-def Collision.circle_rec(center: M.Vector2, +radius: F32, rectangle: Rectangle) -> Bool:
+def Collision.point_circle(point: M.Vector2, center: M.Vector2, +radius: F32) -> Bool:
+  Collision.point_circle_for(UncontractedCollision{}, point, center, radius)
+
+def Collision.circle_rec_for(+arithmetic: Collision.Arithmetic, center: M.Vector2, +radius: F32, rectangle: Rectangle) -> Bool:
   M.Vector2{x, y} = center
   Rectangle{rx, ry, w, h} = rectangle
   +half_w = (w / 2.0 : F32)
@@ -207,7 +226,10 @@ def Collision.circle_rec(center: M.Vector2, +radius: F32, rectangle: Rectangle) 
   +corner_x = (dx - half_w : F32)
   +corner_y = (dy - half_h : F32)
   (((dx <= half_w + radius) && (dy <= half_h + radius))
-    && ((dx <= half_w) || (dy <= half_h) || (corner_x * corner_x + corner_y * corner_y <= radius * radius)) : F32)
+    && ((dx <= half_w) || (dy <= half_h) || (Collision.square_sum(arithmetic, corner_x, corner_y) <= radius * radius)) : F32)
+
+def Collision.circle_rec(center: M.Vector2, +radius: F32, rectangle: Rectangle) -> Bool:
+  Collision.circle_rec_for(UncontractedCollision{}, center, radius, rectangle)
 
 def Collision.lines.hit(inside: Bool, +arithmetic: Collision.Arithmetic, x: F32, y: F32, rx: F32, ry: F32, +t: F32) -> Maybe<&2, M.Vector2>:
   match inside:
@@ -239,46 +261,59 @@ def Collision.lines_for(+arithmetic: Collision.Arithmetic, start: M.Vector2, end
 def Collision.lines(start: M.Vector2, end: M.Vector2, other_start: M.Vector2, other_end: M.Vector2) -> Maybe<&2, M.Vector2>:
   Collision.lines_for(UncontractedCollision{}, start, end, other_start, other_end)
 
-def Collision.point_triangle(point: M.Vector2, first: M.Vector2, second: M.Vector2, third: M.Vector2) -> Bool:
+# Each a*b + c*d below is fma(a, b, c*d) in the fused linked reference.
+def Collision.point_triangle_for(+arithmetic: Collision.Arithmetic, point: M.Vector2, first: M.Vector2, second: M.Vector2, third: M.Vector2) -> Bool:
   M.Vector2{+x, +y} = point
   M.Vector2{+ax, +ay} = first
   M.Vector2{+bx, +by} = second
   M.Vector2{+cx, +cy} = third
-  +denominator = ((by - cy) * (ax - cx) + (cx - bx) * (ay - cy) : F32)
-  +alpha = (((by - cy) * (x - cx) + (cx - bx) * (y - cy)) / denominator : F32)
-  +beta = (((cy - ay) * (x - cx) + (ax - cx) * (y - cy)) / denominator : F32)
+  +denominator = Collision.multiply_add(arithmetic, (by - cy : F32), (ax - cx : F32), ((cx - bx) * (ay - cy) : F32))
+  +alpha = (Collision.multiply_add(arithmetic, (by - cy : F32), (x - cx : F32), ((cx - bx) * (y - cy) : F32)) / denominator : F32)
+  +beta = (Collision.multiply_add(arithmetic, (cy - ay : F32), (x - cx : F32), ((ax - cx) * (y - cy) : F32)) / denominator : F32)
   gamma = (1.0 - alpha - beta : F32)
   ((alpha > 0.0) && (beta > 0.0) && (gamma > 0.0) : F32)
 
-def Collision.point_line(point: M.Vector2, first: M.Vector2, second: M.Vector2, threshold: F32) -> Bool:
+def Collision.point_triangle(point: M.Vector2, first: M.Vector2, second: M.Vector2, third: M.Vector2) -> Bool:
+  Collision.point_triangle_for(UncontractedCollision{}, point, first, second, third)
+
+# cross = fma(dxc, dyl, -(dyc*dxl)) in the fused linked reference.
+def Collision.point_line_for(+arithmetic: Collision.Arithmetic, point: M.Vector2, first: M.Vector2, second: M.Vector2, threshold: F32) -> Bool:
   M.Vector2{+x, +y} = point
   M.Vector2{+ax, +ay} = first
   M.Vector2{+bx, +by} = second
   +dx = (bx - ax : F32)
   +dy = (by - ay : F32)
-  cross = ((x - ax) * dy - (y - ay) * dx : F32)
+  cross = Collision.multiply_add(arithmetic, (x - ax : F32), dy, F32.neg(((y - ay) * dx : F32)))
   along_x = Bool.pick(Bool, (dx > 0.0 : F32), ((ax <= x) && (x <= bx) : F32), ((bx <= x) && (x <= ax) : F32))
   along_y = Bool.pick(Bool, (dy > 0.0 : F32), ((ay <= y) && (y <= by) : F32), ((by <= y) && (y <= ay) : F32))
   (F32.abs(cross) < threshold * F32.max(F32.abs(dx), F32.abs(dy)) : F32)
     && Bool.pick(Bool, (F32.abs(dx) >= F32.abs(dy) : F32), along_x, along_y)
 
-def Collision.circle_line.route(degenerate: Bool, +x: F32, +y: F32, +radius: F32, +ax: F32, +ay: F32, bx: F32, by: F32, +dx: F32, +dy: F32) -> Bool:
-  match degenerate:
-    case True{}: Collision.circles(M.Vector2{ax, ay}, 0.0, M.Vector2{x, y}, radius)
-    case False{}:
-      length_squared = (dx * dx + dy * dy : F32)
-      +projection = M.Math.clamp((((x - ax) * (bx - ax) + (y - ay) * (by - ay)) / length_squared : F32), 0.0, 1.0)
-      +distance_x = ((ax - projection * dx) - x : F32)
-      +distance_y = ((ay - projection * dy) - y : F32)
-      (distance_x * distance_x + distance_y * distance_y <= radius * radius : F32)
+def Collision.point_line(point: M.Vector2, first: M.Vector2, second: M.Vector2, threshold: F32) -> Bool:
+  Collision.point_line_for(UncontractedCollision{}, point, first, second, threshold)
 
-def Collision.circle_line(center: M.Vector2, radius: F32, first: M.Vector2, second: M.Vector2) -> Bool:
+# Fused reference: squares as fma(a, a, b*b) and p1 - t*d as one fmsub.
+def Collision.circle_line.route(degenerate: Bool, +arithmetic: Collision.Arithmetic, +x: F32, +y: F32, +radius: F32, +ax: F32, +ay: F32, bx: F32, by: F32, +dx: F32, +dy: F32) -> Bool:
+  match degenerate:
+    case True{}: Collision.circles_for(arithmetic, M.Vector2{ax, ay}, 0.0, M.Vector2{x, y}, radius)
+    case False{}:
+      length_squared = Collision.square_sum(arithmetic, dx, dy)
+      +dot = Collision.multiply_add(arithmetic, (x - ax : F32), (bx - ax : F32), ((y - ay) * (by - ay) : F32))
+      +projection = M.Math.clamp((dot / length_squared : F32), 0.0, 1.0)
+      +distance_x = (Collision.multiply_add(arithmetic, F32.neg(projection), dx, ax) - x : F32)
+      +distance_y = (Collision.multiply_add(arithmetic, F32.neg(projection), dy, ay) - y : F32)
+      (Collision.square_sum(arithmetic, distance_x, distance_y) <= radius * radius : F32)
+
+def Collision.circle_line_for(+arithmetic: Collision.Arithmetic, center: M.Vector2, radius: F32, first: M.Vector2, second: M.Vector2) -> Bool:
   M.Vector2{x, y} = center
   M.Vector2{+ax, +ay} = first
   M.Vector2{+bx, +by} = second
   +dx = (ax - bx : F32)
   +dy = (ay - by : F32)
-  Collision.circle_line.route((F32.abs(dx) + F32.abs(dy) <= 0.00000011920928955078125 : F32), x, y, radius, ax, ay, bx, by, dx, dy)
+  Collision.circle_line.route((F32.abs(dx) + F32.abs(dy) <= 0.00000011920928955078125 : F32), arithmetic, x, y, radius, ax, ay, bx, by, dx, dy)
+
+def Collision.circle_line(center: M.Vector2, radius: F32, first: M.Vector2, second: M.Vector2) -> Bool:
+  Collision.circle_line_for(UncontractedCollision{}, center, radius, first, second)
 
 def Collision.polygon.last(points: +List<M.Vector2>, previous: M.Vector2) -> M.Vector2:
   match points:
@@ -302,8 +337,14 @@ def Collision.polygon.loop(points: +List<M.Vector2>, +point: M.Vector2, previous
     case Con{+current, rest}:
       Collision.polygon.loop(rest, point, current, Bool.xor(inside, Collision.polygon.edge(point, current, previous)))
 
+# raylib requires pointCount > 2; checking the list shape avoids walking it.
+def Collision.polygon.enough(points: +List<M.Vector2>) -> Bool:
+  match points:
+    case Con{_, Con{_, Con{_, _}}}: True{}
+    case _: False{}
+
 def Collision.point_poly(point: M.Vector2, +points: +List<M.Vector2>) -> Bool:
-  (List.length(&2, M.Vector2, points) > 2n : Nat)
+  Collision.polygon.enough(points)
     && Collision.polygon.loop(points, point, Collision.polygon.last(points, M.Vector2.zero()), False{})
 
 # Internal signed-word operations for raylib's integer raster stepping.
@@ -522,30 +563,37 @@ def Random.Sequence.values(sequence: Random.Sequence) -> +List<F32>:
 def Random.unload_sequence(sequence: Random.Sequence) -> Unit:
   Unit{}
 
-def Random.sequence.contains(values: +List<F32>, +value: F32) -> Bool:
-  match values:
-    case Nil{}: False{}
-    case Con{head, rest}: F32.is_eq(head, value) || Random.sequence.contains(rest, value)
+# Duplicate flags indexed by value - minimum (span <= 65535) keep each draw O(1)
+# while accepting exactly the values rprand's linear duplicate scan accepts.
+# Array depth holding count entries; shared by every owned-buffer allocation.
+def Surface.capacity(+count: U32) -> Nat:
+  Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
 
-def Random.sequence.step(+remaining: Nat, +values: +List<F32>, draw: Random.State & F32) -> Random.State & (Nat & +List<F32>):
+def Random.sequence.mark(+remaining: Nat, +values: +List<F32>, +value: F32, +slot: U32, state: Random.State, read: Array<U32> & U32) -> Random.State & (Nat & (+List<F32> & Array<U32>)):
+  (seen, +flag) = read
+  +duplicate = U32.is_eq(flag, 1)
+  (state, (Bool.pick(Nat, duplicate, 1n+remaining, remaining),
+    (Bool.pick(+List<F32>, duplicate, values, Con{value, values}), Array.set(U32, seen, slot, 1))))
+
+def Random.sequence.step(+remaining: Nat, +values: +List<F32>, +minimum: F32, seen: Array<U32>, draw: Random.State & F32) -> Random.State & (Nat & (+List<F32> & Array<U32>)):
   (state, +value) = draw
-  +duplicate = Random.sequence.contains(values, value)
-  (state, (Bool.pick(Nat, duplicate, 1n+remaining, remaining), Bool.pick(+List<F32>, duplicate, values, Con{value, values})))
+  +slot = F32.to_u32((value - minimum : F32))
+  Random.sequence.mark(remaining, values, value, slot, state, Array.get(U32, seen, slot))
 
-def Random.sequence.loop(budget: Nat, +minimum: F32, +span: U32, cursor: Random.State & (Nat & +List<F32>)) -> Random.State & Result<&1, &1, Random.Sequence.Error, Random.Sequence>:
+def Random.sequence.loop(budget: Nat, +minimum: F32, +span: U32, cursor: Random.State & (Nat & (+List<F32> & Array<U32>))) -> Random.State & Result<&1, &1, Random.Sequence.Error, Random.Sequence>:
   match budget cursor:
-    case _ Tuple{state, Tuple{0n, values}}:
+    case _ Tuple{state, Tuple{0n, Tuple{values, _}}}:
       (state, Done{RandomSequence{List.reverse(&2, F32, values)}})
-    case 0n Tuple{state, Tuple{_, values}}:
+    case 0n Tuple{state, Tuple{_, Tuple{values, _}}}:
       (state, Fail{SequenceDrawLimit{RandomSequence{List.reverse(&2, F32, values)}}})
-    case 1n+more Tuple{state, Tuple{1n+remaining, values}}:
-      Random.sequence.loop(more, minimum, span, Random.sequence.step(remaining, values,
+    case 1n+more Tuple{state, Tuple{1n+remaining, Tuple{values, seen}}}:
+      Random.sequence.loop(more, minimum, span, Random.sequence.step(remaining, values, minimum, seen,
         Random.value.result(minimum, span, Random.next_u32(state))))
 
-def Random.sequence.count(valid: Bool, state: Random.State, count: U32, minimum: F32, span: U32, budget: Nat) -> Random.State & Result<&1, &1, Random.Sequence.Error, Random.Sequence>:
+def Random.sequence.count(valid: Bool, state: Random.State, count: U32, minimum: F32, +span: U32, budget: Nat) -> Random.State & Result<&1, &1, Random.Sequence.Error, Random.Sequence>:
   match valid:
     case False{}: (state, Fail{InvalidSequenceRequest{}})
-    case True{}: Random.sequence.loop(budget, minimum, span, (state, (U32.to_nat(count), Nil{})))
+    case True{}: Random.sequence.loop(budget, minimum, span, (state, (U32.to_nat(count), (Nil{}, Array.new(U32, Surface.capacity(span), 0)))))
 
 def Random.sequence.bounds(valid: Bool, state: Random.State, +count: U32, +minimum: F32, maximum: F32, budget: Nat) -> Random.State & Result<&1, &1, Random.Sequence.Error, Random.Sequence>:
   match valid:
@@ -929,9 +977,6 @@ def Surface.to_png(surface: Surface) -> +List<U32>:
 def Surface.dimensions(surface: Surface) -> U32 & U32:
   Surface{w, h, _} = surface
   (w, h)
-
-def Surface.capacity(+count: U32) -> Nat:
-  Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
 
 def Surface.creation.checked(ok: Bool, +w: U32, +h: U32, color: U32) -> Maybe<Surface>:
   match ok:
@@ -2947,18 +2992,20 @@ def Surface.to_image(surface: Surface) -> Image:
   Pair.snd(Array<U32>, Image, Surface.tree(depth, U32.shln(1, depth), 0, 0, w, h, pixels))
 
 # Portable, inspectable P3 PPM output for headless programs. Alpha is discarded.
-def Surface.ppm.colors(colors: List<U32>) -> String:
+# Walks colors in reverse, prepending each short line, so the text is built
+# with constant stack depth on every backend (the JS lane overflowed per pixel).
+def Surface.ppm.colors(colors: List<U32>, acc: String) -> String:
   match colors:
     case Nil{}:
-      ""
+      acc
     case Con{+color, rest}:
-      U32.show(Color.red(color)) ++ " " ++ U32.show(Color.green(color)) ++ " "
-        ++ U32.show(Color.blue(color)) ++ "\n" ++ Surface.ppm.colors(rest)
+      Surface.ppm.colors(rest, U32.show(Color.red(color)) ++ " " ++ U32.show(Color.green(color)) ++ " "
+        ++ U32.show(Color.blue(color)) ++ "\n" ++ acc)
 
 def Surface.to_ppm(surface: Surface) -> String:
   Surface{+w, +h, pixels} = surface
   "P3\n" ++ U32.show(w) ++ " " ++ U32.show(h) ++ "\n255\n"
-    ++ Surface.ppm.colors(Surface.colors(Surface{w, h, pixels}))
+    ++ Surface.ppm.colors(List.reverse(&1, U32, Surface.colors(Surface{w, h, pixels})), "")
 
 def Surface.ppm.written(result: File & Result<&1, &1, U32 & String, Unit>) -> IO(Result<&1, &1, U32 & String, Unit>):
   (file, status) = result

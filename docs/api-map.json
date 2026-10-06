@@ -192,33 +192,33 @@
     "milestone": "collision"
   },
   "CheckCollisionCircles": {
-    "jonlib": "Collision.circles",
+    "jonlib": "Collision.circles_for / Collision.circles",
     "status": "profile-covered",
-    "scope": "Finite bounded F32 centers/radii, inclusive squared-distance tangency and reference signed-radius behavior.",
+    "scope": "Finite bounded F32 centers/radii, inclusive squared-distance tangency and reference signed-radius behavior. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
     "gaps": [
-      "Exceptional/subnormal and contracted variants",
+      "Exceptional/subnormal inputs and other contraction patterns",
       "Full target/performance coverage"
     ],
     "api_id": "raylib:function:CheckCollisionCircles",
     "milestone": "collision"
   },
   "CheckCollisionCircleRec": {
-    "jonlib": "Collision.circle_rec",
+    "jonlib": "Collision.circle_rec_for / Collision.circle_rec",
     "status": "profile-covered",
-    "scope": "Finite bounded F32 circle/rectangle predicate preserving reference side and corner tests.",
+    "scope": "Finite bounded F32 circle/rectangle predicate preserving reference side and corner tests. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
     "gaps": [
-      "Exceptional/subnormal and contracted variants",
+      "Exceptional/subnormal inputs and other contraction patterns",
       "Full target/performance coverage"
     ],
     "api_id": "raylib:function:CheckCollisionCircleRec",
     "milestone": "collision"
   },
   "CheckCollisionCircleLine": {
-    "jonlib": "Collision.circle_line",
+    "jonlib": "Collision.circle_line_for / Collision.circle_line",
     "status": "profile-covered",
-    "scope": "Finite bounded F32 circle/segment closest-point predicate with reference epsilon-degenerate endpoint fallback.",
+    "scope": "Finite bounded F32 circle/segment closest-point predicate with reference epsilon-degenerate endpoint fallback. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
     "gaps": [
-      "Exceptional/subnormal and contracted variants",
+      "Exceptional/subnormal inputs and other contraction patterns",
       "Full target/performance coverage"
     ],
     "api_id": "raylib:function:CheckCollisionCircleLine",
@@ -236,33 +236,33 @@
     "milestone": "collision"
   },
   "CheckCollisionPointCircle": {
-    "jonlib": "Collision.point_circle",
+    "jonlib": "Collision.point_circle_for / Collision.point_circle",
     "status": "profile-covered",
-    "scope": "Finite bounded F32 point/circle squared-distance predicate with inclusive tangency.",
+    "scope": "Finite bounded F32 point/circle squared-distance predicate with inclusive tangency. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
     "gaps": [
-      "Exceptional/subnormal and contracted variants",
+      "Exceptional/subnormal inputs and other contraction patterns",
       "Full target/performance coverage"
     ],
     "api_id": "raylib:function:CheckCollisionPointCircle",
     "milestone": "collision"
   },
   "CheckCollisionPointTriangle": {
-    "jonlib": "Collision.point_triangle",
+    "jonlib": "Collision.point_triangle_for / Collision.point_triangle",
     "status": "profile-covered",
-    "scope": "Finite bounded F32 point/triangle predicate; strict barycentric interior and false for tested degenerate triangles.",
+    "scope": "Finite bounded F32 point/triangle predicate; strict barycentric interior and false for tested degenerate triangles. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
     "gaps": [
-      "Exceptional/subnormal and contracted variants",
+      "Exceptional/subnormal inputs and other contraction patterns",
       "Full target/performance coverage"
     ],
     "api_id": "raylib:function:CheckCollisionPointTriangle",
     "milestone": "collision"
   },
   "CheckCollisionPointLine": {
-    "jonlib": "Collision.point_line",
+    "jonlib": "Collision.point_line_for / Collision.point_line",
     "status": "profile-covered",
-    "scope": "Finite bounded F32 point/segment predicate with integral threshold, strict cross-product margin and inclusive dominant-axis interval.",
+    "scope": "Finite bounded F32 point/segment predicate with integral threshold, strict cross-product margin and inclusive dominant-axis interval. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
     "gaps": [
-      "Exceptional/subnormal and contracted variants",
+      "Exceptional/subnormal inputs and other contraction patterns",
       "Full target/performance coverage"
     ],
     "api_id": "raylib:function:CheckCollisionPointLine",
@@ -1241,11 +1241,11 @@
     "milestone": "pixels"
   },
   "CheckCollisionSpheres": {
-    "jonlib": "Collision.spheres",
+    "jonlib": "Collision.spheres_for / Collision.spheres",
     "status": "profile-covered",
-    "scope": "Finite bounded sphere predicate using inclusive squared distance and the reference squared sum of signed radii.",
+    "scope": "Finite bounded sphere predicate using inclusive squared distance and the reference squared sum of signed radii. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
     "gaps": [
-      "Exceptional/subnormal and contracted variants",
+      "Exceptional/subnormal inputs and other contraction patterns",
       "Full target/performance coverage"
     ],
     "api_id": "raylib:function:CheckCollisionSpheres",
@@ -1263,11 +1263,11 @@
     "milestone": "collision"
   },
   "CheckCollisionBoxSphere": {
-    "jonlib": "Collision.box_sphere",
+    "jonlib": "Collision.box_sphere_for / Collision.box_sphere",
     "status": "profile-covered",
-    "scope": "Finite bounded box/sphere predicate with reference component Clamp ordering and inclusive closest-point distance test.",
+    "scope": "Finite bounded box/sphere predicate with reference component Clamp ordering and inclusive closest-point distance test. Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
     "gaps": [
-      "Exceptional/subnormal and contracted variants",
+      "Exceptional/subnormal inputs and other contraction patterns",
       "Full target/performance coverage"
     ],
     "api_id": "raylib:function:CheckCollisionBoxSphere",

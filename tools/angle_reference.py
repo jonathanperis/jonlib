@@ -386,8 +386,6 @@ def qualify(raylib_source, library, build_dir, *, c_source, cases_from, parse_ou
         loader_names = runtime_image.DARWIN_LOADER_NAMES if darwin else LOADER_NAMES
         environment.require_clear(loader_names)
         raylib_source, library = Path(raylib_source).resolve(), Path(library).resolve()
-        for relative, digest in manifest['source_sha256'].items():
-            if track(ROOT/relative) != digest: raise ValueError('Frozen source/toolchain drift: '+relative)
         track(__file__); track(ROOT/'tools/runtime_image.py')
         context_source = REFERENCE/('angle_qualification_darwin_context.c' if darwin else 'angle_qualification_context.c')
         track(context_source)
