@@ -1,19 +1,43 @@
 #!/usr/bin/env python3
 """Verify bounded raw DEFLATE against raylib and independently generated streams."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
 import random
 import struct
 import zlib
 
-if __package__:
-    from .conformance import BUILD, ROOT, checkout, run, source_gate
-    from .byte_probe import BEND_EMITTER, parse_results
-else:
-    from conformance import BUILD, ROOT, checkout, run, source_gate
-    from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import BEND_EMITTER, parse_results
+from conformance import source_gate
+import probekit
+from probekit import ProbeFailure
+
+PROGRAM = '''import Base
+import ../../jonlib.bend as J
+import ../../src/inflate.bend as D
+''' + BEND_EMITTER + '''
+def emit(result: Maybe<List<U32>>) -> IO(Unit):
+  match result:
+    case None{}: IO.print("null")
+    case Some{bytes}: emit_bytes(~&1, bytes)
+def payload(+maximum: U32, result: Result<&1, &1, U32 & String, +List<U32>>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "compressed fixture read failed")
+    case Done{+bytes}:
+      do IO<Unit>:
+        emit(J.Compression.decompressBANG(bytes, maximum))
+        emit(D.decompressBANG(False{}, bytes, maximum))
+def received(maximum: U32, result: File & Result<&1, &1, U32 & String, +List<U32>>) -> IO(Unit):
+  (file, status) = result
+  do IO<Unit>:
+    Unit <- File.close(file)
+    payload(maximum, status)
+def opened(size: U32, maximum: U32, result: Result<&1, &1, U32 & String, File>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "compressed fixture open failed")
+    case Done{file}: IO.bind(File & Result<&1, &1, U32 & String, +List<U32>>, Unit, File.read_bytes(file, size), received(maximum))
+def main() -> IO(Unit):
+  do IO<Unit>:
+'''
 
 
 def compress(data, level=6, strategy=zlib.Z_DEFAULT_STRATEGY):
@@ -90,19 +114,10 @@ def fixtures():
     return inputs,malformed
 
 
-def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True)
-    parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true')
-    args=parser.parse_args()
-    lock=json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'))
-    checkout(args.raylib_source,lock['raylib']['revision'])
-    work=BUILD/'inflate-probe';work.mkdir(parents=True,exist_ok=True)
-    report_path=work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    inputs,malformed=fixtures()
-    native_payloads=[b'Native raylib compression '*100,bytes(range(256))*8]
+NATIVE_PAYLOADS=[b'Native raylib compression '*100,bytes(range(256))*8]
+
+
+def reference_program(inputs, work):
     lines=['#include "raylib.h"','#include "external/stb_image.h"','#include <stdio.h>',
            'static void emit(unsigned char *data,int size){putchar(\'[\');for(int i=0;i<size;i++)printf("%s%u",i?",":"",data[i]);puts("]");}',
            'static int pair(unsigned char *src,int size,int capacity){int n=0;unsigned char *data=DecompressData(src,size,&n);emit(data,n);MemFree(data);',
@@ -112,78 +127,54 @@ def main():
         path=work/f'{case["id"]}.deflate';path.write_bytes(case['compressed'])
         lines += ['{int size=0,n=0;',f'unsigned char *src=LoadFileData({json.dumps(str(path))},&size);',
                   f'if(!src)return 2;if(!pair(src,size,{len(case["data"])}))return 4;UnloadFileData(src);}}']
-    for i,payload in enumerate(native_payloads):
+    for i,payload in enumerate(NATIVE_PAYLOADS):
         source=work/f'native-{i}.data';source.write_bytes(payload)
         path=work/f'native-{i}.deflate'
         lines += ['{int size=0,n=0,output=0;',f'unsigned char *src=LoadFileData({json.dumps(str(source))},&size);',
                   'if(!src)return 2;unsigned char *compressed=CompressData(src,size,&n);',
                   f'if(!SaveFileData({json.dumps(str(path))},compressed,n))return 3;',
                   'if(!pair(compressed,n,size))return 4;MemFree(compressed);UnloadFileData(src);}']
-    source=work/'reference.c';source.write_text('\n'.join(lines+['}'])+'\n')
-    binary=work/'reference'
-    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary])
-    text=run([binary]);expected=[json.loads(line) for line in text.splitlines()]
-    for i,payload in enumerate(native_payloads):inputs.append(dict(id=f'native-{i}',data=payload,compressed=(work/f'native-{i}.deflate').read_bytes()))
+    return '\n'.join(lines+['}'])+'\n'
+
+
+def main():
+    probe=probekit.Probe('inflate',probekit.arguments(__doc__))
+    probe.report['sources']=source_gate()
+    work=probe.work;inputs,malformed=fixtures()
+    text=probe.native(reference_program(inputs,work));expected=[json.loads(line) for line in text.splitlines()]
+    for i,payload in enumerate(NATIVE_PAYLOADS):inputs.append(dict(id=f'native-{i}',data=payload,compressed=(work/f'native-{i}.deflate').read_bytes()))
     originals=[list(case['data']) for case in inputs]
-    if expected[1::2]!=originals:raise ValueError('Native stb DEFLATE output differs from original payloads')
+    if expected[1::2]!=originals:raise ProbeFailure('Native stb DEFLATE output differs from original payloads')
     native_expected=[list(case['data'][:300] if case['id']=='multiple-blocks' else case['data']) for case in inputs]
-    if expected[::2]!=native_expected:raise ValueError('Native raw DEFLATE output differs from its recorded empty-stored-block rule')
+    if expected[::2]!=native_expected:raise ProbeFailure('Native raw DEFLATE output differs from its recorded empty-stored-block rule')
     kinds=sorted({(case['compressed'][0]>>1)&3 for case in inputs})
-    if kinds!=[0,1,2]:raise ValueError('Stored, fixed and dynamic reference blocks are all required')
+    if kinds!=[0,1,2]:raise ProbeFailure('Stored, fixed and dynamic reference blocks are all required')
     requests=[dict(id=c['id'],compressed=c['compressed'],maximum=len(c['data'])) for c in inputs]+malformed
     for case in malformed:(work/f'{case["id"]}.deflate').write_bytes(case['compressed'])
     expected += [None]*(2*len(malformed)+2)
-    report=dict(passed=False,valid_streams=len(inputs),invalid_controls=len(malformed)+1,block_kinds=kinds,
-                native_output_bytes=sum(map(len,native_expected)),png_output_bytes=sum(map(len,originals)),sources=source_gate(),
-                empty_stored_block=dict(native_prefix_bytes=300,png_complete_bytes=3300),output_chunk_limit=256,
-                inputs_sha256=hashlib.sha256(json.dumps([dict(c,compressed=list(c['compressed'])) for c in requests]).encode()).hexdigest(),
-                reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        program='''import Base
-import ../../jonlib.bend as J
-import ../../src/inflate.bend as D
-''' + BEND_EMITTER + '''
-def emit(result: Maybe<List<U32>>) -> IO(Unit):
-  match result:
-    case None{}: IO.print("null")
-    case Some{bytes}: emit_bytes(~&1, bytes)
-def payload(+maximum: U32, result: Result<&1, &1, U32 & String, +List<U32>>) -> IO(Unit):
-  match result:
-    case Fail{_}: IO.die(Unit, 1, "compressed fixture read failed")
-    case Done{+bytes}:
-      do IO<Unit>:
-        emit(J.Compression.decompressBANG(bytes, maximum))
-        emit(D.decompressBANG(False{}, bytes, maximum))
-def received(maximum: U32, result: File & Result<&1, &1, U32 & String, +List<U32>>) -> IO(Unit):
-  (file, status) = result
-  do IO<Unit>:
-    Unit <- File.close(file)
-    payload(maximum, status)
-def opened(size: U32, maximum: U32, result: Result<&1, &1, U32 & String, File>) -> IO(Unit):
-  match result:
-    case Fail{_}: IO.die(Unit, 1, "compressed fixture open failed")
-    case Done{file}: IO.bind(File & Result<&1, &1, U32 & String, +List<U32>>, Unit, File.read_bytes(file, size), received(maximum))
-def main() -> IO(Unit):
-  do IO<Unit>:
-'''.replace('BANG','!' if lane=='metal' else '')
-        for case in requests:
-            path=work/f'{case["id"]}.deflate'
-            program+=f'    IO.bind(Result<&1, &1, U32 & String, File>, Unit, File.open({json.dumps(str(path))}, "r"), opened({len(case["compressed"])}, {case["maximum"]}))\n'
-        program+='    emit(J.Compression.decompress'+('!' if lane=='metal' else '')+'([256], 1))\n'
-        program+='    emit(D.decompress'+('!' if lane=='metal' else '')+'(False{}, [256], 1))\n'
-        source=work/f'{lane}.bend';source.write_text(program)
-        binary=work/('candidate.js' if lane=='javascript' else f'candidate-{lane}')
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        actual=parse_results(run(command))
-        differences=[i for i,(a,b) in enumerate(zip(expected,actual)) if a!=b]
-        report['lanes'][lane]=dict(passed=actual==expected,different_cases=differences)
-        report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if actual!=expected:raise ValueError(f'{lane}: DEFLATE mismatches at cases {differences}')
-        print(f'{lane}: {len(inputs)} streams match native ({report["native_output_bytes"]} bytes) and PNG ({report["png_output_bytes"]} bytes); {len(malformed)+1} controls passed',flush=True)
-    report['passed']=True
-    report_path.write_text(json.dumps(report,indent=2)+'\n')
+    # Each action prints the public decoder row then the PNG-oriented decoder row; the last is the out-of-range byte control.
+    actions=requests+[None];pairs=[expected[i:i+2] for i in range(0,len(expected),2)]
 
+    def render(selected,gpu):
+        bang='!' if gpu else '';body=PROGRAM.replace('BANG',bang)
+        for case in selected:
+            if case is None:
+                body+=f'    emit(J.Compression.decompress{bang}([256], 1))\n    emit(D.decompress{bang}(False{{}}, [256], 1))\n'
+            else:
+                body+=f'    IO.bind(Result<&1, &1, U32 & String, File>, Unit, File.open({json.dumps(str(work/(case["id"]+".deflate")))}, "r"), opened({len(case["compressed"])}, {case["maximum"]}))\n'
+        return body
+
+    def parse(out,selected):
+        rows=parse_results(out)
+        return [rows[i:i+2] for i in range(0,len(rows),2)]
+
+    probe.compare(pairs,probe.candidates(render,actions,batch=len(actions),parse=parse),
+                  describe=lambda index:f'stream {actions[index]["id"] if actions[index] else "byte-256 control"}')
+    probe.finish(valid_streams=len(inputs),invalid_controls=len(malformed)+1,block_kinds=kinds,
+                 native_output_bytes=sum(map(len,native_expected)),png_output_bytes=sum(map(len,originals)),
+                 empty_stored_block=dict(native_prefix_bytes=300,png_complete_bytes=3300),output_chunk_limit=256,
+                 inputs_sha256=hashlib.sha256(json.dumps([dict(c,compressed=list(c['compressed'])) for c in requests]).encode()).hexdigest(),
+                 reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 if __name__=='__main__':
     main()
