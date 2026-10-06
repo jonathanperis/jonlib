@@ -29,56 +29,21 @@ fast math are disabled; the driver qualifies the same process before evaluating
 any supplied pair. Nonfinite raw words are rejected before conversion or any
 candidate/original/native angle operation.
 
-## Run and provenance
+## Run
 
-With the project toolchain activated:
+These files are the native oracle for the `angle-kernels` gate:
 
 ```
-python3 tools/modern_angle_reference.py
-python3 tools/modern_angle_reference.py --search-trials 100000000 --work .build/angle-search
-python3 tools/modern_angle_reference.py --search-boundaries 100000 --work .build/angle-boundary-search
-python3 tools/modern_angle_reference.py --search-tiny 50000000 --work .build/angle-tiny-search
+python3 tools/angle_kernel_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
 ```
 
-`--compiler` can explicitly select another already-installed compiler. Builds
-are fresh, subprocess output survives failures/timeouts, and the module records
-source/adapted/shim/compiler/binary/input/library hashes plus exact command flags.
-Preflight checks cover layout, no excess precision, RN mode, FTZ/DAZ/control
-register state, nine true-FMA controls, seven direct narrowing controls and four
-gradual-underflow controls. The same checks run again in the corpus process; a final-context JSON record on
-stderr is checked and retained after execution without changing trace framing;
-library hashes must still agree with the preflight snapshot. Libc package-manager
-identity is recorded when available; an absent package database is stated as a
-limitation rather than invented. Runtime libc version and loaded libm hash remain
-separately recorded.
-
-The Python API supplies `samples()`, `build_native(work, compiler)`,
-`native_reference(rows, work, compiler)`, `parse_native(text, rows)`,
-`validate_metadata(environment)`, `source_paths()` and `assert_pins()`.
-`native_reference` returns `(metadata, records)`; no Bend execution occurs.
-
-All 1,086 historical `angle_probe.samples()` entries remain first, in original
-order, including duplicates. Their original JSON hash is checked. All 178
-pinned-source/Sun differences remain in that unchanged prefix. The exact 178 IDs
-and native/Sun words were independently matched to the retained historical
-`clang-o2-strict.tsv` diagnostic, then frozen in
-`modern_atan2f_historical.json`. Separate fixed hashes cover the IDs, all 178
-differing records and all 1,086 complete result records, so matching only the
-count cannot pass. Additional
-controls include signed zeros, axes, quadrants, equal/adjacent magnitudes, every
-finite exponent, subnormal significand patterns, raw exponent-distance guard
-boundaries, common power-of-two rescaling, deterministic bit-stratified samples,
-minimum general ratio `00000001/0c800000` and its negative-y counterpart, and
-tiny products with x words `75000000`, `7b000000`, `7b800000`, `7f000000`.
-
-`modern_atan2f_general_cases.json` retains a bounded subset of independently
-native-generated general-fallback cases. Uniform ratio sampling uses xorshift64*
-with stated seeds/budgets. The targeted generator samples binary32 angle
-midpoints, applies native `tanl`, and forms bounded continued-fraction convergents
-with numerator/denominator at most `0xffffff`; both are exactly representable
-binary32 integers. `tanl` only proposes inputs. Retained outputs/branches come
-from the pinned source, with no Bend feedback. This finds both final correction
-scalings efficiently without an input-specific implementation correction table.
+The probe compiles the unmodified source (through the shim) and the adapted
+source into separate symbols, runs `modern_atan2f_driver.c` over the frozen
+corpora (`modern_atan2f_historical.json`, `modern_atan2f_general_cases.json`
+and the manifest controls) after its rounding-environment preflight (layout,
+round-to-nearest, no flush-to-zero, true FMA and gradual-underflow controls),
+and requires the adapted result to equal the unmodified one on every row before
+comparing Jonmath's kernel. See [docs/ANGLES.md](../../docs/ANGLES.md).
 
 ## Trace ABI
 
