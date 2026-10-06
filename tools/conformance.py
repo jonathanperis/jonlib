@@ -161,6 +161,10 @@ COLLISION_APIS = {
     'box_sphere':('CheckCollisionBoxSphere','bts','bool'),
 }
 COLLISION_CELLS = {'bool':1, 'rectangle':4, 'hit':3}
+# Collisions whose linked arm64 reference contracts a*b+c into fma (verified by
+# disassembling libraylib.a); they are generated through J.Collision.<name>_for.
+CONTRACTED_COLLISIONS = {'lines', 'circles', 'point_circle', 'circle_rec', 'point_triangle',
+                         'point_line', 'circle_line', 'spheres', 'box_sphere'}
 
 ROOT = Path(__file__).resolve().parents[1]
 BUILD = ROOT / ".build"
@@ -1309,8 +1313,8 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
                 if op['function']=='point_poly':
                     arguments += ', [' + ','.join('M.Vector2{' + ','.join(f32(v) for v in p) + '}' for p in op['points']) + ']'
                 function_name = op['function']
-                if function_name == 'lines':
-                    function_name = 'lines_for'
+                if function_name in CONTRACTED_COLLISIONS:
+                    function_name += '_for'
                     arguments = f'J.{collision_arithmetic()}{{}}, ' + arguments
                 expression = f'J.Collision.{function_name}({arguments})'
                 function = {'rectangle':'write_rectangle','hit':'write_hit','bool':'J.Surface.draw_pixel'}[result]

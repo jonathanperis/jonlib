@@ -44,9 +44,9 @@ its signed-zero bit; this differs from the profiled `Vector2.min/max` operations
 The shared conformance suite calls the actual linked raylib queries and compares
 every Boolean and all four rectangle result-bit fields. Fixtures include interior,
 disjoint, touching, one-ULP-inside/outside, signed-zero and degenerate inputs.
-Default predicate arithmetic is uncontracted F32; segment queries additionally
-expose the fused profile below. These finite-input fixtures do not establish
-exceptional/subnormal or all contracted/platform variants, nor
+Default predicate arithmetic is uncontracted F32; every predicate whose linked
+reference contracts multiply-adds also has a `_for` variant (below). These
+finite-input fixtures do not establish exceptional/subnormal inputs, nor
 performance parity. See [PROGRESS.md](PROGRESS.md) for remaining collision APIs.
 
 Polygon fixtures permit up to 4096 vertices. Boundary classification follows the
@@ -57,11 +57,18 @@ rule. Segment intersections reject determinants with magnitude below
 
 ## Linked-reference arithmetic
 
-`Collision.lines` uses `UncontractedCollision{}`. Select `FusedCollision{}` through
-`lines_for` for the exercised Apple clang/macOS arm64 reference, whose linked
-`CheckCollisionLines` uses fused multiply-add. Hosted Linux/x86_64 uses the
-uncontracted profile. These are explicit arithmetic choices, independent of
-the gradient/libm profile.
+The Apple clang/macOS arm64 build of raylib contracts `a*b + c` into `fmadd` in
+nine collision queries; hosted Linux/x86_64 does not. Each therefore has an
+explicit `_for(arithmetic, ...)` variant taking `UncontractedCollision{}` or
+`FusedCollision{}`, and its convenience form uses `UncontractedCollision{}`:
+`lines`, `circles`, `point_circle`, `circle_rec`, `point_triangle`, `point_line`,
+`circle_line`, `spheres` and `box_sphere`. The fused shapes were read from the
+disassembled linked library: every `a*b + c*d` is `fma(a, b, c*d)`, squared
+3D distance is `fma(dz, dz, fma(dx, dx, dy*dy))`, and `circle_line`'s
+`p1 - t*d` is a single fused subtraction. The `collision-contraction` fixtures
+are non-dyadic inputs on which the two profiles disagree, so each host's suite
+fails if the other profile is used. These choices are independent of the
+gradient/libm profile.
 
 The internal `src/fused.bend` retains the exact F32 product, aligns integer limbs
 and rounds the sum directly to 24 bits. Rounding through a binary64 sum would
@@ -76,4 +83,4 @@ python3 tools/fused_probe.py --bend-source "$BEND_SOURCE" --gpu
 Set `BEND_SOURCE` as documented in [README.md](../README.md#requirements).
 The original segment counterexample remains in the strict native-raylib corpus.
 NaN/infinity, subnormal intermediates/results, overflow, other contraction
-patterns and full contracted profiles for the other predicates remain gaps.
+patterns and other compilers' contraction choices remain gaps.
