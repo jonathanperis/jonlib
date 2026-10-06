@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """Exact finite/normal atan2 bit probes against native libm or a Sun GNU control."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
 import platform
 import random
 import struct
 
-from conformance import BUILD, ROOT, checkout, f32, gradient_reference, run, source_gate
+import probekit
+from conformance import f32, gradient_reference
 
 
 GNU_CONTROL = r'''
@@ -44,6 +43,16 @@ static float gnu_atan2(float y,float x) {
   switch(m) {case 0:return z;case 1:return -z;case 2:return pi-(z-low);default:return(z-low)-pi;}
 }
 '''
+FOLDING = r'''#include <math.h>
+#include <stdio.h>
+#include <string.h>
+static unsigned word(float x) { unsigned b;memcpy(&b,&x,4);return b; }
+int main(void) {
+  float (*volatile native)(float,float)=atan2f;
+  printf("%u %u %u %u\n",word(atan2f(0.0f,-1.0f)),word(native(0.0f,-1.0f)),word(atan2f(1.0f,-1e-20f)),word(native(1.0f,-1e-20f)));
+}
+'''
+BATCH = 16  # samples per printed line; one program holds every sample
 
 
 def samples():
@@ -60,51 +69,17 @@ def samples():
     return values
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true')
-    parser.add_argument('--gnu-control',action='store_true')
-    args = parser.parse_args()
-    lock = json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'))
-    values = samples()
-    work = BUILD/('angle-probe-gnu' if args.gnu_control else 'angle-probe');work.mkdir(parents=True,exist_ok=True)
-    report_path = work/'results.json'
-    report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    source = work/'reference.c'
-    source.write_text('#include <math.h>\n#include <stdint.h>\n#include <stdio.h>\n#include <string.h>\n#pragma STDC FP_CONTRACT OFF\n'+GNU_CONTROL+
-        '\nstatic float (*volatile native_atan2)(float,float)=atan2f;\nstatic const float samples[][2]={'+','.join('{'+','.join(v.hex()+'f' for v in pair)+'}' for pair in values)+'};\n'+
-        'int main(void) { for(unsigned i=0;i<sizeof(samples)/sizeof(samples[0]);i++) { float value='+('gnu_atan2' if args.gnu_control else 'native_atan2')+
-        '(samples[i][0],samples[i][1]); unsigned bits=word(value); printf("%u\\n",bits); } }\n')
-    binary = work/'reference'
-    run(['clang','-std=c11','-O2',source,'-lm','-o',binary])
-    expected = [int(line) for line in run([binary]).splitlines()]
-    if len(expected)!=len(values):raise ValueError('Incomplete atan2 reference result set')
-    gnu = args.gnu_control or gradient_reference()=='GnuGradient'
-    folding = work/'folding.c'
-    folding.write_text('''#include <math.h>
-#include <stdio.h>
-#include <string.h>
-static unsigned word(float x) { unsigned b;memcpy(&b,&x,4);return b; }
-int main(void) {
-  float (*volatile native)(float,float)=atan2f;
-  printf("%u %u %u %u\\n",word(atan2f(0.0f,-1.0f)),word(native(0.0f,-1.0f)),word(atan2f(1.0f,-1e-20f)),word(native(1.0f,-1e-20f)));
-}
-''')
-    run(['clang','-std=c11','-O2',folding,'-lm','-o',work/'folding'])
-    literal_pi,native_pi,literal_half,native_half = map(int,run([work/'folding']).split())
-    report = dict(passed=False,samples=len(values),profile='gnu' if gnu else 'apple',
-                  reference='sun-control' if args.gnu_control else 'native-libm',
-                  inputs_sha256=hashlib.sha256(json.dumps(values).encode()).hexdigest(),sources=source_gate(),lanes={})
-    report['host'] = dict(system=platform.system(),machine=platform.machine(),libc=platform.libc_ver(),
-                          clang=run(['clang','--version']).splitlines()[0])
-    report['constant_folding'] = dict(literal_pi=f'{literal_pi:08x}',native_pi=f'{native_pi:08x}',
-                                     literal_near_half_pi=f'{literal_half:08x}',native_near_half_pi=f'{native_half:08x}')
-    report_path.write_text(json.dumps(report,indent=2)+'\n')
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        candidate = work/f'{lane}.bend'
-        program = '''import Base
+def reference_source(values, gnu_control):
+    function = 'gnu_atan2' if gnu_control else 'native_atan2'
+    return ('#include <math.h>\n#include <stdint.h>\n#include <stdio.h>\n#include <string.h>\n#pragma STDC FP_CONTRACT OFF\n'
+            + GNU_CONTROL + '\nstatic float (*volatile native_atan2)(float,float)=atan2f;\nstatic const float samples[][2]={'
+            + ','.join('{' + ','.join(v.hex() + 'f' for v in pair) + '}' for pair in values) + '};\n'
+            f'int main(void) {{ for(unsigned i=0;i<sizeof(samples)/sizeof(samples[0]);i++) {{ float value={function}'
+            '(samples[i][0],samples[i][1]); unsigned bits=word(value); printf("%u\\n",bits); } }\n')
+
+
+def candidate_source(selected, gpu, gnu):
+    program = '''import Base
 import ../../src/angle.bend as A
 type Sample is Data:
   Sample{y: F32, x: F32}
@@ -114,22 +89,35 @@ def calculate(values: +List<Sample>) -> List<U32>:
     case Con{Sample{y, x}, rest}: Con{F32.bits(A.atan2(PROFILE, y, x)), calculate(rest)}
 def main() -> IO(Unit):
   do IO<Unit>:
-'''.replace('PROFILE','True{}' if gnu else 'False{}')
-        for start in range(0,len(values),16):
-            inputs = ','.join('Sample{'+','.join(f32(v) for v in pair)+'}' for pair in values[start:start+16])
-            program += f'    IO.print(List.show(~&1, ~U32, ~U32.show, calculate{"!" if lane=="metal" else ""}([{inputs}])))\n'
-        candidate.write_text(program)
-        output = work/('candidate.js' if lane=='javascript' else f'candidate-{lane}')
-        run(['bun',args.bend_source/'bend2/main.ts',candidate,'-o',output])
-        command = ['bun',output] if lane=='javascript' else [output,*(['--gpu','on'] if lane=='metal' else [])]
-        actual = [word for line in run(command).splitlines() for word in json.loads(line)]
-        differences = [dict(index=i,input=values[i],reference=a,candidate=b) for i,(a,b) in enumerate(zip(expected,actual)) if a!=b]
-        report['lanes'][lane] = dict(passed=actual==expected,mismatch_count=len(differences),differences=differences[:16])
-        report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if actual!=expected:raise ValueError(f'{lane}: atan2 mismatch: {differences[:3]}')
-        print(f'{lane}: {len(values)} atan2 results match exact {report["reference"]} bits ({report["profile"]})',flush=True)
-    report['passed'] = True
-    report_path.write_text(json.dumps(report,indent=2)+'\n')
+'''.replace('PROFILE', 'True{}' if gnu else 'False{}')
+    for start in range(0, len(selected), BATCH):
+        inputs = ','.join('Sample{' + ','.join(f32(v) for v in pair) + '}' for pair in selected[start:start + BATCH])
+        program += f'    IO.print(List.show(~&1, ~U32, ~U32.show, calculate{"!" if gpu else ""}([{inputs}])))\n'
+    return program
+
+
+def main():
+    args = probekit.arguments(__doc__, lambda parser: parser.add_argument('--gnu-control', action='store_true'), raylib=False)
+    probe = probekit.Probe('angle-gnu' if args.gnu_control else 'angle', args)
+    values = samples()
+    gnu = args.gnu_control or gradient_reference() == 'GnuGradient'
+    expected = [int(line) for line in probe.native(reference_source(values, args.gnu_control), link_raylib=False).splitlines()]
+    if len(expected) != len(values):
+        raise probekit.ProbeFailure('Incomplete atan2 reference result set')
+    # Diagnostic only: literal (possibly compile-time folded) versus runtime native calls.
+    (probe.work / 'folding.c').write_text(FOLDING)
+    probekit.run(['clang', '-std=c11', '-O2', probe.work / 'folding.c', '-lm', '-o', probe.work / 'folding'])
+    folding = [f'{int(v):08x}' for v in probekit.run([probe.work / 'folding']).split()]
+    probe.report.update(samples=len(values), profile='gnu' if gnu else 'apple',
+                        reference='sun-control' if args.gnu_control else 'native-libm',
+                        inputs_sha256=hashlib.sha256(json.dumps(values).encode()).hexdigest(),
+                        reference_sha256=hashlib.sha256('\n'.join(map(str, expected)).encode()).hexdigest(),
+                        host=dict(system=platform.system(), machine=platform.machine(), libc=platform.libc_ver()),
+                        constant_folding=dict(zip(('literal_pi', 'native_pi', 'literal_near_half_pi', 'native_near_half_pi'), folding)))
+    lanes = probe.candidates(lambda selected, gpu: candidate_source(selected, gpu, gnu), values, batch=len(values),
+                             parse=lambda text, selected: [w for line in text.splitlines() for w in json.loads(line)])
+    probe.compare(expected, lanes, lambda i: f'sample {i} (y, x)={values[i]}')
+    probe.finish(samples=len(values), profile=probe.report['profile'], reference=probe.report['reference'])
 
 
 if __name__ == '__main__':
