@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """Compare exact PNG memory/file exports and complete candidate decode round trips."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
 import random
 import struct
 import zlib
 
-from conformance import BUILD, ROOT, checkout, run, source_gate
 from byte_probe import BEND_EMITTER, parse_results
+import probekit
+from probekit import ProbeFailure
 
 
 def fixtures():
@@ -37,18 +36,7 @@ def fixtures():
     return cases
 
 
-def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True)
-    parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true')
-    args=parser.parse_args()
-    lock=json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'))
-    checkout(args.raylib_source,lock['raylib']['revision'])
-    work=BUILD/'png-export-probe';work.mkdir(parents=True,exist_ok=True)
-    report_path=work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    cases=fixtures()
+def reference_program(cases, work):
     lines=['#include "raylib.h"','#include <stdio.h>','#include <string.h>',
            'static void emit(unsigned char *bytes,int size){putchar(\'[\');for(int i=0;i<size;i++)printf("%s%u",i?",":"",bytes[i]);puts("]");}',
            'int main(void){SetTraceLogLevel(LOG_NONE);']
@@ -65,11 +53,11 @@ def main():
                   'Image decoded=LoadImageFromMemory(".png",encoded,n);if(!decoded.data||decoded.width!=image.width||decoded.height!=image.height)return 5;',
                   'ImageFormat(&decoded,7);Color *colors=LoadImageColors(image);int rgba_size=image.width*image.height*4;if(!colors||memcmp(decoded.data,colors,rgba_size))return 6;emit(encoded,n);emit(decoded.data,rgba_size);',
                   'UnloadImageColors(colors);UnloadImage(decoded);'+('' if file_only else 'MemFree(encoded);')+'UnloadFileData(file);UnloadFileData(data);','}']
-    source=work/'reference.c';source.write_text('\n'.join(lines+['}'])+'\n')
-    binary=work/'reference'
-    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary])
-    text=run([binary]);expected=[json.loads(line) for line in text.splitlines()]
-    if len(expected)!=2*len(cases):raise ValueError('Incomplete native PNG exports')
+    return '\n'.join(lines+['}'])+'\n'
+
+
+def check_reference(cases, expected):
+    """Independently parse every native PNG: color type, raster size, and filter/block coverage."""
     filters=set();blocks=set()
     for case,encoded in zip(cases,expected[::2]):
         data=bytes(encoded);offset=8;idat=bytearray()
@@ -84,12 +72,14 @@ def main():
         if len(raster)!=stride*case['height']:raise ValueError('Native filtered raster size differs')
         filters.update(raster[::stride]);blocks.add((idat[2]>>1)&3)
     if filters!=set(range(5)) or blocks!={0,1}:raise ValueError(f'Incomplete filter/block coverage: {filters}, {blocks}')
-    report=dict(passed=False,images=len(cases),encoded_bytes=sum(map(len,expected[::2])),roundtrip_bytes=sum(map(len,expected[1::2])),
-                filters=sorted(filters),block_types=sorted(blocks),sources=source_gate(),
-                inputs_sha256=hashlib.sha256(b''.join(struct.pack('>IIII',c['width'],c['height'],c.get('format',7),int(c.get('file_only',False)))+c['data'] for c in cases)).hexdigest(),
-                reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        program='''import Base
+    return filters,blocks
+
+
+def saves_file(case):
+    return 'format' in case or case['id'] in ('mixed','noise-filters')
+
+
+PROGRAM='''import Base
 import ../../jonlib.bend as J
 '''+BEND_EMITTER+'''def encoded.formatted(result: Result<&1, &1, J.Image.Formatted & J.Pixel.Error, +List<U32>>) -> Maybe<&2, +List<U32>>:
   match result:
@@ -152,26 +142,43 @@ def opened(formatted: Bool, file_only: Bool, width: U32, height: U32, format: U3
     case Done{file}: IO.bind(File & Result<&1, &1, U32 & String, +List<U32>>, Unit, File.read_bytes(file, size), received(formatted, file_only, width, height, format, save, path))
 def main() -> IO(Unit):
   do IO<Unit>:
-'''.replace('BANG','!' if lane=='metal' else '')
-        saved_cases=[]
-        for case in cases:
-            save=lane!='metal' and ('format' in case or case['id'] in ('mixed','noise-filters'))
-            if save:saved_cases.append(case['id'])
-            path=work/f'{case["id"]}.rgba';output=work/f'{lane}-{case["id"]}.png'
-            program+=f'    IO.bind(Result<&1, &1, U32 & String, File>, Unit, File.open({json.dumps(str(path))}, "r"), opened({"True{}" if "format" in case else "False{}"}, {"True{}" if case.get("file_only") else "False{}"}, {case["width"]}, {case["height"]}, {case.get("format",7)}, {len(case["data"])}, {"True{}" if save else "False{}"}, {json.dumps(str(output))}))\n'
-        source=work/f'{lane}.bend';source.write_text(program)
-        binary=work/('candidate.js' if lane=='javascript' else f'candidate-{lane}')
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        actual=parse_results(run(command))
-        differences=[dict(index=i,case=cases[i//2]['id'],kind='encoded' if i%2==0 else 'pixels') for i,(a,b) in enumerate(zip(expected,actual)) if a!=b]
-        files_match=all((work/f'{lane}-{name}.png').read_bytes()==(work/f'reference-{name}.png').read_bytes() for name in saved_cases)
-        report['lanes'][lane]=dict(passed=actual==expected and files_match,differences=differences,file_exports=len(saved_cases))
-        report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if actual!=expected or not files_match:raise ValueError(f'{lane}: PNG export differences: {differences[:4]}')
-        print(f'{lane}: {len(cases)} PNGs / {report["encoded_bytes"]} exact bytes and {report["roundtrip_bytes"]} round-trip bytes passed',flush=True)
-    report['passed']=True
-    report_path.write_text(json.dumps(report,indent=2)+'\n')
+'''
+
+
+def main():
+    probe=probekit.Probe('png-export',probekit.arguments(__doc__));work=probe.work
+    cases=fixtures()
+    text=probe.native(reference_program(cases,work));native=[json.loads(line) for line in text.splitlines()]
+    if len(native)!=2*len(cases):raise ProbeFailure('Incomplete native PNG exports')
+    filters,blocks=check_reference(cases,native)
+    # One row per case: encoded bytes, round-trip RGBA and, for file exports, the written file bytes.
+    expected=[[native[2*i],native[2*i+1]]+([list((work/f'reference-{case["id"]}.png').read_bytes())] if saves_file(case) else [])
+              for i,case in enumerate(cases)]
+    output=lambda case:work/f'candidate-{case["id"]}.png'
+    for case in cases:output(case).unlink(missing_ok=True)
+
+    def render(selected,gpu):
+        program=PROGRAM.replace('BANG','!' if gpu else '')
+        for case in selected:
+            path=work/f'{case["id"]}.rgba'
+            program+=f'    IO.bind(Result<&1, &1, U32 & String, File>, Unit, File.open({json.dumps(str(path))}, "r"), opened({"True{}" if "format" in case else "False{}"}, {"True{}" if case.get("file_only") else "False{}"}, {case["width"]}, {case["height"]}, {case.get("format",7)}, {len(case["data"])}, {"True{}" if saves_file(case) else "False{}"}, {json.dumps(str(output(case)))}))\n'
+        return program
+
+    def parse(text,selected):
+        values=parse_results(text);rows=[]
+        for i,case in enumerate(selected):
+            if 2*i+2>len(values):break
+            row=values[2*i:2*i+2]
+            if saves_file(case):  # Read and remove the file so every lane must write it again.
+                row.append(list(output(case).read_bytes()) if output(case).is_file() else None);output(case).unlink(missing_ok=True)
+            rows.append(row)
+        return rows+([values[2*len(rows):]] if len(values)>2*len(rows) else [])
+
+    probe.compare(expected,probe.candidates(render,cases,batch=len(cases),parse=parse),lambda i:f'case {cases[i]["id"]}')
+    probe.finish(images=len(cases),encoded_bytes=sum(map(len,native[::2])),roundtrip_bytes=sum(map(len,native[1::2])),
+                 file_exports=sum(map(saves_file,cases)),filters=sorted(filters),block_types=sorted(blocks),
+                 inputs_sha256=hashlib.sha256(b''.join(struct.pack('>IIII',c['width'],c['height'],c.get('format',7),int(c.get('file_only',False)))+c['data'] for c in cases)).hexdigest(),
+                 reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__=='__main__':
