@@ -102,7 +102,6 @@ The focused gate is:
 
 ```sh
 python3 tools/pic_format_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --reference-env clean-loader
-python3 tools/pic_format_audit.py .build/pic-format-probe/results.json
 ```
 
 It requires three complete lanes: CPU-one-thread, CPU-two-thread and JavaScript.

@@ -35,7 +35,7 @@ are unchanged.
 ## Obligation-to-evidence matrix
 
 In this table, short `test_*` names refer to
-[`tests/test_tga_format_harness.py`](../tests/test_tga_format_harness.py).
+[`tests/test_formatted_probes.py`](../tests/test_formatted_probes.py).
 `focused` means the fresh `tools/tga_format_probe.py` run, whose durable report
 is [tga-formatted-rebuilt.json](evidence/tga-formatted-rebuilt.json). Fresh focused, canonical and required legacy runtime gates now pass on the
 isolated d3-based source. The focused and canonical records are independently

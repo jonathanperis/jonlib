@@ -349,7 +349,7 @@ qualify the later PIC increment or unexecuted platform/resource domains.
 ```sh
 python3 tools/png_file_probe.py --reference-env clean-loader \
   --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
-python3 -m unittest discover -s tests -p test_png_file_harness.py -v
+python3 -m unittest discover -s tests -p test_formatted_probes.py -v
 ```
 
 Only partial `raylib:function:LoadImage` scope expands; no API completes and the
@@ -476,7 +476,7 @@ limits; no equivalence to lost test source is inferred from test counts.
 
 ```sh
 python3 tools/pnm_file_probe.py --reference-env clean-loader --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
-python3 -m unittest discover -s tests -p test_pnm_file_harness.py -v
+python3 -m unittest discover -s tests -p test_formatted_probes.py -v
 ```
 
 ## Format-preserving TGA file loading
@@ -628,7 +628,7 @@ remains pending.
 
 ```sh
 python3 tools/tga_file_probe.py --reference-env clean-loader --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
-python3 -m unittest discover -s tests -p test_tga_file_harness.py -v
+python3 -m unittest discover -s tests -p test_formatted_probes.py -v
 ```
 
 ## Format-preserving BMP file loading
@@ -821,7 +821,7 @@ integration/performance result is established by this local run.
 
 ```sh
 python3 tools/bmp_file_probe.py --reference-env clean-loader --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
-python3 -m unittest discover -s tests -p test_bmp_file_harness.py -v
+python3 -m unittest discover -s tests -p test_formatted_probes.py -v
 ```
 
 ## Verification
@@ -977,7 +977,6 @@ The focused commands are:
 
 ```sh
 python3 tools/pic_file_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --reference-env clean-loader
-python3 tools/pic_file_audit.py .build/pic-file-probe/results.json
 ```
 
 The gate requires complete CPU-one-thread, CPU-two-thread and JavaScript lanes.

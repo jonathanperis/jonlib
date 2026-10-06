@@ -5262,7 +5262,7 @@ not a maximum-area, heap, allocation-success or OS-close guarantee. See the
 ```sh
 python3 tools/png_file_probe.py --reference-env clean-loader \
   --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
-python3 -m unittest discover -s tests -p test_png_file_harness.py -v
+python3 -m unittest discover -s tests -p test_formatted_probes.py -v
 ```
 
 The [new local evidence](evidence/png-formatted-files.json) passes on Linux
@@ -5379,8 +5379,7 @@ is added. See the [contract](PIC.md#format-preserving-pic-memory-loading) and
 ```sh
 python3 tools/pic_format_probe.py --reference-env clean-loader \
   --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
-python3 tools/pic_format_audit.py .build/pic-format-probe/results.json
-python3 -m unittest discover -s tests -p test_pic_format_harness.py -v
+python3 -m unittest discover -s tests -p test_formatted_probes.py -v
 ```
 
 The fresh local Linux x86-64 gate passes mandatory CPU-one-thread,

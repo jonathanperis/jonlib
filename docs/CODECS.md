@@ -140,7 +140,7 @@ qualify the new formatted path.
 
 ```sh
 python3 tools/qoi_format_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
-python3 -m unittest discover -s tests -p test_qoi_format_harness.py -v
+python3 -m unittest discover -s tests -p test_formatted_probes.py -v
 ```
 
 The native gate uses actual pinned `LoadImageFromMemory`, observes `image.data`
@@ -189,7 +189,7 @@ load, and the separately measured 1,048,577-byte full-read stress case.
 
 ```sh
 python3 tools/qoi_file_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
-python3 -m unittest discover -s tests -p test_qoi_file_harness.py -v
+python3 -m unittest discover -s tests -p test_formatted_probes.py -v
 ```
 
 Generic formatted/float dispatch, PNM formatted file loading and original formats

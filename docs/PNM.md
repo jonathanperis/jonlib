@@ -129,7 +129,7 @@ on GPU/Metal or any unrun OS/hosted target.
 
 ```sh
 python3 tools/pnm_format_probe.py --reference-env clean-loader --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
-python3 -m unittest discover -s tests -p test_pnm_format_harness.py -v
+python3 -m unittest discover -s tests -p test_formatted_probes.py -v
 ```
 
 The dedicated gate uses actual pinned `LoadImageFromMemory`, observes actual

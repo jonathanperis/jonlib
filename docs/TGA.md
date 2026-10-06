@@ -216,7 +216,7 @@ files remained unchanged. The new mandatory CI gate and fresh merged-source
 
 ```sh
 python3 tools/tga_format_probe.py --reference-env clean-loader --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
-python3 -m unittest discover -s tests -p test_tga_format_harness.py -v
+python3 -m unittest discover -s tests -p test_formatted_probes.py -v
 ```
 
 ## Exact export packet selection
