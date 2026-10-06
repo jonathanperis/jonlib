@@ -1,51 +1,22 @@
 #!/usr/bin/env python3
 """Compare float rectangles with native extraction/crop and retained owners."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
 import struct
 
 from bmp_probe import bend_bytes
 from byte_probe import BEND_EMITTER, parse_results
-from conformance import BUILD, ROOT, checkout, run, source_gate
+from conformance import ROOT, source_gate
+import probekit
+from probekit import ProbeFailure
 
-
-def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True);parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true');args=parser.parse_args()
-    lock=json.loads((ROOT/'toolchain.json').read_text());checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'));checkout(args.raylib_source,lock['raylib']['revision'])
-    work=BUILD/'float-rgb-crop-probe';work.mkdir(parents=True,exist_ok=True);report_path=work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    data=list(struct.pack('<'+'f'*72,*[i+c for i in range(24) for c in (0.25,0.5,0.75)]));path=work/'input.raw';path.write_bytes(bytes(data))
-    cases=[dict(kind=kind,rect=rect) for kind in ('extract','crop') for rect in ((0,0,6,4),(1,1,3,2),(5,3,1,1),(0,0,1,4),(0,3,6,1))]
-    cases += [dict(kind='crop',rect=rect) for rect in ((-2,-1,5,4),(-1,-1,8,6),(4,2,9,9),(7,0,1,1),(0,5,1,1))]
-    controls=[dict(kind='extract',rect=rect) for rect in ((-1,0,2,1),(5,0,2,1),(0.5,0,2,1),(0,0,0,1))]
-    controls += [dict(kind='crop',rect=rect) for rect in ((6,0,1,1),(-10,0,2,1),(0,0,0,1),(0.5,0,2,1))]
-    lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
+PRELUDE = ['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
            'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
            'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
            'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
            'static void emit(Image image){word(image.width);word(image.height);for(int i=0;i<image.width*image.height*12;i++)byte(((unsigned char*)image.data)[i]);end();UnloadImage(image);}',
            'int main(void){SetTraceLogLevel(LOG_NONE);']
-    load=f'LoadImageRaw({json.dumps(str(path.relative_to(ROOT)))},6,4,PIXELFORMAT_UNCOMPRESSED_R32G32B32,0)'
-    for case in cases:
-        rectangle='(Rectangle){'+','.join(str(v) for v in case['rect'])+'}'
-        lines.append('{Image image='+load+';if(!image.data)return 2;')
-        lines.append('Image region=ImageFromImage(image,'+rectangle+');UnloadImage(image);emit(region);}' if case['kind']=='extract' else 'ImageCrop(&image,'+rectangle+');emit(image);}')
-    lines.append('emit('+load+');}')
-    source=work/'reference.c';source.write_text('\n'.join(lines)+'\n');binary=work/'reference'
-    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary]);text=run([binary]);reference=parse_results(text)
-    if len(reference)!=len(cases)+1 or reference[-1]!=list(struct.pack('<II',6,4))+data:raise ValueError('Incomplete native rectangle output')
-    pixels=0
-    for row in reference[:-1]:
-        count=int.from_bytes(bytes(row[:4]),'little')*int.from_bytes(bytes(row[4:8]),'little')
-        if len(row)!=8+12*count:raise ValueError('Native rectangle metadata/length differs')
-        pixels+=count
-    wanted=reference[:-1]+[reference[-1] for _ in controls]+[[1]]
-    report=dict(passed=False,native_cases=len(cases),pixels=pixels,retained_owner_controls=len(controls),independent_extraction_controls=1,sources=source_gate(),
-                inputs_sha256=hashlib.sha256(json.dumps([data,cases,controls]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
-    program='''import Base
+PROGRAM = '''import Base
 import ../../jonlib.bend as J
 import ../../jonmath.bend as M
 def reverse_into(values: +List<U32>, rest: +List<U32>) -> +List<U32>:
@@ -101,22 +72,48 @@ def ownership(result: Maybe<J.Image.FloatRGB>) -> Bool:
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
-    image=f'J.Image.FloatRGB.from_bytes(6, 4, {bend_bytes(data)})'
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        bang='!' if lane=='metal' else '';body=program
-        for reject,group in ((False,cases),(True,controls)):
-            for case in group:
-                rectangle='J.Rectangle{'+', '.join(f'F32.neg({abs(v):.1f})' if v<0 else f'{v:.1f}' for v in case['rect'])+'}'
-                body+=f'    observed(apply{bang}({"True" if case["kind"]=="crop" else "False"}{{}}, {"True" if reject else "False"}{{}}, {rectangle}, {image}))\n'
-        body+=f'    emit_bytes(~&1, [Bool.to_u32(ownership{bang}({image}))])\n'
-        source=work/f'{lane}.bend';source.write_text(body);binary=work/('candidate.js' if lane=='javascript' else 'candidate-'+lane)
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        actual=parse_results(run(command));different=[i for i,(a,b) in enumerate(zip(wanted,actual)) if a!=b]
-        report['lanes'][lane]=dict(passed=actual==wanted,different_cases=different);report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if actual!=wanted:raise ValueError(f'{lane}: float rectangle differences {different}')
-        print(f'{lane}: {len(cases)} native rectangles / {pixels} pixels, {len(controls)} retained owners and independent extraction passed',flush=True)
-    report['passed']=True;report_path.write_text(json.dumps(report,indent=2)+'\n')
+
+
+def fixtures():
+    data=list(struct.pack('<'+'f'*72,*[i+c for i in range(24) for c in (0.25,0.5,0.75)]))
+    cases=[dict(kind=kind,rect=rect) for kind in ('extract','crop') for rect in ((0,0,6,4),(1,1,3,2),(5,3,1,1),(0,0,1,4),(0,3,6,1))]
+    cases += [dict(kind='crop',rect=rect) for rect in ((-2,-1,5,4),(-1,-1,8,6),(4,2,9,9),(7,0,1,1),(0,5,1,1))]
+    controls=[dict(kind='extract',rect=rect) for rect in ((-1,0,2,1),(5,0,2,1),(0.5,0,2,1),(0,0,0,1))]
+    controls += [dict(kind='crop',rect=rect) for rect in ((6,0,1,1),(-10,0,2,1),(0,0,0,1),(0.5,0,2,1))]
+    return data,cases,controls
+
+
+def reference_program(path,cases):
+    lines=list(PRELUDE);load=f'LoadImageRaw({json.dumps(str(path.relative_to(ROOT)))},6,4,PIXELFORMAT_UNCOMPRESSED_R32G32B32,0)'
+    for case in cases:
+        rectangle='(Rectangle){'+','.join(str(v) for v in case['rect'])+'}'
+        lines.append('{Image image='+load+';if(!image.data)return 2;')
+        lines.append('Image region=ImageFromImage(image,'+rectangle+');UnloadImage(image);emit(region);}' if case['kind']=='extract' else 'ImageCrop(&image,'+rectangle+');emit(image);}')
+    lines.append('emit('+load+');}')
+    return '\n'.join(lines)+'\n'
+
+
+def main():
+    probe=probekit.Probe('float-rgb-crop',probekit.arguments(__doc__))
+    data,cases,controls=fixtures();path=probe.work/'input.raw';path.write_bytes(bytes(data))
+    text=probe.native(reference_program(path,cases));reference=parse_results(text)
+    if len(reference)!=len(cases)+1 or reference[-1]!=list(struct.pack('<II',6,4))+data:raise ProbeFailure('Incomplete native rectangle output')
+    pixels=0
+    for row in reference[:-1]:
+        count=int.from_bytes(bytes(row[:4]),'little')*int.from_bytes(bytes(row[4:8]),'little')
+        if len(row)!=8+12*count:raise ProbeFailure('Native rectangle metadata/length differs')
+        pixels+=count
+    wanted=reference[:-1]+[reference[-1] for _ in controls]+[[1]];probe.report['sources']=source_gate()
+    image=f'J.Image.FloatRGB.from_bytes(6, 4, {bend_bytes(data)})';actions=[]
+    for reject,group in ((False,cases),(True,controls)):
+        for case in group:
+            rectangle='J.Rectangle{'+', '.join(f'F32.neg({abs(v):.1f})' if v<0 else f'{v:.1f}' for v in case['rect'])+'}'
+            actions.append(f'observed(applyBANG({"True" if case["kind"]=="crop" else "False"}{{}}, {"True" if reject else "False"}{{}}, {rectangle}, {image}))')
+    actions.append(f'emit_bytes(~&1, [Bool.to_u32(ownershipBANG({image}))])')
+    render=lambda selected,gpu:PROGRAM+''.join('    '+line.replace('BANG','!' if gpu else '')+'\n' for line in selected)
+    probe.compare(wanted,probe.candidates(render,actions,batch=len(actions),parse=lambda text,selected:parse_results(text)))
+    probe.finish(native_cases=len(cases),pixels=pixels,retained_owner_controls=len(controls),independent_extraction_controls=1,
+                 inputs_sha256=hashlib.sha256(json.dumps([data,cases,controls]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__=='__main__':

@@ -1,65 +1,24 @@
 #!/usr/bin/env python3
 """Compare native format-9 nearest/default resizing and RGBA8 quantization."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
 import struct
 
 from bmp_probe import bend_bytes
 from byte_probe import BEND_EMITTER, parse_results
-from conformance import BUILD, ROOT, checkout, run, source_gate
+from conformance import ROOT, source_gate
 from float_rgb_probe import boundaries
+import probekit
+from probekit import ProbeFailure
 
-
-def fixtures(filtered=False):
-    sources=[]
-    for width,height in ((1,1),(1,7),(7,1),(2,3),(5,4)):
-        values=[component for i in range(width*height) for component in ((i+0.5)/(width*height),0.25,0.75)]
-        sources.append(dict(width=width,height=height,bytes=list(struct.pack('<'+'f'*len(values),*values))))
-    words=boundaries();sources.append(dict(width=len(words)//3,height=1,bytes=list(struct.pack('<'+'I'*len(words),*words))))
-    cases=[]
-    for i,source in enumerate(sources):
-        for width,height in ((source['width'],source['height']),(1,1),(4,5),(17,9)):
-            xr=((source['width']<<16)//width)+1;yr=((source['height']<<16)//height)+1
-            if ((width-1)*xr)>>16>=source['width'] or ((height-1)*yr)>>16>=source['height']:raise ValueError('Native resize fixture leaves source bounds')
-            cases.append(dict(source,id=f'{i}-{width}-{height}',target_width=width,target_height=height))
-    original=list(struct.pack('<fff',0.5,0.25,0.75))
-    controls=[dict(width=1,height=1,bytes=original,target_width=w,target_height=h) for w,h in ((0,1),(1,4097),(512,1),(1,512))]
-    controls.append(dict(width=1,height=1,bytes=list(struct.pack('<fff',2.0,0.5,0.75)),target_width=2,target_height=2))
-    if filtered:
-        cases.extend(controls[2:4]);controls=controls[:2]+controls[4:]
-    return cases,controls
-
-
-def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True);parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true');parser.add_argument('--filtered',action='store_true');args=parser.parse_args()
-    lock=json.loads((ROOT/'toolchain.json').read_text());checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'));checkout(args.raylib_source,lock['raylib']['revision'])
-    mode='filtered' if args.filtered else 'nearest';work=BUILD/('float-rgb-filtered-probe' if args.filtered else 'float-rgb-resize-probe')
-    work.mkdir(parents=True,exist_ok=True);report_path=work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    cases,controls=fixtures(args.filtered);lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-        'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-        'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-        'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
-        'static void emit(Image image){if(!image.data||image.format!=PIXELFORMAT_UNCOMPRESSED_R32G32B32)exit(2);word(image.width);word(image.height);',
-        'for(int i=0;i<image.width*image.height*12;i++)byte(((unsigned char*)image.data)[i]);end();UnloadImage(image);}',
-        'int main(void){SetTraceLogLevel(LOG_NONE);']
-    for i,case in enumerate([*cases,*controls]):
-        path=work/(str(i)+'.raw');path.write_bytes(bytes(case['bytes']))
-        lines.append(f'{{Image image=LoadImageRaw({json.dumps(str(path.relative_to(ROOT)))},{case["width"]},{case["height"]},PIXELFORMAT_UNCOMPRESSED_R32G32B32,0);')
-        if i<len(cases):lines.append(f'{"ImageResize" if args.filtered else "ImageResizeNN"}(&image,{case["target_width"]},{case["target_height"]});')
-        lines.append('emit(image);}')
-    source=work/'reference.c';source.write_text('\n'.join(lines+['}'])+'\n');binary=work/'reference'
-    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary]);text=run([binary]);expected=parse_results(text)
-    if len(expected)!=len(cases)+len(controls):raise ValueError('Incomplete native resize output')
-    for case,row in zip(cases,expected):
-        w,h=case['target_width'],case['target_height']
-        if row[:8]!=list(struct.pack('<II',w,h)) or len(row)!=8+w*h*12:raise ValueError('Native resize shape differs')
-    report=dict(passed=False,mode=mode,native_cases=len(cases),pixels=sum(c['target_width']*c['target_height'] for c in cases),retained_owner_controls=len(controls),sources=source_gate(),
-                inputs_sha256=hashlib.sha256(json.dumps([cases,controls]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
-    program='''import Base
+PRELUDE = ['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
+           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
+           'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
+           'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+           'static void emit(Image image){if(!image.data||image.format!=PIXELFORMAT_UNCOMPRESSED_R32G32B32)exit(2);word(image.width);word(image.height);',
+           'for(int i=0;i<image.width*image.height*12;i++)byte(((unsigned char*)image.data)[i]);end();UnloadImage(image);}',
+           'int main(void){SetTraceLogLevel(LOG_NONE);']
+PROGRAM = '''import Base
 import ../../jonlib.bend as J
 def reverse_into(values: +List<U32>, rest: +List<U32>) -> +List<U32>:
   match values:
@@ -95,19 +54,54 @@ def observed(reject: Bool, result: Maybe<Result<&1, &1, J.Image.FloatRGB, J.Imag
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
-    if args.filtered:program=program.replace('J.Image.FloatRGB.resize_nn(', 'J.Image.FloatRGB.resize(')
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        bang='!' if lane=='metal' else '';body=program
-        for i,case in enumerate([*cases,*controls]):
-            body+=f'    observed({"True" if i>=len(cases) else "False"}{{}}, resized{bang}({case["target_width"]}, {case["target_height"]}, J.Image.FloatRGB.from_bytes({case["width"]}, {case["height"]}, {bend_bytes(case["bytes"])})))\n'
-        source=work/f'{lane}.bend';source.write_text(body);binary=work/('candidate.js' if lane=='javascript' else 'candidate-'+lane)
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        actual=parse_results(run(command));different=[i for i,(a,b) in enumerate(zip(expected,actual)) if a!=b]
-        report['lanes'][lane]=dict(passed=actual==expected,different_cases=different);report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if actual!=expected:raise ValueError(f'{lane}: float {mode} differences {different}')
-        print(f'{lane}: {len(cases)} native {mode} cases / {report["pixels"]} pixels and {len(controls)} retained owners passed',flush=True)
-    report['passed']=True;report_path.write_text(json.dumps(report,indent=2)+'\n')
+
+
+def fixtures(filtered=False):
+    sources=[]
+    for width,height in ((1,1),(1,7),(7,1),(2,3),(5,4)):
+        values=[component for i in range(width*height) for component in ((i+0.5)/(width*height),0.25,0.75)]
+        sources.append(dict(width=width,height=height,bytes=list(struct.pack('<'+'f'*len(values),*values))))
+    words=boundaries();sources.append(dict(width=len(words)//3,height=1,bytes=list(struct.pack('<'+'I'*len(words),*words))))
+    cases=[]
+    for i,source in enumerate(sources):
+        for width,height in ((source['width'],source['height']),(1,1),(4,5),(17,9)):
+            xr=((source['width']<<16)//width)+1;yr=((source['height']<<16)//height)+1
+            if ((width-1)*xr)>>16>=source['width'] or ((height-1)*yr)>>16>=source['height']:raise ValueError('Native resize fixture leaves source bounds')
+            cases.append(dict(source,id=f'{i}-{width}-{height}',target_width=width,target_height=height))
+    original=list(struct.pack('<fff',0.5,0.25,0.75))
+    controls=[dict(width=1,height=1,bytes=original,target_width=w,target_height=h) for w,h in ((0,1),(1,4097),(512,1),(1,512))]
+    controls.append(dict(width=1,height=1,bytes=list(struct.pack('<fff',2.0,0.5,0.75)),target_width=2,target_height=2))
+    if filtered:
+        cases.extend(controls[2:4]);controls=controls[:2]+controls[4:]
+    return cases,controls
+
+
+def reference_program(cases,controls,work,filtered):
+    lines=list(PRELUDE)
+    for i,case in enumerate([*cases,*controls]):
+        path=work/(str(i)+'.raw');path.write_bytes(bytes(case['bytes']))
+        lines.append(f'{{Image image=LoadImageRaw({json.dumps(str(path.relative_to(ROOT)))},{case["width"]},{case["height"]},PIXELFORMAT_UNCOMPRESSED_R32G32B32,0);')
+        if i<len(cases):lines.append(f'{"ImageResize" if filtered else "ImageResizeNN"}(&image,{case["target_width"]},{case["target_height"]});')
+        lines.append('emit(image);}')
+    return '\n'.join(lines+['}'])+'\n'
+
+
+def main():
+    args=probekit.arguments(__doc__,lambda parser:parser.add_argument('--filtered',action='store_true'))
+    mode='filtered' if args.filtered else 'nearest';probe=probekit.Probe('float-rgb-filtered' if args.filtered else 'float-rgb-resize',args)
+    cases,controls=fixtures(args.filtered);text=probe.native(reference_program(cases,controls,probe.work,args.filtered));expected=parse_results(text)
+    if len(expected)!=len(cases)+len(controls):raise ProbeFailure('Incomplete native resize output')
+    for case,row in zip(cases,expected):
+        w,h=case['target_width'],case['target_height']
+        if row[:8]!=list(struct.pack('<II',w,h)) or len(row)!=8+w*h*12:raise ProbeFailure('Native resize shape differs')
+    probe.report['sources']=source_gate()
+    program=PROGRAM.replace('J.Image.FloatRGB.resize_nn(','J.Image.FloatRGB.resize(') if args.filtered else PROGRAM
+    actions=[f'observed({"True" if i>=len(cases) else "False"}{{}}, resizedBANG({case["target_width"]}, {case["target_height"]}, J.Image.FloatRGB.from_bytes({case["width"]}, {case["height"]}, {bend_bytes(case["bytes"])})))'
+             for i,case in enumerate([*cases,*controls])]
+    render=lambda selected,gpu:program+''.join('    '+line.replace('BANG','!' if gpu else '')+'\n' for line in selected)
+    probe.compare(expected,probe.candidates(render,actions,batch=len(actions),parse=lambda text,selected:parse_results(text)))
+    probe.finish(mode=mode,native_cases=len(cases),pixels=sum(c['target_width']*c['target_height'] for c in cases),retained_owner_controls=len(controls),
+                 inputs_sha256=hashlib.sha256(json.dumps([cases,controls]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__=='__main__':
