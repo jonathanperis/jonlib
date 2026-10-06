@@ -16,8 +16,9 @@ import time
 import struct
 
 if __package__:
-    from . import reference_environment
+    from . import native_profiles, reference_environment
 else:
+    import native_profiles
     import reference_environment
 
 UNARY_IMAGE_APIS = {'flip_horizontal':'ImageFlipHorizontal', 'flip_vertical':'ImageFlipVertical',
@@ -1026,16 +1027,11 @@ def has_extrema(cases):
 
 
 def qualify_extrema(raylib_source, library, *, reference_env=None):
-    # Import locally: the qualifier receives the unchanged canonical generators,
-    # parser and runner instead of importing them through a circular dependency.
-    if __package__:
-        from .extrema_reference import qualify
-    else:
-        from extrema_reference import qualify
+    # The selector receives the unchanged canonical generator, validator and parser.
     environment = reference_environment.select(reference_env)
-    return qualify(raylib_source, library, BUILD,
-                   c_source=c_source, cases_from=cases_from, parse_output=parse_output,
-                   run=lambda command: run(command, env=environment.child()))
+    return native_profiles.extrema_profile(library, raylib_source, BUILD / 'native-profiles',
+                                           c_source=c_source, cases_from=cases_from, parse_output=parse_output,
+                                           run=lambda command: run(command, env=environment.child()))
 
 
 def has_angles(cases):
@@ -1045,33 +1041,14 @@ def has_angles(cases):
 
 
 def qualify_angles(raylib_source, library, *, reference_env=None):
-    # Always execute the independent gate now. Never load an earlier receipt or
-    # infer the contract from the host name, gradient profile or candidate output.
-    if __package__:
-        from .angle_reference import qualify
-    else:
-        from angle_reference import qualify
+    # Select freshly from native observations of frozen controls; never infer the
+    # contract from the host name, gradient profile or candidate output.
     environment = reference_environment.select(reference_env)
-    qualification = qualify(raylib_source, library, BUILD,
-                            c_source=c_source, cases_from=cases_from, parse_output=parse_output,
-                            reference_env=environment)
-    if (type(qualification) is not dict or qualification.get('qualified') is not True or
-            qualification.get('schema') != 1 or qualification.get('contract') != 'native-angle-qualification-v1' or
-            qualification.get('phase') != 'qualified' or
-            type(qualification.get('run_id')) is not str or not re.fullmatch('[0-9a-f]{32}', qualification['run_id']) or
-            type(qualification.get('selected_profile')) is not str or
-            qualification['selected_profile'] not in ANGLE_REFERENCES or
-            qualification.get('matching_profiles') != [qualification['selected_profile']]):
-        raise ValueError('Angles require a fresh uniquely qualified native contract')
-    contexts = qualification.get('contexts')
-    artifacts = qualification.get('artifacts')
-    source = Path(__file__).resolve()
-    if (type(contexts) is not dict or set(contexts) != {'pinned-run', 'pointer-run', 'canonical-run', 'runtime-wrapper-run', 'mirror-run'} or
-            any(type(context) is not dict or not context for context in contexts.values()) or
-            type(artifacts) is not dict or artifacts.get(str(source)) != hashlib.sha256(source.read_bytes()).hexdigest()):
-        raise ValueError('Angles require complete fresh qualification contexts and source identity')
-    environment.assert_receipt(qualification.get('reference_environment'))
-    return qualification
+    selection = native_profiles.angle_profile(raylib_source, BUILD / 'native-profiles',
+                                              lambda command: run(command, env=environment.child()))
+    if selection.get('selected_profile') not in ANGLE_REFERENCES:
+        raise ValueError('Angles require a uniquely selected native contract')
+    return selection
 
 
 def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
@@ -1581,7 +1558,7 @@ def main():
     report['progression'] = json.loads((ROOT / 'api/summary.json').read_text())['core_functions']
     report['verification_sources'] = {
         str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
-        for path in (ROOT / 'tools/conformance.py', ROOT / 'tools/extrema_reference.py', ROOT / 'tools/angle_reference.py', ROOT / 'tools/reference_environment.py', ROOT / 'tests/contracts.bend',
+        for path in (ROOT / 'tools/conformance.py', ROOT / 'tools/native_profiles.py', ROOT / 'tools/reference_environment.py', ROOT / 'tests/contracts.bend',
                      ROOT / 'tests/transforms.bend', ROOT / 'tests/transforms_gpu.bend', ROOT / 'examples/transforms.bend',
                      ROOT / 'tests/decoding.bend', ROOT / 'tests/decoding_gpu.bend',
                      ROOT / 'tests/io_decoding.bend',
@@ -1639,14 +1616,14 @@ def main():
         extrema_reference = qualification['selected_profile']
         report['extrema_reference'] = qualification
         report_path.write_text(json.dumps(report, indent=2) + '\n')
-        print(f'Literal-raymath extrema profile: {extrema_reference} (fresh native qualification)', flush=True)
+        print(f'Literal-raymath extrema profile: {extrema_reference} (fresh native selection)', flush=True)
     angle_reference = None
     if has_angles(cases):
         qualification = qualify_angles(args.raylib_source, cmake / 'raylib/libraylib.a', reference_env=environment)
         angle_reference = qualification['selected_profile']
         report['angle_reference'] = qualification
         report_path.write_text(json.dumps(report, indent=2) + '\n')
-        print(f'Native angle profile: {angle_reference} (fresh independent qualification)', flush=True)
+        print(f'Native angle profile: {angle_reference} (fresh native selection)', flush=True)
     if any(op['op']=='vector3_value' and op['function']=='unproject' for case in cases for op in case['operations']):
         report['unprojection_rejections'] = verify_unproject_rejections(args.raylib_source, cmake/'raylib/libraylib.a', reference_env=environment)
         print('unprojection: singular and zero-W native oracle controls rejected',flush=True)
