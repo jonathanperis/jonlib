@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """Compare Radiance RGBE images and every channel/exponent pair as exact F32 bits."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
 
 from bmp_probe import bend_bytes
 from byte_probe import BEND_EMITTER, parse_results
-from conformance import BUILD, ROOT, checkout, run, source_gate
+import probekit
+from probekit import ProbeFailure
 
 
 def hdr(width,height,samples,*,signature=b'#?RADIANCE',metadata=b'',dimensions=None):
@@ -77,15 +76,7 @@ def fixtures():
     return inputs,malformed
 
 
-def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True)
-    parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true')
-    args=parser.parse_args();lock=json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'));checkout(args.raylib_source,lock['raylib']['revision'])
-    work=BUILD/'hdr-probe';work.mkdir(parents=True,exist_ok=True);report_path=work/'results.json'
-    report_path.write_text(json.dumps(dict(passed=False))+'\n');inputs,malformed=fixtures()
+def reference_program(inputs):
     lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>','#include <string.h>',
            'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
            'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
@@ -98,20 +89,10 @@ def main():
            'Image image=load(data,size);for(int i=0;i<65536;i++){unsigned a,b,c;memcpy(&a,(float*)image.data+3*i,4);memcpy(&b,(float*)image.data+3*i+1,4);memcpy(&c,(float*)image.data+3*i+2,4);if(a!=b||a!=c)exit(4);word(a);}end();UnloadImage(image);free(data);}',
            'int main(void){SetTraceLogLevel(LOG_NONE);']
     for case in inputs:lines.append('{unsigned char data[]={'+','.join(map(str,case['bytes']))+'};emit(data,sizeof(data));}')
-    source=work/'reference.c';source.write_text('\n'.join(lines+['pairs();}'])+'\n');binary=work/'reference'
-    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary])
-    text=run([binary]);expected=parse_results(text)
-    if len(expected)!=len(inputs)+1 or len(expected[-1])!=65536*4:raise ValueError('Incomplete native HDR results')
-    pixels=0
-    for row in expected[:-1]:
-        width=int.from_bytes(bytes(row[:4]),'little');height=int.from_bytes(bytes(row[4:8]),'little')
-        if len(row)!=8+width*height*12:raise ValueError('Native HDR channel count differs')
-        pixels+=width*height
-    wanted=expected[:-1]+[[c['error']] for c in malformed]+[expected[-1],[1]]
-    report=dict(passed=False,images=len(inputs),pixels=pixels,error_controls=len(malformed),channel_exponent_pairs=65536,ownership_controls=1,
-                sources=source_gate(),inputs_sha256=hashlib.sha256(json.dumps([inputs,malformed]).encode()).hexdigest(),
-                reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
-    program='''import Base
+    return '\n'.join(lines+['pairs();}'])+'\n'
+
+
+PROGRAM='''import Base
 import ../../jonlib.bend as J
 import ../../jonmath.bend as M
 import ../../src/hdr.bend as H
@@ -166,20 +147,34 @@ def disposed(result: Result<&1, &1, J.Image.DecodeError, J.Image.FloatRGB>) -> U
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        bang='!' if lane=='metal' else '';body=program
-        for case in inputs:body+=f'    observed(J.Image.FloatRGB.decode_hdr{bang}({bend_bytes(case["bytes"])}))\n'
-        for case in malformed:body+=f'    emit_bytes(~&1, [error_code(J.Image.FloatRGB.decode_hdr{bang}({bend_bytes(case["bytes"])}))])\n'
-        body+=f'    emit_bytes(~&1, exponents{bang}(256n, 0, Nil{{}}))\n'
-        body+=f'    emit_bytes(~&1, [disposed{bang}(J.Image.FloatRGB.decode_hdr({bend_bytes(inputs[0]["bytes"])}))])\n'
-        source=work/f'{lane}.bend';source.write_text(body);binary=work/('candidate.js' if lane=='javascript' else f'candidate-{lane}')
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        actual=parse_results(run(command));differences=[i for i,(a,b) in enumerate(zip(wanted,actual)) if a!=b]
-        report['lanes'][lane]=dict(passed=actual==wanted,different_cases=differences);report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if actual!=wanted:raise ValueError(f'{lane}: HDR differs in cases {differences}')
-        print(f'{lane}: {len(inputs)} HDR images / {pixels} pixels, {len(malformed)} errors and 65536 exact channel/exponent pairs passed',flush=True)
-    report['passed']=True;report_path.write_text(json.dumps(report,indent=2)+'\n')
+
+
+def main():
+    probe=probekit.Probe('hdr',probekit.arguments(__doc__));inputs,malformed=fixtures()
+    text=probe.native(reference_program(inputs));expected=parse_results(text)
+    if len(expected)!=len(inputs)+1 or len(expected[-1])!=65536*4:raise ProbeFailure('Incomplete native HDR results')
+    pixels=0
+    for row in expected[:-1]:
+        width=int.from_bytes(bytes(row[:4]),'little');height=int.from_bytes(bytes(row[4:8]),'little')
+        if len(row)!=8+width*height*12:raise ProbeFailure('Native HDR channel count differs')
+        pixels+=width*height
+    wanted=expected[:-1]+[[c['error']] for c in malformed]+[expected[-1],[1]]
+    actions=[('image',c) for c in inputs]+[('error',c) for c in malformed]+[('pairs',dict(id='channel-exponent-pairs')),('disposed',dict(id='ownership'))]
+
+    def render(selected,gpu):
+        bang='!' if gpu else '';body=PROGRAM
+        for kind,case in selected:
+            if kind=='image':body+=f'    observed(J.Image.FloatRGB.decode_hdr{bang}({bend_bytes(case["bytes"])}))\n'
+            elif kind=='error':body+=f'    emit_bytes(~&1, [error_code(J.Image.FloatRGB.decode_hdr{bang}({bend_bytes(case["bytes"])}))])\n'
+            elif kind=='pairs':body+=f'    emit_bytes(~&1, exponents{bang}(256n, 0, Nil{{}}))\n'
+            else:body+=f'    emit_bytes(~&1, [disposed{bang}(J.Image.FloatRGB.decode_hdr({bend_bytes(inputs[0]["bytes"])}))])\n'
+        return body
+
+    probe.compare(wanted,probe.candidates(render,actions,batch=len(actions),parse=lambda text,selected:parse_results(text)),
+                  lambda i:f'{actions[i][0]} {actions[i][1]["id"]}')
+    probe.finish(images=len(inputs),pixels=pixels,error_controls=len(malformed),channel_exponent_pairs=65536,ownership_controls=1,
+                 inputs_sha256=hashlib.sha256(json.dumps([inputs,malformed]).encode()).hexdigest(),
+                 reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__=='__main__':
