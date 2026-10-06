@@ -1,42 +1,47 @@
-# Owned RGBA8 mipmaps
+# RGBA8 mipmaps
 
-`Surface.mipmaps(surface) -> Image.Mipmaps` consumes a checked single-level RGBA8
-surface and generates its complete mipmap chain. Dimensions retain the existing
-1..4096 profile. The returned levels have independent owned storage.
+Jonlib adapts raylib 6.0 `ImageMipmaps` for single-level RGBA8 `Surface` input.
+
+```bend
+Surface.mipmaps(surface) -> Image.Mipmaps
+Image.Mipmaps.entries(chain) -> U32 & List<Surface>
+Image.Mipmaps.unload(chain) -> Unit
+```
+
+## Contract
+
+`Surface.mipmaps` consumes a checked single-level RGBA8 surface (dimensions
+1..4096) and generates its complete chain with independently owned levels.
 
 - The first level preserves every original RGBA pixel.
 - Each next dimension is `max(1, floor(previous / 2))`.
-- Each level uses the preceding level as its source for the verified default
-  Mitchell downsampling filter; levels are not resized directly from the base.
-- The final level is 1×1. The reported count includes the base; an input already
-  1×1 produces one unchanged level.
+- Each level is downsampled from the **preceding level**, not from the base,
+  with the default Mitchell filter of [RESAMPLING.md](RESAMPLING.md).
+- The final level is 1×1. The count includes the base; a 1×1 input produces one
+  unchanged level.
 - POT, NPOT, odd and one-pixel-wide/high images follow the same native sequence.
 
-`Image.Mipmaps.entries(chain) -> U32 & List<Surface>` consumes the chain and
-returns the count and levels in base-to-smallest order. Each returned Surface can
-be consumed, transformed or exported separately. `Image.Mipmaps.unload(chain)`
-consumes the entire chain and returns `Unit`.
+`Image.Mipmaps.entries` consumes the chain and returns the count and levels in
+base-to-smallest order; each Surface can then be consumed, transformed or
+exported separately. `Image.Mipmaps.unload` consumes the whole chain. As with
+other owned images, the visible constructor does not authorize manually
+inconsistent storage, and no allocation-failure recovery is promised.
 
-This adapts pinned `ImageMipmaps` for single-level RGBA8 input. Existing native
-partial/full chains, other pixel formats, contiguous C allocation/pointer ABI,
-texture upload/integration and full resource/platform/performance remain gaps.
-Like other owned images, the visible constructor does not authorize manually
-inconsistent storage. No allocation-failure recovery is promised.
+## How it is verified
 
-## Verification
+`tools/mipmap_probe.py` (gate `mipmap`) gives native `ImageMipmaps` and the
+candidate identical raw source bytes, then compares the level count, every
+level's dimensions and every RGBA byte on CPU-1, CPU-2, JavaScript and, with
+`--gpu`, forced GPU. The corpus includes thin 4096-axis images, NPOT/odd sizes,
+a large source, hidden RGB and alpha boundaries. Mutating one returned level
+must leave every other level unchanged.
 
 ```sh
-python3 tools/mipmap_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only mipmap
 ```
 
-Configure checkout variables as in [README.md](../README.md#requirements).
-The probe calls actual native `ImageMipmaps`, then compares the complete level
-count, dimensions and every RGBA byte on CPU/JavaScript/forced Metal. Its corpus
-includes thin 4096-axis images, NPOT/odd sizes, a 33,153-pixel source, hidden RGB
-and alpha boundaries. Mutating one returned level must preserve all other levels.
-The native and candidate receive identical raw source bytes.
-The current gate passes 14 chains / 72 levels / 61,127 pixels per lane, including
-three independently mutated chains. See [evidence/mipmaps.json](evidence/mipmaps.json).
+## Known gaps
 
-The unchanged filter implementation and its broader coefficient/resize evidence
-are documented in [RESAMPLING.md](RESAMPLING.md).
+Existing native partial/full chains as input, other pixel formats, the
+contiguous C allocation/pointer ABI, texture upload/integration and complete
+resource/platform/performance parity.

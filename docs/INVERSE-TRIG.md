@@ -1,15 +1,16 @@
 # Inverse-trigonometry compatibility gap
 
-`QuaternionSlerp`, `QuaternionToAxisAngle` and `QuaternionToEuler` remain blocked
-pending verified native float `asin`/`acos` profiles. The existing atan2 profile
-passes; these remaining dependencies have distinct rounding behavior.
+`QuaternionSlerp`, `QuaternionToAxisAngle` and `QuaternionToEuler` are
+**blocked**, with no implemented mapping. They depend on native float
+`asinf`/`acosf`, and no verified reference-compatible profile for those
+functions exists yet. (The `atan2f` dependency of the angle APIs is handled by
+explicit profiles; see [ANGLES.md](ANGLES.md).)
 
-The pinned Base primitives produced 10 mismatched CPU/JavaScript words and 286
-mismatched forced-Metal words in 572 results over 286 unique finite F32 inputs.
-The native oracle uses volatile function pointers, preventing builtin constant
-folding from replacing actual `asinf`/`acosf` calls.
+## Why the blocker exists
 
-Retained Apple arm64 examples include:
+Bend's Base `F32.asin`/`F32.acos` primitives do not reproduce native libm bits,
+and on the forced-Metal lane they also differ in signed zero. Retained examples
+(native values from Apple arm64 libm):
 
 | Operation | Input | Native bits | Base bits |
 |---|---:|---|---|
@@ -18,21 +19,33 @@ Retained Apple arm64 examples include:
 | `asinf` | +1 | `3fc90fda` | `3fc90fdb` |
 | `asinf` on Metal | -0 | `80000000` | `00000000` |
 
-An independent evaluation of the published legacy Apple
-[asin](https://github.com/apple-oss-distributions/Libm/blob/17a5f9daa3f5679f7536b26f133b40cc078753c3/Source/Intel/asinf.s) and
-[acos](https://github.com/apple-oss-distributions/Libm/blob/17a5f9daa3f5679f7536b26f133b40cc078753c3/Source/Intel/acosf.s)
-mathematical descriptions by Eric Postpischil
-also differed from the current native implementation in 719 asin and 737 acos
-results over a separate 4,128-input diagnostic corpus. Substituting idealized
-double-precision functions, even with endpoint adjustments, still differed in
-65 asin and 46 acos results. These alternatives were not adopted.
+Two candidate replacements were evaluated and **not** adopted because they also
+differ from the current native implementation:
+
+- the published legacy Apple
+  [asin](https://github.com/apple-oss-distributions/Libm/blob/17a5f9daa3f5679f7536b26f133b40cc078753c3/Source/Intel/asinf.s)
+  and
+  [acos](https://github.com/apple-oss-distributions/Libm/blob/17a5f9daa3f5679f7536b26f133b40cc078753c3/Source/Intel/acosf.s)
+  algorithms by Eric Postpischil;
+- idealized double-precision functions rounded to F32, even with endpoint
+  adjustments.
+
+Closing the gap requires a licensed, verified reference-compatible `asinf` and
+`acosf` (per declared profile) with exact native comparisons; expected values and
+comparisons are not relaxed in the meantime.
+
+## Diagnostic gate `inverse-trig`
+
+`tools/inverse_trig_probe.py` (diagnostic gate; never counted as parity) calls
+native `asinf`/`acosf` through volatile function pointers, which prevents builtin
+constant folding, and records the Base `F32.asin`/`F32.acos` results on CPU-1,
+CPU-2 and JavaScript (and a forced-GPU lane with `--gpu`). Inputs are ±0, ±1,
+neighbours of 0.5, 0.57, 0.62, 0.975 and 1.0 in both signs, and seeded values in
+[-1, 1]. Per-lane mismatches are written to
+`.build/inverse-trig-probe/results.json`; they are recorded, not asserted.
 
 ```sh
-python3 tools/inverse_trig_probe.py --bend-source "$BEND_SOURCE" --gpu
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only inverse-trig
 ```
 
-Set the checkout variable as described in [README.md](../README.md#requirements).
-The command records `.build/inverse-trig-probe/results.json`; it reports a
-diagnostic result, not a passing Jonlib implementation. Hosted CI retains
-per-host evidence. Exact comparisons remain in place, and the ledger counts no
-implementation for these blocked APIs.
+The API ledger counts no implementation for these three functions.

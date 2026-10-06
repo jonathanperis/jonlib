@@ -1,36 +1,47 @@
-# TGA memory/file decoding and default RLE export
+# TGA decoding and default RLE export
+
+Jonlib reproduces the TGA paths of raylib 6.0's pinned stb_image /
+stb_image_write: RGBA8 decoding, a format-preserving decoder that keeps raylib's
+native output format, and the exporter's exact default RLE bytes.
 
 | API | Contract |
 |---|---|
-| `Image.Formatted.decode_tga(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Image.Formatted>` with owned native format-1/2/4/7 pixels and an implicit single mip. |
-| `Image.Formatted.load_tga(path: String)` | Returns `IO(Result<&1, &1, Image.LoadError, Image.Formatted>)`; explicit TGA selection, inclusive 1 MiB encoded-file cap and the same native-format memory domain. |
-| `Surface.decode_tga(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Surface>` containing owned normalized RGBA8 pixels. |
-| `Surface.to_tga(surface) -> +List<U32>` | Consumes RGBA8 and emits the pinned exporter's exact default RLE bytes. |
+| `Surface.decode_tga(bytes: +List<U32>)` | `Result<&1, &1, Image.DecodeError, Surface>` with owned normalized RGBA8 pixels. |
+| `Image.Formatted.decode_tga(bytes: +List<U32>)` | `Result<&1, &1, Image.DecodeError, Image.Formatted>` with owned native format-1/2/4/7 pixels and an implicit single mip level. |
+| `Image.Formatted.load_tga(path: String)` | `IO(Result<&1, &1, Image.LoadError, Image.Formatted>)`; explicit TGA selection, inclusive 1 MiB encoded-file cap, same domain as `decode_tga`. See [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-tga-file-loading). |
+| `Surface.to_tga(surface) -> +List<U32>` | Consumes RGBA8 and returns the pinned exporter's exact default RLE bytes. |
 | `Surface.write_tga(surface, path)` | Consumes RGBA8 and returns `IO(Result<&1, &1, U32 & String, Unit>)` through Base byte-file writing and closure. |
+
+Checked formats 1..8 have separate consuming `Image.Formatted.to_tga/write_tga`
+entry points that preserve native channel routing and packed/R32 expansion; see
+[IMAGE-EXPORT.md](IMAGE-EXPORT.md). Shared suffix/content dispatch through
+`Surface.decode_image`/`Surface.load_image` is in [IMAGE-FILES.md](IMAGE-FILES.md).
 
 ## Decoding profile
 
-- Non-paletted types 2/3/10/11 accept depths 8/15/16/24/32 with the native
+- Non-paletted types 2/3/10/11 accept depths 8/15/16/24/32 with the
   depth-selection rules below. Types 10/11 are RLE.
-- Indexed images, types 1 and 9, with 8/16-bit indices and 1..65535 palette entries
-  encoded at 8/15/16/24/32 bits. Palette 8-bit values are opaque grayscale;
-  palette 15/16-bit values use opaque RGB555; 32-bit entries retain alpha.
-- Dimensions 1..4096; ID fields up to 255 bytes are skipped.
+- Indexed types 1 and 9 accept 8/16-bit indices and 1..65535 palette entries
+  encoded at 8/15/16/24/32 bits. 8-bit entries are opaque grayscale; 15/16-bit
+  entries are opaque RGB555; 32-bit entries retain alpha.
+- Dimensions 1..4096. ID fields up to 255 bytes are skipped.
 - Descriptor bit 5 selects top-down or bottom-up storage; output is row-major
-  top-down. Origin coordinates, horizontal-origin and other descriptor bits are
-  ignored by the pinned reader and this profile.
-- RLE packets may cross rows. Raw/repeated packet counts are 1..128; counts
-  extending beyond the remaining image are rejected as `InvalidImageStream`.
+  top-down. Origin coordinates, the horizontal-origin bit and other descriptor
+  bits are ignored by the pinned reader and by this profile. Direct images
+  ignore unused color-map header fields.
+- RLE packets may cross rows. Raw/repeat packet counts are 1..128; a count
+  extending beyond the remaining image is rejected as `InvalidImageStream`.
 - Gray-alpha and 32-bit true-color retain zero alpha, unlike uncompressed BMP's
   alpha repair rule.
-- All 15-bit samples and type-2/type-10 16-bit samples consume two little-endian bytes per pixel.
-  RGB fields are the five bits at shifts 10, 5 and 0, expanded with integer
-  `channel*255/31`. The native decoder ignores bit 15 and the descriptor's alpha
-  count for these packed formats: output alpha is always 255. This is distinct
-  from 16-bit grayscale's two independent gray/alpha bytes.
-- The pinned palette-start field skips that many **bytes after the image ID**,
-  rather than shifting logical indices. Indices at or beyond the palette count
-  select entry zero. Both behaviors are reproduced from actual native execution.
+- All 15-bit samples and type-2/10 16-bit samples consume two little-endian
+  bytes per pixel. RGB fields are the five bits at shifts 10, 5 and 0, expanded
+  with integer `channel*255/31`. The native decoder ignores bit 15 and the
+  descriptor's alpha count for these packed formats: output alpha is always 255.
+  This is distinct from type-3/11 16-bit grayscale's two independent gray/alpha
+  bytes.
+- The palette-start field skips that many **bytes after the image ID**, rather
+  than shifting logical indices. Indices at or beyond the palette count select
+  entry zero. Both behaviors are reproduced from actual native execution.
 
 | Depth | Types 2/10 | Types 3/11 |
 |---|---|---|
@@ -40,25 +51,29 @@
 | 24 | Opaque BGR | Opaque BGR |
 | 32 | BGRA, alpha retained | BGRA, alpha retained |
 
-The nominal true-color/grayscale type changes only the 16-bit interpretation.
-These cross-type combinations follow actual pinned native loading.
+The nominal true-color/grayscale type changes only the 16-bit interpretation;
+these cross-type combinations follow actual pinned native loading.
 
-Every supplied value must be a byte, otherwise decoding returns `InvalidImageByte`.
-Unsupported fields or incomplete headers return `InvalidImageHeader`; dimensions
-outside the profile return `UnsupportedImageSize`. Missing ID/pixel/packet data
-returns `TruncatedImageData`. Valid trailing bytes are ignored after the image.
+### Errors
 
-Native permissive malformed-data recovery remains outside this checked profile.
-The dedicated formatted-memory factory preserves native output formats below. Shared memory/file dispatch is
-documented in [IMAGE-FILES.md](IMAGE-FILES.md).
+Every supplied value, including ignored tails, is checked as a byte before the
+header, so `InvalidImageByte` has precedence. Incomplete or unsupported headers
+return `InvalidImageHeader`; dimensions outside 1..4096 return
+`UnsupportedImageSize`; missing ID/palette/pixel/packet bytes return
+`TruncatedImageData`; packet counts exceeding the remaining image return
+`InvalidImageStream`. Header validity precedes size, which precedes palette
+loading and pixel allocation. Valid trailing bytes after the image are ignored.
+These are checked adaptations: native permissive malformed-data recovery is
+outside the profile, and checked-invalid inputs are not claimed as native
+rejections.
 
 ## Format-preserving TGA memory loading
 
-`Image.Formatted.decode_tga(bytes)` keeps the existing checked byte/header/size/
-stream contract while preserving the actual pinned `LoadImageFromMemory` output.
-Raylib requests stb channels zero, maps output channels 1/2/3/4 to formats
-1/2/4/7, and supplies one mip level. Native output channels are carried separately
-from input sample/index byte width; canonical RGBA decoding remains unchanged.
+`Image.Formatted.decode_tga(bytes)` keeps the checked byte/header/size/stream
+contract above while preserving the actual pinned `LoadImageFromMemory` output.
+raylib requests stb channels zero, maps output channels 1/2/3/4 to formats
+1/2/4/7 and supplies one mip level. Output channels are independent of the
+input sample/index byte width.
 
 | Input | Native output |
 |---|---|
@@ -67,196 +82,95 @@ from input sample/index byte width; canonical RGBA decoding remains unchanged.
 | Direct 15-bit or type-2/10 16-bit | Expanded RGB888 (4), R,G,B |
 | Direct 24-bit, either nominal type | RGB888 (4), R,G,B |
 | Direct 32-bit, either nominal type | RGBA8888 (7), R,G,B,A |
-| Indexed palette depth 8 | Grayscale (1), independent of index width |
-| Indexed palette depth 15/16/24 | Expanded RGB888 (4), independent of index width |
-| Indexed palette depth 32 | RGBA8888 (7), independent of index width |
+| Indexed, palette depth 8 | Grayscale (1), independent of index width |
+| Indexed, palette depth 15/16/24 | Expanded RGB888 (4), independent of index width |
+| Indexed, palette depth 32 | RGBA8888 (7), independent of index width |
 
 The adapter extracts gray R and gray-alpha R,A or packs RGB/RGBA in native byte
-order with integer operations. No luminance round trip is introduced. RGB555
-retains integer `value*255/31` expansion and ignores bit 15; it produces expanded
-RGB888 rather than a packed pixel format. Descriptor alpha-count bits do not
-change the channel count or repair zero alpha. Palette-start byte skipping,
-entry-zero fallback, vertical orientation, ignored horizontal-origin bits,
-raw/RLE stepping and valid trailing data retain the existing decoder semantics.
-`Surface.decode_tga` ignores the extra metadata and stays RGBA8-normalized.
+order with integer operations; no luminance round trip is introduced. RGB555
+keeps integer `value*255/31` expansion, ignores bit 15 and produces expanded
+RGB888, not a packed pixel format. Descriptor alpha-count bits do not change the
+channel count or repair zero alpha. Palette-start skipping, entry-zero fallback,
+orientation, ignored horizontal-origin bits, raw/RLE stepping and valid trailing
+data follow the decoder above. `Surface.decode_tga` stays RGBA8-normalized.
 
-The immutable input list can be reused, while success returns one affine pixel
-owner. Point reads return that owner alongside their `Maybe` result, including
-out-of-bounds reads. Byte export and the Surface bridge consume it. Raw export
-contains exactly `width*height*channels` bytes, excluding backing-array padding.
-Logical grayscale words have zero high 24 bits; gray-alpha has zero high 16 bits;
-RGB888 has a zero high byte. Failure returns only its typed error.
+Ownership: the immutable input list can be reused; success returns one affine
+pixel owner. Point reads return that owner alongside their `Maybe` result,
+including out-of-bounds reads. Byte export and the Surface bridge consume it.
+Raw export contains exactly `width*height*channels` row-major bytes, excluding
+backing-array padding. Logical grayscale words have zero high 24 bits,
+gray-alpha zero high 16 bits and RGB888 a zero high byte. Failure returns only
+the typed error, never a partial image.
 
-All supplied values, including ignored tails, are checked as bytes before the
-header, so `InvalidImageByte` has precedence. Incomplete/unsupported headers
-return `InvalidImageHeader`; dimensions outside 1..4096 return
-`UnsupportedImageSize`; missing ID/palette/pixel/packet bytes return
-`TruncatedImageData`; packet counts exceeding the remaining image return
-`InvalidImageStream`. Header validity precedes size, which precedes palette
-loading and pixel allocation. These checked adaptations do not claim parity
-with permissive native malformed-stream recovery.
+File loading (`Image.Formatted.load_tga`) adds explicit, suffix-independent TGA
+selection, the inclusive 1,048,576-byte raster-file cap and the shared
+close-before-decode IO model; see
+[IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-tga-file-loading).
 
-The memory-only increment expanded partial `raylib:function:LoadImageFromMemory`.
-The separate file wrapper below expands partial `raylib:function:LoadImage`.
-Generic formatted/float dispatch, remaining codec formats, nondefault stb flags,
-dimensions above 4096, native pointer/allocation/OOM behavior and maximum-area/
-resource/performance qualification remain open. CPU/JavaScript verification
-cannot establish GPU/Metal, Windows/browser, other hosts or hosted CI coverage.
-No API is complete.
+## Default RLE export
 
-## Format-preserving TGA file loading
+`Surface.to_tga` emits a type-10 header, 32-bit BGRA samples, eight alpha bits
+and bottom-up rows. It reproduces native default RLE packet selection,
+restarting at each row and capping each packet at 128 pixels. The native
+raw-packet scan compares the next pixel with the one **two positions earlier**
+and shortens the packet when those match; conventional adjacent-pixel run
+detection would change the encoded bytes even though decoded pixels are
+identical. `Surface.write_tga` selects TGA independently of the file extension.
 
-`Image.Formatted.load_tga(path)` selects the formatted TGA decoder explicitly,
-independently of the suffix. Uppercase/mixed-case, misleading, arbitrary and
-absent suffixes do not alter the codec or cap. It accepts only the checked TGA
-domain above; it does not sniff other codecs, retry a decoder or use generic
-formatted dispatch. Existing normalized Surface APIs remain unchanged.
+## How it is verified
 
-The two-function wrapper follows `Image.Formatted.load_pnm`: a dedicated
-continuation receives `Image.file.bytes(path, Image.file.limit(RasterFile{}))`
-and adapts `Image.Formatted.decode_tga` through `Image.file.decoded`. The shared
-reader admits **1,048,576 encoded bytes, inclusive**, rejects larger reported
-U32 sizes before reading, performs one read whose length must exactly match the
-reported size, and calls close before processing its result or decoding.
-Open/size/read errors preserve the Base code and message; above-U32 sizes retain
-Base's overflow file error. Decoder errors are wrapped exactly once. Base does
-not report close failures. Full ordering and error details are in the
-[file contract](IMAGE-FILES.md#format-preserving-tga-file-loading).
+All gates compare exact output against pinned native raylib on the CPU-1,
+CPU-2 and JavaScript lanes (see [VERIFICATION.md](VERIFICATION.md)).
 
-Success returns one affine format-1/2/4/7 owner with width/height 1..4096 and one
-implicit mip level. Input sample/index width remains separate from output
-channels; palette depth selects indexed output. Raw export, high-bit invariants,
-point-read ownership, conversion and disposal use the unchanged formatted
-memory-owner contract above. Failure returns no partial owner or open File.
-
-The cap bounds admitted encoded input, not decoded area, total heap, allocation
-success or throughput. RLE compression does not turn it into a maximum-area
-qualification. Concurrent/special files, native callbacks, native allocation
-ABI/OOM behavior, additional platforms and full resource/performance coverage
-remain outside the slice. Fresh local formatted-file verification is recorded below.
-The memory reconstruction and integration results below are historical
-evidence for their recorded sources, not new validation of this file wrapper.
-
-### Fresh local file verification
-
-The [source-scoped file report](evidence/tga-formatted-files.json) qualifies
-**225 accepted real files / 61,913 pixels**: all 169 memory streams unchanged,
-plus 56 tiny filename variants across formats 1/2/4/7. There are **197 actual
-`LoadImage`** references and **28 separately labelled explicit TGA references**.
-The fresh isolated archive explicitly enables and verifies TGA/PNG/BMP/GIF
-aliases; every accepted header, complete raster and on-disk byte sequence is
-validated before native access. Native `.tga` still selects shared stb content
-detection; other-codec and malformed controls remain outside this TGA oracle.
-
-Each CPU-one-thread, CPU-two-thread and JavaScript lane passes **1,283 primary
-records / 854,352 bytes** in 41 exact ordered partitions. Public formatted loads
-are reopened for raw bytes, threaded point/high-bit ownership checks and the
-consuming Surface bridge. Separate normalized/generic regressions preserve their
-real routing contracts. **154 checked-only file controls** retain all 144
-byte-safe memory controls; non-byte U32 values stay synthetic or memory-only.
-
-The 100-cycle fd64 lane checks **1,209 individually framed records**, covering
-four successful layouts and eight acquired-handle failure/stage paths per cycle,
-eight synthetic checks and a final valid load. All three lanes pass sparse
-cap-plus-one/misleading-name/256 MiB/U32-overflow checks and an independently
-native-observed valid exact-cap file with a fully validated ignored tail. Fixed
-runtime RSS ceilings are enforced separately from compilation. Complete raw
-native/candidate replay, all 1,643 seals, 187 owned/reaped command receipts and
-nine resource receipts passed independent audit; these are scoped runtime and
-source-order facts, not a universal IO or OS-close-success proof.
-
-The formatted TGA memory/PNM-file/QOI-file/TGA-export and canonical regressions
-also pass on this unchanged library source. Surface TGA and generic memory/file
-reports, sources and exits pass; their inherited harnesses do not retain full
-stdout for an independent full-record replay. The new 81-gate CI addition still
-requires its own exact-commit hosted run; the historical 80-gate memory checkpoint
-is separately recorded in [CI runtime](CI.md).
-
-## Reconstructed formatted-memory verification
-
-This section records the isolated `f6a48cd` reconstruction from published
-baseline `d3b93896`; the
-lost local checkpoint and its runtime receipts are not represented as recovered
-artifacts. Fresh verification status and provenance are recorded in
-[evidence/tga-formatted-rebuilt.json](evidence/tga-formatted-rebuilt.json).
-The [obligation coverage matrix](TGA-REBUILD-COVERAGE.md) separates retained
-published gates, newly reconstructed tests and unavailable historical artifacts.
-The first fresh attempt stopped at a compiler exit -9 after 19 passing batches;
-its failure receipts are preserved. The independently reviewed execution-partition repair keeps
-the full ordered workload and requires a fresh full run, as detailed in the
-coverage matrix. This is not a changed oracle or a reduced corpus.
-The fresh focused Linux x86-64 run passes **169 native images / 61,857 pixels**
-and **155 checked-only controls**. Native observation has **155,600 raw bytes**
-before **247,428 normalized bytes**, plus selected uppercase aliases, totaling
-**377 native records**. Each CPU-one-thread, CPU-two-thread and JavaScript lane
-passes all **1,311 observations / 1,024,632 bytes** across **43 deterministic
-partitions**: **466,800 raw** and **557,832 normalized bytes**, with no differences.
-All **1,224 source/build/input/output seals** pass. Input and native-reference
-hashes match the failed first capture, so grouping changes neither the corpus
-nor oracle output. Candidate mipmaps remain an implicit type contract rather
-than a measured field. Fresh canonical and strict replay pass 261 scenarios / 40,101 words, plus
-333 QOI bytes and 23 palette words per lane. Ownership/transform/decode
-contracts, examples and QOI file/error checks pass. Existing Surface TGA and
-generic memory/file dispatch regressions also pass; see the complete
-[verification record](VERIFICATION.md#reconstructed-format-preserving-tga-memory-loading-2026-10-03).
-
-The unchanged formatted TGA exporter also passes 304 images / 619,451 pixels
-and 3,200 typed IO checks per CPU-one-thread/CPU-two-thread/JavaScript lane;
-FloatRGB BMP/TGA export passes 12 files on CPU/JavaScript. These preservation
-regressions add no new export or formatted-file capability. This evidence is
-isolated to the TGA-only d3-based source; any later integration must be verified
-afresh against its changed library hashes.
-
-The focused gate inspects actual native format/mipmaps and every raw byte before
-normalization, isolates checked-invalid controls from native, and requires
-CPU-one-thread, CPU-two-thread and JavaScript full-byte comparisons. At that isolated checkpoint, workflow
-files remained unchanged. The new mandatory CI gate and fresh merged-source
-585-test/149-law verification are recorded separately in
-[TGA integration](TGA-INTEGRATION.md); the integrated hosted result remains open.
+- **RGBA8 decode and export** (`tools/tga_probe.py`, gate `tga`, using the shared
+  bitmap harness in `tools/bmp_probe.py`): every accepted stream is decoded by
+  native `LoadImageFromMemory(".tga")` converted to RGBA8 and compared pixel for
+  pixel with `Surface.decode_tga`. Fixtures cover raw/RLE gray, gray-alpha,
+  BGR and BGRA in both orientations, cross-row runs, 128/129/130-pixel packet
+  limits, ignored descriptor bits, all five-bit RGB555 values with both
+  high-bit states, every cross-type depth, every palette encoding and index
+  width, palette skips, out-of-range indices and a 257-entry palette.
+  Malformed controls (empty, short header/pixels/palette, bad type/depth,
+  zero/oversized axes, packet overruns, non-byte values) check the typed error
+  only. `Surface.to_tga` output is compared byte for byte with native
+  `ExportImage(..., ".tga")` files (ABA/ABBC patterns, 128/129/130-pixel
+  boundaries, cross-row runs, seeded mixed packets), and one `Surface.write_tga`
+  file with the native file. The optional `--gpu` lane adds forced GPU.
+- **Format-preserving memory decode** (`tools/tga_format_probe.py`, gate
+  `tga-format`, driver `tools/formatted_codec.py`): a native build with TGA
+  explicitly enabled is first qualified (little-endian storage, distinct direct
+  16-bit routing, both palette index widths, formats 1/2/4/7). For each
+  accepted fixture, native width/height/mipmaps/format and every raw byte are
+  recorded before a separate RGBA8 normalization, including the `.TGA` alias.
+  Jonlib's raw export, factory and retained-owner point reads are compared with
+  the raw bytes; the Surface bridge, `Surface.decode_tga` and (for selected
+  cases) generic `Surface.decode_image` dispatch with the normalized bytes. An independent safety parser admits only complete, well-framed
+  streams to native; it never computes expected pixels. Checked-invalid
+  controls run only through Jonlib and check exact typed errors.
+- **Format-preserving file loading** (`tools/tga_file_probe.py`, gate
+  `tga-file`, driver `tools/formatted_file.py`): see
+  [IMAGE-FILES.md](IMAGE-FILES.md#how-it-is-verified).
 
 ```sh
-python3 tools/tga_format_probe.py --reference-env clean-loader --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
-python3 -m unittest discover -s tests -p test_formatted_probes.py -v
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only tga-format
 ```
 
-## Exact export packet selection
+## Known gaps
 
-The exporter emits a type-10 header, 32-bit BGRA samples, eight alpha bits and
-bottom-up rows. It preserves native default RLE selection, restarting at each
-row and capping each packet at 128 pixels. The native raw-packet scan compares
-the next pixel with the one **two positions earlier**, and shortens the packet
-when those match. Conventional adjacent-pixel run detection would change the
-encoded bytes even when decoded pixels remain identical.
+- Native permissive malformed-stream recovery, nondefault stb flags and
+  dimensions above 4096.
+- Exporter flags other than the default RLE path; `Surface.to_tga` accepts only
+  RGBA8 (wider formats go through `Image.Formatted.to_tga`).
+- Native pointer/allocation ABI, OOM behavior, maximum-area resources and
+  performance. The file cap bounds encoded input only; RLE input can describe
+  far more pixel storage.
+- Generic formatted/float dispatch.
+- GPU evidence is local only (`--gpu` on the `tga` probe); the formatted memory
+  and file gates run on CPU and JavaScript. Windows, browser and big-endian
+  hosts are unverified.
+- In the API ledger this work is part of the partial
+  `raylib:function:LoadImageFromMemory` and `raylib:function:LoadImage` entries;
+  neither is complete.
 
-The output is compared with real `ExportImage(..., ".tga")` files, including
-ABA/ABBC patterns, 128/129/130-pixel boundaries, cross-row repeated colors and
-seeded mixed packets. Nondefault exporter flags and wider source formats remain gaps.
-The dedicated writer selects TGA independently of the file extension.
-
-## Historical Surface verification
-
-```sh
-python3 tools/tga_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
-```
-
-Configure checkout variables as described in [README.md](../README.md#requirements).
-The shared bitmap comparison gate checks 64 native images (1,219 pixels), 23 typed
-errors and 11 complete exports (3,447 bytes) on CPU, JavaScript and forced Metal.
-CPU/JS additionally compare a real file export. Packed cases cover all five-bit
-channel values, both high-bit states, both orientations and mixed raw/RLE packets;
-existing gray-alpha and byte-color inputs remain in the same gate. Indexed cases
-cover every palette encoding and index width, raw/RLE packets, nonzero palette
-skips, out-of-range recovery, transparent entries and a 257-entry palette.
-Empty/unsupported/truncated palettes and indices are rejected. Shared memory
-and file dispatch exercise packed, indexed and cross-type streams. Cross-type
-fixtures verify every newly accepted combination in raw/RLE and both orientations.
-See [evidence/tga-depths.json](evidence/tga-depths.json) for hashes and lane outcomes.
-
-The altered stb implementation retains the selected MIT notice in
-[LICENSES/stb-image.txt](../LICENSES/stb-image.txt). Full platform/resource/
-performance parity remains open.
-
-Checked formats 1..8 have separate consuming `Image.Formatted.to_tga/write_tga`
-entry points preserving native channel routing and packed/R32 expansion; see
-[FORMATTED-TGA-EXPORT.md](FORMATTED-TGA-EXPORT.md). Surface decoder/encoder and
-FloatRGB scope are unchanged.
+The adapted stb code (`src/tga.bend`) retains the MIT notice in
+[LICENSES/stb-image.txt](../LICENSES/stb-image.txt).

@@ -96,8 +96,9 @@ mean `partial` in the authoritative ledger.
    `proposed_jonlib` for a planned name and `jonlib` for an existing mapping.
 3. Implement and run the applicable reference comparisons, ownership checks,
    integration examples, targets and performance measurements.
-4. Update scope, gaps, evidence and gate results. Keep exact case/lane counts
-   and input hashes in the evidence documents. Then regenerate and check:
+4. Update scope, gaps, evidence and gate results following the record rules
+   below. Case/lane counts, hashes and timings belong in gate results
+   (`.build/gates/`), not in progress records. Then regenerate and check:
 
    ```sh
    python3 tools/api_plan.py build
@@ -119,6 +120,25 @@ API remains partial. Never report mapped functions divided by 600 as overall
 parity. The release gate also requires formats, integration, performance and
 the complete target matrix.
 
+## Progress record rules
+
+`api/progress.json` records state the **contract**, not the history of how it
+was verified:
+
+- `scope`: inputs, formats and bounds; the error and ownership model; notable
+  reference quirks that are reproduced or deliberately rejected. No hosts, lanes,
+  counts of tests/observations/bytes, timings, commit hashes, CI run IDs or
+  "pending" qualification claims. Aim for 250 characters, at most 500.
+- `gaps`: at most six items naming missing contract domains or target areas
+  (formats, numeric domains, ABI, platforms, performance), about 160 characters each.
+- `evidence`: at most twelve repository paths, led by the probe(s) and the
+  topic page; no historical pages or run records.
+
+`python3 tools/api_plan.py check` (also run by `tools/check_project.py`) rejects a
+scope over 600 characters, more than six gaps, a gap over 200 characters, more than
+twelve evidence paths, and any 40-hex commit hash or 9+-digit run ID in a scope,
+gap or blocker.
+
 ## Drift and extraction verification
 
 `tools/check_project.py` runs the offline generated-file/evidence gate.
@@ -131,10 +151,12 @@ python3 tools/api_plan.py check --clang-audit \
 ```
 
 The extractor retains conditional source alternatives. An independent Clang AST
-audit compares all public C function names and exact C++ overload signatures.
-Neither audit executes those APIs. Source-aware checks also compare the whole
+audit compares all public C function names and exact C++ overload signatures,
+active typedefs/enumerators and C++ constants; a separate line audit accounts for
+every public typedef/define/constexpr alternative, including ones inactive on the
+auditing host. Neither audit executes those APIs: they establish declaration
+accounting, not runtime parity, semantic contracts or platform support. Source-aware checks also compare the whole
 catalog, including hashes and support entries. Extraction changes must be
 reviewed and explicitly regenerated with `sync --raylib-source PATH`; checks
-never repair source or generated files. Both hosted conformance jobs run this
-audit. The [inventory verification record](API-INVENTORY-VERIFICATION.md)
-records the initial proof and its limits.
+never repair source or generated files. The `api-audit` gate in `tools/gates.json` runs this
+audit on both CI hosts.
