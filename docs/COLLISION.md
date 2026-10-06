@@ -28,7 +28,7 @@ Pure Bend queries in `jonlib.bend`, adapted from pinned raylib `rshapes.c`:
 | `Collision.point_circle(point, center, radius)` | Inclusive squared-distance test. |
 | `Collision.circle_rec(center, radius, rectangle)` | Reference side/corner distance test, including tangency. |
 | `Collision.lines(start, end, other_start, other_end)` | `Maybe<&2, Vector2>`; inclusive segment endpoints, `None` for parallel/collinear lines or intersections outside either segment. |
-| `Collision.lines_for(arithmetic, start, end, other_start, other_end)` | Explicit `Collision.Arithmetic` selection described below. |
+| `Collision.lines_for(arithmetic, start, end, other_start, other_end)` | Explicit `M.Contraction` selection described below. |
 | `Collision.point_triangle(point, first, second, third)` | Strictly positive barycentric weights; excludes edges and degenerate triangles. |
 | `Collision.point_line(point, first, second, threshold)` | Strict cross-product margin and inclusive dominant-axis bounds; F32 threshold truncated toward zero like the C `int`. |
 | `Collision.circle_line(center, radius, first, second)` | Closest point on the segment; near-zero segments use the reference epsilon fallback to the first endpoint. |
@@ -59,8 +59,8 @@ rule. Segment intersections reject determinants with magnitude below
 
 The Apple clang/macOS arm64 build of raylib contracts `a*b + c` into `fmadd` in
 nine collision queries; the Linux x86_64 build does not. Each therefore has an
-explicit `_for(arithmetic, ...)` variant taking `UncontractedCollision{}` or
-`FusedCollision{}`, and its convenience form uses `UncontractedCollision{}`:
+explicit `_for(arithmetic, ...)` variant taking `M.Uncontracted{}` or
+`M.Fused{}`, and its convenience form uses `M.Uncontracted{}`:
 `lines`, `circles`, `point_circle`, `circle_rec`, `point_triangle`, `point_line`,
 `circle_line`, `spheres` and `box_sphere`. The fused shapes were read from the
 disassembled linked library: every `a*b + c*d` is `fma(a, b, c*d)`, squared
@@ -70,8 +70,8 @@ are non-dyadic inputs on which the two profiles disagree, so each host's suite
 fails if the other profile is used. These choices are independent of the
 gradient/libm profile.
 
-The harness declares the profile per host: `FusedCollision{}` for Darwin arm64,
-`UncontractedCollision{}` for Linux x86_64; other hosts need their own verified
+The harness declares the profile per host: `M.Fused{}` for Darwin arm64,
+`M.Uncontracted{}` for Linux x86_64; other hosts need their own verified
 declaration. The same declaration selects the spline and Perlin noise profiles
 ([SPLINES.md](SPLINES.md), [PERLIN.md](PERLIN.md)).
 

@@ -2,8 +2,8 @@
 
 | API | Contract |
 |---|---|
-| `Surface.decode_psd(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Surface>` with owned RGBA8 output, using `J.UncontractedDecode{}` matte arithmetic. |
-| `Surface.decode_psd_for(reference, bytes)` | Same, with an explicit `J.Image.Decode.Reference` matte profile. |
+| `Surface.decode_psd(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Surface>` with owned RGBA8 output, using `M.Uncontracted{}` matte arithmetic. |
+| `Surface.decode_psd_for(reference, bytes)` | Same, with an explicit `M.Contraction` matte profile. |
 
 Shared memory/file dispatch recognizes the exact `8BPS` signature; see
 [IMAGE-FILES.md](IMAGE-FILES.md).
@@ -52,10 +52,10 @@ then `channel*ra + inv`, truncating to a byte. Supported prematted channels are
 `channel >= 255-alpha`; values outside that domain return `InvalidImageStream`
 rather than relying on native out-of-range float-to-byte conversion.
 
-Import Jonlib as `J` and choose `J.Image.Decode.Reference` explicitly:
+Import Jonmath as `M` and choose an `M.Contraction` explicitly:
 
-- `J.UncontractedDecode{}` rounds the final multiplication and addition separately.
-- `J.FusedDecode{}` uses one correctly rounded fused multiply-add.
+- `M.Uncontracted{}` rounds the final multiplication and addition separately.
+- `M.Fused{}` uses one correctly rounded fused multiply-add.
 
 The default is uncontracted, consistent with the other image arithmetic APIs. Use
 `_for` on `Surface.decode_psd`, `Surface.decode_image` and `Surface.load_image`

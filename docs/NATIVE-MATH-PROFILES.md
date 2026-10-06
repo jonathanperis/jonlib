@@ -19,16 +19,16 @@ the diagnostic.
 ## Extrema zero-tie profiles
 
 `Vector2/3/4.min_for`, `max_for` and `Vector2/3.clamp_for` take a
-`Gradient.Reference` that fixes the result for mixed-sign zero operands (see
+`Libm` that fixes the result for mixed-sign zero operands (see
 [MATH.md](MATH.md)):
 
 | Profile | `min` of `+0`/`-0` | `max` of `+0`/`-0` |
 |---|---|---|
-| `AccurateGradient{}` | negative zero (sign OR) | positive zero (sign AND) |
-| `GnuGradient{}` | first operand | first operand |
+| `AppleLibm{}` | negative zero (sign OR) | positive zero (sign AND) |
+| `Glibc239Libm{}` | first operand | first operand |
 
 Same-sign zeros keep their common sign in both profiles. The convenience
-`min`, `max` and `clamp` select `AccurateGradient{}`.
+`min`, `max` and `clamp` select `AppleLibm{}`.
 
 ### Selection (`native_profiles.extrema_profile`)
 
@@ -52,8 +52,8 @@ profile before emitting any Bend candidate:
 The selection is recorded as `extrema_reference` (contract
 `literal-vector-extrema-v1`) in the conformance report and passed explicitly to
 those eight APIs only. Gradients, rotations, scalar clamp and magnitude clamps
-keep the host-declared gradient profile (`AccurateGradient{}` on Darwin,
-`GnuGradient{}` on Linux/glibc; see [GRADIENTS.md](GRADIENTS.md)). A selection
+keep the host-declared gradient profile (`AppleLibm{}` on Darwin,
+`Glibc239Libm{}` on Linux/glibc; see [GRADIENTS.md](GRADIENTS.md)). A selection
 names which existing contract the reference context follows; it is not evidence
 for another compiler, architecture or call path, and the full native/Bend bitwise
 comparison remains the acceptance authority.
@@ -73,8 +73,8 @@ same C source on a glibc 2.41 host:
 | `fmaxf(-0, +0)` | `00000000` | `80000000` | `00000000` |
 
 Literal folding gives negative zero for minima and positive zero for maxima
-(the `AccurateGradient{}` table); ordinary runtime builtin lowering keeps the
-first operand (the `GnuGradient{}` table); the native glibc implementation keeps
+(the `AppleLibm{}` table); ordinary runtime builtin lowering keeps the
+first operand (the `Glibc239Libm{}` table); the native glibc implementation keeps
 the second operand, which matches **neither** declared profile. Ordinary Clang
 and GCC `-O2` builds show the first two columns; strict Clang
 (`-ffp-model=strict`) and the `-fno-builtin-fminf/-fmaxf` variants call the
@@ -92,7 +92,7 @@ For `atan2f(1.0f, -1e-20f)` (input bits `3f800000, 9e3ce508`):
 - Literal, volatile-input and native-pointer glibc 2.41 calls: `3fc90fdb`
 - The Sun float control (`GNU_CONTROL` in `tools/angle_probe.py`, licence in
   [LICENSES/sun-math.txt](../LICENSES/sun-math.txt)) and Jonlib's
-  `Sun239AngleRn{}` kernel: `3fc90fda`
+  `Glibc239Libm{}` kernel: `3fc90fda`
 
 Raymath's `Vector2Angle((1,0), (-1e-20,1))` produces the native value, at `-O0`,
 with builtins suppressed and under strict floating point alike, so it is not a
@@ -102,7 +102,7 @@ constant-folding effect. In the Sun algorithm the huge-ratio branch rounds
 same operations in `gnu.ratio` and `gnu.quadrant`. glibc 2.41 replaced the Sun
 code with CORE-MATH's correctly rounded `atan2f`
 ([release announcement](https://sourceware.org/pipermail/libc-announce/2025/000045.html)),
-which is why it is a separate profile, `Glibc241AngleRn{}`.
+which is why it is a separate profile, `Glibc241Libm{}`.
 
 ## Diagnostic gate `native-math-profiles`
 

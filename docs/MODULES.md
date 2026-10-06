@@ -29,16 +29,15 @@ Both modules use the same vector/matrix values.
 ## Type ownership
 
 Jonmath owns `Vector2`, `Vector3`, `Vector4`, `Matrix`, `Matrix.Decomposition`,
-`Float64`, the shared `Gradient.Reference` numerical profile
-(`M.AccurateGradient{}`, `M.GnuGradient{}`) and the separate `Angle.Reference`
-checked-angle profile (`M.Apple2007AngleRn{}`, `M.Sun239AngleRn{}`,
-`M.Glibc241AngleRn{}`; see [ANGLES.md](ANGLES.md)). Construct values with
-`M.Vector2{...}`, `M.Matrix{...}`, `M.Float64{...}` and `M.Decomposed{...}`.
+`Float64` and the two numerical profiles shared by both modules: `M.Libm`
+(`M.AppleLibm{}`, `M.Glibc239Libm{}`, `M.Glibc241Libm{}`; which C math library
+a result follows, see [ANGLES.md](ANGLES.md)) and `M.Contraction`
+(`M.Uncontracted{}`, `M.Fused{}`; whether the reference build fuses `a*b + c`,
+see [COLLISION.md](COLLISION.md)). Construct values with `M.Vector2{...}`,
+`M.Matrix{...}`, `M.Float64{...}` and `M.Decomposed{...}`.
 
 Jonlib owns `J.Rectangle`, `J.BoundingBox`, `J.Surface` and its core-specific
 types; a bounding box's corners and geometry APIs use Jonmath vectors.
-`J.Image.Decode.Reference` and its `J.FusedDecode{}` / `J.UncontractedDecode{}`
-constructors belong to Jonlib's codec interface; see [PSD.md](PSD.md).
 `J.Image.FloatRGB` owns float image storage while its pixels use the canonical
 `M.Vector3` type; see [HDR.md](HDR.md).
 
