@@ -64,7 +64,7 @@ def arguments(description, configure=None, argv=None, *, bend=True, raylib=True)
     if raylib:
         parser.add_argument('--raylib-source', type=Path, required=True)
     parser.add_argument('--gpu', action='store_true', help='also run a forced-GPU lane; failure is fatal')
-    parser.add_argument('--jobs', type=int, default=max(1, min(4, os.cpu_count() or 1)),
+    parser.add_argument('--jobs', type=int, default=int(os.environ.get('PROBEKIT_JOBS', max(1, min(4, os.cpu_count() or 1)))),
                         help='batches compiled/run concurrently (results keep plan order)')
     if configure:
         configure(parser)
