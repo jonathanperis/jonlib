@@ -1,18 +1,17 @@
 # TGA decoding and default RLE export
 
 Jonlib reproduces the TGA paths of raylib 6.0's pinned stb_image /
-stb_image_write: RGBA8 decoding, a format-preserving decoder that keeps raylib's
-native output format, and the exporter's exact default RLE bytes.
+stb_image_write: a decoder that keeps raylib's native output format and the
+exporter's exact default RLE bytes.
 
 | API | Contract |
 |---|---|
-| `Surface.decode_tga(bytes: +List<U32>)` | `Result<&1, &1, Image.DecodeError, Surface>` with owned normalized RGBA8 pixels. |
-| `Image.Formatted.decode_tga(bytes: +List<U32>)` | `Result<&1, &1, Image.DecodeError, Image.Formatted>` with owned native format-1/2/4/7 pixels and an implicit single mip level. |
-| `Image.Formatted.load_tga(path: String)` | `IO(Result<&1, &1, Image.LoadError, Image.Formatted>)`; explicit TGA selection, inclusive 1 MiB encoded-file cap, same domain as `decode_tga`. See [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-tga-file-loading). |
-| `Surface.to_tga(surface) -> +List<U32>` | Consumes RGBA8 and returns the pinned exporter's exact default RLE bytes. |
-| `Surface.write_tga(surface, path)` | Consumes RGBA8 and returns `IO(Result<&1, &1, U32 & String, Unit>)` through Base byte-file writing and closure. |
+| `Surface.decode_tga(bytes: +List<U32>)` | `Result<&1, &1, Surface.Error, Surface>` with owned native format-1/2/4/7 pixels and an implicit single mip level. |
+| `Surface.load_tga(path: String)` | `IO(Result<&1, &1, Surface.IOError, Surface>)`; explicit TGA selection, inclusive 1 MiB encoded-file cap, same domain as `decode_tga`. See [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-tga-file-loading). |
+| `Surface.to_tga(surface)` | `Result<&1, &1, Surface & Surface.Error, +List<U32>>` with the pinned exporter's exact default RLE bytes; see [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
+| `Surface.write_tga(surface, path)` | Consumes the owner and returns `IO(Result<&1, &1, Surface.IOError, Unit>)` through Base byte-file writing and closure. |
 
-Checked formats 1..8 have separate consuming `Image.Formatted.to_tga/write_tga`
+Checked formats 1..8 have separate consuming `Surface.to_tga/write_tga`
 entry points that preserve native channel routing and packed/R32 expansion; see
 [IMAGE-EXPORT.md](IMAGE-EXPORT.md). Shared suffix/content dispatch through
 `Surface.decode_image`/`Surface.load_image` is in [IMAGE-FILES.md](IMAGE-FILES.md).
@@ -69,7 +68,7 @@ rejections.
 
 ## Format-preserving TGA memory loading
 
-`Image.Formatted.decode_tga(bytes)` keeps the checked byte/header/size/stream
+`Surface.decode_tga(bytes)` keeps the checked byte/header/size/stream
 contract above while preserving the actual pinned `LoadImageFromMemory` output.
 raylib requests stb channels zero, maps output channels 1/2/3/4 to formats
 1/2/4/7 and supplies one mip level. Output channels are independent of the
@@ -92,7 +91,7 @@ keeps integer `value*255/31` expansion, ignores bit 15 and produces expanded
 RGB888, not a packed pixel format. Descriptor alpha-count bits do not change the
 channel count or repair zero alpha. Palette-start skipping, entry-zero fallback,
 orientation, ignored horizontal-origin bits, raw/RLE stepping and valid trailing
-data follow the decoder above. `Surface.decode_tga` stays RGBA8-normalized.
+data follow the decoder above.
 
 Ownership: the immutable input list can be reused; success returns one affine
 pixel owner. Point reads return that owner alongside their `Maybe` result,
@@ -102,7 +101,7 @@ backing-array padding. Logical grayscale words have zero high 24 bits,
 gray-alpha zero high 16 bits and RGB888 a zero high byte. Failure returns only
 the typed error, never a partial image.
 
-File loading (`Image.Formatted.load_tga`) adds explicit, suffix-independent TGA
+File loading (`Surface.load_tga`) adds explicit, suffix-independent TGA
 selection, the inclusive 1,048,576-byte raster-file cap and the shared
 close-before-decode IO model; see
 [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-tga-file-loading).
@@ -160,11 +159,11 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 - Native permissive malformed-stream recovery, nondefault stb flags and
   dimensions above 4096.
 - Exporter flags other than the default RLE path; `Surface.to_tga` accepts only
-  RGBA8 (wider formats go through `Image.Formatted.to_tga`).
+  RGBA8 (wider formats go through `Surface.to_tga`).
 - Native pointer/allocation ABI, OOM behavior, maximum-area resources and
   performance. The file cap bounds encoded input only; RLE input can describe
   far more pixel storage.
-- Generic formatted/float dispatch.
+
 - GPU evidence is local only (`--gpu` on the `tga` probe); the formatted memory
   and file gates run on CPU and JavaScript. Windows, browser and big-endian
   hosts are unverified.

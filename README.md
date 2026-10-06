@@ -13,7 +13,7 @@ maps every public release-header API and supporting declaration to a work
 package, Bend target, dependencies and verification status. Current limited
 profiles remain explicitly partial.
 
-The first implementation is a headless, owned RGBA8 image library. Its drawing
+The first implementation is a headless, owned image library. Its drawing
 algorithms are Bend source. A separate C executable runs pinned raylib as a
 differential test reference.
 
@@ -39,7 +39,7 @@ and the [progress dashboard](docs/PROGRESS.md). At the time of writing the ledge
 marks 117 of raylib.h's 600 functions and 142 of raymath.h's 146 as partial and
 none as complete; the dashboard always has the current counts.
 
-- **Images** ([API](docs/API.md)): owned RGBA8 `Surface` creation, pixel access and
+- **Images** ([API](docs/API.md)): owned `Surface` creation in any raylib pixel format, pixel access and
   copies; clipped pixels, rectangles, circles, lines, triangles, fans/strips and
   outlines; image composition with tint/alpha and source/destination clipping;
   crop, extract, nearest and [filtered resize](docs/RESAMPLING.md), canvas/POT,
@@ -47,10 +47,10 @@ none as complete; the dashboard always has the current counts.
   gradients, checkerboards, noise, cellular and Perlin generation;
   [mipmaps](docs/MIPMAPS.md), [Gaussian blur](docs/BLUR.md) and
   [kernel convolution](docs/CONVOLUTION.md).
-- **Pixel formats**: byte/integer formats 1..8 as `Image.Formatted`
-  ([FORMATS.md](docs/FORMATS.md), [R32.md](docs/R32.md)), packed pixel access and
-  dithering ([PIXELS.md](docs/PIXELS.md)) and RGB float images
-  ([FLOAT-RGB.md](docs/FLOAT-RGB.md)).
+- **Pixel formats**: one `Surface` image type for raylib pixel formats 1..9
+  ([FORMATS.md](docs/FORMATS.md), [R32.md](docs/R32.md),
+  [FLOAT-RGB.md](docs/FLOAT-RGB.md)), with packed pixel access and dithering
+  ([PIXELS.md](docs/PIXELS.md)).
 - **Codecs and files** ([CODECS.md](docs/CODECS.md)): decoding QOI, BMP, TGA,
   PGM/PPM, PNG, PSD, Softimage PIC, GIF (first frame and animations) and Radiance
   HDR from memory or bounded files, with format-preserving variants
@@ -198,8 +198,8 @@ file/decode error checks. See [CODECS.md](docs/CODECS.md) and [MATH.md](docs/MAT
 ## Ownership and compatibility
 
 Drawing returns the updated `Surface`; the old value is consumed. Reads return
-the surface alongside an optional pixel. The initial profile uses RGBA8 images
-up to 4096×4096 and bounded integral coordinates represented as F32. See the API
+the surface alongside an optional pixel. Images are up to 4096×4096 in pixel
+formats 1..9 (operations follow raylib per format) and bounded integral coordinates represented as F32. See the API
 document for the vector variants, exact domains, ownership returns and reference
 edge behavior. Full image drawing, formats and platform coverage remain open work.
 

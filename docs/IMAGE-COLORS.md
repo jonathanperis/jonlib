@@ -1,22 +1,19 @@
 # Bulk and point image colors
 
 Jonlib adapts raylib 6.0 `LoadImageColors` (bulk) and `GetImageColor` (point)
-for formatted and RGB float images.
+for every pixel format.
 
 ```bend
-Image.Formatted.colors(image) -> List<U32>
-Image.FloatRGB.colors(image) -> Result<&1, &1, Image.FloatRGB, List<U32>>
-Image.Formatted.get(image, x: U32, y: U32) -> Image.Formatted & Maybe<&2, U32>
-Image.FloatRGB.get(image, x: U32, y: U32) -> Image.FloatRGB & Maybe<&2, U32>
+Surface.colors(image) -> Result<&1, &1, Surface & Surface.Error, List<U32>>
+Surface.get(image, x: U32, y: U32) -> Surface & Maybe<&2, U32>
 ```
 
 ## Contract
 
-- `Image.Formatted.colors` consumes a checked format-1..8 image and returns every
-  pixel as packed RGBA8 in row-major order.
-- `Image.FloatRGB.colors` truncates each finite `[0,1]` RGB sample through native
-  F32 `component*255`, with opaque alpha. Unsupported samples return the
-  original owner in `Fail`.
+- `Surface.colors` consumes the image and returns every pixel as packed RGBA8 in
+  row-major order. Formats 1..8 always succeed. R32G32B32 truncates each finite
+  `[0,1]` sample through native F32 `component*255`, with opaque alpha; other
+  samples return the original owner with `OutOfDomain`.
 - `get` returns the retained owner and the selected color. Bounds are checked
   before array access; out-of-bounds coordinates return `None`. Float reads also
   return `None` for an unsupported selected sample. Only the selected pixel is
@@ -34,6 +31,7 @@ These match actual `LoadImageColors` / `GetImageColor`:
 | 6 RGBA4 | Each nibble ×17 |
 | 4 RGB888, 7 RGBA8888 | Bytes preserved (RGB888 opaque) |
 | 8 R32 | Red-only color with opaque alpha (see [R32.md](R32.md)) |
+| 9 R32G32B32 | Truncated `component*255` with opaque alpha |
 
 These deliberately differ from `ImageFormat`'s normalized reciprocal
 arithmetic and from the low-level `GetPixelColor` (`Pixel.get_color`, see

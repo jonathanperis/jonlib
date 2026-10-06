@@ -2,9 +2,8 @@
 
 | API | Contract |
 |---|---|
-| `Surface.decode_pic(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Surface>` with owned RGBA8 output. |
-| `Image.Formatted.decode_pic(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Image.Formatted>` preserving native RGB888 (4) or RGBA8888 (7); see [format-preserving memory loading](#format-preserving-pic-memory-loading). |
-| `Image.Formatted.load_pic(path: String)` | Returns `IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` through the inclusive 1 MiB raster-file boundary, selecting PIC independently of the suffix. |
+| `Surface.decode_pic(bytes: +List<U32>)` | Returns `Result<&1, &1, Surface.Error, Surface>` preserving native RGB888 (4) or RGBA8888 (7); see [format-preserving memory loading](#format-preserving-pic-memory-loading). |
+| `Surface.load_pic(path: String)` | Returns `IO(Result<&1, &1, Surface.IOError, Surface>)` through the inclusive 1 MiB raster-file boundary, selecting PIC independently of the suffix. |
 
 Shared memory/file dispatch recognizes the native `53 80 f6 34` signature and
 `PICT` marker at byte 88; see [IMAGE-FILES.md](IMAGE-FILES.md).
@@ -51,8 +50,8 @@ integer channel operations.
 
 ## Format-preserving PIC memory loading
 
-`Image.Formatted.decode_pic(bytes: +List<U32>)` returns
-`Result<&1, &1, Image.DecodeError, Image.Formatted>` across the complete checked
+`Surface.decode_pic(bytes: +List<U32>)` returns
+`Result<&1, &1, Surface.Error, Surface>` across the complete checked
 PIC domain above.
 
 The result preserves width/height, an implicit single mip and every native
@@ -66,8 +65,7 @@ components. The selected-input-sample size accumulator is not an output channel
 count.
 
 The shared decoder carries this metadata in its private owned result.
-`Surface.decode_pic` discards it and retains the same canonical RGBA8 pixels.
-The formatted adapter reuses the affine pixel array, swaps bytes with integer
+`Surface.decode_pic` reuses the affine pixel array, packs bytes with integer
 operations, clears RGB's unused high byte and exports only logical pixels. There
 is no second parser, floating conversion, `ImageFormat` normalization or opacity
 inference. Dimensions 1..4096, packet ordering, RLE rules, global byte

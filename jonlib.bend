@@ -645,7 +645,8 @@ type Surface.IOError is Type:
 # Operations raylib applies as LoadImageColors, an RGBA8 step, then ImageFormat.
 type Surface.Recolor is Type:
   Recolored{transform: Color.Transform}
-  Blurred{size: U32}
+  Replaced{original: U32, replacement: U32}
+  BlurredPremultiplied{size: U32}
   Convolved{kernel: +List<F32>}
   Resized{width: U32, height: U32}
   ResizedNearest{width: U32, height: U32}
@@ -1023,21 +1024,9 @@ def Color.Transform.brightness(amount: F32) -> Color.Transform:
 def Rgba.alpha_clear(surface: Rgba, color: U32, threshold: F32) -> Rgba:
   Rgba.color.transform(surface, AlphaClear{F32.to_u32((threshold * 255.0 : F32)), color})
 
-def Rgba.alpha_premultiply(surface: Rgba) -> Rgba:
-  Rgba.color.transform(surface, AlphaPremultiply{})
-
 def Rgba.blur_gaussian.premultiplied(size: U32, surface: Rgba) -> Rgba:
   Rgba{+width, +height, pixels} = surface
   Rgba{width, height, Blur.blur(width, height, size, pixels)}
-
-def Rgba.blur_gaussian.checked(valid: Bool, surface: Rgba, size: U32) -> Result<&1, &1, Rgba & Surface.Error, Rgba>:
-  match valid:
-    case False{}: Fail{(surface, InvalidSize{})}
-    case True{}: Done{Rgba.blur_gaussian.premultiplied(size, Rgba.alpha_premultiply(surface))}
-
-def Rgba.blur_gaussian(surface: Rgba, +size: U32) -> Result<&1, &1, Rgba & Surface.Error, Rgba>:
-  Rgba{+width, +height, pixels} = surface
-  Rgba.blur_gaussian.checked(((size <= width) && (size <= height) : U32), Rgba{width, height, pixels}, size)
 
 def Rgba.convolution.result(width: U32, height: U32, result: Result<&1, &1, Array<U32>, Array<U32>>) -> Result<&1, &1, Rgba & Surface.Error, Rgba>:
   match result:
@@ -2395,7 +2384,8 @@ def Surface.to_pot(surface: Surface, fill: U32) -> Result<&1, &1, Surface & Surf
 def Surface.recolor.apply(op: Surface.Recolor, image: Rgba) -> Result<&1, &1, Rgba & Surface.Error, Rgba>:
   match op:
     case Recolored{transform}: Done{Rgba.color.transform(image, transform)}
-    case Blurred{size}: Rgba.blur_gaussian(image, size)
+    case Replaced{original, replacement}: Done{Rgba.color.transform(image, ImageReplace{original, replacement})}
+    case BlurredPremultiplied{size}: Done{Rgba.blur_gaussian.premultiplied(size, image)}
     case Convolved{kernel}: Rgba.kernel_convolution(image, kernel)
     case Resized{width, height}: Rgba.resize(image, width, height)
     case ResizedNearest{width, height}: Rgba.resize_nn(image, width, height)
@@ -2405,10 +2395,22 @@ def Surface.recolor.finish(keep: Surface, +format: U32, result: Result<&1, &1, R
     case Fail{Tuple{_, error}}: Fail{(keep, error)}
     case Done{image}: Done{Surface.from_rgba(image, format)}
 
+# ImageColorReplace returns to the original format only when it has no alpha
+# channel (GRAYSCALE, R5G6B5, R8G8B8, R32G32B32); others stay R8G8B8A8.
+def Surface.recolor.output(op: Surface.Recolor, +format: U32) -> Surface.Recolor & U32:
+  match op:
+    case Replaced{original, replacement}:
+      (Replaced{original, replacement}, Bool.pick(U32, U32.is_eq(format, 1) || U32.is_eq(format, 3) || U32.is_eq(format, 4) || U32.is_eq(format, 9), format, 7))
+    case _: (op, format)
+
+def Surface.recolor.applied(keep: Surface, image: Rgba, selected: Surface.Recolor & U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  (op, target) = selected
+  Surface.recolor.finish(keep, target, Surface.recolor.apply(op, image))
+
 def Surface.recolor.converted(keep: Surface, op: Surface.Recolor, +format: U32, converted: Result<&1, &1, Surface & Surface.Error, Rgba>) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match converted:
     case Fail{Tuple{_, error}}: Fail{(keep, error)}
-    case Done{image}: Surface.recolor.finish(keep, format, Surface.recolor.apply(op, image))
+    case Done{image}: Surface.recolor.applied(keep, image, Surface.recolor.output(op, format))
 
 def Surface.recolor.cloned(op: Surface.Recolor, +width: U32, +height: U32, +format: U32, pair: Surface.Pixels & Surface.Pixels) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   (keep, work) = pair
@@ -2447,13 +2449,26 @@ def Surface.color_brightness(surface: Surface, +amount: F32) -> Result<&1, &1, S
     Recolored{Color.Transform.brightness(amount)})
 
 def Surface.color_replace(surface: Surface, original: U32, replacement: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
-  Surface.recolor(surface, Recolored{ImageReplace{original, replacement}})
+  Surface.recolor(surface, Replaced{original, replacement})
 
 def Surface.alpha_premultiply(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Surface.recolor(surface, Recolored{AlphaPremultiply{}})
 
-def Surface.blur_gaussian(surface: Surface, size: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
-  Surface.recolor(surface, Blurred{size})
+def Surface.blur.premultiplied(size: U32, result: Result<&1, &1, Surface & Surface.Error, Surface>) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match result:
+    case Fail{failure}: Fail{failure}
+    case Done{surface}: Surface.recolor(surface, BlurredPremultiplied{size})
+
+def Surface.blur.checked(valid: Bool, surface: Surface, size: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match valid:
+    case False{}: Fail{(surface, InvalidSize{})}
+    case True{}: Surface.blur.premultiplied(size, Surface.recolor(surface, Recolored{AlphaPremultiply{}}))
+
+# ImageBlurGaussian first runs ImageAlphaPremultiply, which returns to the
+# original format, then blurs that image's colors and converts back again.
+def Surface.blur_gaussian(surface: Surface, +size: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface{+width, +height, format, pixels} = surface
+  Surface.blur.checked(((size <= width) && (size <= height) : U32), Surface{width, height, format, pixels}, size)
 
 def Surface.kernel_convolution(surface: Surface, kernel: +List<F32>) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Surface.recolor(surface, Convolved{kernel})

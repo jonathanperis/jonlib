@@ -3516,9 +3516,9 @@
       "phase": 0,
       "sequence": 0,
       "status": "partial",
-      "jonlib": "Surface / Image.Formatted / Image.Packed16 / Image.FloatRGB / Image.Mipmaps",
+      "jonlib": "Surface / Image.Mipmaps",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 surfaces, byte/integer format images, raw 16-bit dithering outputs and RGB float storage, dimensions 1..4096. Image.Mipmaps owns complete RGBA8 base-to-1x1 levels; the other image owners retain a single level.",
+      "scope": "One owned Surface per image: dimensions 1..4096, one mip level and raylib PixelFormat 1..9 (R8G8B8A8 as canonical Color words, other byte formats as native samples, R32G32B32 as vectors). Image.Mipmaps owns complete R8G8B8A8 base-to-1x1 levels.",
       "gaps": [
         "Remaining image formats, existing/other-format mipmap chains and full dimension domain",
         "Native allocation ABI and complete integration/target/resource/performance gates"
@@ -40311,11 +40311,11 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.load_image / Surface.load_image_for / Surface.load_qoi / Image.FloatRGB.load_hdr / Image.Formatted.load_qoi / Image.Formatted.load_pnm / Image.Formatted.load_tga / Image.Formatted.load_bmp / Image.Formatted.load_png / Image.Formatted.load_pic",
+      "jonlib": "Surface.load_image / Surface.load_image_for / Surface.load_qoi / Surface.load_hdr / Surface.load_pnm / Surface.load_tga / Surface.load_bmp / Surface.load_png / Surface.load_pic",
       "mapping_state": "implemented",
-      "scope": "Bounded ordinary-file loading: native last-dot suffix/token/content selection across the RGBA8 BMP/PNG/TGA/PNM/PSD/PIC/GIF profiles, QOI (inclusive 83,886,102-byte cap) and FloatRGB.load_hdr (1 MiB cap). Image.Formatted.load_{qoi,pnm,tga,bmp,png,pic} select the codec regardless of filename and keep native format and raw bytes; raster files share an inclusive 1,048,576-byte pre-read cap. One exact-length read, close before decode and typed file/decode errors; Base does not report close failures.",
+      "scope": "Bounded ordinary-file loading returning the native format: last-dot suffix/token/content selection across the BMP/PNG/TGA/PNM/PSD/PIC/GIF profiles and QOI (inclusive 83,886,102-byte cap); Surface.load_{qoi,png,bmp,tga,pnm,pic,hdr} select the codec regardless of filename (HDR: 1 MiB cap); raster files share an inclusive 1,048,576-byte pre-read cap. One exact-length read, close before decode and typed file/decode errors; Base does not report close failures.",
       "gaps": [
-        "JPEG and other payload codecs, generic formatted/float dispatch, remaining families and larger files/decoder domains",
+        "JPEG and other payload codecs, remaining families and larger files/decoder domains",
         "Original pixel-format metadata for the other normalized codec paths, additional native arithmetic profiles and reference callbacks",
         "Concurrent/special-file semantics, OS-close failure reporting and native OOM behavior",
         "Encoded-size caps do not bound decoded area, heap use or allocation success",
@@ -40385,9 +40385,9 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Image.Formatted.load_raw / Image.FloatRGB.load_raw",
+      "jonlib": "Surface.load_raw",
       "mapping_state": "implemented",
-      "scope": "Ordinary unchanging files, dimensions 1..4096: Image.Formatted.load_raw for formats 1..7 and finite [0,1] R32 format 8 (both zero signs, positive subnormals); Image.FloatRGB.load_raw for non-NaN RGB F32 format 9. Native fitting-header/fallback-to-zero selection, exact payload words and signed-int bounds; handles close before decoding. InvalidRawSamples (out-of-domain payload) and InvalidRawRequest (float NaNs) follow closure; formatted format 9 is a pre-open InvalidRawRequest.",
+      "scope": "Ordinary unchanging files, dimensions 1..4096, formats 1..9: R32 finite [0,1] (both zero signs, positive subnormals) and non-NaN R32G32B32 words. Native fitting-header/fallback-to-zero selection, exact payload words and signed-int bounds; handles close before decoding. DataError{OutOfDomain} for unsupported samples follows closure; invalid requests fail before opening.",
       "gaps": [
         "Other formats, broader R32 domains, format-9 NaN payload parity, signed/out-of-range parameters and concurrent/special files",
         "Native callbacks/allocation ABI and complete target/integration/performance coverage"
@@ -40583,11 +40583,11 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Image.FloatRGB.decode_hdr / Image.Formatted.decode_qoi / Image.Formatted.decode_pnm / Image.Formatted.decode_tga / Image.Formatted.decode_bmp / Image.Formatted.decode_png / Image.Formatted.decode_pic",
+      "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Surface.decode_hdr",
       "mapping_state": "implemented",
-      "scope": "Shared token/content dispatch decodes QOI, BMP, TGA, binary 8/16-bit PNM, PNG (1..16-bit, Adam7, native-default CgBI; 1 MiB encoded/64 MiB filtered caps), PSD (raw/PackBits, explicit matte arithmetic), PIC and first-frame GIF to owned RGBA8, dimensions 1..4096. Radiance HDR decodes to FloatRGB with exact F32 bits. Image.Formatted.decode_{qoi,pnm,tga,bmp,png,pic} keep the native format (grayscale, gray-alpha, RGB888, RGBA8888) and raw bytes, one mip. Malformed input returns typed errors.",
+      "scope": "Shared token/content dispatch decodes QOI, BMP, TGA, binary 8/16-bit PNM, PNG (1..16-bit, Adam7, native-default CgBI; 1 MiB encoded/64 MiB filtered caps), PSD (raw/PackBits, explicit matte arithmetic), PIC and first-frame GIF, dimensions 1..4096, keeping the native format (GRAYSCALE, GRAY_ALPHA, R8G8B8 or R8G8B8A8; PSD and GIF R8G8B8A8) and exact bytes; Surface.decode_hdr returns R32G32B32 with exact F32 bits. Malformed input returns typed errors.",
       "gaps": [
-        "JPEG and other payload codecs; shared formatted/float dispatch and HDR conversion",
+        "JPEG and other payload codecs; HDR in the shared dispatch",
         "Original pixel-format metadata for the remaining normalized codecs (PSD, GIF) and remaining dispatch families",
         "Nondefault external stb decoder flags, PSD out-of-range matte casts and permissive incomplete/excess raster recovery",
         "Other permissive malformed-stream recovery, dimensions above 4096, native pointer/allocation ABI and OOM parity",
@@ -40886,9 +40886,9 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.to_bmp/to_tga/to_qoi/write_bmp/write_tga/write_qoi/write_png/write_raw / Image.FloatRGB.write_raw/write_png/write_bmp/write_tga / Surface.write_image",
+      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Surface.to_bmp/to_tga/to_qoi/write_bmp/write_tga/write_qoi/write_png/write_raw / Surface.write_raw/write_png/write_bmp/write_tga / Surface.write_image",
       "mapping_state": "implemented",
-      "scope": "Surface.write_image picks PNG/BMP/TGA/QOI/RAW by native ASCII-case-insensitive last-dot suffix. RGBA8: QOI, V4 BMP, RLE TGA, default PNG. Formats 1..8 (R32 finite [0,1]): PNG and RAW bytes, 24-bit/V4 BMP and 1..4-channel RLE TGA via native LoadImageColors rules; formatted QOI only from RGB888/RGBA8888. RGB float: exact non-NaN RAW words; finite [0,1] PNG/BMP/TGA. Rejected sources keep their owner before any file opens; accepted writes consume it, close the handle and return typed Base errors.",
+      "scope": "Surface.write_image picks PNG/BMP/TGA/QOI/RAW by native ASCII-case-insensitive last-dot suffix. GRAYSCALE, GRAY_ALPHA, R8G8B8 and R8G8B8A8 write stored samples (24-bit/V4 BMP, 1..4-channel RLE TGA, default PNG); other formats use native LoadImageColors rules (R32 finite [0,1], R32G32B32 finite [0,1]); QOI only from R8G8B8/R8G8B8A8; RAW writes exact stored words. Rejected sources keep their owner before any file opens; accepted writes consume it, close the handle and return typed errors.",
       "gaps": [
         "JPEG/KTX and other formats/options; extension dispatch for non-Surface owners; NaN parity and native out-of-range auxiliary casts",
         "Native callbacks/allocation ABI and complete targets/integration/performance",
@@ -40960,9 +40960,9 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.to_png / Image.Formatted.to_png / Image.FloatRGB.to_png",
+      "jonlib": "Surface.to_png / Surface.export_to_memory",
       "mapping_state": "implemented",
-      "scope": "Exact default PNG (filtering, compression, checksums) from RGBA8, byte formats 1/2/4/7, finite [0,1] R32 format 8 and non-NaN RGB float format 9. Float and R32 sources use the native raw little-endian storage-prefix interpretation (R32: all four sample bytes as RGBA), distinct from normalized file export. Packed formats 3/5/6 are rejected with the original owner.",
+      "scope": "Exact default PNG (filtering, compression, checksums) from byte formats 1/2/4/7, finite [0,1] R32 and R32G32B32. Float and R32 sources use the native raw little-endian storage-prefix interpretation (R32: all four sample bytes as RGBA), distinct from file export. Packed formats 3/5/6 and other file types are rejected with the original owner.",
       "gaps": [
         "Packed/other float source formats, NaN parity, configured flags and generic dispatch",
         "Native pointer/output-size/allocator ABI and ownership correspondence",
@@ -41029,9 +41029,9 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Image.Formatted.to_code / Image.Formatted.write_code / Image.FloatRGB.to_code / Image.FloatRGB.write_code",
+      "jonlib": "Surface.to_code / Surface.write_code",
       "mapping_state": "implemented",
-      "scope": "Checked formats 1..7, finite [0,1] R32 format 8 and non-NaN RGB float format 9; payload at most 65536 bytes; non-NUL ASCII paths with 1..200-character basenames. Exact native banner/credits, uppercase basename/last-extension rules, dimensions/format/count, raw little-endian sample bytes, unpadded hex and default line breaks. Unsupported sources/requests keep their owner before any file is opened; typed Base errors and handle closure.",
+      "scope": "Every Surface format (R32 finite [0,1]); payload at most 65536 bytes; non-NUL ASCII paths with 1..200-character basenames. Exact native banner/credits, uppercase basename/last-extension rules, dimensions/format/count, raw little-endian sample bytes, unpadded hex and default line breaks. Rejected requests keep their owner (InvalidRequest) before any file is opened; typed Base errors and handle closure.",
       "gaps": [
         "NaN payload parity, wider payload/path/Unicode/truncation domains, native long-name buffer overflow and other source formats",
         "Configured line widths and native allocation/ownership ABI",
@@ -41100,7 +41100,7 @@
       "status": "partial",
       "jonlib": "Surface.create",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 Surface filled with one packed color; dimensions 1..4096 per axis, otherwise None. Power-of-two storage padding is excluded from exports.",
+      "scope": "R8G8B8A8 Surface filled with one packed color; dimensions 1..4096 per axis, otherwise None. Power-of-two storage padding is excluded from exports.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -41653,9 +41653,9 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.copy / Image.FloatRGB.copy",
+      "jonlib": "Surface.copy",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 and non-NaN RGB F32 copies, returning the source and an independent clone with exact native sample words.",
+      "scope": "Every Surface format; returns the source and an independent clone with exact stored samples. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -41671,7 +41671,8 @@
       "evidence": [
         "docs/API.md",
         "tools/float_rgb_transform_probe.py",
-        "docs/FLOAT-RGB.md"
+        "docs/FLOAT-RGB.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -41713,9 +41714,9 @@
       "phase": 1,
       "sequence": 8,
       "status": "partial",
-      "jonlib": "Surface.extract / Image.FloatRGB.extract",
+      "jonlib": "Surface.extract",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 and non-NaN RGB F32 positive integral in-bounds regions; original owner retained and extracted storage independent with exact native samples.",
+      "scope": "Every Surface format; positive integral in-bounds regions; original owner retained and extracted storage independent with exact samples. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -41731,7 +41732,8 @@
       "evidence": [
         "docs/API.md",
         "tools/float_rgb_crop_probe.py",
-        "docs/FLOAT-RGB.md"
+        "docs/FLOAT-RGB.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -41774,9 +41776,9 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.from_channel / Image.Formatted.from_channel / Image.FloatRGB.from_channel",
+      "jonlib": "Surface.from_channel",
       "mapping_state": "implemented",
-      "scope": "Retained sources and independent grayscale output: Surface returns normalized RGBA8; formats 1..7 and finite [0,1] RGB float return native format-1 storage. Bounded integral selectors retain native per-format redirection, packed reciprocal normalization and F32 byte truncation. Unsupported typed requests preserve original owners. Checked normalized R32 format 8 redirects every valid selector to its sole sample, retaining exact source words and producing independent format-1 output.",
+      "scope": "Retained sources and independent GRAYSCALE output for every format (R32 finite [0,1], R32G32B32 finite [0,1]). Bounded integral selectors keep native per-format redirection (R32 always its sole sample), packed reciprocal normalization and F32 byte truncation. Unsupported requests preserve original owners. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Other selector/source domains, formats and mipmaps",
         "Complete native ABI/resource/target/performance coverage",
@@ -41800,7 +41802,8 @@
         "docs/IMAGE-CHANNELS.md",
         "docs/R32.md",
         "tools/image_format_probe.py",
-        "tools/r32_image_probe.py"
+        "tools/r32_image_probe.py",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -41959,9 +41962,9 @@
       "phase": 1,
       "sequence": 6,
       "status": "partial",
-      "jonlib": "Image.Formatted.convert / Surface.to_formatted / Image.Formatted.to_surface / Image.Formatted.to_float_rgb / Surface.to_float_rgb / Image.FloatRGB.to_surface / Image.FloatRGB.from_bytes / Image.FloatRGB.to_bytes / Image.FloatRGB.to_formatted",
+      "jonlib": "Surface.format / Surface.from_bytes / Surface.export",
       "mapping_state": "implemented",
-      "scope": "Owned formats 1..8 plus bidirectional RGB float format-9 bridges: native direct normalization, packed reciprocal expansion, alpha discard, thresholds and bit-preserving no-ops; float encoding needs finite [0,1] samples. Format 8 (R32) holds exact finite [0,1] words incl. positive subnormals and both zero signs; conversion to it uses uncontracted F32 luminance (also from format 9), from it red-only normalization; 8-to-9 is direct. Exact non-NaN raw words; failures return the original owner.",
+      "scope": "Surface.format between formats 1..9: native direct normalization, packed reciprocal expansion, alpha discard, thresholds and bit-preserving no-ops; float encoding needs finite [0,1] samples. R32 holds exact finite [0,1] words incl. positive subnormals and both zero signs; conversion to it uses uncontracted F32 luminance (also from format 9), from it red-only normalization; 8-to-9 is direct. Failures return the original owner.",
       "gaps": [
         "Other float/half/compressed formats, mipmaps and other thresholds/endianness",
         "NaN payload interoperability, out-of-domain float casts and native allocation ABI",
@@ -42030,9 +42033,9 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.to_pot / Image.FloatRGB.to_pot",
+      "jonlib": "Surface.to_pot",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 and non-NaN RGB F32, dimensions 1..4096; canvas expansion to next power-of-two dimensions with native fill/no-op behavior. Format 9 preserves sample words and ignores fill, leaving exposed pixels zero.",
+      "scope": "Every Surface format, dimensions 1..4096; canvas expansion to next power-of-two dimensions with SetPixelColor fill (R32 and R32G32B32 stay zero) and the native no-op for POT sizes. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Other dimensions/formats/mipmaps and NaN payload parity",
         "Full target/performance gates"
@@ -42051,7 +42054,8 @@
         "tools/conformance.py",
         "tools/float_rgb_canvas_probe.py",
         "docs/ROTATION.md",
-        "docs/FLOAT-RGB.md"
+        "docs/FLOAT-RGB.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42094,9 +42098,9 @@
       "phase": 1,
       "sequence": 8,
       "status": "partial",
-      "jonlib": "Surface.crop / Image.FloatRGB.crop",
+      "jonlib": "Surface.crop",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 and non-NaN RGB F32 integral crops; positive clipped results or native strictly-outside-origin no-ops. Exact samples and returned owners on rejection.",
+      "scope": "Every Surface format; integral crops with positive clipped results or native strictly-outside-origin no-ops; exact samples and returned owners on rejection. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -42112,7 +42116,8 @@
       "evidence": [
         "docs/API.md",
         "tools/float_rgb_crop_probe.py",
-        "docs/FLOAT-RGB.md"
+        "docs/FLOAT-RGB.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42157,9 +42162,9 @@
       "status": "partial",
       "jonlib": "Surface.alpha_crop",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8; reference alpha bounds/cropping for threshold 0..1; empty selections preserve the original image unchanged.",
+      "scope": "Every Surface format; reference alpha bounds then a byte-level crop for threshold 0..1; empty selections preserve the original image unchanged. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Other formats/mipmaps and complete platform/performance gates"
+        "Mipmaps and complete platform/performance gates"
       ],
       "blocker": null,
       "gates": {
@@ -42172,7 +42177,8 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42216,7 +42222,7 @@
       "status": "partial",
       "jonlib": "Surface.alpha_clear",
       "mapping_state": "implemented",
-      "scope": "RGBA8; finite threshold 0..1 converted to an inclusive byte cutoff; replaces all four channels.",
+      "scope": "R8G8B8A8 owners; finite threshold 0..1 converted to an inclusive byte cutoff; replaces all four channels. Other formats return UnsupportedFormat with the owner (surface-format negative controls).",
       "gaps": [
         "Other formats/mipmaps and full target/performance gates"
       ],
@@ -42231,7 +42237,8 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42276,7 +42283,7 @@
       "status": "partial",
       "jonlib": "Surface.alpha_mask",
       "mapping_state": "implemented",
-      "scope": "Same-size RGBA8 surfaces; reference normalized grayscale mask values replace destination alpha; original mask retained; mismatched dimensions return both owners with InvalidSize.",
+      "scope": "Same-size R8G8B8A8 owners; reference normalized grayscale mask values replace destination alpha; original mask retained; mismatched dimensions return both owners with InvalidSize. Other formats return UnsupportedFormat with both owners.",
       "gaps": [
         "Grayscale/other image formats",
         "Reference warning/no-op adaptation on mismatched sizes",
@@ -42338,9 +42345,9 @@
       "status": "partial",
       "jonlib": "Surface.alpha_premultiply",
       "mapping_state": "implemented",
-      "scope": "RGBA8; reference F32 alpha division and RGB multiplication with byte truncation; alpha retained.",
+      "scope": "RGBA8; reference F32 alpha division and RGB multiplication with byte truncation; alpha retained. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Other formats/mipmaps and full target/performance gates"
+        "Mipmaps and full target/performance gates"
       ],
       "blocker": null,
       "gates": {
@@ -42353,7 +42360,8 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42397,7 +42405,7 @@
       "status": "partial",
       "jonlib": "Surface.blur_gaussian",
       "mapping_state": "implemented",
-      "scope": "Checked RGBA8 surfaces and U32 blur size 0..min(width,height). Native byte-premultiplied alpha, four horizontal/vertical sliding-window iterations, remove-before-add sums, edge divisors, per-vertical-pass byte truncation and reverse premultiplication. Zero size retains native quantization; excessive requests return the original with InvalidSize.",
+      "scope": "Any Surface format: ImageAlphaPremultiply back to the source format, then LoadImageColors, the RGBA8 blur and ImageFormat. U32 size 0..min(width,height); four sliding-window iterations, remove-before-add sums, edge divisors, per-vertical-pass byte truncation and reverse premultiplication. Excessive sizes return the original with InvalidSize. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Other source formats/mipmaps and configured iteration counts",
         "Negative/excessive native blur sizes and native allocation ABI",
@@ -42415,7 +42423,8 @@
       "evidence": [
         "src/blur.bend",
         "tools/blur_probe.py",
-        "docs/BLUR.md"
+        "docs/BLUR.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42459,7 +42468,7 @@
       "status": "partial",
       "jonlib": "Surface.kernel_convolution",
       "mapping_state": "implemented",
-      "scope": "Checked RGBA8 surfaces and immutable square F32 kernels of 0..225 entries; coefficients zero or finite magnitude 2^-16..16. Native flat unsigned-index sampling/row wrapping, odd/even anchoring, normalized channel multiplication, ordered accumulation, RGB clamping and unclamped defined alpha conversion. Unsupported kernels or alpha casts return the unchanged original with InvalidKernel, including late failures.",
+      "scope": "Any Surface format via LoadImageColors, the RGBA8 kernel and ImageFormat back; immutable square F32 kernels of 0..225 entries, coefficients zero or finite magnitude 2^-16..16. Native flat unsigned-index sampling/row wrapping, odd/even anchoring, normalized channel multiplication, ordered accumulation, RGB clamping and unclamped defined alpha conversion. Unsupported kernels or alpha casts return the unchanged original with InvalidKernel, including late failures. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Wider kernels/coefficient domains and undefined native alpha casts",
         "Other source formats/mipmaps and native allocation ABI",
@@ -42478,7 +42487,8 @@
         "src/convolution.bend",
         "tools/convolution_probe.py",
         "docs/CONVOLUTION.md",
-        "tests/transforms.bend"
+        "tests/transforms.bend",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42520,9 +42530,9 @@
       "phase": 1,
       "sequence": 8,
       "status": "partial",
-      "jonlib": "Surface.resize / Image.FloatRGB.resize",
+      "jonlib": "Surface.resize",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 and finite [0,1] RGB F32; one mip; dimensions 1..4096. Default Catmull-Rom/Mitchell filters retain binary64 normalization, clamp folding and native alpha/pass/accumulation order. Float input follows native RGBA8 truncation and re-normalization, including same-size quantization. Unsupported requests preserve original owners.",
+      "scope": "R8G8B8A8 and, via LoadImageColors/ImageFormat, formats 3, 5, 6, 8 and 9; dimensions 1..4096. Default Catmull-Rom/Mitchell filters retain binary64 normalization, clamp folding and native alpha/pass/accumulation order; conversions quantize even at unchanged sizes. GRAYSCALE, GRAY_ALPHA and R8G8B8 use 1..3-channel stbir paths in raylib and return UnsupportedFormat. Rejected requests preserve original owners; formats 3..9 are compared on the surface-format profile.",
       "gaps": [
         "Other image formats and mipmap chains",
         "Dimensions beyond the initial Surface domain",
@@ -42543,13 +42553,13 @@
         "tests/transforms.bend",
         "tools/float_rgb_resize_probe.py",
         "docs/FLOAT-RGB.md",
-        "tools/resize_conformance.py"
+        "tools/resize_conformance.py",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [
-        "Surface.resize",
-        "Image.FloatRGB.resize"
+        "Surface.resize"
       ],
       "milestone_dependencies": [
         "images",
@@ -42588,9 +42598,9 @@
       "phase": 1,
       "sequence": 8,
       "status": "partial",
-      "jonlib": "Surface.resize_nn / Image.FloatRGB.resize_nn",
+      "jonlib": "Surface.resize_nn",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 and finite [0,1] RGB F32, dimensions 1..4096. Preserves native plus-one fixed-point mapping where indices are in bounds; float input follows native RGBA8 truncation and re-normalization even at unchanged dimensions. Rejection retains the original owner.",
+      "scope": "Any Surface format via LoadImageColors, the plus-one fixed-point mapping and ImageFormat back, dimensions 1..4096; unsafe mappings return the original owner. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -42606,7 +42616,8 @@
       "evidence": [
         "docs/API.md",
         "tools/float_rgb_resize_probe.py",
-        "docs/FLOAT-RGB.md"
+        "docs/FLOAT-RGB.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42648,12 +42659,12 @@
       "phase": 1,
       "sequence": 8,
       "status": "partial",
-      "jonlib": "Surface.resize_canvas / Image.FloatRGB.resize_canvas",
+      "jonlib": "Surface.resize_canvas",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 and non-NaN RGB F32, dimensions 1..4096; bounded integral offsets with positive overlap for changed sizes. Exact sample movement and same-size no-ops; native format-9 fill is ignored and exposed RGB samples remain zero. Rejected requests retain original owners.",
+      "scope": "Every Surface format, dimensions 1..4096; bounded integral offsets with positive overlap for changed sizes. Exact sample movement and same-size no-ops; the fill is stored with SetPixelColor, which leaves R32 and R32G32B32 canvases zero. Rejected requests retain original owners. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "No-overlap/unsafe reference copy domains",
-        "Other formats/mipmaps, NaN payload parity and complete platform/performance gates"
+        "Mipmaps, NaN payload parity and complete platform/performance gates"
       ],
       "blocker": null,
       "gates": {
@@ -42669,7 +42680,8 @@
         "tests/transforms.bend",
         "tools/float_rgb_canvas_probe.py",
         "docs/API.md",
-        "docs/FLOAT-RGB.md"
+        "docs/FLOAT-RGB.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42714,7 +42726,7 @@
       "status": "partial",
       "jonlib": "Surface.mipmaps / Image.Mipmaps.entries / Image.Mipmaps.unload",
       "mapping_state": "implemented",
-      "scope": "Checked single-level RGBA8 surfaces, dimensions 1..4096. Returns complete owned base-to-1x1 levels, preserving the base and resizing each preceding level with native default filtering; levels are independent owners.",
+      "scope": "R8G8B8A8 owners, dimensions 1..4096: complete owned base-to-1x1 levels, preserving the base and resizing each preceding level with native default filtering; levels are independent owners. Other formats return UnsupportedFormat with the owner.",
       "gaps": [
         "Existing partial/full native chains and non-RGBA8 source formats",
         "Contiguous C allocation/pointer ABI and texture integration",
@@ -42774,9 +42786,9 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.dither / Image.Packed16.export",
+      "jonlib": "Surface.dither / Surface.export",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 to raw 16-bit-word Floyd-Steinberg output for per-channel widths 0..8 totaling at most 16. Preserves raster order, truncation, neighbor saturation, alpha handling and exact format metadata; rejects unsupported bits with original surface.",
+      "scope": "Any Surface format via LoadImageColors to Floyd-Steinberg R5G6B5 (5,6,5,0), R5G5B5A1 (5,5,5,1) or R4G4B4A4 (4,4,4,4). Preserves raster order, truncation, neighbor saturation and alpha handling; other bit counts (native format 0) return the original with InvalidDitherBits. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Other source formats/mipmaps and native 16-bit memory/allocator ABI",
         "Full integration/target/resource/performance coverage"
@@ -42793,7 +42805,8 @@
       "evidence": [
         "tools/pixel_probe.py",
         "tests/transforms.bend",
-        "docs/PIXELS.md"
+        "docs/PIXELS.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42835,9 +42848,9 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.flip_vertical / Image.FloatRGB.flip_vertical",
+      "jonlib": "Surface.flip_vertical",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 and non-NaN RGB F32 vertical flipping with exact native sample words and preserved dimensions.",
+      "scope": "Every Surface format; vertical flipping with exact stored samples and preserved dimensions. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -42853,7 +42866,8 @@
       "evidence": [
         "docs/API.md",
         "tools/float_rgb_transform_probe.py",
-        "docs/FLOAT-RGB.md"
+        "docs/FLOAT-RGB.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42895,9 +42909,9 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.flip_horizontal / Image.FloatRGB.flip_horizontal",
+      "jonlib": "Surface.flip_horizontal",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 and non-NaN RGB F32 horizontal flipping with exact native sample words and preserved dimensions.",
+      "scope": "Every Surface format; horizontal flipping with exact stored samples and preserved dimensions. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -42913,7 +42927,8 @@
       "evidence": [
         "docs/API.md",
         "tools/float_rgb_transform_probe.py",
-        "docs/FLOAT-RGB.md"
+        "docs/FLOAT-RGB.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42957,7 +42972,7 @@
       "status": "partial",
       "jonlib": "Surface.rotate_degrees_for / Surface.rotate_degrees",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8; integral degrees -360..360 with explicit reference trigonometry; reference bilinear interpolation, truncated bounds and transparent outside pixels; output dimensions 1..4096; rejected requests preserve the original owner.",
+      "scope": "R8G8B8A8 owners; integral degrees -360..360 with explicit reference trigonometry; reference bilinear interpolation, truncated bounds and transparent outside pixels; output dimensions 1..4096; rejected requests preserve the original owner. Other formats return UnsupportedFormat.",
       "gaps": [
         "Wider-angle reference behavior",
         "Other formats/mipmaps",
@@ -43017,11 +43032,11 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.rotate_cw / Image.FloatRGB.rotate_cw",
+      "jonlib": "Surface.rotate_cw",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 and non-NaN RGB F32; 90-degree clockwise rotation with swapped dimensions and exact sample words.",
+      "scope": "Every Surface format; 90-degree clockwise rotation with swapped dimensions and exact sample words. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Other formats/mipmaps, NaN payload parity and complete target/performance evidence"
+        "Mipmaps, NaN payload parity and complete target/performance evidence"
       ],
       "blocker": null,
       "gates": {
@@ -43036,7 +43051,8 @@
         "tests/fixtures/images.json",
         "tools/float_rgb_transform_probe.py",
         "docs/API.md",
-        "docs/FLOAT-RGB.md"
+        "docs/FLOAT-RGB.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43078,11 +43094,11 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.rotate_ccw / Image.FloatRGB.rotate_ccw",
+      "jonlib": "Surface.rotate_ccw",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 and non-NaN RGB F32; 90-degree counterclockwise rotation with swapped dimensions and exact sample words.",
+      "scope": "Every Surface format; 90-degree counterclockwise rotation with swapped dimensions and exact sample words. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Other formats/mipmaps, NaN payload parity and complete target/performance evidence"
+        "Mipmaps, NaN payload parity and complete target/performance evidence"
       ],
       "blocker": null,
       "gates": {
@@ -43097,7 +43113,8 @@
         "tests/fixtures/images.json",
         "tools/float_rgb_transform_probe.py",
         "docs/API.md",
-        "docs/FLOAT-RGB.md"
+        "docs/FLOAT-RGB.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43139,11 +43156,11 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.color_tint / Image.FloatRGB.color_tint",
+      "jonlib": "Surface.color_tint",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 or finite [0,1] RGB F32 through native byte truncation, integer tint multiplication and RGB normalization; alpha is retained in Surface and discarded in format 9. Rejected float owners are preserved.",
+      "scope": "Any Surface format via LoadImageColors, integer tint multiplication and ImageFormat back (alpha discarded by formats without alpha). R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Other source domains/formats/mipmaps and target/performance evidence"
+        "Other source domains/mipmaps and target/performance evidence"
       ],
       "blocker": null,
       "gates": {
@@ -43158,7 +43175,8 @@
         "tests/fixtures/images.json",
         "tools/float_rgb_color_probe.py",
         "docs/API.md",
-        "docs/FLOAT-RGB.md"
+        "docs/FLOAT-RGB.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43201,11 +43219,11 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.color_invert / Image.FloatRGB.color_invert",
+      "jonlib": "Surface.color_invert",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 inversion and finite [0,1] RGB F32 via native byte quantization/inversion/normalization, preserving rejected float owners.",
+      "scope": "Any Surface format via LoadImageColors, RGB inversion and ImageFormat back. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Other source domains/formats/mipmaps and target/performance evidence"
+        "Other source domains/mipmaps and target/performance evidence"
       ],
       "blocker": null,
       "gates": {
@@ -43220,7 +43238,8 @@
         "tests/fixtures/images.json",
         "tools/float_rgb_color_probe.py",
         "docs/API.md",
-        "docs/FLOAT-RGB.md"
+        "docs/FLOAT-RGB.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43262,11 +43281,11 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.color_grayscale / Image.FloatRGB.color_grayscale",
+      "jonlib": "Surface.color_grayscale",
       "mapping_state": "implemented",
-      "scope": "RGBA8 to opaque normalized grayscale RGBA8, and finite [0,1] RGB float directly to owned native grayscale format 1, with native F32 luminance order and truncation. Rejected float requests return the original owner.",
+      "scope": "ImageFormat to GRAYSCALE from any Surface format, with native F32 luminance order and truncation; R32G32B32 converts directly from finite [0,1] samples. Rejected requests return the original owner. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Other source domains/formats/mipmaps and remaining metadata/native ABI",
+        "Other source domains/mipmaps and remaining metadata/native ABI",
         "Full target/resource/performance coverage"
       ],
       "blocker": null,
@@ -43283,7 +43302,8 @@
         "tools/conformance.py",
         "tools/float_rgb_formats_probe.py",
         "docs/PALETTES.md",
-        "docs/FLOAT-RGB.md"
+        "docs/FLOAT-RGB.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43325,11 +43345,11 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.color_contrast / Image.FloatRGB.color_contrast",
+      "jonlib": "Surface.color_contrast",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 and finite [0,1] RGB F32 byte-quantized paths; finite contrast clamped to -100..100, native F32 arithmetic/truncation and retained rejected float owners.",
+      "scope": "Any Surface format via LoadImageColors and ImageFormat back; finite contrast clamped to -100..100 with native F32 arithmetic/truncation; non-finite amounts are InvalidRequest. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Other source domains/formats/mipmaps and target/performance evidence"
+        "Other source domains/mipmaps and target/performance evidence"
       ],
       "blocker": null,
       "gates": {
@@ -43344,7 +43364,8 @@
         "tests/fixtures/images.json",
         "tools/float_rgb_color_probe.py",
         "docs/API.md",
-        "docs/FLOAT-RGB.md"
+        "docs/FLOAT-RGB.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43386,11 +43407,11 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.color_brightness / Image.FloatRGB.color_brightness",
+      "jonlib": "Surface.color_brightness",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 and finite [0,1] RGB F32 byte-quantized paths; finite brightness truncated toward zero (C int conversion) then clamped to -255..255, native underflow-to-one behavior and preserved rejected float owners.",
+      "scope": "Any Surface format via LoadImageColors and ImageFormat back; finite amounts below 2^31 in magnitude truncated toward zero (C int) then clamped to -255..255, native underflow-to-one; other amounts are InvalidRequest. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Full signed/source domain, other formats/mipmaps and target/performance evidence"
+        "Full signed/source domain, Mipmaps and target/performance evidence"
       ],
       "blocker": null,
       "gates": {
@@ -43405,7 +43426,8 @@
         "tests/fixtures/images.json",
         "tools/float_rgb_color_probe.py",
         "docs/API.md",
-        "docs/FLOAT-RGB.md"
+        "docs/FLOAT-RGB.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43447,11 +43469,11 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.color_replace / Image.FloatRGB.color_replace",
+      "jonlib": "Surface.color_replace",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 exact four-channel replacement; finite [0,1] RGB F32 through native byte quantization, alpha-255 input matching and RGB normalization that discards replacement alpha. Rejected float owners are retained.",
+      "scope": "Any Surface format via LoadImageColors and exact four-byte matching; GRAYSCALE, R5G6B5, R8G8B8 and R32G32B32 convert back with ImageFormat, other formats stay R8G8B8A8 as in raylib. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Other source domains/formats/mipmaps and target/performance evidence"
+        "Other source domains/mipmaps and target/performance evidence"
       ],
       "blocker": null,
       "gates": {
@@ -43466,7 +43488,8 @@
         "tests/fixtures/images.json",
         "tools/float_rgb_color_probe.py",
         "docs/API.md",
-        "docs/FLOAT-RGB.md"
+        "docs/FLOAT-RGB.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43509,9 +43532,9 @@
       "phase": 1,
       "sequence": 6,
       "status": "partial",
-      "jonlib": "Surface.colors / Image.Formatted.colors / Image.FloatRGB.colors",
+      "jonlib": "Surface.colors",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8, formats 1..7 and finite [0,1] RGB floats to complete row-major RGBA color lists. Native packed integer expansion and float truncation are preserved; unsupported float samples return the original owner. Bounded format-8 R32 additionally produces native red-only colors with opaque alpha.",
+      "scope": "Every Surface format to complete row-major RGBA color lists: native packed integer expansion, red-only R32 and truncated R32G32B32 samples (finite [0,1], otherwise OutOfDomain with the owner). Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open.",
         "R32 samples outside finite [0,1] and complete target/contraction profiles"
@@ -43531,7 +43554,8 @@
         "docs/IMAGE-COLORS.md",
         "docs/R32.md",
         "tools/image_format_probe.py",
-        "tools/r32_image_probe.py"
+        "tools/r32_image_probe.py",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43576,7 +43600,7 @@
       "status": "partial",
       "jonlib": "Surface.load_palette / Image.Palette.entries",
       "mapping_state": "implemented",
-      "scope": "Preserves the source owner and returns an owned RGBA palette for capacity 1..4096: first-occurrence order, alpha-zero exclusion, alpha-sensitive uniqueness, native count and BLANK padding to full capacity.",
+      "scope": "Preserves the source owner and returns an owned RGBA palette for capacity 1..4096: first-occurrence order, alpha-zero exclusion, alpha-sensitive uniqueness, native count and BLANK padding to full capacity. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Native pointers/allocators and other image formats/mipmaps",
         "Full integration/target/resource/performance coverage"
@@ -43594,7 +43618,8 @@
         "tests/fixtures/images.json",
         "tests/transforms.bend",
         "tests/test_harness.py",
-        "docs/PALETTES.md"
+        "docs/PALETTES.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43755,9 +43780,9 @@
       "status": "partial",
       "jonlib": "Surface.alpha_border",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8; threshold 0..1; strict alpha-byte comparison and exact zero rectangle for empty selections; original owner returned.",
+      "scope": "Every Surface format; threshold 0..1; strict comparison of the LoadImageColors alpha byte (255 for formats without alpha) and exact zero rectangle for empty selections; original owner returned. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
-        "Other formats/mipmaps and complete platform/performance gates"
+        "Mipmaps and complete platform/performance gates"
       ],
       "blocker": null,
       "gates": {
@@ -43770,7 +43795,8 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43813,9 +43839,9 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.get / Image.Formatted.get / Image.FloatRGB.get",
+      "jonlib": "Surface.get",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8, formats 1..7 and finite [0,1] selected RGB float pixels. U32 coordinates are checked before access; out-of-bounds/unsupported pixels return None with the original owner. Native packed integer expansion and float truncation remain distinct from other pixel/format APIs. Checked normalized R32 format-8 points additionally produce native red-only colors, distinct from low-level GetPixelColor grayscale replication.",
+      "scope": "Every Surface format; U32 coordinates are checked before access; out-of-bounds pixels and out-of-domain R32G32B32 samples return None with the original owner. Native packed integer expansion and red-only R32 colors remain distinct from low-level GetPixelColor. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open.",
         "R32 samples outside finite [0,1] and complete target/contraction profiles"
@@ -43835,7 +43861,8 @@
         "docs/IMAGE-COLORS.md",
         "docs/R32.md",
         "tools/image_format_probe.py",
-        "tools/r32_image_probe.py"
+        "tools/r32_image_probe.py",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43880,7 +43907,7 @@
       "status": "partial",
       "jonlib": "Surface.clear",
       "mapping_state": "implemented",
-      "scope": "Consumes an RGBA8 Surface and replaces every pixel with one packed color; dimensions preserved.",
+      "scope": "Consumes a Surface of any format and stores one color in every pixel with ImageDrawPixel's per-format encoding; dimensions preserved. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -43894,7 +43921,8 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43939,7 +43967,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_pixel",
       "mapping_state": "implemented",
-      "scope": "RGBA8; replaces the RGBA bytes of an in-bounds pixel; outside coordinates are clipped.",
+      "scope": "Every Surface format; stores one in-bounds pixel with ImageDrawPixel's per-format encoding (no blending); outside coordinates are clipped. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -43953,7 +43981,8 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43998,7 +44027,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_pixel_v",
       "mapping_state": "implemented",
-      "scope": "RGBA8; bounded finite Vector2 coordinates truncated before pixel clipping.",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite Vector2 coordinates truncated before pixel clipping. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Other formats and complete target/performance evidence"
       ],
@@ -44013,7 +44042,8 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44059,7 +44089,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_line",
       "mapping_state": "implemented",
-      "scope": "RGBA8; integral coordinates; pinned 16.16 stepping and excluded endpoint",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; integral coordinates; pinned 16.16 stepping and excluded endpoint. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -44073,7 +44103,8 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44118,7 +44149,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_line_v",
       "mapping_state": "implemented",
-      "scope": "RGBA8; bounded finite Vector2 inputs and raylib add-half/truncate rounding",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite Vector2 inputs and raylib add-half/truncate rounding. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -44132,7 +44163,8 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44178,7 +44210,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_line_ex",
       "mapping_state": "implemented",
-      "scope": "RGBA8; bounded finite endpoints; add-half/truncate rounding; safe signed 16.16 deltas; thickness 0..32767.",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite endpoints; add-half/truncate rounding; safe signed 16.16 deltas; thickness 0..32767. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Negative thickness, full formats/domains and target/performance evidence"
       ],
@@ -44193,7 +44225,8 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44239,7 +44272,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_circle",
       "mapping_state": "implemented",
-      "scope": "RGBA8; reference midpoint filled-circle coverage with U32 radius, clipped to the image.",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; reference midpoint filled-circle coverage with U32 radius, clipped to the image. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -44253,7 +44286,8 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44298,7 +44332,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_circle_v",
       "mapping_state": "implemented",
-      "scope": "RGBA8; finite bounded center truncated to integers; radius 0..32767.",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded center truncated to integers; radius 0..32767. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full format/numeric domain and target/performance evidence"
       ],
@@ -44313,7 +44347,8 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44359,7 +44394,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_circle_lines",
       "mapping_state": "implemented",
-      "scope": "RGBA8; integral bounded center; radius 0..32767; reference midpoint outline.",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; integral bounded center; radius 0..32767; reference midpoint outline. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full format/numeric domain and target/performance evidence"
       ],
@@ -44374,7 +44409,8 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44419,7 +44455,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_circle_lines_v",
       "mapping_state": "implemented",
-      "scope": "RGBA8; bounded finite center truncated before midpoint outline; radius 0..32767.",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite center truncated before midpoint outline; radius 0..32767. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full format/numeric domain and target/performance evidence"
       ],
@@ -44434,7 +44470,8 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44480,7 +44517,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_rectangle",
       "mapping_state": "implemented",
-      "scope": "RGBA8; integral-coordinate profile of the CPU ImageDrawRectangle, clipped to the image.",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; integral-coordinate profile of the CPU ImageDrawRectangle, clipped to the image. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -44494,7 +44531,8 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44539,7 +44577,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_rectangle_v",
       "mapping_state": "implemented",
-      "scope": "RGBA8; bounded finite position and size truncated before reference rectangle drawing.",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite position and size truncated before reference rectangle drawing. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full format/numeric domain and target/performance evidence"
       ],
@@ -44554,7 +44592,8 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44600,7 +44639,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_rectangle_rec",
       "mapping_state": "implemented",
-      "scope": "RGBA8; bounded finite rectangle; clipping precedes coordinate/extent truncation.",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite rectangle; clipping precedes coordinate/extent truncation. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full format/numeric domain and target/performance evidence"
       ],
@@ -44615,7 +44654,8 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44661,7 +44701,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_rectangle_lines",
       "mapping_state": "implemented",
-      "scope": "RGBA8; bounded finite rectangle; thickness 0..32767; reference four-edge truncation and degenerate behavior.",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite rectangle; thickness 0..32767; reference four-edge truncation and degenerate behavior. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Negative thickness, full formats/domains and target/performance evidence"
       ],
@@ -44676,7 +44716,8 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44722,7 +44763,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_triangle",
       "mapping_state": "implemented",
-      "scope": "RGBA8; finite bounded vertices with raylib's (int) truncation of bounds and edge steps; defined reference signed-edge arithmetic",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices with raylib's (int) truncation of bounds and edge steps; defined reference signed-edge arithmetic. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -44736,7 +44777,8 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44782,7 +44824,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_triangle_ex",
       "mapping_state": "implemented",
-      "scope": "RGBA8; finite bounded vertices with (int)-truncated bounds/edge steps; defined signed arithmetic and nonzero reference weight sum; reference byte-quantized barycentric color interpolation.",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices with (int)-truncated bounds/edge steps; defined signed arithmetic and nonzero reference weight sum; reference byte-quantized barycentric color interpolation. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Degenerate/undefined reference gradients",
         "Other formats and full target/performance gates",
@@ -44799,7 +44841,8 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44845,7 +44888,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_triangle_lines",
       "mapping_state": "implemented",
-      "scope": "RGBA8; bounded finite vertices truncated before line rasterization",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite vertices truncated before line rasterization. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -44859,7 +44902,8 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44905,7 +44949,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_triangle_fan",
       "mapping_state": "implemented",
-      "scope": "RGBA8; List<Vector2> with finite bounded vertices (each triangle as ImageDrawTriangle); reference fan order; fewer than three points is a no-op.",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; List<Vector2> with finite bounded vertices (each triangle as ImageDrawTriangle); reference fan order; fewer than three points is a no-op. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full formats/domains and target/performance evidence"
       ],
@@ -44920,7 +44964,8 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44966,7 +45011,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_triangle_strip",
       "mapping_state": "implemented",
-      "scope": "RGBA8; finite bounded vertices (each triangle as ImageDrawTriangle); alternating reference winding; fewer than three points is a no-op.",
+      "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices (each triangle as ImageDrawTriangle); alternating reference winding; fewer than three points is a no-op. Every format 1..9 is compared with raylib on the surface-format profile.",
       "gaps": [
         "Full formats/domains and target/performance evidence"
       ],
@@ -44981,7 +45026,8 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/API.md"
+        "docs/API.md",
+        "tools/surface_format_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -45027,7 +45073,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_image / Surface.draw_image_region / Surface.draw_image_rect",
       "mapping_state": "implemented",
-      "scope": "RGBA8; bounded finite source/destination rectangles, including fractional fields; source clipping precedes truncated-size scaling decisions; destination clipping precedes pixel truncation; both owners preserved; one mip level",
+      "scope": "R8G8B8A8 owners; bounded finite source/destination rectangles, including fractional fields; source clipping precedes truncated-size scaling decisions; destination clipping precedes pixel truncation; both owners preserved; one mip level. Other formats return UnsupportedFormat with both owners.",
       "gaps": [
         "empty or undefined source rectangles",
         "other pixel formats",

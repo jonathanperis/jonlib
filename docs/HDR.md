@@ -2,10 +2,9 @@
 
 | API | Contract |
 |---|---|
-| `Image.FloatRGB.decode_hdr(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Image.FloatRGB>`. Owned pixels are `Array<M.Vector3>` (Jonmath's shared vector type) preserving native `PIXELFORMAT_UNCOMPRESSED_R32G32B32` (format 9) sample bits. |
-| `Image.FloatRGB.entries(image)` | Consumes the image and returns `(width, height, List<M.Vector3>)` in top-down row-major order. |
-| `Image.FloatRGB.unload(image)` | Consumes the owner and returns `Unit`. |
-| `Image.FloatRGB.load_hdr(path)` | Returns `IO(Result<&1, &1, Image.LoadError, Image.FloatRGB>)`; see [file loading](#file-loading). |
+| `Surface.decode_hdr(bytes: +List<U32>)` | Returns `Result<&1, &1, Surface.Error, Surface>`. Owned pixels are `Array<M.Vector3>` (Jonmath's shared vector type) preserving native `PIXELFORMAT_UNCOMPRESSED_R32G32B32` (format 9) sample bits. |
+| `Surface.export(image)` | Consumes the image and returns its dimensions, format 9 and the little-endian F32 sample bytes in top-down row-major order. |
+| `Surface.load_hdr(path)` | Returns `IO(Result<&1, &1, Surface.IOError, Surface>)`; see [file loading](#file-loading). |
 
 ## Supported profile
 
@@ -51,10 +50,10 @@ from truncated raw recovery.
 
 ## File loading
 
-`Image.FloatRGB.load_hdr(path)` explicitly selects the Radiance decoder
+`Surface.load_hdr(path)` explicitly selects the Radiance decoder
 regardless of filename, reads at most 1 MiB, requires the complete reported byte
 count and closes the handle before decoding. Open/size/read errors retain
-`ImageFileError`; decode/size errors are wrapped as `ImageDecodeError`. The
+`FileError`; decode/size errors are wrapped as `DataError`. The
 supported IO domain is ordinary non-changing files, using the same byte-file
 boundary as Surface and animation loading ([IMAGE-FILES.md](IMAGE-FILES.md)).
 

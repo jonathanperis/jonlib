@@ -575,7 +575,7 @@
       "name": "LoadImageFromMemory",
       "milestone": "image-codecs",
       "status": "partial",
-      "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Image.FloatRGB.decode_hdr / Image.Formatted.decode_qoi / Image.Formatted.decode_pnm / Image.Formatted.decode_tga / Image.Formatted.decode_bmp / Image.Formatted.decode_png / Image.Formatted.decode_pic",
+      "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Surface.decode_hdr",
       "next_step": "Close documented gaps and unverified gates for LoadImageFromMemory.",
       "milestone_dependencies": [
         "files",
@@ -589,7 +589,7 @@
       "name": "ExportImage",
       "milestone": "image-codecs",
       "status": "partial",
-      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.to_bmp/to_tga/to_qoi/write_bmp/write_tga/write_qoi/write_png/write_raw / Image.FloatRGB.write_raw/write_png/write_bmp/write_tga / Surface.write_image",
+      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Surface.to_bmp/to_tga/to_qoi/write_bmp/write_tga/write_qoi/write_png/write_raw / Surface.write_raw/write_png/write_bmp/write_tga / Surface.write_image",
       "next_step": "Close documented gaps and unverified gates for ExportImage.",
       "milestone_dependencies": [
         "files",
@@ -603,7 +603,7 @@
       "name": "ImageFormat",
       "milestone": "pixels",
       "status": "partial",
-      "jonlib": "Image.Formatted.convert / Surface.to_formatted / Image.Formatted.to_surface / Image.Formatted.to_float_rgb / Surface.to_float_rgb / Image.FloatRGB.to_surface / Image.FloatRGB.from_bytes / Image.FloatRGB.to_bytes / Image.FloatRGB.to_formatted",
+      "jonlib": "Surface.format / Surface.from_bytes / Surface.export",
       "next_step": "Close documented gaps and unverified gates for ImageFormat.",
       "milestone_dependencies": [
         "numerics",

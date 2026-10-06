@@ -36,10 +36,9 @@ a result follows, see [ANGLES.md](ANGLES.md)) and `M.Contraction`
 see [COLLISION.md](COLLISION.md)). Construct values with `M.Vector2{...}`,
 `M.Matrix{...}`, `M.Float64{...}` and `M.Decomposed{...}`.
 
-Jonlib owns `J.Rectangle`, `J.BoundingBox`, `J.Surface` and its core-specific
-types; a bounding box's corners and geometry APIs use Jonmath vectors.
-`J.Image.FloatRGB` owns float image storage while its pixels use the canonical
-`M.Vector3` type; see [HDR.md](HDR.md).
+Jonlib owns `J.Rectangle`, `J.BoundingBox`, `J.Surface` (the one image type,
+for every pixel format; R32G32B32 samples use the canonical `M.Vector3`) and its
+core-specific types; a bounding box's corners and geometry APIs use Jonmath vectors.
 
 ## Namespace migration
 
@@ -52,6 +51,53 @@ Math was previously exposed through `jonlib.bend`. Update those references:
 Jonlib image/geometry operations keep their `J` namespace. The math declarations
 have a single implementation in `jonmath.bend`; the move changes module/type
 ownership and imports, not arithmetic or reference profiles.
+
+## Image API migration
+
+Jonlib previously had four image owners. They are now one format-tagged
+`J.Surface{width, height, format, pixels}` (see [API.md](API.md)):
+
+- `J.Surface{w, h, pixels}` (RGBA8) → `J.Surface{w, h, 7, J.Words{pixels}}`.
+  Format-7 words stay canonical `0xRRGGBBAA` Colors.
+- `J.Image.Formatted` / `FormattedImage{w, h, f, p}` → `J.Surface{w, h, f, J.Words{p}}`.
+  Format-7 words are now canonical rather than byte-swapped.
+- `J.Image.FloatRGB` / `FloatRGB{w, h, p}` → `J.Surface{w, h, 9, J.Vectors{p}}`.
+- `J.Surface` (dither output) → a Surface in format 3, 5 or 6.
+- Conversions (`Formatted.convert`, `to_formatted`, `to_surface`, `to_float_rgb`,
+  `FloatRGB.to_formatted`) → `J.Surface.format(surface, target)`.
+  `from_bytes`/`to_bytes`/`export` → `J.Surface.from_bytes(w, h, format, bytes)` /
+  `J.Surface.export(surface)`; `FloatRGB.entries` → the export bytes.
+- Per-type operations (`Surface.flip`, `.color_tint`, `.resize`,
+  `Surface.colors`, `.get`, `.from_channel`, ...) → the `J.Surface`
+  operation of the same name, which now covers every format.
+- Decoders and loaders (`Surface.decode_*`, `load_image`, `Surface.decode_*`,
+  `Surface.load_*`, `Surface.decode_hdr/load_hdr/load_raw`) →
+  `J.Surface.decode_*`, `load_*`, `load_raw`, returning the file's native format
+  (previously `Surface.decode_*` returned RGBA8: add `J.Surface.format(s, 7)` or
+  read `J.Surface.colors`).
+- Exports: `Surface.export_to_memory` / `Surface.export_to_memory` (memory) →
+  `J.Surface.export_to_memory(surface, ".png")`; file bytes and writers →
+  `J.Surface.to_png/to_bmp/to_tga/to_qoi`, `write_*`, `to_code`, `write_code`.
+
+Result shapes are uniform: every consuming operation that can fail returns
+`Result<&1, &1, J.Surface & J.Surface.Error, R>`, so color operations, `colors`,
+`alpha_clear`, `alpha_premultiply`, `draw_image`, `mipmaps`, `to_ppm` and
+`to_image` (previously total on RGBA8) now return `Result`.
+`J.Surface.Error` and `J.Surface.Error` merge into `J.Surface.Error`
+(`UnsupportedFormat` → `UnsupportedFormat`). `J.Surface.IOError`,
+`RawLoadError`, `ExportError`, `Surface.IOError`,
+`Surface.IOError` and both `CodeWriteError` types merge into
+`J.Surface.IOError` (`FileError{code, message}`, `DataError{error}`,
+`SourceError{surface, error}`); writers that returned `U32 & String` errors use
+it too.
+
+Contract changes made with the merge: contrast/brightness amounts outside their
+C parameter domain are `InvalidRequest` in every format, and R32G32B32 brightness
+truncates fractional amounts like the other formats; `dither` accepts only the
+bit counts that name a 16-bit format; raw float export and memory PNG no longer
+reject NaN words (factories still never create them); `resize` on GRAYSCALE,
+GRAY_ALPHA and R8G8B8 is `UnsupportedFormat` until their 1..3-channel filters
+are ported.
 
 ## Private arithmetic support
 
