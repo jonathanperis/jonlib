@@ -1,43 +1,62 @@
 #!/usr/bin/env python3
 """Compare Surface.write_image dispatch, complete files and ownership with raylib."""
-import argparse
 import errno
 import hashlib
 import json
-from pathlib import Path
-import resource
-import signal
-import subprocess
+import shutil
+import sys
 
 from bmp_probe import bend_bytes
-from conformance import BUILD, ENV, ROOT, checkout, run, source_gate
+import probekit
 
 CODECS = ('png', 'bmp', 'tga', 'qoi', 'raw')
 CLOSURE_ITERATIONS = 100
 SENTINEL = b'unchanged\x00image-export-sentinel\xff'
+FILE_DESCRIPTOR_LIMIT = 64
+# Candidate launcher: RLIMIT_NOFILE=64 for the run; with argv[2]=='1' the candidate
+# alone also gets RLIMIT_FSIZE=0 and ignores SIGXFSZ, so every ordinary file write
+# fails after open (stdout pipes are exempt). Records the candidate's peak RSS.
+LAUNCHER = ('import resource,signal,subprocess,sys;'
+            'usage,fsize,command=sys.argv[1],sys.argv[2]=="1",sys.argv[3:];'
+            f'resource.setrlimit(resource.RLIMIT_NOFILE,({FILE_DESCRIPTOR_LIMIT},{FILE_DESCRIPTOR_LIMIT}));'
+            'limit=lambda:(signal.signal(signal.SIGXFSZ,signal.SIG_IGN),resource.setrlimit(resource.RLIMIT_FSIZE,(0,0)));'
+            'code=subprocess.run(command,preexec_fn=limit if fsize else None,timeout=230).returncode;'
+            'rss=resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss;'
+            "open(usage,'w').write(str(int(rss if sys.platform=='darwin' else rss*1024)));sys.exit(code)")
 
 
-def limit_handles():
-    resource.setrlimit(resource.RLIMIT_NOFILE, (64, 64))
+def limited_runs(probe, name, program, *, before=None, fsize=False):
+    """Compile once; run CPU-1/CPU-2/JavaScript under the launcher limits.
+
+    before(lane) prepares the lane and may return its working directory.
+    Yields (lane, stdout, peak RSS bytes) in lane order.
+    """
+    commands = probe._compile(name, lambda gpu: program)
+    for lane in probekit.CPU_LANES:
+        cwd = (before(lane) if before else None) or probekit.ROOT
+        usage = probe.work/f'{name}-{lane}.rss'
+        text = probekit.run([sys.executable, '-c', LAUNCHER, usage, int(fsize), *commands[lane]], cwd=cwd, timeout=240)
+        yield lane, text, int(usage.read_text())
 
 
-def limit_write_failures():
-    limit_handles()
-    # Applied only to the child process. Pipes used for stdout/stderr are not
-    # subject to RLIMIT_FSIZE, while every ordinary output file write is.
-    signal.signal(signal.SIGXFSZ, signal.SIG_IGN)
-    resource.setrlimit(resource.RLIMIT_FSIZE, (0, 0))
+def native_in(probe, program, cwd, name='reference'):
+    """probe.native, but run in `cwd`: the relative paths are themselves the dispatch fixtures."""
+    source, binary = probe.work/f'{name}.c', probe.work/name
+    source.write_text(program)
+    probekit.run(['clang', '-std=c11', '-O2', '-I'+str(probe.args.raylib_source/'src'), source, probe.library, '-lm', '-o', binary])
+    return probekit.run([binary], cwd=cwd)
+
+
+def fresh(directory):
+    shutil.rmtree(directory, ignore_errors=True)
+    directory.mkdir(parents=True)
+    return directory
 
 
 def prepare_write_failure_paths(directory):
-    if directory.is_symlink():
-        raise ValueError('Write-failure directory must be task-owned')
     directory.mkdir(parents=True, exist_ok=True)
     for codec in (*CODECS, 'data'):
-        path = directory/('write-failure.'+codec)
-        if path.is_symlink() or (path.exists() and not path.is_file()):
-            raise ValueError('Write-failure fixture must be an ordinary file')
-        path.write_bytes(SENTINEL)
+        (directory/('write-failure.'+codec)).write_bytes(SENTINEL)
 
 
 def write_failure_marker():
@@ -210,13 +229,9 @@ def verify_closure_files(directory, reference):
             raise ValueError(f'Complete image-export closure file differs: {codec}')
 
 
-def compare_rows(cases, expected, actual):
-    if len(actual) != len(cases)+1 or len(expected) != len(cases):
-        raise ValueError('Image-export comparison result count differs')
-    for case, wanted, got in zip(cases, expected, actual):
-        normalized = {key: value for key, value in got.items() if key not in ('code', 'message_empty')}
-        if normalized != wanted:
-            raise ValueError(f'Native image-export bytes/pixels/dispatch differ: {case["id"]}')
+def comparable(rows):
+    """Candidate case rows without the closure marker or the IO-error details native has no equivalent for."""
+    return [{key: value for key, value in row.items() if key not in ('code', 'message_empty')} for row in rows[:-1]]
 
 
 def reference_program(cases):
@@ -364,49 +379,18 @@ def main() -> IO(Unit):
     return program+f'  write_failure_loop({CLOSURE_ITERATIONS}n)\n'
 
 
-def run_write_failure_lane(args, work, lane):
-    directory = work/(lane+'-write-failure-files')
-    prepare_write_failure_paths(directory)
-    source = work/'write-failure.bend'
-    source.write_text(write_failure_program())
-    binary = work/('write-failure.js' if lane=='javascript' else 'write-failure-cpu')
-    run(['bun', args.bend_source/'bend2/main.ts', source, '-o', binary], timeout=600)
-    command = ['bun', binary] if lane=='javascript' else [binary]
-    process = subprocess.run(list(map(str, command)), cwd=directory, env=ENV, capture_output=True,
-                             text=True, timeout=240, preexec_fn=limit_write_failures)
-    if process.returncode:
-        raise RuntimeError(f'{lane}: post-open image-export write-failure run failed\n{process.stderr[-2000:]}')
-    marker = verify_write_failures(directory, process.stdout)
-    return dict(passed=True, **marker, file_size_limit=0, file_descriptor_limit=64,
-                signal_xfsz='ignored', program_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
-                stdout_sha256=hashlib.sha256(process.stdout.encode()).hexdigest())
-
-
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source', type=Path, required=True)
-    parser.add_argument('--raylib-source', type=Path, required=True)
-    args = parser.parse_args()
-    work = BUILD/'image-export-probe'
-    work.mkdir(parents=True, exist_ok=True)
-    report_path = work/'results.json'
-    # Invalidate an earlier pass before provenance checks or any external command.
-    report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    lock = json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source, lock['bend']['revision'], lock['bend'].get('patch'))
-    checkout(args.raylib_source, lock['raylib']['revision'])
-    cases = fixtures()
+    args = probekit.arguments(__doc__)
+    if args.gpu:
+        raise SystemExit('image_export_probe has no forced-GPU variant (file IO runs on CPU lanes only)')
+    probe = probekit.Probe('image-export', args)
+    work, cases = probe.work, fixtures()
     if not cases or len({case['id'] for case in cases}) != len(cases):
-        raise ValueError('Empty or duplicate image-export fixture set')
+        raise probekit.ProbeFailure('Empty or duplicate image-export fixture set')
     native_cases = [case for case in cases if case['native']]
-    reference_directory = work/'native-files'
+    reference_directory = fresh(work/'native-files')
     prepare_paths(reference_directory, native_cases)
-    source = work/'reference.c'
-    source.write_text(reference_program(native_cases))
-    binary = work/'reference'
-    run(['clang', '-std=c11', '-O2', '-I'+str(args.raylib_source/'src'), source,
-         BUILD/'raylib/raylib/libraylib.a', '-lm', '-o', binary])
-    reference_text = run([binary], cwd=reference_directory)
+    reference_text = native_in(probe, reference_program(native_cases), reference_directory)
     reference = parse_rows(reference_text, native_cases)
     verify_files(reference_directory, native_cases, reference)
     reference_by_id = {row['id']: row for row in reference}
@@ -414,51 +398,40 @@ def main():
     expected = [reference_by_id[case['id']] if case['native'] else
                 dict(id=case['id'], status='unsupported', width=case['width'], height=case['height'], pixels=case['pixels'])
                 for case in cases]
-    report = dict(passed=False, cases=len(cases), reference_cases=len(native_cases),
-                  export_cases=sum(case['status']=='ok' for case in cases),
-                  rejected_owner_controls=sum(case['status']=='unsupported' for case in cases),
-                  io_error_controls=sum(case['status']=='file' for case in cases),
-                  post_open_write_error_controls=len(CODECS),
-                  encoded_bytes=sum(len(row.get('bytes', [])) for row in reference),
-                  roundtrip_pixels=sum(len(row.get('pixels', [])) for case, row in zip(native_cases, reference) if case['status']=='ok'),
-                  closure_iterations=CLOSURE_ITERATIONS, closure_operations_per_iteration=len(CODECS)*3+1,
-                  file_descriptor_limit=64, sources=source_gate(),
-                  harness_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-                  inputs_sha256=hashlib.sha256(json.dumps(cases, sort_keys=True).encode()).hexdigest(),
-                  reference_sha256=hashlib.sha256(reference_text.encode()).hexdigest(),
-                  reference_program_sha256=hashlib.sha256(source.read_bytes()).hexdigest(), lanes={})
-    report_path.write_text(json.dumps(report, indent=2)+'\n')
-    source = work/'candidate.bend'
-    source.write_text(candidate_program(cases, expected))
-    report['candidate_program_sha256'] = hashlib.sha256(source.read_bytes()).hexdigest()
-    for lane in ('cpu', 'javascript'):
-        report['lanes'][lane] = dict(passed=False)
-        report_path.write_text(json.dumps(report, indent=2)+'\n')
-        directory = work/(lane+'-files')
+
+    def prepared(lane):
+        directory = fresh(work/(lane+'-files'))
         prepare_paths(directory, cases)
-        binary = work/('candidate.js' if lane=='javascript' else 'candidate-cpu')
-        run(['bun', args.bend_source/'bend2/main.ts', source, '-o', binary], timeout=600)
-        command = ['bun', binary] if lane=='javascript' else [binary]
-        process = subprocess.run(list(map(str, command)), cwd=directory, env=ENV, capture_output=True,
-                                 text=True, timeout=240, preexec_fn=limit_handles)
-        if process.returncode:
-            raise RuntimeError(f'{lane}: image-export run failed\n{process.stderr[-2000:]}')
-        actual = parse_rows(process.stdout, cases, candidate=True)
-        compare_rows(cases, expected, actual)
-        verify_files(directory, cases, actual)
-        verify_closure_files(directory, closure_reference)
-        # This is a mandatory second CPU/JS execution. No lane passes if its
-        # post-open failures, repeated descriptor closure, or sentinels differ.
-        write_failures = run_write_failure_lane(args, work, lane)
-        report['lanes'][lane] = dict(passed=True, result_rows=len(actual),
-                                    post_open_write_failures=write_failures,
-                                    stdout_sha256=hashlib.sha256(process.stdout.encode()).hexdigest())
-        report_path.write_text(json.dumps(report, indent=2)+'\n')
-        print(f'{lane}: {report["export_cases"]} complete native image files, {report["rejected_owner_controls"]} retained-owner rejections, '
-              f'{report["io_error_controls"]} open errors, {write_failures["writes"]} post-open write errors and '
-              f'{CLOSURE_ITERATIONS} low-descriptor cycles passed', flush=True)
-    report['passed'] = True
-    report_path.write_text(json.dumps(report, indent=2)+'\n')
+        return directory
+
+    # Each lane runs in its own prepared directory with 64 descriptors; its complete
+    # files, untouched sentinels/directories and closure files are verified in place.
+    lanes, rss = {}, {}
+    for lane, text, peak in limited_runs(probe, 'candidate', candidate_program(cases, expected), before=prepared):
+        actual = parse_rows(text, cases, candidate=True)
+        verify_files(work/(lane+'-files'), cases, actual)
+        verify_closure_files(work/(lane+'-files'), closure_reference)
+        lanes[lane], rss[lane] = comparable(actual), peak
+    probe.compare(expected, lanes, lambda i: cases[i]['id'])
+    def failing(lane):
+        directory = fresh(work/(lane+'-write-failure-files'))
+        prepare_write_failure_paths(directory)
+        return directory
+
+    # A mandatory second execution per lane: every post-open write fails with EFBIG.
+    for lane, text, _ in limited_runs(probe, 'write-failure', write_failure_program(), before=failing, fsize=True):
+        verify_write_failures(work/(lane+'-write-failure-files'), text)
+    probe.finish(cases=len(cases), reference_cases=len(native_cases),
+                 export_cases=sum(case['status'] == 'ok' for case in cases),
+                 rejected_owner_controls=sum(case['status'] == 'unsupported' for case in cases),
+                 io_error_controls=sum(case['status'] == 'file' for case in cases),
+                 post_open_write_error_controls=len(CODECS),
+                 encoded_bytes=sum(len(row.get('bytes', [])) for row in reference),
+                 roundtrip_pixels=sum(len(row.get('pixels', [])) for case, row in zip(native_cases, reference) if case['status'] == 'ok'),
+                 closure_iterations=CLOSURE_ITERATIONS, closure_operations_per_iteration=len(CODECS)*3+1,
+                 file_descriptor_limit=FILE_DESCRIPTOR_LIMIT, maximum_rss_bytes=rss,
+                 inputs_sha256=hashlib.sha256(json.dumps(cases, sort_keys=True).encode()).hexdigest(),
+                 reference_sha256=hashlib.sha256(reference_text.encode()).hexdigest())
 
 
 if __name__ == '__main__':
