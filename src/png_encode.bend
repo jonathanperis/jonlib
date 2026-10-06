@@ -2,6 +2,7 @@
 # Altered Bend adaptation of stb_image_write's default byte-format PNG export.
 # MIT notice: LICENSES/stb-image.txt. Auto filter, quality 8, no vertical flip.
 import Base
+import ./checksum.bend as Checksum
 import ./png.bend as P
 import ./deflate.bend as D
 
@@ -85,16 +86,6 @@ def rows(n: Nat, +y: U32, +width: U32, +channels: U32, state: Array<U32> & Array
     case 1n+rest Tuple{pixels, output}:
       rows(rest, (y + 1 : U32), width, channels, row.filtered(y, width, channels, output, choose(5n, 0, (y * width : U32), width, channels, Choice{pixels, 2147483647, 0})))
 
-def crc.bits(n: Nat, +value: U32) -> U32:
-  match n:
-    case 0n: value
-    case 1n+rest: crc.bits(rest, ((value >> 1n) .^. Bool.pick(U32, ((value .&. 1) > 0 : U32), 3988292384, 0) : U32))
-
-def crc(bytes: +List<U32>, value: U32) -> U32:
-  match bytes:
-    case Nil{}: value
-    case Con{byte, rest}: crc(rest, crc.bits(8n, (value .^. byte : U32)))
-
 def word.bytes(+value: U32) -> +List<U32>:
   [(value >> 24n : U32), ((value >> 16n) .&. 255 : U32), ((value >> 8n) .&. 255 : U32), (value .&. 255 : U32)]
 
@@ -103,7 +94,7 @@ def word.prepend(+value: U32, bytes: +List<U32>) -> +List<U32>:
 
 def chunk(kind: U32, size: U32, +payload: +List<U32>, bytes: +List<U32>) -> +List<U32>:
   +tag = word.bytes(kind)
-  checksum = (crc(payload, crc(tag, 4294967295)) .^. 4294967295 : U32)
+  checksum = (Checksum.crc(payload, Checksum.crc(tag, 4294967295)) .^. 4294967295 : U32)
   word.prepend(checksum, P.reverse_into(payload, P.reverse_into(tag, word.prepend(size, bytes))))
 
 def color_type(channels: U32) -> U32:

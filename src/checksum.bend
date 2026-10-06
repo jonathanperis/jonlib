@@ -112,3 +112,14 @@ def checked(size: Maybe<&2, U32>, bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
 
 def md5(+bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
   checked(input_size(bytes, 0, True{}), bytes)
+
+# Reflected CRC-32 (polynomial 0xEDB88320) register update, one bit at a time.
+def crc.bits(n: Nat, +value: U32) -> U32:
+  match n:
+    case 0n: value
+    case 1n+rest: crc.bits(rest, ((value >> 1n) .^. Bool.pick(U32, ((value .&. 1) > 0 : U32), 3988292384, 0) : U32))
+
+def crc(bytes: +List<U32>, value: U32) -> U32:
+  match bytes:
+    case Nil{}: value
+    case Con{byte, rest}: crc(rest, crc.bits(8n, (value .^. byte : U32)))
