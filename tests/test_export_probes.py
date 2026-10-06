@@ -1,17 +1,22 @@
-"""Offline checks for the export probes: fixtures, independent decoders and strict parsers."""
+"""Offline checks for the export and R32 probes: fixtures, independent decoders and strict parsers."""
 import json
 from pathlib import Path
 import struct
 import sys
 import tempfile
 import unittest
+import zlib
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
+import float_rgb_r32_probe
 import formatted_bmp_export_probe as bmp
 import formatted_export
 import formatted_qoi_export_probe as qoi
 import formatted_tga_export_probe as tga
 import image_export_probe
+import image_format_probe
+import r32_image_probe
+import r32_raw_file_probe
 
 
 def chunks(rows):
@@ -27,6 +32,116 @@ def chunks(rows):
 
 def observation(meta, *values):
     return '\n'.join([json.dumps(meta), *(chunks([list(v)]) for v in values)]) + '\n'
+
+
+def words(data):
+    return set(struct.unpack('<' + 'I' * (len(data) // 4), bytes(data)))
+
+
+class R32InputTests(unittest.TestCase):
+    def test_r32_samples_are_in_domain_and_straddle_every_threshold(self):
+        samples = image_format_probe.r32_words()
+        self.assertEqual(samples, sorted(set(samples)))
+        self.assertTrue({0, 0x80000000, 1, 0x007fffff, 0x00800000, 0x3f7fffff, 0x3f800000} <= set(samples))
+        self.assertTrue(all(w == 0x80000000 or w <= 0x3f800000 for w in samples))
+        for limit, offset in ((255, 0), (31, .5), (63, .5), (15, .5)):
+            for level in range(1 if offset == 0 else 0, limit):
+                center = struct.unpack('<I', struct.pack('<f', (level + offset) / limit))[0]
+                self.assertTrue({center - 1, center, center + 1} <= set(samples))
+
+    def test_image_format_covers_all_64_pairs_and_bad_factories(self):
+        cases = image_format_probe.cases()
+        pairs = {(c['source'], c['targets'][0]) for c in cases if len(c['targets']) == 1 and c['targets'][0] and not c['bridge']}
+        self.assertEqual(pairs, {(a, b) for a in range(1, 9) for b in range(1, 9)})
+        large = next(c for c in cases if 'repeat_words' in c)
+        self.assertEqual(large['bytes'], image_format_probe.word_bytes(large['repeat_words'] * large['repeat_count']))
+        controls = image_format_probe.invalid_cases()
+        self.assertTrue({0x80000001, 0x3f800001, 0x7f800000, 0x7fc00000} <= {w for c in controls if len(c['bytes']) == 4 and max(c['bytes']) < 256 for w in words(c['bytes'])})
+        self.assertTrue(any(c['width'] == 4097 for c in controls) and any(c['bytes'] == [0, 0, 0, 256] for c in controls))
+
+    def test_image_format_parser_reassembles_chunks_and_guards_noops(self):
+        case = dict(width=1, height=1, source=8, bytes=[0, 0, 0, 128], targets=[0, 8], bridge=False)
+        head = dict(width=1, height=1, format=8, chunked=True)
+        encode = lambda rows: '\n'.join(map(json.dumps, rows))
+        self.assertEqual(image_format_probe.parse_rows(encode([head, [0, 0], [0, 128], 'end', dict(rejected=True)]), [case], [{}]),
+                         [dict(width=1, height=1, format=8, bytes=[0, 0, 0, 128]), dict(rejected=True)])
+        for rows in ([head, [0, 0, 0, 128]], [head, [0, 0, 0, 0], 'end'], [dict(head, format=9), [0, 0, 0, 128], 'end'],
+                     [head, [0, 0, 0, 128], 'end', 'end'], [head, [0, 0, 0, 256], 'end']):
+            with self.subTest(rows=rows), self.assertRaises(ValueError):
+                image_format_probe.parse_rows(encode(rows), [case])
+
+    def test_r32_image_png_validation_and_shapes(self):
+        def png(width, height, rgba):
+            chunk = lambda kind, payload: struct.pack('>I', len(payload)) + kind + payload + struct.pack('>I', zlib.crc32(kind + payload))
+            raster = b''.join(b'\0' + bytes(rgba[y*width*4:(y+1)*width*4]) for y in range(height))
+            return list(b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0))
+                        + chunk(b'IDAT', zlib.compress(raster)) + chunk(b'IEND', b''))
+        good = png(1, 1, [127, 0, 0, 255])
+        self.assertTrue(r32_image_probe.valid_png(good, 1, 1))
+        for bad in (good[:-1], good + [0], good[:29] + [good[29] ^ 1] + good[30:], png(2, 1, [0] * 8)):
+            self.assertFalse(r32_image_probe.valid_png(bad, 1, 1))
+        case = dict(id='half', width=1, height=1, bytes=[0, 0, 0, 63])
+        ops = [dict(kind='png', case=case), dict(kind='code', case=case), dict(kind='memory_png', case=case)]
+        rows = [good, [127, 0, 0, 255], list(b'#define HALF_FORMAT   8\n'), png(1, 1, case['bytes']), case['bytes']]
+        shapes = r32_image_probe.schemas(ops)
+        self.assertEqual(r32_image_probe.parse_rows(chunks(rows), shapes), rows)
+        self.assertEqual(r32_image_probe.png_observations(ops, rows)['half']['png']['decoded_rgba'], [127, 0, 0, 255])
+        for index, changed in ((2, list(b'#define HALF_FORMAT   9\n')), (4, [0, 0, 0, 64]), (1, [127, 0, 0])):
+            bad = list(rows); bad[index] = changed
+            with self.subTest(index=index), self.assertRaises(ValueError):
+                r32_image_probe.png_observations(ops, r32_image_probe.parse_rows(chunks(bad), shapes))
+
+    def test_r32_raw_fixtures_select_payloads_and_place_invalid_words_at_both_ends(self):
+        cases, controls = r32_raw_file_probe.fixture_specs()
+        for case in cases:
+            if not case['error']:
+                size = case['width'] * case['height'] * 4
+                offset = case['header'] if case['header'] and case['header'] + size <= len(case['data']) else 0
+                self.assertEqual(case['selected'], case['data'][offset:offset + size])
+        for word in r32_raw_file_probe.INVALID_WORDS:
+            first = next(c for c in controls if c['name'] == f'invalid-{word:08x}-first')
+            last = next(c for c in controls if c['name'] == f'invalid-{word:08x}-last')
+            self.assertEqual((first['data'][:4], last['data'][-4:]), (list(struct.pack('<I', word)),) * 2)
+        row = r32_raw_file_probe.image_row(cases[0])
+        self.assertEqual(r32_raw_file_probe.parse_rows(chunks([row, None]), [cases[0], cases[-1]], native=True), [row, None])
+        with self.assertRaises(ValueError):
+            r32_raw_file_probe.parse_rows(chunks([row[:-1], None]), [cases[0], cases[-1]], native=True)
+
+    def test_sparse_raw_input_holds_only_the_selected_word(self):
+        _, controls = r32_raw_file_probe.fixture_specs()
+        case = next(c for c in controls if c['name'] == 'bounded-sparse-header-tail')
+        build = r32_raw_file_probe.ROOT / '.build'
+        build.mkdir(exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=build) as directory:
+            r32_raw_file_probe.prepare_inputs(Path(directory), [], [case])
+            path = r32_raw_file_probe.ROOT / case['path']
+            self.assertEqual(path.stat().st_size, case['size'])
+            with path.open('rb') as file:
+                file.seek(case['header'])
+                self.assertEqual(file.read(4), b'\0\0\0\x80')
+
+    def test_float_rgb_r32_controls_and_parser(self):
+        controls = float_rgb_r32_probe.controls()
+        for word in float_rgb_r32_probe.INVALID_WORDS:
+            for component in range(3):
+                for position in range(3):
+                    c = next(c for c in controls if c['name'] == f'reject-{word:08x}-component{component}-position{position}')
+                    self.assertEqual(struct.unpack_from('<I', bytes(c['bytes']), 12*position + 4*component)[0], word)
+        case = float_rgb_r32_probe.fixture('one', [(0, 0, 0)])
+        shapes = float_rgb_r32_probe.shapes([case])
+        row = list(struct.pack('<IIII', 1, 1, 8, 0))
+        self.assertEqual(float_rgb_r32_probe.parse_rows(chunks([row]), shapes), [row])
+        for bad in ([row[:-1]], [list(struct.pack('<IIII', 1, 1, 8, 0x3f800001))], [row, row]):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                float_rgb_r32_probe.parse_rows(chunks(bad), shapes)
+
+    def test_float_rgb_r32_qualification_requires_uncontracted_profile(self):
+        case = float_rgb_r32_probe.fixture('one', [(0, 0, 0)])
+        good = dict(pixels=1, uncontracted_mismatches=0, fused_differences=1)
+        self.assertEqual(float_rgb_r32_probe.qualify(good, [case]), good)
+        for bad in (dict(good, pixels=2), dict(good, pixels=True), dict(good, uncontracted_mismatches=1), dict(good, fused_differences=0), {}):
+            with self.subTest(bad=bad), self.assertRaises(float_rgb_r32_probe.ProbeFailure):
+                float_rgb_r32_probe.qualify(bad, [case])
 
 
 class RasterExportTests(unittest.TestCase):
