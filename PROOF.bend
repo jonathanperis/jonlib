@@ -4,7 +4,7 @@ import ./LAWS.bend as Laws
 import ./jonlib.bend as J
 import ./jonmath.bend as M
 
-def Laws.clear_dimensions(width, height, pixels, color):
+def Laws.clear_dimensions(width, height, format, pixels, color):
   {==}
 
 def Laws.transpose_involution(matrix):
@@ -310,16 +310,16 @@ def Laws.bmp_nonterminal_row(padding, bytes):
 def Laws.bmp_terminal_row(padding, bytes):
   {==}
 
-def Laws.formatted_tga_gray_channels():
+def Laws.export_gray_channels():
   {==}
 
-def Laws.formatted_tga_gray_alpha_channels():
+def Laws.export_gray_alpha_channels():
   {==}
 
-def Laws.formatted_tga_rgb_channels():
+def Laws.export_rgb_channels():
   {==}
 
-def Laws.formatted_tga_rgba_channels():
+def Laws.export_rgba_channels():
   {==}
 
 def Laws.tga_values_zero(channels, colors, bytes):
@@ -350,37 +350,37 @@ def Laws.image_file_complete_short():
 def Laws.image_file_complete_long():
   {==}
 
-def Laws.formatted_qoi_export_rgb_channels():
+def Laws.qoi_export_rgb_channels():
   {==}
 
-def Laws.formatted_qoi_export_rgba_channels():
+def Laws.qoi_export_rgba_channels():
   {==}
 
-def Laws.formatted_qoi_export_gray_rejected():
+def Laws.qoi_export_gray_rejected():
   {==}
 
-def Laws.formatted_qoi_export_gray_alpha_rejected():
+def Laws.qoi_export_gray_alpha_rejected():
   {==}
 
-def Laws.formatted_qoi_export_rgb565_rejected():
+def Laws.qoi_export_rgb565_rejected():
   {==}
 
-def Laws.formatted_qoi_export_rgb5a1_rejected():
+def Laws.qoi_export_rgb5a1_rejected():
   {==}
 
-def Laws.formatted_qoi_export_rgba4_rejected():
+def Laws.qoi_export_rgba4_rejected():
   {==}
 
-def Laws.formatted_qoi_export_r32_rejected():
+def Laws.qoi_export_r32_rejected():
   {==}
 
-def Laws.formatted_qoi_export_rgb_packing():
+def Laws.qoi_export_rgb_packing():
   {==}
 
-def Laws.formatted_qoi_export_rgba_packing():
+def Laws.qoi_export_rgba_packing():
   {==}
 
-def Laws.formatted_qoi_export_packing_empty(index, format, pixels):
+def Laws.qoi_export_packing_empty(index, format, pixels):
   {==}
 
 def Laws.qoi_surface_encoder_preserved(width, height, pixels):
@@ -461,38 +461,35 @@ def Laws.pic_native_low_bits():
 def Laws.pic_native_alpha_low_bits():
   {==}
 
-def Laws.formatted_native_format_1():
+def Laws.codec_native_format_1():
   {==}
 
-def Laws.formatted_native_format_2():
+def Laws.codec_native_format_2():
   {==}
 
-def Laws.formatted_native_format_3():
+def Laws.codec_native_format_3():
   {==}
 
-def Laws.formatted_native_format_4():
+def Laws.codec_native_format_4():
   {==}
 
-def Laws.formatted_native_word_1_2155905279():
+def Laws.codec_native_word_1_2155905279():
   {==}
 
-def Laws.formatted_native_word_2_2172748032():
+def Laws.codec_native_word_2_2172748032():
   {==}
 
-def Laws.formatted_native_word_2_305419896():
+def Laws.codec_native_word_2_305419896():
   {==}
 
-def Laws.formatted_native_word_3_305419896():
+def Laws.codec_native_word_3_305419896():
   {==}
 
-def Laws.formatted_native_word_3_305420031():
+def Laws.codec_native_word_3_305420031():
   {==}
 
-def Laws.formatted_native_word_4_2172748032():
+def Laws.codec_native_pixels_zero(index, channels, pixels):
   {==}
 
-def Laws.formatted_native_word_4_305419896():
-  {==}
-
-def Laws.formatted_native_pixels_zero(index, channels, pixels):
+def Laws.codec_native_rgba_is_canonical(width, height, pixels):
   {==}

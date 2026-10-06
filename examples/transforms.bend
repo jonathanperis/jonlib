@@ -1,12 +1,17 @@
 import Base
 import ../jonlib.bend as J
 
+def finished(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "image export failed")
+    case Done{_}: IO.pure(Unit, Unit{})
+
 def save(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}:
       IO.die(Unit, 1, "image transformation failed")
     case Done{surface}:
-      IO.try(Unit, J.Surface.write_ppm(surface, ".build/transforms.ppm"))
+      IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_ppm(surface, ".build/transforms.ppm"), finished)
 
 def transform(surface: J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
   do Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
