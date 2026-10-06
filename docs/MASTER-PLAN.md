@@ -95,7 +95,7 @@ prerequisites are also isolated, as are the [checked normal multiply/divide and
 word adapters](BINARY64-OPS.md) and [gradual-output product](BINARY64-GRADUAL-MULTIPLY.md).
 The [complete private finite modern angle kernel](MODERN-ANGLE.md) now consumes
 these unchanged helpers with separate source/trace verification. The
-[checked angle integration](CHECKED-ANGLES.md) adds public references, guarded
+[checked angle integration](ANGLES.md) adds public references, guarded
 wrappers and fresh native selection. Device/resource and wider-domain evidence
 remain Phase 1 work.
 
@@ -173,10 +173,10 @@ the destination remains the full, versioned parity matrix.
 
 ## Standalone native angle qualification
 
-The independently frozen [native angle qualification gate](ANGLE-QUALIFICATION.md)
+The independently frozen [native angle qualification gate](ANGLES.md)
 checks 76 scalar controls, 205 canonical/runtime wrapper controls and
 1,654 ordered intermediate words before angle-candidate generation. The new
-[checked angle integration](CHECKED-ANGLES.md) consumes the fresh qualified
+[checked angle integration](ANGLES.md) consumes the fresh qualified
 selection and enforces each intermediate domain. Old algorithms/defaults and
 canonical fixtures remain unchanged. Historical Apple/Sun source contracts are
 not newly host-qualified; Darwin angle-bearing canonical/Metal runs currently
