@@ -60,7 +60,7 @@ def Base64.decode(text: String) -> Maybe<&2, +List<U32>>:
 def Checksum.crc32.checked(size: Maybe<&2, U32>, bytes: +List<U32>) -> Maybe<&2, U32>:
   match size:
     case None{}: None{}
-    case Some{_}: Some{(PngEncode.crc(bytes, 4294967295) .^. 4294967295 : U32)}
+    case Some{_}: Some{(Checksums.crc(bytes, 4294967295) .^. 4294967295 : U32)}
 
 def Checksum.crc32(+bytes: +List<U32>) -> Maybe<&2, U32>:
   Checksum.crc32.checked(Checksums.input_size(bytes, 0, True{}), bytes)
@@ -2808,46 +2808,47 @@ def Surface.to_ppm(surface: Surface) -> String:
   "P3\n" ++ U32.show(w) ++ " " ++ U32.show(h) ++ "\n255\n"
     ++ Surface.ppm.colors(List.reverse(&1, U32, Surface.colors(Surface{w, h, pixels})), "")
 
-def Surface.ppm.written(result: File & Result<&1, &1, U32 & String, Unit>) -> IO(Result<&1, &1, U32 & String, Unit>):
+# Shared file writers: write once, close the handle, return the write status.
+def Image.file.write.closed(result: File & Result<&1, &1, U32 & String, Unit>) -> IO(Result<&1, &1, U32 & String, Unit>):
   (file, status) = result
   do IO<Result<&1, &1, U32 & String, Unit>>:
     Unit <- File.close(file)
     IO.pure(Result<&1, &1, U32 & String, Unit>, status)
 
-def Surface.ppm.opened(text: String, opened: Result<&1, &1, U32 & String, File>) -> IO(Result<&1, &1, U32 & String, Unit>):
+def Image.file.write_text.opened(text: String, opened: Result<&1, &1, U32 & String, File>) -> IO(Result<&1, &1, U32 & String, Unit>):
   match opened:
     case Fail{error}:
       IO.pure(Result<&1, &1, U32 & String, Unit>, Fail{error})
     case Done{file}:
       IO.bind(File & Result<&1, &1, U32 & String, Unit>, Result<&1, &1, U32 & String, Unit>,
-        File.write(file, text), Surface.ppm.written)
+        File.write(file, text), Image.file.write.closed)
 
 def Surface.write_ppm(surface: Surface, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.ppm.opened(Surface.to_ppm(surface)))
+    File.open(path, "w"), Image.file.write_text.opened(Surface.to_ppm(surface)))
 
-def Surface.qoi.opened(bytes: +List<U32>, opened: Result<&1, &1, U32 & String, File>) -> IO(Result<&1, &1, U32 & String, Unit>):
+def Image.file.write.opened(bytes: +List<U32>, opened: Result<&1, &1, U32 & String, File>) -> IO(Result<&1, &1, U32 & String, Unit>):
   match opened:
     case Fail{error}: IO.pure(Result<&1, &1, U32 & String, Unit>, Fail{error})
     case Done{file}:
       IO.bind(File & Result<&1, &1, U32 & String, Unit>, Result<&1, &1, U32 & String, Unit>,
-        File.write_bytes(file, bytes), Surface.ppm.written)
+        File.write_bytes(file, bytes), Image.file.write.closed)
 
 def Surface.write_qoi(surface: Surface, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.qoi.opened(Surface.to_qoi(surface)))
+    File.open(path, "w"), Image.file.write.opened(Surface.to_qoi(surface)))
 
 def Surface.write_bmp(surface: Surface, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.qoi.opened(Surface.to_bmp(surface)))
+    File.open(path, "w"), Image.file.write.opened(Surface.to_bmp(surface)))
 
 def Surface.write_tga(surface: Surface, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.qoi.opened(Surface.to_tga(surface)))
+    File.open(path, "w"), Image.file.write.opened(Surface.to_tga(surface)))
 
 def Surface.write_png(surface: Surface, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.qoi.opened(Surface.to_png(surface)))
+    File.open(path, "w"), Image.file.write.opened(Surface.to_png(surface)))
 
 type Image.FileKind is Data:
   QoiFile{}
@@ -3147,7 +3148,7 @@ def Image.Formatted.raw_bytes(image: Image.Formatted) -> +List<U32>:
 
 def Image.Formatted.write_raw(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.qoi.opened(Image.Formatted.raw_bytes(image)))
+    File.open(path, "w"), Image.file.write.opened(Image.Formatted.raw_bytes(image)))
 
 type Image.ExportError is Type:
   UnsupportedImageExport{surface: Surface}
@@ -3172,15 +3173,15 @@ def Surface.write_image(surface: Surface, +path: String) -> IO(Result<&1, &1, Im
 
 def Image.Formatted.write_png(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.qoi.opened(Image.Formatted.png.file_bytes(image)))
+    File.open(path, "w"), Image.file.write.opened(Image.Formatted.png.file_bytes(image)))
 
 def Image.Formatted.write_bmp(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.qoi.opened(Image.Formatted.to_bmp(image)))
+    File.open(path, "w"), Image.file.write.opened(Image.Formatted.to_bmp(image)))
 
 def Image.Formatted.write_tga(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.qoi.opened(Image.Formatted.to_tga(image)))
+    File.open(path, "w"), Image.file.write.opened(Image.Formatted.to_tga(image)))
 
 type Image.Formatted.QoiWriteError is Type:
   QoiSourceError{image: Image.Formatted}
@@ -3197,7 +3198,7 @@ def Image.Formatted.qoi.file_bytes(path: String, result: Result<&1, &1, Image.Fo
     case Done{bytes}:
       IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.Formatted.QoiWriteError, Unit>,
         IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-          File.open(path, "w"), Surface.qoi.opened(bytes)), Image.Formatted.qoi.written)
+          File.open(path, "w"), Image.file.write.opened(bytes)), Image.Formatted.qoi.written)
 
 def Image.Formatted.write_qoi(image: Image.Formatted, path: String) -> IO(Result<&1, &1, Image.Formatted.QoiWriteError, Unit>):
   Image.Formatted.qoi.file_bytes(path, Image.Formatted.to_qoi(image))
@@ -3313,7 +3314,7 @@ def Image.FloatRGB.file.write(path: String, result: Result<&1, &1, Image.FloatRG
     case Fail{image}: IO.pure(Result<&1, &1, Image.FloatRGB.WriteError, Unit>, Fail{FloatRGBSampleError{image}})
     case Done{bytes}:
       IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.FloatRGB.WriteError, Unit>,
-        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Surface.qoi.opened(bytes)), Image.FloatRGB.file.written)
+        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Image.file.write.opened(bytes)), Image.FloatRGB.file.written)
 
 def Image.FloatRGB.write_raw(image: Image.FloatRGB, path: String) -> IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>):
   Image.FloatRGB.file.write(path, Image.FloatRGB.to_bytes(image))
@@ -3355,7 +3356,7 @@ def Image.Formatted.code.write(path: String, result: Result<&1, &1, Image.Format
     case Fail{image}: IO.pure(Result<&1, &1, Image.Formatted.CodeWriteError, Unit>, Fail{CodeSourceError{image}})
     case Done{text}:
       IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.Formatted.CodeWriteError, Unit>,
-        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Surface.ppm.opened(text)), Image.Formatted.code.written)
+        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Image.file.write_text.opened(text)), Image.Formatted.code.written)
 
 def Image.Formatted.write_code(image: Image.Formatted, +path: String) -> IO(Result<&1, &1, Image.Formatted.CodeWriteError, Unit>):
   Image.Formatted.code.write(path, Image.Formatted.to_code(image, path))
@@ -3389,7 +3390,7 @@ def Image.FloatRGB.code.write(path: String, result: Result<&1, &1, Image.FloatRG
     case Fail{image}: IO.pure(Result<&1, &1, Image.FloatRGB.CodeWriteError, Unit>, Fail{FloatCodeSourceError{image}})
     case Done{text}:
       IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.FloatRGB.CodeWriteError, Unit>,
-        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Surface.ppm.opened(text)), Image.FloatRGB.code.written)
+        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Image.file.write_text.opened(text)), Image.FloatRGB.code.written)
 
 def Image.FloatRGB.write_code(image: Image.FloatRGB, +path: String) -> IO(Result<&1, &1, Image.FloatRGB.CodeWriteError, Unit>):
   Image.FloatRGB.code.write(path, Image.FloatRGB.to_code(image, path))
