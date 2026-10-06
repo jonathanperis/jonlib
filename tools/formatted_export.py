@@ -133,7 +133,7 @@ def opened(width: U32, height: U32, format: U32, size: U32, path: String, result
 # Direct Base writes establish the exact host error code and message. Every
 # formatted write must return them unchanged, rather than merely any error.
 RASTER_IO = '''def direct(path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
-  IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), J.Surface.qoi.opened([1]))
+  IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), J.Image.file.write.opened([1]))
 def status(+code: U32, message: String, result: Result<&1, &1, U32 & String, Unit>) -> IO(Unit):
   match result:
     case Fail{Tuple{actual_code, actual_message}}: checked(U32.is_gt(code, 0) && U32.is_eq(code, actual_code) && String.eq(message, actual_message))
