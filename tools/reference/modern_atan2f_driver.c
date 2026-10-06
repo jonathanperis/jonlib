@@ -1,79 +1,37 @@
-/* Jonlib native-only qualification/trace driver. Independent controls are fixed
- * IEEE words. The pinned scalar source, native pointer and Sun comparator remain
- * distinct call paths. This file is not a production angle implementation. */
-#define _GNU_SOURCE
+/* Jonlib native oracle driver for the pinned atan2f kernels. Not a production
+ * angle implementation. The instrumented glibc-2.41 adaptation, the unmodified
+ * glibc-2.41 source, the pinned Sun 2.39 source and host libm remain distinct
+ * call paths; rows are read from a file of "id y x" hexadecimal words. */
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
 #include <fenv.h>
-#include <dlfcn.h>
-#ifdef __APPLE__
-#include "runtime_image.h"
-#endif
 #include "modern_atan2f_shim.h"
 #include "modern_atan2f_trace.h"
-#ifdef __GLIBC__
-#include <gnu/libc-version.h>
-#endif
 #if defined(__x86_64__) || defined(__i386__)
 #include <xmmintrin.h>
-#elif !defined(__aarch64__)
-#error Floating point control register qualification is unavailable
 #endif
-#include "modern_atan2f_sun.h"
 struct ma_trace_state ma_trace;
 float modern_atan2f_adapted(float,float);
-float modern_atan2f_original(float,float);
+float glibc241_atan2f(float,float);
+float sun239_atan2f(float,float);
 static float (*volatile native_atan2)(float,float) = atan2f;
-static float (*volatile original_atan2)(float,float) = modern_atan2f_original;
+static float (*volatile original_atan2)(float,float) = glibc241_atan2f;
 static float (*volatile adapted_atan2)(float,float) = modern_atan2f_adapted;
-static float (*volatile sun_atan2)(float,float) = gnu_atan2;
+static float (*volatile sun_atan2)(float,float) = sun239_atan2f;
 
-static uint64_t control_word(void) {
-#if defined(__x86_64__) || defined(__i386__)
-  return _mm_getcsr();
-#else
-  uint64_t value; __asm__ volatile("mrs %0, fpcr" : "=r"(value)); return value;
-#endif
-}
+/* Oracle sanity: round-to-nearest, no FTZ/DAZ, true FMA, exact narrowing and
+ * gradual underflow. Any failure invalidates every pinned-source observation. */
 static int context_ok(void) {
   if (fegetround()!=FE_TONEAREST) return 0;
-  uint64_t c=control_word();
 #if defined(__x86_64__) || defined(__i386__)
-  return !(c & ((1u<<15)|(1u<<6)|(3u<<13)));
-#else
+  return !(_mm_getcsr() & ((1u<<15)|(1u<<6)|(3u<<13)));
+#elif defined(__aarch64__)
+  uint64_t c; __asm__ volatile("mrs %0, fpcr" : "=r"(c));
   return !(c & ((1ull<<24)|(1ull<<19)|(3ull<<22)|3ull));
-#endif
-}
-#ifdef __APPLE__
-static unsigned short x87_control(void) {
-#if defined(__x86_64__)
-  unsigned short value; __asm__ volatile("fnstcw %0":"=m"(value)); return value;
 #else
-  return 0;
-#endif
-}
-static int runtime_images(FILE *out) {
-  if (dlsym(RTLD_DEFAULT,"atan2f")!=(void *)native_atan2 ||
-      dlsym(RTLD_DEFAULT,"fma")!=(void *)ma_runtime_fma) return 0;
-  fprintf(out,",\"x87_control\":%u,\"symbol_path\":\"volatile-pointers-equal-dlsym-default\",\"loader_overrides\":",x87_control());
-  if (!jon_runtime_loader_write_json(out)) return 0;
-  fputs(",\"runtime_images\":{\"atan2_library\":",out);
-  if (!jon_runtime_image_write_json(out,(void *)native_atan2)) return 0;
-  fputs(",\"fma_library\":",out);
-  if (!jon_runtime_image_write_json(out,(void *)ma_runtime_fma)) return 0;
-  fputc('}',out);
   return 1;
-}
 #endif
-static int finish_context(void) {
-  if (!context_ok()) return 12;
-  fprintf(stderr,"{\"kind\":\"final-context\",\"rounding\":\"FE_TONEAREST\",\"rounding_code\":%d,\"control\":%" PRIu64 ",\"ftz\":false,\"daz\":false",fegetround(),control_word());
-#ifdef __APPLE__
-  if (!runtime_images(stderr)) return 13;
-#endif
-  fputs("}\n",stderr);
-  return 0;
 }
 static int qualify(void) {
   if (!context_ok()) return 2;
@@ -108,19 +66,6 @@ static int qualify(void) {
   volatile double ds=asdouble(1),dt=asdouble(0x0010000000000000),one=1.0;
   if (asuint(fs*onef)!=1 || asuint(ft*half)!=0x00400000 ||
       asuint64(ds*one)!=1 || asuint64(dt*0.5)!=0x0008000000000000) return 6;
-  Dl_info ai={0},fi={0};
-  if (!dladdr((void *)native_atan2,&ai) || !dladdr((void *)ma_runtime_fma,&fi) || !ai.dli_fname || !fi.dli_fname) return 7;
-  /* Separate literal and volatile-pointer diagnostic paths, never selectors. */
-  volatile float y=1.0f,x=ma_asfloat(0x9e3ce508);
-  printf("{\"kind\":\"qualification\",\"rounding\":\"FE_TONEAREST\",\"initial_rounding\":%d,\"control\":%" PRIu64 ",\"ftz\":false,\"daz\":false,\"binary32\":true,\"binary64\":true,\"excess_precision\":false,\"fma_controls\":9,\"narrow_controls\":7,\"gradual_controls\":4,\"atan2_library\":\"%s\",\"fma_library\":\"%s\",\"literal_atan2\":%u,\"pointer_atan2\":%u,\"original_atan2\":%u",
-    fegetround(),control_word(),ai.dli_fname,fi.dli_fname,asuint(atan2f(1.0f,-1e-20f)),asuint(native_atan2(y,x)),asuint(original_atan2(y,x)));
-#ifdef __GLIBC__
-  printf(",\"libc\":\"glibc\",\"libc_version\":\"%s\"",gnu_get_libc_version());
-#endif
-#ifdef __APPLE__
-  if (!runtime_images(stdout)) return 13;
-#endif
-  puts("}");
   return 0;
 }
 static void emit(unsigned id,uint32_t yw,uint32_t xw) {
@@ -204,7 +149,6 @@ static void tiny_search(uint64_t count,uint64_t state) {
 }
 int main(int argc,char **argv) {
   int q=qualify(); if(q) { fprintf(stderr,"Native context qualification failed: %d\n",q); return q; }
-  if(argc==2 && !strcmp(argv[1],"--qualify")) return finish_context();
   if(argc==4 && !strcmp(argv[1],"--search-tiny")) {
     uint64_t count=strtoull(argv[2],0,0),state=strtoull(argv[3],0,0);
     if(!state || !count || count>UINT64_C(200000000))return 9;
@@ -227,10 +171,12 @@ int main(int argc,char **argv) {
       if(ma_trace.mask&128) { emit((unsigned)i,y,x); found++; }
     }
     fprintf(stderr,"search_trials=%" PRIu64 " general_hits=%u final_state=%" PRIu64 "\n",count,found,state);
-  } else if(argc==1) {
+  } else if(argc==2) {
+    FILE *in=fopen(argv[1],"r"); if(!in) return 10;
     unsigned id; uint32_t y,x; int read;
-    while((read=scanf("%u %" SCNx32 " %" SCNx32,&id,&y,&x))==3) emit(id,y,x);
-    if(read!=EOF || ferror(stdin))return 10;
+    while((read=fscanf(in,"%u %" SCNx32 " %" SCNx32,&id,&y,&x))==3) emit(id,y,x);
+    if(read!=EOF || ferror(in))return 10;
+    fclose(in);
   } else return 11;
-  return finish_context();
+  return context_ok() ? 0 : 12;
 }
