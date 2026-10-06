@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """Compare checked formats 1..8, exact ImageFormat pairs, chains and factory bounds."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
 import random
 import struct
 import sys
 
 from bmp_probe import bend_bytes
 from byte_probe import BEND_EMITTER
-from conformance import BUILD, ROOT, checkout, run, source_gate
+import probekit
+from probekit import ProbeFailure
 
 
 BYTES_PER_PIXEL = {1:1, 2:2, 3:2, 4:3, 5:2, 6:2, 7:4, 8:4}
@@ -149,12 +148,6 @@ def parse_rows(text, inputs, controls=()):
     return rows
 
 
-def differences(expected, actual):
-    if len(expected) != len(actual):
-        raise ValueError('Incomplete ImageFormat comparison result count')
-    return [dict(case=i,reference=a,candidate=b) for i,(a,b) in enumerate(zip(expected,actual)) if a != b]
-
-
 def reference_program(inputs):
     lines = ['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>','#include <string.h>',
              'int main(void){SetTraceLogLevel(LOG_NONE);']
@@ -180,7 +173,8 @@ def reference_program(inputs):
     return '\n'.join(lines+['}'])+'\n'
 
 
-def candidate_program(inputs, controls, lane):
+def candidate_program(actions, gpu=False):
+    """Conversions then factory controls, one ('input'|'control', case) action per output row."""
     program = '''import Base
 import ../../jonlib.bend as J
 def reverse_into(values: +List<U32>, rest: +List<U32>) -> +List<U32>:
@@ -228,55 +222,35 @@ def main() -> IO(Unit):
   do IO<Unit>:
 '''
     program = program.replace('def chain(', BEND_EMITTER+'def chain(', 1)
-    bang = '!' if lane == 'metal' else ''
-    for case in inputs:
-        targets = ','.join(map(str,case['targets']))
-        program += f'    observed(calculate{bang}({case["width"]}, {case["height"]}, {case["source"]}, {input_expression(case)}, [{targets}], {"True{}" if case["bridge"] else "False{}"}))\n'
-    for case in controls:
-        program += f'    rejected(J.Image.Formatted.from_bytes{bang}({case["width"]}, {case["height"]}, {case["source"]}, {bend_bytes(case["bytes"])}))\n'
+    bang = '!' if gpu else ''
+    for kind, case in actions:
+        if kind == 'input':
+            targets = ','.join(map(str,case['targets']))
+            program += f'    observed(calculate{bang}({case["width"]}, {case["height"]}, {case["source"]}, {input_expression(case)}, [{targets}], {"True{}" if case["bridge"] else "False{}"}))\n'
+        else:
+            program += f'    rejected(J.Image.Formatted.from_bytes{bang}({case["width"]}, {case["height"]}, {case["source"]}, {bend_bytes(case["bytes"])}))\n'
     return program
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True)
-    parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true',help='Also run pure conversion/factory operations on forced Metal')
-    args = parser.parse_args()
-    work = BUILD/'image-format-probe';work.mkdir(parents=True,exist_ok=True)
-    report_path = work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
+    probe = probekit.Probe('image-format', probekit.arguments(__doc__))
     if sys.byteorder != 'little':
-        raise ValueError('Current formatted-image profile requires a little-endian reference')
-    lock = json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'))
-    checkout(args.raylib_source,lock['raylib']['revision'])
+        raise ProbeFailure('Current formatted-image profile requires a little-endian reference')
     inputs, controls = cases(), invalid_cases()
-    source = work/'reference.c';source.write_text(reference_program(inputs));binary = work/'reference'
-    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary])
-    reference_text = run([binary]);expected = parse_rows(reference_text, inputs)
-    wanted = expected+[dict(rejected=True) for _ in controls]
-    report = dict(passed=False,format_pairs=64,cases=len(inputs),factory_controls=len(controls),r32_boundary_samples=len(r32_words()),
-                  checked_bytes=sum(len(row['bytes']) for row in expected),
-                  inputs_sha256=hashlib.sha256(json.dumps([inputs,controls]).encode()).hexdigest(),
-                  reference_sha256=hashlib.sha256(reference_text.encode()).hexdigest(),sources=source_gate(),
-                  reference_program_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
-                  harness_sha256={name:hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in
-                                  ('tools/image_format_probe.py','tools/bmp_probe.py','tools/byte_probe.py','tools/conformance.py','tests/test_r32_harness.py')},lanes={})
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        source = work/f'{lane}.bend';source.write_text(candidate_program(inputs,controls,lane))
-        report['lanes'][lane] = dict(passed=False,candidate_program_sha256=hashlib.sha256(source.read_bytes()).hexdigest())
-        report_path.write_text(json.dumps(report,indent=2)+'\n')
-        binary = work/('candidate.js' if lane == 'javascript' else f'candidate-{lane}')
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command = ['bun',binary] if lane == 'javascript' else [binary,*(['--gpu','on'] if lane == 'metal' else [])]
-        actual = parse_rows(run(command), inputs, controls)
-        delta = differences(wanted,actual)
-        report['lanes'][lane].update(passed=not delta,result_count=len(actual),mismatch_count=len(delta),differences=delta[:5])
-        report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if delta:
-            raise ValueError(f'{lane}: image-format mismatch: {delta[:1]}')
-        print(f'{lane}: 64 format pairs, {len(inputs)} native pair/chain/bridge cases, {len(controls)} factory controls, {report["checked_bytes"]} exact bytes',flush=True)
-    report['passed'] = True;report_path.write_text(json.dumps(report,indent=2)+'\n')
+    reference_text = probe.native(reference_program(inputs))
+    expected = parse_rows(reference_text, inputs)
+    actions = [('input', case) for case in inputs]+[('control', case) for case in controls]
+
+    def parse(text, selected):
+        return parse_rows(text, [c for k, c in selected if k == 'input'], [c for k, c in selected if k == 'control'])
+
+    # One program as before; candidate rows pass the same strict shape/no-op parser.
+    lanes = probe.candidates(candidate_program, actions, batch=len(actions), parse=parse)
+    probe.compare(expected+[dict(rejected=True) for _ in controls], lanes, lambda i: f'{actions[i][0]} {i}')
+    probe.finish(format_pairs=64, cases=len(inputs), factory_controls=len(controls), r32_boundary_samples=len(r32_words()),
+                 checked_bytes=sum(len(row['bytes']) for row in expected),
+                 inputs_sha256=hashlib.sha256(json.dumps([inputs,controls]).encode()).hexdigest(),
+                 reference_sha256=hashlib.sha256(reference_text.encode()).hexdigest())
 
 
 if __name__ == '__main__':

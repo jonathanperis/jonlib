@@ -185,4 +185,4 @@ out-of-domain operands/pairs; they must not silently substitute an already-round
 product for directly rounded gradual-underflow arithmetic. The separate
 [gradual-output product](BINARY64-GRADUAL-MULTIPLY.md) now provides that isolated
 arithmetic on a different checked rectangle. Existing angle profiles, fixtures,
-expectations, tolerances and their strict canonical mismatch remain unchanged. See [ANGLE-PLAN.md](ANGLE-PLAN.md).
+expectations, tolerances and their strict canonical mismatch remain unchanged. See [ANGLE-PLAN.md](ANGLES.md).

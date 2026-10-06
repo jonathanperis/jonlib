@@ -5,29 +5,19 @@ Native controls use LoadImageRaw and SaveFileData only, never color conversion
 or ExportImage's incidental float-to-byte casts. Invalid-domain payloads are
 Jonlib's explicit checked-storage adaptation, not native rejection claims.
 """
-import argparse
 import hashlib
 import json
-from pathlib import Path
 import struct
-import subprocess
 import sys
 
 from byte_probe import BEND_EMITTER, parse_results
-from conformance import BUILD, ENV, ROOT, checkout, run, source_gate
+from image_export_probe import FILE_DESCRIPTOR_LIMIT, limited_runs
 from image_format_probe import r32_words, word_bytes
-from raw_file_probe import limit_handles
+import probekit
+from probekit import ROOT, ProbeFailure
 
 ERRORS = {'file':1,'request':2,'truncated':3,'large':4,'samples':5}
 MAX_RUNTIME_RSS = 256*1024*1024
-# A fresh Python parent isolates candidate peak RSS from compiler high-water marks.
-RESOURCE_RUNNER = '''import json, resource, subprocess, sys
-from pathlib import Path
-result = subprocess.run(sys.argv[2:],timeout=230)
-rss = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
-Path(sys.argv[1]).write_text(json.dumps({'maximum_rss_bytes':int(rss if sys.platform == 'darwin' else rss*1024)})+'\\n')
-sys.exit(result.returncode)
-'''
 INVALID_WORDS = (0x80000001,0x807fffff,0x80800000,0xbf000000,0xbf800000,
                  0x3f800001,0x7f7fffff,0x7f800000,0xff800000,
                  0x7fc00000,0x7f800001,0x7fffffff,0xffc01234,0xff800001)
@@ -215,78 +205,39 @@ def candidate_program(cases,controls,work,lane):
     return program+'    closure_loop(100n)\n'
 
 
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
-
-
-def harness_hashes():
-    return {name:digest((ROOT/name).read_bytes()) for name in
-            ('tools/r32_raw_file_probe.py','tools/raw_file_probe.py','tools/byte_probe.py',
-             'tools/image_format_probe.py','tools/conformance.py','tests/test_r32_raw_harness.py')}
-
-
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True);parser.add_argument('--raylib-source',type=Path,required=True)
-    args = parser.parse_args()
-    work = BUILD/'r32-raw-file-probe';work.mkdir(parents=True,exist_ok=True)
-    report_path = work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    if sys.byteorder != 'little':raise ValueError('R32 RAW native profile requires little-endian storage')
-    lock = json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'));checkout(args.raylib_source,lock['raylib']['revision'])
+    args = probekit.arguments(__doc__)
+    if args.gpu:raise SystemExit('r32_raw_file_probe has no forced-GPU variant (file IO runs on CPU lanes only)')
+    probe = probekit.Probe('r32-raw-file',args);work = probe.work
+    if sys.byteorder != 'little':raise ProbeFailure('R32 RAW native profile requires little-endian storage')
     cases,controls = fixture_specs();prepare_inputs(work,cases,controls)
-    report = dict(passed=False,native_cases=len(cases),native_successes=sum(not c['error'] for c in cases),
-                  controls=sum(bool(c['error']) for c in controls),bounded_read_controls=sum(not c['error'] for c in controls),
-                  maximum_runtime_rss_bytes=MAX_RUNTIME_RSS,sample_controls=sum(c['error']=='samples' for c in controls),
-                  closure_iterations=100,closure_paths=['success','samples','truncated','read','size'],
-                  file_descriptor_limit=64,sources=source_gate(),harness_sha256=harness_hashes(),
-                  inputs_sha256=digest(json.dumps([cases,controls]).encode()),lanes={})
-    (work/'inputs.json').write_text(json.dumps([cases,controls])+'\n')
     clear_outputs(work,cases,'reference')
-    # Rebuild the archive against the verified source instead of trusting stale artifacts.
-    cmake = BUILD/'raylib'
-    run(['cmake','-S',args.raylib_source,'-B',cmake,'-DPLATFORM=Memory',
-         '-DCMAKE_BUILD_TYPE=Release','-DBUILD_EXAMPLES=OFF','-DCUSTOMIZE_BUILD=ON',
-         '-DSUPPORT_MODULE_RAUDIO=OFF','-DSUPPORT_RPRAND_GENERATOR=ON','-DUSE_EXTERNAL_GLFW=OFF'])
-    run(['cmake','--build',cmake,'--parallel','4'])
-    archive = cmake/'raylib/libraylib.a'
-    report['native_build'] = dict(raylib_revision=lock['raylib']['revision'],
-                                archive_sha256=digest(archive.read_bytes()),
-                                cmake_cache_sha256=digest((cmake/'CMakeCache.txt').read_bytes()),
-                                source=str(args.raylib_source.resolve()),rebuilt=True)
-    source = work/'reference.c';source.write_text(reference_program(cases,work));binary = work/'reference';binary.unlink(missing_ok=True)
-    report['reference_program_sha256'] = digest(source.read_bytes())
-    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,archive,'-lm','-o',binary])
-    text = run([binary]);(work/'reference.stdout').write_text(text)
-    expected = parse_rows(text,cases,native=True);verify_files(work,cases,'reference')
-    report['reference_sha256'] = digest(text.encode())
-    report['compared_payload_bytes'] = sum(len(c['selected']) for c in cases if not c['error'])
-    for lane in ('cpu','javascript'):
-        clear_outputs(work,cases+controls,lane)
-        source = work/(lane+'.bend');source.write_text(candidate_program(cases,controls,work,lane))
-        binary = work/('candidate-'+lane+('.js' if lane=='javascript' else ''));binary.unlink(missing_ok=True)
-        evidence = dict(passed=False,candidate_program_sha256=digest(source.read_bytes()));report['lanes'][lane] = evidence
-        report_path.write_text(json.dumps(report,indent=2)+'\n')
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command = ['bun',binary] if lane=='javascript' else [binary]
-        usage = work/(lane+'-resource.json');usage.unlink(missing_ok=True)
-        process = subprocess.run([sys.executable,'-c',RESOURCE_RUNNER,str(usage),*map(str,command)],cwd=ROOT,env=ENV,capture_output=True,text=True,timeout=240,preexec_fn=limit_handles)
-        (work/(lane+'.stdout')).write_text(process.stdout)
-        if process.returncode:raise RuntimeError(f'{lane}: R32 RAW/closure run failed\n{process.stderr[-2000:]}')
-        memory = json.loads(usage.read_text())['maximum_rss_bytes']
-        if type(memory) is not int or not 0 < memory <= MAX_RUNTIME_RSS:
-            raise ValueError(f'{lane}: bounded-read runtime RSS exceeded {MAX_RUNTIME_RSS} bytes: {memory}')
-        actual = parse_rows(process.stdout,cases+controls,closure=True)
-        # Native successes must match actual native observations, in addition to
-        # independent selected-input checks; no modelled conversion oracle.
-        if any(actual[i] != row for i,row in enumerate(expected) if row is not None):raise ValueError('Native R32 RAW bytes differ')
-        verify_files(work,cases+controls,lane)
-        evidence.update(passed=True,result_count=len(actual),maximum_rss_bytes=memory,candidate_sha256=digest(process.stdout.encode()))
-        report_path.write_text(json.dumps(report,indent=2)+'\n')
-        print(f"{lane}: {len(cases)} native R32 RAW cases, {report['controls']} typed controls, bounded sparse read and 100 low-descriptor closure cycles passed",flush=True)
-    if source_gate() != report['sources'] or harness_hashes() != report['harness_sha256']:raise ValueError('R32 RAW source/harness changed during verification')
-    if digest(archive.read_bytes()) != report['native_build']['archive_sha256']:raise ValueError('Native R32 RAW archive changed during verification')
-    report['passed'] = True;report_path.write_text(json.dumps(report,indent=2)+'\n')
+    text = probe.native(reference_program(cases,work))
+    # Native successes must equal the independently selected payload; failures print null.
+    native = parse_rows(text,cases,native=True);verify_files(work,cases,'reference')
+    everything = cases+controls
+    # One row per load: its output and the complete file it re-exported (None if absent); then the closure marker.
+    expected = [[native[i] if i < len(cases) and native[i] is not None else
+                 [ERRORS[case['error']]] if case['error'] else image_row(case),
+                 None if case['error'] else case['selected']] for i,case in enumerate(everything)]+[[[1],None]]
+    lanes,rss = {},{}
+    for lane,output,peak in limited_runs(probe,'candidate',candidate_program(cases,controls,work,'candidate'),
+                                        before=lambda lane:clear_outputs(work,everything,'candidate')):
+        files = [list(path.read_bytes()) if path.is_file() else None
+                 for path in (work/('candidate-'+case['name']+'.raw') for case in everything)]
+        lanes[lane] = [[row,files[i] if i < len(files) else None] for i,row in enumerate(parse_results(output))]
+        if not 0 < peak <= MAX_RUNTIME_RSS:
+            raise ProbeFailure(f'{lane}: bounded-read runtime RSS exceeded {MAX_RUNTIME_RSS} bytes: {peak}')
+        rss[lane] = peak
+    probe.compare(expected,lanes,lambda i:everything[i]['name'] if i < len(everything) else 'closure')
+    probe.finish(native_cases=len(cases),native_successes=sum(not c['error'] for c in cases),
+                 controls=sum(bool(c['error']) for c in controls),bounded_read_controls=sum(not c['error'] for c in controls),
+                 sample_controls=sum(c['error']=='samples' for c in controls),closure_iterations=100,
+                 closure_paths=['success','samples','truncated','read','size'],file_descriptor_limit=FILE_DESCRIPTOR_LIMIT,
+                 maximum_runtime_rss_bytes=MAX_RUNTIME_RSS,maximum_rss_bytes=rss,
+                 compared_payload_bytes=sum(len(c['selected']) for c in cases if not c['error']),
+                 inputs_sha256=hashlib.sha256(json.dumps([cases,controls]).encode()).hexdigest(),
+                 reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__ == '__main__':

@@ -8,6 +8,7 @@ claims. Each gate's outcome and duration is written to .build/gates/<id>.json;
 the run fails if any non-diagnostic gate fails.
 """
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -45,6 +46,37 @@ def shards(gates, count):
     return [sorted(b, key=lambda g: order[g['id']]) for b in bins], load_minutes
 
 
+def summarize(value, depth=0):
+    """Keep scalars and small structures; replace bulky lists/objects by their size."""
+    if isinstance(value, dict):
+        if depth > 2 or len(value) > 40:
+            return {'items': len(value)}
+        return {k: summarize(v, depth + 1) for k, v in value.items()}
+    if isinstance(value, list):
+        if len(value) > 12 or any(isinstance(v, (dict, list)) for v in value):
+            return {'items': len(value)}
+        return value
+    if isinstance(value, str) and len(value) > 200:
+        return value[:200] + '...'
+    return value
+
+
+def evidence(gate, started, passed, elapsed, os_name):
+    """Compact summary of every results file the gate wrote (full files stay CI artifacts)."""
+    files = sorted(p for p in (ROOT / '.build').rglob('results.json')
+                   if p.stat().st_mtime >= started and OUT not in p.parents)
+    files += [p for p in [ROOT / '.build/conformance.json'] if p.exists() and p.stat().st_mtime >= started]
+    reports = {}
+    for path in files:
+        raw = path.read_bytes()
+        reports[str(path.relative_to(ROOT))] = dict(sha256=hashlib.sha256(raw).hexdigest(), summary=summarize(json.loads(raw)))
+    lock = json.loads((ROOT / 'toolchain.json').read_text())
+    return dict(gate=gate['id'], title=gate.get('title', ''), passed=passed, diagnostic=gate.get('diagnostic', False),
+                os=os_name, machine=platform.machine(), seconds=elapsed,
+                toolchain=dict(bend=lock['bend']['revision'], raylib=lock['raylib']['revision'], bun=lock['bun']['version']),
+                reports=reports)
+
+
 def command(gate, args):
     values = {'bend': str(args.bend_source), 'raylib': str(args.raylib_source), 'python': sys.executable}
     return [part.format(**values) for part in gate['run']]
@@ -58,6 +90,7 @@ def main(argv=None):
     parser.add_argument('--os', default=host_os(), choices=('linux', 'macos'))
     parser.add_argument('--only', action='append', default=[], help='run only these gate ids')
     parser.add_argument('--plan', action='store_true', help='print the shard plan and exit')
+    parser.add_argument('--record', type=Path, help='also write compact per-gate evidence into this directory')
     args = parser.parse_args(argv)
     index, count = map(int, args.shard.split('/'))
     if not 1 <= index <= count:
@@ -73,12 +106,15 @@ def main(argv=None):
     failures = []
     for gate in selected:
         print(f'::group::{gate["id"]}' if os.environ.get('GITHUB_ACTIONS') else f'== {gate["id"]}', flush=True)
-        started = time.monotonic()
+        started, wall = time.monotonic(), time.time() - 1
         result = subprocess.run(command(gate, args), cwd=ROOT, env=dict(os.environ, BEND_NO_TELEMETRY='1'))
         elapsed = round(time.monotonic() - started, 1)
         passed = result.returncode == 0
-        (OUT / f'{gate["id"]}.json').write_text(json.dumps(dict(id=gate['id'], passed=passed, diagnostic=gate.get('diagnostic', False),
-                                                                returncode=result.returncode, seconds=elapsed, os=args.os)) + '\n')
+        record = evidence(gate, wall, passed, elapsed, args.os)
+        (OUT / f'{gate["id"]}.json').write_text(json.dumps(record, indent=1) + '\n')
+        if args.record and passed:
+            args.record.mkdir(parents=True, exist_ok=True)
+            (args.record / f'{gate["id"]}-{args.os}.json').write_text(json.dumps(record, indent=1) + '\n')
         if os.environ.get('GITHUB_ACTIONS'):
             print('::endgroup::', flush=True)
         print(f'{"PASS" if passed else "FAIL"} {gate["id"]} ({elapsed:.0f}s)', flush=True)

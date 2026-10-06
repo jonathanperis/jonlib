@@ -1,45 +1,16 @@
 #!/usr/bin/env python3
 """Private gradual-output binary64 multiply: rational/native and CPU-1/2/JS gates.
 
-Subprocess retention, fresh compilation and drift checks follow the existing
-private FMA harness. The arithmetic oracle and corpus are independent of the
-candidate. Every reported observation includes its operation kind.
+The arithmetic oracle and corpus are independent of the candidate. Every
+reported observation includes its operation kind.
 """
-import argparse
-from collections import Counter
-import hashlib
-import json
-import os
-from pathlib import Path
-import platform
 import random
-import re
-import shutil
-import subprocess
-import time
 
-from binary64_gradual_multiply_oracle import (BOUNDS, FRACTION, KINDS, SIGN, checked,
-                                    decode64, in_domain, nearest64, power2, word)
-from conformance import BUILD, ROOT, checkout, source_gate
+from binary64_gradual_multiply_oracle import BOUNDS, KINDS, SIGN, checked, in_domain, word
+from binary64_harness import CALCULATE, FIELDS, FRACTION, OBSERVE, controls, kinded, labelled, normal, run
 
 CHUNK = 256
-LINE = 16
-WIDTH = 5
 SEED = 0x64A6D00D
-FIELDS = ('ah', 'al', 'bh', 'bl')
-FLAGS = ['-std=c11', '-O2', '-frounding-math', '-fno-fast-math',
-         '-ffp-contract=off', '-fno-lto']
-DEPENDENCIES = ('src/binary64_gradual_multiply.bend', 'src/binary64_fma.bend',
-                'tools/binary64_gradual_multiply_probe.py', 'tools/binary64_gradual_multiply_oracle.py',
-                'tools/binary64_fma_oracle.py', 'tests/test_binary64_gradual_multiply.py',
-                'tools/conformance.py', 'LAWS.bend', 'PROOF.bend', 'toolchain.json')
-
-
-def normal(exponent, fraction=0, sign=0):
-    if (type(exponent) is not int or type(fraction) is not int or type(sign) is not int
-            or not -1022 <= exponent <= 1023 or not 0 <= fraction <= FRACTION or sign not in (0, 1)):
-        raise ValueError('Invalid normal binary64 parameters')
-    return (sign << 63) | ((exponent + 1023) << 52) | fraction
 
 
 # Fixed IEEE encodings make these controls independent of both rounding paths.
@@ -165,14 +136,10 @@ HAND = (
 
 def samples():
     """Deterministic asymmetric-domain and significand stratification."""
-    rows, seen = [], {}
+    rows, record = labelled()
     def add(a, b, label):
         key = (word(a, 64), word(b, 64))
-        if key not in seen:
-            row = dict(kind='multiply', labels=[])
-            row.update(zip(FIELDS, [part for value in (a, b) for part in (value >> 32, value & 0xffffffff)]))
-            rows.append(row); seen[key] = row
-        if label not in seen[key]['labels']: seen[key]['labels'].append(label)
+        record(key, dict(kind='multiply', labels=[], **dict(zip(FIELDS, [part for value in key for part in (value >> 32, value & 0xffffffff)]))), label)
     def signs(a, b, label):
         for sa in (0, SIGN):
             for sb in (0, SIGN): add(a ^ sa, b ^ sb, label)
@@ -234,139 +201,19 @@ def samples():
                 pair=[other,other]; pair[operand]=bad
                 add(*pair,f'reject-invalid-operand-{operand}')
     for index,row in enumerate(rows): row['id']=index
-    validate_rows(rows)
     return rows
 
 
-def validate_row(row):
-    required = {'id', 'kind', *FIELDS}
-    if type(row) is not dict or not required <= set(row) or set(row) - required - {'labels'}:
-        raise ValueError('Malformed input record shape')
-    word(row['id'], 32)
-    if type(row['kind']) is not str or row['kind'] not in KINDS:
-        raise ValueError('Unknown observation kind')
-    for field in FIELDS:
-        word(row[field], 32)
-    if 'labels' in row and (type(row['labels']) is not list or
-            any(type(label) is not str or not label for label in row['labels']) or
-            len(set(row['labels'])) != len(row['labels'])):
-        raise ValueError('Malformed input labels')
-
-
-def validate_rows(rows):
-    if type(rows) is not list:
-        raise ValueError('Expected input record list')
-    ids = set()
-    for row in rows:
-        validate_row(row)
-        if row['id'] in ids:
-            raise ValueError('Duplicate input observation ID')
-        ids.add(row['id'])
-
-
-def expected_row(row):
-    validate_row(row)
-    result = checked(row['kind'], *(row[field] for field in FIELDS))
-    prefix = [row['id'], KINDS[row['kind']]]
-    return [*prefix, 0, 0, 0] if result is None else [*prefix, 1, *result]
-
-
-def strict_json(text):
-    if type(text) is not str:
-        raise ValueError('Expected JSON text')
-    def pairs(items):
-        value = {}
-        for key, item in items:
-            if key in value:
-                raise ValueError('Duplicate JSON key')
-            value[key] = item
-        return value
-    def constant(value):
-        raise ValueError('Nonfinite JSON constant')
-    return json.loads(text, object_pairs_hook=pairs, parse_constant=constant)
-
-
-def parse_output(text, selected):
-    validate_rows(selected)
-    if type(text) is not str:
-        raise ValueError('Expected output text')
-    lines = text.splitlines()
-    groups = [selected[start:start+LINE] for start in range(0, len(selected), LINE)]
-    if len(lines) != len(groups):
-        raise ValueError('Wrong output line count/framing')
-    actual = []
-    for line, group in zip(lines, groups):
-        values = strict_json(line)
-        if type(values) is not list or len(values) != WIDTH * len(group):
-            raise ValueError('Wrong output shape/count')
-        for value in values:
-            word(value, 32)
-        for offset, row in enumerate(group):
-            result = values[WIDTH*offset:WIDTH*(offset+1)]
-            if result[0] != row['id'] or result[1] != KINDS[row['kind']] or result[2] not in (0, 1):
-                raise ValueError('Wrong output ID, operation kind or tag')
-            if result[2] == 0 and result[3:] != [0, 0]:
-                raise ValueError('Noncanonical rejected payload')
-            actual.append(result)
-    return actual
-
-
-def validate_observations(rows):
-    if type(rows) is not list:
-        raise ValueError('Expected observation list')
-    ids = set()
-    for row in rows:
-        if type(row) is not list or len(row) != WIDTH:
-            raise ValueError('Wrong observation shape')
-        for value in row:
-            word(value, 32)
-        if row[0] in ids or row[1] not in KINDS.values() or row[2] not in (0, 1):
-            raise ValueError('Wrong observation ID, operation kind or tag')
-        if row[2] == 0 and row[3:] != [0, 0]:
-            raise ValueError('Noncanonical rejected payload')
-        ids.add(row[0])
-
-
-def compare(expected, actual):
-    validate_observations(expected)
-    validate_observations(actual)
-    if len(expected) != len(actual):
-        raise ValueError('Incomplete comparison')
-    differences = [dict(id=a[0], expected=a, actual=b) for a, b in zip(expected, actual) if a != b]
-    if differences:
-        raise ValueError(f'Exact mismatch: {differences[:8]} (total {len(differences)})')
-
-
-def program(selected):
-    validate_rows(selected)
-    if not 1 <= len(selected) <= CHUNK:
-        raise ValueError('Candidate program must contain 1..256 operations')
-    source = '''import Base
+expected_row, task, native_input = kinded(KINDS, checked)
+PROGRAM = '''import Base
 import ../../src/binary64_fma.bend as F
 import ../../src/binary64_gradual_multiply.bend as G
 type Task is Data:
   Multiply{index: U32, ah: U32, al: U32, bh: U32, bl: U32}
-def observe(index: U32, kind: U32, value: Maybe<F.Words>, rest: List<U32>) -> List<U32>:
-  match value:
-    case None{}: Con{index, Con{kind, Con{0, Con{0, Con{0, rest}}}}}
-    case Some{pair}:
-      F.Words{high, low} = pair
-      Con{index, Con{kind, Con{1, Con{high, Con{low, rest}}}}}
-def one(task: Task, rest: List<U32>) -> List<U32>:
+''' + OBSERVE + '''def one(task: Task, rest: List<U32>) -> List<U32>:
   match task:
     case Multiply{index, ah, al, bh, bl}: observe(index, 0, G.checked(ah, al, bh, bl), rest)
-def calculate(values: +List<Task>) -> List<U32>:
-  match values:
-    case Nil{}: Nil{}
-    case Con{task, rest}: one(task, calculate(rest))
-def main() -> IO(Unit):
-  do IO<Unit>:
-'''
-    for start in range(0, len(selected), LINE):
-        values = [row['kind'].title() + '{' + ','.join(str(value) for value in (row['id'], *(row[f] for f in FIELDS))) + '}'
-                  for row in selected[start:start+LINE]]
-        source += '    IO.print(List.show(~&1, ~U32, ~U32.show, calculate([' + ','.join(values) + '])))\n'
-    return source
+''' + CALCULATE
 
 # These runtime controls deliberately include subnormal inputs and outputs,
 # outside the candidate's domain, to detect FTZ/DAZ or nonbinary64 evaluation.
@@ -435,7 +282,6 @@ NATIVE_CONTROLS = (
     (0x0010000000000000, 0x3fefffffffffffff, 0x0010000000000000),  # native_min_normal_boundary_tie
     (0x0010000000000000, 0x3feffffffffffffe, 0x000fffffffffffff),  # native_max_subnormal_exact
 )
-PREFLIGHT_COUNT = len(NATIVE_CONTROLS)
 NATIVE = r'''#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -478,9 +324,9 @@ static int allowed(uint64_t value, int minimum) {
   if (!exponent) return (value & UINT64_C(0x7fffffffffffffff)) == 0;
   return (int)exponent-1023 >= minimum && exponent <= 1023;
 }
-int main(int argc, char **argv) {
+int main(void) {
   int initial=fegetround();
-  if (argc != 2 || initial < 0 || fesetround(FE_TONEAREST) || fegetround() != FE_TONEAREST) return 2;
+  if (initial < 0 || fesetround(FE_TONEAREST) || fegetround() != FE_TONEAREST) return 2;
   uint64_t control=get_control(), forbidden; const char *control_name;
 #if defined(__x86_64__) || defined(__i386__)
   control_name="mxcsr"; forbidden=(1u<<15) | (1u<<6) | (3u<<13);
@@ -502,7 +348,7 @@ int main(int argc, char **argv) {
   uint64_t after=get_control();
   if (fegetround()!=FE_TONEAREST || (after & forbidden)) return 9;
   printf("{\"rounding\":\"FE_TONEAREST\",\"initial_rounding\":%d,\"selected_rounding\":%d,\"control_name\":\"%s\",\"control\":%" PRIu64 ",\"control_after\":%" PRIu64 ",\"ftz\":false,\"daz\":false,\"runtime_mul\":true,\"binary64_evaluation\":true,\"preflight_count\":%u}\n",initial,fegetround(),control_name,control,after,preflights);
-  FILE *in=fopen(argv[1],"r"); if (!in) return 5;
+  FILE *in=fopen(INPUT,"r"); if (!in) return 5;
   uint32_t index,kind,ah,al,bh,bl; int count;
   while ((count=fscanf(in,"%" SCNu32 " %" SCNu32 " %" SCNu32 " %" SCNu32 " %" SCNu32 " %" SCNu32,&index,&kind,&ah,&al,&bh,&bl)) == 6) {
     if (kind != 0) { fclose(in); return 8; }
@@ -517,255 +363,15 @@ int main(int argc, char **argv) {
   if (fegetround()!=FE_TONEAREST || (get_control() & forbidden)) return 9;
   return 0;
 }
-'''.replace('@CONTROLS@', ',\n'.join('    {' + ','.join(f'UINT64_C(0x{value:016x})' for value in row) + '}'
-                                        for row in NATIVE_CONTROLS))
-
-
-def parse_native(text, rows):
-    validate_rows(rows)
-    if type(text) is not str:
-        raise ValueError('Expected native output text')
-    lines = text.splitlines()
-    if len(lines) != len(rows) + 1:
-        raise ValueError('Wrong native line count')
-    metadata = strict_json(lines[0])
-    keys = {'rounding', 'initial_rounding', 'selected_rounding', 'control_name',
-            'control', 'control_after', 'ftz', 'daz', 'runtime_mul', 'binary64_evaluation', 'preflight_count'}
-    if type(metadata) is not dict or set(metadata) != keys:
-        raise ValueError('Malformed native environment metadata')
-    if (metadata['rounding'] != 'FE_TONEAREST' or metadata['ftz'] is not False or
-            metadata['daz'] is not False or metadata['runtime_mul'] is not True or metadata['binary64_evaluation'] is not True or
-            metadata['control_name'] not in ('mxcsr', 'fpcr')):
-        raise ValueError('Unsupported native rounding/denormal/runtime environment')
-    for key in ('initial_rounding', 'selected_rounding', 'control', 'control_after', 'preflight_count'):
-        if type(metadata[key]) is not int or metadata[key] < 0:
-            raise ValueError('Invalid native control metadata')
-    for field in ('control', 'control_after'):
-        word(metadata[field], 32 if metadata['control_name'] == 'mxcsr' else 64)
-    for key in ('initial_rounding', 'selected_rounding', 'preflight_count'):
-        word(metadata[key], 32)
-    if metadata['selected_rounding'] != 0 or metadata['preflight_count'] != PREFLIGHT_COUNT:
-        raise ValueError('Unsupported native rounding or incomplete preflight')
-    mask = ((1 << 15) | (1 << 6) | (3 << 13) if metadata['control_name'] == 'mxcsr'
-            else (1 << 24) | (1 << 19) | (3 << 22) | 3)
-    if (metadata['control'] | metadata['control_after']) & mask:
-        raise ValueError('Native rounding/denormal mode does not match metadata')
-    groups = []
-    for start in range(0, len(rows), LINE):
-        combined = []
-        for line in lines[1+start:1+min(start+LINE, len(rows))]:
-            values = strict_json(line)
-            if type(values) is not list or len(values) != WIDTH:
-                raise ValueError('Malformed native record')
-            combined.extend(values)
-        groups.append(json.dumps(combined))
-    return metadata, parse_output('\n'.join(groups), rows)
-
-
-def digest(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
-
-
-def write_json(path, value):
-    path.write_text(json.dumps(value, indent=2, sort_keys=True) + '\n')
-
-
-def execute(command, work, name, timeout=600, env=None):
-    command = [str(part) for part in command]
-    for suffix in ('stdout', 'stderr'):
-        (work/(name+'.'+suffix)).unlink(missing_ok=True)
-    try:
-        process = subprocess.run(command, cwd=ROOT, env=dict(os.environ, BEND_NO_TELEMETRY='1', **(env or {})),
-                                 text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=timeout)
-    except subprocess.TimeoutExpired as error:
-        for suffix, data in (('stdout', error.stdout), ('stderr', error.stderr)):
-            (work/(name+'.'+suffix)).write_text(data.decode() if isinstance(data, bytes) else data or '')
-        raise
-    (work/(name+'.stdout')).write_text(process.stdout)
-    (work/(name+'.stderr')).write_text(process.stderr)
-    if process.returncode:
-        raise ValueError(f'{name} exited {process.returncode}; retained stdout/stderr')
-    return process.stdout
-
-
-def compile_fresh(command, outputs, work, name, env=None):
-    for path in outputs:
-        path.unlink(missing_ok=True)
-    execute(command, work, name, env=env)
-    if any(not path.is_file() or path.stat().st_size == 0 for path in outputs):
-        raise ValueError('Compiler succeeded without all fresh nonempty outputs')
-
-
-def compiler_identity(command, work, name):
-    resolved = shutil.which(str(command))
-    if resolved is None:
-        raise ValueError(f'Missing compiler/runtime: {command}')
-    path = Path(resolved).resolve()
-    return dict(path=str(path), sha256=digest(path), version=execute([command, '--version'], work, name).strip())
-
-
-def candidate_environment(compiler):
-    # Match the pinned Bend CLI's supported CPU compiler predicate.  An unsupported
-    # CC would silently fall back to another clang, invalidating compiler evidence.
-    match = re.search(r'^(Apple )?(?:\w+ )?clang version (\d+)', compiler['version'], re.M)
-    if match is None or int(match[2]) < 14:
-        raise ValueError('Recorded compiler is not a supported Bend CPU clang')
-    return {'CC': compiler['path']}
-
-
-def assert_unchanged(before):
-    after = {path: digest(ROOT/path) for path in before}
-    if after != before:
-        raise ValueError('Source/harness/toolchain drift during probe')
-
-
-def final_source_gate(hashes, bend_source, lock, compilers=None, work=None):
-    assert_unchanged(hashes)
-    checkout(bend_source, lock['bend']['revision'], lock['bend'].get('patch'))
-    for name, (command, expected) in (compilers or {}).items():
-        if compiler_identity(command, work, name+'-final-version') != expected:
-            raise ValueError('Compiler/runtime executable drift during probe')
-
-
-def retain_artifacts(report, work, names):
-    """Pin evidence as it is consumed; do not bless later artifact changes."""
-    retained = report.setdefault('artifacts', {})
-    for name in names:
-        current = digest(work/name)
-        if name in retained and retained[name] != current:
-            raise ValueError('Input/program/output artifact drift during probe: ' + name)
-        retained[name] = current
-
-
-def assert_artifacts_unchanged(report, work):
-    for name, expected in report.get('artifacts', {}).items():
-        if digest(work/name) != expected:
-            raise ValueError('Input/program/output artifact drift during probe: ' + name)
-
-
-def native_reference(rows, expected, work, clang):
-    validate_rows(rows)
-    source = work/'reference.c'; source.write_text(NATIVE)
-    inputs = work/'native-input.txt'
-    inputs.write_text(''.join(' '.join(str(v) for v in (r['id'], KINDS[r['kind']], *(r[f] for f in FIELDS)))+'\n' for r in rows))
-    compiler = compiler_identity(clang, work, 'compiler-version')
-    compile_fresh([clang, *FLAGS, source, '-lm', '-o', work/'reference'], [work/'reference'], work, 'native-compile')
-    evidence = {'artifacts': {}}
-    retain_artifacts(evidence, work, ['reference.c', 'reference', 'native-input.txt'])
-    output = execute([work/'reference', inputs], work, 'native-run')
-    environment, actual = parse_native(output, rows)
-    compare(expected, actual)
-    assert_artifacts_unchanged(evidence, work)
-    retain_artifacts(evidence, work, ['native-run.stdout', 'native-run.stderr'])
-    return dict(passed=True, observations=len(actual), compiler=compiler, flags=FLAGS, environment=environment,
-                artifacts=evidence['artifacts'])
+'''.replace('@CONTROLS@', controls(NATIVE_CONTROLS))
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source', type=Path, required=True)
-    parser.add_argument('--clang', default='clang')
-    parser.add_argument('--native-only', action='store_true', help='qualify oracle/native only; never reports candidate pass')
-    args = parser.parse_args()
-    work = BUILD/'binary64-gradual-multiply-probe'; work.mkdir(parents=True, exist_ok=True)
-    report_path = work/'results.json'
-    report = dict(schema=1, passed=False, lanes={}, phase='initializing')
-    write_json(report_path, report)
-    start = time.monotonic()
-    try:
-        lock = json.loads((ROOT/'toolchain.json').read_text())
-        checkout(args.bend_source, lock['bend']['revision'], lock['bend'].get('patch'))
-        hashes = source_gate()
-        dependencies = (*DEPENDENCIES, lock['bend']['patch']['path']) if lock['bend'].get('patch') else DEPENDENCIES
-        for path in dependencies:
-            hashes[path] = digest(ROOT/path)
-        bun = compiler_identity('bun', work, 'bun-version')
-        if bun['version'] != lock['bun']['version']:
-            raise ValueError('Bun version does not match pinned toolchain')
-        rows = samples()
-        expected = [expected_row(row) for row in rows]
-        write_json(work/'inputs.json', rows)
-        write_json(work/'expected.json', expected)
-        report.update(phase='native-qualification', observations=len(rows),
-                      accepted=sum(row[2] for row in expected), rejected=sum(row[2] == 0 for row in expected),
-                      coverage=dict(Counter(label for row in rows for label in row['labels'])),
-                      seed=SEED, bun=bun, chunk_limit=CHUNK, output_line_limit=LINE,
-                      sources=hashes, inputs_sha256=digest(work/'inputs.json'), oracle_sha256=digest(work/'expected.json'),
-                      scope='private RN-even multiply; a zero/normal [-277,0], b zero/normal [-885,0]; gradual output',
-                      gpu='not run; no device claim', host=dict(platform=platform.platform(), machine=platform.machine(),
-                      libc=platform.libc_ver(), python=platform.python_version()), chunks=[], artifacts={})
-        retain_artifacts(report, work, ['inputs.json', 'expected.json'])
-        write_json(report_path, report)
-        report['native'] = native_reference(rows, expected, work, args.clang)
-        for name, value in report['native']['artifacts'].items():
-            report['artifacts'][name] = value
-        assert_artifacts_unchanged(report, work)
-        candidate_env = candidate_environment(report['native']['compiler'])
-        report['candidate_compiler'] = dict(compiler=report['native']['compiler'], environment=candidate_env,
-                                            flags_source='pinned bend2/main.ts cli_build CPU flags')
-        write_json(work/'native-metadata.json', report['native'])
-        report['native_metadata_sha256'] = digest(work/'native-metadata.json')
-        compilers = {'compiler': (args.clang, report['native']['compiler']), 'bun': ('bun', bun)}
-        names = ['inputs.json', 'expected.json', 'native-input.txt', 'reference.c', 'reference', 'native-metadata.json']
-        names += [f'{prefix}.{suffix}' for prefix in ('compiler-version', 'bun-version', 'native-compile', 'native-run') for suffix in ('stdout', 'stderr')]
-        retain_artifacts(report, work, names)
-        print(f'Exact rational/volatile-runtime oracle agreement: {len(rows)} checked inputs', flush=True)
-        if args.native_only:
-            final_source_gate(hashes, args.bend_source, lock, compilers, work)
-            names += [f'{prefix}-final-version.{suffix}' for prefix in ('compiler', 'bun') for suffix in ('stdout', 'stderr')]
-            assert_artifacts_unchanged(report, work)
-            retain_artifacts(report, work, names)
-            report.update(phase='native-only-complete',
-                          elapsed_seconds=round(time.monotonic()-start, 3))
-            write_json(report_path, report)
-            print('Native qualification complete; candidate lanes not run and overall passed remains false', flush=True)
-            return
-        report['phase'] = 'candidate'
-        write_json(report_path, report)
-        cli = ['bun', args.bend_source/'bend2/main.ts']
-        proof = execute([*cli, ROOT/'PROOF.bend', '--check-only'], work, 'proof')
-        if proof.strip() != 'All terms check.':
-            raise ValueError('Incomplete proof verdict')
-        report['proof'] = proof.strip()
-        retain_artifacts(report, work, ['proof.stdout', 'proof.stderr'])
-        totals = Counter()
-        for batch, offset in enumerate(range(0, len(rows), CHUNK)):
-            selected = rows[offset:offset+CHUNK]
-            source = work/f'candidate-{batch:03}.bend'; source.write_text(program(selected))
-            retain_artifacts(report, work, [source.name])
-            binary, js = work/f'candidate-{batch:03}', work/f'candidate-{batch:03}.js'
-            compile_fresh([*cli, source, '-o', binary, '-o', js], [binary, js], work, f'compile-{batch:03}', env=candidate_env)
-            retain_artifacts(report, work, [binary.name, js.name, f'compile-{batch:03}.stdout', f'compile-{batch:03}.stderr'])
-            for lane, command in (('cpu-1', [binary, '--gpu', 'off', '--threads', '1']),
-                                  ('cpu-2', [binary, '--gpu', 'off', '--threads', '2']), ('javascript', ['bun', js])):
-                actual = parse_output(execute(command, work, f'{lane}-{batch:03}'), selected)
-                compare(expected[offset:offset+len(selected)], actual)
-                retain_artifacts(report, work, [f'{lane}-{batch:03}.stdout', f'{lane}-{batch:03}.stderr'])
-                totals[lane] += len(actual)
-                report['lanes'][lane] = dict(passed=False, checked=totals[lane])
-            report['chunks'].append(dict(index=batch, offset=offset, count=len(selected), passed=True))
-            write_json(report_path, report)
-            print(f'chunk {batch+1}: {len(selected)} observations match CPU-1/CPU-2/JS', flush=True)
-        if set(totals) != {'cpu-1', 'cpu-2', 'javascript'} or any(value != len(rows) for value in totals.values()):
-            raise ValueError('Incomplete lane coverage')
-        final_source_gate(hashes, args.bend_source, lock, compilers, work)
-        names += ['proof.stdout', 'proof.stderr']
-        names += [f'{prefix}-final-version.{suffix}' for prefix in ('compiler', 'bun') for suffix in ('stdout', 'stderr')]
-        for batch in range(len(report['chunks'])):
-            names += [f'candidate-{batch:03}{suffix}' for suffix in ('.bend', '', '.js')]
-            names += [f'{prefix}-{batch:03}.{suffix}' for prefix in ('compile', 'cpu-1', 'cpu-2', 'javascript') for suffix in ('stdout', 'stderr')]
-        assert_artifacts_unchanged(report, work)
-        retain_artifacts(report, work, names)
-        report.update(passed=True, phase='complete',
-                      elapsed_seconds=round(time.monotonic()-start, 3))
-        for lane in report['lanes'].values():
-            lane['passed'] = True
-        write_json(report_path, report)
-        print(f'PASS: {len(rows)} complete exact observations on each of three lanes', flush=True)
-    except Exception as error:
-        report.update(passed=False, error=str(error), elapsed_seconds=round(time.monotonic()-start, 3))
-        write_json(report_path, report)
-        raise
+    run('binary64-gradual-multiply', __doc__, rows=samples(), expected_row=expected_row, native=NATIVE,
+        native_rows=lambda row: True, native_input=native_input,
+        metadata=('rounding', 'initial_rounding', 'selected_rounding', 'control_name', 'control', 'control_after',
+                  'ftz', 'daz', 'runtime_mul', 'binary64_evaluation', 'preflight_count'),
+        header=PROGRAM, task=task, width=5, batch=CHUNK, preflights=len(NATIVE_CONTROLS))
 
 
 if __name__ == '__main__':

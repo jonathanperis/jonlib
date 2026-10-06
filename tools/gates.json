@@ -1014,18 +1014,19 @@
    "minutes": 1
   },
   {
-   "id": "modern-angle",
-   "title": "",
+   "id": "angle-kernels",
+   "title": "atan2f kernels vs pinned glibc/Sun sources (Apple vs native libm on Darwin) and checked wrappers vs raymath",
    "run": [
     "{python}",
-    "tools/modern_angle_probe.py",
-    "--bend-source={bend}"
+    "tools/angle_kernel_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
    ],
    "os": [
     "linux",
     "macos"
    ],
-   "minutes": 5
+   "minutes": 18
   },
   {
    "id": "angle-legacy",

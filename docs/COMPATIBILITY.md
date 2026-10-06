@@ -21,7 +21,7 @@ failure: native `3fc90fdb` versus legacy Sun `3fc90fda` at
 `vector2-angle-profiles` pixel `(6,0)`. The new explicit checked route closes
 that mismatch without retargeting the old profile. Existing Apple/GNU scalar
 algorithms and public defaults/`*_for` meanings are unchanged. See
-[CHECKED-ANGLES.md](CHECKED-ANGLES.md) for the new finite-input, staged
+[CHECKED-ANGLES.md](ANGLES.md) for the new finite-input, staged
 normal/zero-wrapper contract and [NATIVE-MATH-PROFILES.md](NATIVE-MATH-PROFILES.md)
 for the prior host-profile diagnosis.
 

@@ -173,5 +173,5 @@ No GPU, hosted, exhaustive-input or performance-parity claim is made.
 This solves the isolated literal tiny-product arithmetic prerequisite. The
 entire pinned scalar angle kernel, both fallbacks, operation-by-operation domain
 integration, native reference qualification, wrapper domains and forced-device/
-resource evidence remain open. See [ANGLE-PLAN.md](ANGLE-PLAN.md). Nothing here
+resource evidence remain open. See [ANGLE-PLAN.md](ANGLES.md). Nothing here
 changes the existing strict canonical angle mismatch.

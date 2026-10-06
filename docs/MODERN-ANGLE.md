@@ -11,7 +11,7 @@ NaN or infinity is rejected before promotion or reduction.
 This implementation remains a **private scalar adapter, with exact scoped
 CPU/JavaScript evidence**. The new explicitly selected checked public angle
 wrappers consume it through `src/checked_angle.bend`; see
-[CHECKED-ANGLES.md](CHECKED-ANGLES.md). Apple and GNU/Sun kernels, old defaults and
+[CHECKED-ANGLES.md](ANGLES.md). Apple and GNU/Sun kernels, old defaults and
 selectors, fixtures, expected words and tolerances are unchanged. The wrapper
 contract is narrower than the finite scalar contract and native selection requires
 fresh independent qualification. Exceptions, errno, NaN payloads, other rounding
@@ -212,14 +212,14 @@ on CPU-one-thread, CPU-two-thread and JavaScript.
 
 A finite scalar kernel alone does not establish vector intermediate/output
 domains, native-profile selection, forced-device behavior or performance. The
-separate [checked angle integration](CHECKED-ANGLES.md) now supplies staged
+separate [checked angle integration](ANGLES.md) now supplies staged
 wrapper checks and independently qualified canonical routing; its evidence is
 separate from this unchanged scalar gate. Device/resource and performance work
-remain in [ANGLE-PLAN.md](ANGLE-PLAN.md).
+remain in [ANGLE-PLAN.md](ANGLES.md).
 
 ## Darwin runtime-image provenance
 
-The native harness now shares the [Darwin Mach-O provenance backend](RUNTIME-IMAGE-PROVENANCE.md)
+The native harness now shares the [Darwin Mach-O provenance backend](ANGLES.md)
 with independent angle qualification. Both actual `atan2f` and `fma` pointers
 have initial/final loaded-image UUID and immutable mapped-code SHA-256 evidence.
 Cache-backed images require active-cache membership and UUID; ordinary files

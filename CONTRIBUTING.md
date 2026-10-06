@@ -79,11 +79,9 @@ becomes a conformance test. Consult asset-specific licenses before adding files.
   and exact scalar/Vector2 results under the declared uncontracted-F32 profile.
   A separate gate checks the bounded gradient trigonometry profile against the
   runner's actual `sinf`/`cosf` results.
-- Each platform has independent **core** and **formatted images** workers with
-  the same pinned setup and 120-minute timeout. The prior `CPU and JavaScript`
-  check names are fail-closed aggregates requiring every worker on both platforms.
-  Evidence names include the platform and shard. See [CI runtime and gate
-  preservation](docs/CI-RUNTIME.md) for ownership, artifact scope and estimates.
+- Every gate in `tools/gates.json` runs on both hosts in six duration-balanced
+  shards; the `CPU and JavaScript` checks require every shard. See
+  [CI](docs/CI.md) for running the same gates locally.
 - Actions are pinned to immutable commits; dependency revisions come from
   `toolchain.json`. Workflows use read-only repository permissions.
 - Hosted conformance does not claim Metal/CUDA or live window/audio validation.

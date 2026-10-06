@@ -334,7 +334,7 @@ components and normal/zero intermediates and outputs. `Vector2.angle_with_refere
 Subnormal inputs are accepted when all derived operations satisfy the bounded
 contract; nonzero subnormal intermediates/output and nonfinite inputs reject.
 The legacy functions above retain their prior unchecked contract and defaults.
-See [CHECKED-ANGLES.md](CHECKED-ANGLES.md) for exact staged arithmetic, source
+See [CHECKED-ANGLES.md](ANGLES.md) for exact staged arithmetic, source
 contracts, fresh native qualification, error propagation and remaining gaps.
 
 ## Floating-point contract and evidence
@@ -357,10 +357,10 @@ are partial mappings, not completed raymath APIs. See the
 
 ## Standalone native angle qualification
 
-The independently frozen [native angle qualification gate](ANGLE-QUALIFICATION.md)
+The independently frozen [native angle qualification gate](ANGLES.md)
 checks 76 scalar controls, 205 canonical/runtime wrapper controls and
 1,654 ordered intermediate words before angle-candidate generation. The new
-[checked angle integration](CHECKED-ANGLES.md) consumes the fresh qualified
+[checked angle integration](ANGLES.md) consumes the fresh qualified
 selection and enforces each intermediate domain. Old algorithms/defaults and
 canonical fixtures remain unchanged. Historical Apple/Sun source contracts are
 not newly host-qualified; Darwin angle-bearing canonical/Metal runs currently
