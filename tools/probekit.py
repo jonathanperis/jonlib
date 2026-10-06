@@ -51,11 +51,17 @@ def run(command, *, cwd=ROOT, timeout=600, fd_limit=None, env=None):
     return result.stdout
 
 
-def arguments(description, configure=None, argv=None):
-    """Common CLI: pinned checkouts, optional forced-GPU lane and batch parallelism."""
+def arguments(description, configure=None, argv=None, *, bend=True, raylib=True):
+    """Common CLI: pinned checkouts, optional forced-GPU lane and batch parallelism.
+
+    Bend-only probes (no native oracle) pass raylib=False; native-only diagnostics
+    pass bend=False.
+    """
     parser = argparse.ArgumentParser(description=description)
-    parser.add_argument('--bend-source', type=Path, required=True)
-    parser.add_argument('--raylib-source', type=Path, required=True)
+    if bend:
+        parser.add_argument('--bend-source', type=Path, required=True)
+    if raylib:
+        parser.add_argument('--raylib-source', type=Path, required=True)
     parser.add_argument('--gpu', action='store_true', help='also run a forced-GPU lane; failure is fatal')
     parser.add_argument('--jobs', type=int, default=max(1, min(4, os.cpu_count() or 1)),
                         help='batches compiled/run concurrently (results keep plan order)')
@@ -71,11 +77,13 @@ def pinned(args):
     """Fail unless both checkouts match toolchain.json (including the Bend overlay)."""
     from conformance import checkout
     lock = json.loads((ROOT / 'toolchain.json').read_text())
-    checkout(args.bend_source, lock['bend']['revision'], lock['bend'].get('patch'))
-    checkout(args.raylib_source, lock['raylib']['revision'])
-    version = run(['bun', '--version']).strip()
-    if version != lock['bun']['version']:
-        raise ProbeFailure(f'bun {version} differs from pinned {lock["bun"]["version"]}')
+    if getattr(args, 'bend_source', None) is not None:
+        checkout(args.bend_source, lock['bend']['revision'], lock['bend'].get('patch'))
+        version = run(['bun', '--version']).strip()
+        if version != lock['bun']['version']:
+            raise ProbeFailure(f'bun {version} differs from pinned {lock["bun"]["version"]}')
+    if getattr(args, 'raylib_source', None) is not None:
+        checkout(args.raylib_source, lock['raylib']['revision'])
     return lock
 
 
@@ -103,21 +111,37 @@ class Probe:
         self.work.mkdir(parents=True, exist_ok=True)
         self.results = self.work / 'results.json'
         self.results.write_text(json.dumps(dict(passed=False)) + '\n')
-        self.library = native_library(args, raylib_options)
+        self.library = native_library(args, raylib_options) if getattr(args, 'raylib_source', None) else None
         self.report = dict(passed=False, probe=name, toolchain=self.lock,
                            raylib_options=list(raylib_options), lanes={})
+
+    def diagnostic(self, **summary):
+        """Finish a report-only run: native observations are recorded, nothing is compared."""
+        self.report.update(summary, passed=True, diagnostic=True)
+        self.save()
+        print(f'{self.name}: DIAGNOSTIC recorded (no parity claim): '
+              + ', '.join(f'{k}={v}' for k, v in summary.items()), flush=True)
 
     @property
     def lanes(self):
         return CPU_LANES + (('gpu',) if self.args.gpu else ())
 
-    def native(self, c_source, name='reference', *, fd_limit=None, extra_flags=()):
-        """Compile a C program against the reference library and return its stdout."""
+    def native(self, c_source, name='reference', *, fd_limit=None, extra_flags=(), link_raylib=True):
+        """Compile a C program (against the reference library unless link_raylib=False) and return its stdout."""
         source, binary = self.work / f'{name}.c', self.work / name
         source.write_text(c_source)
-        run(['clang', '-std=c11', '-O2', '-fno-builtin-atan2f', *extra_flags,
-             '-I' + str(self.args.raylib_source / 'src'), source, self.library, '-lm', '-o', binary])
+        source_dir = getattr(self.args, 'raylib_source', None)
+        raylib = (['-I' + str(source_dir / 'src')] if source_dir else []) + ([self.library] if link_raylib and self.library else [])
+        run(['clang', '-std=c11', '-O2', '-fno-builtin-atan2f', *extra_flags, source, *raylib, '-lm', '-o', binary])
         return run([binary], fd_limit=fd_limit)
+
+    def native_batches(self, render, items, *, batch, source_limit=None, name='reference', fd_limit=None):
+        """Run render(selected) C programs over ordered batches; return concatenated stdout."""
+        batches = plan_batches(items, batch, None if source_limit is None else
+                               (lambda selected: len(render(selected).encode())), source_limit)
+        self.report['native_batches'] = len(batches)
+        return ''.join(self.native(render(selected), f'{name}-{index}', fd_limit=fd_limit)
+                       for index, selected in enumerate(batches))
 
     def _compile(self, index, render):
         cli = ['bun', self.args.bend_source / 'bend2/main.ts']
