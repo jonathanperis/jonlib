@@ -1,46 +1,17 @@
 #!/usr/bin/env python3
 """Check exact non-NaN format-9 raw words, byte round trips and owned failures."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
 import random
 import struct
 
 from bmp_probe import bend_bytes
 from byte_probe import BEND_EMITTER, parse_results
-from conformance import BUILD, ROOT, checkout, run, source_gate
+from conformance import ROOT, source_gate
+import probekit
+from probekit import ProbeFailure
 
-
-def fixtures():
-    classes=[0,0x80000000,1,0x80000001,0x007fffff,0x807fffff,0x00800000,0x80800000,
-             0x3f800000,0xbf800000,0x7f7fffff,0xff7fffff,0x7f800000,0xff800000,0x3f000000]
-    exponents=[(sign<<31)|(exponent<<23)|mantissa for sign in (0,1) for exponent in range(255) for mantissa in (0,1,0x7fffff)]
-    rng=random.Random(0x32b17);random_words=[]
-    while len(random_words)<3072:
-        word=rng.getrandbits(32)
-        if word&0x7fffffff<=0x7f800000:random_words.append(word)
-    cases=[]
-    for name,width,height,words in [('classes',5,1,classes),('exponents',255,2,exponents),('random',64,16,random_words)]:
-        cases.append(dict(id=name,width=width,height=height,bytes=list(b''.join(struct.pack('<I',word) for word in words))))
-    valid=cases[0]['bytes'][:12]
-    invalid=[dict(id='zero-width',width=0,height=1,bytes=valid),dict(id='large-height',width=1,height=4097,bytes=valid),
-             dict(id='short',width=1,height=1,bytes=valid[:-1]),dict(id='excess',width=1,height=1,bytes=valid+[0]),
-             dict(id='byte',width=1,height=1,bytes=[256,*valid[1:]])]
-    for index,bits in enumerate((0x7f800001,0x7fc01234,0xffc00001)):
-        words=[0x3e800000,0x3f000000,0x3f400000];words[index]=bits
-        invalid.append(dict(id=f'nan-{index}',width=1,height=1,bytes=list(struct.pack('<III',*words))))
-    return cases,invalid
-
-
-def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True);parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true');args=parser.parse_args()
-    lock=json.loads((ROOT/'toolchain.json').read_text());checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'));checkout(args.raylib_source,lock['raylib']['revision'])
-    work=BUILD/'float-rgb-bytes-probe';work.mkdir(parents=True,exist_ok=True);report_path=work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    cases,invalid=fixtures()
-    lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
+PRELUDE = ['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
            'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
            'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
            'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
@@ -48,26 +19,7 @@ def main():
            'word(image.width);word(image.height);for(int i=0;i<w*h*12;i++)byte(((unsigned char*)image.data)[i]);end();',
            'for(int i=0;i<w*h*12;i++)byte(((unsigned char*)image.data)[i]);end();UnloadImage(image);}',
            'int main(void){SetTraceLogLevel(LOG_NONE);']
-    for case in cases:
-        path=work/(case['id']+'.raw');path.write_bytes(bytes(case['bytes']))
-        lines.append(f'emit({json.dumps(str(path.relative_to(ROOT)))},{case["width"]},{case["height"]});')
-    exported=work/'native-normalized.raw'
-    lines += ['Image image=GenImageColor(256,1,BLANK);for(int i=0;i<256;i++)((Color*)image.data)[i]=(Color){i,255-i,i^0x55,i};',
-              'ImageFormat(&image,PIXELFORMAT_UNCOMPRESSED_R32G32B32);',
-              f'if(!ExportImage(image,{json.dumps(str(exported.relative_to(ROOT)))}))return 3;UnloadImage(image);',
-              f'int size=0;unsigned char *data=LoadFileData({json.dumps(str(exported.relative_to(ROOT)))},&size);if(size!=3072)return 4;',
-              'for(int i=0;i<size;i++)byte(data[i]);end();UnloadFileData(data);return 0;}']
-    source=work/'reference.c';source.write_text('\n'.join(lines)+'\n');binary=work/'reference'
-    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary])
-    text=run([binary]);expected=parse_results(text)
-    if len(expected)!=2*len(cases)+1:raise ValueError('Incomplete native raw float results')
-    for i,case in enumerate(cases):
-        if expected[2*i]!=list(struct.pack('<II',case['width'],case['height']))+case['bytes'] or expected[2*i+1]!=case['bytes']:raise ValueError('Native raw layout differs')
-    wanted=expected+[[1] for _ in invalid]+[[1]]
-    report=dict(passed=False,native_images=len(cases),pixels=sum(c['width']*c['height'] for c in cases),export_bytes=3072,
-                invalid_controls=len(invalid),owner_controls=1,sources=source_gate(),inputs_sha256=hashlib.sha256(json.dumps([cases,invalid]).encode()).hexdigest(),
-                reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
-    program='''import Base
+PROGRAM = '''import Base
 import ../../jonlib.bend as J
 import ../../jonmath.bend as M
 import ../../src/hdr.bend as H
@@ -142,23 +94,61 @@ def rejected_owner() -> Bool:
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        bang='!' if lane=='metal' else '';body=program
-        for case in cases:
-            arguments=f'{case["width"]}, {case["height"]}, {bend_bytes(case["bytes"])}'
-            body+=f'    emit_image(J.Image.FloatRGB.from_bytes{bang}({arguments}))\n'
-            body+=f'    emit_roundtrip(roundtrip{bang}({arguments}))\n'
-        body+=f'    emit_export(native_export{bang}())\n'
-        for case in invalid:body+=f'    emit_bytes(~&1, [rejected(J.Image.FloatRGB.from_bytes{bang}({case["width"]}, {case["height"]}, {bend_bytes(case["bytes"])}))])\n'
-        body+=f'    emit_bytes(~&1, [Bool.to_u32(rejected_owner{bang}())])\n'
-        source=work/f'{lane}.bend';source.write_text(body);binary=work/('candidate.js' if lane=='javascript' else 'candidate-'+lane)
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        actual=parse_results(run(command));differences=[i for i,(a,b) in enumerate(zip(wanted,actual)) if a!=b]
-        report['lanes'][lane]=dict(passed=actual==wanted,different_cases=differences);report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if actual!=wanted:raise ValueError(f'{lane}: raw float differences {differences}')
-        print(f'{lane}: {report["pixels"]} native raw pixels, 3072 export bytes, {len(invalid)} invalid inputs and retained NaN owner passed',flush=True)
-    report['passed']=True;report_path.write_text(json.dumps(report,indent=2)+'\n')
+
+
+def fixtures():
+    classes=[0,0x80000000,1,0x80000001,0x007fffff,0x807fffff,0x00800000,0x80800000,
+             0x3f800000,0xbf800000,0x7f7fffff,0xff7fffff,0x7f800000,0xff800000,0x3f000000]
+    exponents=[(sign<<31)|(exponent<<23)|mantissa for sign in (0,1) for exponent in range(255) for mantissa in (0,1,0x7fffff)]
+    rng=random.Random(0x32b17);random_words=[]
+    while len(random_words)<3072:
+        word=rng.getrandbits(32)
+        if word&0x7fffffff<=0x7f800000:random_words.append(word)
+    cases=[]
+    for name,width,height,words in [('classes',5,1,classes),('exponents',255,2,exponents),('random',64,16,random_words)]:
+        cases.append(dict(id=name,width=width,height=height,bytes=list(b''.join(struct.pack('<I',word) for word in words))))
+    valid=cases[0]['bytes'][:12]
+    invalid=[dict(id='zero-width',width=0,height=1,bytes=valid),dict(id='large-height',width=1,height=4097,bytes=valid),
+             dict(id='short',width=1,height=1,bytes=valid[:-1]),dict(id='excess',width=1,height=1,bytes=valid+[0]),
+             dict(id='byte',width=1,height=1,bytes=[256,*valid[1:]])]
+    for index,bits in enumerate((0x7f800001,0x7fc01234,0xffc00001)):
+        words=[0x3e800000,0x3f000000,0x3f400000];words[index]=bits
+        invalid.append(dict(id=f'nan-{index}',width=1,height=1,bytes=list(struct.pack('<III',*words))))
+    return cases,invalid
+
+
+def reference_program(cases,work):
+    lines=list(PRELUDE)
+    for case in cases:
+        path=work/(case['id']+'.raw');path.write_bytes(bytes(case['bytes']))
+        lines.append(f'emit({json.dumps(str(path.relative_to(ROOT)))},{case["width"]},{case["height"]});')
+    exported=work/'native-normalized.raw'
+    lines += ['Image image=GenImageColor(256,1,BLANK);for(int i=0;i<256;i++)((Color*)image.data)[i]=(Color){i,255-i,i^0x55,i};',
+              'ImageFormat(&image,PIXELFORMAT_UNCOMPRESSED_R32G32B32);',
+              f'if(!ExportImage(image,{json.dumps(str(exported.relative_to(ROOT)))}))return 3;UnloadImage(image);',
+              f'int size=0;unsigned char *data=LoadFileData({json.dumps(str(exported.relative_to(ROOT)))},&size);if(size!=3072)return 4;',
+              'for(int i=0;i<size;i++)byte(data[i]);end();UnloadFileData(data);return 0;}']
+    return '\n'.join(lines)+'\n'
+
+
+def main():
+    probe=probekit.Probe('float-rgb-bytes',probekit.arguments(__doc__))
+    cases,invalid=fixtures();text=probe.native(reference_program(cases,probe.work));expected=parse_results(text)
+    if len(expected)!=2*len(cases)+1:raise ProbeFailure('Incomplete native raw float results')
+    for i,case in enumerate(cases):
+        if expected[2*i]!=list(struct.pack('<II',case['width'],case['height']))+case['bytes'] or expected[2*i+1]!=case['bytes']:raise ProbeFailure('Native raw layout differs')
+    wanted=expected+[[1] for _ in invalid]+[[1]];probe.report['sources']=source_gate()
+    actions=[]
+    for case in cases:
+        arguments=f'{case["width"]}, {case["height"]}, {bend_bytes(case["bytes"])}'
+        actions+=[f'emit_image(J.Image.FloatRGB.from_bytesBANG({arguments}))',f'emit_roundtrip(roundtripBANG({arguments}))']
+    actions.append('emit_export(native_exportBANG())')
+    actions+=[f'emit_bytes(~&1, [rejected(J.Image.FloatRGB.from_bytesBANG({case["width"]}, {case["height"]}, {bend_bytes(case["bytes"])}))])' for case in invalid]
+    actions.append('emit_bytes(~&1, [Bool.to_u32(rejected_ownerBANG())])')
+    render=lambda selected,gpu:PROGRAM+''.join('    '+line.replace('BANG','!' if gpu else '')+'\n' for line in selected)
+    probe.compare(wanted,probe.candidates(render,actions,batch=len(actions),parse=lambda text,selected:parse_results(text)))
+    probe.finish(native_images=len(cases),pixels=sum(c['width']*c['height'] for c in cases),export_bytes=3072,invalid_controls=len(invalid),owner_controls=1,
+                 inputs_sha256=hashlib.sha256(json.dumps([cases,invalid]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__=='__main__':
