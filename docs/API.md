@@ -39,7 +39,7 @@ the unsigned bit pattern returned by `ColorToInt`.
 The public scalar and Vector2 operations are listed in [MATH.md](MATH.md),
 including their explicit uncontracted-F32 profile and remaining numeric gaps.
 The three checked `*_with_reference` angle APIs use the separate
-`M.Angle.Reference` and return `Maybe<F32>`; see [CHECKED-ANGLES.md](CHECKED-ANGLES.md).
+`M.Angle.Reference` and return `Maybe<F32>`; see [CHECKED-ANGLES.md](ANGLES.md).
 Pure geometry queries are listed in [COLLISION.md](COLLISION.md), including
 strict rectangle edges and inclusive circle tangency.
 Spline point queries and their explicit arithmetic profiles are listed in

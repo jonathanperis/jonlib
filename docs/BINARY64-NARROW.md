@@ -107,7 +107,7 @@ strictly failed at the separately documented angle scenario.
 
 ## Remaining modern-angle prerequisites
 
-See [ANGLE-PLAN.md](ANGLE-PLAN.md). A
+See [ANGLE-PLAN.md](ANGLES.md). A
 [private bounded binary64 FMA](BINARY64-FMA.md) is now implemented separately.
 A [private bounded add/subtract helper](BINARY64-ADD-SUB.md) now supplies audited
 signed-zero arithmetic separately. [Checked normal multiply/divide and word

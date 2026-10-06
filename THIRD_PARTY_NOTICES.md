@@ -214,8 +214,8 @@ The complete MIT notice is retained in the Bend file, the tooling original and
 adaptation, and [LICENSES/core-math-atan2f.txt](LICENSES/core-math-atan2f.txt).
 `tools/reference/modern_atan2f_glibc241.c` is the unmodified pinned source;
 `modern_atan2f_adapted.c` adds observation-only branch/intermediate traces and a
-finite-input boundary for reference tooling. Their shims, compile flags and
-separate hashes are recorded by `tools/modern_angle_reference.py`. Neither C
+finite-input boundary for reference tooling; both are compiled only by
+`tools/angle_kernel_probe.py` as the native oracle. Neither C
 implementation is linked into the Bend candidate. No glibc LGPL testcase table
 is copied; controls are independently generated. See [the private contract](docs/MODERN-ANGLE.md).
 
@@ -265,4 +265,4 @@ helpers are original tooling; none is linked into the Bend library.
 The independently derived Apple control facts cite the pinned July 2007 source,
 its author and SHA-256 in the manifest. This slice does not redistribute that
 source or the local assembly adaptation because a covering license was not
-verified. See [qualification provenance](docs/ANGLE-QUALIFICATION.md).
+verified. See [qualification provenance](docs/ANGLES.md).
