@@ -517,8 +517,6 @@ def cases_from(document):
                 _, signature, result = COLLISION_APIS[function]
                 if len(values) != sum(ARGUMENT_SIZES[p] for p in signature) or not all(coordinate(v, True) for v in values):
                     raise ValueError(f'{name}: invalid collision argument arity/domain')
-                if function == 'point_line' and not coordinate(values[-1]):
-                    raise ValueError(f'{name}: point-line threshold must be integral')
                 if function == 'point_poly':
                     points = op.get('points')
                     if not isinstance(points, list) or len(points)>4096 or any(not isinstance(p,list) or len(p)!=2 or not all(coordinate(v,True) for v in p) for p in points):
@@ -529,7 +527,7 @@ def cases_from(document):
             if kind == 'from_channel':
                 if not coordinate(op.get('channel')) or type(op.get('observe_source', False)) is not bool:
                     raise ValueError(f'{name}: channel requires an integral selector and Boolean source observation')
-            if kind in ('color_contrast', 'color_brightness') and not coordinate(op.get('amount'), kind == 'color_contrast'):
+            if kind in ('color_contrast', 'color_brightness') and not coordinate(op.get('amount'), True):
                 raise ValueError(f'{name}: invalid color adjustment amount')
             if kind in ('alpha_clear','alpha_crop') and (not coordinate(op.get('threshold'), True) or not 0 <= op['threshold'] <= 1):
                 raise ValueError(f'{name}: alpha threshold must be finite in 0..1')

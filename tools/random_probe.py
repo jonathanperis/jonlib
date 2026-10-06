@@ -20,7 +20,8 @@ def main():
     library = BUILD/'raylib/raylib/libraylib.a'
     if not library.is_file():raise ValueError('Run conformance.py first to build the declared reference')
     seeds = [0,1,4294967295,2864434397,2147483648,20260926]
-    ranges = [(-3,5),(10,-10),(7,7),(0,99),(-32767,32767)]*32
+    # Fractional bounds exercise GetRandomValue(int,int)'s implicit truncation.
+    ranges = [(-3,5),(10,-10),(7,7),(0,99),(-32767,32767),(-3.7,5.9),(10.2,-10.8),(-0.5,0.5)]*20
     tails = [(0,3,2,0.0),(0,3,2,1.0),(1,7,5,0.37)]
     sequences = [(0,5,-3,5),(1,21,-10,10),(4294967295,1,7,7),
                  (0,3,10,8),(123,0,-2,2),(123,4,5,7),(42,64,0,63)]

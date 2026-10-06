@@ -130,6 +130,22 @@ type BoundingBox is Data:
 type Rectangle is Data:
   Rectangle{x: F32, y: F32, width: F32, height: F32}
 
+# Internal signed-word operations for raylib's integer raster stepping.
+def Signed.word(+x: F32) -> U32:
+  +magnitude = F32.to_u32(F32.abs(x))
+  Bool.pick(U32, (x < 0.0 : F32), (0 - magnitude : U32), magnitude)
+
+def Signed.high16(+word: U32) -> F32:
+  (U32.to_f32((word >> 16n : U32))
+    - Bool.pick(F32, (word >= 2147483648 : U32), 65536.0, 0.0) : F32)
+
+def Signed.trunc(+x: F32) -> F32:
+  +magnitude = F32.floor(F32.abs(x))
+  Bool.pick(F32, (x < 0.0 : F32), (0.0 - magnitude : F32), magnitude)
+
+def Signed.to_f32(+word: U32) -> F32:
+  Bool.pick(F32, (word >= 2147483648 : U32), F32.neg(U32.to_f32((0 - word : U32))), U32.to_f32(word))
+
 type Collision.Arithmetic is Data:
   UncontractedCollision{}
   FusedCollision{}
@@ -276,7 +292,8 @@ def Collision.point_triangle_for(+arithmetic: Collision.Arithmetic, point: M.Vec
 def Collision.point_triangle(point: M.Vector2, first: M.Vector2, second: M.Vector2, third: M.Vector2) -> Bool:
   Collision.point_triangle_for(UncontractedCollision{}, point, first, second, third)
 
-# cross = fma(dxc, dyl, -(dyc*dxl)) in the fused linked reference.
+# cross = fma(dxc, dyl, -(dyc*dxl)) in the fused linked reference; the int
+# threshold truncates like C's implicit conversion.
 def Collision.point_line_for(+arithmetic: Collision.Arithmetic, point: M.Vector2, first: M.Vector2, second: M.Vector2, threshold: F32) -> Bool:
   M.Vector2{+x, +y} = point
   M.Vector2{+ax, +ay} = first
@@ -286,7 +303,7 @@ def Collision.point_line_for(+arithmetic: Collision.Arithmetic, point: M.Vector2
   cross = Collision.multiply_add(arithmetic, (x - ax : F32), dy, F32.neg(((y - ay) * dx : F32)))
   along_x = Bool.pick(Bool, (dx > 0.0 : F32), ((ax <= x) && (x <= bx) : F32), ((bx <= x) && (x <= ax) : F32))
   along_y = Bool.pick(Bool, (dy > 0.0 : F32), ((ay <= y) && (y <= by) : F32), ((by <= y) && (y <= ay) : F32))
-  (F32.abs(cross) < threshold * F32.max(F32.abs(dx), F32.abs(dy)) : F32)
+  (F32.abs(cross) < Signed.trunc(threshold) * F32.max(F32.abs(dx), F32.abs(dy)) : F32)
     && Bool.pick(Bool, (F32.abs(dx) >= F32.abs(dy) : F32), along_x, along_y)
 
 def Collision.point_line(point: M.Vector2, first: M.Vector2, second: M.Vector2, threshold: F32) -> Bool:
@@ -346,22 +363,6 @@ def Collision.polygon.enough(points: +List<M.Vector2>) -> Bool:
 def Collision.point_poly(point: M.Vector2, +points: +List<M.Vector2>) -> Bool:
   Collision.polygon.enough(points)
     && Collision.polygon.loop(points, point, Collision.polygon.last(points, M.Vector2.zero()), False{})
-
-# Internal signed-word operations for raylib's integer raster stepping.
-def Signed.word(+x: F32) -> U32:
-  +magnitude = F32.to_u32(F32.abs(x))
-  Bool.pick(U32, (x < 0.0 : F32), (0 - magnitude : U32), magnitude)
-
-def Signed.high16(+word: U32) -> F32:
-  (U32.to_f32((word >> 16n : U32))
-    - Bool.pick(F32, (word >= 2147483648 : U32), 65536.0, 0.0) : F32)
-
-def Signed.trunc(+x: F32) -> F32:
-  +magnitude = F32.floor(F32.abs(x))
-  Bool.pick(F32, (x < 0.0 : F32), (0.0 - magnitude : F32), magnitude)
-
-def Signed.to_f32(+word: U32) -> F32:
-  Bool.pick(F32, (word >= 2147483648 : U32), F32.neg(U32.to_f32((0 - word : U32))), U32.to_f32(word))
 
 # A color is packed RRGGBBAA. Channel conversion follows C unsigned-byte casts.
 def Color.rgba(r: U32, g: U32, b: U32, a: U32) -> U32:
@@ -544,9 +545,12 @@ def Random.value.result(lower: F32, span: U32, result: Random.State & U32) -> Ra
   (state, value) = result
   (state, (U32.to_f32((value % span : U32)) + lower : F32))
 
-def Random.value(state: Random.State, +minimum: F32, +maximum: F32) -> Random.State & F32:
-  +lower = F32.min(minimum, maximum)
-  upper = F32.max(minimum, maximum)
+# GetRandomValue(int, int): fractional bounds truncate as C's implicit conversion does.
+def Random.value(state: Random.State, minimum: F32, maximum: F32) -> Random.State & F32:
+  +low = Signed.trunc(minimum)
+  +high = Signed.trunc(maximum)
+  +lower = F32.min(low, high)
+  upper = F32.max(low, high)
   Random.value.result(lower, F32.to_u32((upper - lower + 1.0 : F32)), Random.next_u32(state))
 
 type Random.Sequence is Type:
@@ -1748,8 +1752,9 @@ def Color.Transform.contrast(amount: F32) -> Color.Transform:
   +contrast = ((100.0 + F32.clamp(amount, (0.0 - 100.0 : F32), 100.0)) / 100.0 : F32)
   ImageContrast{(contrast * contrast : F32)}
 
+# ImageColorBrightness takes int: truncate toward zero, then clamp like raylib.
 def Color.Transform.brightness(amount: F32) -> Color.Transform:
-  ImageBrightness{F32.clamp(amount, (0.0 - 255.0 : F32), 255.0)}
+  ImageBrightness{F32.clamp(Signed.trunc(amount), (0.0 - 255.0 : F32), 255.0)}
 
 def Surface.color_contrast(surface: Surface, amount: F32) -> Surface:
   Surface.color.transform(surface, Color.Transform.contrast(amount))

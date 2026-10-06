@@ -282,8 +282,8 @@ it does not claim the reference resizer's memory use or performance.
 `color_tint(surface, color)` uses integer channel products divided by 255.
 `color_invert(surface)` inverts RGB and retains alpha.
 `color_contrast(surface, amount)` uses finite F32 contrast clamped to -100..100.
-`color_brightness(surface, amount)` takes a finite integral F32 adjustment,
-clamped to -255..255. Its negative channel underflow becomes **1**, matching
+`color_brightness(surface, amount)` takes a finite F32 adjustment, truncated toward
+zero like raylib's `int` parameter, then clamped to -255..255. Its negative channel underflow becomes **1**, matching
 the pinned reference; an exact zero remains zero. Both retain alpha.
 `color_replace(surface, original, replacement)` matches all four bytes.
 
