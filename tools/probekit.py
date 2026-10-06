@@ -95,10 +95,14 @@ def native_library(args, options=()):
     build = BUILD / 'raylib' if not tuple(options[len(DEFAULT_RAYLIB_OPTIONS):]) else BUILD / f'raylib-{key}'
     library = build / 'raylib/libraylib.a'
     stamp = build / 'probekit-options.json'
-    if not (library.is_file() and stamp.is_file() and json.loads(stamp.read_text()) == list(options)):
-        run(['cmake', '-S', args.raylib_source, '-B', build, *('-D' + o for o in options)])
-        run(['cmake', '--build', build, '--parallel', '4'])
-        stamp.write_text(json.dumps(list(options)) + '\n')
+    build.mkdir(parents=True, exist_ok=True)
+    import fcntl
+    with open(build.parent / f'{build.name}.lock', 'w') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)  # concurrent probes share one cached build per option set
+        if not (library.is_file() and stamp.is_file() and json.loads(stamp.read_text()) == list(options)):
+            run(['cmake', '-S', args.raylib_source, '-B', build, *('-D' + o for o in options)])
+            run(['cmake', '--build', build, '--parallel', '4'])
+            stamp.write_text(json.dumps(list(options)) + '\n')
     return library
 
 
