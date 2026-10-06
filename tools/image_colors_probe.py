@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 """Compare native bulk/point colors from formatted and RGB float images."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
 import struct
 
 from bmp_probe import bend_bytes
 from byte_probe import BEND_EMITTER, parse_results
-from conformance import BUILD, ROOT, checkout, run, source_gate
 from formatted_float_probe import fixtures as formatted_fixtures
 from float_rgb_probe import boundaries
+import probekit
+from probekit import ROOT, ProbeFailure
 
 
 def fixtures():
@@ -22,43 +21,7 @@ def fixtures():
     return cases,controls,invalid
 
 
-def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True);parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true');args=parser.parse_args()
-    lock=json.loads((ROOT/'toolchain.json').read_text());checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'));checkout(args.raylib_source,lock['raylib']['revision'])
-    work=BUILD/'image-colors-probe';work.mkdir(parents=True,exist_ok=True);report_path=work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    cases,controls,invalid=fixtures();lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-        'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-        'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-        'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
-        'static void emit(Image image){if(!image.data)exit(2);word(image.width);word(image.height);word(image.format);',
-        'int size=GetPixelDataSize(image.width,image.height,image.format);for(int i=0;i<size;i++)byte(((unsigned char*)image.data)[i]);end();}',
-        'int main(void){SetTraceLogLevel(LOG_NONE);']
-    for i,case in enumerate([*cases,*controls,invalid]):
-        path=work/(str(i)+'.raw');path.write_bytes(bytes(case['bytes']))
-        lines.append(f'{{Image image=LoadImageRaw({json.dumps(str(path.relative_to(ROOT)))},{case["width"]},{case["height"]},{case["format"]},0);if(!image.data)return 3;')
-        if i<len(cases):
-            lines+=['Color *colors=LoadImageColors(image);if(!colors)return 4;int n=image.width*image.height;',
-                    'for(int j=0;j<n;j++)word(ColorToInt(colors[j]));end();',
-                    'for(int j=0;j<n;j++){unsigned c=ColorToInt(GetImageColor(image,j%image.width,j/image.width));if(c!=ColorToInt(colors[j]))return 5;word(c);}end();UnloadImageColors(colors);']
-        elif i<len(cases)+len(controls):
-            lines.append(f'byte(1);word(ColorToInt(GetImageColor(image,{case["x"]},{case["y"]})));end();' if case['found'] else 'byte(0);end();')
-        lines.append('emit(image);UnloadImage(image);}')
-    source=work/'reference.c';source.write_text('\n'.join(lines+['}'])+'\n');binary=work/'reference'
-    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary]);text=run([binary]);expected=parse_results(text)
-    if len(expected)!=3*len(cases)+2*len(controls)+1:raise ValueError('Incomplete native color observations')
-    at=0
-    for i,case in enumerate([*cases,*controls,invalid]):
-        if i<len(cases):
-            if len(expected[at])!=case['width']*case['height']*4 or expected[at]!=expected[at+1]:raise ValueError('Native bulk/point colors differ')
-            at+=2
-        elif i<len(cases)+len(controls):at+=1
-        if expected[at]!=list(struct.pack('<III',case['width'],case['height'],case['format']))+case['bytes']:raise ValueError('Native color observation changed source')
-        at+=1
-    report=dict(passed=False,source_formats=len(cases),pixels=sum(c['width']*c['height'] for c in cases),point_controls=len(controls),bulk_rejected_owners=1,sources=source_gate(),
-                inputs_sha256=hashlib.sha256(json.dumps([cases,controls,invalid]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
-    program='''import Base
+PROGRAM='''import Base
 import ../../jonlib.bend as J
 def reverse_into(values: +List<U32>, rest: +List<U32>) -> +List<U32>:
   match values:
@@ -180,27 +143,69 @@ def emit_float_get(result: Maybe<(J.Image.FloatRGB & Maybe<&2, U32>)>) -> IO(Uni
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
-    def image(case):
-        floating=case['format']==9;owner='FloatRGB' if floating else 'Formatted'
-        return f'J.Image.{owner}.from_bytes({case["width"]}, {case["height"]}, '+('' if floating else f'{case["format"]}, ')+bend_bytes(case['bytes'])+')'
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        bang='!' if lane=='metal' else '';body=program
-        for case in cases:
-            kind='float' if case['format']==9 else 'formatted';created=image(case)
-            body+=f'    emit_float_bulk(False{{}}, float_bulk{bang}({created}))\n' if kind=='float' else f'    emit_bulk(formatted_bulk{bang}({created}))\n'
-            body+=f'    emit_{kind}_points({kind}_walk{bang}({created}))\n'
-        for case in controls:
-            kind='float' if case['format']==9 else 'formatted'
-            body+=f'    emit_{kind}_get({kind}_get{bang}({case["x"]}, {case["y"]}, {image(case)}))\n'
-        body+=f'    emit_float_bulk(True{{}}, float_bulk{bang}({image(invalid)}))\n'
-        source=work/f'{lane}.bend';source.write_text(body);binary=work/('candidate.js' if lane=='javascript' else 'candidate-'+lane)
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        actual=parse_results(run(command));different=[i for i,(a,b) in enumerate(zip(expected,actual)) if a!=b]
-        report['lanes'][lane]=dict(passed=actual==expected,different_cases=different);report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if actual!=expected:raise ValueError(f'{lane}: image color differences {different}')
-        print(f'{lane}: 8 formats / {report["pixels"]} native bulk/point colors, 6 point controls and retained rejected bulk owner passed',flush=True)
-    report['passed']=True;report_path.write_text(json.dumps(report,indent=2)+'\n')
+ROWS={'case':3,'control':2,'invalid':1}
+
+
+def grouped(rows,selected):
+    """Split flat byte results into one group per action (bulk/points/source, point/source or owner)."""
+    sizes=[ROWS[kind] for kind,_ in selected]
+    if len(rows)!=sum(sizes):raise ProbeFailure(f'image-colors: {len(rows)} byte results for {sum(sizes)} expected')
+    groups,at=[],0
+    for size in sizes:groups.append(rows[at:at+size]);at+=size
+    return groups
+
+
+def image(case):
+    floating=case['format']==9;owner='FloatRGB' if floating else 'Formatted'
+    return f'J.Image.{owner}.from_bytes({case["width"]}, {case["height"]}, '+('' if floating else f'{case["format"]}, ')+bend_bytes(case['bytes'])+')'
+
+
+def render(selected,gpu):
+    bang='!' if gpu else '';body=PROGRAM
+    for kind,case in selected:
+        family='float' if case['format']==9 else 'formatted'
+        if kind=='case':
+            created=image(case)
+            body+=f'    emit_float_bulk(False{{}}, float_bulk{bang}({created}))\n' if family=='float' else f'    emit_bulk(formatted_bulk{bang}({created}))\n'
+            body+=f'    emit_{family}_points({family}_walk{bang}({created}))\n'
+        elif kind=='control':body+=f'    emit_{family}_get({family}_get{bang}({case["x"]}, {case["y"]}, {image(case)}))\n'
+        else:body+=f'    emit_float_bulk(True{{}}, float_bulk{bang}({image(case)}))\n'
+    return body
+
+
+def main():
+    probe=probekit.Probe('image-colors',probekit.arguments(__doc__));work=probe.work
+    cases,controls,invalid=fixtures();lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
+        'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
+        'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
+        'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+        'static void emit(Image image){if(!image.data)exit(2);word(image.width);word(image.height);word(image.format);',
+        'int size=GetPixelDataSize(image.width,image.height,image.format);for(int i=0;i<size;i++)byte(((unsigned char*)image.data)[i]);end();}',
+        'int main(void){SetTraceLogLevel(LOG_NONE);']
+    for i,case in enumerate([*cases,*controls,invalid]):
+        path=work/(str(i)+'.raw');path.write_bytes(bytes(case['bytes']))
+        lines.append(f'{{Image image=LoadImageRaw({json.dumps(str(path.relative_to(ROOT)))},{case["width"]},{case["height"]},{case["format"]},0);if(!image.data)return 3;')
+        if i<len(cases):
+            lines+=['Color *colors=LoadImageColors(image);if(!colors)return 4;int n=image.width*image.height;',
+                    'for(int j=0;j<n;j++)word(ColorToInt(colors[j]));end();',
+                    'for(int j=0;j<n;j++){unsigned c=ColorToInt(GetImageColor(image,j%image.width,j/image.width));if(c!=ColorToInt(colors[j]))return 5;word(c);}end();UnloadImageColors(colors);']
+        elif i<len(cases)+len(controls):
+            lines.append(f'byte(1);word(ColorToInt(GetImageColor(image,{case["x"]},{case["y"]})));end();' if case['found'] else 'byte(0);end();')
+        lines.append('emit(image);UnloadImage(image);}')
+    text=probe.native('\n'.join(lines+['}'])+'\n');expected=parse_results(text)
+    if len(expected)!=3*len(cases)+2*len(controls)+1:raise ProbeFailure('Incomplete native color observations')
+    at=0
+    for i,case in enumerate([*cases,*controls,invalid]):
+        if i<len(cases):
+            if len(expected[at])!=case['width']*case['height']*4 or expected[at]!=expected[at+1]:raise ProbeFailure('Native bulk/point colors differ')
+            at+=2
+        elif i<len(cases)+len(controls):at+=1
+        if expected[at]!=list(struct.pack('<III',case['width'],case['height'],case['format']))+case['bytes']:raise ProbeFailure('Native color observation changed source')
+        at+=1
+    actions=[('case',case) for case in cases]+[('control',case) for case in controls]+[('invalid',invalid)]
+    probe.compare(grouped(expected,actions),probe.candidates(render,actions,batch=len(actions),parse=lambda text,selected:grouped(parse_results(text),selected)))
+    probe.finish(source_formats=len(cases),pixels=sum(c['width']*c['height'] for c in cases),point_controls=len(controls),bulk_rejected_owners=1,
+                 inputs_sha256=hashlib.sha256(json.dumps([cases,controls,invalid]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__=='__main__':
