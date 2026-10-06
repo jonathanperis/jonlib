@@ -1,20 +1,30 @@
 #!/usr/bin/env python3
 """Exact coefficient-bit and filtered-image probes against pinned raylib/stb."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
-import struct
-import random
 import platform
+import random
+import struct
 
 if __package__:
-    from .conformance import BUILD, ROOT, bend_source, cases_from, c_source, checkout, compare, f32, parse_output, result_size, run, source_gate
+    from .conformance import BUILD, ROOT, bend_source, cases_from, c_source, f32, parse_output, result_size, source_gate
+    from . import probekit
+    from .probekit import ProbeFailure
 else:
-    from conformance import BUILD, ROOT, bend_source, cases_from, c_source, checkout, compare, f32, parse_output, result_size, run, source_gate
+    from conformance import BUILD, ROOT, bend_source, cases_from, c_source, f32, parse_output, result_size, source_gate
+    import probekit
+    from probekit import ProbeFailure
+
+STB_FLAGS = ('-O3', '-fno-strict-aliasing')
+KERNEL_PAIRS = [(w, out) for w in range(1, 18) for out in range(1, 18)]
+LANE_ALIASES = {'cpu': ('cpu-1', 'cpu-2'), 'metal': ('gpu',)}
 
 
-def coefficient_vectors(source, work):
+def integer_rows(text):
+    return [[int(value) for value in line.split()] for line in text.splitlines() if line.strip()]
+
+
+def coefficient_vectors(source, work, probe):
     """Observe the stock normalization step, before clamp-edge folding."""
     header = (source / 'src/external/stb_image_resize2.h').read_text()
     start = '    // add all contribs\n'
@@ -33,8 +43,7 @@ def coefficient_vectors(source, work):
 ''' + finish, 1)
     observed = work / 'stb_observed.h'
     observed.write_text(instrumented)
-    probe = work / 'coefficients.c'
-    probe.write_text('''#include <stdio.h>
+    program = '''#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #define STB_IMAGE_RESIZE_STATIC
@@ -50,10 +59,10 @@ int main(void) {
   }
   return 0;
 }
-''')
-    binary = work / 'coefficients'
-    run(['clang', '-std=c11', '-O3', '-fno-strict-aliasing', probe, '-lm', '-o', binary])
-    rows = [json.loads(line) for line in run([binary]).splitlines()]
+'''
+    # The observed header sits beside the generated source; no raylib symbol is referenced.
+    text = probe.native(program, 'coefficients', extra_flags=STB_FLAGS)
+    rows = [json.loads(line) for line in text.splitlines()]
     unique = {}
     for row in rows:
         key = tuple(row['input'])
@@ -92,9 +101,7 @@ def bend_coefficients(vectors, gpu=False):
     return '\n'.join(lines) + '\n'
 
 
-def kernel_vectors(source, work):
-    probe = work / 'kernels.c'
-    probe.write_text('''#include <stdio.h>
+KERNEL_PROGRAM = '''#include <stdio.h>
 #include <string.h>
 #define STB_IMAGE_RESIZE_STATIC
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
@@ -118,13 +125,14 @@ int main(void) {
   }
   return 0;
 }
-''')
-    binary = work / 'kernels'
-    run(['clang', '-std=c11', '-O3', '-fno-strict-aliasing', '-I'+str(source/'src'), probe, '-lm', '-o', binary])
-    return [[int(value) for value in line.split()] for line in run([binary]).splitlines()]
+'''
 
 
-def bend_kernels(gpu=False):
+def kernel_vectors(probe):
+    return integer_rows(probe.native(KERNEL_PROGRAM, 'kernels', extra_flags=STB_FLAGS))
+
+
+def bend_kernels(gpu=False, pairs=None):
     lines = ['import Base', 'import ../../src/resample.bend as R',
              'def bits(values: +List<F32>) -> List<U32>:', '  match values:',
              '    case Nil{}: Nil{}', '    case Con{v, rest}: Con{F32.bits(v), bits(rest)}',
@@ -149,10 +157,20 @@ def bend_kernels(gpu=False):
              'def show(values: List<List<U32>>) -> String:', '  match values:',
              '    case Nil{}: ""', '    case Con{v, rest}: show.row(v) ++ "\\n" ++ show(rest)',
              'def main() -> IO(Unit):', '  do IO<Unit>:']
-    for w in range(1,18):
-        for out in range(1,18):
-            lines.append(f'    IO.print(show(all{"!" if gpu else ""}({out}n, {w}, {out})))')
+    for w, out in KERNEL_PAIRS if pairs is None else pairs:
+        lines.append(f'    IO.print(show(all{"!" if gpu else ""}({out}n, {w}, {out})))')
     return '\n'.join(lines) + '\n'
+
+
+def kernel_groups(rows, pairs):
+    """One group of `out` packed kernels per (width, out) action."""
+    if len(rows) != sum(out for _, out in pairs):
+        raise ProbeFailure(f'resize: {len(rows)} kernel rows for {sum(out for _, out in pairs)} expected')
+    groups, at = [], 0
+    for _, out in pairs:
+        groups.append(rows[at:at+out])
+        at += out
+    return groups
 
 
 def image_cases():
@@ -191,115 +209,111 @@ def image_cases():
     return cases_from(dict(schema=1, cases=cases))
 
 
-def verify_images(args, work):
+def resize_probe(args, results):
+    """A probekit run kept in .build/resize (the gate's published report location)."""
+    probe = probekit.Probe('resize', args)
+    probe.results.unlink(missing_ok=True)
+    try:
+        probe.work.rmdir()
+    except OSError:
+        pass
+    probe.work = BUILD / 'resize'
+    probe.work.mkdir(parents=True, exist_ok=True)
+    probe.results = results
+    probe.save()
+    return probe
+
+
+def selected_lanes(probe):
+    names = probe.lanes
+    if getattr(probe.args, 'lane', None):
+        names = LANE_ALIASES.get(probe.args.lane, (probe.args.lane,))
+    return names
+
+
+def verify_images(args, work, probe=None):
     report_path = work / 'images-results.json'
     report_path.write_text(json.dumps(dict(passed=False)) + '\n')
     cases = image_cases()
     if args.case_prefix:
         cases = cases_from(dict(schema=1, cases=[case for case in cases if case['id'].startswith(args.case_prefix)]))
-    library = BUILD / 'raylib/raylib/libraylib.a'
-    if not library.is_file():
-        raise ValueError('Run tools/conformance.py first to build the pinned reference')
+    probe = probe or resize_probe(args, report_path)
     (work / 'images.json').write_text(json.dumps(dict(schema=1, cases=cases), indent=2) + '\n')
-    reference_source = work / 'images.c'
-    reference_source.write_text(c_source(cases))
-    binary = work / 'images-reference'
-    run(['clang', '-std=c11', '-O2', '-I'+str(args.raylib_source/'src'), reference_source, library, '-lm', '-o', binary])
-    reference_text = run([binary])
+    reference_text = probe.native(c_source(cases), 'images-reference')
     (work / 'images-reference.jsonl').write_text(reference_text)
     reference = parse_output(reference_text, cases)
     report = dict(passed=False, scenarios=len(cases), pixels=sum(w*h for w,h in map(result_size,cases)), lanes={},
                   source_sha256=source_gate(), fixtures_sha256=hashlib.sha256(json.dumps(cases,sort_keys=True).encode()).hexdigest(),
                   retained_counterexamples=[31,136,200,386], toolchain=json.loads((ROOT/'toolchain.json').read_text()),
                   host=dict(system=platform.system(), machine=platform.machine()),
-                  reference_library_sha256=hashlib.sha256(library.read_bytes()).hexdigest())
-    report_path.write_text(json.dumps(report, indent=2) + '\n')
-    lanes = [args.lane] if args.lane else ['cpu', 'javascript', *(['metal'] if args.gpu else [])]
-    for name in lanes:
-        outputs = []
-        for batch, start in enumerate(range(0, len(cases), 64)):
-            source = work / f'images-{name}-{batch}.bend'
-            source.write_text(bend_source(cases[start:start+64], gpu=name=='metal').replace('import ../jonlib.bend', 'import ../../jonlib.bend').replace('import ../jonmath.bend', 'import ../../jonmath.bend'))
-            binary = work / (f'images-{batch}.js' if name=='javascript' else f'images-{name}-{batch}')
-            run(['bun', args.bend_source/'bend2/main.ts', source, '-o', binary])
-            command = ['bun', binary] if name=='javascript' else [binary, *(['--gpu','on'] if name=='metal' else [])]
-            outputs.append(run(command))
-        output = ''.join(outputs)
-        (work / f'images-{name}.jsonl').write_text(output)
-        actual = parse_output(output, cases)
-        compare(reference, actual)
-        report['lanes'][name] = dict(passed=True)
+                  reference_library_sha256=hashlib.sha256(probe.library.read_bytes()).hexdigest())
+    if report_path != probe.results:
         report_path.write_text(json.dumps(report, indent=2) + '\n')
+
+    def render(selected, gpu):
+        return bend_source(selected, gpu=gpu).replace('import ../jonlib.bend', 'import ../../jonlib.bend').replace('import ../jonmath.bend', 'import ../../jonmath.bend')
+
+    lanes = probe.candidates(render, cases, batch=64, parse=lambda text, selected: parse_output(text, selected))
+    lanes = {name: rows for name, rows in lanes.items() if name in selected_lanes(probe)}
+    for name, rows in lanes.items():
+        (work / f'images-{name}.jsonl').write_text(''.join(json.dumps(row) + '\n' for row in rows))
+    probe.compare(reference, lanes, describe=lambda i: cases[i]['id'])
+    for name in lanes:
+        report['lanes'][name] = dict(passed=True)
         print(f'{name}: {len(cases)} default resize images, {report["pixels"]} exact pixels', flush=True)
     report['passed'] = True
-    report_path.write_text(json.dumps(report, indent=2) + '\n')
+    if report_path != probe.results:
+        report_path.write_text(json.dumps(report, indent=2) + '\n')
     return report
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--raylib-source', type=Path, default=Path.home() / 'Projetos/raysan5/raylib')
-    parser.add_argument('--bend-source', type=Path, default=Path.home() / 'Projetos/bendlang/bend')
-    parser.add_argument('--gpu', action='store_true')
-    parser.add_argument('--images-only', action='store_true', help='Run whole-image comparisons without repeating coefficient probes')
-    parser.add_argument('--lane', choices=('cpu', 'javascript', 'metal'), help='Run one image lane for focused diagnosis')
-    parser.add_argument('--case-prefix', help='Select image cases by stable ID prefix for focused diagnosis')
-    args = parser.parse_args()
-    if args.lane == 'metal' and not args.gpu:
-        parser.error('--lane metal requires --gpu')
-    pins = json.loads((ROOT / 'toolchain.json').read_text())
-    checkout(args.raylib_source, pins['raylib']['revision'])
-    checkout(args.bend_source, pins['bend']['revision'], pins['bend'].get('patch'))
+    def configure(parser):
+        parser.add_argument('--images-only', action='store_true', help='Run whole-image comparisons without repeating coefficient probes')
+        parser.add_argument('--lane', choices=('cpu-1', 'cpu-2', 'javascript', 'gpu', *LANE_ALIASES),
+                            help='Compare/report one image lane for focused diagnosis (cpu: both CPU lanes; metal: gpu)')
+        parser.add_argument('--case-prefix', help='Select image cases by stable ID prefix for focused diagnosis')
+    args = probekit.arguments(__doc__, configure)
+    if args.lane in ('gpu', 'metal') and not args.gpu:
+        raise SystemExit(f'--lane {args.lane} requires --gpu')
     work = BUILD / 'resize'
     work.mkdir(parents=True, exist_ok=True)
+    host = dict(system=platform.system(), machine=platform.machine())
     if args.images_only:
-        verify_images(args, work)
+        probe = resize_probe(args, work / 'images-results.json')
+        images = verify_images(args, work, probe)
+        probe.report.update({k: v for k, v in images.items() if k not in ('passed', 'lanes')}, scope='images-only',
+                            case_prefix=args.case_prefix, lane=args.lane)
+        probe.finish(scenarios=images['scenarios'], pixels=images['pixels'], fixtures_sha256=images['fixtures_sha256'])
         return
-    report_path = work / 'results.json'
-    report_path.write_text(json.dumps(dict(passed=False)) + '\n')
-    vectors, header_hash = coefficient_vectors(args.raylib_source, work)
-    source = work / 'numeric.bend'
-    source.write_text(bend_coefficients(vectors))
-    cli = ['bun', args.bend_source / 'bend2/main.ts']
-    run([*cli, source, '-o', work / 'numeric', '-o', work / 'numeric.js'])
-    lanes = [('cpu', [work / 'numeric']), ('javascript', ['bun', work / 'numeric.js'])]
-    if args.gpu:
-        gpu_source = work / 'numeric_gpu.bend'
-        gpu_source.write_text(bend_coefficients(vectors, gpu=True))
-        run([*cli, gpu_source, '-o', work / 'numeric_gpu'])
-        lanes.append(('metal', [work / 'numeric_gpu', '--gpu', 'on']))
+    probe = resize_probe(args, work / 'results.json')
+    probe.report.update(scope='full', source_sha256=source_gate(), host=host, stages={})
+    vectors, header_hash = coefficient_vectors(args.raylib_source, work, probe)
     expected = [row['output'] for row in vectors]
-    report = dict(passed=False, normalization_vectors=len(vectors), coefficients=sum(map(len, expected)),
-                  header_sha256=header_hash, lanes={}, source_sha256=source_gate(),
-                  toolchain=pins, host=dict(system=platform.system(), machine=platform.machine()))
-    for name, command in lanes:
-        actual = [[int(value) for value in line.split()] for line in run(command).splitlines() if line.strip()]
-        (work / f'coefficients-{name}.json').write_text(json.dumps(actual) + '\n')
-        mismatches = [i for i, (a, b) in enumerate(zip(actual, expected)) if a != b]
-        if len(actual) != len(expected) or mismatches:
-            report['mismatches'] = mismatches[:20]
-            report_path.write_text(json.dumps(report, indent=2) + '\n')
-            raise ValueError(f'{name}: normalization mismatch, rows {mismatches[:5]} ({len(actual)}/{len(expected)} rows)')
-        report['lanes'][name] = dict(passed=True)
-        print(f'{name}: {len(vectors)} normalization vectors, {report["coefficients"]} coefficient bits exact', flush=True)
-    expected_kernels = kernel_vectors(args.raylib_source, work)
-    for name in report['lanes']:
-        source = work / f'kernels_{name}.bend'
-        binary = work / ('kernels_js.js' if name == 'javascript' else f'kernels_{name}')
-        source.write_text(bend_kernels(name == 'metal'))
-        run([*cli, source, '-o', binary])
-        command = ['bun', binary] if name == 'javascript' else [binary, *(['--gpu', 'on'] if name == 'metal' else [])]
-        actual = [[int(value) for value in line.split()] for line in run(command).splitlines() if line.strip()]
-        (work / f'kernels-{name}.json').write_text(json.dumps(actual) + '\n')
-        (work / 'kernels-reference.json').write_text(json.dumps(expected_kernels) + '\n')
-        mismatches = [i for i, (a,b) in enumerate(zip(actual, expected_kernels)) if a!=b]
-        if len(actual) != len(expected_kernels) or mismatches:
-            raise ValueError(f'{name}: kernel mismatch rows {mismatches[:10]} ({len(actual)}/{len(expected_kernels)})')
-        print(f'{name}: {len(actual)} kernels match exact first index and coefficient bits', flush=True)
-        report['lanes'][name]['kernels'] = len(actual)
-    report['images'] = verify_images(args, work)
-    report['passed'] = True
-    report_path.write_text(json.dumps(report, indent=2) + '\n')
+    lanes = probe.candidates(lambda selected, gpu: bend_coefficients(selected, gpu), vectors, batch=len(vectors),
+                             parse=lambda text, selected: integer_rows(text))
+    for name, rows in lanes.items():
+        (work / f'coefficients-{name}.json').write_text(json.dumps(rows) + '\n')
+    probe.compare(expected, lanes, describe=lambda i: f'normalization vector {i}')
+    probe.report.update(normalization_vectors=len(vectors), coefficients=sum(map(len, expected)), header_sha256=header_hash)
+    probe.report['stages']['coefficients'] = json.loads(json.dumps(probe.report['lanes']))
+    for name in lanes:
+        print(f'{name}: {len(vectors)} normalization vectors, {probe.report["coefficients"]} coefficient bits exact', flush=True)
+    expected_kernels = kernel_vectors(probe)
+    (work / 'kernels-reference.json').write_text(json.dumps(expected_kernels) + '\n')
+    lanes = probe.candidates(lambda selected, gpu: bend_kernels(gpu, selected), KERNEL_PAIRS, batch=len(KERNEL_PAIRS),
+                             parse=lambda text, selected: kernel_groups(integer_rows(text), selected))
+    for name, groups in lanes.items():
+        (work / f'kernels-{name}.json').write_text(json.dumps([row for group in groups for row in group]) + '\n')
+    probe.compare(kernel_groups(expected_kernels, KERNEL_PAIRS), lanes, describe=lambda i: f'kernels for width/out {KERNEL_PAIRS[i]}')
+    probe.report['kernels'] = len(expected_kernels)
+    probe.report['stages']['kernels'] = json.loads(json.dumps(probe.report['lanes']))
+    for name in lanes:
+        print(f'{name}: {len(expected_kernels)} kernels match exact first index and coefficient bits', flush=True)
+    images = verify_images(args, work, probe)
+    probe.report['images'] = images
+    probe.finish(normalization_vectors=len(vectors), coefficients=probe.report['coefficients'], kernels=len(expected_kernels),
+                 scenarios=images['scenarios'], pixels=images['pixels'])
 
 
 if __name__ == '__main__':
