@@ -1003,7 +1003,7 @@
   "ImageDrawTriangle": {
     "jonlib": "Surface.draw_triangle",
     "status": "profile-covered",
-    "scope": "RGBA8; integral vertices; defined reference signed-edge arithmetic",
+    "scope": "RGBA8; finite bounded vertices with raylib's (int) truncation of bounds and edge steps; defined reference signed-edge arithmetic",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -1013,11 +1013,11 @@
   "ImageDrawTriangleEx": {
     "jonlib": "Surface.draw_triangle_ex",
     "status": "profile-covered",
-    "scope": "RGBA8; integral bounded vertices; defined signed arithmetic and nonzero reference weight sum; reference byte-quantized barycentric color interpolation.",
+    "scope": "RGBA8; finite bounded vertices with (int)-truncated bounds/edge steps; defined signed arithmetic and nonzero reference weight sum; reference byte-quantized barycentric color interpolation.",
     "gaps": [
-      "Fractional vertices and wider domains",
       "Degenerate/undefined reference gradients",
-      "Other formats and full target/performance gates"
+      "Other formats and full target/performance gates",
+      "Wider coordinate domains"
     ],
     "api_id": "raylib:function:ImageDrawTriangleEx",
     "milestone": "images"
@@ -1035,9 +1035,9 @@
   "ImageDrawTriangleFan": {
     "jonlib": "Surface.draw_triangle_fan",
     "status": "profile-covered",
-    "scope": "RGBA8; List<Vector2> with bounded integral vertices; reference fan order; fewer than three points is a no-op.",
+    "scope": "RGBA8; List<Vector2> with finite bounded vertices (each triangle as ImageDrawTriangle); reference fan order; fewer than three points is a no-op.",
     "gaps": [
-      "Fractional vertices, full formats/domains and target/performance evidence"
+      "Full formats/domains and target/performance evidence"
     ],
     "api_id": "raylib:function:ImageDrawTriangleFan",
     "milestone": "images"
@@ -1045,9 +1045,9 @@
   "ImageDrawTriangleStrip": {
     "jonlib": "Surface.draw_triangle_strip",
     "status": "profile-covered",
-    "scope": "RGBA8; bounded integral vertices; alternating reference winding; fewer than three points is a no-op.",
+    "scope": "RGBA8; finite bounded vertices (each triangle as ImageDrawTriangle); alternating reference winding; fewer than three points is a no-op.",
     "gaps": [
-      "Fractional vertices, full formats/domains and target/performance evidence"
+      "Full formats/domains and target/performance evidence"
     ],
     "api_id": "raylib:function:ImageDrawTriangleStrip",
     "milestone": "images"

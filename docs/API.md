@@ -119,10 +119,10 @@ is outside this API's contract.
 | `Surface.draw_line(surface, x0, y0, x1, y1, color) -> Surface` | Integral F32 endpoints; matches `ImageDrawLine` fixed-point stepping and excludes the final endpoint. A zero-length line draws nothing. |
 | `Surface.draw_line_v(surface, start, end, color) -> Surface` | Vector2 endpoints; applies raylib's F32 `coordinate + 0.5` followed by truncation toward zero before drawing. |
 | `Surface.draw_line_ex(surface, start, end, thickness, color)` | Reference add-half/truncate endpoints, dominant-axis strips and even-thickness bias; thickness 0..32767. |
-| `Surface.draw_triangle(surface, v1, v2, v3, color) -> Surface` | Integral Vector2 vertices; matches `ImageDrawTriangle` winding, inclusive edge tests, clipping and degenerate behavior. |
+| `Surface.draw_triangle(surface, v1, v2, v3, color) -> Surface` | Finite Vector2 vertices; bounds and edge steps are truncated to integers as in raylib. Matches `ImageDrawTriangle` winding, inclusive edge tests, clipping and degenerate behavior. |
 | `Surface.draw_triangle_lines(surface, v1, v2, v3, color) -> Surface` | Vector2 vertices truncated toward zero, then three reference-compatible line segments. |
-| `Surface.draw_triangle_ex(surface, v1, v2, v3, c1, c2, c3)` | Reference coverage and byte-quantized barycentric color weights. Requires integral vertices, defined signed arithmetic and nonzero reference weight sum. |
-| `Surface.draw_triangle_fan(surface, points, color)` / `draw_triangle_strip(surface, points, color)` | Immutable `+List<Vector2>` of integral vertices; reference vertex order/winding. Fewer than three points draws nothing. |
+| `Surface.draw_triangle_ex(surface, v1, v2, v3, c1, c2, c3)` | Reference coverage and byte-quantized barycentric color weights. Fractional vertices follow the same truncation; requires defined signed arithmetic and nonzero reference weight sum. |
+| `Surface.draw_triangle_fan(surface, points, color)` / `draw_triangle_strip(surface, points, color)` | Immutable `+List<Vector2>` of finite vertices, each triangle drawn as `draw_triangle`; reference vertex order/winding. Fewer than three points draws nothing. |
 | `Surface.draw_image(destination, source, x, y, tint) -> Surface & Surface` | Full-source, unscaled RGBA8 drawing; clips destination placement, applies integer tint/alpha blending, returns destination then unchanged source. |
 | `Surface.extract(surface, rectangle) -> Surface & Maybe<Surface>` | Retains the original; returns an independent region for positive integral in-bounds rectangles, otherwise `None`. |
 | `Surface.crop(surface, rectangle) -> Result<&1, &1, Surface & Surface.Error, Surface>` | Clips an integral rectangle as raylib does; returns the cropped surface or the original with an error. An origin strictly beyond the right/bottom edge is the reference no-op. |
@@ -215,8 +215,8 @@ Drawing coordinates and rectangle extents are represented as **F32 but must be
 finite integers in -32767..32767**. Radius is **0..32767**. This permits negative
 positions while Bend has no native signed integer type. The vector wrappers,
 `draw_rectangle_rec`, `draw_rectangle_lines` and `draw_image_rect` accept bounded
-finite fractional fields with the conversion rules above. Filled triangle
-vertices remain integral. NaN/infinity and larger values are outside the drawing profile.
+finite fractional fields with the conversion rules above, as do filled triangle
+vertices (truncated like raylib's `int` casts). NaN/infinity and larger values are outside the drawing profile.
 Surface operations do not promise successful allocation when the process runs
 out of memory; Bend's runtime treats allocation failure as fatal.
 

@@ -2051,8 +2051,11 @@ def Raster.inverse(a: Raster.Edge, b: Raster.Edge, c: Raster.Edge) -> F32:
   Edge{cv, _, _} = c
   (255.0 / Signed.to_f32((av + bv + cv : U32)) : F32)
 
+# raylib truncates each step to int before seeding the row value in float.
 def Raster.edge(x: F32, y: F32, vx: F32, vy: F32, +dx: F32, +dy: F32) -> Raster.Edge:
-  Edge{Signed.word(((x - vx) * dx + dy * (y - vy) : F32)), Signed.word(dx), Signed.word(dy)}
+  +sx = Signed.trunc(dx)
+  +sy = Signed.trunc(dy)
+  Edge{Signed.word(((x - vx) * sx + sy * (y - vy) : F32)), Signed.word(sx), Signed.word(sy)}
 
 def Surface.triangle.pixel(inside: Bool, pixels: Array<U32>, at: U32, paint: Raster.Paint, a: U32, b: U32, c: U32) -> Array<U32>:
   match inside:
@@ -2097,10 +2100,10 @@ def Surface.draw_triangle(surface: Surface, v1: M.Vector2, v2: M.Vector2, v3: M.
   M.Vector2{+ax, +ay} = v1
   M.Vector2{+bx, +by} = v2
   M.Vector2{+cx, +cy} = v3
-  +x0 = F32.max(0.0, F32.min(ax, F32.min(bx, cx)))
-  +y0 = F32.max(0.0, F32.min(ay, F32.min(by, cy)))
-  +x1 = F32.min(U32.to_f32((w - 1 : U32)), F32.max(ax, F32.max(bx, cx)))
-  +y1 = F32.min(U32.to_f32((h - 1 : U32)), F32.max(ay, F32.max(by, cy)))
+  +x0 = F32.max(0.0, Signed.trunc(F32.min(ax, F32.min(bx, cx))))
+  +y0 = F32.max(0.0, Signed.trunc(F32.min(ay, F32.min(by, cy))))
+  +x1 = F32.min(U32.to_f32((w - 1 : U32)), Signed.trunc(F32.max(ax, F32.max(bx, cx))))
+  +y1 = F32.min(U32.to_f32((h - 1 : U32)), Signed.trunc(F32.max(ay, F32.max(by, cy))))
   +sign = Bool.pick(F32, ((bx - ax) * (cy - ay) - (cx - ax) * (by - ay) > 0.0 : F32), (0.0 - 1.0 : F32), 1.0)
   Surface.triangle.fill(((x0 <= x1) && (y0 <= y1) : F32), w, h, pixels, x0, y0, x1, y1,
     Raster.edge(x0, y0, bx, by, ((cy - by) * sign : F32), ((bx - cx) * sign : F32)),
@@ -2112,10 +2115,10 @@ def Surface.draw_triangle_ex(surface: Surface, v1: M.Vector2, v2: M.Vector2, v3:
   M.Vector2{+ax, +ay} = v1
   M.Vector2{+bx, +by} = v2
   M.Vector2{+cx, +cy} = v3
-  +x0 = F32.max(0.0, F32.min(ax, F32.min(bx, cx)))
-  +y0 = F32.max(0.0, F32.min(ay, F32.min(by, cy)))
-  +x1 = F32.min(U32.to_f32((w - 1 : U32)), F32.max(ax, F32.max(bx, cx)))
-  +y1 = F32.min(U32.to_f32((h - 1 : U32)), F32.max(ay, F32.max(by, cy)))
+  +x0 = F32.max(0.0, Signed.trunc(F32.min(ax, F32.min(bx, cx))))
+  +y0 = F32.max(0.0, Signed.trunc(F32.min(ay, F32.min(by, cy))))
+  +x1 = F32.min(U32.to_f32((w - 1 : U32)), Signed.trunc(F32.max(ax, F32.max(bx, cx))))
+  +y1 = F32.min(U32.to_f32((h - 1 : U32)), Signed.trunc(F32.max(ay, F32.max(by, cy))))
   +sign = Bool.pick(F32, ((bx - ax) * (cy - ay) - (cx - ax) * (by - ay) > 0.0 : F32), (0.0 - 1.0 : F32), 1.0)
   +ea = Raster.edge(x0, y0, bx, by, ((cy - by) * sign : F32), ((bx - cx) * sign : F32))
   +eb = Raster.edge(x0, y0, cx, cy, ((ay - cy) * sign : F32), ((cx - ax) * sign : F32))
