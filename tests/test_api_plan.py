@@ -140,6 +140,32 @@ inline Vec operator + (const Vec& lhs, const float& rhs) { return lhs; }
                 with self.assertRaises(ValueError):
                     plan.make_ledger(self.reference, self.policy, bad)
 
+    def test_progress_records_state_contracts_not_run_history(self):
+        self.assertEqual(plan.lint_progress(self.progress), [])
+        key = 'raylib:function:ImageDraw'
+        cases = {
+            'long scope': dict(scope='x' * (plan.MAX_SCOPE + 1)),
+            'too many gaps': dict(gaps=['gap'] * (plan.MAX_GAPS + 1)),
+            'long gap': dict(gaps=['x' * (plan.MAX_GAP + 1)]),
+            'too much evidence': dict(evidence=['docs/API.md'] * (plan.MAX_EVIDENCE + 1)),
+            'commit hash': dict(scope='Passes at e481d3c257c6add2b9f756a583c648fcc5c92b7d.'),
+            'run ID in gap': dict(gaps=['Hosted Conformance 37202964890 pending']),
+        }
+        for name, change in cases.items():
+            with self.subTest(name=name):
+                progress = copy.deepcopy(self.progress)
+                progress['entries'][key].update(change)
+                problems = plan.lint_progress(progress)
+                self.assertEqual(len(problems), 1, problems)
+                self.assertTrue(problems[0].startswith(key))
+        progress = copy.deepcopy(self.progress)
+        progress['entries'][key]['scope'] = 'Caps at 1048576 bytes and 83,886,102-byte files; F32 0.1234567891.'
+        self.assertEqual(plan.lint_progress(progress), [])
+        with patch.object(plan, 'read', side_effect=lambda name: progress if name == 'progress.json' else plan.json.loads((plan.API / name).read_text())):
+            progress['entries'][key]['gaps'] = ['Hosted run 37202964890']
+            with patch('sys.argv', ['api_plan.py', 'check']), self.assertRaisesRegex(ValueError, 'must state contracts'):
+                plan.main()
+
     def test_check_rejects_stale_outputs_and_source_drift(self):
         BUILD.mkdir(exist_ok=True)
         with tempfile.TemporaryDirectory(dir=BUILD, prefix='api-plan-') as directory:

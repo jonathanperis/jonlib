@@ -18,6 +18,9 @@ STATUSES = {'not-started', 'in-progress', 'partial', 'blocked', 'complete'}
 GATES = ('availability', 'behavior', 'ownership', 'integration', 'targets', 'performance')
 DELTA_FIELDS = ('status', 'jonlib', 'scope', 'gaps', 'gates', 'evidence', 'blocker',
                 'gate_evidence', 'target_results', 'milestone', 'api_dependencies')
+# Progress records state contracts, not run history (see docs/API-TRACKING.md).
+MAX_SCOPE, MAX_GAPS, MAX_GAP, MAX_EVIDENCE = 600, 6, 200, 12
+RUN_HISTORY = (re.compile(r'\b[0-9a-fA-F]{40}\b'), re.compile(r'(?<![\d.,])\d{9,}(?!\d)'))
 
 
 def dump(value):
@@ -155,6 +158,24 @@ def snake(name):
 
 def local_evidence(value):
     return value.startswith(('https://', 'http://')) or (ROOT / value.split('#')[0]).is_file()
+
+
+def lint_progress(progress):
+    """Return contract-style violations in editable progress records."""
+    problems = []
+    for key, update in progress['entries'].items():
+        scope, gaps, evidence = update.get('scope', ''), update.get('gaps', []), update.get('evidence', [])
+        if len(scope) > MAX_SCOPE:
+            problems.append(f'{key}: scope has {len(scope)} characters (limit {MAX_SCOPE})')
+        if len(gaps) > MAX_GAPS:
+            problems.append(f'{key}: {len(gaps)} gaps (limit {MAX_GAPS})')
+        problems += [f'{key}: gap has {len(gap)} characters (limit {MAX_GAP})' for gap in gaps if len(gap) > MAX_GAP]
+        if len(evidence) > MAX_EVIDENCE:
+            problems.append(f'{key}: {len(evidence)} evidence paths (limit {MAX_EVIDENCE})')
+        for text in [scope, *gaps, update.get('blocker') or '']:
+            if any(pattern.search(text) for pattern in RUN_HISTORY):
+                problems.append(f'{key}: commit hash or CI run ID in scope/gaps/blocker: {text[:80]}')
+    return problems
 
 
 def acyclic(graph, label):
@@ -410,6 +431,9 @@ def main():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(text)
     elif args.command == 'check':
+        problems = lint_progress(progress)
+        if problems:
+            raise ValueError('api/progress.json records must state contracts:\n  ' + '\n  '.join(problems))
         if args.raylib_source and source_catalog(args.raylib_source) != reference:
             raise ValueError('Pinned upstream source and committed reference catalog differ; review and sync explicitly')
         stale = [relative for relative, text in outputs.items() if not (ROOT / relative).is_file() or (ROOT / relative).read_text() != text]
