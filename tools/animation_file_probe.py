@@ -12,6 +12,7 @@ from probekit import ROOT, ProbeFailure
 
 PROGRAM='''import Base
 import ../../jonlib.bend as J
+import ../../jonmath.bend as M
 def error_name(error: J.Image.LoadError) -> String:
   match error:
     case J.ImageFileError{_, _}: "file"
@@ -108,7 +109,7 @@ def main():
         else:row['error']=case['error']
     if at!=len(expected):raise ProbeFailure('Incomplete native animation file output')
     profile=image_decode_reference()
-    preamble=PROGRAM.replace('REFERENCE',f'J.{profile}{{}}')
+    preamble=PROGRAM.replace('REFERENCE',f'M.{profile}{{}}')
     for key,path in [('INVALID',str((work/'malformed.gif').relative_to(ROOT))),('VALID',sequence),('DIRECTORY',str(directory.relative_to(ROOT))),('LARGE',controls[0]['path'])]:
         preamble=preamble.replace(key,json.dumps(path))
     actions=[('load',case) for case in [*cases,*controls]]+[('default',None),('closure',None)]
@@ -117,7 +118,7 @@ def main():
     def render(selected,gpu):
         body=preamble
         for kind,case in selected:
-            if kind=='load':body+=f'    IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Animation>, Unit, J.Image.Animation.load_image_for(J.{profile}{{}}, {json.dumps(case["path"])}, {case.get("frames",100)}, {case.get("pixels",16777216)}), observed)\n'
+            if kind=='load':body+=f'    IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Animation>, Unit, J.Image.Animation.load_image_for(M.{profile}{{}}, {json.dumps(case["path"])}, {case.get("frames",100)}, {case.get("pixels",16777216)}), observed)\n'
             elif kind=='default':body+=f'    IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Animation>, Unit, J.Image.Animation.load_image({json.dumps(str(default.relative_to(ROOT)))}, 1, 1), observed)\n'
             else:body+='    closure_loop(100n)\n'
         return body

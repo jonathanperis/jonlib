@@ -628,31 +628,29 @@ def result_size(case):
 
 
 def gradient_reference():
+    """M.Libm constructor for the host's sinf/cosf (gradients, rotations) behavior."""
     if platform.system() == 'Darwin':
-        return 'AccurateGradient'
+        return 'AppleLibm'
     if platform.system() == 'Linux' and platform.libc_ver()[0] == 'glibc':
-        return 'GnuGradient'
+        return 'Glibc239Libm'
     raise ValueError('Declare a verified gradient math reference for this host')
 
 
-def collision_arithmetic():
+def contraction():
+    """M.Contraction constructor matching how the linked raylib build contracts a*b+c."""
     if platform.system() == 'Darwin' and platform.machine() == 'arm64':
-        return 'FusedCollision'
+        return 'Fused'
     if platform.system() == 'Linux' and platform.machine() == 'x86_64':
-        return 'UncontractedCollision'
-    raise ValueError('Declare a verified linked collision arithmetic profile for this host')
+        return 'Uncontracted'
+    raise ValueError('Declare a verified linked contraction profile for this host')
 
 
-def noise_reference():
-    return {'FusedCollision':'FusedNoise','UncontractedCollision':'UncontractedNoise'}[collision_arithmetic()]
+# One host contraction applies to collisions, noise, splines and PSD decoding alike.
+collision_arithmetic = noise_reference = spline_reference = image_decode_reference = contraction
 
-
-def spline_reference():
-    return {'FusedCollision':'FusedSpline','UncontractedCollision':'UncontractedSpline'}[collision_arithmetic()]
-
-
-def image_decode_reference():
-    return {'FusedCollision':'FusedDecode','UncontractedCollision':'UncontractedDecode'}[collision_arithmetic()]
+# Native selections use the frozen source-contract names; Jonmath names the libm.
+LIBM_FOR_PROFILE = {'Apple2007AngleRn': 'AppleLibm', 'Sun239AngleRn': 'Glibc239Libm', 'Glibc241AngleRn': 'Glibc241Libm',
+                    'AccurateGradient': 'AppleLibm', 'GnuGradient': 'Glibc239Libm'}
 
 
 def vector_arguments(signature, values, bend=False):
@@ -1262,12 +1260,12 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
                 profiled = namespace=='Spline' or op['function'] in ('clamp','min','max') or (namespace,op['function']) in ROTATION_ANGLES
                 function_name = op['function']+'_for' if profiled else op['function']
                 if angle:
-                    function_name = op['function']+'_with_reference'
-                    profile = f'M.{angle_reference}{{}}, '
+                    function_name = op['function']+'_for'
+                    profile = f'M.{LIBM_FOR_PROFILE[angle_reference]}{{}}, '
                 elif (namespace, op['function']) in EXTREMA_QUERIES:
-                    profile = f'M.{extrema_reference}{{}}, '
+                    profile = f'M.{LIBM_FOR_PROFILE[extrema_reference]}{{}}, '
                 else:
-                    profile = (f'J.{spline_reference()}{{}}, ' if namespace=='Spline' else f'M.{gradient_reference()}{{}}, ') if profiled else ''
+                    profile = (f'M.{spline_reference()}{{}}, ' if namespace=='Spline' else f'M.{gradient_reference()}{{}}, ') if profiled else ''
                 module = 'M' if namespace in ('Math','Vector2','Vector3','Vector4','Matrix','Quaternion','Float64') else 'J'
                 expression = f'{module}.{namespace}.{function_name}({profile}{vector_arguments(signature,op["args"],bend=True)})'
                 if angle:
@@ -1291,7 +1289,7 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
                 function_name = op['function']
                 if function_name in CONTRACTED_COLLISIONS:
                     function_name += '_for'
-                    arguments = f'J.{collision_arithmetic()}{{}}, ' + arguments
+                    arguments = f'M.{collision_arithmetic()}{{}}, ' + arguments
                 expression = f'J.Collision.{function_name}({arguments})'
                 function = {'rectangle':'write_rectangle','hit':'write_hit','bool':'J.Surface.draw_pixel'}[result]
                 value = f'Bool.to_u32({expression})' if result=='bool' else expression
@@ -1376,7 +1374,7 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
             creation = f'create_cellular{"!" if gpu else ""}({cellular["seed"]}, {case["width"]}, {case["height"]}, {cellular["tile"]})'
         if 'perlin' in case:
             perlin = case['perlin']
-            creation = f'J.Surface.create_perlin_for{"!" if gpu else ""}(J.{noise_reference()}{{}}, {case["width"]}, {case["height"]}, {f32(perlin["offset_x"])}, {f32(perlin["offset_y"])}, {f32(perlin["scale"])})'
+            creation = f'J.Surface.create_perlin_for{"!" if gpu else ""}(M.{noise_reference()}{{}}, {case["width"]}, {case["height"]}, {f32(perlin["offset_x"])}, {f32(perlin["offset_y"])}, {f32(perlin["scale"])})'
         if 'checked' in case:
             checked = case['checked']
             creation = f'J.Surface.create_checked{"!" if gpu else ""}({case["width"]}, {case["height"]}, {checked["tile_width"]}, {checked["tile_height"]}, {rgba(case["background"])}, {rgba(checked["color"])})'

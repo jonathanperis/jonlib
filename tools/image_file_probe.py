@@ -56,6 +56,7 @@ def image_streams():
 
 PROGRAM='''import Base
 import ../../jonlib.bend as J
+import ../../jonmath.bend as M
 def error_name(error: J.Image.LoadError) -> String:
   match error:
     case J.ImageFileError{_, _}: "file"
@@ -147,7 +148,7 @@ def main():
     if len(expected)!=len(cases):raise ProbeFailure('Incomplete native image-file results')
     if any(row['loaded']!=(case['error'] is None) for case,row in zip(cases,expected)):raise ProbeFailure('Native image-file acceptance differs from fixture profile')
     profile=image_decode_reference()
-    preamble=PROGRAM.replace('REFERENCE',f'J.{profile}{{}}')
+    preamble=PROGRAM.replace('REFERENCE',f'M.{profile}{{}}')
     for key,path in [('INVALID',work/'malformed.png'),('VALID',work/'alpha.psd'),('DIRECTORY',directory),('LARGE',work/'large.png')]:
         preamble=preamble.replace(key,json.dumps(str(path.relative_to(ROOT))))
     # Native pixels/dispatch plus the fixture's error kind; boundaries and closure have no native row.
@@ -160,7 +161,7 @@ def main():
         for kind,case in selected:
             if kind=='closure':body+='    closure_loop(100n)\n';continue
             function='load_qoi' if case['legacy'] else 'load_image_for'
-            reference='' if case['legacy'] else f'J.{profile}{{}}, '
+            reference='' if case['legacy'] else f'M.{profile}{{}}, '
             body+=f'    IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.{function}({reference}{json.dumps(case["path"])}), observed)\n'
         return body
 

@@ -74,56 +74,47 @@ def Checksum.sha1(bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
 def Checksum.sha256(bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
   Sha.hash(True{}, bytes)
 
-type Spline.Reference is Data:
-  UncontractedSpline{}
-  FusedSpline{}
-
-def Spline.fused(reference: Spline.Reference) -> Bool:
-  match reference:
-    case UncontractedSpline{}: False{}
-    case FusedSpline{}: True{}
-
-def Spline.linear_for(reference: Spline.Reference, start: M.Vector2, end: M.Vector2, +t: F32) -> M.Vector2:
+def Spline.linear_for(reference: M.Contraction, start: M.Vector2, end: M.Vector2, +t: F32) -> M.Vector2:
   M.Vector2{x, y} = start
   M.Vector2{u, v} = end
-  +fused = Spline.fused(reference)
+  +fused = M.Contraction.fused(reference)
   M.Vector2{SplineNumeric.linear(fused, x, u, t), SplineNumeric.linear(fused, y, v, t)}
 
 def Spline.linear(start: M.Vector2, end: M.Vector2, t: F32) -> M.Vector2:
-  Spline.linear_for(UncontractedSpline{}, start, end, t)
+  Spline.linear_for(M.Uncontracted{}, start, end, t)
 
-def Spline.basis_for(reference: Spline.Reference, first: M.Vector2, second: M.Vector2, third: M.Vector2, fourth: M.Vector2, +t: F32) -> M.Vector2:
+def Spline.basis_for(reference: M.Contraction, first: M.Vector2, second: M.Vector2, third: M.Vector2, fourth: M.Vector2, +t: F32) -> M.Vector2:
   M.Vector2{ax, ay} = first
   M.Vector2{bx, by} = second
   M.Vector2{cx, cy} = third
   M.Vector2{dx, dy} = fourth
-  +fused = Spline.fused(reference)
+  +fused = M.Contraction.fused(reference)
   M.Vector2{SplineNumeric.basis(fused, ax, bx, cx, dx, t), SplineNumeric.basis(fused, ay, by, cy, dy, t)}
 
 def Spline.basis(first: M.Vector2, second: M.Vector2, third: M.Vector2, fourth: M.Vector2, t: F32) -> M.Vector2:
-  Spline.basis_for(UncontractedSpline{}, first, second, third, fourth, t)
+  Spline.basis_for(M.Uncontracted{}, first, second, third, fourth, t)
 
-def Spline.catmull_rom_for(reference: Spline.Reference, first: M.Vector2, second: M.Vector2, third: M.Vector2, fourth: M.Vector2, t: F32) -> M.Vector2:
+def Spline.catmull_rom_for(reference: M.Contraction, first: M.Vector2, second: M.Vector2, third: M.Vector2, fourth: M.Vector2, t: F32) -> M.Vector2:
   M.Vector2{ax, ay} = first
   M.Vector2{bx, by} = second
   M.Vector2{cx, cy} = third
   M.Vector2{dx, dy} = fourth
-  +fused = Spline.fused(reference)
+  +fused = M.Contraction.fused(reference)
   +weights = SplineNumeric.catmull_weights(fused, t)
   M.Vector2{SplineNumeric.catmull(fused, weights, ax, bx, cx, dx), SplineNumeric.catmull(fused, weights, ay, by, cy, dy)}
 
 def Spline.catmull_rom(first: M.Vector2, second: M.Vector2, third: M.Vector2, fourth: M.Vector2, t: F32) -> M.Vector2:
-  Spline.catmull_rom_for(UncontractedSpline{}, first, second, third, fourth, t)
+  Spline.catmull_rom_for(M.Uncontracted{}, first, second, third, fourth, t)
 
-def Spline.bezier_quad_for(reference: Spline.Reference, start: M.Vector2, control: M.Vector2, end: M.Vector2, +t: F32) -> M.Vector2:
+def Spline.bezier_quad_for(reference: M.Contraction, start: M.Vector2, control: M.Vector2, end: M.Vector2, +t: F32) -> M.Vector2:
   M.Vector2{ax, ay} = start
   M.Vector2{bx, by} = control
   M.Vector2{cx, cy} = end
-  +fused = Spline.fused(reference)
+  +fused = M.Contraction.fused(reference)
   M.Vector2{SplineNumeric.bezier_quad(fused, ax, bx, cx, t), SplineNumeric.bezier_quad(fused, ay, by, cy, t)}
 
 def Spline.bezier_quad(start: M.Vector2, control: M.Vector2, end: M.Vector2, t: F32) -> M.Vector2:
-  Spline.bezier_quad_for(UncontractedSpline{}, start, control, end, t)
+  Spline.bezier_quad_for(M.Uncontracted{}, start, control, end, t)
 
 type BoundingBox is Data:
   BoundingBox{min: M.Vector3, max: M.Vector3}
@@ -147,60 +138,56 @@ def Signed.trunc(+x: F32) -> F32:
 def Signed.to_f32(+word: U32) -> F32:
   Bool.pick(F32, (word >= 2147483648 : U32), F32.neg(U32.to_f32((0 - word : U32))), U32.to_f32(word))
 
-type Collision.Arithmetic is Data:
-  UncontractedCollision{}
-  FusedCollision{}
-
-def Collision.multiply_add(arithmetic: Collision.Arithmetic, a: F32, b: F32, c: F32) -> F32:
+def Collision.multiply_add(arithmetic: M.Contraction, a: F32, b: F32, c: F32) -> F32:
   match arithmetic:
-    case UncontractedCollision{}: (a * b + c : F32)
-    case FusedCollision{}: Fused.multiply_add(a, b, c)
+    case M.Uncontracted{}: (a * b + c : F32)
+    case M.Fused{}: Fused.multiply_add(a, b, c)
 
 # dx*dx + dy*dy as the linked reference evaluates it: fma(dx, dx, dy*dy) when fused.
-def Collision.square_sum(+arithmetic: Collision.Arithmetic, +dx: F32, +dy: F32) -> F32:
+def Collision.square_sum(+arithmetic: M.Contraction, +dx: F32, +dy: F32) -> F32:
   Collision.multiply_add(arithmetic, dx, dx, (dy * dy : F32))
 
 # Vector3DistanceSqr inlined into rmodels.c: fma(dz, dz, fma(dx, dx, dy*dy)) when fused.
-def Collision.distance_sqr(+arithmetic: Collision.Arithmetic, left: M.Vector3, right: M.Vector3) -> F32:
+def Collision.distance_sqr(+arithmetic: M.Contraction, left: M.Vector3, right: M.Vector3) -> F32:
   M.Vector3{x, y, z} = left
   M.Vector3{u, v, w} = right
   +dz = (w - z : F32)
   Collision.multiply_add(arithmetic, dz, dz, Collision.square_sum(arithmetic, (u - x : F32), (v - y : F32)))
 
-def Collision.spheres_for(+arithmetic: Collision.Arithmetic, left: M.Vector3, radius: F32, right: M.Vector3, other_radius: F32) -> Bool:
+def Collision.spheres_for(+arithmetic: M.Contraction, left: M.Vector3, radius: F32, right: M.Vector3, other_radius: F32) -> Bool:
   +sum = (radius + other_radius : F32)
   (Collision.distance_sqr(arithmetic, left, right) <= sum * sum : F32)
 
 def Collision.spheres(left: M.Vector3, radius: F32, right: M.Vector3, other_radius: F32) -> Bool:
-  Collision.spheres_for(UncontractedCollision{}, left, radius, right, other_radius)
+  Collision.spheres_for(M.Uncontracted{}, left, radius, right, other_radius)
 
 def Collision.boxes(left: BoundingBox, right: BoundingBox) -> Bool:
   BoundingBox{M.Vector3{ax, ay, az}, M.Vector3{bx, by, bz}} = left
   BoundingBox{M.Vector3{cx, cy, cz}, M.Vector3{dx, dy, dz}} = right
   ((bx >= cx) && (ax <= dx) && (by >= cy) && (ay <= dy) && (bz >= cz) && (az <= dz) : F32)
 
-def Collision.box_sphere_for(+arithmetic: Collision.Arithmetic, box: BoundingBox, center: M.Vector3, +radius: F32) -> Bool:
+def Collision.box_sphere_for(+arithmetic: M.Contraction, box: BoundingBox, center: M.Vector3, +radius: F32) -> Bool:
   BoundingBox{M.Vector3{lx, ly, lz}, M.Vector3{ux, uy, uz}} = box
   M.Vector3{+x, +y, +z} = center
   closest = {M.Vector3{M.Math.clamp(x, lx, ux), M.Math.clamp(y, ly, uy), M.Math.clamp(z, lz, uz)} : M.Vector3}
   (Collision.distance_sqr(arithmetic, M.Vector3{x, y, z}, closest) <= radius * radius : F32)
 
 def Collision.box_sphere(box: BoundingBox, center: M.Vector3, +radius: F32) -> Bool:
-  Collision.box_sphere_for(UncontractedCollision{}, box, center, radius)
+  Collision.box_sphere_for(M.Uncontracted{}, box, center, radius)
 
 def Collision.recs(left: Rectangle, right: Rectangle) -> Bool:
   Rectangle{+x, +y, w, h} = left
   Rectangle{+u, +v, rw, rh} = right
   ((x < u + rw) && (x + w > u) && (y < v + rh) && (y + h > v) : F32)
 
-def Collision.circles_for(+arithmetic: Collision.Arithmetic, left: M.Vector2, radius: F32, right: M.Vector2, other_radius: F32) -> Bool:
+def Collision.circles_for(+arithmetic: M.Contraction, left: M.Vector2, radius: F32, right: M.Vector2, other_radius: F32) -> Bool:
   M.Vector2{x, y} = left
   M.Vector2{u, v} = right
   +sum = (radius + other_radius : F32)
   (Collision.square_sum(arithmetic, (u - x : F32), (v - y : F32)) <= sum * sum : F32)
 
 def Collision.circles(left: M.Vector2, radius: F32, right: M.Vector2, other_radius: F32) -> Bool:
-  Collision.circles_for(UncontractedCollision{}, left, radius, right, other_radius)
+  Collision.circles_for(M.Uncontracted{}, left, radius, right, other_radius)
 
 def Collision.rectangle.result(overlap: Bool, +x: F32, +y: F32, right: F32, bottom: F32) -> Rectangle:
   match overlap:
@@ -225,15 +212,15 @@ def Collision.point_rec(point: M.Vector2, rectangle: Rectangle) -> Bool:
   Rectangle{+rx, +ry, w, h} = rectangle
   ((x >= rx) && (x < rx + w) && (y >= ry) && (y < ry + h) : F32)
 
-def Collision.point_circle_for(+arithmetic: Collision.Arithmetic, point: M.Vector2, center: M.Vector2, +radius: F32) -> Bool:
+def Collision.point_circle_for(+arithmetic: M.Contraction, point: M.Vector2, center: M.Vector2, +radius: F32) -> Bool:
   M.Vector2{x, y} = point
   M.Vector2{cx, cy} = center
   (Collision.square_sum(arithmetic, (x - cx : F32), (y - cy : F32)) <= radius * radius : F32)
 
 def Collision.point_circle(point: M.Vector2, center: M.Vector2, +radius: F32) -> Bool:
-  Collision.point_circle_for(UncontractedCollision{}, point, center, radius)
+  Collision.point_circle_for(M.Uncontracted{}, point, center, radius)
 
-def Collision.circle_rec_for(+arithmetic: Collision.Arithmetic, center: M.Vector2, +radius: F32, rectangle: Rectangle) -> Bool:
+def Collision.circle_rec_for(+arithmetic: M.Contraction, center: M.Vector2, +radius: F32, rectangle: Rectangle) -> Bool:
   M.Vector2{x, y} = center
   Rectangle{rx, ry, w, h} = rectangle
   +half_w = (w / 2.0 : F32)
@@ -246,14 +233,14 @@ def Collision.circle_rec_for(+arithmetic: Collision.Arithmetic, center: M.Vector
     && ((dx <= half_w) || (dy <= half_h) || (Collision.square_sum(arithmetic, corner_x, corner_y) <= radius * radius)) : F32)
 
 def Collision.circle_rec(center: M.Vector2, +radius: F32, rectangle: Rectangle) -> Bool:
-  Collision.circle_rec_for(UncontractedCollision{}, center, radius, rectangle)
+  Collision.circle_rec_for(M.Uncontracted{}, center, radius, rectangle)
 
-def Collision.lines.hit(inside: Bool, +arithmetic: Collision.Arithmetic, x: F32, y: F32, rx: F32, ry: F32, +t: F32) -> Maybe<&2, M.Vector2>:
+def Collision.lines.hit(inside: Bool, +arithmetic: M.Contraction, x: F32, y: F32, rx: F32, ry: F32, +t: F32) -> Maybe<&2, M.Vector2>:
   match inside:
     case False{}: None{}
     case True{}: Some{M.Vector2{Collision.multiply_add(arithmetic, t, rx, x), Collision.multiply_add(arithmetic, t, ry, y)}}
 
-def Collision.lines.divided(nonparallel: Bool, +arithmetic: Collision.Arithmetic, +x: F32, +y: F32, +rx: F32, +ry: F32, +sx: F32, +sy: F32, u: F32, v: F32, +divisor: F32) -> Maybe<&2, M.Vector2>:
+def Collision.lines.divided(nonparallel: Bool, +arithmetic: M.Contraction, +x: F32, +y: F32, +rx: F32, +ry: F32, +sx: F32, +sy: F32, u: F32, v: F32, +divisor: F32) -> Maybe<&2, M.Vector2>:
   match nonparallel:
     case False{}: None{}
     case True{}:
@@ -263,7 +250,7 @@ def Collision.lines.divided(nonparallel: Bool, +arithmetic: Collision.Arithmetic
       +s = (Collision.multiply_add(arithmetic, dx, ry, F32.neg((dy * rx : F32))) / divisor : F32)
       Collision.lines.hit(((0.0 <= t) && (t <= 1.0) && (0.0 <= s) && (s <= 1.0) : F32), arithmetic, x, y, rx, ry, t)
 
-def Collision.lines_for(+arithmetic: Collision.Arithmetic, start: M.Vector2, end: M.Vector2, other_start: M.Vector2, other_end: M.Vector2) -> Maybe<&2, M.Vector2>:
+def Collision.lines_for(+arithmetic: M.Contraction, start: M.Vector2, end: M.Vector2, other_start: M.Vector2, other_end: M.Vector2) -> Maybe<&2, M.Vector2>:
   M.Vector2{+x, +y} = start
   M.Vector2{ex, ey} = end
   M.Vector2{+u, +v} = other_start
@@ -276,10 +263,10 @@ def Collision.lines_for(+arithmetic: Collision.Arithmetic, start: M.Vector2, end
   Collision.lines.divided((F32.abs(divisor) >= 0.00000011920928955078125 : F32), arithmetic, x, y, rx, ry, sx, sy, u, v, divisor)
 
 def Collision.lines(start: M.Vector2, end: M.Vector2, other_start: M.Vector2, other_end: M.Vector2) -> Maybe<&2, M.Vector2>:
-  Collision.lines_for(UncontractedCollision{}, start, end, other_start, other_end)
+  Collision.lines_for(M.Uncontracted{}, start, end, other_start, other_end)
 
 # Each a*b + c*d below is fma(a, b, c*d) in the fused linked reference.
-def Collision.point_triangle_for(+arithmetic: Collision.Arithmetic, point: M.Vector2, first: M.Vector2, second: M.Vector2, third: M.Vector2) -> Bool:
+def Collision.point_triangle_for(+arithmetic: M.Contraction, point: M.Vector2, first: M.Vector2, second: M.Vector2, third: M.Vector2) -> Bool:
   M.Vector2{+x, +y} = point
   M.Vector2{+ax, +ay} = first
   M.Vector2{+bx, +by} = second
@@ -291,11 +278,11 @@ def Collision.point_triangle_for(+arithmetic: Collision.Arithmetic, point: M.Vec
   ((alpha > 0.0) && (beta > 0.0) && (gamma > 0.0) : F32)
 
 def Collision.point_triangle(point: M.Vector2, first: M.Vector2, second: M.Vector2, third: M.Vector2) -> Bool:
-  Collision.point_triangle_for(UncontractedCollision{}, point, first, second, third)
+  Collision.point_triangle_for(M.Uncontracted{}, point, first, second, third)
 
 # cross = fma(dxc, dyl, -(dyc*dxl)) in the fused linked reference; the int
 # threshold truncates like C's implicit conversion.
-def Collision.point_line_for(+arithmetic: Collision.Arithmetic, point: M.Vector2, first: M.Vector2, second: M.Vector2, threshold: F32) -> Bool:
+def Collision.point_line_for(+arithmetic: M.Contraction, point: M.Vector2, first: M.Vector2, second: M.Vector2, threshold: F32) -> Bool:
   M.Vector2{+x, +y} = point
   M.Vector2{+ax, +ay} = first
   M.Vector2{+bx, +by} = second
@@ -308,10 +295,10 @@ def Collision.point_line_for(+arithmetic: Collision.Arithmetic, point: M.Vector2
     && Bool.pick(Bool, (F32.abs(dx) >= F32.abs(dy) : F32), along_x, along_y)
 
 def Collision.point_line(point: M.Vector2, first: M.Vector2, second: M.Vector2, threshold: F32) -> Bool:
-  Collision.point_line_for(UncontractedCollision{}, point, first, second, threshold)
+  Collision.point_line_for(M.Uncontracted{}, point, first, second, threshold)
 
 # Fused reference: squares as fma(a, a, b*b) and p1 - t*d as one fmsub.
-def Collision.circle_line.route(degenerate: Bool, +arithmetic: Collision.Arithmetic, +x: F32, +y: F32, +radius: F32, +ax: F32, +ay: F32, bx: F32, by: F32, +dx: F32, +dy: F32) -> Bool:
+def Collision.circle_line.route(degenerate: Bool, +arithmetic: M.Contraction, +x: F32, +y: F32, +radius: F32, +ax: F32, +ay: F32, bx: F32, by: F32, +dx: F32, +dy: F32) -> Bool:
   match degenerate:
     case True{}: Collision.circles_for(arithmetic, M.Vector2{ax, ay}, 0.0, M.Vector2{x, y}, radius)
     case False{}:
@@ -322,7 +309,7 @@ def Collision.circle_line.route(degenerate: Bool, +arithmetic: Collision.Arithme
       +distance_y = (Collision.multiply_add(arithmetic, F32.neg(projection), dy, ay) - y : F32)
       (Collision.square_sum(arithmetic, distance_x, distance_y) <= radius * radius : F32)
 
-def Collision.circle_line_for(+arithmetic: Collision.Arithmetic, center: M.Vector2, radius: F32, first: M.Vector2, second: M.Vector2) -> Bool:
+def Collision.circle_line_for(+arithmetic: M.Contraction, center: M.Vector2, radius: F32, first: M.Vector2, second: M.Vector2) -> Bool:
   M.Vector2{x, y} = center
   M.Vector2{+ax, +ay} = first
   M.Vector2{+bx, +by} = second
@@ -331,7 +318,7 @@ def Collision.circle_line_for(+arithmetic: Collision.Arithmetic, center: M.Vecto
   Collision.circle_line.route((F32.abs(dx) + F32.abs(dy) <= 0.00000011920928955078125 : F32), arithmetic, x, y, radius, ax, ay, bx, by, dx, dy)
 
 def Collision.circle_line(center: M.Vector2, radius: F32, first: M.Vector2, second: M.Vector2) -> Bool:
-  Collision.circle_line_for(UncontractedCollision{}, center, radius, first, second)
+  Collision.circle_line_for(M.Uncontracted{}, center, radius, first, second)
 
 def Collision.polygon.last(points: +List<M.Vector2>, previous: M.Vector2) -> M.Vector2:
   match points:
@@ -765,15 +752,6 @@ def Pixel.write.format(valid: Bool, format: U32, color: U32, +bytes: +List<U32>)
 def Pixel.set_color(bytes: +List<U32>, color: U32, +format: U32) -> Result<&2, &2, Pixel.Error, +List<U32>>:
   Pixel.write.format(((format >= 1) && (format <= 7) : U32), format, color, bytes)
 
-type Image.Decode.Reference is Data:
-  UncontractedDecode{}
-  FusedDecode{}
-
-def Image.Decode.fused(reference: Image.Decode.Reference) -> Bool:
-  match reference:
-    case UncontractedDecode{}: False{}
-    case FusedDecode{}: True{}
-
 type Image.DecodeError is Data:
   InvalidImageHeader{}
   InvalidImageByte{}
@@ -827,11 +805,11 @@ def Surface.psd.result(result: Result<&1, &1, Codec.Error, Psd.Image>) -> Result
     case Fail{error}: Fail{Image.codec.error(error)}
     case Done{Psd.Image{w, h, pixels}}: Done{Surface{w, h, pixels}}
 
-def Surface.decode_psd_for(reference: Image.Decode.Reference, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
-  Surface.psd.result(Psd.decode(Image.Decode.fused(reference), bytes))
+def Surface.decode_psd_for(reference: M.Contraction, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
+  Surface.psd.result(Psd.decode(M.Contraction.fused(reference), bytes))
 
 def Surface.decode_psd(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
-  Surface.decode_psd_for(UncontractedDecode{}, bytes)
+  Surface.decode_psd_for(M.Uncontracted{}, bytes)
 
 def Surface.decode_pic(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   Surface.codec.result(Pic.decode(bytes))
@@ -1404,31 +1382,22 @@ def Surface.create_cellular(state: Random.State, +width: U32, +height: U32, +til
   Surface.cellular.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096)
     && (tile > 0) && (tile <= 4096) : U32), state, width, height, tile)
 
-type Noise.Reference is Data:
-  UncontractedNoise{}
-  FusedNoise{}
-
-def Noise.fused(reference: Noise.Reference) -> Bool:
-  match reference:
-    case UncontractedNoise{}: False{}
-    case FusedNoise{}: True{}
-
-def Surface.perlin.checked(valid: Bool, reference: Noise.Reference, +width: U32, +height: U32, offset_x: F32, offset_y: F32, scale: F32) -> Maybe<Surface>:
+def Surface.perlin.checked(valid: Bool, reference: M.Contraction, +width: U32, +height: U32, offset_x: F32, offset_y: F32, scale: F32) -> Maybe<Surface>:
   match valid:
     case False{}: None{}
     case True{}:
       +count = (width * height : U32)
-      Some{Surface{width, height, Perlin.pixels(U32.to_nat(count), 0, Noise.fused(reference), width, height, offset_x, offset_y, scale,
+      Some{Surface{width, height, Perlin.pixels(U32.to_nat(count), 0, M.Contraction.fused(reference), width, height, offset_x, offset_y, scale,
         Array.new(U32, Surface.capacity(count), 255))}}
 
-def Surface.create_perlin_for(reference: Noise.Reference, +width: U32, +height: U32, +offset_x: F32, +offset_y: F32, +scale: F32) -> Maybe<Surface>:
+def Surface.create_perlin_for(reference: M.Contraction, +width: U32, +height: U32, +offset_x: F32, +offset_y: F32, +scale: F32) -> Maybe<Surface>:
   Surface.perlin.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
     && ((F32.abs(offset_x) <= 32767.0) && (F32.abs(offset_y) <= 32767.0) && (F32.abs(scale) <= 256.0) : F32)
     && F32.is_eq(F32.floor(offset_x), offset_x) && F32.is_eq(F32.floor(offset_y), offset_y)
     && (F32.is_eq(scale, 0.0) || (F32.abs(scale) >= 0.0000152587890625 : F32)), reference, width, height, offset_x, offset_y, scale)
 
 def Surface.create_perlin(width: U32, height: U32, offset_x: F32, offset_y: F32, scale: F32) -> Maybe<Surface>:
-  Surface.create_perlin_for(UncontractedNoise{}, width, height, offset_x, offset_y, scale)
+  Surface.create_perlin_for(M.Uncontracted{}, width, height, offset_x, offset_y, scale)
 
 def Surface.checked.loop(n: Nat, +i: U32, +width: U32, +tx: U32, +ty: U32, +first: U32, +second: U32, pixels: Array<U32>) -> Array<U32>:
   match n:
@@ -1500,19 +1469,19 @@ def Surface.linear.trigonometry(+width: U32, +height: U32, inner: U32, outer: U3
   +extent = F32.abs(Bool.pick(F32, same_sign, start, (start + U32.to_f32(width) * cosine : F32)))
   Surface.linear.ready((extent > 0.0 : F32), width, height, cosine, sine, start, extent, inner, outer)
 
-def Surface.linear.checked(valid: Bool, reference: M.Gradient.Reference, +width: U32, +height: U32, direction: F32, inner: U32, outer: U32) -> Maybe<Surface>:
+def Surface.linear.checked(valid: Bool, reference: M.Libm, +width: U32, +height: U32, direction: F32, inner: U32, outer: U32) -> Maybe<Surface>:
   match valid:
     case False{}: None{}
     case True{}:
       radians = ((90.0 - direction) / 180.0 * 3.14159 : F32)
-      Surface.linear.trigonometry(width, height, inner, outer, Trig.sincos_for(M.Gradient.gnu(reference), radians))
+      Surface.linear.trigonometry(width, height, inner, outer, Trig.sincos_for(M.Libm.gnu(reference), radians))
 
-def Surface.create_gradient_linear_for(reference: M.Gradient.Reference, +width: U32, +height: U32, +direction: F32, inner: U32, outer: U32) -> Maybe<Surface>:
+def Surface.create_gradient_linear_for(reference: M.Libm, +width: U32, +height: U32, +direction: F32, inner: U32, outer: U32) -> Maybe<Surface>:
   Surface.linear.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
     && (F32.abs(direction) <= 360.0 : F32) && F32.is_eq(F32.floor(direction), direction), reference, width, height, direction, inner, outer)
 
 def Surface.create_gradient_linear(width: U32, height: U32, direction: F32, inner: U32, outer: U32) -> Maybe<Surface>:
-  Surface.create_gradient_linear_for(M.AccurateGradient{}, width, height, direction, inner, outer)
+  Surface.create_gradient_linear_for(M.AppleLibm{}, width, height, direction, inner, outer)
 
 def Surface.clear(surface: Surface, color: U32) -> Surface:
   Surface{+w, +h, _} = surface
@@ -2271,18 +2240,18 @@ def Surface.rotation.trigonometry(surface: Surface, values: F32 & F32) -> Result
   Surface.rotation.sized(((width >= 1) && (height >= 1) && (width <= 4096) && (height <= 4096) : U32),
     Surface{sw, sh, pixels}, width, height, cosine, sine)
 
-def Surface.rotation.checked(valid: Bool, reference: M.Gradient.Reference, surface: Surface, degrees: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+def Surface.rotation.checked(valid: Bool, reference: M.Libm, surface: Surface, degrees: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match valid:
     case False{}: Fail{(surface, InvalidRectangle{})}
     case True{}:
       radians = (degrees * 3.14159265358979323846 / 180.0 : F32)
-      Surface.rotation.trigonometry(surface, Trig.sincos_for(M.Gradient.gnu(reference), radians))
+      Surface.rotation.trigonometry(surface, Trig.sincos_for(M.Libm.gnu(reference), radians))
 
-def Surface.rotate_degrees_for(reference: M.Gradient.Reference, surface: Surface, +degrees: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+def Surface.rotate_degrees_for(reference: M.Libm, surface: Surface, +degrees: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Surface.rotation.checked((F32.abs(degrees) <= 360.0 : F32) && F32.is_eq(F32.floor(degrees), degrees), reference, surface, degrees)
 
 def Surface.rotate_degrees(surface: Surface, degrees: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
-  Surface.rotate_degrees_for(M.AccurateGradient{}, surface, degrees)
+  Surface.rotate_degrees_for(M.AppleLibm{}, surface, degrees)
 
 def Surface.blit.region(destination: Surface, source: Surface, rect: Rectangle, +x: F32, +y: F32, tint: U32) -> Surface & Surface:
   Surface{+dw, +dh, dst} = destination
@@ -2916,7 +2885,7 @@ def Image.file.psd(bytes: +List<U32>) -> Bool:
     case Con{56, Con{66, Con{80, Con{83, _}}}}: True{}
     case _: False{}
 
-def Image.file.raster_selected(reference: Image.Decode.Reference, png: Bool, bmp: Bool, pnm: Bool, psd: Bool, pic: Bool, gif: Bool, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
+def Image.file.raster_selected(reference: M.Contraction, png: Bool, bmp: Bool, pnm: Bool, psd: Bool, pic: Bool, gif: Bool, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   match png bmp pnm psd pic gif:
     case True{} _ _ _ _ _: Surface.decode_png(bytes)
     case False{} True{} _ _ _ _: Surface.decode_bmp(bytes)
@@ -2926,24 +2895,24 @@ def Image.file.raster_selected(reference: Image.Decode.Reference, png: Bool, bmp
     case False{} False{} False{} False{} False{} True{}: Surface.decode_gif(bytes)
     case False{} False{} False{} False{} False{} False{}: Surface.decode_tga(bytes)
 
-def Image.file.raster(reference: Image.Decode.Reference, +bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
+def Image.file.raster(reference: M.Contraction, +bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   match bytes:
     case Con{+a, Con{+b, _}}:
       Image.file.raster_selected(reference, U32.is_eq(a, 137) && U32.is_eq(b, 80), U32.is_eq(a, 66) && U32.is_eq(b, 77),
         U32.is_eq(a, 80) && (U32.is_eq(b, 53) || U32.is_eq(b, 54)), Image.file.psd(bytes), Pic.signature(bytes), Gif.signature(bytes), bytes)
     case _: Surface.decode_tga(bytes)
 
-def Image.file.decode(reference: Image.Decode.Reference, kind: Image.FileKind, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
+def Image.file.decode(reference: M.Contraction, kind: Image.FileKind, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   match kind:
     case QoiFile{}: Surface.decode_qoi(bytes)
     case RasterFile{}: Image.file.raster(reference, bytes)
     case UnsupportedImageFile{}: Fail{InvalidImageHeader{}}
 
-def Surface.decode_image_for(reference: Image.Decode.Reference, file_type: String, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
+def Surface.decode_image_for(reference: M.Contraction, file_type: String, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   Image.file.decode(reference, Image.memory.kind(file_type), bytes)
 
 def Surface.decode_image(file_type: String, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
-  Surface.decode_image_for(UncontractedDecode{}, file_type, bytes)
+  Surface.decode_image_for(M.Uncontracted{}, file_type, bytes)
 
 def Image.Animation.single.sized(valid: Bool, +width: U32, +height: U32, pixels: Array<U32>) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
   match valid:
@@ -2955,21 +2924,21 @@ def Image.Animation.single(maximum_pixels: U32, result: Result<&1, &1, Image.Dec
     case Fail{error}: Fail{error}
     case Done{Surface{+width, +height, pixels}}: Image.Animation.single.sized((width * height <= maximum_pixels : U32), width, height, pixels)
 
-def Image.Animation.memory.checked(valid: Bool, reference: Image.Decode.Reference, file_type: String, bytes: +List<U32>, maximum_pixels: U32) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
+def Image.Animation.memory.checked(valid: Bool, reference: M.Contraction, file_type: String, bytes: +List<U32>, maximum_pixels: U32) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
   match valid:
     case False{}: Fail{UnsupportedImageSize{}}
     case True{}: Image.Animation.single(maximum_pixels, Surface.decode_image_for(reference, file_type, bytes))
 
-def Image.Animation.memory.selected(gif: Bool, reference: Image.Decode.Reference, file_type: String, bytes: +List<U32>, maximum_frames: U32, +maximum_pixels: U32) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
+def Image.Animation.memory.selected(gif: Bool, reference: M.Contraction, file_type: String, bytes: +List<U32>, maximum_frames: U32, +maximum_pixels: U32) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
   match gif:
     case True{}: Image.Animation.decode_gif(bytes, maximum_frames, maximum_pixels)
     case False{}: Image.Animation.memory.checked(((maximum_frames > 0) && (maximum_pixels > 0) && (maximum_pixels <= 16777216) : U32), reference, file_type, bytes, maximum_pixels)
 
-def Image.Animation.decode_image_for(reference: Image.Decode.Reference, +file_type: String, bytes: +List<U32>, maximum_frames: U32, maximum_pixels: U32) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
+def Image.Animation.decode_image_for(reference: M.Contraction, +file_type: String, bytes: +List<U32>, maximum_frames: U32, maximum_pixels: U32) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
   Image.Animation.memory.selected(String.eq(file_type, ".gif") || String.eq(file_type, ".GIF"), reference, file_type, bytes, maximum_frames, maximum_pixels)
 
 def Image.Animation.decode_image(file_type: String, bytes: +List<U32>, maximum_frames: U32, maximum_pixels: U32) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
-  Image.Animation.decode_image_for(UncontractedDecode{}, file_type, bytes, maximum_frames, maximum_pixels)
+  Image.Animation.decode_image_for(M.Uncontracted{}, file_type, bytes, maximum_frames, maximum_pixels)
 
 def Image.file.decoded(-A: Type, result: Result<&1, &1, Image.DecodeError, A>) -> Result<&1, &1, Image.LoadError, A>:
   match result:
@@ -3022,41 +2991,41 @@ def Image.file.opened(limit: U32, opened: Result<&1, &1, U32 & String, File>) ->
 def Image.file.bytes(path: String, limit: U32) -> IO(Result<&1, &1, Image.LoadError, +List<U32>>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, Image.LoadError, +List<U32>>, File.open(path, "r"), Image.file.opened(limit))
 
-def Image.file.surface(reference: Image.Decode.Reference, kind: Image.FileKind, result: Result<&1, &1, Image.LoadError, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, Surface>):
+def Image.file.surface(reference: M.Contraction, kind: Image.FileKind, result: Result<&1, &1, Image.LoadError, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, Surface>):
   match result:
     case Fail{error}: IO.pure(Result<&1, &1, Image.LoadError, Surface>, Fail{error})
     case Done{bytes}: IO.pure(Result<&1, &1, Image.LoadError, Surface>, Image.file.decoded(Surface, Image.file.decode(reference, kind, bytes)))
 
-def Image.file.load(reference: Image.Decode.Reference, +kind: Image.FileKind, path: String) -> IO(Result<&1, &1, Image.LoadError, Surface>):
+def Image.file.load(reference: M.Contraction, +kind: Image.FileKind, path: String) -> IO(Result<&1, &1, Image.LoadError, Surface>):
   IO.bind(Result<&1, &1, Image.LoadError, +List<U32>>, Result<&1, &1, Image.LoadError, Surface>,
     Image.file.bytes(path, Image.file.limit(kind)), Image.file.surface(reference, kind))
 
 def Surface.load_qoi(path: String) -> IO(Result<&1, &1, Image.LoadError, Surface>):
-  Image.file.load(UncontractedDecode{}, QoiFile{}, path)
+  Image.file.load(M.Uncontracted{}, QoiFile{}, path)
 
-def Surface.load_image_for(reference: Image.Decode.Reference, +path: String) -> IO(Result<&1, &1, Image.LoadError, Surface>):
+def Surface.load_image_for(reference: M.Contraction, +path: String) -> IO(Result<&1, &1, Image.LoadError, Surface>):
   Image.file.load(reference, Image.file.kind(path), path)
 
 def Surface.load_image(path: String) -> IO(Result<&1, &1, Image.LoadError, Surface>):
-  Surface.load_image_for(UncontractedDecode{}, path)
+  Surface.load_image_for(M.Uncontracted{}, path)
 
 def Image.Animation.file.token(+suffix: String) -> String:
   Bool.pick(String, String.eq(String.to_lower(suffix), ".gif"), ".gif", suffix)
 
-def Image.Animation.file.loaded(reference: Image.Decode.Reference, token: String, maximum_frames: U32, maximum_pixels: U32, result: Result<&1, &1, Image.LoadError, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, Image.Animation>):
+def Image.Animation.file.loaded(reference: M.Contraction, token: String, maximum_frames: U32, maximum_pixels: U32, result: Result<&1, &1, Image.LoadError, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, Image.Animation>):
   match result:
     case Fail{error}: IO.pure(Result<&1, &1, Image.LoadError, Image.Animation>, Fail{error})
     case Done{bytes}:
       IO.pure(Result<&1, &1, Image.LoadError, Image.Animation>, Image.file.decoded(Image.Animation,
         Image.Animation.decode_image_for(reference, token, bytes, maximum_frames, maximum_pixels)))
 
-def Image.Animation.load_image_for(reference: Image.Decode.Reference, +path: String, maximum_frames: U32, maximum_pixels: U32) -> IO(Result<&1, &1, Image.LoadError, Image.Animation>):
+def Image.Animation.load_image_for(reference: M.Contraction, +path: String, maximum_frames: U32, maximum_pixels: U32) -> IO(Result<&1, &1, Image.LoadError, Image.Animation>):
   +token = Image.Animation.file.token(Image.file.token(path))
   IO.bind(Result<&1, &1, Image.LoadError, +List<U32>>, Result<&1, &1, Image.LoadError, Image.Animation>,
     Image.file.bytes(path, Image.file.limit(Image.memory.kind(token))), Image.Animation.file.loaded(reference, token, maximum_frames, maximum_pixels))
 
 def Image.Animation.load_image(path: String, maximum_frames: U32, maximum_pixels: U32) -> IO(Result<&1, &1, Image.LoadError, Image.Animation>):
-  Image.Animation.load_image_for(UncontractedDecode{}, path, maximum_frames, maximum_pixels)
+  Image.Animation.load_image_for(M.Uncontracted{}, path, maximum_frames, maximum_pixels)
 
 # Explicit QOI selection shares the bounded, complete, close-before-decode file boundary.
 def Image.Formatted.qoi.file.loaded(result: Result<&1, &1, Image.LoadError, +List<U32>>) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>):

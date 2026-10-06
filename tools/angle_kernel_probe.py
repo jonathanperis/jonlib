@@ -598,6 +598,7 @@ def wrapper_program(selected, gpu=False):
     source = '''import Base
 import ../../jonmath.bend as M
 import ../../src/checked_angle.bend as C
+import ../../src/angle.bend as LA
 def raw(value: U32) -> F32:
   U32{bits} = value
   F32{bits}
@@ -609,34 +610,39 @@ def maybe(value: Maybe<F32>, rest: List<U32>) -> List<U32>:
   match value:
     case None{}: Con{0, Con{0, rest}}
     case Some{value}: Con{1, Con{F32.bits(value), rest}}
-def reference(profile: U32) -> M.Angle.Reference:
+def reference(profile: U32) -> M.Libm:
   match profile:
-    case 0: M.Apple2007AngleRn{}
-    case 1: M.Sun239AngleRn{}
-    case _: M.Glibc241AngleRn{}
+    case 0: M.AppleLibm{}
+    case 1: M.Glibc239Libm{}
+    case _: M.Glibc241Libm{}
+# Unchecked Apple/Sun kernels as raymath's legacy wrappers compute them.
+def line.legacy(gnu: Bool, start: M.Vector2, end: M.Vector2) -> F32:
+  M.Vector2{x, y} = start
+  M.Vector2{u, v} = end
+  F32.neg(LA.atan2(gnu, (v - y : F32), (u - x : F32)))
 def legacy2(enabled: U32, line: U32, +left: M.Vector2, +right: M.Vector2) -> List<U32>:
   match enabled:
     case 0: [0,0,0,0]
     case _:
       match line:
-        case 0: [1,F32.bits(M.Vector2.angle_for(M.AccurateGradient{},left,right)),F32.bits(M.Vector2.angle_for(M.GnuGradient{},left,right)),F32.bits(M.Vector2.angle(left,right))]
-        case _: [1,F32.bits(M.Vector2.line_angle_for(M.AccurateGradient{},left,right)),F32.bits(M.Vector2.line_angle_for(M.GnuGradient{},left,right)),F32.bits(M.Vector2.line_angle(left,right))]
+        case 0: [1,F32.bits(LA.atan2(False{},M.Vector2.cross_product(left,right),M.Vector2.dot_product(left,right))),F32.bits(LA.atan2(True{},M.Vector2.cross_product(left,right),M.Vector2.dot_product(left,right))),F32.bits(M.Vector2.angle(left,right))]
+        case _: [1,F32.bits(line.legacy(False{},left,right)),F32.bits(line.legacy(True{},left,right)),F32.bits(M.Vector2.line_angle(left,right))]
 def legacy3(enabled: U32, +left: M.Vector3, +right: M.Vector3) -> List<U32>:
   match enabled:
     case 0: [0,0,0,0]
-    case _: [1,F32.bits(M.Vector3.angle_for(M.AccurateGradient{},left,right)),F32.bits(M.Vector3.angle_for(M.GnuGradient{},left,right)),F32.bits(M.Vector3.angle(left,right))]
+    case _: [1,F32.bits(LA.atan2(False{},M.Vector3.length(M.Vector3.cross_product(left,right)),M.Vector3.dot_product(left,right))),F32.bits(LA.atan2(True{},M.Vector3.length(M.Vector3.cross_product(left,right)),M.Vector3.dot_product(left,right))),F32.bits(M.Vector3.angle(left,right))]
 def angle2(+profile: U32, +x: F32, +y: F32, +u: F32, +v: F32, rest: List<U32>) -> List<U32>:
   +left = {M.Vector2{x,y} : M.Vector2}
   +right = {M.Vector2{u,v} : M.Vector2}
-  pack(C.vector2(profile,x,y,u,v), maybe(M.Vector2.angle_with_reference(reference(profile),left,right), rest))
+  pack(C.vector2(profile,x,y,u,v), maybe(M.Vector2.angle_for(reference(profile),left,right), rest))
 def line2(+profile: U32, +x: F32, +y: F32, +u: F32, +v: F32, rest: List<U32>) -> List<U32>:
   +left = {M.Vector2{x,y} : M.Vector2}
   +right = {M.Vector2{u,v} : M.Vector2}
-  pack(C.line(profile,x,y,u,v), maybe(M.Vector2.line_angle_with_reference(reference(profile),left,right), rest))
+  pack(C.line(profile,x,y,u,v), maybe(M.Vector2.line_angle_for(reference(profile),left,right), rest))
 def profile3(+profile: U32, +x: F32, +y: F32, +z: F32, +u: F32, +v: F32, +w: F32, rest: List<U32>) -> List<U32>:
   +left = {M.Vector3{x,y,z} : M.Vector3}
   +right = {M.Vector3{u,v,w} : M.Vector3}
-  pack(C.vector3(profile,x,y,z,u,v,w), maybe(M.Vector3.angle_with_reference(reference(profile),left,right), rest))
+  pack(C.vector3(profile,x,y,z,u,v,w), maybe(M.Vector3.angle_for(reference(profile),left,right), rest))
 def observe.api(api: U32, id: U32, legacy: U32, +x: F32, +y: F32, +z: F32, +u: F32, +v: F32, +w: F32) -> List<U32>:
   match api:
     case 0:

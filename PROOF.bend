@@ -295,15 +295,6 @@ def Laws.checked_angle_line_input_reject(profile, x, y, u, v):
 def Laws.checked_angle_vector3_input_reject(profile, x, y, z, u, v, w):
   {==}
 
-def Laws.angle_vector2_default_preserved(left, right):
-  {==}
-
-def Laws.angle_line_default_preserved(left, right):
-  {==}
-
-def Laws.angle_vector3_default_preserved(left, right):
-  {==}
-
 def Laws.checked_angle_scalar_some(word):
   {==}
 

@@ -306,7 +306,7 @@ def candidate_lines(codec, actions):
             elif role in (f'dispatch-{n}', 'surface-error'):
                 call = f'J.Surface.load_image({path})'
             else:
-                call = f'J.Surface.load_image_for(J.{"UncontractedDecode" if role == "uncontracted" else "FusedDecode"}{{}}, {path})'
+                call = f'J.Surface.load_image_for(M.{"Uncontracted" if role == "uncontracted" else "Fused"}{{}}, {path})'
             if role == 'surface-error':
                 then = f'surface.failed({ident})'
         else:

@@ -77,7 +77,7 @@ class CodecSpecTests(unittest.TestCase):
         roles = [a['role'] for a in actions]
         self.assertEqual(roles, list(codec.roles) + list(codec.dispatch_roles) + ['uncontracted', 'fused'])
         program = formatted_codec.candidate_program(codec, actions)
-        self.assertIn('J.Surface.decode_image_for(J.FusedDecode{}, ".BMP"', program)
+        self.assertIn('J.Surface.decode_image_for(M.Fused{}, ".BMP"', program)
         with self.assertRaises(ProbeFailure):
             formatted_codec.expectations(codec, [case], [], [raw, normal] + [dict(raw, role='alias-BMP', format=7)])
 

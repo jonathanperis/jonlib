@@ -79,6 +79,7 @@ def grouped(lines, actions):
 
 PROGRAM='''import Base
 import ../../jonlib.bend as J
+import ../../jonmath.bend as M
 def reverse_into(values: +List<U32>, rest: +List<U32>) -> +List<U32>:
   match values:
     case Nil{}: rest
@@ -176,8 +177,8 @@ def main():
     def render(selected,gpu):
         bang='!' if gpu else '';body=PROGRAM
         for kind,case in selected:
-            if kind=='animation':body+=f'    observed(J.Image.Animation.decode_image_for{bang}(J.{profile}{{}}, {json.dumps(case["token"])}, {bend_bytes(case["bytes"])}, {case["frames"]}, {case["frames"]*case["width"]*case["height"]}))\n'
-            elif kind=='control':body+=f'    IO.print(U32.show(error_code(J.Image.Animation.decode_image_for{bang}(J.{profile}{{}}, {json.dumps(case["token"])}, {bend_bytes(case["bytes"])}, {case["maximum_frames"]}, {case["maximum_pixels"]}))))\n'
+            if kind=='animation':body+=f'    observed(J.Image.Animation.decode_image_for{bang}(M.{profile}{{}}, {json.dumps(case["token"])}, {bend_bytes(case["bytes"])}, {case["frames"]}, {case["frames"]*case["width"]*case["height"]}))\n'
+            elif kind=='control':body+=f'    IO.print(U32.show(error_code(J.Image.Animation.decode_image_for{bang}(M.{profile}{{}}, {json.dumps(case["token"])}, {bend_bytes(case["bytes"])}, {case["maximum_frames"]}, {case["maximum_pixels"]}))))\n'
             elif kind=='default_reference':body+=f'    IO.print(U32.show(Bool.to_u32(default_reference{bang}({bend_bytes(psd(1,1,[[255],[255],[255],[11]]))}))))\n'
             else:body+=f'    IO.print(U32.show(Bool.to_u32({kind}{bang}(J.Image.Animation.decode_gif({bend_bytes(cases[1]["bytes"])}, 3, 18)))))\n'
         return body
