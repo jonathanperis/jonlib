@@ -1,58 +1,25 @@
 #!/usr/bin/env python3
 """Compare lossless RGB-float copying and orientation with native Image operations."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
 import struct
 
 from bmp_probe import bend_bytes
 from byte_probe import BEND_EMITTER, parse_results
-from conformance import BUILD, ROOT, checkout, run, source_gate
+from conformance import ROOT, source_gate
 from float_rgb_bytes_probe import fixtures as raw_fixtures
+import probekit
+from probekit import ProbeFailure
 
-
-def fixtures():
-    raw,_=raw_fixtures();shapes=list(raw)
-    shapes += [dict(raw[0],id='column',width=1,height=5),dict(id='single',width=1,height=1,bytes=raw[0]['bytes'][:12]),
-               dict(id='rectangle',width=3,height=2,bytes=raw[0]['bytes']+list(struct.pack('<fff',0.25,0.5,0.75)))]
-    operations=[['copy'],['h'],['v'],['cw'],['ccw'],['cw']*4,['h','v','cw','ccw']]
-    cases=[dict(shape,id=shape['id']+'-'+str(i),operations=ops) for shape in shapes for i,ops in enumerate(operations)]
-    values=[word for i in range(4096) for word in (0x3f000000+i,0xbf000000+i,i+1)]
-    cases.append(dict(id='wide-chain',width=4096,height=1,bytes=list(struct.pack('<'+'I'*len(values),*values)),operations=['cw','v','h','ccw']))
-    return cases
-
-
-def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True);parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true');args=parser.parse_args()
-    lock=json.loads((ROOT/'toolchain.json').read_text());checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'));checkout(args.raylib_source,lock['raylib']['revision'])
-    work=BUILD/'float-rgb-transform-probe';work.mkdir(parents=True,exist_ok=True);report_path=work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    cases=fixtures();lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-        'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-        'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-        'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
-        'static void emit(Image image){word(image.width);word(image.height);for(int i=0;i<image.width*image.height*12;i++)byte(((unsigned char*)image.data)[i]);end();UnloadImage(image);}',
-        'int main(void){SetTraceLogLevel(LOG_NONE);']
-    native={'h':'ImageFlipHorizontal','v':'ImageFlipVertical','cw':'ImageRotateCW','ccw':'ImageRotateCCW'}
-    for i,case in enumerate(cases):
-        path=work/(str(i)+'.raw');path.write_bytes(bytes(case['bytes']))
-        lines.append(f'{{Image image=LoadImageRaw({json.dumps(str(path.relative_to(ROOT)))},{case["width"]},{case["height"]},PIXELFORMAT_UNCOMPRESSED_R32G32B32,0);if(!image.data)return 2;')
-        for op in case['operations']:
-            lines.append('{Image copy=ImageCopy(image);UnloadImage(image);image=copy;}' if op=='copy' else native[op]+'(&image);')
-        lines.append('emit(image);}')
-    source=work/'reference.c';source.write_text('\n'.join(lines+['}'])+'\n');binary=work/'reference'
-    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary]);text=run([binary]);expected=parse_results(text)
-    if len(expected)!=len(cases):raise ValueError('Incomplete native float orientation output')
-    for case,row in zip(cases,expected):
-        w,h=case['width'],case['height']
-        for op in case['operations']:
-            if op in ('cw','ccw'):w,h=h,w
-        if row[:8]!=list(struct.pack('<II',w,h)) or len(row)!=8+w*h*12:raise ValueError('Native orientation metadata differs')
-    report=dict(passed=False,cases=len(cases),pixels=sum(c['width']*c['height'] for c in cases),ownership_controls=1,sources=source_gate(),
-                inputs_sha256=hashlib.sha256(json.dumps(cases).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
-    program='''import Base
+PRELUDE = ['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
+           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
+           'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
+           'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+           'static void emit(Image image){word(image.width);word(image.height);for(int i=0;i<image.width*image.height*12;i++)byte(((unsigned char*)image.data)[i]);end();UnloadImage(image);}',
+           'int main(void){SetTraceLogLevel(LOG_NONE);']
+NATIVE = {'h':'ImageFlipHorizontal','v':'ImageFlipVertical','cw':'ImageRotateCW','ccw':'ImageRotateCCW'}
+CODES = {'copy':0,'h':1,'v':2,'cw':3,'ccw':4}
+PROGRAM = '''import Base
 import ../../jonlib.bend as J
 import ../../jonmath.bend as M
 def reverse_into(values: +List<U32>, rest: +List<U32>) -> +List<U32>:
@@ -106,21 +73,46 @@ def owned_copy() -> Bool:
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
-    codes={'copy':0,'h':1,'v':2,'cw':3,'ccw':4}
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        bang='!' if lane=='metal' else '';body=program
-        for case in cases:
-            ops='['+','.join(str(codes[op]) for op in case['operations'])+']'
-            body+=f'    observed(apply{bang}({ops}, J.Image.FloatRGB.from_bytes({case["width"]}, {case["height"]}, {bend_bytes(case["bytes"])})))\n'
-        body+=f'    emit_bytes(~&1, [Bool.to_u32(owned_copy{bang}())])\n'
-        source=work/f'{lane}.bend';source.write_text(body);binary=work/('candidate.js' if lane=='javascript' else 'candidate-'+lane)
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        actual=parse_results(run(command));wanted=expected+[[1]];different=[i for i,(a,b) in enumerate(zip(wanted,actual)) if a!=b]
-        report['lanes'][lane]=dict(passed=actual==wanted,different_cases=different);report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if actual!=wanted:raise ValueError(f'{lane}: float orientation differences {different}')
-        print(f'{lane}: {len(cases)} native orientation cases / {report["pixels"]} pixels and independent copy passed',flush=True)
-    report['passed']=True;report_path.write_text(json.dumps(report,indent=2)+'\n')
+
+
+def fixtures():
+    raw,_=raw_fixtures();shapes=list(raw)
+    shapes += [dict(raw[0],id='column',width=1,height=5),dict(id='single',width=1,height=1,bytes=raw[0]['bytes'][:12]),
+               dict(id='rectangle',width=3,height=2,bytes=raw[0]['bytes']+list(struct.pack('<fff',0.25,0.5,0.75)))]
+    operations=[['copy'],['h'],['v'],['cw'],['ccw'],['cw']*4,['h','v','cw','ccw']]
+    cases=[dict(shape,id=shape['id']+'-'+str(i),operations=ops) for shape in shapes for i,ops in enumerate(operations)]
+    values=[word for i in range(4096) for word in (0x3f000000+i,0xbf000000+i,i+1)]
+    cases.append(dict(id='wide-chain',width=4096,height=1,bytes=list(struct.pack('<'+'I'*len(values),*values)),operations=['cw','v','h','ccw']))
+    return cases
+
+
+def reference_program(cases,work):
+    lines=list(PRELUDE)
+    for i,case in enumerate(cases):
+        path=work/(str(i)+'.raw');path.write_bytes(bytes(case['bytes']))
+        lines.append(f'{{Image image=LoadImageRaw({json.dumps(str(path.relative_to(ROOT)))},{case["width"]},{case["height"]},PIXELFORMAT_UNCOMPRESSED_R32G32B32,0);if(!image.data)return 2;')
+        for op in case['operations']:
+            lines.append('{Image copy=ImageCopy(image);UnloadImage(image);image=copy;}' if op=='copy' else NATIVE[op]+'(&image);')
+        lines.append('emit(image);}')
+    return '\n'.join(lines+['}'])+'\n'
+
+
+def main():
+    probe=probekit.Probe('float-rgb-transform',probekit.arguments(__doc__))
+    cases=fixtures();text=probe.native(reference_program(cases,probe.work));expected=parse_results(text)
+    if len(expected)!=len(cases):raise ProbeFailure('Incomplete native float orientation output')
+    for case,row in zip(cases,expected):
+        w,h=case['width'],case['height']
+        for op in case['operations']:
+            if op in ('cw','ccw'):w,h=h,w
+        if row[:8]!=list(struct.pack('<II',w,h)) or len(row)!=8+w*h*12:raise ProbeFailure('Native orientation metadata differs')
+    probe.report['sources']=source_gate()
+    actions=[f'observed(applyBANG([{",".join(str(CODES[op]) for op in case["operations"])}], J.Image.FloatRGB.from_bytes({case["width"]}, {case["height"]}, {bend_bytes(case["bytes"])})))' for case in cases]
+    actions.append('emit_bytes(~&1, [Bool.to_u32(owned_copyBANG())])')
+    render=lambda selected,gpu:PROGRAM+''.join('    '+line.replace('BANG','!' if gpu else '')+'\n' for line in selected)
+    probe.compare(expected+[[1]],probe.candidates(render,actions,batch=len(actions),parse=lambda text,selected:parse_results(text)))
+    probe.finish(cases=len(cases),pixels=sum(c['width']*c['height'] for c in cases),ownership_controls=1,
+                 inputs_sha256=hashlib.sha256(json.dumps(cases).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__=='__main__':

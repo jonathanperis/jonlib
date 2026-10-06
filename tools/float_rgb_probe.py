@@ -1,36 +1,16 @@
 #!/usr/bin/env python3
 """Compare owned RGB-float/RGBA8 conversion with native ImageFormat."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
 import struct
 
 from bmp_probe import bend_bytes
 from byte_probe import BEND_EMITTER, parse_results
-from conformance import BUILD, ROOT, checkout, run, source_gate
+from conformance import source_gate
+import probekit
+from probekit import ProbeFailure
 
-
-def boundaries():
-    values={0,0x80000000,1,0x007fffff,0x00800000,0x3f800000}
-    for byte in range(256):
-        bits=struct.unpack('<I',struct.pack('<f',byte/255.0))[0]
-        values.update(v for v in (bits-1,bits,bits+1) if 0<=v<=0x3f800000)
-    values=sorted(values)
-    return [component for i,value in enumerate(values) for component in (value,values[(i+17)%len(values)],values[(i+53)%len(values)])]
-
-
-def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True)
-    parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true')
-    args=parser.parse_args();lock=json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'));checkout(args.raylib_source,lock['raylib']['revision'])
-    work=BUILD/'float-rgb-probe';work.mkdir(parents=True,exist_ok=True);report_path=work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    words=boundaries();count=len(words)//3;invalid=[0x80000001,0xbe800000,0x3f800001,0x7f800000,0xff800000,0x7fc00001,0xffc00001]
-    source=work/'reference.c'
-    source.write_text('''#include "raylib.h"
+REFERENCE = '''#include "raylib.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,7 +30,7 @@ int main(void){
     for(int i=0;i<256;i++)((Color*)bytes.data)[i]=(Color){i,255-i,i^0x55,i};
     ImageFormat(&bytes,PIXELFORMAT_UNCOMPRESSED_R32G32B32);emit(bytes);
     ImageFormat(&bytes,PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);emit(bytes);UnloadImage(bytes);
-    unsigned values[]={'''+','.join(map(str,words))+'''};
+    unsigned values[]={WORDS};
     Image boundary={malloc(sizeof(values)),sizeof(values)/12,1,1,PIXELFORMAT_UNCOMPRESSED_R32G32B32};
     if(!boundary.data)return 1;memcpy(boundary.data,values,sizeof(values));
     ImageFormat(&boundary,PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);emit(boundary);UnloadImage(boundary);
@@ -60,15 +40,8 @@ int main(void){
     Image hdr=LoadImageFromMemory(".hdr",data,size);if(!hdr.data)return 3;
     emit(hdr);ImageFormat(&hdr,PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);emit(hdr);UnloadImage(hdr);free(data);
 }
-''')
-    binary=work/'reference';run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary])
-    text=run([binary]);expected=parse_results(text)
-    lengths=[8+256*12,8+256*4,8+count*4,8+33024*12,8+33024*4]
-    if len(expected)!=5 or [len(row) for row in expected]!=lengths:raise ValueError('Incomplete native float conversion output')
-    wanted=expected+[[1] for _ in invalid]
-    report=dict(passed=False,normalized_byte_values=256,boundary_pixels=count,hdr_pixels=33024,rejected_owner_controls=len(invalid),sources=source_gate(),
-                inputs_sha256=hashlib.sha256(json.dumps([words,invalid]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
-    program='''import Base
+'''
+PROGRAM = '''import Base
 import ../../jonlib.bend as J
 import ../../jonmath.bend as M
 import ../../src/hdr.bend as H
@@ -150,22 +123,34 @@ def rejection(bits: U32, component: U32) -> Bool:
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        bang='!' if lane=='metal' else '';body=program
-        body+=f'    emit_floats(J.Image.FloatRGB.entries(J.Surface.to_float_rgb{bang}(byte_image())))\n'
-        body+=f'    emit_surface(J.Image.FloatRGB.to_surface{bang}(J.Surface.to_float_rgb(byte_image())))\n'
-        body+=f'    emit_surface(J.Image.FloatRGB.to_surface{bang}(boundary_image({bend_bytes(words)}, {count})))\n'
-        body+=f'    emit_floats(J.Image.FloatRGB.entries{bang}(hdr_image()))\n'
-        body+=f'    emit_surface(J.Image.FloatRGB.to_surface{bang}(hdr_image()))\n'
-        for index,bits in enumerate(invalid):body+=f'    emit_bytes(~&1, [Bool.to_u32(rejection{bang}({bits}, {index%3}))])\n'
-        source=work/f'{lane}.bend';source.write_text(body);binary=work/('candidate.js' if lane=='javascript' else 'candidate-'+lane)
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        actual=parse_results(run(command));differences=[i for i,(a,b) in enumerate(zip(wanted,actual)) if a!=b]
-        report['lanes'][lane]=dict(passed=actual==wanted,different_cases=differences);report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if actual!=wanted:raise ValueError(f'{lane}: float conversion differs in cases {differences}')
-        print(f'{lane}: 256 byte normalizations, {count} boundary pixels, 33024 HDR pixels and 7 rejected owners passed',flush=True)
-    report['passed']=True;report_path.write_text(json.dumps(report,indent=2)+'\n')
+
+
+def boundaries():
+    values={0,0x80000000,1,0x007fffff,0x00800000,0x3f800000}
+    for byte in range(256):
+        bits=struct.unpack('<I',struct.pack('<f',byte/255.0))[0]
+        values.update(v for v in (bits-1,bits,bits+1) if 0<=v<=0x3f800000)
+    values=sorted(values)
+    return [component for i,value in enumerate(values) for component in (value,values[(i+17)%len(values)],values[(i+53)%len(values)])]
+
+
+def main():
+    probe=probekit.Probe('float-rgb',probekit.arguments(__doc__))
+    words=boundaries();count=len(words)//3;invalid=[0x80000001,0xbe800000,0x3f800001,0x7f800000,0xff800000,0x7fc00001,0xffc00001]
+    text=probe.native(REFERENCE.replace('WORDS',','.join(map(str,words))));expected=parse_results(text)
+    lengths=[8+256*12,8+256*4,8+count*4,8+33024*12,8+33024*4]
+    if len(expected)!=5 or [len(row) for row in expected]!=lengths:raise ProbeFailure('Incomplete native float conversion output')
+    wanted=expected+[[1] for _ in invalid];probe.report['sources']=source_gate()
+    actions=['emit_floats(J.Image.FloatRGB.entries(J.Surface.to_float_rgbBANG(byte_image())))',
+             'emit_surface(J.Image.FloatRGB.to_surfaceBANG(J.Surface.to_float_rgb(byte_image())))',
+             f'emit_surface(J.Image.FloatRGB.to_surfaceBANG(boundary_image({bend_bytes(words)}, {count})))',
+             'emit_floats(J.Image.FloatRGB.entriesBANG(hdr_image()))',
+             'emit_surface(J.Image.FloatRGB.to_surfaceBANG(hdr_image()))']
+    actions+=[f'emit_bytes(~&1, [Bool.to_u32(rejectionBANG({bits}, {index%3}))])' for index,bits in enumerate(invalid)]
+    render=lambda selected,gpu:PROGRAM+''.join('    '+line.replace('BANG','!' if gpu else '')+'\n' for line in selected)
+    probe.compare(wanted,probe.candidates(render,actions,batch=len(actions),parse=lambda text,selected:parse_results(text)))
+    probe.finish(normalized_byte_values=256,boundary_pixels=count,hdr_pixels=33024,rejected_owner_controls=len(invalid),
+                 inputs_sha256=hashlib.sha256(json.dumps([words,invalid]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__=='__main__':
