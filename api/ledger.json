@@ -40464,10 +40464,10 @@
         "docs/FLOAT-RGB-BYTES.md",
         "docs/evidence/float-rgb-raw-files.json",
         "tools/r32_raw_file_probe.py",
-        "tests/test_r32_raw_harness.py",
         "tools/r32_image_probe.py",
         "docs/R32.md",
-        "docs/evidence/r32-raw-files.json"
+        "docs/evidence/r32-raw-files.json",
+        "tests/test_export_probes.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -41048,17 +41048,15 @@
         "tools/r32_image_probe.py",
         "docs/evidence/r32-image-format.json",
         "tools/formatted_bmp_export_probe.py",
-        "tests/test_formatted_bmp_export.py",
         "docs/FORMATTED-BMP-EXPORT.md",
         "docs/evidence/formatted-bmp-export.json",
         "tools/formatted_tga_export_probe.py",
-        "tests/test_formatted_tga_export.py",
         "docs/FORMATTED-TGA-EXPORT.md",
         "docs/evidence/formatted-tga-export.json",
         "docs/FORMATTED-QOI-EXPORT.md",
         "tools/formatted_qoi_export_probe.py",
-        "tests/test_formatted_qoi_export.py",
-        "docs/evidence/formatted-qoi-export.json"
+        "docs/evidence/formatted-qoi-export.json",
+        "tests/test_export_probes.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -41128,9 +41126,9 @@
         "docs/PNG-EXPORT.md",
         "docs/evidence/float-rgb-png.json",
         "tools/r32_image_probe.py",
-        "tests/test_r32_harness.py",
         "docs/R32.md",
-        "docs/evidence/r32-memory-png.json"
+        "docs/evidence/r32-memory-png.json",
+        "tests/test_export_probes.py"
       ],
       "gate_evidence": {},
       "target_results": {},

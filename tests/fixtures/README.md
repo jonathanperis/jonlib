@@ -1,12 +1,5 @@
 # Shared image fixtures (schema 1)
 
-`conformance-before-runtime-split.yml` is a separate CI test fixture: the exact
-Conformance workflow at reviewed checkpoint
-`36f5d0b5a811297b349c45aa6ddc3a9a067ac8d3`, before the runtime split. Its SHA-256
-is fixed in `test_conformance_workflow.py`. It is evidence for preserving setup,
-gate payloads, ordering and upload scope, not an executable workflow or an image
-fixture. See [the CI contract](../../docs/CI-RUNTIME.md) before changing it.
-
 `images.json` is the common input to both raylib and Bend code generation.
 Each case has a unique lowercase/hyphenated `id`, `width`, `height`, a four-byte
 RGBA `background`, and an ordered `operations` array.
@@ -51,7 +44,8 @@ Supported operations:
   and output cell `x`,`y`. Boolean results use one cell; rectangle results use
   four adjacent exact F32-bit cells, all required to fit.
   Segment `lines` results use three cells (hit flag and both coordinate bits).
-  `point_poly` adds a `points` array; `point_line` requires an integral threshold.
+  `point_poly` adds a `points` array; a fractional `point_line` threshold is
+  truncated like the C `int` parameter.
 - `vector3_value` follows the numeric-probe format with flattened XYZ arguments
   and three adjacent result-bit cells for vector results. Bounding-box collision
   arguments flatten each minimum XYZ and maximum XYZ pair.
@@ -122,11 +116,12 @@ Supported operations:
 - `line`: integral `x0`, `y0`, `x1`, `y1`, RGBA `color`.
 - `line_v`: the same fields with finite fractional coordinates permitted.
 - `line_ex`: the same vector fields plus `thickness` in 0..32767.
-- `triangle`: integral `x0`, `y0`, `x1`, `y1`, `x2`, `y2`, RGBA `color`.
+- `triangle`: finite `x0`, `y0`, `x1`, `y1`, `x2`, `y2` (bounds and edge steps are
+  truncated like raylib's `int` casts), RGBA `color`.
 - `triangle_lines`: the same vertex fields with finite fractional coordinates.
-- `triangle_ex`: integral vertex fields and three colors (`color`, `color2`,
+- `triangle_ex`: finite vertex fields and three colors (`color`, `color2`,
   `color3`); validation rejects undefined signed arithmetic and zero weight sums.
-- `triangle_fan`, `triangle_strip`: integral `[x,y]` pairs in `points`;
+- `triangle_fan`, `triangle_strip`: finite `[x,y]` pairs in `points`;
   fewer than three points is a reference no-op.
 - `blit`: integral destination `x`, `y`, RGBA `tint`, and `source` containing
   positive `width`/`height` and exactly width × height row-major RGBA `pixels`.
@@ -175,16 +170,3 @@ Fallible Bend operations propagate failures to the IO entry point, where they
 fail the test; returning an unchanged image cannot conceal a rejected transform.
 This is a finite conformance
 corpus, not exhaustive mathematical proof of the coordinate/size domain.
-
-## Reconstructed format-preserving PNM files
-
-`tools/pnm_file_probe.py` reuses the 96 complete PNM-memory fixtures verbatim and
-adds 60 suffix/channel/depth variants. Each run writes real files into its unique
-`.build/pnm-file-probe/run-*` directory. All 74 invalid/file controls are checked
-only; none enters native. Native references distinguish actual `LoadImage` from
-explicit PNM selection, and observe raw metadata/bytes before normalization.
-Exact-cap tail, sparse rejection and ten-path fd64 repetition are separate
-resource observations. The safety parser never supplies expected decoded bytes.
-Fresh source-sealed evidence is in
-[the reconstructed report](../../docs/evidence/pnm-formatted-files.json),
-not the lost original PNM-file checkpoint's receipt.
