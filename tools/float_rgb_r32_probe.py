@@ -5,29 +5,24 @@ Expected conversion bytes come exclusively from the pinned ImageFormat. The
 volatile C arithmetic control only qualifies the archive's uncontracted profile;
 Python arithmetic generates inputs, never expected conversion outputs.
 """
-import argparse
 import hashlib
 import itertools
 import json
-from pathlib import Path
 import random
 import struct
 import sys
 
 from bmp_probe import bend_bytes
 from byte_probe import BEND_EMITTER, parse_results
-from conformance import BUILD, ROOT, checkout, run, source_gate
 from float_rgb_formats_probe import fixtures as previous_fixtures
 from image_format_probe import r32_words, word_bytes
+import probekit
+from probekit import ProbeFailure
 
 BATCH_OPERATIONS = 8
 INVALID_WORDS = (0x80000001,0x807fffff,0x80800000,0xbf000000,0x3f800001,
                  0x7f7fffff,0x7f800000,0xff800000)
 NAN_WORDS = (0x7fc00000,0x7f800001,0xffc12345)
-
-
-def digest(data):
-    return hashlib.sha256(data).hexdigest()
 
 
 def fixture(name, pixels, width=None, source=9, targets=None, **extra):
@@ -119,16 +114,6 @@ def parse_rows(text, expected_shapes):
         if not valid:
             raise ValueError(f'FloatRGB/R32 metadata, owner or byte length differs at {index}')
     return rows
-
-
-def differences(expected,actual):
-    if len(expected) != len(actual):
-        raise ValueError('FloatRGB/R32 comparison count differs')
-    return [i for i,(a,b) in enumerate(zip(expected,actual)) if a != b]
-
-
-def batches(ops):
-    return [ops[i:i+BATCH_OPERATIONS] for i in range(0,len(ops),BATCH_OPERATIONS)]
 
 
 C_PREAMBLE = r'''#include "raylib.h"
@@ -290,95 +275,37 @@ def candidate_program(ops):
     return body
 
 
-def harness_hashes():
-    return {name:digest((ROOT/name).read_bytes()) for name in
-            ('tools/float_rgb_r32_probe.py','tools/float_rgb_formats_probe.py','tools/image_format_probe.py',
-             'tools/bmp_probe.py','tools/byte_probe.py','tools/conformance.py','tests/test_float_rgb_r32_harness.py')}
-
-
-def native_build(raylib_source,lock):
-    cmake = BUILD/'raylib'
-    commands = [['cmake','-S',raylib_source,'-B',cmake,'-DPLATFORM=Memory',
-                 '-DCMAKE_BUILD_TYPE=Release','-DBUILD_EXAMPLES=OFF','-DCUSTOMIZE_BUILD=ON',
-                 '-DSUPPORT_MODULE_RAUDIO=OFF','-DSUPPORT_RPRAND_GENERATOR=ON','-DUSE_EXTERNAL_GLFW=OFF'],
-                ['cmake','--build',cmake,'--parallel','4']]
-    for command in commands:run(command)
-    archive = cmake/'raylib/libraylib.a'
-    return archive,dict(raylib_revision=lock['raylib']['revision'],rebuilt=True,
-                        commands=[list(map(str,c)) for c in commands],archive_sha256=digest(archive.read_bytes()),
-                        cmake_cache_sha256=digest((cmake/'CMakeCache.txt').read_bytes()),
-                        compiler_flags_sha256=digest((cmake/'raylib/CMakeFiles/raylib.dir/flags.make').read_bytes()),
-                        header_sha256=digest((raylib_source/'src/raylib.h').read_bytes()),
-                        textures_sha256=digest((raylib_source/'src/rtextures.c').read_bytes()))
-
-
-def qualify_native(cases,work,raylib_source,archive):
-    source = work/'qualification.c';source.write_text(qualification_program(cases))
-    binary = work/'qualification';binary.unlink(missing_ok=True)
-    output = work/'qualification.stdout';output.unlink(missing_ok=True)
-    command = ['clang','-std=c11','-O2','-ffp-contract=off','-I'+str(raylib_source/'src'),source,archive,'-lm','-o',binary]
-    run(command);text = run([binary]);output.write_text(text)
-    observed = json.loads(text)
+def qualify(observed, cases):
+    """The archive must match left-associated uncontracted F32 and differ from fused luminance."""
     if (type(observed) is not dict or set(observed)!={'pixels','uncontracted_mismatches','fused_differences'} or
         any(type(v) is not int for v in observed.values()) or
         observed['pixels']!=sum(c['width']*c['height'] for c in cases if c['source']==9 and c['targets']==[8]) or
         observed['uncontracted_mismatches']!=0 or observed['fused_differences']<=0):
-        raise ValueError('Native R32 archive does not qualify for the uncontracted profile')
-    return dict(observed,command=list(map(str,command)),program_sha256=digest(source.read_bytes()),stdout_sha256=digest(text.encode()))
+        raise ProbeFailure('Native R32 archive does not qualify for the uncontracted profile')
+    return observed
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True);parser.add_argument('--raylib-source',type=Path,required=True)
-    args = parser.parse_args()
-    work = BUILD/'float-rgb-r32-probe';work.mkdir(parents=True,exist_ok=True)
-    report_path = work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    if sys.byteorder!='little':raise ValueError('FloatRGB/R32 profile requires little-endian storage')
-    lock = json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'));checkout(args.raylib_source,lock['raylib']['revision'])
+    args = probekit.arguments(__doc__)
+    if args.gpu:raise SystemExit('float_rgb_r32_probe has no forced-GPU variant (no GPU evidence claimed)')
+    probe = probekit.Probe('float-rgb-r32',args)
+    if sys.byteorder!='little':raise ProbeFailure('FloatRGB/R32 profile requires little-endian storage')
     cases,invalid = fixtures(),controls();ops = cases+invalid
-    manifest = json.dumps(ops,sort_keys=True)+'\n';(work/'inputs.json').write_text(manifest)
-    report = dict(passed=False,native_cases=len(cases),native_pixels=sum(c['width']*c['height'] for c in cases),
-                  retained_owner_controls=sum(bool(c.get('reject')) for c in invalid),direct_nan_controls=sum('nan' in c for c in invalid),
-                  expected_results=len(shapes(ops)),sources=source_gate(),harness_sha256=harness_hashes(),
-                  inputs_sha256=digest(manifest.encode()),lanes={},profile='finite [0,1], left-associated uncontracted F32',
-                  limits=['No wider HDR input','No NaN payload interoperability','No GPU or unverified target/contraction evidence'])
-    report_path.write_text(json.dumps(report,indent=2)+'\n')
-    archive,report['native_build'] = native_build(args.raylib_source,lock)
-    report['qualification'] = qualify_native(cases,work,args.raylib_source,archive)
-    source = work/'reference.c';source.write_text(reference_program(ops));binary = work/'reference';binary.unlink(missing_ok=True)
-    output = work/'reference.stdout';output.unlink(missing_ok=True)
-    command = ['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,archive,'-lm','-o',binary]
-    report['reference_command'] = list(map(str,command));report['reference_program_sha256'] = digest(source.read_bytes())
-    run(command);text = run([binary]);output.write_text(text)
-    report['reference_sha256'] = digest(text.encode());expected = parse_rows(text,shapes(ops))
-    report['compared_bytes'] = sum(map(len,expected))
-    for lane in ('cpu','javascript'):
-        report['lanes'][lane] = dict(passed=False,batches=[]);cursor=0;all_rows=[];all_text=[]
-        for index,batch in enumerate(batches(ops)):
-            source = work/f'{lane}-{index}.bend';source.write_text(candidate_program(batch))
-            binary = work/f'candidate-{lane}-{index}{".js" if lane=="javascript" else ""}';binary.unlink(missing_ok=True)
-            output = work/f'{lane}-{index}.stdout';output.unlink(missing_ok=True)
-            evidence = dict(passed=False,operations=len(batch),result_start=cursor,expected_results=len(shapes(batch)),
-                            program_sha256=digest(source.read_bytes()))
-            report['lanes'][lane]['batches'].append(evidence);report_path.write_text(json.dumps(report,indent=2)+'\n')
-            run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-            text = run(['bun',binary] if lane=='javascript' else [binary]);output.write_text(text)
-            evidence['stdout_sha256'] = digest(text.encode());report_path.write_text(json.dumps(report,indent=2)+'\n')
-            actual = parse_rows(text,shapes(batch));delta = differences(expected[cursor:cursor+len(actual)],actual)
-            evidence.update(passed=not delta,results=len(actual),different_results=delta)
-            report_path.write_text(json.dumps(report,indent=2)+'\n')
-            if delta:raise ValueError(f'{lane} batch {index}: FloatRGB/R32 native differences {delta}')
-            cursor += len(actual);all_rows.extend(actual);all_text.append(text)
-        delta = differences(expected,all_rows)
-        report['lanes'][lane].update(passed=not delta,results=len(all_rows),different_results=delta,
-                                    stdout_sha256=digest(''.join(all_text).encode()))
-        report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if delta:raise ValueError(f'{lane}: FloatRGB/R32 full result differs')
-        print(f'{lane}: {len(cases)} native conversions / {report["native_pixels"]} pixels, {report["retained_owner_controls"]} exact retained owners and {report["direct_nan_controls"]} direct NaN owners passed',flush=True)
-    if source_gate()!=report['sources'] or harness_hashes()!=report['harness_sha256'] or digest(archive.read_bytes())!=report['native_build']['archive_sha256']:
-        raise ValueError('FloatRGB/R32 source, harness or native archive changed during verification')
-    report['passed']=True;report_path.write_text(json.dumps(report,indent=2)+'\n')
+    qualification = qualify(json.loads(probe.native(qualification_program(cases),'qualification',extra_flags=('-ffp-contract=off',))),cases)
+    text = probe.native(reference_program(ops));rows = iter(parse_rows(text,shapes(ops)))
+    expected = [[next(rows) for _ in shapes([op])] for op in ops]
+
+    def parse(text,selected):
+        rows = iter(parse_rows(text,shapes(selected)))
+        return [[next(rows) for _ in shapes([op])] for op in selected]
+
+    lanes = probe.candidates(lambda selected,gpu:candidate_program(selected),ops,batch=BATCH_OPERATIONS,parse=parse)
+    probe.compare(expected,lanes,lambda i:ops[i].get('name',''))
+    probe.finish(native_cases=len(cases),native_pixels=sum(c['width']*c['height'] for c in cases),
+                 retained_owner_controls=sum(bool(c.get('reject')) for c in invalid),direct_nan_controls=sum('nan' in c for c in invalid),
+                 expected_results=len(shapes(ops)),compared_bytes=sum(len(r) for op in expected for r in op),qualification=qualification,
+                 inputs_sha256=hashlib.sha256((json.dumps(ops,sort_keys=True)+'\n').encode()).hexdigest(),
+                 reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__=='__main__':
