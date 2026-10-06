@@ -59,21 +59,17 @@ return the original stream and `None` before allocation or generation.
 convention. It consumes two draws per complete seed tile, Y before X; no-seed
 grids consume no draws. See [CELLULAR.md](CELLULAR.md).
 
-## Evidence
+## How it is verified
 
-The full-image corpus checks dimensions and every noise pixel. A separate probe
-compares 960 native `GetRandomValue` results across six seeds, three stream
-observations after actual `GenImageWhiteNoise` calls, and seven complete
-`LoadRandomSequence`/following-draw results. Sequence cases include full ranges,
-duplicate retries, reversed/constant bounds, empty requests and excessive count.
-Three additional observations check the stream after cellular generation:
+| Gate | Tool | Compares |
+|---|---|---|
+| `conformance` | `tools/conformance.py` | dimensions and every pixel of white-noise and cellular fixtures, and the rejected-owner contracts, vs linked raylib |
+| `random` | `tools/random_probe.py` | `Random.value` results against native `GetRandomValue` for several seeds; the stream after actual `GenImageWhiteNoise` and `GenImageCellular` calls; complete `LoadRandomSequence` results and the following draw (full ranges, duplicate retries, reversed and constant bounds, empty requests, excessive count) |
 
 ```sh
-python3 tools/random_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only random
 ```
 
-Configure checkout variables as described in [README.md](../README.md#requirements).
-The forced GPU wrapper includes seeding and subsequent draws, so the seed path
-is exercised on the device as well. Rejected-owner contracts are checked on
-CPU, JavaScript and forced Metal. No distribution improvement, sequence
-substitution or platform-dependent default seed is introduced.
+With `--gpu`, the forced-GPU lane also runs seeding and subsequent draws on the
+device. No distribution improvement, sequence substitution or
+platform-dependent default seed is introduced.

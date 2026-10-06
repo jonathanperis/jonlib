@@ -23,13 +23,19 @@ Jonlib selects the minimum integer squared distance first and caps it at
 at most 2²⁴ and is exactly representable in F32. A single square root followed
 by the original intensity expression therefore suffices for the exercised profile.
 
-Before accepting cellular fixtures, the native conformance runner compares
-`(float)hypot(x,y)` with `sqrtf((float)(x*x+y*y))` for **all 13,180,825**
-nonnegative coordinate-difference pairs below the cap. A mismatch fails the gate.
-Whole-image fixtures then compare every pixel on CPU-1, CPU-2, JavaScript and
-forced Metal, including incomplete grids, saturation, no seeds and the maximum
-tile size. The independent random probe compares the stream after generation.
+## How it is verified
 
-The implementation is Bend-only and retains explicit ownership of seed/output
+- **Distance reduction** (`conformance` gate): before any cellular fixture is
+  accepted, the native reference program compares `(float)hypot(x,y)` (through a
+  volatile native pointer) with `sqrtf((float)(x*x+y*y))` for **every**
+  nonnegative pair `x, y < 4096` with `x*x+y*y <= 2^24`. Any mismatch fails the
+  gate.
+- **Images** (`conformance` gate): whole-image fixtures compare every pixel with
+  linked raylib on CPU-1, CPU-2 and JavaScript (and forced GPU with `--gpu`),
+  including incomplete grids, saturation, no seeds and the maximum tile size.
+- **Random stream** (`random` gate, `tools/random_probe.py`): the stream after
+  generation is compared with native raylib (see [RANDOM.md](RANDOM.md)).
+
+The implementation is Bend-only and keeps explicit ownership of seed/output
 arrays. No performance parity is claimed. Implicit-global/libc random behavior,
 broader dimensions/tile sizes and full target/resource coverage remain gaps.

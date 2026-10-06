@@ -96,8 +96,8 @@ mean `partial` in the authoritative ledger.
    `proposed_jonlib` for a planned name and `jonlib` for an existing mapping.
 3. Implement and run the applicable reference comparisons, ownership checks,
    integration examples, targets and performance measurements.
-4. Update scope, gaps, evidence and gate results. Keep exact case/lane counts
-   and input hashes in the evidence documents. Then regenerate and check:
+4. Update scope, gaps, evidence and gate results. Case/lane counts, hashes and
+   timings belong in gate results (`.build/gates/`). Then regenerate and check:
 
    ```sh
    python3 tools/api_plan.py build
@@ -131,10 +131,12 @@ python3 tools/api_plan.py check --clang-audit \
 ```
 
 The extractor retains conditional source alternatives. An independent Clang AST
-audit compares all public C function names and exact C++ overload signatures.
-Neither audit executes those APIs. Source-aware checks also compare the whole
+audit compares all public C function names and exact C++ overload signatures,
+active typedefs/enumerators and C++ constants; a separate line audit accounts for
+every public typedef/define/constexpr alternative, including ones inactive on the
+auditing host. Neither audit executes those APIs: they establish declaration
+accounting, not runtime parity, semantic contracts or platform support. Source-aware checks also compare the whole
 catalog, including hashes and support entries. Extraction changes must be
 reviewed and explicitly regenerated with `sync --raylib-source PATH`; checks
-never repair source or generated files. Both hosted conformance jobs run this
-audit. The [inventory verification record](API-INVENTORY-VERIFICATION.md)
-records the initial proof and its limits.
+never repair source or generated files. The `api-audit` gate in `tools/gates.json` runs this
+audit on both CI hosts.
