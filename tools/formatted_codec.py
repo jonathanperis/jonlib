@@ -71,6 +71,7 @@ static void observed(const char *id,const char *role,Image image){
 
 BEND_PRELUDE = r'''import Base
 import ../../jonlib.bend as J
+import ../../jonmath.bend as M
 def reverse_into(values: +List<U32>, rest: +List<U32>) -> +List<U32>:
   match values:
     case Nil{}: rest
@@ -354,8 +355,8 @@ def candidate_program(codec, actions, gpu=False):
         elif role.startswith('dispatch-'):
             image = f'surface(J.Surface.decode_image({json.dumps("." + role[len("dispatch-"):])}, {data}))'
         elif role in ('uncontracted', 'fused'):
-            profile = 'UncontractedDecode' if role == 'uncontracted' else 'FusedDecode'
-            image = f'surface(J.Surface.decode_image_for(J.{profile}{{}}, {json.dumps(codec.contraction_token)}, {data}))'
+            profile = 'Uncontracted' if role == 'uncontracted' else 'Fused'
+            image = f'surface(J.Surface.decode_image_for(M.{profile}{{}}, {json.dumps(codec.contraction_token)}, {data}))'
         elif role == 'factory':
             image = (f'J.Image.Formatted.from_bytes({c["width"]}, {c["height"]}, {codec.formats[c["channels"]]}, '
                      f'{bend_bytes(action["expected"]["bytes"])})')

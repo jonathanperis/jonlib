@@ -1,5 +1,6 @@
 import Base
 import ../jonlib.bend as J
+import ../jonmath.bend as M
 
 def error_code(result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> U32:
   match result:
@@ -42,7 +43,7 @@ def psd_profiles() -> Bool:
   +bytes = {[56,66,80,83,0,1,0,0,0,0,0,0,0,4,0,0,0,1,0,0,0,1,0,8,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,11] : +List<U32>}
   decoded_color(J.Color.rgba(255, 255, 255, 11), J.Surface.decode_psd(bytes))
     && decoded_color(J.Color.rgba(255, 255, 255, 11), J.Surface.decode_image(".psd", bytes))
-    && decoded_color(J.Color.rgba(254, 254, 254, 11), J.Surface.decode_image_for(J.FusedDecode{}, ".psd", bytes))
+    && decoded_color(J.Color.rgba(254, 254, 254, 11), J.Surface.decode_image_for(M.Fused{}, ".psd", bytes))
 
 def checks() -> Bool:
   U32.is_eq(error_code(J.Surface.decode_qoi([113,111,105])), 0)

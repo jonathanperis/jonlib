@@ -163,7 +163,7 @@ def candidate_program(actions):
         else:
             output, then = 'J.Surface', f'surface.emitted({ident}, {json.dumps(role)})'
             call = {'surface': f'J.Surface.load_qoi({path})', 'dispatch': f'J.Surface.load_image({path})'}.get(role) or \
-                f'J.Surface.load_image_for(J.{"UncontractedDecode" if role == "uncontracted" else "FusedDecode"}{{}}, {path})'
+                f'J.Surface.load_image_for(M.{"Uncontracted" if role == "uncontracted" else "Fused"}{{}}, {path})'
         lines.append(f'    IO.bind(Result<&1, &1, J.Image.LoadError, {output}>, Unit, {call}, {then})')
     return '\n'.join(lines) + '\n'
 

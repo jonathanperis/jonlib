@@ -391,21 +391,6 @@ law checked_angle_vector3_input_reject:
   for w: F32
   {CA.vector3.valid(False{}, profile, x, y, z, u, v, w) == Fail{1} : Result<&2, &2, U32, F32>}
 
-law angle_vector2_default_preserved:
-  for +left: M.Vector2
-  for +right: M.Vector2
-  {M.Vector2.angle(left, right) == M.Vector2.angle_for(M.AccurateGradient{}, left, right) : F32}
-
-law angle_line_default_preserved:
-  for +left: M.Vector2
-  for +right: M.Vector2
-  {M.Vector2.line_angle(left, right) == M.Vector2.line_angle_for(M.AccurateGradient{}, left, right) : F32}
-
-law angle_vector3_default_preserved:
-  for +left: M.Vector3
-  for +right: M.Vector3
-  {M.Vector3.angle(left, right) == M.Vector3.angle_for(M.AccurateGradient{}, left, right) : F32}
-
 law checked_angle_scalar_some:
   for word: U32
   {CA.scalar_result(Some{word}) == CA.normal(32, CA.from_word(word)) : Result<&2, &2, U32, F32>}

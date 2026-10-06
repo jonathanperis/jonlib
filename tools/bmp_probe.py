@@ -227,6 +227,7 @@ def bend_bytes(values):
 
 PROGRAM='''import Base
 import ../../jonlib.bend as J
+import ../../jonmath.bend as M
 def reverse_into(values: +List<U32>, rest: +List<U32>) -> +List<U32>:
   match values:
     case Nil{}: rest
@@ -300,7 +301,7 @@ def main(codec='bmp', fixture_factory=fixtures, native_extension=None):
     program=PROGRAM.replace('OUTPUT',json.dumps(str(written))).replace('BMP',codec.upper()).replace('Surface.to_bmp',f'Surface.to_{codec}').replace('Surface.write_bmp',f'Surface.write_{codec}')
     if not outputs:program=program[:program.index('def fill(')]+'def main() -> IO(Unit):\n  do IO<Unit>:\n'
     function=f'decode_{codec}_for' if codec=='psd' else f'decode_{codec}'
-    profile=f'J.{image_decode_reference()}{{}}, ' if codec=='psd' else ''
+    profile=f'M.{image_decode_reference()}{{}}, ' if codec=='psd' else ''
 
     def render(selected,gpu):
         bang='!' if gpu else '';body=program
