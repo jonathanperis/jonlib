@@ -31,12 +31,13 @@ it is not automatically a requirement to reproduce crashes or memory corruption.
 
 The working foundation includes owned RGBA8, byte/integer and RGB float images,
 drawing/composition/transforms, mipmaps, blur/convolution, image codecs and file
-exports, bounded compression/data utilities and extensive Jonmath profiles. It has
-exact raylib-reference comparisons on CPU/JS/Metal, hosted Linux/macOS checks,
-and an explicit compiler overlay fixing the observed Metal dispatch failure.
+exports, bounded compression/data utilities and extensive Jonmath profiles. They
+are compared exactly with the pinned raylib reference on CPU and JavaScript lanes
+(Linux and macOS in CI; forced Metal locally), with an explicit compiler overlay
+fixing the observed Metal dispatch failure ([VERIFICATION.md](VERIFICATION.md)).
 
 **We are in Phase 1. Full raylib parity has not been reached.** The
-[API progression dashboard](PROGRESS.md) now inventories every public declaration
+[API progression dashboard](PROGRESS.md) inventories every public declaration
 in the five release headers plus `config.h`: functions, types, enum values,
 macros, conditional controls and C++ conveniences. Every entry has a work package,
 current/proposed Bend mapping, verification recipe, dependencies and next action.
@@ -81,23 +82,38 @@ small part of a later phase forward when needed by an example or a runtime gap.
    numerical-precision gaps. F32-only convenience signatures are not a reason
    to discard required signed/wider-number behavior.
 
-The latest local batches add **image-as-code export, owned RGBA8 mipmaps,
-Gaussian blur/convolution, Base64/checksums and native quality-8 raw compression**.
-All remain scoped profiles. The [resampling record](RESAMPLING.md),
-[codec profile](CODECS.md), [math profile](MATH.md) and generated
-[progress queue](PROGRESS.md) give the current evidence and next dependencies.
+Detailed contracts for the delivered Phase 1 profiles are in the topic pages
+listed by the [API](API.md) and [compatibility](COMPATIBILITY.md) pages. Private
+numerical prerequisites (the [binary64 helpers](BINARY64.md) and the
+[modern angle kernel](MODERN-ANGLE.md)) back the [checked angle APIs](ANGLES.md);
+device/resource and wider-domain evidence remain Phase 1 work.
 
-The isolated [direct binary64 narrowing prerequisite](BINARY64-NARROW.md) now
-provides checked nearest-even binary32 words, including gradual underflow. It
-does not alter old conversion consumers;
-private [bounded FMA](BINARY64-FMA.md) and [add/subtract](BINARY64-ADD-SUB.md)
-prerequisites are also isolated, as are the [checked normal multiply/divide and
-word adapters](BINARY64-OPS.md) and [gradual-output product](BINARY64-GRADUAL-MULTIPLY.md).
-The [complete private finite modern angle kernel](MODERN-ANGLE.md) now consumes
-these unchanged helpers with separate source/trace verification. The
-[checked angle integration](ANGLES.md) adds public references, guarded
-wrappers and fresh native selection. Device/resource and wider-domain evidence
-remain Phase 1 work.
+## Near-term sequence
+
+The current milestone is a headless image foundation: owned images, drawing,
+composition, transforms, codecs and math, verified against raylib 6.0 CPU image
+operations. Next, in dependency order:
+
+1. **2D library growth.** Complete the remaining primitive families, math and
+   collision helpers; broaden image drawing to more formats and mipmaps; close
+   gaps in the [image codec profiles](CODECS.md), including remaining codecs,
+   original-format metadata and broader pixel layouts; add text/fonts and PCM WAV
+   with their own reference gates; port selected upstream examples and compare
+   deterministic outputs. Efficient command buffers and tiled rendering must be
+   measured against equivalent raylib scenes; the current correctness-oriented
+   image loops are not an assumed high-performance architecture.
+2. **Interactive platform foundation.** Use existing Base windows/audio where
+   sufficient; add generic Bend facilities for event polling, sizing/DPI/
+   fullscreen, cursor/clipboard, text entry, high-resolution timing, presentation
+   pacing, audio backpressure and gamepad/touch input. Rendering, decoding and
+   mixing algorithms stay in Bend.
+3. **Assets and 3D.** General clipping/depth, textured meshes, cameras, lighting,
+   animation, model importers, richer fonts and compressed image/audio formats.
+   Programmable effects are defined in Bend; the compatibility contract for
+   arbitrary GLSL and low-level rlgl interoperability is decided separately.
+4. **Platform expansion.** Native Windows, browser and Android need runtime,
+   compiler and platform work. Each platform needs lifecycle, input, audio,
+   graphics and packaging evidence; unsupported targets are tracked openly.
 
 ## Compiler and runtime workstream
 
@@ -117,6 +133,14 @@ affected Jonlib scenarios. The Metal work demonstrated why: one candidate
 passed Jonlib but broke another Bend workload, and was rejected. Preserve that
 cross-workload gate for future compiler changes.
 
+The Metal dispatch defect is resolved for the declared profile by the explicit,
+hash-checked compiler overlay in `toolchain.json`
+([METAL-INVESTIGATION.md](METAL-INVESTIGATION.md)): dispatcher-only boundaries,
+no source-specific rule and no altered expected output. The overlay is a
+checked-in Apache-2.0 patch until upstream integration; CUDA and the upstream
+cluster/site gates remain unverified. Retain the exact-source checks when
+updating Bend.
+
 ## The parity loop for every batch
 
 1. Read the pinned implementation, declaration, examples and known edge cases.
@@ -131,7 +155,18 @@ cross-workload gate for future compiler changes.
 
 We reuse upstream tests where applicable and port upstream examples into bounded
 scenarios. Raylib's existing smoke tests and screenshots are useful inputs, but
-we must supply the behavioral assertions they do not contain.
+we must supply the behavioral assertions they do not contain. In addition:
+
+- Control random seeds, clocks, assets, quality settings, backends and capture frames.
+- Use exact assertions for deterministic integer/image behavior; define any
+  numeric or rendering tolerance before accepting a mismatch.
+- Add small regressions for independently meaningful failure boundaries.
+- Measure resource growth, frame-time distributions and audio underruns as
+  requirements separate from correctness.
+- Record unimplemented, runtime-blocked, passing and intentionally divergent behavior.
+
+Passing Jonlib's suite means the declared, exercised profile passes; it is not
+proof about every raylib program. See [VERIFICATION.md](VERIFICATION.md).
 
 ## Tracking progress honestly
 
@@ -170,14 +205,3 @@ evidence, regenerate checklists and pass the drift/completion gates.
 The immediate product milestone is a real 2D application built from the image,
 texture, text, input and audio foundations. That is an intermediate milestone;
 the destination remains the full, versioned parity matrix.
-
-## Standalone native angle qualification
-
-The independently frozen [native angle qualification gate](ANGLES.md)
-checks 76 scalar controls, 205 canonical/runtime wrapper controls and
-1,654 ordered intermediate words before angle-candidate generation. The new
-[checked angle integration](ANGLES.md) consumes the fresh qualified
-selection and enforces each intermediate domain. Old algorithms/defaults and
-canonical fixtures remain unchanged. Historical Apple/Sun source contracts are
-not newly host-qualified; Darwin angle-bearing canonical/Metal runs currently
-fail unsupported provenance rather than inferring an angle profile.

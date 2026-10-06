@@ -1,6 +1,6 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
 # Private checked normal binary64 operations and canonical-word adapters.
-# No existing consumers. See docs/BINARY64-OPS.md for the bounded contract.
+# No existing consumers. See docs/BINARY64.md for the bounded contract.
 import Base
 import ./binary64_fma.bend as W
 import ./resize_numeric.bend as N

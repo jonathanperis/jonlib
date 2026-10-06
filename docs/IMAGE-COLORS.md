@@ -1,46 +1,63 @@
-# Native bulk and point image colors
+# Bulk and point image colors
 
-`Image.Formatted.colors(image)` consumes a checked format-1..8 image and returns
-every packed RGBA8 color as `List<U32>`, in row-major order.
-Bounded [R32](R32.md) samples produce red-only colors with opaque alpha;
-this does not implement the distinct low-level `GetPixelColor` R32 behavior.
-`Image.FloatRGB.colors(image)` returns
-`Result<&1, &1, Image.FloatRGB, List<U32>>`: finite `[0,1]` RGB is truncated through
-native F32 `component*255`, with opaque alpha; unsupported samples return the
-original owner.
+Jonlib adapts raylib 6.0 `LoadImageColors` (bulk) and `GetImageColor` (point)
+for formatted and RGB float images.
 
-Both image types also expose `get(image, x: U32, y: U32)`, returning the retained
-owner and `Maybe<&2, U32>`. Bounds are checked before array access. Out-of-bounds
-coordinates return `None`; float reads also return `None` for unsupported selected
-samples. Only the selected float pixel is validated, so another unsupported pixel
-does not prevent a valid point read.
-
-## Packed-format distinctions
-
-These APIs reproduce actual `LoadImageColors` and `GetImageColor`:
-
-- RGB565 expands five-bit channels by 8 and the six-bit channel by 4.
-- RGB5A1 uses the conventional shifted blue field and alpha bit.
-- RGBA4 expands each nibble by 17; gray and gray-alpha preserve byte values.
-
-This differs from `ImageFormat`'s normalized reciprocal arithmetic and the
-separate raw `GetPixelColor` RGB5A1 low-five-bit blue quirk. The operations retain
-their distinct mappings rather than sharing a misleading universal color decoder.
-
-## Verification
-
-```sh
-python3 tools/image_colors_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+```bend
+Image.Formatted.colors(image) -> List<U32>
+Image.FloatRGB.colors(image) -> Result<&1, &1, Image.FloatRGB, List<U32>>
+Image.Formatted.get(image, x: U32, y: U32) -> Image.Formatted & Maybe<&2, U32>
+Image.FloatRGB.get(image, x: U32, y: U32) -> Image.FloatRGB & Maybe<&2, U32>
 ```
 
-Configure checkout variables as in [README.md](../README.md#requirements).
-The gate compares eight layouts / 2,561 pixels as both native bulk and point
-colors on CPU/JavaScript/forced Metal. Every source word after point reads is
-compared with native storage. Six point controls cover bounds, rejected float
-samples and a valid pixel beside an unsupported sample. A failed bulk float
-export returns its unchanged owner. The existing 33,024-pixel float conversion
-gate also passes after sharing its pixel conversion helper. See
-[evidence/image-colors.json](evidence/image-colors.json).
+## Contract
 
-Other source domains, float/half/compressed formats, mipmaps and complete native
-ABI/resource/platform/performance coverage remain gaps.
+- `Image.Formatted.colors` consumes a checked format-1..8 image and returns every
+  pixel as packed RGBA8 in row-major order.
+- `Image.FloatRGB.colors` truncates each finite `[0,1]` RGB sample through native
+  F32 `component*255`, with opaque alpha. Unsupported samples return the
+  original owner in `Fail`.
+- `get` returns the retained owner and the selected color. Bounds are checked
+  before array access; out-of-bounds coordinates return `None`. Float reads also
+  return `None` for an unsupported selected sample. Only the selected pixel is
+  validated, so an unsupported sample elsewhere does not prevent a valid read.
+
+## Per-format color rules
+
+These match actual `LoadImageColors` / `GetImageColor`:
+
+| Format | RGBA8 color |
+|---|---|
+| 1 grayscale, 2 gray-alpha | Byte values preserved (gray replicated into RGB) |
+| 3 RGB565 | Five-bit channels ×8, six-bit channel ×4, alpha 255 |
+| 5 RGB5A1 | Conventional shifted blue field; five-bit channels ×8, alpha bit 0/255 |
+| 6 RGBA4 | Each nibble ×17 |
+| 4 RGB888, 7 RGBA8888 | Bytes preserved (RGB888 opaque) |
+| 8 R32 | Red-only color with opaque alpha (see [R32.md](R32.md)) |
+
+These deliberately differ from `ImageFormat`'s normalized reciprocal
+arithmetic and from the low-level `GetPixelColor` (`Pixel.get_color`, see
+[PIXELS.md](PIXELS.md)), whose RGB5A1 blue reads the low five bits including
+the alpha bit. The R32 rule here does not implement `GetPixelColor`'s distinct
+R32 behavior. The operations keep separate mappings rather than sharing one
+misleading universal color decoder.
+
+## How it is verified
+
+`tools/image_colors_probe.py` (gate `image-colors`) compares bulk and point
+colors with native `LoadImageColors` / `GetImageColor` over every formatted
+byte/packed layout and RGB float, on CPU-1, CPU-2, JavaScript and, with `--gpu`,
+forced GPU. After point reads every source word is compared with native
+storage. Controls cover out-of-bounds coordinates, rejected float samples, a
+valid pixel beside an unsupported sample and the unchanged owner of a failed
+bulk float export. R32 colors are compared in gate `r32-image`
+(`tools/r32_image_probe.py`).
+
+```sh
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only image-colors
+```
+
+## Known gaps
+
+Other source domains, float/half/compressed formats, mipmaps and complete
+native ABI/resource/platform/performance coverage.

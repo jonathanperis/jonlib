@@ -50,12 +50,11 @@ for total internal reflection and otherwise applies the original formula.
 same explicit zero-tie contract. `min` and `max` select the accurate profile.
 
 The GNU label is a declared numerical profile, not a guarantee for every glibc
-version/compiler evaluation path. Debian glibc 2.41 / Clang 19 reproduces
-different constant-folded and native-libm zero ties, plus broader `atan2f`
-differences. See [native host-profile diagnosis](NATIVE-MATH-PROFILES.md).
-The conformance harness qualifies literal extrema separately using an independent
-native corpus and logs the chosen existing contract. It does not infer zero ties
-from the gradient/angle profile or alter these public library operations.
+version/compiler evaluation path: constant folding, builtin lowering and native
+glibc calls give three different zero-tie behaviours. The reference harness
+selects the extrema profile from native controls instead of inferring it from the
+host or the gradient/angle profile; see
+[NATIVE-MATH-PROFILES.md](NATIVE-MATH-PROFILES.md).
 
 `rotate_for(reference, vector, radians)` uses the explicit trigonometric reference
 profile; `rotate` selects the accurate profile. The current profile covers finite
@@ -126,7 +125,7 @@ a replacement basis. Aliased C pointer behavior remains outside this mapping.
 ## Vector4 API
 
 `Vector4{x, y, z, w}` is immutable `Data` with four F32 fields. All twenty-two
-pinned Vector4 functions now have scoped mappings:
+pinned Vector4 functions have scoped mappings:
 
 - Constructors: `zero()`, `one()`.
 - Components: `add`, `add_value`, `subtract`, `subtract_value`, `scale`,
@@ -234,9 +233,9 @@ subnormal projection arithmetic, and unverified non-finite promotion payloads,
 remain gaps. The public carrier API provides storage and promotion; arithmetic
 helpers are internal and reuse finite-normal integer-limb operations.
 
-`MatrixPerspective` remains blocked by an observed native binary64 tangent
-rounding difference that survives into F32 matrix fields. The exact counterexample
-and reproducible diagnostic are recorded in [PERSPECTIVE.md](PERSPECTIVE.md).
+`MatrixPerspective` is blocked: the native binary64 tangent rounding survives
+into F32 matrix fields, so a correctly rounded tangent is not a substitute. The
+counterexample and diagnostic gate are in [PERSPECTIVE.md](PERSPECTIVE.md).
 
 ## Quaternion API
 
@@ -284,9 +283,8 @@ basis used by `Matrix.compose`. Both results follow their respective reference
 implementations; no implicit normalization makes them interchangeable.
 The remaining quaternion operations and full integration/ABI/target/performance
 coverage remain ledger gaps.
-Spherical interpolation and axis/Euler extraction currently depend on an
-unresolved native inverse-trig profile; retained failures and the diagnostic
-are documented in [INVERSE-TRIG.md](INVERSE-TRIG.md).
+`QuaternionSlerp`, `QuaternionToAxisAngle` and `QuaternionToEuler` are blocked
+on native `asinf`/`acosf` profiles; see [INVERSE-TRIG.md](INVERSE-TRIG.md).
 
 ## Float-list exports
 
@@ -302,40 +300,38 @@ does not enforce a fixed length for arbitrary caller-created lists.
 
 ## Vector angle profiles
 
-`Vector2.angle(left, right)` returns the reference signed cross/dot angle.
-`Vector2.line_angle(start, end)` negates the endpoint-difference angle.
-`Vector3.angle(left, right)` uses the reference cross-product length and dot
-product. Each has an `_for(reference, ...)` variant; convenience calls use the
-existing `AccurateGradient{}` Apple selection, while `GnuGradient{}` selects the
-GNU float profile.
+Angle profiles, the checked entry points and host profile selection are
+specified in [ANGLES.md](ANGLES.md). In summary:
 
-The Apple numerical specification rounds π toward zero near the negative X axis;
-the GNU profile retains its own float polynomial and quadrant corrections.
-The implementations preserve those observable differences. An independent Bend
-polynomial evaluation and licensed Sun-kernel adaptation replace backend-native
-atan2 primitives that failed exact probes. Supporting binary64 multiplication
-and division round directly from integer limbs.
+- `Vector2.angle_with_reference`, `Vector2.line_angle_with_reference` and
+  `Vector3.angle_with_reference` take an `Angle.Reference`
+  (`Apple2007AngleRn{}`, `Sun239AngleRn{}` or `Glibc241AngleRn{}`) and return
+  `Maybe<F32>`; they reject nonfinite components and nonzero subnormal
+  intermediates or results.
+- The legacy `Vector2.angle(left, right)` (reference signed cross/dot angle),
+  `Vector2.line_angle(start, end)` (negated endpoint-difference angle) and
+  `Vector3.angle(left, right)` (cross-product length and dot product) keep their
+  unchecked contract. Each has an `_for(Gradient.Reference, ...)` variant:
+  `AccurateGradient{}` (the convenience default) selects the Apple algorithm,
+  which rounds π toward zero near the negative X axis, and `GnuGradient{}` the
+  Sun float algorithm with its own polynomial and quadrant corrections.
 
-The angle oracle explicitly disables builtin `atan2f` folding, and the standalone
-probe calls the native function through a volatile pointer. This distinguishes
-actual libm behavior from compiler-folded literal calls. Probe artifacts retain
-both endpoint variants and host/compiler information.
+Both legacy algorithms are evaluated in Bend (an independent polynomial
+evaluation and a licensed Sun-kernel adaptation, see
+[LICENSES/sun-math.txt](../LICENSES/sun-math.txt)) rather than with
+backend-native `atan2`, with supporting binary64 multiplication/division rounded
+directly from integer limbs (`src/float64_ops.bend`). Their references disable
+builtin `atan2f` folding and call native libm through a volatile pointer, so
+actual library behaviour is compared rather than compiler-folded literals.
 
-```sh
-python3 tools/float64_ops_probe.py --bend-source "$BEND_SOURCE" --gpu
-python3 tools/angle_probe.py --bend-source "$BEND_SOURCE" --gpu
-python3 tools/angle_probe.py --bend-source "$BEND_SOURCE" --gnu-control --gpu
-```
+| Gate | Probe | Compares |
+|---|---|---|
+| `float64-ops` | `tools/float64_ops_probe.py` | internal normal binary64 multiply/divide vs native C bits |
+| `angle-legacy` | `tools/angle_probe.py --gnu-control` | legacy GNU angle vs the independent Sun C control |
+| `angle-kernels` | `tools/angle_kernel_probe.py` | angle kernels and checked wrappers (see [ANGLES.md](ANGLES.md)) |
 
-The new explicit `Angle.Reference` checked entry points enforce finite original
-components and normal/zero intermediates and outputs. `Vector2.angle_with_reference`,
-`Vector2.line_angle_with_reference` and `Vector3.angle_with_reference` return
-`Maybe<F32>` and take `Apple2007AngleRn{}`, `Sun239AngleRn{}` or `Glibc241AngleRn{}`.
-Subnormal inputs are accepted when all derived operations satisfy the bounded
-contract; nonzero subnormal intermediates/output and nonfinite inputs reject.
-The legacy functions above retain their prior unchecked contract and defaults.
-See [CHECKED-ANGLES.md](ANGLES.md) for exact staged arithmetic, source
-contracts, fresh native qualification, error propagation and remaining gaps.
+`tools/angle_probe.py` without `--gnu-control` compares the host-declared legacy
+profile with the host's native `atan2f`.
 
 ## Floating-point contract and evidence
 
@@ -344,7 +340,9 @@ contract of the pinned Bend compiler. The independent C reference includes the
 unmodified pinned `raymath.h` with `FP_CONTRACT OFF`. This choice is explicit:
 fused multiply-add/contracted build variants are separate, unverified contracts.
 
-The shared fixtures compare exact returned F32 bit patterns and Boolean values.
+The `conformance` gate (`tools/conformance.py` over `tests/fixtures/images.json`)
+compares exact returned F32 bit patterns and Boolean values with the linked
+pinned raylib on CPU-1, CPU-2 and JavaScript.
 Vector-returning operations write every component to adjacent verification cells;
 the validator requires all cells to fit. Signed zero is retained in generated
 Bend literals. There is no tolerance added to make mismatches pass.
@@ -353,15 +351,4 @@ Current evidence uses finite inputs, nonzero normalized ranges, and nonzero
 component divisors. Exceptional/subnormal behavior, contracted builds, remaining
 raymath functions and the full target/performance matrix remain open. These
 are partial mappings, not completed raymath APIs. See the
-[progress dashboard](PROGRESS.md) and [verification record](VERIFICATION.md).
-
-## Standalone native angle qualification
-
-The independently frozen [native angle qualification gate](ANGLES.md)
-checks 76 scalar controls, 205 canonical/runtime wrapper controls and
-1,654 ordered intermediate words before angle-candidate generation. The new
-[checked angle integration](ANGLES.md) consumes the fresh qualified
-selection and enforces each intermediate domain. Old algorithms/defaults and
-canonical fixtures remain unchanged. Historical Apple/Sun source contracts are
-not newly host-qualified; Darwin angle-bearing canonical/Metal runs currently
-fail unsupported provenance rather than inferring an angle profile.
+[progress dashboard](PROGRESS.md) and [VERIFICATION.md](VERIFICATION.md).

@@ -6,205 +6,183 @@ Candidate: Bend **2.0.27+jonlib-metal.1**, base
 [compiler overlay](../patches/README.md) declared in `toolchain.json`.
 Profile: **rgba8-cpu-images-v1**, with domains defined in [API.md](API.md).
 
-## Verified evidence
-
-The 2026-10-02 Debian x86-64 checked-angle integration (Clang 19.1.7 /
-glibc 2.41) passes the complete unchanged **261 scenarios / 40,101 output words**
-on CPU-one-thread, CPU-two-thread and JavaScript. Every field also matches,
-including 333 QOI bytes and 23 palette words per lane. Independent native
-qualification selects `AccurateGradient` for literal extrema and the separate
-`Glibc241AngleRn` for checked angles. Original raymath calls, fixtures, pixel
-locations, compiler flags and exact comparisons are unchanged.
-
-The old-profile checkpoint had 260/261 scenarios and remains a historical
-failure: native `3fc90fdb` versus legacy Sun `3fc90fda` at
-`vector2-angle-profiles` pixel `(6,0)`. The new explicit checked route closes
-that mismatch without retargeting the old profile. Existing Apple/GNU scalar
-algorithms and public defaults/`*_for` meanings are unchanged. See
-[CHECKED-ANGLES.md](ANGLES.md) for the new finite-input, staged
-normal/zero-wrapper contract and [NATIVE-MATH-PROFILES.md](NATIVE-MATH-PROFILES.md)
-for the prior host-profile diagnosis.
-
-The five private arithmetic prerequisites and [modern scalar kernel](MODERN-ANGLE.md)
-are unchanged and now serve the explicitly selected checked angle wrappers.
-Their independent prior arithmetic/scalar evidence remains scoped to those
-recorded runs; it is not represented as a new exhaustive rerun. New wrapper,
-qualification and canonical evidence is separate. No new GPU, hosted, universal
-input or performance result is claimed. Current angle-bearing canonical/Metal
-entrypoints require supported Linux ELF provenance; Darwin/Windows contexts
-fail unsupported before candidate generation rather than inferring a profile.
-Existing legacy APIs remain available.
-
-The suffix-selected export gate's separate CPU/JS evidence and the historical
-Apple evidence below do not establish new file-dispatch or modern checked-angle
-Metal/Apple coverage.
-
-The historical local Apple M1/macOS corpus contains **261 deterministic scenarios /
-40,101 checked output words per lane**, matching native CPU (one and two threads), JavaScript
-and forced Metal. Most words are RGBA pixels; 1,878 are exact numeric/collision
-result-bit probe cells. QOI export bytes and full palette observations are
-compared separately. GitHub Actions
-is configured to run this corpus on **Ubuntu 24.04
-(x86_64)** and **macOS 15 (arm64)** for CPU/JavaScript; use the current workflow
-result for the exact published commit's hosted evidence.
-Ownership, bounds, color and Base.Image adapter contracts also pass on CPU/JS.
-Every RGB pixel in the primitive, composite and crop/resize PPM examples matches
-the corresponding raylib reference scene.
-The dimension-preservation, transpose-involution and float-export-length proofs
-check with `All terms check.` See the
-[hosted verification record](VERIFICATION.md#github-actions).
-
-The complete **forced Metal gate passes all current scenarios and export bytes** on the
-local Apple M1 with the declared compiler overlay. Stock Bend's failure and
-rejected intermediate fixes remain documented in
-[METAL-INVESTIGATION.md](METAL-INVESTIGATION.md). The hosted results linked below
-originally established the CPU/JS baseline; current CI applies the declared overlay.
-
-A current run's precise inputs, source hashes and lane outcomes are in
-`.build/conformance.json`. The authoritative [API dashboard](PROGRESS.md) covers
-the complete release-header/support inventory. The 600-entry
-`.build/api-inventory.json` is its legacy core view, mapping 117 reference APIs to
-these scoped operations/contracts. Jonmath's companion ledger additionally maps
-142 functions from `raymath.h`. Remaining functions retain explicit planned work.
-These counts are an inventory, not a percentage of full parity.
-Both `profile-covered` and `contract-checked` are partial-coverage statuses.
+This page lists the verified capability profiles and known divergences. The
+authoritative per-API status is the [API dashboard](PROGRESS.md), generated from
+the ledger described in [API-TRACKING.md](API-TRACKING.md). Every mapped
+capability below is **partial** (the legacy `profile-covered` and
+`contract-checked` labels both mean partial) and must not be reported as a fully
+completed raylib API. Mapped counts are an inventory, not a parity percentage.
 The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
 
-| Reference capability | Jonlib operation | Status |
-|---|---|---|
-| `GenImageColor` | `Surface.create` | Passing valid RGBA8 fixtures |
-| `ImageClearBackground` | `Surface.clear` | Passing; dimensions also covered by a checked law |
-| `ImageDrawPixel` | `Surface.draw_pixel` | Passing replacement/clipping fixtures |
-| `ImageDrawRectangle` | `Surface.draw_rectangle` | Passing clipping/degenerate fixtures |
-| `ImageDrawCircle` | `Surface.draw_circle` | Passing midpoint/radius-12/small-radius fixtures |
-| `ImageDrawLine` | `Surface.draw_line` | Exact fixed-point octants, reversal, clipping and endpoint-exclusion fixtures |
-| `ImageDrawLineV` | `Surface.draw_line_v` | Reference add-half/truncate conversion, including negative/fractional inputs |
-| `ImageDrawTriangle` | `Surface.draw_triangle` | Integral-vertex winding, clipping, degeneracy and signed edge stepping |
-| `ImageDrawTriangleLines` | `Surface.draw_triangle_lines` | Truncated vertices and three reference-compatible segments |
-| `ImageDraw` | `Surface.draw_image / draw_image_region / draw_image_rect` | Partial RGBA8: source clipping, default scaling, destination clipping and bounded fractional rectangles; both owners retained |
-| `ImageFromImage` | `Surface.extract` | Positive integral in-bounds region; independent output; original retained |
-| `ImageCrop` | `Surface.crop` | Integral clipping with positive result and outside-origin no-op; typed failure preserves original |
-| `ImageResizeNN` | `Surface.resize_nn` | Exact +1 fixed-point ratios; valid flat source mappings; invalid/unsafe requests preserve original |
-| `ImageResize` | `Surface.resize` | Partial RGBA8 profile: default filters, exact normalization, alpha-aware output and owner-preserving invalid-size errors |
-| `ImageMipmaps` | `Surface.mipmaps`, `Image.Mipmaps.entries/unload` | Owned RGBA8 base-to-1x1 levels with sequential default filtering and independent storage; native complete-level comparison |
-| `ImageBlurGaussian` | `Surface.blur_gaussian` | Native four-iteration RGBA8 box approximation, premultiply/unpremultiply quantization, bounded sizes and retained rejected owners |
-| `ImageKernelConvolution` | `Surface.kernel_convolution` | Bounded square RGBA8 kernels, native flat-index row wrapping and arithmetic; original owner retained for unsupported kernels/alpha casts |
-| Vector wrappers, outlines, thick lines, fans/strips and vertex-colored triangles | `Surface.draw_*` families | Exact scoped pixel comparisons, including truncation, winding and quantized vertex weights |
-| `LoadImageColors` / `GetImageColor` | `Surface.colors` / `Surface.get` | Full export passing; direct reads/ownership/out-of-bounds behavior contract-checked |
-| `ImageCopy` | `Surface.copy` | Independent mutation and original-pixel preservation contract-checked |
-| `GetColor` / `ColorToInt` | `Color.rgba` / channel extractors | Channel/packing contracts checked, including unsigned-byte truncation |
-| `ColorAlphaBlend` | `Color.alpha_blend` | Exact reference vectors including transparent/opaque/tinted cases |
-| Color equality, alpha/Fade, tint, brightness, contrast and lerp | `Color` value operations | Exact packed bytes/Boolean values in the documented finite-factor profiles |
-| Normalized/HSV colors | `Color.normalize/from_normalized/to_hsv/from_hsv` | Exact float bits or packed bytes, including achromatic/sector boundaries; bounded HSV input profile |
-| Image color/alpha operations and checkerboards | `Surface.color_*`, `alpha_*`, `create_checked` | Exact reference arithmetic, preserved mask ownership and checked generator inputs |
-| Alpha bounds/cropping | `Surface.alpha_border/alpha_crop` | Exact rectangles, retained observation owner and unchanged images for empty selections |
-| Canvas resizing | `Surface.resize_canvas` | Raw RGBA copy/fill, clipping and same-size no-op; rejected requests preserve the original owner |
-| Square gradients | `Surface.create_gradient_square` | Exact odd/even and density-endpoint fixtures, including density one |
-| Radial/linear gradients | `Surface.create_gradient_radial/linear` | Balanced generation; radial density 0..1, integral linear directions -360..360; wider-angle rounding remains a gap |
-| Random streams / white noise | `Random.seed/value`, `Surface.create_white_noise` | Exact rprand sequences, full image pixels, fixed draw consumption and rejected-owner preservation |
-| Unique random sequences | `Random.load_sequence/unload_sequence` | Exact acceptance order/following state; explicit structural draw budget and owned incomplete/error results |
-| Cellular images | `Surface.create_cellular` | Exact seed order, full pixels and post-generation state; exhaustive native integer-distance reduction gate |
-| Perlin images | `Surface.create_perlin/create_perlin_for` | Six seeded octaves with explicit arithmetic profiles; exact tables, raw octave values and complete native pixels |
-| Text data / grayscale / palettes | `Surface.create_text_bytes/color_grayscale/load_palette`, `Image.Palette` | Opaque normalized data images; exhaustive native luminance gate; complete ordered/padded palette observations and source preservation |
-| Pixel sizes / raw dithering | `Pixel.data_size`, `Surface.dither`, `Image.Packed16` | Exact all-format size boundaries and raw packed words/metadata; native byte-allocation ABI remains a gap |
-| Byte/integer pixel access | `Pixel.get_color/set_color` | Exhaustive two-byte reads, exact full write buffers, strict alpha threshold and native RGB5A1 read quirk |
-| Byte/integer image-format conversion | `Image.Formatted` and Surface bridges | All 49 format pairs, no-ops and chains checked as complete native-order bytes; normalized channel rules retained |
-| Bounded R32 image format | `Image.Formatted` format 8 | Checked finite `[0,1]` words, exact signed-zero/subnormal storage, uncontracted luminance and red-only normalization; distinct raw-bit memory PNG and normalized file PNG, checked RAW loading, direct bounded RGB-float conversion, with wider-domain and unverified-target gaps in [R32.md](R32.md) |
-| Raw image files | `Image.Formatted.load_raw/write_raw` | Formats 1..7 and checked finite `[0,1]` R32; exact native payload/export bytes, header-offset/fallback rules and distinct closed-handle sample errors, with low-descriptor CPU/JS checks in [RAW-FILES.md](RAW-FILES.md) |
-| Image-file loading | `Surface.load_image/load_qoi` | Native supported suffix/content detection, complete reads, typed errors and low-descriptor closure checks on CPU/JS |
-| Image memory dispatch | `Surface.decode_image` | Native extension-token/content selection across implemented codecs; shared raster aliases, QOI separation and typed invalid controls on CPU/JS/Metal |
-| `ImageFlipHorizontal/Vertical` | `Surface.flip_horizontal/flip_vertical` | Exact explicit and seeded full-image comparisons |
-| `ImageRotateCW/CCW` | `Surface.rotate_cw/rotate_ccw` | Exact RGBA bytes, non-square dimensions and transform sequencing |
-| `ImageRotate` / `ImageToPOT` | `Surface.rotate_degrees_for/to_pot` | Checked general rotation with reference bilinear sampling; exhaustive supported POT-axis reference validation and exact fill/copy fixtures |
-| Format-preserving QOI memory loading | `Image.Formatted.decode_qoi` | Native format 4/7, dimensions/single-mip metadata and every raw byte observed before normalization; strict typed errors and affine owner checks on CPU-1/CPU-2/JavaScript. GPU qualification and generic formatted dispatch remain open; memory-only evidence does not establish file IO coverage. See [CODECS.md](CODECS.md#format-preserving-qoi-memory-loading). |
-| Format-preserving QOI file loading | `Image.Formatted.load_qoi` | Local Linux x86-64 CPU-1/CPU-2/JavaScript passes: 135 accepted files, native format 4/7 single-mip metadata and 126,883 raw bytes before normalization; 129 actual `LoadImage` and 6 explicit-selection references. Inclusive 83,886,102-byte cap, 69 typed controls, 100 fd64 cycles through eight acquired-handle paths and separate >1 MiB read stress. See the [file report](evidence/qoi-formatted-files.json), [verification entry](VERIFICATION.md#format-preserving-qoi-file-loading-2026-10-02) and [remaining scope](IMAGE-FILES.md#formatted-qoi-file-evidence). |
-| Checked formatted QOI export | `Image.Formatted.to_qoi/write_qoi` | Native original-format 4/7 routing, integer byte packing, channels 3/4 and colorspace 0; six unsupported checked formats retain exact owners before IO. Typed accepted file errors and closed handles. Local Linux x86-64 CPU-1/CPU-2/JavaScript pass: 273 accepted + 22 rejected sources, 1,415,214 encoded bytes, 801 accepted-source and 7,200 retained-source repeated IO calls per lane; see [FORMATTED-QOI-EXPORT.md](FORMATTED-QOI-EXPORT.md). |
-| QOI loading/export | `Surface.decode_qoi/to_qoi/load_qoi/write_qoi` | Valid-stream RGBA8 profile, all opcodes, exact export bytes, typed malformed-input errors and real CPU/JS file round trips |
-| BMP decoding/export | `Surface.decode_bmp/to_bmp/write_bmp` | CORE indexed/RGB24 and 40/56/108/124-byte profiles; native palette-count, mask, alpha and offset rules, plus exact exports |
-| Format-preserving BMP memory loading | `Image.Formatted.decode_bmp` | Partial `LoadImageFromMemory`: native RGB888 (4)/RGBA8888 (7), implicit single mip and exact raw bytes across the unchanged checked BMP domain; effective alpha-mask layout determines channels before alpha repair. Fresh local CPU-1/CPU-2/JavaScript runs pass 224 images, 597 controls and 873,268 bytes per lane with independent complete replay. See [BMP.md](BMP.md#format-preserving-bmp-memory-loading) and [evidence](evidence/bmp-formatted-memory.json). The historical [82-gate hosted checkpoint](https://github.com/jonathanperis/jonlib/actions/runs/37152040429) passes at `82a81b12`; the later [83-gate BMP-file checkpoint](https://github.com/jonathanperis/jonlib/actions/runs/37161146356) also passes at `1312479c`. |
-| Format-preserving BMP file loading | `Image.Formatted.load_bmp` | Partial `LoadImage`: explicit suffix-independent BMP, native format 4/7 and unchanged checked 1..4096 memory semantics; inclusive 1 MiB cap, pre-read size rejection, Base U32-size overflow, one exact-length read and close-before-decode calls with ignored close failures. Fresh local Linux CPU-1/CPU-2/JavaScript qualification passes 294 accepted files, 608 candidate-only controls and 2,184 observations / 602,588 bytes per lane, with independent complete-byte replay. The historical [83-gate hosted checkpoint](https://github.com/jonathanperis/jonlib/actions/runs/37161146356) passes at `1312479c`, with all six workers, both aggregates and six nonempty artifacts; it does not qualify the later PNG increment. See [file contract](IMAGE-FILES.md#format-preserving-bmp-file-loading) and [file evidence](evidence/bmp-formatted-files.json). |
-| Checked formatted BMP export | `Image.Formatted.to_bmp/write_bmp` | Exact native 24-bit/V4 bytes for checked formats 1..8, packed native expansion, R32 truncation, consuming typed IO and closed handles; see [FORMATTED-BMP-EXPORT.md](FORMATTED-BMP-EXPORT.md) |
-| Checked formatted TGA export | `Image.Formatted.to_tga/write_tga` | Native channel/header/RLE bytes for checked formats 1..8, packed expansion and R32 run collapse, consuming typed IO; see [FORMATTED-TGA-EXPORT.md](FORMATTED-TGA-EXPORT.md) |
-| Format-preserving TGA memory loading | `Image.Formatted.decode_tga` | Partial `LoadImageFromMemory`: native grayscale (1), gray-alpha (2), expanded RGB888 (4), RGBA8888 (7), implicit single mip and exact raw bytes; palette depth is independent of index width. See [TGA.md](TGA.md#format-preserving-tga-memory-loading) and [fresh integrated evidence](evidence/tga-integrated-validation.json). |
-| Format-preserving TGA file loading | `Image.Formatted.load_tga` | Partial `LoadImage`: explicit suffix-independent TGA, native formats 1/2/4/7 and the unchanged checked memory domain; inclusive 1 MiB cap, pre-read size rejection, one exact-length read and close-before-decode calls. Local Linux CPU-1/CPU-2/JavaScript file qualification passes independently of prior memory evidence. The historical TGA-file checkpoint and subsequent 82-gate BMP-memory checkpoint pass hosted qualification; later increments require their own exact-tip result. See [file contract](IMAGE-FILES.md#format-preserving-tga-file-loading). |
-| TGA decoding/export | `Surface.decode_tga/to_tga/write_tga` | Native raw/RLE type/depth selection and indexed profiles; RGB555/alpha, palette skips/index recovery, exact exports and bounded errors |
-| Binary PGM/PPM decoding | `Surface.decode_pnm` | P5/P6 8/16-bit input samples, native little-endian reduction to opaque RGBA8 and maxval/separator/comment rules; historical full dimension-boundary pixels |
-| Format-preserving PGM/PPM memory loading | `Image.Formatted.decode_pnm` | Partial `LoadImageFromMemory`: native grayscale (1)/RGB888 (4), implicit one mip and exact reduced 8-bit output in the checked little-endian 1..4096 profile. Local Linux x86-64 CPU-1/CPU-2/JavaScript pass: 96 native images, 73 typed controls and 885,750 compared bytes per lane. No file/generic formatted or source-depth expansion is claimed. See [PNM.md](PNM.md#format-preserving-pnm-memory-loading). |
-| Format-preserving PGM/PPM file loading | `Image.Formatted.load_pnm` | Partial `LoadImage`: explicit suffix-independent P5/P6, native format 1/4 and inclusive 1 MiB cap. Fresh reconstructed Linux CPU-1/CPU-2/JavaScript gate passes 156 accepted files, 74 checked-only controls and 626 observations / 129,072 bytes per lane, with exact-cap acceptance and separately measured fd64/sparse controls. See [file evidence](evidence/pnm-formatted-files.json) and [reconstruction obligations](PNM-FILE-RECONSTRUCTION.md). |
-| PSD decoding | `Surface.decode_psd_for` and shared `_for` dispatch | Version-1 RGB mode, 0..16 channels, raw/PackBits and explicit matte profiles; native alpha/defaults/depth rules and bounded packets/metadata |
-| Softimage PIC decoding | `Surface.decode_pic` | Raw/pure-RLE/mixed-RLE channel packets, native clipping/zero-count/default/overwrite behavior and bounded malformed-input errors |
-| Format-preserving PIC memory loading | `Image.Formatted.decode_pic` | Partial `LoadImageFromMemory`: native RGB888 (4)/RGBA8888 (7), implicit one mip and exact integer-packed bytes across the unchanged checked PIC domain. Any alpha bit in the union of validated packet masks selects RGBA independently of opacity and later packets. No file/generic dispatch or input-cap change. Fresh local Linux CPU-1/CPU-2/JavaScript qualification passes 101 streams, 343 checked-only controls and 1,536 complete observations / 836,048 bytes per lane, with independent raw-byte replay. The exact [86-gate e481d3c memory checkpoint](https://github.com/jonathanperis/jonlib/actions/runs/37202964890) passes its twelve workers, both aggregates and twelve distinct nonempty artifacts; later PIC-file qualification is separate. See [evidence](evidence/pic-formatted-memory.json) and [PIC.md](PIC.md#format-preserving-pic-memory-loading). |
-| First-frame GIF decoding | `Surface.decode_gif` | GIF87a/89a in-canvas/interlaced rectangles, native background fills, global/local palettes, transparency and bounded LZW |
-| Animation memory loading | `Image.Animation.decode_gif/decode_image_for/entries/unload` | Owned budgeted GIF sequences or one-frame static fallback; native disposal/palette/control behavior and explicit PSD arithmetic |
-| Animation file loading | `Image.Animation.load_image/load_image_for` | Case-insensitive GIF suffix selection, native static fallback, caller budgets and complete closed-handle reads on CPU/JS |
-| HDR float decoding | `Image.FloatRGB.decode_hdr/entries/unload` | Raw/RLE RGB F32, native later-row origin reset, bounded packets and exhaustive exact sample bits including subnormals |
-| HDR float file loading | `Image.FloatRGB.load_hdr` | Explicit Radiance selection, exact native file samples and shared bounded/complete/closed-handle IO on CPU/JS |
-| RGB float/Surface conversion | `Surface.to_float_rgb` / `Image.FloatRGB.to_surface` | Native byte normalization and finite `[0,1]` truncation, opaque alpha, bit-checked domains and rejected-owner preservation |
-| RGB float raw-byte interface | `Image.FloatRGB.from_bytes/to_bytes` | Exact non-NaN little-endian format-9 samples, strict size/byte checks and returned owners on export rejection |
-| RGB float copying/orientation | `Image.FloatRGB.copy/flip_horizontal/flip_vertical/rotate_cw/rotate_ccw` | Independent owners and exact native sample movement/dimensions on CPU/JS/Metal |
-| RGB float rectangles | `Image.FloatRGB.extract/crop` | Native integral region/crop words and clipping, retained rejected owners and independent extracted storage |
-| RGB float nearest resize | `Image.FloatRGB.resize_nn` | Native RGBA8 quantization and fixed-point mapping followed by float normalization; original owners retained on rejection |
-| RGB float filtered resize | `Image.FloatRGB.resize` | Native format-9 RGBA8 fallback, default four-channel filtering and float normalization with retained rejected owners |
-| RGB float canvas/POT | `Image.FloatRGB.resize_canvas/to_pot` | Native sample movement, ignored fill/zero background, same-size no-ops and bounded owner-preserving geometry |
-| RGB float color transforms | `Image.FloatRGB.color_tint/color_invert/color_contrast/color_brightness/color_replace` | Native byte-quantized format-9 paths, clamping/alpha behavior and retained rejected owners |
-| Direct RGB float formats | `Image.FloatRGB.to_formatted/color_grayscale` | Native direct finite `[0,1]` F32 channels to formats 1..8, exact packed rounding, grayscale storage, uncontracted R32 luminance and retained rejected owners |
-| Byte/integer to RGB float | `Image.Formatted.to_float_rgb` | Native normalized F32 words from all seven layouts, packed precision and alpha discard verified through return chains |
-| Native grayscale channels | `Image.Formatted.from_channel` / `Image.FloatRGB.from_channel` | Format-specific selection, normalized sample truncation and independent grayscale storage with retained source words |
-| Native formatted/float color observations | `Image.Formatted.colors/get` / `Image.FloatRGB.colors/get` | Exact packed integer expansion/float truncation, bounded point reads and retained rejected owners |
-| RGB float PNG export | `Image.FloatRGB.to_png/write_png` | Exact native raw-storage memory prefix versus normalized file colors, retained rejected owners and closed handles |
-| RGB float BMP/TGA file export | `Image.FloatRGB.to_bmp/to_tga/write_bmp/write_tga` | Exact native normalized file bytes/pixels, explicit codec selection and retained rejected owners |
-| Image-as-code export | `Image.Formatted.to_code/write_code`, `Image.FloatRGB.to_code/write_code` | Exact native banner/name/metadata/hex text from formats 1..7 and non-NaN format-9 words, bounded payloads and retained rejected owners with closed handles |
-| RGB float RAW file IO | `Image.FloatRGB.load_raw/write_raw` | Native fitting-header/fallback selection, exact format-9 words and typed domain/file failures with closed handles on CPU/JS |
-| Raw DEFLATE | `Compression.decompress` | Stored/fixed/dynamic blocks and bounded copies; native empty-stored-block completion differs explicitly from the internal PNG-oriented path |
-| Native raw compression | `Compression.compress` | Exact quality-8 sdefl bytes, empty zero-byte output, bounded native sequence budget and full CPU/JS/Metal byte comparisons; public decoder input cap remains separate |
-| Base64 utilities | `Base64.encode/decode` | Native alphabet/padding, NUL-inclusive encoded size and bounded logical decoded bytes, with explicit malformed-input rejection |
-| CRC32 and MD5 | `Checksum.crc32/md5` | Native CRC value and four MD5 words with bounded byte validation, little-endian MD5 input profile and immutable results |
-| SHA-1 and SHA-256 | `Checksum.sha1/sha256` | Exact native five/eight-word values, retaining the reference's SHA-256 padding quirk at lengths 56..59 modulo 64 |
-| PNG decoding | `Surface.decode_png` | Non-interlaced/Adam7 1/2/4/8/16-bit and native-default CgBI profiles; filtering/scattering, palette/tRNS, framing and bounded errors |
-| Format-preserving PNG memory loading | `Image.Formatted.decode_png` | Partial `LoadImageFromMemory` contract: native format 1/2/4/7, implicit single mip and exact reduced 8-bit bytes across the unchanged checked PNG domain. Structural tRNS promotion is independent of opacity and sticky through later PLTE; full 16-bit keys precede narrowing. Inclusive 1 MiB encoded/64 MiB filtered caps and error precedence are unchanged. Fresh local Linux CPU-1/CPU-2/JavaScript passes: 230 images, 208 controls and 1,896 complete observations / 1,532,452 bytes per lane, with independent raw-byte replay. New hosted/other-platform qualification remains pending. See [evidence](evidence/png-formatted-memory.json) and [PNG.md](PNG.md#format-preserving-png-memory-loading). |
-| Format-preserving PIC file loading | `Image.Formatted.load_pic` | Partial `LoadImage`: explicit suffix-independent PIC, native format 4/7, implicit one mip and unchanged checked memory semantics. Inclusive 1 MiB pre-read cap, Base U32-size overflow, one exact-length read and close-before-decode calls with ignored close failures. PIC memory retains no encoded cap. Fresh local three-lane file qualification and complete retained-byte replay pass; exact-tip hosted qualification remains pending. Memory/Surface evidence stays separately scoped. See [file contract](IMAGE-FILES.md#format-preserving-pic-file-loading) and [file evidence](evidence/pic-formatted-files.json). |
-| Format-preserving PNG file loading | `Image.Formatted.load_png` | Partial `LoadImage`: explicit suffix-independent PNG, native format 1/2/4/7, implicit one mip and unchanged checked memory semantics. Inclusive 1 MiB pre-read cap, Base U32-size overflow, one exact-length read and close-before-decode calls with ignored close failures; the existing PNG encoded/filtered limits remain unchanged. Fresh local Linux CPU-1/CPU-2/JavaScript passes 370 accepted files, 143 file plus 76 continuation controls and 2,846 primary observations / 1,531,636 bytes per lane, with independent complete primary/resource replay. The 28-stage frozen matrix passes 966 Python tests without skips and 177 scoped laws. Final metadata/CI-tree checks are separate; the historical [85-gate hosted checkpoint](https://github.com/jonathanperis/jonlib/actions/runs/37187107908) at `e6ac05e6` passes with twelve workers, both aggregates and twelve unique nonempty artifacts. Later increments need separate hosted qualification. See [file contract](IMAGE-FILES.md#format-preserving-png-file-loading) and [file evidence](evidence/png-formatted-files.json). |
-| PNG export | `Surface.to_png/write_png`, `Image.Formatted.to_png/write_png` | Exact default byte-format memory and format-1..7 file output; native packed expansion, channel/header preservation, rejection and normalized round trips |
-| Suffix-selected RGBA8 export | `Surface.write_image` | Native ASCII-insensitive PNG/BMP/TGA/QOI/RAW suffix selection, exact file bytes, retained unsupported owners and typed Base IO adaptation; see [IMAGE-EXPORT.md](IMAGE-EXPORT.md) |
-| Scalar/Vector2/Vector3/Vector4 raymath | Jonmath `Math` and vector functions | Exact results for the explicit uncontracted-F32 profile; exceptional/contracted variants remain open |
-| Vector angle queries | `Vector2.angle/line_angle`, `Vector3.angle` and `_for` variants | Explicit Apple/GNU numerical profiles with exact native/control probes and signed quadrant behavior |
-| Quaternion arithmetic/metrics/interpolation | `Quaternion` functions | Shared Vector4 representation; exact Hamilton products, zero normalization/inversion, NLERP and sign-equivalent equality |
-| Quaternion/matrix conversion and composition | `Quaternion.from_matrix/to_matrix/transform`, `Vector3.rotate_by_quaternion`, `Matrix.compose` | Exact branch/tie order, full matrix/four-dimensional results and non-unit/zero quaternion behavior |
-| Decomposition, 3D constructors and unprojection | `Matrix.decompose`, quaternion constructors/spline, `Vector3.rotate_by_axis_angle/unproject` | Ten-field decomposition, bounded half-angle profiles, exact inverse ordering and native invalid-domain controls |
-| Binary64-input projection matrices | `Float64`, `Matrix.frustum/ortho` | Full input bits retained before reference F32 casts; exact fine-interval fields and normal/zero domain controls |
-| Float-list exports | `Vector3.to_float_v`, `Matrix.to_float_v` | Exact values/order and proven 3/16-element lengths; native array ABI/mutability remain gaps |
-| Matrix arithmetic/inversion, affine constructors and vector transforms | `Matrix`, `Vector2.transform`, `Vector3.transform` | All 16 fields and transformed components compared exactly, including noncommuting products and near-singular inversion; double-transpose law checked |
-| View and rotation matrices | `Matrix.look_at`, `rotate_*_for`, `rotate_for` | Reference degenerate bases, explicit bounded trigonometric profiles, raw trig bits and distinct Euler orders |
-| Eleven 2D collision queries | `Collision` functions | Exact Boolean/rectangle/hit-coordinate fixtures; explicit segment contraction profiles and native-fmaf verification |
-| Linear/B-spline/Catmull-Rom/quadratic Bezier points | `Spline` functions | Exact XY and coefficient order with explicit arithmetic profiles; cubic Bezier remains blocked by native powf rounding |
-| Sphere/box queries | `Collision.spheres/boxes/box_sphere` | Exact bounded Boolean fixtures, inclusive contacts, signed radii and supplied-bound ordering |
-| `ImageFromChannel` | `Surface.from_channel` | Preserved RGBA8 source and independent normalized output; all reference byte/channel combinations checked |
-| Base.Image conversion / PPM export | `Surface.to_image/to_ppm/write_ppm` | Adapter pixels/padding and actual file RGB output checked |
-| GPU execution of image operations | Same Bend API | All fixture pixels pass on M1 Metal with the declared compiler overlay |
-| GPU graphics-pipeline `Draw*` APIs | Future rasterizer | Not implemented; CPU `ImageDraw*` matches do not cover these |
-| Textures, text/fonts, additional image codecs, meshes, models, animation | Future library modules | Not implemented |
-| Input, window controls, audio, native Windows/browser/Android | Future library and runtime work | Not implemented in Jonlib |
+## Lanes and host profiles
 
-No performance parity is claimed. The array-based image algorithms are an
-initial correctness foundation, not the production tiled rendering pipeline.
-CUDA, Windows, browser graphics, live windows and live audio were not verified
-in this milestone. Source and fixture domains are finite and explicitly
-bounded; passing fixtures is not exhaustive proof of every supported input.
-Filled-triangle fractional vertices, other pixel formats, broader mipmap integration, additional
-codecs and the complete numerical/platform matrix remain open requirements.
-The mapped APIs must not be reported as fully completed
-raylib APIs. See [RESAMPLING.md](RESAMPLING.md) for the distinction between
-nearest-neighbor and default-filter coverage.
+- Every gate compares Jonlib on CPU one-thread, CPU two-thread and JavaScript
+  exactly against native raylib built from the pinned source. CI runs all gates
+  in [`tools/gates.json`](../tools/gates.json) on Ubuntu 24.04 (x86-64) and
+  macOS 15 (arm64); see [CI.md](CI.md) and [VERIFICATION.md](VERIFICATION.md).
+- Forced-GPU (Metal) execution is a separate local lane (`--gpu`) on Apple
+  hardware, valid only with the declared compiler overlay; stock Bend fails the
+  full corpus on Metal ([METAL-INVESTIGATION.md](METAL-INVESTIGATION.md)). A CPU
+  fallback is not GPU evidence. CUDA was not verified.
+- Host-dependent numerical behavior is an explicit, named profile, never an
+  implicit host guess:
+  - checked vector angles: the `M.Angle.Reference` profile whose frozen native
+    `atan2f` controls match the host ([ANGLES.md](ANGLES.md));
+  - literal extrema and Vector min/max/clamp signed zeros: native qualification
+    in `tools/native_profiles.py`;
+  - gradient, image-rotation and profiled math trigonometry (`*_for` with
+    `M.Gradient.Reference`): `AccurateGradient` on Darwin, `GnuGradient` on
+    glibc Linux;
+  - linked collision/noise/spline/decode multiply-add contraction: fused on
+    Darwin arm64, uncontracted on Linux x86-64.
 
-The dedicated resize gate covers 529 images / 46,474 output pixels per lane,
-1,059 normalization vectors and 2,601 complete kernels. Its scope includes
-identity, hidden RGB/alpha, anisotropic and extreme reductions/enlargements.
-See [RESAMPLING.md](RESAMPLING.md); full format/platform/performance parity remains open.
+  Other hosts must declare a verified profile before conformance runs. Libm
+  records for open gaps are diagnostic gates (`native-math-profiles`,
+  `inverse-trig`, `perspective`, `filter-precision`); see
+  [NATIVE-MATH-PROFILES.md](NATIVE-MATH-PROFILES.md).
+- The main corpus (gate `conformance`, `tools/conformance.py` with
+  `tests/fixtures/images.json`) compares complete RGBA pixel arrays and
+  dimensions, numeric/collision result bits, QOI export bytes and palette
+  observations; it also runs the ownership, bounds, color and Base.Image adapter
+  contracts, the PPM examples (every RGB pixel against the raylib scene) and
+  `PROOF.bend` (dimension preservation, transpose involution, float-export lengths).
+
+## Capability profiles
+
+Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
+
+| Reference capability | Jonlib operation | Verified profile | Gates |
+|---|---|---|---|
+| `GenImageColor` | `Surface.create` | Valid RGBA8 dimensions 1..4096 | `conformance` |
+| `ImageClearBackground` | `Surface.clear` | Full pixels; dimension preservation is a checked law | `conformance` |
+| `ImageDrawPixel` | `Surface.draw_pixel` | Byte replacement and clipping | `conformance` |
+| `ImageDrawRectangle` | `Surface.draw_rectangle` | Clipping and degenerate rectangles | `conformance` |
+| `ImageDrawCircle` | `Surface.draw_circle` | Midpoint coverage, large and small radii | `conformance` |
+| `ImageDrawLine` | `Surface.draw_line` | Exact fixed-point octants, reversal, clipping and endpoint exclusion | `conformance` |
+| `ImageDrawLineV` | `Surface.draw_line_v` | Reference add-half/truncate conversion, including negative/fractional inputs | `conformance` |
+| `ImageDrawTriangle` | `Surface.draw_triangle` | Integral-vertex winding, clipping, degeneracy and signed edge stepping | `conformance` |
+| `ImageDrawTriangleLines` | `Surface.draw_triangle_lines` | Truncated vertices and three reference-compatible segments | `conformance` |
+| Vector wrappers, outlines, thick lines, fans/strips, vertex-colored triangles | `Surface.draw_*` families | Truncation, winding and byte-quantized vertex weights | `conformance` |
+| `ImageDraw` | `Surface.draw_image / draw_image_region / draw_image_rect` | RGBA8, one mip: source clipping, default scaling, destination clipping, bounded fractional rectangles; both owners retained | `conformance` |
+| `ImageFromImage` | `Surface.extract` | Positive integral in-bounds region; independent output; original retained | `conformance` |
+| `ImageCrop` | `Surface.crop` | Integral clipping, outside-origin no-op; typed failure returns the original | `conformance` |
+| `ImageResizeNN` | `Surface.resize_nn` | Exact fixed-point ratios; invalid/unsafe mappings return the original | `conformance` |
+| `ImageResize` | `Surface.resize` | RGBA8 default filters, exact normalization, alpha-aware output, owner-preserving size errors ([RESAMPLING.md](RESAMPLING.md)) | `resize`, `conformance` |
+| `ImageMipmaps` | `Surface.mipmaps`, `Image.Mipmaps.entries/unload` | Owned RGBA8 base-to-1x1 levels, sequential default filtering, complete-level comparison | `mipmap` |
+| `ImageBlurGaussian` | `Surface.blur_gaussian` | Four-iteration RGBA8 box approximation, premultiply/unpremultiply quantization, bounded sizes, retained rejected owners | `blur` |
+| `ImageKernelConvolution` | `Surface.kernel_convolution` | Bounded square RGBA8 kernels, native flat-index row wrapping; original retained for unsupported kernels/alpha casts | `convolution` |
+| `LoadImageColors` / `GetImageColor` | `Surface.colors` / `Surface.get` | Full export; direct reads, ownership and out-of-bounds `None` | `conformance` |
+| `ImageCopy` | `Surface.copy` | Independent mutation; original pixels preserved | `conformance` |
+| `GetColor` / `ColorToInt` | `Color.rgba` / channel extractors | Packing with unsigned-byte truncation | `conformance` |
+| `ColorAlphaBlend` | `Color.alpha_blend` | Transparent/opaque/tinted reference vectors | `conformance` |
+| Color equality, alpha/Fade, tint, brightness, contrast, lerp | `Color` value operations | Exact packed bytes/Booleans in the finite-factor profiles | `conformance` |
+| Normalized/HSV colors | `Color.normalize/from_normalized/to_hsv/from_hsv` | Exact float bits or bytes, achromatic/sector boundaries; bounded HSV input | `conformance` |
+| Image color/alpha operations, checkerboards | `Surface.color_*`, `alpha_*`, `create_checked` | Reference arithmetic, preserved mask ownership, checked generator inputs | `conformance` |
+| Alpha bounds/cropping | `Surface.alpha_border/alpha_crop` | Exact rectangles; empty selections leave the image unchanged | `conformance` |
+| Canvas resizing | `Surface.resize_canvas` | Raw RGBA copy/fill, clipping, same-size no-op; rejected requests return the original | `conformance` |
+| Square gradients | `Surface.create_gradient_square` | Odd/even sizes and density endpoints, including density one | `conformance` |
+| Radial/linear gradients | `Surface.create_gradient_radial/linear` | Radial density 0..1; integral linear directions -360..360 | `conformance`, `trig` |
+| Random streams / white noise | `Random.seed/value`, `Surface.create_white_noise` | Exact rprand sequences, full pixels, fixed draw consumption, rejected-owner preservation | `random`, `conformance` |
+| Unique random sequences | `Random.load_sequence/unload_sequence` | Exact acceptance order and following state; explicit draw budget; owned incomplete/error results | `random` |
+| Cellular images | `Surface.create_cellular` | Seed order, full pixels, post-generation state; exhaustive integer-distance reduction | `random`, `conformance` |
+| Perlin images | `Surface.create_perlin/create_perlin_for` | Six seeded octaves with explicit arithmetic profiles; tables, raw octave values and pixels | `perlin` |
+| Text data / grayscale / palettes | `Surface.create_text_bytes/color_grayscale/load_palette`, `Image.Palette` | Opaque data images; exhaustive luminance; ordered/padded palettes with source preservation | `conformance` |
+| Pixel sizes / raw dithering | `Pixel.data_size`, `Surface.dither`, `Image.Packed16` | All-format size boundaries; raw packed words and metadata | `pixel` |
+| Byte/integer pixel access | `Pixel.get_color/set_color` | Exhaustive two-byte reads, full write buffers, strict alpha threshold, native RGB5A1 read quirk | `raw-pixel` |
+| Byte/integer image-format conversion | `Image.Formatted` and Surface bridges | All 49 format pairs, no-ops and chains as native-order bytes | `image-format` |
+| Bounded R32 image format | `Image.Formatted` format 8 | Finite `[0,1]` words, signed-zero/subnormal storage, uncontracted luminance, red-only normalization; raw-bit memory PNG vs normalized file PNG ([R32.md](R32.md)) | `r32-image`, `r32-raw-file`, `float-rgb-r32` |
+| Raw image files | `Image.Formatted.load_raw/write_raw` | Formats 1..7 and finite `[0,1]` R32; header-offset/fallback rules, distinct sample errors, closed handles ([RAW-FILES.md](RAW-FILES.md)) | `raw-file` |
+| `ImageFlipHorizontal/Vertical` | `Surface.flip_horizontal/flip_vertical` | Explicit and seeded full images | `conformance` |
+| `ImageRotateCW/CCW` | `Surface.rotate_cw/rotate_ccw` | Exact bytes, non-square dimensions, sequencing | `conformance` |
+| `ImageRotate` / `ImageToPOT` | `Surface.rotate_degrees_for/to_pot` | Reference bilinear sampling; POT fill/copy | `conformance`, `trig-rotation` |
+| `ImageFromChannel` | `Surface.from_channel` | All byte/channel combinations; independent normalized output | `conformance`, `image-channel` |
+| Base.Image conversion / PPM export | `Surface.to_image/to_ppm/write_ppm` | Adapter pixels/padding and actual file RGB | `conformance` |
+| Image-file loading | `Surface.load_image/load_qoi` | Native suffix/content detection, complete reads, typed errors, closed handles ([IMAGE-FILES.md](IMAGE-FILES.md)) | `image-file` |
+| Image memory dispatch | `Surface.decode_image` | Extension-token/content selection across implemented codecs, shared raster aliases, QOI separation, typed invalid controls (also forced Metal) | `image-memory` |
+| QOI loading/export | `Surface.decode_qoi/to_qoi/load_qoi/write_qoi` | Valid-stream RGBA8, all opcodes, exact export bytes, typed malformed-input errors, file round trips ([CODECS.md](CODECS.md)) | `conformance`, `image-file` |
+| BMP decoding/export | `Surface.decode_bmp/to_bmp/write_bmp` | CORE indexed/RGB24 and 40/56/108/124-byte headers; palette-count, mask, alpha and offset rules; exact exports ([BMP.md](BMP.md)) | `bmp` |
+| TGA decoding/export | `Surface.decode_tga/to_tga/write_tga` | Raw/RLE type/depth selection, indexed, RGB555/alpha, palette skips/index recovery, exact exports ([TGA.md](TGA.md)) | `tga` |
+| Binary PGM/PPM decoding | `Surface.decode_pnm` | P5/P6 8/16-bit, little-endian reduction to opaque RGBA8, maxval/separator/comment rules ([PNM.md](PNM.md)) | `pnm` |
+| PNG decoding | `Surface.decode_png` | Non-interlaced/Adam7 1/2/4/8/16-bit and native-default CgBI; filtering, palette/tRNS, framing, bounded errors ([PNG.md](PNG.md)) | `png` |
+| PSD decoding | `Surface.decode_psd_for` and `_for` dispatch | Version-1 RGB, 0..16 channels, raw/PackBits, explicit matte profiles ([PSD.md](PSD.md)) | `psd`, `psd-matte` |
+| Softimage PIC decoding | `Surface.decode_pic` | Raw/pure-RLE/mixed-RLE packets, clipping/zero-count/default/overwrite behavior, bounded errors ([PIC.md](PIC.md)) | `pic` |
+| First-frame GIF decoding | `Surface.decode_gif` | GIF87a/89a in-canvas/interlaced rectangles, background fills, palettes, transparency, bounded LZW ([GIF.md](GIF.md)) | `gif` |
+| Animation memory loading | `Image.Animation.decode_gif/decode_image_for/entries/unload` | Budgeted GIF sequences or one-frame static fallback; disposal/palette/control behavior ([GIF-ANIMATION.md](GIF-ANIMATION.md)) | `gif-animation` |
+| Animation file loading | `Image.Animation.load_image/load_image_for` | Case-insensitive GIF suffix, static fallback, caller budgets, closed handles | `animation-file` |
+| Format-preserving memory loading (`LoadImageFromMemory`) | `Image.Formatted.decode_bmp/decode_tga/decode_png/decode_pic/decode_pnm/decode_qoi` | Native output format, implicit single mip and exact raw bytes before normalization across each codec's unchanged checked domain; see the codec pages | `bmp-format`, `tga-format`, `png-format`, `pic-format`, `pnm-format`, `qoi-format` |
+| Format-preserving file loading (`LoadImage`) | `Image.Formatted.load_bmp/load_tga/load_png/load_pic/load_pnm/load_qoi` | Explicit suffix-independent codec; inclusive 1 MiB pre-read cap (QOI: 83,886,102 bytes), complete reads, close-before-decode, typed errors; see [IMAGE-FILES.md](IMAGE-FILES.md) | `bmp-file`, `tga-file`, `png-file`, `pic-file`, `pnm-file`, `qoi-file` |
+| PNG export | `Surface.to_png/write_png`, `Image.Formatted.to_png/write_png` | Default byte-format memory and format-1..7 file output; packed expansion, channel/header preservation, rejection, normalized round trips ([IMAGE-EXPORT.md](IMAGE-EXPORT.md)) | `png-export`, `deflate` |
+| Suffix-selected RGBA8 export | `Surface.write_image` | ASCII-insensitive PNG/BMP/TGA/QOI/RAW suffix selection, exact file bytes, retained unsupported owners, typed IO | `image-export` |
+| Checked formatted BMP/TGA/QOI export | `Image.Formatted.to_bmp/write_bmp`, `to_tga/write_tga`, `to_qoi/write_qoi` | Native bytes for checked formats 1..8 (QOI: original formats 4/7 only, other formats retain their owner before IO); consuming typed IO, closed handles | `formatted-bmp-export`, `formatted-tga-export`, `formatted-qoi-export` |
+| Image-as-code export | `Image.Formatted.to_code/write_code`, `Image.FloatRGB.to_code/write_code` | Banner/name/metadata/hex text from formats 1..7 and non-NaN format-9 words; bounded payloads ([IMAGE-CODE.md](IMAGE-CODE.md)) | `image-code` |
+| HDR float decoding | `Image.FloatRGB.decode_hdr/entries/unload` | Raw/RLE RGB F32, later-row origin reset, bounded packets, exhaustive sample bits including subnormals ([HDR.md](HDR.md)) | `hdr` |
+| HDR float file loading | `Image.FloatRGB.load_hdr` | Explicit Radiance selection, shared bounded/complete/closed-handle IO | `hdr-file` |
+| RGB float/Surface conversion | `Surface.to_float_rgb` / `Image.FloatRGB.to_surface` | Byte normalization, finite `[0,1]` truncation, opaque alpha, rejected-owner preservation ([FLOAT-RGB.md](FLOAT-RGB.md)) | `float-rgb` |
+| RGB float raw bytes | `Image.FloatRGB.from_bytes/to_bytes` | Non-NaN little-endian format-9 samples, strict size/byte checks | `float-rgb-bytes` |
+| RGB float copy/orientation | `Image.FloatRGB.copy/flip_*/rotate_*` | Independent owners, exact sample movement (also forced Metal) | `float-rgb-transform` |
+| RGB float rectangles | `Image.FloatRGB.extract/crop` | Integral region/crop words and clipping | `float-rgb-crop` |
+| RGB float resize | `Image.FloatRGB.resize_nn/resize` | Native RGBA8 quantization (nearest or default filter) then float normalization | `float-rgb-resize`, `float-rgb-resize-filtered` |
+| RGB float canvas/POT | `Image.FloatRGB.resize_canvas/to_pot` | Sample movement, ignored fill/zero background, same-size no-ops | `float-rgb-canvas` |
+| RGB float color transforms | `Image.FloatRGB.color_*` | Native byte-quantized format-9 paths | `float-rgb-color` |
+| Direct RGB float formats | `Image.FloatRGB.to_formatted/color_grayscale` | Finite `[0,1]` channels to formats 1..8, packed rounding, uncontracted R32 luminance | `float-rgb-formats` |
+| Byte/integer to RGB float | `Image.Formatted.to_float_rgb` | Normalized F32 words from all seven layouts; packed precision; alpha discarded | `formatted-float` |
+| Native grayscale channels | `Image.Formatted.from_channel` / `Image.FloatRGB.from_channel` | Format-specific selection, normalized truncation ([IMAGE-CHANNELS.md](IMAGE-CHANNELS.md)) | `image-channel` |
+| Formatted/float color observations | `Image.Formatted.colors/get` / `Image.FloatRGB.colors/get` | Packed expansion/float truncation, bounded point reads ([IMAGE-COLORS.md](IMAGE-COLORS.md)) | `image-colors` |
+| RGB float PNG export | `Image.FloatRGB.to_png/write_png` | Raw-storage memory prefix versus normalized file colors | `float-rgb-png` |
+| RGB float BMP/TGA export | `Image.FloatRGB.to_bmp/to_tga/write_bmp/write_tga` | Normalized file bytes, explicit codec selection | `float-rgb-raster-export` |
+| RGB float RAW file IO | `Image.FloatRGB.load_raw/write_raw` | Fitting-header/fallback selection, exact format-9 words, typed failures | `float-rgb-raw-file` |
+| Raw DEFLATE | `Compression.decompress` | Stored/fixed/dynamic blocks, bounded copies; native empty-stored-block completion differs explicitly from the internal PNG-oriented path ([DEFLATE.md](DEFLATE.md)) | `inflate` |
+| Raw compression | `Compression.compress` | Quality-8 sdefl bytes, empty zero-byte output, bounded native sequence budget, also forced Metal ([COMPRESSION.md](COMPRESSION.md)) | `sdeflate`, `sdeflate-lz`, `sdeflate-huffman` |
+| Base64 | `Base64.encode/decode` | Alphabet/padding, NUL-inclusive encoded size, bounded decoded bytes ([BASE64.md](BASE64.md)) | `base64` |
+| CRC32 and MD5 | `Checksum.crc32/md5` | CRC value and four MD5 words, little-endian MD5 profile ([CHECKSUMS.md](CHECKSUMS.md)) | `checksum` |
+| SHA-1 and SHA-256 | `Checksum.sha1/sha256` | Five/eight native words, including the SHA-256 padding quirk ([SHA.md](SHA.md)) | `sha` |
+| Scalar/Vector2/Vector3/Vector4 raymath | Jonmath `Math` and vector functions | Explicit uncontracted-F32 profile ([MATH.md](MATH.md)) | `conformance`, `jonmath-example` |
+| Vector angle queries | `Vector2.angle/line_angle`, `Vector3.angle`, `_for` and `*_with_reference` | Legacy Apple/GNU profiles; checked angles per selected `M.Angle.Reference` ([ANGLES.md](ANGLES.md)) | `conformance`, `angle-kernels`, `angle-legacy`, `modern-angle-bounds` |
+| Quaternion arithmetic/metrics/interpolation | `Quaternion` functions | Shared Vector4 representation; Hamilton products, zero normalization/inversion, NLERP, sign-equivalent equality | `conformance` |
+| Quaternion/matrix conversion and composition | `Quaternion.from_matrix/to_matrix/transform`, `Vector3.rotate_by_quaternion`, `Matrix.compose` | Branch/tie order, full matrices, non-unit/zero quaternions | `conformance` |
+| Decomposition, 3D constructors, unprojection | `Matrix.decompose`, quaternion constructors/spline, `Vector3.rotate_by_axis_angle/unproject` | Ten-field decomposition, bounded half-angle profiles, inverse ordering, invalid-domain controls | `conformance` |
+| Binary64-input projection matrices | `Float64`, `Matrix.frustum/ortho` | Full input bits retained before reference F32 casts; normal/zero domain controls | `conformance`, `float64-ops` |
+| Float-list exports | `Vector3.to_float_v`, `Matrix.to_float_v` | Values/order; 3/16-element lengths are checked laws | `conformance` |
+| Matrix arithmetic/inversion, affine constructors, vector transforms | `Matrix`, `Vector2.transform`, `Vector3.transform` | All 16 fields, noncommuting products, near-singular inversion; double transpose is a checked law | `conformance` |
+| View and rotation matrices | `Matrix.look_at`, `rotate_*_for`, `rotate_for` | Degenerate bases, bounded trigonometric profiles, distinct Euler orders | `conformance` |
+| 2D collision queries | `Collision` functions | Boolean/rectangle/hit-coordinate results; explicit segment contraction profiles ([COLLISION.md](COLLISION.md)) | `conformance`, `fused` |
+| Sphere/box queries | `Collision.spheres/boxes/box_sphere` | Inclusive contacts, signed radii, supplied-bound ordering | `conformance` |
+| Linear/B-spline/Catmull-Rom/quadratic Bezier points | `Spline` functions | XY and coefficient order with explicit arithmetic profiles ([SPLINES.md](SPLINES.md)) | `spline` |
+| GPU execution of image operations | Same Bend API | All corpus pixels and export bytes on forced Metal with the overlay | local `tools/conformance.py --gpu` |
+| GPU graphics-pipeline `Draw*` APIs | Future rasterizer | Not implemented; CPU `ImageDraw*` matches do not cover these | — |
+| Textures, text/fonts, further codecs, meshes, models, animation | Future modules | Not implemented | — |
+| Input, window, audio, native Windows/browser/Android | Future library and runtime work | Not implemented | — |
+
+## Known divergences and gaps
+
+- **Legacy angle profiles are not retargeted.** On glibc ≥ 2.41 hosts the legacy
+  Sun (`GnuGradient`) angle differs from native `atan2f`: fixture
+  `vector2-angle-profiles` pixel `(6,0)` gives legacy `3fc90fda` versus native
+  `3fc90fdb`. The checked `*_with_reference` route with `Glibc241AngleRn` matches.
+  The arm64 Apple subnormal difference is described in [ANGLES.md](ANGLES.md).
+- Cubic Bezier spline points are blocked by native `powf` rounding.
+- Linear gradients outside integral -360..360 directions (wider-angle libm
+  rounding) remain open ([GRADIENTS.md](GRADIENTS.md)).
+- Native byte-allocation ABI for pixel data, native array ABI/mutability for
+  float-list exports, and native static/pointer buffers for checksums are adapted,
+  not reproduced.
+- Exceptional and contracted F32 variants of raymath remain open.
+- Format-preserving loading covers only the listed codecs through explicit entry
+  points; generic formatted dispatch and other-platform/GPU qualification of the
+  formatted codecs remain open.
+- Filled-triangle fractional vertices beyond the documented truncation, other
+  pixel formats in drawing, broader mipmap integration and additional codecs are
+  open requirements.
+- No performance parity is claimed. The array-based image algorithms are a
+  correctness foundation, not the production tiled rendering pipeline.
+- CUDA, Windows, browser graphics, live windows and live audio are unverified.
+  Source and fixture domains are finite and explicitly bounded; passing fixtures
+  is not exhaustive proof of every supported input.
 
 ## Comparison policy
 
 - Compare the complete ordered RGBA pixel array and actual dimensions.
-- Compare every selected QOI export byte and every scalar/vector result bit.
+- Compare every selected export byte and every scalar/vector result bit.
 - No image tolerance for this integer-coordinate CPU image profile.
 - Require the pinned base revisions and exact declared Bend overlay; reject
   unexpected tracked changes. Raylib must remain unmodified.
