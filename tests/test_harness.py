@@ -190,6 +190,7 @@ class HarnessTests(unittest.TestCase):
         BUILD.mkdir(exist_ok=True)
         with patch('sys.path',[str(ROOT/'tools'),*sys.path]):
             main=runpy.run_path(str(ROOT/'tools/image_memory_probe.py'))['main']
+        probekit=main.__globals__['probekit']
         with tempfile.TemporaryDirectory(dir=BUILD,prefix='memory-negative-') as directory:
             work=Path(directory);report=work/'image-memory-probe/results.json'
             report.parent.mkdir();report.write_text(json.dumps(dict(passed=True)))
@@ -198,20 +199,19 @@ class HarnessTests(unittest.TestCase):
             def fake_run(command,**kwargs):
                 name=Path(command[0]).name
                 if name=='reference':return '\n'.join(map(json.dumps,reference))
-                if name.startswith('candidate-cpu-'):
+                if name.startswith('candidate-'):
                     index=int(name.rsplit('-',1)[1]);rows=wanted[index*64:(index+1)*64]
                     # Removing/adding identical rows across batches would fool only a global comparison.
                     rows=rows[:-1] if index==0 else [dict(loaded=False),*rows]
                     return '\n'.join(map(json.dumps,rows))
                 return ''
-            overrides=dict(BUILD=work,checkout=lambda *args:None,source_gate=lambda:{},run=fake_run,
-                           image_streams=lambda:dict(png=b'0',bmp=b'1',tga=b'2'))
-            argv=['image_memory_probe.py','--bend-source',str(work/'bend'),'--raylib-source',str(work/'raylib')]
-            with patch.dict(main.__globals__,overrides),patch('sys.argv',argv):
-                with self.assertRaisesRegex(ValueError,'batch 0 result count differs'):main()
+            overrides=dict(image_streams=lambda:dict(png=b'0',bmp=b'1',tga=b'2'))
+            argv=['image_memory_probe.py','--bend-source',str(work/'bend'),'--raylib-source',str(work/'raylib'),'--jobs','1']
+            with patch.dict(main.__globals__,overrides),patch('sys.argv',argv),\
+                 patch.multiple(probekit,BUILD=work,pinned=lambda args:{},native_library=lambda args,options:work/'libraylib.a',run=fake_run):
+                with self.assertRaisesRegex(probekit.ProbeFailure,'cpu-1 batch 0 produced 63 rows for 64 actions'):main()
             result=json.loads(report.read_text())
             self.assertFalse(result['passed'])
-            self.assertEqual(result['lanes']['cpu']['batches'][0]['result_rows'],63)
 
     def test_source_gate_covers_jonmath_root(self):
         BUILD.mkdir(exist_ok=True)
