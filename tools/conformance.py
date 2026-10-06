@@ -287,9 +287,10 @@ def gradient_contract(width, height, op):
     points = [(op['x'+str(i)], op['y'+str(i)]) for i in range(3)]
     (ax,ay),(bx,by),(cx,cy) = points
     sign = -1 if fp(fp((bx-ax)*(cy-ay))-fp((cx-ax)*(by-ay))) > 0 else 1
-    x0, y0 = max(0,min(p[0] for p in points)), max(0,min(p[1] for p in points))
-    x1, y1 = min(width,max(p[0] for p in points)), min(height,max(p[1] for p in points))
-    edges = [(bx,by,(cy-by)*sign,(bx-cx)*sign), (cx,cy,(ay-cy)*sign,(cx-ax)*sign), (ax,ay,(by-ay)*sign,(ax-bx)*sign)]
+    x0, y0 = max(0,math.trunc(min(p[0] for p in points))), max(0,math.trunc(min(p[1] for p in points)))
+    x1, y1 = min(width,math.trunc(max(p[0] for p in points))), min(height,math.trunc(max(p[1] for p in points)))
+    edges = [(bx,by,math.trunc(fp(cy-by))*sign,math.trunc(fp(bx-cx))*sign), (cx,cy,math.trunc(fp(ay-cy))*sign,math.trunc(fp(cx-ax))*sign),
+             (ax,ay,math.trunc(fp(by-ay))*sign,math.trunc(fp(ax-bx))*sign)]
     weights = []
     for vx,vy,dx,dy in edges:
         value = fp(fp((x0-vx)*dx) + fp((y0-vy)*dy))
@@ -542,15 +543,15 @@ def cases_from(document):
                     fields += ['x2', 'y2']
             if kind in ('rectangle', 'rectangle_v', 'rectangle_rec', 'rectangle_lines', 'crop', 'extract'):
                 fields += ["width", "height"]
-            fractional = kind in ('line_v', 'line_ex', 'triangle_lines', 'pixel_v', 'circle_v', 'circle_lines_v', 'rectangle_v', 'rectangle_rec', 'rectangle_lines')
+            fractional = kind in ('line_v', 'line_ex', 'triangle', 'triangle_ex', 'triangle_lines', 'pixel_v', 'circle_v', 'circle_lines_v', 'rectangle_v', 'rectangle_rec', 'rectangle_lines')
             if any(not coordinate(op.get(k), fractional) for k in fields):
                 raise ValueError(f"{name}: invalid coordinates for {kind}")
             if kind == 'triangle_ex' and not gradient_contract(current_w, current_h, op):
                 raise ValueError(f'{name}: gradient requires defined arithmetic and a nonzero weight sum')
             if kind in ('triangle_fan', 'triangle_strip'):
                 points = op.get('points')
-                if not isinstance(points, list) or any(not isinstance(p, list) or len(p)!=2 or any(not coordinate(v) for v in p) for p in points):
-                    raise ValueError(f'{name}: expected integral triangle points')
+                if not isinstance(points, list) or any(not isinstance(p, list) or len(p)!=2 or any(not coordinate(v, True) for v in p) for p in points):
+                    raise ValueError(f'{name}: expected finite bounded triangle points')
             if kind in ('line_ex', 'rectangle_lines') and not integer(op.get('thickness'), 0, 32767):
                 raise ValueError(f'{name}: thickness must be 0..32767')
             if kind in ('line', 'line_v', 'line_ex', 'triangle_lines'):

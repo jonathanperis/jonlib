@@ -348,7 +348,7 @@ class HarnessTests(unittest.TestCase):
                     dict(case, alpha_border=True),
                     dict(case, gradient_square=dict(density=1.5, outer=[0,0,0,0])),
                     dict(case, width=2, height=2, gradient_linear=dict(direction=361, outer=[0,0,0,0])),
-                    dict(case, operations=[dict(op='triangle_fan', points=[[0.5,1],[2,3],[4,5]], color=[0,0,0,255])]),
+                    dict(case, operations=[dict(op='triangle_fan', points=[[float('inf'),1],[2,3],[4,5]], color=[0,0,0,255])]),
                     dict(case, operations=[dict(op='triangle_ex', x0=0, y0=0, x1=1, y1=1, x2=2, y2=2, color=[255,0,0,255], color2=[0,255,0,255], color3=[0,0,255,255])]),
                     dict(case, operations=[dict(op='color_brightness', amount=0.5)]),
                     dict(case, operations=[dict(op='number_value', function='normalize', x=0, y=0, args=[1,0,1e-50])]),

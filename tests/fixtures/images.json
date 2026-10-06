@@ -1091,6 +1091,19 @@
       {"op":"triangle","x0":-4,"y0":-2,"x1":15,"y1":3,"x2":3,"y2":12,"color":[200,50,90,30]},
       {"op":"triangle","x0":10,"y0":8,"x1":13,"y1":8,"x2":10,"y2":12,"color":[40,80,120,255]}
     ]},
+    {"id":"triangle-fractional-vertices","width":12,"height":10,"background":[0,0,0,255],"operations":[
+      {"op":"triangle","x0":0.5,"y0":0.5,"x1":4.5,"y1":0.5,"x2":0.5,"y2":4.5,"color":[255,0,0,255]},
+      {"op":"triangle","x0":11.7,"y0":2.3,"x1":5.2,"y1":9.9,"x2":9.6,"y2":0.4,"color":[0,255,0,200]},
+      {"op":"triangle","x0":-0.9,"y0":-0.4,"x1":-0.1,"y1":-0.8,"x2":-0.5,"y2":-0.1,"color":[0,0,255,255]},
+      {"op":"triangle","x0":-2.75,"y0":6.25,"x1":3.5,"y1":9.75,"x2":1.25,"y2":3.5,"color":[90,90,200,255]}
+    ]},
+    {"id":"triangle-fractional-batches","width":17,"height":13,"background":[20,40,60,70],"operations":[
+      {"op":"triangle_fan","points":[[5.5,5.25],[1.75,2.5],[8.2,1.1],[10.6,7.3],[5.4,10.9]],"color":[230,40,90,255]},
+      {"op":"triangle_strip","points":[[10.3,-1.7],[15.8,1.2],[8.1,4.6],[16.4,6.5],[10.9,10.2]],"color":[40,210,170,128]}
+    ]},
+    {"id":"vertex-colored-triangle-fractional","width":11,"height":9,"background":[20,30,40,60],"operations":[
+      {"op":"triangle_ex","x0":1.5,"y0":1.25,"x1":9.75,"y1":2.5,"x2":3.25,"y2":8.5,"color":[255,0,0,255],"color2":[0,255,0,128],"color3":[0,0,255,0]}
+    ]},
     {"id":"triangle-large-integer-edges","width":64,"height":32,"background":[0,0,0,255],"operations":[
       {"op":"triangle","x0":-10000,"y0":-9999,"x1":10000,"y1":10001,"x2":40,"y2":10,"color":[80,160,240,255]}
     ]},
