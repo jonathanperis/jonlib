@@ -1,6 +1,12 @@
 # Pinned atan2f arithmetic-domain derivation
 
-Written domain analysis prepared independently of the kernel implementation, 2026-10-02. The exact finite coefficient checker is retained as `tools/modern_angle_bounds.py`. Its finite checks and the algebraic arguments below are separate from implementation and differential-test evidence.
+Written domain analysis of the pinned glibc 2.41 `e_atan2f.c`, independent of the
+Bend kernel ([MODERN-ANGLE.md](MODERN-ANGLE.md)). It justifies the domains of the
+private binary64 helpers ([BINARY64.md](BINARY64.md)) for every finite-input
+kernel call. The exact finite coefficient checker is `tools/modern_angle_bounds.py`
+(gate `modern-angle-bounds`). Its finite checks and the algebraic arguments below
+are separate from implementation and differential-test evidence. Line numbers
+refer to the pinned source.
 
 ## Result and qualification
 
@@ -12,9 +18,9 @@ check with exact rationals. The algebraic error-envelope argument below is a
 written proof, not a machine-checked proof or an exhaustive input-pair test.
 
 The literal whole kernel does **not** have a normal-only multiplication domain:
-line 83's `z*e > 0` really produces binary64 subnormals and negative zero. This is
-not just a hypothetical range-analysis failure. A bit-faithful intermediate port
-must support those products. A result-bit-only port could replace this particular
+line 83's `z*e > 0` really produces binary64 subnormals and negative zero. A
+bit-faithful intermediate port must support those products (Jonlib does, through
+the gradual-output product). A result-bit-only port could replace this particular
 comparison by a separately justified sign/nonzero predicate; see section 8.
 
 ## 1. Source and reproducibility
@@ -287,27 +293,28 @@ If only result bits under RN matter, a narrowly documented replacement is
 This equivalence does not preserve line 83's intermediate words, floating-point
 exception flags, or every non-RN behavior. Keep it separate from a literal port.
 
-## 9. Smallest isolated next primitive and tests
+## 9. Helper domains that cover the kernel
 
-After direct narrowing, implement an independently tested private binary64 FMA
-with an explicit bounded contract before attaching kernel consumers:
+The bounds above select the private helper contracts in [BINARY64.md](BINARY64.md):
 
-- a,b: signed zero or normal with exponents E in [-277,127]
-- c: signed zero or normal with E in [-554,255]
-- Exact product-plus-addend is an integer multiple of 2^-658 and has magnitude
-  <2^257; therefore its correctly rounded result is normal or exact zero
+- FMA: a,b signed zero or normal with exponents E in [-277,127]; c signed zero
+  or normal with E in [-554,255]. The exact product-plus-addend is an integer
+  multiple of 2^-658 with magnitude <2^257, so its correctly rounded result is
+  normal or exact zero
 - Exact 106-bit product, exact signed accumulation/cancellation, then one RN
-  step. A simple fixed 29-U32 magnitude accumulator spans this entire proof
-  domain; a smaller jam-based implementation requires its own rounding proof
-- Inputs outside the contract must fail closed, never silently flush or reuse
-  a different profile. This is not general binary64 FMA with gradual underflow
+  step. A fixed 29-U32 magnitude accumulator spans this entire domain; a
+  smaller jam-based implementation would require its own rounding proof
+- Inputs outside the contract fail closed, never silently flush or reuse a
+  different profile. This is not general binary64 FMA with gradual underflow
 
 All explicit FMA calls in this pinned kernel fit this asymmetric contract.
-An independently audited normal/zero add/sub domain with input E in [-900,130]
-also suffices: a nonzero sum/difference is >=2^-952 and <2^132. This covers the
-actual cancellation floors, while keeping arbitrary subnormal inputs excluded.
+A normal/zero add/sub domain with input E in [-900,130] also suffices: a nonzero
+sum/difference is >=2^-952 and <2^132. This covers the actual cancellation
+floors while keeping arbitrary subnormal inputs excluded. The only multiplication
+that leaves the normal-result domain is line 83's `z*e` (section 8), covered by
+the separate gradual-output product.
 
-Required exact controls include:
+Exact controls that distinguish a correct implementation:
 
 - fma(1+2^-52,1-2^-52,-1) = -2^-104 (multiply-then-add wrongly gives zero)
 - fma(1,1,2^-53)=1 and fma(1,1+2^-52,2^-53)=1+2^-51 (both tie parities)
@@ -319,38 +326,32 @@ Required exact controls include:
   product and zero addend returns their common sign if equal, otherwise +0;
   nonzero exact product cancellation is +0. Unary negation flips zero signs
 - Enumerate all zero-sign triples for FMA and all zero-sign pairs for add/sub;
-  include both orders (+0,-0), which exposes an existing private-add gap
+  include both orders (+0,-0), which exposes the legacy addition gap (section 10)
 
-## 10. Existing helper gaps and remaining acceptance work
+## 10. Legacy arithmetic that does not substitute
 
-`resize_numeric.bend:118-122` returns b whenever a is zero. Thus +0 + -0
-currently returns -0 rather than RN +0. Its exact nonzero cancellation path
-normalizes to +0, which is correct for RN. Do not change legacy consumers as
-part of this arithmetic milestone; put audited semantics in the new private
-layer. `float64_ops.bend` has rounded normal multiplication/division but no
-binary64 FMA. `fused.bend` is an F32 result helper and cannot supply these
-binary64 product residuals. Promotion through `float64.promote` preserves
-binary32 subnormals; normal-only `Double.from_f32` is not interchangeable.
+`resize_numeric.bend`'s addition returns b whenever a is zero. Thus +0 + -0
+returns -0 rather than RN +0. Its exact nonzero cancellation path normalizes to
++0, which is correct for RN. Legacy consumers keep that behaviour; the audited
+zero semantics live in the private binary64 layer. `float64_ops.bend` has
+rounded normal multiplication/division but no binary64 FMA. `fused.bend` is an
+F32 result helper and cannot supply these binary64 product residuals. Promotion
+through `float64.promote` preserves binary32 subnormals; normal-only
+`Double.from_f32` is not interchangeable.
 
-Still unestablished here: implementation correctness; independent review or
-mechanization of the written algebra; full kernel intermediate/result parity;
-native reference qualification; exhaustive input-pair coverage; forced-device
-correctness/resources/performance. The finite coefficient check is not any of
-those gates. No claim of modern angle-profile completion or changed old profile
-is supported. A literal port still needs the one identified gradual-underflow
-multiply, or the explicitly narrower RN result-bit comparison replacement.
+## 11. Scope of this analysis
 
-## Integration status
-
-The private adapter and its verification boundary are recorded separately in
-[MODERN-ANGLE.md](MODERN-ANGLE.md). This original analysis is retained as written
-bounds; historical “remaining work” statements above describe the analysis
-stage, not a promotion of helper contracts or public angle APIs.
+This page establishes operand domains only. It is not a proof of implementation
+correctness, of full kernel intermediate/result parity or of exhaustive
+input-pair coverage, and the written algebra is not mechanized; those are covered
+(to the extent stated) by the `angle-kernels` gate and the helper gates described
+in [MODERN-ANGLE.md](MODERN-ANGLE.md) and [BINARY64.md](BINARY64.md). The finite
+coefficient check is not any of those gates.
 
 ## 12. Retained branches with no finite-input RN witness
 
-These are written reachability arguments reviewed independently against the
-pinned source and exact constant inequalities. They are not conclusions from
+These are written reachability arguments checked against the pinned source and
+exact constant inequalities. They are not conclusions from
 zero branch counts, exhaustive input execution or machine-checked theorems.
 The implementation retains every source branch; synthetic helper tests are
 reported separately from reachable scalar cases.

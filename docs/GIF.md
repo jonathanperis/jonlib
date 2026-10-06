@@ -2,9 +2,11 @@
 
 `Surface.decode_gif(bytes: +List<U32>)` returns
 `Result<&1, &1, Image.DecodeError, Surface>` with owned RGBA8 pixels. Shared
-memory/file dispatch recognizes `GIF87a` and `GIF89a` signatures.
+memory/file dispatch recognizes `GIF87a` and `GIF89a` signatures; see
+[IMAGE-FILES.md](IMAGE-FILES.md). Owned multi-frame animations are documented in
+[GIF-ANIMATION.md](GIF-ANIMATION.md).
 
-## Current profile
+## Supported profile
 
 - Logical dimensions 1..4096. Positive first-image rectangles may be offset
   within the canvas; returned dimensions are the logical canvas dimensions.
@@ -22,41 +24,46 @@ memory/file dispatch recognizes `GIF87a` and `GIF89a` signatures.
   disposal metadata are not exposed in this first-frame API.
 - LSB-first GIF LZW with minimum code sizes 2..8, required initial clear, clear
   resets, dictionary growth/width changes and next-code self-reference.
-- Owned storage is bounded to the image and an 8,192-entry native-sized dictionary.
-  Code widths stop at 12 bits. Bit and prefix-chain fuel ensures structural
-  termination; dictionary and output bounds are checked before writes.
-- Exactly the rectangle's number of pixels and valid palette references are required.
-  The first completed raster is returned; later frames/trailing data are ignored.
+- Owned storage is bounded to the image and an 8,192-entry native-sized
+  dictionary. Code widths stop at 12 bits. Bit and prefix-chain fuel ensures
+  structural termination; dictionary and output bounds are checked before writes.
+- Exactly the rectangle's number of pixels and valid palette references are
+  required. The first completed raster is returned; later frames/trailing data
+  are ignored.
 
 Invalid bytes return `InvalidImageByte`; incomplete/unsupported headers, missing
-tables, invalid backgrounds or out-of-canvas/empty rectangles return `InvalidImageHeader`; dimensions
-outside the profile return `UnsupportedImageSize`. Incomplete palettes/sub-blocks
-return `TruncatedImageData`. Invalid LZW, missing/extra pixels or palette indices
+tables, invalid backgrounds or out-of-canvas/empty rectangles return
+`InvalidImageHeader`; dimensions outside the profile return
+`UnsupportedImageSize`. Incomplete palettes/sub-blocks return
+`TruncatedImageData`. Invalid LZW, missing/extra pixels or palette indices
 outside the selected table return `InvalidImageStream`.
 
-Bounded owned animations with retain/restore disposal are documented in
-[GIF-ANIMATION.md](GIF-ANIMATION.md). Original metadata, zero-area/native malformed
-malformed recovery and full resource/platform/performance coverage remain gaps.
+## How it is verified
 
-## Verification
+`tools/gif_probe.py` (gate `gif`) compares native first-frame images and
+typed-error controls exactly with `LoadImageFromMemory` on the CPU-1, CPU-2 and
+JavaScript lanes; `--gpu` adds a forced-GPU lane (local only). Cases cover
+versions, palettes, transparency, extensions, one-byte sub-blocks,
+self-reference, resets, every supported minimum code size and a 4,096-pixel
+stream that reaches 12-bit codes and clears its table. An independent malformed
+stream fits the image but exceeds dictionary capacity, checking dictionary
+rejection separately from output bounds. Geometry cases cover edge-aligned/offset
+rectangles, native background byte order, transparent-vs-untouched pixels,
+global/local palettes and thin/interlaced pass boundaries through seventeen rows.
+Shared memory/file gates (`image-memory`, `image-file`) include actual GIF
+payloads and cross-extension loading.
 
 ```sh
-python3 tools/gif_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only gif
 ```
 
-Configure checkout variables as in [README.md](../README.md#requirements).
-The gate compares 41 native images / 5,410 pixels and 23 error controls on CPU,
-JavaScript and forced Metal. Cases cover versions, palettes, transparency,
-extensions, one-byte sub-blocks, self-reference, resets, every supported minimum
-code size and a 4,096-pixel stream that reaches 12-bit codes and clears its table.
-An independent malformed stream fits the image but exceeds dictionary capacity,
-checking dictionary rejection separately from output bounds.
-Geometry cases cover edge-aligned/offset rectangles, native background byte order,
-transparent-vs-untouched pixels, global/local palettes and thin/interlaced pass
-boundaries through seventeen rows.
-Shared memory/file gates include actual GIF payloads and cross-extension loading.
-Hashes and outcomes are in [evidence/gif-geometry.json](evidence/gif-geometry.json).
+## Known gaps
+
+Original-format metadata, zero-area images, native malformed recovery and full
+resource/platform/performance coverage.
+
+## Provenance
 
 The altered stb reader retains its MIT notice in
-[LICENSES/stb-image.txt](../LICENSES/stb-image.txt), including upstream GIF credit
-to Jean-Marc Lienher and stb.
+[LICENSES/stb-image.txt](../LICENSES/stb-image.txt), including upstream GIF
+credit to Jean-Marc Lienher and stb.

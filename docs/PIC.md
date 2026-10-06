@@ -1,11 +1,15 @@
 # Softimage PIC decoding
 
-`Surface.decode_pic(bytes: +List<U32>)` returns
-`Result<&1, &1, Image.DecodeError, Surface>` with owned RGBA8 output. Shared
-memory/file dispatch recognizes the native `53 80 f6 34` signature and `PICT`
-marker at byte 88; see [IMAGE-FILES.md](IMAGE-FILES.md).
+| API | Contract |
+|---|---|
+| `Surface.decode_pic(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Surface>` with owned RGBA8 output. |
+| `Image.Formatted.decode_pic(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Image.Formatted>` preserving native RGB888 (4) or RGBA8888 (7); see [format-preserving memory loading](#format-preserving-pic-memory-loading). |
+| `Image.Formatted.load_pic(path: String)` | Returns `IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` through the inclusive 1 MiB raster-file boundary, selecting PIC independently of the suffix. |
 
-## Current profile
+Shared memory/file dispatch recognizes the native `53 80 f6 34` signature and
+`PICT` marker at byte 88; see [IMAGE-FILES.md](IMAGE-FILES.md).
+
+## Supported profile
 
 - Dimensions 1..4096, with the complete 104-byte header present.
 - One to ten chained descriptors; any nonzero chain byte continues the list.
@@ -22,9 +26,9 @@ marker at byte 88; see [IMAGE-FILES.md](IMAGE-FILES.md).
 Byte values are checked globally. Invalid/incomplete headers, descriptors,
 unsupported packet formats and more than ten packets return `InvalidImageHeader`.
 Dimensions outside the profile return `UnsupportedImageSize`; insufficient raw
-sample data returns `TruncatedImageData`; non-byte elements return `InvalidImageByte`.
-Header/count validation and raw sample totals precede output allocation.
-Compressed packets are checked before writing their output.
+sample data returns `TruncatedImageData`; non-byte elements return
+`InvalidImageByte`. Header/count validation and raw sample totals precede output
+allocation. Compressed packets are checked before writing their output.
 
 ## Native RLE rules
 
@@ -38,108 +42,89 @@ Mixed RLE uses three forms:
 - Controls 129..255 repeat one sample `control - 127` times.
 - Control 128 reads a big-endian U16 repeat count, including zero.
 
-Mixed counts beyond the row return `InvalidImageStream`. Both modes require
-data following the control byte, matching native behavior even for empty masks;
+Mixed counts beyond the row return `InvalidImageStream`. Both modes require data
+following the control byte, matching native behavior even for empty masks;
 missing count/sample data returns `TruncatedImageData`. Structural input-byte fuel
 bounds zero-count runs. Raw and compressed packets can share a row and retain
-their ordered channel overwrites.
-
-Generic formatted dispatch, native malformed recovery and full
-resource/platform/performance coverage remain gaps. PSD arithmetic profiles do
-not affect PIC's integer channel operations.
-
-## Verification
-
-```sh
-python3 tools/pic_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
-```
-
-Configure checkout variables as in [README.md](../README.md#requirements).
-The probe compares 33 native images / 8,867 pixels and 24 error controls on
-CPU, JavaScript and forced Metal. Cases cover every high-bit channel mask,
-ignored low bits, white defaults, overlapping channel packets, zero alpha,
-ten-packet chains, multiple rows and a 4096-pixel row. RLE cases add clipped/zero
-runs, mixed raw/repeated/extended counts, mode mixtures, 128/255 boundaries,
-4096-pixel extended runs, malformed counts and bounded no-progress streams.
-Shared dispatch compares
-actual PIC data across supported extension families and both `.pic` suffix cases.
-Hashes and outcomes are in [evidence/pic-rle.json](evidence/pic-rle.json).
-
-The altered stb reader retains the MIT notice in
-[LICENSES/stb-image.txt](../LICENSES/stb-image.txt), with upstream PIC attribution
-to Tom Seddon.
+their ordered channel overwrites. PSD arithmetic profiles do not affect PIC's
+integer channel operations.
 
 ## Format-preserving PIC memory loading
 
 `Image.Formatted.decode_pic(bytes: +List<U32>)` returns
 `Result<&1, &1, Image.DecodeError, Image.Formatted>` across the complete checked
-PIC domain above. This expands only partial `raylib:function:LoadImageFromMemory`;
-no API is completed.
+PIC domain above.
 
 The result preserves width/height, an implicit single mip and every native
 row-major byte in RGB888 (format 4) or RGBA8888 (format 7). Output channels come
 from the bitwise union of **all validated packet channel masks**: any `0x10`
 alpha bit selects four components; otherwise the result has three. Thus an
-alpha-only first/middle packet still selects RGBA after later RGB packets,
-and alpha-present images remain RGBA even if every output alpha is 255.
-Missing color channels keep the existing white defaults; low mask bits do not
-select output components. The selected-input-sample size accumulator is not an
-output channel count.
+alpha-only first/middle packet still selects RGBA after later RGB packets, and
+alpha-present images remain RGBA even if every output alpha is 255. Missing
+color channels keep the white defaults; low mask bits do not select output
+components. The selected-input-sample size accumulator is not an output channel
+count.
 
 The shared decoder carries this metadata in its private owned result.
 `Surface.decode_pic` discards it and retains the same canonical RGBA8 pixels.
 The formatted adapter reuses the affine pixel array, swaps bytes with integer
-operations, clears RGB's unused high byte and exports only logical pixels.
-There is no second parser, floating conversion, `ImageFormat` normalization or
-opacity inference. Dimensions 1..4096, packet ordering, RLE rules, global byte
+operations, clears RGB's unused high byte and exports only logical pixels. There
+is no second parser, floating conversion, `ImageFormat` normalization or opacity
+inference. Dimensions 1..4096, packet ordering, RLE rules, global byte
 validation, typed errors and their precedence are unchanged. PIC memory has no
-new encoded-input cap. Mipmaps are implicit in the candidate type; the native
+encoded-input cap. Mipmaps are implicit in the candidate type; the native
 reference must separately report exactly one.
 
-### Qualification and remaining gaps
+The [file loader](IMAGE-FILES.md) adds the inclusive 1 MiB bounded-IO
+restriction, exact-length read and close-before-decode ordering without changing
+this uncapped memory domain.
 
-The focused gate is:
+## How it is verified
+
+Expected results come from the pinned native raylib, compared exactly on the
+CPU-1, CPU-2 and JavaScript lanes.
+
+- **Surface decoding** (`tools/pic_probe.py`, gate `pic`): normalized pixels and
+  error controls covering every high-bit channel mask, ignored low bits, white
+  defaults, overlapping channel packets, zero alpha, ten-packet chains, multiple
+  rows and a 4096-pixel row; RLE cases add clipped/zero runs, mixed
+  raw/repeated/extended counts, mode mixtures, 128/255 boundaries, 4096-pixel
+  extended runs, malformed counts and bounded no-progress streams. `--gpu` adds
+  a forced-GPU lane (local only).
+- **Format-preserving memory loading** (`tools/pic_format_probe.py` on
+  `tools/formatted_codec.py`, gate `pic-format`): the native PIC feature is
+  disabled by default, so the probe builds raylib with
+  `SUPPORT_FILEFORMAT_PIC=ON`. Native dimensions, format, mipmaps and raw bytes
+  are observed before a separate normalized RGBA reference, then compared through
+  the raw, factory, owner, round-trip, bridge, Surface and dispatch roles. Only
+  complete, independently admitted streams reach the unmodified native oracle:
+  its failed-PIC path can free/null the intermediate output and still enter
+  4-to-3 conversion, so every malformed control is checked-only and no native
+  malformed-recovery claim is made. Admission walks every descriptor, row,
+  control, count and selected-sample byte without producing expected pixels; a
+  `.pic` suffix alone proves no PIC identity because stb sniffs content.
+- **Format-preserving file loading** (`tools/pic_file_probe.py` on
+  `tools/formatted_file.py`, gate `pic-file`): memory fixtures as files with path
+  variants, file controls and the shared closure, sparse/oversized and exact-cap
+  resource runs.
+- Shared dispatch across supported extension families and both `.pic` suffix
+  cases is covered by `image-memory` and `image-file`.
 
 ```sh
-python3 tools/pic_format_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --reference-env clean-loader
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only pic-format
 ```
 
-It requires three complete lanes: CPU-one-thread, CPU-two-thread and JavaScript.
-The native PIC feature is disabled by default, so the gate configures a fresh
-isolated Memory archive with explicit PIC support and checks both CMake cache
-and effective compiler flags. Actual native dimensions, format, mipmaps,
-`GetPixelDataSize` and full raw bytes are observed before a separate normalized
-RGBA reference. Historical normalized Surface results do not qualify this
-formatted adapter.
+## Known gaps
 
-Only complete independently admitted streams may reach the unmodified native
-oracle. Its pinned failed-PIC path can free/null the intermediate output and
-still enter 4-to-3 conversion. Every malformed control is therefore checked-only;
-no native malformed-recovery claim is made. Admission walks all actual descriptor,
-row, control, count and selected-sample bytes without producing expected pixels.
-Its finite fixture/source/partition budgets are harness resource limits, not
-restrictions added to the public API.
+- Generic formatted dispatch and native malformed recovery.
+- Maximum-area allocation, OOM/native pointer ABI and representative performance.
+- GPU for the formatted paths, Windows/browser and big-endian targets.
+- Ledger scope: formatted memory loading is partial
+  `raylib:function:LoadImageFromMemory` scope and formatted file loading partial
+  `raylib:function:LoadImage` scope; no API is completed.
 
-The separate [format-preserving PIC file loader](IMAGE-FILES.md#format-preserving-pic-file-loading)
-adds the existing inclusive 1 MiB bounded-IO restriction without changing this
-uncapped memory domain. Its [fresh local file evidence](evidence/pic-formatted-files.json)
-passes 170 files / 37,375 pixels with complete three-lane raw-byte/resource replay;
-exact-tip hosted file qualification remains pending. Shared formatted dispatch, maximum-area
-allocation, OOM/native pointer ABI, representative performance, GPU/Metal,
-big-endian and other platform/hosted qualification remain separate gaps.
-PSD arithmetic profiles and shared DEFLATE/arithmetic code are unchanged.
+## Provenance
 
-The [fresh local evidence](evidence/pic-formatted-memory.json) passes **101 streams /
-37,306 pixels and 343 checked-only controls** on all three lanes, preserving the
-33-stream / 8,867-pixel and 24-control legacy corpus exactly. Each lane compares
-**1,536 complete observations / 836,048 bytes**. Independent replay verifies every
-record against observed native raw bytes across 51 candidate partitions, with
-231 exact command receipts and 1,417 source/artifact seals. The 1,023.403-second
-focused run is verification time, not a benchmark. All 177 prior laws are retained
-and 13 scoped channel/packing laws are added; these are not a universal decoder
-proof. See the [matrix and audit scope](VERIFICATION.md#format-preserving-pic-memory-loading-2026-10-04).
-The exact [86-gate hosted PIC-memory checkpoint](https://github.com/jonathanperis/jonlib/actions/runs/37202964890)
-at `e481d3c257c6add2b9f756a583c648fcc5c92b7d` passes Checks, all twelve
-workers, both aggregates and twelve unique nonempty artifacts on the recorded
-Ubuntu/macOS CPU/JavaScript lanes. It does not qualify the later PIC-file scope
-or the new 87-gate/fourteen-worker topology.
+The altered stb reader retains the MIT notice in
+[LICENSES/stb-image.txt](../LICENSES/stb-image.txt), with upstream PIC attribution
+to Tom Seddon.

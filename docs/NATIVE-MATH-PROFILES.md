@@ -1,277 +1,158 @@
-# Native math profile diagnosis
+# Native math profiles
 
-`tools/native_math_profile_probe.py` separates compiler folding, compiler-lowered
-runtime operations, native libm calls, and the existing explicit Jonmath profiles.
-It builds **native C only**. It does not build Bend, alter library profiles, update
-expected results, change tolerances, or participate in the canonical conformance
-gate. A completed diagnostic is **not a parity pass**.
+raymath's angle and extrema functions call C library `atan2f`, `fminf` and
+`fmaxf`, whose last-bit and signed-zero behaviour depends on the C library, the
+compiler and the call path. Jonmath therefore exposes explicit numerical
+profiles, and the reference harness **selects** the profile that matches the
+native reference instead of assuming one result is universal. Two tools are
+involved:
 
-## Run against existing tools
+| Tool | Role |
+|---|---|
+| `tools/native_profiles.py` | Used by `tools/conformance.py`: selects the host's `atan2f` angle profile and literal-extrema zero-tie profile from frozen controls. |
+| `tools/native_math_profile_probe.py` | Diagnostic gate `native-math-profiles`: records how compiler folding, builtin lowering and native libm calls differ. Never a parity result. |
 
-```sh
-python3 tools/native_math_profile_probe.py \
-  --raylib-source "$RAYLIB_SOURCE" \
-  --clang clang \
-  --gcc gcc
-```
+Angle profiles, their selection controls and the checked angle APIs are
+described in [ANGLES.md](ANGLES.md); this page covers the extrema selection and
+the diagnostic.
 
-`--raylib-source` is required and should identify the existing raylib source at
-the revision in `toolchain.json`. Nothing is downloaded, installed, or checked
-out. A Git checkout must have the pinned revision and an unchanged `src/raymath.h`.
-An extracted source archive may be used: its header is hashed, but the report
-leaves `observed_git_revision` null rather than claiming Git verification.
-`--gcc` is optional; omitting it runs only the four Clang modes. Absolute compiler
-paths work. `--timeout` bounds each command separately (default: 120 seconds).
+## Extrema zero-tie profiles
 
-The default output directory is `.build/native-profile-diagnostic`; use
-`--output PATH` for a separate run. Its files include:
+`Vector2/3/4.min_for`, `max_for` and `Vector2/3.clamp_for` take a
+`Gradient.Reference` that fixes the result for mixed-sign zero operands (see
+[MATH.md](MATH.md)):
 
-- `results.json`: completion/error state, compiler versions, host/libc,
-  rounding mode, native-library paths, exact build commands, source/header/input
-  hashes, all scalar/vector observations, and every angle difference
-- `diagnostic.c`: the reproducible generated C source
-- `<mode>.tsv`: all observed bits, including every angle input/output
-- `<mode>.version.log` and `<mode>.compile.log`: tool and build diagnostics
+| Profile | `min` of `+0`/`-0` | `max` of `+0`/`-0` |
+|---|---|---|
+| `AccurateGradient{}` | negative zero (sign OR) | positive zero (sign AND) |
+| `GnuGradient{}` | first operand | first operand |
 
-The report is initialized before reading sources and updated after each mode.
-A failed mode does not erase preceding results or prevent other modes from
-running. A setup/build/run/parse failure exits nonzero and retains
-`diagnostic_completed: false` with the error. Successful data collection exits
-zero even when profiles differ. `parity_established` is always false, and
-`not_canonical_gate` is always true. Interrupted execution leaves the last
-persisted partial report. Check these fields rather than interpreting process
-success as conformance.
+Same-sign zeros keep their common sign in both profiles. The convenience
+`min`, `max` and `clamp` select `AccurateGradient{}`.
 
-The parser requires each expected observation ID exactly once and its exact
-scalar/vector component count. It rejects renamed, duplicate, missing, extra,
-or malformed observations and samples. Host fields are mandatory for the
-recorded platform: Linux/Darwin require absolute native-library paths; a
-recorded glibc host requires the matching runtime glibc version. Duplicate,
-unknown, empty host fields, empty compiler identity, and a rounding mode other
-than `FE_TONEAREST` fail the diagnostic rather than yielding partial provenance.
+### Selection (`native_profiles.extrema_profile`)
 
-Python-only regression tests cover successful completion, stale-result
-invalidation, partial failures, provenance, timeout logs, and malformed output:
+When the main corpus contains any of the eight extrema queries (Vector2/3/4
+min and max, Vector2/3 component clamp), `tools/conformance.py` selects the
+profile before emitting any Bend candidate:
 
-```sh
-python3 -m unittest discover -s tests -p test_native_math_profile.py -v
-```
+- **Controls.** Every ordered pair (min/max) and triple (clamp) of
+  `{-1, -0, +0, +1}`, both uniformly in all lanes and isolated in each lane among
+  lane-distinct finite nonzero sentinels, for every vector width.
+- **Native run.** The controls go through the unchanged canonical fixture
+  validator, C generator, static-inline raymath calls and output parser, compiled
+  with the canonical reference command (`clang -std=c11 -O2
+  -fno-builtin-atan2f`, no extra min/max flags).
+- **Expectations.** Fixed bit truth tables for each declared profile; clamp
+  follows raymath's `min(upper, max(lower, value))` order.
+- **Decision.** Exactly one profile must match every result word. Zero or
+  several matches (second-operand ties, mixed or unknown behaviour, missing
+  components) fail the run; there is no libc-based fallback.
 
-They mock all subprocess execution and do not require a compiler.
+The selection is recorded as `extrema_reference` (contract
+`literal-vector-extrema-v1`) in the conformance report and passed explicitly to
+those eight APIs only. Gradients, rotations, scalar clamp and magnitude clamps
+keep the host-declared gradient profile (`AccurateGradient{}` on Darwin,
+`GnuGradient{}` on Linux/glibc; see [GRADIENTS.md](GRADIENTS.md)). A selection
+names which existing contract the reference context follows; it is not evidence
+for another compiler, architecture or call path, and the full native/Bend bitwise
+comparison remains the acceptance authority.
 
-## What is compared
+## Observed reference behaviour
 
-All builds use C11 and `-ffp-contract=off`:
+### Signed-zero ties depend on the call path
 
-| Mode | Additional flags |
-| --- | --- |
-| `clang-o0` | `-O0` |
-| `clang-o2` | `-O2` |
-| `clang-o2-native` | `-O2 -fno-builtin-atan2f -fno-builtin-fminf -fno-builtin-fmaxf` |
-| `clang-o2-strict` | `-O2 -ffp-model=strict` |
-| `gcc-o2` (optional) | `-O2` |
-| `gcc-o2-native` (optional) | `-O2 -fno-builtin-atan2f -fno-builtin-fminf -fno-builtin-fmaxf` |
+For mixed-sign zero operands, three different behaviours are observable from the
+same C source on a glibc 2.41 host:
 
-Within each build, literal calls, calls with volatile input values, and calls
-through volatile native function pointers are separate observations. Volatile
-inputs prevent constant propagation; they do **not** prevent builtin lowering.
-The native-pointer path prevents replacing the target call with a known builtin.
-The native-only flags are diagnostic variants, not proposed changes to the
-canonical oracle.
-
-The program imports the existing `GNU_CONTROL` and deterministic 1,086-sample
-corpus from `tools/angle_probe.py`. The generated source retains the Sun license
-notice; see `LICENSES/sun-math.txt`. It also reads the unchanged six relevant
-fixture scenarios from `tests/fixtures/images.json`, calls the pinned raymath
-header with literal and volatile vector inputs, and evaluates small C models of
-the **documented** Jonmath zero-tie contracts. Those C models are not Bend
-execution evidence. No Apple angle implementation is evaluated by this tool.
-
-## Recorded Linux x86-64 result
-
-The local 2026-10-02 report at
-`.build/native-profile-diagnostic/results.json` records:
-
-- Debian Clang 19.1.7 (3+b1), GCC 14.2.0-19, glibc 2.41
-- `FE_TONEAREST` and `/lib/x86_64-linux-gnu/libm.so.6`
-- Raymath header SHA-256
-  `2b8b88f5b3f748e3cf8bdbfb8b7da23a76c755dc40f9c6e455bfc09b3669d028`
-- Angle-input SHA-256
-  `e97e8ae61b081cbf56aaedf449be5e40795523ee73deba21649e297d20d499fb`,
-  matching the corpus in `docs/evidence/vector-angle-profiles.json`
-- All six modes completed, each with **178/1,086** Sun-control/native angle
-  differences: seven boundary samples and 171 seeded random samples, each one
-  representable binary32 step apart
-- Zero differences between direct volatile-input `atan2f` and volatile-pointer
-  native `atan2f` over that corpus
-
-A compact checked-in [host-profile evidence record](evidence/native-math-host-profile.json)
-retains the final source/input/header hashes, compiler flags and per-mode counts.
-The reproducible diagnostic retains the complete observations locally.
-
-The final run used a Git checkout at the pinned revision
-`dbc56a87da87d973a9c5baa4e7438a9d20121d28` with an unchanged `src/raymath.h`;
-`observed_git_revision` and the header hash are recorded. These are host-specific
-observations, not assertions about every glibc release, compiler,
-architecture, optimization context, or floating-point rounding mode.
-
-## Three observable signed-zero contracts
-
-For mixed-sign zero operands, the observed scalar contracts are:
-
-| Operation and operands | Literal folding | Ordinary volatile-input builtin | Native glibc pointer |
-| --- | --- | --- | --- |
+| Operation and operands | Literal folding | Volatile-input builtin | Native glibc pointer |
+|---|---|---|---|
 | `fminf(+0, -0)` | `80000000` | `00000000` | `80000000` |
 | `fminf(-0, +0)` | `80000000` | `80000000` | `00000000` |
 | `fmaxf(+0, -0)` | `00000000` | `00000000` | `80000000` |
 | `fmaxf(-0, +0)` | `00000000` | `80000000` | `00000000` |
 
-Thus literal folding selects negative zero for minima and positive zero for
-maxima; ordinary runtime builtin lowering retains the first operand in these
-observations; the native glibc implementation retains the second operand. All
-three preserve the common sign when both zero operands have the same sign.
-The ordinary Clang modes and GCC `-O2` show the first two columns. Strict Clang
-and the no-builtin variants use the native results instead.
+Literal folding gives negative zero for minima and positive zero for maxima
+(the `AccurateGradient{}` table); ordinary runtime builtin lowering keeps the
+first operand (the `GnuGradient{}` table); the native glibc implementation keeps
+the second operand, which matches **neither** declared profile. Ordinary Clang
+and GCC `-O2` builds show the first two columns; strict Clang
+(`-ffp-model=strict`) and the `-fno-builtin-fminf/-fmaxf` variants call the
+native function. LLVM permits either equal operand for
+[`llvm.minnum`/`llvm.maxnum`](https://releases.llvm.org/19.1.0/docs/LangRef.html#llvm-minnum-intrinsic),
+so there is no portable tie order. For example, `Vector4Min`'s zero X/W
+components are `-0,-0` with folded literals, `-0,+0` with volatile inputs and
+`+0,-0` through native libm. This is why extrema are selected from the canonical
+literal reference context rather than inferred from the host.
 
-`jonmath.bend`'s `Vector2.clamp.minimum/maximum` helpers deliberately implement
-first-operand zero ties for `GnuGradient{}` and sign-selecting ties for
-`AccurateGradient{}`. Vector2/3/4 extrema and component clamps share those
-helpers. See `docs/MATH.md`. Consequently:
+### Native atan2f versus the Sun control
 
-- The existing GNU model matches the ordinary volatile-input builtin observations
-- The existing accurate zero model matches the literal-folded observations
-- Neither existing zero model matches all native glibc mixed-zero calls
+For `atan2f(1.0f, -1e-20f)` (input bits `3f800000, 9e3ce508`):
 
-These observations do not establish that glibc 2.41 introduced the native
-zero-tie behavior. The difference is already demonstrated by changing only the
-call path on this one host. LLVM 19 explicitly permits either equal operand for
-`llvm.minnum`/`llvm.maxnum`; it does not give a portable signed-zero tie order.
-The generated Clang IR uses these intrinsics for runtime builtin calls.
-[LLVM 19 language reference](https://releases.llvm.org/19.1.0/docs/LangRef.html#llvm-minnum-intrinsic).
+- Literal, volatile-input and native-pointer glibc 2.41 calls: `3fc90fdb`
+- The Sun float control (`GNU_CONTROL` in `tools/angle_probe.py`, licence in
+  [LICENSES/sun-math.txt](../LICENSES/sun-math.txt)) and Jonlib's
+  `Sun239AngleRn{}` kernel: `3fc90fda`
 
-### Mapping the five recorded fixture failures
+Raymath's `Vector2Angle((1,0), (-1e-20,1))` produces the native value, at `-O0`,
+with builtins suppressed and under strict floating point alike, so it is not a
+constant-folding effect. In the Sun algorithm the huge-ratio branch rounds
+`half + 0.5*low` to `3fc90fdb`, the negative-X correction rounds `z-low` to
+`3fc90fdc`, and `pi-(z-low)` becomes `3fc90fda`; `src/angle.bend` performs the
+same operations in `gnu.ratio` and `gnu.quadrant`. glibc 2.41 replaced the Sun
+code with CORE-MATH's correctly rounded `atan2f`
+([release announcement](https://sourceware.org/pipermail/libc-announce/2025/000045.html)),
+which is why it is a separate profile, `Glibc241AngleRn{}`.
 
-The original `environment-lanes.json` reports only the first failing pixel per
-scenario. The native diagnostic reproduces those first cells in literal raymath
-calls and the declared GNU C model:
+## Diagnostic gate `native-math-profiles`
 
-| Scenario / pixel | Literal raymath | GNU zero model |
-| --- | --- | --- |
-| `vector4-extrema` / 3 | `80000000` | `00000000` |
-| `vector3-extrema` / 6 | `80000000` | `00000000` |
-| `vector3-clamp-components` / 3 | `00000000` | `80000000` |
-| `vector2-extrema` / 4 | `80000000` | `00000000` |
-| `vector2-clamp-components` / 4 | `00000000` | `80000000` |
+`tools/native_math_profile_probe.py` builds **native C only** (no Bend), alters
+no profile, expected value or tolerance, and records `diagnostic: true` in its
+results. A completed run is not a parity pass.
 
-The literal and volatile raymath vectors retain the same API and inputs. For
-example, `Vector4Min`'s zero X/W components are `-0,-0` with folded literals,
-`-0,+0` with ordinary volatile inputs, and `+0,-0` through native libm. This
-explains why disabling all three builtins changes the first Vector4 failure
-from pixel 3 to pixel 0 rather than making the GNU model match.
+```sh
+python3 tools/native_math_profile_probe.py --raylib-source "$RAYLIB_SOURCE" --clang clang [--gcc gcc]
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only native-math-profiles
+```
 
-## Near-half-pi angle and the wider GNU/native gap
+`--raylib-source` must be the pinned checkout from `toolchain.json` (checked by
+`probekit`). `--clang` defaults to `clang`; `--gcc` is optional and adds two GCC
+modes. All builds use `-std=c11 … -ffp-contract=off`:
 
-For `atan2f(1.0f, -1e-20f)`, the exact input bits are `3f800000,9e3ce508`:
+| Mode | Additional flags |
+|---|---|
+| `clang-o0` | `-O0` |
+| `clang-o2` | `-O2` |
+| `clang-o2-native` | `-O2 -fno-builtin-atan2f -fno-builtin-fminf -fno-builtin-fmaxf` |
+| `clang-o2-strict` | `-O2 -ffp-model=strict` |
+| `gcc-o2` (with `--gcc`) | `-O2` |
+| `gcc-o2-native` (with `--gcc`) | `-O2 -fno-builtin-atan2f -fno-builtin-fminf -fno-builtin-fmaxf` |
 
-- Literal, volatile-input, and native-pointer glibc calls: `3fc90fdb`
-- Imported Sun control, both literal and runtime: `3fc90fda`
-- The recorded Jonlib GNU lane: `3fc90fda`
+Each mode records, as separate observations: literal calls, calls with volatile
+inputs (no constant propagation, but builtin lowering still possible) and calls
+through volatile native function pointers (the actual library function) for the
+mixed-zero `fminf`/`fmaxf` pairs and the near-half-pi `atan2f` endpoints; the Sun
+control at those endpoints and its intermediate steps; literal and volatile
+raymath calls for the six fixture scenarios `vector2-angle-profiles`,
+`vector2/3/4-extrema` and `vector2/3-clamp-components` of
+`tests/fixtures/images.json`; C models of the two declared zero-tie profiles
+(diagnostics, not Bend execution); and native, Sun and direct `atan2f` bits for
+the deterministic `tools/angle_probe.py` sample corpus. Host fields (rounding mode,
+glibc version, absolute library paths for `atan2f`/`fminf`/`fmaxf`) are
+mandatory; a rounding mode other than `FE_TONEAREST`, missing, duplicate,
+renamed or malformed observations fail the run.
 
-Raymath's `Vector2Angle((1,0),(-1e-20,1))` produces the same native value. This
-persists at `-O0`, with builtin suppression, and under strict floating-point
-compilation, so disabling constant folding cannot resolve it.
+Results are written to `.build/native-math-profile-probe/results.json` (per-mode
+flags, compiler version, every observation and the native/Sun angle
+differences). Parser and host-field validation are unit-tested in
+`tests/test_native_math_profile.py`, which mocks all native execution.
 
-The control's huge-ratio branch rounds `half + 0.5*low` to `3fc90fdb`; the
-negative-X correction then rounds `z-low` to `3fc90fdc`, and `pi-(z-low)` becomes
-`3fc90fda`. The corresponding operations are explicit in
-`src/angle.bend`'s `gnu.ratio` and `gnu.quadrant`. The observed Jonlib result
-therefore agrees with the declared Sun-derived algorithm at this input.
+## Rules and known gaps
 
-The glibc 2.41 release introduced CORE-MATH's correctly rounded `atan2f` and
-`atanf`, among other binary32 functions. This is a documented native
-implementation change, consistent with the measured broad separation from the
-older Sun control; the diagnostic does not infer it solely from one endpoint.
-[glibc 2.41 release announcement](https://sourceware.org/pipermail/libc-announce/2025/000045.html).
-
-## Interpretation and limits
-
-The six recorded scenario failures have two distinct explanations: compiler
-folding/lowering changes the zero-tie behavior of the C reference, and native
-glibc 2.41's angle results differ from the declared Sun-derived profile. The
-same recorded failures across CPU-1, CPU-2 and JavaScript do not isolate a new
-backend-specific Bend defect. This diagnostic independently accounts for those
-observed bits, but does not replace executing Bend against either control.
-
-Selecting `GnuGradient{}` merely because the host reports Linux/glibc is broader
-than the evidence supports. Conversely, selecting the accurate zero-tie model
-would only address literal extrema here; it would not establish a glibc 2.41
-angle profile or native zero-tie parity. Do not repair the gate by silently
-switching profiles, suppressing builtins, replacing expected bits, or accepting
-one-step differences. Any new supported profile needs an explicit contract and
-native/Bend evidence across its declared inputs and targets. Existing canonical
-gates, profiles and exact comparisons remain unchanged.
-
-## Explicit qualification of literal extrema
-
-The conformance harness now qualifies extrema independently of gradient/angle
-profile selection. When Vector2/3/4 min/max or Vector2/3 component clamp appears,
-`tools/extrema_reference.py` builds a fresh, independent native control corpus
-before emitting any Bend candidate. It does not inspect conformance-fixture
-outcomes or try Bend profiles to find one that passes.
-
-The fixed corpus exhausts `{-1,-0,+0,+1}` ordered pairs and clamp triples in
-uniform vectors and each isolated component among finite mixed-lane sentinels:
-832 vector observations / 2,368 result words across all eight APIs. Predeclared
-bit truth tables encode only the existing accurate and GNU zero contracts.
-Exactly one common profile must match every observation. Second-operand ties,
-mixed/unknown/ambiguous behavior, missing components and malformed output fail
-closed. The generator rejects relevant queries without an explicit qualified
-selection; there is no libc-based fallback for them.
-
-Controls run through the unchanged canonical fixture validator, C generator,
-decimal literal formatter, static-inline raymath calls, image observations and
-parser. They use the exact canonical compiler command, including `-O2` and
-`-fno-builtin-atan2f`; no additional min/max flags are introduced. The report
-records compiler identity, commands, header/library/control/source hashes,
-complete native observations and the selected profile. Every run invalidates
-stale success and removes its stale generated executable before compilation.
-
-The selected contract is logged and passed explicitly only to the eight extrema
-APIs. Gradients, rotations, angles, scalar clamp and magnitude clamps retain their
-prior selection. Jonmath, all canonical native fixture inputs and expected
-outputs, and the exact comparator remain unchanged. The native-pointer/runtime
-contexts diagnosed above remain different, deliberately unqualified contexts.
-
-The report is `.build/extrema-reference/results.json`; `qualified: true` means
-only that one declared contract matches the controlled native reference context.
-`parity_established` remains false. A separate preflight cannot prove optimizer
-behavior in every surrounding translation unit, so the unchanged full native/
-Bend bitwise comparison is still the acceptance authority. This qualification
-does not establish a new glibc 2.41 angle profile or an overall conformance pass.
-
-Metal prefix diagnostics also qualify freshly when their prefix contains these
-queries and then require the pinned `--raylib-source` checkout. Image-only
-callers need no extrema qualification. Qualification on one host is not evidence
-for another compiler, architecture or execution target.
-
-The [checked-in qualification and lane evidence](evidence/qualified-literal-extrema.json)
-records the Clang 19 Linux result: the accurate contract uniquely matches all
-2,368 native control words, while the GNU contract differs on 76. With that
-explicit selection, the five original extrema/clamp scenario failures disappear
-on CPU one-thread, CPU two-thread and JavaScript. Each lane matches 260 of the
-unchanged 261 scenarios; the angle scenario remains an exact mismatch and the
-canonical gate still fails. These counts describe this corpus, not library-wide
-parity or an API-completion percentage.
-
-The remaining angle work is staged in [ANGLE-PLAN.md](ANGLES.md), including
-the immutable MIT algorithm source, reusable binary64 arithmetic prerequisites,
-a separate angle reference type and exact CPU/JS/device qualification gates.
-
-## Standalone native angle qualification
-
-The independently frozen [native angle qualification gate](ANGLES.md)
-now verifies 76 scalar controls, 205 canonical/runtime wrapper controls and
-1,654 ordered intermediate words before any future angle-candidate generation.
-It uniquely observes the modern contract on the recorded Linux host; historical
-source contracts are not newly host-qualified. Public routing, old algorithms,
-canonical fixtures and the final-angle-only wrapper validation gap are unchanged.
+- Do not repair a mismatch by switching profiles, suppressing builtins,
+  replacing expected bits or accepting one-step differences. A new profile needs
+  an explicit contract and native/Bend evidence across its declared inputs.
+- Native glibc pointer-call zero ties (second operand) have no declared profile;
+  contexts that call the library function directly are not covered.
+- The gradient/rotation profile is still declared per host family, not selected
+  from native controls; other host families need their own verified declaration.

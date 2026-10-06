@@ -31,78 +31,46 @@ import ./jonlib.bend as J
 import ./jonmath.bend as M
 ```
 
-Image decoding supports shared memory/file dispatch through
-`J.Surface.decode_image(file_type, bytes)` and `J.Surface.load_image(path)`.
-See [supported payloads, extension aliases and bounds](docs/IMAGE-FILES.md).
-`J.Surface.write_image(surface, path)` selects PNG/BMP/TGA/QOI/RAW output by
-[case-insensitive filename suffix](docs/IMAGE-EXPORT.md), with typed errors and
-owner-preserving rejection before a file is opened.
+## What works today
 
-## Implemented
+Everything below is a **partial, scoped profile** compared exactly with pinned
+raylib; each API's domain and gaps are in [`api/progress.json`](api/progress.json)
+and the [progress dashboard](docs/PROGRESS.md). At the time of writing the ledger
+marks 117 of raylib.h's 600 functions and 142 of raymath.h's 146 as partial and
+none as complete; the dashboard always has the current counts.
 
-- Packed RGBA colors and integer alpha blending.
-- Image creation, clear, pixel access and independent copies.
-- Clipped pixel/rectangle drawing and raylib-compatible midpoint circles.
-- Fixed-point lines, vector-line rounding, filled triangles and triangle outlines.
-- Unscaled image composition with clipping, tint, alpha and source preservation.
-- Checked region extraction/cropping, source-rectangle drawing and exact fixed-point nearest-neighbor resizing.
-- Default filtered RGBA8 resize with precision-correct coefficient normalization
-  and alpha-aware Catmull-Rom/Mitchell filtering.
-- Owned RGBA8 mipmap chains with sequential default filtering and independent levels.
-- Native RGBA8 Gaussian-blur approximation with reference alpha and byte quantization.
-- Bounded native RGBA8 kernel convolution with exact edge/indexing and alpha-cast rules.
-- Native Base64 encoding/decoding with explicit NUL-inclusive sizes and bounded inputs.
-- Native CRC32 and MD5 values with bounded byte inputs and complete digest-word comparisons.
-- Native SHA-1/SHA-256 values, retaining the pinned SHA-256 padding quirk.
-- Scaled/source-clipped image composition, including bounded fractional rectangles.
-- Vector drawing variants, outlines, thick lines, fans/strips and vertex-colored triangles.
-- RGBA8 color/alpha transforms, checkerboards and quarter-turn rotations.
-- Alpha bounds/cropping, raw canvas resizing and square gradients.
-- Checked general image rotation and power-of-two canvas expansion.
-- Source-preserving channel extraction and eleven scoped pure 2D collision queries.
-- Vector3 arithmetic, cross/dot products, and bounded sphere/box collision queries.
-- Matrix arithmetic/inversion, binary64-input projections, view/rotation constructors, vector transforms and paired-vector orthonormalization.
-- Four-component vector arithmetic and immutable float-list exports with checked length laws.
-- Normalized/HSV color conversions and quaternion Hamilton-product foundations.
-- Owned seeded random streams and reference-exact white-noise images.
-- Radial and one-cycle linear gradient profiles with balanced owned-array generation.
-- QOI decoding/encoding and real byte-file loading/export, with typed failures; explicit [formatted QOI export](docs/FORMATTED-QOI-EXPORT.md) accepts original RGB888/RGBA8888 and retains unsupported owners before IO, verified on local Linux CPU/JavaScript.
-- CORE indexed/RGB24 and 40/56/108/124-byte BMP profiles with native palette, bitfield and alpha behavior; exact RGBA8 V4 export, checked formatted [24-bit/V4 BMP export](docs/FORMATTED-BMP-EXPORT.md) for formats 1..8, checked formatted [RLE TGA export](docs/FORMATTED-TGA-EXPORT.md) for formats 1..8, and owned raw image-file IO.
-- TGA raw/RLE true-color, grayscale and indexed decoding with byte-exact default RLE export; dedicated [formatted TGA memory loading](docs/TGA.md#format-preserving-tga-memory-loading) preserves native grayscale/gray-alpha/expanded RGB888/RGBA8888 output, including palette-depth selection independent of index width. Dedicated [formatted TGA file loading](docs/IMAGE-FILES.md#format-preserving-tga-file-loading) adds suffix-independent selection with the shared inclusive 1 MiB cap, exact reads and close-before-decode calls.
-- Binary 8/16-bit PGM/PPM decoding with native header, maxval and little-endian sample behavior; dedicated [formatted PNM memory loading](docs/PNM.md#format-preserving-pnm-memory-loading) preserves native grayscale/RGB888 output with reduced 8-bit samples and typed checked errors. Local Linux CPU-1/CPU-2/JavaScript raw-byte verification is recorded in the [PNM evidence](docs/evidence/pnm-formatted.json). Dedicated [formatted PNM file loading](docs/IMAGE-FILES.md#format-preserving-pnm-file-loading) adds suffix-independent P5/P6 selection with the shared inclusive 1 MiB cap and exact-read/closed-handle evidence.
-- Raw/PackBits PSD decoding with native channels/alpha, explicit matte arithmetic, depth rules, defaults and metadata skipping.
-- Raw/pure-RLE/mixed-RLE Softimage PIC decoding with native clipping, white defaults and channel overwrite order; dedicated [formatted PIC memory loading](docs/PIC.md#format-preserving-pic-memory-loading) preserves native RGB888/RGBA8888 storage selected from all validated packet masks, independently of opacity. Fresh local CPU-one-thread/CPU-two-thread/JavaScript qualification passes with independent complete-byte replay; [PIC evidence](docs/evidence/pic-formatted-memory.json) keeps hosted and platform gaps explicit. The dedicated [formatted PIC file loader](docs/IMAGE-FILES.md#format-preserving-pic-file-loading) preserves that storage with suffix-independent selection and the shared inclusive 1 MiB pre-read cap; PIC memory remains uncapped. Fresh local file qualification and complete independent replay pass; [file evidence](docs/evidence/pic-formatted-files.json) keeps exact-tip hosted and platform gaps explicit.
-- First-frame GIF decoding with offsets/interlacing, native background fills, global/local palettes, transparency and bounded LZW.
-- Bounded owned GIF animations from memory/files and generic single-image fallback, with native retain/restore disposal and complete frame comparisons.
-- Owned raw/scanline-RLE Radiance RGBE float images and bounded file loading, with exhaustive native F32-bit comparisons including subnormals.
-- Native RGB float/RGBA8 conversion with retained owners on unsupported samples and stack-bounded large image exports.
-- Exact non-NaN RGB float raw-byte import/export, including signed zero, subnormals and infinities.
-- Lossless RGB float copies, flips and quarter-turn rotations with native sample-word comparisons.
-- RGB float region extraction and clipped cropping with retained-owner and independent-region checks.
-- Native RGB float nearest/default-filtered resizing, including RGBA8 quantization and retained rejected owners.
-- RGB float canvas/POT operations preserving native sample movement, zero-fill quirks and same-size no-ops.
-- RGB float tint/invert/contrast/brightness/replacement with native quantization, clamping and alpha behavior.
-- Direct RGB float conversion to byte/integer formats and grayscale with verified packed-rounding boundaries.
-- Native byte/integer and RGB float image-as-code text export with exact naming, raw-byte formatting and owned file-error handling.
-- RGB float RAW file loading/writing with native header selection, exact words and retained owners on rejected writes.
-- Bounded raw DEFLATE decompression with native empty-block semantics.
-- Byte-exact native quality-8 raw compression with bounded inputs and explicit
-  rejection of the retained native sequence-buffer overflow domain.
-- PNG decoding across supported 1/2/4/8/16-bit formats, Adam7 and native-default CgBI. Dedicated [formatted PNG file loading](docs/IMAGE-FILES.md#format-preserving-png-file-loading) selects PNG independently of suffixes, preserving native grayscale/gray-alpha/RGB888/RGBA8888 output with the shared inclusive 1 MiB cap, exact reads and close-before-decode calls; fresh local Linux CPU-one-thread/CPU-two-thread/JavaScript file qualification passes with independent complete-record replay. The historical [85-gate hosted checkpoint](https://github.com/jonathanperis/jonlib/actions/runs/37187107908) at `e6ac05e6` passes; the later PIC increment requires its own exact-tip hosted result.
-- Byte-exact default PNG export: byte-format memory output and all seven checked image formats through file export.
-- Bounded PNG/BMP/TGA/PGM/PPM/QOI file loading with native supported suffix/content detection.
-- Jonmath scalar/vector/matrix/quaternion profiles with exact reference arithmetic.
-- Horizontal and vertical flips.
-- Conversion to Bend's `Base.Image` quadtree.
-- P3 PPM encoding and file export through Base IO.
-- Exact full-pixel differential testing, deterministic seeded scenarios, a
-  dimension-preservation law, and ownership/adapter contract checks.
-- Verified native CPU, JavaScript and Metal execution with the declared compiler overlay.
+- **Images** ([API](docs/API.md)): owned RGBA8 `Surface` creation, pixel access and
+  copies; clipped pixels, rectangles, circles, lines, triangles, fans/strips and
+  outlines; image composition with tint/alpha and source/destination clipping;
+  crop, extract, nearest and [filtered resize](docs/RESAMPLING.md), canvas/POT,
+  flips and rotations; color/alpha transforms, palettes and channels;
+  gradients, checkerboards, noise, cellular and Perlin generation;
+  [mipmaps](docs/MIPMAPS.md), [Gaussian blur](docs/BLUR.md) and
+  [kernel convolution](docs/CONVOLUTION.md).
+- **Pixel formats**: byte/integer formats 1..8 as `Image.Formatted`
+  ([FORMATS.md](docs/FORMATS.md), [R32.md](docs/R32.md)), packed pixel access and
+  dithering ([PIXELS.md](docs/PIXELS.md)) and RGB float images
+  ([FLOAT-RGB.md](docs/FLOAT-RGB.md)).
+- **Codecs and files** ([CODECS.md](docs/CODECS.md)): decoding QOI, BMP, TGA,
+  PGM/PPM, PNG, PSD, Softimage PIC, GIF (first frame and animations) and Radiance
+  HDR from memory or bounded files, with format-preserving variants
+  ([IMAGE-FILES.md](docs/IMAGE-FILES.md)); export to QOI, BMP, TGA, PNG, RAW and C
+  source ([IMAGE-EXPORT.md](docs/IMAGE-EXPORT.md), [IMAGE-CODE.md](docs/IMAGE-CODE.md)),
+  with typed errors and owner-preserving rejection before a file is opened.
+- **Data utilities**: raw DEFLATE decoding and quality-8 compression
+  ([DEFLATE.md](docs/DEFLATE.md), [COMPRESSION.md](docs/COMPRESSION.md)),
+  [Base64](docs/BASE64.md), [CRC32/MD5](docs/CHECKSUMS.md) and [SHA-1/SHA-256](docs/SHA.md).
+- **Jonmath** ([MATH.md](docs/MATH.md)): scalar helpers, Vector2/3/4, matrices and
+  quaternions with exact reference arithmetic order, explicit numerical profiles
+  for libm-dependent results ([ANGLES.md](docs/ANGLES.md)), 2D/3D
+  [collisions](docs/COLLISION.md), [splines](docs/SPLINES.md) and owned
+  [random streams](docs/RANDOM.md).
+- **Execution**: native CPU, JavaScript and (with the declared compiler overlay)
+  forced Metal; see [VERIFICATION.md](docs/VERIFICATION.md).
 
-See the [master plan](docs/MASTER-PLAN.md), [API](docs/API.md), [compatibility ledger](docs/COMPATIBILITY.md),
-[verification record](docs/VERIFICATION.md), and [roadmap](docs/ROADMAP.md).
-This is an early library: desktop interaction,
-textures/fonts, additional codecs, audio, 3D, and broader platform support remain future work.
+Not yet started: windows and input, textures and fonts, audio, 3D, shaders and
+platforms beyond headless CPU/JS/Metal. The [master plan](docs/MASTER-PLAN.md)
+orders that work.
 
 ## Requirements
 
@@ -143,61 +111,26 @@ installed Bend 2.0.27 is not equivalent to this declared source toolchain.
 From the repository root:
 
 ```sh
+python3 tools/check_project.py
 python3 -m unittest discover -s tests -v
-python3 tools/conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --plan
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only conformance
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --shard 1/1
 ```
 
-The harness builds raylib's headless Memory backend under `.build/`, generates
-both runners from [`tests/fixtures/images.json`](tests/fixtures/images.json),
-and compares every packed RGBA pixel on native CPU (one/two threads) and JS.
-It also checks the proof, owned copies, bounds, Base.Image conversion, and the
-three headless PPM examples. Empty suites, missing outputs and mismatches fail.
+[`tools/gates.json`](tools/gates.json) lists every gate: the main differential
+corpus (`tools/conformance.py`, which also checks contracts, examples, the proof
+and the API inventory), focused probes per API family, the resize gate, the
+compiler-overlay regressions and diagnostic records. Each compares Jonlib with
+the pinned raylib reference on native CPU (one and two threads) and JavaScript;
+empty suites, missing outputs and mismatches fail. [CI.md](docs/CI.md) describes
+how GitHub Actions shards the gates on Ubuntu and macOS, and
+[VERIFICATION.md](docs/VERIFICATION.md) what a pass does and does not establish.
 
-```sh
-python3 tools/conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
-```
-
-The optional GPU command forces device execution and fails if the device or
-results are unavailable. **The full current corpus passes on the tested M1 with the
-declared overlay**, including every RGBA pixel. Stock Bend's failure and the
+Forced-GPU runs (`--gpu` on `tools/conformance.py`, `tools/verify_bend.py` and the
+probes) fail rather than fall back to CPU. They run locally on supported Apple
+hardware; hosted CI does not claim GPU validation. Stock Bend's failure and the
 compiler fix are documented in [the investigation](docs/METAL-INVESTIGATION.md).
-Hosted CI validates CPU/JavaScript; it does not claim GPU validation.
-
-Default filtered resizing also has a dedicated exact-bit/pixel gate:
-
-```sh
-python3 tools/resize_conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
-```
-
-It checks normalization, complete filter kernels, all four retained precision
-counterexamples and a 529-image corpus including 4096-pixel axis boundaries.
-See [resampling status and evidence](docs/RESAMPLING.md).
-
-The compiler overlay also has a focused upstream regression runner:
-
-```sh
-python3 tools/verify_bend.py --bend-source "$BEND_SOURCE"
-python3 tools/verify_bend.py --bend-source "$BEND_SOURCE" --gpu
-```
-
-Gradient arithmetic and measured parallel generation have separate probes:
-
-```sh
-python3 tools/trig_probe.py --bend-source "$BEND_SOURCE" --gpu
-python3 tools/gradient_bench.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
-```
-
-See [GRADIENTS.md](docs/GRADIENTS.md) for the verified direction range, retained
-wider-angle counterexamples and timing scope.
-
-Evidence is written to `.build/conformance.json`, with source/input hashes,
-toolchain, host and per-lane results. Generated programs and complete reference/
-candidate pixel outputs remain beside it. Each run initially marks the report
-failed, so an unsuccessful rerun cannot leave an old success as its result.
-The run checks the complete [API ledger](api/ledger.json) against the pinned
-headers and exports its **600 public raylib.h functions** into
-`.build/api-inventory.json`. Its progress summary comes from the same ledger.
-Mapped image operations cover only the declared profile.
 
 ## Follow the full parity plan
 
@@ -221,7 +154,7 @@ BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" examples/headless.bend -o .
 ```
 
 This writes `.build/headless.ppm`: the rectangle/circle regression scene, rendered
-by Jonlib. It opens no window. The conformance command checks its RGB values
+by Jonlib. It opens no window. The `conformance` gate checks its RGB values
 against raylib's actual image output.
 
 The second example combines filled/outlined triangles, a line and a tinted image:

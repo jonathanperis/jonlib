@@ -1,11 +1,11 @@
-# Public API: current profiles
+# Public API
 
 Import `jonlib.bend` as `J` for core operations and `jonmath.bend` as `M` for math
 operations and shared vector/matrix types. See [MODULES.md](MODULES.md) for the
 `ray*` → `jon*` naming convention and import migration.
 This is a source library for the Bend 2.0.27 base plus the compiler overlay in
 `toolchain.json`. Helpers with further dotted suffixes
-are implementation details; only operations listed here form this initial API.
+are implementation details; only operations listed here form the public API.
 
 ## Color
 
@@ -36,10 +36,12 @@ the unsigned bit pattern returned by `ColorToInt`.
   Wider hue inputs remain outside this profile. RGB→HSV→RGB is not promised to
   recover every byte, because the reference itself rounds intermediate values.
 
+## API families documented elsewhere
+
 The public scalar and Vector2 operations are listed in [MATH.md](MATH.md),
 including their explicit uncontracted-F32 profile and remaining numeric gaps.
 The three checked `*_with_reference` angle APIs use the separate
-`M.Angle.Reference` and return `Maybe<F32>`; see [CHECKED-ANGLES.md](ANGLES.md).
+`M.Angle.Reference` and return `Maybe<F32>`; see [ANGLES.md](ANGLES.md).
 Pure geometry queries are listed in [COLLISION.md](COLLISION.md), including
 strict rectangle edges and inclusive circle tangency.
 Spline point queries and their explicit arithmetic profiles are listed in
@@ -61,7 +63,7 @@ are documented in [SHA.md](SHA.md).
 Bounded quality-8 raw compression, including empty-input and native sequence-limit
 behavior, is documented in [COMPRESSION.md](COMPRESSION.md).
 
-## Owned RGBA8 surfaces
+## Shared types
 
 `Vector2` is immutable Jonmath `Data`, constructed as `M.Vector2{x, y}` with F32 fields.
 Reusable local constructor bindings need a type annotation, for example
@@ -71,8 +73,8 @@ crop/extraction/region-drawing profile requires integral rectangle values;
 `draw_image_rect` and the documented rectangle wrappers also support fractional fields.
 
 `M.Angle.Reference` has `M.Apple2007AngleRn{}`, `M.Sun239AngleRn{}` and
-`M.Glibc241AngleRn{}` constructors. They name numerical contracts; fresh native
-qualification is separate. Existing `Gradient.Reference` APIs retain their meanings.
+`M.Glibc241AngleRn{}` constructors. They name numerical contracts, not host
+detection; see [ANGLES.md](ANGLES.md). Existing `Gradient.Reference` APIs retain their meanings.
 
 `M.Vector3{x, y, z}` is immutable `Data` with three F32 fields.
 `M.Vector4{x, y, z, w}` provides four immutable F32 fields.
@@ -80,12 +82,14 @@ qualification is separate. Existing `Gradient.Reference` APIs retain their meani
 without reordering. Their numeric and collision operations are documented in
 [MATH.md](MATH.md) and [COLLISION.md](COLLISION.md).
 Jonmath's `M.Matrix` contains 16 F32 fields in the reference declaration order; its layout,
-identity/transpose operations and vector transforms are listed in [MATH.md](MATH.md#matrix-api).
+identity/transpose operations and vector transforms are listed in [MATH.md](MATH.md).
 `M.Matrix.Decomposition` contains `M.Decomposed{translation, rotation, scale}` with
 Vector3/Vector4/Vector3 fields, adapting the three distinct outputs of decomposition.
 `M.Float64{high, low}` retains binary64 input bits for projection matrices;
 `M.Float64.from_f32` promotes existing F32 values. Precision and supported domains
-are detailed in [MATH.md](MATH.md#binary64-projection-inputs).
+are detailed in [MATH.md](MATH.md).
+
+## Owned RGBA8 surfaces
 
 `Surface` owns its row-major pixel array. Always start with `Surface.create`:
 the underlying constructor is visible because Bend does not provide the needed
@@ -171,43 +175,43 @@ is outside this API's contract.
 | `Image.FloatRGB.load_hdr(path)` | Explicit HDR file selection, 1 MiB byte cap, complete reads, closed handles and typed errors; returns owned RGB float pixels. See [HDR.md](HDR.md). |
 | `Image.FloatRGB.entries(image)` / `unload(image)` | Consume a float image to return `(width, height, List<M.Vector3>)` or dispose of its owned pixels. |
 | `Surface.to_float_rgb(surface)` / `Image.FloatRGB.to_surface(image)` | Native format-7/9 RGB normalization and checked opaque RGBA8 conversion. Rejection returns the original float owner; see [FLOAT-RGB.md](FLOAT-RGB.md). |
-| `Image.FloatRGB.from_bytes(width, height, bytes)` / `to_bytes(image)` | Exact non-NaN little-endian format-9 words, checked dimensions/lengths and rejected-owner preservation; see [FLOAT-RGB-BYTES.md](FLOAT-RGB-BYTES.md). |
-| `Image.FloatRGB.copy(image)` | Returns the original float owner and an independent clone. See [FLOAT-RGB.md](FLOAT-RGB.md#copy-and-lossless-orientation). |
-| `Image.FloatRGB.flip_horizontal/flip_vertical/rotate_cw/rotate_ccw` | Consume the float owner and preserve exact sample words; quarter-turns swap dimensions. See [FLOAT-RGB.md](FLOAT-RGB.md#copy-and-lossless-orientation). |
-| `Image.FloatRGB.extract(image, rect)` / `crop(image, rect)` | Independent integral regions or clipped crops with exact sample words and retained rejected owners; see [FLOAT-RGB.md](FLOAT-RGB.md#rectangular-extraction-and-crop). |
-| `Image.FloatRGB.resize_nn(image, width, height)` | Native format-9 RGBA8-quantized nearest resizing with retained original owners on unsupported samples/sizes/mappings; see [FLOAT-RGB.md](FLOAT-RGB.md#native-nearest-neighbor-resizing). |
-| `Image.FloatRGB.resize(image, width, height)` | Native format-9 RGBA8-quantized default filtering with retained owners; see [FLOAT-RGB.md](FLOAT-RGB.md#native-nearest-neighbor-resizing). |
-| `Image.FloatRGB.resize_canvas(image, width, height, x, y, fill)` / `to_pot(image, fill)` | Native lossless movement, ignored float-format fill color, bounded offsets and retained rejected owners; see [FLOAT-RGB.md](FLOAT-RGB.md#canvas-resizing-and-pot-growth). |
-| `Image.FloatRGB.color_tint/color_invert/color_contrast/color_brightness/color_replace` | Native format-9 byte-quantized color paths with preserved rejected owners; see [FLOAT-RGB.md](FLOAT-RGB.md#native-color-transforms). |
-| `Image.FloatRGB.to_formatted(image, target)` / `color_grayscale(image)` | Direct finite `[0,1]` native normalized conversion to formats 1..8 (R32 uses uncontracted F32 luminance), or grayscale format 1, retaining rejected float owners; see [FLOAT-RGB.md](FLOAT-RGB.md#direct-byteinteger-formats-and-grayscale). |
-| `Image.Formatted.decode_bmp(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>` | Entire checked BMP memory profile with native RGB888 (4) or RGBA8888 (7), implicit one mip and exact raw row-major bytes; effective alpha layout determines channels before pixel decoding or alpha repair. Existing 1..4096 bounds and typed errors apply; no encoded memory cap. See [BMP.md](BMP.md#format-preserving-bmp-memory-loading). |
-| `Image.Formatted.decode_pic(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>` | Entire checked PIC memory domain with native RGB888 (4) or RGBA8888 (7), implicit one mip and exact raw bytes. The union of all validated packet masks selects alpha independently of opacity, packet order and selected-sample totals. Existing 1..4096 bounds, raw/pure/mixed RLE and typed-error precedence remain unchanged; no encoded-memory cap. Fresh local Linux CPU-1/CPU-2/JavaScript qualification passes with complete raw-byte replay; the exact [86-gate e481d3c hosted memory checkpoint](https://github.com/jonathanperis/jonlib/actions/runs/37202964890) also passes its recorded Ubuntu/macOS CPU/JavaScript gates. Later PIC-file qualification is separate. See [PIC.md](PIC.md#format-preserving-pic-memory-loading). |
-| `Image.Formatted.decode_png(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>` | Entire checked PNG memory domain with native grayscale (1), gray-alpha (2), RGB888 (4) or RGBA8888 (7), implicit one mip and exact 8-bit component bytes. Structural tRNS promotes channels independently of opacity and remains sticky through later PLTE; 16-bit keys compare before high-byte reduction. Existing inclusive 1 MiB encoded/64 MiB filtered caps, 1..4096 dimensions, CgBI defaults and typed-error precedence are unchanged. Fresh local Linux CPU-1/CPU-2/JavaScript qualification passes; hosted qualification remains pending. See [PNG.md](PNG.md#format-preserving-png-memory-loading). |
-| `Image.Formatted.decode_tga(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>` | Checked TGA memory decoding preserving native grayscale (1), gray-alpha (2), expanded RGB888 (4) or RGBA8888 (7), implicit single mip and exact raw bytes; palette depth determines indexed output independently of index width. Existing 1..4096 bounds and typed errors apply. See [TGA.md](TGA.md#format-preserving-tga-memory-loading). |
-| `Image.Formatted.decode_pnm(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>` | Checked binary P5/P6 memory decoding preserving native grayscale (1) or RGB888 (4), single-mip dimensions and exact reduced 8-bit output; dimensions 1..4096, maxval 1..65535 and existing checked little-endian parsing/errors. See [PNM.md](PNM.md#format-preserving-pnm-memory-loading). |
-| `Image.Formatted.decode_qoi(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>` | Checked single-mip QOI memory decoding preserving native RGB888 (4) or RGBA8888 (7) metadata and exact raw bytes; dimensions 1..4096 and existing strict typed errors. See [CODECS.md](CODECS.md#format-preserving-qoi-memory-loading). |
-| `Image.Formatted.load_pic(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` | Explicit, suffix-independent PIC file selection preserving native RGB888 (4)/RGBA8888 (7), implicit one mip and exact raw bytes. Inclusive 1,048,576-byte RasterFile cap before one exact-length read, Base U32-size overflow, exact file/decode errors and close-before-decode calls; Base ignores close failures. PIC memory remains uncapped and unchanged. Fresh local CPU-1/CPU-2/JavaScript file qualification and complete retained-byte replay pass; exact-tip hosted qualification remains pending. See [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-pic-file-loading). |
-| `Image.Formatted.load_png(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` | Explicit, suffix-independent PNG file selection preserving native grayscale (1), gray-alpha (2), RGB888 (4) or RGBA8888 (7), implicit one mip and the unchanged checked PNG memory domain. Inclusive 1,048,576-byte RasterFile cap before one exact-length read; close-before-decode calls and unchanged Base code/message errors. The decoder retains its separate inclusive 1 MiB encoded/64 MiB filtered limits. Fresh local Linux CPU-1/CPU-2/JavaScript file qualification passes 370 accepted files, 219 checked-only controls and 2,846 primary observations / 1,531,636 bytes per lane, plus independently replayed boundary/sparse/exact-cap records; the historical [85-gate hosted checkpoint](https://github.com/jonathanperis/jonlib/actions/runs/37187107908) at `e6ac05e6` passes with twelve workers, both aggregates and twelve unique nonempty artifacts. Later increments need separate hosted qualification. See [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-png-file-loading) and [file evidence](evidence/png-formatted-files.json). |
-| `Image.Formatted.load_bmp(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` | Explicit, suffix-independent BMP file selection preserving native RGB888 (4)/RGBA8888 (7), implicit one mip and the unchanged checked 1..4096 memory domain. Inclusive 1,048,576-byte raster cap, one exact-length read, close-before-decode calls and typed errors; Base ignores close errors. Local Linux CPU-1/CPU-2/JavaScript file qualification and the historical [83-gate hosted checkpoint](https://github.com/jonathanperis/jonlib/actions/runs/37161146356) at `1312479c` pass; later increments need separate hosted qualification. See [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-bmp-file-loading). |
-| `Image.Formatted.load_qoi(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` | Explicit, suffix-independent QOI file selection preserving native format 4/7, single-mip dimensions and exact raw bytes; inclusive 83,886,102-byte cap, complete reads, close-before-decode ordering and typed errors. See [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-qoi-file-loading). |
-| `Image.Formatted.load_pnm(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` | Explicit, suffix-independent binary P5/P6 file selection preserving native grayscale (1)/RGB888 (4), implicit single-mip dimensions and exact reduced 8-bit samples; inclusive 1,048,576-byte raster cap, complete reads, close-before-decode calls and typed errors. See [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-pnm-file-loading). |
-| `Image.Formatted.load_tga(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` | Explicit, suffix-independent TGA file selection preserving native grayscale (1), gray-alpha (2), expanded RGB888 (4) or RGBA8888 (7), implicit single mip and the existing checked 1..4096 memory domain. Inclusive 1,048,576-byte raster cap, one exact-length read, close-before-decode calls and typed errors. Local Linux CPU-1/CPU-2/JavaScript file qualification and the historical 81-gate TGA-file checkpoint pass; later increments require their own exact-tip hosted qualification. See [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-tga-file-loading). |
-| `Image.Formatted.to_float_rgb(image)` | Consume formats 1..8 into native normalized RGB float storage, preserving packed-channel precision and R32 red-only sample bits while dropping alpha; see [FLOAT-RGB.md](FLOAT-RGB.md#direct-byteinteger-formats-and-grayscale). |
+| `Image.FloatRGB.from_bytes(width, height, bytes)` / `to_bytes(image)` | Exact non-NaN little-endian format-9 words, checked dimensions/lengths and rejected-owner preservation; see [FLOAT-RGB.md](FLOAT-RGB.md). |
+| `Image.FloatRGB.copy(image)` | Returns the original float owner and an independent clone. See [FLOAT-RGB.md](FLOAT-RGB.md). |
+| `Image.FloatRGB.flip_horizontal/flip_vertical/rotate_cw/rotate_ccw` | Consume the float owner and preserve exact sample words; quarter-turns swap dimensions. See [FLOAT-RGB.md](FLOAT-RGB.md). |
+| `Image.FloatRGB.extract(image, rect)` / `crop(image, rect)` | Independent integral regions or clipped crops with exact sample words and retained rejected owners; see [FLOAT-RGB.md](FLOAT-RGB.md). |
+| `Image.FloatRGB.resize_nn(image, width, height)` | Native format-9 RGBA8-quantized nearest resizing with retained original owners on unsupported samples/sizes/mappings; see [FLOAT-RGB.md](FLOAT-RGB.md). |
+| `Image.FloatRGB.resize(image, width, height)` | Native format-9 RGBA8-quantized default filtering with retained owners; see [FLOAT-RGB.md](FLOAT-RGB.md). |
+| `Image.FloatRGB.resize_canvas(image, width, height, x, y, fill)` / `to_pot(image, fill)` | Native lossless movement, ignored float-format fill color, bounded offsets and retained rejected owners; see [FLOAT-RGB.md](FLOAT-RGB.md). |
+| `Image.FloatRGB.color_tint/color_invert/color_contrast/color_brightness/color_replace` | Native format-9 byte-quantized color paths with preserved rejected owners; see [FLOAT-RGB.md](FLOAT-RGB.md). |
+| `Image.FloatRGB.to_formatted(image, target)` / `color_grayscale(image)` | Direct finite `[0,1]` native normalized conversion to formats 1..8 (R32 uses uncontracted F32 luminance), or grayscale format 1, retaining rejected float owners; see [FLOAT-RGB.md](FLOAT-RGB.md). |
+| `Image.Formatted.decode_bmp(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>` | Entire checked BMP memory profile with native RGB888 (4) or RGBA8888 (7), implicit one mip and exact raw row-major bytes; effective alpha layout determines channels before pixel decoding or alpha repair. Existing 1..4096 bounds and typed errors apply; no encoded memory cap. See [BMP.md](BMP.md). |
+| `Image.Formatted.decode_pic(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>` | Entire checked PIC memory domain with native RGB888 (4) or RGBA8888 (7), implicit one mip and exact raw bytes. The union of all validated packet masks selects alpha independently of opacity, packet order and selected-sample totals. Existing 1..4096 bounds, raw/pure/mixed RLE and typed-error precedence remain unchanged; no encoded-memory cap. See [PIC.md](PIC.md). |
+| `Image.Formatted.decode_png(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>` | Entire checked PNG memory domain with native grayscale (1), gray-alpha (2), RGB888 (4) or RGBA8888 (7), implicit one mip and exact 8-bit component bytes. Structural tRNS promotes channels independently of opacity and remains sticky through later PLTE; 16-bit keys compare before high-byte reduction. Existing inclusive 1 MiB encoded/64 MiB filtered caps, 1..4096 dimensions, CgBI defaults and typed-error precedence are unchanged. See [PNG.md](PNG.md). |
+| `Image.Formatted.decode_tga(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>` | Checked TGA memory decoding preserving native grayscale (1), gray-alpha (2), expanded RGB888 (4) or RGBA8888 (7), implicit single mip and exact raw bytes; palette depth determines indexed output independently of index width. Existing 1..4096 bounds and typed errors apply. See [TGA.md](TGA.md). |
+| `Image.Formatted.decode_pnm(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>` | Checked binary P5/P6 memory decoding preserving native grayscale (1) or RGB888 (4), single-mip dimensions and exact reduced 8-bit output; dimensions 1..4096, maxval 1..65535 and existing checked little-endian parsing/errors. See [PNM.md](PNM.md). |
+| `Image.Formatted.decode_qoi(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>` | Checked single-mip QOI memory decoding preserving native RGB888 (4) or RGBA8888 (7) metadata and exact raw bytes; dimensions 1..4096 and existing strict typed errors. See [CODECS.md](CODECS.md). |
+| `Image.Formatted.load_pic(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` | Explicit, suffix-independent PIC file selection preserving native RGB888 (4)/RGBA8888 (7), implicit one mip and exact raw bytes. Inclusive 1,048,576-byte RasterFile cap before one exact-length read, Base U32-size overflow, exact file/decode errors and close-before-decode calls; Base ignores close failures. PIC memory remains uncapped and unchanged. See [IMAGE-FILES.md](IMAGE-FILES.md). |
+| `Image.Formatted.load_png(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` | Explicit, suffix-independent PNG file selection preserving native grayscale (1), gray-alpha (2), RGB888 (4) or RGBA8888 (7), implicit one mip and the unchanged checked PNG memory domain. Inclusive 1,048,576-byte RasterFile cap before one exact-length read, Base U32-size overflow, close-before-decode calls and unchanged Base code/message errors; Base ignores close failures. The decoder retains its separate inclusive 1 MiB encoded/64 MiB filtered limits. See [IMAGE-FILES.md](IMAGE-FILES.md). |
+| `Image.Formatted.load_bmp(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` | Explicit, suffix-independent BMP file selection preserving native RGB888 (4)/RGBA8888 (7), implicit one mip and the unchanged checked 1..4096 memory domain. Inclusive 1,048,576-byte raster cap with pre-read size rejection, Base U32-size overflow, one exact-length read, close-before-decode calls and typed errors; Base ignores close errors. See [IMAGE-FILES.md](IMAGE-FILES.md). |
+| `Image.Formatted.load_qoi(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` | Explicit, suffix-independent QOI file selection preserving native format 4/7, single-mip dimensions and exact raw bytes; inclusive 83,886,102-byte cap, complete reads, close-before-decode ordering and typed errors. See [IMAGE-FILES.md](IMAGE-FILES.md). |
+| `Image.Formatted.load_pnm(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` | Explicit, suffix-independent binary P5/P6 file selection preserving native grayscale (1)/RGB888 (4), implicit single-mip dimensions and exact reduced 8-bit samples; inclusive 1,048,576-byte raster cap, complete reads, close-before-decode calls and typed errors. See [IMAGE-FILES.md](IMAGE-FILES.md). |
+| `Image.Formatted.load_tga(path: String) -> IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` | Explicit, suffix-independent TGA file selection preserving native grayscale (1), gray-alpha (2), expanded RGB888 (4) or RGBA8888 (7), implicit single mip and the existing checked 1..4096 memory domain. Inclusive 1,048,576-byte raster cap with pre-read size rejection, one exact-length read, close-before-decode calls and typed errors. See [IMAGE-FILES.md](IMAGE-FILES.md). |
+| `Image.Formatted.to_float_rgb(image)` | Consume formats 1..8 into native normalized RGB float storage, preserving packed-channel precision and R32 red-only sample bits while dropping alpha; see [FLOAT-RGB.md](FLOAT-RGB.md). |
 | `Image.Formatted.from_channel(image, selected)` / `Image.FloatRGB.from_channel(image, selected)` | Retain the source and return an independent native grayscale channel with format-specific selector rules; see [IMAGE-CHANNELS.md](IMAGE-CHANNELS.md). |
 | `Image.Formatted.colors/get` / `Image.FloatRGB.colors/get` | Native bulk and point RGBA observations with packed integer expansion, float truncation and retained point/error owners; see [IMAGE-COLORS.md](IMAGE-COLORS.md). |
 | `Image.Formatted.load_raw(path, width, height, format, header_size)` | Native RAW header selection for formats 1..7 and checked finite `[0,1]` R32 (8); exact words and metadata, bounded reads, closed handles and distinct `InvalidRawSamples` errors. Format 9 remains unsupported here. See [RAW-FILES.md](RAW-FILES.md). |
-| `Image.FloatRGB.load_raw(path, width, height, header_size)` / `write_raw(image, path)` | Native RAW header selection and exact non-NaN RGB words; typed load/write errors, closed handles and retained owners on NaN write rejection. See [RAW-FILES.md](RAW-FILES.md#rgb-float-files). |
+| `Image.FloatRGB.load_raw(path, width, height, header_size)` / `write_raw(image, path)` | Native RAW header selection and exact non-NaN RGB words; typed load/write errors, closed handles and retained owners on NaN write rejection. See [RAW-FILES.md](RAW-FILES.md). |
 | `Surface.decode_image_for(reference, file_type, bytes)` / `Surface.load_image_for(reference, path)` | Shared dispatch with `J.Image.Decode.Reference`; affects PSD matte arithmetic and retains existing bounds/error/closure behavior. Convenience calls select `J.UncontractedDecode{}`. |
 | `Surface.decode_png` | Bounded non-interlaced/Adam7 PNG and native-default CgBI decoding at supported 1/2/4/8/16-bit combinations; filtering, transparency and normalization in [PNG.md](PNG.md). |
-| `Surface.to_png`, `write_png` | Consuming RGBA8 memory/file exports with byte-exact native default filtering, quality-8 compression and checksums; see [PNG-EXPORT.md](PNG-EXPORT.md). |
+| `Surface.to_png`, `write_png` | Consuming RGBA8 memory/file exports with byte-exact native default filtering, quality-8 compression and checksums; see [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
 | `Surface.write_image(surface, path)` | ASCII-case-insensitive PNG/BMP/TGA/QOI/RAW suffix dispatch; pre-open unsupported-suffix errors retain the owner, selected file operations consume it and return typed IO errors; see [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
-| `Image.Formatted.to_png` | Consuming PNG memory export preserving byte-format 1/2/3/4-channel data and R32's native raw-byte RGBA interpretation; unsupported packed formats return the original owner. See [PNG-EXPORT.md](PNG-EXPORT.md). |
-| `Image.Formatted.to_bmp` / `write_bmp` | Consuming exact native BMP file bytes and explicit typed file IO for checked formats 1..8; 24-bit grayscale/gray-alpha/RGB and V4 packed/RGBA/R32 routing. See [FORMATTED-BMP-EXPORT.md](FORMATTED-BMP-EXPORT.md). |
-| `Image.Formatted.to_qoi(image) -> Result<&1, &1, Image.Formatted & Pixel.Error, +List<U32>>` / `write_qoi(image, path) -> IO(Result<&1, &1, Image.Formatted.QoiWriteError, Unit>)` | Explicit native QOI file bytes for original RGB888 (4) / RGBA8888 (7), header channels 3/4; other checked formats retain their exact owner before IO. Accepted writes consume the owner and close acquired handles. Local Linux x86-64 CPU-1/CPU-2/JavaScript evidence is recorded in [FORMATTED-QOI-EXPORT.md](FORMATTED-QOI-EXPORT.md). |
-| `Image.Formatted.to_tga` / `write_tga` | Consuming exact native RLE TGA file bytes and explicit typed IO for checked formats 1..8; channel-preserving gray/gray-alpha/RGB and native packed/RGBA/R32 expansion. See [FORMATTED-TGA-EXPORT.md](FORMATTED-TGA-EXPORT.md). |
-| `Image.Formatted.write_png` | Consuming PNG file export for checked formats 1..8, with native byte-channel/packed-color expansion and bounded R32 red-only normalization; see [PNG-EXPORT.md](PNG-EXPORT.md). |
-| `Image.FloatRGB.to_png` / `write_png` | Preserve native raw-prefix memory PNG versus normalized-color file PNG, with retained rejected owners and typed file errors; see [PNG-EXPORT.md](PNG-EXPORT.md#rgb-float-memoryfile-distinction). |
-| `Image.FloatRGB.to_bmp/to_tga` / `write_bmp/write_tga` | Native normalized BMP/TGA file bytes and explicit typed writers, preserving rejected owners; see [FLOAT-RASTER-EXPORT.md](FLOAT-RASTER-EXPORT.md). |
+| `Image.Formatted.to_png` | Consuming PNG memory export preserving byte-format 1/2/3/4-channel data and R32's native raw-byte RGBA interpretation; unsupported packed formats return the original owner. See [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
+| `Image.Formatted.to_bmp` / `write_bmp` | Consuming exact native BMP file bytes and explicit typed file IO for checked formats 1..8; 24-bit grayscale/gray-alpha/RGB and V4 packed/RGBA/R32 routing. See [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
+| `Image.Formatted.to_qoi(image) -> Result<&1, &1, Image.Formatted & Pixel.Error, +List<U32>>` / `write_qoi(image, path) -> IO(Result<&1, &1, Image.Formatted.QoiWriteError, Unit>)` | Explicit native QOI file bytes for original RGB888 (4) / RGBA8888 (7), header channels 3/4 and colorspace 0; other checked formats retain their exact owner before IO. Accepted writes consume the owner and close acquired handles. See [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
+| `Image.Formatted.to_tga` / `write_tga` | Consuming exact native RLE TGA file bytes and explicit typed IO for checked formats 1..8; channel-preserving gray/gray-alpha/RGB and native packed/RGBA/R32 expansion. See [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
+| `Image.Formatted.write_png` | Consuming PNG file export for checked formats 1..8, with native byte-channel/packed-color expansion and bounded R32 red-only normalization; see [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
+| `Image.FloatRGB.to_png` / `write_png` | Preserve native raw-prefix memory PNG versus normalized-color file PNG, with retained rejected owners and typed file errors; see [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
+| `Image.FloatRGB.to_bmp/to_tga` / `write_bmp/write_tga` | Native normalized BMP/TGA file bytes and explicit typed writers, preserving rejected owners; see [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
 | `Image.Formatted.to_code(image, path)` / `write_code(image, path)` | Exact native image-as-code text, basename/hex/newline rules and typed owner-preserving failures; see [IMAGE-CODE.md](IMAGE-CODE.md). |
 | `Image.FloatRGB.to_code(image, path)` / `write_code(image, path)` | Native format-9 image-as-code text from exact non-NaN sample bytes, bounded paths/payloads and typed owner-preserving failures; see [IMAGE-CODE.md](IMAGE-CODE.md). |
 
@@ -331,32 +335,12 @@ rendering, allocation, hardware or compiler behavior is formally proven.
 the complete output string in memory. These are correct small-image adapters;
 large real-time frames and streaming encoders need later performance work.
 
+## Private arithmetic
 
-### Private future-angle prerequisite
-
-The isolated [finite binary64 narrowing helper](BINARY64-NARROW.md) accepts words
-and returns checked nearest-even binary32 words with gradual underflow. It has
-no current public consumer and does not extend any API in this document. Its
-additional structural/concrete laws do not constitute a universal arithmetic
-proof or modern-angle implementation.
-
-The [bounded FMA](BINARY64-FMA.md) and [bounded add/subtract](BINARY64-ADD-SUB.md)
-helpers have the same private status. They establish only their checked arithmetic
-contracts, with no existing image/math API consumer, public API promotion or
-angle-profile change. The add/subtract implementation reuses private FMA
-primitives under its own reviewed bounds.
-
-The [checked normal multiply/divide and word adapters](BINARY64-OPS.md) likewise
-remain private. Their separate pair-guarded domains, exact finite F32 promotion,
-normal/zero packing and unsigned raw-word steps do not widen existing APIs or
-supply the tiny branch's gradual-underflow multiplication.
-
-The separate [gradual-output product](BINARY64-GRADUAL-MULTIPLY.md) now supplies
-that private arithmetic prerequisite for its asymmetric normal-input domain.
-It rounds once to normal/subnormal/signed-zero words and has no existing API
-consumer; it does not widen the normal helpers or implement the angle kernel.
-
-
-The new [private modern finite atan2 adapter](MODERN-ANGLE.md) consumes these
-helpers without introducing a public angle API or changing an existing selector.
-Scalar finite-input support does not expand vector intermediate/output domains.
+The checked binary64 helpers (narrowing, bounded FMA, add/subtract, normal
+multiply/divide with word adapters and the gradual-output product) and the
+[modern finite `atan2f` adapter](MODERN-ANGLE.md) are private: they are not
+re-exported and do not widen any API in this document. Their domains and proof
+limits are in [BINARY64.md](BINARY64.md); the public checked angle wrappers that
+consume them are in [ANGLES.md](ANGLES.md). Scalar finite-input support does not
+expand vector intermediate/output domains.
