@@ -2,11 +2,10 @@
 
 | API | Contract |
 |---|---|
-| `Surface.decode_png(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Surface>` with owned normalized RGBA8 pixels. |
-| `Image.Formatted.decode_png(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Image.Formatted>` preserving the native 8-bit output format (1/2/4/7) and bytes; see [format-preserving memory loading](#format-preserving-png-memory-loading). |
-| `Image.Formatted.load_png(path: String)` | Returns `IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` through the shared bounded, exact-read, close-before-decode file boundary; see [format-preserving file loading](#format-preserving-png-file-loading). |
+| `Surface.decode_png(bytes: +List<U32>)` | Returns `Result<&1, &1, Surface.Error, Surface>` preserving the native 8-bit output format (1/2/4/7) and bytes; see [format-preserving memory loading](#format-preserving-png-memory-loading). |
+| `Surface.load_png(path: String)` | Returns `IO(Result<&1, &1, Surface.IOError, Surface>)` through the shared bounded, exact-read, close-before-decode file boundary; see [format-preserving file loading](#format-preserving-png-file-loading). |
 
-Shared normalized memory/file dispatch (`Surface.decode_image`,
+Shared memory/file dispatch (`Surface.decode_image`,
 `Surface.load_image`) uses the same profile; see [IMAGE-FILES.md](IMAGE-FILES.md).
 Exact PNG export is documented in [IMAGE-EXPORT.md](IMAGE-EXPORT.md).
 
@@ -90,8 +89,8 @@ before array indexing, and dimensions/filtered capacity before allocation.
 
 ## Format-preserving PNG memory loading
 
-`Image.Formatted.decode_png(bytes: +List<U32>)` returns
-`Result<&1, &1, Image.DecodeError, Image.Formatted>`. It accepts the same checked
+`Surface.decode_png(bytes: +List<U32>)` returns
+`Result<&1, &1, Surface.Error, Surface>`. It accepts the same checked
 PNG domain as `Surface.decode_png`: the color/depth combinations, Adam7 passes,
 filter arithmetic, CgBI defaults, chunk ordering, palette/key behavior and
 inclusive limits above are unchanged. It takes no format, channel or reference
@@ -124,13 +123,13 @@ sample after full-width tRNS comparison. This preserves the native 8-bit
 the pinned default conversion flags unchanged: no added BGR swap or
 unpremultiplication, including hidden color at zero alpha.
 
-`Image.Formatted.export` consumes the owner and returns
+`Surface.export` consumes the owner and returns
 `((width, height), (format, bytes))`, with exactly `width*height*channels`
 component bytes and no storage padding. Logical packed words use G, G/A, R/G/B
 or R/G/B/A in successive low bytes; unused upper bytes are zero. Integer packing
-avoids an F32 conversion or a grayscale luminance round trip. The consuming
-`Image.Formatted.to_surface` bridge produces the same normalized RGBA8 values as
-the Surface decoder. The candidate's single mip level is an implicit type
+avoids an F32 conversion or a grayscale luminance round trip.
+`Surface.colors` reads the same RGBA8 values native `LoadImageColors` returns.
+The candidate's single mip level is an implicit type
 contract, not a stored field.
 
 ### Limits and error ordering
@@ -170,7 +169,7 @@ exercised profile.
 
 ## Format-preserving PNG file loading
 
-`Image.Formatted.load_png(path: String)` wraps the shared `RasterFile` reader
+`Surface.load_png(path: String)` wraps the shared `RasterFile` reader
 and the unchanged formatted decoder. PNG is selected explicitly, independently
 of the path suffix. The shared inclusive 1 MiB file cap, one exact-length read
 and close-before-decode call ordering neither enlarge nor replace the encoded and
@@ -224,7 +223,7 @@ Gates run in CI on Ubuntu and macOS (CPU/JavaScript); see [CI.md](CI.md).
 
 - Nondefault external stb decoder flags and broader native malformed-input
   recovery.
-- Generic formatted dispatch; original source bit depth (16-bit output).
+- Original source bit depth (16-bit output).
 - GPU for the formatted paths, Windows/browser and big-endian targets.
 - Native pointer/allocation ABI, allocation-failure parity, maximum-area success
   and representative performance.

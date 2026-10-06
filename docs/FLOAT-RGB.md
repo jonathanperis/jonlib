@@ -1,8 +1,8 @@
 # RGB float images
 
-`Image.FloatRGB` is an owned raylib format-9 image (`PIXELFORMAT_UNCOMPRESSED_R32G32B32`):
-row-major RGB F32 samples with logical dimensions. It is produced by the
-[HDR decoder](HDR.md), the RGBA8 bridge, raw bytes/files and format conversion,
+A `Surface` in format 9 (`PIXELFORMAT_UNCOMPRESSED_R32G32B32`) stores one
+`M.Vector3` of F32 samples per pixel. It is produced by the
+[HDR decoder](HDR.md), raw bytes/files and format conversion,
 and its operations reproduce what raylib 6.0 does to format-9 images. Many
 native format-9 operations go through RGBA8, so they **quantize** even when
 nominally lossless; Jonlib keeps that behavior instead of treating them as float
@@ -24,37 +24,38 @@ Two domains recur below:
 Rejection always returns the original owner with every sample bit intact.
 Dimensions and storage must satisfy the image-owner invariant; create owners
 through the APIs on this page or the HDR/raw loaders, since manually
-inconsistent owner records are outside the contract.
+inconsistent owner records are outside the contract. Rejections are
+`Fail{(owner, OutOfDomain)}` for samples and `InvalidRequest`/`InvalidSize`
+for parameters.
 
 ## RGBA8 bridge
 
 | API | Contract |
 |---|---|
-| `Surface.to_float_rgb(surface) -> Image.FloatRGB` | Consumes RGBA8, normalizes each RGB byte with native F32 `byte/255` and discards alpha, as format 9 does |
-| `Image.FloatRGB.to_surface(image) -> Result<&1, &1, Image.FloatRGB, Surface>` | Finite `[0,1]` samples become opaque RGBA8 through native F32 `component*255` truncation; otherwise `Fail` with the original owner |
+| `Surface.format(rgba8, 9)` | Normalizes each RGB byte with native F32 `byte/255` and discards alpha, as format 9 does |
+| `Surface.format(image, 7)` | Finite `[0,1]` samples become opaque RGBA8 through native F32 `component*255` truncation; otherwise `OutOfDomain` with the original owner |
 
 This is the native `ImageFormat` format-7/format-9 bridge: logical dimensions
 and row order are kept, with no gamma, clamping or tone mapping. HDR values
-outside `[0,1]` remain available through `Image.FloatRGB.entries` after rejection.
+outside `[0,1]` remain available through `Surface.export` after rejection.
 
 ## Raw bytes
 
 ```bend
-Image.FloatRGB.from_bytes(width, height, bytes: +List<U32>) -> Maybe<Image.FloatRGB>
-Image.FloatRGB.to_bytes(image) -> Result<&1, &1, Image.FloatRGB, +List<U32>>
+Surface.from_bytes(width, height, 9, bytes: +List<U32>) -> Maybe<Surface>
+Surface.export(image) -> (U32 & U32) & (U32 & List<U32>)
 ```
 
 `from_bytes` checks dimensions 1..4096 and exactly `width*height*12` byte
-values, reading three little-endian F32 words per pixel. `to_bytes` consumes the
-image and emits the exact format-9 words without storage padding. Both support
-the non-NaN domain: import rejects NaN words before constructing floats, and
-export rejects NaN samples while returning the owner. No normalization, gamma or
-tone mapping is applied. Exact raw NaN-word interoperability is outside the
-profile. The `Image.Formatted` byte factory keeps its own format domain.
+values, reading three little-endian F32 words per pixel; it rejects NaN words
+before constructing floats, so no factory creates NaN samples. `export` consumes
+the image and emits the exact format-9 words without storage padding. No
+normalization, gamma or tone mapping is applied. Exact raw NaN-word
+interoperability is outside the profile.
 
 ## Lossless copy and orientation
 
-`Image.FloatRGB.copy(image)` returns `(original, copy)` with independent storage.
+`Surface.copy(image)` returns `(original, copy)` with independent storage.
 `flip_horizontal`, `flip_vertical`, `rotate_cw` and `rotate_ccw` consume the
 image and preserve every non-NaN sample word: flips keep dimensions, quarter
 turns swap them. RGB vectors move without normalization, matching native
@@ -62,10 +63,10 @@ format-9 byte movement.
 
 ## Extraction and crop
 
-- `extract(image, rectangle) -> Image.FloatRGB & Maybe<Image.FloatRGB>` keeps the
+- `extract(image, rectangle) -> Surface & Maybe<Surface>` keeps the
   source and returns an independent region for a positive, integral, in-bounds
   rectangle; otherwise `None`.
-- `crop(image, rectangle) -> Result<&1, &1, Image.FloatRGB & Surface.Error, Image.FloatRGB>`
+- `crop(image, rectangle) -> Result<&1, &1, Surface & Surface.Error, Surface>`
   clips integral rectangles with the Surface rules. Positive clipped regions keep
   exact sample words. An origin strictly beyond the image returns the unchanged
   owner, as native does; other unsupported rectangles return the owner with
@@ -74,20 +75,20 @@ format-9 byte movement.
 ## Resizing
 
 `resize_nn(image, width, height)` and `resize(image, width, height)` return
-`Result<&1, &1, Image.FloatRGB, Image.FloatRGB>`. Destination dimensions are
+`Result<&1, &1, Surface & Surface.Error, Surface>`. Destination dimensions are
 1..4096 and samples must be finite `[0,1]`; unsupported inputs and unsafe
 fixed-point nearest mappings return the original, unquantized owner.
 
 The native format-9 path converts to RGBA8, resizes (nearest: the plus-one 16.16
 mapping; filtered: four-channel Catmull-Rom/Mitchell, see
 [RESAMPLING.md](RESAMPLING.md)), then normalizes RGB back to floats. **Even
-unchanged dimensions quantize**: `0.5` becomes `127/255`. The original float
-storage is retained through fallible stages without cloning it for recovery.
+unchanged dimensions quantize**: `0.5` becomes `127/255`. A copy of the
+original storage is kept so every rejection returns it unquantized.
 
 ## Canvas and POT
 
 `resize_canvas(image, width, height, x, y, fill)` and `to_pot(image, fill)` return
-`Result<&1, &1, Image.FloatRGB & Surface.Error, Image.FloatRGB>`. Dimensions are
+`Result<&1, &1, Surface & Surface.Error, Surface>`. Dimensions are
 1..4096; offsets follow the bounded integral Surface profile, with positive
 overlap required when dimensions change. Invalid requests return the owner.
 
@@ -99,24 +100,25 @@ the established next-power-of-two calculation.
 ## Color transforms
 
 `color_tint`, `color_invert`, `color_contrast`, `color_brightness` and
-`color_replace` return `Result<&1, &1, Image.FloatRGB, Image.FloatRGB>`. They
+`color_replace` return `Result<&1, &1, Surface & Surface.Error, Surface>`. They
 truncate finite `[0,1]` samples to RGBA8, apply the byte operation, then
 normalize RGB back; nominal no-ops still quantize. Unsupported samples or
 parameters return the owner.
 
 - Contrast must be finite and is clamped to -100..100.
-- Brightness must be finite and integral and is clamped to -255..255; native
-  negative channel underflow becomes one rather than zero.
+- Brightness must be finite and below 2^31 in magnitude; it is truncated toward
+  zero (the C `int` parameter) and clamped to -255..255; native negative channel
+  underflow becomes one rather than zero.
 - Tint and replacement alpha are discarded on the way back to RGB. Replacement
   still matches all four RGBA bytes, with input alpha 255.
 
 ## Byte/integer formats and grayscale
 
-`Image.FloatRGB.to_formatted(image, target) -> Result<&1, &1, Image.FloatRGB, Image.Formatted>`
-accepts targets 1..8 and finite `[0,1]` samples. It uses native normalized F32
-channels directly with alpha one; it does **not** first truncate to RGBA8.
-`color_grayscale(image)` selects target 1, matching the native change to
-grayscale storage. Targets 0 and 9 are unsupported.
+`Surface.format(image, target)` from format 9 accepts targets 1..8 and finite
+`[0,1]` samples. It uses native normalized F32 channels directly with alpha one;
+it does **not** first truncate to RGBA8. `color_grayscale(image)` selects target
+1, matching the native change to grayscale storage. Targets 0 and 9 keep the
+owner unchanged.
 
 - Packed channels round the already-rounded F32 product as native `round` does.
   Adding one half in F32 first can round twice: words `0x3d088888` (limit 15)
@@ -129,7 +131,7 @@ grayscale storage. Targets 0 and 9 are unsupported.
   subnormal results are valid R32 samples. The luminance relies on separate
   multiply/add instructions; fused or contracted variants are not claimed.
 
-`Image.Formatted.to_float_rgb(image)` consumes any checked format-1..8 owner and
+`Surface.format(image, 9)` consumes any checked format-1..8 owner and
 returns format-9 storage. Grayscale replicates into RGB and alpha is discarded.
 Packed channels use the native reciprocal-multiply expansion directly,
 preserving float bits an intermediate RGBA8 conversion would lose. R32 maps its
@@ -145,7 +147,7 @@ luminance again.
   [IMAGE-EXPORT.md](IMAGE-EXPORT.md); raw file loading/writing:
   [RAW-FILES.md](RAW-FILES.md); image-as-code: [IMAGE-CODE.md](IMAGE-CODE.md).
 
-Surface colors, FloatRGB entries and packed/formatted image exports share a
+Color lists and raw exports share a
 tail-recursive logical-prefix operation instead of Base `List.take`, whose
 generated JavaScript recursed once per pixel and overflowed the stack on large
 images. Output lengths, order and ownership are unchanged.
@@ -168,7 +170,7 @@ inputs return complete, unchanged owners.
 | `float-rgb-color` | `tools/float_rgb_color_probe.py` | Color transforms, clamping, alpha matching, nonfinite/fractional parameter rejection |
 | `float-rgb-formats` | `tools/float_rgb_formats_probe.py` | Direct targets 1..8 and grayscale at packed/grayscale rounding boundaries |
 | `float-rgb-r32` | `tools/float_rgb_r32_probe.py` | Format 9 → R32 conversion and NaN controls; CPU/JS only, with an independent native-archive qualification |
-| `formatted-float` | `tools/formatted_float_probe.py` | `Image.Formatted.to_float_rgb` for every source layout, channel level and alpha pattern, plus return chains |
+| `formatted-float` | `tools/formatted_float_probe.py` | `Surface.format` to format 9 for every source layout, channel level and alpha pattern, plus return chains |
 
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only float-rgb

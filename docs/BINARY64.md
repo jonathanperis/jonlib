@@ -1,6 +1,6 @@
 # Private binary64 emulation
 
-The `Glibc241AngleRn` angle profile (see [ANGLES.md](ANGLES.md)) reproduces the
+The `M.Glibc241Libm{}` angle profile (see [ANGLES.md](ANGLES.md)) reproduces the
 pinned glibc 2.41 `e_atan2f.c`, which evaluates in binary64 with explicit FMA,
 compensated double-double arithmetic, a product that genuinely underflows to
 binary64 subnormals, unsigned raw-word stepping and a single final narrowing to

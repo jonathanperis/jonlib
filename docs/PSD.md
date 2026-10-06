@@ -2,7 +2,7 @@
 
 | API | Contract |
 |---|---|
-| `Surface.decode_psd(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Surface>` with owned RGBA8 output, using `M.Uncontracted{}` matte arithmetic. |
+| `Surface.decode_psd(bytes: +List<U32>)` | Returns `Result<&1, &1, Surface.Error, Surface>` with an owned R8G8B8A8 image, using `M.Uncontracted{}` matte arithmetic. |
 | `Surface.decode_psd_for(reference, bytes)` | Same, with an explicit `M.Contraction` matte profile. |
 
 Shared memory/file dispatch recognizes the exact `8BPS` signature; see

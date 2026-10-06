@@ -166,6 +166,21 @@
    "minutes": 4
   },
   {
+   "id": "surface-format",
+   "title": "Format-generic Surface operations on pixel formats 1..9",
+   "run": [
+    "{python}",
+    "tools/surface_format_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 8
+  },
+  {
    "id": "r32-image",
    "title": "",
    "run": [
