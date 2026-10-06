@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 """Compare owned GIF animation frames with native LoadImageAnimFromMemory."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
 
 from bmp_probe import bend_bytes
-from conformance import BUILD, ROOT, checkout, image_decode_reference, run, source_gate
+from conformance import image_decode_reference
 from gif_probe import animation
 from image_file_probe import image_streams
+import probekit
+from probekit import ProbeFailure
 from psd_probe import psd
 
 
@@ -57,35 +57,27 @@ def fixtures():
     return cases,controls
 
 
-def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True)
-    parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true')
-    args=parser.parse_args();lock=json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'));checkout(args.raylib_source,lock['raylib']['revision'])
-    work=BUILD/'gif-animation-probe';work.mkdir(parents=True,exist_ok=True)
-    report_path=work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    cases,controls=fixtures()
+def reference_program(cases):
     lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
            'static void emit(const char *token,const unsigned char *data,int size){int frames=0;Image image=LoadImageAnimFromMemory(token,data,size,&frames);if(!image.data)exit(2);ImageFormat(&image,PIXELFORMAT_UNCOMPRESSED_R8G8B8A8);',
            'printf("{\\"width\\":%d,\\"height\\":%d,\\"count\\":%d}\\n",image.width,image.height,frames);',
            'for(int f=0;f<frames;f++){putchar(\'[\');for(int i=0;i<image.width*image.height;i++)printf("%s%u",i?",":"",(unsigned)ColorToInt(((Color*)image.data)[f*image.width*image.height+i]));puts("]");}UnloadImage(image);}',
            'int main(void){SetTraceLogLevel(LOG_NONE);']
     for case in cases:lines+=['{unsigned char data[]={'+','.join(map(str,case['bytes']))+'};emit('+json.dumps(case['token'])+',data,sizeof(data));}']
-    source=work/'reference.c';source.write_text('\n'.join(lines+['}'])+'\n');binary=work/'reference'
-    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary])
-    text=run([binary]);expected=[json.loads(line) for line in text.splitlines()]
-    at=0
-    for case in cases:
-        if expected[at]!={key:case[key] for key in ('width','height')}|{'count':case['frames']}:raise ValueError('Native animation geometry/count differs')
-        at+=1+case['frames']
-    if at!=len(expected):raise ValueError('Incomplete native animation output')
-    profile=image_decode_reference()
-    report=dict(passed=False,animations=len(cases),frames=sum(c['frames'] for c in cases),decode_reference=profile,
-                pixels=sum(c['frames']*c['width']*c['height'] for c in cases),error_controls=len(controls),sources=source_gate(),
-                inputs_sha256=hashlib.sha256(json.dumps([cases,controls]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
-    program='''import Base
+    return '\n'.join(lines+['}'])+'\n'
+
+
+def grouped(lines, actions):
+    """One row per action: an animation is its header line plus one line per frame; leftovers form an extra row."""
+    rows,at=[],0
+    for kind,case in actions:
+        if at>=len(lines):break
+        size=1+case['frames'] if kind=='animation' else 1
+        rows.append(lines[at:at+size] if kind=='animation' else lines[at]);at+=size
+    return rows+([lines[at:]] if at<len(lines) else [])
+
+
+PROGRAM='''import Base
 import ../../jonlib.bend as J
 def reverse_into(values: +List<U32>, rest: +List<U32>) -> +List<U32>:
   match values:
@@ -166,21 +158,35 @@ def default_reference(bytes: +List<U32>) -> Bool:
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        bang='!' if lane=='metal' else '';body=program
-        for case in cases:body+=f'    observed(J.Image.Animation.decode_image_for{bang}(J.{profile}{{}}, {json.dumps(case["token"])}, {bend_bytes(case["bytes"])}, {case["frames"]}, {case["frames"]*case["width"]*case["height"]}))\n'
-        for case in controls:body+=f'    IO.print(U32.show(error_code(J.Image.Animation.decode_image_for{bang}(J.{profile}{{}}, {json.dumps(case["token"])}, {bend_bytes(case["bytes"])}, {case["maximum_frames"]}, {case["maximum_pixels"]}))))\n'
-        for function in ('owned','disposed'):body+=f'    IO.print(U32.show(Bool.to_u32({function}{bang}(J.Image.Animation.decode_gif({bend_bytes(cases[1]["bytes"])}, 3, 18)))))\n'
-        body+=f'    IO.print(U32.show(Bool.to_u32(default_reference{bang}({bend_bytes(psd(1,1,[[255],[255],[255],[11]]))}))))\n'
-        source=work/f'{lane}.bend';source.write_text(body);binary=work/('candidate.js' if lane=='javascript' else f'candidate-{lane}')
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        actual=[json.loads(line) for line in run(command).splitlines()];wanted=expected+[c['error'] for c in controls]+[1,1,1]
-        differences=[dict(index=i,reference=a,candidate=b) for i,(a,b) in enumerate(zip(wanted,actual)) if a!=b]
-        report['lanes'][lane]=dict(passed=actual==wanted,differences=differences[:2]);report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if actual!=wanted:raise ValueError(f'{lane}: animation differs: {differences[:1]}')
-        print(f'{lane}: {len(cases)} animations / {report["frames"]} frames and {len(controls)} controls passed',flush=True)
-    report['ownership_controls']=2;report['default_reference_controls']=1;report['passed']=True;report_path.write_text(json.dumps(report,indent=2)+'\n')
+
+
+def main():
+    probe=probekit.Probe('gif-animation',probekit.arguments(__doc__))
+    cases,controls=fixtures()
+    text=probe.native(reference_program(cases));native=[json.loads(line) for line in text.splitlines()]
+    at=0
+    for case in cases:
+        if native[at]!={key:case[key] for key in ('width','height')}|{'count':case['frames']}:raise ProbeFailure('Native animation geometry/count differs')
+        at+=1+case['frames']
+    if at!=len(native):raise ProbeFailure('Incomplete native animation output')
+    profile=image_decode_reference()
+    actions=[('animation',c) for c in cases]+[('control',c) for c in controls]+[(name,dict(id=name)) for name in ('owned','disposed','default_reference')]
+    expected=grouped(native,actions[:len(cases)])+[c['error'] for c in controls]+[1,1,1]
+
+    def render(selected,gpu):
+        bang='!' if gpu else '';body=PROGRAM
+        for kind,case in selected:
+            if kind=='animation':body+=f'    observed(J.Image.Animation.decode_image_for{bang}(J.{profile}{{}}, {json.dumps(case["token"])}, {bend_bytes(case["bytes"])}, {case["frames"]}, {case["frames"]*case["width"]*case["height"]}))\n'
+            elif kind=='control':body+=f'    IO.print(U32.show(error_code(J.Image.Animation.decode_image_for{bang}(J.{profile}{{}}, {json.dumps(case["token"])}, {bend_bytes(case["bytes"])}, {case["maximum_frames"]}, {case["maximum_pixels"]}))))\n'
+            elif kind=='default_reference':body+=f'    IO.print(U32.show(Bool.to_u32(default_reference{bang}({bend_bytes(psd(1,1,[[255],[255],[255],[11]]))}))))\n'
+            else:body+=f'    IO.print(U32.show(Bool.to_u32({kind}{bang}(J.Image.Animation.decode_gif({bend_bytes(cases[1]["bytes"])}, 3, 18)))))\n'
+        return body
+
+    parse=lambda text,selected:grouped([json.loads(line) for line in text.splitlines()],selected)
+    probe.compare(expected,probe.candidates(render,actions,batch=len(actions),parse=parse),lambda i:f'{actions[i][0]} {actions[i][1]["id"]}')
+    probe.finish(animations=len(cases),frames=sum(c['frames'] for c in cases),decode_reference=profile,
+                 pixels=sum(c['frames']*c['width']*c['height'] for c in cases),error_controls=len(controls),ownership_controls=2,default_reference_controls=1,
+                 inputs_sha256=hashlib.sha256(json.dumps([cases,controls]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__=='__main__':
