@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 """Compare supported image-file dispatch with native raylib and check closure."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
 import resource
 import struct
-import subprocess
 
-from conformance import BUILD, ENV, ROOT, checkout, image_decode_reference, run, source_gate
+from conformance import image_decode_reference
 from png_probe import png
 from bmp_probe import bitmap, bitmap16, bitfield_bitmap, core_bitmap, core_indexed_bitmap, indexed_bitmap
 from tga_probe import indexed_targa, targa
 from psd_probe import alpha_planes, psd, rle_psd
 from pic_probe import pic, pic_packets
 from gif_probe import gif
+import probekit
+from probekit import ROOT, ProbeFailure
+
+FILE_DESCRIPTOR_LIMIT=64
 
 
 def limit_handles():
@@ -53,23 +54,50 @@ def image_streams():
                 transparent=1,background=2,frame=(1,1,3,2),interlaced=True))}
 
 
+PROGRAM='''import Base
+import ../../jonlib.bend as J
+def error_name(error: J.Image.LoadError) -> String:
+  match error:
+    case J.ImageFileError{_, _}: "file"
+    case J.ImageDecodeError{J.UnsupportedImageSize{}}: "size"
+    case _: "decode"
+def observed(result: Result<&1, &1, J.Image.LoadError, J.Surface>) -> IO(Unit):
+  match result:
+    case Fail{error}: IO.print("{\\"loaded\\":false,\\"error\\":\\"" ++ error_name(error) ++ "\\"}")
+    case Done{J.Surface{+w, +h, pixels}}:
+      IO.print("{\\"loaded\\":true,\\"width\\":" ++ U32.show(w) ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"pixels\\":" ++ List.show(~&1, ~U32, ~U32.show, J.Surface.colors(J.Surface{w, h, pixels})) ++ "}")
+def checked(valid: Bool) -> IO(Unit):
+  match valid:
+    case True{}: IO.pure(Unit, Unit{})
+    case False{}: IO.die(Unit, 1, "image-file outcome or closure differs")
+def required(expected: String, result: Result<&1, &1, J.Image.LoadError, J.Surface>) -> IO(Unit):
+  match result:
+    case Done{_}: checked(String.eq(expected, "success"))
+    case Fail{error}: checked(String.eq(expected, error_name(error)))
+def closure_loop(n: Nat) -> IO(Unit):
+  match n:
+    case 0n: IO.print("{\\"closure_checks\\":true}")
+    case 1n+rest:
+      do IO<Unit>:
+        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, VALID), required("success"))
+        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, INVALID), required("decode"))
+        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, DIRECTORY), required("file"))
+        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, LARGE), required("size"))
+        closure_loop(rest)
+def main() -> IO(Unit):
+  do IO<Unit>:
+'''
+
+
 def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True)
-    parser.add_argument('--raylib-source',type=Path,required=True)
-    args=parser.parse_args()
-    lock=json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'))
-    checkout(args.raylib_source,lock['raylib']['revision'])
-    work=BUILD/'image-file-probe';work.mkdir(parents=True,exist_ok=True)
-    report_path=work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
+    probe=probekit.Probe('image-file',probekit.arguments(__doc__));work=probe.work
     streams=image_streams()
     cases=[]
     def add(name,data,error=None,legacy=False):
         path=work/name
         path.parent.mkdir(parents=True,exist_ok=True)
         if data is not None:path.write_bytes(data)
-        elif path.exists():raise ValueError('Task-owned missing-file fixture unexpectedly exists')
+        elif path.exists():raise ProbeFailure('Task-owned missing-file fixture unexpectedly exists')
         cases.append(dict(path=str(path.relative_to(ROOT)),data=list(data) if data is not None else None,error=error,legacy=legacy))
     for extension in ('png','bmp','tga','pgm','ppm','qoi','psd','pic','gif'):
         add(f'normal.{extension}',streams[extension]);add(f'upper.{extension.upper()}',streams[extension])
@@ -115,74 +143,37 @@ def main():
             lines+=['{int size=0;',f'unsigned char *data=LoadFileData({path},&size);',
                     'emit(LoadImageFromMemory(".qoi",data,size));UnloadFileData(data);}']
         else:lines += [f'emit(LoadImage({path}));']
-    source=work/'reference.c';source.write_text('\n'.join(lines+['}'])+'\n')
-    binary=work/'reference'
-    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary])
-    text=run([binary]);expected=[json.loads(line) for line in text.splitlines()]
-    if len(expected)!=len(cases):raise ValueError('Incomplete native image-file results')
-    if any(row['loaded']!=(case['error'] is None) for case,row in zip(cases,expected)):raise ValueError('Native image-file acceptance differs from fixture profile')
+    text=probe.native('\n'.join(lines+['}'])+'\n');expected=[json.loads(line) for line in text.splitlines()]
+    if len(expected)!=len(cases):raise ProbeFailure('Incomplete native image-file results')
+    if any(row['loaded']!=(case['error'] is None) for case,row in zip(cases,expected)):raise ProbeFailure('Native image-file acceptance differs from fixture profile')
     profile=image_decode_reference()
-    report=dict(passed=False,reference_cases=len(cases),boundary_controls=len(controls),closure_iterations=100,file_descriptor_limit=64,decode_reference=profile,
-                inputs_sha256=hashlib.sha256(json.dumps([cases,controls]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest(),sources=source_gate(),lanes={})
-    program='''import Base
-import ../../jonlib.bend as J
-def error_name(error: J.Image.LoadError) -> String:
-  match error:
-    case J.ImageFileError{_, _}: "file"
-    case J.ImageDecodeError{J.UnsupportedImageSize{}}: "size"
-    case _: "decode"
-def observed(result: Result<&1, &1, J.Image.LoadError, J.Surface>) -> IO(Unit):
-  match result:
-    case Fail{error}: IO.print("{\\"loaded\\":false,\\"error\\":\\"" ++ error_name(error) ++ "\\"}")
-    case Done{J.Surface{+w, +h, pixels}}:
-      IO.print("{\\"loaded\\":true,\\"width\\":" ++ U32.show(w) ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"pixels\\":" ++ List.show(~&1, ~U32, ~U32.show, J.Surface.colors(J.Surface{w, h, pixels})) ++ "}")
-def checked(valid: Bool) -> IO(Unit):
-  match valid:
-    case True{}: IO.pure(Unit, Unit{})
-    case False{}: IO.die(Unit, 1, "image-file outcome or closure differs")
-def required(expected: String, result: Result<&1, &1, J.Image.LoadError, J.Surface>) -> IO(Unit):
-  match result:
-    case Done{_}: checked(String.eq(expected, "success"))
-    case Fail{error}: checked(String.eq(expected, error_name(error)))
-def closure_loop(n: Nat) -> IO(Unit):
-  match n:
-    case 0n: IO.print("{\\"closure_checks\\":true}")
-    case 1n+rest:
-      do IO<Unit>:
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, VALID), required("success"))
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, INVALID), required("decode"))
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, DIRECTORY), required("file"))
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, LARGE), required("size"))
-        closure_loop(rest)
-def main() -> IO(Unit):
-  do IO<Unit>:
-'''
-    program=program.replace('REFERENCE',f'J.{profile}{{}}')
+    preamble=PROGRAM.replace('REFERENCE',f'J.{profile}{{}}')
     for key,path in [('INVALID',work/'malformed.png'),('VALID',work/'alpha.psd'),('DIRECTORY',directory),('LARGE',work/'large.png')]:
-        program=program.replace(key,json.dumps(str(path.relative_to(ROOT))))
-    for case in [*cases,*controls]:
-        function='load_qoi' if case['legacy'] else 'load_image_for'
-        reference='' if case['legacy'] else f'J.{profile}{{}}, '
-        program+=f'    IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.{function}({reference}{json.dumps(case["path"])}), observed)\n'
-    program+='    closure_loop(100n)\n'
-    source=work/'candidate.bend';source.write_text(program)
-    for lane in ('cpu','javascript'):
-        binary=work/('candidate.js' if lane=='javascript' else 'candidate-cpu')
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command=['bun',binary] if lane=='javascript' else [binary]
-        process=subprocess.run(list(map(str,command)),cwd=ROOT,env=ENV,capture_output=True,text=True,timeout=240,preexec_fn=limit_handles)
-        if process.returncode:raise RuntimeError(f'{lane}: image-file run failed\n{process.stderr[-2000:]}')
-        actual=[json.loads(line) for line in process.stdout.splitlines()]
-        if len(actual)!=len(cases)+len(controls)+1 or actual[-1]!={'closure_checks':True}:raise ValueError('Incomplete image-file results')
-        normalized=[{k:v for k,v in row.items() if k!='error'} for row in actual[:len(cases)]]
-        if normalized!=expected:raise ValueError(f'{lane}: native file pixels or dispatch differs')
-        for case,row in zip([*cases,*controls],actual):
-            if case['error'] and row.get('error')!=case['error']:raise ValueError(f'{lane}: file/decode error kind differs for {case["path"]}')
-        report['lanes'][lane]=dict(passed=True)
-        report_path.write_text(json.dumps(report,indent=2)+'\n')
-        print(f'{lane}: {len(cases)} native file cases, {len(controls)} boundaries and 100 low-descriptor cycles passed',flush=True)
-    report['passed']=True
-    report_path.write_text(json.dumps(report,indent=2)+'\n')
+        preamble=preamble.replace(key,json.dumps(str(path.relative_to(ROOT))))
+    # Native pixels/dispatch plus the fixture's error kind; boundaries and closure have no native row.
+    actions=[('case',case) for case in cases]+[('control',case) for case in controls]+[('closure',None)]
+    wanted=[dict(row,error=case['error']) if case['error'] else row for case,row in zip(cases,expected)]
+    wanted+=[dict(loaded=False,error=case['error']) for case in controls]+[dict(closure_checks=True)]
+
+    def render(selected,gpu):
+        body=preamble
+        for kind,case in selected:
+            if kind=='closure':body+='    closure_loop(100n)\n';continue
+            function='load_qoi' if case['legacy'] else 'load_image_for'
+            reference='' if case['legacy'] else f'J.{profile}{{}}, '
+            body+=f'    IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.{function}({reference}{json.dumps(case["path"])}), observed)\n'
+        return body
+
+    def parse(text,selected):
+        rows=[json.loads(line) for line in text.splitlines() if line.strip()]
+        # Error kinds are compared only where the fixture profile names one.
+        return [{k:v for k,v in row.items() if k!='error'} if kind=='case' and not case['error'] else row
+                for (kind,case),row in zip(selected,rows)]+rows[len(selected):]
+
+    probe.compare(wanted,probe.candidates(render,actions,batch=len(actions),fd_limit=FILE_DESCRIPTOR_LIMIT,parse=parse),
+                  describe=lambda i:f'action {i} ({actions[i][1]["path"] if actions[i][1] else "closure"})')
+    probe.finish(reference_cases=len(cases),boundary_controls=len(controls),closure_iterations=100,file_descriptor_limit=FILE_DESCRIPTOR_LIMIT,decode_reference=profile,
+                 inputs_sha256=hashlib.sha256(json.dumps([cases,controls]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__=='__main__':
