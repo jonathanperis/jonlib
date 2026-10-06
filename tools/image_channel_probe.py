@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """Compare native grayscale channel extraction, selector rules and source owners."""
-import argparse
 import hashlib
 import json
-from pathlib import Path
 import struct
 
 from bmp_probe import bend_bytes
 from byte_probe import BEND_EMITTER, parse_results
-from conformance import BUILD, ROOT, checkout, f32, run, source_gate
+from conformance import f32
 from formatted_float_probe import fixtures as formatted_fixtures
 from float_rgb_probe import boundaries
+import probekit
+from probekit import ROOT, ProbeFailure
 
 
 def fixtures():
@@ -24,39 +24,7 @@ def fixtures():
     return cases,controls
 
 
-def main():
-    parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source',type=Path,required=True);parser.add_argument('--raylib-source',type=Path,required=True)
-    parser.add_argument('--gpu',action='store_true');args=parser.parse_args()
-    lock=json.loads((ROOT/'toolchain.json').read_text());checkout(args.bend_source,lock['bend']['revision'],lock['bend'].get('patch'));checkout(args.raylib_source,lock['raylib']['revision'])
-    work=BUILD/'image-channel-probe';work.mkdir(parents=True,exist_ok=True);report_path=work/'results.json';report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    cases,controls=fixtures();lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-        'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-        'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-        'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
-        'static void emit(Image image){if(!image.data)exit(2);word(image.width);word(image.height);word(image.format);',
-        'int size=GetPixelDataSize(image.width,image.height,image.format);for(int i=0;i<size;i++)byte(((unsigned char*)image.data)[i]);end();}',
-        'int main(void){SetTraceLogLevel(LOG_NONE);']
-    for i,case in enumerate([*cases,*controls]):
-        path=work/(str(i)+'.raw');path.write_bytes(bytes(case['bytes']))
-        lines.append(f'{{Image image=LoadImageRaw({json.dumps(str(path.relative_to(ROOT)))},{case["width"]},{case["height"]},{case["format"]},0);')
-        if i<len(cases):lines.append(f'Image channel=ImageFromChannel(image,{case["selected"]});emit(image);emit(channel);UnloadImage(channel);')
-        else:lines.append('emit(image);')
-        lines.append('UnloadImage(image);}')
-    source=work/'reference.c';source.write_text('\n'.join(lines+['}'])+'\n');binary=work/'reference'
-    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),source,BUILD/'raylib/raylib/libraylib.a','-lm','-o',binary]);text=run([binary]);expected=parse_results(text)
-    if len(expected)!=2*len(cases)+len(controls):raise ValueError('Incomplete native channel output')
-    at=0
-    for i,case in enumerate([*cases,*controls]):
-        if expected[at]!=list(struct.pack('<III',case['width'],case['height'],case['format']))+case['bytes']:raise ValueError('Native channel extraction altered source')
-        at+=1
-        if i<len(cases):
-            if expected[at][:12]!=list(struct.pack('<III',case['width'],case['height'],1)) or len(expected[at])!=12+case['width']*case['height']:raise ValueError('Native grayscale shape differs')
-            at+=1
-    wanted=expected+[[1],[1]]
-    report=dict(passed=False,native_cases=len(cases),channel_pixels=sum(c['width']*c['height'] for c in cases),rejected_owner_controls=len(controls),independence_controls=2,sources=source_gate(),
-                inputs_sha256=hashlib.sha256(json.dumps([cases,controls]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest(),lanes={})
-    program='''import Base
+PROGRAM='''import Base
 import ../../jonlib.bend as J
 import ../../jonmath.bend as M
 import ../../src/hdr.bend as H
@@ -139,22 +107,59 @@ def float_ownership() -> Bool:
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
-    for lane in ('cpu','javascript',*(['metal'] if args.gpu else [])):
-        bang='!' if lane=='metal' else '';body=program
-        for i,case in enumerate([*cases,*controls]):
-            selected=f'H.float_bits({case["bits"]})' if 'bits' in case else f32(case['selected'])
-            floating=case['format']==9;kind='float' if floating else 'formatted';owner='FloatRGB' if floating else 'Formatted'
+
+
+def grouped(rows,sizes):
+    """Split flat byte results into one group per action (sizes[i] results each)."""
+    if len(rows)!=sum(sizes):raise ProbeFailure(f'image-channel: {len(rows)} byte results for {sum(sizes)} expected')
+    groups,at=[],0
+    for size in sizes:groups.append(rows[at:at+size]);at+=size
+    return groups
+
+
+def main():
+    probe=probekit.Probe('image-channel',probekit.arguments(__doc__));work=probe.work
+    cases,controls=fixtures();lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
+        'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
+        'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
+        'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+        'static void emit(Image image){if(!image.data)exit(2);word(image.width);word(image.height);word(image.format);',
+        'int size=GetPixelDataSize(image.width,image.height,image.format);for(int i=0;i<size;i++)byte(((unsigned char*)image.data)[i]);end();}',
+        'int main(void){SetTraceLogLevel(LOG_NONE);']
+    for i,case in enumerate([*cases,*controls]):
+        path=work/(str(i)+'.raw');path.write_bytes(bytes(case['bytes']))
+        lines.append(f'{{Image image=LoadImageRaw({json.dumps(str(path.relative_to(ROOT)))},{case["width"]},{case["height"]},{case["format"]},0);')
+        if i<len(cases):lines.append(f'Image channel=ImageFromChannel(image,{case["selected"]});emit(image);emit(channel);UnloadImage(channel);')
+        else:lines.append('emit(image);')
+        lines.append('UnloadImage(image);}')
+    text=probe.native('\n'.join(lines+['}'])+'\n');expected=parse_results(text)
+    if len(expected)!=2*len(cases)+len(controls):raise ProbeFailure('Incomplete native channel output')
+    at=0
+    for i,case in enumerate([*cases,*controls]):
+        if expected[at]!=list(struct.pack('<III',case['width'],case['height'],case['format']))+case['bytes']:raise ProbeFailure('Native channel extraction altered source')
+        at+=1
+        if i<len(cases):
+            if expected[at][:12]!=list(struct.pack('<III',case['width'],case['height'],1)) or len(expected[at])!=12+case['width']*case['height']:raise ProbeFailure('Native grayscale shape differs')
+            at+=1
+    # Native source+channel results, retained rejected owners, then two independence controls.
+    actions=[('case',case) for case in cases]+[('control',case) for case in controls]+[('ownership','formatted'),('ownership','float')]
+    sizes=lambda selected:[2 if kind=='case' else 1 for kind,_ in selected]
+    wanted=grouped(expected+[[1],[1]],sizes(actions))
+
+    def render(selected,gpu):
+        bang='!' if gpu else '';body=PROGRAM
+        for kind,case in selected:
+            if kind=='ownership':
+                body+=f'    emit_bytes(~&1, [Bool.to_u32({case}_ownership{bang}())])\n';continue
+            selector=f'H.float_bits({case["bits"]})' if 'bits' in case else f32(case['selected'])
+            floating=case['format']==9;family='float' if floating else 'formatted';owner='FloatRGB' if floating else 'Formatted'
             arguments=f'{case["width"]}, {case["height"]}, '+('' if floating else f'{case["format"]}, ')+bend_bytes(case['bytes'])
-            body+=f'    {kind}_result({"True" if i>=len(cases) else "False"}{{}}, {kind}_channel{bang}({selected}, J.Image.{owner}.from_bytes({arguments})))\n'
-        for kind in ('formatted','float'):body+=f'    emit_bytes(~&1, [Bool.to_u32({kind}_ownership{bang}())])\n'
-        source=work/f'{lane}.bend';source.write_text(body);binary=work/('candidate.js' if lane=='javascript' else 'candidate-'+lane)
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary],timeout=600)
-        command=['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        actual=parse_results(run(command));different=[i for i,(a,b) in enumerate(zip(wanted,actual)) if a!=b]
-        report['lanes'][lane]=dict(passed=actual==wanted,different_cases=different);report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if actual!=wanted:raise ValueError(f'{lane}: image channel differences {different}')
-        print(f'{lane}: {len(cases)} native channel cases / {report["channel_pixels"]} pixels, {len(controls)} rejected owners and 2 independent outputs passed',flush=True)
-    report['passed']=True;report_path.write_text(json.dumps(report,indent=2)+'\n')
+            body+=f'    {family}_result({"True" if kind=="control" else "False"}{{}}, {family}_channel{bang}({selector}, J.Image.{owner}.from_bytes({arguments})))\n'
+        return body
+
+    probe.compare(wanted,probe.candidates(render,actions,batch=len(actions),parse=lambda text,selected:grouped(parse_results(text),sizes(selected))))
+    probe.finish(native_cases=len(cases),channel_pixels=sum(c['width']*c['height'] for c in cases),rejected_owner_controls=len(controls),independence_controls=2,
+                 inputs_sha256=hashlib.sha256(json.dumps([cases,controls]).encode()).hexdigest(),reference_sha256=hashlib.sha256(text.encode()).hexdigest())
 
 
 if __name__=='__main__':
