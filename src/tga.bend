@@ -2,18 +2,9 @@
 # Altered Bend adaptation of pinned stb_image/stb_image_write TGA paths.
 # MIT notice: LICENSES/stb-image.txt. See THIRD_PARTY_NOTICES.md.
 import Base
+import ./codec.bend as C
 import ./formats.bend as F
-import ./qoi.bend as Q
 
-type Error is Data:
-  BadHeader{}
-  BadByte{}
-  BadSize{}
-  Truncated{}
-  BadStream{}
-
-type Image is Type:
-  Image{width: U32, height: U32, native_channels: U32, pixels: Array<U32>}
 
 type Header is Data:
   Header{width: U32, height: U32, top: Bool, rle: Bool, channels: U32, native_channels: U32, packed: Bool, palette: +List<U32>, data: +List<U32>}
@@ -54,19 +45,19 @@ type ColorMap is Data:
 type Palette is Data:
   Palette{colors: +List<U32>, data: +List<U32>}
 
-def palette.color(channels: U32, packed: Bool, colors: +List<U32>, word: Maybe<&2, F.Word>) -> Result<&2, &2, Error, Palette>:
+def palette.color(channels: U32, packed: Bool, colors: +List<U32>, word: Maybe<&2, F.Word>) -> Result<&2, &2, C.Error, Palette>:
   match word:
-    case None{}: Fail{Truncated{}}
+    case None{}: Fail{C.Truncated{}}
     case Some{F.Word{value, data}}: Done{Palette{Con{rgba(packed, channels, value), colors}, data}}
 
-def palette.read(n: Nat, +channels: U32, +packed: Bool, state: Result<&2, &2, Error, Palette>) -> Result<&2, &2, Error, Palette>:
+def palette.read(n: Nat, +channels: U32, +packed: Bool, state: Result<&2, &2, C.Error, Palette>) -> Result<&2, &2, C.Error, Palette>:
   match n state:
     case _ Fail{error}: Fail{error}
     case 0n Done{Palette{colors, data}}: Done{Palette{List.reverse(&2, U32, colors), data}}
     case 1n+rest Done{Palette{colors, data}}:
       palette.read(rest, channels, packed, palette.color(channels, packed, colors, F.read_word(U32.to_nat(channels), 0n, 0, data)))
 
-def palette.load(map: ColorMap, data: +List<U32>) -> Result<&2, &2, Error, Palette>:
+def palette.load(map: ColorMap, data: +List<U32>) -> Result<&2, &2, C.Error, Palette>:
   match map:
     case NoColorMap{}: Done{Palette{Nil{}, data}}
     case ColorMap{skip, count, channels, packed}:
@@ -78,22 +69,22 @@ def palette.spec(indexed: Bool, skip: U32, count: U32, +bits: U32) -> ColorMap:
     case False{}: NoColorMap{}
     case True{}: ColorMap{skip, count, ((bits + 7) / 8 : U32), U32.is_eq(bits, 15) || U32.is_eq(bits, 16)}
 
-def header.palette(width: U32, height: U32, top: Bool, rle: Bool, channels: U32, native_channels: U32, packed: Bool, result: Result<&2, &2, Error, Palette>) -> Result<&2, &2, Error, Header>:
+def header.palette(width: U32, height: U32, top: Bool, rle: Bool, channels: U32, native_channels: U32, packed: Bool, result: Result<&2, &2, C.Error, Palette>) -> Result<&2, &2, C.Error, Header>:
   match result:
     case Fail{error}: Fail{error}
     case Done{Palette{colors, data}}: Done{Header{width, height, top, rle, channels, native_channels, packed, colors, data}}
 
-def header.sized(valid: Bool, width: U32, height: U32, top: Bool, rle: Bool, channels: U32, native_channels: U32, packed: Bool, map: ColorMap, id: U32, bytes: +List<U32>) -> Result<&2, &2, Error, Header>:
+def header.sized(valid: Bool, width: U32, height: U32, top: Bool, rle: Bool, channels: U32, native_channels: U32, packed: Bool, map: ColorMap, id: U32, bytes: +List<U32>) -> Result<&2, &2, C.Error, Header>:
   match valid:
-    case False{}: Fail{BadSize{}}
+    case False{}: Fail{C.BadSize{}}
     case True{}: header.palette(width, height, top, rle, channels, native_channels, packed, palette.load(map, List.drop(&2, U32, bytes, U32.to_nat(id))))
 
-def header.checked(valid: Bool, +width: U32, +height: U32, top: Bool, rle: Bool, channels: U32, native_channels: U32, packed: Bool, map: ColorMap, id: U32, bytes: +List<U32>) -> Result<&2, &2, Error, Header>:
+def header.checked(valid: Bool, +width: U32, +height: U32, top: Bool, rle: Bool, channels: U32, native_channels: U32, packed: Bool, map: ColorMap, id: U32, bytes: +List<U32>) -> Result<&2, &2, C.Error, Header>:
   match valid:
-    case False{}: Fail{BadHeader{}}
+    case False{}: Fail{C.BadHeader{}}
     case True{}: header.sized(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32), width, height, top, rle, channels, native_channels, packed, map, id, bytes)
 
-def header(bytes: +List<U32>) -> Result<&2, &2, Error, Header>:
+def header(bytes: +List<U32>) -> Result<&2, &2, C.Error, Header>:
   match bytes:
     case Con{id, Con{+map, Con{+kind, Con{sl, Con{sh, Con{cl, Con{ch, Con{+entry_bits, Con{_, Con{_, Con{_, Con{_, Con{wl, Con{wh, Con{hl, Con{hh, Con{+bits, Con{descriptor, data}}}}}}}}}}}}}}}}}}:
       +gray = U32.is_eq(kind, 3) || U32.is_eq(kind, 11)
@@ -109,7 +100,7 @@ def header(bytes: +List<U32>) -> Result<&2, &2, Error, Header>:
         ((descriptor .&. 32) > 0 : U32), (kind >= 8 : U32), ((bits + 7) / 8 : U32),
         native.channels(Bool.pick(U32, indexed, entry_bits, bits), gray && Bool.not(indexed)), packed,
         palette.spec(indexed, (sl .|. (sh << 8n) : U32), count, entry_bits), id, data)
-    case _: Fail{BadHeader{}}
+    case _: Fail{C.BadHeader{}}
 
 def rgba.selected(palette: +List<U32>, packed: Bool, channels: U32, word: U32) -> U32:
   match palette:
@@ -121,24 +112,24 @@ def rgba.selected(palette: +List<U32>, packed: Bool, channels: U32, word: U32) -
 type Cursor is Data:
   Cursor{data: +List<U32>, left: U32, repeat: Bool, pixel: U32}
 
-def read(channels: U32, packed: Bool, palette: +List<U32>, left: U32, repeat: Bool, word: Maybe<&2, F.Word>) -> Result<&2, &2, Error, Cursor>:
+def read(channels: U32, packed: Bool, palette: +List<U32>, left: U32, repeat: Bool, word: Maybe<&2, F.Word>) -> Result<&2, &2, C.Error, Cursor>:
   match word:
-    case None{}: Fail{Truncated{}}
+    case None{}: Fail{C.Truncated{}}
     case Some{F.Word{value, rest}}: Done{Cursor{rest, left, repeat, rgba.selected(palette, packed, channels, value)}}
 
-def packet(valid: Bool, +channels: U32, packed: Bool, palette: +List<U32>, +count: U32, repeat: Bool, data: +List<U32>) -> Result<&2, &2, Error, Cursor>:
+def packet(valid: Bool, +channels: U32, packed: Bool, palette: +List<U32>, +count: U32, repeat: Bool, data: +List<U32>) -> Result<&2, &2, C.Error, Cursor>:
   match valid:
-    case False{}: Fail{BadStream{}}
+    case False{}: Fail{C.BadStream{}}
     case True{}: read(channels, packed, palette, (count - 1 : U32), repeat, F.read_word(U32.to_nat(channels), 0n, 0, data))
 
-def command(remaining: U32, channels: U32, packed: Bool, palette: +List<U32>, data: +List<U32>) -> Result<&2, &2, Error, Cursor>:
+def command(remaining: U32, channels: U32, packed: Bool, palette: +List<U32>, data: +List<U32>) -> Result<&2, &2, C.Error, Cursor>:
   match data:
-    case Nil{}: Fail{Truncated{}}
+    case Nil{}: Fail{C.Truncated{}}
     case Con{+code, rest}:
       +count = ((code .&. 127) + 1 : U32)
       packet((count <= remaining : U32), channels, packed, palette, count, (code >= 128 : U32), rest)
 
-def next(rle: Bool, fresh: Bool, repeat: Bool, remaining: U32, +channels: U32, packed: Bool, palette: +List<U32>, left: U32, pixel: U32, data: +List<U32>) -> Result<&2, &2, Error, Cursor>:
+def next(rle: Bool, fresh: Bool, repeat: Bool, remaining: U32, +channels: U32, packed: Bool, palette: +List<U32>, left: U32, pixel: U32, data: +List<U32>) -> Result<&2, &2, C.Error, Cursor>:
   match rle fresh repeat:
     case False{} _ _: read(channels, packed, palette, 0, False{}, F.read_word(U32.to_nat(channels), 0n, 0, data))
     case True{} True{} _: command(remaining, channels, packed, palette, data)
@@ -148,22 +139,22 @@ def next(rle: Bool, fresh: Bool, repeat: Bool, remaining: U32, +channels: U32, p
 type State is Type:
   State{cursor: Cursor, pixels: Array<U32>}
 
-def write(index: U32, pixels: Array<U32>, result: Result<&2, &2, Error, Cursor>) -> Result<&1, &1, Error, State>:
+def write(index: U32, pixels: Array<U32>, result: Result<&2, &2, C.Error, Cursor>) -> Result<&1, &1, C.Error, State>:
   match result:
     case Fail{error}: Fail{error}
     case Done{Cursor{data, left, repeat, +pixel}}: Done{State{Cursor{data, left, repeat, pixel}, Array.set(U32, pixels, index, pixel)}}
 
-def pixels(n: Nat, +index: U32, +width: U32, +height: U32, +top: Bool, +rle: Bool, +channels: U32, +native_channels: U32, +packed: Bool, +palette: +List<U32>, state: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, Image>:
+def pixels(n: Nat, +index: U32, +width: U32, +height: U32, +top: Bool, +rle: Bool, +channels: U32, +native_channels: U32, +packed: Bool, +palette: +List<U32>, state: Result<&1, &1, C.Error, State>) -> Result<&1, &1, C.Error, C.Image>:
   match n state:
     case _ Fail{error}: Fail{error}
-    case 0n Done{State{_, output}}: Done{Image{width, height, native_channels, output}}
+    case 0n Done{State{_, output}}: Done{C.Image{width, height, native_channels, output}}
     case 1n+rest Done{State{Cursor{data, +left, repeat, pixel}, output}}:
       +y = (index / width : U32)
       at = (Bool.pick(U32, top, y, (height - 1 - y : U32)) * width + index % width : U32)
       pixels(rest, (index + 1 : U32), width, height, top, rle, channels, native_channels, packed, palette,
         write(at, output, next(rle, U32.is_eq(left, 0), repeat, (width * height - index : U32), channels, packed, palette, left, pixel, data)))
 
-def start(result: Result<&2, &2, Error, Header>) -> Result<&1, &1, Error, Image>:
+def start(result: Result<&2, &2, C.Error, Header>) -> Result<&1, &1, C.Error, C.Image>:
   match result:
     case Fail{error}: Fail{error}
     case Done{Header{+width, +height, top, rle, channels, native_channels, packed, palette, data}}:
@@ -171,13 +162,13 @@ def start(result: Result<&2, &2, Error, Header>) -> Result<&1, &1, Error, Image>
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
       pixels(U32.to_nat(count), 0, width, height, top, rle, channels, native_channels, packed, palette, Done{State{Cursor{data, 0, False{}, 0}, Array.new(U32, depth, 0)}})
 
-def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, Error, Image>:
+def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
   match valid:
-    case False{}: Fail{BadByte{}}
+    case False{}: Fail{C.BadByte{}}
     case True{}: start(header(bytes))
 
-def decode(+bytes: +List<U32>) -> Result<&1, &1, Error, Image>:
-  checked(Q.valid_bytes(bytes, True{}), bytes)
+def decode(+bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+  checked(C.valid_bytes(bytes, True{}), bytes)
 
 type Packet is Data:
   Packet{count: U32, repeat: Bool}
