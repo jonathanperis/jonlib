@@ -3087,7 +3087,7 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2",
       "mapping_state": "implemented",
-      "scope": "Two F32 components; bounded finite fixture domains.",
+      "scope": "Immutable two-F32 XY value; operations define their bounded finite domains.",
       "gaps": [
         "Complete numeric domain and integration/target/performance evidence"
       ],
@@ -32593,7 +32593,7 @@
       "status": "partial",
       "jonlib": "Compression.compress",
       "mapping_state": "implemented",
-      "scope": "Immutable valid byte lists of 0..1048576 bytes and at most 87380 retained sequences per 262144-byte block. Native quality-8 little-endian hashes, chain/lazy parsing, frequencies, Huffman/precode construction, dynamic/stored cost selection and exact raw bytes; empty input returns zero bytes. Invalid requests or sequence-budget exhaustion return None. Complete actual native bytes and nonempty internal-decoder/zlib round trips pass on CPU/JS/forced Metal, including maximum incompressible input. The public decoder still rejects compressed results exceeding its separate 1-MiB input cap.",
+      "scope": "Immutable byte lists of 0..1048576 bytes with at most 87380 retained sequences per 262144-byte block. Native quality-8 little-endian hashing, chain/lazy parsing, Huffman/precode construction, dynamic/stored cost selection and exact raw-DEFLATE bytes; empty input yields zero bytes. Invalid requests or sequence-budget exhaustion return None. The public decoder accepts compressed results only up to its separate 1 MiB input cap.",
       "gaps": [
         "Larger input domains, big-endian hash profiles and native sequence-overflow domains",
         "Public decompression of compressed results larger than 1 MiB",
@@ -32714,7 +32714,7 @@
       "status": "partial",
       "jonlib": "Base64.encode / Base64.Encoded",
       "mapping_state": "implemented",
-      "scope": "Immutable valid byte lists up to 1048576 bytes, including empty input. Exact native RFC4648 text/alphabet/padding and NUL-inclusive size in Base64Encoded; Bend text excludes its terminator. Invalid bytes/oversized inputs return None. Complete native text/size comparisons pass on CPU/JS/forced Metal, including the maximum input.",
+      "scope": "Immutable byte lists of 0..1048576 bytes, including empty input. Exact native RFC 4648 text/alphabet/padding; Base64Encoded carries the native NUL-inclusive size while the Bend text excludes the terminator. Invalid bytes or oversized inputs return None.",
       "gaps": [
         "Larger input domains and native pointer/allocator/output-parameter ABI",
         "Complete resource/platform/performance coverage"
@@ -32772,7 +32772,7 @@
       "status": "partial",
       "jonlib": "Base64.decode",
       "mapping_state": "implemented",
-      "scope": "Nonempty ASCII alphabet groups of four with zero/one/two final padding characters, first-NUL termination and ignored unused padding bits. Exact native logical bytes, capped at 1048576, returned as an immutable list. Malformed/empty/oversized requests return None; the native empty-input before-buffer read is not reproduced. Complete native bytes and rejection controls pass on CPU/JS/forced Metal.",
+      "scope": "Nonempty ASCII alphabet groups of four with zero/one/two final padding characters, first-NUL termination and ignored unused padding bits. Exact native logical bytes, capped at 1048576, as an immutable list. Malformed/empty/oversized requests return None; the native empty-input before-buffer read is not reproduced.",
       "gaps": [
         "Native permissive malformed recovery, empty-input undefined behavior and larger outputs",
         "Native pointer/allocator/output-parameter ABI and complete resource/platform/performance coverage"
@@ -32830,7 +32830,7 @@
       "status": "partial",
       "jonlib": "Checksum.crc32",
       "mapping_state": "implemented",
-      "scope": "Immutable valid byte lists of 0..1048576 bytes; native CRC32 initial/final complements using the existing verified PNG recurrence. Unsupported bytes/lengths return None. Native U32 values match independent standard CRC32 across all single bytes, block/size boundaries and maximum input on CPU/JS/forced Metal.",
+      "scope": "Immutable byte lists of 0..1048576 bytes; native CRC32 initial/final complements over the shared PNG CRC recurrence, equal to standard CRC32. Unsupported bytes/lengths return None.",
       "gaps": [
         "Larger domains and native pointer/data-size ABI",
         "Complete resource/platform/performance coverage"
@@ -32888,7 +32888,7 @@
       "status": "partial",
       "jonlib": "Checksum.md5",
       "mapping_state": "implemented",
-      "scope": "Immutable valid byte lists of 0..1048576 bytes, including empty input. Native little-endian padding/message words, modulo-U32 rounds and exactly four returned U32 words in native array order. Unsupported bytes/lengths return None before allocation. Native and independent standard digests match all single-byte, padding/block/random/max-size fixtures on CPU/JS/forced Metal.",
+      "scope": "Immutable byte lists of 0..1048576 bytes, including empty input. Native little-endian padding/message words, modulo-U32 rounds and exactly four U32 words in native array order (standard MD5). Unsupported bytes/lengths return None before allocation.",
       "gaps": [
         "Larger domains and big-endian native behavior",
         "Native mutable static-buffer/pointer/allocation ABI",
@@ -32947,7 +32947,7 @@
       "status": "partial",
       "jonlib": "Checksum.sha1",
       "mapping_state": "implemented",
-      "scope": "Immutable valid byte lists of 0..1048576 bytes, including empty input. Native big-endian padding/message schedule, modulo-U32 rounds and exactly five native-order hash words; invalid inputs return None before allocation. Actual native and standard SHA-1 values match on CPU/JS/forced Metal across complete byte/padding/block/random/max-size fixtures.",
+      "scope": "Immutable byte lists of 0..1048576 bytes, including empty input. Native big-endian padding/message schedule, modulo-U32 rounds and exactly five native-order hash words (standard SHA-1); invalid inputs return None before allocation.",
       "gaps": [
         "Larger domains and other native compiler profiles",
         "Native mutable static-pointer/output-buffer ABI",
@@ -33006,7 +33006,7 @@
       "status": "partial",
       "jonlib": "Checksum.sha256",
       "mapping_state": "implemented",
-      "scope": "Immutable valid byte lists of 0..1048576 bytes; exactly eight native-order U32 hash words with native schedules/rounds and the dataSize+4 padding rule. Preserves the native nonstandard results at lengths 56..59 modulo 64, including eleven retained counterexamples; every candidate word is compared with actual linked ComputeSHA256 on CPU/JS/forced Metal. Invalid inputs return None before allocation.",
+      "scope": "Immutable byte lists of 0..1048576 bytes; exactly eight native-order U32 hash words with native schedules/rounds and the native dataSize+4 padding rule, preserving its nonstandard digests at lengths 56..59 modulo 64. Invalid inputs return None before allocation.",
       "gaps": [
         "Larger domains and other native integer-width/compiler profiles",
         "Native mutable static-pointer/output-buffer ABI",
@@ -39594,7 +39594,7 @@
         "Verified native powf cube profile",
         "Complete cubic Bezier parity"
       ],
-      "blocker": "Native Apple powf(t,3) differs from a double-cube substitute: 6670/1048576 investigated inputs, with a retained actual GetSplinePointBezierCubic coordinate mismatch.",
+      "blocker": "Native Apple powf(t,3) differs from a double-cube substitute on some inputs, producing an actual GetSplinePointBezierCubic coordinate mismatch.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -39622,7 +39622,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Resolve: Native Apple powf(t,3) differs from a double-cube substitute: 6670/1048576 investigated inputs, with a retained actual GetSplinePointBezierCubic coordinate mismatch.",
+      "next_step": "Resolve: Native Apple powf(t,3) differs from a double-cube substitute on some inputs, producing an actual GetSplinePointBezierCubic coordinate mismatch.",
       "priority": 3
     },
     {
@@ -40313,14 +40313,13 @@
       "status": "partial",
       "jonlib": "Surface.load_image / Surface.load_image_for / Surface.load_qoi / Image.FloatRGB.load_hdr / Image.Formatted.load_qoi / Image.Formatted.load_pnm / Image.Formatted.load_tga / Image.Formatted.load_bmp / Image.Formatted.load_png / Image.Formatted.load_pic",
       "mapping_state": "implemented",
-      "scope": "Bounded ordinary-file loading with native last-dot suffix/token/content selection across implemented RGBA8 BMP/PNG/TGA/PNM/PSD/PIC/GIF profiles, separate QOI selection and explicit Radiance HDR float loading. FloatRGB.load_hdr preserves native RGB F32 bits with a 1 MiB cap and filename-independent codec selection. Dedicated Image.Formatted.load_qoi selects QOI independently of filename and preserves native RGB888 (4) or RGBA8888 (7) single-mip dimensions and every raw byte within the existing 1..4096 decoder domain and inclusive 83,886,102-byte file cap. All paths share complete reads, close-before-decode calls and typed file/decode errors; Base does not report close failures. Existing Surface loaders remain RGBA8-normalized. Surface.load_image_for propagates explicit PSD matte arithmetic; convenience Surface calls are uncontracted. Dedicated Image.Formatted.load_pnm selects binary P5/P6 independently of filename, preserving native grayscale (1) or RGB888 (4), implicit single-mip dimensions and exact reduced 8-bit samples in the checked little-endian profile. Its inclusive 1,048,576-byte cap reuses RasterFile; complete reads, typed Base code/message and close-before-decode ordering are retained. Local Linux x86-64 CPU-one-thread/CPU-two-thread/JavaScript qualify actual LoadImage versus explicit-selection references, checked-only malformed controls, sparse pre-read rejection, U32-size overflow, 100 fd64 cycles across ten acquired paths and an accepted exact-cap full read. Dedicated Image.Formatted.load_tga explicitly selects TGA independently of filename, preserving native grayscale (1), gray-alpha (2), expanded RGB888 (4) or RGBA8888 (7), implicit single mip and the unchanged checked 1..4096 memory domain. It reuses the inclusive 1,048,576-byte RasterFile boundary: pre-read rejection above the cap, unchanged Base U32-size overflow, one exact-length read, typed file/decode errors and close-before-decode calls without reported close failures. Formatted-TGA file qualification is recorded separately from prior memory/integration evidence; the encoded cap is not a maximum decoded-area or heap guarantee. Dedicated Image.Formatted.load_bmp explicitly selects BMP independently of filename, preserving native RGB888 (4) or RGBA8888 (7), implicit one mip and every raw row-major byte in the unchanged checked 1..4096 memory domain. It reuses the inclusive 1,048,576-byte RasterFile boundary, including pre-read size rejection, unchanged Base U32-size overflow, one exact-length read, typed file/decode errors and close-before-decode calls with ignored close failures. Fresh source-scoped local Linux x86-64 CPU-one-thread/CPU-two-thread/JavaScript qualification passes 294 accepted files / 39,259 pixels, preserving all 224 memory streams byte-for-byte, with 272 actual LoadImage and 22 explicit-selection references. Each lane checks 608 candidate-only controls (229 file and 379 synthetic/internal), 2,184 complete observations / 602,588 bytes and all boundary/sparse/exact-cap records; independent full-byte replay verifies 2,210 source/artifact seals and 299 exact inner command receipts. The 1,009-frame fd64 boundary and accepted exact-cap read are separately measured. The frozen same-source regression matrix passes 21 serial stages, 794 Python tests without skips and all 158 scoped laws; later final-tree checks and exact-tip hosted qualification remain pending. Historical memory evidence remains separate. The encoded cap is not a maximum decoded-area, total-heap or allocation-success guarantee. Dedicated Image.Formatted.load_png explicitly selects PNG independently of filename, preserving native grayscale (1), gray-alpha (2), RGB888 (4) or RGBA8888 (7), implicit one mip and exact 8-bit row-major bytes across the unchanged checked packed/8/16-bit, Adam7 and native-default CgBI memory domain. It reuses the inclusive 1,048,576-byte RasterFile boundary: pre-read size rejection, unchanged Base U32-size overflow, one exact-length read, unchanged typed code/message errors and close-before-decode calls with ignored close failures. The PNG memory decoder separately retains its inclusive 1 MiB encoded/64 MiB filtered-stream caps and fail-fast error precedence. Structural tRNS and full-width transparency-key behavior are inherited unchanged. Fresh source-scoped local Linux x86-64 CPU-one-thread/CPU-two-thread/JavaScript qualification passes 370 files / 86,119 pixels, preserving all 230 memory streams and 208 controls exactly. Native routing uses 326 actual LoadImage and 44 explicit LoadFileData plus LoadImageFromMemory(.png) calls. Each lane passes 143 file plus 76 continuation controls and 2,846 primary observations / 1,531,636 bytes, with 1,209 boundary records / 1,003 bytes, four sparse records and six exact-cap records / 20 bytes measured separately. Independent complete-record replay verifies 429 command receipts and 2,699 seals, rejecting 121 adversarial replay mutations. Native mipmaps are measured; candidate single mip is implicit. Factory reconstruction uses native bytes after a separately successful public reopen; raw round trips use reopened loader exports. The frozen 28-stage regression matrix passes 966 Python tests without skips and 177 scoped laws; independent regression replay covers 45,105 formatted records / 19,789,812 bytes across three lanes, excluding focused PNG-file totals. Nine older gates and canonical ancillary checks retain report/source/artifact evidence; QOI closure is final-image/terminal-only. Final metadata/CI checks are separately recorded. The exact PNG-file commit e6ac05e6d1daf64d050e6da3f783ed60cc3130e1 passes Checks 37187107919 and 85-gate Conformance 37187107908, with twelve workers, both aggregates and twelve unique nonempty artifacts. This historical hosted qualification does not qualify the later PIC increment. Dedicated Image.Formatted.load_pic explicitly selects Softimage PIC independently of filename, preserving native RGB888 (4) or RGBA8888 (7), implicit one mip and exact integer-packed row-major bytes across the unchanged checked 1..4096 memory domain. Any alpha bit in the union of all validated packet masks selects RGBA independently of opacity or later packets. The wrapper reuses the inclusive 1,048,576-byte RasterFile boundary: pre-read size rejection, unchanged Base U32-size overflow, one exact-length read, exact file/decode errors and close-before-decode calls with ignored close failures. PIC memory remains uncapped and unchanged. Fresh source-scoped Linux x86-64 CPU-one-thread/CPU-two-thread/JavaScript file qualification passes 170 files / 37,375 pixels, 203 candidate-only file controls and 152 exact nonbyte continuations. Native routes are 148 actual LoadImage and 22 explicit PIC references. Each lane passes 1,724 primary observations / 830,752 bytes, 1,009 boundary records / 703 bytes, four sparse controls and six exact-cap records / 20 bytes; all retained bytes are independently replayed. The unchanged PIC memory corpus retains 101 streams / 37,306 pixels and 343 controls, including its memory-valid 1,048,577-byte stream as an explicit file-cap rejection. The fresh 32-stage regression matrix passes 1,198 Python tests with zero skips and all 190 existing laws; its independent replay covers 61,908 formatted records / 26,895,933 bytes, separately from focused PIC-file totals. Older harnesses retain report/source/artifact limits and QOI closure remains final-image/terminal-only. Exact-tip 87-gate/fourteen-worker hosted qualification remains pending.",
+      "scope": "Bounded ordinary-file loading: native last-dot suffix/token/content selection across the RGBA8 BMP/PNG/TGA/PNM/PSD/PIC/GIF profiles, QOI (inclusive 83,886,102-byte cap) and FloatRGB.load_hdr (1 MiB cap). Image.Formatted.load_{qoi,pnm,tga,bmp,png,pic} select the codec regardless of filename and keep native format and raw bytes; raster files share an inclusive 1,048,576-byte pre-read cap. One exact-length read, close before decode and typed file/decode errors; Base does not report close failures.",
       "gaps": [
         "JPEG and other payload codecs, generic formatted/float dispatch, remaining families and larger files/decoder domains",
         "Original pixel-format metadata for the other normalized codec paths, additional native arithmetic profiles and reference callbacks",
-        "Concurrent/special-file semantics, OS-close failure reporting and complete targets/integration/resource/performance",
-        "Formatted BMP file final-tree checks, exact-tip hosted qualification and untested platforms/resource domains; local finite-file evidence does not establish maximum-area allocation, native OOM/OS-close behavior or full integration/performance",
-        "Formatted PNG file hosted qualification passes at e6ac05e6d1daf64d050e6da3f783ed60cc3130e1 for the recorded Ubuntu/macOS CPU/JavaScript gates; final metadata/CI checks are separately recorded. GPU/Metal IO, Windows/browser, big-endian, unexecuted macOS domains, maximum-area/heap/allocation/OOM/OS-close behavior, generic formatted/float dispatch and complete integration/performance remain gaps",
-        "Formatted PIC file local three-lane focus and fresh 32-stage regression qualification pass; final metadata/tree checks are separate and exact-tip hosted qualification remains pending. No generic formatted dispatch, maximum-area/heap/allocation/OOM/OS-close, GPU/Metal IO, Windows/browser, big-endian or complete integration/performance claim"
+        "Concurrent/special-file semantics, OS-close failure reporting and native OOM behavior",
+        "Encoded-size caps do not bound decoded area, heap use or allocation success",
+        "GPU/Metal IO, Windows/browser and big-endian targets; complete integration/resource/performance coverage"
       ],
       "blocker": null,
       "gates": {
@@ -40388,7 +40387,7 @@
       "status": "partial",
       "jonlib": "Image.Formatted.load_raw / Image.FloatRGB.load_raw",
       "mapping_state": "implemented",
-      "scope": "Ordinary non-changing files, formats 1..7 and non-NaN RGB F32 format 9, dimensions 1..4096. Shared bounded positional reads preserve native fitting-header/fallback-to-zero selection, exact payload words, signed-int bounds, typed errors and handle closure before decoding. Unsupported float NaNs report InvalidRawRequest after closure. Formatted format 8 additionally loads checked finite [0,1] R32, preserving both zero signs and positive subnormals. InvalidRawSamples distinguishes complete out-of-domain payloads after closure; formatted format 9 stays a pre-open InvalidRawRequest.",
+      "scope": "Ordinary unchanging files, dimensions 1..4096: Image.Formatted.load_raw for formats 1..7 and finite [0,1] R32 format 8 (both zero signs, positive subnormals); Image.FloatRGB.load_raw for non-NaN RGB F32 format 9. Native fitting-header/fallback-to-zero selection, exact payload words and signed-int bounds; handles close before decoding. InvalidRawSamples (out-of-domain payload) and InvalidRawRequest (float NaNs) follow closure; formatted format 9 is a pre-open InvalidRawRequest.",
       "gaps": [
         "Other formats, broader R32 domains, format-9 NaN payload parity, signed/out-of-range parameters and concurrent/special files",
         "Native callbacks/allocation ABI and complete target/integration/performance coverage"
@@ -40586,15 +40585,14 @@
       "status": "partial",
       "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Image.FloatRGB.decode_hdr / Image.Formatted.decode_qoi / Image.Formatted.decode_pnm / Image.Formatted.decode_tga / Image.Formatted.decode_bmp / Image.Formatted.decode_png / Image.Formatted.decode_pic",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 decoding for QOI/BMP/TGA/PNM/PSD/PIC/PNG and first-frame GIF, plus separate raw/scanline-RLE Radiance RGBE FloatRGB images preserving native F32 bits including subnormals. HDR retains LF headers, bounded dimensions, checked RLE counts/row widths and native later-row raw reset to the canvas origin. RGBA8 dispatch retains native tokens/content detection, GIF geometry/background/LZW, PIC packet/clipping rules, profiled PSD matte arithmetic, BMP/TGA/PNM sample/header/palette behavior and packed/8/16-bit/Adam7/CgBI PNG. QOI remains separately selected. Dedicated Image.Formatted.decode_qoi preserves native QOI RGB888 (4) or RGBA8888 (7) metadata and every row-major byte, with one mip level, dimensions 1..4096 and the existing strict stream/error contract. Dedicated Image.Formatted.decode_pnm preserves native P5 grayscale (1) or P6 RGB888 (4), implicit single-mip dimensions and every reduced 8-bit row-major sample for binary 8/16-bit PNM input in the checked 1..4096 little-endian profile. It retains maxval/separator rules and typed checked errors, with exact raw-byte, owner and regression observations on local Linux CPU-one-thread/CPU-two-thread/JavaScript. Surface convenience and generic dispatch remain RGBA8-normalized. Dedicated Image.Formatted.decode_tga preserves native grayscale (1), gray-alpha (2), expanded RGB888 (4) or RGBA8888 (7), implicit single mip and exact integer-packed output in the checked 1..4096 profile. Input sample/index byte width is distinct from output channels, selected from palette depth for indexed streams; existing RGB555, zero alpha, orientation, palette fallback, RLE and typed-error rules remain unchanged. Dedicated Image.Formatted.decode_bmp preserves native RGB888 (4) or RGBA8888 (7), implicit one mip and exact integer-packed row-major bytes across the entire existing checked CORE/INFO/56/V4/V5 indexed, RGB555/24/32 and bitfield memory profile. Effective alpha-mask layout selects output channels before decoding or BI_RGB32 alpha repair; source bit depth, observed opacity and ignored palette/embedded masks do not select metadata. Typed byte/header/size/truncation/index errors remain unchanged and no encoded-memory cap is introduced. Dedicated Image.Formatted.decode_png preserves native grayscale (1), gray-alpha (2), RGB888 (4) or RGBA8888 (7), implicit single mip and exact integer-packed 8-bit component bytes across the complete existing checked PNG memory domain. Structural tRNS promotes channels independently of matching pixels, empty/opaque/unused palette alpha and remains sticky across later PLTE. Full 16-bit transparency keys compare before high-byte reduction; packed expansion, Adam7/filter/chunk rules and native-default CgBI remain unchanged. The inclusive 1 MiB encoded and 64 MiB filtered-stream caps, dimensions 1..4096 and fail-fast typed-error precedence are unchanged. Fresh local Linux x86-64 CPU-one-thread/CPU-two-thread/JavaScript qualification passes 230 images, 208 typed controls and 1,896 complete observations / 1,532,452 compared bytes per lane. Native format and every raw byte are captured before normalization; native mipmaps are measured as one while candidate mipmaps are an implicit type contract. Independent full-record replay passes. Historical normalized Surface evidence is kept separate; the 27-stage frozen runtime matrix passes 866 Python tests and 177 scoped laws, with older harness replay limits documented. A separate integrated metadata/CI source snapshot passes 871 Python tests without skips, 177 laws, syntax/project/API/CI-preservation/whitespace checks with runtime sources unchanged; final-tree review is recorded separately from runtime evidence. Dedicated Image.Formatted.decode_pic preserves native RGB888 (4) or RGBA8888 (7), implicit one mip and every integer-packed row-major byte across the entire unchanged checked PIC memory domain. Channels derive from the union of all validated packet masks: any alpha bit selects RGBA independently of opacity, later packets or selected-input-sample totals. The shared decoder retains dimensions 1..4096, white defaults, low-bit ignoring, ordered overlaps, raw/pure/mixed RLE, clipping, zero-count sample consumption, global byte validation and typed-error precedence. The adapter reuses owned storage without reparsing or floating normalization; no encoded-memory cap, file API or generic formatted dispatch is added. Fresh source-scoped local Linux x86-64 CPU-one-thread/CPU-two-thread/JavaScript qualification passes 101 streams / 37,306 pixels and 343 checked-only controls, preserving the original 33 streams / 8,867 pixels and 24 controls exactly. Each lane passes 1,536 complete observations / 836,048 bytes; 263 native observations capture raw metadata and bytes before normalization. The fresh PIC-enabled Memory archive is checked in both cache and effective flags; malformed controls never reach its unsafe failed-PIC conversion path. Independent full-record replay verifies 231 exact command receipts and 1,417 seals. The frozen 30-stage regression matrix passes 1,053 Python tests without skips and all 190 scoped laws (177 preserved plus 13 new channel/packing equalities). Independent regression replay checks 474 frozen sources, 12,093 artifact seals, 57,300 formatted records / 24,387,789 bytes, 42 resource runs and 2,032 inner plus 30 terminal outer commands. Canonical replay compares every 261 scenarios / 40,101 words, 333 QOI bytes and 23 palette words per lane, including optional fields. Ten older gates and canonical ancillary checks retain report/source/artifact-only limits; QOI closure retains only final image/terminal observations. Final metadata/CI-tree checks are recorded separately from this frozen runtime snapshot. The exact e481d3c257c6add2b9f756a583c648fcc5c92b7d PIC-memory checkpoint passes Checks 37202964891 and 86-gate Conformance 37202964890, with twelve workers, both aggregates and twelve unique nonempty artifacts on the recorded Ubuntu/macOS CPU/JavaScript gates. This historical memory qualification does not qualify later PIC-file loading or the new 87-gate topology.",
+      "scope": "Shared token/content dispatch decodes QOI, BMP, TGA, binary 8/16-bit PNM, PNG (1..16-bit, Adam7, native-default CgBI; 1 MiB encoded/64 MiB filtered caps), PSD (raw/PackBits, explicit matte arithmetic), PIC and first-frame GIF to owned RGBA8, dimensions 1..4096. Radiance HDR decodes to FloatRGB with exact F32 bits. Image.Formatted.decode_{qoi,pnm,tga,bmp,png,pic} keep the native format (grayscale, gray-alpha, RGB888, RGBA8888) and raw bytes, one mip. Malformed input returns typed errors.",
       "gaps": [
-        "JPEG and other payload codecs; shared float dispatch and HDR conversion",
+        "JPEG and other payload codecs; shared formatted/float dispatch and HDR conversion",
+        "Original pixel-format metadata for the remaining normalized codecs (PSD, GIF) and remaining dispatch families",
         "Nondefault external stb decoder flags, PSD out-of-range matte casts and permissive incomplete/excess raster recovery",
-        "Original pixel-format metadata for remaining normalized codecs, shared formatted/float dispatch and remaining dispatch families; formatted PNG file loading remains outside this memory-only increment",
-        "Big-endian and additional native arithmetic/platform profiles; GPU/Metal, Windows/browser and exact-commit hosted qualification",
-        "Other permissive malformed-stream recovery, dimensions above 4096, arbitrary input-length resource behavior, native pointer/allocation ABI and OOM parity",
-        "Maximum-area allocation, representative latency/throughput/memory and complete targets/integration/performance",
-        "PIC formatted file/generic dispatch remains outside this memory-only increment; its exact e481d3c hosted checkpoint passes the recorded memory gates. Dedicated PIC files are tracked separately under LoadImage; historical normalized Surface evidence does not qualify formatted PIC"
+        "Other permissive malformed-stream recovery, dimensions above 4096, native pointer/allocation ABI and OOM parity",
+        "Big-endian and other native arithmetic profiles; GPU/Metal, Windows and browser targets",
+        "Maximum-area allocation, latency/throughput/memory budgets and complete target/integration coverage"
       ],
       "blocker": null,
       "gates": {
@@ -40890,12 +40888,12 @@
       "status": "partial",
       "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Image.Formatted.to_bmp/to_tga/to_qoi/write_bmp/write_tga/write_qoi/write_png/write_raw / Image.FloatRGB.write_raw/write_png/write_bmp/write_tga / Surface.write_image",
       "mapping_state": "implemented",
-      "scope": "QOI/BMP/TGA/default PNG from RGBA8; PNG/RAW from formats 1..7; non-NaN RGB float RAW words and finite [0,1] RGB float PNG/BMP/TGA through native LoadImageColors normalization. Exact bytes/pixels, explicit codec selection, pre-open rejected-owner preservation, typed errors and closed handles are verified. Float RAW native exports use defined normalized auxiliary casts. RGBA8 filename-selected PNG/BMP/TGA/QOI/RAW uses native ASCII-case-insensitive last-dot dispatch, unchanged rejected owners before opening files, and typed file errors. Checked normalized R32 format-8 owners additionally support exact RAW bytes and native red-only PNG file colors. Checked formats 1..8 additionally provide consuming pure BMP file bytes and explicit BMP file IO: native 24-bit grayscale/gray-alpha/RGB888 versus V4 LoadImageColors packed/RGBA/R32 paths, including exact header/padding/channel rules and Base error-code/message preservation. Checked formats 1..8 additionally provide consuming pure TGA file bytes and explicit TGA IO with native 1/2/3/4-channel headers, row-bounded default RLE, LoadImageColors packed expansion and R32 exported-color run collapse; Base errors preserve exact code/message. Explicit formatted QOI pure/file adapters accept only original RGB888 (4) and RGBA8888 (7), with integer channel packing, channels 3/4 and colorspace 0; formats 1/2/3/5/6/8 retain their exact owner before file IO. Accepted writes consume owners and preserve typed Base code/message with acquired-handle closure. Local Linux x86-64 CPU-1/CPU-2/JavaScript focused qualification passes 273 accepted and 22 rejected QOI sources, complete native file bytes and original-format decoded bytes, plus exact retained-source and typed Base IO controls.",
+      "scope": "Surface.write_image picks PNG/BMP/TGA/QOI/RAW by native ASCII-case-insensitive last-dot suffix. RGBA8: QOI, V4 BMP, RLE TGA, default PNG. Formats 1..8 (R32 finite [0,1]): PNG and RAW bytes, 24-bit/V4 BMP and 1..4-channel RLE TGA via native LoadImageColors rules; formatted QOI only from RGB888/RGBA8888. RGB float: exact non-NaN RAW words; finite [0,1] PNG/BMP/TGA. Rejected sources keep their owner before any file opens; accepted writes consume it, close the handle and return typed Base errors.",
       "gaps": [
         "JPEG/KTX and other formats/options; extension dispatch for non-Surface owners; NaN parity and native out-of-range auxiliary casts",
         "Native callbacks/allocation ABI and complete targets/integration/performance",
         "Failing-device, short-write and close-error equivalence; Base close has no error result",
-        "R32 broader domains and complete target/contraction profiles; this extension has current-host CPU/JS evidence only"
+        "R32 samples outside finite [0,1] and complete target/contraction profiles"
       ],
       "blocker": null,
       "gates": {
@@ -40964,12 +40962,12 @@
       "status": "partial",
       "jonlib": "Surface.to_png / Image.Formatted.to_png / Image.FloatRGB.to_png",
       "mapping_state": "implemented",
-      "scope": "Exact default PNG from RGBA8, byte formats 1/2/4/7 and non-NaN RGB floats. Float memory export preserves native raw little-endian storage-prefix interpretation, distinct from normalized file export. Byte channels, filtering, compression/checksums and rejected-owner behavior remain verified through complete encoded/decoded output. Checked normalized R32 format 8 preserves all four little-endian sample bytes as native RGBA memory PNG, distinct from red-only normalized file PNG; packed formats 3/5/6 retain rejection owners.",
+      "scope": "Exact default PNG (filtering, compression, checksums) from RGBA8, byte formats 1/2/4/7, finite [0,1] R32 format 8 and non-NaN RGB float format 9. Float and R32 sources use the native raw little-endian storage-prefix interpretation (R32: all four sample bytes as RGBA), distinct from normalized file export. Packed formats 3/5/6 are rejected with the original owner.",
       "gaps": [
         "Packed/other float source formats, NaN parity, configured flags and generic dispatch",
         "Native pointer/output-size/allocator ABI and ownership correspondence",
         "Complete integration/target/resource/performance coverage",
-        "R32 storage remains finite [0,1]; new R32 memory path has current-host CPU/JS evidence only"
+        "R32 samples outside finite [0,1]"
       ],
       "blocker": null,
       "gates": {
@@ -41033,12 +41031,12 @@
       "status": "partial",
       "jonlib": "Image.Formatted.to_code / Image.Formatted.write_code / Image.FloatRGB.to_code / Image.FloatRGB.write_code",
       "mapping_state": "implemented",
-      "scope": "Checked formats 1..7 and non-NaN RGB float format 9 with payload at most 65536 bytes and non-NUL ASCII paths whose basenames have 1..200 characters. Exact native banner/credits, uppercase basename/last-extension rules, dimensions/format/count, raw little-endian sample bytes, unpadded hex and default line breaks. Unsupported sources/requests retain owners before opening; typed Base errors, handle closure and an ASan-checked native oracle are verified on CPU/JS, with pure text generation on forced Metal. Checked normalized R32 format-8 owners additionally preserve exact sample bytes and native format/count metadata in generated text and files.",
+      "scope": "Checked formats 1..7, finite [0,1] R32 format 8 and non-NaN RGB float format 9; payload at most 65536 bytes; non-NUL ASCII paths with 1..200-character basenames. Exact native banner/credits, uppercase basename/last-extension rules, dimensions/format/count, raw little-endian sample bytes, unpadded hex and default line breaks. Unsupported sources/requests keep their owner before any file is opened; typed Base errors and handle closure.",
       "gaps": [
         "NaN payload parity, wider payload/path/Unicode/truncation domains, native long-name buffer overflow and other source formats",
         "Configured line widths and native allocation/ownership ABI",
         "Complete target/resource/integration/performance coverage",
-        "R32 broader domains and complete target/contraction profiles; this extension has current-host CPU/JS evidence only"
+        "R32 samples outside finite [0,1] and complete target/contraction profiles"
       ],
       "blocker": null,
       "gates": {
@@ -41102,7 +41100,7 @@
       "status": "partial",
       "jonlib": "Surface.create",
       "mapping_state": "implemented",
-      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "scope": "Owned RGBA8 Surface filled with one packed color; dimensions 1..4096 per axis, otherwise None. Power-of-two storage padding is excluded from exports.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -41532,7 +41530,7 @@
       "status": "partial",
       "jonlib": "Surface.create_cellular",
       "mapping_state": "implemented",
-      "scope": "Owned-stream RGBA8 cellular generation with dimensions/tile size 1..4096; reference floor seed grids, Y-before-X draws, adjacent-tile clipping and opaque intensity order. Exact integer-distance reduction is gated against every in-domain native hypot pair; invalid requests preserve the stream.",
+      "scope": "Owned-stream RGBA8 cellular generation with dimensions/tile size 1..4096; reference floor seed grids, Y-before-X draws, adjacent-tile clipping and opaque intensity order. Integer-distance reduction reproduces native hypot for every in-domain pair; invalid requests preserve the stream.",
       "gaps": [
         "Implicit-global/libc random profiles and broader generation domains",
         "Full integration/target/resource/performance coverage"
@@ -41782,7 +41780,7 @@
       "gaps": [
         "Other selector/source domains, formats and mipmaps",
         "Complete native ABI/resource/target/performance coverage",
-        "R32 broader domains and complete target/contraction profiles; this extension has current-host CPU/JS evidence only"
+        "R32 samples outside finite [0,1] and complete target/contraction profiles"
       ],
       "blocker": null,
       "gates": {
@@ -41963,12 +41961,12 @@
       "status": "partial",
       "jonlib": "Image.Formatted.convert / Surface.to_formatted / Image.Formatted.to_surface / Image.Formatted.to_float_rgb / Surface.to_float_rgb / Image.FloatRGB.to_surface / Image.FloatRGB.from_bytes / Image.FloatRGB.to_bytes / Image.FloatRGB.to_formatted",
       "mapping_state": "implemented",
-      "scope": "Owned formats 1..7 and bidirectional format-9 RGB float bridges with native direct normalization, packed reciprocal expansion, alpha discard and finite [0,1] float encoding/luminance/rounding. Exact non-NaN raw words, returned unsupported float owners, thresholds/no-ops and stack-bounded native-order exports are retained. Bounded format-8 R32 stores exact finite [0,1] words including positive subnormals and both zero signs; formats 1..8 convert with uncontracted F32 luminance, red-only R32 normalization, bit-preserving no-ops and direct 8-to-9 RGB float transport. Bounded format-9 to R32 now uses the same direct uncontracted F32 luminance with complete retained-owner failures; current-host CPU/JS checks include non-identity chains and full 33024-pixel traversal.",
+      "scope": "Owned formats 1..8 plus bidirectional RGB float format-9 bridges: native direct normalization, packed reciprocal expansion, alpha discard, thresholds and bit-preserving no-ops; float encoding needs finite [0,1] samples. Format 8 (R32) holds exact finite [0,1] words incl. positive subnormals and both zero signs; conversion to it uses uncontracted F32 luminance (also from format 9), from it red-only normalization; 8-to-9 is direct. Exact non-NaN raw words; failures return the original owner.",
       "gaps": [
         "Other float/half/compressed formats, mipmaps and other thresholds/endianness",
         "NaN payload interoperability, out-of-domain float casts and native allocation ABI",
         "Complete integration/target/resource/performance coverage",
-        "R32 broader domains and complete target/contraction profiles; this extension has current-host CPU/JS evidence only"
+        "R32 samples outside finite [0,1] and complete target/contraction profiles"
       ],
       "blocker": null,
       "gates": {
@@ -42034,7 +42032,7 @@
       "status": "partial",
       "jonlib": "Surface.to_pot / Image.FloatRGB.to_pot",
       "mapping_state": "implemented",
-      "scope": "Owned RGBA8 and non-NaN RGB F32, dimensions 1..4096; canvas expansion to next power-of-two dimensions with native fill/no-op behavior. Format 9 preserves sample words and ignores fill, leaving exposed pixels zero. All 4096 axis values are compared with actual ImageToPOT.",
+      "scope": "Owned RGBA8 and non-NaN RGB F32, dimensions 1..4096; canvas expansion to next power-of-two dimensions with native fill/no-op behavior. Format 9 preserves sample words and ignores fill, leaving exposed pixels zero.",
       "gaps": [
         "Other dimensions/formats/mipmaps and NaN payload parity",
         "Full target/performance gates"
@@ -42399,7 +42397,7 @@
       "status": "partial",
       "jonlib": "Surface.blur_gaussian",
       "mapping_state": "implemented",
-      "scope": "Checked RGBA8 surfaces and U32 blur size 0..min(width,height). Native byte-premultiplied alpha, four horizontal/vertical sliding-window iterations, remove-before-add sums, edge divisors, per-vertical-pass byte truncation and reverse premultiplication. Zero size retains native quantization; excessive requests return the original with InvalidSize. Exact native pixels and rejected owners pass on CPU/JS/forced Metal.",
+      "scope": "Checked RGBA8 surfaces and U32 blur size 0..min(width,height). Native byte-premultiplied alpha, four horizontal/vertical sliding-window iterations, remove-before-add sums, edge divisors, per-vertical-pass byte truncation and reverse premultiplication. Zero size retains native quantization; excessive requests return the original with InvalidSize.",
       "gaps": [
         "Other source formats/mipmaps and configured iteration counts",
         "Negative/excessive native blur sizes and native allocation ABI",
@@ -42461,7 +42459,7 @@
       "status": "partial",
       "jonlib": "Surface.kernel_convolution",
       "mapping_state": "implemented",
-      "scope": "Checked RGBA8 surfaces and immutable square F32 kernels of 0..225 entries; coefficients zero or finite magnitude 2^-16..16. Native flat unsigned-index sampling/row wrapping, odd/even anchoring, normalized channel multiplication, ordered accumulation, RGB clamping and unclamped defined alpha conversion. Unsupported kernels or alpha casts return the unchanged original with InvalidKernel, including late failures. Complete native pixels and retained owners pass on CPU/JS/forced Metal.",
+      "scope": "Checked RGBA8 surfaces and immutable square F32 kernels of 0..225 entries; coefficients zero or finite magnitude 2^-16..16. Native flat unsigned-index sampling/row wrapping, odd/even anchoring, normalized channel multiplication, ordered accumulation, RGB clamping and unclamped defined alpha conversion. Unsupported kernels or alpha casts return the unchanged original with InvalidKernel, including late failures.",
       "gaps": [
         "Wider kernels/coefficient domains and undefined native alpha casts",
         "Other source formats/mipmaps and native allocation ABI",
@@ -42716,7 +42714,7 @@
       "status": "partial",
       "jonlib": "Surface.mipmaps / Image.Mipmaps.entries / Image.Mipmaps.unload",
       "mapping_state": "implemented",
-      "scope": "Checked single-level RGBA8 surfaces, dimensions 1..4096. Complete owned base-to-1x1 levels, preserving the base and resizing each preceding level with native default filtering. Exact count/dimensions/all pixels, odd/thin/4096-axis boundaries and independent level mutation pass on CPU/JS/forced Metal.",
+      "scope": "Checked single-level RGBA8 surfaces, dimensions 1..4096. Returns complete owned base-to-1x1 levels, preserving the base and resizing each preceding level with native default filtering; levels are independent owners.",
       "gaps": [
         "Existing partial/full native chains and non-RGBA8 source formats",
         "Contiguous C allocation/pointer ABI and texture integration",
@@ -43266,7 +43264,7 @@
       "status": "partial",
       "jonlib": "Surface.color_grayscale / Image.FloatRGB.color_grayscale",
       "mapping_state": "implemented",
-      "scope": "RGBA8 to opaque normalized grayscale RGBA8, plus finite [0,1] RGB float directly to owned native grayscale format 1. Preserves F32 luminance order/truncation; byte RGB uses its existing exhaustive 2^24 gate and float RGB adds targeted luminance boundaries with retained rejected owners.",
+      "scope": "RGBA8 to opaque normalized grayscale RGBA8, and finite [0,1] RGB float directly to owned native grayscale format 1, with native F32 luminance order and truncation. Rejected float requests return the original owner.",
       "gaps": [
         "Other source domains/formats/mipmaps and remaining metadata/native ABI",
         "Full target/resource/performance coverage"
@@ -43516,7 +43514,7 @@
       "scope": "Owned RGBA8, formats 1..7 and finite [0,1] RGB floats to complete row-major RGBA color lists. Native packed integer expansion and float truncation are preserved; unsupported float samples return the original owner. Bounded format-8 R32 additionally produces native red-only colors with opaque alpha.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open.",
-        "R32 broader domains and complete target/contraction profiles; this extension has current-host CPU/JS evidence only"
+        "R32 samples outside finite [0,1] and complete target/contraction profiles"
       ],
       "blocker": null,
       "gates": {
@@ -43578,7 +43576,7 @@
       "status": "partial",
       "jonlib": "Surface.load_palette / Image.Palette.entries",
       "mapping_state": "implemented",
-      "scope": "Preserves the source owner and returns an owned RGBA palette for capacity 1..4096; first occurrence order, alpha-zero exclusion, alpha-sensitive uniqueness, count and full BLANK-padded capacity are compared exactly.",
+      "scope": "Preserves the source owner and returns an owned RGBA palette for capacity 1..4096: first-occurrence order, alpha-zero exclusion, alpha-sensitive uniqueness, native count and BLANK padding to full capacity.",
       "gaps": [
         "Native pointers/allocators and other image formats/mipmaps",
         "Full integration/target/resource/performance coverage"
@@ -43820,7 +43818,7 @@
       "scope": "Owned RGBA8, formats 1..7 and finite [0,1] selected RGB float pixels. U32 coordinates are checked before access; out-of-bounds/unsupported pixels return None with the original owner. Native packed integer expansion and float truncation remain distinct from other pixel/format APIs. Checked normalized R32 format-8 points additionally produce native red-only colors, distinct from low-level GetPixelColor grayscale replication.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open.",
-        "R32 broader domains and complete target/contraction profiles; this extension has current-host CPU/JS evidence only"
+        "R32 samples outside finite [0,1] and complete target/contraction profiles"
       ],
       "blocker": null,
       "gates": {
@@ -43882,7 +43880,7 @@
       "status": "partial",
       "jonlib": "Surface.clear",
       "mapping_state": "implemented",
-      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "scope": "Consumes an RGBA8 Surface and replaces every pixel with one packed color; dimensions preserved.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -43941,7 +43939,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_pixel",
       "mapping_state": "implemented",
-      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "scope": "RGBA8; replaces the RGBA bytes of an in-bounds pixel; outside coordinates are clipped.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -44241,7 +44239,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_circle",
       "mapping_state": "implemented",
-      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "scope": "RGBA8; reference midpoint filled-circle coverage with U32 radius, clipped to the image.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -44482,7 +44480,7 @@
       "status": "partial",
       "jonlib": "Surface.draw_rectangle",
       "mapping_state": "implemented",
-      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "scope": "RGBA8; integral-coordinate profile of the CPU ImageDrawRectangle, clipped to the image.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -46380,7 +46378,7 @@
       "status": "partial",
       "jonlib": "Color.with_alpha",
       "mapping_state": "implemented",
-      "scope": "Same finite-factor alpha replacement as ColorAlpha; reference Fade exercised separately.",
+      "scope": "Same finite-factor alpha replacement as ColorAlpha (Color.with_alpha).",
       "gaps": [
         "Complete platform/integration/performance gates"
       ],
@@ -46439,7 +46437,7 @@
       "status": "partial",
       "jonlib": "Color.rgba",
       "mapping_state": "implemented",
-      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "scope": "Packs four channels as 0xRRGGBBAA keeping the low eight bits of each (C unsigned-byte conversion), the unsigned bit pattern of ColorToInt.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -46976,7 +46974,7 @@
       "status": "partial",
       "jonlib": "Color.alpha_blend",
       "mapping_state": "implemented",
-      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "scope": "Integer ColorAlphaBlend on packed RGBA, including 256-based tint and alpha rounding.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -47093,7 +47091,7 @@
       "status": "partial",
       "jonlib": "Color.red/green/blue/alpha",
       "mapping_state": "implemented",
-      "scope": "Current RGBA8/owned-Surface or color contract only; see docs/API.md.",
+      "scope": "Packed 0xRRGGBBAA U32 words in GetColor byte order; Color.red/green/blue/alpha extract 8-bit channels.",
       "gaps": [
         "Full input/format domain and all applicable platform/performance gates remain open."
       ],
@@ -61059,7 +61057,7 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.length",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 length; exact result-bit comparisons on exercised CPU/JS/Metal targets.",
+      "scope": "Uncontracted finite F32 length.",
       "gaps": [
         "Exceptional/subnormal and contracted variants",
         "Full platform/performance gates"
@@ -61419,7 +61417,7 @@
       "gaps": [
         "Nonzero subnormal wrapper intermediates/output are rejected; nonfinite input behavior is rejection only, not native exceptional parity",
         "Other rounding modes, contracted/FMA wrapper variants, errno, exceptions and NaN payload semantics",
-        "Fresh host qualification currently supports only Linux glibc ELF; Apple/Sun historical source contracts do not newly qualify those hosts",
+        "macOS arm64 native atan2f differs from the Apple2007 kernel on some subnormal results, one reaching the checked wrapper (docs/ANGLES.md)",
         "Forced-device, other native targets, full-domain and performance coverage"
       ],
       "blocker": null,
@@ -61490,7 +61488,7 @@
       "gaps": [
         "Nonzero subnormal wrapper intermediates/output are rejected; nonfinite input behavior is rejection only, not native exceptional parity",
         "Other rounding modes, contracted/FMA wrapper variants, errno, exceptions and NaN payload semantics",
-        "Fresh host qualification currently supports only Linux glibc ELF; Apple/Sun historical source contracts do not newly qualify those hosts",
+        "macOS arm64 native atan2f differs from the Apple2007 kernel on some subnormal results, one reaching the checked wrapper (docs/ANGLES.md)",
         "Forced-device, other native targets, full-domain and performance coverage"
       ],
       "blocker": null,
@@ -62032,7 +62030,7 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.min_for / jonmath.Vector2.min",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component minima with explicit reference signed-zero behavior. Canonical literal-raymath tests explicitly qualify the existing zero-tie contract using independent native controls; Clang 19 Linux selects AccurateGradient and exact CPU/JS fixture comparisons confirm that context.",
+      "scope": "Finite F32 component minima with explicit reference signed-zero behavior.",
       "gaps": [
         "Exceptional/subnormal and full platform/performance coverage",
         "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts"
@@ -62097,7 +62095,7 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.max_for / jonmath.Vector2.max",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component maxima with explicit reference signed-zero behavior. Canonical literal-raymath tests explicitly qualify the existing zero-tie contract using independent native controls; Clang 19 Linux selects AccurateGradient and exact CPU/JS fixture comparisons confirm that context.",
+      "scope": "Finite F32 component maxima with explicit reference signed-zero behavior.",
       "gaps": [
         "Exceptional/subnormal and full platform/performance coverage",
         "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts"
@@ -62343,7 +62341,7 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.clamp_for / jonmath.Vector2.clamp",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component clamp, including reversed bounds and explicit AccurateGradient/GnuGradient signed-zero selection. Canonical literal-raymath tests explicitly qualify the existing zero-tie contract using independent native controls; Clang 19 Linux selects AccurateGradient and exact CPU/JS fixture comparisons confirm that context.",
+      "scope": "Finite F32 component clamp, including reversed bounds and explicit AccurateGradient/GnuGradient signed-zero selection.",
       "gaps": [
         "Exceptional/subnormal and full platform/performance coverage",
         "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts"
@@ -62705,7 +62703,7 @@
       "status": "partial",
       "jonlib": "jonmath.Vector3.add",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component addition, including signed-zero fixtures.",
+      "scope": "Finite F32 component addition, including signed zeros.",
       "gaps": [
         "Exceptional/subnormal domains and full target/performance coverage"
       ],
@@ -63059,7 +63057,7 @@
       "status": "partial",
       "jonlib": "jonmath.Vector3.cross_product",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 cross product with reference handedness and three-component exact-bit fixtures.",
+      "scope": "Uncontracted finite F32 cross product with reference handedness.",
       "gaps": [
         "Exceptional/subnormal and contracted variants",
         "Full target/performance coverage"
@@ -63483,7 +63481,7 @@
       "gaps": [
         "Nonzero subnormal wrapper intermediates/output are rejected; nonfinite input behavior is rejection only, not native exceptional parity",
         "Other rounding modes, contracted/FMA wrapper variants, errno, exceptions and NaN payload semantics",
-        "Fresh host qualification currently supports only Linux glibc ELF; Apple/Sun historical source contracts do not newly qualify those hosts",
+        "macOS arm64 native atan2f differs from the Apple2007 kernel on some subnormal results, one reaching the checked wrapper (docs/ANGLES.md)",
         "Forced-device, other native targets, full-domain and performance coverage"
       ],
       "blocker": null,
@@ -63729,7 +63727,7 @@
       "status": "partial",
       "jonlib": "jonmath.Vector3.project",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 projection with nonzero reference squared target length; all component bits compared.",
+      "scope": "Uncontracted finite F32 projection with nonzero reference squared target length.",
       "gaps": [
         "Undefined/exceptional/subnormal and contracted domains",
         "Full target/performance coverage"
@@ -64333,7 +64331,7 @@
       "status": "partial",
       "jonlib": "jonmath.Vector3.min_for / jonmath.Vector3.min",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component minima with explicit reference signed-zero selection. Canonical literal-raymath tests explicitly qualify the existing zero-tie contract using independent native controls; Clang 19 Linux selects AccurateGradient and exact CPU/JS fixture comparisons confirm that context.",
+      "scope": "Finite F32 component minima with explicit reference signed-zero selection.",
       "gaps": [
         "Exceptional/subnormal and complete target/performance coverage",
         "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts"
@@ -64398,7 +64396,7 @@
       "status": "partial",
       "jonlib": "jonmath.Vector3.max_for / jonmath.Vector3.max",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component maxima with explicit reference signed-zero selection. Canonical literal-raymath tests explicitly qualify the existing zero-tie contract using independent native controls; Clang 19 Linux selects AccurateGradient and exact CPU/JS fixture comparisons confirm that context.",
+      "scope": "Finite F32 component maxima with explicit reference signed-zero selection.",
       "gaps": [
         "Exceptional/subnormal and complete target/performance coverage",
         "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts"
@@ -64709,7 +64707,7 @@
       "status": "partial",
       "jonlib": "jonmath.Vector3.clamp_for / jonmath.Vector3.clamp",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component clamp with explicit AccurateGradient/GnuGradient signed-zero ties and reference bound ordering. Canonical literal-raymath tests explicitly qualify the existing zero-tie contract using independent native controls; Clang 19 Linux selects AccurateGradient and exact CPU/JS fixture comparisons confirm that context.",
+      "scope": "Finite F32 component clamp with explicit AccurateGradient/GnuGradient signed-zero ties and reference bound ordering.",
       "gaps": [
         "Exceptional/subnormal domains",
         "Full target/performance coverage",
@@ -65907,7 +65905,7 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.min_for / jonmath.Vector4.min",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component minima with explicit reference signed-zero selection. Canonical literal-raymath tests explicitly qualify the existing zero-tie contract using independent native controls; Clang 19 Linux selects AccurateGradient and exact CPU/JS fixture comparisons confirm that context.",
+      "scope": "Finite F32 component minima with explicit reference signed-zero selection.",
       "gaps": [
         "Exceptional/subnormal and full target/performance coverage",
         "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts"
@@ -65972,7 +65970,7 @@
       "status": "partial",
       "jonlib": "jonmath.Vector4.max_for / jonmath.Vector4.max",
       "mapping_state": "implemented",
-      "scope": "Finite F32 component maxima with explicit reference signed-zero selection. Canonical literal-raymath tests explicitly qualify the existing zero-tie contract using independent native controls; Clang 19 Linux selects AccurateGradient and exact CPU/JS fixture comparisons confirm that context.",
+      "scope": "Finite F32 component maxima with explicit reference signed-zero selection.",
       "gaps": [
         "Exceptional/subnormal and full target/performance coverage",
         "Arbitrary runtime/native-pointer and unqualified compiler/architecture zero-tie contexts"
@@ -66277,7 +66275,7 @@
       "status": "partial",
       "jonlib": "jonmath.Matrix.determinant",
       "mapping_state": "implemented",
-      "scope": "Uncontracted finite F32 reference Laplace expansion, including tested singular and negative determinants.",
+      "scope": "Uncontracted finite F32 reference Laplace expansion, including singular and negative determinants.",
       "gaps": [
         "Exceptional/subnormal and contracted variants",
         "Full target/performance coverage"
@@ -66457,7 +66455,7 @@
       "status": "partial",
       "jonlib": "jonmath.Matrix.invert",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 inversion using the reference minors and reciprocal denominator; nonzero inversion denominator and finite supported intermediates/results. Exact identity, affine, dense and near-singular fixtures.",
+      "scope": "Uncontracted F32 inversion using the reference minors and reciprocal denominator; nonzero inversion denominator and finite supported intermediates/results.",
       "gaps": [
         "Singular/exceptional/subnormal and contracted profiles",
         "Full target/performance coverage"
@@ -66518,7 +66516,7 @@
       "status": "partial",
       "jonlib": "jonmath.Matrix.identity",
       "mapping_state": "implemented",
-      "scope": "Reference 4x4 identity with all 16 F32 fields compared exactly.",
+      "scope": "Reference 4x4 identity; all 16 F32 fields exact.",
       "gaps": [
         "Full integration/target/performance coverage"
       ],
@@ -66695,7 +66693,7 @@
       "status": "partial",
       "jonlib": "jonmath.Matrix.multiply",
       "mapping_state": "implemented",
-      "scope": "Uncontracted F32 four-term products in reference operand/field order; noncommuting and dense products checked exactly.",
+      "scope": "Uncontracted F32 four-term products in reference operand/field order (noncommutative).",
       "gaps": [
         "Exceptional/subnormal and contracted variants",
         "Complete SIMD/target/performance matrix"
@@ -67295,7 +67293,7 @@
       "status": "partial",
       "jonlib": "jonmath.Matrix.frustum",
       "mapping_state": "implemented",
-      "scope": "Six binary64 Float64 inputs retained through interval subtraction before reference F32 casts/arithmetic. Exact full-field fixtures include intervals below an F32 ULP; normal/zero intermediate/result profile with nonzero spans.",
+      "scope": "Six binary64 Float64 inputs retained through interval subtraction before reference F32 casts/arithmetic, including intervals below an F32 ULP; normal/zero intermediate/result profile with nonzero spans.",
       "gaps": [
         "Exceptional/subnormal arithmetic profiles",
         "Complete integration/target/performance coverage"
@@ -68862,7 +68860,7 @@
       "status": "blocked",
       "jonlib": "jonmath.Quaternion.to_euler",
       "mapping_state": "proposed",
-      "scope": "Reference Euler extraction requires exact native asinf in addition to the verified atan2 profile.",
+      "scope": "Reference Euler extraction requires exact native asinf in addition to the explicit atan2 profile.",
       "gaps": [
         "Verified native asin dependency",
         "Complete Euler extraction evidence"

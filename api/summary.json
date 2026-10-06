@@ -617,7 +617,7 @@
       "milestone": "shapes",
       "status": "blocked",
       "jonlib": "Draw.get_spline_point_bezier_cubic",
-      "next_step": "Resolve: Native Apple powf(t,3) differs from a double-cube substitute: 6670/1048576 investigated inputs, with a retained actual GetSplinePointBezierCubic coordinate mismatch.",
+      "next_step": "Resolve: Native Apple powf(t,3) differs from a double-cube substitute on some inputs, producing an actual GetSplinePointBezierCubic coordinate mismatch.",
       "milestone_dependencies": [
         "frame",
         "rlgl-core",
