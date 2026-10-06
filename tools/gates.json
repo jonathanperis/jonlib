@@ -1,0 +1,1333 @@
+{
+ "description": "Conformance gates run by tools/run_gates.py. 'run' placeholders: {python}, {bend}, {raylib}. 'minutes' is an approximate hosted-runner duration used only to balance shards. Diagnostic entries record evidence for open gaps and never count as parity.",
+ "gates": [
+  {
+   "id": "conformance",
+   "title": "Main differential corpus, contracts, examples and PROOF.bend",
+   "run": [
+    "{python}",
+    "tools/conformance.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 12
+  },
+  {
+   "id": "jonmath-example",
+   "title": "Standalone Jonmath import example (CPU/JS)",
+   "run": [
+    "{python}",
+    "tools/example_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1
+  },
+  {
+   "id": "api-audit",
+   "title": "Pinned header catalog and C/C++ API audit",
+   "run": [
+    "{python}",
+    "tools/api_plan.py",
+    "check",
+    "--clang-audit",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "bend-overlay",
+   "title": "Compiler overlay against upstream regressions",
+   "run": [
+    "{python}",
+    "tools/verify_bend.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 6
+  },
+  {
+   "id": "resize",
+   "title": "Filtered resize coefficients, kernels and 529-image corpus",
+   "run": [
+    "{python}",
+    "tools/resize_conformance.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 20
+  },
+  {
+   "id": "random",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/random_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "perlin",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/perlin_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "spline",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/spline_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "pixel",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/pixel_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "raw-pixel",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/raw_pixel_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "image-format",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/image_format_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 4
+  },
+  {
+   "id": "r32-image",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/r32_image_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 4
+  },
+  {
+   "id": "r32-raw-file",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/r32_raw_file_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 3
+  },
+  {
+   "id": "float-rgb-r32",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/float_rgb_r32_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 3
+  },
+  {
+   "id": "raw-file",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/raw_file_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "bmp",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/bmp_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "tga",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/tga_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "png",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/png_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 5
+  },
+  {
+   "id": "pic",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/pic_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "psd",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/psd_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "psd-matte",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/psd_matte_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "pnm",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/pnm_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "gif",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/gif_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "gif-animation",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/gif_animation_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 5
+  },
+  {
+   "id": "animation-file",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/animation_file_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "hdr",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/hdr_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 9
+  },
+  {
+   "id": "hdr-file",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/hdr_file_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 5
+  },
+  {
+   "id": "float-rgb",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/float_rgb_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 3
+  },
+  {
+   "id": "float-rgb-bytes",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/float_rgb_bytes_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 3
+  },
+  {
+   "id": "float-rgb-raw-file",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/float_rgb_raw_file_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "float-rgb-transform",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/float_rgb_transform_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 8
+  },
+  {
+   "id": "float-rgb-crop",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/float_rgb_crop_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "float-rgb-resize",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/float_rgb_resize_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "float-rgb-resize-filtered",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/float_rgb_resize_probe.py",
+    "--filtered",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "float-rgb-canvas",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/float_rgb_canvas_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "float-rgb-color",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/float_rgb_color_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 12
+  },
+  {
+   "id": "float-rgb-formats",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/float_rgb_formats_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "formatted-float",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/formatted_float_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "image-channel",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/image_channel_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 3
+  },
+  {
+   "id": "image-colors",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/image_colors_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "float-rgb-png",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/float_rgb_png_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "float-rgb-raster-export",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/float_rgb_raster_export_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 4
+  },
+  {
+   "id": "image-code",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/image_code_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "image-memory",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/image_memory_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 9
+  },
+  {
+   "id": "image-file",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/image_file_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 5
+  },
+  {
+   "id": "image-export",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/image_export_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 4
+  },
+  {
+   "id": "png-export",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/png_export_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 3
+  },
+  {
+   "id": "deflate",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/deflate_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1
+  },
+  {
+   "id": "inflate",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/inflate_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1
+  },
+  {
+   "id": "mipmap",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/mipmap_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 3
+  },
+  {
+   "id": "blur",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/blur_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1
+  },
+  {
+   "id": "convolution",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/convolution_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "base64",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/base64_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 5
+  },
+  {
+   "id": "checksum",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/checksum_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 4
+  },
+  {
+   "id": "sha",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/sha_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1
+  },
+  {
+   "id": "sdeflate-huffman",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/sdeflate_huffman_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "sdeflate-lz",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/sdeflate_probe.py",
+    "--stage",
+    "lz",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "sdeflate",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/sdeflate_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 5
+  },
+  {
+   "id": "trig",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/trig_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1
+  },
+  {
+   "id": "trig-rotation",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/trig_probe.py",
+    "--rotation",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1
+  },
+  {
+   "id": "fused",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/fused_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1
+  },
+  {
+   "id": "float64-ops",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/float64_ops_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1
+  },
+  {
+   "id": "binary64-narrow",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/binary64_narrow_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "binary64-fma",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/binary64_fma_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "binary64-add-sub",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/binary64_add_sub_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "binary64-ops",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/binary64_ops_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "binary64-gradual-multiply",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/binary64_gradual_multiply_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "modern-angle-bounds",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/modern_angle_bounds.py"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1
+  },
+  {
+   "id": "modern-angle",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/modern_angle_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 5
+  },
+  {
+   "id": "angle-legacy",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/angle_probe.py",
+    "--gnu-control",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "formatted-bmp-export",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/formatted_bmp_export_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 3
+  },
+  {
+   "id": "formatted-tga-export",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/formatted_tga_export_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 3
+  },
+  {
+   "id": "formatted-qoi-export",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/formatted_qoi_export_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 3
+  },
+  {
+   "id": "bmp-format",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/bmp_format_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 20
+  },
+  {
+   "id": "tga-format",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/tga_format_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 12
+  },
+  {
+   "id": "png-format",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/png_format_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 15
+  },
+  {
+   "id": "pic-format",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/pic_format_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 10
+  },
+  {
+   "id": "pnm-format",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/pnm_format_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 6
+  },
+  {
+   "id": "qoi-format",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/qoi_format_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 4
+  },
+  {
+   "id": "bmp-file",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/bmp_file_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 20
+  },
+  {
+   "id": "tga-file",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/tga_file_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 12
+  },
+  {
+   "id": "png-file",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/png_file_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 20
+  },
+  {
+   "id": "pic-file",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/pic_file_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 12
+  },
+  {
+   "id": "pnm-file",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/pnm_file_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 8
+  },
+  {
+   "id": "qoi-file",
+   "title": "",
+   "run": [
+    "{python}",
+    "tools/qoi_file_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 6
+  },
+  {
+   "id": "native-math-profiles",
+   "title": "Host libm profile record (diagnostic)",
+   "run": [
+    "{python}",
+    "tools/native_math_profile_probe.py",
+    "--clang",
+    "clang",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1,
+   "diagnostic": true
+  },
+  {
+   "id": "filter-precision",
+   "title": "Default-filter precision record (diagnostic; stock control must match)",
+   "run": [
+    "{python}",
+    "tools/filter_probe.py",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1,
+   "diagnostic": true
+  },
+  {
+   "id": "perspective",
+   "title": "MatrixPerspective rounding record (diagnostic)",
+   "run": [
+    "{python}",
+    "tools/perspective_probe.py",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1,
+   "diagnostic": true
+  },
+  {
+   "id": "inverse-trig",
+   "title": "Inverse-trig libm record (diagnostic)",
+   "run": [
+    "{python}",
+    "tools/inverse_trig_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1,
+   "diagnostic": true
+  }
+ ]
+}
