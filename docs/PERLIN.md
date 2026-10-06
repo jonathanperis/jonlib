@@ -20,26 +20,29 @@ seed. The Z coordinate starts at 1. Each pixel follows raylib's original aspect
 compensation, clamp to -1..1, F32 remapping and unsigned-byte truncation.
 Packed table words reproduce both repeated 256-entry halves exactly.
 
-The exercised macOS arm64 reference contracts the easing polynomial, interpolation
+The linked macOS arm64 reference contracts the easing polynomial, interpolation
 and octave accumulation into multiply-add instructions. `FusedNoise{}` uses the
-existing Bend-only single-rounding arithmetic to reproduce this behavior.
-Hosted Linux/x86_64 uses `UncontractedNoise{}`. Neither profile modifies the
-reference build flags or substitutes different noise coefficients.
+Bend-only single-rounding arithmetic of `src/fused.bend` to reproduce this
+behavior; Linux x86_64 uses `UncontractedNoise{}`. The harness selects the
+profile from the same host declaration as the collision arithmetic
+([COLLISION.md](COLLISION.md)). Neither profile modifies the reference build
+flags or substitutes different noise coefficients.
 
-## Verification
+## How it is verified
 
-The full-image suite compares every native pixel for square, wide, tall, thin,
-offset/wrapping, negative, zero and small-scale fixtures on CPU-1, CPU-2,
-JavaScript and forced Metal. Three invalid-domain contracts are also checked.
-An independent pinned-header probe verifies all 1,024 table cells and 222 raw
-octave results per profile, before image quantization:
+| Gate | Tool | Compares |
+|---|---|---|
+| `conformance` | `tools/conformance.py` | every pixel of square, wide, tall, thin, offset/wrapping, negative, zero and small-scale fixtures vs linked raylib, plus the invalid-domain contracts |
+| `perlin` | `tools/perlin_probe.py` | all packed permutation/gradient table cells and raw octave results (before image quantization) vs the pinned `stb_perlin` header compiled with the host's contraction profile |
+
+`tools/perlin_probe.py --uncontracted-control` checks `UncontractedNoise{}`
+against the header compiled without contraction, on any host:
 
 ```sh
-python3 tools/perlin_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --gpu
-python3 tools/perlin_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --uncontracted-control --gpu
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only perlin
+python3 tools/perlin_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --uncontracted-control
 ```
 
-Configure checkouts as described in [README.md](../README.md#requirements).
 The MIT notice is retained in [LICENSES/stb-perlin.txt](../LICENSES/stb-perlin.txt).
 Broader domains, other contraction patterns and complete target/resource/
 performance parity remain gaps.

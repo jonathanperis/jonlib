@@ -3538,7 +3538,6 @@
         "docs/PIXELS.md",
         "docs/FLOAT-RGB.md",
         "docs/MIPMAPS.md",
-        "docs/evidence/mipmaps.json",
         "tests/transforms.bend"
       ],
       "gate_evidence": {},
@@ -32616,10 +32615,6 @@
         "tools/sdeflate_probe.py",
         "tools/sdeflate_huffman_probe.py",
         "docs/COMPRESSION.md",
-        "docs/evidence/sdeflate-compression.json",
-        "docs/evidence/sdeflate-lz.json",
-        "docs/evidence/sdeflate-huffman.json",
-        "docs/evidence/sdeflate-sequence-overflow.json",
         "LICENSES/sdefl.txt"
       ],
       "gate_evidence": {},
@@ -32678,8 +32673,7 @@
       },
       "evidence": [
         "tools/inflate_probe.py",
-        "docs/DEFLATE.md",
-        "docs/evidence/raw-deflate.json"
+        "docs/DEFLATE.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -32737,8 +32731,7 @@
       "evidence": [
         "src/base64.bend",
         "tools/base64_probe.py",
-        "docs/BASE64.md",
-        "docs/evidence/base64.json"
+        "docs/BASE64.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -32796,8 +32789,7 @@
       "evidence": [
         "src/base64.bend",
         "tools/base64_probe.py",
-        "docs/BASE64.md",
-        "docs/evidence/base64.json"
+        "docs/BASE64.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -32855,7 +32847,6 @@
       "evidence": [
         "tools/checksum_probe.py",
         "docs/CHECKSUMS.md",
-        "docs/evidence/checksums.json",
         "src/png_encode.bend"
       ],
       "gate_evidence": {},
@@ -32915,8 +32906,7 @@
       "evidence": [
         "src/checksum.bend",
         "tools/checksum_probe.py",
-        "docs/CHECKSUMS.md",
-        "docs/evidence/checksums.json"
+        "docs/CHECKSUMS.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -32975,8 +32965,7 @@
       "evidence": [
         "src/sha.bend",
         "tools/sha_probe.py",
-        "docs/SHA.md",
-        "docs/evidence/sha.json"
+        "docs/SHA.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -33035,8 +33024,7 @@
       "evidence": [
         "src/sha.bend",
         "tools/sha_probe.py",
-        "docs/SHA.md",
-        "docs/evidence/sha.json"
+        "docs/SHA.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -39617,8 +39605,7 @@
       },
       "evidence": [
         "tools/spline_probe.py",
-        "docs/SPLINES.md",
-        "docs/evidence/spline-points.json"
+        "docs/SPLINES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -40345,59 +40332,18 @@
         "performance": "unverified"
       },
       "evidence": [
-        "tools/image_file_probe.py",
-        "tools/image_memory_probe.py",
-        "tools/psd_matte_probe.py",
-        "tools/hdr_file_probe.py",
-        "docs/evidence/image-dispatch.json",
-        "docs/evidence/pnm-16bit.json",
-        "docs/evidence/tga-packed.json",
-        "docs/evidence/tga-palettes.json",
-        "docs/evidence/tga-depths.json",
-        "docs/evidence/bmp-palettes.json",
-        "docs/evidence/bmp-rgb555.json",
-        "docs/evidence/bmp-bitfields.json",
-        "docs/evidence/bmp-headers.json",
-        "docs/evidence/bmp-core.json",
-        "docs/evidence/bmp-core-indexed.json",
-        "docs/evidence/psd-raw.json",
-        "docs/evidence/psd-rle.json",
-        "docs/evidence/psd-alpha.json",
-        "docs/evidence/pic-raw.json",
-        "docs/evidence/pic-rle.json",
-        "docs/evidence/gif-first-frame.json",
-        "docs/evidence/gif-geometry.json",
-        "docs/evidence/hdr-files.json",
-        "examples/qoi_roundtrip.bend",
-        "tests/io_decoding.bend",
-        "tests/decoding.bend",
         "docs/IMAGE-FILES.md",
-        "docs/PSD.md",
-        "docs/PIC.md",
-        "docs/GIF.md",
-        "docs/HDR.md",
         "docs/CODECS.md",
-        "tools/qoi_file_probe.py",
-        "docs/evidence/qoi-formatted-files.json",
-        "tools/pnm_file_probe.py",
-        "docs/PNM.md",
-        "docs/FORMATS.md",
-        "docs/evidence/pnm-formatted-files.json",
-        "docs/VERIFICATION.md",
-        "tools/tga_file_probe.py",
-        "docs/TGA.md",
-        "docs/evidence/tga-formatted-files.json",
-        "docs/BMP.md",
-        "tools/bmp_file_probe.py",
-        "docs/evidence/bmp-formatted-files.json",
-        "docs/PNG.md",
-        "docs/API.md",
-        "tools/png_file_probe.py",
-        "docs/evidence/png-formatted-files.json",
-        "tools/pic_file_probe.py",
-        "docs/evidence/pic-formatted-files.json",
+        "tools/image_file_probe.py",
         "tools/formatted_file.py",
-        "tests/test_formatted_probes.py"
+        "tools/png_file_probe.py",
+        "tools/bmp_file_probe.py",
+        "tools/tga_file_probe.py",
+        "tools/pic_file_probe.py",
+        "tools/pnm_file_probe.py",
+        "tools/qoi_file_probe.py",
+        "tools/hdr_file_probe.py",
+        "tests/io_decoding.bend"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -40461,12 +40407,10 @@
         "tools/float_rgb_raw_file_probe.py",
         "tests/decoding.bend",
         "docs/RAW-FILES.md",
-        "docs/FLOAT-RGB-BYTES.md",
-        "docs/evidence/float-rgb-raw-files.json",
+        "docs/FLOAT-RGB.md",
         "tools/r32_raw_file_probe.py",
         "tools/r32_image_probe.py",
         "docs/R32.md",
-        "docs/evidence/r32-raw-files.json",
         "tests/test_export_probes.py"
       ],
       "gate_evidence": {},
@@ -40532,8 +40476,7 @@
         "tools/image_file_probe.py",
         "tests/decoding.bend",
         "docs/GIF-ANIMATION.md",
-        "docs/IMAGE-FILES.md",
-        "docs/evidence/animation-files.json"
+        "docs/IMAGE-FILES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -40598,9 +40541,7 @@
         "tools/gif_animation_probe.py",
         "tools/gif_probe.py",
         "tools/image_memory_probe.py",
-        "docs/GIF-ANIMATION.md",
-        "docs/evidence/gif-animation.json",
-        "docs/evidence/animation-memory.json"
+        "docs/GIF-ANIMATION.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -40665,73 +40606,18 @@
         "performance": "unverified"
       },
       "evidence": [
-        "tests/fixtures/images.json",
-        "tests/decoding.bend",
-        "tools/image_memory_probe.py",
         "docs/IMAGE-FILES.md",
-        "docs/evidence/image-dispatch.json",
-        "docs/evidence/pnm-16bit.json",
-        "docs/evidence/tga-packed.json",
-        "docs/evidence/tga-palettes.json",
-        "docs/evidence/tga-depths.json",
-        "docs/evidence/bmp-palettes.json",
-        "docs/evidence/bmp-rgb555.json",
-        "docs/evidence/bmp-bitfields.json",
-        "docs/evidence/bmp-headers.json",
-        "docs/evidence/bmp-core.json",
-        "docs/evidence/bmp-core-indexed.json",
-        "docs/evidence/psd-raw.json",
-        "docs/evidence/psd-rle.json",
-        "docs/evidence/psd-alpha.json",
-        "docs/evidence/pic-raw.json",
-        "docs/evidence/pic-rle.json",
-        "docs/evidence/gif-first-frame.json",
-        "docs/evidence/gif-geometry.json",
-        "docs/evidence/hdr-raw.json",
-        "docs/evidence/hdr-rle.json",
-        "docs/evidence/hdr-fallback.json",
+        "docs/CODECS.md",
+        "docs/FORMATS.md",
+        "tools/image_memory_probe.py",
+        "tools/formatted_codec.py",
+        "tools/png_probe.py",
         "tools/bmp_probe.py",
         "tools/tga_probe.py",
-        "tools/pnm_probe.py",
-        "tools/png_probe.py",
-        "tools/psd_probe.py",
-        "tools/psd_matte_probe.py",
         "tools/pic_probe.py",
         "tools/gif_probe.py",
-        "tools/hdr_probe.py",
-        "docs/CODECS.md",
-        "docs/BMP.md",
-        "docs/TGA.md",
-        "docs/PNM.md",
-        "docs/PNG.md",
-        "docs/PSD.md",
-        "docs/PIC.md",
-        "docs/GIF.md",
-        "docs/HDR.md",
-        "src/qoi.bend",
-        "tools/qoi_format_probe.py",
-        "docs/FORMATS.md",
-        "docs/evidence/qoi-formatted.json",
-        "src/pnm.bend",
-        "tools/pnm_format_probe.py",
-        "docs/evidence/pnm-formatted.json",
-        "docs/VERIFICATION.md",
-        "src/tga.bend",
-        "tools/tga_format_probe.py",
-        "docs/evidence/tga-formatted-rebuilt.json",
-        "docs/TGA-REBUILD-COVERAGE.md",
-        "src/bmp.bend",
-        "tools/bmp_format_probe.py",
-        "docs/evidence/bmp-formatted-memory.json",
-        "src/png.bend",
-        "docs/API.md",
-        "tools/png_format_probe.py",
-        "docs/evidence/png-formatted-memory.json",
-        "src/pic.bend",
-        "tools/pic_format_probe.py",
-        "docs/evidence/pic-formatted-memory.json",
-        "tools/formatted_codec.py",
-        "tests/test_formatted_probes.py"
+        "tests/decoding.bend",
+        "tests/fixtures/images.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -41021,42 +40907,18 @@
         "performance": "unverified"
       },
       "evidence": [
-        "tests/fixtures/images.json",
-        "examples/qoi_roundtrip.bend",
-        "tools/raw_file_probe.py",
-        "tools/float_rgb_raw_file_probe.py",
-        "tools/float_rgb_png_probe.py",
-        "tools/float_rgb_raster_export_probe.py",
-        "tools/bmp_probe.py",
-        "tools/tga_probe.py",
-        "tools/png_export_probe.py",
-        "docs/CODECS.md",
-        "docs/RAW-FILES.md",
-        "docs/FLOAT-RGB-BYTES.md",
-        "docs/BMP.md",
-        "docs/TGA.md",
-        "docs/PNG-EXPORT.md",
-        "docs/FLOAT-RASTER-EXPORT.md",
-        "docs/evidence/float-rgb-raw-files.json",
-        "docs/evidence/float-rgb-png.json",
-        "docs/evidence/float-rgb-raster-export.json",
-        "tools/image_export_probe.py",
         "docs/IMAGE-EXPORT.md",
-        "docs/evidence/image-export-dispatch.json",
-        "docs/R32.md",
-        "tools/image_format_probe.py",
-        "tools/r32_image_probe.py",
-        "docs/evidence/r32-image-format.json",
+        "docs/RAW-FILES.md",
+        "docs/FLOAT-RGB.md",
+        "tools/image_export_probe.py",
+        "tools/formatted_export.py",
+        "tools/png_export_probe.py",
         "tools/formatted_bmp_export_probe.py",
-        "docs/FORMATTED-BMP-EXPORT.md",
-        "docs/evidence/formatted-bmp-export.json",
         "tools/formatted_tga_export_probe.py",
-        "docs/FORMATTED-TGA-EXPORT.md",
-        "docs/evidence/formatted-tga-export.json",
-        "docs/FORMATTED-QOI-EXPORT.md",
         "tools/formatted_qoi_export_probe.py",
-        "docs/evidence/formatted-qoi-export.json",
-        "tests/test_export_probes.py"
+        "tools/float_rgb_raster_export_probe.py",
+        "tools/raw_file_probe.py",
+        "examples/qoi_roundtrip.bend"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -41123,11 +40985,9 @@
         "tools/float_rgb_png_probe.py",
         "tools/deflate_probe.py",
         "tests/transforms.bend",
-        "docs/PNG-EXPORT.md",
-        "docs/evidence/float-rgb-png.json",
+        "docs/IMAGE-EXPORT.md",
         "tools/r32_image_probe.py",
         "docs/R32.md",
-        "docs/evidence/r32-memory-png.json",
         "tests/test_export_probes.py"
       ],
       "gate_evidence": {},
@@ -41193,13 +41053,10 @@
         "src/image_code.bend",
         "tools/image_code_probe.py",
         "docs/IMAGE-CODE.md",
-        "docs/evidence/image-code.json",
-        "docs/evidence/image-code-native-overflow.json",
         "THIRD_PARTY_NOTICES.md",
         "docs/R32.md",
         "tools/image_format_probe.py",
-        "tools/r32_image_probe.py",
-        "docs/evidence/r32-image-format.json"
+        "tools/r32_image_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -41259,9 +41116,7 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md",
-        "docs/VERIFICATION.md",
-        "docs/evidence/image-transforms.json"
+        "docs/API.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -41324,8 +41179,7 @@
       },
       "evidence": [
         "tests/fixtures/images.json",
-        "docs/GRADIENTS.md",
-        "docs/evidence/gradient-trig-full.json"
+        "docs/GRADIENTS.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -41818,11 +41672,8 @@
       },
       "evidence": [
         "docs/API.md",
-        "docs/VERIFICATION.md",
         "tools/float_rgb_transform_probe.py",
-        "docs/FLOAT-RGB.md",
-        "docs/evidence/float-rgb-transforms.json",
-        "docs/evidence/image-transforms.json"
+        "docs/FLOAT-RGB.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -41881,11 +41732,8 @@
       },
       "evidence": [
         "docs/API.md",
-        "docs/VERIFICATION.md",
         "tools/float_rgb_crop_probe.py",
-        "docs/FLOAT-RGB.md",
-        "docs/evidence/float-rgb-crop.json",
-        "docs/evidence/image-transforms.json"
+        "docs/FLOAT-RGB.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -41952,11 +41800,9 @@
         "tools/image_channel_probe.py",
         "docs/API.md",
         "docs/IMAGE-CHANNELS.md",
-        "docs/evidence/image-channels.json",
         "docs/R32.md",
         "tools/image_format_probe.py",
-        "tools/r32_image_probe.py",
-        "docs/evidence/r32-image-format.json"
+        "tools/r32_image_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42142,16 +41988,9 @@
         "tests/transforms.bend",
         "docs/FORMATS.md",
         "docs/FLOAT-RGB.md",
-        "docs/FLOAT-RGB-BYTES.md",
-        "docs/evidence/float-rgb.json",
-        "docs/evidence/float-rgb-bytes.json",
-        "docs/evidence/float-rgb-formats.json",
-        "docs/evidence/formatted-float.json",
         "docs/R32.md",
         "tools/r32_image_probe.py",
-        "docs/evidence/r32-image-format.json",
-        "tools/float_rgb_r32_probe.py",
-        "docs/evidence/float-rgb-r32.json"
+        "tools/float_rgb_r32_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42214,8 +42053,7 @@
         "tools/conformance.py",
         "tools/float_rgb_canvas_probe.py",
         "docs/ROTATION.md",
-        "docs/FLOAT-RGB.md",
-        "docs/evidence/float-rgb-canvas.json"
+        "docs/FLOAT-RGB.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42275,11 +42113,8 @@
       },
       "evidence": [
         "docs/API.md",
-        "docs/VERIFICATION.md",
         "tools/float_rgb_crop_probe.py",
-        "docs/FLOAT-RGB.md",
-        "docs/evidence/float-rgb-crop.json",
-        "docs/evidence/image-transforms.json"
+        "docs/FLOAT-RGB.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42582,8 +42417,7 @@
       "evidence": [
         "src/blur.bend",
         "tools/blur_probe.py",
-        "docs/BLUR.md",
-        "docs/evidence/blur.json"
+        "docs/BLUR.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42646,7 +42480,6 @@
         "src/convolution.bend",
         "tools/convolution_probe.py",
         "docs/CONVOLUTION.md",
-        "docs/evidence/convolution.json",
         "tests/transforms.bend"
       ],
       "gate_evidence": {},
@@ -42708,12 +42541,10 @@
       },
       "evidence": [
         "docs/RESAMPLING.md",
-        "docs/evidence/default-resize.json",
         "tests/fixtures/images.json",
         "tests/transforms.bend",
         "tools/float_rgb_resize_probe.py",
         "docs/FLOAT-RGB.md",
-        "docs/evidence/float-rgb-filtered.json",
         "tools/resize_conformance.py"
       ],
       "gate_evidence": {},
@@ -42776,11 +42607,8 @@
       },
       "evidence": [
         "docs/API.md",
-        "docs/VERIFICATION.md",
         "tools/float_rgb_resize_probe.py",
-        "docs/FLOAT-RGB.md",
-        "docs/evidence/float-rgb-nearest.json",
-        "docs/evidence/image-transforms.json"
+        "docs/FLOAT-RGB.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42843,8 +42671,7 @@
         "tests/transforms.bend",
         "tools/float_rgb_canvas_probe.py",
         "docs/API.md",
-        "docs/FLOAT-RGB.md",
-        "docs/evidence/float-rgb-canvas.json"
+        "docs/FLOAT-RGB.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42907,7 +42734,6 @@
       "evidence": [
         "tools/mipmap_probe.py",
         "docs/MIPMAPS.md",
-        "docs/evidence/mipmaps.json",
         "docs/RESAMPLING.md"
       ],
       "gate_evidence": {},
@@ -43028,11 +42854,8 @@
       },
       "evidence": [
         "docs/API.md",
-        "docs/VERIFICATION.md",
         "tools/float_rgb_transform_probe.py",
-        "docs/FLOAT-RGB.md",
-        "docs/evidence/float-rgb-transforms.json",
-        "docs/evidence/image-transforms.json"
+        "docs/FLOAT-RGB.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43091,11 +42914,8 @@
       },
       "evidence": [
         "docs/API.md",
-        "docs/VERIFICATION.md",
         "tools/float_rgb_transform_probe.py",
-        "docs/FLOAT-RGB.md",
-        "docs/evidence/float-rgb-transforms.json",
-        "docs/evidence/image-transforms.json"
+        "docs/FLOAT-RGB.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43218,8 +43038,7 @@
         "tests/fixtures/images.json",
         "tools/float_rgb_transform_probe.py",
         "docs/API.md",
-        "docs/FLOAT-RGB.md",
-        "docs/evidence/float-rgb-transforms.json"
+        "docs/FLOAT-RGB.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43280,8 +43099,7 @@
         "tests/fixtures/images.json",
         "tools/float_rgb_transform_probe.py",
         "docs/API.md",
-        "docs/FLOAT-RGB.md",
-        "docs/evidence/float-rgb-transforms.json"
+        "docs/FLOAT-RGB.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43342,8 +43160,7 @@
         "tests/fixtures/images.json",
         "tools/float_rgb_color_probe.py",
         "docs/API.md",
-        "docs/FLOAT-RGB.md",
-        "docs/evidence/float-rgb-color.json"
+        "docs/FLOAT-RGB.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43405,8 +43222,7 @@
         "tests/fixtures/images.json",
         "tools/float_rgb_color_probe.py",
         "docs/API.md",
-        "docs/FLOAT-RGB.md",
-        "docs/evidence/float-rgb-color.json"
+        "docs/FLOAT-RGB.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43469,8 +43285,7 @@
         "tools/conformance.py",
         "tools/float_rgb_formats_probe.py",
         "docs/PALETTES.md",
-        "docs/FLOAT-RGB.md",
-        "docs/evidence/float-rgb-formats.json"
+        "docs/FLOAT-RGB.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43531,8 +43346,7 @@
         "tests/fixtures/images.json",
         "tools/float_rgb_color_probe.py",
         "docs/API.md",
-        "docs/FLOAT-RGB.md",
-        "docs/evidence/float-rgb-color.json"
+        "docs/FLOAT-RGB.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43593,8 +43407,7 @@
         "tests/fixtures/images.json",
         "tools/float_rgb_color_probe.py",
         "docs/API.md",
-        "docs/FLOAT-RGB.md",
-        "docs/evidence/float-rgb-color.json"
+        "docs/FLOAT-RGB.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43655,8 +43468,7 @@
         "tests/fixtures/images.json",
         "tools/float_rgb_color_probe.py",
         "docs/API.md",
-        "docs/FLOAT-RGB.md",
-        "docs/evidence/float-rgb-color.json"
+        "docs/FLOAT-RGB.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -43717,15 +43529,11 @@
       },
       "evidence": [
         "docs/API.md",
-        "docs/VERIFICATION.md",
         "tools/image_colors_probe.py",
         "docs/IMAGE-COLORS.md",
-        "docs/evidence/image-colors.json",
-        "docs/evidence/image-transforms.json",
         "docs/R32.md",
         "tools/image_format_probe.py",
-        "tools/r32_image_probe.py",
-        "docs/evidence/r32-image-format.json"
+        "tools/r32_image_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44025,15 +43833,11 @@
       },
       "evidence": [
         "docs/API.md",
-        "docs/VERIFICATION.md",
         "tools/image_colors_probe.py",
         "docs/IMAGE-COLORS.md",
-        "docs/evidence/image-colors.json",
-        "docs/evidence/image-transforms.json",
         "docs/R32.md",
         "tools/image_format_probe.py",
-        "tools/r32_image_probe.py",
-        "docs/evidence/r32-image-format.json"
+        "tools/r32_image_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44092,9 +43896,7 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md",
-        "docs/VERIFICATION.md",
-        "docs/evidence/image-transforms.json"
+        "docs/API.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44153,9 +43955,7 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md",
-        "docs/VERIFICATION.md",
-        "docs/evidence/image-transforms.json"
+        "docs/API.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44275,9 +44075,7 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md",
-        "docs/VERIFICATION.md",
-        "docs/evidence/image-transforms.json"
+        "docs/API.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44336,9 +44134,7 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md",
-        "docs/VERIFICATION.md",
-        "docs/evidence/image-transforms.json"
+        "docs/API.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44459,9 +44255,7 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md",
-        "docs/VERIFICATION.md",
-        "docs/evidence/image-transforms.json"
+        "docs/API.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44702,9 +44496,7 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md",
-        "docs/VERIFICATION.md",
-        "docs/evidence/image-transforms.json"
+        "docs/API.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -44946,9 +44738,7 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md",
-        "docs/VERIFICATION.md",
-        "docs/evidence/image-transforms.json"
+        "docs/API.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -45071,9 +44861,7 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md",
-        "docs/VERIFICATION.md",
-        "docs/evidence/image-transforms.json"
+        "docs/API.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -45258,9 +45046,7 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md",
-        "docs/VERIFICATION.md",
-        "docs/evidence/image-transforms.json"
+        "docs/API.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -46667,9 +46453,7 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md",
-        "docs/VERIFICATION.md",
-        "docs/evidence/image-transforms.json"
+        "docs/API.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -47206,9 +46990,7 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md",
-        "docs/VERIFICATION.md",
-        "docs/evidence/image-transforms.json"
+        "docs/API.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -47325,9 +47107,7 @@
         "performance": "unverified"
       },
       "evidence": [
-        "docs/API.md",
-        "docs/VERIFICATION.md",
-        "docs/evidence/image-transforms.json"
+        "docs/API.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -61652,39 +61432,18 @@
         "performance": "unverified"
       },
       "evidence": [
-        "tests/fixtures/images.json",
-        "tools/angle_probe.py",
-        "tools/float64_ops_probe.py",
-        "docs/MATH.md",
         "docs/ANGLES.md",
-        "docs/BINARY64-NARROW.md",
-        "docs/evidence/binary64-narrow.json",
-        "docs/BINARY64-FMA.md",
-        "docs/evidence/binary64-fma.json",
-        "docs/BINARY64-ADD-SUB.md",
-        "docs/evidence/binary64-add-sub.json",
-        "docs/BINARY64-OPS.md",
-        "docs/evidence/binary64-ops.json",
-        "docs/BINARY64-GRADUAL-MULTIPLY.md",
-        "docs/evidence/binary64-gradual-multiply.json",
-        "jonmath.bend",
-        "src/modern_angle.bend",
-        "tools/modern_angle_bounds.py",
         "docs/MODERN-ANGLE.md",
-        "docs/MODERN-ANGLE-BOUNDS.md",
-        "docs/evidence/modern-angle.json",
-        "tools/reference/angle_qualification_v1.json",
-        "docs/evidence/angle-qualification.json",
-        "docs/evidence/angle-qualification-review.json",
+        "docs/BINARY64.md",
+        "jonmath.bend",
         "src/checked_angle.bend",
-        "tests/test_angle_integration.py",
-        "docs/evidence/checked-angles.json",
-        "docs/evidence/checked-angle-wrappers.json",
-        "docs/evidence/checked-angle-canonical.json",
-        "docs/evidence/checked-angle-qualification.json",
+        "src/modern_angle.bend",
         "tools/angle_kernel_probe.py",
+        "tools/angle_probe.py",
         "tools/native_profiles.py",
-        "tests/test_angle_profiles.py"
+        "tools/modern_angle_bounds.py",
+        "tests/test_angle_integration.py",
+        "tests/fixtures/images.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -61744,38 +61503,18 @@
         "performance": "unverified"
       },
       "evidence": [
-        "tests/fixtures/images.json",
-        "tools/angle_probe.py",
-        "docs/MATH.md",
         "docs/ANGLES.md",
-        "docs/BINARY64-NARROW.md",
-        "docs/evidence/binary64-narrow.json",
-        "docs/BINARY64-FMA.md",
-        "docs/evidence/binary64-fma.json",
-        "docs/BINARY64-ADD-SUB.md",
-        "docs/evidence/binary64-add-sub.json",
-        "docs/BINARY64-OPS.md",
-        "docs/evidence/binary64-ops.json",
-        "docs/BINARY64-GRADUAL-MULTIPLY.md",
-        "docs/evidence/binary64-gradual-multiply.json",
-        "jonmath.bend",
-        "src/modern_angle.bend",
-        "tools/modern_angle_bounds.py",
         "docs/MODERN-ANGLE.md",
-        "docs/MODERN-ANGLE-BOUNDS.md",
-        "docs/evidence/modern-angle.json",
-        "tools/reference/angle_qualification_v1.json",
-        "docs/evidence/angle-qualification.json",
-        "docs/evidence/angle-qualification-review.json",
+        "docs/BINARY64.md",
+        "jonmath.bend",
         "src/checked_angle.bend",
-        "tests/test_angle_integration.py",
-        "docs/evidence/checked-angles.json",
-        "docs/evidence/checked-angle-wrappers.json",
-        "docs/evidence/checked-angle-canonical.json",
-        "docs/evidence/checked-angle-qualification.json",
+        "src/modern_angle.bend",
         "tools/angle_kernel_probe.py",
+        "tools/angle_probe.py",
         "tools/native_profiles.py",
-        "tests/test_angle_profiles.py"
+        "tools/modern_angle_bounds.py",
+        "tests/test_angle_integration.py",
+        "tests/fixtures/images.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -62313,7 +62052,6 @@
         "jonmath.bend",
         "tests/test_extrema_integration.py",
         "docs/NATIVE-MATH-PROFILES.md",
-        "docs/evidence/qualified-literal-extrema.json",
         "tools/angle_kernel_probe.py",
         "tools/native_profiles.py",
         "tests/test_angle_profiles.py"
@@ -62379,7 +62117,6 @@
         "jonmath.bend",
         "tests/test_extrema_integration.py",
         "docs/NATIVE-MATH-PROFILES.md",
-        "docs/evidence/qualified-literal-extrema.json",
         "tools/angle_kernel_probe.py",
         "tools/native_profiles.py",
         "tests/test_angle_profiles.py"
@@ -62626,7 +62363,6 @@
         "jonmath.bend",
         "tests/test_extrema_integration.py",
         "docs/NATIVE-MATH-PROFILES.md",
-        "docs/evidence/qualified-literal-extrema.json",
         "tools/angle_kernel_probe.py",
         "tools/native_profiles.py",
         "tests/test_angle_profiles.py"
@@ -63760,38 +63496,18 @@
         "performance": "unverified"
       },
       "evidence": [
-        "tests/fixtures/images.json",
-        "tools/angle_probe.py",
-        "docs/MATH.md",
         "docs/ANGLES.md",
-        "docs/BINARY64-NARROW.md",
-        "docs/evidence/binary64-narrow.json",
-        "docs/BINARY64-FMA.md",
-        "docs/evidence/binary64-fma.json",
-        "docs/BINARY64-ADD-SUB.md",
-        "docs/evidence/binary64-add-sub.json",
-        "docs/BINARY64-OPS.md",
-        "docs/evidence/binary64-ops.json",
-        "docs/BINARY64-GRADUAL-MULTIPLY.md",
-        "docs/evidence/binary64-gradual-multiply.json",
-        "jonmath.bend",
-        "src/modern_angle.bend",
-        "tools/modern_angle_bounds.py",
         "docs/MODERN-ANGLE.md",
-        "docs/MODERN-ANGLE-BOUNDS.md",
-        "docs/evidence/modern-angle.json",
-        "tools/reference/angle_qualification_v1.json",
-        "docs/evidence/angle-qualification.json",
-        "docs/evidence/angle-qualification-review.json",
+        "docs/BINARY64.md",
+        "jonmath.bend",
         "src/checked_angle.bend",
-        "tests/test_angle_integration.py",
-        "docs/evidence/checked-angles.json",
-        "docs/evidence/checked-angle-wrappers.json",
-        "docs/evidence/checked-angle-canonical.json",
-        "docs/evidence/checked-angle-qualification.json",
+        "src/modern_angle.bend",
         "tools/angle_kernel_probe.py",
+        "tools/angle_probe.py",
         "tools/native_profiles.py",
-        "tests/test_angle_profiles.py"
+        "tools/modern_angle_bounds.py",
+        "tests/test_angle_integration.py",
+        "tests/fixtures/images.json"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -64637,7 +64353,6 @@
         "jonmath.bend",
         "tests/test_extrema_integration.py",
         "docs/NATIVE-MATH-PROFILES.md",
-        "docs/evidence/qualified-literal-extrema.json",
         "tools/angle_kernel_probe.py",
         "tools/native_profiles.py",
         "tests/test_angle_profiles.py"
@@ -64703,7 +64418,6 @@
         "jonmath.bend",
         "tests/test_extrema_integration.py",
         "docs/NATIVE-MATH-PROFILES.md",
-        "docs/evidence/qualified-literal-extrema.json",
         "tools/angle_kernel_probe.py",
         "tools/native_profiles.py",
         "tests/test_angle_profiles.py"
@@ -65016,7 +64730,6 @@
         "jonmath.bend",
         "tests/test_extrema_integration.py",
         "docs/NATIVE-MATH-PROFILES.md",
-        "docs/evidence/qualified-literal-extrema.json",
         "tools/angle_kernel_probe.py",
         "tools/native_profiles.py",
         "tests/test_angle_profiles.py"
@@ -66214,7 +65927,6 @@
         "jonmath.bend",
         "tests/test_extrema_integration.py",
         "docs/NATIVE-MATH-PROFILES.md",
-        "docs/evidence/qualified-literal-extrema.json",
         "tools/angle_kernel_probe.py",
         "tools/native_profiles.py",
         "tests/test_angle_profiles.py"
@@ -66280,7 +65992,6 @@
         "jonmath.bend",
         "tests/test_extrema_integration.py",
         "docs/NATIVE-MATH-PROFILES.md",
-        "docs/evidence/qualified-literal-extrema.json",
         "tools/angle_kernel_probe.py",
         "tools/native_profiles.py",
         "tests/test_angle_profiles.py"
@@ -67662,8 +67373,7 @@
       },
       "evidence": [
         "tools/perspective_probe.py",
-        "docs/PERSPECTIVE.md",
-        "docs/evidence/perspective-rounding-blocker.json"
+        "docs/PERSPECTIVE.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -68683,8 +68393,7 @@
       },
       "evidence": [
         "tools/inverse_trig_probe.py",
-        "docs/INVERSE-TRIG.md",
-        "docs/evidence/inverse-trig-blocker.json"
+        "docs/INVERSE-TRIG.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -69048,8 +68757,7 @@
       },
       "evidence": [
         "tools/inverse_trig_probe.py",
-        "docs/INVERSE-TRIG.md",
-        "docs/evidence/inverse-trig-blocker.json"
+        "docs/INVERSE-TRIG.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -69170,8 +68878,7 @@
       },
       "evidence": [
         "tools/inverse_trig_probe.py",
-        "docs/INVERSE-TRIG.md",
-        "docs/evidence/inverse-trig-blocker.json"
+        "docs/INVERSE-TRIG.md"
       ],
       "gate_evidence": {},
       "target_results": {},
