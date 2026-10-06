@@ -2,7 +2,7 @@
 
 Jonlib is working toward raylib parity with library algorithms written in Bend
 2. Read the [API](docs/API.md), [compatibility ledger](docs/COMPATIBILITY.md), and
-[roadmap](docs/ROADMAP.md) before proposing a change.
+[master plan](docs/MASTER-PLAN.md) before proposing a change.
 
 ## Local setup
 
@@ -18,15 +18,17 @@ Set `BEND_SOURCE` and `RAYLIB_SOURCE` to your checkout locations as shown in the
 ```sh
 python3 tools/check_project.py
 python3 -m unittest discover -s tests -v
-python3 tools/conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
-python3 tools/verify_bend.py --bend-source "$BEND_SOURCE"
-python3 tools/resize_conformance.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only conformance
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --shard 1/1
 ```
+
+Use `--only GATE_ID` (repeatable) for the gates in `tools/gates.json` that your
+change affects; [VERIFICATION.md](docs/VERIFICATION.md) explains what each kind of
+gate establishes.
 
 Native Metal verification requires a real supported Mac/GPU and a suitable Apple
 clang version. `--gpu` forces device execution; it must fail rather than silently
-use CPU results. The complete Metal gate passes on the tested M1 with the overlay.
-Run both `tools/conformance.py --gpu` and `tools/verify_bend.py --gpu` for changes
+use CPU results. Run both `tools/conformance.py --gpu` and `tools/verify_bend.py --gpu` for changes
 affecting the device path. See [the investigation](docs/METAL-INVESTIGATION.md)
 for the historical failure, rejected candidates and remaining verification limits.
 
@@ -65,23 +67,14 @@ becomes a conformance test. Consult asset-specific licenses before adding files.
 
 ## GitHub Actions
 
-- **Checks** validates the test harness, fixtures, source boundary, metadata and
-  generated API progression files/dependencies/completion claims.
-- **Conformance** builds and tests CPU/JavaScript on Ubuntu 24.04 and macOS 15,
-  explicitly applies the hash-checked compiler patch, checks the law/contracts/
-  examples and 16 upstream compiler regressions, records the default-filter
-  precision diagnostic, and uploads evidence for 14 days. Diagnostic variants
-  are not treated as passing Bend implementations. Both core workers re-extract the
-  complete API catalog and independently audit C functions/C++ overloads with Clang.
-  The filtered-resize gate also checks exact normalization/kernel bits and
-  529 real raylib image outputs, including the retained precision counterexamples.
-  The main corpus also checks QOI export bytes, codec failures, real byte-file IO
-  and exact scalar/Vector2 results under the declared uncontracted-F32 profile.
-  A separate gate checks the bounded gradient trigonometry profile against the
-  runner's actual `sinf`/`cosf` results.
-- Every gate in `tools/gates.json` runs on both hosts in six duration-balanced
-  shards; the `CPU and JavaScript` checks require every shard. See
-  [CI](docs/CI.md) for running the same gates locally.
+- **Checks** (Ubuntu and macOS) runs the Python unit tests, byte-compiles the
+  tools and runs `tools/check_project.py`: source boundary, fixtures, API ledger
+  and progress-record lint, generated files and documentation links.
+- **Conformance** runs every gate in `tools/gates.json` on Ubuntu and macOS in
+  duration-balanced shards with the pinned toolchain and hash-checked compiler
+  overlay; the aggregate `CPU and JavaScript` checks require every shard.
+  Diagnostic gates record open gaps and are never treated as passing
+  implementations. See [CI](docs/CI.md) for details and local equivalents.
 - Actions are pinned to immutable commits; dependency revisions come from
   `toolchain.json`. Workflows use read-only repository permissions.
 - Hosted conformance does not claim Metal/CUDA or live window/audio validation.

@@ -58,7 +58,7 @@ rule. Segment intersections reject determinants with magnitude below
 ## Linked-reference arithmetic
 
 The Apple clang/macOS arm64 build of raylib contracts `a*b + c` into `fmadd` in
-nine collision queries; hosted Linux/x86_64 does not. Each therefore has an
+nine collision queries; the Linux x86_64 build does not. Each therefore has an
 explicit `_for(arithmetic, ...)` variant taking `UncontractedCollision{}` or
 `FusedCollision{}`, and its convenience form uses `UncontractedCollision{}`:
 `lines`, `circles`, `point_circle`, `circle_rec`, `point_triangle`, `point_line`,
@@ -70,17 +70,26 @@ are non-dyadic inputs on which the two profiles disagree, so each host's suite
 fails if the other profile is used. These choices are independent of the
 gradient/libm profile.
 
-The internal `src/fused.bend` retains the exact F32 product, aligns integer limbs
+The harness declares the profile per host: `FusedCollision{}` for Darwin arm64,
+`UncontractedCollision{}` for Linux x86_64; other hosts need their own verified
+declaration. The same declaration selects the spline and Perlin noise profiles
+([SPLINES.md](SPLINES.md), [PERLIN.md](PERLIN.md)).
+
+The internal `src/fused.bend` keeps the exact F32 product, aligns integer limbs
 and rounds the sum directly to 24 bits. Rounding through a binary64 sum would
-lose tiny addends at an F32 halfway boundary. `tools/fused_probe.py` compares
-2,056 finite-normal cases with native `fmaf`, including those double-rounding
-counterexamples, cancellation and signed zeros:
+lose tiny addends at an F32 halfway boundary.
+
+## How it is verified
+
+| Gate | Tool | Compares |
+|---|---|---|
+| `conformance` | `tools/conformance.py` | every Boolean and all rectangle/point result bits vs the linked raylib queries, with the host's arithmetic profile |
+| `fused` | `tools/fused_probe.py` | the internal finite-normal F32 multiply-add vs native `fmaf`, including double-rounding counterexamples, cancellation and signed zeros |
 
 ```sh
-python3 tools/fused_probe.py --bend-source "$BEND_SOURCE" --gpu
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only fused
 ```
 
-Set `BEND_SOURCE` as documented in [README.md](../README.md#requirements).
-The original segment counterexample remains in the strict native-raylib corpus.
+The original segment counterexample stays in the strict native-raylib corpus.
 NaN/infinity, subnormal intermediates/results, overflow, other contraction
 patterns and other compilers' contraction choices remain gaps.

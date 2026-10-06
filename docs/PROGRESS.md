@@ -67,7 +67,7 @@ This is a priority queue with visible prerequisites, not a claim that every item
 - **`raylib:function:LoadImageFromMemory`** (partial, `image-codecs`): Close documented gaps and unverified gates for LoadImageFromMemory.
 - **`raylib:function:ExportImage`** (partial, `image-codecs`): Close documented gaps and unverified gates for ExportImage.
 - **`raylib:function:ImageFormat`** (partial, `pixels`): Close documented gaps and unverified gates for ImageFormat.
-- **`raylib:function:GetSplinePointBezierCubic`** (blocked, `shapes`): Resolve: Native Apple powf(t,3) differs from a double-cube substitute: 6670/1048576 investigated inputs, with a retained actual GetSplinePointBezierCubic coordinate mismatch.
+- **`raylib:function:GetSplinePointBezierCubic`** (blocked, `shapes`): Resolve: Native Apple powf(t,3) differs from a double-cube substitute on some inputs, producing an actual GetSplinePointBezierCubic coordinate mismatch.
 - **`raymath:function:QuaternionSlerp`** (blocked, `jonmath`): Resolve: Base and investigated inverse-trig models differ from the actual float libm; no verified acos profile is available yet.
 - **`raymath:function:QuaternionToAxisAngle`** (blocked, `jonmath`): Resolve: Native acosf endpoint/tail values differ from Base and investigated numerical models.
 - **`raymath:function:QuaternionToEuler`** (blocked, `jonmath`): Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models.
