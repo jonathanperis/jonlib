@@ -1,32 +1,10 @@
 #!/usr/bin/env python3
 """Check bounded gradient trigonometry against the host's actual sinf/cosf."""
-import argparse
-import json
-from pathlib import Path
+from conformance import gradient_reference, source_gate
+import probekit
+from probekit import ProbeFailure
 
-from conformance import BUILD, ROOT, checkout, gradient_reference, run, source_gate
-
-
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--bend-source', type=Path, required=True)
-    parser.add_argument('--gpu', action='store_true')
-    parser.add_argument('--full', action='store_true', help='Check every integral direction in -32767..32767')
-    parser.add_argument('--gnu-control', action='store_true', help='Check the Arm/GNU polynomial against its independent C model on any host')
-    parser.add_argument('--rotation', action='store_true', help='Use ImageRotate degree-to-radian evaluation instead of linear gradients')
-    args = parser.parse_args()
-    if args.gnu_control and args.full:
-        parser.error('The independent GNU control covers the one-cycle fast-reduction domain')
-    pins = json.loads((ROOT/'toolchain.json').read_text())
-    checkout(args.bend_source, pins['bend']['revision'], pins['bend'].get('patch'))
-    work = BUILD/'trig-probe'
-    work.mkdir(exist_ok=True)
-    report_path = work/'results.json'
-    report_path.write_text(json.dumps(dict(passed=False))+'\n')
-    limit = 32767 if args.full else 360
-    count = 2*limit+1
-    c = work/'reference.c'
-    c.write_text('''/* Arm optimized-routines polynomial; MIT alternative, see LICENSES/arm-math.txt. */
+REFERENCE = '''/* Arm optimized-routines polynomial; MIT alternative, see LICENSES/arm-math.txt. */
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -63,16 +41,8 @@ int main(void) {
   }
   return 0;
 }
-'''.replace('RADIANS','(float)i*3.14159265358979323846f/180.0f' if args.rotation else '(float)(90-i)/180.0f*3.14159f'))
-    reference = work/'reference'
-    run(['clang','-std=c11','-O2',f'-DLIMIT={limit}',*(['-DGNU_CONTROL'] if args.gnu_control else []),c,'-lm','-o',reference])
-    expected = [[int(v) for v in line.split()] for line in run([reference]).splitlines()]
-    lanes = ['cpu','javascript', *(['metal'] if args.gpu else [])]
-    gnu = args.gnu_control or gradient_reference()=='GnuGradient'
-    report = dict(passed=False,directions=count,limit=limit,operation='rotation' if args.rotation else 'gradient',profile='GnuGradient' if gnu else 'AccurateGradient',reference='arm-model' if args.gnu_control else 'native-libm',source_sha256=source_gate(),lanes={})
-    for lane in lanes:
-        source = work/f'{lane}.bend'
-        source.write_text('''import Base
+'''
+PROGRAM = '''import Base
 import ../../src/trig.bend as T
 def bits(pair: F32 & F32) -> U32 & U32:
   (c, s) = pair
@@ -100,20 +70,49 @@ def main() -> IO(Unit):
   do IO<Unit>:
     batches(BATCHESn, F32.neg(LIMIT.0))
     IO.print(show(valuesBANG(REMAINDERn, LAST.0)))
-'''.replace('RADIANS','(direction * 3.14159265358979323846 / 180.0 : F32)' if args.rotation else '((90.0 - direction) / 180.0 * 3.14159 : F32)').replace('GNU_PROFILE','True{}' if gnu else 'False{}').replace('BANG','!' if lane=='metal' else '').replace('BATCHES',str(count//32))
-            .replace('LIMIT',str(limit)).replace('REMAINDER',str(count%32)).replace('LAST',str(-limit+32*(count//32))))
-        binary = work/('javascript.js' if lane=='javascript' else lane)
-        run(['bun',args.bend_source/'bend2/main.ts',source,'-o',binary])
-        command = ['bun',binary] if lane=='javascript' else [binary,*(['--gpu','on'] if lane=='metal' else [])]
-        actual = [[int(v) for v in line.split()] for line in run(command).splitlines() if line.strip()]
-        mismatches = [dict(direction=i-limit,reference=a,candidate=b) for i,(a,b) in enumerate(zip(expected,actual)) if a!=b]
-        report['lanes'][lane] = dict(passed=not mismatches and len(actual)==len(expected),mismatches=mismatches[:16],mismatch_count=len(mismatches))
-        report_path.write_text(json.dumps(report,indent=2)+'\n')
-        if not report['lanes'][lane]['passed']:
-            raise ValueError(f'{lane}: trigonometry mismatches: {mismatches[:3]}')
-        print(f'{lane}: {count} directions match exact {report["reference"]} bits ({report["profile"]})',flush=True)
-    report['passed'] = True
-    report_path.write_text(json.dumps(report,indent=2)+'\n')
+'''
+
+
+def main():
+    parser = []
+
+    def configure(p):
+        parser.append(p)
+        p.add_argument('--full', action='store_true', help='Check every integral direction in -32767..32767')
+        p.add_argument('--gnu-control', action='store_true', help='Check the Arm/GNU polynomial against its independent C model on any host')
+        p.add_argument('--rotation', action='store_true', help='Use ImageRotate degree-to-radian evaluation instead of linear gradients')
+
+    args = probekit.arguments(__doc__, configure, raylib=False)
+    if args.gnu_control and args.full:
+        parser[0].error('The independent GNU control covers the one-cycle fast-reduction domain')
+    probe = probekit.Probe('trig', args)
+    limit = 32767 if args.full else 360
+    count = 2*limit+1
+    text = probe.native(REFERENCE.replace('RADIANS', '(float)i*3.14159265358979323846f/180.0f' if args.rotation else '(float)(90-i)/180.0f*3.14159f'),
+                        extra_flags=[f'-DLIMIT={limit}', *(['-DGNU_CONTROL'] if args.gnu_control else [])])
+    expected = [[int(v) for v in line.split()] for line in text.splitlines()]
+    if len(expected) != count:
+        raise ProbeFailure('Incomplete trigonometry reference')
+    gnu = args.gnu_control or gradient_reference() == 'GnuGradient'
+    probe.report['source_sha256'] = source_gate()
+    directions = list(range(-limit, limit+1))
+
+    def render(selected, gpu):
+        # The program walks a contiguous direction range in 32-direction prints, as before.
+        first, total = selected[0], len(selected)
+        if selected != list(range(first, first+total)):
+            raise ProbeFailure('Trigonometry batches must be contiguous direction ranges')
+        return (PROGRAM.replace('RADIANS', '(direction * 3.14159265358979323846 / 180.0 : F32)' if args.rotation else '((90.0 - direction) / 180.0 * 3.14159 : F32)')
+                .replace('GNU_PROFILE', 'True{}' if gnu else 'False{}').replace('BANG', '!' if gpu else '').replace('BATCHES', str(total//32))
+                .replace('LIMIT', str(-first)).replace('REMAINDER', str(total % 32)).replace('LAST', str(first+32*(total//32))))
+
+    def parse(text, selected):
+        return [[int(v) for v in line.split()] for line in text.splitlines() if line.strip()]
+
+    probe.compare(expected, probe.candidates(render, directions, batch=len(directions), parse=parse),
+                  describe=lambda index: f'direction {directions[index]}')
+    probe.finish(directions=count, limit=limit, operation='rotation' if args.rotation else 'gradient',
+                 profile='GnuGradient' if gnu else 'AccurateGradient', reference='arm-model' if args.gnu_control else 'native-libm')
 
 
 if __name__ == '__main__':
