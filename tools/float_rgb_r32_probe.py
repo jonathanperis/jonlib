@@ -102,10 +102,10 @@ def shapes(ops):
 def parse_rows(text, expected_shapes):
     rows = parse_results(text)
     if len(rows) != len(expected_shapes):
-        raise ValueError(f'FloatRGB/R32 result count differs: {len(rows)} != {len(expected_shapes)}')
+        raise ValueError(f'R32G32B32/R32 result count differs: {len(rows)} != {len(expected_shapes)}')
     for index,(row,shape) in enumerate(zip(rows,expected_shapes)):
         if type(row) is not list or any(type(v) is not int or not 0 <= v <= 255 for v in row):
-            raise ValueError(f'Malformed FloatRGB/R32 byte row {index}')
+            raise ValueError(f'Malformed R32G32B32/R32 byte row {index}')
         if 'exact' in shape:
             valid = row == shape['exact']
         else:
@@ -114,7 +114,7 @@ def parse_rows(text, expected_shapes):
             words = struct.unpack('<'+'I'*(shape['size']//4),bytes(row[12:]))
             valid = all(word<=0x3f800000 or word==0x80000000 for word in words)
         if not valid:
-            raise ValueError(f'FloatRGB/R32 metadata, owner or byte length differs at {index}')
+            raise ValueError(f'R32G32B32/R32 metadata, owner or byte length differs at {index}')
     return rows
 
 
@@ -209,11 +209,11 @@ def selected(expected: U32, targets: +List<U32>, result: Result<&1, &1, J.Surfac
     case 2 _ Fail{Tuple{image, J.UnsupportedFormat{}}}: retained_copies(J.Surface.copy(image))
     case 0 Nil{} Done{image}: formatted(J.Surface.export(image))
     case 0 Con{target, rest} Done{image}: selected(0, rest, J.Surface.format(image, target))
-    case _ _ _: IO.die(Unit, 1, "FloatRGB/R32 conversion or ownership differs")
+    case _ _ _: IO.die(Unit, 1, "R32G32B32/R32 conversion or ownership differs")
 def converted(expected: U32, targets: +List<U32>, result: Maybe<J.Surface>) -> IO(Unit):
   match targets result:
     case Con{target, rest} Some{image}: selected(expected, rest, J.Surface.format(image, target))
-    case _ _: IO.die(Unit, 1, "FloatRGB/R32 source rejected")
+    case _ _: IO.die(Unit, 1, "R32G32B32/R32 source rejected")
 def invalid_pixel(component: U32, value: F32) -> M.Vector3:
   match component:
     case 0: M.Vector3{value, 0.5, 0.75}
@@ -282,7 +282,7 @@ def main():
     args = probekit.arguments(__doc__)
     if args.gpu:raise SystemExit('float_rgb_r32_probe has no forced-GPU variant (no GPU evidence claimed)')
     probe = probekit.Probe('float-rgb-r32',args)
-    if sys.byteorder!='little':raise ProbeFailure('FloatRGB/R32 profile requires little-endian storage')
+    if sys.byteorder!='little':raise ProbeFailure('R32G32B32/R32 profile requires little-endian storage')
     cases,invalid = fixtures(),controls();ops = cases+invalid
     qualification = qualify(json.loads(probe.native(qualification_program(cases),'qualification',extra_flags=('-ffp-contract=off',))),cases)
     text = probe.native(reference_program(ops));rows = iter(parse_rows(text,shapes(ops)))
