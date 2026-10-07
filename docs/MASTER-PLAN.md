@@ -29,9 +29,10 @@ it is not automatically a requirement to reproduce crashes or memory corruption.
 
 ## Where we are
 
-The working foundation includes owned RGBA8, byte/integer and RGB float images,
-drawing/composition/transforms, mipmaps, blur/convolution, image codecs and file
-exports, bounded compression/data utilities and extensive Jonmath profiles. They
+The working foundation includes one owned image type (`Surface`, raylib pixel
+formats 1..9) with drawing/composition/transforms, mipmaps, blur/convolution,
+image codecs and file exports, bounded compression/data utilities and extensive
+Jonmath profiles. They
 are compared exactly with the pinned raylib reference on CPU and JavaScript lanes
 (Linux and macOS in CI; forced Metal locally), with an explicit compiler overlay
 fixing the observed Metal dispatch failure ([VERIFICATION.md](VERIFICATION.md)).
