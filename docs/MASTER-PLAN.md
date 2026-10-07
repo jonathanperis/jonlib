@@ -76,10 +76,10 @@ order (`docs/PROGRESS.md` lists every ID):
 1. **`types`** — raylib's enums, enumerators, constants and struct types as Bend
    constants/types (531 catalog entries, mostly mechanical). Low risk, and it
    makes the language mapping that every later API reuses explicit.
-2. **`files` and `memory`** — the 41 file/path/directory utilities and the
-   trace-log/allocation contracts. Jonlib already adapts `GetFileExtension`
-   and closed-handle IO internally; the public APIs need exact path/string
-   semantics and Base IO, not new algorithms.
+2. **`files` and `memory`** — the path utilities and file data/text/code IO are
+   delivered ([FILES.md](FILES.md)); directories, rename/remove, modification
+   times and the working directory are blocked on OS primitives Base lacks
+   (runtime workstream), and the trace-log/allocation contracts remain.
 3. **`pixels` macros and color utilities** — named color constants and the
    remaining color/format helpers.
 4. **Blocked numerics** — `MatrixPerspective`, `QuaternionSlerp`,
