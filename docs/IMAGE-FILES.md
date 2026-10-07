@@ -98,9 +98,10 @@ storage. File bounds never enlarge a memory decoder's own domain.
 
 ## Format-preserving file loaders
 
-Each `Surface.load_<codec>(path)` passes `Image.file.bytes(path, limit)` to
-one shared continuation (`Surface.codec.loaded`), which forwards load errors or
-adapts `Surface.decode_<codec>` through `Image.file.decoded`. Common contract:
+Each `Surface.load_<codec>(path)` calls `Surface.load_with(~decode, limit, path)`,
+which reads with `Image.file.bytes` and adapts the given decoder through
+`Image.file.decoded`; passing the decoder as a parameter keeps each program to
+the one codec it uses. Common contract:
 
 - **Explicit selection.** The suffix is never consulted: lower/upper/mixed
   case, misleading (e.g. `.qoi` for PNG), arbitrary or absent suffixes, spaces,
