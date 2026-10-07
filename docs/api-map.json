@@ -1542,5 +1542,51 @@
     ],
     "api_id": "raylib:function:CheckCollisionBoxSphere",
     "milestone": "collision"
+  },
+  "GetRayCollisionSphere": {
+    "jonlib": "Collision.ray_sphere_for / Collision.ray_sphere",
+    "status": "profile-covered",
+    "scope": "Every result field bit for bit, including inside rays and raylib's NaN distance, point and normal on misses (compared as one NaN class). Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
+    "gaps": [
+      "Exceptional/subnormal inputs and other contraction patterns",
+      "Full target/performance coverage",
+      "NaN sign and payload are not reproduced"
+    ],
+    "api_id": "raylib:function:GetRayCollisionSphere",
+    "milestone": "collision"
+  },
+  "GetRayCollisionBox": {
+    "jonlib": "Collision.ray_box_for / Collision.ray_box",
+    "status": "profile-covered",
+    "scope": "Slab intersection with raylib's inside-ray reversal, signed-zero fmin/fmax ties by libm profile and the truncated-int normal; every field bit for bit. Explicit uncontracted and Apple-clang FMA profiles.",
+    "gaps": [
+      "NaN slab distances (raylib's arm64 build and C disagree) and normals outside the int cast (undefined in C) are None",
+      "Exceptional/subnormal inputs and other contraction patterns",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:GetRayCollisionBox",
+    "milestone": "collision"
+  },
+  "GetRayCollisionTriangle": {
+    "jonlib": "Collision.ray_triangle_for / Collision.ray_triangle",
+    "status": "profile-covered",
+    "scope": "Moller-Trumbore with raylib's 1e-6 epsilon, parallel/outside/behind misses as the zero result and hit fields bit for bit. Explicit uncontracted and Apple-clang FMA profiles.",
+    "gaps": [
+      "Exceptional/subnormal inputs and other contraction patterns",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:GetRayCollisionTriangle",
+    "milestone": "collision"
+  },
+  "GetRayCollisionQuad": {
+    "jonlib": "Collision.ray_quad_for / Collision.ray_quad",
+    "status": "profile-covered",
+    "scope": "Triangles (p1, p2, p4) then (p2, p3, p4), as raylib; planar and skewed quads bit for bit. Explicit uncontracted and Apple-clang FMA profiles.",
+    "gaps": [
+      "Exceptional/subnormal inputs and other contraction patterns",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:GetRayCollisionQuad",
+    "milestone": "collision"
   }
 }

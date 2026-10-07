@@ -87,9 +87,9 @@ order (`docs/PROGRESS.md` lists every ID):
    need native `tanf`/`acosf`/`atan2f`/`powf` profiles. The diagnostic
    `perspective` and `inverse-trig` gates already record native behavior; the
    work is accurate per-libm kernels, as for `sinf`/`cosf`. The ray collisions
-   (`GetRayCollisionSphere/Box/Triangle/Quad`) need fused-contraction variants
-   of the raymath helpers `rmodels.c` inlines (arm64 builds contract them);
-   the mesh/model collisions wait for the Phase 5 types.
+   (`GetRayCollisionSphere/Box/Triangle/Quad`) are delivered with explicit
+   contraction profiles ([COLLISION.md](COLLISION.md)); the mesh/model
+   collisions wait for the Phase 5 types.
 5. **Image leftovers** — compressed formats (14+) and multi-level images (DDS
    DXT and mip chains are loaded by default raylib; PKM/KTX/PVR/ASTC are
    configuration options), which need a storage decision (below); the

@@ -4879,23 +4879,26 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Ray",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Immutable position and direction Vector3 values; directions are not normalized.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Complete integration/target/performance evidence"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/ray_probe.py",
+        "docs/COLLISION.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -4906,7 +4909,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive Ray semantics from the linked source, add a reference fixture, then implement Ray.",
+      "next_step": "Close documented gaps and unverified gates for Ray.",
       "priority": 100
     },
     {
@@ -4937,23 +4940,26 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "RayCollision",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Immutable hit flag, F32 distance and Vector3 point and normal, compared field by field with raylib.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Complete integration/target/performance evidence"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/ray_probe.py",
+        "docs/COLLISION.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -4965,7 +4971,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive RayCollision semantics from the linked source, add a reference fixture, then implement RayCollision.",
+      "next_step": "Close documented gaps and unverified gates for RayCollision.",
       "priority": 100
     },
     {
@@ -55834,23 +55840,28 @@
       "milestone": "collision",
       "phase": 1,
       "sequence": 25,
-      "status": "not-started",
-      "jonlib": "Collision.get_ray_collision_sphere",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Collision.ray_sphere_for / Collision.ray_sphere",
+      "mapping_state": "implemented",
+      "scope": "Every result field bit for bit, including inside rays and raylib's NaN distance, point and normal on misses (compared as one NaN class). Explicit uncontracted and arm64 Apple-clang FMA profiles matching the disassembled linked reference.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal inputs and other contraction patterns",
+        "Full target/performance coverage",
+        "NaN sign and payload are not reproduced"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/ray_probe.py",
+        "docs/COLLISION.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55865,7 +55876,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
-      "next_step": "Derive GetRayCollisionSphere semantics from the linked source, add a reference fixture, then implement Collision.get_ray_collision_sphere.",
+      "next_step": "Close documented gaps and unverified gates for GetRayCollisionSphere.",
       "priority": 225
     },
     {
@@ -55891,23 +55902,28 @@
       "milestone": "collision",
       "phase": 1,
       "sequence": 25,
-      "status": "not-started",
-      "jonlib": "Collision.get_ray_collision_box",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Collision.ray_box_for / Collision.ray_box",
+      "mapping_state": "implemented",
+      "scope": "Slab intersection with raylib's inside-ray reversal, signed-zero fmin/fmax ties by libm profile and the truncated-int normal; every field bit for bit. Explicit uncontracted and Apple-clang FMA profiles.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "NaN slab distances (raylib's arm64 build and C disagree) and normals outside the int cast (undefined in C) are None",
+        "Exceptional/subnormal inputs and other contraction patterns",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/ray_probe.py",
+        "docs/COLLISION.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55922,7 +55938,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
-      "next_step": "Derive GetRayCollisionBox semantics from the linked source, add a reference fixture, then implement Collision.get_ray_collision_box.",
+      "next_step": "Close documented gaps and unverified gates for GetRayCollisionBox.",
       "priority": 225
     },
     {
@@ -56006,23 +56022,27 @@
       "milestone": "collision",
       "phase": 1,
       "sequence": 25,
-      "status": "not-started",
-      "jonlib": "Collision.get_ray_collision_triangle",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Collision.ray_triangle_for / Collision.ray_triangle",
+      "mapping_state": "implemented",
+      "scope": "Moller-Trumbore with raylib's 1e-6 epsilon, parallel/outside/behind misses as the zero result and hit fields bit for bit. Explicit uncontracted and Apple-clang FMA profiles.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal inputs and other contraction patterns",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/ray_probe.py",
+        "docs/COLLISION.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56037,7 +56057,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
-      "next_step": "Derive GetRayCollisionTriangle semantics from the linked source, add a reference fixture, then implement Collision.get_ray_collision_triangle.",
+      "next_step": "Close documented gaps and unverified gates for GetRayCollisionTriangle.",
       "priority": 225
     },
     {
@@ -56063,23 +56083,27 @@
       "milestone": "collision",
       "phase": 1,
       "sequence": 25,
-      "status": "not-started",
-      "jonlib": "Collision.get_ray_collision_quad",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Collision.ray_quad_for / Collision.ray_quad",
+      "mapping_state": "implemented",
+      "scope": "Triangles (p1, p2, p4) then (p2, p3, p4), as raylib; planar and skewed quads bit for bit. Explicit uncontracted and Apple-clang FMA profiles.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Exceptional/subnormal inputs and other contraction patterns",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/ray_probe.py",
+        "docs/COLLISION.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56094,7 +56118,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
-      "next_step": "Derive GetRayCollisionQuad semantics from the linked source, add a reference fixture, then implement Collision.get_ray_collision_quad.",
+      "next_step": "Close documented gaps and unverified gates for GetRayCollisionQuad.",
       "priority": 225
     },
     {

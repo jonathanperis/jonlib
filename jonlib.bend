@@ -200,6 +200,195 @@ def Collision.box_sphere_for(+arithmetic: M.Contraction, box: BoundingBox, cente
 def Collision.box_sphere(box: BoundingBox, center: M.Vector3, +radius: F32) -> Bool:
   Collision.box_sphere_for(M.Uncontracted{}, box, center, radius)
 
+# Rays (rmodels.c). The raymath helpers raylib inlines are contracted on the
+# arm64 build: dot products are fma(z, w, fma(x, u, y*v)), cross-product terms
+# fma(a1, b1, -(a2*b2)); point = position + direction*t is never fused.
+type Ray is Data:
+  Ray{position: M.Vector3, direction: M.Vector3}
+
+type RayCollision is Data:
+  RayCollision{hit: Bool, distance: F32, point: M.Vector3, normal: M.Vector3}
+
+def RayCollision.none() -> RayCollision:
+  RayCollision{False{}, 0.0, M.Vector3{0.0, 0.0, 0.0}, M.Vector3{0.0, 0.0, 0.0}}
+
+def Collision.ray.dot(+arithmetic: M.Contraction, left: M.Vector3, right: M.Vector3) -> F32:
+  M.Vector3{+x, y, +z} = left
+  M.Vector3{+u, v, +w} = right
+  Collision.multiply_add(arithmetic, z, w, Collision.multiply_add(arithmetic, x, u, (y * v : F32)))
+
+def Collision.ray.difference(arithmetic: M.Contraction, +a: F32, +b: F32, +c: F32, +d: F32) -> F32:
+  match arithmetic:
+    case M.Uncontracted{}: (a * b - c * d : F32)
+    case M.Fused{}: Fused.multiply_add(a, b, F32.neg((c * d : F32)))
+
+def Collision.ray.cross(+arithmetic: M.Contraction, left: M.Vector3, right: M.Vector3) -> M.Vector3:
+  M.Vector3{+x, +y, +z} = left
+  M.Vector3{+u, +v, +w} = right
+  M.Vector3{Collision.ray.difference(arithmetic, y, w, z, v), Collision.ray.difference(arithmetic, z, u, x, w),
+    Collision.ray.difference(arithmetic, x, v, y, u)}
+
+def Collision.ray.normalized(nonzero: Bool, vector: M.Vector3, +length: F32) -> M.Vector3:
+  match nonzero:
+    case False{}: vector
+    case True{}: M.Vector3.scale(vector, (1.0 / length : F32))
+
+def Collision.ray.normalize(+arithmetic: M.Contraction, +vector: M.Vector3) -> M.Vector3:
+  +length = F32.sqrt(Collision.ray.dot(arithmetic, vector, vector))
+  Collision.ray.normalized(F32.is_ne(length, 0.0), vector, length)
+
+def Collision.ray.at(ray: Ray, +t: F32) -> M.Vector3:
+  Ray{position, direction} = ray
+  M.Vector3.add(position, M.Vector3.scale(direction, t))
+
+def Collision.ray.sphere.hit(+arithmetic: M.Contraction, ray: Ray, center: M.Vector3, +hit: Bool, +inside: Bool, +distance: F32) -> RayCollision:
+  +point = Collision.ray.at(ray, distance)
+  +normal = Collision.ray.normalize(arithmetic, M.Vector3.subtract(point, center))
+  RayCollision{hit, distance, point, Bool.pick(M.Vector3, inside, M.Vector3.negate(normal), normal)}
+
+# GetRayCollisionSphere: d = r*r - (dist*dist - v*v) (fused: fma(r, r, -fma(dist,
+# dist, -(v*v)))); the distance is v + sqrt(d) from inside, v - sqrt(d) otherwise.
+# Misses keep raylib's NaN distance, point and normal.
+def Collision.ray_sphere_for(+arithmetic: M.Contraction, +ray: Ray, +center: M.Vector3, +radius: F32) -> RayCollision:
+  Ray{+position, +direction} = ray
+  +offset = M.Vector3.subtract(center, position)
+  +along = Collision.ray.dot(arithmetic, offset, direction)
+  +distance = F32.sqrt(Collision.ray.dot(arithmetic, offset, offset))
+  +d = Bool.pick(F32, M.Contraction.fused(arithmetic), Fused.multiply_add(radius, radius, F32.neg(Fused.multiply_add(distance, distance, F32.neg((along * along : F32))))),
+    (radius * radius - (distance * distance - along * along) : F32))
+  +inside = (distance < radius : F32)
+  Collision.ray.sphere.hit(arithmetic, ray, center, (d >= 0.0 : F32), inside,
+    Bool.pick(F32, inside, (along + F32.sqrt(d) : F32), (along - F32.sqrt(d) : F32)))
+
+def Collision.ray_sphere(ray: Ray, center: M.Vector3, radius: F32) -> RayCollision:
+  Collision.ray_sphere_for(M.Uncontracted{}, ray, center, radius)
+
+def Collision.ray.triangle.hit(found: Bool, +arithmetic: M.Contraction, ray: Ray, edge1: M.Vector3, edge2: M.Vector3, +t: F32) -> RayCollision:
+  match found:
+    case False{}: RayCollision.none()
+    case True{}: RayCollision{True{}, t, Collision.ray.at(ray, t), Collision.ray.normalize(arithmetic, Collision.ray.cross(arithmetic, edge1, edge2))}
+
+def Collision.ray.triangle.t(missed: Bool, +arithmetic: M.Contraction, ray: Ray, edge1: M.Vector3, +edge2: M.Vector3, +q: M.Vector3, +inverse: F32) -> RayCollision:
+  match missed:
+    case True{}: RayCollision.none()
+    case False{}:
+      +t = (Collision.ray.dot(arithmetic, edge2, q) * inverse : F32)
+      Collision.ray.triangle.hit((t > 0.000001 : F32), arithmetic, ray, edge1, edge2, t)
+
+def Collision.ray.triangle.v(missed: Bool, +arithmetic: M.Contraction, +ray: Ray, +edge1: M.Vector3, +edge2: M.Vector3, +offset: M.Vector3, +inverse: F32, +u: F32) -> RayCollision:
+  match missed:
+    case True{}: RayCollision.none()
+    case False{}:
+      Ray{_, +direction} = ray
+      +q = Collision.ray.cross(arithmetic, offset, edge1)
+      +v = (Collision.ray.dot(arithmetic, direction, q) * inverse : F32)
+      Collision.ray.triangle.t(((v < 0.0) || ((u + v) > 1.0) : F32), arithmetic, ray, edge1, edge2, q, inverse)
+
+def Collision.ray.triangle.u(parallel: Bool, +arithmetic: M.Contraction, +ray: Ray, +p1: M.Vector3, +edge1: M.Vector3, +edge2: M.Vector3, +p: M.Vector3, +det: F32) -> RayCollision:
+  match parallel:
+    case True{}: RayCollision.none()
+    case False{}:
+      Ray{+position, _} = ray
+      +inverse = (1.0 / det : F32)
+      +offset = M.Vector3.subtract(position, p1)
+      +u = (Collision.ray.dot(arithmetic, offset, p) * inverse : F32)
+      Collision.ray.triangle.v(((u < 0.0) || (u > 1.0) : F32), arithmetic, ray, edge1, edge2, offset, inverse, u)
+
+# GetRayCollisionTriangle (Moller-Trumbore with raylib's 1e-6 EPSILON).
+def Collision.ray_triangle_for(+arithmetic: M.Contraction, +ray: Ray, +p1: M.Vector3, p2: M.Vector3, p3: M.Vector3) -> RayCollision:
+  Ray{_, +direction} = ray
+  +edge1 = M.Vector3.subtract(p2, p1)
+  +edge2 = M.Vector3.subtract(p3, p1)
+  +p = Collision.ray.cross(arithmetic, direction, edge2)
+  +det = Collision.ray.dot(arithmetic, edge1, p)
+  Collision.ray.triangle.u(((det > F32.neg(0.000001)) && (det < 0.000001) : F32), arithmetic, ray, p1, edge1, edge2, p, det)
+
+def Collision.ray_triangle(ray: Ray, p1: M.Vector3, p2: M.Vector3, p3: M.Vector3) -> RayCollision:
+  Collision.ray_triangle_for(M.Uncontracted{}, ray, p1, p2, p3)
+
+def Collision.ray.quad.second(+arithmetic: M.Contraction, +ray: Ray, p2: M.Vector3, p3: M.Vector3, p4: M.Vector3, first: RayCollision) -> RayCollision:
+  match first:
+    case RayCollision{True{}, distance, point, normal}: RayCollision{True{}, distance, point, normal}
+    case RayCollision{False{}, _, _, _}: Collision.ray_triangle_for(arithmetic, ray, p2, p3, p4)
+
+# GetRayCollisionQuad: triangle (p1, p2, p4), else (p2, p3, p4).
+def Collision.ray_quad_for(+arithmetic: M.Contraction, +ray: Ray, p1: M.Vector3, +p2: M.Vector3, p3: M.Vector3, +p4: M.Vector3) -> RayCollision:
+  Collision.ray.quad.second(arithmetic, ray, p2, p3, p4, Collision.ray_triangle_for(arithmetic, ray, p1, p2, p4))
+
+def Collision.ray_quad(ray: Ray, p1: M.Vector3, p2: M.Vector3, p3: M.Vector3, p4: M.Vector3) -> RayCollision:
+  Collision.ray_quad_for(M.Uncontracted{}, ray, p1, p2, p3, p4)
+
+# Box slabs: fmin/fmax tie signed zeros by the libm profile; NaN slab distances
+# (an origin on a slab plane with a zero direction component), which the arm64
+# and x86 builds test differently, and normals outside the int cast are None.
+def Collision.ray.box.nan(+t: F32) -> Bool:
+  ((F32.bits(t) .&. 2147483647) > 2139095040 : U32)
+
+def Collision.ray.box.castable(+value: F32) -> Bool:
+  (F32.abs(value) < 2147483648.0 : F32)
+
+def Collision.ray.box.lerp(arithmetic: M.Contraction, +low: F32, +high: F32) -> F32:
+  match arithmetic:
+    case M.Uncontracted{}: (low + 0.5 * (high - low) : F32)
+    case M.Fused{}: Fused.multiply_add(0.5, (high - low : F32), low)
+
+def Collision.ray.box.normal(+arithmetic: M.Contraction, +inside: Bool, +normal: M.Vector3) -> M.Vector3:
+  M.Vector3{+x, +y, +z} = normal
+  +unit = Collision.ray.normalize(arithmetic, M.Vector3{Signed.trunc(x), Signed.trunc(y), Signed.trunc(z)})
+  Bool.pick(M.Vector3, inside, M.Vector3.negate(unit), unit)
+
+def Collision.ray.box.finish(defined: Bool, +arithmetic: M.Contraction, +inside: Bool, +hit: Bool, +distance: F32, +point: M.Vector3, +normal: M.Vector3) -> Maybe<RayCollision>:
+  match defined:
+    case False{}: None{}
+    case True{}: Some{RayCollision{hit, Bool.pick(F32, inside, F32.neg(distance), distance), point, Collision.ray.box.normal(arithmetic, inside, normal)}}
+
+def Collision.ray.box.normals(+arithmetic: M.Contraction, +inside: Bool, +finite: Bool, +hit: Bool, +near: F32, landing: M.Vector3, box: BoundingBox) -> Maybe<RayCollision>:
+  M.Vector3{+qx, +qy, +qz} = landing
+  BoundingBox{+low, +high} = box
+  M.Vector3{+lx, +ly, +lz} = low
+  M.Vector3{+hx, +hy, +hz} = high
+  +nx = (((qx - Collision.ray.box.lerp(arithmetic, lx, hx)) * 2.01) / (hx - lx) : F32)
+  +ny = (((qy - Collision.ray.box.lerp(arithmetic, ly, hy)) * 2.01) / (hy - ly) : F32)
+  +nz = (((qz - Collision.ray.box.lerp(arithmetic, lz, hz)) * 2.01) / (hz - lz) : F32)
+  Collision.ray.box.finish(finite && Collision.ray.box.castable(nx) && Collision.ray.box.castable(ny) && Collision.ray.box.castable(nz),
+    arithmetic, inside, hit, near, M.Vector3{qx, qy, qz}, M.Vector3{nx, ny, nz})
+
+def Collision.ray.box.slabs(+arithmetic: M.Contraction, +gnu: Bool, +inside: Bool, +position: M.Vector3, +direction: M.Vector3, +box: BoundingBox) -> Maybe<RayCollision>:
+  M.Vector3{+px, +py, +pz} = position
+  M.Vector3{+dx, +dy, +dz} = direction
+  BoundingBox{+low, +high} = box
+  M.Vector3{+lx, +ly, +lz} = low
+  M.Vector3{+hx, +hy, +hz} = high
+  +t0 = ((lx - px) * (1.0 / dx) : F32)
+  +t1 = ((hx - px) * (1.0 / dx) : F32)
+  +t2 = ((ly - py) * (1.0 / dy) : F32)
+  +t3 = ((hy - py) * (1.0 / dy) : F32)
+  +t4 = ((lz - pz) * (1.0 / dz) : F32)
+  +t5 = ((hz - pz) * (1.0 / dz) : F32)
+  +near = M.Vector2.clamp.maximum(gnu, M.Vector2.clamp.maximum(gnu, M.Vector2.clamp.minimum(gnu, t0, t1), M.Vector2.clamp.minimum(gnu, t2, t3)), M.Vector2.clamp.minimum(gnu, t4, t5))
+  +far = M.Vector2.clamp.minimum(gnu, M.Vector2.clamp.minimum(gnu, M.Vector2.clamp.maximum(gnu, t0, t1), M.Vector2.clamp.maximum(gnu, t2, t3)), M.Vector2.clamp.maximum(gnu, t4, t5))
+  +finite = Bool.not(Collision.ray.box.nan(t0) || Collision.ray.box.nan(t1) || Collision.ray.box.nan(t2) || Collision.ray.box.nan(t3)
+    || Collision.ray.box.nan(t4) || Collision.ray.box.nan(t5))
+  Collision.ray.box.normals(arithmetic, inside, finite, Bool.not(((far < 0.0) || (near > far) : F32)), near,
+    M.Vector3.add(position, M.Vector3.scale(direction, near)), box)
+
+def Collision.ray.box.inside(position: M.Vector3, box: BoundingBox) -> Bool:
+  M.Vector3{+px, +py, +pz} = position
+  BoundingBox{+low, +high} = box
+  M.Vector3{+lx, +ly, +lz} = low
+  M.Vector3{+hx, +hy, +hz} = high
+  ((px > lx) && (px < hx) && (py > ly) && (py < hy) && (pz > lz) && (pz < hz) : F32)
+
+# GetRayCollisionBox: slab intersection; a ray starting inside the box is
+# traced backwards and its distance and normal negated, as raylib does.
+def Collision.ray_box_for(+arithmetic: M.Contraction, libm: M.Libm, +ray: Ray, +box: BoundingBox) -> Maybe<RayCollision>:
+  Ray{+position, +direction} = ray
+  +inside = Collision.ray.box.inside(position, box)
+  Collision.ray.box.slabs(arithmetic, M.Libm.gnu(libm), inside, position, Bool.pick(M.Vector3, inside, M.Vector3.negate(direction), direction), box)
+
+def Collision.ray_box(ray: Ray, box: BoundingBox) -> Maybe<RayCollision>:
+  Collision.ray_box_for(M.Uncontracted{}, M.AppleLibm{}, ray, box)
+
 def Collision.recs(left: Rectangle, right: Rectangle) -> Bool:
   Rectangle{+x, +y, w, h} = left
   Rectangle{+u, +v, rw, rh} = right

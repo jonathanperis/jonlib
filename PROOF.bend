@@ -502,3 +502,12 @@ def Laws.surface_draw_word_rgba_is_color(color):
 
 def Laws.surface_fill_word_r32_is_zero(color):
   {==}
+
+def Laws.ray_box_undefined_is_none(arithmetic, inside, hit, distance, point, normal):
+  {==}
+
+def Laws.ray_triangle_parallel_misses(arithmetic, ray, p1, edge1, edge2, p, det):
+  {==}
+
+def Laws.ray_quad_keeps_first_hit(arithmetic, ray, p2, p3, p4, distance, point, normal):
+  {==}

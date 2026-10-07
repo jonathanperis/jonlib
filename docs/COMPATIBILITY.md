@@ -149,6 +149,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | View and rotation matrices | `Matrix.look_at`, `rotate_*_for`, `rotate_for` | Degenerate bases, bounded trigonometric profiles, distinct Euler orders | `conformance` |
 | 2D collision queries | `Collision` functions | Boolean/rectangle/hit-coordinate results; explicit segment contraction profiles ([COLLISION.md](COLLISION.md)) | `conformance`, `fused` |
 | Sphere/box queries | `Collision.spheres/boxes/box_sphere` | Inclusive contacts, signed radii, supplied-bound ordering | `conformance` |
+| Ray queries | `Collision.ray_sphere/ray_box/ray_triangle/ray_quad` | Every `RayCollision` field bit; host contraction and libm profiles; non-portable box inputs are `None` | `ray`, `ray-uncontracted` |
 | Linear/B-spline/Catmull-Rom/quadratic Bezier points | `Spline` functions | XY and coefficient order with explicit arithmetic profiles ([SPLINES.md](SPLINES.md)) | `spline` |
 | GPU execution of image operations | Same Bend API | All corpus pixels and export bytes on forced Metal with the overlay | local `tools/conformance.py --gpu` |
 | GPU graphics-pipeline `Draw*` APIs | Future rasterizer | Not implemented; CPU `ImageDraw*` matches do not cover these | — |

@@ -151,6 +151,37 @@
    "minutes": 1
   },
   {
+   "id": "ray",
+   "title": "Ray collisions (sphere, box, triangle, quad) against the linked raylib with the host contraction and libm profiles",
+   "run": [
+    "{python}",
+    "tools/ray_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
+   "id": "ray-uncontracted",
+   "title": "Ray collisions against the pinned rmodels.c compiled without contraction (Uncontracted profile control)",
+   "run": [
+    "{python}",
+    "tools/ray_probe.py",
+    "--uncontracted-control",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
    "id": "pixel",
    "title": "",
    "run": [
