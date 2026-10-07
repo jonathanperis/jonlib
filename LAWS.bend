@@ -653,8 +653,8 @@ law surface_format_zero_keeps_owner:
 
 law surface_draw_word_rgba_is_color:
   for color: U32
-  {J.Surface.draw_word(7, color) == color : U32}
+  {J.Surface.word.draw(7, color) == color : U32}
 
 law surface_fill_word_r32_is_zero:
   for color: U32
-  {J.Surface.fill_word(8, 8, color) == 0 : U32}
+  {J.Surface.word.fill(8, 8, color) == 0 : U32}
