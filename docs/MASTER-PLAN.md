@@ -83,10 +83,13 @@ order (`docs/PROGRESS.md` lists every ID):
 3. **`pixels` macros and color utilities** — named color constants and the
    remaining color/format helpers.
 4. **Blocked numerics** — `MatrixPerspective`, `QuaternionSlerp`,
-   `QuaternionToAxisAngle`, `QuaternionToEuler`, the ray collisions and the
-   cubic Bézier spline need native `tanf`/`acosf`/`atan2f`/`powf` profiles. The
-   diagnostic `perspective` and `inverse-trig` gates already record native
-   behavior; the work is accurate per-libm kernels, as for `sinf`/`cosf`.
+   `QuaternionToAxisAngle`, `QuaternionToEuler` and the cubic Bézier spline
+   need native `tanf`/`acosf`/`atan2f`/`powf` profiles. The diagnostic
+   `perspective` and `inverse-trig` gates already record native behavior; the
+   work is accurate per-libm kernels, as for `sinf`/`cosf`. The ray collisions
+   (`GetRayCollisionSphere/Box/Triangle/Quad`) need fused-contraction variants
+   of the raymath helpers `rmodels.c` inlines (arm64 builds contract them);
+   the mesh/model collisions wait for the Phase 5 types.
 5. **Image leftovers** — compressed formats (14+) and multi-level images (DDS
    DXT and mip chains are loaded by default raylib; PKM/KTX/PVR/ASTC are
    configuration options), which need a storage decision (below); the
