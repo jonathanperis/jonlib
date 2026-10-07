@@ -6,16 +6,16 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1183,
-    "partial": 680
+    "not-started": 1176,
+    "partial": 687
   },
   "core_functions": {
     "total": 600,
     "blocked": 17,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 446,
-    "partial": 137
+    "not-started": 440,
+    "partial": 143
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 631,
-    "partial": 279
+    "not-started": 625,
+    "partial": 285
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 17,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 516,
-      "partial": 504
+      "not-started": 509,
+      "partial": 511
     },
     "raymath.h": {
       "total": 254,
@@ -150,8 +150,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 12,
-      "partial": 0
+      "not-started": 5,
+      "partial": 7
     },
     {
       "id": "files",

@@ -24936,23 +24936,25 @@
       "milestone": "memory",
       "phase": 1,
       "sequence": 3,
-      "status": "not-started",
-      "jonlib": "TraceLogCallback",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "U32 -> String -> IO(Unit) handler of Log.trace_with",
+      "mapping_state": "implemented",
+      "scope": "A handler of the log type and preformatted text.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No va_list argument"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/LOGGING.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -24963,7 +24965,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Prove sizes/content and allocation/error/ownership lifecycles; make native-buffer and callback adaptations explicit.",
-      "next_step": "Derive TraceLogCallback semantics from the linked source, add a reference fixture, then implement TraceLogCallback.",
+      "next_step": "Close documented gaps and unverified gates for TraceLogCallback.",
       "priority": 203
     },
     {
@@ -31127,23 +31129,26 @@
       "milestone": "memory",
       "phase": 1,
       "sequence": 3,
-      "status": "not-started",
-      "jonlib": "Buffer.set_trace_log_level",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Log.level / Log.default",
+      "mapping_state": "implemented",
+      "scope": "A Log.Logger value carries the threshold (default LOG_INFO) instead of process-wide state.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Process-wide state replaced by explicit values (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/log_probe.py",
+        "docs/LOGGING.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31154,7 +31159,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Prove sizes/content and allocation/error/ownership lifecycles; make native-buffer and callback adaptations explicit.",
-      "next_step": "Derive SetTraceLogLevel semantics from the linked source, add a reference fixture, then implement Buffer.set_trace_log_level.",
+      "next_step": "Close documented gaps and unverified gates for SetTraceLogLevel.",
       "priority": 203
     },
     {
@@ -31180,23 +31185,27 @@
       "milestone": "memory",
       "phase": 1,
       "sequence": 3,
-      "status": "not-started",
-      "jonlib": "Buffer.trace_log",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Log.trace / Log.message",
+      "mapping_state": "implemented",
+      "scope": "Prints the level prefix, at most 244 characters of preformatted text and a newline when the type is at or above the threshold; LOG_FATAL exits with status 1.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No variadic formatting: '%' prints literally (TextFormat belongs to the text utilities)",
+        "Android log routing"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/log_probe.py",
+        "docs/LOGGING.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31207,7 +31216,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Prove sizes/content and allocation/error/ownership lifecycles; make native-buffer and callback adaptations explicit.",
-      "next_step": "Derive TraceLog semantics from the linked source, add a reference fixture, then implement Buffer.trace_log.",
+      "next_step": "Close documented gaps and unverified gates for TraceLog.",
       "priority": 203
     },
     {
@@ -31233,23 +31242,27 @@
       "milestone": "memory",
       "phase": 1,
       "sequence": 3,
-      "status": "not-started",
-      "jonlib": "Buffer.set_trace_log_callback",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Log.trace_with",
+      "mapping_state": "implemented",
+      "scope": "The handler receives the log type and text of messages at or above the threshold instead of standard output.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Process-wide state replaced by explicit values (language adaptation)",
+        "No va_list argument"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/log_probe.py",
+        "docs/LOGGING.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31262,7 +31275,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Prove sizes/content and allocation/error/ownership lifecycles; make native-buffer and callback adaptations explicit.",
-      "next_step": "Derive SetTraceLogCallback semantics from the linked source, add a reference fixture, then implement Buffer.set_trace_log_callback.",
+      "next_step": "Close documented gaps and unverified gates for SetTraceLogCallback.",
       "priority": 203
     },
     {
@@ -31288,23 +31301,26 @@
       "milestone": "memory",
       "phase": 1,
       "sequence": 3,
-      "status": "not-started",
-      "jonlib": "Buffer.mem_alloc",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Memory.alloc",
+      "mapping_state": "implemented",
+      "scope": "An owned list of size zero bytes (RL_CALLOC).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Raw pointers/allocator ABI and allocation failure"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/transforms.bend",
+        "docs/LOGGING.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31315,7 +31331,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Prove sizes/content and allocation/error/ownership lifecycles; make native-buffer and callback adaptations explicit.",
-      "next_step": "Derive MemAlloc semantics from the linked source, add a reference fixture, then implement Buffer.mem_alloc.",
+      "next_step": "Close documented gaps and unverified gates for MemAlloc.",
       "priority": 203
     },
     {
@@ -31341,23 +31357,26 @@
       "milestone": "memory",
       "phase": 1,
       "sequence": 3,
-      "status": "not-started",
-      "jonlib": "Buffer.mem_realloc",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Memory.realloc",
+      "mapping_state": "implemented",
+      "scope": "Keeps the first size bytes; growth is zero-filled (C leaves it uninitialized).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Raw pointers/allocator ABI and allocation failure"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/transforms.bend",
+        "docs/LOGGING.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31368,7 +31387,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Prove sizes/content and allocation/error/ownership lifecycles; make native-buffer and callback adaptations explicit.",
-      "next_step": "Derive MemRealloc semantics from the linked source, add a reference fixture, then implement Buffer.mem_realloc.",
+      "next_step": "Close documented gaps and unverified gates for MemRealloc.",
       "priority": 203
     },
     {
@@ -31394,23 +31413,26 @@
       "milestone": "memory",
       "phase": 1,
       "sequence": 3,
-      "status": "not-started",
-      "jonlib": "Buffer.mem_free",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Memory.free",
+      "mapping_state": "implemented",
+      "scope": "Consumes the owned bytes.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Raw pointers/allocator ABI"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/transforms.bend",
+        "docs/LOGGING.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31421,7 +31443,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Prove sizes/content and allocation/error/ownership lifecycles; make native-buffer and callback adaptations explicit.",
-      "next_step": "Derive MemFree semantics from the linked source, add a reference fixture, then implement Buffer.mem_free.",
+      "next_step": "Close documented gaps and unverified gates for MemFree.",
       "priority": 203
     },
     {
