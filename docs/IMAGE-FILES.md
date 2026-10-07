@@ -31,7 +31,7 @@ wrapped exactly once).
 ## Suffix and content selection
 
 Recognized tokens are `.png`, `.bmp`, `.tga`, `.pgm`, `.ppm`, `.jpg`, `.jpeg`,
-`.gif`, `.pic`, `.psd` and `.qoi`, plus their entirely uppercase forms.
+`.gif`, `.pic`, `.psd`, `.qoi` and `.dds`, plus their entirely uppercase forms.
 Mixed-case forms and `.pnm` are unsupported, matching native dispatch.
 
 - **Memory** calls require the complete token: `image.png` and `.png-tail` are
@@ -90,7 +90,8 @@ no guarantee of reported OS-close success. Ordinary byte files contain only
 | Selection | Inclusive encoded-file cap |
 |---|---|
 | Raster tokens, unsupported suffixes, `load_png/pnm/tga/bmp/pic`, `load_hdr` | 1,048,576 bytes (`RasterFile`) |
-| QOI tokens, `Surface.load_qoi`, `Surface.load_qoi` | 83,886,102 bytes = `14 + 5*(4096*4096) + 8` (`QoiFile`) |
+| QOI tokens, `Surface.load_qoi` | 83,886,102 bytes = `14 + 5*(4096*4096) + 8` (`QoiFile`) |
+| DDS tokens, `Surface.load_dds` | 67,109,000 bytes, above `128 + 4*(4096*4096)` (`DdsFile`) |
 
 Caps bound admitted encoded input only, not decoded area, total heap,
 allocation success or throughput; compressed input can describe far more pixel

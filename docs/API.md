@@ -238,10 +238,10 @@ HDR); use `Surface.colors` or `Surface.format(surface, 7)` for RGBA8.
 
 | Operation | Contract |
 |---|---|
-| `Surface.decode_qoi/png/bmp/tga/pnm/pic/gif/psd/hdr(bytes)` / `decode_psd_for(contraction, bytes)` | Memory decoders returning `Result<&1, &1, Surface.Error, Surface>`. See [CODECS.md](CODECS.md), [PNG.md](PNG.md), [BMP.md](BMP.md), [TGA.md](TGA.md), [PNM.md](PNM.md), [PIC.md](PIC.md), [GIF.md](GIF.md), [PSD.md](PSD.md), [HDR.md](HDR.md). |
+| `Surface.decode_qoi/dds/png/bmp/tga/pnm/pic/gif/psd/hdr(bytes)` / `decode_psd_for(contraction, bytes)` | Memory decoders returning `Result<&1, &1, Surface.Error, Surface>`. See [CODECS.md](CODECS.md), [PNG.md](PNG.md), [BMP.md](BMP.md), [TGA.md](TGA.md), [PNM.md](PNM.md), [PIC.md](PIC.md), [GIF.md](GIF.md), [PSD.md](PSD.md), [HDR.md](HDR.md). |
 | `Surface.decode_image(file_type, bytes)` / `decode_image_for(contraction, ...)` | `LoadImageFromMemory`: exact extension tokens select QOI or the raster signatures. See [IMAGE-FILES.md](IMAGE-FILES.md). |
 | `Surface.load_image(path)` / `load_image_for(contraction, path)` | `LoadImage`: bounded ordinary files, native last-dot suffix/content selection, close before decode. |
-| `Surface.load_qoi/png/bmp/tga/pnm/pic/hdr(path)` | Explicit codec selection independent of the suffix, with the same file boundary. |
+| `Surface.load_qoi/dds/png/bmp/tga/pnm/pic/hdr(path)` | Explicit codec selection independent of the suffix, with the same file boundary. |
 | `Surface.load_raw(path, width, height, format, header_size)` | `LoadImageRaw` for formats 1..13 with native header selection. See [RAW-FILES.md](RAW-FILES.md). |
 | `Image.Animation.decode_gif/decode_image/load_image(...)` / `entries` / `unload` | GIF frame sequences or a one-frame fallback with caller budgets. See [GIF-ANIMATION.md](GIF-ANIMATION.md). |
 | `Surface.to_png/to_bmp/to_tga/to_qoi(surface)` | `ExportImage` file bytes: GRAYSCALE, GRAY_ALPHA, R8G8B8 and R8G8B8A8 write stored samples, other formats `LoadImageColors`; QOI accepts R8G8B8 and R8G8B8A8 only. See [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |

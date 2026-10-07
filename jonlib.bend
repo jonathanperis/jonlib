@@ -50,6 +50,7 @@ import ./src/inflate.bend as Inflate
 import ./src/sdeflate.bend as Sdeflate
 import ./src/png.bend as Png
 import ./src/png_encode.bend as PngEncode
+import ./src/dds.bend as Dds
 
 # -----------------------------------------------------------------------------
 # Data utilities: compression, Base64, checksums and splines
@@ -1682,17 +1683,22 @@ def Image.file.write.opened(bytes: +List<U32>, opened: Result<&1, &1, U32 & Stri
 
 type Image.FileKind is Data:
   QoiFile{}
+  DdsFile{}
   RasterFile{}
   UnsupportedImageFile{}
 
-def Image.memory.selected(qoi: Bool, raster: Bool) -> Image.FileKind:
-  match qoi raster:
-    case True{} _: QoiFile{}
-    case False{} True{}: RasterFile{}
-    case False{} False{}: UnsupportedImageFile{}
+def Image.memory.selected(qoi: Bool, dds: Bool, raster: Bool) -> Image.FileKind:
+  match qoi dds raster:
+    case True{} _ _: QoiFile{}
+    case False{} True{} _: DdsFile{}
+    case False{} False{} True{}: RasterFile{}
+    case False{} False{} False{}: UnsupportedImageFile{}
 
+# raylib 6.0's default file formats: stb_image signatures for the raster
+# suffixes, QOI and DDS (rltexgpu.h).
 def Image.memory.kind(+file_type: String) -> Image.FileKind:
   Image.memory.selected(String.eq(file_type, ".qoi") || String.eq(file_type, ".QOI"),
+    String.eq(file_type, ".dds") || String.eq(file_type, ".DDS"),
     String.eq(file_type, ".png") || String.eq(file_type, ".PNG")
       || String.eq(file_type, ".bmp") || String.eq(file_type, ".BMP")
       || String.eq(file_type, ".tga") || String.eq(file_type, ".TGA")
@@ -1736,9 +1742,11 @@ def Image.export.kind(path: String) -> U32:
   +token = String.to_lower(Image.file.token(path))
   Image.export.selected(String.eq(token, ".png"), String.eq(token, ".bmp"), String.eq(token, ".tga"), String.eq(token, ".qoi"), String.eq(token, ".raw"))
 
+# DDS admits its 128-byte header plus the largest uncompressed payload.
 def Image.file.limit(kind: Image.FileKind) -> U32:
   match kind:
     case QoiFile{}: 83886102
+    case DdsFile{}: 67109000
     case _: 1048576
 
 def Image.file.psd(bytes: +List<U32>) -> Bool:
@@ -3451,6 +3459,23 @@ def Surface.decode_pnm(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surfa
 def Surface.decode_pic(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   Surface.codec.result(Pic.decode(bytes))
 
+def Surface.dds.created(result: Maybe<Surface>) -> Result<&1, &1, Surface.Error, Surface>:
+  match result:
+    case None{}: Fail{UnsupportedImageSize{}}
+    case Some{surface}: Done{surface}
+
+def Surface.dds.result(outcome: Dds.Outcome) -> Result<&1, &1, Surface.Error, Surface>:
+  match outcome:
+    case Dds.Decoded{Dds.Image{width, height, format, data}}: Surface.dds.created(Surface.from_bytes(width, height, format, data))
+    case Dds.Unsupported{}: Fail{UnsupportedFormat{}}
+    case Dds.Invalid{error}: Fail{Image.codec.error(error)}
+
+# DDS (raylib's rl_load_dds_from_memory): uncompressed single-level R5G6B5,
+# A1R5G5B5, A4R4G4B4, 24-bit and 32-bit files in raylib's channel order;
+# compressed (DXT) files and mipmap chains are UnsupportedFormat.
+def Surface.decode_dds(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
+  Surface.dds.result(Dds.decode(bytes))
+
 # PNG retains native output components from structural color/tRNS metadata.
 def Surface.decode_png(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   Surface.codec.result(Png.decode(bytes))
@@ -3506,6 +3531,7 @@ def Image.file.raster(reference: M.Contraction, +bytes: +List<U32>) -> Result<&1
 def Image.file.decode(reference: M.Contraction, kind: Image.FileKind, bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   match kind:
     case QoiFile{}: Surface.decode_qoi(bytes)
+    case DdsFile{}: Surface.decode_dds(bytes)
     case RasterFile{}: Image.file.raster(reference, bytes)
     case UnsupportedImageFile{}: Fail{InvalidImageHeader{}}
 
@@ -3806,6 +3832,9 @@ def Surface.load_with(~decode: +List<U32> -> Result<&1, &1, Surface.Error, Surfa
 
 def Surface.load_qoi(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
   Surface.load_with(~Surface.decode_qoi, Image.file.limit(QoiFile{}), path)
+
+def Surface.load_dds(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
+  Surface.load_with(~Surface.decode_dds, Image.file.limit(DdsFile{}), path)
 
 def Surface.load_png(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
   Surface.load_with(~Surface.decode_png, Image.file.limit(RasterFile{}), path)
