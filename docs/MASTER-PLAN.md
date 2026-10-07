@@ -132,6 +132,14 @@ Decisions for Jonathan before the next batches:
   image unchanged).
 - **The Phase 1 exit measure** above, which changes how progress is reported
   (not the release definition).
+- **Enum and constant mapping (`types`).** Proposed: raylib enumerators as
+  zero-argument U32 functions with raylib's spelling (as `Color.RAYWHITE()`
+  and `Math.PI()` now are), since raylib APIs take them as `int`; sum types
+  would be safer but diverge from flag combinations such as `ConfigFlags`.
+- **Global state (`memory`, file callbacks).** `SetTraceLogLevel`,
+  `SetTraceLogCallback` and the `Set*FileCallback` hooks mutate process-wide
+  state that Bend does not have. Proposed: explicit logger/loader values passed
+  to the operations that log or load, recorded as language adaptations.
 - **Order of the remaining Phase 1 packages** versus starting the Phase 2
   window/input foundation.
 
