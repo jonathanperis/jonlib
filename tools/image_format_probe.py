@@ -83,7 +83,7 @@ def cases():
     result.append(dict(width=256,height=129,source=8,bytes=word_bytes(pattern*8256),
                        repeat_words=pattern,repeat_count=8256,targets=[0,8],bridge=False))
     # The unified Surface factory accepts R32G32B32 bytes (formerly a rejected
-    # Formatted-factory control); native ImageFormat(0) keeps them exactly.
+    # factory control); native ImageFormat(0) keeps them exactly.
     result.append(dict(width=1,height=1,source=9,bytes=word_bytes([0x3f000000]*3),targets=[0],bridge=False))
     return result
 
