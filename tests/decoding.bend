@@ -19,6 +19,7 @@ def file_kind(kind: J.Image.FileKind) -> U32:
     case J.QoiFile{}: 0
     case J.RasterFile{}: 1
     case J.UnsupportedImageFile{}: 2
+    case J.DdsFile{}: 3
 
 def short_read(result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> Bool:
   match result:
@@ -62,6 +63,9 @@ def checks() -> Bool:
     && U32.is_eq(file_kind(J.Image.file.kind(".jpeg")), 2)
     && U32.is_eq(file_kind(J.Image.file.kind("image.PNG")), 1)
     && U32.is_eq(file_kind(J.Image.file.kind("image.PnG")), 2)
+    && U32.is_eq(file_kind(J.Image.file.kind("texture.dds")), 3)
+    && U32.is_eq(file_kind(J.Image.file.kind("texture.DDS")), 3)
+    && U32.is_eq(file_kind(J.Image.file.kind("texture.Dds")), 2)
     && short_read(J.Image.file.payload(2, Done{[1]}))
     && raw_short_read(J.Image.raw.payload(12, Done{[0,0,0,0]}))
     && String.eq(J.Image.Animation.file.token(J.Image.file.token(".GiF")), "")
