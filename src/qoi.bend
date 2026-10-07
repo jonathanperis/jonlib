@@ -2,59 +2,37 @@
 # QOI decoding/encoding adapted from Dominic Szablewski's MIT-licensed qoi.h in raylib 6.0.
 # Altered owned Bend implementation; see LICENSES/qoi.txt and THIRD_PARTY_NOTICES.md.
 import Base
+import ./codec.bend as C
 
-type Error is Data:
-  BadHeader{}
-  BadByte{}
-  BadSize{}
-  Truncated{}
-  BadStream{}
-
-type Image is Type:
-  Image{width: U32, height: U32, channels: U32, pixels: Array<U32>}
 
 type Header is Data:
   Header{width: U32, height: U32, channels: U32, data: +List<U32>}
 
-type Word is Data:
-  Word{value: U32, rest: +List<U32>}
-
-def word(bytes: +List<U32>) -> Maybe<&2, Word>:
-  match bytes:
-    case Con{a, Con{b, Con{c, Con{d, rest}}}}:
-      Some{Word{((a << 24n) .|. (b << 16n) .|. (c << 8n) .|. d : U32), rest}}
-    case _: None{}
-
-def header.valid(valid: Bool, width: U32, height: U32, channels: U32, data: +List<U32>) -> Result<&2, &2, Error, Header>:
+def header.valid(valid: Bool, width: U32, height: U32, channels: U32, data: +List<U32>) -> Result<&2, &2, C.Error, Header>:
   match valid:
-    case False{}: Fail{BadHeader{}}
+    case False{}: Fail{C.BadHeader{}}
     case True{}: Done{Header{width, height, channels, data}}
 
-def header.tail(width: U32, height: U32, bytes: +List<U32>) -> Result<&2, &2, Error, Header>:
+def header.tail(width: U32, height: U32, bytes: +List<U32>) -> Result<&2, &2, C.Error, Header>:
   match bytes:
     case Con{+channels, Con{space, rest}}:
       header.valid(((channels >= 3) && (channels <= 4) && (space <= 1) : U32), width, height, channels, rest)
-    case _: Fail{BadHeader{}}
+    case _: Fail{C.BadHeader{}}
 
-def header.height(width: U32, result: Maybe<&2, Word>) -> Result<&2, &2, Error, Header>:
+def header.height(width: U32, result: Maybe<&2, C.Word>) -> Result<&2, &2, C.Error, Header>:
   match result:
-    case None{}: Fail{BadHeader{}}
-    case Some{Word{height, rest}}: header.tail(width, height, rest)
+    case None{}: Fail{C.BadHeader{}}
+    case Some{C.Word{height, rest}}: header.tail(width, height, rest)
 
-def header.width(result: Maybe<&2, Word>) -> Result<&2, &2, Error, Header>:
+def header.width(result: Maybe<&2, C.Word>) -> Result<&2, &2, C.Error, Header>:
   match result:
-    case None{}: Fail{BadHeader{}}
-    case Some{Word{width, rest}}: header.height(width, word(rest))
+    case None{}: Fail{C.BadHeader{}}
+    case Some{C.Word{width, rest}}: header.height(width, C.word(rest))
 
-def header.magic(result: Maybe<&2, Word>) -> Result<&2, &2, Error, Header>:
+def header.magic(result: Maybe<&2, C.Word>) -> Result<&2, &2, C.Error, Header>:
   match result:
-    case Some{Word{1903126886, rest}}: header.width(word(rest))
-    case _: Fail{BadHeader{}}
-
-def valid_bytes(bytes: +List<U32>, +valid: Bool) -> Bool:
-  match bytes:
-    case Nil{}: valid
-    case Con{v, rest}: valid_bytes(rest, valid && (v <= 255 : U32))
+    case Some{C.Word{1903126886, rest}}: header.width(C.word(rest))
+    case _: Fail{C.BadHeader{}}
 
 def rgba(r: U32, g: U32, b: U32, a: U32) -> U32:
   (((r .&. 255) << 24n) .|. ((g .&. 255) << 16n) .|. ((b .&. 255) << 8n) .|. (a .&. 255) : U32)
@@ -65,20 +43,20 @@ def hash(+pixel: U32) -> U32:
 type State is Type:
   State{data: +List<U32>, cache: Array<U32>, pixel: U32, repeat: U32, output: Array<U32>}
 
-def parsed(data: +List<U32>, cache: Array<U32>, +pixel: U32, repeat: U32, output: Array<U32>) -> Result<&1, &1, Error, State>:
+def parsed(data: +List<U32>, cache: Array<U32>, +pixel: U32, repeat: U32, output: Array<U32>) -> Result<&1, &1, C.Error, State>:
   Done{State{data, Array.set(U32, cache, hash(pixel), pixel), pixel, repeat, output}}
 
-def rgb(data: +List<U32>, cache: Array<U32>, previous: U32, output: Array<U32>) -> Result<&1, &1, Error, State>:
+def rgb(data: +List<U32>, cache: Array<U32>, previous: U32, output: Array<U32>) -> Result<&1, &1, C.Error, State>:
   match data:
     case Con{r, Con{g, Con{b, rest}}}: parsed(rest, cache, rgba(r, g, b, previous), 0, output)
-    case _: Fail{Truncated{}}
+    case _: Fail{C.Truncated{}}
 
-def rgba_chunk(data: +List<U32>, cache: Array<U32>, output: Array<U32>) -> Result<&1, &1, Error, State>:
+def rgba_chunk(data: +List<U32>, cache: Array<U32>, output: Array<U32>) -> Result<&1, &1, C.Error, State>:
   match data:
     case Con{r, Con{g, Con{b, Con{a, rest}}}}: parsed(rest, cache, rgba(r, g, b, a), 0, output)
-    case _: Fail{Truncated{}}
+    case _: Fail{C.Truncated{}}
 
-def indexed(data: +List<U32>, output: Array<U32>, result: Array<U32> & U32) -> Result<&1, &1, Error, State>:
+def indexed(data: +List<U32>, output: Array<U32>, result: Array<U32> & U32) -> Result<&1, &1, C.Error, State>:
   (cache, pixel) = result
   parsed(data, cache, pixel, 0, output)
 
@@ -87,80 +65,80 @@ def diff(+byte: U32, +pixel: U32) -> U32:
     (((pixel >> 16n) .&. 255) + ((byte >> 2n) .&. 3) - 2 : U32),
     (((pixel >> 8n) .&. 255) + (byte .&. 3) - 2 : U32), pixel)
 
-def luma(data: +List<U32>, cache: Array<U32>, +pixel: U32, +green: U32, output: Array<U32>) -> Result<&1, &1, Error, State>:
+def luma(data: +List<U32>, cache: Array<U32>, +pixel: U32, +green: U32, output: Array<U32>) -> Result<&1, &1, C.Error, State>:
   match data:
     case Con{+byte, rest}:
       parsed(rest, cache, rgba(((pixel >> 24n) + green - 8 + (byte >> 4n) : U32),
         (((pixel >> 16n) .&. 255) + green : U32),
         (((pixel >> 8n) .&. 255) + green - 8 + (byte .&. 15) : U32), pixel), 0, output)
-    case _: Fail{Truncated{}}
+    case _: Fail{C.Truncated{}}
 
-def compact(tag: U32, +byte: U32, data: +List<U32>, cache: Array<U32>, pixel: U32, output: Array<U32>) -> Result<&1, &1, Error, State>:
+def compact(tag: U32, +byte: U32, data: +List<U32>, cache: Array<U32>, pixel: U32, output: Array<U32>) -> Result<&1, &1, C.Error, State>:
   match tag:
     case 0: indexed(data, output, Array.get(U32, cache, (byte .&. 63 : U32)))
     case 1: parsed(data, cache, diff(byte, pixel), 0, output)
     case 2: luma(data, cache, pixel, ((byte .&. 63) - 32 : U32), output)
     case _: parsed(data, cache, pixel, (byte .&. 63 : U32), output)
 
-def opcode(byte: U32, data: +List<U32>, cache: Array<U32>, pixel: U32, output: Array<U32>) -> Result<&1, &1, Error, State>:
+def opcode(byte: U32, data: +List<U32>, cache: Array<U32>, pixel: U32, output: Array<U32>) -> Result<&1, &1, C.Error, State>:
   match byte:
     case 254: rgb(data, cache, pixel, output)
     case 255: rgba_chunk(data, cache, output)
     case +other: compact((other >> 6n : U32), other, data, cache, pixel, output)
 
-def next(repeat: U32, data: +List<U32>, cache: Array<U32>, pixel: U32, output: Array<U32>) -> Result<&1, &1, Error, State>:
+def next(repeat: U32, data: +List<U32>, cache: Array<U32>, pixel: U32, output: Array<U32>) -> Result<&1, &1, C.Error, State>:
   match repeat:
     case 0:
       match data:
-        case Nil{}: Fail{Truncated{}}
+        case Nil{}: Fail{C.Truncated{}}
         case Con{byte, rest}: opcode(byte, rest, cache, pixel, output)
     case n: Done{State{data, cache, pixel, (n - 1 : U32), output}}
 
-def write(i: U32, channels: U32, result: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, State>:
+def write(i: U32, channels: U32, result: Result<&1, &1, C.Error, State>) -> Result<&1, &1, C.Error, State>:
   match result:
     case Fail{error}: Fail{error}
     case Done{State{data, cache, +pixel, repeat, output}}:
       Done{State{data, cache, pixel, repeat, Array.set(U32, output, i,
         Bool.pick(U32, U32.is_eq(channels, 3), (pixel .|. 255 : U32), pixel))}}
 
-def finish(state: State) -> Result<&1, &1, Error, Array<U32>>:
+def finish(state: State) -> Result<&1, &1, C.Error, Array<U32>>:
   match state:
     case State{Con{0, Con{0, Con{0, Con{0, Con{0, Con{0, Con{0, Con{1, Nil{}}}}}}}}}, _, _, 0, output}: Done{output}
-    case _: Fail{BadStream{}}
+    case _: Fail{C.BadStream{}}
 
-def loop(n: Nat, +i: U32, +channels: U32, state: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, Array<U32>>:
+def loop(n: Nat, +i: U32, +channels: U32, state: Result<&1, &1, C.Error, State>) -> Result<&1, &1, C.Error, Array<U32>>:
   match n state:
     case _ Fail{error}: Fail{error}
     case 0n Done{value}: finish(value)
     case 1n+k Done{State{data, cache, pixel, repeat, output}}:
       loop(k, (i + 1 : U32), channels, write(i, channels, next(repeat, data, cache, pixel, output)))
 
-def image(width: U32, height: U32, channels: U32, result: Result<&1, &1, Error, Array<U32>>) -> Result<&1, &1, Error, Image>:
+def image(width: U32, height: U32, channels: U32, result: Result<&1, &1, C.Error, Array<U32>>) -> Result<&1, &1, C.Error, C.Image>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{pixels}: Done{Image{width, height, channels, pixels}}
+    case Done{pixels}: Done{C.Image{width, height, channels, pixels}}
 
-def sized(valid: Bool, +width: U32, +height: U32, +channels: U32, data: +List<U32>) -> Result<&1, &1, Error, Image>:
+def sized(valid: Bool, +width: U32, +height: U32, +channels: U32, data: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
   match valid:
-    case False{}: Fail{BadSize{}}
+    case False{}: Fail{C.BadSize{}}
     case True{}:
       +count = (width * height : U32)
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
       image(width, height, channels, loop(U32.to_nat(count), 0, channels, Done{State{data, Array.new(U32, 6n, 0), 255, 0, Array.new(U32, depth, 0)}}))
 
-def start(header: Result<&2, &2, Error, Header>) -> Result<&1, &1, Error, Image>:
+def start(header: Result<&2, &2, C.Error, Header>) -> Result<&1, &1, C.Error, C.Image>:
   match header:
     case Fail{error}: Fail{error}
     case Done{Header{+w, +h, channels, data}}:
       sized(((w >= 1) && (h >= 1) && (w <= 4096) && (h <= 4096) : U32), w, h, channels, data)
 
-def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, Error, Image>:
+def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
   match valid:
-    case False{}: Fail{BadByte{}}
-    case True{}: start(header.magic(word(bytes)))
+    case False{}: Fail{C.BadByte{}}
+    case True{}: start(header.magic(C.word(bytes)))
 
-def decode(+bytes: +List<U32>) -> Result<&1, &1, Error, Image>:
-  checked(valid_bytes(bytes, True{}), bytes)
+def decode(+bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+  checked(C.valid_bytes(bytes, True{}), bytes)
 
 type Encoder is Type:
   Encoder{cache: Array<U32>, previous: U32, run: U32, reverse: +List<U32>}

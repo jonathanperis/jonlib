@@ -341,36 +341,6 @@ def Laws.tga_row_zero(channels, colors, bytes):
     case Nil{}: {==}
     case Con{_, _}: {==}
 
-def Laws.formatted_qoi_rgb_format():
-  {==}
-
-def Laws.formatted_qoi_rgba_format():
-  {==}
-
-def Laws.formatted_qoi_rgb_word():
-  {==}
-
-def Laws.formatted_qoi_rgba_word():
-  {==}
-
-def Laws.formatted_qoi_pixels_zero(index, channels, pixels):
-  {==}
-
-def Laws.formatted_pnm_gray_format():
-  {==}
-
-def Laws.formatted_pnm_rgb_format():
-  {==}
-
-def Laws.formatted_pnm_gray_word():
-  {==}
-
-def Laws.formatted_pnm_rgb_word():
-  {==}
-
-def Laws.formatted_pnm_pixels_zero(index, channels, pixels):
-  {==}
-
 def Laws.raster_file_limit():
   {==}
 
@@ -443,36 +413,6 @@ def Laws.tga_native_rgb24():
 def Laws.tga_native_rgba32():
   {==}
 
-def Laws.formatted_tga_decode_format1():
-  {==}
-
-def Laws.formatted_tga_decode_format2():
-  {==}
-
-def Laws.formatted_tga_decode_format4():
-  {==}
-
-def Laws.formatted_tga_decode_format7():
-  {==}
-
-def Laws.formatted_tga_decode_gray():
-  {==}
-
-def Laws.formatted_tga_decode_grayalpha():
-  {==}
-
-def Laws.formatted_tga_decode_rgb():
-  {==}
-
-def Laws.formatted_tga_decode_rgba():
-  {==}
-
-def Laws.formatted_tga_decode_zero_alpha():
-  {==}
-
-def Laws.formatted_tga_decode_pixels_zero(index, channels, pixels):
-  {==}
-
 def Laws.bmp_native_absent_alpha():
   {==}
 
@@ -480,24 +420,6 @@ def Laws.bmp_native_alpha_field(mask, shift, multiplier, shrink):
   {==}
 
 def Laws.bmp_native_layout_alpha(red, green, blue, alpha):
-  {==}
-
-def Laws.formatted_bmp_decode_rgb_format():
-  {==}
-
-def Laws.formatted_bmp_decode_rgba_format():
-  {==}
-
-def Laws.formatted_bmp_decode_rgb_word():
-  {==}
-
-def Laws.formatted_bmp_decode_rgba_word():
-  {==}
-
-def Laws.formatted_bmp_decode_zero_alpha():
-  {==}
-
-def Laws.formatted_bmp_decode_pixels_zero(index, channels, pixels):
   {==}
 
 def Laws.png_native_gray():
@@ -527,36 +449,6 @@ def Laws.png_native_rgba():
 def Laws.png_palette_trns_sticky_plte(cfg, key, compressed, seen, raw, bytes):
   {==}
 
-def Laws.formatted_png_decode_format1():
-  {==}
-
-def Laws.formatted_png_decode_format2():
-  {==}
-
-def Laws.formatted_png_decode_format4():
-  {==}
-
-def Laws.formatted_png_decode_format7():
-  {==}
-
-def Laws.formatted_png_decode_gray():
-  {==}
-
-def Laws.formatted_png_decode_grayalpha():
-  {==}
-
-def Laws.formatted_png_decode_rgb():
-  {==}
-
-def Laws.formatted_png_decode_rgba():
-  {==}
-
-def Laws.formatted_png_decode_zero_alpha():
-  {==}
-
-def Laws.formatted_png_decode_pixels_zero(index, channels, pixels):
-  {==}
-
 def Laws.pic_native_mask_empty(mask):
   {==}
 
@@ -578,20 +470,38 @@ def Laws.pic_native_low_bits():
 def Laws.pic_native_alpha_low_bits():
   {==}
 
-def Laws.formatted_pic_decode_rgb_format():
+def Laws.formatted_native_format_1():
   {==}
 
-def Laws.formatted_pic_decode_rgba_format():
+def Laws.formatted_native_format_2():
   {==}
 
-def Laws.formatted_pic_decode_rgb_word():
+def Laws.formatted_native_format_3():
   {==}
 
-def Laws.formatted_pic_decode_rgba_word():
+def Laws.formatted_native_format_4():
   {==}
 
-def Laws.formatted_pic_decode_zero_alpha():
+def Laws.formatted_native_word_1_2155905279():
   {==}
 
-def Laws.formatted_pic_decode_pixels_zero(index, channels, pixels):
+def Laws.formatted_native_word_2_2172748032():
+  {==}
+
+def Laws.formatted_native_word_2_305419896():
+  {==}
+
+def Laws.formatted_native_word_3_305419896():
+  {==}
+
+def Laws.formatted_native_word_3_305420031():
+  {==}
+
+def Laws.formatted_native_word_4_2172748032():
+  {==}
+
+def Laws.formatted_native_word_4_305419896():
+  {==}
+
+def Laws.formatted_native_pixels_zero(index, channels, pixels):
   {==}

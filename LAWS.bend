@@ -15,6 +15,7 @@ import ./src/qoi.bend as Qoi
 import ./src/png.bend as Png
 import ./src/pic.bend as Pic
 import ./src/formats.bend as Formats
+import ./src/codec.bend as Codec
 
 law clear_dimensions:
   for +width: U32
@@ -176,9 +177,6 @@ law checked_decode_reject:
   for low: U32
   {O.checked_decode.valid(False{}, high, low) == None{} : Maybe<Resize.Double>}
 
-
-
-
 law checked_multiply_negative_zero:
   {O.checked_multiply(2147483648, 0, 1072693248, 0) == Some{F.Words{2147483648, 0}} : Maybe<F.Words>}
 
@@ -190,10 +188,6 @@ law checked_divide_negative_zero:
 
 law checked_divide_zero_denominator:
   {O.checked_divide(0, 0, 2147483648, 0) == None{} : Maybe<F.Words>}
-
-
-
-
 
 law words_increment_negative_carry:
   {O.increment(3220176896, 4294967295) == F.Words{3220176897, 0} : F.Words}
@@ -461,44 +455,6 @@ law tga_row_zero:
   for bytes: +List<U32>
   {Tga.encode.row(0n, channels, (colors, bytes)) == bytes : +List<U32>}
 
-# Scoped QOI metadata/packing laws; not a universal decoding theorem.
-law formatted_qoi_rgb_format:
-  {J.Image.Formatted.qoi.format(3) == 4 : U32}
-
-law formatted_qoi_rgba_format:
-  {J.Image.Formatted.qoi.format(4) == 7 : U32}
-
-law formatted_qoi_rgb_word:
-  {J.Image.Formatted.qoi.word(3, 305419896) == 5649426 : U32}
-
-law formatted_qoi_rgba_word:
-  {J.Image.Formatted.qoi.word(4, 305419896) == 2018915346 : U32}
-
-law formatted_qoi_pixels_zero:
-  for index: U32
-  for channels: U32
-  for pixels: Array<U32>
-  {J.Image.Formatted.qoi.pixels(0n, index, channels, pixels) == pixels : Array<U32>}
-
-# Scoped PNM metadata/packing structural facts, not a universal codec proof.
-law formatted_pnm_gray_format:
-  {J.Image.Formatted.pnm.format(1) == 1 : U32}
-
-law formatted_pnm_rgb_format:
-  {J.Image.Formatted.pnm.format(3) == 4 : U32}
-
-law formatted_pnm_gray_word:
-  {J.Image.Formatted.pnm.word(1, 2155905279) == 128 : U32}
-
-law formatted_pnm_rgb_word:
-  {J.Image.Formatted.pnm.word(3, 305420031) == 5649426 : U32}
-
-law formatted_pnm_pixels_zero:
-  for index: U32
-  for channels: U32
-  for pixels: Array<U32>
-  {J.Image.Formatted.pnm.pixels(0n, index, channels, pixels) == pixels : Array<U32>}
-
 # Pure file-boundary facts; these do not prove host IO, allocation or closure.
 law raster_file_limit:
   {J.Image.file.limit(J.RasterFile{}) == 1048576 : U32}
@@ -580,39 +536,6 @@ law tga_native_rgb24:
 law tga_native_rgba32:
   {Tga.native.channels(32, False{}) == 4 : U32}
 
-law formatted_tga_decode_format1:
-  {J.Image.Formatted.tga.format(1) == 1 : U32}
-
-law formatted_tga_decode_format2:
-  {J.Image.Formatted.tga.format(2) == 2 : U32}
-
-law formatted_tga_decode_format4:
-  {J.Image.Formatted.tga.format(3) == 4 : U32}
-
-law formatted_tga_decode_format7:
-  {J.Image.Formatted.tga.format(4) == 7 : U32}
-
-law formatted_tga_decode_gray:
-  {J.Image.Formatted.tga.word(1, 2155905279) == 128 : U32}
-
-law formatted_tga_decode_grayalpha:
-  {J.Image.Formatted.tga.word(2, 305419896) == 30738 : U32}
-
-law formatted_tga_decode_rgb:
-  {J.Image.Formatted.tga.word(3, 305419896) == 5649426 : U32}
-
-law formatted_tga_decode_rgba:
-  {J.Image.Formatted.tga.word(4, 305419896) == 2018915346 : U32}
-
-law formatted_tga_decode_zero_alpha:
-  {J.Image.Formatted.tga.word(2, 2172748032) == 129 : U32}
-
-law formatted_tga_decode_pixels_zero:
-  for index: U32
-  for channels: U32
-  for pixels: Array<U32>
-  {J.Image.Formatted.tga.pixels(0n, index, channels, pixels) == pixels : Array<U32>}
-
 # Scoped BMP effective-layout metadata and packing, not a universal codec proof.
 law bmp_native_absent_alpha:
   {Bmp.native.alpha(Bmp.ChannelValue{255}) == 3 : U32}
@@ -630,27 +553,6 @@ law bmp_native_layout_alpha:
   for blue: Bmp.Channel
   for +alpha: Bmp.Channel
   {Bmp.native.channels(Bmp.Layout{red, green, blue, alpha}) == Bmp.native.alpha(alpha) : U32}
-
-law formatted_bmp_decode_rgb_format:
-  {J.Image.Formatted.bmp.format(3) == 4 : U32}
-
-law formatted_bmp_decode_rgba_format:
-  {J.Image.Formatted.bmp.format(4) == 7 : U32}
-
-law formatted_bmp_decode_rgb_word:
-  {J.Image.Formatted.bmp.word(3, 305419896) == 5649426 : U32}
-
-law formatted_bmp_decode_rgba_word:
-  {J.Image.Formatted.bmp.word(4, 305419896) == 2018915346 : U32}
-
-law formatted_bmp_decode_zero_alpha:
-  {J.Image.Formatted.bmp.word(4, 2172748032) == 8487297 : U32}
-
-law formatted_bmp_decode_pixels_zero:
-  for index: U32
-  for channels: U32
-  for pixels: Array<U32>
-  {J.Image.Formatted.bmp.pixels(0n, index, channels, pixels) == pixels : Array<U32>}
 
 # Scoped PNG structural metadata/packing laws, not a universal decoder proof.
 law png_native_gray:
@@ -688,40 +590,7 @@ law png_palette_trns_sticky_plte:
   for +bytes: +List<U32>
   {Png.more.plte(True{}, cfg, key, True{}, compressed, seen, raw, [1, 2, 3], bytes)
     == Done{Png.More{bytes, Png.Parts{Some{cfg}, [16909311], key, True{}, compressed, seen, raw}}}
-    : Result<&2, &2, Png.Error, Png.Parsing>}
-
-law formatted_png_decode_format1:
-  {J.Image.Formatted.png.format(1) == 1 : U32}
-
-law formatted_png_decode_format2:
-  {J.Image.Formatted.png.format(2) == 2 : U32}
-
-law formatted_png_decode_format4:
-  {J.Image.Formatted.png.format(3) == 4 : U32}
-
-law formatted_png_decode_format7:
-  {J.Image.Formatted.png.format(4) == 7 : U32}
-
-law formatted_png_decode_gray:
-  {J.Image.Formatted.png.word(1, 2155905279) == 128 : U32}
-
-law formatted_png_decode_grayalpha:
-  {J.Image.Formatted.png.word(2, 305419896) == 30738 : U32}
-
-law formatted_png_decode_rgb:
-  {J.Image.Formatted.png.word(3, 305419896) == 5649426 : U32}
-
-law formatted_png_decode_rgba:
-  {J.Image.Formatted.png.word(4, 305419896) == 2018915346 : U32}
-
-law formatted_png_decode_zero_alpha:
-  {J.Image.Formatted.png.word(2, 2172748032) == 129 : U32}
-
-law formatted_png_decode_pixels_zero:
-  for index: U32
-  for channels: U32
-  for pixels: Array<U32>
-  {J.Image.Formatted.png.pixels(0n, index, channels, pixels) == pixels : Array<U32>}
+    : Result<&2, &2, Codec.Error, Png.Parsing>}
 
 # Scoped PIC packet-union and integer packing laws, not a decoder proof.
 law pic_native_mask_empty:
@@ -746,23 +615,43 @@ law pic_native_low_bits:
 law pic_native_alpha_low_bits:
   {Pic.native.channels([Pic.Packet{2, 31, 0}, Pic.Packet{0, 239, 0}]) == 4 : U32}
 
-law formatted_pic_decode_rgb_format:
-  {J.Image.Formatted.pic.format(3) == 4 : U32}
+# Native formatted packing shared by every codec decoder (scoped facts, not a
+# universal decoding theorem): channel count -> raylib format, RGBA word -> native word.
+law formatted_native_format_1:
+  {J.Image.Formatted.native.format(1) == 1 : U32}
 
-law formatted_pic_decode_rgba_format:
-  {J.Image.Formatted.pic.format(4) == 7 : U32}
+law formatted_native_format_2:
+  {J.Image.Formatted.native.format(2) == 2 : U32}
 
-law formatted_pic_decode_rgb_word:
-  {J.Image.Formatted.pic.word(3, 305419896) == 5649426 : U32}
+law formatted_native_format_3:
+  {J.Image.Formatted.native.format(3) == 4 : U32}
 
-law formatted_pic_decode_rgba_word:
-  {J.Image.Formatted.pic.word(4, 305419896) == 2018915346 : U32}
+law formatted_native_format_4:
+  {J.Image.Formatted.native.format(4) == 7 : U32}
 
-law formatted_pic_decode_zero_alpha:
-  {J.Image.Formatted.pic.word(4, 2172748032) == 8487297 : U32}
+law formatted_native_word_1_2155905279:
+  {J.Image.Formatted.native.word(1, 2155905279) == 128 : U32}
 
-law formatted_pic_decode_pixels_zero:
+law formatted_native_word_2_2172748032:
+  {J.Image.Formatted.native.word(2, 2172748032) == 129 : U32}
+
+law formatted_native_word_2_305419896:
+  {J.Image.Formatted.native.word(2, 305419896) == 30738 : U32}
+
+law formatted_native_word_3_305419896:
+  {J.Image.Formatted.native.word(3, 305419896) == 5649426 : U32}
+
+law formatted_native_word_3_305420031:
+  {J.Image.Formatted.native.word(3, 305420031) == 5649426 : U32}
+
+law formatted_native_word_4_2172748032:
+  {J.Image.Formatted.native.word(4, 2172748032) == 8487297 : U32}
+
+law formatted_native_word_4_305419896:
+  {J.Image.Formatted.native.word(4, 305419896) == 2018915346 : U32}
+
+law formatted_native_pixels_zero:
   for index: U32
   for channels: U32
   for pixels: Array<U32>
-  {J.Image.Formatted.pic.pixels(0n, index, channels, pixels) == pixels : Array<U32>}
+  {J.Image.Formatted.native.pixels(0n, index, channels, pixels) == pixels : Array<U32>}

@@ -5,6 +5,7 @@
 # Altered Bend implementations; see THIRD_PARTY_NOTICES.md and LICENSES/raylib.txt.
 import Base
 import ./jonmath.bend as M
+import ./src/codec.bend as Codec
 import ./src/resample.bend as Resample
 import ./src/qoi.bend as Qoi
 import ./src/gradients.bend as Gradients
@@ -59,7 +60,7 @@ def Base64.decode(text: String) -> Maybe<&2, +List<U32>>:
 def Checksum.crc32.checked(size: Maybe<&2, U32>, bytes: +List<U32>) -> Maybe<&2, U32>:
   match size:
     case None{}: None{}
-    case Some{_}: Some{(PngEncode.crc(bytes, 4294967295) .^. 4294967295 : U32)}
+    case Some{_}: Some{(Checksums.crc(bytes, 4294967295) .^. 4294967295 : U32)}
 
 def Checksum.crc32(+bytes: +List<U32>) -> Maybe<&2, U32>:
   Checksum.crc32.checked(Checksums.input_size(bytes, 0, True{}), bytes)
@@ -713,7 +714,7 @@ def Pixel.read.valid(valid: Bool, format: U32, bytes: +List<U32>) -> Result<&2, 
 def Pixel.read.format(valid: Bool, format: U32, +bytes: +List<U32>) -> Result<&2, &2, Pixel.Error, U32>:
   match valid:
     case False{}: Fail{UnsupportedPixelFormat{}}
-    case True{}: Pixel.read.valid(Qoi.valid_bytes(bytes, True{}), format, bytes)
+    case True{}: Pixel.read.valid(Codec.valid_bytes(bytes, True{}), format, bytes)
 
 def Pixel.get_color(bytes: +List<U32>, +format: U32) -> Result<&2, &2, Pixel.Error, U32>:
   Pixel.read.format(((format >= 1) && (format <= 7) : U32), format, bytes)
@@ -759,7 +760,7 @@ def Pixel.write.bytes(valid: Bool, +format: U32, color: U32, +bytes: +List<U32>)
 def Pixel.write.format(valid: Bool, format: U32, color: U32, +bytes: +List<U32>) -> Result<&2, &2, Pixel.Error, +List<U32>>:
   match valid:
     case False{}: Fail{UnsupportedPixelFormat{}}
-    case True{}: Pixel.write.bytes(Qoi.valid_bytes(bytes, True{}), format, color, bytes)
+    case True{}: Pixel.write.bytes(Codec.valid_bytes(bytes, True{}), format, color, bytes)
 
 def Pixel.set_color(bytes: +List<U32>, color: U32, +format: U32) -> Result<&2, &2, Pixel.Error, +List<U32>>:
   Pixel.write.format(((format >= 1) && (format <= 7) : U32), format, color, bytes)
@@ -784,92 +785,46 @@ type Image.LoadError is Type:
   ImageFileError{code: U32, message: String}
   ImageDecodeError{error: Image.DecodeError}
 
-def Surface.qoi.error(error: Qoi.Error) -> Image.DecodeError:
+def Image.codec.error(error: Codec.Error) -> Image.DecodeError:
   match error:
-    case Qoi.BadHeader{}: InvalidImageHeader{}
-    case Qoi.BadByte{}: InvalidImageByte{}
-    case Qoi.BadSize{}: UnsupportedImageSize{}
-    case Qoi.Truncated{}: TruncatedImageData{}
-    case Qoi.BadStream{}: InvalidImageStream{}
+    case Codec.BadHeader{}: InvalidImageHeader{}
+    case Codec.BadByte{}: InvalidImageByte{}
+    case Codec.BadSize{}: UnsupportedImageSize{}
+    case Codec.Truncated{}: TruncatedImageData{}
+    case Codec.BadStream{}: InvalidImageStream{}
 
-def Surface.qoi.result(result: Result<&1, &1, Qoi.Error, Qoi.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
+def Surface.codec.result(result: Result<&1, &1, Codec.Error, Codec.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
   match result:
-    case Fail{error}: Fail{Surface.qoi.error(error)}
-    case Done{Qoi.Image{width, height, _, pixels}}: Done{Surface{width, height, pixels}}
+    case Fail{error}: Fail{Image.codec.error(error)}
+    case Done{Codec.Image{width, height, _, pixels}}: Done{Surface{width, height, pixels}}
 
 def Surface.decode_qoi(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
-  Surface.qoi.result(Qoi.decode(bytes))
+  Surface.codec.result(Qoi.decode(bytes))
 
 def Surface.to_qoi(surface: Surface) -> +List<U32>:
   Surface{w, h, pixels} = surface
   Qoi.encode(w, h, pixels)
 
-def Surface.bmp.error(error: Bmp.Error) -> Image.DecodeError:
-  match error:
-    case Bmp.BadHeader{}: InvalidImageHeader{}
-    case Bmp.BadByte{}: InvalidImageByte{}
-    case Bmp.BadSize{}: UnsupportedImageSize{}
-    case Bmp.Truncated{}: TruncatedImageData{}
-    case Bmp.BadStream{}: InvalidImageStream{}
-
-def Surface.bmp.result(result: Result<&1, &1, Bmp.Error, Bmp.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
-  match result:
-    case Fail{error}: Fail{Surface.bmp.error(error)}
-    case Done{Bmp.Image{w, h, _, pixels}}: Done{Surface{w, h, pixels}}
-
 def Surface.decode_bmp(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
-  Surface.bmp.result(Bmp.decode(bytes))
+  Surface.codec.result(Bmp.decode(bytes))
 
 def Surface.to_bmp(surface: Surface) -> +List<U32>:
   Surface{w, h, pixels} = surface
   Bmp.encode(w, h, pixels)
 
-def Surface.tga.error(error: Tga.Error) -> Image.DecodeError:
-  match error:
-    case Tga.BadHeader{}: InvalidImageHeader{}
-    case Tga.BadByte{}: InvalidImageByte{}
-    case Tga.BadSize{}: UnsupportedImageSize{}
-    case Tga.Truncated{}: TruncatedImageData{}
-    case Tga.BadStream{}: InvalidImageStream{}
-
-def Surface.tga.result(result: Result<&1, &1, Tga.Error, Tga.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
-  match result:
-    case Fail{error}: Fail{Surface.tga.error(error)}
-    case Done{Tga.Image{w, h, _, pixels}}: Done{Surface{w, h, pixels}}
-
 def Surface.decode_tga(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
-  Surface.tga.result(Tga.decode(bytes))
+  Surface.codec.result(Tga.decode(bytes))
 
 def Surface.to_tga(surface: Surface) -> +List<U32>:
   Surface{w, h, pixels} = surface
   Tga.encode(w, h, pixels)
 
-def Surface.pnm.error(error: Pnm.Error) -> Image.DecodeError:
-  match error:
-    case Pnm.BadHeader{}: InvalidImageHeader{}
-    case Pnm.BadByte{}: InvalidImageByte{}
-    case Pnm.BadSize{}: UnsupportedImageSize{}
-    case Pnm.Truncated{}: TruncatedImageData{}
-
-def Surface.pnm.result(result: Result<&1, &1, Pnm.Error, Pnm.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
-  match result:
-    case Fail{error}: Fail{Surface.pnm.error(error)}
-    case Done{Pnm.Image{w, h, _, pixels}}: Done{Surface{w, h, pixels}}
-
 def Surface.decode_pnm(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
-  Surface.pnm.result(Pnm.decode(bytes))
+  Surface.codec.result(Pnm.decode(bytes))
 
-def Surface.psd.error(error: Psd.Error) -> Image.DecodeError:
-  match error:
-    case Psd.BadHeader{}: InvalidImageHeader{}
-    case Psd.BadByte{}: InvalidImageByte{}
-    case Psd.BadSize{}: UnsupportedImageSize{}
-    case Psd.Truncated{}: TruncatedImageData{}
-    case Psd.BadStream{}: InvalidImageStream{}
-
-def Surface.psd.result(result: Result<&1, &1, Psd.Error, Psd.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
+def Surface.psd.result(result: Result<&1, &1, Codec.Error, Psd.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
   match result:
-    case Fail{error}: Fail{Surface.psd.error(error)}
+    case Fail{error}: Fail{Image.codec.error(error)}
     case Done{Psd.Image{w, h, pixels}}: Done{Surface{w, h, pixels}}
 
 def Surface.decode_psd_for(reference: Image.Decode.Reference, bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
@@ -878,33 +833,12 @@ def Surface.decode_psd_for(reference: Image.Decode.Reference, bytes: +List<U32>)
 def Surface.decode_psd(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
   Surface.decode_psd_for(UncontractedDecode{}, bytes)
 
-def Surface.pic.error(error: Pic.Error) -> Image.DecodeError:
-  match error:
-    case Pic.BadHeader{}: InvalidImageHeader{}
-    case Pic.BadByte{}: InvalidImageByte{}
-    case Pic.BadSize{}: UnsupportedImageSize{}
-    case Pic.Truncated{}: TruncatedImageData{}
-    case Pic.BadStream{}: InvalidImageStream{}
-
-def Surface.pic.result(result: Result<&1, &1, Pic.Error, Pic.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
-  match result:
-    case Fail{error}: Fail{Surface.pic.error(error)}
-    case Done{Pic.Image{w, h, _, pixels}}: Done{Surface{w, h, pixels}}
-
 def Surface.decode_pic(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
-  Surface.pic.result(Pic.decode(bytes))
+  Surface.codec.result(Pic.decode(bytes))
 
-def Surface.gif.error(error: Gif.Error) -> Image.DecodeError:
-  match error:
-    case Gif.BadHeader{}: InvalidImageHeader{}
-    case Gif.BadByte{}: InvalidImageByte{}
-    case Gif.BadSize{}: UnsupportedImageSize{}
-    case Gif.Truncated{}: TruncatedImageData{}
-    case Gif.BadStream{}: InvalidImageStream{}
-
-def Surface.gif.result(result: Result<&1, &1, Gif.Error, Gif.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
+def Surface.gif.result(result: Result<&1, &1, Codec.Error, Gif.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
   match result:
-    case Fail{error}: Fail{Surface.gif.error(error)}
+    case Fail{error}: Fail{Image.codec.error(error)}
     case Done{Gif.Image{w, h, pixels}}: Done{Surface{w, h, pixels}}
 
 def Surface.decode_gif(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
@@ -918,9 +852,9 @@ def Image.Animation.convert(frames: List<Gif.Image>, values: List<Surface>) -> L
     case Nil{}: List.reverse(&1, Surface, values)
     case Con{Gif.Image{w, h, pixels}, rest}: Image.Animation.convert(rest, Con{Surface{w, h, pixels}, values})
 
-def Image.Animation.result(result: Result<&1, &1, Gif.Error, GifAnimation.Animation>) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
+def Image.Animation.result(result: Result<&1, &1, Codec.Error, GifAnimation.Animation>) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
   match result:
-    case Fail{error}: Fail{Surface.gif.error(error)}
+    case Fail{error}: Fail{Image.codec.error(error)}
     case Done{GifAnimation.Animation{width, height, count, frames}}: Done{Animation{width, height, count, Image.Animation.convert(frames, Nil{})}}
 
 def Image.Animation.decode_gif(bytes: +List<U32>, maximum_frames: U32, maximum_pixels: U32) -> Result<&1, &1, Image.DecodeError, Image.Animation>:
@@ -936,17 +870,9 @@ def Image.Animation.unload(animation: Image.Animation) -> Unit:
 type Image.FloatRGB is Type:
   FloatRGB{width: U32, height: U32, pixels: Array<M.Vector3>}
 
-def Image.FloatRGB.hdr.error(error: Hdr.Error) -> Image.DecodeError:
-  match error:
-    case Hdr.BadHeader{}: InvalidImageHeader{}
-    case Hdr.BadByte{}: InvalidImageByte{}
-    case Hdr.BadSize{}: UnsupportedImageSize{}
-    case Hdr.Truncated{}: TruncatedImageData{}
-    case Hdr.BadStream{}: InvalidImageStream{}
-
-def Image.FloatRGB.hdr.result(result: Result<&1, &1, Hdr.Error, Hdr.Image>) -> Result<&1, &1, Image.DecodeError, Image.FloatRGB>:
+def Image.FloatRGB.hdr.result(result: Result<&1, &1, Codec.Error, Hdr.Image>) -> Result<&1, &1, Image.DecodeError, Image.FloatRGB>:
   match result:
-    case Fail{error}: Fail{Image.FloatRGB.hdr.error(error)}
+    case Fail{error}: Fail{Image.codec.error(error)}
     case Done{Hdr.Image{w, h, pixels}}: Done{FloatRGB{w, h, pixels}}
 
 def Image.FloatRGB.decode_hdr(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.FloatRGB>:
@@ -959,20 +885,8 @@ def Image.FloatRGB.entries(image: Image.FloatRGB) -> U32 & U32 & List<M.Vector3>
 def Image.FloatRGB.unload(image: Image.FloatRGB) -> Unit:
   Unit{}
 
-def Surface.png.error(error: Png.Error) -> Image.DecodeError:
-  match error:
-    case Png.BadHeader{}: InvalidImageHeader{}
-    case Png.BadByte{}: InvalidImageByte{}
-    case Png.BadSize{}: UnsupportedImageSize{}
-    case Png.BadStream{}: InvalidImageStream{}
-
-def Surface.png.result(result: Result<&1, &1, Png.Error, Png.Image>) -> Result<&1, &1, Image.DecodeError, Surface>:
-  match result:
-    case Fail{error}: Fail{Surface.png.error(error)}
-    case Done{Png.Image{w, h, _, pixels}}: Done{Surface{w, h, pixels}}
-
 def Surface.decode_png(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Surface>:
-  Surface.png.result(Png.decode(bytes))
+  Surface.codec.result(Png.decode(bytes))
 
 def Surface.to_png(surface: Surface) -> +List<U32>:
   Surface{width, height, pixels} = surface
@@ -1121,192 +1035,71 @@ def Image.FloatRGB.to_bytes(image: Image.FloatRGB) -> Result<&1, &1, Image.Float
 type Image.Formatted is Type:
   FormattedImage{width: U32, height: U32, format: U32, pixels: Array<U32>}
 
-# QOI channel metadata selects native storage; decoding/cache state stays RGBA.
-# Pack with integers rather than an ImageFormat floating-point round trip.
-def Image.Formatted.qoi.format(channels: U32) -> U32:
-  Bool.pick(U32, U32.is_eq(channels, 3), 4, 7)
+# Codec decoders return canonical RGBA words plus their native output channel
+# count (1 gray, 2 gray+alpha, 3 RGB, 4 RGBA). Pack them into raylib's native
+# storage with integers: a floating ImageFormat round trip could alter samples.
+def Image.Formatted.native.format(channels: U32) -> U32:
+  match channels:
+    case 1: 1
+    case 2: 2
+    case 3: 4
+    case _: 7
 
-def Image.Formatted.qoi.word(channels: U32, pixel: U32) -> U32:
-  +word = Formats.swap(pixel)
-  Bool.pick(U32, U32.is_eq(channels, 3), (word .&. 16777215 : U32), word)
+def Image.Formatted.native.word(channels: U32, +pixel: U32) -> U32:
+  match channels:
+    case 1: (pixel >> 24n : U32)
+    case 2: ((pixel >> 24n) .|. ((pixel .&. 255) << 8n) : U32)
+    case 3: (Formats.swap(pixel) .&. 16777215 : U32)
+    case _: Formats.swap(pixel)
 
-def Image.Formatted.qoi.write(index: U32, channels: U32, read: Array<U32> & U32) -> Array<U32>:
+def Image.Formatted.native.write(index: U32, channels: U32, read: Array<U32> & U32) -> Array<U32>:
   (pixels, pixel) = read
-  Array.set(U32, pixels, index, Image.Formatted.qoi.word(channels, pixel))
+  Array.set(U32, pixels, index, Image.Formatted.native.word(channels, pixel))
 
-def Image.Formatted.qoi.pixels(n: Nat, +index: U32, +channels: U32, pixels: Array<U32>) -> Array<U32>:
+def Image.Formatted.native.pixels(n: Nat, +index: U32, +channels: U32, pixels: Array<U32>) -> Array<U32>:
   match n:
     case 0n: pixels
     case 1n+rest:
-      Image.Formatted.qoi.pixels(rest, (index + 1 : U32), channels, Image.Formatted.qoi.write(index, channels, Array.get(U32, pixels, index)))
+      Image.Formatted.native.pixels(rest, (index + 1 : U32), channels, Image.Formatted.native.write(index, channels, Array.get(U32, pixels, index)))
 
-def Image.Formatted.qoi.result(result: Result<&1, &1, Qoi.Error, Qoi.Image>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
+def Image.Formatted.native(+width: U32, +height: U32, +channels: U32, pixels: Array<U32>) -> Image.Formatted:
+  FormattedImage{width, height, Image.Formatted.native.format(channels),
+    Image.Formatted.native.pixels(U32.to_nat((width * height : U32)), 0, channels, pixels)}
+
+# QOI channel metadata selects native storage; decoding/cache state stays RGBA.
+# Pack with integers rather than an ImageFormat floating-point round trip.
+def Image.Formatted.codec.result(result: Result<&1, &1, Codec.Error, Codec.Image>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
   match result:
-    case Fail{error}: Fail{Surface.qoi.error(error)}
-    case Done{Qoi.Image{+width, +height, +channels, pixels}}:
-      Done{FormattedImage{width, height, Image.Formatted.qoi.format(channels),
-        Image.Formatted.qoi.pixels(U32.to_nat((width * height : U32)), 0, channels, pixels)}}
+    case Fail{error}: Fail{Image.codec.error(error)}
+    case Done{Codec.Image{width, height, channels, pixels}}: Done{Image.Formatted.native(width, height, channels, pixels)}
 
 def Image.Formatted.decode_qoi(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
-  Image.Formatted.qoi.result(Qoi.decode(bytes))
+  Image.Formatted.codec.result(Qoi.decode(bytes))
 
 # BMP retains native components from the effective alpha-mask layout. Indexed,
 # RGB555 and RGB888 inputs expand to RGB; alpha repair never changes metadata.
-def Image.Formatted.bmp.format(channels: U32) -> U32:
-  Bool.pick(U32, U32.is_eq(channels, 3), 4, 7)
-
-def Image.Formatted.bmp.word(channels: U32, pixel: U32) -> U32:
-  +word = Formats.swap(pixel)
-  Bool.pick(U32, U32.is_eq(channels, 3), (word .&. 16777215 : U32), word)
-
-def Image.Formatted.bmp.write(index: U32, channels: U32, read: Array<U32> & U32) -> Array<U32>:
-  (pixels, pixel) = read
-  Array.set(U32, pixels, index, Image.Formatted.bmp.word(channels, pixel))
-
-def Image.Formatted.bmp.pixels(n: Nat, +index: U32, +channels: U32, pixels: Array<U32>) -> Array<U32>:
-  match n:
-    case 0n: pixels
-    case 1n+rest:
-      Image.Formatted.bmp.pixels(rest, (index + 1 : U32), channels, Image.Formatted.bmp.write(index, channels, Array.get(U32, pixels, index)))
-
-def Image.Formatted.bmp.result(result: Result<&1, &1, Bmp.Error, Bmp.Image>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
-  match result:
-    case Fail{error}: Fail{Surface.bmp.error(error)}
-    case Done{Bmp.Image{+width, +height, +channels, pixels}}:
-      Done{FormattedImage{width, height, Image.Formatted.bmp.format(channels),
-        Image.Formatted.bmp.pixels(U32.to_nat((width * height : U32)), 0, channels, pixels)}}
-
 def Image.Formatted.decode_bmp(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
-  Image.Formatted.bmp.result(Bmp.decode(bytes))
+  Image.Formatted.codec.result(Bmp.decode(bytes))
 
 # PIC retains native components from the union of validated packet masks.
 # Keep the owned RGBA array and integer-pack it; opacity never selects format.
-def Image.Formatted.pic.format(channels: U32) -> U32:
-  Bool.pick(U32, U32.is_eq(channels, 3), 4, 7)
-
-def Image.Formatted.pic.word(channels: U32, pixel: U32) -> U32:
-  +word = Formats.swap(pixel)
-  Bool.pick(U32, U32.is_eq(channels, 3), (word .&. 16777215 : U32), word)
-
-def Image.Formatted.pic.write(index: U32, channels: U32, read: Array<U32> & U32) -> Array<U32>:
-  (pixels, pixel) = read
-  Array.set(U32, pixels, index, Image.Formatted.pic.word(channels, pixel))
-
-def Image.Formatted.pic.pixels(n: Nat, +index: U32, +channels: U32, pixels: Array<U32>) -> Array<U32>:
-  match n:
-    case 0n: pixels
-    case 1n+rest:
-      Image.Formatted.pic.pixels(rest, (index + 1 : U32), channels, Image.Formatted.pic.write(index, channels, Array.get(U32, pixels, index)))
-
-def Image.Formatted.pic.result(result: Result<&1, &1, Pic.Error, Pic.Image>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
-  match result:
-    case Fail{error}: Fail{Surface.pic.error(error)}
-    case Done{Pic.Image{+width, +height, +channels, pixels}}:
-      Done{FormattedImage{width, height, Image.Formatted.pic.format(channels),
-        Image.Formatted.pic.pixels(U32.to_nat((width * height : U32)), 0, channels, pixels)}}
-
 def Image.Formatted.decode_pic(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
-  Image.Formatted.pic.result(Pic.decode(bytes))
+  Image.Formatted.codec.result(Pic.decode(bytes))
 
 # PNM magic retains native gray/RGB storage after the decoder's 8-bit reduction.
 # Extract integer samples directly; a floating luminance round trip can alter gray.
-def Image.Formatted.pnm.format(channels: U32) -> U32:
-  Bool.pick(U32, U32.is_eq(channels, 1), 1, 4)
-
-def Image.Formatted.pnm.word(channels: U32, +pixel: U32) -> U32:
-  Bool.pick(U32, U32.is_eq(channels, 1), (pixel >> 24n : U32), (Formats.swap(pixel) .&. 16777215 : U32))
-
-def Image.Formatted.pnm.write(index: U32, channels: U32, read: Array<U32> & U32) -> Array<U32>:
-  (pixels, pixel) = read
-  Array.set(U32, pixels, index, Image.Formatted.pnm.word(channels, pixel))
-
-def Image.Formatted.pnm.pixels(n: Nat, +index: U32, +channels: U32, pixels: Array<U32>) -> Array<U32>:
-  match n:
-    case 0n: pixels
-    case 1n+rest:
-      Image.Formatted.pnm.pixels(rest, (index + 1 : U32), channels, Image.Formatted.pnm.write(index, channels, Array.get(U32, pixels, index)))
-
-def Image.Formatted.pnm.result(result: Result<&1, &1, Pnm.Error, Pnm.Image>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
-  match result:
-    case Fail{error}: Fail{Surface.pnm.error(error)}
-    case Done{Pnm.Image{+width, +height, +channels, pixels}}:
-      Done{FormattedImage{width, height, Image.Formatted.pnm.format(channels),
-        Image.Formatted.pnm.pixels(U32.to_nat((width * height : U32)), 0, channels, pixels)}}
-
 def Image.Formatted.decode_pnm(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
-  Image.Formatted.pnm.result(Pnm.decode(bytes))
+  Image.Formatted.codec.result(Pnm.decode(bytes))
 
 # TGA carries actual native output channels independently of input sample/index
 # width. Pack canonical RGBA with integers, retaining gray and zero-alpha bytes.
-def Image.Formatted.tga.format(channels: U32) -> U32:
-  match channels:
-    case 1: 1
-    case 2: 2
-    case 3: 4
-    case _: 7
-
-def Image.Formatted.tga.word(channels: U32, +pixel: U32) -> U32:
-  match channels:
-    case 1: (pixel >> 24n : U32)
-    case 2: ((pixel >> 24n) .|. ((pixel .&. 255) << 8n) : U32)
-    case 3: (Formats.swap(pixel) .&. 16777215 : U32)
-    case _: Formats.swap(pixel)
-
-def Image.Formatted.tga.write(index: U32, channels: U32, read: Array<U32> & U32) -> Array<U32>:
-  (pixels, pixel) = read
-  Array.set(U32, pixels, index, Image.Formatted.tga.word(channels, pixel))
-
-def Image.Formatted.tga.pixels(n: Nat, +index: U32, +channels: U32, pixels: Array<U32>) -> Array<U32>:
-  match n:
-    case 0n: pixels
-    case 1n+rest:
-      Image.Formatted.tga.pixels(rest, (index + 1 : U32), channels, Image.Formatted.tga.write(index, channels, Array.get(U32, pixels, index)))
-
-def Image.Formatted.tga.result(result: Result<&1, &1, Tga.Error, Tga.Image>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
-  match result:
-    case Fail{error}: Fail{Surface.tga.error(error)}
-    case Done{Tga.Image{+width, +height, +native_channels, pixels}}:
-      Done{FormattedImage{width, height, Image.Formatted.tga.format(native_channels),
-        Image.Formatted.tga.pixels(U32.to_nat((width * height : U32)), 0, native_channels, pixels)}}
-
 def Image.Formatted.decode_tga(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
-  Image.Formatted.tga.result(Tga.decode(bytes))
+  Image.Formatted.codec.result(Tga.decode(bytes))
 
 # PNG retains native output components from structural color/tRNS metadata.
 # Pack reduced RGBA samples with integers, retaining gray and zero-alpha bytes.
-def Image.Formatted.png.format(channels: U32) -> U32:
-  match channels:
-    case 1: 1
-    case 2: 2
-    case 3: 4
-    case _: 7
-
-def Image.Formatted.png.word(channels: U32, +pixel: U32) -> U32:
-  match channels:
-    case 1: (pixel >> 24n : U32)
-    case 2: ((pixel >> 24n) .|. ((pixel .&. 255) << 8n) : U32)
-    case 3: (Formats.swap(pixel) .&. 16777215 : U32)
-    case _: Formats.swap(pixel)
-
-def Image.Formatted.png.write(index: U32, channels: U32, read: Array<U32> & U32) -> Array<U32>:
-  (pixels, pixel) = read
-  Array.set(U32, pixels, index, Image.Formatted.png.word(channels, pixel))
-
-def Image.Formatted.png.pixels(n: Nat, +index: U32, +channels: U32, pixels: Array<U32>) -> Array<U32>:
-  match n:
-    case 0n: pixels
-    case 1n+rest:
-      Image.Formatted.png.pixels(rest, (index + 1 : U32), channels, Image.Formatted.png.write(index, channels, Array.get(U32, pixels, index)))
-
-def Image.Formatted.png.result(result: Result<&1, &1, Png.Error, Png.Image>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
-  match result:
-    case Fail{error}: Fail{Surface.png.error(error)}
-    case Done{Png.Image{+width, +height, +native_channels, pixels}}:
-      Done{FormattedImage{width, height, Image.Formatted.png.format(native_channels),
-        Image.Formatted.png.pixels(U32.to_nat((width * height : U32)), 0, native_channels, pixels)}}
-
 def Image.Formatted.decode_png(bytes: +List<U32>) -> Result<&1, &1, Image.DecodeError, Image.Formatted>:
-  Image.Formatted.png.result(Png.decode(bytes))
+  Image.Formatted.codec.result(Png.decode(bytes))
 
 def Image.Formatted.created(width: U32, height: U32, format: U32, result: Maybe<Array<U32>>) -> Maybe<Image.Formatted>:
   match result:
@@ -1568,7 +1361,7 @@ def Surface.text.checked(valid: Bool, +width: U32, +height: U32, bytes: +List<U3
 
 def Surface.create_text_bytes(+width: U32, +height: U32, +bytes: +List<U32>) -> Maybe<Surface>:
   Surface.text.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
-    && Qoi.valid_bytes(bytes, True{}), width, height, bytes)
+    && Codec.valid_bytes(bytes, True{}), width, height, bytes)
 
 def Surface.noise.write(index: U32, threshold: U32, pixels: Array<U32>, draw: Random.State & U32) -> Random.State & Array<U32>:
   (state, value) = draw
@@ -3015,46 +2808,47 @@ def Surface.to_ppm(surface: Surface) -> String:
   "P3\n" ++ U32.show(w) ++ " " ++ U32.show(h) ++ "\n255\n"
     ++ Surface.ppm.colors(List.reverse(&1, U32, Surface.colors(Surface{w, h, pixels})), "")
 
-def Surface.ppm.written(result: File & Result<&1, &1, U32 & String, Unit>) -> IO(Result<&1, &1, U32 & String, Unit>):
+# Shared file writers: write once, close the handle, return the write status.
+def Image.file.write.closed(result: File & Result<&1, &1, U32 & String, Unit>) -> IO(Result<&1, &1, U32 & String, Unit>):
   (file, status) = result
   do IO<Result<&1, &1, U32 & String, Unit>>:
     Unit <- File.close(file)
     IO.pure(Result<&1, &1, U32 & String, Unit>, status)
 
-def Surface.ppm.opened(text: String, opened: Result<&1, &1, U32 & String, File>) -> IO(Result<&1, &1, U32 & String, Unit>):
+def Image.file.write_text.opened(text: String, opened: Result<&1, &1, U32 & String, File>) -> IO(Result<&1, &1, U32 & String, Unit>):
   match opened:
     case Fail{error}:
       IO.pure(Result<&1, &1, U32 & String, Unit>, Fail{error})
     case Done{file}:
       IO.bind(File & Result<&1, &1, U32 & String, Unit>, Result<&1, &1, U32 & String, Unit>,
-        File.write(file, text), Surface.ppm.written)
+        File.write(file, text), Image.file.write.closed)
 
 def Surface.write_ppm(surface: Surface, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.ppm.opened(Surface.to_ppm(surface)))
+    File.open(path, "w"), Image.file.write_text.opened(Surface.to_ppm(surface)))
 
-def Surface.qoi.opened(bytes: +List<U32>, opened: Result<&1, &1, U32 & String, File>) -> IO(Result<&1, &1, U32 & String, Unit>):
+def Image.file.write.opened(bytes: +List<U32>, opened: Result<&1, &1, U32 & String, File>) -> IO(Result<&1, &1, U32 & String, Unit>):
   match opened:
     case Fail{error}: IO.pure(Result<&1, &1, U32 & String, Unit>, Fail{error})
     case Done{file}:
       IO.bind(File & Result<&1, &1, U32 & String, Unit>, Result<&1, &1, U32 & String, Unit>,
-        File.write_bytes(file, bytes), Surface.ppm.written)
+        File.write_bytes(file, bytes), Image.file.write.closed)
 
 def Surface.write_qoi(surface: Surface, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.qoi.opened(Surface.to_qoi(surface)))
+    File.open(path, "w"), Image.file.write.opened(Surface.to_qoi(surface)))
 
 def Surface.write_bmp(surface: Surface, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.qoi.opened(Surface.to_bmp(surface)))
+    File.open(path, "w"), Image.file.write.opened(Surface.to_bmp(surface)))
 
 def Surface.write_tga(surface: Surface, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.qoi.opened(Surface.to_tga(surface)))
+    File.open(path, "w"), Image.file.write.opened(Surface.to_tga(surface)))
 
 def Surface.write_png(surface: Surface, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.qoi.opened(Surface.to_png(surface)))
+    File.open(path, "w"), Image.file.write.opened(Surface.to_png(surface)))
 
 type Image.FileKind is Data:
   QoiFile{}
@@ -3354,7 +3148,7 @@ def Image.Formatted.raw_bytes(image: Image.Formatted) -> +List<U32>:
 
 def Image.Formatted.write_raw(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.qoi.opened(Image.Formatted.raw_bytes(image)))
+    File.open(path, "w"), Image.file.write.opened(Image.Formatted.raw_bytes(image)))
 
 type Image.ExportError is Type:
   UnsupportedImageExport{surface: Surface}
@@ -3379,15 +3173,15 @@ def Surface.write_image(surface: Surface, +path: String) -> IO(Result<&1, &1, Im
 
 def Image.Formatted.write_png(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.qoi.opened(Image.Formatted.png.file_bytes(image)))
+    File.open(path, "w"), Image.file.write.opened(Image.Formatted.png.file_bytes(image)))
 
 def Image.Formatted.write_bmp(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.qoi.opened(Image.Formatted.to_bmp(image)))
+    File.open(path, "w"), Image.file.write.opened(Image.Formatted.to_bmp(image)))
 
 def Image.Formatted.write_tga(image: Image.Formatted, path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-    File.open(path, "w"), Surface.qoi.opened(Image.Formatted.to_tga(image)))
+    File.open(path, "w"), Image.file.write.opened(Image.Formatted.to_tga(image)))
 
 type Image.Formatted.QoiWriteError is Type:
   QoiSourceError{image: Image.Formatted}
@@ -3404,7 +3198,7 @@ def Image.Formatted.qoi.file_bytes(path: String, result: Result<&1, &1, Image.Fo
     case Done{bytes}:
       IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.Formatted.QoiWriteError, Unit>,
         IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>,
-          File.open(path, "w"), Surface.qoi.opened(bytes)), Image.Formatted.qoi.written)
+          File.open(path, "w"), Image.file.write.opened(bytes)), Image.Formatted.qoi.written)
 
 def Image.Formatted.write_qoi(image: Image.Formatted, path: String) -> IO(Result<&1, &1, Image.Formatted.QoiWriteError, Unit>):
   Image.Formatted.qoi.file_bytes(path, Image.Formatted.to_qoi(image))
@@ -3520,7 +3314,7 @@ def Image.FloatRGB.file.write(path: String, result: Result<&1, &1, Image.FloatRG
     case Fail{image}: IO.pure(Result<&1, &1, Image.FloatRGB.WriteError, Unit>, Fail{FloatRGBSampleError{image}})
     case Done{bytes}:
       IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.FloatRGB.WriteError, Unit>,
-        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Surface.qoi.opened(bytes)), Image.FloatRGB.file.written)
+        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Image.file.write.opened(bytes)), Image.FloatRGB.file.written)
 
 def Image.FloatRGB.write_raw(image: Image.FloatRGB, path: String) -> IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>):
   Image.FloatRGB.file.write(path, Image.FloatRGB.to_bytes(image))
@@ -3562,7 +3356,7 @@ def Image.Formatted.code.write(path: String, result: Result<&1, &1, Image.Format
     case Fail{image}: IO.pure(Result<&1, &1, Image.Formatted.CodeWriteError, Unit>, Fail{CodeSourceError{image}})
     case Done{text}:
       IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.Formatted.CodeWriteError, Unit>,
-        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Surface.ppm.opened(text)), Image.Formatted.code.written)
+        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Image.file.write_text.opened(text)), Image.Formatted.code.written)
 
 def Image.Formatted.write_code(image: Image.Formatted, +path: String) -> IO(Result<&1, &1, Image.Formatted.CodeWriteError, Unit>):
   Image.Formatted.code.write(path, Image.Formatted.to_code(image, path))
@@ -3596,7 +3390,7 @@ def Image.FloatRGB.code.write(path: String, result: Result<&1, &1, Image.FloatRG
     case Fail{image}: IO.pure(Result<&1, &1, Image.FloatRGB.CodeWriteError, Unit>, Fail{FloatCodeSourceError{image}})
     case Done{text}:
       IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Image.FloatRGB.CodeWriteError, Unit>,
-        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Surface.ppm.opened(text)), Image.FloatRGB.code.written)
+        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Image.file.write_text.opened(text)), Image.FloatRGB.code.written)
 
 def Image.FloatRGB.write_code(image: Image.FloatRGB, +path: String) -> IO(Result<&1, &1, Image.FloatRGB.CodeWriteError, Unit>):
   Image.FloatRGB.code.write(path, Image.FloatRGB.to_code(image, path))
