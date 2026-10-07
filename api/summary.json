@@ -582,7 +582,7 @@
       "name": "LoadImageFromMemory",
       "milestone": "image-codecs",
       "status": "partial",
-      "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_dds / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Surface.decode_hdr",
+      "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_dds / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Surface.decode_hdr / Image.Stored.decode_image / Image.Stored.decode_dds",
       "next_step": "Close documented gaps and unverified gates for LoadImageFromMemory.",
       "milestone_dependencies": [
         "files",
@@ -596,7 +596,7 @@
       "name": "ExportImage",
       "milestone": "image-codecs",
       "status": "partial",
-      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Surface.to_bmp/to_tga/to_qoi/write_bmp/write_tga/write_qoi/write_png/write_raw / Surface.write_raw/write_png/write_bmp/write_tga / Surface.write_image / Surface.write_image_with",
+      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Surface.to_bmp/to_tga/to_qoi/write_bmp/write_tga/write_qoi/write_png/write_raw / Surface.write_raw/write_png/write_bmp/write_tga / Surface.write_image / Surface.write_image_with / Image.Stored.write_raw",
       "next_step": "Close documented gaps and unverified gates for ExportImage.",
       "milestone_dependencies": [
         "files",

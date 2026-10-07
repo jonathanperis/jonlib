@@ -511,3 +511,9 @@ def Laws.ray_triangle_parallel_misses(arithmetic, ray, p1, edge1, edge2, p, det)
 
 def Laws.ray_quad_keeps_first_hit(arithmetic, ray, p2, p3, p4, distance, point, normal):
   {==}
+
+def Laws.stored_copy_keeps_every_level(width, height, format, mipmaps, data):
+  {==}
+
+def Laws.stored_compressed_levels_unsupported(image, width, height, format, count, data):
+  {==}

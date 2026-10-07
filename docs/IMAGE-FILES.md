@@ -92,6 +92,7 @@ no guarantee of reported OS-close success. Ordinary byte files contain only
 | Raster tokens, unsupported suffixes, `load_png/pnm/tga/bmp/pic`, `load_hdr` | 1,048,576 bytes (`RasterFile`) |
 | QOI tokens, `Surface.load_qoi` | 83,886,102 bytes = `14 + 5*(4096*4096) + 8` (`QoiFile`) |
 | DDS tokens, `Surface.load_dds` | 67,109,000 bytes, above `128 + 4*(4096*4096)` (`DdsFile`) |
+| DDS tokens in `Image.Stored.load_image` | 89,478,612 bytes = `128 + 4*(4^13-1)/3`, a 4096x4096 R8G8B8A8 mipmap chain |
 
 Caps bound admitted encoded input only, not decoded area, total heap,
 allocation success or throughput; compressed input can describe far more pixel
@@ -211,6 +212,38 @@ controls and counts `TruncatedImageData`; mixed-RLE row overruns
 null/free output before its 4-to-3 conversion, so malformed inputs are never
 sent to native. Packet rules: [PIC.md](PIC.md).
 
+## Compressed and multi-level images
+
+A Surface holds one uncompressed level, so `Surface.decode_image` and
+`Surface.load_image` return `UnsupportedFormat` for the DDS files raylib loads
+as compressed blocks or mipmap chains. `Image.Stored{width, height, format,
+mipmaps, data}` holds raylib's Image fields for them:
+
+| Function | raylib | Contract |
+|---|---|---|
+| `Image.Stored.decode_image(file_type, bytes)` / `decode_image_for` | `LoadImageFromMemory` | DDS tokens decode every DDS raylib loads: Surface's uncompressed formats, DXT1 (format 14, or 15 with the alpha-pixels flag), DXT3 (16) and DXT5 (17) blocks and mipmap chains of up to 64 levels. Other tokens decode one Surface level (mipmaps 1). |
+| `Image.Stored.load_image(path)` / `load_image_for` | `LoadImage` | DDS files by suffix (both cases), other files through `Surface.load_image_for`. |
+| `Image.Stored.decode_dds(bytes)` | DDS `LoadImageFromMemory` | As above without the token dispatch. |
+| `Image.Stored.levels(image)` | — | The uncompressed levels as an `Image.Mipmaps` of Surfaces; compressed images are `UnsupportedFormat` (with their owner). |
+| `Image.Stored.copy(image)` | `ImageCopy` | Two equal images with every level. |
+| `Image.Stored.raw(image)` / `write_raw(image, path)` | `ExportImage` to `.raw` | The top level's `GetPixelDataSize` bytes. |
+| `Image.Stored.to_code(image, path)` / `write_code` | `ExportImageAsCode` | raylib's header text over the top level's bytes, at most 64 KiB. |
+| `Image.Stored.is_valid` / `unload` / `entries` | `IsImageValid` / `UnloadImage` | Fields, validity and consumption. |
+
+`data` is the complete level chain, largest level first, each level halving
+both dimensions down to 1 with `GetPixelDataSize` bytes (compressed levels
+below 4x4 hold one 8- or 16-byte block), with raylib's channel reordering for
+A1R5G5B5, A4R4G4B4 and B8G8R8A8 files. raylib copies only `pitch` (compressed)
+or `size` bytes of a level, plus a third of that for a chain, and reads its
+other levels past that buffer when the chain is longer (always for full
+compressed chains and for non-square ones); Jonlib reads every level from the
+file instead. A file without every level is `TruncatedImageData`, other FourCC
+codes (raylib returns their data as format 0) `InvalidImageHeader`, more than
+64 levels `UnsupportedImageSize`. The Surface operations raylib cannot apply to
+compressed data (it warns, or converts uninitialized `LoadImageColors` output)
+have no `Image.Stored` form. KTX, PKM, PVR and ASTC files, which raylib loads
+only when configured to, are not decoded yet.
+
 ## How it is verified
 
 All gates compare exact output against pinned native raylib on the CPU-1,
@@ -258,6 +291,14 @@ verified on CPU and JavaScript only; no GPU filesystem claim is made.
   compilation, must stay below 256 MiB (closure/sparse) and 1 GiB (exact-cap);
   these are acceptance ceilings, not allocation limits.
 
+- **Stored images** (`tools/stored_probe.py`, gate `stored`): DXT1/DXT3/DXT5
+  files from 1x1 to 12x8 with exact, larger and smaller pitches, compressed and
+  uncompressed chains (square, non-square, two-level) and the refusal controls
+  decode to the chain derived from the file; native `LoadImageFromMemory` must
+  agree on format, dimensions, level count and every byte of its own buffer.
+  `ImageCopy` (its defined prefix), `ExportImage(".raw")`, `ExportImageAsCode`,
+  the split levels, a QOI file and `.dds`/`.DDS` file loading are compared too.
+
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only tga-file
 ```
@@ -269,7 +310,8 @@ paths they exercise.
 ## Known gaps
 
 - JPEG decoding; HDR in the shared suffix dispatch; original source formats
-  for PSD and GIF (decoded as R8G8B8A8).
+  for PSD and GIF (decoded as R8G8B8A8); the configuration-gated KTX, PKM,
+  PVR and ASTC loaders; operations on mipmapped images.
 - Concurrent or changing files, special files, native callbacks, native
   pointer/allocation ABI and OOM parity, OS-close failure reporting.
 - Maximum decoded-area, heap and performance qualification; nondefault stb
