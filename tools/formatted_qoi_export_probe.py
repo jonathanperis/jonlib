@@ -276,86 +276,101 @@ def emit(id: String, role: String, value: (U32 & U32) & (U32 & List<U32>)) -> IO
   do IO<Unit>:
     meta(id, role, width, height, format)
     emit_bytes(~&1, bytes)
-def observed(id: String, role: String, result: Maybe<J.Image.Formatted>) -> IO(Unit):
+def observed(id: String, role: String, result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "QOI fixture source rejected")
-    case Some{image}: emit(id, role, J.Image.Formatted.export(image))
-def decoded(result: Result<&1, &1, J.Image.DecodeError, J.Image.Formatted>) -> Maybe<J.Image.Formatted>:
+    case Some{image}: emit(id, role, J.Surface.export(image))
+def decoded(result: Result<&1, &1, J.Surface.Error, J.Surface>) -> Maybe<J.Surface>:
   match result:
     case Fail{_}: None{}
     case Done{image}: Some{image}
-def surface(result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> Maybe<J.Image.Formatted>:
+def rgba.bytes(values: List<U32>, bytes: +List<U32>) -> +List<U32>:
+  match values:
+    case Nil{}: List.reverse(&2, U32, bytes)
+    case Con{+v, rest}: rgba.bytes(rest, Con{J.Color.alpha(v), Con{J.Color.blue(v), Con{J.Color.green(v), Con{J.Color.red(v), bytes}}}})
+def rgba.colors(+width: U32, +height: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> Maybe<J.Surface>:
   match result:
     case Fail{_}: None{}
-    case Done{image}: Some{J.Surface.to_formatted(image)}
-def bridge(result: Maybe<J.Image.Formatted>) -> Maybe<J.Image.Formatted>:
+    case Done{values}: J.Surface.from_bytes(width, height, 7, rgba.bytes(values, Nil{}))
+def rgba(image: J.Surface) -> Maybe<J.Surface>:
+  J.Surface{+width, +height, format, pixels} = image
+  rgba.colors(width, height, J.Surface.colors(J.Surface{width, height, format, pixels}))
+def surface(result: Result<&1, &1, J.Surface.Error, J.Surface>) -> Maybe<J.Surface>:
+  match result:
+    case Fail{_}: None{}
+    case Done{image}: rgba(image)
+def bridge.formatted(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Maybe<J.Surface>:
+  match result:
+    case Fail{_}: None{}
+    case Done{image}: Some{image}
+def bridge(result: Maybe<J.Surface>) -> Maybe<J.Surface>:
   match result:
     case None{}: None{}
-    case Some{image}: Some{J.Surface.to_formatted(J.Image.Formatted.to_surface(image))}
-def owner(mode: U32, width: U32, height: U32, format: U32, bytes: +List<U32>) -> Maybe<J.Image.Formatted>:
+    case Some{image}: bridge.formatted(J.Surface.format(image, 7))
+def owner(mode: U32, width: U32, height: U32, format: U32, bytes: +List<U32>) -> Maybe<J.Surface>:
   match mode:
-    case 1: decoded(J.Image.Formatted.decode_qoi(bytes))
-    case 2: bridge(J.Image.Formatted.from_bytes(width, height, format, bytes))
-    case _: J.Image.Formatted.from_bytes(width, height, format, bytes)
-def encoded(+id: String, width: U32, height: U32, format: U32, result: Result<&1, &1, J.Image.Formatted & J.Pixel.Error, +List<U32>>) -> IO(Unit):
+    case 1: decoded(J.Surface.decode_qoi(bytes))
+    case 2: bridge(J.Surface.from_bytes(width, height, format, bytes))
+    case _: J.Surface.from_bytes(width, height, format, bytes)
+def encoded(+id: String, width: U32, height: U32, format: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, +List<U32>>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "Accepted QOI export rejected")
     case Done{+bytes}:
       do IO<Unit>:
         meta(id, "encoded", width, height, format)
         emit_bytes(~&2, bytes)
-        observed(id, "decoded", decoded(J.Image.Formatted.decode_qoi(bytes)))
+        observed(id, "decoded", decoded(J.Surface.decode_qoi(bytes)))
         observed(id, "surface", surface(J.Surface.decode_qoi(bytes)))
-def pure(id: String, width: U32, height: U32, format: U32, result: Maybe<J.Image.Formatted>) -> IO(Unit):
+def pure(id: String, width: U32, height: U32, format: U32, result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "QOI source rejected")
-    case Some{image}: encoded(id, width, height, format, J.Image.Formatted.to_qoi(image))
-def loaded(result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> Maybe<J.Image.Formatted>:
+    case Some{image}: encoded(id, width, height, format, J.Surface.to_qoi(image))
+def loaded(result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> Maybe<J.Surface>:
   match result:
     case Fail{_}: None{}
     case Done{image}: Some{image}
-def loaded.emit(id: String, result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> IO(Unit):
+def loaded.emit(id: String, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   observed(id, "loaded", loaded(result))
-def saved(id: String, path: String, result: Result<&1, &1, J.Image.Formatted.QoiWriteError, Unit>) -> IO(Unit):
+def saved(id: String, path: String, result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "Accepted QOI write rejected")
-    case Done{_}: IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_qoi(path), loaded.emit(id))
-def save(id: String, +path: String, result: Maybe<J.Image.Formatted>) -> IO(Unit):
+    case Done{_}: IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_qoi(path), loaded.emit(id))
+def save(id: String, +path: String, result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "QOI write source rejected")
-    case Some{image}: IO.bind(Result<&1, &1, J.Image.Formatted.QoiWriteError, Unit>, Unit, J.Image.Formatted.write_qoi(image, path), saved(id, path))
-def rejected.pure(result: Result<&1, &1, J.Image.Formatted & J.Pixel.Error, +List<U32>>) -> Maybe<J.Image.Formatted>:
+    case Some{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_qoi(image, path), saved(id, path))
+def rejected.pure(result: Result<&1, &1, J.Surface & J.Surface.Error, +List<U32>>) -> Maybe<J.Surface>:
   match result:
-    case Fail{Tuple{image, J.UnsupportedPixelFormat{}}}: Some{image}
+    case Fail{Tuple{image, J.UnsupportedFormat{}}}: Some{image}
     case _: None{}
-def rejected.twice(result: Maybe<J.Image.Formatted>) -> Maybe<J.Image.Formatted>:
+def rejected.twice(result: Maybe<J.Surface>) -> Maybe<J.Surface>:
   match result:
     case None{}: None{}
-    case Some{image}: rejected.pure(J.Image.Formatted.to_qoi(image))
-def rejected.last(id: String, result: Result<&1, &1, J.Image.Formatted.QoiWriteError, Unit>) -> IO(Unit):
+    case Some{image}: rejected.pure(J.Surface.to_qoi(image))
+def rejected.last(id: String, result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.QoiSourceError{image}}: observed(id, "retained", rejected.pure(J.Image.Formatted.to_qoi(image)))
+    case Fail{J.SourceError{image, J.UnsupportedFormat{}}}: observed(id, "retained", rejected.pure(J.Surface.to_qoi(image)))
     case _: IO.die(Unit, 1, "QOI wrong source error")
-def rejected.absent(id: String, absent: String, result: Result<&1, &1, J.Image.Formatted.QoiWriteError, Unit>) -> IO(Unit):
+def rejected.absent(id: String, absent: String, result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.QoiSourceError{image}}: IO.bind(Result<&1, &1, J.Image.Formatted.QoiWriteError, Unit>, Unit, J.Image.Formatted.write_qoi(image, absent), rejected.last(id))
+    case Fail{J.SourceError{image, J.UnsupportedFormat{}}}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_qoi(image, absent), rejected.last(id))
     case _: IO.die(Unit, 1, "QOI wrong source error")
-def rejected.directory(id: String, absent: String, directory: String, result: Result<&1, &1, J.Image.Formatted.QoiWriteError, Unit>) -> IO(Unit):
+def rejected.directory(id: String, absent: String, directory: String, result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.QoiSourceError{image}}: IO.bind(Result<&1, &1, J.Image.Formatted.QoiWriteError, Unit>, Unit, J.Image.Formatted.write_qoi(image, directory), rejected.absent(id, absent))
+    case Fail{J.SourceError{image, J.UnsupportedFormat{}}}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_qoi(image, directory), rejected.absent(id, absent))
     case _: IO.die(Unit, 1, "QOI wrong source error")
-def rejected.missing(id: String, absent: String, missing: String, directory: String, result: Result<&1, &1, J.Image.Formatted.QoiWriteError, Unit>) -> IO(Unit):
+def rejected.missing(id: String, absent: String, missing: String, directory: String, result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.QoiSourceError{image}}: IO.bind(Result<&1, &1, J.Image.Formatted.QoiWriteError, Unit>, Unit, J.Image.Formatted.write_qoi(image, missing), rejected.directory(id, absent, directory))
+    case Fail{J.SourceError{image, J.UnsupportedFormat{}}}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_qoi(image, missing), rejected.directory(id, absent, directory))
     case _: IO.die(Unit, 1, "QOI wrong source error")
-def rejected.second(id: String, +path: String, missing: String, directory: String, result: Result<&1, &1, J.Image.Formatted.QoiWriteError, Unit>) -> IO(Unit):
+def rejected.second(id: String, +path: String, missing: String, directory: String, result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.QoiSourceError{image}}: IO.bind(Result<&1, &1, J.Image.Formatted.QoiWriteError, Unit>, Unit, J.Image.Formatted.write_qoi(image, path), rejected.missing(id, path ++ ".absent.qoi", missing, directory))
+    case Fail{J.SourceError{image, J.UnsupportedFormat{}}}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_qoi(image, path), rejected.missing(id, path ++ ".absent.qoi", missing, directory))
     case _: IO.die(Unit, 1, "QOI wrong source error")
-def reject(id: String, +path: String, missing: String, directory: String, result: Maybe<J.Image.Formatted>) -> IO(Unit):
+def reject(id: String, +path: String, missing: String, directory: String, result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "QOI rejected owner lost")
-    case Some{image}: IO.bind(Result<&1, &1, J.Image.Formatted.QoiWriteError, Unit>, Unit, J.Image.Formatted.write_qoi(image, path), rejected.second(id, path ++ ".qoi", missing, directory))
+    case Some{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_qoi(image, path), rejected.second(id, path ++ ".qoi", missing, directory))
 def process.selected(accepted: Bool, +id: String, +width: U32, +height: U32, +format: U32, +mode: U32, path: String, missing: String, directory: String, +bytes: +List<U32>) -> IO(Unit):
   match accepted:
     case True{}:
@@ -380,11 +395,11 @@ def opened(id: String, width: U32, height: U32, format: U32, mode: U32, size: U3
   match result:
     case Fail{_}: IO.die(Unit, 1, "QOI input open failed")
     case Done{file}: IO.bind(File & Result<&1, &1, U32 & String, +List<U32>>, Unit, File.read_bytes(file, size), received(id, width, height, format, mode, path, missing, directory))
-def source.loaded(id: String, result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> IO(Unit):
+def source.loaded(id: String, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   observed(id, "source", loaded(result))
-def pure.loaded(id: String, width: U32, height: U32, format: U32, result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> IO(Unit):
+def pure.loaded(id: String, width: U32, height: U32, format: U32, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   pure(id, width, height, format, loaded(result))
-def save.loaded(id: String, path: String, result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> IO(Unit):
+def save.loaded(id: String, path: String, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   save(id, path, loaded(result))
 '''
 
@@ -399,9 +414,9 @@ def candidate_program(cases,work):
     for c in cases:
         ident=json.dumps(c['id']);origin=c.get('origin');data=c.get('input',c['data']);source=work/(c['id']+('.input.qoi' if 'input' in c else '.raw'));target=output_path(work,c)
         if origin=='load':
-            call='J.Image.Formatted.load_qoi('+json.dumps(str(source))+')'
+            call='J.Surface.load_qoi('+json.dumps(str(source))+')'
             for continuation in (f'source.loaded({ident})',f'pure.loaded({ident}, {c["width"]}, {c["height"]}, {c["format"]})',f'save.loaded({ident}, {json.dumps(str(target))})'):
-                body+=f'    IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Formatted>, Unit, {call}, {continuation})\n'
+                body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, {call}, {continuation})\n'
         else:
             mode={'decode':1,'bridge':2}.get(origin,0)
             continuation=f'opened({ident}, {c["width"]}, {c["height"]}, {c["format"]}, {mode}, {len(data)+1}, {json.dumps(str(target))}, {json.dumps(str(work/"missing-parent"/"rejected.dat"))}, {json.dumps(str(work/"directory"))})'
@@ -413,15 +428,15 @@ def io_program(work,failure):
     body=BEND_PREFIX+r'''
 def direct(path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), J.Image.file.write.opened([1]))
-def status(+code: U32, message: String, result: Result<&1, &1, J.Image.Formatted.QoiWriteError, Unit>) -> IO(Unit):
+def status(+code: U32, message: String, result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.QoiFileError{actual_code, actual_message}}: checked(U32.is_gt(code, 0) && U32.is_eq(code, actual_code) && String.eq(message, actual_message))
+    case Fail{J.FileError{actual_code, actual_message}}: checked(U32.is_gt(code, 0) && U32.is_eq(code, actual_code) && String.eq(message, actual_message))
     case Done{_}: checked(U32.is_eq(code, 0))
     case _: checked(False{})
-def write(code: U32, message: String, path: String, result: Maybe<J.Image.Formatted>) -> IO(Unit):
+def write(code: U32, message: String, path: String, result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: checked(False{})
-    case Some{image}: IO.bind(Result<&1, &1, J.Image.Formatted.QoiWriteError, Unit>, Unit, J.Image.Formatted.write_qoi(image, path), status(code, message))
+    case Some{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_qoi(image, path), status(code, message))
 def bytes.eq(actual: List<U32>, expected: +List<U32>) -> Bool:
   match actual expected:
     case Nil{} Nil{}: True{}
@@ -431,25 +446,25 @@ def retained.exported(format: U32, bytes: +List<U32>, result: (U32 & U32) & (U32
   match result:
     case Tuple{Tuple{1, 1}, Tuple{actual, values}}: checked(U32.is_eq(format, actual) && bytes.eq(values, bytes))
     case _: checked(False{})
-def retained(format: U32, bytes: +List<U32>, result: Result<&1, &1, J.Image.Formatted.QoiWriteError, Unit>) -> IO(Unit):
+def retained(format: U32, bytes: +List<U32>, result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.QoiSourceError{image}}: retained.exported(format, bytes, J.Image.Formatted.export(image))
+    case Fail{J.SourceError{image, J.UnsupportedFormat{}}}: retained.exported(format, bytes, J.Surface.export(image))
     case _: checked(False{})
-def reject.write(+format: U32, +bytes: +List<U32>, path: String, result: Maybe<J.Image.Formatted>) -> IO(Unit):
+def reject.write(+format: U32, +bytes: +List<U32>, path: String, result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: checked(False{})
-    case Some{image}: IO.bind(Result<&1, &1, J.Image.Formatted.QoiWriteError, Unit>, Unit, J.Image.Formatted.write_qoi(image, path), retained(format, bytes))
+    case Some{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_qoi(image, path), retained(format, bytes))
 def loop(n: Nat, +code: U32, +message: String, +path: String) -> IO(Unit):
   match n:
     case 0n: IO.print("{\"iterations\":100,\"accepted_writes\":200,\"rejected_writes\":1800}")
     case 1n+rest:
       do IO<Unit>:
 '''
-    for fmt in ACCEPTED:body+=f'        write(code, message, path, J.Image.Formatted.from_bytes(1, 1, {fmt}, [{", ".join(["17"]*BPP[fmt])}]))\n'
+    for fmt in ACCEPTED:body+=f'        write(code, message, path, J.Surface.from_bytes(1, 1, {fmt}, [{", ".join(["17"]*BPP[fmt])}]))\n'
     for fmt in REJECTED:
         values=[0,0,0,128] if fmt==8 else [17]*BPP[fmt];data='['+', '.join(map(str,values))+']'
         for path in (work/'rejected-sentinel.dat',work/'missing-parent'/'rejected.dat',work/'directory'):
-            body+=f'        reject.write({fmt}, {data}, {json.dumps(str(path))}, J.Image.Formatted.from_bytes(1, 1, {fmt}, {data}))\n'
+            body+=f'        reject.write({fmt}, {data}, {json.dumps(str(path))}, J.Surface.from_bytes(1, 1, {fmt}, {data}))\n'
     body+=r'''        loop(rest, code, message, path)
 def baseline(expected: U32, path: String, result: Result<&1, &1, U32 & String, Unit>) -> IO(Unit):
   match result:
@@ -467,7 +482,7 @@ def main() -> IO(Unit):
     paths=formatted_export.io_targets(work,failure)
     for path,code in paths:body+=f'    IO.bind(Result<&1, &1, U32 & String, Unit>, Unit, direct({json.dumps(str(path))}), baseline({code}, {json.dumps(str(path))}))\n'
     if not failure:
-        body+=f'    write(0, "", {json.dumps(str(work/"repeated.dat"))}, J.Image.Formatted.from_bytes(1, 1, 7, [17, 17, 17, 17]))\n'
+        body+=f'    write(0, "", {json.dumps(str(work/"repeated.dat"))}, J.Surface.from_bytes(1, 1, 7, [17, 17, 17, 17]))\n'
         body+='    IO.print("{\\\"final_success\\\":true}")\n'
     return body
 

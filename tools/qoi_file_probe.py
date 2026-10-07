@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Native original-format QOI ordinary files: exact bytes, typed IO and closure.
+"""Native-format QOI ordinary files: exact bytes, typed IO and closure.
 
 Explicit QOI selection ignores suffix; native LoadImage and explicit
 LoadFileData/LoadImageFromMemory references are recorded separately. QOI uses
@@ -109,25 +109,25 @@ def success.exported(format: U32, bytes: +List<U32>, data: (U32 & U32) & (U32 & 
   match data:
     case Tuple{Tuple{3, 1}, Tuple{actual, values}}: require(U32.is_eq(format, actual) && bytes.eq(values, bytes))
     case _: require(False{})
-def success.required(format: U32, bytes: +List<U32>, result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> IO(Unit):
+def success.required(format: U32, bytes: +List<U32>, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
-    case Done{image}: success.exported(format, bytes, J.Image.Formatted.export(image))
+    case Done{image}: success.exported(format, bytes, J.Surface.export(image))
     case _: require(False{})
-def file.code.required(expected: U32, result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> IO(Unit):
+def file.code.required(expected: U32, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
-    case Fail{J.ImageFileError{code, _}}: require(U32.is_eq(expected, code))
+    case Fail{J.FileError{code, _}}: require(U32.is_eq(expected, code))
     case _: require(False{})
-def qoi.stage.short(result: Result<&1, &1, J.Image.LoadError, +List<U32>>) -> IO(Unit):
-  IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Formatted>, Unit, J.Image.Formatted.qoi.file.loaded(result), required(3))
-def qoi.stage.failure(result: Result<&1, &1, J.Image.LoadError, +List<U32>>) -> IO(Unit):
-  IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Formatted>, Unit, J.Image.Formatted.qoi.file.loaded(result), exact.error(731, "stage-read-failure"))
+def qoi.stage.short(result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Unit):
+  IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, codec.loaded(result), required(3))
+def qoi.stage.failure(result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Unit):
+  IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, codec.loaded(result), exact.error(731, "stage-read-failure"))
 def qoi.stage.opened(fail: Bool, result: Result<&1, &1, U32 & String, File>) -> IO(Unit):
   match fail result:
     case _ Fail{_}: IO.die(Unit, 1, "stage fixture open failed")
     case False{} Done{file}:
-      IO.bind(Result<&1, &1, J.Image.LoadError, +List<U32>>, Unit, J.Image.file.read(2, (file, Done{[1]})), qoi.stage.short)
+      IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Image.file.read(2, (file, Done{[1]})), qoi.stage.short)
     case True{} Done{file}:
-      IO.bind(Result<&1, &1, J.Image.LoadError, +List<U32>>, Unit, J.Image.file.read(2, (file, Fail{(731, "stage-read-failure")})), qoi.stage.failure)
+      IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Image.file.read(2, (file, Fail{(731, "stage-read-failure")})), qoi.stage.failure)
 '''
 
 
@@ -149,7 +149,7 @@ def candidate_program(actions):
     for a in actions:
         c, role = a['case'], a['role']
         ident, path = json.dumps(c['id']), json.dumps(c['path'])
-        output, call = 'J.Image.Formatted', f'J.Image.Formatted.load_qoi({path})'
+        call = f'J.Surface.load_qoi({path})'
         if role == 'raw':
             then = f'load.emitted({ident}, "raw")'
         elif role == 'bridge':
@@ -159,12 +159,12 @@ def candidate_program(actions):
             if c.get('special') == 'overflow':
                 then = f'file.failed({ident}, {errno.EOVERFLOW}, {json.dumps(os.strerror(errno.EOVERFLOW))})'
         elif role == 'surface-error':
-            output, call, then = 'J.Surface', f'J.Surface.load_image({path})', f'surface.failed({ident})'
+            call, then = f'J.Surface.load_image({path})', f'surface.failed({ident})'
         else:
-            output, then = 'J.Surface', f'surface.emitted({ident}, {json.dumps(role)})'
+            then = f'surface.emitted({ident}, {json.dumps(role)})'
             call = {'surface': f'J.Surface.load_qoi({path})', 'dispatch': f'J.Surface.load_image({path})'}.get(role) or \
                 f'J.Surface.load_image_for(M.{"Uncontracted" if role == "uncontracted" else "Fused"}{{}}, {path})'
-        lines.append(f'    IO.bind(Result<&1, &1, J.Image.LoadError, {output}>, Unit, {call}, {then})')
+        lines.append(f'    IO.bind({formatted_file.LOADED}, Unit, {call}, {then})')
     return '\n'.join(lines) + '\n'
 
 
@@ -176,19 +176,19 @@ def boundary_program(by_id, reference):
             then = f'success.required({4 if by_id[name]["channels"] == 3 else 7}, {bend_bytes(reference[name][0]["bytes"])})'
         if name == 'host-size-overflow':
             then = f'file.code.required({errno.EOVERFLOW})'
-        lines.append(f'        IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_qoi({json.dumps(by_id[name]["path"])}), {then})')
+        lines.append(f'        IO.bind({formatted_file.LOADED}, Unit, J.Surface.load_qoi({json.dumps(by_id[name]["path"])}), {then})')
     valid = json.dumps(by_id['c3-s0-hidden-alpha-cache']['path'])
     lines += [f'        IO.bind(Result<&1, &1, U32 & String, File>, Unit, File.open({valid}, "r"), qoi.stage.opened({v}))' for v in ('False{}', 'True{}')]
     lines += ['        closure_loop(rest)', 'def main() -> IO(Unit):', '  do IO<Unit>:',
               '    require(U32.is_eq(J.Image.file.limit(J.QoiFile{}), 83886102) && (83886102 <= J.Image.file.limit(J.QoiFile{}) : U32) && Bool.not((83886103 <= J.Image.file.limit(J.QoiFile{}) : U32)))',
               '    require(J.Image.file.complete(0n, Nil{}) && J.Image.file.complete(2n, [1, 2]) && Bool.not(J.Image.file.complete(2n, [1])) && Bool.not(J.Image.file.complete(1n, [1, 2])))']
-    for value, then in [('Fail{J.ImageFileError{719, "continuation-failure"}}', 'exact.error(719, "continuation-failure")'),
+    for value, then in [('Fail{J.FileError{719, "continuation-failure"}}', 'exact.error(719, "continuation-failure")'),
                         ('J.Image.file.payload(2, Fail{(727, "payload-failure")})', 'exact.error(727, "payload-failure")'),
                         ('J.Image.file.payload(2, Done{[1]})', 'required(3)'), ('J.Image.file.payload(1, Done{[1, 2]})', 'required(3)'),
                         ('Done{[256]}', 'required(1)')]:
-        lines.append(f'    IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Formatted>, Unit, J.Image.Formatted.qoi.file.loaded({value}), {then})')
+        lines.append(f'    IO.bind({formatted_file.LOADED}, Unit, codec.loaded({value}), {then})')
     lines += ['    closure_loop(100n)',
-              f'    IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_qoi({valid}), load.emitted("closure-final", "raw"))',
+              f'    IO.bind({formatted_file.LOADED}, Unit, J.Surface.load_qoi({valid}), load.emitted("closure-final", "raw"))',
               '    IO.print(' + json.dumps(json.dumps(TERMINAL, separators=(',', ':'))) + ')']
     return '\n'.join(lines) + '\n'
 

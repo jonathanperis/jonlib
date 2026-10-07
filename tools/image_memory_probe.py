@@ -12,12 +12,16 @@ from probekit import ProbeFailure
 PREAMBLE='''import Base
 import ../../jonlib.bend as J
 import ../../jonmath.bend as M
-def observed(result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> IO(Unit):
+def shown(+w: U32, +h: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "decoded image colors unavailable")
+    case Done{colors}:
+      IO.print("{\\"loaded\\":true,\\"width\\":" ++ U32.show(w) ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"pixels\\":" ++ List.show(~&1, ~U32, ~U32.show, colors) ++ "}")
+def observed(result: Result<&1, &1, J.Surface.Error, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.print("{\\"loaded\\":false}")
-    case Done{J.Surface{+w, +h, pixels}}:
-      IO.print("{\\"loaded\\":true,\\"width\\":" ++ U32.show(w) ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"pixels\\":" ++ List.show(~&1, ~U32, ~U32.show, J.Surface.colors(J.Surface{w, h, pixels})) ++ "}")
-def error_code(result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> U32:
+    case Done{J.Surface{+w, +h, format, pixels}}: shown(w, h, J.Surface.colors(J.Surface{w, h, format, pixels}))
+def error_code(result: Result<&1, &1, J.Surface.Error, J.Surface>) -> U32:
   match result:
     case Done{_}: 99
     case Fail{error}:
@@ -27,6 +31,7 @@ def error_code(result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> U32:
         case J.UnsupportedImageSize{}: 2
         case J.TruncatedImageData{}: 3
         case J.InvalidImageStream{}: 4
+        case _: 98
 def main() -> IO(Unit):
   do IO<Unit>:
 '''

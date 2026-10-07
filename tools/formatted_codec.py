@@ -1,4 +1,4 @@
-"""Shared driver for original-format (Image.Formatted) memory-decoding probes.
+"""Shared driver for native-format memory-decoding probes (format-tagged J.Surface).
 
 A codec module supplies a Codec: accepted fixtures, checked controls (typed
 decode errors), raylib build options, extension tokens and the roles it
@@ -6,15 +6,15 @@ exercises. The driver records raylib's raw and RGBA8-normalized LoadImageFromMem
 output for every fixture (plus each alias token, which must equal raw), then
 compares every Jonlib entry point on CPU-1/CPU-2/JavaScript:
 
-  raw            Image.Formatted.decode_<codec>               -> native raw bytes
-  bridge         raw -> Surface -> Formatted                  -> normalized RGBA8
-  surface        Surface.decode_<codec>                       -> normalized RGBA8
-  factory        Image.Formatted.from_bytes(native raw)       -> native raw bytes
-  owner          bounded/unbounded Formatted.get reads        -> native raw bytes
+  raw            Surface.decode_<codec> (native format)       -> native raw bytes
+  bridge         raw -> Surface.format(7) (ImageFormat)       -> normalized RGBA8
+  surface        Surface.decode_<codec> -> Surface.colors     -> normalized RGBA8
+  factory        Surface.from_bytes(native raw)               -> native raw bytes
+  owner          bounded/unbounded Surface.get reads          -> native raw bytes
   raw-roundtrip  export then from_bytes                       -> native raw bytes
-  dispatch-<t>   Surface.decode_image(".<t>")                 -> normalized RGBA8
+  dispatch-<t>   Surface.decode_image(".<t>") -> colors       -> normalized RGBA8
   uncontracted / fused  Surface.decode_image_for(profile)     -> normalized RGBA8
-  formatted-error / surface-error  typed DecodeError codes on checked controls
+  formatted-error  typed Surface.Error codes on checked controls
 
 Controls flagged native=True are additionally loaded by raylib, which must reject them.
 """
@@ -27,7 +27,7 @@ import probekit
 from probekit import ProbeFailure
 
 RAW_ROLES = {'raw', 'factory', 'owner', 'raw-roundtrip'}
-ERROR_ROLES = ('formatted-error', 'surface-error')
+ERROR_ROLES = ('formatted-error',)
 CHANNEL_BYTES = {1: 1, 2: 2, 4: 3, 7: 4}
 
 
@@ -92,35 +92,52 @@ def words(n: Nat, +index: U32, +format: U32, state: Array<U32> & Bool) -> Array<
     case _ Tuple{pixels, False{}}: (pixels, False{})
     case 0n Tuple{pixels, True{}}: (pixels, True{})
     case 1n+rest Tuple{pixels, True{}}: words(rest, (index + 1 : U32), format, words.read(format, Array.get(U32, pixels, index)))
-def checked.words(width: U32, height: U32, format: U32, state: Array<U32> & Bool) -> Maybe<J.Image.Formatted>:
+def checked.words(width: U32, height: U32, format: U32, state: Array<U32> & Bool) -> Maybe<J.Surface>:
   match state:
-    case Tuple{pixels, True{}}: Some{J.FormattedImage{width, height, format, pixels}}
+    case Tuple{pixels, True{}}: Some{J.Surface{width, height, format, J.Words{pixels}}}
     case _: None{}
-def checked(image: J.Image.Formatted) -> Maybe<J.Image.Formatted>:
-  J.FormattedImage{+width, +height, +format, pixels} = image
-  checked.words(width, height, format, words(U32.to_nat((width * height : U32)), 0, format, (pixels, True{})))
-def decoded(result: Result<&1, &1, J.Image.DecodeError, J.Image.Formatted>) -> Maybe<J.Image.Formatted>:
+def checked(image: J.Surface) -> Maybe<J.Surface>:
+  match image:
+    case J.Surface{+width, +height, +format, J.Words{pixels}}:
+      checked.words(width, height, format, words(U32.to_nat((width * height : U32)), 0, format, (pixels, True{})))
+    case _: None{}
+def decoded(result: Result<&1, &1, J.Surface.Error, J.Surface>) -> Maybe<J.Surface>:
   match result:
     case Fail{_}: None{}
     case Done{image}: checked(image)
-def surface(result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> Maybe<J.Image.Formatted>:
+def rgba.bytes(values: List<U32>, bytes: +List<U32>) -> +List<U32>:
+  match values:
+    case Nil{}: List.reverse(&2, U32, bytes)
+    case Con{+v, rest}: rgba.bytes(rest, Con{J.Color.alpha(v), Con{J.Color.blue(v), Con{J.Color.green(v), Con{J.Color.red(v), bytes}}}})
+def rgba.colors(+width: U32, +height: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> Maybe<J.Surface>:
   match result:
     case Fail{_}: None{}
-    case Done{image}: Some{J.Surface.to_formatted(image)}
-def bridge(result: Maybe<J.Image.Formatted>) -> Maybe<J.Image.Formatted>:
+    case Done{values}: J.Surface.from_bytes(width, height, 7, rgba.bytes(values, Nil{}))
+def rgba(image: J.Surface) -> Maybe<J.Surface>:
+  J.Surface{+width, +height, format, pixels} = image
+  rgba.colors(width, height, J.Surface.colors(J.Surface{width, height, format, pixels}))
+def surface(result: Result<&1, &1, J.Surface.Error, J.Surface>) -> Maybe<J.Surface>:
+  match result:
+    case Fail{_}: None{}
+    case Done{image}: rgba(image)
+def bridge.formatted(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Maybe<J.Surface>:
+  match result:
+    case Fail{_}: None{}
+    case Done{image}: Some{image}
+def bridge(result: Maybe<J.Surface>) -> Maybe<J.Surface>:
   match result:
     case None{}: None{}
-    case Some{image}: Some{J.Surface.to_formatted(J.Image.Formatted.to_surface(image))}
-def owner.got(expected: Maybe<&2, U32>, result: J.Image.Formatted & Maybe<&2, U32>) -> Maybe<J.Image.Formatted>:
+    case Some{image}: bridge.formatted(J.Surface.format(image, 7))
+def owner.got(expected: Maybe<&2, U32>, result: J.Surface & Maybe<&2, U32>) -> Maybe<J.Surface>:
   match expected result:
     case None{} Tuple{image, None{}}: Some{image}
-    case Some{wanted} Tuple{image, Some{value}}: Bool.pick(Maybe<J.Image.Formatted>, U32.is_eq(wanted, value), Some{image}, None{})
+    case Some{wanted} Tuple{image, Some{value}}: Bool.pick(Maybe<J.Surface>, U32.is_eq(wanted, value), Some{image}, None{})
     case _ _: None{}
-def owner.read(result: Maybe<J.Image.Formatted>, x: U32, y: U32, expected: Maybe<&2, U32>) -> Maybe<J.Image.Formatted>:
+def owner.read(result: Maybe<J.Surface>, x: U32, y: U32, expected: Maybe<&2, U32>) -> Maybe<J.Surface>:
   match result:
     case None{}: None{}
-    case Some{image}: owner.got(expected, J.Image.Formatted.get(image, x, y))
-def owner(result: Maybe<J.Image.Formatted>, +width: U32, +height: U32, first: U32, last: U32) -> Maybe<J.Image.Formatted>:
+    case Some{image}: owner.got(expected, J.Surface.get(image, x, y))
+def owner(result: Maybe<J.Surface>, +width: U32, +height: U32, first: U32, last: U32) -> Maybe<J.Surface>:
   image = owner.read(result, 0, 0, Some{first})
   image = owner.read(image, (width - 1 : U32), (height - 1 : U32), Some{last})
   image = owner.read(image, width, 0, None{})
@@ -131,34 +148,31 @@ def roundtrip.bytes(values: List<U32>, bytes: +List<U32>) -> +List<U32>:
   match values:
     case Nil{}: List.reverse(&2, U32, bytes)
     case Con{head, tail}: roundtrip.bytes(tail, Con{head, bytes})
-def roundtrip.exported(data: (U32 & U32) & (U32 & List<U32>)) -> Maybe<J.Image.Formatted>:
+def roundtrip.exported(data: (U32 & U32) & (U32 & List<U32>)) -> Maybe<J.Surface>:
   ((width, height), (format, bytes)) = data
-  J.Image.Formatted.from_bytes(width, height, format, roundtrip.bytes(bytes, Nil{}))
-def roundtrip(result: Maybe<J.Image.Formatted>) -> Maybe<J.Image.Formatted>:
+  J.Surface.from_bytes(width, height, format, roundtrip.bytes(bytes, Nil{}))
+def roundtrip(result: Maybe<J.Surface>) -> Maybe<J.Surface>:
   match result:
     case None{}: None{}
-    case Some{image}: roundtrip.exported(J.Image.Formatted.export(image))
+    case Some{image}: roundtrip.exported(J.Surface.export(image))
 def emit(id: String, role: String, data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
   ((width, height), (format, bytes)) = data
   do IO<Unit>:
     IO.print("{\"id\":\"" ++ id ++ "\",\"role\":\"" ++ role ++ "\",\"width\":" ++ U32.show(width) ++ ",\"height\":" ++ U32.show(height) ++ ",\"mipmaps\":1,\"format\":" ++ U32.show(format) ++ "}")
     emit_bytes(~&1, bytes)
-def observed(id: String, role: String, result: Maybe<J.Image.Formatted>) -> IO(Unit):
+def observed(id: String, role: String, result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "valid image or owner invariant rejected")
-    case Some{image}: emit(id, role, J.Image.Formatted.export(image))
-def error.code(error: J.Image.DecodeError) -> U32:
+    case Some{image}: emit(id, role, J.Surface.export(image))
+def error.code(error: J.Surface.Error) -> U32:
   match error:
     case J.InvalidImageHeader{}: 0
     case J.InvalidImageByte{}: 1
     case J.UnsupportedImageSize{}: 2
     case J.TruncatedImageData{}: 3
     case J.InvalidImageStream{}: 4
-def formatted.error(result: Result<&1, &1, J.Image.DecodeError, J.Image.Formatted>) -> U32:
-  match result:
-    case Fail{error}: error.code(error)
-    case Done{_}: 99
-def surface.error(result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> U32:
+    case _: 98
+def decode.error(result: Result<&1, &1, J.Surface.Error, J.Surface>) -> U32:
   match result:
     case Fail{error}: error.code(error)
     case Done{_}: 99
@@ -338,11 +352,9 @@ def candidate_program(codec, actions, gpu=False):
     for action in actions:
         c, role = action['case'], action['role']
         data, ident = bindings[c['id']], json.dumps(c['id'])
-        decode = f'decoded(J.Image.Formatted.{decoder}({data}))'
+        decode = f'decoded(J.Surface.{decoder}({data}))'
         if role in ERROR_ROLES:
-            mode = role.split('-')[0]
-            call = 'J.Image.Formatted' if mode == 'formatted' else 'J.Surface'
-            lines.append(f'    emit.error({ident}, {json.dumps(role)}, {mode}.error({call}.{decoder}({data})))')
+            lines.append(f'    emit.error({ident}, {json.dumps(role)}, decode.error(J.Surface.{decoder}({data})))')
             continue
         if role == 'raw':
             image = decode
@@ -358,7 +370,7 @@ def candidate_program(codec, actions, gpu=False):
             profile = 'Uncontracted' if role == 'uncontracted' else 'Fused'
             image = f'surface(J.Surface.decode_image_for(M.{profile}{{}}, {json.dumps(codec.contraction_token)}, {data}))'
         elif role == 'factory':
-            image = (f'J.Image.Formatted.from_bytes({c["width"]}, {c["height"]}, {codec.formats[c["channels"]]}, '
+            image = (f'J.Surface.from_bytes({c["width"]}, {c["height"]}, {codec.formats[c["channels"]]}, '
                      f'{bend_bytes(action["expected"]["bytes"])})')
         elif role == 'owner':
             normal = action['normalized']
