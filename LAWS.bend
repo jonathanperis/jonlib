@@ -641,3 +641,20 @@ law codec_native_rgba_is_canonical:
   for +height: U32
   for pixels: Array<U32>
   {J.Surface.codec.stored(4, width, height, 4, pixels) == J.Surface{width, height, 7, J.Words{pixels}} : J.Surface}
+
+# Unified Surface: format target 0 keeps the owner; R8G8B8A8 drawing stores the
+# canonical Color word; SetPixelColor leaves R32 canvases zero.
+law surface_format_zero_keeps_owner:
+  for width: U32
+  for height: U32
+  for format: U32
+  for pixels: J.Surface.Pixels
+  {J.Surface.format(J.Surface{width, height, format, pixels}, 0) == Done{J.Surface{width, height, format, pixels}} : Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>}
+
+law surface_draw_word_rgba_is_color:
+  for color: U32
+  {J.Surface.draw_word(7, color) == color : U32}
+
+law surface_fill_word_r32_is_zero:
+  for color: U32
+  {J.Surface.fill_word(8, 8, color) == 0 : U32}
