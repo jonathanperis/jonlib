@@ -4208,6 +4208,90 @@ def Surface.load_raw(path: String, +width: U32, +height: U32, +format: U32, head
   Image.raw.parameters(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096)
     && (format >= 1) && (format <= 13) : U32), path, width, height, format, header_size)
 
+# Explicit loaders. raylib's Set*FileCallback functions install process-wide
+# callbacks that LoadImage, LoadImageRaw and LoadImageAnim read through, and
+# that ExportImage's PNG and raw branches and ExportImageAsCode write through
+# (its BMP, TGA and QOI writers open the file themselves). Jonlib passes the
+# callback to these _with forms instead; see docs/FILES.md.
+def Image.file.within(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, Surface.IOError, +List<U32>>:
+  match valid:
+    case False{}: Fail{DataError{UnsupportedImageSize{}}}
+    case True{}: Done{bytes}
+
+def Image.file.limited(+limit: U32, result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(Result<&1, &1, Surface.IOError, +List<U32>>):
+  match result:
+    case Fail{error}: IO.pure(Result<&1, &1, Surface.IOError, +List<U32>>, Fail{error})
+    case Done{+bytes}: IO.pure(Result<&1, &1, Surface.IOError, +List<U32>>, Image.file.within(Nat.is_le(List.length(&2, U32, bytes), U32.to_nat(limit)), bytes))
+
+def Image.file.load_with(~load: String -> IO(Result<&1, &1, Surface.IOError, +List<U32>>), path: String, +limit: U32) -> IO(Result<&1, &1, Surface.IOError, +List<U32>>):
+  IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, +List<U32>>, load(path), Image.file.limited(limit))
+
+def Surface.load_image_with(~load: String -> IO(Result<&1, &1, Surface.IOError, +List<U32>>), reference: M.Contraction, +path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
+  +kind = Image.file.kind(path)
+  IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, Surface>,
+    Image.file.load_with(~load, path, Image.file.limit(kind)), Image.file.surface(reference, kind))
+
+def Image.Animation.load_image_with(~load: String -> IO(Result<&1, &1, Surface.IOError, +List<U32>>), reference: M.Contraction, +path: String, maximum_frames: U32, maximum_pixels: U32) -> IO(Result<&1, &1, Surface.IOError, Image.Animation>):
+  +token = Image.Animation.file.token(Image.file.token(path))
+  IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, Image.Animation>,
+    Image.file.load_with(~load, path, Image.file.limit(Image.memory.kind(token))), Image.Animation.file.loaded(reference, token, maximum_frames, maximum_pixels))
+
+def Image.raw.slice(enough: Bool, +header: U32, +needed: U32, +size: Nat, bytes: +List<U32>) -> Result<&1, &1, Surface.IOError, +List<U32>>:
+  match enough:
+    case False{}: Fail{DataError{TruncatedImageData{}}}
+    case True{}:
+      +skip = Bool.pick(Nat, (header > 0 : U32) && Nat.is_le((U32.to_nat(header) + U32.to_nat(needed) : Nat), size), U32.to_nat(header), 0n)
+      Done{List.take(&2, U32, List.drop(&2, U32, bytes, skip), U32.to_nat(needed))}
+
+def Image.raw.sliced(+header: U32, +needed: U32, result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(Result<&1, &1, Surface.IOError, +List<U32>>):
+  match result:
+    case Fail{error}: IO.pure(Result<&1, &1, Surface.IOError, +List<U32>>, Fail{error})
+    case Done{+bytes}:
+      +size = List.length(&2, U32, bytes)
+      IO.pure(Result<&1, &1, Surface.IOError, +List<U32>>, Image.raw.slice(Nat.is_le(U32.to_nat(needed), size), header, needed, size, bytes))
+
+def Image.raw.request_with(~load: String -> IO(Result<&1, &1, Surface.IOError, +List<U32>>), valid: Bool, path: String, +header: U32, +needed: U32) -> IO(Result<&1, &1, Surface.IOError, +List<U32>>):
+  match valid:
+    case False{}: IO.pure(Result<&1, &1, Surface.IOError, +List<U32>>, Fail{DataError{InvalidRequest{}}})
+    case True{}: IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, +List<U32>>, load(path), Image.raw.sliced(header, needed))
+
+def Image.raw.parameters_with(~load: String -> IO(Result<&1, &1, Surface.IOError, +List<U32>>), valid: Bool, path: String, +width: U32, +height: U32, +format: U32, +header: U32) -> IO(Result<&1, &1, Surface.IOError, Surface>):
+  match valid:
+    case False{}: IO.pure(Result<&1, &1, Surface.IOError, Surface>, Fail{DataError{InvalidRequest{}}})
+    case True{}:
+      +needed = (width * height * (Pixel.bits_per_pixel(format) / 8) : U32)
+      IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, Surface>,
+        Image.raw.request_with(~load, (header <= 2147483647 - needed : U32), path, header, needed), Image.raw.surface(width, height, format))
+
+def Surface.load_raw_with(~load: String -> IO(Result<&1, &1, Surface.IOError, +List<U32>>), path: String, +width: U32, +height: U32, +format: U32, header_size: U32) -> IO(Result<&1, &1, Surface.IOError, Surface>):
+  Image.raw.parameters_with(~load, ((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096)
+    && (format >= 1) && (format <= 13) : U32), path, width, height, format, header_size)
+
+def Surface.write.bytes_with(~save: String -> +List<U32> -> IO(Result<&1, &1, Surface.IOError, Unit>), path: String, result: Result<&1, &1, Surface & Surface.Error, +List<U32>>) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  match result:
+    case Fail{Tuple{surface, error}}: IO.pure(Result<&1, &1, Surface.IOError, Unit>, Fail{SourceError{surface, error}})
+    case Done{bytes}: save(path, bytes)
+
+def Surface.write.kind_with(~save: String -> +List<U32> -> IO(Result<&1, &1, Surface.IOError, Unit>), kind: U32, surface: Surface, path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  match kind:
+    case 1: Surface.write.bytes_with(~save, path, Surface.to_png(surface))
+    case 2: Surface.write_bmp(surface, path)
+    case 3: Surface.write_tga(surface, path)
+    case 4: Surface.write_qoi(surface, path)
+    case 5: Surface.write.bytes_with(~save, path, Surface.raw.payload(Surface.payload.check(surface)))
+    case _: IO.pure(Result<&1, &1, Surface.IOError, Unit>, Fail{SourceError{surface, UnsupportedFileType{}}})
+
+def Surface.write_image_with(~save: String -> +List<U32> -> IO(Result<&1, &1, Surface.IOError, Unit>), surface: Surface, +path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  Surface.write.kind_with(~save, Image.export.kind(path), surface, path)
+
+def Surface.write.text_with(~save: String -> String -> IO(Result<&1, &1, Surface.IOError, Unit>), path: String, result: Result<&1, &1, Surface & Surface.Error, String>) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  match result:
+    case Fail{Tuple{surface, error}}: IO.pure(Result<&1, &1, Surface.IOError, Unit>, Fail{SourceError{surface, error}})
+    case Done{text}: save(path, text)
+
+def Surface.write_code_with(~save: String -> String -> IO(Result<&1, &1, Surface.IOError, Unit>), surface: Surface, +path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  Surface.write.text_with(~save, path, Surface.to_code(surface, path))
+
 # -----------------------------------------------------------------------------
 # Files: rcore.c path and file-data utilities
 #
@@ -4454,6 +4538,36 @@ def Files.find.loaded(+search: String, result: Result<&1, &1, Surface.IOError, S
 def Files.text_find_index(path: String, +search: String) -> IO(Maybe<U32>):
   IO.bind(Result<&1, &1, Surface.IOError, String>, Maybe<U32>, Files.load_text(path), Files.find.loaded(search))
 
+# The _with forms take the callback raylib's Set*FileCallback would install;
+# raylib calls it in place of the standard file access.
+def Files.load_data_with(~load: String -> IO(Result<&1, &1, Surface.IOError, +List<U32>>), path: String) -> IO(Result<&1, &1, Surface.IOError, +List<U32>>):
+  load(path)
+
+def Files.save.checked_with(~save: String -> +List<U32> -> IO(Result<&1, &1, Surface.IOError, Unit>), valid: Bool, path: String, bytes: +List<U32>) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  match valid:
+    case False{}: IO.pure(Result<&1, &1, Surface.IOError, Unit>, Fail{DataError{InvalidRequest{}}})
+    case True{}: save(path, bytes)
+
+def Files.save_data_with(~save: String -> +List<U32> -> IO(Result<&1, &1, Surface.IOError, Unit>), path: String, +bytes: +List<U32>) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  Files.save.checked_with(~save, Codec.valid_bytes(bytes, True{}), path, bytes)
+
+def Files.load_text_with(~load: String -> IO(Result<&1, &1, Surface.IOError, String>), path: String) -> IO(Result<&1, &1, Surface.IOError, String>):
+  load(path)
+
+# The callback receives the text up to its first NUL, as raylib's char pointer.
+def Files.save_text_with(~save: String -> String -> IO(Result<&1, &1, Surface.IOError, Unit>), path: String, text: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  save(path, Files.until_nul(text, False{}, ""))
+
+def Files.find.existing_with(~load: String -> IO(Result<&1, &1, Surface.IOError, String>), path: String, +search: String, exists: Bool) -> IO(Maybe<U32>):
+  match exists:
+    case False{}: IO.pure(Maybe<U32>, None{})
+    case True{}: IO.bind(Result<&1, &1, Surface.IOError, String>, Maybe<U32>, load(path), Files.find.loaded(search))
+
+# FileTextFindIndex checks that the file exists on disk before loading its
+# text through the callback.
+def Files.text_find_index_with(~load: String -> IO(Result<&1, &1, Surface.IOError, String>), +path: String, +search: String) -> IO(Maybe<U32>):
+  IO.bind(Bool, Maybe<U32>, Files.exists(path), Files.find.existing_with(~load, path, search))
+
 def Files.code.text(name: Maybe<&2, String>, +size: U32, bytes: +List<U32>) -> Maybe<String>:
   match name:
     case None{}: None{}
@@ -4474,6 +4588,14 @@ def Files.export.text(path: String, text: Maybe<String>) -> IO(Result<&1, &1, Su
 # ExportDataAsCode: the generated header written to path.
 def Files.export_data_as_code(bytes: +List<U32>, +path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
   Files.export.text(path, Files.data_as_code(bytes, path))
+
+def Files.export.text_with(~save: String -> String -> IO(Result<&1, &1, Surface.IOError, Unit>), path: String, text: Maybe<String>) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  match text:
+    case None{}: IO.pure(Result<&1, &1, Surface.IOError, Unit>, Fail{DataError{InvalidRequest{}}})
+    case Some{code}: Files.save_text_with(~save, path, code)
+
+def Files.export_data_as_code_with(~save: String -> String -> IO(Result<&1, &1, Surface.IOError, Unit>), bytes: +List<U32>, +path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  Files.export.text_with(~save, path, Files.data_as_code(bytes, path))
 
 # -----------------------------------------------------------------------------
 # Logging and memory: rcore.c TraceLog and MemAlloc/MemRealloc/MemFree

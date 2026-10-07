@@ -70,18 +70,25 @@ small part of a later phase forward when needed by an example or a runtime gap.
 Delivered Phase 1 slices: the image module (`images`, `resampling`,
 `image-codecs` work packages: every API mapped and compared with raylib on
 formats 1..13 where raylib supports them), `random`, most of `jonmath` and the
-2D/sphere/box `collision` queries. What remains in Phase 1, in the recommended
+2D/sphere/box/ray `collision` queries. What remains in Phase 1, in the recommended
 order (`docs/PROGRESS.md` lists every ID):
 
-1. **`types`** — raylib's enums, enumerators, constants and struct types as Bend
-   constants/types (531 catalog entries, mostly mechanical). Low risk, and it
-   makes the language mapping that every later API reuses explicit.
-2. **`files` and `memory`** — the path utilities and file data/text/code IO are
-   delivered ([FILES.md](FILES.md)); directories, rename/remove, modification
-   times and the working directory are blocked on OS primitives Base lacks
-   (runtime workstream), and the trace-log/allocation contracts remain.
-3. **`pixels` macros and color utilities** — named color constants and the
-   remaining color/format helpers.
+1. **`types`** — delivered for the value types: every enumeration of
+   raylib.h, rlgl.h, rgestures.h and rcamera.h as checked U32 constants, the
+   math/geometry/ray/camera/transform structs (field-checked against the
+   headers) and raymath's C++ operators. The remaining structs hold GPU,
+   audio or model resources (`Texture`, `Shader`, `Mesh`, `Font`, `Wave`, ...)
+   or C `int` fields (`NPatchInfo`, `GlyphInfo`, `VrDeviceInfo`,
+   `AutomationEvent`); they arrive with their modules, which also settle the
+   signed-int field representation.
+2. **`files` and `memory`** — delivered: path utilities, file data/text/code IO
+   ([FILES.md](FILES.md)), trace logging and the allocation helpers
+   ([LOGGING.md](LOGGING.md)), and explicit `_with` loaders for the
+   `Set*FileCallback` hooks. Directories, rename/remove, modification times
+   and the working directory are blocked on OS primitives Base lacks (runtime
+   workstream); `AudioCallback` arrives with audio.
+3. **`pixels` macros and color utilities** — delivered, including the named
+   color constants.
 4. **Blocked numerics** — `MatrixPerspective`, `QuaternionSlerp`,
    `QuaternionToAxisAngle`, `QuaternionToEuler` and the cubic Bézier spline
    need native `tanf`/`acosf`/`atan2f`/`powf` profiles. The diagnostic
