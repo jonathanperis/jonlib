@@ -650,7 +650,7 @@ collision_arithmetic = noise_reference = spline_reference = image_decode_referen
 
 # Native selections use the frozen source-contract names; Jonmath names the libm.
 LIBM_FOR_PROFILE = {'Apple2007AngleRn': 'AppleLibm', 'Sun239AngleRn': 'Glibc239Libm', 'Glibc241AngleRn': 'Glibc241Libm',
-                    'AccurateGradient': 'AppleLibm', 'GnuGradient': 'Glibc239Libm'}
+                    'AppleLibm': 'AppleLibm', 'Glibc239Libm': 'Glibc239Libm'}
 
 
 def vector_arguments(signature, values, bend=False):
@@ -1055,7 +1055,7 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
     Executable entrypoints must obtain angle_reference from qualify_angles in
     this invocation. A name accepted here is not a qualification receipt.
     """
-    if extrema_reference is not None and extrema_reference not in ('AccurateGradient', 'GnuGradient'):
+    if extrema_reference is not None and extrema_reference not in ('AppleLibm', 'Glibc239Libm'):
         raise ValueError('Unknown extrema reference profile')
     if has_extrema(cases) and extrema_reference is None:
         raise ValueError('Extrema require fresh canonical literal-raymath profile qualification')

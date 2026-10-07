@@ -15,7 +15,7 @@ import struct
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / 'tools/reference/angle_qualification_v1.json'
 ANGLE_PROFILES = ('Apple2007AngleRn', 'Sun239AngleRn', 'Glibc241AngleRn')
-EXTREMA_PROFILES = ('AccurateGradient', 'GnuGradient')
+EXTREMA_PROFILES = ('AppleLibm', 'Glibc239Libm')
 CANONICAL_FLAGS = ['-std=c11', '-O2', '-fno-builtin-atan2f']
 APIS = ('Vector2Angle', 'Vector2LineAngle', 'Vector3Angle')
 
@@ -194,9 +194,9 @@ CONTROL_BITS = (0xbf800000, 0x80000000, 0x00000000, 0x3f800000)
 KINDS = {2: 'vector_value', 3: 'vector3_value', 4: 'vector4_value'}
 # Indices into CONTROL_BITS. Accurate: min zero-sign OR / max zero-sign AND. GNU: first zero operand.
 TABLES = {
-    'AccurateGradient': {'min': ((0, 0, 0, 0), (0, 1, 1, 1), (0, 1, 2, 2), (0, 1, 2, 3)),
+    'AppleLibm': {'min': ((0, 0, 0, 0), (0, 1, 1, 1), (0, 1, 2, 2), (0, 1, 2, 3)),
                          'max': ((0, 1, 2, 3), (1, 1, 2, 3), (2, 2, 2, 3), (3, 3, 3, 3))},
-    'GnuGradient': {'min': ((0, 0, 0, 0), (0, 1, 1, 1), (0, 2, 2, 2), (0, 1, 2, 3)),
+    'Glibc239Libm': {'min': ((0, 0, 0, 0), (0, 1, 1, 1), (0, 2, 2, 2), (0, 1, 2, 3)),
                     'max': ((0, 1, 2, 3), (1, 1, 1, 3), (2, 2, 2, 3), (3, 3, 3, 3))},
 }
 
