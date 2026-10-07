@@ -44,13 +44,13 @@ Mixed-case forms and `.pnm` are unsupported, matching native dispatch.
   classified normally. Unsupported suffixes are still opened and read under the
   1 MiB cap, then fail with `DataError{InvalidImageHeader}`.
 - `.qoi`/`.QOI` select QOI directly. Every other recognized token selects the
-  stb-style raster family, which detects content: PNG, BMP, P5/P6, PSD, PIC and
-  GIF signatures are tried in that order, otherwise the TGA profile. PNG bytes
+  stb-style raster family, which detects content: PNG, BMP, P5/P6, PSD, PIC,
+  GIF and JPEG signatures are tried in that order, otherwise the TGA profile. PNG bytes
   named `image.bmp` therefore load as PNG, matching native content detection.
   QOI bytes under a raster token and raster bytes under a QOI token are
   rejected. The `.jpg/.jpeg/.gif/.pic/.psd` aliases accept any implemented
-  raster payload, as the native shared decoder does; actual JPEG decoding is
-  not implemented.
+  raster payload, as the native shared decoder does; JPEG content decodes as
+  [JPEG.md](JPEG.md) describes.
 - Codec profiles: [PNG](PNG.md), [BMP](BMP.md), [TGA](TGA.md), [PNM](PNM.md),
   [PSD](PSD.md), [PIC](PIC.md), [GIF](GIF.md) (first frame), QOI in
   [CODECS.md](CODECS.md). HDR is selected only explicitly (`load_hdr`,
@@ -333,7 +333,7 @@ paths they exercise.
 
 ## Known gaps
 
-- JPEG decoding; HDR in the shared suffix dispatch; original source formats
+- HDR in the shared suffix dispatch; original source formats
   for PSD and GIF (decoded as R8G8B8A8); multi-level KTX/PVR files and `.ktx`
   export; operations on mipmapped images.
 - Concurrent or changing files, special files, native callbacks, native

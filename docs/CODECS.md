@@ -17,11 +17,12 @@ selection and the shared bounded file boundary are documented in
 | PNM | Binary 8/16-bit P5/P6; native format 1/4 (8-bit); files | [PNM.md](PNM.md) | `pnm`, `pnm-format`, `pnm-file` |
 | PSD | Raw/PackBits RGB(A) planes, explicit matte profiles; R8G8B8A8 | [PSD.md](PSD.md) | `psd`, `psd-matte` |
 | PIC | Softimage raw/pure-RLE/mixed-RLE packets; native format 4/7; files | [PIC.md](PIC.md) | `pic`, `pic-format`, `pic-file` |
-| DDS | Uncompressed single-level R5G6B5/A1R5G5B5/A4R4G4B4/RGB24/BGRA32; native format 3/5/6/4/7; files | [below](#dds) | `dds` |
+| DDS | Uncompressed single-level R5G6B5/A1R5G5B5/A4R4G4B4/RGB24/BGRA32; native format 3/5/6/4/7; files. DXT blocks and mip chains as `Image.Stored` | [below](#dds), [IMAGE-FILES.md](IMAGE-FILES.md#compressed-and-multi-level-images) | `dds`, `stored` |
+| KTX, PKM, PVR, ASTC | Configuration-gated single-level loaders as `Image.Stored` | [IMAGE-FILES.md](IMAGE-FILES.md#compressed-and-multi-level-images) | `gputex` |
 | GIF (first frame) | Rectangles, interlacing, palettes, transparency, bounded LZW; R8G8B8A8 | [GIF.md](GIF.md) | `gif` |
 | GIF animation | Owned frames, retain/restore disposal, budgets; memory and files | [GIF-ANIMATION.md](GIF-ANIMATION.md) | `gif-animation`, `animation-file` |
 | HDR | Raw/RLE Radiance RGBE to exact F32 (format 9); files | [HDR.md](HDR.md) | `hdr`, `hdr-file` |
-| JPEG | Tokens `.jpg`/`.jpeg` route to the implemented raster decoders only; JPEG decoding is not implemented | [IMAGE-FILES.md](IMAGE-FILES.md) | `image-memory`, `image-file` |
+| JPEG | stb baseline/progressive decoding as raylib with `SUPPORT_FILEFORMAT_JPG`; GRAYSCALE or R8G8B8; files | [JPEG.md](JPEG.md) | `jpeg` |
 | Raw headerless | `LoadImageRaw`/`.raw` export for formats 1..13 (checked R32/R16) | [RAW-FILES.md](RAW-FILES.md) | `raw-file`, `r32-raw-file`, `float-rgb-raw-file` |
 | Image as code | Exact `ExportImageAsCode` text and file export | [IMAGE-CODE.md](IMAGE-CODE.md) | `image-code` |
 | DEFLATE decompression | Bounded raw DEFLATE (`DecompressData`) and the PNG inflater policy | [DEFLATE.md](DEFLATE.md) | `inflate` |

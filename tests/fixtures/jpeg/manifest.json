@@ -1,0 +1,150 @@
+{
+ "encoder": "libjpeg-turbo version 3.2.0 (build 20260630)",
+ "fixtures": [
+  {
+   "name": "g1x1",
+   "source": "synthetic P5 1x1, seed 321",
+   "command": "cjpeg -quality 90"
+  },
+  {
+   "name": "g8",
+   "source": "synthetic P5 8x8, seed 159",
+   "command": "cjpeg -quality 85"
+  },
+  {
+   "name": "g17x9",
+   "source": "synthetic P5 17x9, seed 384",
+   "command": "cjpeg -quality 75"
+  },
+  {
+   "name": "g64x48",
+   "source": "synthetic P5 64x48, seed 437",
+   "command": "cjpeg -quality 80"
+  },
+  {
+   "name": "c1x1",
+   "source": "synthetic P6 1x1, seed 317",
+   "command": "cjpeg -sample 1x1"
+  },
+  {
+   "name": "c16-444",
+   "source": "synthetic P6 16x16, seed 403",
+   "command": "cjpeg -sample 1x1"
+  },
+  {
+   "name": "c16-420",
+   "source": "synthetic P6 16x16, seed 397",
+   "command": "cjpeg -sample 2x2"
+  },
+  {
+   "name": "c13x9-422",
+   "source": "synthetic P6 13x9, seed 573",
+   "command": "cjpeg -sample 2x1"
+  },
+  {
+   "name": "c13x9-440",
+   "source": "synthetic P6 13x9, seed 573",
+   "command": "cjpeg -sample 1x2"
+  },
+  {
+   "name": "c33x16-411",
+   "source": "synthetic P6 33x16, seed 619",
+   "command": "cjpeg -sample 4x1"
+  },
+  {
+   "name": "c7x5-311",
+   "source": "synthetic P6 7x5, seed 521",
+   "command": "cjpeg -sample 3x1"
+  },
+  {
+   "name": "c12x12-mixed",
+   "source": "synthetic P6 12x12, seed 997",
+   "command": "cjpeg -sample 2x2,2x1,1x1"
+  },
+  {
+   "name": "c20x12-rst1",
+   "source": "synthetic P6 20x12, seed 855",
+   "command": "cjpeg -sample 2x2 -restart 1B"
+  },
+  {
+   "name": "c24x24-rst-rows",
+   "source": "synthetic P6 24x24, seed 1317",
+   "command": "cjpeg -sample 2x2 -restart 2"
+  },
+  {
+   "name": "c16-q1",
+   "source": "synthetic P6 16x16, seed 409",
+   "command": "cjpeg -quality 1"
+  },
+  {
+   "name": "c16-q100",
+   "source": "synthetic P6 16x16, seed 505",
+   "command": "cjpeg -quality 100"
+  },
+  {
+   "name": "c16-optimize",
+   "source": "synthetic P6 16x16, seed 1128",
+   "command": "cjpeg -optimize"
+  },
+  {
+   "name": "c16-rgb",
+   "source": "synthetic P6 16x16, seed 562",
+   "command": "cjpeg -rgb"
+  },
+  {
+   "name": "c64x48-420",
+   "source": "synthetic P6 64x48, seed 628",
+   "command": "cjpeg -sample 2x2 -quality 70"
+  },
+  {
+   "name": "c8-arithmetic",
+   "source": "synthetic P6 8x8, seed 1266",
+   "command": "cjpeg -arithmetic"
+  },
+  {
+   "name": "pg8",
+   "source": "synthetic P5 8x8, seed 271",
+   "command": "cjpeg -progressive"
+  },
+  {
+   "name": "pg17x9",
+   "source": "synthetic P5 17x9, seed 496",
+   "command": "cjpeg -progressive -quality 60"
+  },
+  {
+   "name": "pc16-420",
+   "source": "synthetic P6 16x16, seed 509",
+   "command": "cjpeg -progressive -sample 2x2"
+  },
+  {
+   "name": "pc16-444",
+   "source": "synthetic P6 16x16, seed 515",
+   "command": "cjpeg -progressive -sample 1x1"
+  },
+  {
+   "name": "pc13x9-422-rst",
+   "source": "synthetic P6 13x9, seed 1075",
+   "command": "cjpeg -progressive -sample 2x1 -restart 1B"
+  },
+  {
+   "name": "pc33x16-411",
+   "source": "synthetic P6 33x16, seed 731",
+   "command": "cjpeg -progressive -sample 4x1"
+  },
+  {
+   "name": "pc64x48-420",
+   "source": "synthetic P6 64x48, seed 740",
+   "command": "cjpeg -progressive -sample 2x2 -quality 70"
+  },
+  {
+   "name": "pc16-q1",
+   "source": "synthetic P6 16x16, seed 521",
+   "command": "cjpeg -progressive -quality 1"
+  },
+  {
+   "name": "k16-cmyk",
+   "source": "synthetic CMYK 16x16, seed 77",
+   "command": "PIL Image.save(JPEG, quality=90)"
+  }
+ ]
+}

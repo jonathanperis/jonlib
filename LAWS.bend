@@ -10,6 +10,7 @@ import ./src/binary64_ops.bend as O
 import ./src/binary64_gradual_multiply.bend as G
 import ./src/resize_numeric.bend as Resize
 import ./src/bmp.bend as Bmp
+import ./src/jpeg.bend as Jpg
 import ./src/tga.bend as Tga
 import ./src/qoi.bend as Qoi
 import ./src/png.bend as Png
@@ -708,3 +709,19 @@ law stored_compressed_levels_unsupported:
   for count: U32
   for data: +List<U32>
   {J.Image.Stored.levels.checked(False{}, image, width, height, format, count, data) == Fail{(image, J.UnsupportedFormat{})} : Result<&1, &1, J.Image.Stored & J.Surface.Error, J.Image.Mipmaps>}
+
+# JPEG: stb's zeroed Huffman table decodes symbol 0 without consuming bits;
+# corrupt runs past coefficient 63 sample 63; coefficients wrap to 16 bits and
+# signed shifts are arithmetic (concrete values, not a decoder theorem).
+law jpeg_absent_table_symbol_zero:
+  for buffer: U32
+  {Jpg.Huff.lookup(Jpg.Absent{}, 16, buffer) == Jpg.Found{0, 0} : Jpg.Found}
+
+law jpeg_zig_past_end:
+  {Jpg.zig(70) == 63 : U32}
+
+law jpeg_short_wraps:
+  {Jpg.short(32768) == 4294934528 : U32}
+
+law jpeg_asr_negative:
+  {Jpg.asr(4294967040, 4n) == 4294967280 : U32}
