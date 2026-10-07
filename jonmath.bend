@@ -9,6 +9,7 @@
 #   4. Vector2
 #   5. Matrices, Vector3 and Vector4
 #   6. Quaternions, decomposition and projection
+#   7. Operator sugar (raymath's optional C++ operators)
 # raymath groups by type; Bend needs definitions before use, so later
 # sections may extend an earlier type (e.g. Vector3 helpers after Matrix).
 import Base
@@ -1208,3 +1209,43 @@ def Vector3.unproject(source: Vector3, projection: Matrix, view: Matrix) -> Vect
   inverse = Matrix.transpose(Matrix.invert(Matrix.transpose(Matrix.multiply(view, projection))))
   Vector3.unproject.result(Quaternion.transform(Vector4{x, y, z, 1.0}, inverse))
 
+# -----------------------------------------------------------------------------
+# Operator sugar (raymath's optional C++ operators)
+#
+# Bend's typed operators call T.add, T.sub, T.mul and T.div, so
+# (a - b : M.Vector3) is raymath's same-type C++ operator. The scalar and
+# matrix overloads (v * s, v / s, v * m, q + s, q - s, q * m, m * s) and
+# ==/!= are the named functions those operators call (see docs/MATH.md).
+
+def Vector2.sub(left: Vector2, right: Vector2) -> Vector2:
+  Vector2.subtract(left, right)
+
+def Vector2.mul(left: Vector2, right: Vector2) -> Vector2:
+  Vector2.multiply(left, right)
+
+def Vector2.div(left: Vector2, right: Vector2) -> Vector2:
+  Vector2.divide(left, right)
+
+def Vector3.sub(left: Vector3, right: Vector3) -> Vector3:
+  Vector3.subtract(left, right)
+
+def Vector3.mul(left: Vector3, right: Vector3) -> Vector3:
+  Vector3.multiply(left, right)
+
+def Vector3.div(left: Vector3, right: Vector3) -> Vector3:
+  Vector3.divide(left, right)
+
+def Vector4.sub(left: Vector4, right: Vector4) -> Vector4:
+  Vector4.subtract(left, right)
+
+def Vector4.mul(left: Vector4, right: Vector4) -> Vector4:
+  Vector4.multiply(left, right)
+
+def Vector4.div(left: Vector4, right: Vector4) -> Vector4:
+  Vector4.divide(left, right)
+
+def Matrix.sub(left: Matrix, right: Matrix) -> Matrix:
+  Matrix.subtract(left, right)
+
+def Matrix.mul(left: Matrix, right: Matrix) -> Matrix:
+  Matrix.multiply(left, right)

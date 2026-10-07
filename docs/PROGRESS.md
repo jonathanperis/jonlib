@@ -28,9 +28,9 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 
 | Step | Phase | Work package | Entries | Partial | Complete | Prerequisites |
 |---|---:|---|---:|---:|---:|---|
-| 1 | 0 | `types` — Types, constants and language mappings | 549 | 349 | 0 | — |
+| 1 | 0 | `types` — Types, constants and language mappings | 549 | 517 | 0 | — |
 | 2 | 1 | `numerics` — Numeric fidelity and scalar contracts | 14 | 13 | 0 | types |
-| 3 | 1 | `jonmath` — Jonmath vectors, matrices and quaternions | 221 | 157 | 0 | numerics |
+| 3 | 1 | `jonmath` — Jonmath vectors, matrices and quaternions | 221 | 217 | 0 | numerics |
 | 4 | 1 | `memory` — Buffers, memory and callback contracts | 12 | 7 | 0 | types |
 | 5 | 1 | `files` — Files, paths, compression and data utilities | 49 | 25 | 0 | memory |
 | 6 | 1 | `random` — Random-number and sequence contracts | 4 | 4 | 0 | numerics, memory |
