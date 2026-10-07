@@ -124,9 +124,18 @@ Operations follow raylib's per-format behavior:
   elsewhere) and otherwise return `OutOfDomain` with the owner.
 - **Drawing** stores each covered pixel's color as `ImageDrawPixel` encodes it
   for the format; there is no blending.
-- **Two-image** operations (`draw_image*`, `alpha_mask`) and `alpha_clear`,
-  `mipmaps` and `rotate_degrees` currently accept R8G8B8A8 owners only and
-  return `UnsupportedFormat` for others.
+- **Composition** (`draw_image*`) reads both images with `GetPixelColor`
+  (integer scaling for packed formats, unlike `LoadImageColors`), blends with
+  `ColorAlphaBlend` unless the source has no alpha and the tint is opaque, and
+  writes with `SetPixelColor`, which leaves R32 and R32G32B32 unchanged. Without
+  blending, equal formats copy stored samples. Scaled draws resize the source
+  in its own format.
+- **Per-format** operations follow raylib's switch: `alpha_clear` changes
+  GRAY_ALPHA, R5G5B5A1, R4G4B4A4 and R8G8B8A8 and leaves formats without alpha
+  unchanged; `alpha_mask` turns GRAYSCALE into GRAY_ALPHA and other formats into
+  R8G8B8A8; `rotate_degrees` blends every stored byte (float results outside
+  the owner domain are `OutOfDomain`); `mipmaps` resizes each level in the
+  image's format.
 
 Which formats each operation has reference evidence for is recorded per API in
 the [compatibility ledger](COMPATIBILITY.md); `tools/surface_format_probe.py`
@@ -178,7 +187,7 @@ compares every format-generic operation on formats 1..9 with raylib.
 | `Surface.alpha_premultiply(surface)` | Reference F32 alpha multiplication of RGB. |
 | `Surface.blur_gaussian(surface, size)` | Four-iteration box approximation with premultiplied alpha; size 0..min(width, height). See [BLUR.md](BLUR.md). |
 | `Surface.kernel_convolution(surface, kernel)` | Bounded square kernels; unsupported kernels/results are `InvalidKernel`. See [CONVOLUTION.md](CONVOLUTION.md). |
-| `Surface.resize(surface, width, height)` | Default filtered resize (Catmull-Rom up, Mitchell down, alpha-aware); dimensions 1..4096. GRAYSCALE, GRAY_ALPHA and R8G8B8 use 1..3-channel filters in raylib that this port does not implement yet: `UnsupportedFormat`. See [RESAMPLING.md](RESAMPLING.md). |
+| `Surface.resize(surface, width, height)` | Default filtered resize (Catmull-Rom up, Mitchell down); dimensions 1..4096. R8G8B8A8 is alpha-aware; GRAYSCALE, GRAY_ALPHA and R8G8B8 filter their own channels unweighted and keep their format; other formats go through RGBA8 and back. See [RESAMPLING.md](RESAMPLING.md). |
 | `Surface.resize_nn(surface, width, height)` | Exact fixed-point nearest mapping; refuses out-of-allocation reference mappings. |
 | `Surface.dither(surface, r, g, b, a)` | Floyd-Steinberg into R5G6B5 (5,6,5,0), R5G5B5A1 (5,5,5,1) or R4G4B4A4 (4,4,4,4); other bit counts are `InvalidDitherBits`. See [PIXELS.md](PIXELS.md). |
 
@@ -200,17 +209,17 @@ returns the original owner.
 
 Every drawing call consumes the owner and returns the updated one.
 
-### R8G8B8A8-only operations
+### Composition, masks, rotation and mipmaps
 
 | Operation | Contract |
 |---|---|
-| `Surface.draw_image(destination, source, x, y, tint)` | Full-source unscaled composition with integer `ColorAlphaBlend`; returns `Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>` with destination first and the unchanged source. |
+| `Surface.draw_image(destination, source, x, y, tint)` | Full-source unscaled composition with integer `ColorAlphaBlend`, any formats; returns `Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>` with destination first and the unchanged source. An R32G32B32 source needs samples in 0..1 (`OutOfDomain`). |
 | `Surface.draw_image_region(destination, source, rectangle, x, y, tint)` | Valid unscaled source subrectangles with integer placement. |
-| `Surface.draw_image_rect(destination, source, source_rectangle, destination_rectangle, tint)` | Bounded finite rectangles, including fractional fields; reference clipping and default filtered scaling. |
-| `Surface.alpha_mask(destination, mask)` | Same-size mask converted to grayscale replaces destination alpha; mismatched sizes are `InvalidSize`. |
-| `Surface.alpha_clear(surface, color, threshold)` | Finite threshold 0..1 as an inclusive alpha-byte cutoff. |
-| `Surface.mipmaps(surface)` / `Image.Mipmaps.entries/unload` | Base-to-1x1 chain with sequential default filtering. See [MIPMAPS.md](MIPMAPS.md). |
-| `Surface.rotate_degrees(surface, degrees)` / `rotate_degrees_for(libm, ...)` | Integral degrees -360..360, reference bilinear sampling and truncated output dimensions. See [ROTATION.md](ROTATION.md). |
+| `Surface.draw_image_rect(destination, source, source_rectangle, destination_rectangle, tint)` | Bounded finite rectangles, including fractional fields; reference clipping and default filtered scaling in the source format. |
+| `Surface.alpha_mask(destination, mask)` | Same-size mask converted to GRAYSCALE becomes the alpha of a GRAY_ALPHA (from GRAYSCALE) or R8G8B8A8 destination; mismatched sizes are `InvalidSize`, conversion failures `OutOfDomain`. |
+| `Surface.alpha_clear(surface, color, threshold)` | Finite threshold 0..1 (else `InvalidRequest`): an inclusive alpha cutoff in GRAY_ALPHA, R5G5B5A1, R4G4B4A4 and R8G8B8A8 with raylib's per-format replacement words; other formats are unchanged. |
+| `Surface.mipmaps(surface) -> Image.Mipmaps` / `Image.Mipmaps.entries/unload` | Base-to-1x1 chain, each level `resize` of the previous one in the image's format. See [MIPMAPS.md](MIPMAPS.md). |
+| `Surface.rotate_degrees(surface, degrees)` / `rotate_degrees_for(libm, ...)` | Integral degrees -360..360, reference bilinear sampling of every stored byte and truncated output dimensions; R32/R32G32B32 results outside the owner domain are `OutOfDomain`. See [ROTATION.md](ROTATION.md). |
 
 ### Codecs and files
 

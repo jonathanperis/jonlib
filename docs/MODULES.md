@@ -94,9 +94,16 @@ it too.
 Contract changes made with the merge: contrast/brightness amounts outside their
 C parameter domain are `InvalidRequest` in every format, and R32G32B32 brightness
 truncates fractional amounts like the other formats; `dither` accepts only the
-bit counts that name a 16-bit format; `resize` on GRAYSCALE,
-GRAY_ALPHA and R8G8B8 is `UnsupportedFormat` until their 1..3-channel filters
-are ported.
+bit counts that name a 16-bit format. `resize` on GRAYSCALE, GRAY_ALPHA and
+R8G8B8 was `UnsupportedFormat` at the merge; it now runs their 1..3-channel
+filters.
+
+Phase 1 parity changes: `draw_image*`, `alpha_mask`, `alpha_clear`,
+`rotate_degrees` and `mipmaps` accept formats 1..9 instead of returning
+`UnsupportedFormat`. `alpha_mask` on a GRAYSCALE destination returns GRAY_ALPHA,
+and on other non-RGBA8 formats R8G8B8A8, as raylib does. `alpha_clear` rejects
+thresholds outside finite 0..1 with `InvalidRequest` (previously unchecked).
+`Surface.mipmaps` returns `Image.Mipmaps` directly, since it cannot fail.
 
 ## Private arithmetic support
 

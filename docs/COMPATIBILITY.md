@@ -63,12 +63,12 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | `ImageDrawTriangle` | `Surface.draw_triangle` | Integral-vertex winding, clipping, degeneracy and signed edge stepping | `conformance` |
 | `ImageDrawTriangleLines` | `Surface.draw_triangle_lines` | Truncated vertices and three reference-compatible segments | `conformance` |
 | Vector wrappers, outlines, thick lines, fans/strips, vertex-colored triangles | `Surface.draw_*` families | Truncation, winding and byte-quantized vertex weights | `conformance` |
-| `ImageDraw` | `Surface.draw_image / draw_image_region / draw_image_rect` | RGBA8, one mip: source clipping, default scaling, destination clipping, bounded fractional rectangles; both owners retained | `conformance` |
+| `ImageDraw` | `Surface.draw_image / draw_image_region / draw_image_rect` | Formats 1..9, one mip: source clipping, default scaling in the source format, destination clipping, `GetPixelColor`/`ColorAlphaBlend`/`SetPixelColor` and memcpy rows, bounded fractional rectangles; both owners retained | `conformance`, `surface-format` |
 | `ImageFromImage` | `Surface.extract` | Positive integral in-bounds region; independent output; original retained | `conformance` |
 | `ImageCrop` | `Surface.crop` | Integral clipping, outside-origin no-op; typed failure returns the original | `conformance` |
 | `ImageResizeNN` | `Surface.resize_nn` | Exact fixed-point ratios; invalid/unsafe mappings return the original | `conformance` |
-| `ImageResize` | `Surface.resize` | RGBA8 default filters, exact normalization, alpha-aware output, owner-preserving size errors ([RESAMPLING.md](RESAMPLING.md)) | `resize`, `conformance` |
-| `ImageMipmaps` | `Surface.mipmaps`, `Image.Mipmaps.entries/unload` | Owned RGBA8 base-to-1x1 levels, sequential default filtering, complete-level comparison | `mipmap` |
+| `ImageResize` | `Surface.resize` | Default filters with exact normalization: alpha-aware RGBA8, unweighted 1..3-channel GRAYSCALE/GRAY_ALPHA/R8G8B8, owner-preserving size errors ([RESAMPLING.md](RESAMPLING.md)) | `resize`, `conformance`, `surface-format` |
+| `ImageMipmaps` | `Surface.mipmaps`, `Image.Mipmaps.entries/unload` | Formats 1..9: owned base-to-1x1 levels, sequential `ImageResize` in the image's format, complete-level comparison | `mipmap` |
 | `ImageBlurGaussian` | `Surface.blur_gaussian` | Four-iteration RGBA8 box approximation, premultiply/unpremultiply quantization, bounded sizes, retained rejected owners | `blur` |
 | `ImageKernelConvolution` | `Surface.kernel_convolution` | Bounded square RGBA8 kernels, native flat-index row wrapping; original retained for unsupported kernels/alpha casts | `convolution` |
 | `LoadImageColors` / `GetImageColor` | `Surface.colors` / `Surface.get` | Full export; direct reads, ownership and out-of-bounds `None` | `conformance` |
@@ -94,7 +94,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | Raw image files | `Surface.load_raw/write_raw` | Formats 1..7 and finite `[0,1]` R32; header-offset/fallback rules, distinct sample errors, closed handles ([RAW-FILES.md](RAW-FILES.md)) | `raw-file` |
 | `ImageFlipHorizontal/Vertical` | `Surface.flip_horizontal/flip_vertical` | Explicit and seeded full images | `conformance` |
 | `ImageRotateCW/CCW` | `Surface.rotate_cw/rotate_ccw` | Exact bytes, non-square dimensions, sequencing | `conformance` |
-| `ImageRotate` / `ImageToPOT` | `Surface.rotate_degrees_for/to_pot` | Reference bilinear sampling; POT fill/copy | `conformance`, `trig-rotation` |
+| `ImageRotate` / `ImageToPOT` | `Surface.rotate_degrees_for/to_pot` | Reference bilinear sampling of every stored byte in formats 1..9 (float results outside the owner domain refused); POT fill/copy | `conformance`, `trig-rotation`, `surface-format` |
 | `ImageFromChannel` | `Surface.from_channel` | All byte/channel combinations; independent GRAYSCALE output | `conformance`, `image-channel` |
 | Base.Image conversion / PPM export | `Surface.to_image/to_ppm/write_ppm` | Adapter pixels/padding and actual file RGB | `conformance` |
 | Image-file loading | `Surface.load_image/load_qoi` | Native suffix/content detection, complete reads, typed errors, closed handles ([IMAGE-FILES.md](IMAGE-FILES.md)) | `image-file` |
@@ -131,7 +131,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | RGB float PNG export | `Surface.export_to_memory/write_png` | Raw-storage memory prefix versus normalized file colors | `float-rgb-png` |
 | RGB float BMP/TGA export | `Surface.to_bmp/to_tga/write_bmp/write_tga` | Normalized file bytes, explicit codec selection | `float-rgb-raster-export` |
 | RGB float RAW file IO | `Surface.load_raw/write_raw` | Fitting-header/fallback selection, exact format-9 words, typed failures | `float-rgb-raw-file` |
-| Format-generic image operations | `Surface` flips, turns, crop/extract/canvas/copy, color operations, resizes, dither, drawing, channels, alpha crop, colors | Every operation on formats 1..9 against raylib after `ImageFormat`, complete stored bytes; GRAYSCALE/GRAY_ALPHA/R8G8B8 filtered resize rejected | `surface-format` |
+| Format-generic image operations | `Surface` flips, turns, crop/extract/canvas/copy, color operations, resizes, dither, drawing, channels, alpha crop, colors | Every operation on formats 1..9 against raylib after `ImageFormat`, complete stored bytes, including alpha clear/mask, rotation and composition across source formats | `surface-format` |
 | Raw DEFLATE | `Compression.decompress` | Stored/fixed/dynamic blocks, bounded copies; native empty-stored-block completion differs explicitly from the internal PNG-oriented path ([DEFLATE.md](DEFLATE.md)) | `inflate` |
 | Raw compression | `Compression.compress` | Quality-8 sdefl bytes, empty zero-byte output, bounded native sequence budget, also forced Metal ([COMPRESSION.md](COMPRESSION.md)) | `sdeflate`, `sdeflate-lz`, `sdeflate-huffman` |
 | Base64 | `Base64.encode/decode` | Alphabet/padding, NUL-inclusive encoded size, bounded decoded bytes ([BASE64.md](BASE64.md)) | `base64` |
@@ -170,10 +170,8 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 - Exceptional and contracted F32 variants of raymath remain open.
 - Native-format loading covers the listed codecs; other-platform/GPU
   qualification of the native-format codec paths remains open.
-- Filled-triangle fractional vertices beyond the documented truncation, mipmaps,
-  image composition and rotation for formats other than R8G8B8A8, filtered
-  resize for GRAYSCALE/GRAY_ALPHA/R8G8B8 and additional codecs are open
-  requirements.
+- Filled-triangle fractional vertices beyond the documented truncation and
+  additional codecs are open requirements.
 - No performance parity is claimed. The array-based image algorithms are a
   correctness foundation, not the production tiled rendering pipeline.
 - CUDA, Windows, browser graphics, live windows and live audio are unverified.

@@ -1,5 +1,6 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
-# Default RGBA8 resampling adapted from stb_image_resize2.h in raylib 6.0.
+# uint8 linear resampling adapted from stb_image_resize2.h in raylib 6.0:
+# STBIR_1CHANNEL, STBIR_2CHANNEL, STBIR_RGB and alpha-weighted STBIR_RGBA.
 # Altered Bend implementation; see THIRD_PARTY_NOTICES.md and LICENSES/stb_image_resize2.txt.
 import Base
 import ./resize_numeric.bend as N
@@ -206,44 +207,93 @@ def Sample.encode(sample: Sample) -> U32:
   +bb = byte(Bool.pick(F32, hidden, b, (pb * inv : F32)))
   ((rr << 24n) .|. (gg << 16n) .|. (bb << 8n) .|. byte(a) : U32)
 
-def decode.step(i: U32, output: Array<Sample>, got: Array<U32> & U32) -> Array<U32> & Array<Sample>:
+# Layouts 1..3 hold native little-endian bytes (channel c in bits 8c..8c+7)
+# in r, g, b. Without alpha weighting stbir runs uint8->uint8 unscaled: samples
+# stay 0..255 and encode as clamp(v + 0.5) truncated; a and pr..pb stay 0.
+def Sample.native(+word: U32) -> Sample:
+  Sample{U32.to_f32((word .&. 255 : U32)), U32.to_f32(((word >> 8n) .&. 255 : U32)),
+    U32.to_f32(((word >> 16n) .&. 255 : U32)), 0.0, 0.0, 0.0, 0.0}
+
+def unscaled(value: F32) -> U32:
+  F32.to_u32(F32.clamp((value + 0.5 : F32), 0.0, 255.0))
+
+def Sample.native_word(sample: Sample) -> U32:
+  Sample{r, g, b, _, _, _, _} = sample
+  (unscaled(r) .|. (unscaled(g) << 8n) .|. (unscaled(b) << 16n) : U32)
+
+def Sample.read(layout: U32, +pixel: U32) -> Sample:
+  match layout:
+    case 4: Sample.decode(pixel)
+    case _: Sample.native(pixel)
+
+def Sample.write(layout: U32, sample: Sample) -> U32:
+  match layout:
+    case 4: Sample.encode(sample)
+    case _: Sample.native_word(sample)
+
+def decode.step(i: U32, layout: U32, output: Array<Sample>, got: Array<U32> & U32) -> Array<U32> & Array<Sample>:
   (source, pixel) = got
-  (source, Array.set(Sample, output, i, Sample.decode(pixel)))
+  (source, Array.set(Sample, output, i, Sample.read(layout, pixel)))
 
-def decode.loop(n: Nat, +i: U32, state: Array<U32> & Array<Sample>) -> Array<Sample>:
+def decode.loop(n: Nat, +i: U32, +layout: U32, state: Array<U32> & Array<Sample>) -> Array<Sample>:
   match n state:
     case 0n Tuple{_, output}: output
     case 1n+k Tuple{source, output}:
-      decode.loop(k, (i + 1 : U32), decode.step(i, output, Array.get(U32, source, i)))
+      decode.loop(k, (i + 1 : U32), layout, decode.step(i, layout, output, Array.get(U32, source, i)))
 
-def decode(+count: U32, pixels: Array<U32>) -> Array<Sample>:
-  decode.loop(U32.to_nat(count), 0, (pixels, Array.new(Sample, capacity(count), Sample.zero())))
+def decode(+layout: U32, +count: U32, pixels: Array<U32>) -> Array<Sample>:
+  decode.loop(U32.to_nat(count), 0, layout, (pixels, Array.new(Sample, capacity(count), Sample.zero())))
 
-def encode.step(i: U32, output: Array<U32>, got: Array<Sample> & Sample) -> Array<Sample> & Array<U32>:
+def encode.step(i: U32, layout: U32, output: Array<U32>, got: Array<Sample> & Sample) -> Array<Sample> & Array<U32>:
   (source, sample) = got
-  (source, Array.set(U32, output, i, Sample.encode(sample)))
+  (source, Array.set(U32, output, i, Sample.write(layout, sample)))
 
-def encode.loop(n: Nat, +i: U32, state: Array<Sample> & Array<U32>) -> Array<U32>:
+def encode.loop(n: Nat, +i: U32, +layout: U32, state: Array<Sample> & Array<U32>) -> Array<U32>:
   match n state:
     case 0n Tuple{_, output}: output
     case 1n+k Tuple{source, output}:
-      encode.loop(k, (i + 1 : U32), encode.step(i, output, Array.get(Sample, source, i)))
+      encode.loop(k, (i + 1 : U32), layout, encode.step(i, layout, output, Array.get(Sample, source, i)))
 
-def encode(+count: U32, pixels: Array<Sample>) -> Array<U32>:
-  encode.loop(U32.to_nat(count), 0, (pixels, Array.new(U32, capacity(count), 0)))
+def encode(+layout: U32, +count: U32, pixels: Array<Sample>) -> Array<U32>:
+  encode.loop(U32.to_nat(count), 0, layout, (pixels, Array.new(U32, capacity(count), 0)))
 
-def gather.step(+odd: Bool, +even_acc: Sample, +odd_acc: Sample, weight: F32, got: Array<Sample> & Sample) -> Array<Sample> & (Sample & Sample):
+# SIMD accumulators: coefficient j adds into lane j & mask. Vertical passes use
+# one lane; RGBA rows alternate two; 1..3-channel rows rotate four lanes.
+type Lanes is Data:
+  Lanes{l0: Sample, l1: Sample, l2: Sample, l3: Sample}
+
+def Lanes.zero() -> Lanes:
+  Lanes{Sample.zero(), Sample.zero(), Sample.zero(), Sample.zero()}
+
+def Lanes.add(lane: U32, lanes: Lanes, weighted: Sample) -> Lanes:
+  match lane lanes:
+    case 0 Lanes{l0, l1, l2, l3}: Lanes{Sample.add(l0, weighted), l1, l2, l3}
+    case 1 Lanes{l0, l1, l2, l3}: Lanes{l0, Sample.add(l1, weighted), l2, l3}
+    case 2 Lanes{l0, l1, l2, l3}: Lanes{l0, l1, Sample.add(l2, weighted), l3}
+    case _ Lanes{l0, l1, l2, l3}: Lanes{l0, l1, l2, Sample.add(l3, weighted)}
+
+# stbir__store_output folds four lanes as (L0+L2)+(L1+L3). Three-coefficient
+# 1- and 3-channel kernels (stbir__3_coeff_only) sum (p0+p1)+p2 instead.
+def Lanes.total(mask: U32, tiny3: Bool, lanes: Lanes) -> Sample:
+  match mask tiny3 lanes:
+    case 0 _ Lanes{l0, _, _, _}: l0
+    case 1 _ Lanes{l0, l1, _, _}: Sample.add(l0, l1)
+    case _ True{} Lanes{l0, l1, l2, _}: Sample.add(Sample.add(l0, l1), l2)
+    case _ False{} Lanes{l0, l1, l2, l3}: Sample.add(Sample.add(l0, l2), Sample.add(l1, l3))
+
+def gather.step(lane: U32, weight: F32, lanes: Lanes, got: Array<Sample> & Sample) -> Array<Sample> & Lanes:
   (pixels, sample) = got
-  +weighted = Sample.mul(sample, weight)
-  (pixels, (Bool.pick(Sample, odd, even_acc, Sample.add(even_acc, weighted)),
-    Bool.pick(Sample, odd, Sample.add(odd_acc, weighted), odd_acc)))
+  (pixels, Lanes.add(lane, lanes, Sample.mul(sample, weight)))
 
-def gather(weights: +List<F32>, +at: U32, +stride: U32, +alternate: Bool, +odd: Bool, state: Array<Sample> & (Sample & Sample)) -> Array<Sample> & Sample:
+def gather.next(weights: +List<F32>, +at: U32, +stride: U32, +mask: U32, +tiny3: Bool, +j: U32, state: Array<Sample> & Lanes) -> Array<Sample> & Sample:
   match weights state:
-    case Nil{} Tuple{pixels, Tuple{even_acc, odd_acc}}: (pixels, Sample.add(even_acc, odd_acc))
-    case Con{weight, rest} Tuple{pixels, Tuple{even_acc, odd_acc}}:
-      gather(rest, (at + stride : U32), stride, alternate, Bool.not(odd),
-        gather.step(alternate && odd, even_acc, odd_acc, weight, Array.get(Sample, pixels, at)))
+    case Nil{} Tuple{pixels, lanes}: (pixels, Lanes.total(mask, tiny3, lanes))
+    case Con{weight, rest} Tuple{pixels, lanes}:
+      gather.next(rest, (at + stride : U32), stride, mask, tiny3, (j + 1 : U32),
+        gather.step((j .&. mask : U32), weight, lanes, Array.get(Sample, pixels, at)))
+
+def gather(weights: +List<F32>, +at: U32, +stride: U32, +mask: U32, +tiny3: Bool, pixels: Array<Sample>) -> Array<Sample> & Sample:
+  gather.next(weights, at, stride, mask, tiny3, 0, (pixels, Lanes.zero()))
 
 def vertical.weights(weights: +List<F32>) -> +List<F32>:
   match weights:
@@ -256,12 +306,12 @@ def vertical.weights(weights: +List<F32>) -> +List<F32>:
 type Pass is Type:
   Pass{kernels: Array<Kernel>, source: Array<Sample>, output: Array<Sample>}
 
-def pass.kernel(+vertical: Bool, +i: U32, +width: U32, +stride: U32, +widest: U32, pixels: Array<Sample>, got: Array<Kernel> & Kernel) -> Array<Kernel> & (Array<Sample> & Sample):
+def pass.kernel(+vertical: Bool, +i: U32, +width: U32, +stride: U32, +mask: U32, +tiny3: Bool, pixels: Array<Sample>, got: Array<Kernel> & Kernel) -> Array<Kernel> & (Array<Sample> & Sample):
   match got:
     case Tuple{kernels, Kernel{+first, +weights}}:
       index = Bool.pick(U32, vertical, (F32.to_u32(first) * stride + i % width : U32), ((i / width) * stride + F32.to_u32(first) : U32))
       (kernels, gather(Bool.pick(+List<F32>, vertical, vertical.weights(weights), weights), index,
-        Bool.pick(U32, vertical, stride, 1), Bool.not(vertical) && (widest >= 4 : U32), False{}, (pixels, (Sample.zero(), Sample.zero()))))
+        Bool.pick(U32, vertical, stride, 1), mask, tiny3, pixels))
 
 def pass.pack(vertical: Bool, widest: U32, stride: U32, got: Array<Kernel> & Kernel) -> Array<Kernel> & Kernel:
   (kernels, +row) = got
@@ -271,19 +321,25 @@ def pass.write(i: U32, output: Array<Sample>, result: Array<Kernel> & (Array<Sam
   match result:
     case Tuple{kernels, Tuple{pixels, sample}}: Pass{kernels, pixels, Array.set(Sample, output, i, sample)}
 
-def pass.loop(n: Nat, +i: U32, +vertical: Bool, +width: U32, +stride: U32, +widest: U32, state: Pass) -> Array<Sample>:
+def pass.loop(n: Nat, +i: U32, +vertical: Bool, +width: U32, +stride: U32, +widest: U32, +mask: U32, +tiny3: Bool, state: Pass) -> Array<Sample>:
   match n state:
     case 0n Pass{_, _, output}: output
     case 1n+k Pass{kernels, source, output}:
       axis = Bool.pick(U32, vertical, (i / width : U32), (i % width : U32))
-      pass.loop(k, (i + 1 : U32), vertical, width, stride, widest,
-        pass.write(i, output, pass.kernel(vertical, i, width, stride, widest, source,
+      pass.loop(k, (i + 1 : U32), vertical, width, stride, widest, mask, tiny3,
+        pass.write(i, output, pass.kernel(vertical, i, width, stride, mask, tiny3, source,
           pass.pack(vertical, widest, stride, Array.get(Kernel, kernels, axis)))))
 
-def pass(vertical: Bool, +width: U32, height: U32, stride: U32, plan: Plan, pixels: Array<Sample>) -> Array<Sample>:
-  Plan{widest, kernels} = plan
+# Horizontal lane mask per layout: RGBA alternates two lanes once kernels reach
+# four coefficients; 1..3 channels always rotate four. Vertical gathers are serial.
+def pass.mask(+vertical: Bool, +layout: U32, +widest: U32) -> U32:
+  Bool.pick(U32, vertical, 0, Bool.pick(U32, U32.is_eq(layout, 4), Bool.pick(U32, (widest >= 4 : U32), 1, 0), 3))
+
+def pass(+vertical: Bool, +layout: U32, +width: U32, height: U32, stride: U32, plan: Plan, pixels: Array<Sample>) -> Array<Sample>:
+  Plan{+widest, kernels} = plan
   +count = (width * height : U32)
-  pass.loop(U32.to_nat(count), 0, vertical, width, stride, widest,
+  tiny3 = Bool.not(vertical) && U32.is_eq(widest, 3) && (U32.is_eq(layout, 1) || U32.is_eq(layout, 3))
+  pass.loop(U32.to_nat(count), 0, vertical, width, stride, widest, pass.mask(vertical, layout, widest), tiny3,
     Pass{kernels, pixels, Array.new(Sample, capacity(count), Sample.zero())})
 
 type Cost is Data:
@@ -293,35 +349,74 @@ def filter_width(+size: U32, +output: U32) -> F32:
   Bool.pick(F32, U32.is_eq(size, output), 1.0,
     Bool.pick(F32, (output > size : U32), 4.0, F32.ceil((4.0 / (U32.to_f32(output) / U32.to_f32(size)) : F32))))
 
-def cost(+nw: U32, +nh: U32, +vertical_scale: F32, +gather: Bool) -> Cost:
-  +scatter = {Cost{0.0, 0.59375, 0.0, 0.96875} : Cost}
-  regular = Bool.pick(Cost, (vertical_scale <= 1.0 : F32),
-    Bool.pick(Cost, gather, Cost{0.0625, 0.8125, 0.0625, 0.59375}, scatter),
-    Bool.pick(Cost, (vertical_scale <= 2.0 : F32), Cost{0.75, 0.4375, 0.125, 0.96875},
-      Bool.pick(Cost, (vertical_scale <= 3.0 : F32), Cost{0.875, 0.0625, 0.1875, 0.4375}, Cost{0.15625, 0.125, 1.0, 1.0})))
-  small = Bool.pick(Cost, Bool.not(gather) && ((nw <= 16) || (nh <= 16) : U32), scatter, regular)
-  Bool.pick(Cost, ((nw <= 4) || (nh <= 4) : U32),
-    Bool.pick(Cost, (nh < nw : U32), Cost{1.0, 1.0, 0.0625, 1.0}, Cost{0.0, 1.0, 0.03125, 0.34375}), small)
+# stbir__compute_weights rows for 1/2/3-channel layouts and the 7-channel
+# alpha-weighted RGBA layout (layout 4 here), indexed by v_classification.
+def cost.table(layout: U32, class: U32) -> Cost:
+  match layout class:
+    case 1 0: Cost{1.00000, 1.00000, 0.31250, 1.00000}
+    case 1 1: Cost{0.56250, 0.59375, 0.00000, 0.96875}
+    case 1 2: Cost{1.00000, 0.06250, 0.00000, 1.00000}
+    case 1 3: Cost{0.00000, 0.09375, 1.00000, 1.00000}
+    case 1 4: Cost{1.00000, 1.00000, 0.31250, 1.00000}
+    case 1 5: Cost{0.03125, 0.12500, 1.00000, 1.00000}
+    case 1 6: Cost{1.00000, 1.00000, 0.06250, 1.00000}
+    case 1 7: Cost{0.00000, 1.00000, 0.00000, 0.03125}
+    case 2 0: Cost{0.00000, 0.84375, 0.00000, 0.03125}
+    case 2 1: Cost{0.09375, 0.93750, 0.00000, 0.78125}
+    case 2 2: Cost{0.87500, 0.21875, 0.00000, 0.96875}
+    case 2 3: Cost{0.09375, 0.09375, 1.00000, 1.00000}
+    case 2 4: Cost{0.00000, 0.84375, 0.00000, 0.03125}
+    case 2 5: Cost{0.03125, 0.12500, 1.00000, 1.00000}
+    case 2 6: Cost{1.00000, 1.00000, 0.06250, 1.00000}
+    case 2 7: Cost{0.00000, 1.00000, 0.00000, 0.53125}
+    case 3 0: Cost{0.00000, 0.53125, 0.00000, 0.03125}
+    case 3 1: Cost{0.06250, 0.96875, 0.00000, 0.53125}
+    case 3 2: Cost{0.87500, 0.18750, 0.00000, 0.93750}
+    case 3 3: Cost{0.00000, 0.09375, 1.00000, 1.00000}
+    case 3 4: Cost{0.00000, 0.53125, 0.00000, 0.03125}
+    case 3 5: Cost{0.03125, 0.12500, 1.00000, 1.00000}
+    case 3 6: Cost{1.00000, 1.00000, 0.06250, 1.00000}
+    case 3 7: Cost{0.00000, 1.00000, 0.00000, 0.56250}
+    case _ 0: Cost{0.00000, 0.59375, 0.00000, 0.96875}
+    case _ 1: Cost{0.06250, 0.81250, 0.06250, 0.59375}
+    case _ 2: Cost{0.75000, 0.43750, 0.12500, 0.96875}
+    case _ 3: Cost{0.87500, 0.06250, 0.18750, 0.43750}
+    case _ 4: Cost{0.00000, 0.59375, 0.00000, 0.96875}
+    case _ 5: Cost{0.15625, 0.12500, 1.00000, 1.00000}
+    case _ 6: Cost{1.00000, 1.00000, 0.06250, 1.00000}
+    case _ _: Cost{0.00000, 1.00000, 0.03125, 0.34375}
+
+# stbir__should_do_vertical_first classification.
+def cost.class(+nw: U32, +nh: U32, +vertical_scale: F32, +gather: Bool) -> U32:
+  regular = Bool.pick(U32, (vertical_scale <= 1.0 : F32), Bool.pick(U32, gather, 1, 0),
+    Bool.pick(U32, (vertical_scale <= 2.0 : F32), 2, Bool.pick(U32, (vertical_scale <= 3.0 : F32), 3, 5)))
+  small = Bool.pick(U32, Bool.not(gather) && ((nw <= 16) || (nh <= 16) : U32), 4, regular)
+  Bool.pick(U32, ((nw <= 4) || (nh <= 4) : U32), Bool.pick(U32, (nh < nw : U32), 6, 7), small)
 
 def vertical_first.cost(hs: F32, vs: F32, +hw: F32, +vw: F32, weights: Cost) -> Bool:
   Cost{h0, h1, v0, v1} = weights
   ((vw * v0 + vs * hw * v1) <= (hw * h0 + hs * vw * h1) : F32)
 
-def vertical_first(+sw: U32, +sh: U32, +nw: U32, +nh: U32) -> Bool:
+def vertical_first(+layout: U32, +sw: U32, +sh: U32, +nw: U32, +nh: U32) -> Bool:
   hs = (U32.to_f32(nw) / U32.to_f32(sw) : F32)
   +vs = (U32.to_f32(nh) / U32.to_f32(sh) : F32)
   hw = filter_width(sw, nw)
   +vw = filter_width(sh, nh)
-  vertical_first.cost(hs, vs, hw, vw, cost(nw, nh, vs, (vw <= 32.0 : F32)))
+  vertical_first.cost(hs, vs, hw, vw, cost.table(layout, cost.class(nw, nh, vs, (vw <= 32.0 : F32))))
 
-def resize.route(vertical: Bool, +sw: U32, +sh: U32, +nw: U32, +nh: U32, pixels: Array<U32>) -> Array<U32>:
+def resize.route(vertical: Bool, +layout: U32, +sw: U32, +sh: U32, +nw: U32, +nh: U32, pixels: Array<U32>) -> Array<U32>:
   match vertical:
     case True{}:
-      intermediate = pass(True{}, sw, nh, sw, Plan.make(sh, nh), decode((sw * sh : U32), pixels))
-      encode((nw * nh : U32), pass(False{}, nw, nh, sw, Plan.make(sw, nw), intermediate))
+      intermediate = pass(True{}, layout, sw, nh, sw, Plan.make(sh, nh), decode(layout, (sw * sh : U32), pixels))
+      encode(layout, (nw * nh : U32), pass(False{}, layout, nw, nh, sw, Plan.make(sw, nw), intermediate))
     case False{}:
-      intermediate = pass(False{}, nw, sh, sw, Plan.make(sw, nw), decode((sw * sh : U32), pixels))
-      encode((nw * nh : U32), pass(True{}, nw, nh, nw, Plan.make(sh, nh), intermediate))
+      intermediate = pass(False{}, layout, nw, sh, sw, Plan.make(sw, nw), decode(layout, (sw * sh : U32), pixels))
+      encode(layout, (nw * nh : U32), pass(True{}, layout, nw, nh, nw, Plan.make(sh, nh), intermediate))
+
+# stbir_resize_uint8_linear for layout 1 (STBIR_1CHANNEL), 2 (STBIR_2CHANNEL),
+# 3 (STBIR_RGB) on native words, or 4 (STBIR_RGBA) on 0xRRGGBBAA words.
+def resize_layout(+layout: U32, +sw: U32, +sh: U32, +nw: U32, +nh: U32, pixels: Array<U32>) -> Array<U32>:
+  resize.route(vertical_first(layout, sw, sh, nw, nh), layout, sw, sh, nw, nh, pixels)
 
 def resize(+sw: U32, +sh: U32, +nw: U32, +nh: U32, pixels: Array<U32>) -> Array<U32>:
-  resize.route(vertical_first(sw, sh, nw, nh), sw, sh, nw, nh, pixels)
+  resize_layout(4, sw, sh, nw, nh, pixels)

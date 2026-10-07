@@ -53,3 +53,26 @@ def emit_chunks(chunks: List<List<U32>>) -> IO(Unit):
 def emit_bytes(~q: Quant, bytes: List<q, U32>) -> IO(Unit):
   emit_chunks(chunked(~q, bytes, 0, (Nil{}, Nil{})))
 '''
+
+# Surface results (programs importing jonlib as J): image() emits a stored
+# J.Surface as format, width and height words then its raw sample bytes, the
+# layout of C_IMAGE; a failed Result prints null.
+SURFACE_EMITTER = BEND_EMITTER + '''def word_bytes(n: Nat, +word: U32, values: List<U32>) -> List<U32>:
+  match n:
+    case 0n: values
+    case 1n+rest: word_bytes(rest, (word >> 8n : U32), Con{(word .&. 255 : U32), values})
+def prepend(reversed: List<U32>, values: List<U32>) -> List<U32>:
+  match reversed:
+    case Nil{}: values
+    case Con{value, rest}: prepend(rest, Con{value, values})
+def exported(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
+  ((width, height), (format, bytes)) = data
+  emit_bytes(~&1, prepend(word_bytes(4n, height, word_bytes(4n, width, word_bytes(4n, format, Nil{}))), bytes))
+def image(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.print("null")
+    case Done{surface}: exported(J.Surface.export(surface))
+'''
+
+C_IMAGE = C_EMITTER + '\n' + ('static void image(Image im){word(im.format);word(im.width);word(im.height);unsigned char *p=im.data;'
+                              'int n=GetPixelDataSize(im.width,im.height,im.format);for(int i=0;i<n;i++)byte(p[i]);end();}')

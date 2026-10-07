@@ -3,16 +3,17 @@
 
 Each case converts one R8G8B8A8 fixture with ImageFormat, applies one operation
 and compares the complete stored result (format, dimensions and raw sample
-bytes, or the returned colors) exactly. Operations Jonlib leaves to a later
-profile for a format (ImageResize on GRAYSCALE, GRAY_ALPHA and R8G8B8) must be
-rejected, as must R8G8B8A8-only operations (ImageAlphaClear) on other
-formats; they are the negative controls.
+bytes, or the returned colors) exactly. ImageRotate blends float bytes too;
+when raylib's R32 result leaves finite [0,1] or its R32G32B32 result holds NaN,
+Jonlib must refuse it (the owner domain), so those cases expect a rejection.
 """
 import hashlib
 import json
 import random
+import struct
 
-from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
+from byte_probe import C_IMAGE, SURFACE_EMITTER, parse_results
+from conformance import gradient_reference
 import probekit
 from probekit import ProbeFailure
 
@@ -20,7 +21,8 @@ FORMATS = range(1, 10)
 SIZES = ((5, 4), (6, 3))
 DRAW = (230, 40, 120, 200)
 FILL = (10, 200, 30, 128)
-UNSUPPORTED = {('resize', 1), ('resize', 2), ('resize', 4)} | {('alpha-clear', f) for f in range(1, 10) if f != 7}
+UNSUPPORTED = set()
+LIBM = gradient_reference()
 
 
 def word(color):
@@ -30,6 +32,21 @@ def word(color):
 
 def c_color(color):
     return '(Color){%d,%d,%d,%d}' % color
+
+
+WHITE = (255, 255, 255, 255)
+TINT = (200, 100, 50, 180)
+HALF = (255, 255, 255, 200)
+# ImageDraw sources: (name, source format or 0 for the image's, srcRec, dstRec, tint);
+# draw.op in PROGRAM runs the same calls by index.
+DRAWS = (
+    ('same', 0, '(Rectangle){0,0,m.width,m.height}', '(Rectangle){1,1,m.width,m.height}', WHITE),
+    ('rgba-tinted', 7, '(Rectangle){0,0,m.width,m.height}', '(Rectangle){-1,1,m.width,m.height}', TINT),
+    ('gray', 1, '(Rectangle){0,0,m.width,m.height}', '(Rectangle){2,-1,m.width,m.height}', WHITE),
+    ('float', 9, '(Rectangle){0,0,m.width,m.height}', '(Rectangle){1,0,m.width,m.height}', WHITE),
+    ('rect-rgb', 4, '(Rectangle){0.5f,0,3,2}', '(Rectangle){1,1,5,3}', WHITE),
+    ('region-gray-alpha', 2, '(Rectangle){1,0,2,2}', '(Rectangle){0,1,2,2}', HALF),
+)
 
 
 # name: (C statement on `Image im` that leaves the result in `out`, kind, Bend expression on `s`)
@@ -97,6 +114,16 @@ OPS = {
                        f'J.Surface.draw_triangle_strip(s, [M.Vector2{{0.0, 0.0}}, M.Vector2{{0.0, 3.0}}, M.Vector2{{3.0, 0.0}}, M.Vector2{{4.0, 3.0}}], {word(DRAW)})'),
     'to-pot': (f'ImageToPOT(&im,{c_color(FILL)});', 'image', f'J.Surface.to_pot(s, {word(FILL)})'),
     'alpha-clear': (f'ImageAlphaClear(&im,{c_color(DRAW)},0.3f);', 'image', f'J.Surface.alpha_clear(s, {word(DRAW)}, 0.3)'),
+    'alpha-clear-high': (f'ImageAlphaClear(&im,{c_color(FILL)},0.8f);', 'image', f'J.Surface.alpha_clear(s, {word(FILL)}, 0.8)'),
+    'rotate': ('ImageRotate(&im,30);', 'image', f'J.Surface.rotate_degrees_for(M.{LIBM}{{}}, s, 30.0)'),
+    'rotate-obtuse': ('ImageRotate(&im,-135);', 'image', f'J.Surface.rotate_degrees_for(M.{LIBM}{{}}, s, F32.neg(135.0))'),
+    **{f'draw-{name}': (f'{{Image m=ImageCopy(im);ImageFlipVertical(&m);{fmt_c}ImageDraw(&im,m,{src_rec},{dst_rec},{c_color(tint)});UnloadImage(m);}}',
+                        'image', f'drawn({kind}, {target}, J.Surface.copy(s))')
+       for kind, (name, target, src_rec, dst_rec, tint) in enumerate(DRAWS)
+       for fmt_c in [f'ImageFormat(&m,{target});' if target else '']},
+    'alpha-mask': ('{Image m=ImageCopy(im);ImageFlipHorizontal(&m);ImageAlphaMask(&im,m);UnloadImage(m);}', 'image', 'masked(0, J.Surface.copy(s))'),
+    'alpha-mask-rgb': ('{Image m=ImageCopy(im);ImageFlipHorizontal(&m);ImageFormat(&m,4);ImageAlphaMask(&im,m);UnloadImage(m);}', 'image',
+                       'masked(4, J.Surface.copy(s))'),
     'alpha-border': ('', 'rect', 'J.Surface.alpha_border(s, 0.3)'),
     'palette': ('', 'palette', 'J.Surface.load_palette(s, 8)'),
     'colors': ('', 'colors', 'J.Surface.colors(s)'),
@@ -106,26 +133,10 @@ OPS = {
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
 import ../../jonmath.bend as M
-''' + BEND_EMITTER + '''
-def word_bytes(n: Nat, +word: U32, values: List<U32>) -> List<U32>:
-  match n:
-    case 0n: values
-    case 1n+rest: word_bytes(rest, (word >> 8n : U32), Con{(word .&. 255 : U32), values})
-def prepend(reversed: List<U32>, values: List<U32>) -> List<U32>:
-  match reversed:
-    case Nil{}: values
-    case Con{value, rest}: prepend(rest, Con{value, values})
-def color_bytes(colors: List<U32>, values: List<U32>) -> List<U32>:
+''' + SURFACE_EMITTER + '''def color_bytes(colors: List<U32>, values: List<U32>) -> List<U32>:
   match colors:
     case Nil{}: List.reverse(&1, U32, values)
     case Con{+color, rest}: color_bytes(rest, Con{J.Color.alpha(color), Con{J.Color.blue(color), Con{J.Color.green(color), Con{J.Color.red(color), values}}}})
-def exported(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
-  ((width, height), (format, bytes)) = data
-  emit_bytes(~&1, prepend(word_bytes(4n, height, word_bytes(4n, width, word_bytes(4n, format, Nil{}))), bytes))
-def image(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):
-  match result:
-    case Fail{_}: IO.print("null")
-    case Done{surface}: exported(J.Surface.export(surface))
 def colors(result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> IO(Unit):
   match result:
     case Fail{_}: IO.print("null")
@@ -150,6 +161,32 @@ def palette(result: J.Surface & Maybe<J.Image.Palette>) -> IO(Unit):
   match result:
     case Tuple{_, None{}}: IO.print("null")
     case Tuple{_, Some{found}}: palette_entries(J.Image.Palette.entries(found))
+def masked.result(result: Result<&1, &1, (J.Surface & J.Surface) & J.Surface.Error, J.Surface & J.Surface>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  match result:
+    case Fail{Tuple{Tuple{image, _}, error}}: Fail{(image, error)}
+    case Done{Tuple{image, _}}: Done{image}
+def masked.with(image: J.Surface, mask: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  match mask:
+    case Fail{Tuple{_, error}}: Fail{(image, error)}
+    case Done{alpha}: masked.result(J.Surface.alpha_mask(image, alpha))
+def masked(+format: U32, pair: J.Surface & J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  (image, copy) = pair
+  masked.with(image, J.Surface.format(J.Surface.flip_horizontal(copy), format))
+def draw.op(kind: U32, image: J.Surface, source: J.Surface) -> Result<&1, &1, (J.Surface & J.Surface) & J.Surface.Error, J.Surface & J.Surface>:
+  match kind:
+    case 0: J.Surface.draw_image(image, source, 1.0, 1.0, 4294967295)
+    case 1: J.Surface.draw_image(image, source, F32.neg(1.0), 1.0, 3362009780)
+    case 2: J.Surface.draw_image(image, source, 2.0, F32.neg(1.0), 4294967295)
+    case 3: J.Surface.draw_image(image, source, 1.0, 0.0, 4294967295)
+    case 4: J.Surface.draw_image_rect(image, source, J.Rectangle{0.5, 0.0, 3.0, 2.0}, J.Rectangle{1.0, 1.0, 5.0, 3.0}, 4294967295)
+    case _: J.Surface.draw_image_region(image, source, J.Rectangle{1.0, 0.0, 2.0, 2.0}, 0.0, 1.0, 4294967240)
+def drawn.with(kind: U32, image: J.Surface, source: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  match source:
+    case Fail{Tuple{_, error}}: Fail{(image, error)}
+    case Done{drawn_source}: masked.result(draw.op(kind, image, drawn_source))
+def drawn(kind: U32, +format: U32, pair: J.Surface & J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  (image, copy) = pair
+  drawn.with(kind, image, J.Surface.format(J.Surface.flip_vertical(copy), format))
 def done(surface: J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
   Done{surface}
 def second(result: J.Surface & Maybe<J.Surface>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
@@ -188,11 +225,9 @@ def actions(cases):
 
 def native(probe, cases, selected):
     lines = ['#include "raylib.h"', '#include <stdio.h>', '#include <stdlib.h>', '#include <string.h>',
-             C_EMITTER,
+             C_IMAGE,
              'static void color(Color c){byte(c.r);byte(c.g);byte(c.b);byte(c.a);}',
-             'static void fword(float f){unsigned u;memcpy(&u,&f,4);word(u);}',
-             'static void image(Image im){word(im.format);word(im.width);word(im.height);unsigned char *p=im.data;'
-             'int n=GetPixelDataSize(im.width,im.height,im.format);for(int i=0;i<n;i++)byte(p[i]);end();}']
+             'static void fword(float f){unsigned u;memcpy(&u,&f,4);word(u);}']
     for i, case in enumerate(cases):
         lines.append(f'static const unsigned char fixture{i}[]={{{",".join(map(str, case["bytes"]))}}};')
         lines.append(f'static Image source{i}(int format){{Image im={{0}};im.width={case["width"]};im.height={case["height"]};'
@@ -241,14 +276,27 @@ def render(cases):
     return emit
 
 
+def owner_domain(op, fmt, row):
+    """Jonlib refuses rotated float bytes outside the R32/R32G32B32 owner domain."""
+    if not op.startswith('rotate') or fmt not in (8, 9) or row is None:
+        return row
+    words = struct.unpack(f'<{(len(row) - 12) // 4}I', bytes(row[12:]))
+    if fmt == 8 and any(w > 0x3F800000 and w != 0x80000000 for w in words):
+        return None
+    if fmt == 9 and any((w & 0x7FFFFFFF) > 0x7F800000 for w in words):
+        return None
+    return row
+
+
 def main():
     probe = probekit.Probe('surface-format', probekit.arguments(__doc__))
     cases = fixtures()
     planned = actions(cases)
-    expected = parse_results(native(probe, cases, planned))
+    native_rows = parse_results(native(probe, cases, planned))
+    expected = [owner_domain(op, fmt, row) for (_, op, fmt), row in zip(planned, native_rows)]
     if len(expected) != len(planned):
         raise ProbeFailure(f'native output has {len(expected)} rows for {len(planned)} cases')
-    for (i, op, fmt), row in zip(planned, expected):
+    for (i, op, fmt), row in zip(planned, native_rows):
         if (row is None) != ((op, fmt) in UNSUPPORTED):
             raise ProbeFailure(f'native row presence differs from the profile for {op} on format {fmt}')
     lanes = probe.candidates(render(cases), planned, batch=96, parse=lambda text, selected: parse_results(text))
@@ -259,6 +307,7 @@ def main():
     probe.compare(expected, lanes, describe=lambda index: '{1} on format {2}, fixture {0}'.format(*planned[index]))
     probe.finish(cases=len(planned), operations=len(OPS), formats=len(FORMATS), fixtures=len(cases),
                  negative_controls=sum((op, fmt) in UNSUPPORTED for _, op, fmt in planned),
+                 domain_refusals=sum(a is not None and b is None for a, b in zip(native_rows, expected)),
                  inputs_sha256=hashlib.sha256(json.dumps(cases).encode()).hexdigest(),
                  reference_sha256=hashlib.sha256(json.dumps(expected).encode()).hexdigest())
 
