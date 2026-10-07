@@ -51,7 +51,8 @@ int main(void){
 
 PREAMBLE='''import Base
 import ../../src/psd.bend as P
-def observed(+alpha: U32, result: Result<&2, &2, P.Error, U32>) -> U32:
+import ../../src/codec.bend as C
+def observed(+alpha: U32, result: Result<&2, &2, C.Error, U32>) -> U32:
   match result:
     case Fail{_}: 256
     case Done{+color}:

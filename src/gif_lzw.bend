@@ -2,6 +2,7 @@
 # Altered Bend adaptation of the pinned stb_image GIF LZW state machine.
 # MIT notice: LICENSES/stb-image.txt. See THIRD_PARTY_NOTICES.md.
 import Base
+import ./codec.bend as C
 
 type Bits is Data:
   Bits{data: +List<U32>, word: U32, count: U32}
@@ -139,11 +140,6 @@ def literals(n: Nat, +index: U32, dictionary: Array<U32>) -> Array<U32>:
     case 0n: dictionary
     case 1n+rest: literals(rest, (index + 1 : U32), Array.set(U32, dictionary, index, ((index << 8n) .|. index : U32)))
 
-def byte_count(data: +List<U32>, count: Nat) -> Nat:
-  match data:
-    case Nil{}: count
-    case Con{_, rest}: byte_count(rest, 1n+count)
-
 def checked(valid: Bool, +minimum: U32, +limit: U32, +data: +List<U32>) -> Maybe<Array<U32>>:
   match valid:
     case False{}: None{}
@@ -151,7 +147,7 @@ def checked(valid: Bool, +minimum: U32, +limit: U32, +data: +List<U32>) -> Maybe
       +clear = (1 << U32.to_nat(minimum) : U32)
       depth = Bool.pick(Nat, U32.is_eq(limit, 1), 0n, 1n+U32.log2((limit - 1 : U32)))
       dictionary = literals(U32.to_nat(clear), 0, Array.new(U32, 13n, 0))
-      run((byte_count(data, 0n) * 8n : Nat), minimum, clear, limit,
+      run((C.byte_count(data, 0n) * 8n : Nat), minimum, clear, limit,
         Some{Running{Bits{data, 0, 0}, (minimum + 1 : U32), (clear + 2 : U32), None{}, 0, False{}, 0, dictionary, Array.new(U32, depth, 0)}})
 
 def decode(+minimum: U32, +limit: U32, data: +List<U32>) -> Maybe<Array<U32>>:

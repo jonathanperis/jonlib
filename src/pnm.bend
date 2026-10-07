@@ -2,17 +2,9 @@
 # Altered Bend adaptation of the pinned stb_image binary PNM reader.
 # MIT notice: LICENSES/stb-image.txt. See THIRD_PARTY_NOTICES.md.
 import Base
+import ./codec.bend as C
 import ./formats.bend as F
-import ./qoi.bend as Q
 
-type Error is Data:
-  BadHeader{}
-  BadByte{}
-  BadSize{}
-  Truncated{}
-
-type Image is Type:
-  Image{width: U32, height: U32, channels: U32, pixels: Array<U32>}
 
 def space(+byte: U32) -> Bool:
   U32.is_eq(byte, 32) || ((byte >= 9) && (byte <= 13) : U32)
@@ -30,55 +22,55 @@ def skip(bytes: +List<U32>, +comment: Bool, stopped: Maybe<&2, U32>) -> +List<U3
 type Token is Data:
   Token{value: U32, delimiter: U32, rest: +List<U32>}
 
-def digits(bytes: +List<U32>, +value: U32, seen: Bool, valid: Bool, stopped: Maybe<&2, U32>) -> Result<&2, &2, Error, Token>:
+def digits(bytes: +List<U32>, +value: U32, seen: Bool, valid: Bool, stopped: Maybe<&2, U32>) -> Result<&2, &2, C.Error, Token>:
   match bytes valid stopped:
-    case _ False{} _: Fail{BadHeader{}}
+    case _ False{} _: Fail{C.BadHeader{}}
     case _ True{} Some{delimiter}: Done{Token{value, delimiter, bytes}}
-    case Nil{} True{} None{}: Fail{BadHeader{}}
+    case Nil{} True{} None{}: Fail{C.BadHeader{}}
     case Con{+byte, rest} True{} None{}:
       +digit = ((byte >= 48) && (byte <= 57) : U32)
       bound = (value < 214748364 : U32) || (U32.is_eq(value, 214748364) && (byte <= 55 : U32))
       digits(rest, Bool.pick(U32, digit, (value * 10 + byte - 48 : U32), value), True{},
         Bool.pick(Bool, digit, bound, seen), Bool.pick(Maybe<&2, U32>, digit, None{}, Some{byte}))
 
-def number(bytes: +List<U32>) -> Result<&2, &2, Error, Token>:
+def number(bytes: +List<U32>) -> Result<&2, &2, C.Error, Token>:
   digits(skip(bytes, False{}, None{}), 0, False{}, True{}, None{})
 
 type Header is Data:
   Header{width: U32, height: U32, channels: U32, wide: Bool, data: +List<U32>}
 
-def header.sized(valid: Bool, width: U32, height: U32, channels: U32, wide: Bool, data: +List<U32>) -> Result<&2, &2, Error, Header>:
+def header.sized(valid: Bool, width: U32, height: U32, channels: U32, wide: Bool, data: +List<U32>) -> Result<&2, &2, C.Error, Header>:
   match valid:
-    case False{}: Fail{BadSize{}}
+    case False{}: Fail{C.BadSize{}}
     case True{}: Done{Header{width, height, channels, wide, data}}
 
-def header.valid(valid: Bool, +width: U32, +height: U32, channels: U32, wide: Bool, data: +List<U32>) -> Result<&2, &2, Error, Header>:
+def header.valid(valid: Bool, +width: U32, +height: U32, channels: U32, wide: Bool, data: +List<U32>) -> Result<&2, &2, C.Error, Header>:
   match valid:
-    case False{}: Fail{BadHeader{}}
+    case False{}: Fail{C.BadHeader{}}
     case True{}: header.sized(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32), width, height, channels, wide, data)
 
-def header.maximum(width: U32, height: U32, channels: U32, token: Result<&2, &2, Error, Token>) -> Result<&2, &2, Error, Header>:
+def header.maximum(width: U32, height: U32, channels: U32, token: Result<&2, &2, C.Error, Token>) -> Result<&2, &2, C.Error, Header>:
   match token:
     case Fail{error}: Fail{error}
     case Done{Token{+value, delimiter, rest}}:
       # The native reader has already consumed exactly one byte after maxval.
       header.valid(((value > 0) && (value <= 65535) : U32) && space(delimiter), width, height, channels, (value > 255 : U32), rest)
 
-def header.height(width: U32, channels: U32, token: Result<&2, &2, Error, Token>) -> Result<&2, &2, Error, Header>:
+def header.height(width: U32, channels: U32, token: Result<&2, &2, C.Error, Token>) -> Result<&2, &2, C.Error, Header>:
   match token:
     case Fail{error}: Fail{error}
     case Done{Token{height, delimiter, rest}}: header.maximum(width, height, channels, number(Con{delimiter, rest}))
 
-def header.width(channels: U32, token: Result<&2, &2, Error, Token>) -> Result<&2, &2, Error, Header>:
+def header.width(channels: U32, token: Result<&2, &2, C.Error, Token>) -> Result<&2, &2, C.Error, Header>:
   match token:
     case Fail{error}: Fail{error}
     case Done{Token{width, delimiter, rest}}: header.height(width, channels, number(Con{delimiter, rest}))
 
-def header(bytes: +List<U32>) -> Result<&2, &2, Error, Header>:
+def header(bytes: +List<U32>) -> Result<&2, &2, C.Error, Header>:
   match bytes:
     case Con{80, Con{53, rest}}: header.width(1, number(rest))
     case Con{80, Con{54, rest}}: header.width(3, number(rest))
-    case _: Fail{BadHeader{}}
+    case _: Fail{C.BadHeader{}}
 
 def enough(n: Nat, bytes: +List<U32>) -> Bool:
   match n bytes:
@@ -94,9 +86,9 @@ def rgba(gray: Bool, +word: U32) -> U32:
     case True{}: ((word << 24n) .|. (word << 16n) .|. (word << 8n) .|. 255 : U32)
     case False{}: (((word .&. 255) << 24n) .|. (((word >> 8n) .&. 255) << 16n) .|. ((word >> 16n) << 8n) .|. 255 : U32)
 
-def write(index: U32, gray: Bool, pixels: Array<U32>, result: Maybe<&2, F.Word>) -> Result<&1, &1, Error, State>:
+def write(index: U32, gray: Bool, pixels: Array<U32>, result: Maybe<&2, F.Word>) -> Result<&1, &1, C.Error, State>:
   match result:
-    case None{}: Fail{Truncated{}}
+    case None{}: Fail{C.Truncated{}}
     case Some{F.Word{value, rest}}: Done{State{rest, Array.set(U32, pixels, index, rgba(gray, value))}}
 
 def samples(n: Nat, wide: Bool, +shift: Nat, value: U32, bytes: +List<U32>) -> Maybe<&2, F.Word>:
@@ -108,37 +100,37 @@ def samples(n: Nat, wide: Bool, +shift: Nat, value: U32, bytes: +List<U32>) -> M
     case 1n+rest True{} Con{_, Con{byte, tail}}: samples(rest, True{}, (shift + 8n : Nat), (value .|. (byte << shift) : U32), tail)
     case _ True{} Con{_, Nil{}}: None{}
 
-def pixels(n: Nat, +index: U32, +channels: U32, +wide: Bool, state: Result<&1, &1, Error, State>) -> Result<&1, &1, Error, Array<U32>>:
+def pixels(n: Nat, +index: U32, +channels: U32, +wide: Bool, state: Result<&1, &1, C.Error, State>) -> Result<&1, &1, C.Error, Array<U32>>:
   match n state:
     case _ Fail{error}: Fail{error}
     case 0n Done{State{_, output}}: Done{output}
     case 1n+rest Done{State{data, output}}:
       pixels(rest, (index + 1 : U32), channels, wide, write(index, U32.is_eq(channels, 1), output, samples(U32.to_nat(channels), wide, 0n, 0, data)))
 
-def image(width: U32, height: U32, channels: U32, result: Result<&1, &1, Error, Array<U32>>) -> Result<&1, &1, Error, Image>:
+def image(width: U32, height: U32, channels: U32, result: Result<&1, &1, C.Error, Array<U32>>) -> Result<&1, &1, C.Error, C.Image>:
   match result:
     case Fail{error}: Fail{error}
-    case Done{output}: Done{Image{width, height, channels, output}}
+    case Done{output}: Done{C.Image{width, height, channels, output}}
 
-def start.valid(valid: Bool, +width: U32, +height: U32, +channels: U32, wide: Bool, data: +List<U32>) -> Result<&1, &1, Error, Image>:
+def start.valid(valid: Bool, +width: U32, +height: U32, +channels: U32, wide: Bool, data: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
   match valid:
-    case False{}: Fail{Truncated{}}
+    case False{}: Fail{C.Truncated{}}
     case True{}:
       +count = (width * height : U32)
       depth = Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
       image(width, height, channels, pixels(U32.to_nat(count), 0, channels, wide, Done{State{data, Array.new(U32, depth, 0)}}))
 
-def start(result: Result<&2, &2, Error, Header>) -> Result<&1, &1, Error, Image>:
+def start(result: Result<&2, &2, C.Error, Header>) -> Result<&1, &1, C.Error, C.Image>:
   match result:
     case Fail{error}: Fail{error}
     case Done{Header{+width, +height, +channels, +wide, +data}}:
       required = (width * height * channels * Bool.pick(U32, wide, 2, 1) : U32)
       start.valid(enough(U32.to_nat(required), data), width, height, channels, wide, data)
 
-def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, Error, Image>:
+def checked(valid: Bool, bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
   match valid:
-    case False{}: Fail{BadByte{}}
+    case False{}: Fail{C.BadByte{}}
     case True{}: start(header(bytes))
 
-def decode(+bytes: +List<U32>) -> Result<&1, &1, Error, Image>:
-  checked(Q.valid_bytes(bytes, True{}), bytes)
+def decode(+bytes: +List<U32>) -> Result<&1, &1, C.Error, C.Image>:
+  checked(C.valid_bytes(bytes, True{}), bytes)
