@@ -369,6 +369,31 @@ def colors_unloaded(result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32
     case Fail{_}: False{}
     case Done{colors}: released(J.Surface.unload_colors(colors))
 
+def same_bytes(left: +List<U32>, right: +List<U32>) -> Bool:
+  match left right:
+    case Nil{} Nil{}: True{}
+    case Con{a, ra} Con{b, rb}: U32.is_eq(a, b) && same_bytes(ra, rb)
+    case _ _: False{}
+
+def logged(line: Maybe<String>, expected: String) -> Bool:
+  match line:
+    case None{}: False{}
+    case Some{text}: String.eq(text, expected)
+
+def silent(line: Maybe<String>) -> Bool:
+  match line:
+    case None{}: True{}
+    case Some{_}: False{}
+
+# MemAlloc zero-fills; MemRealloc keeps a prefix and zero-fills growth.
+def memory_checks() -> Bool:
+  same_bytes(J.Memory.alloc(4), [0,0,0,0])
+    && same_bytes(J.Memory.realloc([1,2,3], 2), [1,2])
+    && same_bytes(J.Memory.realloc([1], 3), [1,0,0])
+    && released(J.Memory.free([1,2]))
+    && logged(J.Log.message(J.Log.default(), 4, "careful"), "WARNING: careful\n")
+    && silent(J.Log.message(J.Log.default(), 2, "hidden"))
+
 def created_valid(result: Maybe<J.Surface>) -> Bool:
   match result:
     case None{}: False{}
@@ -386,4 +411,4 @@ def ownership_checks() -> Bool:
     && colors_unloaded(J.Surface.colors(J.Surface{1, 1, 7, J.Words{Array.new(U32, 0n, 16909060)}}))
 
 def main() -> IO(Unit):
-  verdict(checks() && ownership_checks())
+  verdict(checks() && ownership_checks() && memory_checks())
