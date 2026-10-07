@@ -3,19 +3,19 @@
   "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
   "declaration_inventory": {
     "total": 1884,
-    "blocked": 5,
+    "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1599,
-    "partial": 280
+    "not-started": 1566,
+    "partial": 297
   },
   "core_functions": {
     "total": 600,
-    "blocked": 1,
+    "blocked": 17,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 479,
-    "partial": 120
+    "not-started": 446,
+    "partial": 137
   },
   "math_functions": {
     "total": 146,
@@ -27,11 +27,11 @@
   },
   "function_declarations": {
     "total": 931,
-    "blocked": 5,
+    "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 664,
-    "partial": 262
+    "not-started": 631,
+    "partial": 279
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -51,11 +51,11 @@
   "headers": {
     "raylib.h": {
       "total": 1037,
-      "blocked": 1,
+      "blocked": 17,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 907,
-      "partial": 129
+      "not-started": 874,
+      "partial": 146
     },
     "raymath.h": {
       "total": 254,
@@ -161,11 +161,11 @@
         "memory"
       ],
       "total": 49,
-      "blocked": 0,
+      "blocked": 16,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 41,
-      "partial": 8
+      "not-started": 8,
+      "partial": 25
     },
     {
       "id": "random",

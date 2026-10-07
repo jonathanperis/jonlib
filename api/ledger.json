@@ -30376,23 +30376,26 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.load_file_data",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.load_data",
+      "mapping_state": "implemented",
+      "scope": "Every byte of the file up to INT_MAX, closing the handle; typed IO errors; an existing empty file is an empty list (raylib: NULL with dataSize 0).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30403,7 +30406,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive LoadFileData semantics from the linked source, add a reference fixture, then implement File.load_file_data.",
+      "next_step": "Close documented gaps and unverified gates for LoadFileData.",
       "priority": 204
     },
     {
@@ -30429,23 +30432,26 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.unload_file_data",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.unload_data",
+      "mapping_state": "implemented",
+      "scope": "Consumes the byte list returned by Files.load_data.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30456,7 +30462,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive UnloadFileData semantics from the linked source, add a reference fixture, then implement File.unload_file_data.",
+      "next_step": "Close documented gaps and unverified gates for UnloadFileData.",
       "priority": 204
     },
     {
@@ -30482,23 +30488,26 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.save_file_data",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.save_data",
+      "mapping_state": "implemented",
+      "scope": "Creates/truncates the file and writes every byte, closing the handle; values above 255 are InvalidRequest before opening.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30511,7 +30520,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive SaveFileData semantics from the linked source, add a reference fixture, then implement File.save_file_data.",
+      "next_step": "Close documented gaps and unverified gates for SaveFileData.",
       "priority": 204
     },
     {
@@ -30537,23 +30546,27 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.export_data_as_code",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.data_as_code / Files.export_data_as_code",
+      "mapping_state": "implemented",
+      "scope": "raylib's generated header (banner, NAME_DATA_SIZE, 20 lower-case hex bytes per line) for 1..1048576 bytes and an ASCII basename of 1..200 characters; the name drops its last extension, upper-cases a-z and maps '.-?!+' to '_'.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Empty data (raylib reads data[-1]), larger payloads and longer/non-ASCII names",
+        "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30566,7 +30579,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive ExportDataAsCode semantics from the linked source, add a reference fixture, then implement File.export_data_as_code.",
+      "next_step": "Close documented gaps and unverified gates for ExportDataAsCode.",
       "priority": 204
     },
     {
@@ -30592,23 +30605,27 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.load_file_text",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.load_text",
+      "mapping_state": "implemented",
+      "scope": "Every byte of the file as characters 0..255, NULs included (text and binary modes agree on the reference hosts).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Windows text-mode newline translation",
+        "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30619,7 +30636,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive LoadFileText semantics from the linked source, add a reference fixture, then implement File.load_file_text.",
+      "next_step": "Close documented gaps and unverified gates for LoadFileText.",
       "priority": 204
     },
     {
@@ -30645,23 +30662,26 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.unload_file_text",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.unload_text",
+      "mapping_state": "implemented",
+      "scope": "Consumes the text returned by Files.load_text.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30672,7 +30692,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive UnloadFileText semantics from the linked source, add a reference fixture, then implement File.unload_file_text.",
+      "next_step": "Close documented gaps and unverified gates for UnloadFileText.",
       "priority": 204
     },
     {
@@ -30698,23 +30718,27 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.save_file_text",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.save_text",
+      "mapping_state": "implemented",
+      "scope": "Writes the text up to its first NUL as bytes; characters above 255 are InvalidRequest before opening.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Windows text-mode newline translation",
+        "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30727,7 +30751,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive SaveFileText semantics from the linked source, add a reference fixture, then implement File.save_file_text.",
+      "next_step": "Close documented gaps and unverified gates for SaveFileText.",
       "priority": 204
     },
     {
@@ -30973,14 +30997,14 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "File.file_rename",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Runtime OS primitive in Bend's Base"
       ],
-      "blocker": null,
+      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -30989,7 +31013,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31000,7 +31026,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive FileRename semantics from the linked source, add a reference fixture, then implement File.file_rename.",
+      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "priority": 204
     },
     {
@@ -31026,14 +31052,14 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "File.file_remove",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Runtime OS primitive in Bend's Base"
       ],
-      "blocker": null,
+      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -31042,7 +31068,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31053,7 +31081,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive FileRemove semantics from the linked source, add a reference fixture, then implement File.file_remove.",
+      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "priority": 204
     },
     {
@@ -31079,14 +31107,14 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "File.file_copy",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Runtime OS primitive in Bend's Base"
       ],
-      "blocker": null,
+      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -31095,7 +31123,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31106,7 +31136,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive FileCopy semantics from the linked source, add a reference fixture, then implement File.file_copy.",
+      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "priority": 204
     },
     {
@@ -31132,14 +31162,14 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "File.file_move",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Runtime OS primitive in Bend's Base"
       ],
-      "blocker": null,
+      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -31148,7 +31178,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31159,7 +31191,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive FileMove semantics from the linked source, add a reference fixture, then implement File.file_move.",
+      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "priority": 204
     },
     {
@@ -31238,23 +31270,26 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.file_text_find_index",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.text_find_index",
+      "mapping_state": "implemented",
+      "scope": "Byte index of the first occurrence of search in the file's text up to its first NUL; None when absent or the file is missing. An empty file, which raylib scans through a NULL text, is None.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31265,7 +31300,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive FileTextFindIndex semantics from the linked source, add a reference fixture, then implement File.file_text_find_index.",
+      "next_step": "Close documented gaps and unverified gates for FileTextFindIndex.",
       "priority": 204
     },
     {
@@ -31291,23 +31326,27 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.file_exists",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.exists",
+      "mapping_state": "implemented",
+      "scope": "True when the path opens for reading, directories included.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "raylib's access() also accepts existing unreadable files",
+        "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31320,7 +31359,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive FileExists semantics from the linked source, add a reference fixture, then implement File.file_exists.",
+      "next_step": "Close documented gaps and unverified gates for FileExists.",
       "priority": 204
     },
     {
@@ -31346,14 +31385,14 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "File.directory_exists",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Runtime OS primitive in Bend's Base"
       ],
-      "blocker": null,
+      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -31362,7 +31401,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31375,7 +31416,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive DirectoryExists semantics from the linked source, add a reference fixture, then implement File.directory_exists.",
+      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "priority": 204
     },
     {
@@ -31401,23 +31442,27 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.is_file_extension",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.has_extension",
+      "mapping_state": "implemented",
+      "scope": "ASCII-case-insensitive match of GetFileExtension against a ';'-separated list of at most 31 entries (the last keeps further separators); entries without a leading '.' compare without it. File extensions of 16+ bytes overflow raylib's buffer: None.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Non-ASCII byte paths compare per character, not per byte",
+        "File extensions of 16+ bytes"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31430,7 +31475,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive IsFileExtension semantics from the linked source, add a reference fixture, then implement File.is_file_extension.",
+      "next_step": "Close documented gaps and unverified gates for IsFileExtension.",
       "priority": 204
     },
     {
@@ -31456,23 +31501,27 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.get_file_length",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.length",
+      "mapping_state": "implemented",
+      "scope": "File size in bytes; 0 when the file does not open.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Directories and sizes above INT_MAX",
+        "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31483,7 +31532,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive GetFileLength semantics from the linked source, add a reference fixture, then implement File.get_file_length.",
+      "next_step": "Close documented gaps and unverified gates for GetFileLength.",
       "priority": 204
     },
     {
@@ -31509,14 +31558,14 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "File.get_file_mod_time",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Runtime OS primitive in Bend's Base"
       ],
-      "blocker": null,
+      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -31525,7 +31574,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31536,7 +31587,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive GetFileModTime semantics from the linked source, add a reference fixture, then implement File.get_file_mod_time.",
+      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "priority": 204
     },
     {
@@ -31562,23 +31613,26 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.get_file_extension",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.extension",
+      "mapping_state": "implemented",
+      "scope": "From the last '.' of the whole path; None when there is none or it is the first character (raylib NULL).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Non-ASCII byte paths compare per character, not per byte"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31589,7 +31643,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive GetFileExtension semantics from the linked source, add a reference fixture, then implement File.get_file_extension.",
+      "next_step": "Close documented gaps and unverified gates for GetFileExtension.",
       "priority": 204
     },
     {
@@ -31615,23 +31669,26 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.get_file_name",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.name",
+      "mapping_state": "implemented",
+      "scope": "The text after the last '/' or '\\\\' separator, or the whole path.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Non-ASCII byte paths compare per character, not per byte"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31642,7 +31699,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive GetFileName semantics from the linked source, add a reference fixture, then implement File.get_file_name.",
+      "next_step": "Close documented gaps and unverified gates for GetFileName.",
       "priority": 204
     },
     {
@@ -31668,23 +31725,26 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.get_file_name_without_ext",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.name_without_ext",
+      "mapping_state": "implemented",
+      "scope": "GetFileName truncated to 255 bytes, cut at its last '.' past the first character.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Non-ASCII byte paths compare per character, not per byte"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31695,7 +31755,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive GetFileNameWithoutExt semantics from the linked source, add a reference fixture, then implement File.get_file_name_without_ext.",
+      "next_step": "Close documented gaps and unverified gates for GetFileNameWithoutExt.",
       "priority": 204
     },
     {
@@ -31721,23 +31781,27 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.get_directory_path",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.directory",
+      "mapping_state": "implemented",
+      "scope": "'./' before paths without a drive letter or leading separator, then the path up to its last separator ('/' or '\\\\' alone for a root file); paths of 1..4093 bytes, None otherwise (raylib reads past an empty path or overflows its 4096-byte buffer).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Non-ASCII byte paths compare per character, not per byte",
+        "Paths outside 1..4093 bytes"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31748,7 +31812,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive GetDirectoryPath semantics from the linked source, add a reference fixture, then implement File.get_directory_path.",
+      "next_step": "Close documented gaps and unverified gates for GetDirectoryPath.",
       "priority": 204
     },
     {
@@ -31774,23 +31838,27 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.get_prev_directory_path",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.previous_directory",
+      "mapping_state": "implemented",
+      "scope": "Paths of up to 3 bytes unchanged; otherwise the path up to its last separator, keeping a root '/' or 'C:\\\\'; empty without a separator. Paths up to 4096 bytes, None beyond (raylib buffer overflow).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Non-ASCII byte paths compare per character, not per byte",
+        "Paths above 4096 bytes"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31801,7 +31869,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive GetPrevDirectoryPath semantics from the linked source, add a reference fixture, then implement File.get_prev_directory_path.",
+      "next_step": "Close documented gaps and unverified gates for GetPrevDirectoryPath.",
       "priority": 204
     },
     {
@@ -31827,14 +31895,14 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "File.get_working_directory",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Runtime OS primitive in Bend's Base"
       ],
-      "blocker": null,
+      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -31843,7 +31911,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31854,7 +31924,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive GetWorkingDirectory semantics from the linked source, add a reference fixture, then implement File.get_working_directory.",
+      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "priority": 204
     },
     {
@@ -31880,14 +31950,14 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "File.get_application_directory",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Runtime OS primitive in Bend's Base"
       ],
-      "blocker": null,
+      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -31896,7 +31966,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31907,7 +31979,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive GetApplicationDirectory semantics from the linked source, add a reference fixture, then implement File.get_application_directory.",
+      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "priority": 204
     },
     {
@@ -31933,14 +32005,14 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "File.make_directory",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Runtime OS primitive in Bend's Base"
       ],
-      "blocker": null,
+      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -31949,7 +32021,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31960,7 +32034,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive MakeDirectory semantics from the linked source, add a reference fixture, then implement File.make_directory.",
+      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "priority": 204
     },
     {
@@ -31986,14 +32060,14 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "File.change_directory",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Runtime OS primitive in Bend's Base"
       ],
-      "blocker": null,
+      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -32002,7 +32076,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -32015,7 +32091,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive ChangeDirectory semantics from the linked source, add a reference fixture, then implement File.change_directory.",
+      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "priority": 204
     },
     {
@@ -32041,14 +32117,14 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "File.is_path_file",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Runtime OS primitive in Bend's Base"
       ],
-      "blocker": null,
+      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -32057,7 +32133,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -32070,7 +32148,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive IsPathFile semantics from the linked source, add a reference fixture, then implement File.is_path_file.",
+      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "priority": 204
     },
     {
@@ -32096,23 +32174,26 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.is_file_name_valid",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.valid_name",
+      "mapping_state": "implemented",
+      "scope": "Empty names are valid; '<>:\"/\\\\|?*', control characters and all-period names are invalid.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Non-ASCII byte paths compare per character, not per byte"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -32125,7 +32206,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive IsFileNameValid semantics from the linked source, add a reference fixture, then implement File.is_file_name_valid.",
+      "next_step": "Close documented gaps and unverified gates for IsFileNameValid.",
       "priority": 204
     },
     {
@@ -32151,14 +32232,14 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "File.load_directory_files",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Runtime OS primitive in Bend's Base"
       ],
-      "blocker": null,
+      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -32167,7 +32248,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -32180,7 +32263,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive LoadDirectoryFiles semantics from the linked source, add a reference fixture, then implement File.load_directory_files.",
+      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "priority": 204
     },
     {
@@ -32206,14 +32289,14 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "File.load_directory_files_ex",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Runtime OS primitive in Bend's Base"
       ],
-      "blocker": null,
+      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -32222,7 +32305,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -32236,7 +32321,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive LoadDirectoryFilesEx semantics from the linked source, add a reference fixture, then implement File.load_directory_files_ex.",
+      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "priority": 204
     },
     {
@@ -32262,14 +32347,14 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "File.unload_directory_files",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Runtime OS primitive in Bend's Base"
       ],
-      "blocker": null,
+      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -32278,7 +32363,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -32291,7 +32378,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive UnloadDirectoryFiles semantics from the linked source, add a reference fixture, then implement File.unload_directory_files.",
+      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "priority": 204
     },
     {
@@ -32482,14 +32569,14 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "File.get_directory_file_count",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Runtime OS primitive in Bend's Base"
       ],
-      "blocker": null,
+      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -32498,7 +32585,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -32509,7 +32598,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive GetDirectoryFileCount semantics from the linked source, add a reference fixture, then implement File.get_directory_file_count.",
+      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "priority": 204
     },
     {
@@ -32535,14 +32624,14 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "File.get_directory_file_count_ex",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Runtime OS primitive in Bend's Base"
       ],
-      "blocker": null,
+      "blocker": "Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -32551,7 +32640,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -32564,7 +32655,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive GetDirectoryFileCountEx semantics from the linked source, add a reference fixture, then implement File.get_directory_file_count_ex.",
+      "next_step": "Resolve: Bend's Base IO exposes only file open/read/write/size/close; this needs an OS primitive (stat, directories, rename/remove or the working directory) from the runtime workstream.",
       "priority": 204
     },
     {

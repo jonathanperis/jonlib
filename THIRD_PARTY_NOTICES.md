@@ -37,6 +37,8 @@ identify the original sources and their required attribution.
   `Image.Formatted.to_qoi` / `write_qoi` additionally adapt the QOI-specific
   original-format RGB888/RGBA8888 export gate from `rtextures.c`, with integer
   channel packing, retained unsupported owners and typed closed-handle IO.
+  `Files.*` in `jonlib.bend` adapts the `rcore.c` path and file-data utilities;
+  `src/image_code.bend` also retains the `ExportDataAsCode` banner/credits.
   `src/dds.bend` adapts `rl_load_dds_from_memory` from `src/external/rltexgpu.h`
   (same author and zlib license) for uncompressed single-level DDS files.
   `Image.Formatted.decode_pnm` adapts `LoadImageFromMemory`'s PNM component-to-format

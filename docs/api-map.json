@@ -43,6 +43,184 @@
     "api_id": "raylib:function:UnloadRandomSequence",
     "milestone": "random"
   },
+  "LoadFileData": {
+    "jonlib": "Files.load_data",
+    "status": "profile-covered",
+    "scope": "Every byte of the file up to INT_MAX, closing the handle; typed IO errors; an existing empty file is an empty list (raylib: NULL with dataSize 0).",
+    "gaps": [
+      "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
+    ],
+    "api_id": "raylib:function:LoadFileData",
+    "milestone": "files"
+  },
+  "UnloadFileData": {
+    "jonlib": "Files.unload_data",
+    "status": "profile-covered",
+    "scope": "Consumes the byte list returned by Files.load_data.",
+    "gaps": [
+      "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
+    ],
+    "api_id": "raylib:function:UnloadFileData",
+    "milestone": "files"
+  },
+  "SaveFileData": {
+    "jonlib": "Files.save_data",
+    "status": "profile-covered",
+    "scope": "Creates/truncates the file and writes every byte, closing the handle; values above 255 are InvalidRequest before opening.",
+    "gaps": [
+      "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
+    ],
+    "api_id": "raylib:function:SaveFileData",
+    "milestone": "files"
+  },
+  "ExportDataAsCode": {
+    "jonlib": "Files.data_as_code / Files.export_data_as_code",
+    "status": "profile-covered",
+    "scope": "raylib's generated header (banner, NAME_DATA_SIZE, 20 lower-case hex bytes per line) for 1..1048576 bytes and an ASCII basename of 1..200 characters; the name drops its last extension, upper-cases a-z and maps '.-?!+' to '_'.",
+    "gaps": [
+      "Empty data (raylib reads data[-1]), larger payloads and longer/non-ASCII names",
+      "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
+    ],
+    "api_id": "raylib:function:ExportDataAsCode",
+    "milestone": "files"
+  },
+  "LoadFileText": {
+    "jonlib": "Files.load_text",
+    "status": "profile-covered",
+    "scope": "Every byte of the file as characters 0..255, NULs included (text and binary modes agree on the reference hosts).",
+    "gaps": [
+      "Windows text-mode newline translation",
+      "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
+    ],
+    "api_id": "raylib:function:LoadFileText",
+    "milestone": "files"
+  },
+  "UnloadFileText": {
+    "jonlib": "Files.unload_text",
+    "status": "profile-covered",
+    "scope": "Consumes the text returned by Files.load_text.",
+    "gaps": [
+      "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
+    ],
+    "api_id": "raylib:function:UnloadFileText",
+    "milestone": "files"
+  },
+  "SaveFileText": {
+    "jonlib": "Files.save_text",
+    "status": "profile-covered",
+    "scope": "Writes the text up to its first NUL as bytes; characters above 255 are InvalidRequest before opening.",
+    "gaps": [
+      "Windows text-mode newline translation",
+      "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
+    ],
+    "api_id": "raylib:function:SaveFileText",
+    "milestone": "files"
+  },
+  "FileTextFindIndex": {
+    "jonlib": "Files.text_find_index",
+    "status": "profile-covered",
+    "scope": "Byte index of the first occurrence of search in the file's text up to its first NUL; None when absent or the file is missing. An empty file, which raylib scans through a NULL text, is None.",
+    "gaps": [
+      "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
+    ],
+    "api_id": "raylib:function:FileTextFindIndex",
+    "milestone": "files"
+  },
+  "FileExists": {
+    "jonlib": "Files.exists",
+    "status": "profile-covered",
+    "scope": "True when the path opens for reading, directories included.",
+    "gaps": [
+      "raylib's access() also accepts existing unreadable files",
+      "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
+    ],
+    "api_id": "raylib:function:FileExists",
+    "milestone": "files"
+  },
+  "IsFileExtension": {
+    "jonlib": "Files.has_extension",
+    "status": "profile-covered",
+    "scope": "ASCII-case-insensitive match of GetFileExtension against a ';'-separated list of at most 31 entries (the last keeps further separators); entries without a leading '.' compare without it. File extensions of 16+ bytes overflow raylib's buffer: None.",
+    "gaps": [
+      "Non-ASCII byte paths compare per character, not per byte",
+      "File extensions of 16+ bytes"
+    ],
+    "api_id": "raylib:function:IsFileExtension",
+    "milestone": "files"
+  },
+  "GetFileLength": {
+    "jonlib": "Files.length",
+    "status": "profile-covered",
+    "scope": "File size in bytes; 0 when the file does not open.",
+    "gaps": [
+      "Directories and sizes above INT_MAX",
+      "Native callback hooks, pointer/allocator ABI and complete target/resource coverage"
+    ],
+    "api_id": "raylib:function:GetFileLength",
+    "milestone": "files"
+  },
+  "GetFileExtension": {
+    "jonlib": "Files.extension",
+    "status": "profile-covered",
+    "scope": "From the last '.' of the whole path; None when there is none or it is the first character (raylib NULL).",
+    "gaps": [
+      "Non-ASCII byte paths compare per character, not per byte"
+    ],
+    "api_id": "raylib:function:GetFileExtension",
+    "milestone": "files"
+  },
+  "GetFileName": {
+    "jonlib": "Files.name",
+    "status": "profile-covered",
+    "scope": "The text after the last '/' or '\\\\' separator, or the whole path.",
+    "gaps": [
+      "Non-ASCII byte paths compare per character, not per byte"
+    ],
+    "api_id": "raylib:function:GetFileName",
+    "milestone": "files"
+  },
+  "GetFileNameWithoutExt": {
+    "jonlib": "Files.name_without_ext",
+    "status": "profile-covered",
+    "scope": "GetFileName truncated to 255 bytes, cut at its last '.' past the first character.",
+    "gaps": [
+      "Non-ASCII byte paths compare per character, not per byte"
+    ],
+    "api_id": "raylib:function:GetFileNameWithoutExt",
+    "milestone": "files"
+  },
+  "GetDirectoryPath": {
+    "jonlib": "Files.directory",
+    "status": "profile-covered",
+    "scope": "'./' before paths without a drive letter or leading separator, then the path up to its last separator ('/' or '\\\\' alone for a root file); paths of 1..4093 bytes, None otherwise (raylib reads past an empty path or overflows its 4096-byte buffer).",
+    "gaps": [
+      "Non-ASCII byte paths compare per character, not per byte",
+      "Paths outside 1..4093 bytes"
+    ],
+    "api_id": "raylib:function:GetDirectoryPath",
+    "milestone": "files"
+  },
+  "GetPrevDirectoryPath": {
+    "jonlib": "Files.previous_directory",
+    "status": "profile-covered",
+    "scope": "Paths of up to 3 bytes unchanged; otherwise the path up to its last separator, keeping a root '/' or 'C:\\\\'; empty without a separator. Paths up to 4096 bytes, None beyond (raylib buffer overflow).",
+    "gaps": [
+      "Non-ASCII byte paths compare per character, not per byte",
+      "Paths above 4096 bytes"
+    ],
+    "api_id": "raylib:function:GetPrevDirectoryPath",
+    "milestone": "files"
+  },
+  "IsFileNameValid": {
+    "jonlib": "Files.valid_name",
+    "status": "profile-covered",
+    "scope": "Empty names are valid; '<>:\"/\\\\|?*', control characters and all-period names are invalid.",
+    "gaps": [
+      "Non-ASCII byte paths compare per character, not per byte"
+    ],
+    "api_id": "raylib:function:IsFileNameValid",
+    "milestone": "files"
+  },
   "CompressData": {
     "jonlib": "Compression.compress",
     "status": "profile-covered",
