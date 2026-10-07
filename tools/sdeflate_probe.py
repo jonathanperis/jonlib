@@ -121,7 +121,7 @@ def observed(result: Maybe<&2, +List<U32>>) -> IO(Unit):
   match result:
     case None{}: IO.print("null")
     case Some{words}: emit_bytes(~&1, array_bytes(words, Nil{}))
-def loaded(result: Result<&1, &1, J.Image.LoadError, +List<U32>>) -> IO(Unit):
+def loaded(result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "sdefl fixture read failed")
     case Done{bytes}: observed(calculateBANG(bytes))
@@ -174,7 +174,7 @@ def observed(result: Maybe<Observation>) -> IO(Unit):
         emit_bytes(~&2, compressed)
         emit_bytes(~&1, decoded)
     case Some{Observation{_, None{}}}: IO.die(Unit, 1, "candidate decompression failed")
-def loaded(result: Result<&1, &1, J.Image.LoadError, +List<U32>>) -> IO(Unit):
+def loaded(result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "sdefl fixture read failed")
     case Done{bytes}: observed(calculateBANG(bytes))
@@ -261,7 +261,7 @@ def main():
         for kind, value in selected:
             if kind == 'file':
                 path = json.dumps(str((work / f'{value}.dat').relative_to(ROOT)))
-                body += f'    IO.bind(Result<&1, &1, J.Image.LoadError, +List<U32>>, Unit, J.Image.file.bytes({path}, 2097152), loaded)\n'
+                body += f'    IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Image.file.bytes({path}, 2097152), loaded)\n'
             else:
                 body += f'    observed(calculate{bang}({value}))\n'
         return body

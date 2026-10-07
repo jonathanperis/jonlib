@@ -46,100 +46,52 @@ def emitted(~q: Quant, width: U32, height: U32, format: U32, bytes: List<q, U32>
 def formatted(result: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
   ((width, height), (format, bytes)) = result
   emitted(~&1, width, height, format, bytes)
-def float_bytes(width: U32, height: U32, result: Result<&1, &1, J.Image.FloatRGB, +List<U32>>) -> IO(Unit):
-  match result:
-    case Fail{_}: IO.die(Unit, 1, "retained float source changed")
-    case Done{bytes}: emitted(~&2, width, height, 9, bytes)
-def float_image(image: J.Image.FloatRGB) -> IO(Unit):
-  J.FloatRGB{+width, +height, pixels} = image
-  float_bytes(width, height, J.Image.FloatRGB.to_bytes(J.FloatRGB{width, height, pixels}))
-def formatted_bulk(result: Maybe<J.Image.Formatted>) -> Maybe<List<U32>>:
+def bulk(result: Maybe<J.Surface>) -> Maybe<Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>>:
   match result:
     case None{}: None{}
-    case Some{image}: Some{J.Image.Formatted.colors(image)}
-def float_bulk(result: Maybe<J.Image.FloatRGB>) -> Maybe<Result<&1, &1, J.Image.FloatRGB, List<U32>>>:
-  match result:
-    case None{}: None{}
-    case Some{image}: Some{J.Image.FloatRGB.colors(image)}
-def emit_bulk(result: Maybe<List<U32>>) -> IO(Unit):
-  match result:
-    case None{}: IO.die(Unit, 1, "valid bulk colors rejected")
-    case Some{values}: emit_bytes(~&1, colors(values, Nil{}))
-def emit_float_bulk(reject: Bool, result: Maybe<Result<&1, &1, J.Image.FloatRGB, List<U32>>>) -> IO(Unit):
+    case Some{image}: Some{J.Surface.colors(image)}
+def emit_bulk(reject: Bool, result: Maybe<Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>>) -> IO(Unit):
   match reject result:
     case False{} Some{Done{values}}: emit_bytes(~&1, colors(values, Nil{}))
-    case True{} Some{Fail{image}}: float_image(image)
-    case _ _: IO.die(Unit, 1, "float bulk domain/owner differs")
-def formatted_read(values: List<U32>, result: J.Image.Formatted & Maybe<&2, U32>) -> Maybe<(J.Image.Formatted & List<U32>)>:
+    case True{} Some{Fail{Tuple{image, J.OutOfDomain{}}}}: formatted(J.Surface.export(image))
+    case _ _: IO.die(Unit, 1, "bulk colors domain/owner differs")
+def point_read(values: List<U32>, result: J.Surface & Maybe<&2, U32>) -> Maybe<(J.Surface & List<U32>)>:
   match result:
     case Tuple{source, Some{color}}: Some{(source, Con{color, values})}
     case _: None{}
-def float_read(values: List<U32>, result: J.Image.FloatRGB & Maybe<&2, U32>) -> Maybe<(J.Image.FloatRGB & List<U32>)>:
-  match result:
-    case Tuple{source, Some{color}}: Some{(source, Con{color, values})}
-    case _: None{}
-def formatted_points(n: Nat, +index: U32, +width: U32, state: Maybe<(J.Image.Formatted & List<U32>)>) -> Maybe<(J.Image.Formatted & List<U32>)>:
+def points(n: Nat, +index: U32, +width: U32, state: Maybe<(J.Surface & List<U32>)>) -> Maybe<(J.Surface & List<U32>)>:
   match n state:
     case _ None{}: None{}
     case 0n _: state
     case 1n+rest Some{Tuple{source, values}}:
-      formatted_points(rest, (index + 1 : U32), width, formatted_read(values, J.Image.Formatted.get(source, (index % width : U32), (index / width : U32))))
-def float_points(n: Nat, +index: U32, +width: U32, state: Maybe<(J.Image.FloatRGB & List<U32>)>) -> Maybe<(J.Image.FloatRGB & List<U32>)>:
-  match n state:
-    case _ None{}: None{}
-    case 0n _: state
-    case 1n+rest Some{Tuple{source, values}}:
-      float_points(rest, (index + 1 : U32), width, float_read(values, J.Image.FloatRGB.get(source, (index % width : U32), (index / width : U32))))
-def formatted_walk(result: Maybe<J.Image.Formatted>) -> Maybe<(J.Image.Formatted & List<U32>)>:
+      points(rest, (index + 1 : U32), width, point_read(values, J.Surface.get(source, (index % width : U32), (index / width : U32))))
+def walk(result: Maybe<J.Surface>) -> Maybe<(J.Surface & List<U32>)>:
   match result:
     case None{}: None{}
-    case Some{J.FormattedImage{+width, +height, format, pixels}}:
-      formatted_points(U32.to_nat((width * height : U32)), 0, width, Some{(J.FormattedImage{width, height, format, pixels}, Nil{})})
-def float_walk(result: Maybe<J.Image.FloatRGB>) -> Maybe<(J.Image.FloatRGB & List<U32>)>:
+    case Some{J.Surface{+width, +height, format, pixels}}:
+      points(U32.to_nat((width * height : U32)), 0, width, Some{(J.Surface{width, height, format, pixels}, Nil{})})
+def emit_points(result: Maybe<(J.Surface & List<U32>)>) -> IO(Unit):
   match result:
-    case None{}: None{}
-    case Some{J.FloatRGB{+width, +height, pixels}}:
-      float_points(U32.to_nat((width * height : U32)), 0, width, Some{(J.FloatRGB{width, height, pixels}, Nil{})})
-def emit_formatted_points(result: Maybe<(J.Image.Formatted & List<U32>)>) -> IO(Unit):
-  match result:
-    case None{}: IO.die(Unit, 1, "valid formatted point rejected")
+    case None{}: IO.die(Unit, 1, "valid point rejected")
     case Some{Tuple{source, values}}:
       do IO<Unit>:
         emit_bytes(~&1, colors(List.reverse(&1, U32, values), Nil{}))
-        formatted(J.Image.Formatted.export(source))
-def emit_float_points(result: Maybe<(J.Image.FloatRGB & List<U32>)>) -> IO(Unit):
-  match result:
-    case None{}: IO.die(Unit, 1, "valid float point rejected")
-    case Some{Tuple{source, values}}:
-      do IO<Unit>:
-        emit_bytes(~&1, colors(List.reverse(&1, U32, values), Nil{}))
-        float_image(source)
+        formatted(J.Surface.export(source))
 def point(value: Maybe<&2, U32>) -> IO(Unit):
   match value:
     case None{}: emit_bytes(~&1, [0])
     case Some{color}: emit_bytes(~&1, Con{1, colors([color], Nil{})})
-def formatted_get(x: U32, y: U32, source: Maybe<J.Image.Formatted>) -> Maybe<(J.Image.Formatted & Maybe<&2, U32>)>:
+def point_get(x: U32, y: U32, source: Maybe<J.Surface>) -> Maybe<(J.Surface & Maybe<&2, U32>)>:
   match source:
     case None{}: None{}
-    case Some{image}: Some{J.Image.Formatted.get(image, x, y)}
-def float_get(x: U32, y: U32, source: Maybe<J.Image.FloatRGB>) -> Maybe<(J.Image.FloatRGB & Maybe<&2, U32>)>:
-  match source:
-    case None{}: None{}
-    case Some{image}: Some{J.Image.FloatRGB.get(image, x, y)}
-def emit_formatted_get(result: Maybe<(J.Image.Formatted & Maybe<&2, U32>)>) -> IO(Unit):
+    case Some{image}: Some{J.Surface.get(image, x, y)}
+def emit_get(result: Maybe<(J.Surface & Maybe<&2, U32>)>) -> IO(Unit):
   match result:
-    case None{}: IO.die(Unit, 1, "formatted control source rejected")
+    case None{}: IO.die(Unit, 1, "control source rejected")
     case Some{Tuple{source, value}}:
       do IO<Unit>:
         point(value)
-        formatted(J.Image.Formatted.export(source))
-def emit_float_get(result: Maybe<(J.Image.FloatRGB & Maybe<&2, U32>)>) -> IO(Unit):
-  match result:
-    case None{}: IO.die(Unit, 1, "float control source rejected")
-    case Some{Tuple{source, value}}:
-      do IO<Unit>:
-        point(value)
-        float_image(source)
+        formatted(J.Surface.export(source))
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -156,20 +108,18 @@ def grouped(rows,selected):
 
 
 def image(case):
-    floating=case['format']==9;owner='FloatRGB' if floating else 'Formatted'
-    return f'J.Image.{owner}.from_bytes({case["width"]}, {case["height"]}, '+('' if floating else f'{case["format"]}, ')+bend_bytes(case['bytes'])+')'
+    return f'J.Surface.from_bytes({case["width"]}, {case["height"]}, {case["format"]}, '+bend_bytes(case['bytes'])+')'
 
 
 def render(selected,gpu):
     bang='!' if gpu else '';body=PROGRAM
     for kind,case in selected:
-        family='float' if case['format']==9 else 'formatted'
         if kind=='case':
             created=image(case)
-            body+=f'    emit_float_bulk(False{{}}, float_bulk{bang}({created}))\n' if family=='float' else f'    emit_bulk(formatted_bulk{bang}({created}))\n'
-            body+=f'    emit_{family}_points({family}_walk{bang}({created}))\n'
-        elif kind=='control':body+=f'    emit_{family}_get({family}_get{bang}({case["x"]}, {case["y"]}, {image(case)}))\n'
-        else:body+=f'    emit_float_bulk(True{{}}, float_bulk{bang}({image(case)}))\n'
+            body+=f'    emit_bulk(False{{}}, bulk{bang}({created}))\n'
+            body+=f'    emit_points(walk{bang}({created}))\n'
+        elif kind=='control':body+=f'    emit_get(point_get{bang}({case["x"]}, {case["y"]}, {image(case)}))\n'
+        else:body+=f'    emit_bulk(True{{}}, bulk{bang}({image(case)}))\n'
     return body
 
 

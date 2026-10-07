@@ -39,27 +39,21 @@ def emitted(~q: Quant, width: U32, height: U32, format: U32, bytes: List<q, U32>
 def formatted(result: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
   ((width, height), (format, bytes)) = result
   emitted(~&1, width, height, format, bytes)
-def retained.bytes(width: U32, height: U32, result: Result<&1, &1, J.Image.FloatRGB, +List<U32>>) -> IO(Unit):
-  match result:
-    case Fail{_}: IO.die(Unit, 1, "retained format owner changed")
-    case Done{bytes}: emitted(~&2, width, height, 9, bytes)
-def retained(image: J.Image.FloatRGB) -> IO(Unit):
-  J.FloatRGB{+width, +height, pixels} = image
-  retained.bytes(width, height, J.Image.FloatRGB.to_bytes(J.FloatRGB{width, height, pixels}))
-def selected(reject: Bool, result: Result<&1, &1, J.Image.FloatRGB, J.Image.Formatted>) -> IO(Unit):
-  match reject result:
-    case False{} Done{image}: formatted(J.Image.Formatted.export(image))
-    case True{} Fail{image}: retained(image)
-    case _ _: IO.die(Unit, 1, "direct conversion acceptance/owner differs")
-def converted(target: U32, result: Maybe<J.Image.FloatRGB>) -> Maybe<Result<&1, &1, J.Image.FloatRGB, J.Image.Formatted>>:
+# expected: 99 accepted (target 0 and the current format keep the owner), 2 OutOfDomain owner.
+def selected(expected: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):
+  match expected result:
+    case 99 Done{image}: formatted(J.Surface.export(image))
+    case 2 Fail{Tuple{image, J.OutOfDomain{}}}: formatted(J.Surface.export(image))
+    case _ _: IO.die(Unit, 1, "direct conversion acceptance/error/owner differs")
+def converted(target: U32, result: Maybe<J.Surface>) -> Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>:
   match target result:
     case _ None{}: None{}
-    case 1 Some{image}: Some{J.Image.FloatRGB.color_grayscale(image)}
-    case _ Some{image}: Some{J.Image.FloatRGB.to_formatted(image, target)}
-def observed(reject: Bool, result: Maybe<Result<&1, &1, J.Image.FloatRGB, J.Image.Formatted>>) -> IO(Unit):
+    case 1 Some{image}: Some{J.Surface.color_grayscale(image)}
+    case _ Some{image}: Some{J.Surface.format(image, target)}
+def observed(expected: U32, result: Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "valid direct-format source rejected")
-    case Some{value}: selected(reject, value)
+    case Some{value}: selected(expected, value)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -91,8 +85,9 @@ def fixtures():
     cases += [dict(width=32,height=32,bytes=gray_data,target=target) for target in (1,2)]
     original=list(struct.pack('<fff',0.5,0.25,0.75))
     cases.append(dict(width=1,height=1,bytes=original,target=8))
-    controls=[dict(width=1,height=1,bytes=original,target=target) for target in (0,9)]
-    controls.append(dict(width=1,height=1,bytes=list(struct.pack('<fff',2.0,0.5,0.75)),target=3))
+    # ImageFormat with format 0 or the current format leaves the image unchanged.
+    cases += [dict(width=1,height=1,bytes=original,target=target) for target in (0,9)]
+    controls=[dict(width=1,height=1,bytes=list(struct.pack('<fff',2.0,0.5,0.75)),target=3,error=2)]
     return cases,controls
 
 
@@ -110,7 +105,7 @@ def check_reference(cases,controls,expected):
     """Independently confirm native metadata and that the retained packed-rounding counterexamples still separate round from add-half."""
     sizes={1:1,2:2,3:2,4:3,5:2,6:2,7:4,8:4,9:12}
     for i,(case,row) in enumerate(zip([*cases,*controls],expected)):
-        target=case['target'] if i<len(cases) else 9
+        target=(case['target'] or 9) if i<len(cases) else 9
         if row[:12]!=list(struct.pack('<III',case['width'],case['height'],target)) or len(row)!=12+case['width']*case['height']*sizes[target]:raise ProbeFailure('Native format metadata differs')
     for word,limit,target,component,shift in ((0x3d088888,15,6,0,12),(0x3c020820,63,3,1,5)):
         case=cases[target-1];data=bytes(case['bytes']);index=next(i for i in range(case['width']) if struct.unpack_from('<I',data,i*12+component*4)[0]==word)
@@ -124,8 +119,8 @@ def main():
     cases,controls=fixtures();text=probe.native(reference_program(cases,controls,probe.work));expected=parse_results(text)
     if len(expected)!=len(cases)+len(controls):raise ProbeFailure('Incomplete native direct-format results')
     check_reference(cases,controls,expected);probe.report['sources']=source_gate()
-    actions=[f'observed({"True" if i>=len(cases) else "False"}{{}}, convertedBANG({case["target"]}, J.Image.FloatRGB.from_bytes({case["width"]}, {case["height"]}, {bend_bytes(case["bytes"])})))'
-             for i,case in enumerate([*cases,*controls])]
+    actions=[f'observed({case.get("error",99)}, convertedBANG({case["target"]}, J.Surface.from_bytes({case["width"]}, {case["height"]}, 9, {bend_bytes(case["bytes"])})))'
+             for case in [*cases,*controls]]
     render=lambda selected,gpu:PROGRAM+''.join('    '+line.replace('BANG','!' if gpu else '')+'\n' for line in selected)
     probe.compare(expected,probe.candidates(render,actions,batch=len(actions),parse=lambda text,selected:parse_results(text)))
     probe.finish(native_cases=len(cases),pixels=sum(c['width']*c['height'] for c in cases),retained_owner_controls=len(controls),

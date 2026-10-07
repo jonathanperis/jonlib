@@ -10,7 +10,7 @@ from probekit import ProbeFailure
 
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
-def read_acc(result: Result<&2, &2, J.Pixel.Error, U32>, values: List<U32>) -> List<U32>:
+def read_acc(result: Result<&2, &2, J.Surface.Error, U32>, values: List<U32>) -> List<U32>:
   match result:
     case Fail{_}: Con{0, Con{0, values}}
     case Done{color}: Con{color, Con{1, values}}
@@ -29,11 +29,11 @@ def byte_list(bytes: +List<U32>) -> List<U32>:
   match bytes:
     case Nil{}: Nil{}
     case Con{head, rest}: Con{head, byte_list(rest)}
-def write_read(bytes: +List<U32>, result: Result<&2, &2, J.Pixel.Error, U32>) -> List<U32>:
+def write_read(bytes: +List<U32>, result: Result<&2, &2, J.Surface.Error, U32>) -> List<U32>:
   match result:
     case Fail{_}: [0]
     case Done{color}: Con{1, Con{color, byte_list(bytes)}}
-def write_result(format: U32, result: Result<&2, &2, J.Pixel.Error, +List<U32>>) -> List<U32>:
+def write_result(format: U32, result: Result<&2, &2, J.Surface.Error, +List<U32>>) -> List<U32>:
   match result:
     case Fail{_}: [0]
     case Done{+bytes}: write_read(bytes, J.Pixel.get_color(bytes, format))

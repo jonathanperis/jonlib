@@ -57,35 +57,46 @@ def word_bytes(n: Nat, +word: U32, values: List<U32>) -> List<U32>:
   match n:
     case 0n: values
     case 1n+rest: word_bytes(rest, (word >> 8n : U32), Con{(word .&. 255 : U32), values})
-def samples(pixels: List<M.Vector3>, values: List<U32>) -> List<U32>:
-  match pixels:
-    case Nil{}: List.reverse(&1, U32, values)
-    case Con{M.Vector3{r, g, b}, rest}: samples(rest, word_bytes(4n, F32.bits(b), word_bytes(4n, F32.bits(g), word_bytes(4n, F32.bits(r), values))))
+def header(+width: U32, +height: U32) -> List<U32>:
+  List.reverse(&1, U32, word_bytes(4n, height, word_bytes(4n, width, Nil{})))
 def colors(pixels: List<U32>, values: List<U32>) -> List<U32>:
   match pixels:
     case Nil{}: List.reverse(&1, U32, values)
     case Con{+color, rest}: colors(rest, Con{J.Color.alpha(color), Con{J.Color.blue(color), Con{J.Color.green(color), Con{J.Color.red(color), values}}}})
 '''+BEND_EMITTER+'''
-def emit_floats(result: U32 & U32 & List<M.Vector3>) -> IO(Unit):
-  (width, height, pixels) = result
-  emit_bytes(~&1, samples(pixels, word_bytes(4n, height, word_bytes(4n, width, Nil{}))))
-def emit_surface(result: Result<&1, &1, J.Image.FloatRGB, J.Surface>) -> IO(Unit):
+def emit_floats(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
+  match data:
+    case Tuple{Tuple{width, height}, Tuple{9, bytes}}: emit_bytes(~&1, List.append(&1, U32, header(width, height), bytes))
+    case _: IO.die(Unit, 1, "float export format changed")
+def emit_converted(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "valid float conversion rejected")
-    case Done{J.Surface{+width, +height, pixels}}:
-      emit_bytes(~&1, colors(J.Surface.colors(J.Surface{width, height, pixels}), word_bytes(4n, height, word_bytes(4n, width, Nil{}))))
+    case Done{image}: emit_floats(J.Surface.export(image))
+def emit_colors(+width: U32, +height: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "converted colors rejected")
+    case Done{values}: emit_bytes(~&1, colors(values, word_bytes(4n, height, word_bytes(4n, width, Nil{}))))
+def emit_surface(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "valid float conversion rejected")
+    case Done{J.Surface{+width, +height, 7, pixels}}: emit_colors(width, height, J.Surface.colors(J.Surface{width, height, 7, pixels}))
+    case Done{_}: IO.die(Unit, 1, "float conversion target format changed")
+def to_rgba(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  match result:
+    case Fail{failure}: Fail{failure}
+    case Done{image}: J.Surface.format(image, 7)
 def byte_pixels(n: Nat, +index: U32, pixels: Array<U32>) -> Array<U32>:
   match n:
     case 0n: pixels
     case 1n+rest: byte_pixels(rest, (index + 1 : U32), Array.set(U32, pixels, index, J.Color.rgba(index, (255 - index : U32), (index .^. 85 : U32), index)))
 def byte_image() -> J.Surface:
-  J.Surface{256, 1, byte_pixels(256n, 0, Array.new(U32, 8n, 0))}
+  J.Surface{256, 1, 7, J.Words{byte_pixels(256n, 0, Array.new(U32, 8n, 0))}}
 def from_words(words: +List<U32>, +index: U32, pixels: Array<M.Vector3>) -> Array<M.Vector3>:
   match words:
     case Con{r, Con{g, Con{b, rest}}}: from_words(rest, (index + 1 : U32), Array.set(M.Vector3, pixels, index, M.Vector3{H.float_bits(r), H.float_bits(g), H.float_bits(b)}))
     case _: pixels
-def boundary_image(words: +List<U32>, +width: U32) -> J.Image.FloatRGB:
-  J.FloatRGB{width, 1, from_words(words, 0, Array.new(M.Vector3, J.Surface.capacity(width), M.Vector3{0.0, 0.0, 0.0}))}
+def boundary_image(words: +List<U32>, +width: U32) -> J.Surface:
+  J.Surface{width, 1, 9, J.Vectors{from_words(words, 0, Array.new(M.Vector3, J.Surface.capacity(width), M.Vector3{0.0, 0.0, 0.0}))}}
 def hdr_pixels(n: Nat, +index: U32, pixels: Array<M.Vector3>) -> Array<M.Vector3>:
   match n:
     case 0n: pixels
@@ -94,23 +105,29 @@ def hdr_pixels(n: Nat, +index: U32, pixels: Array<M.Vector3>) -> Array<M.Vector3
       +exponent = (index / 256 : U32)
       hdr_pixels(rest, (index + 1 : U32), Array.set(M.Vector3, pixels, index,
         M.Vector3{H.sample(channel, exponent), H.sample((255 - channel : U32), exponent), H.sample((channel .^. 85 : U32), exponent)}))
-def hdr_image() -> J.Image.FloatRGB:
-  J.FloatRGB{256, 129, hdr_pixels(33024n, 0, Array.new(M.Vector3, 16n, M.Vector3{0.0, 0.0, 0.0}))}
-def vector_bits(left: M.Vector3, right: M.Vector3) -> Bool:
-  M.Vector3{a, b, c} = left
-  M.Vector3{x, y, z} = right
-  U32.is_eq(F32.bits(a), F32.bits(x)) && U32.is_eq(F32.bits(b), F32.bits(y)) && U32.is_eq(F32.bits(c), F32.bits(z))
-def rejected_values(wanted: M.Vector3, values: List<M.Vector3>) -> Bool:
-  match values:
-    case Con{first, Con{second, Nil{}}}: vector_bits(first, M.Vector3{0.25, 0.5, 0.75}) && vector_bits(wanted, second)
+def hdr_image() -> J.Surface:
+  J.Surface{256, 129, 9, J.Vectors{hdr_pixels(33024n, 0, Array.new(M.Vector3, 16n, M.Vector3{0.0, 0.0, 0.0}))}}
+def export_words(bytes: List<U32>, values: List<U32>) -> List<U32>:
+  match bytes:
+    case Con{a, Con{b, Con{c, Con{d, rest}}}}: export_words(rest, Con{(a .|. (b << 8n) .|. (c << 16n) .|. (d << 24n) : U32), values})
+    case _: List.reverse(&1, U32, values)
+def same_words(left: List<U32>, right: List<U32>) -> Bool:
+  match left right:
+    case Nil{} Nil{}: True{}
+    case Con{a, ra} Con{b, rb}: U32.is_eq(a, b) && same_words(ra, rb)
+    case _ _: False{}
+def vector_words(value: M.Vector3, rest: List<U32>) -> List<U32>:
+  M.Vector3{r, g, b} = value
+  Con{F32.bits(r), Con{F32.bits(g), Con{F32.bits(b), rest}}}
+def rejected_export(wanted: M.Vector3, data: (U32 & U32) & (U32 & List<U32>)) -> Bool:
+  match data:
+    case Tuple{Tuple{2, 1}, Tuple{9, bytes}}:
+      same_words(export_words(bytes, Nil{}), vector_words(M.Vector3{0.25, 0.5, 0.75}, vector_words(wanted, Nil{})))
     case _: False{}
-def rejected_entries(wanted: M.Vector3, result: U32 & U32 & List<M.Vector3>) -> Bool:
-  (width, height, values) = result
-  U32.is_eq(width, 2) && U32.is_eq(height, 1) && rejected_values(wanted, values)
-def rejected(wanted: M.Vector3, result: Result<&1, &1, J.Image.FloatRGB, J.Surface>) -> Bool:
+def rejected(wanted: M.Vector3, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Bool:
   match result:
-    case Done{_}: False{}
-    case Fail{image}: rejected_entries(wanted, J.Image.FloatRGB.entries(image))
+    case Fail{Tuple{image, J.OutOfDomain{}}}: rejected_export(wanted, J.Surface.export(image))
+    case _: False{}
 def invalid_pixel(component: U32, value: F32) -> M.Vector3:
   match component:
     case 0: M.Vector3{value, 0.5, 0.75}
@@ -119,7 +136,7 @@ def invalid_pixel(component: U32, value: F32) -> M.Vector3:
 def rejection(bits: U32, component: U32) -> Bool:
   +wanted = invalid_pixel(component, H.float_bits(bits))
   pixels = Array.set(M.Vector3, Array.new(M.Vector3, 1n, M.Vector3{0.25, 0.5, 0.75}), 1, wanted)
-  rejected(wanted, J.Image.FloatRGB.to_surface(J.FloatRGB{2, 1, pixels}))
+  rejected(wanted, J.Surface.format(J.Surface{2, 1, 9, J.Vectors{pixels}}, 7))
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -141,11 +158,11 @@ def main():
     lengths=[8+256*12,8+256*4,8+count*4,8+33024*12,8+33024*4]
     if len(expected)!=5 or [len(row) for row in expected]!=lengths:raise ProbeFailure('Incomplete native float conversion output')
     wanted=expected+[[1] for _ in invalid];probe.report['sources']=source_gate()
-    actions=['emit_floats(J.Image.FloatRGB.entries(J.Surface.to_float_rgbBANG(byte_image())))',
-             'emit_surface(J.Image.FloatRGB.to_surfaceBANG(J.Surface.to_float_rgb(byte_image())))',
-             f'emit_surface(J.Image.FloatRGB.to_surfaceBANG(boundary_image({bend_bytes(words)}, {count})))',
-             'emit_floats(J.Image.FloatRGB.entriesBANG(hdr_image()))',
-             'emit_surface(J.Image.FloatRGB.to_surfaceBANG(hdr_image()))']
+    actions=['emit_converted(J.Surface.formatBANG(byte_image(), 9))',
+             'emit_surface(to_rgbaBANG(J.Surface.format(byte_image(), 9)))',
+             f'emit_surface(J.Surface.formatBANG(boundary_image({bend_bytes(words)}, {count}), 7))',
+             'emit_floats(J.Surface.exportBANG(hdr_image()))',
+             'emit_surface(J.Surface.formatBANG(hdr_image(), 7))']
     actions+=[f'emit_bytes(~&1, [Bool.to_u32(rejectionBANG({bits}, {index%3}))])' for index,bits in enumerate(invalid)]
     render=lambda selected,gpu:PROGRAM+''.join('    '+line.replace('BANG','!' if gpu else '')+'\n' for line in selected)
     probe.compare(wanted,probe.candidates(render,actions,batch=len(actions),parse=lambda text,selected:parse_results(text)))

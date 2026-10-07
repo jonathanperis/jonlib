@@ -40,7 +40,7 @@ def observed(+count: U32, result: Maybe<&1, (Array<U32> & H.Codes)>) -> IO(Unit)
       b = array_bytes(J.Image.list.take(~U32, Array.to_list(~U32, lengths), U32.to_nat(count)), a)
       c = array_bytes(J.Image.list.take(~U32, Array.to_list(~U32, words), U32.to_nat(count)), b)
       emit_bytes(~&1, List.reverse(&1, U32, c))
-def loaded(+count: U32, maximum: U32, result: Result<&1, &1, J.Image.LoadError, +List<U32>>) -> IO(Unit):
+def loaded(+count: U32, maximum: U32, result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "Huffman fixture read failed")
     case Done{bytes}: observed(count, calculateBANG(count, maximum, frequencies(bytes, 0, Array.new(U32, H.depth(count), 0))))
@@ -99,7 +99,7 @@ def main():
         body=PROGRAM.replace('BANG','!' if gpu else '')
         for i,case in selected:
             path=json.dumps(str((probe.work/f'{i}.dat').relative_to(ROOT)))
-            body+=f'    IO.bind(Result<&1, &1, J.Image.LoadError, +List<U32>>, Unit, J.Image.file.bytes({path}, 1152), loaded({case["count"]}, {case["maximum"]}))\n'
+            body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Image.file.bytes({path}, 1152), loaded({case["count"]}, {case["maximum"]}))\n'
         return body
 
     probe.compare(expected,probe.candidates(render,list(enumerate(cases)),batch=64,parse=lambda out,selected:parse_results(out)))
