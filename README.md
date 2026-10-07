@@ -47,19 +47,21 @@ none as complete; the dashboard always has the current counts.
   gradients, checkerboards, noise, cellular and Perlin generation;
   [mipmaps](docs/MIPMAPS.md), [Gaussian blur](docs/BLUR.md) and
   [kernel convolution](docs/CONVOLUTION.md).
-- **Pixel formats**: one `Surface` image type for raylib pixel formats 1..9
+- **Pixel formats**: one `Surface` image type for raylib pixel formats 1..13
   ([FORMATS.md](docs/FORMATS.md), [R32.md](docs/R32.md),
-  [FLOAT-RGB.md](docs/FLOAT-RGB.md)), with packed pixel access and dithering
+  [FLOAT-RGB.md](docs/FLOAT-RGB.md), [FLOAT-FORMATS.md](docs/FLOAT-FORMATS.md)),
+  with packed pixel access and dithering
   ([PIXELS.md](docs/PIXELS.md)).
-- **Codecs and files** ([CODECS.md](docs/CODECS.md)): decoding QOI, BMP, TGA,
-  PGM/PPM, PNG, PSD, Softimage PIC, GIF (first frame and animations) and Radiance
-  HDR from memory or bounded files, with format-preserving variants
+- **Codecs and files** ([CODECS.md](docs/CODECS.md)): decoding QOI, DDS
+  (uncompressed), BMP, TGA, PGM/PPM, PNG, PSD, Softimage PIC, GIF (first frame and
+  animations) and Radiance HDR from memory or bounded files, with format-preserving variants
   ([IMAGE-FILES.md](docs/IMAGE-FILES.md)); export to QOI, BMP, TGA, PNG, RAW and C
   source ([IMAGE-EXPORT.md](docs/IMAGE-EXPORT.md), [IMAGE-CODE.md](docs/IMAGE-CODE.md)),
   with typed errors and owner-preserving rejection before a file is opened.
 - **Data utilities**: raw DEFLATE decoding and quality-8 compression
   ([DEFLATE.md](docs/DEFLATE.md), [COMPRESSION.md](docs/COMPRESSION.md)),
-  [Base64](docs/BASE64.md), [CRC32/MD5](docs/CHECKSUMS.md) and [SHA-1/SHA-256](docs/SHA.md).
+  [Base64](docs/BASE64.md), [CRC32/MD5](docs/CHECKSUMS.md) and [SHA-1/SHA-256](docs/SHA.md);
+  path utilities and file data/text IO ([FILES.md](docs/FILES.md)).
 - **Jonmath** ([MATH.md](docs/MATH.md)): scalar helpers, Vector2/3/4, matrices and
   quaternions with exact reference arithmetic order, explicit numerical profiles
   for libm-dependent results ([ANGLES.md](docs/ANGLES.md)), 2D/3D
@@ -199,7 +201,7 @@ file/decode error checks. See [CODECS.md](docs/CODECS.md) and [MATH.md](docs/MAT
 
 Drawing returns the updated `Surface`; the old value is consumed. Reads return
 the surface alongside an optional pixel. Images are up to 4096×4096 in pixel
-formats 1..9 (operations follow raylib per format) and bounded integral coordinates represented as F32. See the API
+formats 1..13 (operations follow raylib per format) and bounded integral coordinates represented as F32. See the API
 document for the vector variants, exact domains, ownership returns and reference
 edge behavior. Full image drawing, formats and platform coverage remain open work.
 
