@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
-"""Exact coefficient-bit and filtered-image probes against pinned raylib/stb."""
+"""Exact coefficient-bit, filtered-image and 1..3-channel layout probes against pinned raylib/stb."""
 import hashlib
 import json
+import math
 import platform
 import random
 import struct
 
 if __package__:
+    from .byte_probe import C_IMAGE, SURFACE_EMITTER, parse_results
     from .conformance import BUILD, ROOT, bend_source, cases_from, c_source, f32, parse_output, result_size, source_gate
     from . import probekit
     from .probekit import ProbeFailure
 else:
+    from byte_probe import C_IMAGE, SURFACE_EMITTER, parse_results
     from conformance import BUILD, ROOT, bend_source, cases_from, c_source, f32, parse_output, result_size, source_gate
     import probekit
     from probekit import ProbeFailure
@@ -267,9 +270,205 @@ def verify_images(args, work, probe=None):
     return report
 
 
+# ImageResize filters these formats' bytes directly with stbir 1..3-channel layouts.
+LAYOUT_FORMATS = {1: 1, 2: 2, 4: 3}
+LAYOUT_PIXELS = 512
+LAYOUT_PROGRAM = '''import Base
+import ../../jonlib.bend as J
+''' + SURFACE_EMITTER + '''def resized(source: Maybe<J.Surface>, +width: U32, +height: U32) -> IO(Unit):
+  match source:
+    case None{}: IO.die(Unit, 1, "fixture creation failed")
+    case Some{surface}: image(J.Surface.resize(surface, width, height))
+'''
+
+
+def stbir_class(sw, sh, nw, nh):
+    """stbir__should_do_vertical_first's v_classification, mirrored to prove corpus coverage."""
+    vs = nh / sh
+    vw = 1 if sh == nh else 4 if nh > sh else math.ceil(4 / vs)
+    gather = vw <= 32
+    if nw <= 4 or nh <= 4:
+        return 6 if nh < nw else 7
+    if not gather and (nw <= 16 or nh <= 16):
+        return 4
+    if vs <= 1:
+        return 1 if gather else 0
+    return 2 if vs <= 2 else 3 if vs <= 3 else 5
+
+
+def layout_cases():
+    """GRAYSCALE, GRAY_ALPHA and R8G8B8 resizes: 1..3-coefficient kernels, both
+    pass orders and every vertical-first cost class."""
+    rng = random.Random(20261007)
+    # Literal fixtures stay within LAYOUT_PIXELS (long list literals exhaust the JavaScript stack).
+    sizes = [(1, 1, 1, 1), (1, 1, 9, 7), (3, 1, 1, 1), (2, 2, 3, 3), (3, 3, 5, 2), (5, 3, 2, 2), (7, 5, 7, 5),
+             (9, 4, 3, 4), (17, 13, 4, 3), (4, 3, 17, 13), (31, 2, 5, 9), (2, 31, 9, 5), (64, 5, 3, 2),
+             (5, 64, 2, 3), (20, 12, 17, 3), (12, 20, 3, 17), (23, 17, 3, 2), (13, 11, 13, 2), (13, 11, 2, 11),
+             (1, 140, 17, 17), (2, 100, 5, 6), (6, 9, 7, 17), (9, 6, 9, 15), (8, 5, 8, 7), (19, 15, 23, 19)]
+    sizes += [tuple(rng.randint(1, limit) for limit in (19, 15, 23, 19)) for _ in range(56)]
+    classes = {stbir_class(*size) for size in sizes}
+    if classes != set(range(8)) or max(w * h for w, h, _, _ in sizes) > LAYOUT_PIXELS:
+        raise ValueError(f'layout corpus misses cost classes {sorted(set(range(8)) - classes)} or exceeds {LAYOUT_PIXELS} pixels')
+    return [dict(id=f'layout-{fmt}-{i:02}', format=fmt, width=w, height=h, new_width=nw, new_height=nh,
+                 bytes=[rng.randrange(256) for _ in range(w * h * channels)])
+            for fmt, channels in LAYOUT_FORMATS.items() for i, (w, h, nw, nh) in enumerate(sizes)]
+
+
+# Seeded native search over the stock stb header (standalone, no raylib). It
+# first checks the 1..3-channel horizontal lane model against stbir on every
+# sampled channel output, then emits fixtures that pin details random images
+# almost never expose: rows whose bytes change under a serial, two-lane or
+# other three-term sum, and sizes where a layout's cost table picks another
+# pass order than the RGBA table (forced through stbir's v-first test hook).
+LAYOUT_SEARCH = r'''#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define STB_IMAGE_RESIZE_STATIC
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#define STBIR__V_FIRST_INFO_BUFFER stbir_vfirst
+#include "external/stb_image_resize2.h"
+
+static unsigned state = 20261007u;
+static unsigned next(void) { state ^= state << 13; state ^= state >> 17; state ^= state << 5; return state; }
+static unsigned char encode(float v) { float f = v + 0.5f; if (!(f > 0)) f = 0; if (f > 255) f = 255; return (unsigned char)f; }
+static void emit(const char *pins, int layout, int sw, int sh, int nw, int nh, const unsigned char *bytes) {
+  printf("{\"pins\":\"%s\",\"layout\":%d,\"width\":%d,\"height\":%d,\"new_width\":%d,\"new_height\":%d,\"bytes\":[", pins, layout, sw, sh, nw, nh);
+  for (int i = 0; i < sw * sh * layout; i++) printf("%s%u", i ? "," : "", bytes[i]);
+  printf("]}\n");
+}
+
+/* Horizontal sum of one packed kernel: order 0 is stbir's for the layout,
+   1 serial, 2 two alternating lanes, 3 the other three-term association. */
+static float sum(int order, int layout, int width, const float *p) {
+  if (order == 1) { float t = p[0]; for (int j = 1; j < width; j++) t = t + p[j]; return t; }
+  if (order == 2) { float e = 0, o = 0; for (int j = 0; j < width; j++) if (j & 1) o = o + p[j]; else e = e + p[j]; return e + o; }
+  if (width == 3) return ((layout == 2) != (order == 3)) ? (p[0] + p[2]) + p[1] : (p[0] + p[1]) + p[2];
+  float l[4] = {0, 0, 0, 0};
+  for (int j = 0; j < width; j++) l[j & 3] = l[j & 3] + p[j];
+  return (l[0] + l[2]) + (l[1] + l[3]);
+}
+
+int main(void) {
+  static const char *names[4] = {"", "serial-sum", "two-lane-sum", "three-term-order"};
+  long checked = 0;
+  for (int layout = 1; layout <= 3; layout++) {
+    int found[4] = {0, 0, 0, 0};
+    for (int sw = 3; sw <= 6; sw++) for (int nw = 1; nw <= 17; nw++) {
+      STBIR_RESIZE r;
+      stbir_resize_init(&r, NULL, sw, 1, 0, NULL, nw, 1, 0, (stbir_pixel_layout)layout, STBIR_TYPE_UINT8);
+      if (!stbir_build_samplers(&r)) return 2;
+      stbir__sampler *s = &r.samplers->horizontal;
+      int width = s->coefficient_width;
+      for (int trial = 0; trial < 60000; trial++) {
+        unsigned char row[18], out[51];
+        for (int i = 0; i < sw * layout; i++) row[i] = next() & 255;
+        if (!stbir_resize_uint8_linear(row, sw, 1, 0, out, nw, 1, 0, (stbir_pixel_layout)layout)) return 3;
+        for (int p = 0; p < nw; p++) for (int k = 0; k < layout; k++) {
+          float terms[16] = {0}; int n0 = s->contributors[p].n0;
+          for (int j = 0; j < width; j++) terms[j] = (n0 + j < sw ? (float)row[(n0 + j) * layout + k] : 0) * s->coefficients[p * width + j];
+          unsigned char stock = encode(sum(0, layout, width, terms));
+          checked++;
+          if (stock != out[p * layout + k]) { fprintf(stderr, "lane model differs from stbir: layout %d, %d->%d, pixel %d\n", layout, sw, nw, p); return 4; }
+          for (int order = 1; order <= 3; order++)
+            if ((order == 3) == (width == 3) && found[order] < 3 && encode(sum(order, layout, width, terms)) != stock) {
+              found[order]++;
+              emit(names[order], layout, sw, 1, nw, 1, row);
+            }
+        }
+      }
+      stbir_free_samplers(&r);
+    }
+  }
+  fprintf(stderr, "%ld channel outputs match the lane model\n", checked);
+  /* Part B: sizes whose layout cost table picks another pass order than the RGBA table. */
+  for (int layout = 1; layout <= 3; layout++) {
+    int found = 0;
+    for (int area = 2; area <= 512 && found < 4; area++)
+      for (int sw = 1; sw <= area && found < 4; sw++) {
+        if (area % sw) continue;
+        int sh = area / sw, hit = 0;
+        for (int nw = 5; nw <= 24 && !hit; nw += 3) for (int nh = 5; nh <= 24 && !hit; nh += 3) {
+          int first[2];
+          for (int v = 0; v < 2; v++) {
+            STBIR_RESIZE r;
+            stbir_resize_init(&r, NULL, sw, sh, 0, NULL, nw, nh, 0, v ? STBIR_RGBA : (stbir_pixel_layout)layout, STBIR_TYPE_UINT8);
+            if (!stbir_build_samplers(&r)) return 5;
+            first[v] = r.samplers->vertical_first;
+            stbir_free_samplers(&r);
+          }
+          if (first[0] == first[1]) continue;
+          unsigned char *in = malloc(area * layout), *a = malloc(nw * nh * layout), *b = malloc(nw * nh * layout);
+          for (int trial = 0; trial < 4000; trial++) {
+            for (int i = 0; i < area * layout; i++) in[i] = next() & 255;
+            stbir_vfirst.control_v_first = 1;
+            stbir_resize_uint8_linear(in, sw, sh, 0, a, nw, nh, 0, (stbir_pixel_layout)layout);
+            stbir_vfirst.control_v_first = 2;
+            stbir_resize_uint8_linear(in, sw, sh, 0, b, nw, nh, 0, (stbir_pixel_layout)layout);
+            stbir_vfirst.control_v_first = 0;
+            if (memcmp(a, b, nw * nh * layout)) { emit("pass-order", layout, sw, sh, nw, nh, in); found++; hit = 1; break; }
+          }
+          free(in); free(a); free(b);
+        }
+      }
+    if (found < 4) { fprintf(stderr, "layout %d: only %d pass-order discriminators\n", layout, found); return 6; }
+  }
+  return 0;
+}
+'''
+
+
+def layout_search(probe):
+    text = probe.native(LAYOUT_SEARCH, 'layouts-search', extra_flags=(*STB_FLAGS, '-ffp-contract=off'), link_raylib=False)
+    found = [json.loads(line) for line in text.splitlines()]
+    formats = {layout: fmt for fmt, layout in LAYOUT_FORMATS.items()}
+    return [dict(id=f'layout-{formats[row["layout"]]}-{row["pins"]}-{i:02}', format=formats[row['layout']],
+                 **{key: row[key] for key in ('width', 'height', 'new_width', 'new_height', 'bytes')})
+            for i, row in enumerate(found)]
+
+
+def layout_native(cases):
+    lines = ['#include "raylib.h"', '#include <stdio.h>', '#include <stdlib.h>', '#include <string.h>', C_IMAGE]
+    for i, case in enumerate(cases):
+        lines.append(f'static const unsigned char data{i}[]={{{",".join(map(str, case["bytes"]))}}};')
+    lines.append('int main(void){SetTraceLogLevel(LOG_NONE);')
+    for i, case in enumerate(cases):
+        lines.append(f'{{Image im={{0}};im.width={case["width"]};im.height={case["height"]};im.mipmaps=1;im.format={case["format"]};'
+                     f'im.data=malloc(sizeof data{i});memcpy(im.data,data{i},sizeof data{i});'
+                     f'ImageResize(&im,{case["new_width"]},{case["new_height"]});image(im);UnloadImage(im);}}')
+    return '\n'.join(lines + ['return 0;}']) + '\n'
+
+
+def layout_render(selected, gpu):
+    body = LAYOUT_PROGRAM
+    for i, case in enumerate(selected):
+        body += (f'def source{i}() -> Maybe<J.Surface>:\n  J.Surface.from_bytes({case["width"]}, {case["height"]}, '
+                 f'{case["format"]}, [{",".join(map(str, case["bytes"]))}])\n')
+    body += 'def main() -> IO(Unit):\n  do IO<Unit>:\n'
+    for i, case in enumerate(selected):
+        body += f'    resized(source{i}(), {case["new_width"]}, {case["new_height"]})\n'
+    return body
+
+
+def verify_layouts(probe, work):
+    searched = layout_search(probe)
+    cases = layout_cases() + searched
+    (work / 'layouts.json').write_text(json.dumps(cases) + '\n')
+    expected = parse_results(probe.native(layout_native(cases), 'layouts-reference'))
+    if len(expected) != len(cases) or None in expected:
+        raise ProbeFailure('resize: native layout reference is incomplete')
+    lanes = probe.candidates(layout_render, cases, batch=96, parse=lambda text, selected: parse_results(text))
+    lanes = {name: rows for name, rows in lanes.items() if name in selected_lanes(probe)}
+    probe.compare(expected, lanes, describe=lambda i: cases[i]['id'])
+    for name in lanes:
+        print(f'{name}: {len(cases)} GRAYSCALE/GRAY_ALPHA/R8G8B8 resizes exact', flush=True)
+    return dict(scenarios=len(cases), searched=len(searched), formats=sorted(LAYOUT_FORMATS), bytes=sum(len(row) for row in expected),
+                fixtures_sha256=hashlib.sha256(json.dumps(cases, sort_keys=True).encode()).hexdigest())
+
+
 def main():
     def configure(parser):
         parser.add_argument('--images-only', action='store_true', help='Run whole-image comparisons without repeating coefficient probes')
+        parser.add_argument('--layouts-only', action='store_true', help='Run only the GRAYSCALE/GRAY_ALPHA/R8G8B8 layout corpus')
         parser.add_argument('--lane', choices=('cpu-1', 'cpu-2', 'javascript', 'gpu', *LANE_ALIASES),
                             help='Compare/report one image lane for focused diagnosis (cpu: both CPU lanes; metal: gpu)')
         parser.add_argument('--case-prefix', help='Select image cases by stable ID prefix for focused diagnosis')
@@ -279,6 +478,12 @@ def main():
     work = BUILD / 'resize'
     work.mkdir(parents=True, exist_ok=True)
     host = dict(system=platform.system(), machine=platform.machine())
+    if args.layouts_only:
+        probe = resize_probe(args, work / 'layouts-results.json')
+        probe.report.update(scope='layouts-only', source_sha256=source_gate(), host=host)
+        layouts = verify_layouts(probe, work)
+        probe.finish(**layouts)
+        return
     if args.images_only:
         probe = resize_probe(args, work / 'images-results.json')
         images = verify_images(args, work, probe)
@@ -312,8 +517,10 @@ def main():
         print(f'{name}: {len(expected_kernels)} kernels match exact first index and coefficient bits', flush=True)
     images = verify_images(args, work, probe)
     probe.report['images'] = images
+    probe.report['stages']['images'] = json.loads(json.dumps(probe.report['lanes']))
+    probe.report['layouts'] = verify_layouts(probe, work)
     probe.finish(normalization_vectors=len(vectors), coefficients=probe.report['coefficients'], kernels=len(expected_kernels),
-                 scenarios=images['scenarios'], pixels=images['pixels'])
+                 scenarios=images['scenarios'], pixels=images['pixels'], layout_scenarios=probe.report['layouts']['scenarios'])
 
 
 if __name__ == '__main__':

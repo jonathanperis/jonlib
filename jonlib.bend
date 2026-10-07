@@ -703,12 +703,6 @@ type Surface.Draw is Type:
   ClearBackground{}
 
 # Two-image RGBA8 operations; both owners come back, destination first.
-type Surface.Blend is Type:
-  BlendImage{x: F32, y: F32, tint: U32}
-  BlendRegion{rect: Rectangle, x: F32, y: F32, tint: U32}
-  BlendRect{rect: Rectangle, target: Rectangle, tint: U32}
-  MaskAlpha{}
-
 type Image.Animation is Type:
   Animation{width: U32, height: U32, count: U32, frames: List<Surface>}
 
@@ -1064,31 +1058,6 @@ def Rgba.kernel_convolution(surface: Rgba, kernel: +List<F32>) -> Result<&1, &1,
   Rgba{+width, +height, pixels} = surface
   Rgba.convolution.result(width, height, Convolution.apply(width, height, kernel, pixels))
 
-def Rgba.mask.pixel(destination: Array<U32> & U32, source: Array<U32> & U32, at: U32) -> Array<U32> & Array<U32>:
-  (dst, color) = destination
-  (mask, value) = source
-  (Array.set(U32, dst, at, ((color .&. 4294967040) .|. Color.grayscale(value) : U32)), mask)
-
-def Rgba.mask.loop(n: Nat, +at: U32, state: Array<U32> & Array<U32>) -> Array<U32> & Array<U32>:
-  match n state:
-    case 0n _: state
-    case 1n+k Tuple{dst, mask}:
-      Rgba.mask.loop(k, (at + 1 : U32), Rgba.mask.pixel(Array.get(U32, dst, at), Array.get(U32, mask, at), at))
-
-def Rgba.mask.finish(+w: U32, +h: U32, state: Array<U32> & Array<U32>) -> Result<&1, &1, (Rgba & Rgba) & Surface.Error, Rgba & Rgba>:
-  (dst, mask) = state
-  Done{(Rgba{w, h, dst}, Rgba{w, h, mask})}
-
-def Rgba.mask.checked(valid: Bool, +w: U32, +h: U32, mw: U32, mh: U32, dst: Array<U32>, mask: Array<U32>) -> Result<&1, &1, (Rgba & Rgba) & Surface.Error, Rgba & Rgba>:
-  match valid:
-    case False{}: Fail{((Rgba{w, h, dst}, Rgba{mw, mh, mask}), InvalidSize{})}
-    case True{}: Rgba.mask.finish(w, h, Rgba.mask.loop(U32.to_nat((w * h : U32)), 0, (dst, mask)))
-
-def Rgba.alpha_mask(destination: Rgba, source: Rgba) -> Result<&1, &1, (Rgba & Rgba) & Surface.Error, Rgba & Rgba>:
-  Rgba{+w, +h, dst} = destination
-  Rgba{+mw, +mh, mask} = source
-  Rgba.mask.checked(U32.is_eq(w, mw) && U32.is_eq(h, mh), w, h, mw, mh, dst, mask)
-
 def Rgba.pixel.checked(ok: Bool, +w: U32, h: U32, pixels: Array<U32>, x: F32, y: F32, color: U32) -> Rgba:
   match ok:
     case False{}:
@@ -1402,32 +1371,6 @@ def Rgba.draw_triangle_strip(surface: Rgba, points: +List<M.Vector2>, color: U32
     case Nil{}: surface
     case Con{older, rest}: Rgba.strip.start(rest, older, color, surface)
 
-def Rgba.blit.pixel(source: Array<U32> & U32, destination: Array<U32> & U32, at: U32, tint: U32) -> Array<U32> & Array<U32>:
-  (src, sc) = source
-  (dst, dc) = destination
-  (src, Array.set(U32, dst, at, Color.alpha_blend(dc, sc, tint)))
-
-def Rgba.blit.row(n: Nat, +si: U32, +di: U32, +tint: U32, buffers: Array<U32> & Array<U32>) -> Array<U32> & Array<U32>:
-  match n:
-    case 0n:
-      buffers
-    case 1n+k:
-      (src, dst) = buffers
-      Rgba.blit.row(k, (si + 1 : U32), (di + 1 : U32), tint,
-        Rgba.blit.pixel(Array.get(U32, src, si), Array.get(U32, dst, di), di, tint))
-
-def Rgba.blit.rows(n: Nat, +cols: Nat, +si: U32, +di: U32, +sw: U32, +dw: U32, +tint: U32, buffers: Array<U32> & Array<U32>) -> Array<U32> & Array<U32>:
-  match n:
-    case 0n:
-      buffers
-    case 1n+k:
-      Rgba.blit.rows(k, cols, (si + sw : U32), (di + dw : U32), sw, dw, tint,
-        Rgba.blit.row(cols, si, di, tint, buffers))
-
-def Rgba.blit.finish(dw: U32, dh: U32, sw: U32, sh: U32, buffers: Array<U32> & Array<U32>) -> Rgba & Rgba:
-  (src, dst) = buffers
-  (Rgba{dw, dh, dst}, Rgba{sw, sh, src})
-
 type Raster.Mapping is Data:
   Region{stride: U32, columns: U32, x: U32, y: U32}
   Nearest{stride: U32, columns: U32, xr: U32, yr: U32}
@@ -1588,112 +1531,9 @@ def Raster.canvas.mapping(sw: U32, sh: U32, width: U32, height: U32, +x: F32, +y
   rows = F32.max(0.0, F32.min((U32.to_f32(sh) - sy : F32), (U32.to_f32(height) - dy : F32)))
   Canvas{F32.to_u32(sx), F32.to_u32(sy), F32.to_u32(dx), F32.to_u32(dy), F32.to_u32(cols), F32.to_u32(rows)}
 
-def Rgba.rotation.sized(valid: Bool, surface: Rgba, +width: U32, +height: U32, cosine: F32, sine: F32) -> Result<&1, &1, Rgba & Surface.Error, Rgba>:
-  match valid:
-    case False{}: Fail{(surface, InvalidSize{})}
-    case True{}:
-      Rgba{sw, sh, pixels} = surface
-      Done{Rgba{width, height, Rotation.render(sw, sh, width, height, cosine, sine, pixels)}}
-
-def Rgba.rotation.trigonometry(surface: Rgba, values: F32 & F32) -> Result<&1, &1, Rgba & Surface.Error, Rgba>:
-  Rgba{+sw, +sh, pixels} = surface
-  (+cosine, +sine) = values
-  +width = F32.to_u32((F32.abs((U32.to_f32(sw) * cosine : F32)) + F32.abs((U32.to_f32(sh) * sine : F32)) : F32))
-  +height = F32.to_u32((F32.abs((U32.to_f32(sh) * cosine : F32)) + F32.abs((U32.to_f32(sw) * sine : F32)) : F32))
-  Rgba.rotation.sized(((width >= 1) && (height >= 1) && (width <= 4096) && (height <= 4096) : U32),
-    Rgba{sw, sh, pixels}, width, height, cosine, sine)
-
-def Rgba.rotation.checked(valid: Bool, reference: M.Libm, surface: Rgba, degrees: F32) -> Result<&1, &1, Rgba & Surface.Error, Rgba>:
-  match valid:
-    case False{}: Fail{(surface, InvalidRectangle{})}
-    case True{}:
-      radians = (degrees * 3.14159265358979323846 / 180.0 : F32)
-      Rgba.rotation.trigonometry(surface, Trig.sincos_for(M.Libm.gnu(reference), radians))
-
-def Rgba.rotate_degrees_for(reference: M.Libm, surface: Rgba, +degrees: F32) -> Result<&1, &1, Rgba & Surface.Error, Rgba>:
-  Rgba.rotation.checked((F32.abs(degrees) <= 360.0 : F32) && F32.is_eq(F32.floor(degrees), degrees), reference, surface, degrees)
-
-def Rgba.blit.region(destination: Rgba, source: Rgba, rect: Rectangle, +x: F32, +y: F32, tint: U32) -> Rgba & Rgba:
-  Rgba{+dw, +dh, dst} = destination
-  Rgba{+sw, +sh, src} = source
-  Rectangle{rx, ry, rw, rh} = rect
-  +skipx = F32.max(0.0, (0.0 - x : F32))
-  +skipy = F32.max(0.0, (0.0 - y : F32))
-  +dx = F32.max(0.0, x)
-  +dy = F32.max(0.0, y)
-  cols = F32.to_u32(F32.max(0.0, F32.min((rw - skipx : F32), (U32.to_f32(dw) - dx : F32))))
-  rows = F32.to_u32(F32.max(0.0, F32.min((rh - skipy : F32), (U32.to_f32(dh) - dy : F32))))
-  Rgba.blit.finish(dw, dh, sw, sh, Rgba.blit.rows(U32.to_nat(rows), U32.to_nat(cols),
-    (F32.to_u32((ry + skipy : F32)) * sw + F32.to_u32((rx + skipx : F32)) : U32),
-    (F32.to_u32(dy) * dw + F32.to_u32(dx) : U32), sw, dw, tint, (src, dst)))
-
-def Rgba.region.checked(valid: Bool, destination: Rgba, source: Rgba, rect: Rectangle, x: F32, y: F32, tint: U32) -> Result<&1, &1, (Rgba & Rgba) & Surface.Error, Rgba & Rgba>:
-  match valid:
-    case False{}:
-      Fail{((destination, source), InvalidRectangle{})}
-    case True{}:
-      Done{Rgba.blit.region(destination, source, rect, x, y, tint)}
-
-def Rgba.draw_image_region(destination: Rgba, source: Rgba, +rect: Rectangle, +x: F32, +y: F32, tint: U32) -> Result<&1, &1, (Rgba & Rgba) & Surface.Error, Rgba & Rgba>:
-  Rgba{+w, +h, pixels} = source
-  Rgba.region.checked(Rectangle.integral(rect) && Rectangle.inside(rect, w, h)
-    && F32.is_eq(F32.floor(x), x) && F32.is_eq(F32.floor(y), y), destination, Rgba{w, h, pixels}, rect, x, y, tint)
-
-# Initial ImageDraw profile: full source, equal-size destination rectangle,
-# RGBA8, one mip level. Both image owners are returned, destination first.
-def Rgba.draw_image(destination: Rgba, source: Rgba, +x: F32, +y: F32, tint: U32) -> Rgba & Rgba:
-  Rgba{+w, +h, pixels} = source
-  Rgba.blit.region(destination, Rgba{w, h, pixels}, Rectangle{0.0, 0.0, U32.to_f32(w), U32.to_f32(h)}, x, y, tint)
-
-def Rgba.image_rect.finish(original: Rgba, drawn: Rgba & Rgba) -> Result<&1, &1, (Rgba & Rgba) & Surface.Error, Rgba & Rgba>:
-  (destination, _) = drawn
-  Done{(destination, original)}
-
-def Rgba.image_rect.resized(destination: Rgba, original: Rgba, x: F32, y: F32, tint: U32, resized: Result<&1, &1, Rgba & Surface.Error, Rgba>) -> Result<&1, &1, (Rgba & Rgba) & Surface.Error, Rgba & Rgba>:
-  match resized:
-    case Fail{Tuple{_, error}}: Fail{((destination, original), error)}
-    case Done{scaled}: Rgba.image_rect.finish(original, Rgba.draw_image(destination, scaled, x, y, tint))
-
-def Rgba.image_rect.extracted(destination: Rgba, x: F32, y: F32, width: U32, height: U32, tint: U32, extracted: Rgba & Maybe<Rgba>) -> Result<&1, &1, (Rgba & Rgba) & Surface.Error, Rgba & Rgba>:
-  match extracted:
-    case Tuple{source, None{}}: Fail{((destination, source), InvalidRectangle{})}
-    case Tuple{source, Some{region}}:
-      Rgba.image_rect.resized(destination, source, x, y, tint, Rgba.resize(region, width, height))
-
-def Rgba.image_rect.extract(source: Rgba, rect: Rectangle) -> Rgba & Maybe<Rgba>:
-  Rgba{w, h, pixels} = source
-  Rectangle{x, y, width, height} = rect
-  Rgba.extract.checked(True{}, w, h, pixels, x, y, width, height)
-
-def Rgba.image_rect.route(scaled: Bool, destination: Rgba, source: Rgba, rect: Rectangle, x: F32, y: F32, width: U32, height: U32, tint: U32) -> Result<&1, &1, (Rgba & Rgba) & Surface.Error, Rgba & Rgba>:
-  match scaled:
-    case False{}: Done{Rgba.blit.region(destination, source, rect, x, y, tint)}
-    case True{}: Rgba.image_rect.extracted(destination, x, y, width, height, tint, Rgba.image_rect.extract(source, rect))
-
-def Rgba.image_rect.checked(valid: Bool, destination: Rgba, source: Rgba, +rect: Rectangle, target: Rectangle, tint: U32) -> Result<&1, &1, (Rgba & Rgba) & Surface.Error, Rgba & Rgba>:
-  match valid:
-    case False{}: Fail{((destination, source), InvalidRectangle{})}
-    case True{}:
-      Rectangle{_, _, rw, rh} = rect
-      Rectangle{x, y, +width, +height} = target
-      Rgba.image_rect.route((F32.is_ne(F32.floor(rw), F32.floor(width)) || F32.is_ne(F32.floor(rh), F32.floor(height))), destination, source, rect, x, y,
-        F32.to_u32(width), F32.to_u32(height), tint)
-
 def Rectangle.bounded(rect: Rectangle) -> Bool:
   Rectangle{x, y, w, h} = rect
   ((F32.abs(x) <= 32767.0) && (F32.abs(y) <= 32767.0) && (F32.abs(w) <= 32767.0) && (F32.abs(h) <= 32767.0) : F32)
-
-def Rgba.draw_image_rect(destination: Rgba, source: Rgba, +rect: Rectangle, +target: Rectangle, tint: U32) -> Result<&1, &1, (Rgba & Rgba) & Surface.Error, Rgba & Rgba>:
-  Rgba{+sw, +sh, pixels} = source
-  Rectangle{+x, +y, width, height} = rect
-  Rectangle{_, _, +tw, +th} = target
-  +sx = F32.max(0.0, x)
-  +sy = F32.max(0.0, y)
-  +cw = F32.min((width + F32.min(0.0, x) : F32), (U32.to_f32(sw) - sx : F32))
-  +ch = F32.min((height + F32.min(0.0, y) : F32), (U32.to_f32(sh) - sy : F32))
-  Rgba.image_rect.checked(Rectangle.bounded(rect) && Rectangle.bounded(target)
-    && ((cw >= 1.0) && (ch >= 1.0) && (tw >= 1.0) && (th >= 1.0) && (F32.floor(tw) <= 4096.0) && (F32.floor(th) <= 4096.0) : F32),
-    destination, Rgba{sw, sh, pixels}, Rectangle{sx, sy, cw, ch}, target, tint)
 
 # Consumes the image and excludes power-of-two storage padding.
 def Rgba.colors(surface: Rgba) -> List<U32>:
@@ -1753,21 +1593,6 @@ def Rgba.copy.result(+w: U32, +h: U32, pair: Array<U32> & Array<U32>) -> Rgba & 
 def Rgba.copy(surface: Rgba) -> Rgba & Rgba:
   Rgba{w, h, pixels} = surface
   Rgba.copy.result(w, h, Array.clone(U32, pixels))
-
-def Rgba.mipmaps.copied(reversed: List<Rgba>, pair: Rgba & Rgba) -> Rgba & List<Rgba>:
-  (source, Rgba{+width, +height, pixels}) = pair
-  +w = U32.max(1, (width / 2 : U32))
-  +h = U32.max(1, (height / 2 : U32))
-  (Rgba{w, h, Resample.resize(width, height, w, h, pixels)}, Con{source, reversed})
-
-def Rgba.mipmaps.step(state: Rgba & List<Rgba>) -> Rgba & List<Rgba>:
-  (surface, reversed) = state
-  Rgba.mipmaps.copied(reversed, Rgba.copy(surface))
-
-def Rgba.mipmaps.levels(n: Nat, state: Rgba & List<Rgba>) -> List<Rgba>:
-  match n state:
-    case 0n Tuple{surface, reversed}: List.reverse(&1, Rgba, Con{surface, reversed})
-    case 1n+rest _: Rgba.mipmaps.levels(rest, Rgba.mipmaps.step(state))
 
 def Image.channel.index(format: U32, +selected: U32) -> U32:
   match format:
@@ -2149,6 +1974,26 @@ def Surface.word.fill(kind: U32, +format: U32, color: U32) -> U32:
     case 8: 0
     case _: Surface.word.draw(format, color)
 
+# GetPixelColor, ImageDraw's reader, on stored words: packed formats use
+# Pixel.packed_color's integer expansion (LoadImageColors uses float factors)
+# and R32 fills r, g and b.
+def Surface.word.read(kind: U32, +word: U32) -> U32:
+  match kind:
+    case 1: Color.rgba((word .&. 255 : U32), (word .&. 255 : U32), (word .&. 255 : U32), 255)
+    case 2: Color.rgba((word .&. 255 : U32), (word .&. 255 : U32), (word .&. 255 : U32), (word >> 8n : U32))
+    case 4: Color.rgba((word .&. 255 : U32), ((word >> 8n) .&. 255 : U32), ((word >> 16n) .&. 255 : U32), 255)
+    case 7: word
+    case 8:
+      +value = F32.to_u32((Formats.r32.value(word) * 255.0 : F32))
+      Color.rgba(value, value, value, 255)
+    case _: Pixel.packed_color(kind, word)
+
+# SetPixelColor: ImageDrawPixel's encoding for formats 1..7; R32 keeps its word.
+def Surface.word.write(kind: U32, +color: U32, +word: U32) -> U32:
+  match kind:
+    case 8: word
+    case _: Surface.word.draw(kind, color)
+
 # The normalized R32G32B32 sample ImageDrawPixel and ImageFormat derive from a Color.
 def Surface.vector.from_color(color: U32) -> M.Vector3:
   +value = color
@@ -2519,13 +2364,22 @@ def Surface.kernel_convolution(surface: Surface, kernel: +List<F32>) -> Result<&
 def Surface.resize_nn(surface: Surface, width: U32, height: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Surface.recolor.run(surface, ResizedNearest{width, height})
 
-def Surface.resize.routed(direct: Bool, surface: Surface, width: U32, height: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+def Surface.resize.words(valid: Bool, +layout: U32, +sw: U32, +sh: U32, +format: U32, pixels: Surface.Pixels, +width: U32, +height: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match valid pixels:
+    case True{} Words{values}: Done{Surface{width, height, format, Words{Resample.resize_layout(layout, sw, sh, width, height, values)}}}
+    case True{} Vectors{values}: Fail{(Surface{sw, sh, format, Vectors{values}}, UnsupportedFormat{})}
+    case False{} other: Fail{(Surface{sw, sh, format, other}, InvalidSize{})}
+
+def Surface.resize.routed(direct: Bool, surface: Surface, +width: U32, +height: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match direct:
-    case True{}: Fail{(surface, UnsupportedFormat{})}
+    case True{}:
+      Surface{sw, sh, +format, pixels} = surface
+      Surface.resize.words(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32),
+        Bool.pick(U32, U32.is_eq(format, 4), 3, format), sw, sh, format, pixels, width, height)
     case False{}: Surface.recolor.run(surface, Resized{width, height})
 
-# ImageResize filters GRAYSCALE, GRAY_ALPHA and R8G8B8 with 1..3-channel stbir
-# layouts, which this port does not implement; other formats use the RGBA8 path.
+# ImageResize filters GRAYSCALE, GRAY_ALPHA and R8G8B8 words directly with the
+# 1..3-channel stbir layouts; other formats take the RGBA8 path and convert back.
 def Surface.resize(surface: Surface, width: U32, height: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Surface{w, h, +format, pixels} = surface
   Surface.resize.routed(U32.is_eq(format, 1) || U32.is_eq(format, 2) || U32.is_eq(format, 4),
@@ -2712,80 +2566,424 @@ def Surface.draw_triangle_ex(surface: Surface, v1: M.Vector2, v2: M.Vector2, v3:
   Surface{width, height, +format, pixels} = surface
   Surface.triangle_ex.selected(format, pixels, width, height, format, v1, v2, v3, c1, c2, c3)
 
-# Two-image operations run on R8G8B8A8 owners only, as this port's profile.
-def Surface.blend.apply(op: Surface.Blend, destination: Rgba, source: Rgba) -> Result<&1, &1, (Rgba & Rgba) & Surface.Error, Rgba & Rgba>:
-  match op:
-    case BlendImage{x, y, tint}: Done{Rgba.draw_image(destination, source, x, y, tint)}
-    case BlendRegion{rect, x, y, tint}: Rgba.draw_image_region(destination, source, rect, x, y, tint)
-    case BlendRect{rect, target, tint}: Rgba.draw_image_rect(destination, source, rect, target, tint)
-    case MaskAlpha{}: Rgba.alpha_mask(destination, source)
+# ImageDraw on every format. Each drawn pixel is GetPixelColor of both images,
+# ColorAlphaBlend unless the source has no alpha and tint.a is 255, then
+# SetPixelColor; without blending, equal formats copy stored samples (memcpy).
+type Surface.Blit is Data:
+  Blit{source: U32, target: U32, copy: Bool, blend: Bool, tint: U32}
 
-def Surface.blend.owners(pair: Rgba & Rgba) -> Surface & Surface:
-  (destination, source) = pair
-  (Surface.rgba.wrap(destination), Surface.rgba.wrap(source))
+def Surface.blit.blended(blend: Bool, +dst: U32, +src: U32, +tint: U32) -> U32:
+  match blend:
+    case True{}: Color.alpha_blend(dst, src, tint)
+    case False{}: src
 
-def Surface.blend.result(result: Result<&1, &1, (Rgba & Rgba) & Surface.Error, Rgba & Rgba>) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
-  match result:
-    case Fail{Tuple{pair, error}}: Fail{(Surface.blend.owners(pair), error)}
-    case Done{pair}: Done{Surface.blend.owners(pair)}
+def Surface.blit.convert(mode: Surface.Blit, +sc: U32, +dc: U32) -> U32:
+  Blit{+source, +target, _, blend, tint} = mode
+  Surface.word.write(target, Surface.blit.blended(blend, Surface.word.read(target, dc), Surface.word.read(source, sc), tint), dc)
 
-def Surface.blend.selected(dk: U32, dp: Surface.Pixels, sk: U32, sp: Surface.Pixels, op: Surface.Blend, +dw: U32, +dh: U32, df: U32, +sw: U32, +sh: U32, sf: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
-  match dk dp sk sp:
-    case 7 Words{dst} 7 Words{src}: Surface.blend.result(Surface.blend.apply(op, Rgba{dw, dh, dst}, Rgba{sw, sh, src}))
-    case _ _ _ _: Fail{((Surface{dw, dh, df, dp}, Surface{sw, sh, sf, sp}), UnsupportedFormat{})}
+def Surface.blit.word(copy: Bool, mode: Surface.Blit, +sc: U32, +dc: U32) -> U32:
+  match copy:
+    case True{}: sc
+    case False{}: Surface.blit.convert(mode, sc, dc)
 
-def Surface.blend.run(op: Surface.Blend, destination: Surface, source: Surface) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
-  Surface{dw, dh, +df, dp} = destination
-  Surface{sw, sh, +sf, sp} = source
-  Surface.blend.selected(df, dp, sf, sp, op, dw, dh, df, sw, sh, sf)
+def Surface.blit.copying(mode: Surface.Blit) -> Bool:
+  Blit{_, _, copy, _, _} = mode
+  copy
 
-# Initial ImageDraw profile: full source, equal-size destination rectangle.
-def Surface.draw_image(destination: Surface, source: Surface, x: F32, y: F32, tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
-  Surface.blend.run(BlendImage{x, y, tint}, destination, source)
+def Surface.blit.pixel(+mode: Surface.Blit, at: U32, source: Array<U32> & U32, destination: Array<U32> & U32) -> Array<U32> & Array<U32>:
+  (src, +sc) = source
+  (dst, +dc) = destination
+  (src, Array.set(U32, dst, at, Surface.blit.word(Surface.blit.copying(mode), mode, sc, dc)))
 
-def Surface.draw_image_region(destination: Surface, source: Surface, rect: Rectangle, x: F32, y: F32, tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
-  Surface.blend.run(BlendRegion{rect, x, y, tint}, destination, source)
+def Surface.blit.row(n: Nat, +si: U32, +di: U32, +mode: Surface.Blit, buffers: Array<U32> & Array<U32>) -> Array<U32> & Array<U32>:
+  match n buffers:
+    case 0n _: buffers
+    case 1n+k Tuple{src, dst}:
+      Surface.blit.row(k, (si + 1 : U32), (di + 1 : U32), mode,
+        Surface.blit.pixel(mode, di, Array.get(U32, src, si), Array.get(U32, dst, di)))
 
-def Surface.draw_image_rect(destination: Surface, source: Surface, rect: Rectangle, target: Rectangle, tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
-  Surface.blend.run(BlendRect{rect, target, tint}, destination, source)
+def Surface.blit.rows(n: Nat, +cols: Nat, +si: U32, +di: U32, +sw: U32, +dw: U32, +mode: Surface.Blit, buffers: Array<U32> & Array<U32>) -> Array<U32> & Array<U32>:
+  match n:
+    case 0n: buffers
+    case 1n+k: Surface.blit.rows(k, cols, (si + sw : U32), (di + dw : U32), sw, dw, mode, Surface.blit.row(cols, si, di, mode, buffers))
+
+# The clipped source rectangle at (x, y), in destination and source indices.
+type Surface.Area is Data:
+  Area{columns: U32, rows: U32, source_at: U32, output_at: U32}
+
+def Surface.blit.area(+dw: U32, +dh: U32, +sw: U32, rect: Rectangle, +x: F32, +y: F32) -> Surface.Area:
+  Rectangle{rx, ry, rw, rh} = rect
+  +skipx = F32.max(0.0, (0.0 - x : F32))
+  +skipy = F32.max(0.0, (0.0 - y : F32))
+  +dx = F32.max(0.0, x)
+  +dy = F32.max(0.0, y)
+  Area{F32.to_u32(F32.max(0.0, F32.min((rw - skipx : F32), (U32.to_f32(dw) - dx : F32)))),
+    F32.to_u32(F32.max(0.0, F32.min((rh - skipy : F32), (U32.to_f32(dh) - dy : F32)))),
+    (F32.to_u32((ry + skipy : F32)) * sw + F32.to_u32((rx + skipx : F32)) : U32), (F32.to_u32(dy) * dw + F32.to_u32(dx) : U32)}
+
+def Surface.blit.words(area: Surface.Area, +sw: U32, +dw: U32, +mode: Surface.Blit, buffers: Array<U32> & Array<U32>) -> Array<U32> & Array<U32>:
+  Area{+columns, rows, source_at, output_at} = area
+  Surface.blit.rows(U32.to_nat(rows), U32.to_nat(columns), source_at, output_at, sw, dw, mode, buffers)
+
+def Surface.blit.vectors(area: Surface.Area, +sw: U32, +dw: U32, buffers: Array<M.Vector3> & Array<M.Vector3>) -> Array<M.Vector3> & Array<M.Vector3>:
+  Area{+columns, +rows, +source_at, +output_at} = area
+  Raster.canvas.copy(~M.Vector3, U32.to_nat((columns * rows : U32)), 0, columns, sw, dw, source_at, output_at, buffers)
+
+def Surface.blit.drawn(buffers: Array<U32> & Array<U32>) -> Array<U32>:
+  (_, dst) = buffers
+  dst
+
+def Surface.blit.owners(+dw: U32, +dh: U32, +df: U32, +sw: U32, +sh: U32, +sf: U32, buffers: Surface.Pixels & Surface.Pixels) -> Surface & Surface:
+  (src, dst) = buffers
+  (Surface{dw, dh, df, dst}, Surface{sw, sh, sf, src})
+
+def Surface.blit.word_pair(result: Array<U32> & Array<U32>) -> Surface.Pixels & Surface.Pixels:
+  (src, dst) = result
+  (Words{src}, Words{dst})
+
+def Surface.blit.vector_pair(result: Array<M.Vector3> & Array<M.Vector3>) -> Surface.Pixels & Surface.Pixels:
+  (src, dst) = result
+  (Vectors{src}, Vectors{dst})
+
+# SetPixelColor cannot write R32G32B32: only an unblended copy changes it.
+def Surface.blit.vector_copy(copy: Bool, area: Surface.Area, +sw: U32, +dw: U32, src: Array<M.Vector3>, dst: Array<M.Vector3>) -> Surface.Pixels & Surface.Pixels:
+  match copy:
+    case True{}: Surface.blit.vector_pair(Surface.blit.vectors(area, sw, dw, (src, dst)))
+    case False{}: (Vectors{src}, Vectors{dst})
+
+# Formats without alpha skip ColorAlphaBlend when tint.a is 255.
+def Surface.blit.opaque(+format: U32, +tint: U32) -> Bool:
+  U32.is_eq(Color.alpha(tint), 255) && (U32.is_eq(format, 1) || U32.is_eq(format, 3) || U32.is_eq(format, 4) || U32.is_eq(format, 8) || U32.is_eq(format, 9))
+
+def Surface.blit.recolored(destination: Surface, colors: Surface, source: Surface, area: Surface.Area, +opaque: Bool, +tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match destination colors:
+    case Surface{+dw, +dh, +df, Words{dst}} Surface{+sw, _, _, Words{src}}:
+      Done{(Surface{dw, dh, df, Words{Surface.blit.drawn(Surface.blit.words(area, sw, dw, Blit{7, df, False{}, Bool.not(opaque), tint}, (src, dst)))}}, source)}
+    case unchanged _: Done{(unchanged, source)}
+
+def Surface.blit.colors(destination: Surface, source: Surface, area: Surface.Area, +opaque: Bool, +tint: U32, colors: Result<&1, &1, Surface & Surface.Error, Surface>) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match colors:
+    case Fail{Tuple{_, error}}: Fail{((destination, source), error)}
+    case Done{converted}: Surface.blit.recolored(destination, converted, source, area, opaque, tint)
+
+# An R32G32B32 source is read through its RGBA8 colors (GetPixelColor's casts,
+# finite [0,1] only); the original source owner is returned unchanged.
+def Surface.blit.colored(destination: Surface, area: Surface.Area, +opaque: Bool, +tint: U32, pair: Surface & Surface) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  (source, copy) = pair
+  Surface.blit.colors(destination, source, area, opaque, tint, Surface.format(copy, 7))
+
+def Surface.blit.selected(dp: Surface.Pixels, sp: Surface.Pixels, area: Surface.Area, +dw: U32, +dh: U32, +df: U32, +sw: U32, +sh: U32, +sf: U32, +tint: U32, +opaque: Bool) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match dp sp:
+    case Words{dst} Words{src}:
+      Done{Surface.blit.owners(dw, dh, df, sw, sh, sf, Surface.blit.word_pair(
+        Surface.blit.words(area, sw, dw, Blit{sf, df, opaque && U32.is_eq(sf, df), Bool.not(opaque), tint}, (src, dst))))}
+    case Words{dst} Vectors{src}:
+      Surface.blit.colored(Surface{dw, dh, df, Words{dst}}, area, opaque, tint, Surface.copy(Surface{sw, sh, sf, Vectors{src}}))
+    case Vectors{dst} Vectors{src}:
+      Done{Surface.blit.owners(dw, dh, df, sw, sh, sf, Surface.blit.vector_copy(opaque, area, sw, dw, src, dst))}
+    case Vectors{dst} Words{src}: Done{(Surface{dw, dh, df, Vectors{dst}}, Surface{sw, sh, sf, Words{src}})}
+
+def Surface.blit.region(destination: Surface, source: Surface, rect: Rectangle, +x: F32, +y: F32, +tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  Surface{+dw, +dh, df, dp} = destination
+  Surface{+sw, sh, +sf, sp} = source
+  Surface.blit.selected(dp, sp, Surface.blit.area(dw, dh, sw, rect, x, y), dw, dh, df, sw, sh, sf, tint, Surface.blit.opaque(sf, tint))
+
+def Surface.region.checked(valid: Bool, destination: Surface, source: Surface, rect: Rectangle, x: F32, y: F32, tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match valid:
+    case False{}: Fail{((destination, source), InvalidRectangle{})}
+    case True{}: Surface.blit.region(destination, source, rect, x, y, tint)
+
+# Unscaled ImageDraw of an integral, in-bounds source rectangle at integral (x, y).
+def Surface.draw_image_region(destination: Surface, source: Surface, +rect: Rectangle, +x: F32, +y: F32, tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  Surface{+w, +h, format, pixels} = source
+  Surface.region.checked(Rectangle.integral(rect) && Rectangle.inside(rect, w, h)
+    && F32.is_eq(F32.floor(x), x) && F32.is_eq(F32.floor(y), y), destination, Surface{w, h, format, pixels}, rect, x, y, tint)
+
+# ImageDraw of the full source at (x, y).
+def Surface.draw_image(destination: Surface, source: Surface, +x: F32, +y: F32, tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  Surface{+w, +h, format, pixels} = source
+  Surface.blit.region(destination, Surface{w, h, format, pixels}, Rectangle{0.0, 0.0, U32.to_f32(w), U32.to_f32(h)}, x, y, tint)
+
+def Surface.image_rect.finish(original: Surface, drawn: Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match drawn:
+    case Fail{Tuple{Tuple{destination, _}, error}}: Fail{((destination, original), error)}
+    case Done{Tuple{destination, _}}: Done{(destination, original)}
+
+def Surface.image_rect.resized(destination: Surface, original: Surface, x: F32, y: F32, tint: U32, resized: Result<&1, &1, Surface & Surface.Error, Surface>) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match resized:
+    case Fail{Tuple{_, error}}: Fail{((destination, original), error)}
+    case Done{scaled}: Surface.image_rect.finish(original, Surface.draw_image(destination, scaled, x, y, tint))
+
+def Surface.image_rect.extracted(destination: Surface, x: F32, y: F32, width: U32, height: U32, tint: U32, extracted: Surface & Maybe<Surface>) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match extracted:
+    case Tuple{source, None{}}: Fail{((destination, source), InvalidRectangle{})}
+    case Tuple{source, Some{region}}:
+      Surface.image_rect.resized(destination, source, x, y, tint, Surface.resize(region, width, height))
+
+# ImageFromImage truncates the clipped (possibly fractional) source rectangle.
+def Surface.image_rect.extract(source: Surface, rect: Rectangle) -> Surface & Maybe<Surface>:
+  Surface{w, h, format, pixels} = source
+  Rectangle{x, y, width, height} = rect
+  Surface.extract.checked(True{}, w, h, format, pixels, x, y, width, height)
+
+def Surface.image_rect.route(scaled: Bool, destination: Surface, source: Surface, rect: Rectangle, x: F32, y: F32, width: U32, height: U32, tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match scaled:
+    case False{}: Surface.blit.region(destination, source, rect, x, y, tint)
+    case True{}: Surface.image_rect.extracted(destination, x, y, width, height, tint, Surface.image_rect.extract(source, rect))
+
+def Surface.image_rect.checked(valid: Bool, destination: Surface, source: Surface, +rect: Rectangle, target: Rectangle, tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match valid:
+    case False{}: Fail{((destination, source), InvalidRectangle{})}
+    case True{}:
+      Rectangle{_, _, rw, rh} = rect
+      Rectangle{x, y, +width, +height} = target
+      Surface.image_rect.route((F32.is_ne(F32.floor(rw), F32.floor(width)) || F32.is_ne(F32.floor(rh), F32.floor(height))), destination, source, rect, x, y,
+        F32.to_u32(width), F32.to_u32(height), tint)
+
+# Scaled ImageDraw: the clipped source rectangle is extracted and resized in
+# its own format (ImageFromImage + ImageResize) when its integral size differs.
+def Surface.draw_image_rect(destination: Surface, source: Surface, +rect: Rectangle, +target: Rectangle, tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  Surface{+sw, +sh, format, pixels} = source
+  Rectangle{+x, +y, width, height} = rect
+  Rectangle{_, _, +tw, +th} = target
+  +sx = F32.max(0.0, x)
+  +sy = F32.max(0.0, y)
+  +cw = F32.min((width + F32.min(0.0, x) : F32), (U32.to_f32(sw) - sx : F32))
+  +ch = F32.min((height + F32.min(0.0, y) : F32), (U32.to_f32(sh) - sy : F32))
+  Surface.image_rect.checked(Rectangle.bounded(rect) && Rectangle.bounded(target)
+    && ((cw >= 1.0) && (ch >= 1.0) && (tw >= 1.0) && (th >= 1.0) && (F32.floor(tw) <= 4096.0) && (F32.floor(th) <= 4096.0) : F32),
+    destination, Surface{sw, sh, format, pixels}, Rectangle{sx, sy, cw, ch}, target, tint)
+
+# ImageAlphaMask: the mask is a GRAYSCALE copy of `source` (ImageFormat). A
+# GRAYSCALE destination becomes GRAY_ALPHA; others become R8G8B8A8 (ImageFormat)
+# whose alpha bytes are the mask. Rejections return both owners unchanged.
+def Surface.mask.pixel(+gray_alpha: Bool, at: U32, destination: Array<U32> & U32, mask: Array<U32> & U32) -> Array<U32> & Array<U32>:
+  (dst, +word) = destination
+  (gray, +value) = mask
+  (Array.set(U32, dst, at, Bool.pick(U32, gray_alpha, (word .|. (value << 8n) : U32), ((word .&. 4294967040) .|. value : U32))), gray)
+
+def Surface.mask.loop(n: Nat, +at: U32, +gray_alpha: Bool, state: Array<U32> & Array<U32>) -> Array<U32>:
+  match n state:
+    case 0n Tuple{dst, _}: dst
+    case 1n+k Tuple{dst, gray}:
+      Surface.mask.loop(k, (at + 1 : U32), gray_alpha, Surface.mask.pixel(gray_alpha, at, Array.get(U32, dst, at), Array.get(U32, gray, at)))
+
+def Surface.mask.write(+gray_alpha: Bool, source: Surface, target: Surface, mask: Surface) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match target mask:
+    case Surface{+w, +h, _, Words{dst}} Surface{_, _, _, Words{gray}}:
+      Done{(Surface{w, h, Bool.pick(U32, gray_alpha, 2, 7), Words{Surface.mask.loop(U32.to_nat((w * h : U32)), 0, gray_alpha, (dst, gray))}}, source)}
+    case _ _: Fail{((target, source), UnsupportedFormat{})}
+
+def Surface.mask.rgba(source: Surface, mask: Surface, converted: Result<&1, &1, Surface & Surface.Error, Surface>) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match converted:
+    case Fail{Tuple{destination, error}}: Fail{((destination, source), error)}
+    case Done{target}: Surface.mask.write(False{}, source, target, mask)
+
+def Surface.mask.target(kind: U32, destination: Surface, source: Surface, mask: Surface) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match kind:
+    case 1: Surface.mask.write(True{}, source, destination, mask)
+    case _: Surface.mask.rgba(source, mask, Surface.format(destination, 7))
+
+def Surface.mask.dispatch(destination: Surface, source: Surface, mask: Surface) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  Surface{w, h, +format, pixels} = destination
+  Surface.mask.target(format, Surface{w, h, format, pixels}, source, mask)
+
+def Surface.mask.converted(destination: Surface, source: Surface, gray: Result<&1, &1, Surface & Surface.Error, Surface>) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match gray:
+    case Fail{Tuple{_, error}}: Fail{((destination, source), error)}
+    case Done{mask}: Surface.mask.dispatch(destination, source, mask)
+
+def Surface.mask.copied(destination: Surface, pair: Surface & Surface) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  (source, copy) = pair
+  Surface.mask.converted(destination, source, Surface.format(copy, 1))
+
+def Surface.mask.sized(valid: Bool, destination: Surface, source: Surface) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
+  match valid:
+    case False{}: Fail{((destination, source), InvalidSize{})}
+    case True{}: Surface.mask.copied(destination, Surface.copy(source))
 
 def Surface.alpha_mask(destination: Surface, source: Surface) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
-  Surface.blend.run(MaskAlpha{}, destination, source)
+  Surface{+dw, +dh, df, dp} = destination
+  Surface{+mw, +mh, mf, mp} = source
+  Surface.mask.sized(U32.is_eq(dw, mw) && U32.is_eq(dh, mh), Surface{dw, dh, df, dp}, Surface{mw, mh, mf, mp})
 
-def Surface.alpha_clear.rgba(color: U32, threshold: F32, result: Result<&1, &1, Surface & Surface.Error, Rgba>) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+# ImageAlphaClear on native words: GRAY_ALPHA compares its alpha byte and
+# stores (color.r, color.a); R5G5B5A1 and R4G4B4A4 compare their alpha bits.
+def Surface.alpha_clear.word(kind: U32, +cutoff: U32, +replacement: U32, +word: U32) -> U32:
+  match kind:
+    case 2: Bool.pick(U32, ((word >> 8n) <= cutoff : U32), replacement, word)
+    case 5: Bool.pick(U32, ((word .&. 1) <= cutoff : U32), replacement, word)
+    case _: Bool.pick(U32, ((word .&. 15) <= cutoff : U32), replacement, word)
+
+def Surface.alpha_clear.step(+kind: U32, +cutoff: U32, +replacement: U32, i: U32, got: Array<U32> & U32) -> Array<U32>:
+  (values, word) = got
+  Array.set(U32, values, i, Surface.alpha_clear.word(kind, cutoff, replacement, word))
+
+def Surface.alpha_clear.loop(n: Nat, +i: U32, +kind: U32, +cutoff: U32, +replacement: U32, values: Array<U32>) -> Array<U32>:
+  match n:
+    case 0n: values
+    case 1n+k:
+      Surface.alpha_clear.loop(k, (i + 1 : U32), kind, cutoff, replacement,
+        Surface.alpha_clear.step(kind, cutoff, replacement, i, Array.get(U32, values, i)))
+
+# raylib computes round(channel*31.0f) and round(channel*15.0f) from unscaled
+# bytes; the stored channel keeps the low byte of that integer.
+def Surface.alpha_clear.packed(+c: U32, +scale: U32) -> U32:
+  ((c * scale) .&. 255 : U32)
+
+def Surface.alpha_clear.r5g5b5a1(+color: U32) -> U32:
+  (((Surface.alpha_clear.packed(Color.red(color), 31) << 11n) .|. (Surface.alpha_clear.packed(Color.green(color), 31) << 6n)
+    .|. (Surface.alpha_clear.packed(Color.blue(color), 31) << 1n) .|. Bool.pick(U32, (Color.alpha(color) < 128 : U32), 0, 1)) .&. 65535 : U32)
+
+def Surface.alpha_clear.r4g4b4a4(+color: U32) -> U32:
+  (((Surface.alpha_clear.packed(Color.red(color), 15) << 12n) .|. (Surface.alpha_clear.packed(Color.green(color), 15) << 8n)
+    .|. (Surface.alpha_clear.packed(Color.blue(color), 15) << 4n) .|. Surface.alpha_clear.packed(Color.alpha(color), 15)) .&. 65535 : U32)
+
+def Surface.alpha_clear.selected(kind: U32, pixels: Surface.Pixels, +width: U32, +height: U32, +format: U32, +color: U32, +threshold: F32) -> Surface:
+  match kind pixels:
+    case 7 Words{values}: Surface.rgba.wrap(Rgba.alpha_clear(Rgba{width, height, values}, color, threshold))
+    case 2 Words{values}:
+      Surface{width, height, format, Words{Surface.alpha_clear.loop(U32.to_nat((width * height : U32)), 0, 2,
+        F32.to_u32((threshold * 255.0 : F32)), (Color.red(color) .|. (Color.alpha(color) << 8n) : U32), values)}}
+    case 5 Words{values}:
+      Surface{width, height, format, Words{Surface.alpha_clear.loop(U32.to_nat((width * height : U32)), 0, 5,
+        Bool.pick(U32, (threshold < 0.5 : F32), 0, 1), Surface.alpha_clear.r5g5b5a1(color), values)}}
+    case 6 Words{values}:
+      Surface{width, height, format, Words{Surface.alpha_clear.loop(U32.to_nat((width * height : U32)), 0, 6,
+        F32.to_u32((threshold * 15.0 : F32)), Surface.alpha_clear.r4g4b4a4(color), values)}}
+    case _ other: Surface{width, height, format, other}
+
+def Surface.alpha_clear.checked(valid: Bool, surface: Surface, color: U32, threshold: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match valid:
+    case False{}: Fail{(surface, InvalidRequest{})}
+    case True{}:
+      Surface{width, height, +format, pixels} = surface
+      Done{Surface.alpha_clear.selected(format, pixels, width, height, format, color, threshold)}
+
+# ImageAlphaClear: formats without alpha are unchanged, as in raylib. The
+# threshold is a finite 0..1 alpha fraction; others are InvalidRequest.
+def Surface.alpha_clear(surface: Surface, color: U32, +threshold: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface.alpha_clear.checked(Surface.amount.finite(threshold) && (threshold >= 0.0 : F32) && (threshold <= 1.0 : F32), surface, color, threshold)
+
+# ImageRotate blends every stored byte on its own: word formats rotate their
+# stored words, R32G32B32 the bytes of each F32 component.
+def Surface.rotation.component(a: F32, b: F32, c: F32, d: F32, +x: F32, +y: F32) -> F32:
+  Formats.r32.value(Rotation.mix(F32.bits(a), F32.bits(b), F32.bits(c), F32.bits(d), x, y))
+
+def Surface.rotation.vector(a: M.Vector3, b: M.Vector3, c: M.Vector3, d: M.Vector3, +x: F32, +y: F32) -> M.Vector3:
+  M.Vector3{ar, ag, ab} = a
+  M.Vector3{br, bg, bb} = b
+  M.Vector3{cr, cg, cb} = c
+  M.Vector3{dr, dg, db} = d
+  M.Vector3{Surface.rotation.component(ar, br, cr, dr, x, y), Surface.rotation.component(ag, bg, cg, dg, x, y),
+    Surface.rotation.component(ab, bb, cb, db, x, y)}
+
+def Surface.rotation.blend(a: M.Vector3, b: M.Vector3, c: M.Vector3, d: M.Vector3, x: F32, y: F32) -> M.Vector3:
+  Surface.rotation.vector(a, b, c, d, x, y)
+
+def Surface.rotation.pixels(pixels: Surface.Pixels, +sw: U32, +sh: U32, +width: U32, +height: U32, +cosine: F32, +sine: F32) -> Surface.Pixels:
+  match pixels:
+    case Words{values}: Words{Rotation.render(sw, sh, width, height, cosine, sine, values)}
+    case Vectors{values}:
+      Vectors{Rotation.render.with(~M.Vector3, ~Surface.rotation.blend, Surface.vector.zero(), sw, sh, width, height, cosine, sine, values)}
+
+def Surface.words.r32.read(result: Array<U32> & U32) -> Array<U32> & Bool:
+  (values, word) = result
+  (values, Formats.r32.word_valid(word))
+
+def Surface.words.r32(n: Nat, +index: U32, state: Array<U32> & Bool) -> Array<U32> & Bool:
+  match n state:
+    case _ Tuple{values, False{}}: (values, False{})
+    case 0n _: state
+    case 1n+rest Tuple{values, True{}}:
+      Surface.words.r32(rest, (index + 1 : U32), Surface.words.r32.read(Array.get(U32, values, index)))
+
+def Surface.rotation.words(state: Array<U32> & Bool) -> Surface.Pixels & Bool:
+  (values, ok) = state
+  (Words{values}, ok)
+
+def Surface.rotation.vectors(state: Array<M.Vector3> & Bool) -> Surface.Pixels & Bool:
+  (values, ok) = state
+  (Vectors{values}, ok)
+
+# Blended float bytes can leave the owner domain (R32 finite [0,1], R32G32B32
+# non-NaN); such results are refused and the original owner is returned.
+def Surface.rotation.domain(kind: U32, +count: U32, pixels: Surface.Pixels) -> Surface.Pixels & Bool:
+  match kind pixels:
+    case 8 Words{values}: Surface.rotation.words(Surface.words.r32(U32.to_nat(count), 0, (values, True{})))
+    case _ Vectors{values}: Surface.rotation.vectors(Surface.vectors.checked(~Surface.vector.ordered, U32.to_nat(count), 0, (values, True{})))
+    case _ other: (other, True{})
+
+def Surface.rotation.checked(original: Surface, +width: U32, +height: U32, +format: U32, result: Surface.Pixels & Bool) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match result:
-    case Fail{failure}: Fail{failure}
-    case Done{image}: Done{Surface.rgba.wrap(Rgba.alpha_clear(image, color, threshold))}
+    case Tuple{_, False{}}: Fail{(original, OutOfDomain{})}
+    case Tuple{rotated, True{}}: Done{Surface{width, height, format, rotated}}
 
-def Surface.alpha_clear(surface: Surface, color: U32, threshold: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
-  Surface.alpha_clear.rgba(color, threshold, Surface.rgba.only(surface))
+def Surface.rotation.render(+width: U32, +height: U32, +cosine: F32, +sine: F32, pair: Surface & Surface) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  (original, Surface{+sw, +sh, +format, pixels}) = pair
+  Surface.rotation.checked(original, width, height, format,
+    Surface.rotation.domain(format, (width * height : U32), Surface.rotation.pixels(pixels, sw, sh, width, height, cosine, sine)))
 
-def Surface.rotation.rgba(reference: M.Libm, degrees: F32, result: Result<&1, &1, Surface & Surface.Error, Rgba>) -> Result<&1, &1, Surface & Surface.Error, Surface>:
-  match result:
-    case Fail{failure}: Fail{failure}
-    case Done{image}: Surface.rgba.result(Rgba.rotate_degrees_for(reference, image, degrees))
+# Only float formats can be refused, so only they keep a copy of the original.
+def Surface.rotation.selected(kind: U32, surface: Surface, +width: U32, +height: U32, +cosine: F32, +sine: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match kind:
+    case 8: Surface.rotation.render(width, height, cosine, sine, Surface.copy(surface))
+    case 9: Surface.rotation.render(width, height, cosine, sine, Surface.copy(surface))
+    case _:
+      Surface{+sw, +sh, format, pixels} = surface
+      Done{Surface{width, height, format, Surface.rotation.pixels(pixels, sw, sh, width, height, cosine, sine)}}
 
-def Surface.rotate_degrees_for(reference: M.Libm, surface: Surface, degrees: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
-  Surface.rotation.rgba(reference, degrees, Surface.rgba.only(surface))
+def Surface.rotation.sized(valid: Bool, surface: Surface, +width: U32, +height: U32, cosine: F32, sine: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match valid:
+    case False{}: Fail{(surface, InvalidSize{})}
+    case True{}:
+      Surface{sw, sh, +format, pixels} = surface
+      Surface.rotation.selected(format, Surface{sw, sh, format, pixels}, width, height, cosine, sine)
+
+def Surface.rotation.trigonometry(surface: Surface, values: F32 & F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface{+sw, +sh, format, pixels} = surface
+  (+cosine, +sine) = values
+  +width = F32.to_u32((F32.abs((U32.to_f32(sw) * cosine : F32)) + F32.abs((U32.to_f32(sh) * sine : F32)) : F32))
+  +height = F32.to_u32((F32.abs((U32.to_f32(sh) * cosine : F32)) + F32.abs((U32.to_f32(sw) * sine : F32)) : F32))
+  Surface.rotation.sized(((width >= 1) && (height >= 1) && (width <= 4096) && (height <= 4096) : U32),
+    Surface{sw, sh, format, pixels}, width, height, cosine, sine)
+
+def Surface.rotation.angle(valid: Bool, reference: M.Libm, surface: Surface, degrees: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match valid:
+    case False{}: Fail{(surface, InvalidRectangle{})}
+    case True{}:
+      radians = (degrees * 3.14159265358979323846 / 180.0 : F32)
+      Surface.rotation.trigonometry(surface, Trig.sincos_for(M.Libm.gnu(reference), radians))
+
+# ImageRotate with integral degrees in -360..360 on every format.
+def Surface.rotate_degrees_for(reference: M.Libm, surface: Surface, +degrees: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface.rotation.angle((F32.abs(degrees) <= 360.0 : F32) && F32.is_eq(F32.floor(degrees), degrees), reference, surface, degrees)
 
 def Surface.rotate_degrees(surface: Surface, degrees: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Surface.rotate_degrees_for(M.AppleLibm{}, surface, degrees)
 
-def Surface.list.of_rgba(levels: List<Rgba>, done: List<Surface>) -> List<Surface>:
-  match levels:
-    case Nil{}: List.reverse(&1, Surface, done)
-    case Con{level, rest}: Surface.list.of_rgba(rest, Con{Surface.rgba.wrap(level), done})
-
-def Surface.mipmaps.rgba(result: Result<&1, &1, Surface & Surface.Error, Rgba>) -> Result<&1, &1, Surface & Surface.Error, Image.Mipmaps>:
+# Halving sizes are always valid, so resize never rejects a level here.
+def Surface.mipmaps.level(result: Result<&1, &1, Surface & Surface.Error, Surface>) -> Surface:
   match result:
-    case Fail{failure}: Fail{failure}
-    case Done{Rgba{+width, +height, pixels}}:
-      +steps = U32.log2(U32.max(width, height))
-      Done{Mipmaps{(1 + U32.from_nat(steps) : U32), Surface.list.of_rgba(Rgba.mipmaps.levels(steps, (Rgba{width, height, pixels}, Nil{})), Nil{})}}
+    case Fail{Tuple{surface, _}}: surface
+    case Done{surface}: surface
 
-# Altered adaptation of raylib ImageMipmaps; each level resizes the preceding one.
-def Surface.mipmaps(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, Image.Mipmaps>:
-  Surface.mipmaps.rgba(Surface.rgba.only(surface))
+def Surface.mipmaps.copied(reversed: List<Surface>, pair: Surface & Surface) -> Surface & List<Surface>:
+  (source, Surface{+width, +height, format, pixels}) = pair
+  (Surface.mipmaps.level(Surface.resize(Surface{width, height, format, pixels}, U32.max(1, (width / 2 : U32)), U32.max(1, (height / 2 : U32)))),
+    Con{source, reversed})
+
+def Surface.mipmaps.levels(n: Nat, state: Surface & List<Surface>) -> List<Surface>:
+  match n state:
+    case 0n Tuple{surface, reversed}: List.reverse(&1, Surface, Con{surface, reversed})
+    case 1n+rest Tuple{surface, reversed}: Surface.mipmaps.levels(rest, Surface.mipmaps.copied(reversed, Surface.copy(surface)))
+
+# Altered adaptation of raylib ImageMipmaps: every format; each level is
+# ImageResize of the preceding one, so converted formats requantize per level.
+def Surface.mipmaps(surface: Surface) -> Image.Mipmaps:
+  Surface{+width, +height, format, pixels} = surface
+  +steps = U32.log2(U32.max(width, height))
+  Mipmaps{(1 + U32.from_nat(steps) : U32), Surface.mipmaps.levels(steps, (Surface{width, height, format, pixels}, Nil{}))}
 
 def Image.Mipmaps.entries(chain: Image.Mipmaps) -> U32 & List<Surface>:
   Mipmaps{count, levels} = chain

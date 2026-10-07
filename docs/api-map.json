@@ -582,9 +582,10 @@
   "ImageAlphaClear": {
     "jonlib": "Surface.alpha_clear",
     "status": "profile-covered",
-    "scope": "R8G8B8A8 owners; finite threshold 0..1 converted to an inclusive byte cutoff; replaces all four channels. Other formats return UnsupportedFormat with the owner (surface-format negative controls).",
+    "scope": "Formats 1..9 with a finite threshold 0..1 (else InvalidRequest): raylib's per-format switch. GRAY_ALPHA, R5G5B5A1 and R4G4B4A4 compare their alpha byte/bits and store raylib's replacement words (including its unscaled round(c*31)/round(c*15) channel values truncated to bytes); R8G8B8A8 replaces all four channels below the inclusive byte cutoff; formats without alpha are unchanged.",
     "gaps": [
-      "Other formats/mipmaps and full target/performance gates"
+      "Pixel formats 10+ (R32G32B32A32, R16 family) and mipmaps",
+      "Full target/performance gates"
     ],
     "api_id": "raylib:function:ImageAlphaClear",
     "milestone": "images"
@@ -592,10 +593,10 @@
   "ImageAlphaMask": {
     "jonlib": "Surface.alpha_mask",
     "status": "profile-covered",
-    "scope": "Same-size R8G8B8A8 owners; reference normalized grayscale mask values replace destination alpha; original mask retained; mismatched dimensions return both owners with InvalidSize. Other formats return UnsupportedFormat with both owners.",
+    "scope": "Same-size owners in formats 1..9: the mask is a GRAYSCALE copy (ImageFormat) of the source; a GRAYSCALE destination becomes GRAY_ALPHA, others become R8G8B8A8 through ImageFormat, with the mask as alpha. The original mask is retained; mismatched dimensions return both owners with InvalidSize; conversion domain failures return them with OutOfDomain.",
     "gaps": [
-      "Grayscale/other image formats",
       "Reference warning/no-op adaptation on mismatched sizes",
+      "Pixel formats 10+",
       "Full target/performance gates"
     ],
     "api_id": "raylib:function:ImageAlphaMask",
@@ -638,9 +639,9 @@
   "ImageResize": {
     "jonlib": "Surface.resize",
     "status": "profile-covered",
-    "scope": "R8G8B8A8 and, via LoadImageColors/ImageFormat, formats 3, 5, 6, 8 and 9; dimensions 1..4096. Default Catmull-Rom/Mitchell filters retain binary64 normalization, clamp folding and native alpha/pass/accumulation order; conversions quantize even at unchanged sizes. GRAYSCALE, GRAY_ALPHA and R8G8B8 use 1..3-channel stbir paths in raylib and return UnsupportedFormat. Rejected requests preserve original owners; formats 3..9 are compared on the surface-format profile.",
+    "scope": "Formats 1..9; dimensions 1..4096. R8G8B8A8 uses the alpha-weighted 7-channel filter; GRAYSCALE, GRAY_ALPHA and R8G8B8 use the unweighted, unscaled 1..3-channel stbir layouts on their own bytes; formats 3, 5, 6, 8 and 9 go through LoadImageColors/ImageFormat and quantize even at unchanged sizes. Default Catmull-Rom/Mitchell filters retain binary64 normalization, clamp folding, per-layout pass-order costs and native SIMD accumulation order. Rejected requests preserve original owners; every format is compared on the surface-format profile and formats 1, 2 and 4 on the resize layout corpus.",
     "gaps": [
-      "Other image formats and mipmap chains",
+      "Pixel formats 10+ and mipmap chains",
       "Dimensions beyond the initial Surface domain",
       "Complete platform, application-integration and performance validation"
     ],
@@ -671,9 +672,9 @@
   "ImageMipmaps": {
     "jonlib": "Surface.mipmaps / Image.Mipmaps.entries / Image.Mipmaps.unload",
     "status": "profile-covered",
-    "scope": "R8G8B8A8 owners, dimensions 1..4096: complete owned base-to-1x1 levels, preserving the base and resizing each preceding level with native default filtering; levels are independent owners. Other formats return UnsupportedFormat with the owner.",
+    "scope": "Formats 1..9, dimensions 1..4096: complete owned base-to-1x1 levels, preserving the base and applying ImageResize to each preceding level in the image's format (1..3-channel filters for GRAYSCALE/GRAY_ALPHA/R8G8B8, RGBA8 round trips with per-level requantization for the others); levels are independent owners. Total: Surface.mipmaps returns Image.Mipmaps.",
     "gaps": [
-      "Existing partial/full native chains and non-RGBA8 source formats",
+      "Existing partial/full native chains and pixel formats 10+",
       "Contiguous C allocation/pointer ABI and texture integration",
       "Complete resource/platform/performance coverage"
     ],
@@ -714,10 +715,10 @@
   "ImageRotate": {
     "jonlib": "Surface.rotate_degrees_for / Surface.rotate_degrees",
     "status": "profile-covered",
-    "scope": "R8G8B8A8 owners; integral degrees -360..360 with explicit reference trigonometry; reference bilinear interpolation, truncated bounds and transparent outside pixels; output dimensions 1..4096; rejected requests preserve the original owner. Other formats return UnsupportedFormat.",
+    "scope": "Formats 1..9; integral degrees -360..360 with explicit reference trigonometry; reference bilinear interpolation of every stored byte, truncated bounds and zero outside pixels; output dimensions 1..4096; R32/R32G32B32 results outside the owner domain (R32 finite [0,1], R32G32B32 non-NaN) and other rejected requests preserve the original owner.",
     "gaps": [
       "Wider-angle reference behavior",
-      "Other formats/mipmaps",
+      "Pixel formats 10+ and mipmaps",
       "Full target/performance gates"
     ],
     "api_id": "raylib:function:ImageRotate",
@@ -1053,10 +1054,10 @@
   "ImageDraw": {
     "jonlib": "Surface.draw_image / Surface.draw_image_region / Surface.draw_image_rect",
     "status": "profile-covered",
-    "scope": "R8G8B8A8 owners; bounded finite source/destination rectangles, including fractional fields; source clipping precedes truncated-size scaling decisions; destination clipping precedes pixel truncation; both owners preserved; one mip level. Other formats return UnsupportedFormat with both owners.",
+    "scope": "Formats 1..9; bounded finite source/destination rectangles, including fractional fields; source clipping precedes truncated-size scaling decisions; scaled sources are extracted and resized in their own format; destination clipping precedes pixel truncation. Pixels use GetPixelColor (integer packed expansion, R32 replicated), ColorAlphaBlend unless the source has no alpha and tint.a is 255, and SetPixelColor (no-op for R32/R32G32B32); unblended equal formats copy stored samples. An R32G32B32 source needs finite [0,1] samples (OutOfDomain). Both owners preserved; one mip level.",
     "gaps": [
       "empty or undefined source rectangles",
-      "other pixel formats",
+      "Pixel formats 10+",
       "mipmaps",
       "full platform/integration/performance validation"
     ],

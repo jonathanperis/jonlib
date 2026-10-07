@@ -1,6 +1,6 @@
 # Cropping and resampling
 
-Jonlib adapts raylib 6.0's RGBA8 extraction, crop, nearest and default filtered
+Jonlib adapts raylib 6.0's extraction, crop, nearest and default filtered
 resize, and the scaled `ImageDraw` path, for `Surface` owners.
 
 | API | raylib profile |
@@ -24,8 +24,11 @@ native-style float-to-byte truncation, then normalize the result back to floats.
   when the result remains nonempty.
 - `resize_nn` uses raylib's **16.16 ratios with the +1 correction**, preserving
   every RGBA byte.
-- `resize` accepts single-level RGBA8 images with dimensions 1..4096; invalid
-  sizes return the original with `InvalidSize`.
+- `resize` accepts single-level images with dimensions 1..4096; invalid sizes
+  return the original with `InvalidSize`. Like `ImageResize`, GRAYSCALE,
+  GRAY_ALPHA and R8G8B8 are filtered in place as 1, 2 and 3 unweighted channels
+  and keep their format; R8G8B8A8 uses the alpha-aware filter; other formats are
+  converted to R8G8B8A8, filtered, and converted back.
 - `draw_image_region` copies an unscaled, in-bounds integral source rectangle
   with destination clipping, tint and alpha, returning both owners.
   `draw_image_rect` integrates the default resizer into source-clipped, scaled
@@ -55,6 +58,16 @@ rejects it with `UnsafeNearestMapping` and returns the original image.
   dimension-dependent horizontal/vertical ordering.
 - Seven-channel filtering for ordinary RGBA (unweighted RGB, alpha and weighted
   RGB), so fully transparent colors are handled deliberately.
+- Plain 1-, 2- and 3-channel filtering (`STBIR_1CHANNEL`, `STBIR_2CHANNEL`,
+  `STBIR_RGB`) for GRAYSCALE, GRAY_ALPHA and R8G8B8, with each layout's own
+  pass-order cost table. Without alpha weighting stbir runs uint8 to uint8
+  **unscaled**: samples are 0..255 floats and encode as `clamp(v + 0.5)`
+  truncated, where RGBA uses `x/255` and `v*255 + 0.5`. The two differ in
+  rounding, so the layouts do not reuse the RGBA coders.
+- The SIMD accumulation order: RGBA rows alternate two accumulators; 1..3-channel
+  rows rotate four (coefficient *j* into lane *j* mod 4, folded as
+  (L0+L2)+(L1+L3)), except three-coefficient 1- and 3-channel kernels, which
+  sum (p0+p1)+p2. Vertical passes accumulate serially.
 - Output clamping and rounding.
 
 The reference build also has architecture-dependent SIMD execution details;
@@ -70,7 +83,8 @@ alpha of **124 becoming 125**, and **192 becoming 191**), so no image tolerance
 is applied. Exact power-of-two scaling is used instead of an approximate
 `pow(2, exponent)`, which changed coefficient bits on Metal.
 
-The implementation keeps a full seven-channel intermediate buffer. `resize_nn`
+The implementation keeps a full seven-channel intermediate buffer, also for the
+1..3-channel layouts, whose unused slots stay zero. `resize_nn`
 remains a separate operation.
 
 ## How it is verified
@@ -81,9 +95,19 @@ remains a separate operation.
   horizontal kernels (first index and every coefficient bit), and whole images
   against unmodified raylib `ImageResize`. The image corpus has seeded cases and
   boundary cases: transparent/opaque colors, identity, anisotropic scales, large
-  filter supports and both 4096-to-1 and 1-to-4096 axes. Comparison is exact on
-  CPU-1, CPU-2, JavaScript and, with `--gpu`, forced GPU. `--images-only`,
-  `--lane` and `--case-prefix` select a focused subset for diagnosis.
+  filter supports and both 4096-to-1 and 1-to-4096 axes. A fourth stage resizes
+  GRAYSCALE, GRAY_ALPHA and R8G8B8 bytes and compares the stored bytes: 81
+  seeded sizes per format (1..3-coefficient kernels, both pass orders, every
+  cost class) plus fixtures from a seeded native search over the stock stb
+  header. The search first checks the horizontal lane model against stbir on
+  every sampled channel output (about 220 million), then keeps rows whose
+  bytes change under a serial, two-lane or other three-term sum, and sizes
+  where a layout's cost table picks another pass order than the RGBA table
+  (forced through stbir's v-first test hook). Random images almost never
+  expose these details; each of those wrong variants, and RGBA's scaled coders,
+  fails the stage. Comparison is exact on CPU-1, CPU-2, JavaScript and, with
+  `--gpu`, forced GPU. `--images-only`, `--layouts-only`, `--lane` and
+  `--case-prefix` select a focused subset for diagnosis.
 - **Main corpus** (`tools/conformance.py`, gate `conformance`): extraction, crop,
   nearest resize, region/rect draws (`blit_region`, `blit_rect`), the retained filtered-resize counterexamples, a
   filtered-resize/crop sequence and invalid-size ownership checks.
@@ -99,7 +123,7 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 
 ## Known gaps
 
-Memory and speed parity, other pixel formats, multi-level (mipmapped) inputs,
+Memory and speed parity, multi-level (mipmapped) inputs,
 dimensions beyond the Surface profile, other GPU models and complete platform
 integration.
 
