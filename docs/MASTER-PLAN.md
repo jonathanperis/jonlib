@@ -123,8 +123,8 @@ all six gates **and** a verified result on every target in
 `api/milestones.json` (Windows, the BSDs, Android, the browser, each GL
 version...), so even a pure CPU function like `ImageResize` completes only with
 Phase 7. That is intentional for the release gate, but it hides Phase 1
-progress. The proposed Phase 1 exit measure, reported alongside the strict
-counts by `tools/api_plan.py`, is: every Phase 1 function `partial` with
+progress. The Phase 1 exit measure, reported alongside the strict counts by
+`tools/api_plan.py` (tagging rules in [API-TRACKING.md](API-TRACKING.md)), is: every Phase 1 function `partial` with
 `behavior` and `ownership` verified on the CI hosts (Linux x86_64 and macOS
 arm64, CPU and JavaScript lanes) and on forced Metal locally, no behavior gaps other than documented
 undefined native behavior, and its remaining gaps limited to targets,

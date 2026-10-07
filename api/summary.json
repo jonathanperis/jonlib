@@ -569,6 +569,13 @@
       "partial": 0
     }
   ],
+  "phase1_exit": {
+    "total": 315,
+    "implemented": 288,
+    "behavior_ownership_verified": 0,
+    "only_allowed_gaps": 0,
+    "meeting": 0
+  },
   "next_work": [
     {
       "id": "raylib:function:LoadImageFromMemory",
