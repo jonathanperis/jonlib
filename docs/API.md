@@ -66,6 +66,11 @@ Bounded quality-8 raw compression, including empty-input and native sequence-lim
 behavior, is documented in [COMPRESSION.md](COMPRESSION.md).
 Path utilities and file data/text/code IO (`Files.*`) are documented in
 [FILES.md](FILES.md).
+raylib.h's enumerations are U32 constants named as in raylib under their enum,
+e.g. `PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8()` or
+`KeyboardKey.KEY_SPACE()`, generated into the last section of `jonlib.bend` by
+`tools/enums_probe.py --write` and checked against compiled raylib (gate `enums`).
+C's `bool` is Base's `Bool`.
 
 ## Shared types
 

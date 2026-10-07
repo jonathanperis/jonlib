@@ -123,25 +123,18 @@ arm64, CPU and JavaScript lanes) and on forced Metal locally, no behavior gaps o
 undefined native behavior, and its remaining gaps limited to targets,
 integration and performance.
 
-Decisions for Jonathan before the next batches:
+Decisions taken (2026-10-07, under Jonathan's "work on everything"; the
+recommended option in each case, revisable on his review):
 
-- **Compressed and multi-level images.** Proposed: a third `Surface.Pixels`
-  variant holding compressed blocks, multi-level loads returned as
-  `Image.Mipmaps`, and every CPU operation raylib does not support on
-  compressed data returning `UnsupportedFormat` (raylib logs and leaves the
-  image unchanged).
-- **The Phase 1 exit measure** above, which changes how progress is reported
-  (not the release definition).
-- **Enum and constant mapping (`types`).** Proposed: raylib enumerators as
-  zero-argument U32 functions with raylib's spelling (as `Color.RAYWHITE()`
-  and `Math.PI()` now are), since raylib APIs take them as `int`; sum types
-  would be safer but diverge from flag combinations such as `ConfigFlags`.
-- **Global state (`memory`, file callbacks).** `SetTraceLogLevel`,
-  `SetTraceLogCallback` and the `Set*FileCallback` hooks mutate process-wide
-  state that Bend does not have. Proposed: explicit logger/loader values passed
-  to the operations that log or load, recorded as language adaptations.
-- **Order of the remaining Phase 1 packages** versus starting the Phase 2
-  window/input foundation.
+- **Phase 1 exit measure:** reported alongside the strict counts as above.
+- **Compressed and multi-level images:** a compressed-block `Surface.Pixels`
+  variant; multi-level loads return `Image.Mipmaps`; CPU operations raylib
+  does not support on compressed data return `UnsupportedFormat`.
+- **Enum mapping:** zero-argument U32 functions with raylib's spelling under
+  the enum's name (`PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8()`).
+- **Global state:** explicit logger/loader values passed to the operations
+  that log or load, recorded as language adaptations.
+- **Order:** finish the decision-free Phase 1 packages, then Phase 2.
 
 ## Near-term sequence
 
