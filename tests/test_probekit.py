@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 from types import SimpleNamespace
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import probekit
@@ -98,3 +99,17 @@ class LaneTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class JobTests(unittest.TestCase):
+    def jobs(self, cpus, gib):
+        pages = {'SC_PAGE_SIZE': 4096, 'SC_PHYS_PAGES': gib * (1 << 30) // 4096}
+        with mock.patch.object(probekit.os, 'cpu_count', return_value=cpus), \
+             mock.patch.object(probekit.os, 'sysconf', side_effect=pages.__getitem__):
+            return probekit.default_jobs()
+
+    def test_memory_bounds_concurrent_batches(self):
+        self.assertEqual(self.jobs(4, 16), 2)   # hosted Linux runner
+        self.assertEqual(self.jobs(3, 7), 1)    # hosted macOS runner
+        self.assertEqual(self.jobs(16, 64), 4)  # never above four
+        self.assertEqual(self.jobs(8, 2), 1)    # small hosts still run
