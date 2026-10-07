@@ -365,6 +365,27 @@
     "api_id": "raylib:function:LoadImageFromMemory",
     "milestone": "image-codecs"
   },
+  "IsImageValid": {
+    "jonlib": "Surface.is_valid",
+    "status": "profile-covered",
+    "scope": "Returns the owner and raylib's validity verdict: positive dimensions and a format. Factory, decoder and loader owners always pass; hand-built records additionally need dimensions 1..4096, a format 1..13 and that format's storage variant (Words or Quads).",
+    "gaps": [
+      "Compressed formats (14+) and multi-level images",
+      "Native pointer/NULL-data ABI"
+    ],
+    "api_id": "raylib:function:IsImageValid",
+    "milestone": "images"
+  },
+  "UnloadImage": {
+    "jonlib": "Surface.unload",
+    "status": "profile-covered",
+    "scope": "Consumes the Surface owner, releasing its storage; affine ownership rules out double unloads and use after unload.",
+    "gaps": [
+      "Native pointer/allocator ABI and resource accounting"
+    ],
+    "api_id": "raylib:function:UnloadImage",
+    "milestone": "images"
+  },
   "ExportImage": {
     "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Surface.to_bmp/to_tga/to_qoi/write_bmp/write_tga/write_qoi/write_png/write_raw / Surface.write_raw/write_png/write_bmp/write_tga / Surface.write_image",
     "status": "profile-covered",
@@ -826,6 +847,16 @@
     ],
     "api_id": "raylib:function:LoadImagePalette",
     "milestone": "images"
+  },
+  "UnloadImageColors": {
+    "jonlib": "Surface.unload_colors",
+    "status": "profile-covered",
+    "scope": "Consumes the color list returned by Surface.colors (LoadImageColors), releasing it; affine ownership rules out double unloads.",
+    "gaps": [
+      "Native pointer/allocator ABI and resource accounting"
+    ],
+    "api_id": "raylib:function:UnloadImageColors",
+    "milestone": "pixels"
   },
   "UnloadImagePalette": {
     "jonlib": "Image.Palette.unload",

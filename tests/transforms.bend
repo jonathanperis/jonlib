@@ -347,5 +347,43 @@ def checks() -> Bool:
     && formatted_roundtrip(J.Surface.create(2, 1, 16909060))
     && png_rejections([3,5,6])
 
+def validity.matched(expected: Bool, valid: Bool) -> Bool:
+  match expected:
+    case True{}: valid
+    case False{}: Bool.not(valid)
+
+def validity(expected: Bool, result: J.Surface & Bool) -> Bool:
+  (_, valid) = result
+  validity.matched(expected, valid)
+
+def released(done: Unit) -> Bool:
+  True{}
+
+def unloaded(result: Maybe<J.Surface>) -> Bool:
+  match result:
+    case None{}: False{}
+    case Some{image}: released(J.Surface.unload(image))
+
+def colors_unloaded(result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> Bool:
+  match result:
+    case Fail{_}: False{}
+    case Done{colors}: released(J.Surface.unload_colors(colors))
+
+def created_valid(result: Maybe<J.Surface>) -> Bool:
+  match result:
+    case None{}: False{}
+    case Some{image}: validity(True{}, J.Surface.is_valid(image))
+
+# IsImageValid on factory owners and hand-built records; unloading consumes owners.
+def ownership_checks() -> Bool:
+  created_valid(J.Surface.from_bytes(1, 2, 2, [1,2,3,4]))
+    && created_valid(J.Surface.from_bytes(1, 1, 13, [0,60,0,56,0,52,0,60]))
+    && validity(False{}, J.Surface.is_valid(J.Surface{0, 1, 7, J.Words{Array.new(U32, 0n, 0)}}))
+    && validity(False{}, J.Surface.is_valid(J.Surface{1, 1, 14, J.Words{Array.new(U32, 0n, 0)}}))
+    && validity(False{}, J.Surface.is_valid(J.Surface{1, 1, 9, J.Words{Array.new(U32, 0n, 0)}}))
+    && validity(False{}, J.Surface.is_valid(J.Surface{1, 1, 7, J.Quads{Array.new(J.Surface.Quad, 0n, J.Quad{0, 0, 0, 0})}}))
+    && unloaded(J.Surface.from_bytes(1, 1, 7, [1,2,3,4]))
+    && colors_unloaded(J.Surface.colors(J.Surface{1, 1, 7, J.Words{Array.new(U32, 0n, 16909060)}}))
+
 def main() -> IO(Unit):
-  verdict(checks())
+  verdict(checks() && ownership_checks())

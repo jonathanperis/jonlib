@@ -167,6 +167,8 @@ compares every format-generic operation on formats 1..13 with raylib.
 | `Surface.format(surface, target)` | `ImageFormat` between formats 1..13 (`HalfToFloat`/`FloatToHalf` for R16 formats); `target` 0 or the current format keeps the owner, compressed targets are `UnsupportedFormat`; float sources need samples in 0..1. See [FORMATS.md](FORMATS.md) and [FLOAT-FORMATS.md](FLOAT-FORMATS.md). |
 | `Surface.dimensions(surface) -> U32 & U32` / `pixel_format(surface) -> Surface & U32` | Consume the owner for its dimensions / return it with its format. |
 | `Surface.colors(surface)` | `LoadImageColors`: consumes the owner and returns `width*height` row-major Colors. |
+| `Surface.is_valid(surface) -> Surface & Bool` | `IsImageValid`: returns the owner; true for every factory/decoder/loader owner, false for a hand-built record with dimensions outside 1..4096, a format outside 1..13 or the wrong storage variant. |
+| `Surface.unload(surface)` / `Surface.unload_colors(colors)` | `UnloadImage` / `UnloadImageColors`: consume the owner or color list; affine ownership rules out double unloads. |
 | `Surface.get(surface, x, y) -> Surface & Maybe<&2, U32>` | `GetImageColor` for one pixel; out-of-bounds U32 coordinates (no wrap) and out-of-domain float samples return `None`. See [IMAGE-COLORS.md](IMAGE-COLORS.md). |
 | `Surface.from_channel(surface, selected) -> Surface & Maybe<Surface>` | `ImageFromChannel`: keeps the source, returns an independent GRAYSCALE image; integral selectors -32767..32767 with per-format redirection. See [IMAGE-CHANNELS.md](IMAGE-CHANNELS.md). |
 | `Surface.load_palette(surface, maximum) -> Surface & Maybe<Image.Palette>` | Keeps the source; first-occurrence colors excluding alpha zero; capacity 1..4096. See [PALETTES.md](PALETTES.md). |

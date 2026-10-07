@@ -3095,6 +3095,32 @@ def Surface.colors.rgba(result: Result<&1, &1, Surface & Surface.Error, Rgba>) -
     case Fail{failure}: Fail{failure}
     case Done{image}: Done{Rgba.colors(image)}
 
+# IsImageValid: positive dimensions and a format. A Surface from any factory
+# passes; a hand-built record also needs 1..4096 dimensions, a format 1..13 and
+# the storage variant of that format. The owner is returned.
+def Surface.valid.storage(wide: Bool, pixels: Surface.Pixels) -> Surface.Pixels & Bool:
+  match wide pixels:
+    case True{} Quads{values}: (Quads{values}, True{})
+    case False{} Words{values}: (Words{values}, True{})
+    case _ other: (other, False{})
+
+def Surface.valid.result(+width: U32, +height: U32, +format: U32, sized: Bool, checked: Surface.Pixels & Bool) -> Surface & Bool:
+  (pixels, stored) = checked
+  (Surface{width, height, format, pixels}, sized && stored)
+
+def Surface.is_valid(surface: Surface) -> Surface & Bool:
+  Surface{+width, +height, +format, pixels} = surface
+  Surface.valid.result(width, height, format,
+    ((width >= 1) && (height >= 1) && (width <= 4096) && (height <= 4096) && (format >= 1) && (format <= 13) : U32),
+    Surface.valid.storage(Surface.wide(format), pixels))
+
+# UnloadImage and UnloadImageColors: consuming the owner releases its storage.
+def Surface.unload(surface: Surface) -> Unit:
+  Unit{}
+
+def Surface.unload_colors(colors: List<U32>) -> Unit:
+  Unit{}
+
 # Consumes the owner; padding storage is excluded.
 def Surface.colors(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, List<U32>>:
   Surface.colors.rgba(Surface.rgba.load(surface))
