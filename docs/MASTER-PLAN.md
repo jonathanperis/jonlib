@@ -93,17 +93,24 @@ order (`docs/PROGRESS.md` lists every ID):
    `QuaternionToAxisAngle`, `QuaternionToEuler` and the cubic Bézier spline
    need native `tanf`/`acosf`/`atan2f`/`powf` profiles. The diagnostic
    `perspective` and `inverse-trig` gates already record native behavior; the
-   work is accurate per-libm kernels, as for `sinf`/`cosf`. The ray collisions
+   work is accurate per-libm kernels, as for `sinf`/`cosf`. Open decision:
+   Apple's current `asinf`/`acosf`/`tanf` match neither its published Libm
+   sources nor correctly rounded results, so an Apple profile would mean
+   deriving kernels from the proprietary binary; the glibc profiles
+   (fdlibm-derived for 2.39, CORE-MATH for 2.41) can be adapted with their
+   notices. Pending Jonathan's choice: glibc profiles only (Apple hosts
+   refused or documented as differing), or another source for Apple. The ray collisions
    (`GetRayCollisionSphere/Box/Triangle/Quad`) are delivered with explicit
    contraction profiles ([COLLISION.md](COLLISION.md)); the mesh/model
    collisions wait for the Phase 5 types.
 5. **Image leftovers** — DDS DXT blocks and mip chains, which default raylib
    loads, and the configuration-gated PKM/KTX/PVR/ASTC loaders are delivered
-   as `Image.Stored` ([IMAGE-FILES.md](IMAGE-FILES.md)); the text-to-image
-   functions (`ImageText*`, `ImageDrawText*`), which need
+   as `Image.Stored` ([IMAGE-FILES.md](IMAGE-FILES.md)), and the
+   configuration-gated JPEG decoder ([JPEG.md](JPEG.md)). Remaining: the
+   text-to-image functions (`ImageText*`, `ImageDrawText*`), which need
    raylib's default font, UTF-8 decoding and text measurement and are best done
-   as the first slice of Phase 3; the configuration-gated JPEG decoder; and
-   wider domains (dimensions above 4096, samples outside the defined C casts).
+   as the first slice of Phase 3; and wider domains (dimensions above 4096,
+   samples outside the defined C casts).
 
 Undefined native behavior found on the way is refused, not reproduced: e.g.
 `ImageAlphaClear` on R5G5B5A1/R4G4B4A4 casts `round(channel*31)` to a byte,

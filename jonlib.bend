@@ -42,6 +42,7 @@ import ./src/pnm.bend as Pnm
 import ./src/psd.bend as Psd
 import ./src/pic.bend as Pic
 import ./src/gif.bend as Gif
+import ./src/jpeg.bend as Jpeg
 import ./src/gif_animation.bend as GifAnimation
 import ./src/hdr.bend as Hdr
 import ./src/image_code.bend as ImageCode
@@ -3789,6 +3790,12 @@ def Surface.dds.result(outcome: Dds.Outcome) -> Result<&1, &1, Surface.Error, Su
 def Surface.decode_dds(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   Surface.dds.result(Dds.decode(bytes))
 
+# JPEG (stb_image's baseline/progressive decoder, as raylib built with
+# SUPPORT_FILEFORMAT_JPG loads it): GRAYSCALE for one component, R8G8B8
+# otherwise (YCbCr, RGB, CMYK and YCCK converted as stb converts them).
+def Surface.decode_jpeg(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
+  Surface.codec.result(Jpeg.decode(bytes))
+
 # PNG retains native output components from structural color/tRNS metadata.
 def Surface.decode_png(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   Surface.codec.result(Png.decode(bytes))
@@ -3824,7 +3831,12 @@ def Surface.hdr.result(result: Result<&1, &1, Codec.Error, Hdr.Image>) -> Result
 def Surface.decode_hdr(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   Surface.hdr.result(Hdr.decode(bytes))
 
-def Image.file.raster_selected(reference: M.Contraction, png: Bool, bmp: Bool, pnm: Bool, psd: Bool, pic: Bool, gif: Bool, bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
+def Image.file.raster_other(jpeg: Bool, bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
+  match jpeg:
+    case True{}: Surface.decode_jpeg(bytes)
+    case False{}: Surface.decode_tga(bytes)
+
+def Image.file.raster_selected(reference: M.Contraction, png: Bool, bmp: Bool, pnm: Bool, psd: Bool, pic: Bool, gif: Bool, +bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   match png bmp pnm psd pic gif:
     case True{} _ _ _ _ _: Surface.decode_png(bytes)
     case False{} True{} _ _ _ _: Surface.decode_bmp(bytes)
@@ -3832,7 +3844,7 @@ def Image.file.raster_selected(reference: M.Contraction, png: Bool, bmp: Bool, p
     case False{} False{} False{} True{} _ _: Surface.decode_psd_for(reference, bytes)
     case False{} False{} False{} False{} True{} _: Surface.decode_pic(bytes)
     case False{} False{} False{} False{} False{} True{}: Surface.decode_gif(bytes)
-    case False{} False{} False{} False{} False{} False{}: Surface.decode_tga(bytes)
+    case False{} False{} False{} False{} False{} False{}: Image.file.raster_other(Jpeg.signature(bytes), bytes)
 
 def Image.file.raster(reference: M.Contraction, +bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   match bytes:
@@ -4148,6 +4160,9 @@ def Surface.load_qoi(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface
 
 def Surface.load_dds(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
   Surface.load_with(~Surface.decode_dds, Image.file.limit(DdsFile{}), path)
+
+def Surface.load_jpeg(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
+  Surface.load_with(~Surface.decode_jpeg, Image.file.limit(RasterFile{}), path)
 
 def Surface.load_png(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
   Surface.load_with(~Surface.decode_png, Image.file.limit(RasterFile{}), path)

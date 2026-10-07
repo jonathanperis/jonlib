@@ -517,3 +517,15 @@ def Laws.stored_copy_keeps_every_level(width, height, format, mipmaps, data):
 
 def Laws.stored_compressed_levels_unsupported(image, width, height, format, count, data):
   {==}
+
+def Laws.jpeg_absent_table_symbol_zero(buffer):
+  {==}
+
+def Laws.jpeg_zig_past_end():
+  {==}
+
+def Laws.jpeg_short_wraps():
+  {==}
+
+def Laws.jpeg_asr_negative():
+  {==}
