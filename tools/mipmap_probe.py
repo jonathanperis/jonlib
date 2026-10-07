@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare every owned mipmap level with native ImageMipmaps on pixel formats 1..9.
+"""Compare every owned mipmap level with native ImageMipmaps on pixel formats 1..13.
 
 R8G8B8A8 runs the full corpus; other formats convert a smaller set with
 ImageFormat first, so each level also follows that format's ImageResize path."""
@@ -13,9 +13,9 @@ import probekit
 from probekit import ROOT, ProbeFailure
 
 
-FORMATS = range(1, 10)
+FORMATS = range(1, 14)
 OTHER_FORMAT_CASES = (0, 1, 2, 3, 5, 6, 7)  # 1x1, 2x2, 3x5, 7x4, 17x9, 1x31, 31x1
-BYTES = {1: 1, 2: 2, 3: 2, 4: 3, 5: 2, 6: 2, 7: 4, 8: 4, 9: 12}
+BYTES = {1: 1, 2: 2, 3: 2, 4: 3, 5: 2, 6: 2, 7: 4, 8: 4, 9: 12, 10: 16, 11: 2, 12: 6, 13: 8}
 
 
 def fixtures():

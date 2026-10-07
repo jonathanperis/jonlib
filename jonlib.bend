@@ -633,15 +633,22 @@ def Random.load_sequence(state: Random.State, count: U32, +minimum: F32, +maximu
 # One owned image, mirroring raylib's Image: dimensions 1..4096, one mip level
 # and an uncompressed raylib PixelFormat 1..9. Formats 1..8 store one word per
 # pixel (R8G8B8A8 as the canonical Color word, the others as their native
-# little-endian sample bytes); R32G32B32 stores one Vector3 per pixel. Build it
-# through a Surface factory, decoder or loader, which keep power-of-two storage
-# and each format's sample domain (finite [0, 1] R32 words, no NaN vectors).
+# little-endian sample bytes); the wide formats store one Quad of sample words.
+# Build it through a Surface factory, decoder or loader, which keep power-of-two
+# storage and each format's sample domain (finite [0, 1] R32 and R16 words, no
+# NaN F32 samples in the wide formats).
 type Surface is Type:
   Surface{width: U32, height: U32, format: U32, pixels: Surface.Pixels}
 
+# A wide sample as stored words: F32 bits for R32G32B32 (a..c) and R32G32B32A32
+# (a..d), half-float bits for R16G16B16 (a..c) and R16G16B16A16 (a..d); unused
+# words are zero.
+type Surface.Quad is Data:
+  Quad{a: U32, b: U32, c: U32, d: U32}
+
 type Surface.Pixels is Type:
   Words{values: Array<U32>}
-  Vectors{values: Array<M.Vector3>}
+  Quads{values: Array<Surface.Quad>}
 
 # Internal R8G8B8A8 kernel record: the RGBA8 algorithms below run on it and the
 # Surface layer converts formats around them as raylib does.
@@ -1438,20 +1445,6 @@ def Rgba.alpha_border(surface: Rgba, threshold: F32) -> Rgba & Rectangle:
   Rgba.border.finish(width, height, Rgba.border.scan(U32.to_nat((width * height : U32)), 0, width,
     F32.to_u32((threshold * 255.0 : F32)), (pixels, AlphaBounds{width, height, 0, 0})))
 
-def Rgba.extract.finish(sw: U32, sh: U32, w: U32, h: U32, buffers: Array<U32> & Array<U32>) -> Rgba & Maybe<Rgba>:
-  (source, region) = buffers
-  (Rgba{sw, sh, source}, Some{Rgba{w, h, region}})
-
-def Rgba.extract.checked(valid: Bool, +sw: U32, sh: U32, pixels: Array<U32>, x: F32, y: F32, width: F32, height: F32) -> Rgba & Maybe<Rgba>:
-  match valid:
-    case False{}:
-      (Rgba{sw, sh, pixels}, None{})
-    case True{}:
-      +w = F32.to_u32(width)
-      +h = F32.to_u32(height)
-      Rgba.extract.finish(sw, sh, w, h, Rgba.sample((w * h : U32),
-        Region{sw, w, F32.to_u32(x), F32.to_u32(y)}, pixels))
-
 def Rectangle.integral(rect: Rectangle) -> Bool:
   Rectangle{+x, +y, +w, +h} = rect
   F32.is_eq(F32.floor(x), x) && F32.is_eq(F32.floor(y), y)
@@ -1602,6 +1595,8 @@ def Image.channel.index(format: U32, +selected: U32) -> U32:
     case 4: Bool.pick(U32, (selected > 2 : U32), 0, selected)
     case 8: 0
     case 9: Bool.pick(U32, (selected > 2 : U32), 0, selected)
+    case 11: 0
+    case 12: Bool.pick(U32, (selected > 2 : U32), 0, selected)
     case _: Bool.pick(U32, (selected > 3 : U32), 3, selected)
 
 def Image.channel.value(index: U32, normal: Formats.Normal) -> U32:
@@ -1922,27 +1917,30 @@ def Surface.pixel_format(surface: Surface) -> Surface & U32:
   Surface{width, height, +format, pixels} = surface
   (Surface{width, height, format, pixels}, format)
 
-# Storage-level helpers shared by every format.
-def Surface.vector.zero() -> M.Vector3:
-  M.Vector3{0.0, 0.0, 0.0}
+# Storage-level helpers shared by every format. Wide formats store Quads.
+def Surface.wide(+format: U32) -> Bool:
+  U32.is_eq(format, 9) || U32.is_eq(format, 10) || U32.is_eq(format, 12) || U32.is_eq(format, 13)
+
+def Surface.quad.zero() -> Surface.Quad:
+  Quad{0, 0, 0, 0}
 
 def Surface.pixels.words(result: Array<U32> & Array<U32>) -> Surface.Pixels & Surface.Pixels:
   (source, output) = result
   (Words{source}, Words{output})
 
-def Surface.pixels.vectors(result: Array<M.Vector3> & Array<M.Vector3>) -> Surface.Pixels & Surface.Pixels:
+def Surface.pixels.quads(result: Array<Surface.Quad> & Array<Surface.Quad>) -> Surface.Pixels & Surface.Pixels:
   (source, output) = result
-  (Vectors{source}, Vectors{output})
+  (Quads{source}, Quads{output})
 
 def Surface.pixels.sample(pixels: Surface.Pixels, +count: U32, +mapping: Raster.Mapping) -> Surface.Pixels & Surface.Pixels:
   match pixels:
     case Words{values}: Surface.pixels.words(Raster.sample(~U32, count, mapping, 0, values))
-    case Vectors{values}: Surface.pixels.vectors(Raster.sample(~M.Vector3, count, mapping, Surface.vector.zero(), values))
+    case Quads{values}: Surface.pixels.quads(Raster.sample(~Surface.Quad, count, mapping, Surface.quad.zero(), values))
 
 def Surface.pixels.clone(pixels: Surface.Pixels) -> Surface.Pixels & Surface.Pixels:
   match pixels:
     case Words{values}: Surface.pixels.words(Array.clone(U32, values))
-    case Vectors{values}: Surface.pixels.vectors(Array.clone(M.Vector3, values))
+    case Quads{values}: Surface.pixels.quads(Array.clone(Surface.Quad, values))
 
 # Format 7 words are canonical Colors; Formats routines read native byte order.
 def Surface.words.native(format: U32, count: Nat, values: Array<U32>) -> Array<U32>:
@@ -1958,25 +1956,27 @@ def Surface.word.bytes(bytes: +List<U32>, +shift: Nat, value: U32) -> U32:
     case Nil{}: value
     case Con{byte, rest}: Surface.word.bytes(rest, (shift + 8n : Nat), (value .|. (byte << shift) : U32))
 
-# The stored word ImageDrawPixel writes for a Color in word formats 1..8.
+# The stored word ImageDrawPixel writes for a Color in word formats 1..8 and 11.
 def Surface.word.draw.selected(kind: U32, +format: U32, +color: U32) -> U32:
   match kind:
     case 7: color
     case 8: Formats.encode(Formats.decode(7, Formats.swap(color)), 8)
+    case 11: Formats.encode(Formats.decode(7, Formats.swap(color)), 11)
     case _: Surface.word.bytes(Pixel.encode(format, color), 0n, 0)
 
 def Surface.word.draw(+format: U32, color: U32) -> U32:
   Surface.word.draw.selected(format, format, color)
 
-# SetPixelColor writes formats 1..7; R32 and R32G32B32 canvases stay zero.
+# SetPixelColor writes formats 1..7; float canvases stay zero.
 def Surface.word.fill(kind: U32, +format: U32, color: U32) -> U32:
   match kind:
     case 8: 0
+    case 11: 0
     case _: Surface.word.draw(format, color)
 
 # GetPixelColor, ImageDraw's reader, on stored words: packed formats use
 # Pixel.packed_color's integer expansion (LoadImageColors uses float factors)
-# and R32 fills r, g and b.
+# and R32/R16 fill r, g and b.
 def Surface.word.read(kind: U32, +word: U32) -> U32:
   match kind:
     case 1: Color.rgba((word .&. 255 : U32), (word .&. 255 : U32), (word .&. 255 : U32), 255)
@@ -1986,121 +1986,172 @@ def Surface.word.read(kind: U32, +word: U32) -> U32:
     case 8:
       +value = F32.to_u32((Formats.r32.value(word) * 255.0 : F32))
       Color.rgba(value, value, value, 255)
+    case 11:
+      +value = F32.to_u32((Formats.half.value(word) * 255.0 : F32))
+      Color.rgba(value, value, value, 255)
     case _: Pixel.packed_color(kind, word)
 
-# SetPixelColor: ImageDrawPixel's encoding for formats 1..7; R32 keeps its word.
+# SetPixelColor: ImageDrawPixel's encoding for formats 1..7; R32/R16 keep their word.
 def Surface.word.write(kind: U32, +color: U32, +word: U32) -> U32:
   match kind:
     case 8: word
+    case 11: word
     case _: Surface.word.draw(kind, color)
 
-# The normalized R32G32B32 sample ImageDrawPixel and ImageFormat derive from a Color.
-def Surface.vector.from_color(color: U32) -> M.Vector3:
-  +value = color
-  M.Vector3{(U32.to_f32(Color.red(value)) / 255.0 : F32),
-    (U32.to_f32(Color.green(value)) / 255.0 : F32), (U32.to_f32(Color.blue(value)) / 255.0 : F32)}
+# LoadImageDataNormalized of a wide sample: F32 or HalfToFloat channels; formats
+# without alpha read 1.
+def Surface.quad.normal(kind: U32, quad: Surface.Quad) -> Formats.Normal:
+  match kind quad:
+    case 9 Quad{a, b, c, _}: Formats.Normal{Formats.r32.value(a), Formats.r32.value(b), Formats.r32.value(c), 1.0}
+    case 10 Quad{a, b, c, d}: Formats.Normal{Formats.r32.value(a), Formats.r32.value(b), Formats.r32.value(c), Formats.r32.value(d)}
+    case 12 Quad{a, b, c, _}: Formats.Normal{Formats.half.value(a), Formats.half.value(b), Formats.half.value(c), 1.0}
+    case _ Quad{a, b, c, d}: Formats.Normal{Formats.half.value(a), Formats.half.value(b), Formats.half.value(c), Formats.half.value(d)}
 
-def Surface.vector.normal(normal: Formats.Normal) -> M.Vector3:
-  Formats.Normal{r, g, b, _} = normal
-  M.Vector3{r, g, b}
+# ImageFormat into a wide format: F32 channels or FloatToHalf.
+def Surface.quad.from_normal(kind: U32, sample: Formats.Normal) -> Surface.Quad:
+  match kind sample:
+    case 9 Formats.Normal{r, g, b, _}: Quad{F32.bits(r), F32.bits(g), F32.bits(b), 0}
+    case 10 Formats.Normal{r, g, b, a}: Quad{F32.bits(r), F32.bits(g), F32.bits(b), F32.bits(a)}
+    case 12 Formats.Normal{r, g, b, _}: Quad{Formats.half.bits(r), Formats.half.bits(g), Formats.half.bits(b), 0}
+    case _ Formats.Normal{r, g, b, a}: Quad{Formats.half.bits(r), Formats.half.bits(g), Formats.half.bits(b), Formats.half.bits(a)}
 
-# LoadImageColors converts R32G32B32 samples with C casts that are defined on
+# The sample ImageDrawPixel and ImageFormat store for a Color (channel/255).
+def Surface.quad.from_color(kind: U32, color: U32) -> Surface.Quad:
+  Surface.quad.from_normal(kind, Formats.decode(7, Formats.swap(color)))
+
+# LoadImageColors converts float samples with C casts that are defined on
 # [0, 1] (and -0); bit checks keep the domain on GPUs that flush denormals.
 def Surface.channel.valid(value: F32) -> Bool:
   +bits = F32.bits(value)
   (bits <= 1065353216 : U32) || U32.is_eq(bits, 2147483648)
 
-def Surface.vector.valid(value: M.Vector3) -> Bool:
-  M.Vector3{r, g, b} = value
-  Surface.channel.valid(r) && Surface.channel.valid(g) && Surface.channel.valid(b)
+def Surface.normal.valid(sample: Formats.Normal) -> Bool:
+  Formats.Normal{r, g, b, a} = sample
+  Surface.channel.valid(r) && Surface.channel.valid(g) && Surface.channel.valid(b) && Surface.channel.valid(a)
 
-def Surface.vector.color(value: M.Vector3) -> U32:
-  M.Vector3{r, g, b} = value
-  Color.rgba(F32.to_u32((r * 255.0 : F32)), F32.to_u32((g * 255.0 : F32)), F32.to_u32((b * 255.0 : F32)), 255)
+def Surface.normal.color(sample: Formats.Normal) -> U32:
+  Formats.Normal{r, g, b, a} = sample
+  Color.rgba(F32.to_u32((r * 255.0 : F32)), F32.to_u32((g * 255.0 : F32)), F32.to_u32((b * 255.0 : F32)), F32.to_u32((a * 255.0 : F32)))
 
-# Raw R32G32B32 words other than NaN: no factory creates NaN and backends do not
-# all keep NaN payloads, so writers reject it.
-def Surface.vector.word(word: U32) -> Bool:
+def Surface.quad.valid(kind: U32, quad: Surface.Quad) -> Bool:
+  Surface.normal.valid(Surface.quad.normal(kind, quad))
+
+def Surface.quad.color(kind: U32, quad: Surface.Quad) -> U32:
+  Surface.normal.color(Surface.quad.normal(kind, quad))
+
+# F32 sample words other than NaN: no factory creates NaN and backends do not
+# all keep NaN payloads in float arithmetic, so writers reject it.
+def Surface.sample.word(word: U32) -> Bool:
   ((word .&. 2147483647) <= 2139095040 : U32)
 
-def Surface.vector.ordered(value: M.Vector3) -> Bool:
-  M.Vector3{r, g, b} = value
-  Surface.vector.word(F32.bits(r)) && Surface.vector.word(F32.bits(g)) && Surface.vector.word(F32.bits(b))
+def Surface.quad.ordered(kind: U32, quad: Surface.Quad) -> Bool:
+  match kind quad:
+    case 9 Quad{a, b, c, _}: Surface.sample.word(a) && Surface.sample.word(b) && Surface.sample.word(c)
+    case 10 Quad{a, b, c, d}: Surface.sample.word(a) && Surface.sample.word(b) && Surface.sample.word(c) && Surface.sample.word(d)
+    case _ _: True{}
 
-def Surface.vectors.checked.read(~valid: M.Vector3 -> Bool, result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Bool:
-  (values, value) = result
-  (values, valid(value))
+# Every sample in the owner domain (ordered) or the byte-conversion domain.
+def Surface.quads.checked.read(+kind: U32, ordered: Bool, result: Array<Surface.Quad> & Surface.Quad) -> Array<Surface.Quad> & Bool:
+  (values, +quad) = result
+  (values, Bool.pick(Bool, ordered, Surface.quad.ordered(kind, quad), Surface.quad.valid(kind, quad)))
 
-def Surface.vectors.checked(~valid: M.Vector3 -> Bool, n: Nat, +index: U32, state: Array<M.Vector3> & Bool) -> Array<M.Vector3> & Bool:
+def Surface.quads.checked(n: Nat, +index: U32, +kind: U32, +ordered: Bool, state: Array<Surface.Quad> & Bool) -> Array<Surface.Quad> & Bool:
   match n state:
     case _ Tuple{values, False{}}: (values, False{})
     case 0n _: state
     case 1n+rest Tuple{values, True{}}:
-      Surface.vectors.checked(~valid, rest, (index + 1 : U32), Surface.vectors.checked.read(~valid, Array.get(M.Vector3, values, index)))
+      Surface.quads.checked(rest, (index + 1 : U32), kind, ordered, Surface.quads.checked.read(kind, ordered, Array.get(Surface.Quad, values, index)))
 
-def Surface.vectors.colors.read(index: U32, output: Array<U32>, result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Array<U32>:
-  (values, value) = result
-  (values, Array.set(U32, output, index, Surface.vector.color(value)))
+def Surface.quads.colors.read(+kind: U32, index: U32, output: Array<U32>, result: Array<Surface.Quad> & Surface.Quad) -> Array<Surface.Quad> & Array<U32>:
+  (values, quad) = result
+  (values, Array.set(U32, output, index, Surface.quad.color(kind, quad)))
 
-def Surface.vectors.colors(n: Nat, +index: U32, state: Array<M.Vector3> & Array<U32>) -> Array<M.Vector3> & Array<U32>:
+def Surface.quads.colors(n: Nat, +index: U32, +kind: U32, state: Array<Surface.Quad> & Array<U32>) -> Array<Surface.Quad> & Array<U32>:
   match n state:
     case 0n _: state
     case 1n+rest Tuple{values, output}:
-      Surface.vectors.colors(rest, (index + 1 : U32), Surface.vectors.colors.read(index, output, Array.get(M.Vector3, values, index)))
+      Surface.quads.colors(rest, (index + 1 : U32), kind, Surface.quads.colors.read(kind, index, output, Array.get(Surface.Quad, values, index)))
 
-def Surface.vectors.from_words.read(+format: U32, index: U32, output: Array<M.Vector3>, result: Array<U32> & U32) -> Array<U32> & Array<M.Vector3>:
+def Surface.quads.from_words.read(+format: U32, +target: U32, index: U32, output: Array<Surface.Quad>, result: Array<U32> & U32) -> Array<U32> & Array<Surface.Quad>:
   (source, word) = result
-  (source, Array.set(M.Vector3, output, index, Surface.vector.normal(Formats.decode(format, word))))
+  (source, Array.set(Surface.Quad, output, index, Surface.quad.from_normal(target, Formats.decode(format, word))))
 
-def Surface.vectors.from_words(n: Nat, +index: U32, +format: U32, state: Array<U32> & Array<M.Vector3>) -> Array<M.Vector3>:
+def Surface.quads.from_words(n: Nat, +index: U32, +format: U32, +target: U32, state: Array<U32> & Array<Surface.Quad>) -> Array<Surface.Quad>:
   match n state:
     case 0n Tuple{_, output}: output
     case 1n+rest Tuple{source, output}:
-      Surface.vectors.from_words(rest, (index + 1 : U32), format, Surface.vectors.from_words.read(format, index, output, Array.get(U32, source, index)))
+      Surface.quads.from_words(rest, (index + 1 : U32), format, target,
+        Surface.quads.from_words.read(format, target, index, output, Array.get(U32, source, index)))
 
-def Surface.words.from_vectors.read(format: U32, index: U32, output: Array<U32>, result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Array<U32>:
-  match result:
-    case Tuple{values, M.Vector3{r, g, b}}:
-      (values, Array.set(U32, output, index, Formats.encode(Formats.Normal{r, g, b, 1.0}, format)))
+def Surface.words.from_quads.read(+kind: U32, +target: U32, index: U32, output: Array<U32>, result: Array<Surface.Quad> & Surface.Quad) -> Array<Surface.Quad> & Array<U32>:
+  (values, quad) = result
+  (values, Array.set(U32, output, index, Formats.encode(Surface.quad.normal(kind, quad), target)))
 
-def Surface.words.from_vectors(n: Nat, +index: U32, +format: U32, state: Array<M.Vector3> & Array<U32>) -> Array<U32>:
+def Surface.words.from_quads(n: Nat, +index: U32, +kind: U32, +target: U32, state: Array<Surface.Quad> & Array<U32>) -> Array<U32>:
   match n state:
     case 0n Tuple{_, output}: output
     case 1n+rest Tuple{values, output}:
-      Surface.words.from_vectors(rest, (index + 1 : U32), format, Surface.words.from_vectors.read(format, index, output, Array.get(M.Vector3, values, index)))
+      Surface.words.from_quads(rest, (index + 1 : U32), kind, target,
+        Surface.words.from_quads.read(kind, target, index, output, Array.get(Surface.Quad, values, index)))
 
-def Surface.rgba.converted(width: U32, height: U32, result: Array<M.Vector3> & Array<U32>) -> Rgba:
+def Surface.quads.convert.read(+kind: U32, +target: U32, index: U32, result: Array<Surface.Quad> & Surface.Quad) -> Array<Surface.Quad>:
+  (values, quad) = result
+  Array.set(Surface.Quad, values, index, Surface.quad.from_normal(target, Surface.quad.normal(kind, quad)))
+
+def Surface.quads.convert(n: Nat, +index: U32, +kind: U32, +target: U32, values: Array<Surface.Quad>) -> Array<Surface.Quad>:
+  match n:
+    case 0n: values
+    case 1n+rest:
+      Surface.quads.convert(rest, (index + 1 : U32), kind, target, Surface.quads.convert.read(kind, target, index, Array.get(Surface.Quad, values, index)))
+
+def Surface.rgba.converted(width: U32, height: U32, result: Array<Surface.Quad> & Array<U32>) -> Rgba:
   (_, pixels) = result
   Rgba{width, height, pixels}
 
-def Surface.rgba.vectors(+width: U32, +height: U32, format: U32, state: Array<M.Vector3> & Bool) -> Result<&1, &1, Surface & Surface.Error, Rgba>:
+def Surface.rgba.quads(+width: U32, +height: U32, +format: U32, state: Array<Surface.Quad> & Bool) -> Result<&1, &1, Surface & Surface.Error, Rgba>:
   match state:
-    case Tuple{values, False{}}: Fail{(Surface{width, height, format, Vectors{values}}, OutOfDomain{})}
+    case Tuple{values, False{}}: Fail{(Surface{width, height, format, Quads{values}}, OutOfDomain{})}
     case Tuple{values, True{}}:
       +count = (width * height : U32)
-      Done{Surface.rgba.converted(width, height, Surface.vectors.colors(U32.to_nat(count), 0, (values, Array.new(U32, Storage.depth(count), 0))))}
+      Done{Surface.rgba.converted(width, height, Surface.quads.colors(U32.to_nat(count), 0, format, (values, Array.new(U32, Storage.depth(count), 0))))}
 
-# LoadImageColors: one canonical Color per pixel. A rejected R32G32B32 owner is
-# returned unchanged.
+# LoadImageColors: one canonical Color per pixel. A wide owner with samples
+# outside [0, 1] is returned unchanged with OutOfDomain.
 def Surface.rgba.load.selected(kind: U32, pixels: Surface.Pixels, +width: U32, +height: U32, +format: U32) -> Result<&1, &1, Surface & Surface.Error, Rgba>:
   match kind pixels:
     case 7 Words{values}: Done{Rgba{width, height, values}}
     case _ Words{values}: Done{Rgba{width, height, Formats.packed_colors(U32.to_nat((width * height : U32)), 0, format, values)}}
-    case _ Vectors{values}:
-      Surface.rgba.vectors(width, height, format, Surface.vectors.checked(~Surface.vector.valid, U32.to_nat((width * height : U32)), 0, (values, True{})))
+    case _ Quads{values}:
+      Surface.rgba.quads(width, height, format, Surface.quads.checked(U32.to_nat((width * height : U32)), 0, format, False{}, (values, True{})))
 
 def Surface.rgba.load(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, Rgba>:
   Surface{width, height, +format, pixels} = surface
   Surface.rgba.load.selected(format, pixels, width, height, format)
 
 # ImageFormat from R8G8B8A8, as raylib's color operations end.
+def Surface.rgba.store.quad(+format: U32, index: U32, result: Array<U32> & U32, output: Array<Surface.Quad>) -> Array<U32> & Array<Surface.Quad>:
+  (colors, color) = result
+  (colors, Array.set(Surface.Quad, output, index, Surface.quad.from_color(format, color)))
+
+def Surface.rgba.store.quads(n: Nat, +index: U32, +format: U32, state: Array<U32> & Array<Surface.Quad>) -> Array<Surface.Quad>:
+  match n state:
+    case 0n Tuple{_, output}: output
+    case 1n+rest Tuple{colors, output}:
+      Surface.rgba.store.quads(rest, (index + 1 : U32), format, Surface.rgba.store.quad(format, index, Array.get(U32, colors, index), output))
+
+def Surface.rgba.store.converted(wide: Bool, +format: U32, +width: U32, +height: U32, pixels: Array<U32>) -> Surface:
+  match wide:
+    case True{}:
+      +count = (width * height : U32)
+      Surface{width, height, format, Quads{Surface.rgba.store.quads(U32.to_nat(count), 0, format, (pixels, Array.new(Surface.Quad, Storage.depth(count), Surface.quad.zero())))}}
+    case False{}:
+      Surface{width, height, format, Words{Formats.convert(U32.to_nat((width * height : U32)), 0, 7, format,
+        Formats.swap_pixels(U32.to_nat((width * height : U32)), 0, pixels))}}
+
 def Surface.rgba.store.selected(kind: U32, +format: U32, +width: U32, +height: U32, pixels: Array<U32>) -> Surface:
   match kind:
     case 7: Surface{width, height, 7, Words{pixels}}
-    case 9: Surface{width, height, 9, Vectors{Array.map(~U32, ~M.Vector3, ~Surface.vector.from_color, pixels)}}
-    case _:
-      Surface{width, height, format, Words{Formats.convert(U32.to_nat((width * height : U32)), 0, 7, format,
-        Formats.swap_pixels(U32.to_nat((width * height : U32)), 0, pixels))}}
+    case _: Surface.rgba.store.converted(Surface.wide(format), format, width, height, pixels)
 
 def Surface.rgba.store(image: Rgba, +format: U32) -> Surface:
   Rgba{width, height, pixels} = image
@@ -2117,37 +2168,43 @@ def Surface.rgba.only(surface: Surface) -> Result<&1, &1, Surface & Surface.Erro
   Surface{width, height, +format, pixels} = surface
   Surface.rgba.only.selected(format, pixels, width, height, format)
 
-# ImageFormat: formats 1..9; target 0 or the current format keeps the owner.
-def Surface.format.words(kind: U32, +width: U32, +height: U32, +format: U32, +target: U32, values: Array<U32>) -> Surface:
-  match kind:
-    case 9:
+# ImageFormat: formats 1..13; target 0 or the current format keeps the owner.
+def Surface.format.words(wide: Bool, +width: U32, +height: U32, +format: U32, +target: U32, values: Array<U32>) -> Surface:
+  match wide:
+    case True{}:
       +count = (width * height : U32)
-      Surface{width, height, 9, Vectors{Surface.vectors.from_words(U32.to_nat(count), 0, format,
-        (Surface.words.native(format, U32.to_nat(count), values), Array.new(M.Vector3, Storage.depth(count), Surface.vector.zero())))}}
-    case _:
+      Surface{width, height, target, Quads{Surface.quads.from_words(U32.to_nat(count), 0, format, target,
+        (Surface.words.native(format, U32.to_nat(count), values), Array.new(Surface.Quad, Storage.depth(count), Surface.quad.zero())))}}
+    case False{}:
       +count = (width * height : U32)
       Surface{width, height, target, Words{Surface.words.native(target, U32.to_nat(count),
         Formats.convert(U32.to_nat(count), 0, format, target, Surface.words.native(format, U32.to_nat(count), values)))}}
 
-def Surface.format.vectors(+width: U32, +height: U32, format: U32, +target: U32, state: Array<M.Vector3> & Bool) -> Result<&1, &1, Surface & Surface.Error, Surface>:
-  match state:
-    case Tuple{values, False{}}: Fail{(Surface{width, height, format, Vectors{values}}, OutOfDomain{})}
-    case Tuple{values, True{}}:
+# Wide samples convert from finite [0, 1], like the byte conversions they share.
+def Surface.format.quads.converted(wide: Bool, +width: U32, +height: U32, +format: U32, +target: U32, values: Array<Surface.Quad>) -> Surface:
+  match wide:
+    case True{}: Surface{width, height, target, Quads{Surface.quads.convert(U32.to_nat((width * height : U32)), 0, format, target, values)}}
+    case False{}:
       +count = (width * height : U32)
-      Done{Surface{width, height, target, Words{Surface.words.native(target, U32.to_nat(count),
-        Surface.words.from_vectors(U32.to_nat(count), 0, target, (values, Array.new(U32, Storage.depth(count), 0))))}}}
+      Surface{width, height, target, Words{Surface.words.native(target, U32.to_nat(count),
+        Surface.words.from_quads(U32.to_nat(count), 0, format, target, (values, Array.new(U32, Storage.depth(count), 0))))}}
+
+def Surface.format.quads(+width: U32, +height: U32, +format: U32, +target: U32, state: Array<Surface.Quad> & Bool) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match state:
+    case Tuple{values, False{}}: Fail{(Surface{width, height, format, Quads{values}}, OutOfDomain{})}
+    case Tuple{values, True{}}: Done{Surface.format.quads.converted(Surface.wide(target), width, height, format, target, values)}
 
 def Surface.format.checked(unchanged: Bool, supported: Bool, surface: Surface, +target: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match unchanged supported surface:
     case True{} _ _: Done{surface}
     case False{} False{} _: Fail{(surface, UnsupportedFormat{})}
-    case False{} True{} Surface{+width, +height, +format, Words{values}}: Done{Surface.format.words(target, width, height, format, target, values)}
-    case False{} True{} Surface{+width, +height, format, Vectors{values}}:
-      Surface.format.vectors(width, height, format, target, Surface.vectors.checked(~Surface.vector.valid, U32.to_nat((width * height : U32)), 0, (values, True{})))
+    case False{} True{} Surface{+width, +height, +format, Words{values}}: Done{Surface.format.words(Surface.wide(target), width, height, format, target, values)}
+    case False{} True{} Surface{+width, +height, +format, Quads{values}}:
+      Surface.format.quads(width, height, format, target, Surface.quads.checked(U32.to_nat((width * height : U32)), 0, format, False{}, (values, True{})))
 
 def Surface.format(surface: Surface, +target: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Surface{width, height, +format, pixels} = surface
-  Surface.format.checked(U32.is_eq(target, 0) || U32.is_eq(target, format), (target <= 9 : U32),
+  Surface.format.checked(U32.is_eq(target, 0) || U32.is_eq(target, format), (target <= 13 : U32),
     Surface{width, height, format, pixels}, target)
 
 # ImageColorGrayscale is ImageFormat(GRAYSCALE).
@@ -2227,9 +2284,9 @@ def Surface.canvas.storage(pixels: Surface.Pixels, +format: U32, fill: U32, dept
     case Words{values}:
       Surface.pixels.words(Raster.canvas.copy(~U32, U32.to_nat(count), 0, cols, sw, dw, source_at, output_at,
         (values, Array.new(U32, depth, Surface.word.fill(format, format, fill)))))
-    case Vectors{values}:
-      Surface.pixels.vectors(Raster.canvas.copy(~M.Vector3, U32.to_nat(count), 0, cols, sw, dw, source_at, output_at,
-        (values, Array.new(M.Vector3, depth, Surface.vector.zero()))))
+    case Quads{values}:
+      Surface.pixels.quads(Raster.canvas.copy(~Surface.Quad, U32.to_nat(count), 0, cols, sw, dw, source_at, output_at,
+        (values, Array.new(Surface.Quad, depth, Surface.quad.zero()))))
 
 def Surface.canvas.overlap(valid: Bool, +sw: U32, sh: U32, +format: U32, pixels: Surface.Pixels, +width: U32, +height: U32, sx: U32, sy: U32, dx: U32, dy: U32, +cols: U32, rows: U32, fill: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match valid:
@@ -2283,11 +2340,11 @@ def Surface.recolor.finish(keep: Surface, +format: U32, result: Result<&1, &1, R
     case Done{image}: Done{Surface.rgba.store(image, format)}
 
 # ImageColorReplace returns to the original format only when it has no alpha
-# channel (GRAYSCALE, R5G6B5, R8G8B8, R32G32B32); others stay R8G8B8A8.
+# channel (GRAYSCALE, R5G6B5, R8G8B8, R32G32B32, R16G16B16); others stay R8G8B8A8.
 def Surface.recolor.output(op: Surface.Recolor, +format: U32) -> Surface.Recolor & U32:
   match op:
     case Replaced{original, replacement}:
-      (Replaced{original, replacement}, Bool.pick(U32, U32.is_eq(format, 1) || U32.is_eq(format, 3) || U32.is_eq(format, 4) || U32.is_eq(format, 9), format, 7))
+      (Replaced{original, replacement}, Bool.pick(U32, U32.is_eq(format, 1) || U32.is_eq(format, 3) || U32.is_eq(format, 4) || U32.is_eq(format, 9) || U32.is_eq(format, 12), format, 7))
     case _: (op, format)
 
 def Surface.recolor.applied(keep: Surface, image: Rgba, selected: Surface.Recolor & U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
@@ -2367,7 +2424,7 @@ def Surface.resize_nn(surface: Surface, width: U32, height: U32) -> Result<&1, &
 def Surface.resize.words(valid: Bool, +layout: U32, +sw: U32, +sh: U32, +format: U32, pixels: Surface.Pixels, +width: U32, +height: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match valid pixels:
     case True{} Words{values}: Done{Surface{width, height, format, Words{Resample.resize_layout(layout, sw, sh, width, height, values)}}}
-    case True{} Vectors{values}: Fail{(Surface{sw, sh, format, Vectors{values}}, UnsupportedFormat{})}
+    case True{} Quads{values}: Fail{(Surface{sw, sh, format, Quads{values}}, UnsupportedFormat{})}
     case False{} other: Fail{(Surface{sw, sh, format, other}, InvalidSize{})}
 
 def Surface.resize.routed(direct: Bool, surface: Surface, +width: U32, +height: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
@@ -2427,24 +2484,25 @@ def Surface.draw.apply(draw: Surface.Draw, +word: U32, image: Rgba) -> Rgba:
     case DrawTriangleStrip{points}: Rgba.draw_triangle_strip(image, points, word)
     case ClearBackground{}: Rgba.clear(image, word)
 
-def Surface.mark.write(marked: Bool, index: U32, value: M.Vector3, values: Array<M.Vector3>) -> Array<M.Vector3>:
+def Surface.mark.write(marked: Bool, index: U32, value: Surface.Quad, values: Array<Surface.Quad>) -> Array<Surface.Quad>:
   match marked:
     case False{}: values
-    case True{}: Array.set(M.Vector3, values, index, value)
+    case True{}: Array.set(Surface.Quad, values, index, value)
 
-def Surface.mark.read(+index: U32, value: M.Vector3, values: Array<M.Vector3>, read: Array<U32> & U32) -> Array<U32> & Array<M.Vector3>:
+def Surface.mark.read(+index: U32, value: Surface.Quad, values: Array<Surface.Quad>, read: Array<U32> & U32) -> Array<U32> & Array<Surface.Quad>:
   (marks, mark) = read
   (marks, Surface.mark.write(U32.is_eq(mark, 1), index, value, values))
 
-def Surface.mark.loop(n: Nat, +index: U32, +value: M.Vector3, state: Array<U32> & Array<M.Vector3>) -> Array<M.Vector3>:
+def Surface.mark.loop(n: Nat, +index: U32, +value: Surface.Quad, state: Array<U32> & Array<Surface.Quad>) -> Array<Surface.Quad>:
   match n state:
     case 0n Tuple{_, values}: values
     case 1n+rest Tuple{marks, values}:
       Surface.mark.loop(rest, (index + 1 : U32), value, Surface.mark.read(index, value, values, Array.get(U32, marks, index)))
 
-def Surface.mark.vectors(+width: U32, +height: U32, format: U32, value: M.Vector3, values: Array<M.Vector3>, marks: Rgba) -> Surface:
+# Wide formats paint a coverage mask, then store the encoded Color where covered.
+def Surface.mark.quads(+width: U32, +height: U32, format: U32, value: Surface.Quad, values: Array<Surface.Quad>, marks: Rgba) -> Surface:
   Rgba{_, _, mask} = marks
-  Surface{width, height, format, Vectors{Surface.mark.loop(U32.to_nat((width * height : U32)), 0, value, (mask, values))}}
+  Surface{width, height, format, Quads{Surface.mark.loop(U32.to_nat((width * height : U32)), 0, value, (mask, values))}}
 
 def Surface.paint.words(format: U32, image: Rgba) -> Surface:
   Rgba{width, height, pixels} = image
@@ -2453,8 +2511,8 @@ def Surface.paint.words(format: U32, image: Rgba) -> Surface:
 def Surface.paint.selected(pixels: Surface.Pixels, draw: Surface.Draw, color: U32, +width: U32, +height: U32, +format: U32) -> Surface:
   match pixels:
     case Words{values}: Surface.paint.words(format, Surface.draw.apply(draw, Surface.word.draw(format, color), Rgba{width, height, values}))
-    case Vectors{values}:
-      Surface.mark.vectors(width, height, format, Surface.vector.from_color(color), values,
+    case Quads{values}:
+      Surface.mark.quads(width, height, format, Surface.quad.from_color(format, color), values,
         Surface.draw.apply(draw, 1, Rgba{width, height, Array.new(U32, Storage.depth((width * height : U32)), 0)}))
 
 def Surface.paint.run(surface: Surface, draw: Surface.Draw, color: U32) -> Surface:
@@ -2523,15 +2581,15 @@ def Surface.shade.word(marked: Bool, +format: U32, index: U32, color: U32, value
     case False{}: values
     case True{}: Array.set(U32, values, index, Surface.word.draw(format, color))
 
-def Surface.shade.vector(marked: Bool, index: U32, color: U32, values: Array<M.Vector3>) -> Array<M.Vector3>:
+def Surface.shade.quad(marked: Bool, +format: U32, index: U32, color: U32, values: Array<Surface.Quad>) -> Array<Surface.Quad>:
   match marked:
     case False{}: values
-    case True{}: Array.set(M.Vector3, values, index, Surface.vector.from_color(color))
+    case True{}: Array.set(Surface.Quad, values, index, Surface.quad.from_color(format, color))
 
 def Surface.shade.store(values: Surface.Pixels, marked: Bool, +format: U32, index: U32, color: U32) -> Surface.Pixels:
   match values:
     case Words{words}: Words{Surface.shade.word(marked, format, index, color, words)}
-    case Vectors{vectors}: Vectors{Surface.shade.vector(marked, index, color, vectors)}
+    case Quads{quads}: Quads{Surface.shade.quad(marked, format, index, color, quads)}
 
 def Surface.shade.read(+format: U32, +index: U32, colors: Array<U32> & U32, marks: Array<U32> & U32, values: Surface.Pixels) -> (Array<U32> & Array<U32>) & Surface.Pixels:
   (shades, color) = colors
@@ -2625,9 +2683,9 @@ def Surface.blit.words(area: Surface.Area, +sw: U32, +dw: U32, +mode: Surface.Bl
   Area{+columns, rows, source_at, output_at} = area
   Surface.blit.rows(U32.to_nat(rows), U32.to_nat(columns), source_at, output_at, sw, dw, mode, buffers)
 
-def Surface.blit.vectors(area: Surface.Area, +sw: U32, +dw: U32, buffers: Array<M.Vector3> & Array<M.Vector3>) -> Array<M.Vector3> & Array<M.Vector3>:
+def Surface.blit.quads(area: Surface.Area, +sw: U32, +dw: U32, buffers: Array<Surface.Quad> & Array<Surface.Quad>) -> Array<Surface.Quad> & Array<Surface.Quad>:
   Area{+columns, +rows, +source_at, +output_at} = area
-  Raster.canvas.copy(~M.Vector3, U32.to_nat((columns * rows : U32)), 0, columns, sw, dw, source_at, output_at, buffers)
+  Raster.canvas.copy(~Surface.Quad, U32.to_nat((columns * rows : U32)), 0, columns, sw, dw, source_at, output_at, buffers)
 
 def Surface.blit.drawn(buffers: Array<U32> & Array<U32>) -> Array<U32>:
   (_, dst) = buffers
@@ -2641,19 +2699,20 @@ def Surface.blit.word_pair(result: Array<U32> & Array<U32>) -> Surface.Pixels & 
   (src, dst) = result
   (Words{src}, Words{dst})
 
-def Surface.blit.vector_pair(result: Array<M.Vector3> & Array<M.Vector3>) -> Surface.Pixels & Surface.Pixels:
+def Surface.blit.quad_pair(result: Array<Surface.Quad> & Array<Surface.Quad>) -> Surface.Pixels & Surface.Pixels:
   (src, dst) = result
-  (Vectors{src}, Vectors{dst})
+  (Quads{src}, Quads{dst})
 
-# SetPixelColor cannot write R32G32B32: only an unblended copy changes it.
-def Surface.blit.vector_copy(copy: Bool, area: Surface.Area, +sw: U32, +dw: U32, src: Array<M.Vector3>, dst: Array<M.Vector3>) -> Surface.Pixels & Surface.Pixels:
+# SetPixelColor cannot write wide formats: only an unblended same-format copy changes them.
+def Surface.blit.quad_copy(copy: Bool, area: Surface.Area, +sw: U32, +dw: U32, src: Array<Surface.Quad>, dst: Array<Surface.Quad>) -> Surface.Pixels & Surface.Pixels:
   match copy:
-    case True{}: Surface.blit.vector_pair(Surface.blit.vectors(area, sw, dw, (src, dst)))
-    case False{}: (Vectors{src}, Vectors{dst})
+    case True{}: Surface.blit.quad_pair(Surface.blit.quads(area, sw, dw, (src, dst)))
+    case False{}: (Quads{src}, Quads{dst})
 
 # Formats without alpha skip ColorAlphaBlend when tint.a is 255.
 def Surface.blit.opaque(+format: U32, +tint: U32) -> Bool:
-  U32.is_eq(Color.alpha(tint), 255) && (U32.is_eq(format, 1) || U32.is_eq(format, 3) || U32.is_eq(format, 4) || U32.is_eq(format, 8) || U32.is_eq(format, 9))
+  U32.is_eq(Color.alpha(tint), 255) && (U32.is_eq(format, 1) || U32.is_eq(format, 3) || U32.is_eq(format, 4) || U32.is_eq(format, 8)
+    || U32.is_eq(format, 9) || U32.is_eq(format, 11) || U32.is_eq(format, 12))
 
 def Surface.blit.recolored(destination: Surface, colors: Surface, source: Surface, area: Surface.Area, +opaque: Bool, +tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
   match destination colors:
@@ -2666,8 +2725,8 @@ def Surface.blit.colors(destination: Surface, source: Surface, area: Surface.Are
     case Fail{Tuple{_, error}}: Fail{((destination, source), error)}
     case Done{converted}: Surface.blit.recolored(destination, converted, source, area, opaque, tint)
 
-# An R32G32B32 source is read through its RGBA8 colors (GetPixelColor's casts,
-# finite [0,1] only); the original source owner is returned unchanged.
+# A wide source is read through its RGBA8 colors (GetPixelColor's casts, finite
+# [0,1] only); the original source owner is returned unchanged.
 def Surface.blit.colored(destination: Surface, area: Surface.Area, +opaque: Bool, +tint: U32, pair: Surface & Surface) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
   (source, copy) = pair
   Surface.blit.colors(destination, source, area, opaque, tint, Surface.format(copy, 7))
@@ -2677,11 +2736,11 @@ def Surface.blit.selected(dp: Surface.Pixels, sp: Surface.Pixels, area: Surface.
     case Words{dst} Words{src}:
       Done{Surface.blit.owners(dw, dh, df, sw, sh, sf, Surface.blit.word_pair(
         Surface.blit.words(area, sw, dw, Blit{sf, df, opaque && U32.is_eq(sf, df), Bool.not(opaque), tint}, (src, dst))))}
-    case Words{dst} Vectors{src}:
-      Surface.blit.colored(Surface{dw, dh, df, Words{dst}}, area, opaque, tint, Surface.copy(Surface{sw, sh, sf, Vectors{src}}))
-    case Vectors{dst} Vectors{src}:
-      Done{Surface.blit.owners(dw, dh, df, sw, sh, sf, Surface.blit.vector_copy(opaque, area, sw, dw, src, dst))}
-    case Vectors{dst} Words{src}: Done{(Surface{dw, dh, df, Vectors{dst}}, Surface{sw, sh, sf, Words{src}})}
+    case Words{dst} Quads{src}:
+      Surface.blit.colored(Surface{dw, dh, df, Words{dst}}, area, opaque, tint, Surface.copy(Surface{sw, sh, sf, Quads{src}}))
+    case Quads{dst} Quads{src}:
+      Done{Surface.blit.owners(dw, dh, df, sw, sh, sf, Surface.blit.quad_copy(opaque && U32.is_eq(sf, df), area, sw, dw, src, dst))}
+    case Quads{dst} Words{src}: Done{(Surface{dw, dh, df, Quads{dst}}, Surface{sw, sh, sf, Words{src}})}
 
 def Surface.blit.region(destination: Surface, source: Surface, rect: Rectangle, +x: F32, +y: F32, +tint: U32) -> Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>:
   Surface{+dw, +dh, df, dp} = destination
@@ -2839,6 +2898,26 @@ def Surface.alpha_clear.r4g4b4a4(+color: U32) -> U32:
   (((Surface.alpha_clear.packed(Color.red(color), 15) << 12n) .|. (Surface.alpha_clear.packed(Color.green(color), 15) << 8n)
     .|. (Surface.alpha_clear.packed(Color.blue(color), 15) << 4n) .|. Surface.alpha_clear.packed(Color.alpha(color), 15)) .&. 65535 : U32)
 
+# R32G32B32A32 and R16G16B16A16 compare their float alpha with the threshold and
+# store the Color as channel/255 F32 or half floats.
+def Surface.normal.alpha(sample: Formats.Normal) -> F32:
+  Formats.Normal{_, _, _, alpha} = sample
+  alpha
+
+def Surface.alpha_clear.quad(+kind: U32, +threshold: F32, +replacement: Surface.Quad, +quad: Surface.Quad) -> Surface.Quad:
+  Bool.pick(Surface.Quad, (Surface.normal.alpha(Surface.quad.normal(kind, quad)) <= threshold : F32), replacement, quad)
+
+def Surface.alpha_clear.quad.step(+kind: U32, +threshold: F32, +replacement: Surface.Quad, i: U32, got: Array<Surface.Quad> & Surface.Quad) -> Array<Surface.Quad>:
+  (values, quad) = got
+  Array.set(Surface.Quad, values, i, Surface.alpha_clear.quad(kind, threshold, replacement, quad))
+
+def Surface.alpha_clear.quads(n: Nat, +i: U32, +kind: U32, +threshold: F32, +replacement: Surface.Quad, values: Array<Surface.Quad>) -> Array<Surface.Quad>:
+  match n:
+    case 0n: values
+    case 1n+k:
+      Surface.alpha_clear.quads(k, (i + 1 : U32), kind, threshold, replacement,
+        Surface.alpha_clear.quad.step(kind, threshold, replacement, i, Array.get(Surface.Quad, values, i)))
+
 def Surface.alpha_clear.selected(kind: U32, pixels: Surface.Pixels, +width: U32, +height: U32, +format: U32, +color: U32, +threshold: F32) -> Surface:
   match kind pixels:
     case 7 Words{values}: Surface.rgba.wrap(Rgba.alpha_clear(Rgba{width, height, values}, color, threshold))
@@ -2851,6 +2930,10 @@ def Surface.alpha_clear.selected(kind: U32, pixels: Surface.Pixels, +width: U32,
     case 6 Words{values}:
       Surface{width, height, format, Words{Surface.alpha_clear.loop(U32.to_nat((width * height : U32)), 0, 6,
         F32.to_u32((threshold * 15.0 : F32)), Surface.alpha_clear.r4g4b4a4(color), values)}}
+    case 10 Quads{values}:
+      Surface{width, height, format, Quads{Surface.alpha_clear.quads(U32.to_nat((width * height : U32)), 0, 10, threshold, Surface.quad.from_color(10, color), values)}}
+    case 13 Quads{values}:
+      Surface{width, height, format, Quads{Surface.alpha_clear.quads(U32.to_nat((width * height : U32)), 0, 13, threshold, Surface.quad.from_color(13, color), values)}}
     case _ other: Surface{width, height, format, other}
 
 def Surface.alpha_clear.checked(valid: Bool, surface: Surface, color: U32, threshold: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
@@ -2866,52 +2949,50 @@ def Surface.alpha_clear(surface: Surface, color: U32, +threshold: F32) -> Result
   Surface.alpha_clear.checked(Surface.amount.finite(threshold) && (threshold >= 0.0 : F32) && (threshold <= 1.0 : F32), surface, color, threshold)
 
 # ImageRotate blends every stored byte on its own: word formats rotate their
-# stored words, R32G32B32 the bytes of each F32 component.
-def Surface.rotation.component(a: F32, b: F32, c: F32, d: F32, +x: F32, +y: F32) -> F32:
-  Formats.r32.value(Rotation.mix(F32.bits(a), F32.bits(b), F32.bits(c), F32.bits(d), x, y))
+# stored words, wide formats each sample word (unused words stay zero).
+def Surface.rotation.quad(a: Surface.Quad, b: Surface.Quad, c: Surface.Quad, d: Surface.Quad, +x: F32, +y: F32) -> Surface.Quad:
+  Quad{a0, a1, a2, a3} = a
+  Quad{b0, b1, b2, b3} = b
+  Quad{c0, c1, c2, c3} = c
+  Quad{d0, d1, d2, d3} = d
+  Quad{Rotation.mix(a0, b0, c0, d0, x, y), Rotation.mix(a1, b1, c1, d1, x, y), Rotation.mix(a2, b2, c2, d2, x, y), Rotation.mix(a3, b3, c3, d3, x, y)}
 
-def Surface.rotation.vector(a: M.Vector3, b: M.Vector3, c: M.Vector3, d: M.Vector3, +x: F32, +y: F32) -> M.Vector3:
-  M.Vector3{ar, ag, ab} = a
-  M.Vector3{br, bg, bb} = b
-  M.Vector3{cr, cg, cb} = c
-  M.Vector3{dr, dg, db} = d
-  M.Vector3{Surface.rotation.component(ar, br, cr, dr, x, y), Surface.rotation.component(ag, bg, cg, dg, x, y),
-    Surface.rotation.component(ab, bb, cb, db, x, y)}
-
-def Surface.rotation.blend(a: M.Vector3, b: M.Vector3, c: M.Vector3, d: M.Vector3, x: F32, y: F32) -> M.Vector3:
-  Surface.rotation.vector(a, b, c, d, x, y)
+def Surface.rotation.blend(a: Surface.Quad, b: Surface.Quad, c: Surface.Quad, d: Surface.Quad, x: F32, y: F32) -> Surface.Quad:
+  Surface.rotation.quad(a, b, c, d, x, y)
 
 def Surface.rotation.pixels(pixels: Surface.Pixels, +sw: U32, +sh: U32, +width: U32, +height: U32, +cosine: F32, +sine: F32) -> Surface.Pixels:
   match pixels:
     case Words{values}: Words{Rotation.render(sw, sh, width, height, cosine, sine, values)}
-    case Vectors{values}:
-      Vectors{Rotation.render.with(~M.Vector3, ~Surface.rotation.blend, Surface.vector.zero(), sw, sh, width, height, cosine, sine, values)}
+    case Quads{values}:
+      Quads{Rotation.render.with(~Surface.Quad, ~Surface.rotation.blend, Surface.quad.zero(), sw, sh, width, height, cosine, sine, values)}
 
-def Surface.words.r32.read(result: Array<U32> & U32) -> Array<U32> & Bool:
-  (values, word) = result
-  (values, Formats.r32.word_valid(word))
+# The R32 and R16 owner domain: finite [0, 1] samples (both zero signs).
+def Surface.words.unit.read(+kind: U32, result: Array<U32> & U32) -> Array<U32> & Bool:
+  (values, +word) = result
+  (values, Bool.pick(Bool, U32.is_eq(kind, 11), Formats.r16.word_valid(word), Formats.r32.word_valid(word)))
 
-def Surface.words.r32(n: Nat, +index: U32, state: Array<U32> & Bool) -> Array<U32> & Bool:
+def Surface.words.unit(n: Nat, +index: U32, +kind: U32, state: Array<U32> & Bool) -> Array<U32> & Bool:
   match n state:
     case _ Tuple{values, False{}}: (values, False{})
     case 0n _: state
     case 1n+rest Tuple{values, True{}}:
-      Surface.words.r32(rest, (index + 1 : U32), Surface.words.r32.read(Array.get(U32, values, index)))
+      Surface.words.unit(rest, (index + 1 : U32), kind, Surface.words.unit.read(kind, Array.get(U32, values, index)))
 
 def Surface.rotation.words(state: Array<U32> & Bool) -> Surface.Pixels & Bool:
   (values, ok) = state
   (Words{values}, ok)
 
-def Surface.rotation.vectors(state: Array<M.Vector3> & Bool) -> Surface.Pixels & Bool:
+def Surface.rotation.quads(state: Array<Surface.Quad> & Bool) -> Surface.Pixels & Bool:
   (values, ok) = state
-  (Vectors{values}, ok)
+  (Quads{values}, ok)
 
-# Blended float bytes can leave the owner domain (R32 finite [0,1], R32G32B32
-# non-NaN); such results are refused and the original owner is returned.
-def Surface.rotation.domain(kind: U32, +count: U32, pixels: Surface.Pixels) -> Surface.Pixels & Bool:
+# Blended float bytes can leave the owner domain (R32/R16 finite [0,1], wide F32
+# samples non-NaN); such results are refused and the original owner is returned.
+def Surface.rotation.domain(kind: U32, +format: U32, +count: U32, pixels: Surface.Pixels) -> Surface.Pixels & Bool:
   match kind pixels:
-    case 8 Words{values}: Surface.rotation.words(Surface.words.r32(U32.to_nat(count), 0, (values, True{})))
-    case _ Vectors{values}: Surface.rotation.vectors(Surface.vectors.checked(~Surface.vector.ordered, U32.to_nat(count), 0, (values, True{})))
+    case 8 Words{values}: Surface.rotation.words(Surface.words.unit(U32.to_nat(count), 0, 8, (values, True{})))
+    case 11 Words{values}: Surface.rotation.words(Surface.words.unit(U32.to_nat(count), 0, 11, (values, True{})))
+    case _ Quads{values}: Surface.rotation.quads(Surface.quads.checked(U32.to_nat(count), 0, format, True{}, (values, True{})))
     case _ other: (other, True{})
 
 def Surface.rotation.checked(original: Surface, +width: U32, +height: U32, +format: U32, result: Surface.Pixels & Bool) -> Result<&1, &1, Surface & Surface.Error, Surface>:
@@ -2922,14 +3003,13 @@ def Surface.rotation.checked(original: Surface, +width: U32, +height: U32, +form
 def Surface.rotation.render(+width: U32, +height: U32, +cosine: F32, +sine: F32, pair: Surface & Surface) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   (original, Surface{+sw, +sh, +format, pixels}) = pair
   Surface.rotation.checked(original, width, height, format,
-    Surface.rotation.domain(format, (width * height : U32), Surface.rotation.pixels(pixels, sw, sh, width, height, cosine, sine)))
+    Surface.rotation.domain(format, format, (width * height : U32), Surface.rotation.pixels(pixels, sw, sh, width, height, cosine, sine)))
 
 # Only float formats can be refused, so only they keep a copy of the original.
-def Surface.rotation.selected(kind: U32, surface: Surface, +width: U32, +height: U32, +cosine: F32, +sine: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
-  match kind:
-    case 8: Surface.rotation.render(width, height, cosine, sine, Surface.copy(surface))
-    case 9: Surface.rotation.render(width, height, cosine, sine, Surface.copy(surface))
-    case _:
+def Surface.rotation.selected(guarded: Bool, surface: Surface, +width: U32, +height: U32, +cosine: F32, +sine: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match guarded:
+    case True{}: Surface.rotation.render(width, height, cosine, sine, Surface.copy(surface))
+    case False{}:
       Surface{+sw, +sh, format, pixels} = surface
       Done{Surface{width, height, format, Surface.rotation.pixels(pixels, sw, sh, width, height, cosine, sine)}}
 
@@ -2938,7 +3018,8 @@ def Surface.rotation.sized(valid: Bool, surface: Surface, +width: U32, +height: 
     case False{}: Fail{(surface, InvalidSize{})}
     case True{}:
       Surface{sw, sh, +format, pixels} = surface
-      Surface.rotation.selected(format, Surface{sw, sh, format, pixels}, width, height, cosine, sine)
+      Surface.rotation.selected(U32.is_eq(format, 8) || U32.is_eq(format, 9) || U32.is_eq(format, 10) || U32.is_eq(format, 11),
+        Surface{sw, sh, format, pixels}, width, height, cosine, sine)
 
 def Surface.rotation.trigonometry(surface: Surface, values: F32 & F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Surface{+sw, +sh, format, pixels} = surface
@@ -3006,17 +3087,17 @@ def Surface.get.words(+width: U32, height: U32, +format: U32, result: Array<U32>
   (values, +word) = result
   (Surface{width, height, format, Words{values}}, Some{Bool.pick(U32, U32.is_eq(format, 7), word, Formats.image_color(format, word))})
 
-def Surface.get.vectors(width: U32, height: U32, format: U32, result: Array<M.Vector3> & M.Vector3) -> Surface & Maybe<&2, U32>:
+def Surface.get.quads(width: U32, height: U32, +format: U32, result: Array<Surface.Quad> & Surface.Quad) -> Surface & Maybe<&2, U32>:
   (values, +value) = result
-  (Surface{width, height, format, Vectors{values}}, Bool.pick(Maybe<&2, U32>, Surface.vector.valid(value), Some{Surface.vector.color(value)}, None{}))
+  (Surface{width, height, format, Quads{values}}, Bool.pick(Maybe<&2, U32>, Surface.quad.valid(format, value), Some{Surface.quad.color(format, value)}, None{}))
 
 def Surface.get.checked(valid: Bool, +width: U32, height: U32, format: U32, pixels: Surface.Pixels, x: U32, y: U32) -> Surface & Maybe<&2, U32>:
   match valid pixels:
     case False{} _: (Surface{width, height, format, pixels}, None{})
     case True{} Words{values}: Surface.get.words(width, height, format, Array.get(U32, values, (y * width + x : U32)))
-    case True{} Vectors{values}: Surface.get.vectors(width, height, format, Array.get(M.Vector3, values, (y * width + x : U32)))
+    case True{} Quads{values}: Surface.get.quads(width, height, format, Array.get(Surface.Quad, values, (y * width + x : U32)))
 
-# GetImageColor: out-of-bounds U32 coordinates and R32G32B32 samples outside the
+# GetImageColor: out-of-bounds U32 coordinates and wide samples outside the
 # LoadImageColors domain return None; coordinates never wrap.
 def Surface.get(surface: Surface, +x: U32, +y: U32) -> Surface & Maybe<&2, U32>:
   Surface{+width, +height, format, pixels} = surface
@@ -3059,17 +3140,18 @@ def Surface.border.inspected(threshold: F32, result: Surface & Maybe<Rgba>) -> S
     case Tuple{owner, Some{image}}: Surface.border.found(owner, Rgba.alpha_border(image, threshold))
 
 # GetImageAlphaBorder reads only alpha, which LoadImageColors sets to 255 for
-# R32G32B32 whatever the samples, so every format has a defined border.
-def Surface.alpha_border.selected(pixels: Surface.Pixels, threshold: F32, +width: U32, +height: U32, format: U32) -> Surface & Rectangle:
-  match pixels:
-    case Words{values}: Surface.border.inspected(threshold, Surface.rgba.inspect(Surface{width, height, format, Words{values}}))
-    case Vectors{values}:
-      Surface.border.found(Surface{width, height, format, Vectors{values}},
+# R32G32B32 and R16G16B16 whatever the samples, so they have a defined border;
+# other formats go through LoadImageColors (no border outside its domain).
+def Surface.alpha_border.selected(opaque: Bool, pixels: Surface.Pixels, threshold: F32, +width: U32, +height: U32, format: U32) -> Surface & Rectangle:
+  match opaque:
+    case False{}: Surface.border.inspected(threshold, Surface.rgba.inspect(Surface{width, height, format, pixels}))
+    case True{}:
+      Surface.border.found(Surface{width, height, format, pixels},
         Rgba.alpha_border(Rgba{width, height, Array.new(U32, Storage.depth((width * height : U32)), 255)}, threshold))
 
 def Surface.alpha_border(surface: Surface, threshold: F32) -> Surface & Rectangle:
-  Surface{width, height, format, pixels} = surface
-  Surface.alpha_border.selected(pixels, threshold, width, height, format)
+  Surface{width, height, +format, pixels} = surface
+  Surface.alpha_border.selected(U32.is_eq(format, 9) || U32.is_eq(format, 12), pixels, threshold, width, height, format)
 
 def Surface.alpha_crop.route(empty: Bool, surface: Surface, rect: Rectangle) -> Surface:
   match empty:
@@ -3108,31 +3190,31 @@ def Surface.channel.words(n: Nat, +index: U32, +format: U32, +channel: U32, stat
     case 1n+rest Tuple{source, output}:
       Surface.channel.words(rest, (index + 1 : U32), format, channel, Surface.channel.word.read(format, channel, index, output, Array.get(U32, source, index)))
 
-def Surface.channel.vector.read(channel: U32, index: U32, output: Array<U32>, result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Array<U32>:
-  match result:
-    case Tuple{source, M.Vector3{r, g, b}}:
-      (source, Array.set(U32, output, index, Image.channel.value(channel, Formats.Normal{r, g, b, 1.0})))
+def Surface.channel.quad.read(+format: U32, channel: U32, index: U32, output: Array<U32>, result: Array<Surface.Quad> & Surface.Quad) -> Array<Surface.Quad> & Array<U32>:
+  (source, quad) = result
+  (source, Array.set(U32, output, index, Image.channel.value(channel, Surface.quad.normal(format, quad))))
 
-def Surface.channel.vectors(n: Nat, +index: U32, +channel: U32, state: Array<M.Vector3> & Array<U32>) -> Array<M.Vector3> & Array<U32>:
+def Surface.channel.quads(n: Nat, +index: U32, +format: U32, +channel: U32, state: Array<Surface.Quad> & Array<U32>) -> Array<Surface.Quad> & Array<U32>:
   match n state:
     case 0n _: state
     case 1n+rest Tuple{source, output}:
-      Surface.channel.vectors(rest, (index + 1 : U32), channel, Surface.channel.vector.read(channel, index, output, Array.get(M.Vector3, source, index)))
+      Surface.channel.quads(rest, (index + 1 : U32), format, channel, Surface.channel.quad.read(format, channel, index, output, Array.get(Surface.Quad, source, index)))
 
 def Surface.channel.words.finished(+width: U32, +height: U32, format: U32, result: Array<U32> & Array<U32>) -> Surface & Maybe<Surface>:
   (source, pixels) = result
   (Surface{width, height, format, Words{source}}, Some{Surface{width, height, 1, Words{pixels}}})
 
-def Surface.channel.vectors.finished(+width: U32, +height: U32, format: U32, result: Array<M.Vector3> & Array<U32>) -> Surface & Maybe<Surface>:
+def Surface.channel.quads.finished(+width: U32, +height: U32, format: U32, result: Array<Surface.Quad> & Array<U32>) -> Surface & Maybe<Surface>:
   (source, pixels) = result
-  (Surface{width, height, format, Vectors{source}}, Some{Surface{width, height, 1, Words{pixels}}})
+  (Surface{width, height, format, Quads{source}}, Some{Surface{width, height, 1, Words{pixels}}})
 
-def Surface.channel.vectors.checked(+width: U32, +height: U32, format: U32, channel: U32, state: Array<M.Vector3> & Bool) -> Surface & Maybe<Surface>:
+# Wide samples convert like LoadImageColors: every channel in finite [0, 1].
+def Surface.channel.quads.checked(+width: U32, +height: U32, +format: U32, channel: U32, state: Array<Surface.Quad> & Bool) -> Surface & Maybe<Surface>:
   match state:
-    case Tuple{values, False{}}: (Surface{width, height, format, Vectors{values}}, None{})
+    case Tuple{values, False{}}: (Surface{width, height, format, Quads{values}}, None{})
     case Tuple{values, True{}}:
       +count = (width * height : U32)
-      Surface.channel.vectors.finished(width, height, format, Surface.channel.vectors(U32.to_nat(count), 0, channel,
+      Surface.channel.quads.finished(width, height, format, Surface.channel.quads(U32.to_nat(count), 0, format, channel,
         (values, Array.new(U32, Storage.depth(count), 0))))
 
 def Surface.channel.checked(valid: Bool, surface: Surface, selected: F32) -> Surface & Maybe<Surface>:
@@ -3142,45 +3224,57 @@ def Surface.channel.checked(valid: Bool, surface: Surface, selected: F32) -> Sur
       +count = (width * height : U32)
       Surface.channel.words.finished(width, height, format, Surface.channel.words(U32.to_nat(count), 0, format,
         Image.channel.index(format, F32.to_u32(F32.max(0.0, selected))), (values, Array.new(U32, Storage.depth(count), 0))))
-    case True{} Surface{+width, +height, +format, Vectors{values}}:
-      Surface.channel.vectors.checked(width, height, format, Image.channel.index(format, F32.to_u32(F32.max(0.0, selected))),
-        Surface.vectors.checked(~Surface.vector.valid, U32.to_nat((width * height : U32)), 0, (values, True{})))
+    case True{} Surface{+width, +height, +format, Quads{values}}:
+      Surface.channel.quads.checked(width, height, format, Image.channel.index(format, F32.to_u32(F32.max(0.0, selected))),
+        Surface.quads.checked(U32.to_nat((width * height : U32)), 0, format, False{}, (values, True{})))
 
 # ImageFromChannel: a GRAYSCALE image of one normalized channel; the source is kept.
 def Surface.from_channel(surface: Surface, +selected: F32) -> Surface & Maybe<Surface>:
   Surface.channel.checked(Image.channel.valid(selected), surface, selected)
 
 # Raw pixel bytes as raylib stores them (ExportImage ".raw", ExportImageAsCode).
-def Surface.vectors.pack(~q: Quant, values: List<M.Vector3>, bytes: List<q, U32>) -> List<q, U32>:
+# Wide samples as stored: words a..c (formats 9, 12) or a..d, each 4 bytes for
+# F32 formats and 2 bytes for half floats, little-endian.
+def Surface.quads.pack.alpha(~q: Quant, four: Bool, +size: Nat, d: U32, bytes: List<q, U32>) -> List<q, U32>:
+  match four:
+    case True{}: Formats.word_bytes(~q, size, d, bytes)
+    case False{}: bytes
+
+def Surface.quads.pack.sample(~q: Quant, +channels: U32, +size: Nat, quad: Surface.Quad, bytes: List<q, U32>) -> List<q, U32>:
+  Quad{a, b, c, d} = quad
+  Surface.quads.pack.alpha(~q, U32.is_eq(channels, 4), size, d,
+    Formats.word_bytes(~q, size, c, Formats.word_bytes(~q, size, b, Formats.word_bytes(~q, size, a, bytes))))
+
+def Surface.quads.pack(~q: Quant, +channels: U32, +size: Nat, values: List<Surface.Quad>, bytes: List<q, U32>) -> List<q, U32>:
   match values:
     case Nil{}: List.reverse(q, U32, bytes)
-    case Con{M.Vector3{r, g, b}, rest}:
-      Surface.vectors.pack(~q, rest, Formats.word_bytes(~q, 4n, F32.bits(b), Formats.word_bytes(~q, 4n, F32.bits(g), Formats.word_bytes(~q, 4n, F32.bits(r), bytes))))
+    case Con{quad, rest}: Surface.quads.pack(~q, channels, size, rest, Surface.quads.pack.sample(~q, channels, size, quad, bytes))
 
 def Surface.raw.selected(~q: Quant, pixels: Surface.Pixels, +width: U32, +height: U32, +format: U32) -> List<q, U32>:
   match pixels:
     case Words{values}:
       Formats.bytes(~q, Image.list.take(~U32, Array.to_list(~U32, Surface.words.native(format, U32.to_nat((width * height : U32)), values)),
         U32.to_nat((width * height : U32))), U32.to_nat((Pixel.bits_per_pixel(format) / 8 : U32)), Nil{})
-    case Vectors{values}:
-      Surface.vectors.pack(~q, Image.list.take(~M.Vector3, Array.to_list(~M.Vector3, values), U32.to_nat((width * height : U32))), Nil{})
+    case Quads{values}:
+      Surface.quads.pack(~q, Bool.pick(U32, U32.is_eq(format, 10) || U32.is_eq(format, 13), 4, 3), Bool.pick(Nat, (format < 11 : U32), 4n, 2n),
+        Image.list.take(~Surface.Quad, Array.to_list(~Surface.Quad, values), U32.to_nat((width * height : U32))), Nil{})
 
 def Surface.raw(~q: Quant, surface: Surface) -> List<q, U32>:
   Surface{width, height, format, pixels} = surface
   Surface.raw.selected(~q, pixels, width, height, format)
 
-def Surface.payload.vectors(+width: U32, +height: U32, format: U32, state: Array<M.Vector3> & Bool) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+def Surface.payload.quads(+width: U32, +height: U32, format: U32, state: Array<Surface.Quad> & Bool) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match state:
-    case Tuple{values, False{}}: Fail{(Surface{width, height, format, Vectors{values}}, OutOfDomain{})}
-    case Tuple{values, True{}}: Done{Surface{width, height, format, Vectors{values}}}
+    case Tuple{values, False{}}: Fail{(Surface{width, height, format, Quads{values}}, OutOfDomain{})}
+    case Tuple{values, True{}}: Done{Surface{width, height, format, Quads{values}}}
 
-def Surface.payload.selected(pixels: Surface.Pixels, +width: U32, +height: U32, format: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+def Surface.payload.selected(pixels: Surface.Pixels, +width: U32, +height: U32, +format: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match pixels:
     case Words{values}: Done{Surface{width, height, format, Words{values}}}
-    case Vectors{values}:
-      Surface.payload.vectors(width, height, format, Surface.vectors.checked(~Surface.vector.ordered, U32.to_nat((width * height : U32)), 0, (values, True{})))
+    case Quads{values}:
+      Surface.payload.quads(width, height, format, Surface.quads.checked(U32.to_nat((width * height : U32)), 0, format, True{}, (values, True{})))
 
-# Owners whose stored words writers accept: every owner except NaN R32G32B32 samples.
+# Owners whose stored words writers accept: every owner except NaN F32 samples.
 def Surface.payload.check(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Surface{width, height, format, pixels} = surface
   Surface.payload.selected(pixels, width, height, format)
@@ -3195,38 +3289,50 @@ def Surface.from_bytes.words(+width: U32, +height: U32, +format: U32, result: Ma
     case None{}: None{}
     case Some{values}: Some{Surface{width, height, format, Words{Surface.words.native(format, U32.to_nat((width * height : U32)), values)}}}
 
-def Surface.vectors.raw.stored(valid: Bool, index: U32, r: U32, g: U32, b: U32, bytes: +List<U32>, values: Array<M.Vector3>) -> Maybe<(+List<U32> & Array<M.Vector3>)>:
-  match valid:
-    case False{}: None{}
-    case True{}: Some{(bytes, Array.set(M.Vector3, values, index, M.Vector3{Hdr.float_bits(r), Hdr.float_bits(g), Hdr.float_bits(b)}))}
+# Wide samples from raw words: channel words a..c (and d) of each pixel in turn.
+def Surface.quads.group.write(+channels: U32, i: U32, a: U32, b: U32, c: U32, output: Array<Surface.Quad>, got: Array<U32> & U32) -> Array<U32> & Array<Surface.Quad>:
+  (flat, d) = got
+  (flat, Array.set(Surface.Quad, output, i, Quad{a, b, c, Bool.pick(U32, U32.is_eq(channels, 4), d, 0)}))
 
-def Surface.vectors.raw.read(index: U32, values: Array<M.Vector3>, bytes: +List<U32>) -> Maybe<(+List<U32> & Array<M.Vector3>)>:
-  match bytes:
-    case Con{r0, Con{r1, Con{r2, Con{r3, Con{g0, Con{g1, Con{g2, Con{g3, Con{b0, Con{b1, Con{b2, Con{b3, rest}}}}}}}}}}}}:
-      +r = (r0 .|. (r1 << 8n) .|. (r2 << 16n) .|. (r3 << 24n) : U32)
-      +g = (g0 .|. (g1 << 8n) .|. (g2 << 16n) .|. (g3 << 24n) : U32)
-      +b = (b0 .|. (b1 << 8n) .|. (b2 << 16n) .|. (b3 << 24n) : U32)
-      Surface.vectors.raw.stored(Surface.vector.word(r) && Surface.vector.word(g) && Surface.vector.word(b), index, r, g, b, rest, values)
-    case _: None{}
+def Surface.quads.group.c(+channels: U32, +at: U32, i: U32, a: U32, b: U32, output: Array<Surface.Quad>, got: Array<U32> & U32) -> Array<U32> & Array<Surface.Quad>:
+  (flat, c) = got
+  Surface.quads.group.write(channels, i, a, b, c, output, Array.get(U32, flat, (at + channels - 1 : U32)))
 
-def Surface.vectors.raw(n: Nat, +index: U32, state: Maybe<(+List<U32> & Array<M.Vector3>)>) -> Maybe<Array<M.Vector3>>:
+def Surface.quads.group.b(+channels: U32, +at: U32, i: U32, a: U32, output: Array<Surface.Quad>, got: Array<U32> & U32) -> Array<U32> & Array<Surface.Quad>:
+  (flat, b) = got
+  Surface.quads.group.c(channels, at, i, a, b, output, Array.get(U32, flat, (at + 2 : U32)))
+
+def Surface.quads.group.a(+channels: U32, +at: U32, i: U32, output: Array<Surface.Quad>, got: Array<U32> & U32) -> Array<U32> & Array<Surface.Quad>:
+  (flat, a) = got
+  Surface.quads.group.b(channels, at, i, a, output, Array.get(U32, flat, (at + 1 : U32)))
+
+def Surface.quads.group(n: Nat, +i: U32, +channels: U32, state: Array<U32> & Array<Surface.Quad>) -> Array<Surface.Quad>:
   match n state:
-    case _ None{}: None{}
-    case 0n Some{Tuple{_, values}}: Some{values}
-    case 1n+rest Some{Tuple{bytes, values}}: Surface.vectors.raw(rest, (index + 1 : U32), Surface.vectors.raw.read(index, values, bytes))
+    case 0n Tuple{_, output}: output
+    case 1n+rest Tuple{flat, output}:
+      Surface.quads.group(rest, (i + 1 : U32), channels, Surface.quads.group.a(channels, (i * channels : U32), i, output, Array.get(U32, flat, (i * channels : U32))))
 
-def Surface.from_bytes.vectors(width: U32, height: U32, result: Maybe<Array<M.Vector3>>) -> Maybe<Surface>:
-  match result:
+def Surface.from_bytes.quads.checked(+width: U32, +height: U32, +format: U32, state: Array<Surface.Quad> & Bool) -> Maybe<Surface>:
+  match state:
+    case Tuple{_, False{}}: None{}
+    case Tuple{values, True{}}: Some{Surface{width, height, format, Quads{values}}}
+
+def Surface.from_bytes.quads(+width: U32, +height: U32, +format: U32, +channels: U32, flat: Maybe<Array<U32>>) -> Maybe<Surface>:
+  match flat:
     case None{}: None{}
-    case Some{values}: Some{Surface{width, height, 9, Vectors{values}}}
-
-def Surface.from_bytes.stored(kind: U32, +width: U32, +height: U32, +format: U32, bytes: +List<U32>) -> Maybe<Surface>:
-  match kind:
-    case 9:
+    case Some{words}:
       +count = (width * height : U32)
-      Surface.from_bytes.vectors(width, height, Surface.vectors.raw(U32.to_nat(count), 0,
-        Some{(bytes, Array.new(M.Vector3, Storage.depth(count), Surface.vector.zero()))}))
-    case _:
+      Surface.from_bytes.quads.checked(width, height, format, Surface.quads.checked(U32.to_nat(count), 0, format, True{},
+        (Surface.quads.group(U32.to_nat(count), 0, channels, (words, Array.new(Surface.Quad, Storage.depth(count), Surface.quad.zero()))), True{})))
+
+def Surface.from_bytes.stored(wide: Bool, +width: U32, +height: U32, +format: U32, bytes: +List<U32>) -> Maybe<Surface>:
+  match wide:
+    case True{}:
+      +channels = Bool.pick(U32, U32.is_eq(format, 10) || U32.is_eq(format, 13), 4, 3)
+      +words = (width * height * channels : U32)
+      Surface.from_bytes.quads(width, height, format, channels, Formats.unpack(U32.to_nat(words), 0, Bool.pick(Nat, (format < 11 : U32), 4n, 2n),
+        Some{Formats.Input{bytes, Array.new(U32, Storage.depth(words), 0)}}))
+    case False{}:
       +count = (width * height : U32)
       Surface.from_bytes.words(width, height, format, Formats.unpack(U32.to_nat(count), 0,
         U32.to_nat((Pixel.bits_per_pixel(format) / 8 : U32)), Some{Formats.Input{bytes, Array.new(U32, Storage.depth(count), 0)}}))
@@ -3234,7 +3340,7 @@ def Surface.from_bytes.stored(kind: U32, +width: U32, +height: U32, +format: U32
 def Surface.from_bytes.validated(valid: Bool, +width: U32, +height: U32, +format: U32, bytes: +List<U32>) -> Maybe<Surface>:
   match valid:
     case False{}: None{}
-    case True{}: Surface.from_bytes.stored(format, width, height, format, bytes)
+    case True{}: Surface.from_bytes.stored(Surface.wide(format), width, height, format, bytes)
 
 def Surface.from_bytes.checked(valid: Bool, +width: U32, +height: U32, +format: U32, +bytes: +List<U32>) -> Maybe<Surface>:
   match valid:
@@ -3243,11 +3349,12 @@ def Surface.from_bytes.checked(valid: Bool, +width: U32, +height: U32, +format: 
       Surface.from_bytes.validated(Formats.valid(bytes, (width * height * (Pixel.bits_per_pixel(format) / 8) : U32), True{})
         && Formats.domain_valid(format, bytes), width, height, format, bytes)
 
-# Owned raw image data (LoadImageRaw bytes): formats 1..9, exactly width*height
-# samples; R32 words must be finite [0, 1] and R32G32B32 words must not be NaN.
+# Owned raw image data (LoadImageRaw bytes): formats 1..13, exactly width*height
+# samples; R32 and R16 words must be finite [0, 1] and F32 samples of the wide
+# formats must not be NaN (half-float samples are unrestricted).
 def Surface.from_bytes(+width: U32, +height: U32, +format: U32, bytes: +List<U32>) -> Maybe<Surface>:
   Surface.from_bytes.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096)
-    && (format >= 1) && (format <= 9) : U32), width, height, format, bytes)
+    && (format >= 1) && (format <= 13) : U32), width, height, format, bytes)
 
 # Base.Image contains RGB colors. Alpha is discarded, not composited.
 def Surface.to_image.rgba(result: Result<&1, &1, Surface & Surface.Error, Rgba>) -> Result<&1, &1, Surface & Surface.Error, Image>:
@@ -3359,10 +3466,14 @@ def Surface.gif.result(result: Result<&1, &1, Codec.Error, Gif.Image>) -> Result
 def Surface.decode_gif(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   Surface.gif.result(Gif.decode(bytes))
 
+def Surface.quad.of_vector(value: M.Vector3) -> Surface.Quad:
+  M.Vector3{r, g, b} = value
+  Quad{F32.bits(r), F32.bits(g), F32.bits(b), 0}
+
 def Surface.hdr.result(result: Result<&1, &1, Codec.Error, Hdr.Image>) -> Result<&1, &1, Surface.Error, Surface>:
   match result:
     case Fail{error}: Fail{Image.codec.error(error)}
-    case Done{Hdr.Image{width, height, pixels}}: Done{Surface{width, height, 9, Vectors{pixels}}}
+    case Done{Hdr.Image{width, height, pixels}}: Done{Surface{width, height, 9, Quads{Array.map(~M.Vector3, ~Surface.Quad, ~Surface.quad.of_vector, pixels)}}}
 
 def Surface.decode_hdr(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   Surface.hdr.result(Hdr.decode(bytes))
@@ -3484,23 +3595,21 @@ def Surface.memory.channels(format: U32) -> U32:
   match format:
     case 8: 4
     case 9: 4
+    case 10: 4
+    case 12: 4
+    case 13: 4
     case _: Surface.png.channels(format)
 
-def Surface.memory.component(channel: U32, value: M.Vector3) -> U32:
-  match channel value:
-    case 0 M.Vector3{r, _, _}: F32.bits(r)
-    case 1 M.Vector3{_, g, _}: F32.bits(g)
-    case _ M.Vector3{_, _, b}: F32.bits(b)
+def Surface.memory.packed(+width: U32, +height: U32, words: Maybe<Array<U32>>) -> +List<U32>:
+  match words:
+    case None{}: Nil{}
+    case Some{values}: PngEncode.formatted(width, height, 4, values)
 
-def Surface.memory.read(+index: U32, output: Array<U32>, result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Array<U32>:
-  (source, value) = result
-  (source, Array.set(U32, output, index, Surface.memory.component((index % 3 : U32), value)))
-
-def Surface.memory.vectors(n: Nat, +index: U32, state: Array<M.Vector3> & Array<U32>) -> Array<U32>:
-  match n state:
-    case 0n Tuple{_, output}: output
-    case 1n+rest Tuple{source, output}:
-      Surface.memory.vectors(rest, (index + 1 : U32), Surface.memory.read(index, output, Array.get(M.Vector3, source, (index / 3 : U32))))
+# The first width*height*4 stored bytes, read as RGBA words.
+def Surface.memory.quads(+width: U32, +height: U32, +format: U32, values: Array<Surface.Quad>) -> +List<U32>:
+  +count = (width * height : U32)
+  Surface.memory.packed(width, height, Formats.unpack(U32.to_nat(count), 0, 4n,
+    Some{Formats.Input{Surface.raw(~&2, Surface{width, height, format, Quads{values}}), Array.new(U32, Storage.depth(count), 0)}}))
 
 def Surface.memory.words(+width: U32, +height: U32, format: U32, +channels: U32, values: Array<U32>) -> +List<U32>:
   match format:
@@ -3511,9 +3620,7 @@ def Surface.memory.checked(valid: Bool, +channels: U32, surface: Surface) -> Res
   match valid surface:
     case False{} _: Fail{(surface, UnsupportedFormat{})}
     case True{} Surface{+width, +height, +format, Words{values}}: Done{Surface.memory.words(width, height, format, channels, values)}
-    case True{} Surface{+width, +height, _, Vectors{values}}:
-      +count = (width * height : U32)
-      Done{PngEncode.formatted(width, height, 4, Surface.memory.vectors(U32.to_nat(count), 0, (values, Array.new(U32, Storage.depth(count), 0))))}
+    case True{} Surface{+width, +height, +format, Quads{values}}: Done{Surface.memory.quads(width, height, format, values)}
 
 def Surface.memory.typed(png: Bool, +channels: U32, surface: Surface) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>:
   match png:
@@ -3748,8 +3855,8 @@ def Image.raw.parameters(valid: Bool, path: String, +width: U32, +height: U32, +
       IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, Surface>,
         Image.raw.bytes(path, header, needed), Image.raw.surface(width, height, format))
 
-# LoadImageRaw: formats 1..9; a header is skipped only when the file holds it
+# LoadImageRaw: formats 1..13; a header is skipped only when the file holds it
 # and the samples.
 def Surface.load_raw(path: String, +width: U32, +height: U32, +format: U32, header_size: U32) -> IO(Result<&1, &1, Surface.IOError, Surface>):
   Image.raw.parameters(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096)
-    && (format >= 1) && (format <= 9) : U32), path, width, height, format, header_size)
+    && (format >= 1) && (format <= 13) : U32), path, width, height, format, header_size)

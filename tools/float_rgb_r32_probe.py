@@ -214,19 +214,19 @@ def converted(expected: U32, targets: +List<U32>, result: Maybe<J.Surface>) -> I
   match targets result:
     case Con{target, rest} Some{image}: selected(expected, rest, J.Surface.format(image, target))
     case _ _: IO.die(Unit, 1, "R32G32B32/R32 source rejected")
-def invalid_pixel(component: U32, value: F32) -> M.Vector3:
+def invalid_pixel(component: U32, word: U32) -> J.Surface.Quad:
   match component:
-    case 0: M.Vector3{value, 0.5, 0.75}
-    case 1: M.Vector3{0.25, value, 0.75}
-    case _: M.Vector3{0.25, 0.5, value}
-def vector_words(value: M.Vector3, rest: List<U32>) -> List<U32>:
-  M.Vector3{r, g, b} = value
-  Con{F32.bits(r), Con{F32.bits(g), Con{F32.bits(b), rest}}}
-def expected_nan_pixel(selected: Bool, wanted: M.Vector3) -> M.Vector3:
+    case 0: J.Quad{word, F32.bits(0.5), F32.bits(0.75), 0}
+    case 1: J.Quad{F32.bits(0.25), word, F32.bits(0.75), 0}
+    case _: J.Quad{F32.bits(0.25), F32.bits(0.5), word, 0}
+def vector_words(value: J.Surface.Quad, rest: List<U32>) -> List<U32>:
+  J.Quad{r, g, b, _} = value
+  Con{r, Con{g, Con{b, rest}}}
+def expected_nan_pixel(selected: Bool, wanted: J.Surface.Quad) -> J.Surface.Quad:
   match selected:
     case True{}: wanted
-    case False{}: M.Vector3{0.25, 0.5, 0.75}
-def expected_words(n: Nat, +index: U32, +position: U32, +wanted: M.Vector3) -> List<U32>:
+    case False{}: J.Quad{F32.bits(0.25), F32.bits(0.5), F32.bits(0.75), 0}
+def expected_words(n: Nat, +index: U32, +position: U32, +wanted: J.Surface.Quad) -> List<U32>:
   match n:
     case 0n: Nil{}
     case 1n+rest: vector_words(expected_nan_pixel(U32.is_eq(index, position), wanted), expected_words(rest, (index + 1 : U32), position, wanted))
@@ -239,18 +239,18 @@ def same_words(left: List<U32>, right: List<U32>) -> Bool:
     case Nil{} Nil{}: True{}
     case Con{a, ra} Con{b, rb}: U32.is_eq(a, b) && same_words(ra, rb)
     case _ _: False{}
-def nan_owner_export(position: U32, wanted: M.Vector3, data: (U32 & U32) & (U32 & List<U32>)) -> Bool:
+def nan_owner_export(position: U32, wanted: J.Surface.Quad, data: (U32 & U32) & (U32 & List<U32>)) -> Bool:
   match data:
     case Tuple{Tuple{3, 1}, Tuple{9, bytes}}: same_words(export_words(bytes, Nil{}), expected_words(3n, 0, position, wanted))
     case _: False{}
-def nan_owner(position: U32, wanted: M.Vector3, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Bool:
+def nan_owner(position: U32, wanted: J.Surface.Quad, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Bool:
   match result:
     case Fail{Tuple{image, J.OutOfDomain{}}}: nan_owner_export(position, wanted, J.Surface.export(image))
     case _: False{}
 def nan_control(word: U32, component: U32, +position: U32) -> IO(Unit):
-  +wanted = invalid_pixel(component, H.float_bits(word))
-  pixels = Array.set(M.Vector3, Array.new(M.Vector3, 2n, M.Vector3{0.25, 0.5, 0.75}), position, wanted)
-  emit_bytes(~&1, [Bool.to_u32(nan_owner(position, wanted, J.Surface.format(J.Surface{3, 1, 9, J.Vectors{pixels}}, 8)))])
+  +wanted = invalid_pixel(component, word)
+  pixels = Array.set(J.Surface.Quad, Array.new(J.Surface.Quad, 2n, J.Quad{F32.bits(0.25), F32.bits(0.5), F32.bits(0.75), 0}), position, wanted)
+  emit_bytes(~&1, [Bool.to_u32(nan_owner(position, wanted, J.Surface.format(J.Surface{3, 1, 9, J.Quads{pixels}}, 8)))])
 '''
 
 

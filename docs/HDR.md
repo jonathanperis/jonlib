@@ -2,7 +2,7 @@
 
 | API | Contract |
 |---|---|
-| `Surface.decode_hdr(bytes: +List<U32>)` | Returns `Result<&1, &1, Surface.Error, Surface>`. Owned pixels are `Array<M.Vector3>` (Jonmath's shared vector type) preserving native `PIXELFORMAT_UNCOMPRESSED_R32G32B32` (format 9) sample bits. |
+| `Surface.decode_hdr(bytes: +List<U32>)` | Returns `Result<&1, &1, Surface.Error, Surface>`. Owned pixels are `Quads` holding the native `PIXELFORMAT_UNCOMPRESSED_R32G32B32` (format 9) sample bits. |
 | `Surface.export(image)` | Consumes the image and returns its dimensions, format 9 and the little-endian F32 sample bytes in top-down row-major order. |
 | `Surface.load_hdr(path)` | Returns `IO(Result<&1, &1, Surface.IOError, Surface>)`; see [file loading](#file-loading). |
 

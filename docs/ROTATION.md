@@ -3,7 +3,7 @@
 ## General image rotation
 
 `Surface.rotate_degrees_for(reference, surface, degrees)` consumes a Surface in
-any of formats 1..9 and returns `Result<Surface & Surface.Error, Surface>` in
+any of formats 1..13 and returns `Result<Surface & Surface.Error, Surface>` in
 the same format. The profile accepts integral degrees -360..360 and output
 dimensions 1..4096. Invalid angles return the original with `InvalidRectangle`;
 oversized output returns it with `InvalidSize`.
@@ -50,7 +50,7 @@ in Bend. Full pixel fixtures then cover the new dimensions, fill and hidden RGB.
 | Gate | Tool | Compares |
 |---|---|---|
 | `conformance` | `tools/conformance.py` | exact dimensions, pixels and failure ownership vs linked raylib `ImageRotate`/`ImageToPOT` |
-| `surface-format` | `tools/surface_format_probe.py` | `ImageRotate` by 30 and -135 degrees on formats 1..9, complete stored bytes; R32/R32G32B32 cases expect `OutOfDomain` exactly when raylib's own result leaves the owner domain |
+| `surface-format` | `tools/surface_format_probe.py` | `ImageRotate` by 30 and -135 degrees on formats 1..13, complete stored bytes; float cases expect `OutOfDomain` exactly when raylib's own result leaves the owner domain |
 | `trig-rotation` | `tools/trig_probe.py --rotation` | Bend sine/cosine of the `ImageRotate` degree-to-radian expression for every integral degree in -360..360 vs the host's `sinf`/`cosf`, with the host-declared profile |
 
 Data-dependent rotation size hints are asserted against actual raylib

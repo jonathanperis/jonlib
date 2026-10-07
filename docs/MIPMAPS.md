@@ -1,7 +1,7 @@
 # Mipmaps
 
 Jonlib adapts raylib 6.0 `ImageMipmaps` for single-level `Surface` input in
-pixel formats 1..9.
+pixel formats 1..13.
 
 ```bend
 Surface.mipmaps(surface) -> Image.Mipmaps
@@ -35,7 +35,7 @@ inconsistent storage, and no allocation-failure recovery is promised.
 
 `tools/mipmap_probe.py` (gate `mipmap`) gives native `ImageMipmaps` and the
 candidate identical raw source bytes, converted with `ImageFormat` to each of
-formats 1..9, then compares the level count, every level's dimensions and every
+formats 1..13, then compares the level count, every level's dimensions and every
 stored byte on CPU-1, CPU-2, JavaScript and, with `--gpu`, forced GPU. The
 R8G8B8A8 corpus includes thin 4096-axis images, NPOT/odd sizes, a large source,
 hidden RGB and alpha boundaries; the other formats use seven of those sizes.

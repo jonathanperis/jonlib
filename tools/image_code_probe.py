@@ -106,26 +106,26 @@ def float_saved(path: String, result: Result<&1, &1, J.Surface.IOError, J.Surfac
     case Fail{_}: IO.die(Unit, 1, "float code file source read failed")
     case Done{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_code(image, path), float_write_ok)
 def float_small() -> J.Surface:
-  J.Surface{1, 1, 9, J.Vectors{Array.new(M.Vector3, 0n, M.Vector3{0.5, 0.25, 0.75})}}
+  J.Surface{1, 1, 9, J.Quads{Array.new(J.Surface.Quad, 0n, J.Quad{F32.bits(0.5), F32.bits(0.25), F32.bits(0.75), 0})}}
 # NaN samples are outside the checked export domain: the owner comes back intact
-# (compared with same-backend bits: NaN payloads are not portable across backends).
+# (stored as raw words, so its bits are exact on every lane).
 def float_nan() -> J.Surface:
-  J.Surface{2, 1, 9, J.Vectors{Array.set(M.Vector3, Array.new(M.Vector3, 1n, M.Vector3{0.5, 0.25, 0.75}), 1, M.Vector3{H.float_bits(2143294004), 0.25, 0.75})}}
-def vector_is.bits(+r: U32, +g: U32, +b: U32, value: M.Vector3) -> Bool:
-  M.Vector3{x, y, z} = value
-  U32.is_eq(F32.bits(x), r) && U32.is_eq(F32.bits(y), g) && U32.is_eq(F32.bits(z), b)
-def vector_is(+r: U32, +g: U32, +b: U32, result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Bool:
+  J.Surface{2, 1, 9, J.Quads{Array.set(J.Surface.Quad, Array.new(J.Surface.Quad, 1n, J.Quad{F32.bits(0.5), F32.bits(0.25), F32.bits(0.75), 0}), 1, J.Quad{2143294004, F32.bits(0.25), F32.bits(0.75), 0})}}
+def vector_is.bits(+r: U32, +g: U32, +b: U32, value: J.Surface.Quad) -> Bool:
+  J.Quad{x, y, z, _} = value
+  U32.is_eq(x, r) && U32.is_eq(y, g) && U32.is_eq(z, b)
+def vector_is(+r: U32, +g: U32, +b: U32, result: Array<J.Surface.Quad> & J.Surface.Quad) -> Array<J.Surface.Quad> & Bool:
   (values, value) = result
   (values, vector_is.bits(r, g, b, value))
-def nan_owner.second(first: Bool, result: Array<M.Vector3> & Bool) -> Bool:
+def nan_owner.second(first: Bool, result: Array<J.Surface.Quad> & Bool) -> Bool:
   (_, second) = result
   first && second
-def nan_owner.first(result: Array<M.Vector3> & Bool) -> Bool:
+def nan_owner.first(result: Array<J.Surface.Quad> & Bool) -> Bool:
   (values, first) = result
-  nan_owner.second(first, vector_is(F32.bits(H.float_bits(2143294004)), 1048576000, 1061158912, Array.get(M.Vector3, values, 1)))
+  nan_owner.second(first, vector_is(2143294004, 1048576000, 1061158912, Array.get(J.Surface.Quad, values, 1)))
 def nan_intact(image: J.Surface) -> Bool:
   match image:
-    case J.Surface{2, 1, 9, J.Vectors{values}}: nan_owner.first(vector_is(1056964608, 1048576000, 1061158912, Array.get(M.Vector3, values, 0)))
+    case J.Surface{2, 1, 9, J.Quads{values}}: nan_owner.first(vector_is(1056964608, 1048576000, 1061158912, Array.get(J.Surface.Quad, values, 0)))
     case _: False{}
 def nan_rejected(result: Result<&1, &1, J.Surface & J.Surface.Error, String>) -> Bool:
   match result:

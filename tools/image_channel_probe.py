@@ -66,9 +66,9 @@ def extracted(selected: F32, result: Maybe<J.Surface>) -> Maybe<(J.Surface & May
 def formatted_read(result: Array<U32> & U32) -> Bool:
   (_, value) = result
   U32.is_eq(value, 16909060)
-def float_read(result: Array<M.Vector3> & M.Vector3) -> Bool:
+def float_read(result: Array<J.Surface.Quad> & J.Surface.Quad) -> Bool:
   match result:
-    case Tuple{_, M.Vector3{r, g, b}}: F32.is_eq(r, 0.25) && F32.is_eq(g, 0.5) && F32.is_eq(b, 0.75)
+    case Tuple{_, J.Quad{r, g, b, _}}: U32.is_eq(r, 1048576000) && U32.is_eq(g, 1056964608) && U32.is_eq(b, 1061158912)
 def gray_read(result: Array<U32> & U32) -> Bool:
   (_, value) = result
   U32.is_eq(value, 0)
@@ -79,13 +79,13 @@ def formatted_independent(result: J.Surface & Maybe<J.Surface>) -> Bool:
     case _: False{}
 def float_independent(result: J.Surface & Maybe<J.Surface>) -> Bool:
   match result:
-    case Tuple{J.Surface{1, 1, 9, J.Vectors{source}}, Some{J.Surface{1, 1, 1, J.Words{gray}}}}:
-      gray_read(Array.get(U32, Array.set(U32, gray, 0, 0), 0)) && float_read(Array.get(M.Vector3, source, 0))
+    case Tuple{J.Surface{1, 1, 9, J.Quads{source}}, Some{J.Surface{1, 1, 1, J.Words{gray}}}}:
+      gray_read(Array.get(U32, Array.set(U32, gray, 0, 0), 0)) && float_read(Array.get(J.Surface.Quad, source, 0))
     case _: False{}
 def formatted_ownership() -> Bool:
   formatted_independent(J.Surface.from_channel(J.Surface{1, 1, 7, J.Words{Array.new(U32, 0n, 16909060)}}, 2.0))
 def float_ownership() -> Bool:
-  float_independent(J.Surface.from_channel(J.Surface{1, 1, 9, J.Vectors{Array.new(M.Vector3, 0n, M.Vector3{0.25, 0.5, 0.75})}}, 1.0))
+  float_independent(J.Surface.from_channel(J.Surface{1, 1, 9, J.Quads{Array.new(J.Surface.Quad, 0n, J.Quad{F32.bits(0.25), F32.bits(0.5), F32.bits(0.75), 0})}}, 1.0))
 def main() -> IO(Unit):
   do IO<Unit>:
 '''

@@ -21,7 +21,7 @@ selection and the shared bounded file boundary are documented in
 | GIF animation | Owned frames, retain/restore disposal, budgets; memory and files | [GIF-ANIMATION.md](GIF-ANIMATION.md) | `gif-animation`, `animation-file` |
 | HDR | Raw/RLE Radiance RGBE to exact F32 (format 9); files | [HDR.md](HDR.md) | `hdr`, `hdr-file` |
 | JPEG | Tokens `.jpg`/`.jpeg` route to the implemented raster decoders only; JPEG decoding is not implemented | [IMAGE-FILES.md](IMAGE-FILES.md) | `image-memory`, `image-file` |
-| Raw headerless | `LoadImageRaw`/`.raw` export for formats 1..9 (checked R32) | [RAW-FILES.md](RAW-FILES.md) | `raw-file`, `r32-raw-file`, `float-rgb-raw-file` |
+| Raw headerless | `LoadImageRaw`/`.raw` export for formats 1..13 (checked R32/R16) | [RAW-FILES.md](RAW-FILES.md) | `raw-file`, `r32-raw-file`, `float-rgb-raw-file` |
 | Image as code | Exact `ExportImageAsCode` text and file export | [IMAGE-CODE.md](IMAGE-CODE.md) | `image-code` |
 | DEFLATE decompression | Bounded raw DEFLATE (`DecompressData`) and the PNG inflater policy | [DEFLATE.md](DEFLATE.md) | `inflate` |
 | Compression | sdefl quality-8 raw DEFLATE (`CompressData`) | [COMPRESSION.md](COMPRESSION.md) | `sdeflate-huffman`, `sdeflate-lz`, `sdeflate` |

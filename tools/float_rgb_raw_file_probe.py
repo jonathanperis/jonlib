@@ -60,22 +60,22 @@ def required(expected: U32, result: Result<&1, &1, J.Surface.IOError, J.Surface>
     case Done{_}: checked(U32.is_eq(expected, 0))
     case Fail{error}: checked(U32.is_eq(expected, error_code(error)))
 def small() -> J.Surface:
-  J.Surface{1, 1, 9, J.Vectors{Array.new(M.Vector3, 0n, M.Vector3{0.25, 0.5, 0.75})}}
+  J.Surface{1, 1, 9, J.Quads{Array.new(J.Surface.Quad, 0n, J.Quad{F32.bits(0.25), F32.bits(0.5), F32.bits(0.75), 0})}}
 def write_ok(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
     case Done{_}: IO.pure(Unit, Unit{})
     case Fail{_}: IO.die(Unit, 1, "raw float write closure failed")
 # Writers reject NaN samples before opening the file; the owner comes back intact
-# (compared with same-backend bits: NaN payloads are not portable across backends).
-def owner_bits(value: M.Vector3) -> Bool:
-  M.Vector3{r, g, b} = value
-  U32.is_eq(F32.bits(r), F32.bits(H.float_bits(2143294004))) && U32.is_eq(F32.bits(g), 1056964608) && U32.is_eq(F32.bits(b), 1061158912)
-def owner_read(result: Array<M.Vector3> & M.Vector3) -> Bool:
+# (stored as raw words, so its bits are exact on every lane).
+def owner_bits(value: J.Surface.Quad) -> Bool:
+  J.Quad{r, g, b, _} = value
+  U32.is_eq(r, 2143294004) && U32.is_eq(g, 1056964608) && U32.is_eq(b, 1061158912)
+def owner_read(result: Array<J.Surface.Quad> & J.Surface.Quad) -> Bool:
   (_, value) = result
   owner_bits(value)
 def owner_seen(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.SourceError{J.Surface{1, 1, 9, J.Vectors{values}}, J.OutOfDomain{}}}: emit_bytes(~&1, [Bool.to_u32(owner_read(Array.get(M.Vector3, values, 0)))])
+    case Fail{J.SourceError{J.Surface{1, 1, 9, J.Quads{values}}, J.OutOfDomain{}}}: emit_bytes(~&1, [Bool.to_u32(owner_read(Array.get(J.Surface.Quad, values, 0)))])
     case _: IO.die(Unit, 1, "raw float invalid owner was lost")
 def write_failed(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
@@ -147,7 +147,7 @@ def main():
         output=work/('candidate-'+case['name']+'.raw');output.unlink(missing_ok=True)
         actions.append(dict(name=case['name'],rows=1,wanted=[wanted],
                             line=f'IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw({json.dumps(case["path"])}, {case["width"]}, {case["height"]}, 9, {case["header"]}), loaded({json.dumps(str(output.relative_to(ROOT)))}))'))
-    actions+=[dict(name='rejected write owner',rows=1,wanted=[[1]],line=f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_raw(J.Surface{{1, 1, 9, J.Vectors{{Array.new(M.Vector3, 0n, M.Vector3{{H.float_bits(2143294004), 0.5, 0.75}})}}}}, {json.dumps(str(sentinel.relative_to(ROOT)))}), owner_seen)'),
+    actions+=[dict(name='rejected write owner',rows=1,wanted=[[1]],line=f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_raw(J.Surface{{1, 1, 9, J.Quads{{Array.new(J.Surface.Quad, 0n, J.Quad{{2143294004, 1056964608, 1061158912, 0}})}}}}, {json.dumps(str(sentinel.relative_to(ROOT)))}), owner_seen)'),
               dict(name='directory write failure',rows=1,wanted=[[1]],line=f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_raw(small(), {json.dumps(str(directory.relative_to(ROOT)))}), write_failed)'),
               dict(name='100 closure cycles',rows=1,wanted=[[1]],line='closure_loop(100n)')]
     actions+=[dict(name=case['name']+' written file',file=work/('candidate-'+case['name']+'.raw'),remove=True,wanted=list((work/('reference-'+case['name']+'.raw')).read_bytes()),line=None) for case in cases]

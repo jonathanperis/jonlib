@@ -1,6 +1,6 @@
 # Pixel formats, raw image data and `ImageFormat`
 
-`Surface` stores an owned single-mip image in native format codes 1..9:
+`Surface` stores an owned single-mip image in native format codes 1..13:
 grayscale, gray-alpha, RGB565, RGB888, RGB5A1, RGBA4, RGBA8888, bounded R32 and
 [RGB float](FLOAT-RGB.md). R32 accepts finite `[0,1]` samples, positive
 subnormals and both zero signs; see [R32.md](R32.md) for its red-only native
@@ -22,7 +22,7 @@ layout. Allocation size and C pointer ABI are separate compatibility gaps.
 | `Surface.decode_qoi(bytes)` | Checked QOI memory factory preserving native RGB888 (4) or RGBA8888 (7), single-mip metadata and exact bytes. See [CODECS.md](CODECS.md#format-preserving-qoi-memory-loading). |
 | `Surface.load_png(path)` / `load_bmp(path)` / `load_pic(path)` / `load_tga(path)` / `load_pnm(path)` -> `IO(Result<&1, &1, Surface.IOError, Surface>)` | Checked ordinary-file factories with explicit suffix-independent codec selection, preserving the respective memory factory's native format and exact bytes. Shared inclusive 1 MiB pre-read cap, one exact-length read, typed file/decode errors and close-before-decode calls; the memory decoders' limits are unchanged. See [IMAGE-FILES.md](IMAGE-FILES.md). |
 | `Surface.load_qoi(path) -> IO(Result<&1, &1, Surface.IOError, Surface>)` | Checked ordinary-file QOI factory with explicit suffix-independent selection, native format 4/7, exact bytes and implicit single mip; inclusive 83,886,102-byte cap. See [CODECS.md](CODECS.md#format-preserving-qoi-file-loading). |
-| `Surface.load_raw` / `write_raw` | Headerless file boundaries (formats 1..9) with explicit header/error/closure behavior. See [RAW-FILES.md](RAW-FILES.md). |
+| `Surface.load_raw` / `write_raw` | Headerless file boundaries (formats 1..13) with explicit header/error/closure behavior. See [RAW-FILES.md](RAW-FILES.md). |
 
 Create owners only through these factories, the generators or conversions.
 Manually inconsistent `Surface{width, height, format, pixels}` values are outside
@@ -36,7 +36,7 @@ the contract.
 | `Surface.from_channel(image, selected)` | Retains the owner and returns `Maybe<Surface>` with an independent native grayscale channel; see [IMAGE-CHANNELS.md](IMAGE-CHANNELS.md). |
 | `Surface.colors(image)` / `get(image, x, y)` | Native bulk colors consume the owner; point reads retain it with a bounded `Maybe` result. Packed expansion follows `LoadImageColors`/`GetImageColor`; see [IMAGE-COLORS.md](IMAGE-COLORS.md). |
 | `Surface.export(image)` | Consumes ownership and returns `((width, height), (format, bytes))`, with every native-order byte and no storage padding. |
-| `Surface.export_to_memory(image, ".png")` / `to_png` / `write_png(image, path)` | Default PNG memory export for byte formats 1/2/4/7 and raw four-byte R32/R32G32B32 words (packed formats retain their owner in `Fail`); file export for every format, preserving native packed-color expansion and R32 red-only normalization. See [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
+| `Surface.export_to_memory(image, ".png")` / `to_png` / `write_png(image, path)` | Default PNG memory export for byte formats 1/2/4/7 and raw four-byte words of the float formats 8, 9, 10, 12 and 13 (packed formats retain their owner in `Fail`); file export for every format, preserving native packed-color expansion and R32 red-only normalization. See [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
 | `Surface.to_bmp(image)` / `to_tga(image)` / `write_bmp` / `write_tga` | Exact native BMP/TGA file bytes for every format, with consuming pure/typed-IO interfaces. See [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
 | `Surface.to_qoi(image) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>` / `write_qoi(image, path) -> IO(Result<&1, &1, Surface.IOError, Unit>)` | Explicit native QOI bytes for RGB888 (4) / RGBA8888 (7), header channels 3/4; other checked formats retain their exact owner before IO. Accepted writes consume the owner and close acquired handles. See [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
 | `Surface.to_code(image, path)` / `write_code(image, path)` | Exact native image-as-code text and typed file export for bounded payloads/ASCII names. See [IMAGE-CODE.md](IMAGE-CODE.md). |

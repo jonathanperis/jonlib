@@ -55,20 +55,20 @@ def observed(result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "float input rejected")
     case Some{image}: emitted(J.Surface.export(image))
-def source_read(result: Array<M.Vector3> & M.Vector3) -> Bool:
+def source_read(result: Array<J.Surface.Quad> & J.Surface.Quad) -> Bool:
   match result:
-    case Tuple{_, M.Vector3{x, y, z}}: F32.is_eq(x, 0.25) && F32.is_eq(y, 0.5) && F32.is_eq(z, 0.75)
-def clone_changed(source: Array<M.Vector3>, result: Array<M.Vector3> & M.Vector3) -> Bool:
+    case Tuple{_, J.Quad{x, y, z, _}}: U32.is_eq(x, 1048576000) && U32.is_eq(y, 1056964608) && U32.is_eq(z, 1061158912)
+def clone_changed(source: Array<J.Surface.Quad>, result: Array<J.Surface.Quad> & J.Surface.Quad) -> Bool:
   match result:
-    case Tuple{_, M.Vector3{x, y, z}}:
-      F32.is_eq(x, 0.0) && F32.is_eq(y, 0.0) && F32.is_eq(z, 0.0) && source_read(Array.get(M.Vector3, source, 0))
+    case Tuple{_, J.Quad{x, y, z, _}}:
+      U32.is_eq(x, 0) && U32.is_eq(y, 0) && U32.is_eq(z, 0) && source_read(Array.get(J.Surface.Quad, source, 0))
 def independent(result: J.Surface & J.Surface) -> Bool:
   match result:
-    case Tuple{J.Surface{1, 1, 9, J.Vectors{source}}, J.Surface{1, 1, 9, J.Vectors{copy}}}:
-      clone_changed(source, Array.get(M.Vector3, Array.set(M.Vector3, copy, 0, M.Vector3{0.0, 0.0, 0.0}), 0))
+    case Tuple{J.Surface{1, 1, 9, J.Quads{source}}, J.Surface{1, 1, 9, J.Quads{copy}}}:
+      clone_changed(source, Array.get(J.Surface.Quad, Array.set(J.Surface.Quad, copy, 0, J.Quad{F32.bits(0.0), F32.bits(0.0), F32.bits(0.0), 0}), 0))
     case _: False{}
 def owned_copy() -> Bool:
-  independent(J.Surface.copy(J.Surface{1, 1, 9, J.Vectors{Array.new(M.Vector3, 0n, M.Vector3{0.25, 0.5, 0.75})}}))
+  independent(J.Surface.copy(J.Surface{1, 1, 9, J.Quads{Array.new(J.Surface.Quad, 0n, J.Quad{F32.bits(0.25), F32.bits(0.5), F32.bits(0.75), 0})}}))
 def main() -> IO(Unit):
   do IO<Unit>:
 '''

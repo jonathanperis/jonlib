@@ -247,7 +247,7 @@ def formatted_rejected(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Sur
 def formatted_created(result: Maybe<J.Surface>) -> Bool:
   match result:
     case None{}: False{}
-    case Some{image}: formatted_rejected(J.Surface.format(image, 10))
+    case Some{image}: formatted_rejected(J.Surface.format(image, 14))
 
 # R8G8B8A8 owners export raylib's byte order from their canonical Color words.
 def native_bytes(data: (U32 & U32) & (U32 & List<U32>)) -> Bool:

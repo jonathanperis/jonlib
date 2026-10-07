@@ -1,7 +1,8 @@
 # RGB float images
 
-A `Surface` in format 9 (`PIXELFORMAT_UNCOMPRESSED_R32G32B32`) stores one
-`M.Vector3` of F32 samples per pixel. It is produced by the
+A `Surface` in format 9 (`PIXELFORMAT_UNCOMPRESSED_R32G32B32`) stores the F32
+bits of each pixel's three samples in a `Surface.Quad` (`a..c`; see
+[FLOAT-FORMATS.md](FLOAT-FORMATS.md) for the other float formats). It is produced by the
 [HDR decoder](HDR.md), raw bytes/files and format conversion,
 and its operations reproduce what raylib 6.0 does to format-9 images. Many
 native format-9 operations go through RGBA8, so they **quantize** even when
