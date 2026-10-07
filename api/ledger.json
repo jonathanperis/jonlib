@@ -40311,9 +40311,9 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.load_image / Surface.load_image_for / Surface.load_qoi / Surface.load_hdr / Surface.load_pnm / Surface.load_tga / Surface.load_bmp / Surface.load_png / Surface.load_pic",
+      "jonlib": "Surface.load_image / Surface.load_image_for / Surface.load_qoi / Surface.load_dds / Surface.load_hdr / Surface.load_pnm / Surface.load_tga / Surface.load_bmp / Surface.load_png / Surface.load_pic",
       "mapping_state": "implemented",
-      "scope": "Bounded ordinary-file loading returning the native format: last-dot suffix/token/content selection across the BMP/PNG/TGA/PNM/PSD/PIC/GIF profiles and QOI (inclusive 83,886,102-byte cap); Surface.load_{qoi,png,bmp,tga,pnm,pic,hdr} select the codec regardless of filename (HDR: 1 MiB cap); raster files share an inclusive 1,048,576-byte pre-read cap. One exact-length read, close before decode and typed file/decode errors; Base does not report close failures.",
+      "scope": "Bounded ordinary-file loading returning the native format: last-dot suffix/token/content selection across the BMP/PNG/TGA/PNM/PSD/PIC/GIF profiles QOI (inclusive 83,886,102-byte cap) and DDS (67,109,000); Surface.load_{qoi,dds,png,bmp,tga,pnm,pic,hdr} select the codec regardless of filename (HDR: 1 MiB cap); raster files share an inclusive 1,048,576-byte pre-read cap. One exact-length read, close before decode and typed file/decode errors; Base does not report close failures.",
       "gaps": [
         "JPEG and other payload codecs, remaining families and larger files/decoder domains",
         "Original pixel-format metadata for the other normalized codec paths, additional native arithmetic profiles and reference callbacks",
@@ -40332,7 +40332,6 @@
       },
       "evidence": [
         "docs/IMAGE-FILES.md",
-        "docs/CODECS.md",
         "tools/image_file_probe.py",
         "tools/codec_files.py",
         "tools/png_file_probe.py",
@@ -40342,7 +40341,8 @@
         "tools/pnm_file_probe.py",
         "tools/qoi_file_probe.py",
         "tools/hdr_file_probe.py",
-        "tests/io_decoding.bend"
+        "tests/io_decoding.bend",
+        "tools/dds_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -40583,11 +40583,11 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Surface.decode_hdr",
+      "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_dds / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Surface.decode_hdr",
       "mapping_state": "implemented",
-      "scope": "Shared token/content dispatch decodes QOI, BMP, TGA, binary 8/16-bit PNM, PNG (1..16-bit, Adam7, native-default CgBI; 1 MiB encoded/64 MiB filtered caps), PSD (raw/PackBits, explicit matte arithmetic), PIC and first-frame GIF, dimensions 1..4096, keeping the native format (GRAYSCALE, GRAY_ALPHA, R8G8B8 or R8G8B8A8; PSD and GIF R8G8B8A8) and exact bytes; Surface.decode_hdr returns R32G32B32 with exact F32 bits. Malformed input returns typed errors.",
+      "scope": "Shared token/content dispatch decodes QOI, uncompressed single-level DDS, BMP, TGA, binary 8/16-bit PNM, PNG (1..16-bit, Adam7, native-default CgBI; 1 MiB encoded/64 MiB filtered caps), PSD (raw/PackBits, explicit matte arithmetic), PIC and first-frame GIF, dimensions 1..4096, keeping the native format (GRAYSCALE, GRAY_ALPHA, R8G8B8 or R8G8B8A8; PSD and GIF R8G8B8A8) and exact bytes; Surface.decode_hdr returns R32G32B32 with exact F32 bits. Malformed input returns typed errors.",
       "gaps": [
-        "JPEG and other payload codecs; HDR in the shared dispatch",
+        "JPEG and other payload codecs; compressed/multi-level DDS; HDR in the shared dispatch",
         "Original pixel-format metadata for the remaining normalized codecs (PSD, GIF) and remaining dispatch families",
         "Nondefault external stb decoder flags, PSD out-of-range matte casts and permissive incomplete/excess raster recovery",
         "Other permissive malformed-stream recovery, dimensions above 4096, native pointer/allocation ABI and OOM parity",
@@ -40606,7 +40606,6 @@
       "evidence": [
         "docs/IMAGE-FILES.md",
         "docs/CODECS.md",
-        "docs/FORMATS.md",
         "tools/image_memory_probe.py",
         "tools/codec_formats.py",
         "tools/png_probe.py",
@@ -40615,7 +40614,8 @@
         "tools/pic_probe.py",
         "tools/gif_probe.py",
         "tests/decoding.bend",
-        "tests/fixtures/images.json"
+        "tests/fixtures/images.json",
+        "tools/dds_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},

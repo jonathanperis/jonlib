@@ -17,6 +17,7 @@ selection and the shared bounded file boundary are documented in
 | PNM | Binary 8/16-bit P5/P6; native format 1/4 (8-bit); files | [PNM.md](PNM.md) | `pnm`, `pnm-format`, `pnm-file` |
 | PSD | Raw/PackBits RGB(A) planes, explicit matte profiles; R8G8B8A8 | [PSD.md](PSD.md) | `psd`, `psd-matte` |
 | PIC | Softimage raw/pure-RLE/mixed-RLE packets; native format 4/7; files | [PIC.md](PIC.md) | `pic`, `pic-format`, `pic-file` |
+| DDS | Uncompressed single-level R5G6B5/A1R5G5B5/A4R4G4B4/RGB24/BGRA32; native format 3/5/6/4/7; files | [below](#dds) | `dds` |
 | GIF (first frame) | Rectangles, interlacing, palettes, transparency, bounded LZW; R8G8B8A8 | [GIF.md](GIF.md) | `gif` |
 | GIF animation | Owned frames, retain/restore disposal, budgets; memory and files | [GIF-ANIMATION.md](GIF-ANIMATION.md) | `gif-animation`, `animation-file` |
 | HDR | Raw/RLE Radiance RGBE to exact F32 (format 9); files | [HDR.md](HDR.md) | `hdr`, `hdr-file` |
@@ -35,6 +36,31 @@ gated by `image-memory` and `image-file`. Run any gate with
 `Surface.IOError` wraps either `FileError{code, message}` or
 `DataError{error}` for loaders, and `SourceError{surface, error}` for writers
 that reject their image before opening the file.
+
+## DDS
+
+`src/dds.bend` adapts raylib's `rl_load_dds_from_memory` (`rltexgpu.h`, enabled
+in raylib's default configuration) for `Surface.decode_dds(bytes)`, the `.dds`
+token of `decode_image`/`load_image`, and `Surface.load_dds(path)`.
+
+- The 128-byte header (`"DDS "`, then 31 little-endian words) selects, in
+  raylib's order: 16-bit RGB (`R5G6B5`), 16-bit RGBA with a `0x8000` or
+  `0xf000` alpha mask (`A1R5G5B5` → `R5G5B5A1`, `A4R4G4B4` → `R4G4B4A4`, each
+  16-bit word rotated left as raylib does), 24-bit RGB (stored as is, so BGR
+  files keep their byte order, like raylib) and 32-bit RGBA (first and third
+  byte swapped, BGRA → RGBA). Trailing bytes are ignored.
+- Other mask/flag/bit-count combinations, a wrong magic, or 16-bit headers with
+  a FourCC are `InvalidImageHeader`, where raylib returns no data.
+- Compressed (DXT) files and mipmap chains, which raylib loads as compressed or
+  multi-level images, are `UnsupportedFormat`: `Surface` holds one uncompressed
+  level. Files shorter than their header or payload, which raylib reads past,
+  are `TruncatedImageData`; dimensions outside 1..4096 are
+  `UnsupportedImageSize`.
+
+`tools/dds_probe.py` (gate `dds`) compares format, dimensions and bytes with
+`LoadImageFromMemory(".dds")` and `LoadImage` (`.dds`, `.DDS`, and the explicit
+loader against a `.dds` copy) on CPU-1, CPU-2 and JavaScript, asserting the
+native compressed/multi-level loads before expecting the Jonlib rejections.
 
 ## QOI
 
