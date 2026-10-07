@@ -52,6 +52,21 @@ def run(command, *, cwd=ROOT, timeout=600, fd_limit=None, env=None):
     return result.stdout
 
 
+# A JavaScript lane running one large codec batch peaks near 4.5 GB, so each
+# concurrent batch is budgeted 6 GB of physical memory (hosted runners: Linux
+# 16 GB -> 2 batches, macOS 7 GB -> 1). PROBEKIT_JOBS or --jobs override this.
+MEMORY_PER_BATCH = 6 << 30
+
+
+def default_jobs():
+    """Concurrent batches bounded by CPUs (at most 4) and physical memory."""
+    try:
+        memory = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
+    except (AttributeError, OSError, ValueError):
+        memory = 0
+    return max(1, min(4, os.cpu_count() or 1, memory // MEMORY_PER_BATCH or 1))
+
+
 def arguments(description, configure=None, argv=None, *, bend=True, raylib=True):
     """Common CLI: pinned checkouts, optional forced-GPU lane and batch parallelism.
 
@@ -64,7 +79,7 @@ def arguments(description, configure=None, argv=None, *, bend=True, raylib=True)
     if raylib:
         parser.add_argument('--raylib-source', type=Path, required=True)
     parser.add_argument('--gpu', action='store_true', help='also run a forced-GPU lane; failure is fatal')
-    parser.add_argument('--jobs', type=int, default=int(os.environ.get('PROBEKIT_JOBS', max(1, min(4, os.cpu_count() or 1)))),
+    parser.add_argument('--jobs', type=int, default=int(os.environ.get('PROBEKIT_JOBS', default_jobs())),
                         help='batches compiled/run concurrently (results keep plan order)')
     if configure:
         configure(parser)

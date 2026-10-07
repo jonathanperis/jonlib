@@ -22,6 +22,11 @@ full probe results as artifacts kept for 30 days. The compact records of a
 full local run (`--record docs/evidence`) are committed in
 [`docs/evidence/`](evidence/); the full dumps are not.
 
+Probes compile and run independent batches concurrently, bounded by CPUs (at
+most four) and by 6 GB of physical memory per batch: a JavaScript lane running a
+large codec batch peaks near 4.5 GB. Hosted Linux runners therefore run two
+batches at a time and macOS runners one. `--jobs N` (or `PROBEKIT_JOBS`) overrides.
+
 Run the same gates locally:
 
 ```sh
