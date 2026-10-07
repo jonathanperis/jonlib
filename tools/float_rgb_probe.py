@@ -92,7 +92,7 @@ def from_words(words: +List<U32>, +index: U32, pixels: Array<M.Vector3>) -> Arra
     case Con{r, Con{g, Con{b, rest}}}: from_words(rest, (index + 1 : U32), Array.set(M.Vector3, pixels, index, M.Vector3{H.float_bits(r), H.float_bits(g), H.float_bits(b)}))
     case _: pixels
 def boundary_image(words: +List<U32>, +width: U32) -> J.Surface:
-  J.Surface{width, 1, 9, J.Vectors{from_words(words, 0, Array.new(M.Vector3, J.Surface.capacity(width), M.Vector3{0.0, 0.0, 0.0}))}}
+  J.Surface{width, 1, 9, J.Vectors{from_words(words, 0, Array.new(M.Vector3, J.Storage.depth(width), M.Vector3{0.0, 0.0, 0.0}))}}
 def hdr_pixels(n: Nat, +index: U32, pixels: Array<M.Vector3>) -> Array<M.Vector3>:
   match n:
     case 0n: pixels

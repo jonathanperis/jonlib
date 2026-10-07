@@ -3,6 +3,20 @@
 # Collision queries adapted from the same release's rshapes.c.
 # 3D collision queries adapted from rmodels.c.
 # Altered Bend implementations; see THIRD_PARTY_NOTICES.md and LICENSES/raylib.txt.
+#
+# Sections, in order (each starts with a "# ----" banner):
+#   1. Data utilities: compression, Base64, checksums and splines
+#   2. Geometry and collision
+#   3. Colors
+#   4. Random streams and owned-buffer storage
+#   5. Image types and errors
+#   6. Raw pixel bytes (GetPixelDataSize, GetPixelColor, SetPixelColor)
+#   7. RGBA8 kernels: generation, color, drawing, geometry and resampling
+#   8. Shared file boundary: suffix rules, bounded reads and closed writes
+#   9. Surface: the public image API, dispatching on pixel format
+#   10. Codecs, exporters, writers and loaders
+# Functions must be defined before use, so kernels precede the Surface layer
+# that dispatches to them.
 import Base
 import ./jonmath.bend as M
 import ./src/codec.bend as Codec
@@ -36,6 +50,9 @@ import ./src/inflate.bend as Inflate
 import ./src/sdeflate.bend as Sdeflate
 import ./src/png.bend as Png
 import ./src/png_encode.bend as PngEncode
+
+# -----------------------------------------------------------------------------
+# Data utilities: compression, Base64, checksums and splines
 
 def Compression.decompress(bytes: +List<U32>, maximum: U32) -> Maybe<List<U32>>:
   Inflate.decompress(True{}, bytes, maximum)
@@ -115,6 +132,9 @@ def Spline.bezier_quad_for(reference: M.Contraction, start: M.Vector2, control: 
 
 def Spline.bezier_quad(start: M.Vector2, control: M.Vector2, end: M.Vector2, t: F32) -> M.Vector2:
   Spline.bezier_quad_for(M.Uncontracted{}, start, control, end, t)
+
+# -----------------------------------------------------------------------------
+# Geometry and collision
 
 type BoundingBox is Data:
   BoundingBox{min: M.Vector3, max: M.Vector3}
@@ -352,6 +372,9 @@ def Collision.point_poly(point: M.Vector2, +points: +List<M.Vector2>) -> Bool:
   Collision.polygon.enough(points)
     && Collision.polygon.loop(points, point, Collision.polygon.last(points, M.Vector2.zero()), False{})
 
+# -----------------------------------------------------------------------------
+# Colors
+
 # A color is packed RRGGBBAA. Channel conversion follows C unsigned-byte casts.
 def Color.rgba(r: U32, g: U32, b: U32, a: U32) -> U32:
   (((r .&. 255) << 24n) .|. ((g .&. 255) << 16n) .|. ((b .&. 255) << 8n) .|. (a .&. 255) : U32)
@@ -515,6 +538,9 @@ def Color.lerp(+left: U32, +right: U32, factor: F32) -> U32:
   Color.rgba(Color.lerp.channel(Color.red(left), Color.red(right), bounded), Color.lerp.channel(Color.green(left), Color.green(right), bounded),
     Color.lerp.channel(Color.blue(left), Color.blue(right), bounded), Color.lerp.channel(Color.alpha(left), Color.alpha(right), bounded))
 
+# -----------------------------------------------------------------------------
+# Random streams and owned-buffer storage
+
 type Random.State is Type:
   RandomState{state: Rng.State}
 
@@ -555,12 +581,13 @@ def Random.Sequence.values(sequence: Random.Sequence) -> +List<F32>:
 def Random.unload_sequence(sequence: Random.Sequence) -> Unit:
   Unit{}
 
-# Duplicate flags indexed by value - minimum (span <= 65535) keep each draw O(1)
-# while accepting exactly the values rprand's linear duplicate scan accepts.
-# Array depth holding count entries; shared by every owned-buffer allocation.
-def Surface.capacity(+count: U32) -> Nat:
+# Depth of a balanced Array holding count entries; shared by every owned buffer
+# (image storage, random sequences) so padding never reaches an export.
+def Storage.depth(+count: U32) -> Nat:
   Bool.pick(Nat, U32.is_eq(count, 1), 0n, 1n+U32.log2((count - 1 : U32)))
 
+# Duplicate flags indexed by value - minimum (span <= 65535) keep each draw O(1)
+# while accepting exactly the values rprand's linear duplicate scan accepts.
 def Random.sequence.mark(+remaining: Nat, +values: +List<F32>, +value: F32, +slot: U32, state: Random.State, read: Array<U32> & U32) -> Random.State & (Nat & (+List<F32> & Array<U32>)):
   (seen, +flag) = read
   +duplicate = U32.is_eq(flag, 1)
@@ -585,7 +612,7 @@ def Random.sequence.loop(budget: Nat, +minimum: F32, +span: U32, cursor: Random.
 def Random.sequence.count(valid: Bool, state: Random.State, count: U32, minimum: F32, +span: U32, budget: Nat) -> Random.State & Result<&1, &1, Random.Sequence.Error, Random.Sequence>:
   match valid:
     case False{}: (state, Fail{InvalidSequenceRequest{}})
-    case True{}: Random.sequence.loop(budget, minimum, span, (state, (U32.to_nat(count), (Nil{}, Array.new(U32, Surface.capacity(span), 0)))))
+    case True{}: Random.sequence.loop(budget, minimum, span, (state, (U32.to_nat(count), (Nil{}, Array.new(U32, Storage.depth(span), 0)))))
 
 def Random.sequence.bounds(valid: Bool, state: Random.State, +count: U32, +minimum: F32, maximum: F32, budget: Nat) -> Random.State & Result<&1, &1, Random.Sequence.Error, Random.Sequence>:
   match valid:
@@ -599,6 +626,9 @@ def Random.load_sequence(state: Random.State, count: U32, +minimum: F32, +maximu
     && (maximum >= F32.neg(32767.0)) && (maximum <= 32767.0) : F32)
     && F32.is_eq(F32.floor(minimum), minimum) && F32.is_eq(F32.floor(maximum), maximum),
     state, count, minimum, maximum, budget)
+
+# -----------------------------------------------------------------------------
+# Image types and errors
 
 # One owned image, mirroring raylib's Image: dimensions 1..4096, one mip level
 # and an uncompressed raylib PixelFormat 1..9. Formats 1..8 store one word per
@@ -693,6 +723,9 @@ def Image.list.prefix(~T: Type, n: Nat, values: List<T>, prefix: List<T>) -> Lis
 
 def Image.list.take(~T: Type, values: List<T>, n: Nat) -> List<T>:
   Image.list.prefix(~T, n, values, Nil{})
+
+# -----------------------------------------------------------------------------
+# Raw pixel bytes (GetPixelDataSize, GetPixelColor, SetPixelColor)
 
 def Pixel.bits_per_pixel(format: U32) -> U32:
   match format:
@@ -814,12 +847,15 @@ def Pixel.write.format(valid: Bool, format: U32, color: U32, +bytes: +List<U32>)
 def Pixel.set_color(bytes: +List<U32>, color: U32, +format: U32) -> Result<&2, &2, Surface.Error, +List<U32>>:
   Pixel.write.format(((format >= 1) && (format <= 7) : U32), format, color, bytes)
 
+# -----------------------------------------------------------------------------
+# RGBA8 kernels: generation, color, drawing, geometry and resampling
+
 def Rgba.creation.checked(ok: Bool, +w: U32, +h: U32, color: U32) -> Maybe<Rgba>:
   match ok:
     case False{}:
       None{}
     case True{}:
-      Some{Rgba{w, h, Array.new(U32, Surface.capacity((w * h : U32)), color)}}
+      Some{Rgba{w, h, Array.new(U32, Storage.depth((w * h : U32)), color)}}
 
 # The initial profile supports 1..4096 pixels on each axis.
 def Rgba.create(+w: U32, +h: U32, color: U32) -> Maybe<Rgba>:
@@ -838,7 +874,7 @@ def Rgba.text.checked(valid: Bool, +width: U32, +height: U32, bytes: +List<U32>)
     case False{}: None{}
     case True{}:
       +count = (width * height : U32)
-      Some{Rgba{width, height, Rgba.text.fill(U32.to_nat(count), 0, bytes, Array.new(U32, Surface.capacity(count), 255))}}
+      Some{Rgba{width, height, Rgba.text.fill(U32.to_nat(count), 0, bytes, Array.new(U32, Storage.depth(count), 255))}}
 
 def Rgba.create_text_bytes(+width: U32, +height: U32, +bytes: +List<U32>) -> Maybe<Rgba>:
   Rgba.text.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
@@ -865,7 +901,7 @@ def Rgba.noise.checked(valid: Bool, state: Random.State, +width: U32, +height: U
     case True{}:
       +count = (width * height : U32)
       Rgba.noise.finished(width, height, Rgba.noise.loop(U32.to_nat(count), 0, F32.to_u32((factor * 100.0 : F32)),
-        (state, Array.new(U32, Surface.capacity(count), 255))))
+        (state, Array.new(U32, Storage.depth(count), 255))))
 
 def Rgba.create_white_noise(state: Random.State, +width: U32, +height: U32, +factor: F32) -> Random.State & Maybe<Rgba>:
   Rgba.noise.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
@@ -891,7 +927,7 @@ def Rgba.perlin.checked(valid: Bool, reference: M.Contraction, +width: U32, +hei
     case True{}:
       +count = (width * height : U32)
       Some{Rgba{width, height, Perlin.pixels(U32.to_nat(count), 0, M.Contraction.fused(reference), width, height, offset_x, offset_y, scale,
-        Array.new(U32, Surface.capacity(count), 255))}}
+        Array.new(U32, Storage.depth(count), 255))}}
 
 def Rgba.create_perlin_for(reference: M.Contraction, +width: U32, +height: U32, +offset_x: F32, +offset_y: F32, +scale: F32) -> Maybe<Rgba>:
   Rgba.perlin.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
@@ -914,7 +950,7 @@ def Rgba.checked.create(valid: Bool, +width: U32, +height: U32, tx: U32, ty: U32
     case False{}: None{}
     case True{}:
       +count = (width * height : U32)
-      Some{Rgba{width, height, Rgba.checked.loop(U32.to_nat(count), 0, width, tx, ty, first, second, Array.new(U32, Surface.capacity(count), first))}}
+      Some{Rgba{width, height, Rgba.checked.loop(U32.to_nat(count), 0, width, tx, ty, first, second, Array.new(U32, Storage.depth(count), first))}}
 
 def Rgba.create_checked(+width: U32, +height: U32, +tx: U32, +ty: U32, first: U32, second: U32) -> Maybe<Rgba>:
   Rgba.checked.create(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096)
@@ -938,7 +974,7 @@ def Rgba.square_gradient.checked(valid: Bool, solid: Bool, +width: U32, +height:
       +count = (width * height : U32)
       Some{Rgba{width, height, Rgba.square_gradient.loop(U32.to_nat(count), 0, width,
         (U32.to_f32(width) / 2.0 : F32), (U32.to_f32(height) / 2.0 : F32), density, inner, outer,
-        Array.new(U32, Surface.capacity(count), inner))}}
+        Array.new(U32, Storage.depth(count), inner))}}
 
 def Rgba.create_gradient_square(+width: U32, +height: U32, +density: F32, inner: U32, outer: U32) -> Maybe<Rgba>:
   Rgba.square_gradient.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
@@ -951,7 +987,7 @@ def Rgba.radial.checked(valid: Bool, +width: U32, +height: U32, density: F32, in
       +count = (width * height : U32)
       paint = {Gradients.Radial{(U32.to_f32(width) / 2.0 : F32), (U32.to_f32(height) / 2.0 : F32),
         (U32.to_f32(U32.min(width, height)) / 2.0 : F32), density, inner, outer} : Gradients.Paint}
-      Some{Rgba{width, height, Gradients.generate(Surface.capacity(count), width, count, paint)}}
+      Some{Rgba{width, height, Gradients.generate(Storage.depth(count), width, count, paint)}}
 
 def Rgba.create_gradient_radial(+width: U32, +height: U32, +density: F32, inner: U32, outer: U32) -> Maybe<Rgba>:
   Rgba.radial.checked(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096) : U32)
@@ -962,7 +998,7 @@ def Rgba.linear.ready(valid: Bool, +width: U32, +height: U32, cosine: F32, sine:
     case False{}: None{}
     case True{}:
       +count = (width * height : U32)
-      Some{Rgba{width, height, Gradients.generate(Surface.capacity(count), width, count,
+      Some{Rgba{width, height, Gradients.generate(Storage.depth(count), width, count,
         Gradients.Linear{cosine, sine, start, extent, inner, outer})}}
 
 def Rgba.linear.trigonometry(+width: U32, +height: U32, inner: U32, outer: U32, values: F32 & F32) -> Maybe<Rgba>:
@@ -988,7 +1024,7 @@ def Rgba.create_gradient_linear(width: U32, height: U32, direction: F32, inner: 
 
 def Rgba.clear(surface: Rgba, color: U32) -> Rgba:
   Rgba{+w, +h, _} = surface
-  Rgba{w, h, Array.new(U32, Surface.capacity((w * h : U32)), color)}
+  Rgba{w, h, Array.new(U32, Storage.depth((w * h : U32)), color)}
 
 def Rgba.color.step(i: U32, transform: Color.Transform, got: Array<U32> & U32) -> Array<U32>:
   (pixels, pixel) = got
@@ -1423,7 +1459,7 @@ def Raster.sample.loop(~T: Data, more: Nat, +i: U32, +mapping: Raster.Mapping, o
 
 def Raster.sample(~T: Data, +count: U32, +mapping: Raster.Mapping, initial: T, source: Array<T>) -> Array<T> & Array<T>:
   Raster.sample.loop(~T, U32.to_nat((count - 1 : U32)), 0, mapping,
-    Array.new(T, Surface.capacity(count), initial), Array.get(T, source, Raster.index(mapping, 0)))
+    Array.new(T, Storage.depth(count), initial), Array.get(T, source, Raster.index(mapping, 0)))
 
 def Rgba.sample(+count: U32, +mapping: Raster.Mapping, source: Array<U32>) -> Array<U32> & Array<U32>:
   Raster.sample(~U32, count, mapping, 0, source)
@@ -1659,7 +1695,7 @@ def Rgba.draw_image_rect(destination: Rgba, source: Rgba, +rect: Rectangle, +tar
     && ((cw >= 1.0) && (ch >= 1.0) && (tw >= 1.0) && (th >= 1.0) && (F32.floor(tw) <= 4096.0) && (F32.floor(th) <= 4096.0) : F32),
     destination, Rgba{sw, sh, pixels}, Rectangle{sx, sy, cw, ch}, target, tint)
 
-# Export consumes the surface and excludes power-of-two storage padding.
+# Consumes the image and excludes power-of-two storage padding.
 def Rgba.colors(surface: Rgba) -> List<U32>:
   Rgba{w, h, pixels} = surface
   Image.list.take(~U32, Array.to_list(~U32, pixels), U32.to_nat((w * h : U32)))
@@ -1780,7 +1816,7 @@ def Rgba.tree(+depth: Nat, +size: U32, +x: U32, +y: U32, +w: U32, +h: U32, pixel
 
 def Rgba.to_image(surface: Rgba) -> Image:
   Rgba{+w, +h, pixels} = surface
-  +depth = Surface.capacity(U32.max(w, h))
+  +depth = Storage.depth(U32.max(w, h))
   Pair.snd(Array<U32>, Image, Rgba.tree(depth, U32.shln(1, depth), 0, 0, w, h, pixels))
 
 # Portable, inspectable P3 PPM output for headless programs. Alpha is discarded.
@@ -1798,6 +1834,9 @@ def Rgba.to_ppm(surface: Rgba) -> String:
   Rgba{+w, +h, pixels} = surface
   "P3\n" ++ U32.show(w) ++ " " ++ U32.show(h) ++ "\n255\n"
     ++ Rgba.ppm.colors(List.reverse(&1, U32, Rgba.colors(Rgba{w, h, pixels})), "")
+
+# -----------------------------------------------------------------------------
+# Shared file boundary: suffix rules, bounded reads and closed writes
 
 # Shared file writers: write once, close the handle, return the write status.
 def Image.file.write.closed(result: File & Result<&1, &1, U32 & String, Unit>) -> IO(Result<&1, &1, U32 & String, Unit>):
@@ -1990,6 +2029,9 @@ def Image.raw.request(valid: Bool, path: String, header: U32, needed: U32) -> IO
 
 def Image.raw.bytes(path: String, +header: U32, +needed: U32) -> IO(Result<&1, &1, Surface.IOError, +List<U32>>):
   Image.raw.request((header <= 2147483647 - needed : U32), path, header, needed)
+
+# -----------------------------------------------------------------------------
+# Surface: the public image API, dispatching on pixel format
 
 # Surface: the one owned image. The RGBA8 kernels above run on Rgba; this layer
 # dispatches on the pixel format the way raylib 6.0 rtextures.c does: byte-level
@@ -2191,7 +2233,7 @@ def Surface.rgba.vectors(+width: U32, +height: U32, format: U32, state: Array<M.
     case Tuple{values, False{}}: Fail{(Surface{width, height, format, Vectors{values}}, OutOfDomain{})}
     case Tuple{values, True{}}:
       +count = (width * height : U32)
-      Done{Surface.rgba.converted(width, height, Surface.vectors.colors(U32.to_nat(count), 0, (values, Array.new(U32, Surface.capacity(count), 0))))}
+      Done{Surface.rgba.converted(width, height, Surface.vectors.colors(U32.to_nat(count), 0, (values, Array.new(U32, Storage.depth(count), 0))))}
 
 # LoadImageColors: one canonical Color per pixel. A rejected R32G32B32 owner is
 # returned unchanged.
@@ -2236,7 +2278,7 @@ def Surface.format.words(kind: U32, +width: U32, +height: U32, +format: U32, +ta
     case 9:
       +count = (width * height : U32)
       Surface{width, height, 9, Vectors{Surface.vectors.from_words(U32.to_nat(count), 0, format,
-        (Surface.native(format, U32.to_nat(count), values), Array.new(M.Vector3, Surface.capacity(count), Surface.zero())))}}
+        (Surface.native(format, U32.to_nat(count), values), Array.new(M.Vector3, Storage.depth(count), Surface.zero())))}}
     case _:
       +count = (width * height : U32)
       Surface{width, height, target, Words{Surface.native(target, U32.to_nat(count),
@@ -2248,7 +2290,7 @@ def Surface.format.vectors(+width: U32, +height: U32, format: U32, +target: U32,
     case Tuple{values, True{}}:
       +count = (width * height : U32)
       Done{Surface{width, height, target, Words{Surface.native(target, U32.to_nat(count),
-        Surface.words.from_vectors(U32.to_nat(count), 0, target, (values, Array.new(U32, Surface.capacity(count), 0))))}}}
+        Surface.words.from_vectors(U32.to_nat(count), 0, target, (values, Array.new(U32, Storage.depth(count), 0))))}}}
 
 def Surface.format.checked(unchanged: Bool, supported: Bool, surface: Surface, +target: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match unchanged supported surface:
@@ -2348,7 +2390,7 @@ def Surface.canvas.overlap(valid: Bool, +sw: U32, sh: U32, +format: U32, pixels:
   match valid:
     case False{}: Fail{(Surface{sw, sh, format, pixels}, InvalidRectangle{})}
     case True{}:
-      Done{Surface.resampled(width, height, format, Surface.canvas.storage(pixels, format, fill, Surface.capacity((width * height : U32)),
+      Done{Surface.resampled(width, height, format, Surface.canvas.storage(pixels, format, fill, Storage.depth((width * height : U32)),
         (cols * rows : U32), cols, sw, width, (sy * sw + sx : U32), (dy * width + dx : U32)))}
 
 def Surface.canvas.mapped(sw: U32, sh: U32, format: U32, pixels: Surface.Pixels, width: U32, height: U32, fill: U32, mapping: Raster.Canvas) -> Result<&1, &1, Surface & Surface.Error, Surface>:
@@ -2377,7 +2419,7 @@ def Surface.resize_canvas(surface: Surface, +width: U32, +height: U32, +x: F32, 
 
 def Surface.to_pot(surface: Surface, fill: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Surface{+width, +height, format, pixels} = surface
-  Surface.resize_canvas(Surface{width, height, format, pixels}, U32.shln(1, Surface.capacity(width)), U32.shln(1, Surface.capacity(height)), 0.0, 0.0, fill)
+  Surface.resize_canvas(Surface{width, height, format, pixels}, U32.shln(1, Storage.depth(width)), U32.shln(1, Storage.depth(height)), 0.0, 0.0, fill)
 
 # Color operations: LoadImageColors, the RGBA8 kernel, then ImageFormat back.
 # Owners in other formats keep a copy so a rejected request returns them intact.
@@ -2496,7 +2538,7 @@ def Surface.dither.rgba(+r: U32, +g: U32, +b: U32, +a: U32, converted: Result<&1
       +count = (width * height : U32)
       Done{Surface{width, height, Dither.format(r, g, b, a), Words{Dither.loop(U32.to_nat(count), 0, width, height,
         Dither.Bits{U32.to_nat(r), U32.to_nat(g), U32.to_nat(b), U32.to_nat(a)},
-        (pixels, Array.new(U32, Surface.capacity(count), 0)))}}}
+        (pixels, Array.new(U32, Storage.depth(count), 0)))}}}
 
 def Surface.dither.checked(valid: Bool, surface: Surface, r: U32, g: U32, b: U32, a: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match valid:
@@ -2559,7 +2601,7 @@ def Surface.paint.selected(pixels: Surface.Pixels, draw: Surface.Draw, color: U3
     case Words{values}: Surface.paint.words(format, Surface.draw.apply(draw, Surface.draw_word(format, color), Rgba{width, height, values}))
     case Vectors{values}:
       Surface.mark.vectors(width, height, format, Surface.vector(color), values,
-        Surface.draw.apply(draw, 1, Rgba{width, height, Array.new(U32, Surface.capacity((width * height : U32)), 0)}))
+        Surface.draw.apply(draw, 1, Rgba{width, height, Array.new(U32, Storage.depth((width * height : U32)), 0)}))
 
 def Surface.paint(surface: Surface, draw: Surface.Draw, color: U32) -> Surface:
   Surface{width, height, format, pixels} = surface
@@ -2661,7 +2703,7 @@ def Surface.triangle_ex.selected(kind: U32, pixels: Surface.Pixels, +width: U32,
   match kind pixels:
     case 7 Words{values}: Surface.of_rgba(Rgba.draw_triangle_ex(Rgba{width, height, values}, v1, v2, v3, c1, c2, c3))
     case _ _:
-      +depth = Surface.capacity((width * height : U32))
+      +depth = Storage.depth((width * height : U32))
       Surface.shade.merged(width, height, format, pixels,
         Rgba.draw_triangle_ex(Rgba{width, height, Array.new(U32, depth, 0)}, v1, v2, v3, c1, c2, c3),
         Rgba.draw_triangle(Rgba{width, height, Array.new(U32, depth, 0)}, v1, v2, v3, 1))
@@ -2825,7 +2867,7 @@ def Surface.alpha_border.selected(pixels: Surface.Pixels, threshold: F32, +width
     case Words{values}: Surface.border.inspected(threshold, Surface.inspect(Surface{width, height, format, Words{values}}))
     case Vectors{values}:
       Surface.border.found(Surface{width, height, format, Vectors{values}},
-        Rgba.alpha_border(Rgba{width, height, Array.new(U32, Surface.capacity((width * height : U32)), 255)}, threshold))
+        Rgba.alpha_border(Rgba{width, height, Array.new(U32, Storage.depth((width * height : U32)), 255)}, threshold))
 
 def Surface.alpha_border(surface: Surface, threshold: F32) -> Surface & Rectangle:
   Surface{width, height, format, pixels} = surface
@@ -2893,7 +2935,7 @@ def Surface.channel.vectors.checked(+width: U32, +height: U32, format: U32, chan
     case Tuple{values, True{}}:
       +count = (width * height : U32)
       Surface.channel.vectors.finished(width, height, format, Surface.channel.vectors(U32.to_nat(count), 0, channel,
-        (values, Array.new(U32, Surface.capacity(count), 0))))
+        (values, Array.new(U32, Storage.depth(count), 0))))
 
 def Surface.channel.checked(valid: Bool, surface: Surface, selected: F32) -> Surface & Maybe<Surface>:
   match valid surface:
@@ -2901,7 +2943,7 @@ def Surface.channel.checked(valid: Bool, surface: Surface, selected: F32) -> Sur
     case True{} Surface{+width, +height, +format, Words{values}}:
       +count = (width * height : U32)
       Surface.channel.words.finished(width, height, format, Surface.channel.words(U32.to_nat(count), 0, format,
-        Image.channel.index(format, F32.to_u32(F32.max(0.0, selected))), (values, Array.new(U32, Surface.capacity(count), 0))))
+        Image.channel.index(format, F32.to_u32(F32.max(0.0, selected))), (values, Array.new(U32, Storage.depth(count), 0))))
     case True{} Surface{+width, +height, +format, Vectors{values}}:
       Surface.channel.vectors.checked(width, height, format, Image.channel.index(format, F32.to_u32(F32.max(0.0, selected))),
         Surface.vectors.checked(~Surface.vector.valid, U32.to_nat((width * height : U32)), 0, (values, True{})))
@@ -2985,11 +3027,11 @@ def Surface.from_bytes.stored(kind: U32, +width: U32, +height: U32, +format: U32
     case 9:
       +count = (width * height : U32)
       Surface.from_bytes.vectors(width, height, Surface.vectors.raw(U32.to_nat(count), 0,
-        Some{(bytes, Array.new(M.Vector3, Surface.capacity(count), Surface.zero()))}))
+        Some{(bytes, Array.new(M.Vector3, Storage.depth(count), Surface.zero()))}))
     case _:
       +count = (width * height : U32)
       Surface.from_bytes.words(width, height, format, Formats.unpack(U32.to_nat(count), 0,
-        U32.to_nat((Pixel.bits_per_pixel(format) / 8 : U32)), Some{Formats.Input{bytes, Array.new(U32, Surface.capacity(count), 0)}}))
+        U32.to_nat((Pixel.bits_per_pixel(format) / 8 : U32)), Some{Formats.Input{bytes, Array.new(U32, Storage.depth(count), 0)}}))
 
 def Surface.from_bytes.validated(valid: Bool, +width: U32, +height: U32, +format: U32, bytes: +List<U32>) -> Maybe<Surface>:
   match valid:
@@ -3026,6 +3068,9 @@ def Surface.to_ppm.rgba(result: Result<&1, &1, Surface & Surface.Error, Rgba>) -
 # Portable, inspectable P3 PPM output for headless programs. Alpha is discarded.
 def Surface.to_ppm(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, String>:
   Surface.to_ppm.rgba(Surface.to_rgba(surface))
+
+# -----------------------------------------------------------------------------
+# Codecs, exporters, writers and loaders
 
 # Codecs. Decoders return raylib's native format for the file (LoadImage).
 def Image.codec.error(error: Codec.Error) -> Surface.Error:
@@ -3270,7 +3315,7 @@ def Surface.memory.checked(valid: Bool, +channels: U32, surface: Surface) -> Res
     case True{} Surface{+width, +height, +format, Words{values}}: Done{Surface.memory.words(width, height, format, channels, values)}
     case True{} Surface{+width, +height, _, Vectors{values}}:
       +count = (width * height : U32)
-      Done{PngEncode.formatted(width, height, 4, Surface.memory.vectors(U32.to_nat(count), 0, (values, Array.new(U32, Surface.capacity(count), 0))))}
+      Done{PngEncode.formatted(width, height, 4, Surface.memory.vectors(U32.to_nat(count), 0, (values, Array.new(U32, Storage.depth(count), 0))))}
 
 def Surface.memory.typed(png: Bool, +channels: U32, surface: Surface) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>:
   match png:
