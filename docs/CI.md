@@ -8,7 +8,8 @@ API ledger and documentation links).
 
 **Conformance** runs every gate in [`tools/gates.json`](../tools/gates.json) on
 `ubuntu-24.04` and `macos-15`. `tools/run_gates.py` splits the manifest into
-six duration-balanced shards per host; the two aggregate jobs (`CPU and
+five duration-balanced shards per host (hosted macOS allows five concurrent
+jobs, so a sixth shard would wait for another to finish); the two aggregate jobs (`CPU and
 JavaScript (ubuntu-24.04)` / `(macos-15)`) pass only when every shard passed.
 Documentation-only changes skip this workflow. The pinned Bend checkout, its
 declared overlay and the pinned raylib checkout come from `toolchain.json`
