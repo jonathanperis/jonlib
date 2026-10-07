@@ -639,7 +639,7 @@
     "status": "profile-covered",
     "scope": "Shared token/content dispatch decodes QOI, uncompressed single-level DDS, BMP, TGA, binary 8/16-bit PNM, PNG (1..16-bit, Adam7, native-default CgBI; 1 MiB encoded/64 MiB filtered caps), PSD (raw/PackBits, explicit matte arithmetic), PIC and first-frame GIF, dimensions 1..4096, keeping the native format (GRAYSCALE, GRAY_ALPHA, R8G8B8 or R8G8B8A8; PSD and GIF R8G8B8A8) and exact bytes; Surface.decode_hdr returns R32G32B32 with exact F32 bits. Malformed input returns typed errors.",
     "gaps": [
-      "JPEG and other payload codecs; configuration-gated KTX/PKM/PVR/ASTC; HDR in the shared dispatch",
+      "JPEG and other payload codecs; multi-level KTX/PVR files; HDR in the shared dispatch",
       "Original pixel-format metadata for the remaining normalized codecs (PSD, GIF) and remaining dispatch families",
       "Nondefault external stb decoder flags, PSD out-of-range matte casts and permissive incomplete/excess raster recovery",
       "Other permissive malformed-stream recovery, dimensions above 4096, native pointer/allocation ABI and OOM parity",

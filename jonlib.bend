@@ -55,6 +55,7 @@ import ./src/sdeflate.bend as Sdeflate
 import ./src/png.bend as Png
 import ./src/png_encode.bend as PngEncode
 import ./src/dds.bend as Dds
+import ./src/gputex.bend as GpuTex
 
 # -----------------------------------------------------------------------------
 # Data utilities: compression, Base64, checksums and splines
@@ -4343,10 +4344,32 @@ def Image.file.is_dds(kind: Image.FileKind) -> Bool:
     case DdsFile{}: True{}
     case _: False{}
 
-def Image.Stored.decode.selected(dds: Bool, reference: M.Contraction, file_type: String, bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Image.Stored>:
+def Image.Stored.loaded(outcome: GpuTex.Outcome) -> Result<&1, &1, Surface.Error, Image.Stored>:
+  match outcome:
+    case GpuTex.Loaded{width, height, format, data}: Image.Stored.created(width, height, format, 1, data)
+    case GpuTex.Unsupported{}: Fail{UnsupportedFormat{}}
+    case GpuTex.Invalid{error}: Fail{Image.codec.error(error)}
+
+# KTX (1), PKM (2), PVR (3) and ASTC (4) tokens, which raylib decodes when
+# built with SUPPORT_FILEFORMAT_KTX/PKM/PVR/ASTC; 0 for other tokens.
+def Image.Stored.gputex.kind(+file_type: String) -> U32:
+  Bool.pick(U32, String.eq(file_type, ".ktx") || String.eq(file_type, ".KTX"), 1,
+  Bool.pick(U32, String.eq(file_type, ".pkm") || String.eq(file_type, ".PKM"), 2,
+  Bool.pick(U32, String.eq(file_type, ".pvr") || String.eq(file_type, ".PVR"), 3,
+  Bool.pick(U32, String.eq(file_type, ".astc") || String.eq(file_type, ".ASTC"), 4, 0))))
+
+def Image.Stored.decode.other(gpu: U32, reference: M.Contraction, file_type: String, bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Image.Stored>:
+  match gpu:
+    case 1: Image.Stored.loaded(GpuTex.decode_ktx(bytes))
+    case 2: Image.Stored.loaded(GpuTex.decode_pkm(bytes))
+    case 3: Image.Stored.loaded(GpuTex.decode_pvr(bytes))
+    case 4: Image.Stored.loaded(GpuTex.decode_astc(bytes))
+    case _: Image.Stored.surface(Surface.decode_image_for(reference, file_type, bytes))
+
+def Image.Stored.decode.selected(dds: Bool, reference: M.Contraction, +file_type: String, bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Image.Stored>:
   match dds:
     case True{}: Image.Stored.decode_dds(bytes)
-    case False{}: Image.Stored.surface(Surface.decode_image_for(reference, file_type, bytes))
+    case False{}: Image.Stored.decode.other(Image.Stored.gputex.kind(file_type), reference, file_type, bytes)
 
 # LoadImageFromMemory with raylib's file-type tokens.
 def Image.Stored.decode_image_for(reference: M.Contraction, +file_type: String, bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Image.Stored>:
@@ -4355,25 +4378,28 @@ def Image.Stored.decode_image_for(reference: M.Contraction, +file_type: String, 
 def Image.Stored.decode_image(file_type: String, bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Image.Stored>:
   Image.Stored.decode_image_for(M.Uncontracted{}, file_type, bytes)
 
-def Image.Stored.file.dds(result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(Result<&1, &1, Surface.IOError, Image.Stored>):
+def Image.Stored.file.decoded(reference: M.Contraction, token: String, result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(Result<&1, &1, Surface.IOError, Image.Stored>):
   match result:
     case Fail{error}: IO.pure(Result<&1, &1, Surface.IOError, Image.Stored>, Fail{error})
-    case Done{bytes}: IO.pure(Result<&1, &1, Surface.IOError, Image.Stored>, Image.file.decoded(Image.Stored, Image.Stored.decode_dds(bytes)))
+    case Done{bytes}: IO.pure(Result<&1, &1, Surface.IOError, Image.Stored>, Image.file.decoded(Image.Stored, Image.Stored.decode_image_for(reference, token, bytes)))
 
 def Image.Stored.file.lifted(result: Result<&1, &1, Surface.IOError, Surface>) -> IO(Result<&1, &1, Surface.IOError, Image.Stored>):
   match result:
     case Fail{error}: IO.pure(Result<&1, &1, Surface.IOError, Image.Stored>, Fail{error})
     case Done{surface}: IO.pure(Result<&1, &1, Surface.IOError, Image.Stored>, Image.file.decoded(Image.Stored, Image.Stored.single(surface)))
 
-# A 4096x4096 R8G8B8A8 chain with its 128-byte header bounds DDS files.
-def Image.Stored.load.selected(dds: Bool, reference: M.Contraction, +path: String) -> IO(Result<&1, &1, Surface.IOError, Image.Stored>):
-  match dds:
-    case True{}: IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, Image.Stored>, Image.file.bytes(path, 89478612), Image.Stored.file.dds)
+# A 4096x4096 R8G8B8A8 chain with its 128-byte header bounds DDS, KTX, PKM,
+# PVR and ASTC files.
+def Image.Stored.load.selected(raw: Bool, reference: M.Contraction, +path: String, token: String) -> IO(Result<&1, &1, Surface.IOError, Image.Stored>):
+  match raw:
+    case True{}: IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, Image.Stored>, Image.file.bytes(path, 89478612), Image.Stored.file.decoded(reference, token))
     case False{}: IO.bind(Result<&1, &1, Surface.IOError, Surface>, Result<&1, &1, Surface.IOError, Image.Stored>, Surface.load_image_for(reference, path), Image.Stored.file.lifted)
 
-# LoadImage: DDS files by suffix, other files through Surface.load_image.
+# LoadImage: DDS, KTX, PKM, PVR and ASTC files by suffix, other files through
+# Surface.load_image.
 def Image.Stored.load_image_for(reference: M.Contraction, +path: String) -> IO(Result<&1, &1, Surface.IOError, Image.Stored>):
-  Image.Stored.load.selected(Image.file.is_dds(Image.file.kind(path)), reference, path)
+  +token = Image.file.token(path)
+  Image.Stored.load.selected(Image.file.is_dds(Image.memory.kind(token)) || U32.is_ne(Image.Stored.gputex.kind(token), 0), reference, path, token)
 
 def Image.Stored.load_image(path: String) -> IO(Result<&1, &1, Surface.IOError, Image.Stored>):
   Image.Stored.load_image_for(M.Uncontracted{}, path)
