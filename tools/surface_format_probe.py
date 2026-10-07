@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Run every format-generic Surface operation on pixel formats 1..9 against raylib.
+"""Run every format-generic Surface operation on pixel formats 1..13 against raylib.
 
 Each case converts one R8G8B8A8 fixture with ImageFormat, applies one operation
 and compares the complete stored result (format, dimensions and raw sample
-bytes, or the returned colors) exactly. ImageRotate blends float bytes too;
-when raylib's R32 result leaves finite [0,1] or its R32G32B32 result holds NaN,
-Jonlib must refuse it (the owner domain), so those cases expect a rejection.
+bytes, or the returned colors) exactly; `to-N` cases are ImageFormat to every
+format. ImageRotate blends float bytes too; when raylib's R32/R16 result leaves
+finite [0,1] or a wide F32 result holds NaN, Jonlib must refuse it (the owner
+domain), so those cases expect a rejection.
 """
 import hashlib
 import json
@@ -17,7 +18,7 @@ from conformance import gradient_reference
 import probekit
 from probekit import ProbeFailure
 
-FORMATS = range(1, 10)
+FORMATS = range(1, 14)
 SIZES = ((5, 4), (6, 3))
 DRAW = (230, 40, 120, 200)
 FILL = (10, 200, 30, 128)
@@ -121,6 +122,7 @@ OPS = {
                         'image', f'drawn({kind}, {target}, J.Surface.copy(s))')
        for kind, (name, target, src_rec, dst_rec, tint) in enumerate(DRAWS)
        for fmt_c in [f'ImageFormat(&m,{target});' if target else '']},
+    **{f'to-{target}': (f'ImageFormat(&im,{target});', 'image', f'J.Surface.format(s, {target})') for target in range(1, 14)},
     'alpha-mask': ('{Image m=ImageCopy(im);ImageFlipHorizontal(&m);ImageAlphaMask(&im,m);UnloadImage(m);}', 'image', 'masked(0, J.Surface.copy(s))'),
     'alpha-mask-rgb': ('{Image m=ImageCopy(im);ImageFlipHorizontal(&m);ImageFormat(&m,4);ImageAlphaMask(&im,m);UnloadImage(m);}', 'image',
                        'masked(4, J.Surface.copy(s))'),
@@ -277,13 +279,18 @@ def render(cases):
 
 
 def owner_domain(op, fmt, row):
-    """Jonlib refuses rotated float bytes outside the R32/R32G32B32 owner domain."""
-    if not op.startswith('rotate') or fmt not in (8, 9) or row is None:
+    """Jonlib refuses rotated float bytes outside the owner domain: R32 and R16
+    finite [0,1], F32 samples of R32G32B32(A32) not NaN."""
+    if not op.startswith('rotate') or fmt not in (8, 9, 10, 11) or row is None:
         return row
-    words = struct.unpack(f'<{(len(row) - 12) // 4}I', bytes(row[12:]))
+    data = bytes(row[12:])
+    if fmt == 11:
+        halves = struct.unpack(f'<{len(data) // 2}H', data)
+        return None if any(h > 0x3C00 and h != 0x8000 for h in halves) else row
+    words = struct.unpack(f'<{len(data) // 4}I', data)
     if fmt == 8 and any(w > 0x3F800000 and w != 0x80000000 for w in words):
         return None
-    if fmt == 9 and any((w & 0x7FFFFFFF) > 0x7F800000 for w in words):
+    if fmt in (9, 10) and any((w & 0x7FFFFFFF) > 0x7F800000 for w in words):
         return None
     return row
 

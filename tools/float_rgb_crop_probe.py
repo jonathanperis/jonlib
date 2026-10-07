@@ -52,17 +52,17 @@ def apply(crop: Bool, reject: Bool, rect: J.Rectangle, result: Maybe<J.Surface>)
     case _ None{}: None{}
     case True{} Some{image}: cropped(reject, J.Surface.crop(image, rect))
     case False{} Some{image}: extracted(reject, J.Surface.extract(image, rect))
-def source_read(result: Array<M.Vector3> & M.Vector3) -> Bool:
+def source_read(result: Array<J.Surface.Quad> & J.Surface.Quad) -> Bool:
   match result:
-    case Tuple{_, M.Vector3{x, y, z}}: F32.is_eq(x, 7.25) && F32.is_eq(y, 7.5) && F32.is_eq(z, 7.75)
-def region_read(source: Array<M.Vector3>, result: Array<M.Vector3> & M.Vector3) -> Bool:
+    case Tuple{_, J.Quad{x, y, z, _}}: U32.is_eq(x, 1088946176) && U32.is_eq(y, 1089470464) && U32.is_eq(z, 1089994752)
+def region_read(source: Array<J.Surface.Quad>, result: Array<J.Surface.Quad> & J.Surface.Quad) -> Bool:
   match result:
-    case Tuple{_, M.Vector3{x, y, z}}:
-      F32.is_eq(x, 0.0) && F32.is_eq(y, 0.0) && F32.is_eq(z, 0.0) && source_read(Array.get(M.Vector3, source, 7))
+    case Tuple{_, J.Quad{x, y, z, _}}:
+      U32.is_eq(x, 0) && U32.is_eq(y, 0) && U32.is_eq(z, 0) && source_read(Array.get(J.Surface.Quad, source, 7))
 def independent(result: J.Surface & Maybe<J.Surface>) -> Bool:
   match result:
-    case Tuple{J.Surface{6, 4, 9, J.Vectors{source}}, Some{J.Surface{3, 2, 9, J.Vectors{region}}}}:
-      region_read(source, Array.get(M.Vector3, Array.set(M.Vector3, region, 0, M.Vector3{0.0, 0.0, 0.0}), 0))
+    case Tuple{J.Surface{6, 4, 9, J.Quads{source}}, Some{J.Surface{3, 2, 9, J.Quads{region}}}}:
+      region_read(source, Array.get(J.Surface.Quad, Array.set(J.Surface.Quad, region, 0, J.Quad{F32.bits(0.0), F32.bits(0.0), F32.bits(0.0), 0}), 0))
     case _: False{}
 def ownership(result: Maybe<J.Surface>) -> Bool:
   match result:

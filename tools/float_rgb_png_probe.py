@@ -77,12 +77,12 @@ def save(path: String, result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "PNG file source rejected")
     case Some{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_png(image, path), write_ok)
-def small(value: F32) -> J.Surface:
-  J.Surface{1, 1, 9, J.Vectors{Array.new(M.Vector3, 0n, M.Vector3{value, 0.25, 0.75})}}
+def small(bits: U32) -> J.Surface:
+  J.Surface{1, 1, 9, J.Quads{Array.new(J.Surface.Quad, 0n, J.Quad{bits, F32.bits(0.25), F32.bits(0.75), 0})}}
 def owner_read(wanted: U32, bytes: List<U32>) -> Bool:
   match bytes:
     case Con{r0, Con{r1, Con{r2, Con{r3, Con{0, Con{0, Con{128, Con{62, Con{0, Con{0, Con{64, Con{63, Nil{}}}}}}}}}}}}}:
-      U32.is_eq((r0 .|. (r1 << 8n) .|. (r2 << 16n) .|. (r3 << 24n) : U32), F32.bits(H.float_bits(wanted)))
+      U32.is_eq((r0 .|. (r1 << 8n) .|. (r2 << 16n) .|. (r3 << 24n) : U32), wanted)
     case _: False{}
 def owner_entries(wanted: U32, data: (U32 & U32) & (U32 & List<U32>)) -> Bool:
   match data:
@@ -93,21 +93,21 @@ def rejected(wanted: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, +L
     case Fail{Tuple{image, J.OutOfDomain{}}}: owner_entries(wanted, J.Surface.export(image))
     case _: False{}
 # NaN samples are outside the checked export domain: the owner comes back intact
-# (compared with same-backend bits: NaN payloads are not portable across backends).
-def nan_owner_bits(value: M.Vector3) -> Bool:
-  M.Vector3{r, g, b} = value
-  U32.is_eq(F32.bits(r), F32.bits(H.float_bits(2143294004))) && U32.is_eq(F32.bits(g), 1048576000) && U32.is_eq(F32.bits(b), 1061158912)
-def nan_owner_read(result: Array<M.Vector3> & M.Vector3) -> Bool:
+# (stored as raw words, so its bits are exact on every lane).
+def nan_owner_bits(value: J.Surface.Quad) -> Bool:
+  J.Quad{r, g, b, _} = value
+  U32.is_eq(r, 2143294004) && U32.is_eq(g, 1048576000) && U32.is_eq(b, 1061158912)
+def nan_owner_read(result: Array<J.Surface.Quad> & J.Surface.Quad) -> Bool:
   (_, value) = result
   nan_owner_bits(value)
 def nan_rejected(result: Result<&1, &1, J.Surface & J.Surface.Error, +List<U32>>) -> Bool:
   match result:
-    case Fail{Tuple{J.Surface{1, 1, 9, J.Vectors{values}}, J.OutOfDomain{}}}: nan_owner_read(Array.get(M.Vector3, values, 0))
+    case Fail{Tuple{J.Surface{1, 1, 9, J.Quads{values}}, J.OutOfDomain{}}}: nan_owner_read(Array.get(J.Surface.Quad, values, 0))
     case _: False{}
 def reject_memory() -> Bool:
-  nan_rejected(J.Surface.export_to_memory(small(H.float_bits(2143294004)), ".png"))
+  nan_rejected(J.Surface.export_to_memory(small(2143294004), ".png"))
 def reject_file_bytes() -> Bool:
-  rejected(1073741824, J.Surface.to_png(small(2.0)))
+  rejected(1073741824, J.Surface.to_png(small(1073741824)))
 def rejected_write(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
     case Fail{J.SourceError{image, J.OutOfDomain{}}}: checked(owner_entries(1073741824, J.Surface.export(image)))
@@ -121,9 +121,9 @@ def closure_loop(n: Nat) -> IO(Unit):
     case 0n: emit_bytes(~&1, [1])
     case 1n+rest:
       do IO<Unit>:
-        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_png(small(0.5), OUTPUT), write_ok)
-        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_png(small(2.0), SENTINEL), rejected_write)
-        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_png(small(0.5), DIRECTORY), failed_write)
+        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_png(small(1056964608), OUTPUT), write_ok)
+        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_png(small(1073741824), SENTINEL), rejected_write)
+        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_png(small(1056964608), DIRECTORY), failed_write)
         closure_loop(rest)
 def main() -> IO(Unit):
   do IO<Unit>:

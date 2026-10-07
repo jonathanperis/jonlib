@@ -2,7 +2,7 @@
 """Check exact R32 observations, ownership, distinct memory/file PNG and rejections.
 
 Pure operations run on CPU/JS and optionally forced Metal. File IO runs only on
-CPU/JS. Packed memory PNG, raw loading and conversion to the non-format 10,
+CPU/JS. Packed memory PNG, raw loading and conversion to compressed format 14,
 out-of-domain R32G32B32->R32 and GetPixelColor remain
 explicit Jonlib rejection contracts, not assertions of native equivalence.
 """
@@ -363,11 +363,11 @@ def observe_memory_reject(result: Maybe<Result<&1, &1, J.Surface & J.Surface.Err
   match result:
     case Some{Fail{Tuple{image, J.UnsupportedFormat{}}}}: formatted(J.Surface.export(image))
     case _: IO.die(Unit, 1, "Packed memory PNG must retain UnsupportedFormat owner")
-# Conversion to R32G32B32 is supported (the float operation); target 10 is not a format.
+# Conversion to R32G32B32 is supported (the float operation); compressed target 14 is not.
 def conversion(result: Maybe<J.Surface>) -> Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>:
   match result:
     case None{}: None{}
-    case Some{image}: Some{J.Surface.format(image, 10)}
+    case Some{image}: Some{J.Surface.format(image, 14)}
 def observe_conversion(result: Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>) -> IO(Unit):
   match result:
     case Some{Fail{Tuple{image, J.UnsupportedFormat{}}}}: formatted(J.Surface.export(image))
@@ -419,7 +419,7 @@ def observe_code(result: Maybe<Result<&1, &1, J.Surface & J.Surface.Error, Strin
     case Some{Done{text}}: emit_bytes(~&1, text_bytes(text, Nil{}))
     case _: IO.die(Unit, 1, "R32 code export rejected")
 def reject_float() -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
-  J.Surface.format(J.Surface{1, 1, 9, J.Vectors{Array.new(M.Vector3, 0n, M.Vector3{H.float_bits(2147483648), H.float_bits(2147483649), 0.75})}}, 8)
+  J.Surface.format(J.Surface{1, 1, 9, J.Quads{Array.new(J.Surface.Quad, 0n, J.Quad{2147483648, 2147483649, F32.bits(0.75), 0})}}, 8)
 def observe_float_reject(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):
   match result:
     case Fail{Tuple{image, J.OutOfDomain{}}}: formatted(J.Surface.export(image))
@@ -503,12 +503,12 @@ def candidate_program(ops, gpu, directory, raw_load_controls=True):
                 number,suffix = {'png':(0,'png'),'raw':(1,'raw'),'code':(2,'h')}[kind]
                 path = json.dumps(str(directory/(case['id']+'.'+suffix)))
                 body += f'    save({number}, {path}, {image_expr(case)})\n'
-        # Test a present payload and an absent path with unsupported format 10: rejection
+        # Test a present payload and an absent path with unsupported format 14: rejection
         # must happen before file opening, and does not claim native load parity.
         if raw_load_controls:
             for name in ('present-format9.raw','absent-format9.raw'):
                 path = json.dumps(str(directory/name))
-                body += f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw({path}, 1, 1, 10, 0), raw_load_rejected)\n'
+                body += f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw({path}, 1, 1, 14, 0), raw_load_rejected)\n'
     return body
 
 

@@ -11,7 +11,7 @@ the caller's width, height and format.
 
 ## Loading
 
-`Surface.load_raw` supports ordinary, non-changing files in formats 1..9.
+`Surface.load_raw` supports ordinary, non-changing files in formats 1..13.
 R32 words are little-endian finite values in `[0,1]`; both zero signs and
 positive subnormals are preserved exactly (see [R32.md](R32.md)). R32G32B32
 payloads are three little-endian words per pixel (`width*height*12` bytes);

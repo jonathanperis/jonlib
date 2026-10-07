@@ -105,7 +105,15 @@ are detailed in [MATH.md](MATH.md).
 | 6 | R4G4B4A4 | `Words`, 16-bit value |
 | 7 | R8G8B8A8 | `Words`, canonical `0xRRGGBBAA` Color word |
 | 8 | R32 | `Words`, F32 bits (finite 0..1, both zero signs) |
-| 9 | R32G32B32 | `Vectors`, one `M.Vector3` (no NaN) |
+| 9 | R32G32B32 | `Quads`, F32 bits in `a..c` (no NaN) |
+| 10 | R32G32B32A32 | `Quads`, F32 bits in `a..d` (no NaN) |
+| 11 | R16 | `Words`, half-float bits (finite 0..1, both zero signs) |
+| 12 | R16G16B16 | `Quads`, half-float bits in `a..c` |
+| 13 | R16G16B16A16 | `Quads`, half-float bits in `a..d` |
+
+`Quads` hold one `Surface.Quad{a, b, c, d}` of stored sample words per pixel
+(unused words are zero), so every lane keeps float bits exactly. See
+[FLOAT-FORMATS.md](FLOAT-FORMATS.md).
 
 Dimensions are 1..4096 with one mip level; storage is rounded up to a power of
 two and padding is excluded from every export. Build owners through the
@@ -120,14 +128,15 @@ Operations follow raylib's per-format behavior:
 - **Color** operations (tint, invert, contrast, brightness, replace, alpha
   premultiply, blur, convolution, `resize`, `resize_nn`, `dither`) run
   `LoadImageColors`, the RGBA8 algorithm and `ImageFormat` back to the original
-  format. R32G32B32 owners need samples in 0..1 (the C casts are undefined
-  elsewhere) and otherwise return `OutOfDomain` with the owner.
+  format. Float owners in formats 9, 10, 12 and 13 need samples in 0..1 (the C
+  casts are undefined elsewhere) and otherwise return `OutOfDomain` with the
+  owner.
 - **Drawing** stores each covered pixel's color as `ImageDrawPixel` encodes it
   for the format; there is no blending.
 - **Composition** (`draw_image*`) reads both images with `GetPixelColor`
   (integer scaling for packed formats, unlike `LoadImageColors`), blends with
   `ColorAlphaBlend` unless the source has no alpha and the tint is opaque, and
-  writes with `SetPixelColor`, which leaves R32 and R32G32B32 unchanged. Without
+  writes with `SetPixelColor`, which leaves float formats (8..13) unchanged. Without
   blending, equal formats copy stored samples. Scaled draws resize the source
   in its own format.
 - **Per-format** operations follow raylib's switch: `alpha_clear` changes
@@ -139,7 +148,7 @@ Operations follow raylib's per-format behavior:
 
 Which formats each operation has reference evidence for is recorded per API in
 the [compatibility ledger](COMPATIBILITY.md); `tools/surface_format_probe.py`
-compares every format-generic operation on formats 1..9 with raylib.
+compares every format-generic operation on formats 1..13 with raylib.
 
 ### Construction and conversion
 
@@ -153,12 +162,12 @@ compares every format-generic operation on formats 1..9 with raylib.
 | `Surface.create_text_bytes(width, height, bytes) -> Maybe<Surface>` | Grayscale data image from bytes, stopping at NUL and padding/truncating to the dimensions; opaque R8G8B8A8 output. See [PALETTES.md](PALETTES.md). |
 | `Surface.create_gradient_square/radial(width, height, density, inner, outer)` | Maybe result; dimensions 1..4096 and finite density 0..1 (density one is the inner color, as the reference clamps). |
 | `Surface.create_gradient_linear(width, height, direction, start, end)` / `create_gradient_linear_for(libm, ...)` | Integral directions -360..360 with an explicit `M.Libm`; rejects a zero reference normalization extent. See [GRADIENTS.md](GRADIENTS.md). |
-| `Surface.from_bytes(width, height, format, bytes) -> Maybe<Surface>` | Raw image data for formats 1..9: exactly `width*height` samples in raylib byte order; R32 words finite 0..1, R32G32B32 words not NaN. See [FORMATS.md](FORMATS.md). |
+| `Surface.from_bytes(width, height, format, bytes) -> Maybe<Surface>` | Raw image data for formats 1..13: exactly `width*height` samples in raylib byte order; R32 and R16 samples finite 0..1, F32 samples of formats 9 and 10 not NaN. See [FORMATS.md](FORMATS.md). |
 | `Surface.export(surface) -> (U32 & U32) & (U32 & List<U32>)` | Consumes the owner: dimensions, format and raw sample bytes without padding. |
-| `Surface.format(surface, target)` | `ImageFormat` between formats 1..9; `target` 0 or the current format keeps the owner, other targets are `UnsupportedFormat`. See [FORMATS.md](FORMATS.md) and [FLOAT-RGB.md](FLOAT-RGB.md). |
+| `Surface.format(surface, target)` | `ImageFormat` between formats 1..13 (`HalfToFloat`/`FloatToHalf` for R16 formats); `target` 0 or the current format keeps the owner, compressed targets are `UnsupportedFormat`; float sources need samples in 0..1. See [FORMATS.md](FORMATS.md) and [FLOAT-FORMATS.md](FLOAT-FORMATS.md). |
 | `Surface.dimensions(surface) -> U32 & U32` / `pixel_format(surface) -> Surface & U32` | Consume the owner for its dimensions / return it with its format. |
 | `Surface.colors(surface)` | `LoadImageColors`: consumes the owner and returns `width*height` row-major Colors. |
-| `Surface.get(surface, x, y) -> Surface & Maybe<&2, U32>` | `GetImageColor` for one pixel; out-of-bounds U32 coordinates (no wrap) and out-of-domain R32G32B32 samples return `None`. See [IMAGE-COLORS.md](IMAGE-COLORS.md). |
+| `Surface.get(surface, x, y) -> Surface & Maybe<&2, U32>` | `GetImageColor` for one pixel; out-of-bounds U32 coordinates (no wrap) and out-of-domain float samples return `None`. See [IMAGE-COLORS.md](IMAGE-COLORS.md). |
 | `Surface.from_channel(surface, selected) -> Surface & Maybe<Surface>` | `ImageFromChannel`: keeps the source, returns an independent GRAYSCALE image; integral selectors -32767..32767 with per-format redirection. See [IMAGE-CHANNELS.md](IMAGE-CHANNELS.md). |
 | `Surface.load_palette(surface, maximum) -> Surface & Maybe<Image.Palette>` | Keeps the source; first-occurrence colors excluding alpha zero; capacity 1..4096. See [PALETTES.md](PALETTES.md). |
 | `Surface.copy(surface) -> Surface & Surface` | The original and an independent copy. |
@@ -172,7 +181,7 @@ compares every format-generic operation on formats 1..9 with raylib.
 | `Surface.rotate_cw/rotate_ccw(surface) -> Surface` | Quarter turns; width and height swap. |
 | `Surface.extract(surface, rectangle) -> Surface & Maybe<Surface>` | `ImageFromImage` profile: keeps the original; positive integral in-bounds rectangles, otherwise `None`. |
 | `Surface.crop(surface, rectangle)` | Clips an integral rectangle as raylib does; an origin strictly beyond the right/bottom edge is the reference no-op. |
-| `Surface.resize_canvas(surface, width, height, offset_x, offset_y, fill)` | Raw copy into a canvas filled with `SetPixelColor(fill)` (R32 and R32G32B32 canvases stay zero); dimensions 1..4096, bounded integral offsets, positive overlap for changed sizes; equal dimensions are a no-op. |
+| `Surface.resize_canvas(surface, width, height, offset_x, offset_y, fill)` | Raw copy into a canvas filled with `SetPixelColor(fill)` (float canvases, formats 8..13, stay zero); dimensions 1..4096, bounded integral offsets, positive overlap for changed sizes; equal dimensions are a no-op. |
 | `Surface.to_pot(surface, fill)` | Canvas expansion to the next power-of-two dimensions; already-POT images are unchanged. |
 | `Surface.alpha_border(surface, threshold) -> Surface & Rectangle` / `alpha_crop(surface, threshold) -> Surface` | Bounds of pixels whose `LoadImageColors` alpha exceeds the truncated threshold byte (formats without alpha read 255); empty selections return `(0,0,0,0)` / the original. |
 
@@ -213,13 +222,13 @@ Every drawing call consumes the owner and returns the updated one.
 
 | Operation | Contract |
 |---|---|
-| `Surface.draw_image(destination, source, x, y, tint)` | Full-source unscaled composition with integer `ColorAlphaBlend`, any formats; returns `Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>` with destination first and the unchanged source. An R32G32B32 source needs samples in 0..1 (`OutOfDomain`). |
+| `Surface.draw_image(destination, source, x, y, tint)` | Full-source unscaled composition with integer `ColorAlphaBlend`, any formats; returns `Result<&1, &1, (Surface & Surface) & Surface.Error, Surface & Surface>` with destination first and the unchanged source. A wide float source needs samples in 0..1 (`OutOfDomain`). |
 | `Surface.draw_image_region(destination, source, rectangle, x, y, tint)` | Valid unscaled source subrectangles with integer placement. |
 | `Surface.draw_image_rect(destination, source, source_rectangle, destination_rectangle, tint)` | Bounded finite rectangles, including fractional fields; reference clipping and default filtered scaling in the source format. |
 | `Surface.alpha_mask(destination, mask)` | Same-size mask converted to GRAYSCALE becomes the alpha of a GRAY_ALPHA (from GRAYSCALE) or R8G8B8A8 destination; mismatched sizes are `InvalidSize`, conversion failures `OutOfDomain`. |
 | `Surface.alpha_clear(surface, color, threshold)` | Finite threshold 0..1 (else `InvalidRequest`): an inclusive alpha cutoff in GRAY_ALPHA, R5G5B5A1, R4G4B4A4 and R8G8B8A8 with raylib's per-format replacement words; other formats are unchanged. |
 | `Surface.mipmaps(surface) -> Image.Mipmaps` / `Image.Mipmaps.entries/unload` | Base-to-1x1 chain, each level `resize` of the previous one in the image's format. See [MIPMAPS.md](MIPMAPS.md). |
-| `Surface.rotate_degrees(surface, degrees)` / `rotate_degrees_for(libm, ...)` | Integral degrees -360..360, reference bilinear sampling of every stored byte and truncated output dimensions; R32/R32G32B32 results outside the owner domain are `OutOfDomain`. See [ROTATION.md](ROTATION.md). |
+| `Surface.rotate_degrees(surface, degrees)` / `rotate_degrees_for(libm, ...)` | Integral degrees -360..360, reference bilinear sampling of every stored byte and truncated output dimensions; float results outside the owner domain are `OutOfDomain`. See [ROTATION.md](ROTATION.md). |
 
 ### Codecs and files
 
@@ -233,7 +242,7 @@ HDR); use `Surface.colors` or `Surface.format(surface, 7)` for RGBA8.
 | `Surface.decode_image(file_type, bytes)` / `decode_image_for(contraction, ...)` | `LoadImageFromMemory`: exact extension tokens select QOI or the raster signatures. See [IMAGE-FILES.md](IMAGE-FILES.md). |
 | `Surface.load_image(path)` / `load_image_for(contraction, path)` | `LoadImage`: bounded ordinary files, native last-dot suffix/content selection, close before decode. |
 | `Surface.load_qoi/png/bmp/tga/pnm/pic/hdr(path)` | Explicit codec selection independent of the suffix, with the same file boundary. |
-| `Surface.load_raw(path, width, height, format, header_size)` | `LoadImageRaw` for formats 1..9 with native header selection. See [RAW-FILES.md](RAW-FILES.md). |
+| `Surface.load_raw(path, width, height, format, header_size)` | `LoadImageRaw` for formats 1..13 with native header selection. See [RAW-FILES.md](RAW-FILES.md). |
 | `Image.Animation.decode_gif/decode_image/load_image(...)` / `entries` / `unload` | GIF frame sequences or a one-frame fallback with caller budgets. See [GIF-ANIMATION.md](GIF-ANIMATION.md). |
 | `Surface.to_png/to_bmp/to_tga/to_qoi(surface)` | `ExportImage` file bytes: GRAYSCALE, GRAY_ALPHA, R8G8B8 and R8G8B8A8 write stored samples, other formats `LoadImageColors`; QOI accepts R8G8B8 and R8G8B8A8 only. See [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
 | `Surface.export_to_memory(surface, file_type)` | `ExportImageToMemory` (".png"): native raw-storage interpretation, including R32/R32G32B32 bytes read as RGBA; 16-bit packed formats are rejected. |

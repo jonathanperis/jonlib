@@ -318,7 +318,7 @@
   "LoadImageRaw": {
     "jonlib": "Surface.load_raw",
     "status": "profile-covered",
-    "scope": "Ordinary unchanging files, dimensions 1..4096, formats 1..9: R32 finite [0,1] (both zero signs, positive subnormals) and non-NaN R32G32B32 words. Native fitting-header/fallback-to-zero selection, exact payload words and signed-int bounds; handles close before decoding. DataError{OutOfDomain} for unsupported samples follows closure; invalid requests fail before opening.",
+    "scope": "Ordinary unchanging files, dimensions 1..4096, formats 1..13: R32 and R16 finite [0,1] (both zero signs, positive subnormals) and non-NaN R32G32B32 words. Native fitting-header/fallback-to-zero selection, exact payload words and signed-int bounds; handles close before decoding. DataError{OutOfDomain} for unsupported samples follows closure; invalid requests fail before opening.",
     "gaps": [
       "Other formats, broader R32 domains, format-9 NaN payload parity, signed/out-of-range parameters and concurrent/special files",
       "Native callbacks/allocation ABI and complete target/integration/performance coverage"
@@ -506,7 +506,7 @@
   "ImageCopy": {
     "jonlib": "Surface.copy",
     "status": "contract-checked",
-    "scope": "Every Surface format; returns the source and an independent clone with exact stored samples. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format; returns the source and an independent clone with exact stored samples. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -516,7 +516,7 @@
   "ImageFromImage": {
     "jonlib": "Surface.extract",
     "status": "profile-covered",
-    "scope": "Every Surface format; positive integral in-bounds regions; original owner retained and extracted storage independent with exact samples. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format; positive integral in-bounds regions; original owner retained and extracted storage independent with exact samples. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -526,7 +526,7 @@
   "ImageFromChannel": {
     "jonlib": "Surface.from_channel",
     "status": "profile-covered",
-    "scope": "Retained sources and independent GRAYSCALE output for every format (R32 finite [0,1], R32G32B32 finite [0,1]). Bounded integral selectors keep native per-format redirection (R32 always its sole sample), packed reciprocal normalization and F32 byte truncation. Unsupported requests preserve original owners. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Retained sources and independent GRAYSCALE output for every format (R32 finite [0,1], R32G32B32 finite [0,1]). Bounded integral selectors keep native per-format redirection (R32 always its sole sample), packed reciprocal normalization and F32 byte truncation. Unsupported requests preserve original owners. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other selector/source domains, formats and mipmaps",
       "Complete native ABI/resource/target/performance coverage",
@@ -538,7 +538,7 @@
   "ImageFormat": {
     "jonlib": "Surface.format / Surface.from_bytes / Surface.export",
     "status": "profile-covered",
-    "scope": "Surface.format between formats 1..9: native direct normalization, packed reciprocal expansion, alpha discard, thresholds and bit-preserving no-ops; float encoding needs finite [0,1] samples. R32 holds exact finite [0,1] words incl. positive subnormals and both zero signs; conversion to it uses uncontracted F32 luminance (also from format 9), from it red-only normalization; 8-to-9 is direct. Failures return the original owner.",
+    "scope": "Surface.format between formats 1..13: native direct normalization, packed reciprocal expansion, raylib HalfToFloat/FloatToHalf bit arithmetic for the R16 formats, alpha discard, thresholds and bit-preserving no-ops; float encoding needs finite [0,1] samples. R32 holds exact finite [0,1] words incl. positive subnormals and both zero signs; conversion to it uses uncontracted F32 luminance (also from format 9), from it red-only normalization; 8-to-9 is direct. Failures return the original owner.",
     "gaps": [
       "Other float/half/compressed formats, mipmaps and other thresholds/endianness",
       "NaN payload interoperability, out-of-domain float casts and native allocation ABI",
@@ -551,7 +551,7 @@
   "ImageToPOT": {
     "jonlib": "Surface.to_pot",
     "status": "profile-covered",
-    "scope": "Every Surface format, dimensions 1..4096; canvas expansion to next power-of-two dimensions with SetPixelColor fill (R32 and R32G32B32 stay zero) and the native no-op for POT sizes. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, dimensions 1..4096; canvas expansion to next power-of-two dimensions with SetPixelColor fill (R32 and R32G32B32 stay zero) and the native no-op for POT sizes. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other dimensions/formats/mipmaps and NaN payload parity",
       "Full target/performance gates"
@@ -562,7 +562,7 @@
   "ImageCrop": {
     "jonlib": "Surface.crop",
     "status": "profile-covered",
-    "scope": "Every Surface format; integral crops with positive clipped results or native strictly-outside-origin no-ops; exact samples and returned owners on rejection. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format; integral crops with positive clipped results or native strictly-outside-origin no-ops; exact samples and returned owners on rejection. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -572,7 +572,7 @@
   "ImageAlphaCrop": {
     "jonlib": "Surface.alpha_crop",
     "status": "profile-covered",
-    "scope": "Every Surface format; reference alpha bounds then a byte-level crop for threshold 0..1; empty selections preserve the original image unchanged. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format; reference alpha bounds then a byte-level crop for threshold 0..1; empty selections preserve the original image unchanged. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Mipmaps and complete platform/performance gates"
     ],
@@ -582,7 +582,7 @@
   "ImageAlphaClear": {
     "jonlib": "Surface.alpha_clear",
     "status": "profile-covered",
-    "scope": "Formats 1..9 with a finite threshold 0..1 (else InvalidRequest): raylib's per-format switch. GRAY_ALPHA, R5G5B5A1 and R4G4B4A4 compare their alpha byte/bits and store raylib's replacement words (including its unscaled round(c*31)/round(c*15) channel values truncated to bytes); R8G8B8A8 replaces all four channels below the inclusive byte cutoff; formats without alpha are unchanged.",
+    "scope": "Formats 1..13 with a finite threshold 0..1 (else InvalidRequest): raylib's per-format switch. GRAY_ALPHA, R5G5B5A1 and R4G4B4A4 compare their alpha byte/bits and store raylib's replacement words (including its unscaled round(c*31)/round(c*15) channel values truncated to bytes); R8G8B8A8 replaces all four channels below the inclusive byte cutoff; formats without alpha are unchanged.",
     "gaps": [
       "Pixel formats 10+ (R32G32B32A32, R16 family) and mipmaps",
       "Full target/performance gates"
@@ -593,7 +593,7 @@
   "ImageAlphaMask": {
     "jonlib": "Surface.alpha_mask",
     "status": "profile-covered",
-    "scope": "Same-size owners in formats 1..9: the mask is a GRAYSCALE copy (ImageFormat) of the source; a GRAYSCALE destination becomes GRAY_ALPHA, others become R8G8B8A8 through ImageFormat, with the mask as alpha. The original mask is retained; mismatched dimensions return both owners with InvalidSize; conversion domain failures return them with OutOfDomain.",
+    "scope": "Same-size owners in formats 1..13: the mask is a GRAYSCALE copy (ImageFormat) of the source; a GRAYSCALE destination becomes GRAY_ALPHA, others become R8G8B8A8 through ImageFormat, with the mask as alpha. The original mask is retained; mismatched dimensions return both owners with InvalidSize; conversion domain failures return them with OutOfDomain.",
     "gaps": [
       "Reference warning/no-op adaptation on mismatched sizes",
       "Pixel formats 10+",
@@ -605,7 +605,7 @@
   "ImageAlphaPremultiply": {
     "jonlib": "Surface.alpha_premultiply",
     "status": "profile-covered",
-    "scope": "RGBA8; reference F32 alpha division and RGB multiplication with byte truncation; alpha retained. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "RGBA8; reference F32 alpha division and RGB multiplication with byte truncation; alpha retained. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Mipmaps and full target/performance gates"
     ],
@@ -615,7 +615,7 @@
   "ImageBlurGaussian": {
     "jonlib": "Surface.blur_gaussian",
     "status": "profile-covered",
-    "scope": "Any Surface format: ImageAlphaPremultiply back to the source format, then LoadImageColors, the RGBA8 blur and ImageFormat. U32 size 0..min(width,height); four sliding-window iterations, remove-before-add sums, edge divisors, per-vertical-pass byte truncation and reverse premultiplication. Excessive sizes return the original with InvalidSize. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Any Surface format: ImageAlphaPremultiply back to the source format, then LoadImageColors, the RGBA8 blur and ImageFormat. U32 size 0..min(width,height); four sliding-window iterations, remove-before-add sums, edge divisors, per-vertical-pass byte truncation and reverse premultiplication. Excessive sizes return the original with InvalidSize. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other source formats/mipmaps and configured iteration counts",
       "Negative/excessive native blur sizes and native allocation ABI",
@@ -627,7 +627,7 @@
   "ImageKernelConvolution": {
     "jonlib": "Surface.kernel_convolution",
     "status": "profile-covered",
-    "scope": "Any Surface format via LoadImageColors, the RGBA8 kernel and ImageFormat back; immutable square F32 kernels of 0..225 entries, coefficients zero or finite magnitude 2^-16..16. Native flat unsigned-index sampling/row wrapping, odd/even anchoring, normalized channel multiplication, ordered accumulation, RGB clamping and unclamped defined alpha conversion. Unsupported kernels or alpha casts return the unchanged original with InvalidKernel, including late failures. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Any Surface format via LoadImageColors, the RGBA8 kernel and ImageFormat back; immutable square F32 kernels of 0..225 entries, coefficients zero or finite magnitude 2^-16..16. Native flat unsigned-index sampling/row wrapping, odd/even anchoring, normalized channel multiplication, ordered accumulation, RGB clamping and unclamped defined alpha conversion. Unsupported kernels or alpha casts return the unchanged original with InvalidKernel, including late failures. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Wider kernels/coefficient domains and undefined native alpha casts",
       "Other source formats/mipmaps and native allocation ABI",
@@ -639,7 +639,7 @@
   "ImageResize": {
     "jonlib": "Surface.resize",
     "status": "profile-covered",
-    "scope": "Formats 1..9; dimensions 1..4096. R8G8B8A8 uses the alpha-weighted 7-channel filter; GRAYSCALE, GRAY_ALPHA and R8G8B8 use the unweighted, unscaled 1..3-channel stbir layouts on their own bytes; formats 3, 5, 6, 8 and 9 go through LoadImageColors/ImageFormat and quantize even at unchanged sizes. Default Catmull-Rom/Mitchell filters retain binary64 normalization, clamp folding, per-layout pass-order costs and native SIMD accumulation order. Rejected requests preserve original owners; every format is compared on the surface-format profile and formats 1, 2 and 4 on the resize layout corpus.",
+    "scope": "Formats 1..13; dimensions 1..4096. R8G8B8A8 uses the alpha-weighted 7-channel filter; GRAYSCALE, GRAY_ALPHA and R8G8B8 use the unweighted, unscaled 1..3-channel stbir layouts on their own bytes; formats 3, 5, 6, 8 and 9 go through LoadImageColors/ImageFormat and quantize even at unchanged sizes. Default Catmull-Rom/Mitchell filters retain binary64 normalization, clamp folding, per-layout pass-order costs and native SIMD accumulation order. Rejected requests preserve original owners; every format is compared on the surface-format profile and formats 1, 2 and 4 on the resize layout corpus.",
     "gaps": [
       "Pixel formats 10+ and mipmap chains",
       "Dimensions beyond the initial Surface domain",
@@ -651,7 +651,7 @@
   "ImageResizeNN": {
     "jonlib": "Surface.resize_nn",
     "status": "profile-covered",
-    "scope": "Any Surface format via LoadImageColors, the plus-one fixed-point mapping and ImageFormat back, dimensions 1..4096; unsafe mappings return the original owner. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Any Surface format via LoadImageColors, the plus-one fixed-point mapping and ImageFormat back, dimensions 1..4096; unsafe mappings return the original owner. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -661,7 +661,7 @@
   "ImageResizeCanvas": {
     "jonlib": "Surface.resize_canvas",
     "status": "profile-covered",
-    "scope": "Every Surface format, dimensions 1..4096; bounded integral offsets with positive overlap for changed sizes. Exact sample movement and same-size no-ops; the fill is stored with SetPixelColor, which leaves R32 and R32G32B32 canvases zero. Rejected requests retain original owners. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, dimensions 1..4096; bounded integral offsets with positive overlap for changed sizes. Exact sample movement and same-size no-ops; the fill is stored with SetPixelColor, which leaves R32 and R32G32B32 canvases zero. Rejected requests retain original owners. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "No-overlap/unsafe reference copy domains",
       "Mipmaps, NaN payload parity and complete platform/performance gates"
@@ -672,7 +672,7 @@
   "ImageMipmaps": {
     "jonlib": "Surface.mipmaps / Image.Mipmaps.entries / Image.Mipmaps.unload",
     "status": "profile-covered",
-    "scope": "Formats 1..9, dimensions 1..4096: complete owned base-to-1x1 levels, preserving the base and applying ImageResize to each preceding level in the image's format (1..3-channel filters for GRAYSCALE/GRAY_ALPHA/R8G8B8, RGBA8 round trips with per-level requantization for the others); levels are independent owners. Total: Surface.mipmaps returns Image.Mipmaps.",
+    "scope": "Formats 1..13, dimensions 1..4096: complete owned base-to-1x1 levels, preserving the base and applying ImageResize to each preceding level in the image's format (1..3-channel filters for GRAYSCALE/GRAY_ALPHA/R8G8B8, RGBA8 round trips with per-level requantization for the others); levels are independent owners. Total: Surface.mipmaps returns Image.Mipmaps.",
     "gaps": [
       "Existing partial/full native chains and pixel formats 10+",
       "Contiguous C allocation/pointer ABI and texture integration",
@@ -684,7 +684,7 @@
   "ImageDither": {
     "jonlib": "Surface.dither / Surface.export",
     "status": "profile-covered",
-    "scope": "Any Surface format via LoadImageColors to Floyd-Steinberg R5G6B5 (5,6,5,0), R5G5B5A1 (5,5,5,1) or R4G4B4A4 (4,4,4,4). Preserves raster order, truncation, neighbor saturation and alpha handling; other bit counts (native format 0) return the original with InvalidDitherBits. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Any Surface format via LoadImageColors to Floyd-Steinberg R5G6B5 (5,6,5,0), R5G5B5A1 (5,5,5,1) or R4G4B4A4 (4,4,4,4). Preserves raster order, truncation, neighbor saturation and alpha handling; other bit counts (native format 0) return the original with InvalidDitherBits. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other source formats/mipmaps and native 16-bit memory/allocator ABI",
       "Full integration/target/resource/performance coverage"
@@ -695,7 +695,7 @@
   "ImageFlipVertical": {
     "jonlib": "Surface.flip_vertical",
     "status": "profile-covered",
-    "scope": "Every Surface format; vertical flipping with exact stored samples and preserved dimensions. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format; vertical flipping with exact stored samples and preserved dimensions. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -705,7 +705,7 @@
   "ImageFlipHorizontal": {
     "jonlib": "Surface.flip_horizontal",
     "status": "profile-covered",
-    "scope": "Every Surface format; horizontal flipping with exact stored samples and preserved dimensions. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format; horizontal flipping with exact stored samples and preserved dimensions. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -715,7 +715,7 @@
   "ImageRotate": {
     "jonlib": "Surface.rotate_degrees_for / Surface.rotate_degrees",
     "status": "profile-covered",
-    "scope": "Formats 1..9; integral degrees -360..360 with explicit reference trigonometry; reference bilinear interpolation of every stored byte, truncated bounds and zero outside pixels; output dimensions 1..4096; R32/R32G32B32 results outside the owner domain (R32 finite [0,1], R32G32B32 non-NaN) and other rejected requests preserve the original owner.",
+    "scope": "Formats 1..13; integral degrees -360..360 with explicit reference trigonometry; reference bilinear interpolation of every stored byte, truncated bounds and zero outside pixels; output dimensions 1..4096; R32/R32G32B32 results outside the owner domain (R32 finite [0,1], R32G32B32 non-NaN) and other rejected requests preserve the original owner.",
     "gaps": [
       "Wider-angle reference behavior",
       "Pixel formats 10+ and mipmaps",
@@ -727,7 +727,7 @@
   "ImageRotateCW": {
     "jonlib": "Surface.rotate_cw",
     "status": "profile-covered",
-    "scope": "Every Surface format; 90-degree clockwise rotation with swapped dimensions and exact sample words. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format; 90-degree clockwise rotation with swapped dimensions and exact sample words. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Mipmaps, NaN payload parity and complete target/performance evidence"
     ],
@@ -737,7 +737,7 @@
   "ImageRotateCCW": {
     "jonlib": "Surface.rotate_ccw",
     "status": "profile-covered",
-    "scope": "Every Surface format; 90-degree counterclockwise rotation with swapped dimensions and exact sample words. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format; 90-degree counterclockwise rotation with swapped dimensions and exact sample words. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Mipmaps, NaN payload parity and complete target/performance evidence"
     ],
@@ -747,7 +747,7 @@
   "ImageColorTint": {
     "jonlib": "Surface.color_tint",
     "status": "profile-covered",
-    "scope": "Any Surface format via LoadImageColors, integer tint multiplication and ImageFormat back (alpha discarded by formats without alpha). R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Any Surface format via LoadImageColors, integer tint multiplication and ImageFormat back (alpha discarded by formats without alpha). R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other source domains/mipmaps and target/performance evidence"
     ],
@@ -757,7 +757,7 @@
   "ImageColorInvert": {
     "jonlib": "Surface.color_invert",
     "status": "profile-covered",
-    "scope": "Any Surface format via LoadImageColors, RGB inversion and ImageFormat back. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Any Surface format via LoadImageColors, RGB inversion and ImageFormat back. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other source domains/mipmaps and target/performance evidence"
     ],
@@ -767,7 +767,7 @@
   "ImageColorGrayscale": {
     "jonlib": "Surface.color_grayscale",
     "status": "profile-covered",
-    "scope": "ImageFormat to GRAYSCALE from any Surface format, with native F32 luminance order and truncation; R32G32B32 converts directly from finite [0,1] samples. Rejected requests return the original owner. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "ImageFormat to GRAYSCALE from any Surface format, with native F32 luminance order and truncation; R32G32B32 converts directly from finite [0,1] samples. Rejected requests return the original owner. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other source domains/mipmaps and remaining metadata/native ABI",
       "Full target/resource/performance coverage"
@@ -778,7 +778,7 @@
   "ImageColorContrast": {
     "jonlib": "Surface.color_contrast",
     "status": "profile-covered",
-    "scope": "Any Surface format via LoadImageColors and ImageFormat back; finite contrast clamped to -100..100 with native F32 arithmetic/truncation; non-finite amounts are InvalidRequest. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Any Surface format via LoadImageColors and ImageFormat back; finite contrast clamped to -100..100 with native F32 arithmetic/truncation; non-finite amounts are InvalidRequest. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other source domains/mipmaps and target/performance evidence"
     ],
@@ -788,7 +788,7 @@
   "ImageColorBrightness": {
     "jonlib": "Surface.color_brightness",
     "status": "profile-covered",
-    "scope": "Any Surface format via LoadImageColors and ImageFormat back; finite amounts below 2^31 in magnitude truncated toward zero (C int) then clamped to -255..255, native underflow-to-one; other amounts are InvalidRequest. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Any Surface format via LoadImageColors and ImageFormat back; finite amounts below 2^31 in magnitude truncated toward zero (C int) then clamped to -255..255, native underflow-to-one; other amounts are InvalidRequest. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full signed/source domain, Mipmaps and target/performance evidence"
     ],
@@ -798,7 +798,7 @@
   "ImageColorReplace": {
     "jonlib": "Surface.color_replace",
     "status": "profile-covered",
-    "scope": "Any Surface format via LoadImageColors and exact four-byte matching; GRAYSCALE, R5G6B5, R8G8B8 and R32G32B32 convert back with ImageFormat, other formats stay R8G8B8A8 as in raylib. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Any Surface format via LoadImageColors and exact four-byte matching; GRAYSCALE, R5G6B5, R8G8B8 and R32G32B32 convert back with ImageFormat, other formats stay R8G8B8A8 as in raylib. R32G32B32 samples outside [0,1] return OutOfDomain with the owner. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other source domains/mipmaps and target/performance evidence"
     ],
@@ -808,7 +808,7 @@
   "LoadImageColors": {
     "jonlib": "Surface.colors",
     "status": "profile-covered",
-    "scope": "Every Surface format to complete row-major RGBA color lists: native packed integer expansion, red-only R32 and truncated R32G32B32 samples (finite [0,1], otherwise OutOfDomain with the owner). Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format to complete row-major RGBA color lists: native packed integer expansion, red-only R32 and truncated R32G32B32 samples (finite [0,1], otherwise OutOfDomain with the owner). Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open.",
       "R32 samples outside finite [0,1] and complete target/contraction profiles"
@@ -819,7 +819,7 @@
   "LoadImagePalette": {
     "jonlib": "Surface.load_palette / Image.Palette.entries",
     "status": "profile-covered",
-    "scope": "Preserves the source owner and returns an owned RGBA palette for capacity 1..4096: first-occurrence order, alpha-zero exclusion, alpha-sensitive uniqueness, native count and BLANK padding to full capacity. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Preserves the source owner and returns an owned RGBA palette for capacity 1..4096: first-occurrence order, alpha-zero exclusion, alpha-sensitive uniqueness, native count and BLANK padding to full capacity. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Native pointers/allocators and other image formats/mipmaps",
       "Full integration/target/resource/performance coverage"
@@ -841,7 +841,7 @@
   "GetImageAlphaBorder": {
     "jonlib": "Surface.alpha_border",
     "status": "profile-covered",
-    "scope": "Every Surface format; threshold 0..1; strict comparison of the LoadImageColors alpha byte (255 for formats without alpha) and exact zero rectangle for empty selections; original owner returned. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format; threshold 0..1; strict comparison of the LoadImageColors alpha byte (255 for formats without alpha) and exact zero rectangle for empty selections; original owner returned. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Mipmaps and complete platform/performance gates"
     ],
@@ -851,7 +851,7 @@
   "GetImageColor": {
     "jonlib": "Surface.get",
     "status": "contract-checked",
-    "scope": "Every Surface format; U32 coordinates are checked before access; out-of-bounds pixels and out-of-domain R32G32B32 samples return None with the original owner. Native packed integer expansion and red-only R32 colors remain distinct from low-level GetPixelColor. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format; U32 coordinates are checked before access; out-of-bounds pixels and out-of-domain R32G32B32 samples return None with the original owner. Native packed integer expansion and red-only R32 colors remain distinct from low-level GetPixelColor. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open.",
       "R32 samples outside finite [0,1] and complete target/contraction profiles"
@@ -862,7 +862,7 @@
   "ImageClearBackground": {
     "jonlib": "Surface.clear",
     "status": "profile-covered",
-    "scope": "Consumes a Surface of any format and stores one color in every pixel with ImageDrawPixel's per-format encoding; dimensions preserved. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Consumes a Surface of any format and stores one color in every pixel with ImageDrawPixel's per-format encoding; dimensions preserved. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -872,7 +872,7 @@
   "ImageDrawPixel": {
     "jonlib": "Surface.draw_pixel",
     "status": "profile-covered",
-    "scope": "Every Surface format; stores one in-bounds pixel with ImageDrawPixel's per-format encoding (no blending); outside coordinates are clipped. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format; stores one in-bounds pixel with ImageDrawPixel's per-format encoding (no blending); outside coordinates are clipped. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -882,7 +882,7 @@
   "ImageDrawPixelV": {
     "jonlib": "Surface.draw_pixel_v",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite Vector2 coordinates truncated before pixel clipping. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite Vector2 coordinates truncated before pixel clipping. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Other formats and complete target/performance evidence"
     ],
@@ -892,7 +892,7 @@
   "ImageDrawLine": {
     "jonlib": "Surface.draw_line",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; integral coordinates; pinned 16.16 stepping and excluded endpoint. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; integral coordinates; pinned 16.16 stepping and excluded endpoint. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -902,7 +902,7 @@
   "ImageDrawLineV": {
     "jonlib": "Surface.draw_line_v",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite Vector2 inputs and raylib add-half/truncate rounding. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite Vector2 inputs and raylib add-half/truncate rounding. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -912,7 +912,7 @@
   "ImageDrawLineEx": {
     "jonlib": "Surface.draw_line_ex",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite endpoints; add-half/truncate rounding; safe signed 16.16 deltas; thickness 0..32767. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite endpoints; add-half/truncate rounding; safe signed 16.16 deltas; thickness 0..32767. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Negative thickness, full formats/domains and target/performance evidence"
     ],
@@ -922,7 +922,7 @@
   "ImageDrawCircle": {
     "jonlib": "Surface.draw_circle",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; reference midpoint filled-circle coverage with U32 radius, clipped to the image. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; reference midpoint filled-circle coverage with U32 radius, clipped to the image. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -932,7 +932,7 @@
   "ImageDrawCircleV": {
     "jonlib": "Surface.draw_circle_v",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded center truncated to integers; radius 0..32767. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded center truncated to integers; radius 0..32767. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full format/numeric domain and target/performance evidence"
     ],
@@ -942,7 +942,7 @@
   "ImageDrawCircleLines": {
     "jonlib": "Surface.draw_circle_lines",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; integral bounded center; radius 0..32767; reference midpoint outline. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; integral bounded center; radius 0..32767; reference midpoint outline. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full format/numeric domain and target/performance evidence"
     ],
@@ -952,7 +952,7 @@
   "ImageDrawCircleLinesV": {
     "jonlib": "Surface.draw_circle_lines_v",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite center truncated before midpoint outline; radius 0..32767. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite center truncated before midpoint outline; radius 0..32767. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full format/numeric domain and target/performance evidence"
     ],
@@ -962,7 +962,7 @@
   "ImageDrawRectangle": {
     "jonlib": "Surface.draw_rectangle",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; integral-coordinate profile of the CPU ImageDrawRectangle, clipped to the image. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; integral-coordinate profile of the CPU ImageDrawRectangle, clipped to the image. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -972,7 +972,7 @@
   "ImageDrawRectangleV": {
     "jonlib": "Surface.draw_rectangle_v",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite position and size truncated before reference rectangle drawing. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite position and size truncated before reference rectangle drawing. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full format/numeric domain and target/performance evidence"
     ],
@@ -982,7 +982,7 @@
   "ImageDrawRectangleRec": {
     "jonlib": "Surface.draw_rectangle_rec",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite rectangle; clipping precedes coordinate/extent truncation. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite rectangle; clipping precedes coordinate/extent truncation. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full format/numeric domain and target/performance evidence"
     ],
@@ -992,7 +992,7 @@
   "ImageDrawRectangleLines": {
     "jonlib": "Surface.draw_rectangle_lines",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite rectangle; thickness 0..32767; reference four-edge truncation and degenerate behavior. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite rectangle; thickness 0..32767; reference four-edge truncation and degenerate behavior. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Negative thickness, full formats/domains and target/performance evidence"
     ],
@@ -1002,7 +1002,7 @@
   "ImageDrawTriangle": {
     "jonlib": "Surface.draw_triangle",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices with raylib's (int) truncation of bounds and edge steps; defined reference signed-edge arithmetic. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices with raylib's (int) truncation of bounds and edge steps; defined reference signed-edge arithmetic. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -1012,7 +1012,7 @@
   "ImageDrawTriangleEx": {
     "jonlib": "Surface.draw_triangle_ex",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices with (int)-truncated bounds/edge steps; defined signed arithmetic and nonzero reference weight sum; reference byte-quantized barycentric color interpolation. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices with (int)-truncated bounds/edge steps; defined signed arithmetic and nonzero reference weight sum; reference byte-quantized barycentric color interpolation. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Degenerate/undefined reference gradients",
       "Other formats and full target/performance gates",
@@ -1024,7 +1024,7 @@
   "ImageDrawTriangleLines": {
     "jonlib": "Surface.draw_triangle_lines",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite vertices truncated before line rasterization. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; bounded finite vertices truncated before line rasterization. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full input/format domain and all applicable platform/performance gates remain open."
     ],
@@ -1034,7 +1034,7 @@
   "ImageDrawTriangleFan": {
     "jonlib": "Surface.draw_triangle_fan",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; List<Vector2> with finite bounded vertices (each triangle as ImageDrawTriangle); reference fan order; fewer than three points is a no-op. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; List<Vector2> with finite bounded vertices (each triangle as ImageDrawTriangle); reference fan order; fewer than three points is a no-op. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full formats/domains and target/performance evidence"
     ],
@@ -1044,7 +1044,7 @@
   "ImageDrawTriangleStrip": {
     "jonlib": "Surface.draw_triangle_strip",
     "status": "profile-covered",
-    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices (each triangle as ImageDrawTriangle); alternating reference winding; fewer than three points is a no-op. Every format 1..9 is compared with raylib on the surface-format profile.",
+    "scope": "Every Surface format, each covered pixel stored with ImageDrawPixel's per-format encoding; finite bounded vertices (each triangle as ImageDrawTriangle); alternating reference winding; fewer than three points is a no-op. Every format 1..13 is compared with raylib on the surface-format profile.",
     "gaps": [
       "Full formats/domains and target/performance evidence"
     ],
@@ -1054,7 +1054,7 @@
   "ImageDraw": {
     "jonlib": "Surface.draw_image / Surface.draw_image_region / Surface.draw_image_rect",
     "status": "profile-covered",
-    "scope": "Formats 1..9; bounded finite source/destination rectangles, including fractional fields; source clipping precedes truncated-size scaling decisions; scaled sources are extracted and resized in their own format; destination clipping precedes pixel truncation. Pixels use GetPixelColor (integer packed expansion, R32 replicated), ColorAlphaBlend unless the source has no alpha and tint.a is 255, and SetPixelColor (no-op for R32/R32G32B32); unblended equal formats copy stored samples. An R32G32B32 source needs finite [0,1] samples (OutOfDomain). Both owners preserved; one mip level.",
+    "scope": "Formats 1..13; bounded finite source/destination rectangles, including fractional fields; source clipping precedes truncated-size scaling decisions; scaled sources are extracted and resized in their own format; destination clipping precedes pixel truncation. Pixels use GetPixelColor (integer packed expansion, R32 replicated), ColorAlphaBlend unless the source has no alpha and tint.a is 255, and SetPixelColor (no-op for R32/R32G32B32); unblended equal formats copy stored samples. An R32G32B32 source needs finite [0,1] samples (OutOfDomain). Both owners preserved; one mip level.",
     "gaps": [
       "empty or undefined source rectangles",
       "Pixel formats 10+",

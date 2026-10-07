@@ -82,7 +82,7 @@ def save(bmp: Bool, path: String, result: Maybe<J.Surface>) -> IO(Unit):
     case None{}: IO.die(Unit, 1, "raster file source rejected")
     case Some{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, write(bmp, image, path), write_ok)
 def small(value: F32) -> J.Surface:
-  J.Surface{1, 1, 9, J.Vectors{Array.new(M.Vector3, 0n, M.Vector3{value, 0.25, 0.75})}}
+  J.Surface{1, 1, 9, J.Quads{Array.new(J.Surface.Quad, 0n, J.Quad{F32.bits(value), F32.bits(0.25), F32.bits(0.75), 0})}}
 def owner_entries(data: (U32 & U32) & (U32 & List<U32>)) -> Bool:
   match data:
     case Tuple{Tuple{1, 1}, Tuple{9, Con{0, Con{0, Con{0, Con{64, Con{0, Con{0, Con{128, Con{62, Con{0, Con{0, Con{64, Con{63, Nil{}}}}}}}}}}}}}}}: True{}

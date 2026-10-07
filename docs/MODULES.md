@@ -105,6 +105,12 @@ and on other non-RGBA8 formats R8G8B8A8, as raylib does. `alpha_clear` rejects
 thresholds outside finite 0..1 with `InvalidRequest` (previously unchecked).
 `Surface.mipmaps` returns `Image.Mipmaps` directly, since it cannot fail.
 
+Pixel formats 10..13 are supported everywhere formats 1..9 are. Float samples
+are stored as bits: the `Vectors{Array<M.Vector3>}` storage of R32G32B32 became
+`Quads{Array<Surface.Quad>}` (`J.Quad{a, b, c, d}` sample words, `d` zero for
+format 9); build `J.Quad{F32.bits(r), F32.bits(g), F32.bits(b), 0}` where code
+built `M.Vector3{r, g, b}`.
+
 ## Private arithmetic support
 
 These modules are not re-exported by Jonlib or Jonmath and do not change any

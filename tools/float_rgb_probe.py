@@ -87,22 +87,22 @@ def byte_pixels(n: Nat, +index: U32, pixels: Array<U32>) -> Array<U32>:
     case 1n+rest: byte_pixels(rest, (index + 1 : U32), Array.set(U32, pixels, index, J.Color.rgba(index, (255 - index : U32), (index .^. 85 : U32), index)))
 def byte_image() -> J.Surface:
   J.Surface{256, 1, 7, J.Words{byte_pixels(256n, 0, Array.new(U32, 8n, 0))}}
-def from_words(words: +List<U32>, +index: U32, pixels: Array<M.Vector3>) -> Array<M.Vector3>:
+def from_words(words: +List<U32>, +index: U32, pixels: Array<J.Surface.Quad>) -> Array<J.Surface.Quad>:
   match words:
-    case Con{r, Con{g, Con{b, rest}}}: from_words(rest, (index + 1 : U32), Array.set(M.Vector3, pixels, index, M.Vector3{H.float_bits(r), H.float_bits(g), H.float_bits(b)}))
+    case Con{r, Con{g, Con{b, rest}}}: from_words(rest, (index + 1 : U32), Array.set(J.Surface.Quad, pixels, index, J.Quad{r, g, b, 0}))
     case _: pixels
 def boundary_image(words: +List<U32>, +width: U32) -> J.Surface:
-  J.Surface{width, 1, 9, J.Vectors{from_words(words, 0, Array.new(M.Vector3, J.Storage.depth(width), M.Vector3{0.0, 0.0, 0.0}))}}
-def hdr_pixels(n: Nat, +index: U32, pixels: Array<M.Vector3>) -> Array<M.Vector3>:
+  J.Surface{width, 1, 9, J.Quads{from_words(words, 0, Array.new(J.Surface.Quad, J.Storage.depth(width), J.Quad{F32.bits(0.0), F32.bits(0.0), F32.bits(0.0), 0}))}}
+def hdr_pixels(n: Nat, +index: U32, pixels: Array<J.Surface.Quad>) -> Array<J.Surface.Quad>:
   match n:
     case 0n: pixels
     case 1n+rest:
       +channel = (index % 256 : U32)
       +exponent = (index / 256 : U32)
-      hdr_pixels(rest, (index + 1 : U32), Array.set(M.Vector3, pixels, index,
-        M.Vector3{H.sample(channel, exponent), H.sample((255 - channel : U32), exponent), H.sample((channel .^. 85 : U32), exponent)}))
+      hdr_pixels(rest, (index + 1 : U32), Array.set(J.Surface.Quad, pixels, index,
+        J.Quad{F32.bits(H.sample(channel, exponent)), F32.bits(H.sample((255 - channel : U32), exponent)), F32.bits(H.sample((channel .^. 85 : U32), exponent)), 0}))
 def hdr_image() -> J.Surface:
-  J.Surface{256, 129, 9, J.Vectors{hdr_pixels(33024n, 0, Array.new(M.Vector3, 16n, M.Vector3{0.0, 0.0, 0.0}))}}
+  J.Surface{256, 129, 9, J.Quads{hdr_pixels(33024n, 0, Array.new(J.Surface.Quad, 16n, J.Quad{F32.bits(0.0), F32.bits(0.0), F32.bits(0.0), 0}))}}
 def export_words(bytes: List<U32>, values: List<U32>) -> List<U32>:
   match bytes:
     case Con{a, Con{b, Con{c, Con{d, rest}}}}: export_words(rest, Con{(a .|. (b << 8n) .|. (c << 16n) .|. (d << 24n) : U32), values})
@@ -112,27 +112,27 @@ def same_words(left: List<U32>, right: List<U32>) -> Bool:
     case Nil{} Nil{}: True{}
     case Con{a, ra} Con{b, rb}: U32.is_eq(a, b) && same_words(ra, rb)
     case _ _: False{}
-def vector_words(value: M.Vector3, rest: List<U32>) -> List<U32>:
-  M.Vector3{r, g, b} = value
-  Con{F32.bits(r), Con{F32.bits(g), Con{F32.bits(b), rest}}}
-def rejected_export(wanted: M.Vector3, data: (U32 & U32) & (U32 & List<U32>)) -> Bool:
+def vector_words(value: J.Surface.Quad, rest: List<U32>) -> List<U32>:
+  J.Quad{r, g, b, _} = value
+  Con{r, Con{g, Con{b, rest}}}
+def rejected_export(wanted: J.Surface.Quad, data: (U32 & U32) & (U32 & List<U32>)) -> Bool:
   match data:
     case Tuple{Tuple{2, 1}, Tuple{9, bytes}}:
-      same_words(export_words(bytes, Nil{}), vector_words(M.Vector3{0.25, 0.5, 0.75}, vector_words(wanted, Nil{})))
+      same_words(export_words(bytes, Nil{}), vector_words(J.Quad{F32.bits(0.25), F32.bits(0.5), F32.bits(0.75), 0}, vector_words(wanted, Nil{})))
     case _: False{}
-def rejected(wanted: M.Vector3, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Bool:
+def rejected(wanted: J.Surface.Quad, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Bool:
   match result:
     case Fail{Tuple{image, J.OutOfDomain{}}}: rejected_export(wanted, J.Surface.export(image))
     case _: False{}
-def invalid_pixel(component: U32, value: F32) -> M.Vector3:
+def invalid_pixel(component: U32, word: U32) -> J.Surface.Quad:
   match component:
-    case 0: M.Vector3{value, 0.5, 0.75}
-    case 1: M.Vector3{0.25, value, 0.75}
-    case _: M.Vector3{0.25, 0.5, value}
+    case 0: J.Quad{word, F32.bits(0.5), F32.bits(0.75), 0}
+    case 1: J.Quad{F32.bits(0.25), word, F32.bits(0.75), 0}
+    case _: J.Quad{F32.bits(0.25), F32.bits(0.5), word, 0}
 def rejection(bits: U32, component: U32) -> Bool:
-  +wanted = invalid_pixel(component, H.float_bits(bits))
-  pixels = Array.set(M.Vector3, Array.new(M.Vector3, 1n, M.Vector3{0.25, 0.5, 0.75}), 1, wanted)
-  rejected(wanted, J.Surface.format(J.Surface{2, 1, 9, J.Vectors{pixels}}, 7))
+  +wanted = invalid_pixel(component, bits)
+  pixels = Array.set(J.Surface.Quad, Array.new(J.Surface.Quad, 1n, J.Quad{F32.bits(0.25), F32.bits(0.5), F32.bits(0.75), 0}), 1, wanted)
+  rejected(wanted, J.Surface.format(J.Surface{2, 1, 9, J.Quads{pixels}}, 7))
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
