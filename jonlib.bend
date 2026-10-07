@@ -2886,9 +2886,9 @@ def Surface.alpha_clear.loop(n: Nat, +i: U32, +kind: U32, +cutoff: U32, +replace
         Surface.alpha_clear.step(kind, cutoff, replacement, i, Array.get(U32, values, i)))
 
 # raylib computes round(channel*31.0f) and round(channel*15.0f) from unscaled
-# bytes; the stored channel keeps the low byte of that integer.
+# bytes and casts them to unsigned char, which is defined only up to 255.
 def Surface.alpha_clear.packed(+c: U32, +scale: U32) -> U32:
-  ((c * scale) .&. 255 : U32)
+  (c * scale : U32)
 
 def Surface.alpha_clear.r5g5b5a1(+color: U32) -> U32:
   (((Surface.alpha_clear.packed(Color.red(color), 31) << 11n) .|. (Surface.alpha_clear.packed(Color.green(color), 31) << 6n)
@@ -2936,17 +2936,25 @@ def Surface.alpha_clear.selected(kind: U32, pixels: Surface.Pixels, +width: U32,
       Surface{width, height, format, Quads{Surface.alpha_clear.quads(U32.to_nat((width * height : U32)), 0, 13, threshold, Surface.quad.from_color(13, color), values)}}
     case _ other: Surface{width, height, format, other}
 
-def Surface.alpha_clear.checked(valid: Bool, surface: Surface, color: U32, threshold: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+def Surface.alpha_clear.checked(valid: Bool, +width: U32, +height: U32, +format: U32, pixels: Surface.Pixels, color: U32, threshold: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   match valid:
-    case False{}: Fail{(surface, InvalidRequest{})}
-    case True{}:
-      Surface{width, height, +format, pixels} = surface
-      Done{Surface.alpha_clear.selected(format, pixels, width, height, format, color, threshold)}
+    case False{}: Fail{(Surface{width, height, format, pixels}, InvalidRequest{})}
+    case True{}: Done{Surface.alpha_clear.selected(format, pixels, width, height, format, color, threshold)}
+
+# The unscaled R5G5B5A1/R4G4B4A4 channels overflow the byte cast for channels
+# above 8 (times 31) or 17 (times 15): undefined native results, refused here.
+def Surface.alpha_clear.defined(+format: U32, +color: U32) -> Bool:
+  +rgb = U32.max(Color.red(color), U32.max(Color.green(color), Color.blue(color)))
+  Bool.pick(Bool, U32.is_eq(format, 5), (rgb <= 8 : U32),
+    Bool.pick(Bool, U32.is_eq(format, 6), (U32.max(rgb, Color.alpha(color)) <= 17 : U32), True{}))
 
 # ImageAlphaClear: formats without alpha are unchanged, as in raylib. The
-# threshold is a finite 0..1 alpha fraction; others are InvalidRequest.
-def Surface.alpha_clear(surface: Surface, color: U32, +threshold: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
-  Surface.alpha_clear.checked(Surface.amount.finite(threshold) && (threshold >= 0.0 : F32) && (threshold <= 1.0 : F32), surface, color, threshold)
+# threshold is a finite 0..1 alpha fraction and the color must keep raylib's
+# packed conversions defined; other requests are InvalidRequest.
+def Surface.alpha_clear(surface: Surface, +color: U32, +threshold: F32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface{width, height, +format, pixels} = surface
+  Surface.alpha_clear.checked(Surface.amount.finite(threshold) && (threshold >= 0.0 : F32) && (threshold <= 1.0 : F32)
+    && Surface.alpha_clear.defined(format, color), width, height, format, pixels, color, threshold)
 
 # ImageRotate blends every stored byte on its own: word formats rotate their
 # stored words, wide formats each sample word (unused words stay zero).
