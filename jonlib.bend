@@ -382,6 +382,85 @@ def Collision.point_poly(point: M.Vector2, +points: +List<M.Vector2>) -> Bool:
 def Color.rgba(r: U32, g: U32, b: U32, a: U32) -> U32:
   (((r .&. 255) << 24n) .|. ((g .&. 255) << 16n) .|. ((b .&. 255) << 8n) .|. (a .&. 255) : U32)
 
+# raylib's named colors (raylib.h), as canonical 0xRRGGBBAA words.
+def Color.LIGHTGRAY() -> U32:
+  3368601855
+
+def Color.GRAY() -> U32:
+  2189591295
+
+def Color.DARKGRAY() -> U32:
+  1347440895
+
+def Color.YELLOW() -> U32:
+  4260954367
+
+def Color.GOLD() -> U32:
+  4291494143
+
+def Color.ORANGE() -> U32:
+  4288741631
+
+def Color.PINK() -> U32:
+  4285383423
+
+def Color.RED() -> U32:
+  3861460991
+
+def Color.MAROON() -> U32:
+  3189848063
+
+def Color.GREEN() -> U32:
+  14954751
+
+def Color.LIME() -> U32:
+  10366975
+
+def Color.DARKGREEN() -> U32:
+  7679231
+
+def Color.SKYBLUE() -> U32:
+  1723858943
+
+def Color.BLUE() -> U32:
+  7991807
+
+def Color.DARKBLUE() -> U32:
+  5418239
+
+def Color.PURPLE() -> U32:
+  3363504127
+
+def Color.VIOLET() -> U32:
+  2268905215
+
+def Color.DARKPURPLE() -> U32:
+  1881112319
+
+def Color.BEIGE() -> U32:
+  3551560703
+
+def Color.BROWN() -> U32:
+  2137673727
+
+def Color.DARKBROWN() -> U32:
+  1279209471
+
+def Color.WHITE() -> U32:
+  4294967295
+
+def Color.BLACK() -> U32:
+  255
+
+def Color.BLANK() -> U32:
+  0
+
+def Color.MAGENTA() -> U32:
+  4278255615
+
+def Color.RAYWHITE() -> U32:
+  4126537215
+
 def Color.red(c: U32) -> U32:
   (c >> 24n : U32)
 
