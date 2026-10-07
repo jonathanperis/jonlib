@@ -30,9 +30,10 @@ it is not automatically a requirement to reproduce crashes or memory corruption.
 ## Where we are
 
 The working foundation includes one owned image type (`Surface`, raylib pixel
-formats 1..9) with drawing/composition/transforms, mipmaps, blur/convolution,
-image codecs and file exports, bounded compression/data utilities and extensive
-Jonmath profiles. They
+formats 1..13) whose drawing, composition, transforms, resizing, mipmaps,
+blur/convolution, color/alpha operations and conversions follow raylib's
+per-format behavior; image codecs (including default-enabled DDS) and file
+exports; bounded compression/data utilities; and extensive Jonmath profiles. They
 are compared exactly with the pinned raylib reference on CPU and JavaScript lanes
 (Linux and macOS in CI; forced Metal locally), with an explicit compiler overlay
 fixing the observed Metal dispatch failure ([VERIFICATION.md](VERIFICATION.md)).
@@ -64,30 +65,72 @@ Phases express dependency order, not isolated silos. Platform and performance
 checks run from the first usable implementation. A vertical slice can bring a
 small part of a later phase forward when needed by an example or a runtime gap.
 
-## Phase 1: current implementation sequence
+## Phase 1: status and remaining work
 
-1. **Line and triangle rasterization:** exact endpoint/edge/winding behavior,
-   clipping, degenerate inputs, and vector-coordinate variants.
-2. **Image composition:** full-source unscaled drawing first, then cropped and
-   scaled drawing, filter behavior, formats and mipmaps. A full-source-only
-   implementation stays partial for `ImageDraw`.
-3. **Remaining image operations:** outlines, fans/strips, gradients, procedural
-   generation, crop/resize/rotate, alpha operations, color transformations and
-   pixel-format conversion.
-4. **Math and collision completeness:** raymath's vectors/matrices/quaternions,
-   projection and interpolation helpers, and raylib's collision operations.
-5. **Asset bytes and codecs:** byte-buffer utilities, image loading/export and
-   format-specific decoders. Start with simpler formats, then implement the
-   remaining formats without silently delegating algorithms to native libraries.
-6. **Broaden domains:** close the initial dimension, coordinate, format and
-   numerical-precision gaps. F32-only convenience signatures are not a reason
-   to discard required signed/wider-number behavior.
+Delivered Phase 1 slices: the image module (`images`, `resampling`,
+`image-codecs` work packages: every API mapped and compared with raylib on
+formats 1..13 where raylib supports them), `random`, most of `jonmath` and the
+2D/sphere/box `collision` queries. What remains in Phase 1, in the recommended
+order (`docs/PROGRESS.md` lists every ID):
+
+1. **`types`** — raylib's enums, enumerators, constants and struct types as Bend
+   constants/types (531 catalog entries, mostly mechanical). Low risk, and it
+   makes the language mapping that every later API reuses explicit.
+2. **`files` and `memory`** — the 41 file/path/directory utilities and the
+   trace-log/allocation contracts. Jonlib already adapts `GetFileExtension`
+   and closed-handle IO internally; the public APIs need exact path/string
+   semantics and Base IO, not new algorithms.
+3. **`pixels` macros and color utilities** — named color constants and the
+   remaining color/format helpers.
+4. **Blocked numerics** — `MatrixPerspective`, `QuaternionSlerp`,
+   `QuaternionToAxisAngle`, `QuaternionToEuler`, the ray collisions and the
+   cubic Bézier spline need native `tanf`/`acosf`/`atan2f`/`powf` profiles. The
+   diagnostic `perspective` and `inverse-trig` gates already record native
+   behavior; the work is accurate per-libm kernels, as for `sinf`/`cosf`.
+5. **Image leftovers** — compressed formats (14+) and multi-level images (DDS
+   DXT and mip chains are loaded by default raylib; PKM/KTX/PVR/ASTC are
+   configuration options), which need a storage decision (below); the
+   text-to-image functions (`ImageText*`, `ImageDrawText*`), which need
+   raylib's default font, UTF-8 decoding and text measurement and are best done
+   as the first slice of Phase 3; the configuration-gated JPEG decoder; and
+   wider domains (dimensions above 4096, samples outside the defined C casts).
+
+Undefined native behavior found on the way is refused, not reproduced: e.g.
+`ImageAlphaClear` on R5G5B5A1/R4G4B4A4 casts `round(channel*31)` to a byte,
+which the arm64 build evaluates without truncation, so those colors are
+`InvalidRequest`.
 
 Detailed contracts for the delivered Phase 1 profiles are in the topic pages
 listed by the [API](API.md) and [compatibility](COMPATIBILITY.md) pages. Private
 numerical prerequisites (the [binary64 helpers](BINARY64.md) and the
 [modern angle kernel](MODERN-ANGLE.md)) back the [checked angle APIs](ANGLES.md);
 device/resource and wider-domain evidence remain Phase 1 work.
+
+## Completion and phase exit
+
+No API is `complete` yet, and none can be during Phase 1: completion requires
+all six gates **and** a verified result on every target in
+`api/milestones.json` (Windows, the BSDs, Android, the browser, each GL
+version...), so even a pure CPU function like `ImageResize` completes only with
+Phase 7. That is intentional for the release gate, but it hides Phase 1
+progress. The proposed Phase 1 exit measure, reported alongside the strict
+counts by `tools/api_plan.py`, is: every Phase 1 function `partial` with
+`behavior` and `ownership` verified on the CI hosts (Linux x86_64 and macOS
+arm64, CPU and JavaScript lanes) and on forced Metal locally, no behavior gaps other than documented
+undefined native behavior, and its remaining gaps limited to targets,
+integration and performance.
+
+Decisions for Jonathan before the next batches:
+
+- **Compressed and multi-level images.** Proposed: a third `Surface.Pixels`
+  variant holding compressed blocks, multi-level loads returned as
+  `Image.Mipmaps`, and every CPU operation raylib does not support on
+  compressed data returning `UnsupportedFormat` (raylib logs and leaves the
+  image unchanged).
+- **The Phase 1 exit measure** above, which changes how progress is reported
+  (not the release definition).
+- **Order of the remaining Phase 1 packages** versus starting the Phase 2
+  window/input foundation.
 
 ## Near-term sequence
 
@@ -96,9 +139,9 @@ composition, transforms, codecs and math, verified against raylib 6.0 CPU image
 operations. Next, in dependency order:
 
 1. **2D library growth.** Complete the remaining primitive families, math and
-   collision helpers; broaden image drawing to more formats and mipmaps; close
-   gaps in the [image codec profiles](CODECS.md), including remaining codecs,
-   original-format metadata and broader pixel layouts; add text/fonts and PCM WAV
+   collision helpers; add compressed/multi-level images and close gaps in the
+   [image codec profiles](CODECS.md), including remaining codecs and
+   original-format metadata; add text/fonts and PCM WAV
    with their own reference gates; port selected upstream examples and compare
    deterministic outputs. Efficient command buffers and tiled rendering must be
    measured against equivalent raylib scenes; the current correctness-oriented
