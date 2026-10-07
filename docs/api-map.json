@@ -582,7 +582,7 @@
   "ImageAlphaClear": {
     "jonlib": "Surface.alpha_clear",
     "status": "profile-covered",
-    "scope": "Formats 1..13 with a finite threshold 0..1: raylib's per-format switch. GRAY_ALPHA, R5G5B5A1 and R4G4B4A4 compare their alpha byte/bits and store raylib's replacement words; R8G8B8A8 replaces all four channels below the inclusive byte cutoff; R32G32B32A32/R16G16B16A16 compare their float alpha and store channel/255 floats; formats without alpha are unchanged. raylib's R5G5B5A1/R4G4B4A4 replacement uses unscaled round(c*31)/round(c*15) byte casts, undefined above 255 (arm64 keeps the unmasked integer), so colors with RGB channels above 8 (R5G5B5A1) or channels above 17 (R4G4B4A4) are InvalidRequest, as are other thresholds.",
+    "scope": "Formats 1..13, finite threshold 0..1: raylib's per-format switch. GRAY_ALPHA, R5G5B5A1 and R4G4B4A4 compare alpha bytes/bits and store raylib's replacement words; R8G8B8A8 replaces all channels at or below the byte cutoff; R32G32B32A32/R16G16B16A16 compare float alpha and store channel/255 floats; formats without alpha are unchanged. R5G5B5A1/R4G4B4A4 colors whose unscaled round(c*31)/round(c*15) byte casts are undefined (channels above 8, or above 17) are InvalidRequest, as are other thresholds.",
     "gaps": [
       "Undefined native packed-color casts for brighter R5G5B5A1/R4G4B4A4 colors",
       "Mipmaps and full target/performance gates"
