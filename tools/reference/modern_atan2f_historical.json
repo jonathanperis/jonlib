@@ -2,7 +2,7 @@
   "provenance": "Retained 2026-10-02 native/Sun diagnostic; independently checked against pinned glibc2.41 source and current Sun control",
   "source_evidence": ".build/native-profile-diagnostic/clang-o2-strict.tsv",
   "source_evidence_sha256": "37f238dd22af09eb40c283557d478ba9d6f372501c04e96cc6cca2b794642f18",
-  "summary_evidence": "docs/evidence/native-math-host-profile.json",
+  "summary_evidence": "tools/reference/native_math_host_profile.json",
   "summary_evidence_sha256": "f82dfef36dd08cc1eed794a5232fe82583b1415d0411805aa3b6229ff0512e26",
   "row_schema": [
     "id",

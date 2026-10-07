@@ -58,7 +58,10 @@ of each results file) and fails if any parity gate fails.
 | Diagnostics | gates marked `"diagnostic": true` | Records for open gaps (host libm behavior, filter precision, perspective rounding, inverse trig); never parity claims |
 
 Probes write their full results under `.build/`; those files are local
-artifacts and are not committed.
+artifacts and are not committed. [`docs/evidence/`](evidence/) keeps one compact
+record per gate and host from the last full run (`run_gates.py --record`):
+outcome, duration, toolchain revisions and a hashed summary of each results
+file the gate wrote. Full results are uploaded by CI as artifacts.
 
 ## Running verification
 

@@ -1,0 +1,66 @@
+{
+ "gate": "tga",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 7.0,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/tga-probe/results.json": {
+   "sha256": "6ef242a2a85cf9039fa0b418d1f481b319f2b31459a5e2d94c968a68bba82ed8",
+   "summary": {
+    "passed": true,
+    "probe": "tga",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 99,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 99,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 99,
+      "different": []
+     }
+    },
+    "batches": 1,
+    "decode_cases": 64,
+    "error_cases": 23,
+    "export_cases": 11,
+    "decoded_pixels": 1219,
+    "export_bytes": 3447,
+    "inputs_sha256": "93ab0c11102c99fb3622a446be8c143b68a0e105f19a22c18d47f4c3944e07a3",
+    "reference_sha256": "b1118e0c5035a924dcdf2a0c08b5f2c02f7852ca4a380a637cfcb57adf3a46c0"
+   }
+  }
+ }
+}
