@@ -102,7 +102,8 @@ Phase 1 parity changes: `draw_image*`, `alpha_mask`, `alpha_clear`,
 `rotate_degrees` and `mipmaps` accept formats 1..9 instead of returning
 `UnsupportedFormat`. `alpha_mask` on a GRAYSCALE destination returns GRAY_ALPHA,
 and on other non-RGBA8 formats R8G8B8A8, as raylib does. `alpha_clear` rejects
-thresholds outside finite 0..1 with `InvalidRequest` (previously unchecked).
+thresholds outside finite 0..1, and R5G5B5A1/R4G4B4A4 colors whose native byte
+casts are undefined, with `InvalidRequest` (previously unchecked).
 `Surface.mipmaps` returns `Image.Mipmaps` directly, since it cannot fail.
 
 Pixel formats 10..13 are supported everywhere formats 1..9 are. Float samples

@@ -6,7 +6,8 @@ and compares the complete stored result (format, dimensions and raw sample
 bytes, or the returned colors) exactly; `to-N` cases are ImageFormat to every
 format. ImageRotate blends float bytes too; when raylib's R32/R16 result leaves
 finite [0,1] or a wide F32 result holds NaN, Jonlib must refuse it (the owner
-domain), so those cases expect a rejection.
+domain), as it must refuse ImageAlphaClear colors whose packed byte casts are
+undefined; those cases expect a rejection.
 """
 import hashlib
 import json
@@ -22,6 +23,9 @@ FORMATS = range(1, 14)
 SIZES = ((5, 4), (6, 3))
 DRAW = (230, 40, 120, 200)
 FILL = (10, 200, 30, 128)
+# Channels inside the range where ImageAlphaClear's unscaled R5G5B5A1 (x31) and
+# R4G4B4A4 (x15) byte casts are defined.
+DARK = (8, 5, 2, 17)
 UNSUPPORTED = set()
 LIBM = gradient_reference()
 
@@ -116,6 +120,7 @@ OPS = {
     'to-pot': (f'ImageToPOT(&im,{c_color(FILL)});', 'image', f'J.Surface.to_pot(s, {word(FILL)})'),
     'alpha-clear': (f'ImageAlphaClear(&im,{c_color(DRAW)},0.3f);', 'image', f'J.Surface.alpha_clear(s, {word(DRAW)}, 0.3)'),
     'alpha-clear-high': (f'ImageAlphaClear(&im,{c_color(FILL)},0.8f);', 'image', f'J.Surface.alpha_clear(s, {word(FILL)}, 0.8)'),
+    'alpha-clear-dark': (f'ImageAlphaClear(&im,{c_color(DARK)},0.6f);', 'image', f'J.Surface.alpha_clear(s, {word(DARK)}, 0.6)'),
     'rotate': ('ImageRotate(&im,30);', 'image', f'J.Surface.rotate_degrees_for(M.{LIBM}{{}}, s, 30.0)'),
     'rotate-obtuse': ('ImageRotate(&im,-135);', 'image', f'J.Surface.rotate_degrees_for(M.{LIBM}{{}}, s, F32.neg(135.0))'),
     **{f'draw-{name}': (f'{{Image m=ImageCopy(im);ImageFlipVertical(&m);{fmt_c}ImageDraw(&im,m,{src_rec},{dst_rec},{c_color(tint)});UnloadImage(m);}}',
@@ -278,9 +283,22 @@ def render(cases):
     return emit
 
 
+def alpha_clear_undefined(op, fmt):
+    """ImageAlphaClear casts round(channel*31) (R5G5B5A1) or round(channel*15)
+    (R4G4B4A4) to unsigned char: undefined above 255, so Jonlib refuses it."""
+    color = {'alpha-clear': DRAW, 'alpha-clear-high': FILL, 'alpha-clear-dark': DARK}.get(op)
+    if color is None or fmt not in (5, 6):
+        return False
+    channels = color[:3] if fmt == 5 else color
+    return max(channels) * (31 if fmt == 5 else 15) > 255
+
+
 def owner_domain(op, fmt, row):
-    """Jonlib refuses rotated float bytes outside the owner domain: R32 and R16
-    finite [0,1], F32 samples of R32G32B32(A32) not NaN."""
+    """Jonlib refuses rotated float bytes outside the owner domain (R32 and R16
+    finite [0,1], F32 samples of R32G32B32(A32) not NaN) and undefined native
+    alpha-clear conversions."""
+    if alpha_clear_undefined(op, fmt):
+        return None
     if not op.startswith('rotate') or fmt not in (8, 9, 10, 11) or row is None:
         return row
     data = bytes(row[12:])
