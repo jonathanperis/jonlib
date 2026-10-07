@@ -19,79 +19,81 @@ PRELUDE = ['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
            'if(export){if(!ExportImage(image,out))exit(3);}else if(!SaveFileData(out,image.data,w*h*12))exit(4);',
            'word(image.width);word(image.height);for(int i=0;i<w*h*12;i++)byte(((unsigned char*)image.data)[i]);end();UnloadImage(image);}',
            'int main(void){SetTraceLogLevel(LOG_NONE);']
-ERRORS = {'file':1,'request':2,'truncated':3,'large':4}
+ERRORS = {'file':1,'request':2,'truncated':3,'large':4,'samples':5}
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
 import ../../jonmath.bend as M
 import ../../src/hdr.bend as H
 '''+BEND_EMITTER+'''
-def error_code(error: J.Image.RawLoadError) -> U32:
+def error_code(error: J.Surface.IOError) -> U32:
   match error:
-    case J.RawFileError{_, _}: 1
-    case J.InvalidRawRequest{}: 2
-    case J.TruncatedRawImage{}: 3
-    case J.RawFileTooLarge{}: 4
-    case J.InvalidRawSamples{}: 5
-def emitted(+width: U32, +height: U32, result: Result<&1, &1, J.Image.FloatRGB, +List<U32>>) -> IO(Unit):
-  match result:
-    case Fail{_}: IO.die(Unit, 1, "valid float byte export rejected")
-    case Done{bytes}:
-      header = {[(width .&. 255 : U32), ((width >> 8n) .&. 255 : U32), 0, 0, (height .&. 255 : U32), ((height >> 8n) .&. 255 : U32), 0, 0] : +List<U32>}
-      emit_bytes(~&2, List.append(&2, U32, header, bytes))
-def reloaded(result: Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>) -> IO(Unit):
+    case J.FileError{_, _}: 1
+    case J.DataError{J.InvalidRequest{}}: 2
+    case J.DataError{J.TruncatedImageData{}}: 3
+    case J.DataError{J.UnsupportedImageSize{}}: 4
+    case J.DataError{J.OutOfDomain{}}: 5
+    case _: 99
+def emitted.sized(+width: U32, +height: U32, bytes: List<U32>) -> IO(Unit):
+  header = {[(width .&. 255 : U32), ((width >> 8n) .&. 255 : U32), 0, 0, (height .&. 255 : U32), ((height >> 8n) .&. 255 : U32), 0, 0] : List<U32>}
+  emit_bytes(~&1, List.append(&1, U32, header, bytes))
+def emitted(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
+  match data:
+    case Tuple{Tuple{width, height}, Tuple{9, bytes}}: emitted.sized(width, height, bytes)
+    case _: IO.die(Unit, 1, "raw float pixel format changed")
+def reloaded(result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{error}: emit_bytes(~&1, [error_code(error)])
-    case Done{J.FloatRGB{+width, +height, pixels}}: emitted(width, height, J.Image.FloatRGB.to_bytes(J.FloatRGB{width, height, pixels}))
-def written(path: String, width: U32, height: U32, result: Result<&1, &1, J.Image.FloatRGB.WriteError, Unit>) -> IO(Unit):
+    case Done{image}: emitted(J.Surface.export(image))
+def written(path: String, width: U32, height: U32, result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "valid raw float write failed")
-    case Done{_}: IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>, Unit, J.Image.FloatRGB.load_raw(path, width, height, 0), reloaded)
-def loaded(+path: String, result: Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>) -> IO(Unit):
+    case Done{_}: IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw(path, width, height, 9, 0), reloaded)
+def loaded(+path: String, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{error}: emit_bytes(~&1, [error_code(error)])
-    case Done{J.FloatRGB{+width, +height, pixels}}:
-      IO.bind(Result<&1, &1, J.Image.FloatRGB.WriteError, Unit>, Unit, J.Image.FloatRGB.write_raw(J.FloatRGB{width, height, pixels}, path), written(path, width, height))
+    case Done{J.Surface{+width, +height, format, pixels}}:
+      IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_raw(J.Surface{width, height, format, pixels}, path), written(path, width, height))
 def checked(ok: Bool) -> IO(Unit):
   match ok:
     case True{}: IO.pure(Unit, Unit{})
     case False{}: IO.die(Unit, 1, "raw float closure/error differs")
-def required(expected: U32, result: Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>) -> IO(Unit):
+def required(expected: U32, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Done{_}: checked(U32.is_eq(expected, 0))
     case Fail{error}: checked(U32.is_eq(expected, error_code(error)))
-def small() -> J.Image.FloatRGB:
-  J.FloatRGB{1, 1, Array.new(M.Vector3, 0n, M.Vector3{0.25, 0.5, 0.75})}
-def write_ok(result: Result<&1, &1, J.Image.FloatRGB.WriteError, Unit>) -> IO(Unit):
+def small() -> J.Surface:
+  J.Surface{1, 1, 9, J.Vectors{Array.new(M.Vector3, 0n, M.Vector3{0.25, 0.5, 0.75})}}
+def write_ok(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
     case Done{_}: IO.pure(Unit, Unit{})
     case Fail{_}: IO.die(Unit, 1, "raw float write closure failed")
-def owner_values(values: List<M.Vector3>) -> Bool:
-  match values:
-    case Con{M.Vector3{r, g, b}, Nil{}}:
-      U32.is_eq(F32.bits(r), F32.bits(H.float_bits(2143294004))) && F32.is_eq(g, 0.5) && F32.is_eq(b, 0.75)
-    case _: False{}
-def owner_entries(result: U32 & U32 & List<M.Vector3>) -> Bool:
-  (width, height, values) = result
-  U32.is_eq(width, 1) && U32.is_eq(height, 1) && owner_values(values)
-def owner_seen(result: Result<&1, &1, J.Image.FloatRGB.WriteError, Unit>) -> IO(Unit):
+# Writers reject NaN samples before opening the file; the owner comes back intact
+# (compared with same-backend bits: NaN payloads are not portable across backends).
+def owner_bits(value: M.Vector3) -> Bool:
+  M.Vector3{r, g, b} = value
+  U32.is_eq(F32.bits(r), F32.bits(H.float_bits(2143294004))) && U32.is_eq(F32.bits(g), 1056964608) && U32.is_eq(F32.bits(b), 1061158912)
+def owner_read(result: Array<M.Vector3> & M.Vector3) -> Bool:
+  (_, value) = result
+  owner_bits(value)
+def owner_seen(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.FloatRGBSampleError{image}}: emit_bytes(~&1, [Bool.to_u32(owner_entries(J.Image.FloatRGB.entries(image)))])
+    case Fail{J.SourceError{J.Surface{1, 1, 9, J.Vectors{values}}, J.OutOfDomain{}}}: emit_bytes(~&1, [Bool.to_u32(owner_read(Array.get(M.Vector3, values, 0)))])
     case _: IO.die(Unit, 1, "raw float invalid owner was lost")
-def write_failed(result: Result<&1, &1, J.Image.FloatRGB.WriteError, Unit>) -> IO(Unit):
+def write_failed(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.FloatRGBFileError{_, _}}: emit_bytes(~&1, [1])
+    case Fail{J.FileError{_, _}}: emit_bytes(~&1, [1])
     case _: IO.die(Unit, 1, "raw float write failure kind differs")
 def closure_loop(n: Nat) -> IO(Unit):
   match n:
     case 0n: emit_bytes(~&1, [1])
     case 1n+rest:
       do IO<Unit>:
-        IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>, Unit, J.Image.FloatRGB.load_raw(VALID, 1, 1, 0), required(0))
-        IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>, Unit, J.Image.FloatRGB.load_raw(SHORT, 1, 1, 0), required(3))
-        IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>, Unit, J.Image.FloatRGB.load_raw(NAN_FILE, 1, 1, 0), required(2))
-        IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>, Unit, J.Image.FloatRGB.load_raw(DIRECTORY, 1, 1, 0), required(1))
-        IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>, Unit, J.Image.FloatRGB.load_raw(LARGE, 1, 1, 0), required(4))
-        IO.bind(Result<&1, &1, J.Image.FloatRGB.WriteError, Unit>, Unit, J.Image.FloatRGB.write_raw(small(), OUTPUT), write_ok)
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw(VALID, 1, 1, 9, 0), required(0))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw(SHORT, 1, 1, 9, 0), required(3))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw(NAN_FILE, 1, 1, 9, 0), required(5))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw(DIRECTORY, 1, 1, 9, 0), required(1))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw(LARGE, 1, 1, 9, 0), required(4))
+        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_raw(small(), OUTPUT), write_ok)
         closure_loop(rest)
 def main() -> IO(Unit):
   do IO<Unit>:
@@ -113,7 +115,7 @@ def file_fixtures(work):
         if data is not None:path.write_bytes(data)
         controls.append(dict(name=name,path=str(path.relative_to(ROOT)),width=width,height=height,header=header,error=error))
     control('missing',1,1,0,None,'file');control('empty',1,1,0,b'','truncated');control('short',1,1,0,b'12345678901','truncated')
-    control('nan',1,1,0,struct.pack('<III',0x7fc00001,0,0),'request')
+    control('nan',1,1,0,struct.pack('<III',0x7fc00001,0,0),'samples')
     control('zero-width',0,1,0,None,'request');control('large-height',1,4097,0,None,'request')
     control('overflow-header',1,1,2147483636,None,'request')
     large=work/'large.raw'
@@ -146,9 +148,9 @@ def main():
     for case,wanted in zip([*cases,*controls],expected+[[ERRORS[c['error']]] for c in controls]):
         output=work/('candidate-'+case['name']+'.raw');output.unlink(missing_ok=True)
         actions.append(dict(name=case['name'],rows=1,wanted=[wanted],
-                            line=f'IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>, Unit, J.Image.FloatRGB.load_raw({json.dumps(case["path"])}, {case["width"]}, {case["height"]}, {case["header"]}), loaded({json.dumps(str(output.relative_to(ROOT)))}))'))
-    actions+=[dict(name='rejected write owner',rows=1,wanted=[[1]],line=f'IO.bind(Result<&1, &1, J.Image.FloatRGB.WriteError, Unit>, Unit, J.Image.FloatRGB.write_raw(J.FloatRGB{{1, 1, Array.new(M.Vector3, 0n, M.Vector3{{H.float_bits(2143294004), 0.5, 0.75}})}}, {json.dumps(str(sentinel.relative_to(ROOT)))}), owner_seen)'),
-              dict(name='directory write failure',rows=1,wanted=[[1]],line=f'IO.bind(Result<&1, &1, J.Image.FloatRGB.WriteError, Unit>, Unit, J.Image.FloatRGB.write_raw(small(), {json.dumps(str(directory.relative_to(ROOT)))}), write_failed)'),
+                            line=f'IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw({json.dumps(case["path"])}, {case["width"]}, {case["height"]}, 9, {case["header"]}), loaded({json.dumps(str(output.relative_to(ROOT)))}))'))
+    actions+=[dict(name='rejected write owner',rows=1,wanted=[[1]],line=f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_raw(J.Surface{{1, 1, 9, J.Vectors{{Array.new(M.Vector3, 0n, M.Vector3{{H.float_bits(2143294004), 0.5, 0.75}})}}}}, {json.dumps(str(sentinel.relative_to(ROOT)))}), owner_seen)'),
+              dict(name='directory write failure',rows=1,wanted=[[1]],line=f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_raw(small(), {json.dumps(str(directory.relative_to(ROOT)))}), write_failed)'),
               dict(name='100 closure cycles',rows=1,wanted=[[1]],line='closure_loop(100n)')]
     actions+=[dict(name=case['name']+' written file',file=work/('candidate-'+case['name']+'.raw'),remove=True,wanted=list((work/('reference-'+case['name']+'.raw')).read_bytes()),line=None) for case in cases]
     actions.append(dict(name='rejected owner sentinel',file=sentinel,wanted=list(b'unchanged'),line=None))

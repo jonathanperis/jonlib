@@ -16,28 +16,27 @@ def word_bytes(n: Nat, +word: U32, values: List<U32>) -> List<U32>:
   match n:
     case 0n: values
     case 1n+rest: word_bytes(rest, (word >> 8n : U32), Con{(word .&. 255 : U32), values})
-def samples(pixels: List<M.Vector3>, values: List<U32>) -> List<U32>:
-  match pixels:
-    case Nil{}: List.reverse(&1, U32, values)
-    case Con{M.Vector3{r, g, b}, rest}: samples(rest, word_bytes(4n, F32.bits(b), word_bytes(4n, F32.bits(g), word_bytes(4n, F32.bits(r), values))))
+def header(+width: U32, +height: U32) -> List<U32>:
+  List.reverse(&1, U32, word_bytes(4n, height, word_bytes(4n, width, Nil{})))
 '''+BEND_EMITTER+'''
-def emit_image(result: U32 & U32 & List<M.Vector3>) -> IO(Unit):
-  (width, height, pixels) = result
-  emit_bytes(~&1, samples(pixels, word_bytes(4n, height, word_bytes(4n, width, Nil{}))))
-def error_code(error: J.Image.LoadError) -> U32:
+def emit_image(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
+  match data:
+    case Tuple{Tuple{width, height}, Tuple{9, bytes}}: emit_bytes(~&1, List.append(&1, U32, header(width, height), bytes))
+    case _: IO.die(Unit, 1, "HDR pixel format changed")
+def error_code(error: J.Surface.IOError) -> U32:
   match error:
-    case J.ImageFileError{_, _}: 1
-    case J.ImageDecodeError{J.UnsupportedImageSize{}}: 2
+    case J.FileError{_, _}: 1
+    case J.DataError{J.UnsupportedImageSize{}}: 2
     case _: 3
-def observed(result: Result<&1, &1, J.Image.LoadError, J.Image.FloatRGB>) -> IO(Unit):
+def observed(result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{error}: emit_bytes(~&1, [error_code(error)])
-    case Done{image}: emit_image(J.Image.FloatRGB.entries(image))
+    case Done{image}: emit_image(J.Surface.export(image))
 def checked(ok: Bool) -> IO(Unit):
   match ok:
     case True{}: IO.pure(Unit, Unit{})
     case False{}: IO.die(Unit, 1, "HDR file outcome or closure differs")
-def required(expected: U32, result: Result<&1, &1, J.Image.LoadError, J.Image.FloatRGB>) -> IO(Unit):
+def required(expected: U32, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Done{_}: checked(U32.is_eq(expected, 0))
     case Fail{error}: checked(U32.is_eq(expected, error_code(error)))
@@ -46,10 +45,10 @@ def closure_loop(n: Nat) -> IO(Unit):
     case 0n: emit_bytes(~&1, [1])
     case 1n+rest:
       do IO<Unit>:
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.FloatRGB>, Unit, J.Image.FloatRGB.load_hdr(VALID), required(0))
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.FloatRGB>, Unit, J.Image.FloatRGB.load_hdr(INVALID), required(3))
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.FloatRGB>, Unit, J.Image.FloatRGB.load_hdr(DIRECTORY), required(1))
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.FloatRGB>, Unit, J.Image.FloatRGB.load_hdr(LARGE), required(2))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_hdr(VALID), required(0))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_hdr(INVALID), required(3))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_hdr(DIRECTORY), required(1))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_hdr(LARGE), required(2))
         closure_loop(rest)
 def main() -> IO(Unit):
   do IO<Unit>:
@@ -101,7 +100,7 @@ def main():
     def render(selected,gpu):
         body=preamble
         for path in selected:
-            body+=f'    IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.FloatRGB>, Unit, J.Image.FloatRGB.load_hdr({json.dumps(path)}), observed)\n' if path else '    closure_loop(100n)\n'
+            body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_hdr({json.dumps(path)}), observed)\n' if path else '    closure_loop(100n)\n'
         return body
 
     probe.compare(wanted,probe.candidates(render,actions,batch=len(actions),fd_limit=FILE_DESCRIPTOR_LIMIT,parse=lambda text,selected:parse_results(text)),

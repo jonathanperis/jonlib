@@ -42,7 +42,7 @@ def decoded(result: Maybe<&2, +List<U32>>) -> IO(Unit):
   match result:
     case None{}: IO.print("null")
     case Some{+bytes}: emit_bytes(~&1, decoded_bytes(bytes, word_bytes(4n, byte_count(bytes, 0), Nil{})))
-def observed(encode: Bool, result: Result<&1, &1, J.Image.LoadError, +List<U32>>) -> IO(Unit):
+def observed(encode: Bool, result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Unit):
   match encode result:
     case _ Fail{_}: IO.die(Unit, 1, "Base64 fixture read failed")
     case True{} Done{bytes}: encoded(J.Base64.encodeBANG(bytes))
@@ -103,7 +103,7 @@ def main():
         for action in selected:
             if action[0]=='file':
                 path=json.dumps(str((probe.work/f'{action[1]}.dat').relative_to(ROOT)))
-                body+=f'    IO.bind(Result<&1, &1, J.Image.LoadError, +List<U32>>, Unit, J.Image.file.bytes({path}, 2097152), observed({"True" if action[2] else "False"}{{}}))\n'
+                body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Image.file.bytes({path}, 2097152), observed({"True" if action[2] else "False"}{{}}))\n'
             elif action[0]=='encode-256':body+=f'    encoded(J.Base64.encode{bang}([256]))\n'
             else:body+=f'    decoded(J.Base64.decode{bang}("AA" ++ SCon{{Char.from_u32(256), "="}}))\n'
         return body

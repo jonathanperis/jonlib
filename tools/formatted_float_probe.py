@@ -38,32 +38,24 @@ def emitted(~q: Quant, width: U32, height: U32, format: U32, bytes: List<q, U32>
 def formatted(result: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
   ((width, height), (format, bytes)) = result
   emitted(~&1, width, height, format, bytes)
-def float_bytes(width: U32, height: U32, result: Result<&1, &1, J.Image.FloatRGB, +List<U32>>) -> IO(Unit):
-  match result:
-    case Fail{_}: IO.die(Unit, 1, "normalization produced unsupported samples")
-    case Done{bytes}: emitted(~&2, width, height, 9, bytes)
-def normalized(result: Maybe<J.Image.Formatted>) -> Maybe<J.Image.FloatRGB>:
+def normalized(result: Maybe<J.Surface>) -> Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>:
   match result:
     case None{}: None{}
-    case Some{image}: Some{J.Image.Formatted.to_float_rgb(image)}
-def observed(result: Maybe<J.Image.FloatRGB>) -> IO(Unit):
+    case Some{image}: Some{J.Surface.format(image, 9)}
+def observed(result: Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>) -> IO(Unit):
   match result:
-    case None{}: IO.die(Unit, 1, "normalization source rejected")
-    case Some{J.FloatRGB{+width, +height, pixels}}: float_bytes(width, height, J.Image.FloatRGB.to_bytes(J.FloatRGB{width, height, pixels}))
-def returned(result: Result<&1, &1, J.Image.FloatRGB, J.Image.Formatted>) -> Maybe<J.Image.Formatted>:
+    case Some{Done{image}}: formatted(J.Surface.export(image))
+    case _: IO.die(Unit, 1, "normalization source rejected")
+def returned(target: U32, result: Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>) -> Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>:
   match result:
-    case Fail{_}: None{}
-    case Done{image}: Some{image}
-def chain(target: U32, result: Maybe<J.Image.FloatRGB>) -> Maybe<J.Image.Formatted>:
+    case Some{Done{image}}: Some{J.Surface.format(image, target)}
+    case _: None{}
+def roundtrip(target: U32, result: Maybe<J.Surface>) -> Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>:
+  returned(target, normalized(result))
+def observed_chain(result: Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>) -> IO(Unit):
   match result:
-    case None{}: None{}
-    case Some{image}: returned(J.Image.FloatRGB.to_formatted(image, target))
-def roundtrip(target: U32, result: Maybe<J.Image.Formatted>) -> Maybe<J.Image.Formatted>:
-  chain(target, normalized(result))
-def observed_chain(result: Maybe<J.Image.Formatted>) -> IO(Unit):
-  match result:
-    case None{}: IO.die(Unit, 1, "normalization return chain rejected")
-    case Some{image}: formatted(J.Image.Formatted.export(image))
+    case Some{Done{image}}: formatted(J.Surface.export(image))
+    case _: IO.die(Unit, 1, "normalization return chain rejected")
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -102,7 +94,7 @@ def main():
             if row[:12]!=list(struct.pack('<III',16,16,target)) or len(row)!=12+size:raise ProbeFailure('Native normalization shape differs')
     probe.report['sources']=source_gate();actions=[]
     for case in cases:
-        image=f'J.Image.Formatted.from_bytes(16, 16, {case["format"]}, {bend_bytes(case["bytes"])})'
+        image=f'J.Surface.from_bytes(16, 16, {case["format"]}, {bend_bytes(case["bytes"])})'
         actions+=[f'observed(normalizedBANG({image}))',f'observed_chain(roundtripBANG({case["format"]}, {image}))']
     render=lambda selected,gpu:PROGRAM+''.join('    '+line.replace('BANG','!' if gpu else '')+'\n' for line in selected)
     probe.compare(expected,probe.candidates(render,actions,batch=len(actions),parse=lambda text,selected:parse_results(text)))

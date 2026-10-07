@@ -42,18 +42,22 @@ def repeat(n: Nat, +size: U32, result: Result<&1, &1, J.Surface & J.Surface.Erro
     case 0n _: result
     case _ Fail{error}: Fail{error}
     case 1n+rest Done{surface}: repeat(rest, size, J.Surface.blur_gaussian(surface, size))
-def calculate(repeats: Nat, size: U32, image: J.Image.Formatted) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
-  repeat(repeats, size, Done{J.Image.Formatted.to_surface(image)})
+def calculate(repeats: Nat, size: U32, image: J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  repeat(repeats, size, Done{image})
 '''+BEND_EMITTER+'''
+def emit_colors(+width: U32, +height: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "blur colors unavailable")
+    case Done{colors}: emit_bytes(~&1, rgba(colors, word_bytes(4n, height, word_bytes(4n, width, Nil{}))))
 def emit_surface(surface: J.Surface) -> IO(Unit):
-  J.Surface{+width, +height, pixels} = surface
-  emit_bytes(~&1, rgba(J.Surface.colors(J.Surface{width, height, pixels}), word_bytes(4n, height, word_bytes(4n, width, Nil{}))))
+  J.Surface{+width, +height, format, pixels} = surface
+  emit_colors(width, height, J.Surface.colors(J.Surface{width, height, format, pixels}))
 def observed(reject: Bool, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):
   match reject result:
     case False{} Done{surface}: emit_surface(surface)
     case True{} Fail{Tuple{surface, J.InvalidSize{}}}: emit_surface(surface)
     case _ _: IO.die(Unit, 1, "blur acceptance or retained owner differs")
-def loaded(reject: Bool, repeats: Nat, size: U32, result: Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>) -> IO(Unit):
+def loaded(reject: Bool, repeats: Nat, size: U32, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "blur fixture read failed")
     case Done{image}: observed(reject, calculateBANG(repeats, size, image))
@@ -85,7 +89,7 @@ def main():
         body=PROGRAM.replace('BANG','!' if gpu else '')
         for i,case in selected:
             path=json.dumps(str((work/(str(i)+'.raw')).relative_to(ROOT)))
-            body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_raw({path}, {case["width"]}, {case["height"]}, 7, 0), loaded({"True" if case["reject"] else "False"}{{}}, {case["repeats"]}n, {case["size"]}))\n'
+            body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw({path}, {case["width"]}, {case["height"]}, 7, 0), loaded({"True" if case["reject"] else "False"}{{}}, {case["repeats"]}n, {case["size"]}))\n'
         return body
 
     actions=list(enumerate(all_cases))

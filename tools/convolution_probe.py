@@ -50,18 +50,22 @@ def rgba(pixels: List<U32>, values: List<U32>) -> List<U32>:
   match pixels:
     case Nil{}: List.reverse(&1, U32, values)
     case Con{+color, rest}: rgba(rest, Con{J.Color.alpha(color), Con{J.Color.blue(color), Con{J.Color.green(color), Con{J.Color.red(color), values}}}})
-def calculate(kernel: +List<F32>, image: J.Image.Formatted) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
-  J.Surface.kernel_convolution(J.Image.Formatted.to_surface(image), kernel)
+def calculate(kernel: +List<F32>, image: J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.kernel_convolution(image, kernel)
 '''+BEND_EMITTER+'''
+def emit_colors(+width: U32, +height: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "convolution colors unavailable")
+    case Done{colors}: emit_bytes(~&1, rgba(colors, word_bytes(4n, height, word_bytes(4n, width, Nil{}))))
 def emit_surface(surface: J.Surface) -> IO(Unit):
-  J.Surface{+width, +height, pixels} = surface
-  emit_bytes(~&1, rgba(J.Surface.colors(J.Surface{width, height, pixels}), word_bytes(4n, height, word_bytes(4n, width, Nil{}))))
+  J.Surface{+width, +height, format, pixels} = surface
+  emit_colors(width, height, J.Surface.colors(J.Surface{width, height, format, pixels}))
 def observed(reject: Bool, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):
   match reject result:
     case False{} Done{surface}: emit_surface(surface)
     case True{} Fail{Tuple{surface, J.InvalidKernel{}}}: emit_surface(surface)
     case _ _: IO.die(Unit, 1, "convolution acceptance or retained owner differs")
-def loaded(reject: Bool, kernel: +List<F32>, result: Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>) -> IO(Unit):
+def loaded(reject: Bool, kernel: +List<F32>, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "convolution fixture read failed")
     case Done{image}: observed(reject, calculateBANG(kernel, image))
@@ -95,7 +99,7 @@ def main():
         body=PROGRAM.replace('BANG','!' if gpu else '')
         for i,case in selected:
             path=json.dumps(str((work/(str(i)+'.raw')).relative_to(ROOT)));kernel='['+', '.join(map(literal,case['kernel']))+']'
-            body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_raw({path}, {case["width"]}, {case["height"]}, 7, 0), loaded({"True" if case["reject"] else "False"}{{}}, {kernel}))\n'
+            body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw({path}, {case["width"]}, {case["height"]}, 7, 0), loaded({"True" if case["reject"] else "False"}{{}}, {kernel}))\n'
         return body
 
     actions=list(enumerate(all_cases))

@@ -35,34 +35,41 @@ def word_bytes(n: Nat, +word: U32, values: List<U32>) -> List<U32>:
   match n:
     case 0n: values
     case 1n+rest: word_bytes(rest, (word >> 8n : U32), Con{(word .&. 255 : U32), values})
-def rgba(pixels: List<U32>, values: List<U32>) -> List<U32>:
-  match pixels:
+def pushed(bytes: List<U32>, values: List<U32>) -> List<U32>:
+  match bytes:
     case Nil{}: values
-    case Con{+color, rest}: rgba(rest, Con{J.Color.alpha(color), Con{J.Color.blue(color), Con{J.Color.green(color), Con{J.Color.red(color), values}}}})
+    case Con{byte, rest}: pushed(rest, Con{byte, values})
+def level_data(data: (U32 & U32) & (U32 & List<U32>), values: List<U32>) -> List<U32>:
+  ((width, height), (_, bytes)) = data
+  pushed(bytes, word_bytes(4n, height, word_bytes(4n, width, values)))
 def level_bytes(levels: List<J.Surface>, values: List<U32>) -> List<U32>:
   match levels:
     case Nil{}: List.reverse(&1, U32, values)
-    case Con{J.Surface{+width, +height, pixels}, rest}:
-      level_bytes(rest, rgba(J.Surface.colors(J.Surface{width, height, pixels}), word_bytes(4n, height, word_bytes(4n, width, values))))
+    case Con{level, rest}: level_bytes(rest, level_data(J.Surface.export(level), values))
 def mark(levels: List<J.Surface>) -> List<J.Surface>:
   match levels:
     case Con{first, Nil{}}: Con{J.Surface.draw_pixel(first, 0.0, 0.0, 305419896), Nil{}}
     case Con{first, Con{second, rest}}: Con{first, Con{J.Surface.draw_pixel(second, 0.0, 0.0, 305419896), rest}}
     case Nil{}: Nil{}
-def selected(mutate: Bool, chain: J.Image.Mipmaps) -> J.Image.Mipmaps:
-  match mutate chain:
-    case False{} _: chain
-    case True{} J.Mipmaps{count, levels}: J.Mipmaps{count, mark(levels)}
-def calculate(mutate: Bool, image: J.Image.Formatted) -> J.Image.Mipmaps:
-  selected(mutate, J.Surface.mipmaps(J.Image.Formatted.to_surface(image)))
+def selected(mutate: Bool, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Image.Mipmaps>) -> Maybe<J.Image.Mipmaps>:
+  match mutate result:
+    case False{} Done{chain}: Some{chain}
+    case True{} Done{J.Mipmaps{count, levels}}: Some{J.Mipmaps{count, mark(levels)}}
+    case _ Fail{_}: None{}
+def calculate(mutate: Bool, image: J.Surface) -> Maybe<J.Image.Mipmaps>:
+  selected(mutate, J.Surface.mipmaps(image))
 '''+BEND_EMITTER+'''
-def observed(result: U32 & List<J.Surface>) -> IO(Unit):
+def emitted(result: U32 & List<J.Surface>) -> IO(Unit):
   (count, levels) = result
   emit_bytes(~&1, level_bytes(levels, word_bytes(4n, count, Nil{})))
-def loaded(mutate: Bool, result: Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>) -> IO(Unit):
+def observed(result: Maybe<J.Image.Mipmaps>) -> IO(Unit):
+  match result:
+    case None{}: IO.die(Unit, 1, "mipmap request rejected")
+    case Some{chain}: emitted(J.Image.Mipmaps.entries(chain))
+def loaded(mutate: Bool, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "mipmap fixture read failed")
-    case Done{image}: observed(J.Image.Mipmaps.entries(calculateBANG(mutate, image)))
+    case Done{image}: observed(calculateBANG(mutate, image))
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -98,7 +105,7 @@ def main():
         body=PROGRAM.replace('BANG','!' if gpu else '')
         for i,case in selected:
             path=json.dumps(str((work/(str(i)+'.raw')).relative_to(ROOT)))
-            body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_raw({path}, {case["width"]}, {case["height"]}, 7, 0), loaded({"True" if case["mutate"] else "False"}{{}}))\n'
+            body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw({path}, {case["width"]}, {case["height"]}, 7, 0), loaded({"True" if case["mutate"] else "False"}{{}}))\n'
         return body
 
     actions=list(enumerate(cases))

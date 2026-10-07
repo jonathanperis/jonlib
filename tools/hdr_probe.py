@@ -108,28 +108,26 @@ def word_bytes(n: Nat, +word: U32, values: List<U32>) -> List<U32>:
   match n:
     case 0n: values
     case 1n+rest: word_bytes(rest, (word >> 8n : U32), Con{(word .&. 255 : U32), values})
-def samples(pixels: List<M.Vector3>, values: List<U32>) -> List<U32>:
-  match pixels:
-    case Nil{}: List.reverse(&1, U32, values)
-    case Con{M.Vector3{r, g, b}, rest}: samples(rest, word_bytes(4n, F32.bits(b), word_bytes(4n, F32.bits(g), word_bytes(4n, F32.bits(r), values))))
+def header(+width: U32, +height: U32) -> List<U32>:
+  List.reverse(&1, U32, word_bytes(4n, height, word_bytes(4n, width, Nil{})))
 '''+BEND_EMITTER+'''
-def emit_image(result: U32 & U32 & List<M.Vector3>) -> IO(Unit):
-  (width, height, pixels) = result
-  emit_bytes(~&1, samples(pixels, word_bytes(4n, height, word_bytes(4n, width, Nil{}))))
-def observed(result: Result<&1, &1, J.Image.DecodeError, J.Image.FloatRGB>) -> IO(Unit):
+def emit_image(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
+  match data:
+    case Tuple{Tuple{width, height}, Tuple{9, bytes}}: emit_bytes(~&1, List.append(&1, U32, header(width, height), bytes))
+    case _: IO.die(Unit, 1, "HDR pixel format changed")
+def observed(result: Result<&1, &1, J.Surface.Error, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "valid HDR rejected")
-    case Done{image}: emit_image(J.Image.FloatRGB.entries(image))
-def error_code(result: Result<&1, &1, J.Image.DecodeError, J.Image.FloatRGB>) -> U32:
+    case Done{image}: emit_image(J.Surface.export(image))
+def error_code(result: Result<&1, &1, J.Surface.Error, J.Surface>) -> U32:
   match result:
     case Done{_}: 99
-    case Fail{error}:
-      match error:
-        case J.InvalidImageHeader{}: 0
-        case J.InvalidImageByte{}: 1
-        case J.UnsupportedImageSize{}: 2
-        case J.TruncatedImageData{}: 3
-        case J.InvalidImageStream{}: 4
+    case Fail{J.InvalidImageHeader{}}: 0
+    case Fail{J.InvalidImageByte{}}: 1
+    case Fail{J.UnsupportedImageSize{}}: 2
+    case Fail{J.TruncatedImageData{}}: 3
+    case Fail{J.InvalidImageStream{}}: 4
+    case Fail{_}: 98
 def channels(n: Nat, +channel: U32, +exponent: U32, values: List<U32>) -> List<U32>:
   match n:
     case 0n: values
@@ -138,12 +136,13 @@ def exponents(n: Nat, +exponent: U32, values: List<U32>) -> List<U32>:
   match n:
     case 0n: List.reverse(&1, U32, values)
     case 1n+rest: exponents(rest, (exponent + 1 : U32), channels(256n, 0, exponent, values))
-def unit_seen(value: Unit) -> U32:
+# Surface owners have no unload call: consuming the decoded owner disposes it.
+def consumed(size: U32 & U32) -> U32:
   1
-def disposed(result: Result<&1, &1, J.Image.DecodeError, J.Image.FloatRGB>) -> U32:
+def disposed(result: Result<&1, &1, J.Surface.Error, J.Surface>) -> U32:
   match result:
     case Fail{_}: 0
-    case Done{image}: unit_seen(J.Image.FloatRGB.unload(image))
+    case Done{image}: consumed(J.Surface.dimensions(image))
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -164,10 +163,10 @@ def main():
     def render(selected,gpu):
         bang='!' if gpu else '';body=PROGRAM
         for kind,case in selected:
-            if kind=='image':body+=f'    observed(J.Image.FloatRGB.decode_hdr{bang}({bend_bytes(case["bytes"])}))\n'
-            elif kind=='error':body+=f'    emit_bytes(~&1, [error_code(J.Image.FloatRGB.decode_hdr{bang}({bend_bytes(case["bytes"])}))])\n'
+            if kind=='image':body+=f'    observed(J.Surface.decode_hdr{bang}({bend_bytes(case["bytes"])}))\n'
+            elif kind=='error':body+=f'    emit_bytes(~&1, [error_code(J.Surface.decode_hdr{bang}({bend_bytes(case["bytes"])}))])\n'
             elif kind=='pairs':body+=f'    emit_bytes(~&1, exponents{bang}(256n, 0, Nil{{}}))\n'
-            else:body+=f'    emit_bytes(~&1, [disposed{bang}(J.Image.FloatRGB.decode_hdr({bend_bytes(inputs[0]["bytes"])}))])\n'
+            else:body+=f'    emit_bytes(~&1, [disposed{bang}(J.Surface.decode_hdr({bend_bytes(inputs[0]["bytes"])}))])\n'
         return body
 
     probe.compare(wanted,probe.candidates(render,actions,batch=len(actions),parse=lambda text,selected:parse_results(text)),
