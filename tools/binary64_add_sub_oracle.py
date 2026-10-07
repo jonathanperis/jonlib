@@ -4,9 +4,7 @@ The reviewed binary64 decoder and nearest-neighbor search are shared with the
 FMA oracle. No candidate limbs, alignment, normalization, or packing are used.
 Subtraction flips the right operand's sign only after validating both inputs.
 """
-from binary64_fma_oracle import (FRACTION, SIGN, MAX_FINITE, OVERFLOW_ENDPOINT,
-                                decode64, in_domain, nearest64, positive64,
-                                power2, word)
+from binary64_fma_oracle import SIGN, decode64, in_domain, nearest64, word
 
 BOUNDS = ((-900, 130), (-900, 130))
 KINDS = {'add': 0, 'sub': 1}

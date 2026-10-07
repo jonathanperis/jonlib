@@ -5,7 +5,7 @@
  "diagnostic": false,
  "os": "macos",
  "machine": "arm64",
- "seconds": 222.4,
+ "seconds": 246.8,
  "toolchain": {
   "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
   "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
@@ -13,7 +13,7 @@
  },
  "reports": {
   ".build/pnm-file-probe/results.json": {
-   "sha256": "6f7080db1fb48d1cbd3b1dbbd63f4d5b5965ad27d23842f68d711a928d025b83",
+   "sha256": "31a0dba0d9f78e1ca74762d776fe406d8f7586b9081e4fb76900a89e975c40b6",
    "summary": {
     "passed": true,
     "probe": "pnm-file",

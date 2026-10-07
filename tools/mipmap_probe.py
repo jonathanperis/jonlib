@@ -5,7 +5,7 @@ import json
 import random
 import struct
 
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 import probekit
 from probekit import ROOT, ProbeFailure
 
@@ -79,9 +79,7 @@ def main():
     probe=probekit.Probe('mipmap',probekit.arguments(__doc__));work=probe.work
     cases=fixtures()
     lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-           'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-           'static void end(void){if(used){puts("]");used=0;}puts("\\\"end\\\"");}',
+           C_EMITTER,
            'static void emit(Image image,int mutate){if(!image.data||image.format!=7)exit(3);word(image.mipmaps);int w=image.width,h=image.height;unsigned char *p=image.data;',
            'for(int level=0;level<image.mipmaps;level++){if(mutate&&level==(image.mipmaps>1?1:0)){p[0]=0x12;p[1]=0x34;p[2]=0x56;p[3]=0x78;}',
            'word(w);word(h);for(int i=0;i<w*h*4;i++)byte(p[i]);p+=w*h*4;w=w>1?w/2:1;h=h>1?h/2:1;}end();UnloadImage(image);}',

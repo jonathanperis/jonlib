@@ -6,16 +6,14 @@ stb's suffix/content sniffing path: a .png suffix alone proves no PNG identity.
 Raw native metadata and every byte are captured before separate normalization.
 CPU-1/CPU-2/JavaScript only; no GPU, formatted-file or generic-formatted claim.
 
-Shared roles, native recording and lanes: tools/formatted_codec.py.
+Shared roles, native recording and lanes: tools/codec_formats.py.
 """
 import json
 import re
 import struct
 import zlib
-from bmp_probe import bend_bytes
 from png_probe import (fixtures as legacy_fixtures, png, chunk, SIGNATURE, CHANNELS, PASSES)
-import formatted_codec
-from probekit import ROOT
+import codec_formats
 
 BATCH_SIZE = 32
 SOURCE_BYTE_LIMIT = 196_608
@@ -24,7 +22,7 @@ MAX_CASE_PIXELS = 8192
 MAX_TOTAL_BYTES = 2_000_000
 ENCODED_LIMIT = 1_048_576
 FILTERED_LIMIT = 67_108_864
-C_PREFIX = formatted_codec.C_PREFIX
+C_PREFIX = codec_formats.C_PREFIX
 
 
 def pass_layout(width,height,components,depth,interlace):
@@ -253,13 +251,13 @@ QUALIFICATION=dict(little_endian=True,png_enabled=True,structural_channels=True,
                    full_width_transparency=True,cgbi_defaults=True,formats=[1,2,4,7])
 
 
-CODEC = formatted_codec.Codec(
+CODEC = codec_formats.Codec(
     name='png', token='.png', aliases=('.PNG',), contraction_token='.PNG', formats={1: 1, 2: 2, 3: 4, 4: 7}, roles=('raw', 'bridge', 'surface', 'factory', 'owner', 'raw-roundtrip'), raylib_options=('SUPPORT_FILEFORMAT_PNG=ON',), batch=32, native_batch=32, qualification=(qualification_program(), QUALIFICATION),
     fixtures=fixtures, controls=controls, describe=__doc__)
 
 
 def main(argv=None):
-    formatted_codec.main(CODEC, argv)
+    codec_formats.main(CODEC, argv)
 
 
 if __name__ == '__main__':

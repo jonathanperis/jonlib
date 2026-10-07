@@ -5,8 +5,8 @@ import json
 import struct
 
 from bmp_probe import bend_bytes
-from byte_probe import BEND_EMITTER, parse_results
-from formatted_float_probe import fixtures as formatted_fixtures
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
+from format_float_probe import fixtures as formatted_fixtures
 from float_rgb_probe import boundaries
 import probekit
 from probekit import ROOT, ProbeFailure
@@ -126,9 +126,7 @@ def render(selected,gpu):
 def main():
     probe=probekit.Probe('image-colors',probekit.arguments(__doc__));work=probe.work
     cases,controls,invalid=fixtures();lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-        'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-        'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-        'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+        C_EMITTER,
         'static void emit(Image image){if(!image.data)exit(2);word(image.width);word(image.height);word(image.format);',
         'int size=GetPixelDataSize(image.width,image.height,image.format);for(int i=0;i<size;i++)byte(((unsigned char*)image.data)[i]);end();}',
         'int main(void){SetTraceLogLevel(LOG_NONE);']

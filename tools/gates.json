@@ -572,11 +572,11 @@
    "minutes": 2
   },
   {
-   "id": "formatted-float",
+   "id": "format-float",
    "title": "",
    "run": [
     "{python}",
-    "tools/formatted_float_probe.py",
+    "tools/format_float_probe.py",
     "--bend-source={bend}",
     "--raylib-source={raylib}"
    ],
@@ -1059,11 +1059,11 @@
    "minutes": 2
   },
   {
-   "id": "formatted-bmp-export",
+   "id": "bmp-export",
    "title": "",
    "run": [
     "{python}",
-    "tools/formatted_bmp_export_probe.py",
+    "tools/bmp_export_probe.py",
     "--bend-source={bend}",
     "--raylib-source={raylib}"
    ],
@@ -1074,11 +1074,11 @@
    "minutes": 3
   },
   {
-   "id": "formatted-tga-export",
+   "id": "tga-export",
    "title": "",
    "run": [
     "{python}",
-    "tools/formatted_tga_export_probe.py",
+    "tools/tga_export_probe.py",
     "--bend-source={bend}",
     "--raylib-source={raylib}"
    ],
@@ -1089,11 +1089,11 @@
    "minutes": 3
   },
   {
-   "id": "formatted-qoi-export",
+   "id": "qoi-export",
    "title": "",
    "run": [
     "{python}",
-    "tools/formatted_qoi_export_probe.py",
+    "tools/qoi_export_probe.py",
     "--bend-source={bend}",
     "--raylib-source={raylib}"
    ],

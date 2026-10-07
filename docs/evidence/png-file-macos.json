@@ -5,7 +5,7 @@
  "diagnostic": false,
  "os": "macos",
  "machine": "arm64",
- "seconds": 720.6,
+ "seconds": 859.1,
  "toolchain": {
   "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
   "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
@@ -13,7 +13,7 @@
  },
  "reports": {
   ".build/png-file-probe/results.json": {
-   "sha256": "f947124d4aefa5ca2e855f75f498db6ca01ca13dba862353e9596ddd3f413e6c",
+   "sha256": "68f6ae0584a8d6002383783fe2830e5936ce3291408de19540a10953899d45a0",
    "summary": {
     "passed": true,
     "probe": "png-file",

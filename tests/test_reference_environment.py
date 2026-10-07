@@ -1,5 +1,4 @@
 """Explicit native-child loader policy, with no parent or candidate mutation."""
-import copy
 import contextlib
 import io
 import runpy

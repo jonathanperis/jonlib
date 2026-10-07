@@ -10,7 +10,7 @@ import json
 import struct
 import sys
 
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from image_export_probe import FILE_DESCRIPTOR_LIMIT, limited_runs
 from image_format_probe import r32_words, word_bytes
 import probekit
@@ -121,11 +121,7 @@ def reference_program(cases,work):
     lines = [r'''#include "raylib.h"
 #include <stdio.h>
 #include <stdlib.h>
-static int used=0;
-static void byte(unsigned v){if(!used)putchar('[');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}
-static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}
-static void end(void){if(used){puts("]");used=0;}puts("\"end\"");}
-static void emit(const char *path,const char *out,int w,int h,int header){
+''' + C_EMITTER + '\n' + r'''static void emit(const char *path,const char *out,int w,int h,int header){
 Image image=LoadImageRaw(path,w,h,PIXELFORMAT_UNCOMPRESSED_R32,header);
 if(!image.data){puts("null");return;}
 if(image.mipmaps!=1)exit(2);

@@ -1,6 +1,6 @@
 """Shared driver for native-format file-loading probes (J.Surface.load_<codec>).
 
-Builds on a formatted_codec.Codec. Every accepted memory fixture becomes a real
+Builds on a codec_formats.Codec. Every accepted memory fixture becomes a real
 file; extra path variants exercise raylib's whole-path extension routing:
 recognized tokens go through native LoadImage, anything else through
 LoadFileData + LoadImageFromMemory(<codec token>). Candidate roles per file:
@@ -25,8 +25,8 @@ import os
 import sys
 from typing import Callable, Optional
 
-import formatted_codec
-from formatted_codec import bend_bytes, bend_input
+import codec_formats
+from codec_formats import bend_bytes, bend_input
 import probekit
 from probekit import ROOT, ProbeFailure
 
@@ -47,7 +47,7 @@ RSS_RUNNER = ('import json,resource,subprocess,sys;'
 
 @dataclass
 class FileCodec:
-    memory: formatted_codec.Codec
+    memory: codec_formats.Codec
     suffixes: tuple                 # (name, suffix or case->suffix) path variants applied to each base fixture
     path_bases: tuple               # fixture ids that get every path variant
     other_codecs: tuple             # (id, bytes) other-format content saved with this codec's suffix
@@ -142,10 +142,10 @@ def prepare(codec, work, cases, invalid):
 
 def reference_program(codec, cases):
     memory = codec.memory
-    lines = [formatted_codec.C_PREFIX, 'int main(void){if(!little_endian())return 10;SetTraceLogLevel(LOG_NONE);']
+    lines = [codec_formats.C_PREFIX, 'int main(void){if(!little_endian())return 10;SetTraceLogLevel(LOG_NONE);']
     for c in cases:
         path, fmt = json.dumps(c['path']), memory.formats[c['channels']]
-        raw_size = c['width'] * c['height'] * formatted_codec.CHANNEL_BYTES[fmt]
+        raw_size = c['width'] * c['height'] * codec_formats.CHANNEL_BYTES[fmt]
         lines.append('{')
         if c['route'] == 'LoadImage':
             lines.append(f'Image image=LoadImage({path});')
@@ -166,7 +166,7 @@ def qualification_program(codec):
     checks = ('if(GetFileExtension(".x")!=NULL||GetFileExtension("dir/.x")==NULL||strcmp(GetFileExtension("dir/.x"),".x")'
               '||GetFileExtension("dir.x/leaf")==NULL||strcmp(GetFileExtension("dir.x/leaf"),".x/leaf"))return 14;')
     program = codec.memory.qualification[0] if codec.memory.qualification else (
-        formatted_codec.C_PREFIX + 'int main(void){SetTraceLogLevel(LOG_NONE);puts("{}");return 0;}\n')
+        codec_formats.C_PREFIX + 'int main(void){SetTraceLogLevel(LOG_NONE);puts("{}");return 0;}\n')
     return '#include <string.h>\n' + program.replace('SetTraceLogLevel(LOG_NONE);', 'SetTraceLogLevel(LOG_NONE);' + checks, 1)
 
 
@@ -176,7 +176,7 @@ LOADED = 'Result<&1, &1, J.Surface.IOError, J.Surface>'
 def bend_prelude(codec):
     from byte_probe import BEND_EMITTER
     n = codec.name
-    return formatted_codec.BEND_PRELUDE.replace('def reverse_into(', BEND_EMITTER + 'def reverse_into(', 1) + rf'''
+    return codec_formats.BEND_PRELUDE.replace('def reverse_into(', BEND_EMITTER + 'def reverse_into(', 1) + rf'''
 def loaded(result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> Maybe<J.Surface>:
   match result:
     case Fail{{_}}: None{{}}
@@ -269,7 +269,7 @@ def expectations(codec, cases, invalid, reference, synthetic=()):
         roles = list(codec.roles) + ([f'dispatch-{codec.name}', 'uncontracted', 'fused'] if c['regress'] and c['route'] == 'LoadImage' else [])
         for role in roles:
             actions.append(dict(case=c, role=role, normalized=normal['bytes'],
-                                expected=dict(raw if role in formatted_codec.RAW_ROLES else normal, role=role)))
+                                expected=dict(raw if role in codec_formats.RAW_ROLES else normal, role=role)))
         if c['regress'] and c['route'] == 'explicit':
             control = dict(c, id=c['id'] + '-generic', error=0)
             actions.append(dict(case=control, role='surface-error', expected=dict(id=control['id'], role='surface-error', error=0)))
@@ -375,7 +375,7 @@ def resource_run(probe, name, program, expected, ceiling):
     for lane, command in commands.items():
         usage = probe.work / f'{name}-{lane}.rss'
         text = probekit.run([sys.executable, '-c', RSS_RUNNER, usage, *command], timeout=240)
-        rows = formatted_codec.parse_rows(text, expected)
+        rows = codec_formats.parse_rows(text, expected)
         if rows != expected:
             first = next(i for i, (a, b) in enumerate(zip(expected, rows)) if a != b) if len(rows) == len(expected) else 0
             raise ProbeFailure(f'{codec_name(probe)} {name}: {lane} differs at record {first}')
@@ -413,14 +413,14 @@ def main(codec, argv=None, description=None):
     heads = [dict(id=c['id'], role=r) for c in cases for r in ('raw', 'normalized')]
     text = probe.native_batches(lambda selected: reference_program(codec, selected), cases, batch=codec.batch,
                                 source_limit=memory.source_limit)
-    rows = formatted_codec.parse_rows(text, heads)
+    rows = codec_formats.parse_rows(text, heads)
     reference = {c['id']: (rows[2*i], rows[2*i+1]) for i, c in enumerate(cases)}
-    stress_rows = formatted_codec.parse_rows(probe.native(reference_program(codec, [stress]), 'exact-cap-reference'),
+    stress_rows = codec_formats.parse_rows(probe.native(reference_program(codec, [stress]), 'exact-cap-reference'),
                                              [dict(id=stress['id'], role=r) for r in ('raw', 'normalized')])
     actions = expectations(codec, cases, invalid, reference, synthetic)
     lanes = probe.candidates(lambda selected, gpu: candidate_program(codec, selected), actions, batch=codec.batch,
                              source_limit=memory.source_limit,
-                             parse=lambda out, selected: formatted_codec.parse_rows(out, [a['expected'] for a in selected]))
+                             parse=lambda out, selected: codec_formats.parse_rows(out, [a['expected'] for a in selected]))
     probe.compare([a['expected'] for a in actions], lanes, describe=lambda i: f'{actions[i]["case"]["id"]}/{actions[i]["role"]}')
     closure, closure_expected = boundary(codec, cases, invalid, reference)
     resource_run(probe, 'boundary', closure, closure_expected, MAX_SPARSE_RSS)

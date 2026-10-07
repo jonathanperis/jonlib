@@ -90,7 +90,7 @@ full IO contract is in
 
 All gates compare exact output against pinned native raylib on the CPU-1,
 CPU-2 and JavaScript lanes (see [VERIFICATION.md](VERIFICATION.md)). Pinned
-raylib disables PNM by default; the formatted memory and file gates build their
+raylib disables PNM by default; the native-format memory and file gates build their
 native archive with `SUPPORT_FILEFORMAT_PNM=ON`.
 
 - **RGBA8 decode** (`tools/pnm_probe.py`, gate `pnm`, shared bitmap harness
@@ -104,7 +104,7 @@ native archive with `SUPPORT_FILEFORMAT_PNM=ON`.
   converts to RGBA8 before inspection, so it does not establish native
   format-1/4 metadata or raw byte lengths.
 - **Format-preserving memory decode** (`tools/pnm_format_probe.py`, gate
-  `pnm-format`, driver `tools/formatted_codec.py`): the native archive is first
+  `pnm-format`, driver `tools/codec_formats.py`): the native archive is first
   qualified (little-endian, PNM enabled, wide second-byte retention, formats
   1/4). For each accepted fixture, native width/height/mipmaps/format and every
   raw byte are recorded before a separate RGBA8 normalization, including the
@@ -115,7 +115,7 @@ native archive with `SUPPORT_FILEFORMAT_PNM=ON`.
   streams to native and never computes expected samples. Checked-invalid
   controls run only through Jonlib and check exact typed errors.
 - **Format-preserving file loading** (`tools/pnm_file_probe.py`, gate
-  `pnm-file`, driver `tools/formatted_file.py`): see
+  `pnm-file`, driver `tools/codec_files.py`): see
   [IMAGE-FILES.md](IMAGE-FILES.md#how-it-is-verified).
 
 ```sh
@@ -130,7 +130,7 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 - Native pointer/allocation ABI, OOM parity, maximum-area resources and
   performance.
 - ASCII P1..P3 and PBM P4 decoding.
-- GPU evidence is local only (`--gpu` on the `pnm` probe); the formatted memory
+- GPU evidence is local only (`--gpu` on the `pnm` probe); the native-format memory
   and file gates run on CPU and JavaScript.
 - In the API ledger this work is part of the partial
   `raylib:function:LoadImageFromMemory` and `raylib:function:LoadImage` entries;

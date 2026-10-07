@@ -12,7 +12,7 @@ import hashlib
 import json
 import random
 
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 import probekit
 from probekit import ProbeFailure
 
@@ -188,9 +188,7 @@ def actions(cases):
 
 def native(probe, cases, selected):
     lines = ['#include "raylib.h"', '#include <stdio.h>', '#include <stdlib.h>', '#include <string.h>',
-             'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-             'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-             'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+             C_EMITTER,
              'static void color(Color c){byte(c.r);byte(c.g);byte(c.b);byte(c.a);}',
              'static void fword(float f){unsigned u;memcpy(&u,&f,4);word(u);}',
              'static void image(Image im){word(im.format);word(im.width);word(im.height);unsigned char *p=im.data;'

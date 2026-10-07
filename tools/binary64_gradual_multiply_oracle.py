@@ -3,8 +3,7 @@
 Reuses the reviewed binary64 rational decoder and ordered-neighbor RN search
 unchanged. No candidate product limbs, normalization, windows or pack are used.
 """
-from binary64_fma_oracle import (FRACTION, SIGN, MAX_FINITE, decode64, in_domain,
-                                nearest64, positive64, power2, word)
+from binary64_fma_oracle import SIGN, decode64, in_domain, nearest64, word
 
 BOUNDS = ((-277, 0), (-885, 0))
 KINDS = {'multiply': 0}
