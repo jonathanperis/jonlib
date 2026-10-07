@@ -1,11 +1,24 @@
 # Jonmath - zlib license, Copyright (c) 2026 Jonathan Peris.
 # Altered Bend adaptation of raymath.h from pinned raylib 6.0.
 # See THIRD_PARTY_NOTICES.md and LICENSES/raylib.txt.
+#
+# Sections, in order (each starts with a "# ----" banner):
+#   1. Shared types: vectors, matrix, binary64 words
+#   2. Numerical profiles: M.Libm and M.Contraction
+#   3. Scalars (Clamp, Lerp, Normalize, Remap, Wrap, FloatEquals)
+#   4. Vector2
+#   5. Matrices, Vector3 and Vector4
+#   6. Quaternions, decomposition and projection
+# raymath groups by type; Bend needs definitions before use, so later
+# sections may extend an earlier type (e.g. Vector3 helpers after Matrix).
 import Base
 import ./src/trig.bend as Trig
 import ./src/float64.bend as Float64Numeric
 import ./src/angle.bend as LegacyAngle
 import ./src/checked_angle.bend as CheckedAngle
+
+# -----------------------------------------------------------------------------
+# Shared types: vectors, matrix, binary64 words
 
 type Vector2 is Data:
   Vector2{x: F32, y: F32}
@@ -44,6 +57,9 @@ def Float64.internal.difference(left: Float64, right: Float64) -> F32:
   Float64{bh, bl} = right
   Float64Numeric.difference(ah, al, bh, bl)
 
+# -----------------------------------------------------------------------------
+# Numerical profiles: M.Libm and M.Contraction
+
 # Which C math library a reference result depends on (sin/cos/atan2 rounding,
 # fminf/fmaxf signed-zero ties). AppleLibm: macOS. Glibc239Libm: glibc before
 # 2.41 (Sun atan2f). Glibc241Libm: glibc 2.41 and later. See docs/ANGLES.md.
@@ -73,6 +89,9 @@ def Contraction.fused(contraction: Contraction) -> Bool:
     case Uncontracted{}: False{}
     case Fused{}: True{}
 
+# -----------------------------------------------------------------------------
+# Scalars (Clamp, Lerp, Normalize, Remap, Wrap, FloatEquals)
+
 def Math.clamp(+value: F32, +lower: F32, +upper: F32) -> F32:
   +first = Bool.pick(F32, (value < lower : F32), lower, value)
   Bool.pick(F32, (first > upper : F32), upper, first)
@@ -91,6 +110,9 @@ def Math.wrap(+value: F32, +lower: F32, +upper: F32) -> F32:
 
 def Math.float_equals(+left: F32, +right: F32) -> Bool:
   (F32.abs((left - right : F32)) <= 0.000001 * F32.max(1.0, F32.max(F32.abs(left), F32.abs(right))) : F32)
+
+# -----------------------------------------------------------------------------
+# Vector2
 
 def Vector2.zero() -> Vector2:
   Vector2{0.0, 0.0}
@@ -300,6 +322,9 @@ def Vector2.rotate_for(reference: Libm, vector: Vector2, angle: F32) -> Vector2:
 
 def Vector2.rotate(vector: Vector2, angle: F32) -> Vector2:
   Vector2.rotate_for(AppleLibm{}, vector, angle)
+
+# -----------------------------------------------------------------------------
+# Matrices, Vector3 and Vector4
 
 def Matrix.identity() -> Matrix:
   Matrix{1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
@@ -895,6 +920,9 @@ def Vector4.equals(left: Vector4, right: Vector4) -> Bool:
   Vector4{x, y, z, w} = left
   Vector4{a, b, c, d} = right
   Math.float_equals(x, a) && Math.float_equals(y, b) && Math.float_equals(z, c) && Math.float_equals(w, d)
+
+# -----------------------------------------------------------------------------
+# Quaternions, decomposition and projection
 
 def Quaternion.identity() -> Vector4:
   Vector4{0.0, 0.0, 0.0, 1.0}
