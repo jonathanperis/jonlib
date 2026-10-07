@@ -3,9 +3,15 @@ import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M
 
-def save(pair: J.Surface & J.Surface) -> IO(Unit):
-  (destination, source) = pair
-  IO.try(Unit, J.Surface.write_ppm(destination, ".build/composite.ppm"))
+def finished(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "image export failed")
+    case Done{_}: IO.pure(Unit, Unit{})
+
+def save(result: Result<&1, &1, (J.Surface & J.Surface) & J.Surface.Error, J.Surface & J.Surface>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "image drawing failed")
+    case Done{Tuple{destination, _}}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_ppm(destination, ".build/composite.ppm"), finished)
 
 def with_icon(destination: J.Surface, created: Maybe<J.Surface>) -> IO(Unit):
   match created:

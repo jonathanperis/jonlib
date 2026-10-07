@@ -115,10 +115,3 @@ def validate_images(images, paths=None):
         raise ValueError('Mixed Darwin image architectures')
     return images
 
-
-def stable_images(images):
-    return {name:stable_image(image) for name,image in validate_images(images).items()}
-
-
-def enrich_images(images):
-    return {name:enrich_image(image) for name,image in validate_images(images).items()}

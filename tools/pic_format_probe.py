@@ -8,22 +8,19 @@ PIC shares stb sniffing: a .pic suffix alone proves no PIC content identity.
 Raw native metadata and every byte are captured before separate normalization.
 CPU-1/CPU-2/JavaScript only; no GPU, formatted-file or generic-formatted claim.
 
-Shared roles, native recording and lanes: tools/formatted_codec.py.
+Shared roles, native recording and lanes: tools/codec_formats.py.
 """
 import json
 import re
-import struct
-from bmp_probe import bend_bytes
-from pic_probe import fixtures as legacy_fixtures, pic_header, pic, pic_packets
-import formatted_codec
-from probekit import ROOT
+from pic_probe import fixtures as legacy_fixtures, pic, pic_packets
+import codec_formats
 
 BATCH_SIZE = 32
 SOURCE_BYTE_LIMIT = 196_608
 FORMATS = {3:4, 4:7}
 MAX_CASE_PIXELS = 8192
 MAX_TOTAL_BYTES = 2_000_000
-C_PREFIX = formatted_codec.C_PREFIX
+C_PREFIX = codec_formats.C_PREFIX
 
 
 class AdmissionError(ValueError):
@@ -272,13 +269,13 @@ QUALIFICATION=dict(little_endian=True,pic_enabled=True,all_descriptor_channels=T
                    default_white=True,packet_overwrite=True,rle_rules=True,formats=[4,7])
 
 
-CODEC = formatted_codec.Codec(
+CODEC = codec_formats.Codec(
     name='pic', token='.pic', aliases=('.PIC',), contraction_token='.PIC', formats={3: 4, 4: 7}, roles=('raw', 'bridge', 'surface', 'factory', 'owner', 'raw-roundtrip'), raylib_options=('SUPPORT_FILEFORMAT_PIC=ON',), batch=32, native_batch=32, qualification=(qualification_program(), QUALIFICATION),
     fixtures=fixtures, controls=controls, describe=__doc__)
 
 
 def main(argv=None):
-    formatted_codec.main(CODEC, argv)
+    codec_formats.main(CODEC, argv)
 
 
 if __name__ == '__main__':

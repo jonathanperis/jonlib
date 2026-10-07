@@ -100,7 +100,7 @@ def main():
     args = probekit.arguments(__doc__, lambda parser: parser.add_argument('--gnu-control', action='store_true'), raylib=False)
     probe = probekit.Probe('angle-gnu' if args.gnu_control else 'angle', args)
     values = samples()
-    gnu = args.gnu_control or gradient_reference() == 'GnuGradient'
+    gnu = args.gnu_control or gradient_reference() == 'Glibc239Libm'
     expected = [int(line) for line in probe.native(reference_source(values, args.gnu_control), link_raylib=False).splitlines()]
     if len(expected) != len(values):
         raise probekit.ProbeFailure('Incomplete atan2 reference result set')

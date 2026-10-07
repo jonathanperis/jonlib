@@ -5,16 +5,14 @@ import json
 import struct
 
 from bmp_probe import bend_bytes
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from conformance import ROOT, source_gate
 from float_rgb_bytes_probe import fixtures as raw_fixtures
 import probekit
 from probekit import ProbeFailure
 
 PRELUDE = ['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-           'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-           'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+           C_EMITTER,
            'static void emit(Image image){word(image.width);word(image.height);for(int i=0;i<image.width*image.height*12;i++)byte(((unsigned char*)image.data)[i]);end();UnloadImage(image);}',
            'int main(void){SetTraceLogLevel(LOG_NONE);']
 NATIVE = {'h':'ImageFlipHorizontal','v':'ImageFlipVertical','cw':'ImageRotateCW','ccw':'ImageRotateCCW'}
@@ -31,31 +29,32 @@ def input_bytes(chunks: +List<+List<U32>>, values: +List<U32>) -> +List<U32>:
     case Nil{}: List.reverse(&2, U32, values)
     case Con{head, tail}: input_bytes(tail, reverse_into(head, values))
 '''+BEND_EMITTER+'''
-def clone(result: J.Image.FloatRGB & J.Image.FloatRGB) -> J.Image.FloatRGB:
+def clone(result: J.Surface & J.Surface) -> J.Surface:
   (_, copy) = result
   copy
-def operation(kind: U32, image: J.Image.FloatRGB) -> J.Image.FloatRGB:
+def operation(kind: U32, image: J.Surface) -> J.Surface:
   match kind:
-    case 0: clone(J.Image.FloatRGB.copy(image))
-    case 1: J.Image.FloatRGB.flip_horizontal(image)
-    case 2: J.Image.FloatRGB.flip_vertical(image)
-    case 3: J.Image.FloatRGB.rotate_cw(image)
-    case _: J.Image.FloatRGB.rotate_ccw(image)
-def apply(ops: +List<U32>, result: Maybe<J.Image.FloatRGB>) -> Maybe<J.Image.FloatRGB>:
+    case 0: clone(J.Surface.copy(image))
+    case 1: J.Surface.flip_horizontal(image)
+    case 2: J.Surface.flip_vertical(image)
+    case 3: J.Surface.rotate_cw(image)
+    case _: J.Surface.rotate_ccw(image)
+def apply(ops: +List<U32>, result: Maybe<J.Surface>) -> Maybe<J.Surface>:
   match ops result:
     case _ None{}: None{}
     case Nil{} _: result
     case Con{op, rest} Some{image}: apply(rest, Some{operation(op, image)})
-def emitted(+width: U32, +height: U32, result: Result<&1, &1, J.Image.FloatRGB, +List<U32>>) -> IO(Unit):
-  match result:
-    case Fail{_}: IO.die(Unit, 1, "float orientation corrupted samples")
-    case Done{bytes}:
-      header = {[(width .&. 255 : U32), ((width >> 8n) .&. 255 : U32), 0, 0, (height .&. 255 : U32), ((height >> 8n) .&. 255 : U32), 0, 0] : +List<U32>}
-      emit_bytes(~&2, List.append(&2, U32, header, bytes))
-def observed(result: Maybe<J.Image.FloatRGB>) -> IO(Unit):
+def emitted.sized(+width: U32, +height: U32, bytes: List<U32>) -> IO(Unit):
+  header = {[(width .&. 255 : U32), ((width >> 8n) .&. 255 : U32), 0, 0, (height .&. 255 : U32), ((height >> 8n) .&. 255 : U32), 0, 0] : List<U32>}
+  emit_bytes(~&1, List.append(&1, U32, header, bytes))
+def emitted(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
+  match data:
+    case Tuple{Tuple{width, height}, Tuple{9, bytes}}: emitted.sized(width, height, bytes)
+    case _: IO.die(Unit, 1, "float orientation changed the pixel format")
+def observed(result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "float input rejected")
-    case Some{J.FloatRGB{+width, +height, pixels}}: emitted(width, height, J.Image.FloatRGB.to_bytes(J.FloatRGB{width, height, pixels}))
+    case Some{image}: emitted(J.Surface.export(image))
 def source_read(result: Array<M.Vector3> & M.Vector3) -> Bool:
   match result:
     case Tuple{_, M.Vector3{x, y, z}}: F32.is_eq(x, 0.25) && F32.is_eq(y, 0.5) && F32.is_eq(z, 0.75)
@@ -63,13 +62,13 @@ def clone_changed(source: Array<M.Vector3>, result: Array<M.Vector3> & M.Vector3
   match result:
     case Tuple{_, M.Vector3{x, y, z}}:
       F32.is_eq(x, 0.0) && F32.is_eq(y, 0.0) && F32.is_eq(z, 0.0) && source_read(Array.get(M.Vector3, source, 0))
-def independent(result: J.Image.FloatRGB & J.Image.FloatRGB) -> Bool:
+def independent(result: J.Surface & J.Surface) -> Bool:
   match result:
-    case Tuple{J.FloatRGB{1, 1, source}, J.FloatRGB{1, 1, copy}}:
+    case Tuple{J.Surface{1, 1, 9, J.Vectors{source}}, J.Surface{1, 1, 9, J.Vectors{copy}}}:
       clone_changed(source, Array.get(M.Vector3, Array.set(M.Vector3, copy, 0, M.Vector3{0.0, 0.0, 0.0}), 0))
     case _: False{}
 def owned_copy() -> Bool:
-  independent(J.Image.FloatRGB.copy(J.FloatRGB{1, 1, Array.new(M.Vector3, 0n, M.Vector3{0.25, 0.5, 0.75})}))
+  independent(J.Surface.copy(J.Surface{1, 1, 9, J.Vectors{Array.new(M.Vector3, 0n, M.Vector3{0.25, 0.5, 0.75})}}))
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -107,7 +106,7 @@ def main():
             if op in ('cw','ccw'):w,h=h,w
         if row[:8]!=list(struct.pack('<II',w,h)) or len(row)!=8+w*h*12:raise ProbeFailure('Native orientation metadata differs')
     probe.report['sources']=source_gate()
-    actions=[f'observed(applyBANG([{",".join(str(CODES[op]) for op in case["operations"])}], J.Image.FloatRGB.from_bytes({case["width"]}, {case["height"]}, {bend_bytes(case["bytes"])})))' for case in cases]
+    actions=[f'observed(applyBANG([{",".join(str(CODES[op]) for op in case["operations"])}], J.Surface.from_bytes({case["width"]}, {case["height"]}, 9, {bend_bytes(case["bytes"])})))' for case in cases]
     actions.append('emit_bytes(~&1, [Bool.to_u32(owned_copyBANG())])')
     render=lambda selected,gpu:PROGRAM+''.join('    '+line.replace('BANG','!' if gpu else '')+'\n' for line in selected)
     probe.compare(expected+[[1]],probe.candidates(render,actions,batch=len(actions),parse=lambda text,selected:parse_results(text)))

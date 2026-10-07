@@ -4,18 +4,17 @@
 Memory-only, native channel-3 RGB888 / channel-4 RGBA8888, single mip level.
 CPU-1, CPU-2 and JavaScript are independent lanes; no GPU or file claim.
 
-Shared roles, native recording and lanes: tools/formatted_codec.py.
+Shared roles, native recording and lanes: tools/codec_formats.py.
 """
 import json
 import random
 import struct
-from bmp_probe import bend_bytes
-import formatted_codec
+import codec_formats
 from probekit import ROOT
 
 BATCH_SIZE = 64
 MARKER = [0, 0, 0, 0, 0, 0, 0, 1]
-C_PREFIX = formatted_codec.C_PREFIX
+C_PREFIX = codec_formats.C_PREFIX
 
 
 def header(width=1, height=1, channels=4, space=0):
@@ -126,13 +125,13 @@ def controls():
     return result
 
 
-CODEC = formatted_codec.Codec(
+CODEC = codec_formats.Codec(
     name='qoi', token='.qoi', aliases=('.QOI',), contraction_token='.QOI', formats={3: 4, 4: 7}, roles=('raw', 'bridge', 'surface', 'dispatch-qoi'), extended_roles=('dispatch-QOI', 'uncontracted', 'fused', 'factory', 'owner'), batch=64, little_endian=False,
     fixtures=fixtures, controls=controls, describe=__doc__)
 
 
 def main(argv=None):
-    formatted_codec.main(CODEC, argv)
+    codec_formats.main(CODEC, argv)
 
 
 if __name__ == '__main__':

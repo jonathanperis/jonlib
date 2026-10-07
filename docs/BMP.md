@@ -2,11 +2,10 @@
 
 | API | Contract |
 |---|---|
-| `Surface.decode_bmp(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Surface>` with normalized RGBA8 pixels. |
-| `Image.Formatted.decode_bmp(bytes: +List<U32>)` | Returns `Result<&1, &1, Image.DecodeError, Image.Formatted>` preserving native RGB888 (4) or RGBA8888 (7), implicit one mip and exact row-major bytes. |
-| `Image.Formatted.load_bmp(path: String)` | Returns `IO(Result<&1, &1, Image.LoadError, Image.Formatted>)` through the inclusive 1 MiB raster-file boundary, selecting BMP independently of the suffix and preserving the checked native format 4/7 memory result. |
-| `Surface.to_bmp(surface) -> +List<U32>` | Consumes RGBA8 ownership and emits exact native V4/32-bit BMP bytes. |
-| `Surface.write_bmp(surface, path)` | Consumes ownership and returns `IO(Result<&1, &1, U32 & String, Unit>)` through the established Base byte-write/close path. |
+| `Surface.decode_bmp(bytes: +List<U32>)` | Returns `Result<&1, &1, Surface.Error, Surface>` preserving native RGB888 (4) or RGBA8888 (7), implicit one mip and exact row-major bytes. |
+| `Surface.load_bmp(path: String)` | Returns `IO(Result<&1, &1, Surface.IOError, Surface>)` through the inclusive 1 MiB raster-file boundary, selecting BMP independently of the suffix and preserving the checked native format 4/7 memory result. |
+| `Surface.to_bmp(surface)` | `Result<&1, &1, Surface & Surface.Error, +List<U32>>` with exact native BMP file bytes (24-bit for 1..3 components, V4 otherwise); see [IMAGE-EXPORT.md](IMAGE-EXPORT.md). |
+| `Surface.write_bmp(surface, path)` | Consumes ownership and returns `IO(Result<&1, &1, Surface.IOError, Unit>)` through the Base byte-write/close path. |
 
 ## Supported decoding profile
 
@@ -20,7 +19,7 @@
   range. This preserves the pinned reader's rule rather than standard CORE
   palette sizing.
 - Width and absolute height are 1..4096; positive height is bottom-up and negative
-  height is top-down. Output is always top-down row-major; Surface normalizes to RGBA8.
+  height is top-down. Output is always top-down row-major.
 - A 40-byte INFO header supports uncompressed (`BI_RGB`) 1/4/8-bit indexed and
   16/24/32-bit true-color pixels, plus 16/32-bit `BI_BITFIELDS`. INFO bitfields
   read three RGB masks immediately after the DIB; those 12 bytes count toward the
@@ -74,7 +73,7 @@ Shared memory/file dispatch uses this profile through `Surface.decode_image` and
 
 ## Format-preserving BMP memory loading
 
-The dedicated `Image.Formatted.decode_bmp` factory uses the entire checked
+The dedicated `Surface.decode_bmp` factory uses the entire checked
 decoding profile above without broadening accepted headers, masks, dimensions or
 errors. The effective native alpha-mask layout selects the output component count
 before decoding and alpha repair. This metadata passes through the owned decoder
@@ -107,16 +106,15 @@ Header, size, truncation and invalid-index precedence is unchanged. This memory
 API has no encoded-input length cap; the file layer's separate 1 MiB raster cap
 is not imported. Probe fixture budgets are oracle safety limits, not API limits.
 
-`Image.Formatted.export` consumes the result and exposes dimensions, format and
+`Surface.export` consumes the result and exposes dimensions, format and
 all logical native-order bytes; `get` retains the exact owner for valid and
-invalid coordinates. The `from_bytes` round trip and consuming `to_surface`
-bridge apply. `Surface.decode_bmp`, generic normalized memory/file dispatch and
-the exporters retain their contracts; no generic formatted dispatcher is added.
+invalid coordinates. The `from_bytes` round trip and `Surface.format` apply, and
+the shared memory/file dispatch returns the same native result.
 
 ## Format-preserving BMP file loading
 
-`Image.Formatted.load_bmp(path: String)` returns
-`IO(Result<&1, &1, Image.LoadError, Image.Formatted>)`. It explicitly selects BMP
+`Surface.load_bmp(path: String)` returns
+`IO(Result<&1, &1, Surface.IOError, Surface>)`. It explicitly selects BMP
 for ordinary, non-changing files, independently of the path suffix. Lowercase,
 uppercase, mixed-case, suffixless and misleading names all use the same checked
 BMP decoder; there is no content-based fallback to another codec.
@@ -124,7 +122,7 @@ BMP decoder; there is no content-based fallback to another codec.
 The two-function wrapper passes
 `Image.file.bytes(path, Image.file.limit(RasterFile{}))` to a dedicated
 continuation. It preserves file/load errors and adapts the unchanged
-`Image.Formatted.decode_bmp` result through `Image.file.decoded`. The shared
+`Surface.decode_bmp` result through `Image.file.decoded`. The shared
 **1,048,576-byte inclusive** cap governs encoded input only. Open/size/read
 errors retain Base's code and message. Successfully reported sizes above the cap
 through U32_MAX are rejected before reading; larger sizes retain Base's overflow
@@ -150,7 +148,7 @@ remains unreachable; no new accepted BMP domain is inferred from it.
 RGBA8 export follows the actual native `ExportImage(..., ".bmp")` path: a
 122-byte file/V4 header, canonical masks, bottom-up BGRA rows and no row padding
 for 32-bit pixels. The explicit BMP writer selects the format independently of
-the path extension. Checked `Image.Formatted` formats 1..8 additionally export
+the path extension. Checked `Surface` formats 1..8 additionally export
 native 24-bit or V4 bytes with source-specific channel rules; see
 [IMAGE-EXPORT.md](IMAGE-EXPORT.md).
 
@@ -177,7 +175,7 @@ CPU-1, CPU-2 and JavaScript lanes.
   entries, all native skip remainders and rejected undefined index domains.
   `--gpu` adds a forced-GPU lane (local only).
 - **Format-preserving memory loading** (`tools/bmp_format_probe.py` on
-  `tools/formatted_codec.py`, gate `bmp-format`): accepted fixtures are admitted
+  `tools/codec_formats.py`, gate `bmp-format`): accepted fixtures are admitted
   by an independent header parse before any native call; native format, mipmaps
   and raw bytes are recorded before separate normalization and compared through
   the raw, factory, owner, round-trip, bridge, Surface and dispatch roles
@@ -187,11 +185,11 @@ CPU-1, CPU-2 and JavaScript lanes.
   discriminators before the broad oracle. Checked-invalid controls only exercise
   Jonlib's typed errors.
 - **Format-preserving file loading** (`tools/bmp_file_probe.py` on
-  `tools/formatted_file.py`, gate `bmp-file`): accepted memory fixtures as files
+  `tools/codec_files.py`, gate `bmp-file`): accepted memory fixtures as files
   plus filename variants; native `LoadImage` for recognized suffixes and
   `LoadFileData` plus `LoadImageFromMemory(".bmp")` for explicit selection; file
   controls and the shared closure, sparse/oversized and exact-cap resource runs.
-- Formatted BMP export is gated by `formatted-bmp-export`
+- BMP export is gated by `bmp-export`
   ([IMAGE-EXPORT.md](IMAGE-EXPORT.md)); shared dispatch by `image-memory` and
   `image-file`.
 
@@ -203,12 +201,12 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 
 - The native decoder's permissive recovery of truncated input.
 - Wider export source formats and native callbacks/allocation ABI.
-- GPU for formatted memory/file paths and file IO, Windows/browser and big-endian
+- GPU for native-format memory/file paths and file IO, Windows/browser and big-endian
   targets, concurrent/special files.
 - Native pointer/allocation/OOM behavior, maximum decoded area/heap and full
   performance.
-- Ledger scope: formatted memory loading is partial
-  `raylib:function:LoadImageFromMemory` scope and formatted file loading partial
+- Ledger scope: native-format memory loading is partial
+  `raylib:function:LoadImageFromMemory` scope and native-format file loading partial
   `raylib:function:LoadImage` scope.
 
 ## Provenance

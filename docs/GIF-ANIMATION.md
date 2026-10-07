@@ -2,9 +2,9 @@
 
 | API | Contract |
 |---|---|
-| `Image.Animation.decode_gif(bytes, maximum_frames, maximum_pixels)` | Returns `Result<&1, &1, Image.DecodeError, Image.Animation>`. |
+| `Image.Animation.decode_gif(bytes, maximum_frames, maximum_pixels)` | Returns `Result<&1, &1, Surface.Error, Image.Animation>`. |
 | `Image.Animation.decode_image(file_type, bytes, maximum_frames, maximum_pixels)` / `decode_image_for(reference, ...)` | Token-dispatched memory loading; see [memory dispatch](#memory-dispatch). |
-| `Image.Animation.load_image(path, maximum_frames, maximum_pixels)` / `load_image_for(reference, ...)` | Returns `IO(Result<&1, &1, Image.LoadError, Image.Animation>)`; see [file loading](#file-loading). |
+| `Image.Animation.load_image(path, maximum_frames, maximum_pixels)` / `load_image_for(reference, ...)` | Returns `IO(Result<&1, &1, Surface.IOError, Image.Animation>)`; see [file loading](#file-loading). |
 | `Image.Animation.entries(animation)` | Consumes the animation and returns `(width, height, count, frames)` with an owned `List<Surface>`. |
 | `Image.Animation.unload(animation)` | Consumes the owner and returns `Unit`. |
 
@@ -21,13 +21,13 @@ under `.png` yields its first frame, matching native fallback behavior; mixed
 `.GiF` is rejected by the memory-token path.
 
 `Image.Animation.decode_image_for(reference, ...)` selects explicit
-`J.Image.Decode.Reference` for PSD fallback ([PSD.md](PSD.md)). The convenience
-call selects `J.UncontractedDecode{}`.
+`M.Contraction` for PSD fallback ([PSD.md](PSD.md)). The convenience
+call selects `M.Uncontracted{}`.
 
 ## File loading
 
 `Image.Animation.load_image(path, maximum_frames, maximum_pixels)` returns
-`IO(Result<&1, &1, Image.LoadError, Image.Animation>)`. The `_for(reference, ...)`
+`IO(Result<&1, &1, Surface.IOError, Image.Animation>)`. The `_for(reference, ...)`
 variant selects explicit PSD arithmetic; the convenience call is uncontracted.
 
 File suffixes use the native last-dot rule. GIF selection is ASCII
@@ -40,8 +40,8 @@ directory-qualified dotfile is classified normally.
 Animation and Surface loaders share the same checked byte-file boundary
 ([IMAGE-FILES.md](IMAGE-FILES.md)): complete reported-size reads, a 1 MiB
 raster/unknown limit, the 83,886,102-byte QOI limit, and handle closure before
-decoding or size/read errors. Open/size/read failures retain `ImageFileError`;
-image/budget failures are wrapped as `ImageDecodeError`. Caller frame/pixel
+decoding or size/read errors. Open/size/read failures retain `FileError`;
+image/budget failures are wrapped as `DataError`. Caller frame/pixel
 budgets apply to retained frames. Ordinary non-changing files are the supported
 IO domain.
 

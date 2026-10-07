@@ -2,7 +2,8 @@
 """Check exact R32 observations, ownership, distinct memory/file PNG and rejections.
 
 Pure operations run on CPU/JS and optionally forced Metal. File IO runs only on
-CPU/JS. Packed memory PNG, formatted format-9 loading, out-of-domain FloatRGB->R32 and GetPixelColor remain
+CPU/JS. Packed memory PNG, raw loading and conversion to the non-format 10,
+out-of-domain R32G32B32->R32 and GetPixelColor remain
 explicit Jonlib rejection contracts, not assertions of native equivalence.
 """
 import hashlib
@@ -13,7 +14,7 @@ import sys
 import zlib
 
 from bmp_probe import bend_bytes
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from conformance import f32
 from image_format_probe import r32_words, word_bytes
 import probekit
@@ -188,11 +189,7 @@ C_PREAMBLE = r'''#include "raylib.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-static int used=0;
-static void byte(unsigned v){if(!used)putchar('[');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}
-static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}
-static void end(void){if(used){puts("]");used=0;}puts("\"end\"");}
-static void bytes(const unsigned char *p,int n){for(int i=0;i<n;i++)byte(p[i]);end();}
+''' + C_EMITTER + '\n' + r'''static void bytes(const unsigned char *p,int n){for(int i=0;i<n;i++)byte(p[i]);end();}
 static void emit(Image image){if(!image.data)exit(2);word(image.width);word(image.height);word(image.format);
 int n=GetPixelDataSize(image.width,image.height,image.format);for(int i=0;i<n;i++)byte(((unsigned char*)image.data)[i]);end();}
 static void file(const char *path){int n=0;unsigned char *p=LoadFileData(path,&n);if(!p||n<=0)exit(3);bytes(p,n);UnloadFileData(p);}
@@ -290,116 +287,118 @@ def emitted(~q: Quant, width: U32, height: U32, format: U32, bytes: List<q, U32>
 def formatted(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
   ((width, height), (format, bytes)) = data
   emitted(~&1, width, height, format, bytes)
-def float_bytes(width: U32, height: U32, result: Result<&1, &1, J.Image.FloatRGB, +List<U32>>) -> IO(Unit):
-  match result:
-    case Fail{_}: IO.die(Unit, 1, "R32 normalized float export rejected")
-    case Done{bytes}: emitted(~&2, width, height, 9, bytes)
-def float_image(image: J.Image.FloatRGB) -> IO(Unit):
-  J.FloatRGB{+width, +height, pixels} = image
-  float_bytes(width, height, J.Image.FloatRGB.to_bytes(J.FloatRGB{width, height, pixels}))
-def normalized(result: Maybe<J.Image.Formatted>) -> Maybe<J.Image.FloatRGB>:
+def normalized(result: Maybe<J.Surface>) -> Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>:
   match result:
     case None{}: None{}
-    case Some{image}: Some{J.Image.Formatted.to_float_rgb(image)}
-def observe_float(result: Maybe<J.Image.FloatRGB>) -> IO(Unit):
+    case Some{image}: Some{J.Surface.format(image, 9)}
+def observe_float(result: Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>) -> IO(Unit):
   match result:
-    case None{}: IO.die(Unit, 1, "R32 normalization source rejected")
-    case Some{image}: float_image(image)
-def bulk(result: Maybe<J.Image.Formatted>) -> Maybe<List<U32>>:
+    case Some{Done{image}}: formatted(J.Surface.export(image))
+    case _: IO.die(Unit, 1, "R32 normalization source rejected")
+def bulk(result: Maybe<J.Surface>) -> Maybe<Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>>:
   match result:
     case None{}: None{}
-    case Some{image}: Some{J.Image.Formatted.colors(image)}
-def observe_colors(result: Maybe<List<U32>>) -> IO(Unit):
+    case Some{image}: Some{J.Surface.colors(image)}
+def observe_colors(result: Maybe<Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>>) -> IO(Unit):
   match result:
-    case None{}: IO.die(Unit, 1, "R32 bulk source rejected")
-    case Some{values}: emit_bytes(~&1, words(values, Nil{}))
-def read_point(values: List<U32>, result: J.Image.Formatted & Maybe<&2, U32>) -> Maybe<(J.Image.Formatted & List<U32>)>:
+    case Some{Done{values}}: emit_bytes(~&1, words(values, Nil{}))
+    case _: IO.die(Unit, 1, "R32 bulk source rejected")
+def read_point(values: List<U32>, result: J.Surface & Maybe<&2, U32>) -> Maybe<(J.Surface & List<U32>)>:
   match result:
     case Tuple{source, Some{color}}: Some{(source, Con{color, values})}
     case _: None{}
-def points(n: Nat, +index: U32, +width: U32, state: Maybe<(J.Image.Formatted & List<U32>)>) -> Maybe<(J.Image.Formatted & List<U32>)>:
+def points(n: Nat, +index: U32, +width: U32, state: Maybe<(J.Surface & List<U32>)>) -> Maybe<(J.Surface & List<U32>)>:
   match n state:
     case _ None{}: None{}
     case 0n _: state
     case 1n+rest Some{Tuple{source, values}}:
-      points(rest, (index + 1 : U32), width, read_point(values, J.Image.Formatted.get(source, (index % width : U32), (index / width : U32))))
-def walked(result: Maybe<J.Image.Formatted>) -> Maybe<(J.Image.Formatted & List<U32>)>:
+      points(rest, (index + 1 : U32), width, read_point(values, J.Surface.get(source, (index % width : U32), (index / width : U32))))
+def walked(result: Maybe<J.Surface>) -> Maybe<(J.Surface & List<U32>)>:
   match result:
     case None{}: None{}
-    case Some{J.FormattedImage{+width, +height, format, pixels}}:
-      points(U32.to_nat((width * height : U32)), 0, width, Some{(J.FormattedImage{width, height, format, pixels}, Nil{})})
-def observe_points(result: Maybe<(J.Image.Formatted & List<U32>)>) -> IO(Unit):
+    case Some{J.Surface{+width, +height, format, pixels}}:
+      points(U32.to_nat((width * height : U32)), 0, width, Some{(J.Surface{width, height, format, pixels}, Nil{})})
+def observe_points(result: Maybe<(J.Surface & List<U32>)>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "R32 point observation rejected")
     case Some{Tuple{source, values}}:
       do IO<Unit>:
         emit_bytes(~&1, words(List.reverse(&1, U32, values), Nil{}))
-        formatted(J.Image.Formatted.export(source))
-def channel(selected: F32, result: Maybe<J.Image.Formatted>) -> Maybe<(J.Image.Formatted & Maybe<J.Image.Formatted>)>:
+        formatted(J.Surface.export(source))
+def channel(selected: F32, result: Maybe<J.Surface>) -> Maybe<(J.Surface & Maybe<J.Surface>)>:
   match result:
     case None{}: None{}
-    case Some{image}: Some{J.Image.Formatted.from_channel(image, selected)}
-def observe_channel(reject: Bool, result: Maybe<(J.Image.Formatted & Maybe<J.Image.Formatted>)>) -> IO(Unit):
+    case Some{image}: Some{J.Surface.from_channel(image, selected)}
+def observe_channel(reject: Bool, result: Maybe<(J.Surface & Maybe<J.Surface>)>) -> IO(Unit):
   match reject result:
     case False{} Some{Tuple{source, Some{gray}}}:
       do IO<Unit>:
-        formatted(J.Image.Formatted.export(source))
-        formatted(J.Image.Formatted.export(gray))
-    case True{} Some{Tuple{source, None{}}}: formatted(J.Image.Formatted.export(source))
+        formatted(J.Surface.export(source))
+        formatted(J.Surface.export(gray))
+    case True{} Some{Tuple{source, None{}}}: formatted(J.Surface.export(source))
     case _ _: IO.die(Unit, 1, "R32 channel acceptance/owner differs")
-def altered(result: Maybe<(J.Image.Formatted & Maybe<J.Image.Formatted>)>) -> Maybe<(J.Image.Formatted & Maybe<J.Image.Formatted>)>:
+def altered(result: Maybe<(J.Surface & Maybe<J.Surface>)>) -> Maybe<(J.Surface & Maybe<J.Surface>)>:
   match result:
-    case Some{Tuple{source, Some{J.FormattedImage{width, height, format, pixels}}}}:
-      Some{(source, Some{J.FormattedImage{width, height, format, Array.set(U32, pixels, 0, 0)}})}
+    case Some{Tuple{source, Some{J.Surface{width, height, format, J.Words{pixels}}}}}:
+      Some{(source, Some{J.Surface{width, height, format, J.Words{Array.set(U32, pixels, 0, 0)}}})}
     case _: None{}
-def independent(result: Maybe<J.Image.Formatted>) -> Maybe<(J.Image.Formatted & Maybe<J.Image.Formatted>)>:
+def independent(result: Maybe<J.Surface>) -> Maybe<(J.Surface & Maybe<J.Surface>)>:
   altered(channel(0.0, result))
-def get(x: U32, y: U32, result: Maybe<J.Image.Formatted>) -> Maybe<(J.Image.Formatted & Maybe<&2, U32>)>:
+def get(x: U32, y: U32, result: Maybe<J.Surface>) -> Maybe<(J.Surface & Maybe<&2, U32>)>:
   match result:
     case None{}: None{}
-    case Some{image}: Some{J.Image.Formatted.get(image, x, y)}
-def observe_missing(result: Maybe<(J.Image.Formatted & Maybe<&2, U32>)>) -> IO(Unit):
+    case Some{image}: Some{J.Surface.get(image, x, y)}
+def observe_missing(result: Maybe<(J.Surface & Maybe<&2, U32>)>) -> IO(Unit):
   match result:
     case Some{Tuple{source, None{}}}:
       do IO<Unit>:
         emit_bytes(~&1, [0])
-        formatted(J.Image.Formatted.export(source))
+        formatted(J.Surface.export(source))
     case _: IO.die(Unit, 1, "R32 out-of-range point accepted")
-def memory(result: Maybe<J.Image.Formatted>) -> Maybe<Result<&1, &1, J.Image.Formatted & J.Pixel.Error, +List<U32>>>:
+def memory(result: Maybe<J.Surface>) -> Maybe<Result<&1, &1, J.Surface & J.Surface.Error, +List<U32>>>:
   match result:
     case None{}: None{}
-    case Some{image}: Some{J.Image.Formatted.to_png(image)}
-def observe_memory_reject(result: Maybe<Result<&1, &1, J.Image.Formatted & J.Pixel.Error, +List<U32>>>) -> IO(Unit):
+    case Some{image}: Some{J.Surface.export_to_memory(image, ".png")}
+def observe_memory_reject(result: Maybe<Result<&1, &1, J.Surface & J.Surface.Error, +List<U32>>>) -> IO(Unit):
   match result:
-    case Some{Fail{Tuple{image, J.UnsupportedPixelFormat{}}}}: formatted(J.Image.Formatted.export(image))
-    case _: IO.die(Unit, 1, "Packed memory PNG must retain UnsupportedPixelFormat owner")
-def conversion(result: Maybe<J.Image.Formatted>) -> Maybe<Result<&1, &1, J.Image.Formatted & J.Pixel.Error, J.Image.Formatted>>:
+    case Some{Fail{Tuple{image, J.UnsupportedFormat{}}}}: formatted(J.Surface.export(image))
+    case _: IO.die(Unit, 1, "Packed memory PNG must retain UnsupportedFormat owner")
+# Conversion to R32G32B32 is supported (the float operation); target 10 is not a format.
+def conversion(result: Maybe<J.Surface>) -> Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>:
   match result:
     case None{}: None{}
-    case Some{image}: Some{J.Image.Formatted.convert(image, 9)}
-def observe_conversion(result: Maybe<Result<&1, &1, J.Image.Formatted & J.Pixel.Error, J.Image.Formatted>>) -> IO(Unit):
+    case Some{image}: Some{J.Surface.format(image, 10)}
+def observe_conversion(result: Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>) -> IO(Unit):
   match result:
-    case Some{Fail{Tuple{image, J.UnsupportedPixelFormat{}}}}: formatted(J.Image.Formatted.export(image))
+    case Some{Fail{Tuple{image, J.UnsupportedFormat{}}}}: formatted(J.Surface.export(image))
     case _: IO.die(Unit, 1, "R32 unsupported conversion owner differs")
-def png(result: Maybe<J.Image.Formatted>) -> Maybe<&2, +List<U32>>:
+def png.result(result: Result<&1, &1, J.Surface & J.Surface.Error, +List<U32>>) -> Maybe<&2, +List<U32>>:
+  match result:
+    case Fail{_}: None{}
+    case Done{bytes}: Some{bytes}
+def png(result: Maybe<J.Surface>) -> Maybe<&2, +List<U32>>:
   match result:
     case None{}: None{}
-    case Some{image}: Some{J.Image.Formatted.png.file_bytes(image)}
-def raw(result: Maybe<J.Image.Formatted>) -> Maybe<&2, +List<U32>>:
+    case Some{image}: png.result(J.Surface.to_png(image))
+def raw(result: Maybe<J.Surface>) -> Maybe<((U32 & U32) & (U32 & List<U32>))>:
   match result:
     case None{}: None{}
-    case Some{image}: Some{J.Image.Formatted.raw_bytes(image)}
-def observe_bytes(result: Maybe<&2, +List<U32>>) -> IO(Unit):
+    case Some{image}: Some{J.Surface.export(image)}
+def observe_raw(result: Maybe<((U32 & U32) & (U32 & List<U32>))>) -> IO(Unit):
   match result:
-    case None{}: IO.die(Unit, 1, "R32 byte export source rejected")
-    case Some{bytes}: emit_bytes(~&2, bytes)
-def decoded(width: U32, height: U32, result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> IO(Unit):
+    case Some{Tuple{_, Tuple{8, bytes}}}: emit_bytes(~&1, bytes)
+    case _: IO.die(Unit, 1, "R32 byte export source rejected")
+def colors.decoded(width: U32, height: U32, +w: U32, +h: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> IO(Unit):
   match result:
-    case Fail{_}: IO.die(Unit, 1, "R32 PNG round trip rejected")
-    case Done{J.Surface{+w, +h, pixels}}:
+    case Fail{_}: IO.die(Unit, 1, "R32 PNG decoded colors rejected")
+    case Done{values}:
       do IO<Unit>:
         checked(U32.is_eq(width, w) && U32.is_eq(height, h))
-        emit_bytes(~&1, rgba(J.Surface.colors(J.Surface{w, h, pixels}), Nil{}))
+        emit_bytes(~&1, rgba(values, Nil{}))
+def decoded(width: U32, height: U32, result: Result<&1, &1, J.Surface.Error, J.Surface>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "R32 PNG round trip rejected")
+    case Done{J.Surface{+w, +h, format, pixels}}: colors.decoded(width, height, w, h, J.Surface.colors(J.Surface{w, h, format, pixels}))
 def observe_png(width: U32, height: U32, result: Maybe<&2, +List<U32>>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "R32 file PNG source rejected")
@@ -407,56 +406,52 @@ def observe_png(width: U32, height: U32, result: Maybe<&2, +List<U32>>) -> IO(Un
       do IO<Unit>:
         emit_bytes(~&2, bytes)
         decoded(width, height, J.Surface.decode_pngBANG(bytes))
-def observe_memory(width: U32, height: U32, result: Maybe<Result<&1, &1, J.Image.Formatted & J.Pixel.Error, +List<U32>>>) -> IO(Unit):
+def observe_memory(width: U32, height: U32, result: Maybe<Result<&1, &1, J.Surface & J.Surface.Error, +List<U32>>>) -> IO(Unit):
   match result:
     case Some{Done{bytes}}: observe_png(width, height, Some{bytes})
     case _: IO.die(Unit, 1, "R32 memory PNG source rejected")
-def code(path: String, result: Maybe<J.Image.Formatted>) -> Maybe<Result<&1, &1, J.Image.Formatted, String>>:
+def code(path: String, result: Maybe<J.Surface>) -> Maybe<Result<&1, &1, J.Surface & J.Surface.Error, String>>:
   match result:
     case None{}: None{}
-    case Some{image}: Some{J.Image.Formatted.to_code(image, path)}
-def observe_code(result: Maybe<Result<&1, &1, J.Image.Formatted, String>>) -> IO(Unit):
+    case Some{image}: Some{J.Surface.to_code(image, path)}
+def observe_code(result: Maybe<Result<&1, &1, J.Surface & J.Surface.Error, String>>) -> IO(Unit):
   match result:
     case Some{Done{text}}: emit_bytes(~&1, text_bytes(text, Nil{}))
     case _: IO.die(Unit, 1, "R32 code export rejected")
-def reject_float() -> Result<&1, &1, J.Image.FloatRGB, J.Image.Formatted>:
-  J.Image.FloatRGB.to_formatted(J.FloatRGB{1, 1, Array.new(M.Vector3, 0n, M.Vector3{H.float_bits(2147483648), H.float_bits(2147483649), 0.75})}, 8)
-def observe_float_reject(result: Result<&1, &1, J.Image.FloatRGB, J.Image.Formatted>) -> IO(Unit):
+def reject_float() -> Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>:
+  J.Surface.format(J.Surface{1, 1, 9, J.Vectors{Array.new(M.Vector3, 0n, M.Vector3{H.float_bits(2147483648), H.float_bits(2147483649), 0.75})}}, 8)
+def observe_float_reject(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):
   match result:
-    case Fail{image}: float_image(image)
-    case _: IO.die(Unit, 1, "Out-of-domain FloatRGB to format8 must retain owner")
-def pixel_result(result: Result<&2, &2, J.Pixel.Error, U32>) -> Bool:
+    case Fail{Tuple{image, J.OutOfDomain{}}}: formatted(J.Surface.export(image))
+    case _: IO.die(Unit, 1, "Out-of-domain R32G32B32 to format8 must retain owner")
+def pixel_result(result: Result<&2, &2, J.Surface.Error, U32>) -> Bool:
   match result:
-    case Fail{J.UnsupportedPixelFormat{}}: True{}
+    case Fail{J.UnsupportedFormat{}}: True{}
     case _: False{}
 def pixel_rejected() -> Bool:
   pixel_result(J.Pixel.get_color([0,0,0,63], 8))
 '''
 
 
-BEND_IO = '''def written(result: Result<&1, &1, U32 & String, Unit>) -> IO(Unit):
+BEND_IO = '''def written(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
     case Done{_}: emit_bytes(~&1, [1])
     case Fail{_}: IO.die(Unit, 1, "R32 file write failed")
-def code_written(result: Result<&1, &1, J.Image.Formatted.CodeWriteError, Unit>) -> IO(Unit):
-  match result:
-    case Done{_}: emit_bytes(~&1, [1])
-    case Fail{_}: IO.die(Unit, 1, "R32 code file write failed")
-def save(kind: U32, path: String, result: Maybe<J.Image.Formatted>) -> IO(Unit):
+def save(kind: U32, path: String, result: Maybe<J.Surface>) -> IO(Unit):
   match kind result:
     case _ None{}: IO.die(Unit, 1, "R32 file source rejected")
-    case 0 Some{image}: IO.bind(Result<&1, &1, U32 & String, Unit>, Unit, J.Image.Formatted.write_png(image, path), written)
-    case 1 Some{image}: IO.bind(Result<&1, &1, U32 & String, Unit>, Unit, J.Image.Formatted.write_raw(image, path), written)
-    case _ Some{image}: IO.bind(Result<&1, &1, J.Image.Formatted.CodeWriteError, Unit>, Unit, J.Image.Formatted.write_code(image, path), code_written)
-def raw_load_rejected(result: Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>) -> IO(Unit):
+    case 0 Some{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_png(image, path), written)
+    case 1 Some{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_raw(image, path), written)
+    case _ Some{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_code(image, path), written)
+def raw_load_rejected(result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
-    case Fail{J.InvalidRawRequest{}}: emit_bytes(~&1, [1])
-    case _: IO.die(Unit, 1, "R32 raw loading expanded beyond this slice")
+    case Fail{J.DataError{J.InvalidRequest{}}}: emit_bytes(~&1, [1])
+    case _: IO.die(Unit, 1, "R32 raw loading accepted an unsupported format")
 '''
 
 
 def image_expr(case):
-    return f'J.Image.Formatted.from_bytes({case["width"]}, {case["height"]}, {case.get("format",8)}, {bend_bytes(case["bytes"])})'
+    return f'J.Surface.from_bytes({case["width"]}, {case["height"]}, {case.get("format",8)}, {bend_bytes(case["bytes"])})'
 
 
 def candidate_program(ops, gpu, directory, raw_load_controls=True):
@@ -491,7 +486,7 @@ def candidate_program(ops, gpu, directory, raw_load_controls=True):
         elif kind == 'png':
             line = f'observe_png({case["width"]}, {case["height"]}, png{bang}({image}))'
         elif kind == 'raw':
-            line = f'observe_bytes(raw{bang}({image}))'
+            line = f'observe_raw(raw{bang}({image}))'
         elif kind == 'code':
             line = f'observe_code(code{bang}({json.dumps(str(directory/(case["id"]+".h")))}, {image}))'
         elif kind == 'float_reject':
@@ -508,12 +503,12 @@ def candidate_program(ops, gpu, directory, raw_load_controls=True):
                 number,suffix = {'png':(0,'png'),'raw':(1,'raw'),'code':(2,'h')}[kind]
                 path = json.dumps(str(directory/(case['id']+'.'+suffix)))
                 body += f'    save({number}, {path}, {image_expr(case)})\n'
-        # Test a present payload and an absent path with unsupported format 9: rejection
+        # Test a present payload and an absent path with unsupported format 10: rejection
         # must happen before file opening, and does not claim native load parity.
         if raw_load_controls:
             for name in ('present-format9.raw','absent-format9.raw'):
                 path = json.dumps(str(directory/name))
-                body += f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_raw({path}, 1, 1, 9, 0), raw_load_rejected)\n'
+                body += f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw({path}, 1, 1, 10, 0), raw_load_rejected)\n'
     return body
 
 

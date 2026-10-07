@@ -10,7 +10,7 @@ import json
 import struct
 import sys
 
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from image_export_probe import FILE_DESCRIPTOR_LIMIT, limited_runs
 from image_format_probe import r32_words, word_bytes
 import probekit
@@ -61,9 +61,9 @@ def fixture_specs():
              data=word_bytes([0x3f000000,0x7fc00000]),error='samples'),
         dict(name='invalid-fallback',width=1,height=1,format=8,header=5,
              data=word_bytes([0x80000001,0x3f000000]),error='samples'),
-        dict(name='format9-present',width=1,height=1,format=9,header=0,
+        dict(name='format10-present',width=1,height=1,format=10,header=0,
              data=word_bytes([0x3e800000,0x3f000000,0x3f400000]),error='request'),
-        dict(name='format9-missing',width=1,height=1,format=9,header=0,data=None,error='request'),
+        dict(name='format10-missing',width=1,height=1,format=10,header=0,data=None,error='request'),
         dict(name='zero-width',width=0,height=1,format=8,header=0,data=None,error='request'),
         dict(name='large-height',width=1,height=4097,format=8,header=0,data=None,error='request'),
         dict(name='overflow-header',width=1,height=1,format=8,header=2147483644,data=None,error='request'),
@@ -121,11 +121,7 @@ def reference_program(cases,work):
     lines = [r'''#include "raylib.h"
 #include <stdio.h>
 #include <stdlib.h>
-static int used=0;
-static void byte(unsigned v){if(!used)putchar('[');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}
-static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}
-static void end(void){if(used){puts("]");used=0;}puts("\"end\"");}
-static void emit(const char *path,const char *out,int w,int h,int header){
+''' + C_EMITTER + '\n' + r'''static void emit(const char *path,const char *out,int w,int h,int header){
 Image image=LoadImageRaw(path,w,h,PIXELFORMAT_UNCOMPRESSED_R32,header);
 if(!image.data){puts("null");return;}
 if(image.mipmaps!=1)exit(2);
@@ -143,43 +139,44 @@ int main(void){SetTraceLogLevel(LOG_NONE);''']
 BEND_PROGRAM = '''import Base
 import ../../jonlib.bend as J
 '''+BEND_EMITTER+'''
-def error_code(error: J.Image.RawLoadError) -> U32:
+def error_code(error: J.Surface.IOError) -> U32:
   match error:
-    case J.RawFileError{_, _}: 1
-    case J.InvalidRawRequest{}: 2
-    case J.TruncatedRawImage{}: 3
-    case J.RawFileTooLarge{}: 4
-    case J.InvalidRawSamples{}: 5
+    case J.FileError{_, _}: 1
+    case J.DataError{J.InvalidRequest{}}: 2
+    case J.DataError{J.TruncatedImageData{}}: 3
+    case J.DataError{J.UnsupportedImageSize{}}: 4
+    case J.DataError{J.OutOfDomain{}}: 5
+    case _: 99
 def emit_image(+width: U32, +height: U32, format: U32, bytes: List<U32>) -> IO(Unit):
   header = {[(width .&. 255 : U32), ((width >> 8n) .&. 255 : U32), 0, 0, (height .&. 255 : U32), ((height >> 8n) .&. 255 : U32), 0, 0, format, 0, 0, 0] : List<U32>}
   emit_bytes(~&1, List.append(&1, U32, header, bytes))
 def emitted(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
   ((width, height), (format, bytes)) = data
   emit_image(width, height, format, bytes)
-def reloaded(result: Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>) -> IO(Unit):
+def reloaded(result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "valid R32 RAW reload failed")
-    case Done{image}: emitted(J.Image.Formatted.export(image))
-def written(path: String, width: U32, height: U32, format: U32, result: Result<&1, &1, U32 & String, Unit>) -> IO(Unit):
+    case Done{image}: emitted(J.Surface.export(image))
+def written(path: String, width: U32, height: U32, format: U32, result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "valid R32 RAW write failed")
-    case Done{_}: IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_raw(path, width, height, format, 0), reloaded)
-def matched(ok: Bool, +path: String, image: J.Image.Formatted) -> IO(Unit):
+    case Done{_}: IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw(path, width, height, format, 0), reloaded)
+def matched(ok: Bool, +path: String, image: J.Surface) -> IO(Unit):
   match ok:
     case False{}: IO.die(Unit, 1, "R32 RAW loaded metadata differs")
     case True{}:
-      J.FormattedImage{+width, +height, +format, pixels} = image
-      IO.bind(Result<&1, &1, U32 & String, Unit>, Unit, J.Image.Formatted.write_raw(J.FormattedImage{width, height, format, pixels}, path), written(path, width, height, format))
-def loaded(path: String, w: U32, h: U32, result: Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>) -> IO(Unit):
+      J.Surface{+width, +height, +format, pixels} = image
+      IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_raw(J.Surface{width, height, format, pixels}, path), written(path, width, height, format))
+def loaded(path: String, w: U32, h: U32, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{error}: emit_bytes(~&1, [error_code(error)])
-    case Done{J.FormattedImage{+width, +height, +format, pixels}}:
-      matched(U32.is_eq(w, width) && U32.is_eq(h, height) && U32.is_eq(format, 8), path, J.FormattedImage{width, height, format, pixels})
+    case Done{J.Surface{+width, +height, +format, pixels}}:
+      matched(U32.is_eq(w, width) && U32.is_eq(h, height) && U32.is_eq(format, 8), path, J.Surface{width, height, format, pixels})
 def checked(ok: Bool) -> IO(Unit):
   match ok:
     case True{}: IO.pure(Unit, Unit{})
     case False{}: IO.die(Unit, 1, "R32 RAW closure/error differs")
-def required(expected: U32, result: Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>) -> IO(Unit):
+def required(expected: U32, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Done{_}: checked(U32.is_eq(expected, 0))
     case Fail{error}: checked(U32.is_eq(expected, error_code(error)))
@@ -197,11 +194,11 @@ def candidate_program(cases,controls,work,lane):
     by_name = {case['name']:case for case in cases+controls}
     for name in closure:
         case = by_name[name]
-        program += f'        IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_raw({json.dumps(case["path"])}, {case["width"]}, {case["height"]}, 8, {case["header"]}), required({ERRORS.get(case["error"],0)}))\n'
+        program += f'        IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw({json.dumps(case["path"])}, {case["width"]}, {case["height"]}, 8, {case["header"]}), required({ERRORS.get(case["error"],0)}))\n'
     program += '        closure_loop(rest)\ndef main() -> IO(Unit):\n  do IO<Unit>:\n'
     for case in cases+controls:
         output = str((work/(lane+'-'+case['name']+'.raw')).relative_to(ROOT))
-        program += f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_raw({json.dumps(case["path"])}, {case["width"]}, {case["height"]}, {case["format"]}, {case["header"]}), loaded({json.dumps(output)}, {case["width"]}, {case["height"]}))\n'
+        program += f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw({json.dumps(case["path"])}, {case["width"]}, {case["height"]}, {case["format"]}, {case["header"]}), loaded({json.dumps(output)}, {case["width"]}, {case["height"]}))\n'
     return program+'    closure_loop(100n)\n'
 
 

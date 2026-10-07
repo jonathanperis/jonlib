@@ -93,7 +93,7 @@ def main():
     expected = [[int(v) for v in line.split()] for line in text.splitlines()]
     if len(expected) != count:
         raise ProbeFailure('Incomplete trigonometry reference')
-    gnu = args.gnu_control or gradient_reference() == 'GnuGradient'
+    gnu = args.gnu_control or gradient_reference() == 'Glibc239Libm'
     probe.report['source_sha256'] = source_gate()
     directions = list(range(-limit, limit+1))
 
@@ -112,7 +112,7 @@ def main():
     probe.compare(expected, probe.candidates(render, directions, batch=len(directions), parse=parse),
                   describe=lambda index: f'direction {directions[index]}')
     probe.finish(directions=count, limit=limit, operation='rotation' if args.rotation else 'gradient',
-                 profile='GnuGradient' if gnu else 'AccurateGradient', reference='arm-model' if args.gnu_control else 'native-libm')
+                 profile='Glibc239Libm' if gnu else 'AppleLibm', reference='arm-model' if args.gnu_control else 'native-libm')
 
 
 if __name__ == '__main__':

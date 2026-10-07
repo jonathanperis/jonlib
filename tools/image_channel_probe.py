@@ -5,9 +5,9 @@ import json
 import struct
 
 from bmp_probe import bend_bytes
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from conformance import f32
-from formatted_float_probe import fixtures as formatted_fixtures
+from format_float_probe import fixtures as formatted_fixtures
 from float_rgb_probe import boundaries
 import probekit
 from probekit import ROOT, ProbeFailure
@@ -47,63 +47,45 @@ def emitted(~q: Quant, width: U32, height: U32, format: U32, bytes: List<q, U32>
 def formatted(result: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
   ((width, height), (format, bytes)) = result
   emitted(~&1, width, height, format, bytes)
-def float_bytes(width: U32, height: U32, result: Result<&1, &1, J.Image.FloatRGB, +List<U32>>) -> IO(Unit):
-  match result:
-    case Fail{_}: IO.die(Unit, 1, "retained float channel source changed")
-    case Done{bytes}: emitted(~&2, width, height, 9, bytes)
-def float_image(image: J.Image.FloatRGB) -> IO(Unit):
-  J.FloatRGB{+width, +height, pixels} = image
-  float_bytes(width, height, J.Image.FloatRGB.to_bytes(J.FloatRGB{width, height, pixels}))
-def channel(reject: Bool, result: Maybe<J.Image.Formatted>) -> IO(Unit):
+def channel(reject: Bool, result: Maybe<J.Surface>) -> IO(Unit):
   match reject result:
     case True{} None{}: IO.pure(Unit, Unit{})
-    case False{} Some{image}: formatted(J.Image.Formatted.export(image))
+    case False{} Some{image}: formatted(J.Surface.export(image))
     case _ _: IO.die(Unit, 1, "channel acceptance differs")
-def formatted_result(reject: Bool, result: Maybe<(J.Image.Formatted & Maybe<J.Image.Formatted>)>) -> IO(Unit):
+def observed(reject: Bool, result: Maybe<(J.Surface & Maybe<J.Surface>)>) -> IO(Unit):
   match result:
-    case None{}: IO.die(Unit, 1, "valid formatted source rejected")
+    case None{}: IO.die(Unit, 1, "valid channel source rejected")
     case Some{Tuple{source, gray}}:
       do IO<Unit>:
-        formatted(J.Image.Formatted.export(source))
+        formatted(J.Surface.export(source))
         channel(reject, gray)
-def float_result(reject: Bool, result: Maybe<(J.Image.FloatRGB & Maybe<J.Image.Formatted>)>) -> IO(Unit):
-  match result:
-    case None{}: IO.die(Unit, 1, "valid float source rejected")
-    case Some{Tuple{source, gray}}:
-      do IO<Unit>:
-        float_image(source)
-        channel(reject, gray)
-def formatted_channel(selected: F32, result: Maybe<J.Image.Formatted>) -> Maybe<(J.Image.Formatted & Maybe<J.Image.Formatted>)>:
+def extracted(selected: F32, result: Maybe<J.Surface>) -> Maybe<(J.Surface & Maybe<J.Surface>)>:
   match result:
     case None{}: None{}
-    case Some{image}: Some{J.Image.Formatted.from_channel(image, selected)}
-def float_channel(selected: F32, result: Maybe<J.Image.FloatRGB>) -> Maybe<(J.Image.FloatRGB & Maybe<J.Image.Formatted>)>:
-  match result:
-    case None{}: None{}
-    case Some{image}: Some{J.Image.FloatRGB.from_channel(image, selected)}
+    case Some{image}: Some{J.Surface.from_channel(image, selected)}
 def formatted_read(result: Array<U32> & U32) -> Bool:
   (_, value) = result
-  U32.is_eq(value, 67305985)
+  U32.is_eq(value, 16909060)
 def float_read(result: Array<M.Vector3> & M.Vector3) -> Bool:
   match result:
     case Tuple{_, M.Vector3{r, g, b}}: F32.is_eq(r, 0.25) && F32.is_eq(g, 0.5) && F32.is_eq(b, 0.75)
 def gray_read(result: Array<U32> & U32) -> Bool:
   (_, value) = result
   U32.is_eq(value, 0)
-def formatted_independent(result: J.Image.Formatted & Maybe<J.Image.Formatted>) -> Bool:
+def formatted_independent(result: J.Surface & Maybe<J.Surface>) -> Bool:
   match result:
-    case Tuple{J.FormattedImage{1, 1, 7, source}, Some{J.FormattedImage{1, 1, 1, gray}}}:
+    case Tuple{J.Surface{1, 1, 7, J.Words{source}}, Some{J.Surface{1, 1, 1, J.Words{gray}}}}:
       gray_read(Array.get(U32, Array.set(U32, gray, 0, 0), 0)) && formatted_read(Array.get(U32, source, 0))
     case _: False{}
-def float_independent(result: J.Image.FloatRGB & Maybe<J.Image.Formatted>) -> Bool:
+def float_independent(result: J.Surface & Maybe<J.Surface>) -> Bool:
   match result:
-    case Tuple{J.FloatRGB{1, 1, source}, Some{J.FormattedImage{1, 1, 1, gray}}}:
+    case Tuple{J.Surface{1, 1, 9, J.Vectors{source}}, Some{J.Surface{1, 1, 1, J.Words{gray}}}}:
       gray_read(Array.get(U32, Array.set(U32, gray, 0, 0), 0)) && float_read(Array.get(M.Vector3, source, 0))
     case _: False{}
 def formatted_ownership() -> Bool:
-  formatted_independent(J.Image.Formatted.from_channel(J.FormattedImage{1, 1, 7, Array.new(U32, 0n, 67305985)}, 2.0))
+  formatted_independent(J.Surface.from_channel(J.Surface{1, 1, 7, J.Words{Array.new(U32, 0n, 16909060)}}, 2.0))
 def float_ownership() -> Bool:
-  float_independent(J.Image.FloatRGB.from_channel(J.FloatRGB{1, 1, Array.new(M.Vector3, 0n, M.Vector3{0.25, 0.5, 0.75})}, 1.0))
+  float_independent(J.Surface.from_channel(J.Surface{1, 1, 9, J.Vectors{Array.new(M.Vector3, 0n, M.Vector3{0.25, 0.5, 0.75})}}, 1.0))
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -120,9 +102,7 @@ def grouped(rows,sizes):
 def main():
     probe=probekit.Probe('image-channel',probekit.arguments(__doc__));work=probe.work
     cases,controls=fixtures();lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-        'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-        'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-        'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+        C_EMITTER,
         'static void emit(Image image){if(!image.data)exit(2);word(image.width);word(image.height);word(image.format);',
         'int size=GetPixelDataSize(image.width,image.height,image.format);for(int i=0;i<size;i++)byte(((unsigned char*)image.data)[i]);end();}',
         'int main(void){SetTraceLogLevel(LOG_NONE);']
@@ -152,9 +132,8 @@ def main():
             if kind=='ownership':
                 body+=f'    emit_bytes(~&1, [Bool.to_u32({case}_ownership{bang}())])\n';continue
             selector=f'H.float_bits({case["bits"]})' if 'bits' in case else f32(case['selected'])
-            floating=case['format']==9;family='float' if floating else 'formatted';owner='FloatRGB' if floating else 'Formatted'
-            arguments=f'{case["width"]}, {case["height"]}, '+('' if floating else f'{case["format"]}, ')+bend_bytes(case['bytes'])
-            body+=f'    {family}_result({"True" if kind=="control" else "False"}{{}}, {family}_channel{bang}({selector}, J.Image.{owner}.from_bytes({arguments})))\n'
+            arguments=f'{case["width"]}, {case["height"]}, {case["format"]}, '+bend_bytes(case['bytes'])
+            body+=f'    observed({"True" if kind=="control" else "False"}{{}}, extracted{bang}({selector}, J.Surface.from_bytes({arguments})))\n'
         return body
 
     probe.compare(wanted,probe.candidates(render,actions,batch=len(actions),parse=lambda text,selected:grouped(parse_results(text),sizes(selected))))

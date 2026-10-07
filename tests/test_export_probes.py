@@ -9,10 +9,10 @@ import zlib
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import float_rgb_r32_probe
-import formatted_bmp_export_probe as bmp
-import formatted_export
-import formatted_qoi_export_probe as qoi
-import formatted_tga_export_probe as tga
+import bmp_export_probe as bmp
+import codec_exports
+import qoi_export_probe as qoi
+import tga_export_probe as tga
 import image_export_probe
 import image_format_probe
 import r32_image_probe
@@ -149,7 +149,7 @@ class RasterExportTests(unittest.TestCase):
         for module, count in ((bmp, 78), (tga, 304)):
             cases = module.fixtures()
             self.assertEqual((len(cases), len({c['id'] for c in cases})), (count, count))
-            self.assertTrue(all(len(c['data']) == c['width'] * c['height'] * formatted_export.BPP[c['format']] for c in cases))
+            self.assertTrue(all(len(c['data']) == c['width'] * c['height'] * codec_exports.BPP[c['format']] for c in cases))
 
     def test_bmp_decoder_reads_both_layouts_bottom_up_and_rejects_mutations(self):
         for fmt, offset in ((1, 54), (7, 122)):

@@ -79,6 +79,7 @@ def grouped(lines, actions):
 
 PROGRAM='''import Base
 import ../../jonlib.bend as J
+import ../../jonmath.bend as M
 def reverse_into(values: +List<U32>, rest: +List<U32>) -> +List<U32>:
   match values:
     case Nil{}: rest
@@ -87,23 +88,27 @@ def input_bytes(chunks: +List<+List<U32>>, values: +List<U32>) -> +List<U32>:
   match chunks:
     case Nil{}: List.reverse(&2, U32, values)
     case Con{head, tail}: input_bytes(tail, reverse_into(head, values))
+def emit_colors(result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "animation frame colors unavailable")
+    case Done{colors}: IO.print(List.show(~&1, ~U32, ~U32.show, colors))
 def emit_frames(frames: List<J.Surface>) -> IO(Unit):
   match frames:
     case Nil{}: IO.pure(Unit, Unit{})
     case Con{surface, rest}:
       do IO<Unit>:
-        IO.print(List.show(~&1, ~U32, ~U32.show, J.Surface.colors(surface)))
+        emit_colors(J.Surface.colors(surface))
         emit_frames(rest)
 def emit_animation(result: U32 & U32 & U32 & List<J.Surface>) -> IO(Unit):
   (width, height, count, frames) = result
   do IO<Unit>:
     IO.print("{\\"width\\":" ++ U32.show(width) ++ ",\\"height\\":" ++ U32.show(height) ++ ",\\"count\\":" ++ U32.show(count) ++ "}")
     emit_frames(frames)
-def observed(result: Result<&1, &1, J.Image.DecodeError, J.Image.Animation>) -> IO(Unit):
+def observed(result: Result<&1, &1, J.Surface.Error, J.Image.Animation>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "valid animation rejected")
     case Done{animation}: emit_animation(J.Image.Animation.entries(animation))
-def error_code(result: Result<&1, &1, J.Image.DecodeError, J.Image.Animation>) -> U32:
+def error_code(result: Result<&1, &1, J.Surface.Error, J.Image.Animation>) -> U32:
   match result:
     case Done{_}: 99
     case Fail{error}:
@@ -113,6 +118,7 @@ def error_code(result: Result<&1, &1, J.Image.DecodeError, J.Image.Animation>) -
         case J.UnsupportedImageSize{}: 2
         case J.TruncatedImageData{}: 3
         case J.InvalidImageStream{}: 4
+        case _: 98
 def second_kept(result: J.Surface & Maybe<&2, U32>) -> Bool:
   match result:
     case Tuple{_, Some{color}}: U32.is_eq(color, J.Color.rgba(17, 34, 51, 255))
@@ -128,13 +134,13 @@ def independent(frames: List<J.Surface>) -> Bool:
 def owned_entries(result: U32 & U32 & U32 & List<J.Surface>) -> Bool:
   (width, height, count, frames) = result
   U32.is_eq(width, 3) && U32.is_eq(height, 2) && U32.is_eq(count, 3) && independent(frames)
-def owned(result: Result<&1, &1, J.Image.DecodeError, J.Image.Animation>) -> Bool:
+def owned(result: Result<&1, &1, J.Surface.Error, J.Image.Animation>) -> Bool:
   match result:
     case Fail{_}: False{}
     case Done{animation}: owned_entries(J.Image.Animation.entries(animation))
 def unit_seen(value: Unit) -> Bool:
   True{}
-def disposed(result: Result<&1, &1, J.Image.DecodeError, J.Image.Animation>) -> Bool:
+def disposed(result: Result<&1, &1, J.Surface.Error, J.Image.Animation>) -> Bool:
   match result:
     case Fail{_}: False{}
     case Done{animation}: unit_seen(J.Image.Animation.unload(animation))
@@ -149,7 +155,7 @@ def default_frames(frames: List<J.Surface>) -> Bool:
 def default_entries(result: U32 & U32 & U32 & List<J.Surface>) -> Bool:
   (width, height, count, frames) = result
   U32.is_eq(width, 1) && U32.is_eq(height, 1) && U32.is_eq(count, 1) && default_frames(frames)
-def default_checked(result: Result<&1, &1, J.Image.DecodeError, J.Image.Animation>) -> Bool:
+def default_checked(result: Result<&1, &1, J.Surface.Error, J.Image.Animation>) -> Bool:
   match result:
     case Fail{_}: False{}
     case Done{animation}: default_entries(J.Image.Animation.entries(animation))
@@ -176,8 +182,8 @@ def main():
     def render(selected,gpu):
         bang='!' if gpu else '';body=PROGRAM
         for kind,case in selected:
-            if kind=='animation':body+=f'    observed(J.Image.Animation.decode_image_for{bang}(J.{profile}{{}}, {json.dumps(case["token"])}, {bend_bytes(case["bytes"])}, {case["frames"]}, {case["frames"]*case["width"]*case["height"]}))\n'
-            elif kind=='control':body+=f'    IO.print(U32.show(error_code(J.Image.Animation.decode_image_for{bang}(J.{profile}{{}}, {json.dumps(case["token"])}, {bend_bytes(case["bytes"])}, {case["maximum_frames"]}, {case["maximum_pixels"]}))))\n'
+            if kind=='animation':body+=f'    observed(J.Image.Animation.decode_image_for{bang}(M.{profile}{{}}, {json.dumps(case["token"])}, {bend_bytes(case["bytes"])}, {case["frames"]}, {case["frames"]*case["width"]*case["height"]}))\n'
+            elif kind=='control':body+=f'    IO.print(U32.show(error_code(J.Image.Animation.decode_image_for{bang}(M.{profile}{{}}, {json.dumps(case["token"])}, {bend_bytes(case["bytes"])}, {case["maximum_frames"]}, {case["maximum_pixels"]}))))\n'
             elif kind=='default_reference':body+=f'    IO.print(U32.show(Bool.to_u32(default_reference{bang}({bend_bytes(psd(1,1,[[255],[255],[255],[11]]))}))))\n'
             else:body+=f'    IO.print(U32.show(Bool.to_u32({kind}{bang}(J.Image.Animation.decode_gif({bend_bytes(cases[1]["bytes"])}, 3, 18)))))\n'
         return body

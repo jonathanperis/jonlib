@@ -2,7 +2,6 @@
 """Fast repository checks used by CI; no downloads or compilation."""
 import json
 import hashlib
-from pathlib import Path
 import re
 import subprocess
 import sys

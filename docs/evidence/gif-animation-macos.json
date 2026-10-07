@@ -1,0 +1,68 @@
+{
+ "gate": "gif-animation",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 15.9,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/gif-animation-probe/results.json": {
+   "sha256": "f811fef0b9a49a4f7e472cb479dac324fbb9ba5e0372bc2cf9832d3447b5edbc",
+   "summary": {
+    "passed": true,
+    "probe": "gif-animation",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 38,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 38,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 38,
+      "different": []
+     }
+    },
+    "batches": 1,
+    "animations": 20,
+    "frames": 37,
+    "decode_reference": "Fused",
+    "pixels": 460,
+    "error_controls": 15,
+    "ownership_controls": 2,
+    "default_reference_controls": 1,
+    "inputs_sha256": "ce6c70fa0efba75483e056aeaf4156d70338424ba2c7ce00aa67306f97ff6cf2",
+    "reference_sha256": "d8022f43b9e4758a37790f173267100e4145a46873c260b146e8639ac457802c"
+   }
+  }
+ }
+}

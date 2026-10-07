@@ -1,0 +1,69 @@
+{
+ "gate": "sdeflate-huffman",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 6.3,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/sdeflate-huffman-probe/results.json": {
+   "sha256": "db8350f4432187aff5f7f81c6faf3c3d914aa5d54201935104ddc50a641e56aa",
+   "summary": {
+    "passed": true,
+    "probe": "sdeflate-huffman",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 103,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 103,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 103,
+      "different": []
+     }
+    },
+    "sources": {
+     "items": 48
+    },
+    "batches": 2,
+    "cases": 103,
+    "table_entries": 11814,
+    "profiles": {
+     "items": 3
+    },
+    "inputs_sha256": "0429be345ba0be42f288843fb03ed2f75bb9d59741d3ca5fdac46ab3414e22ef",
+    "reference_sha256": "8b26b5447d99d3997064ae96ffa36523318bdb79e20541f5237eb91324543919"
+   }
+  }
+ }
+}

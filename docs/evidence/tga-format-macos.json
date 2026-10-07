@@ -1,0 +1,67 @@
+{
+ "gate": "tga-format",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 338.4,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/tga-format-probe/results.json": {
+   "sha256": "b4e2aec27bd588ec2e9d0e8e7bf6b22511304ae1a4132d1fb0277e76bd319b30",
+   "summary": {
+    "passed": true,
+    "probe": "tga-format",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [
+     "SUPPORT_FILEFORMAT_TGA=ON"
+    ],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 1156,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 1156,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 1156,
+      "different": []
+     }
+    },
+    "batches": 38,
+    "cases": 169,
+    "controls": 155,
+    "native_rejections": 0,
+    "observations": 1156,
+    "compared_bytes": 1024632,
+    "reference_sha256": "8b2bf355ad3e8c4c1d269663a6c7e36ffe7fd9289ff2664862d88d9f80d0e407"
+   }
+  }
+ }
+}

@@ -1,0 +1,66 @@
+{
+ "gate": "image-format",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 9.7,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/image-format-probe/results.json": {
+   "sha256": "57ede7ffbc39ec0977a1bebfdf9bb361eb40ffabf6cee3cb9772d2ca47a38239",
+   "summary": {
+    "passed": true,
+    "probe": "image-format",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 210,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 210,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 210,
+      "different": []
+     }
+    },
+    "batches": 1,
+    "format_pairs": 64,
+    "cases": 166,
+    "factory_controls": 44,
+    "r32_boundary_samples": 1119,
+    "checked_bytes": 173315,
+    "inputs_sha256": "ea97c0d883ca6b3ff5e881399d64ee92b1e73a80bb876483369c8775bbec5df9",
+    "reference_sha256": "05f02e24891deda83426aaaca67bef01f2e0339a79ecf10af7cf4ef2fda6605c"
+   }
+  }
+ }
+}

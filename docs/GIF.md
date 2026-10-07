@@ -1,7 +1,7 @@
 # First-frame GIF decoding
 
 `Surface.decode_gif(bytes: +List<U32>)` returns
-`Result<&1, &1, Image.DecodeError, Surface>` with owned RGBA8 pixels. Shared
+`Result<&1, &1, Surface.Error, Surface>` with owned RGBA8 pixels. Shared
 memory/file dispatch recognizes `GIF87a` and `GIF89a` signatures; see
 [IMAGE-FILES.md](IMAGE-FILES.md). Owned multi-frame animations are documented in
 [GIF-ANIMATION.md](GIF-ANIMATION.md).

@@ -9,11 +9,11 @@ Pure point queries return `Vector2` values:
 | `Spline.catmull_rom(first, second, third, fourth, t)` | Original four Catmull-Rom weights and final half-scale. |
 | `Spline.bezier_quad(start, control, end, t)` | Quadratic weights and reference three-term accumulation. |
 
-Each API has an `_for(reference, ...)` variant accepting `Spline.Reference`:
-`FusedSpline{}` or `UncontractedSpline{}`. Convenience calls select uncontracted
+Each API has an `_for(reference, ...)` variant accepting `M.Contraction`:
+`M.Fused{}` or `M.Uncontracted{}`. Convenience calls select uncontracted
 arithmetic. The linked macOS arm64 reference uses fused multiply-add and Linux
-x86_64 the uncontracted profile; the harness selects `FusedSpline{}` or
-`UncontractedSpline{}` from the same host declaration as the collision
+x86_64 the uncontracted profile; the harness selects `M.Fused{}` or
+`M.Uncontracted{}` from the same host declaration as the collision
 arithmetic ([COLLISION.md](COLLISION.md)). The exact formulas remain separate
 from algebraically equivalent vector interpolation helpers.
 
@@ -31,7 +31,7 @@ performance coverage remain gaps.
 
 `tools/spline_probe.py --uncontracted-control` instead compiles the unchanged
 pinned spline functions from `rshapes.c` with `FP_CONTRACT OFF` and checks
-`UncontractedSpline{}` on any host:
+`M.Uncontracted{}` on any host:
 
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only spline

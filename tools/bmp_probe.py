@@ -227,6 +227,7 @@ def bend_bytes(values):
 
 PROGRAM='''import Base
 import ../../jonlib.bend as J
+import ../../jonmath.bend as M
 def reverse_into(values: +List<U32>, rest: +List<U32>) -> +List<U32>:
   match values:
     case Nil{}: rest
@@ -235,12 +236,16 @@ def input_bytes(chunks: +List<+List<U32>>, values: +List<U32>) -> +List<U32>:
   match chunks:
     case Nil{}: List.reverse(&2, U32, values)
     case Con{head, tail}: input_bytes(tail, reverse_into(head, values))
-def decoded(result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> IO(Unit):
+def shown(+w: U32, +h: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "valid BMP colors unavailable")
+    case Done{colors}:
+      IO.print("{\\"width\\":" ++ U32.show(w) ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"pixels\\":" ++ List.show(~&1, ~U32, ~U32.show, colors) ++ "}")
+def decoded(result: Result<&1, &1, J.Surface.Error, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "valid BMP rejected")
-    case Done{J.Surface{+w, +h, pixels}}:
-      IO.print("{\\"width\\":" ++ U32.show(w) ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"pixels\\":" ++ List.show(~&1, ~U32, ~U32.show, J.Surface.colors(J.Surface{w, h, pixels})) ++ "}")
-def error_code(result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> U32:
+    case Done{J.Surface{+w, +h, format, pixels}}: shown(w, h, J.Surface.colors(J.Surface{w, h, format, pixels}))
+def error_code(result: Result<&1, &1, J.Surface.Error, J.Surface>) -> U32:
   match result:
     case Done{_}: 99
     case Fail{error}:
@@ -250,18 +255,27 @@ def error_code(result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> U32:
         case J.UnsupportedImageSize{}: 2
         case J.TruncatedImageData{}: 3
         case J.InvalidImageStream{}: 4
+        case _: 98
 def fill(values: +List<U32>, +index: U32, +width: U32, surface: J.Surface) -> J.Surface:
   match values:
     case Nil{}: surface
     case Con{color, rest}: fill(rest, (index + 1 : U32), width, J.Surface.draw_pixel(surface, U32.to_f32((index % width : U32)), U32.to_f32((index / width : U32)), color))
+def exported(result: Result<&1, &1, J.Surface & J.Surface.Error, +List<U32>>) -> +List<U32>:
+  match result:
+    case Fail{_}: Nil{}
+    case Done{bytes}: bytes
 def encoded(width: U32, values: +List<U32>, result: Maybe<J.Surface>) -> +List<U32>:
   match result:
     case None{}: Nil{}
-    case Some{surface}: J.Surface.to_bmp(fill(values, 0, width, surface))
+    case Some{surface}: exported(J.Surface.to_bmp(fill(values, 0, width, surface)))
+def finished(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "BMP export failed")
+    case Done{_}: IO.pure(Unit, Unit{})
 def saved(result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "BMP export input rejected")
-    case Some{surface}: IO.try(Unit, J.Surface.write_bmp(surface, OUTPUT))
+    case Some{surface}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_bmp(surface, OUTPUT), finished)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -300,7 +314,7 @@ def main(codec='bmp', fixture_factory=fixtures, native_extension=None):
     program=PROGRAM.replace('OUTPUT',json.dumps(str(written))).replace('BMP',codec.upper()).replace('Surface.to_bmp',f'Surface.to_{codec}').replace('Surface.write_bmp',f'Surface.write_{codec}')
     if not outputs:program=program[:program.index('def fill(')]+'def main() -> IO(Unit):\n  do IO<Unit>:\n'
     function=f'decode_{codec}_for' if codec=='psd' else f'decode_{codec}'
-    profile=f'J.{image_decode_reference()}{{}}, ' if codec=='psd' else ''
+    profile=f'M.{image_decode_reference()}{{}}, ' if codec=='psd' else ''
 
     def render(selected,gpu):
         bang='!' if gpu else '';body=program

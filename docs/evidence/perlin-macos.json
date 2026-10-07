@@ -1,0 +1,68 @@
+{
+ "gate": "perlin",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 2.4,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/perlin-probe/results.json": {
+   "sha256": "0d752611bcb92e58e2f6ac38c1f2c16bba8c0d2c45c38bbc9c1ae1f7c36517dc",
+   "summary": {
+    "passed": true,
+    "probe": "perlin",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 22,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 22,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 22,
+      "different": []
+     }
+    },
+    "sources": {
+     "items": 48
+    },
+    "batches": 1,
+    "reference": "pinned stb_perlin compiled with explicit FP contraction",
+    "profile": "fused",
+    "table_cells": 1024,
+    "octave_samples": 222,
+    "inputs_sha256": "7738c8a4717dd5b69107477d2adc01daef9e4c407829450917dd6c1ecb41efbc",
+    "reference_sha256": "f0c35de5392946947f8ee6fb448be0f9ef6168be8dc75a99288506038496cb9e"
+   }
+  }
+ }
+}

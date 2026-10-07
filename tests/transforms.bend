@@ -1,12 +1,17 @@
 import Base
 import ../jonlib.bend as J
 
-def pixels_kept(values: List<U32>) -> Bool:
+def kept_values(values: List<U32>) -> Bool:
   match values:
     case Con{16909060, Con{16909060, Nil{}}}:
       True{}
     case _:
       False{}
+
+def pixels_kept(result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> Bool:
+  match result:
+    case Done{values}: kept_values(values)
+    case Fail{_}: False{}
 
 def failed(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>, expected: U32) -> Bool:
   match result:
@@ -20,9 +25,7 @@ def failed(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>, expec
           U32.is_eq(expected, 1) && pixels_kept(J.Surface.colors(surface))
         case J.UnsafeNearestMapping{}:
           U32.is_eq(expected, 2) && pixels_kept(J.Surface.colors(surface))
-        case J.InvalidDitherBits{}:
-          False{}
-        case J.InvalidKernel{}:
+        case _:
           False{}
 
 def invalid(created: Maybe<J.Surface>, operation: U32) -> Bool:
@@ -113,7 +116,7 @@ def rotation_last(result: Array<U32> & U32) -> Bool:
 
 def rotation_too_large(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Bool:
   match result:
-    case Fail{Tuple{J.Surface{w, h, pixels}, J.InvalidSize{}}}:
+    case Fail{Tuple{J.Surface{w, h, _, J.Words{pixels}}, J.InvalidSize{}}}:
       U32.is_eq(w, 4096) && U32.is_eq(h, 128) && rotation_last(Array.get(U32, pixels, 524287))
     case _: False{}
 
@@ -122,14 +125,20 @@ def rotation_size(created: Maybe<J.Surface>) -> Bool:
     case None{}: False{}
     case Some{surface}: rotation_too_large(J.Surface.rotate_degrees(surface, 1.0))
 
-def channel_pixels(values: List<U32>) -> Bool:
+def channel_values(values: List<U32>) -> Bool:
   match values:
     case Con{33686271, Con{33686271, Nil{}}}: True{}
     case _: False{}
 
-def channel_owners(pair: J.Surface & J.Surface) -> Bool:
-  (source, extracted) = pair
-  pixels_kept(J.Surface.colors(source)) && channel_pixels(J.Surface.colors(extracted))
+def channel_pixels(result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> Bool:
+  match result:
+    case Done{values}: channel_values(values)
+    case Fail{_}: False{}
+
+def channel_owners(pair: J.Surface & Maybe<J.Surface>) -> Bool:
+  match pair:
+    case Tuple{source, Some{extracted}}: pixels_kept(J.Surface.colors(source)) && channel_pixels(J.Surface.colors(extracted))
+    case _: False{}
 
 def channel_created(created: Maybe<J.Surface>) -> Bool:
   match created:
@@ -192,7 +201,7 @@ def palette_created(created: Maybe<J.Surface>, invalid: Bool) -> Bool:
     case Some{surface} True{}: palette_rejected(J.Surface.load_palette(surface, 0))
     case Some{surface} False{}: palette_disposed(J.Surface.load_palette(surface, 4))
 
-def dither_rejected(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Image.Packed16>) -> Bool:
+def dither_rejected(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Bool:
   match result:
     case Fail{Tuple{surface, J.InvalidDitherBits{}}}: pixels_kept(J.Surface.colors(surface))
     case _: False{}
@@ -208,18 +217,19 @@ def no_size(result: Maybe<&2, U32>) -> Bool:
     case None{}: True{}
     case Some{_}: False{}
 
-def pixel_error(error: J.Pixel.Error, expected: U32) -> Bool:
+def pixel_error(error: J.Surface.Error, expected: U32) -> Bool:
   match error:
-    case J.UnsupportedPixelFormat{}: U32.is_eq(expected, 0)
+    case J.UnsupportedFormat{}: U32.is_eq(expected, 0)
     case J.InvalidPixelByte{}: U32.is_eq(expected, 1)
     case J.TruncatedPixelData{}: U32.is_eq(expected, 2)
+    case _: False{}
 
-def pixel_failed(-A: Data, result: Result<&2, &2, J.Pixel.Error, A>, expected: U32) -> Bool:
+def pixel_failed(-A: Data, result: Result<&2, &2, J.Surface.Error, A>, expected: U32) -> Bool:
   match result:
     case Fail{error}: pixel_error(error, expected)
     case Done{_}: False{}
 
-def no_formatted(result: Maybe<J.Image.Formatted>) -> Bool:
+def no_formatted(result: Maybe<J.Surface>) -> Bool:
   match result:
     case None{}: True{}
     case Some{_}: False{}
@@ -229,40 +239,46 @@ def formatted_bytes_kept(data: (U32 & U32) & (U32 & List<U32>)) -> Bool:
     case Tuple{Tuple{1, 2}, Tuple{2, Con{1, Con{2, Con{3, Con{4, Nil{}}}}}}}: True{}
     case _: False{}
 
-def formatted_rejected(result: Result<&1, &1, J.Image.Formatted & J.Pixel.Error, J.Image.Formatted>) -> Bool:
+def formatted_rejected(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Bool:
   match result:
-    case Fail{Tuple{image, J.UnsupportedPixelFormat{}}}: formatted_bytes_kept(J.Image.Formatted.export(image))
+    case Fail{Tuple{image, J.UnsupportedFormat{}}}: formatted_bytes_kept(J.Surface.export(image))
     case _: False{}
 
-def formatted_created(result: Maybe<J.Image.Formatted>) -> Bool:
+def formatted_created(result: Maybe<J.Surface>) -> Bool:
   match result:
     case None{}: False{}
-    case Some{image}: formatted_rejected(J.Image.Formatted.convert(image, 9))
+    case Some{image}: formatted_rejected(J.Surface.format(image, 10))
+
+# R8G8B8A8 owners export raylib's byte order from their canonical Color words.
+def native_bytes(data: (U32 & U32) & (U32 & List<U32>)) -> Bool:
+  match data:
+    case Tuple{Tuple{2, 1}, Tuple{7, Con{1, Con{2, Con{3, Con{4, Con{1, Con{2, Con{3, Con{4, Nil{}}}}}}}}}}}: True{}
+    case _: False{}
 
 def formatted_roundtrip(result: Maybe<J.Surface>) -> Bool:
   match result:
     case None{}: False{}
-    case Some{surface}: pixels_kept(J.Surface.colors(J.Image.Formatted.to_surface(J.Surface.to_formatted(surface))))
+    case Some{surface}: native_bytes(J.Surface.export(surface))
 
 def png_owner_bytes(format: U32, data: (U32 & U32) & (U32 & List<U32>)) -> Bool:
   match data:
     case Tuple{Tuple{1, 2}, Tuple{actual, Con{1, Con{2, Con{3, Con{4, Nil{}}}}}}}: U32.is_eq(format, actual)
     case _: False{}
 
-def png_rejected(format: U32, result: Result<&1, &1, J.Image.Formatted & J.Pixel.Error, +List<U32>>) -> Bool:
+def png_rejected(format: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, +List<U32>>) -> Bool:
   match result:
-    case Fail{Tuple{image, J.UnsupportedPixelFormat{}}}: png_owner_bytes(format, J.Image.Formatted.export(image))
+    case Fail{Tuple{image, J.UnsupportedFormat{}}}: png_owner_bytes(format, J.Surface.export(image))
     case _: False{}
 
-def png_created(format: U32, result: Maybe<J.Image.Formatted>) -> Bool:
+def png_created(format: U32, result: Maybe<J.Surface>) -> Bool:
   match result:
     case None{}: False{}
-    case Some{image}: png_rejected(format, J.Image.Formatted.to_png(image))
+    case Some{image}: png_rejected(format, J.Surface.export_to_memory(image, ".png"))
 
 def png_rejections(formats: +List<U32>) -> Bool:
   match formats:
     case Nil{}: True{}
-    case Con{+format, rest}: png_created(format, J.Image.Formatted.from_bytes(1, 2, format, [1,2,3,4])) && png_rejections(rest)
+    case Con{+format, rest}: png_created(format, J.Surface.from_bytes(1, 2, format, [1,2,3,4])) && png_rejections(rest)
 
 def verdict(ok: Bool) -> IO(Unit):
   match ok:
@@ -322,12 +338,12 @@ def checks() -> Bool:
     && pixel_failed(+List<U32>, J.Pixel.set_color([0,0,0,0], 0, 8), 0)
     && pixel_failed(+List<U32>, J.Pixel.set_color([0,0,0,0,256], 0, 7), 1)
     && pixel_failed(+List<U32>, J.Pixel.set_color([1,2], 0, 7), 2)
-    && no_formatted(J.Image.Formatted.from_bytes(0, 1, 7, []))
-    && no_formatted(J.Image.Formatted.from_bytes(1, 1, 0, []))
-    && no_formatted(J.Image.Formatted.from_bytes(1, 1, 7, [1,2,3]))
-    && no_formatted(J.Image.Formatted.from_bytes(1, 1, 7, [1,2,3,4,5]))
-    && no_formatted(J.Image.Formatted.from_bytes(1, 1, 7, [1,2,3,256]))
-    && formatted_created(J.Image.Formatted.from_bytes(1, 2, 2, [1,2,3,4]))
+    && no_formatted(J.Surface.from_bytes(0, 1, 7, []))
+    && no_formatted(J.Surface.from_bytes(1, 1, 0, []))
+    && no_formatted(J.Surface.from_bytes(1, 1, 7, [1,2,3]))
+    && no_formatted(J.Surface.from_bytes(1, 1, 7, [1,2,3,4,5]))
+    && no_formatted(J.Surface.from_bytes(1, 1, 7, [1,2,3,256]))
+    && formatted_created(J.Surface.from_bytes(1, 2, 2, [1,2,3,4]))
     && formatted_roundtrip(J.Surface.create(2, 1, 16909060))
     && png_rejections([3,5,6])
 

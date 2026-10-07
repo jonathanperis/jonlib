@@ -78,9 +78,9 @@ def main():
     text=probe.native(REFERENCE,extra_flags=('-ffp-contract=off','-fno-builtin-fmaf'));(probe.work/'reference.jsonl').write_text(text)
     reference=parse_results(text)
     if len(reference)!=3 or any(len(values)!=33151 for values in reference):raise ProbeFailure('Incomplete native matte results')
-    profile=image_decode_reference();selected=1 if profile=='FusedDecode' else 0
+    profile=image_decode_reference();selected=1 if profile=='Fused' else 0
     native_differences={name:sum(a!=b for a,b in zip(reference[index],reference[2]))
-                        for index,name in enumerate(('UncontractedDecode','FusedDecode'))}
+                        for index,name in enumerate(('Uncontracted','Fused'))}
     probe.report.update(native_profile=profile,native_model_mismatches=native_differences);probe.save()
     if reference[selected]!=reference[2]:raise ProbeFailure(f'Linked native PSD differs from declared {profile} arithmetic')
 

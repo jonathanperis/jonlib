@@ -5,14 +5,13 @@ import json
 import struct
 
 from bmp_probe import bend_bytes
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from conformance import ROOT, source_gate
 import probekit
 from probekit import ProbeFailure
 
 PRELUDE = ['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>','#include <string.h>',
-           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-           'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+           C_EMITTER,
            'static void emit(unsigned char *data,int size){for(int i=0;i<size;i++)byte(data[i]);end();}',
            'static void observe(Image source,unsigned char *encoded,int size,int file){if(!encoded)exit(2);emit(encoded,size);',
            'Image decoded=LoadImageFromMemory(".png",encoded,size);if(!decoded.data||decoded.width!=source.width||decoded.height!=source.height)exit(3);ImageFormat(&decoded,7);',
@@ -36,15 +35,15 @@ def rgba(values: List<U32>, bytes: List<U32>) -> List<U32>:
     case Nil{}: List.reverse(&1, U32, bytes)
     case Con{+color, rest}: rgba(rest, Con{J.Color.alpha(color), Con{J.Color.blue(color), Con{J.Color.green(color), Con{J.Color.red(color), bytes}}}})
 '''+BEND_EMITTER+'''
-def encoded(file: Bool, image: J.Image.FloatRGB) -> Result<&1, &1, J.Image.FloatRGB, +List<U32>>:
+def encoded(file: Bool, image: J.Surface) -> Result<&1, &1, J.Surface & J.Surface.Error, +List<U32>>:
   match file:
-    case False{}: J.Image.FloatRGB.to_png(image)
-    case True{}: J.Image.FloatRGB.png.file_bytes(image)
-def exported(result: Result<&1, &1, J.Image.FloatRGB, +List<U32>>) -> Maybe<&2, +List<U32>>:
+    case False{}: J.Surface.export_to_memory(image, ".png")
+    case True{}: J.Surface.to_png(image)
+def exported(result: Result<&1, &1, J.Surface & J.Surface.Error, +List<U32>>) -> Maybe<&2, +List<U32>>:
   match result:
     case Fail{_}: None{}
     case Done{bytes}: Some{bytes}
-def encode(file: Bool, result: Maybe<J.Image.FloatRGB>) -> Maybe<&2, +List<U32>>:
+def encode(file: Bool, result: Maybe<J.Surface>) -> Maybe<&2, +List<U32>>:
   match result:
     case None{}: None{}
     case Some{image}: exported(encoded(file, image))
@@ -52,13 +51,17 @@ def checked(ok: Bool) -> IO(Unit):
   match ok:
     case True{}: IO.pure(Unit, Unit{})
     case False{}: IO.die(Unit, 1, "float PNG dimensions/owner/write differs")
-def decoded(width: U32, height: U32, result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> IO(Unit):
+def colors(width: U32, height: U32, +w: U32, +h: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> IO(Unit):
   match result:
-    case Fail{_}: IO.die(Unit, 1, "float PNG round trip failed")
-    case Done{J.Surface{+w, +h, pixels}}:
+    case Fail{_}: IO.die(Unit, 1, "decoded float PNG colors rejected")
+    case Done{values}:
       do IO<Unit>:
         checked(U32.is_eq(width, w) && U32.is_eq(height, h))
-        emit_bytes(~&1, rgba(J.Surface.colors(J.Surface{w, h, pixels}), Nil{}))
+        emit_bytes(~&1, rgba(values, Nil{}))
+def decoded(width: U32, height: U32, result: Result<&1, &1, J.Surface.Error, J.Surface>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "float PNG round trip failed")
+    case Done{J.Surface{+w, +h, format, pixels}}: colors(width, height, w, h, J.Surface.colors(J.Surface{w, h, format, pixels}))
 def observed(width: U32, height: U32, result: Maybe<&2, +List<U32>>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "valid float PNG rejected")
@@ -66,48 +69,61 @@ def observed(width: U32, height: U32, result: Maybe<&2, +List<U32>>) -> IO(Unit)
       do IO<Unit>:
         emit_bytes(~&2, bytes)
         decoded(width, height, J.Surface.decode_pngBANG(bytes))
-def write_ok(result: Result<&1, &1, J.Image.FloatRGB.WriteError, Unit>) -> IO(Unit):
+def write_ok(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
     case Done{_}: IO.pure(Unit, Unit{})
     case Fail{_}: IO.die(Unit, 1, "valid float PNG file write failed")
-def save(path: String, result: Maybe<J.Image.FloatRGB>) -> IO(Unit):
+def save(path: String, result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "PNG file source rejected")
-    case Some{image}: IO.bind(Result<&1, &1, J.Image.FloatRGB.WriteError, Unit>, Unit, J.Image.FloatRGB.write_png(image, path), write_ok)
-def small(value: F32) -> J.Image.FloatRGB:
-  J.FloatRGB{1, 1, Array.new(M.Vector3, 0n, M.Vector3{value, 0.25, 0.75})}
-def owner_read(wanted: U32, values: List<M.Vector3>) -> Bool:
-  match values:
-    case Con{M.Vector3{r, g, b}, Nil{}}:
-      U32.is_eq(F32.bits(r), F32.bits(H.float_bits(wanted))) && F32.is_eq(g, 0.25) && F32.is_eq(b, 0.75)
+    case Some{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_png(image, path), write_ok)
+def small(value: F32) -> J.Surface:
+  J.Surface{1, 1, 9, J.Vectors{Array.new(M.Vector3, 0n, M.Vector3{value, 0.25, 0.75})}}
+def owner_read(wanted: U32, bytes: List<U32>) -> Bool:
+  match bytes:
+    case Con{r0, Con{r1, Con{r2, Con{r3, Con{0, Con{0, Con{128, Con{62, Con{0, Con{0, Con{64, Con{63, Nil{}}}}}}}}}}}}}:
+      U32.is_eq((r0 .|. (r1 << 8n) .|. (r2 << 16n) .|. (r3 << 24n) : U32), F32.bits(H.float_bits(wanted)))
     case _: False{}
-def owner_entries(wanted: U32, result: U32 & U32 & List<M.Vector3>) -> Bool:
-  (width, height, values) = result
-  U32.is_eq(width, 1) && U32.is_eq(height, 1) && owner_read(wanted, values)
-def rejected(wanted: U32, result: Result<&1, &1, J.Image.FloatRGB, +List<U32>>) -> Bool:
+def owner_entries(wanted: U32, data: (U32 & U32) & (U32 & List<U32>)) -> Bool:
+  match data:
+    case Tuple{Tuple{1, 1}, Tuple{9, bytes}}: owner_read(wanted, bytes)
+    case _: False{}
+def rejected(wanted: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, +List<U32>>) -> Bool:
   match result:
-    case Done{_}: False{}
-    case Fail{image}: owner_entries(wanted, J.Image.FloatRGB.entries(image))
+    case Fail{Tuple{image, J.OutOfDomain{}}}: owner_entries(wanted, J.Surface.export(image))
+    case _: False{}
+# NaN samples are outside the checked export domain: the owner comes back intact
+# (compared with same-backend bits: NaN payloads are not portable across backends).
+def nan_owner_bits(value: M.Vector3) -> Bool:
+  M.Vector3{r, g, b} = value
+  U32.is_eq(F32.bits(r), F32.bits(H.float_bits(2143294004))) && U32.is_eq(F32.bits(g), 1048576000) && U32.is_eq(F32.bits(b), 1061158912)
+def nan_owner_read(result: Array<M.Vector3> & M.Vector3) -> Bool:
+  (_, value) = result
+  nan_owner_bits(value)
+def nan_rejected(result: Result<&1, &1, J.Surface & J.Surface.Error, +List<U32>>) -> Bool:
+  match result:
+    case Fail{Tuple{J.Surface{1, 1, 9, J.Vectors{values}}, J.OutOfDomain{}}}: nan_owner_read(Array.get(M.Vector3, values, 0))
+    case _: False{}
 def reject_memory() -> Bool:
-  rejected(2143294004, J.Image.FloatRGB.to_png(small(H.float_bits(2143294004))))
+  nan_rejected(J.Surface.export_to_memory(small(H.float_bits(2143294004)), ".png"))
 def reject_file_bytes() -> Bool:
-  rejected(1073741824, J.Image.FloatRGB.png.file_bytes(small(2.0)))
-def rejected_write(result: Result<&1, &1, J.Image.FloatRGB.WriteError, Unit>) -> IO(Unit):
+  rejected(1073741824, J.Surface.to_png(small(2.0)))
+def rejected_write(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.FloatRGBSampleError{image}}: checked(owner_entries(1073741824, J.Image.FloatRGB.entries(image)))
+    case Fail{J.SourceError{image, J.OutOfDomain{}}}: checked(owner_entries(1073741824, J.Surface.export(image)))
     case _: IO.die(Unit, 1, "PNG write rejection lost source")
-def failed_write(result: Result<&1, &1, J.Image.FloatRGB.WriteError, Unit>) -> IO(Unit):
+def failed_write(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.FloatRGBFileError{_, _}}: checked(True{})
+    case Fail{J.FileError{_, _}}: checked(True{})
     case _: IO.die(Unit, 1, "PNG file error kind differs")
 def closure_loop(n: Nat) -> IO(Unit):
   match n:
     case 0n: emit_bytes(~&1, [1])
     case 1n+rest:
       do IO<Unit>:
-        IO.bind(Result<&1, &1, J.Image.FloatRGB.WriteError, Unit>, Unit, J.Image.FloatRGB.write_png(small(0.5), OUTPUT), write_ok)
-        IO.bind(Result<&1, &1, J.Image.FloatRGB.WriteError, Unit>, Unit, J.Image.FloatRGB.write_png(small(2.0), SENTINEL), rejected_write)
-        IO.bind(Result<&1, &1, J.Image.FloatRGB.WriteError, Unit>, Unit, J.Image.FloatRGB.write_png(small(0.5), DIRECTORY), failed_write)
+        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_png(small(0.5), OUTPUT), write_ok)
+        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_png(small(2.0), SENTINEL), rejected_write)
+        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_png(small(0.5), DIRECTORY), failed_write)
         closure_loop(rest)
 def main() -> IO(Unit):
   do IO<Unit>:
@@ -159,7 +175,7 @@ def main():
     # Each action: Bend line (BANG marks forced-GPU calls; cpu_only lines are absent from the GPU variant) and its CPU/GPU expectation.
     actions,rows=[],iter(expected)
     for case in cases:
-        image=f'J.Image.FloatRGB.from_bytes({case["width"]}, {case["height"]}, {bend_bytes(case["bytes"])})'
+        image=f'J.Surface.from_bytes({case["width"]}, {case["height"]}, 9, {bend_bytes(case["bytes"])})'
         for file in (False,True) if case['file'] else (False,):
             wanted=[next(rows),next(rows)]
             actions.append(dict(name=f'{case["id"]} {"file" if file else "memory"} PNG',rows=2,cpu=wanted,gpu=wanted,

@@ -1,27 +1,25 @@
 # Raw image files
 
 Jonlib reproduces raylib's `LoadImageRaw` header rule and `ExportImage(".raw")`
-bytes through dedicated, explicitly selected operations. Generic
-extension-based RAW dispatch is not implemented; the caller keeps width,
-height and format.
+bytes. `Surface.write_image` also selects RAW for a `.raw` suffix; loading needs
+the caller's width, height and format.
 
 | API | Result |
 |---|---|
-| `Image.Formatted.load_raw(path, width, height, format, header_size)` | `IO(Result<&1, &1, Image.RawLoadError, Image.Formatted>)` |
-| `Image.Formatted.write_raw(image, path)` | `IO(Result<&1, &1, U32 & String, Unit>)` |
-| `Image.FloatRGB.load_raw(path, width, height, header_size)` | `IO(Result<&1, &1, Image.RawLoadError, Image.FloatRGB>)` |
-| `Image.FloatRGB.write_raw(image, path)` | `IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>)` |
+| `Surface.load_raw(path, width, height, format, header_size)` | `IO(Result<&1, &1, Surface.IOError, Surface>)` |
+| `Surface.write_raw(image, path)` | `IO(Result<&1, &1, Surface.IOError, Unit>)` |
 
 ## Loading
 
-`Image.Formatted.load_raw` supports ordinary, non-changing files with
-byte/integer formats 1..7 and checked R32 format 8. R32 words are
-little-endian finite values in `[0,1]`; both zero signs and positive subnormals
-are preserved exactly (see [R32.md](R32.md)). Dimensions are 1..4096. The U32
-header size plus the required image bytes must fit a nonnegative signed C int,
-and the file size must not exceed 2,147,483,647 bytes. Invalid request
-parameters are rejected before opening. Format 9 is an `InvalidRawRequest`
-here, before opening; use `Image.FloatRGB.load_raw`.
+`Surface.load_raw` supports ordinary, non-changing files in formats 1..9.
+R32 words are little-endian finite values in `[0,1]`; both zero signs and
+positive subnormals are preserved exactly (see [R32.md](R32.md)). R32G32B32
+payloads are three little-endian words per pixel (`width*height*12` bytes);
+every non-NaN sample is preserved exactly, including signed zero, subnormals
+and infinities. Dimensions are 1..4096. The U32 header size plus the required
+image bytes must fit a nonnegative signed C int, and the file size must not
+exceed 2,147,483,647 bytes. Invalid request parameters are rejected before
+opening.
 
 The pinned native header rule:
 
@@ -35,41 +33,25 @@ contain arbitrary bytes. Opened handles are closed before the result image is
 constructed, including on size and read failures. A short read is rejected
 rather than filled with synthetic pixels.
 
-`Image.RawLoadError`:
+`Surface.IOError` results:
 
-- `InvalidRawRequest`: unsupported dimensions/format or unsafe header arithmetic.
-- `InvalidRawSamples`: a complete selected R32 payload contains a negative
-  nonzero sample, a value above one, infinity or NaN; reported after closure.
-  This is Jonlib's checked-storage adaptation, not a native rejection.
-- `TruncatedRawImage`: too few file/payload bytes.
-- `RawFileTooLarge`: a reported file size exceeds the signed-int bound.
-- `RawFileError{code, message}`: the original Base open/size/read error.
-
-## RGB float files
-
-`Image.FloatRGB.load_raw` reads little-endian format-9 RGB words with the same
-positional-read boundary, header-fit rule, signed-int limits and closure
-behavior as the formatted loader. The required payload is `width*height*12`
-bytes. Every non-NaN sample is preserved exactly, including signed zero,
-subnormals and infinities. NaN payloads return `InvalidRawRequest` after the
-file is closed; incomplete payloads return `TruncatedRawImage`.
-
-`Image.FloatRGB.write_raw` writes every raw word without normalization or
-storage padding:
-
-- `FloatRGBSampleError{image}` returns the original owner for unsupported NaN
-  samples, before the output file is opened or truncated.
-- `FloatRGBFileError{code, message}` preserves the Base open/write error.
-- Valid output consumes the source owner and closes its handle on completion.
-
-The raw sample domain and the JavaScript NaN-representation gap are described
-in [FLOAT-RGB.md](FLOAT-RGB.md).
+- `DataError{InvalidRequest}`: unsupported dimensions/format or unsafe header arithmetic.
+- `DataError{OutOfDomain}`: a complete selected payload contains a sample
+  outside the format's domain (R32: negative nonzero, above one, infinity or
+  NaN; R32G32B32: NaN); reported after closure. This is Jonlib's
+  checked-storage adaptation, not a native rejection.
+- `DataError{TruncatedImageData}`: too few file/payload bytes.
+- `DataError{UnsupportedImageSize}`: a reported file size exceeds the signed-int bound.
+- `FileError{code, message}`: the original Base open/size/read error.
 
 ## Exporting
 
-`Image.Formatted.write_raw` consumes its owner and writes exactly the
-native-order image bytes, without a header, then closes the file after the
-write result. R32 words are written unchanged.
+`Surface.write_raw` consumes its owner and writes exactly the native-order
+image bytes, without a header or storage padding, then closes the file after
+the write result. R32 and R32G32B32 words are written unchanged; NaN
+R32G32B32 samples are rejected with `SourceError{owner, OutOfDomain}` before the
+file is opened, and open/write failures are `FileError{code, message}`. The raw float domain and the
+JavaScript NaN-representation gap are described in [FLOAT-RGB.md](FLOAT-RGB.md).
 
 ## How it is verified
 
@@ -100,8 +82,7 @@ verified on CPU and JavaScript only; no GPU filesystem claim is made.
   load/header cases compare every output file with native loaded storage
   (`SaveFileData`), and some normalized cases also with native
   `ExportImage(".raw")`. Controls cover request, file, truncation, size and NaN
-  domains; NaN write rejection preserves both the owner and an existing output
-  file, and a directory write checks the file-error variant. 100
+  domains, and a directory write checks the file-error variant. 100
   load/domain/truncation/read/size/write cycles run under the descriptor limit.
 
 ```sh
