@@ -28,7 +28,7 @@ class ExtremaIntegrationTests(unittest.TestCase):
                     self.assertTrue(has_extrema(cases))
                     with self.assertRaisesRegex(ValueError, 'fresh canonical'):
                         bend_source(cases)
-                    for profile in ('AccurateGradient', 'GnuGradient'):
+                    for profile in ('AppleLibm', 'Glibc239Libm'):
                         for gpu in (False, True):
                             source = bend_source(cases, gpu=gpu, extrema_reference=profile)
                             self.assertIn(f'M.{namespace}.{function}_for(M.{LIBM_FOR_PROFILE[profile]}{{}}, ', source)
@@ -49,7 +49,7 @@ class ExtremaIntegrationTests(unittest.TestCase):
         ], gradient_linear={'direction': 45, 'outer': [255, 255, 255, 255]})
         native = c_source(cases)
         with patch('tools.conformance.gradient_reference', return_value='Glibc239Libm'):
-            source = bend_source(cases, extrema_reference='AccurateGradient', angle_reference='Glibc241AngleRn')
+            source = bend_source(cases, extrema_reference='AppleLibm', angle_reference='Glibc241AngleRn')
         self.assertIn('M.Vector2.min_for(M.AppleLibm{}, ', source)
         self.assertIn('M.Vector2.angle_for(M.Glibc241Libm{}, ', source)
         self.assertIn('M.Vector2.rotate_for(M.Glibc239Libm{}, ', source)
@@ -66,7 +66,7 @@ class ExtremaIntegrationTests(unittest.TestCase):
         self.assertFalse(has_extrema(cases))
         for gpu in (False, True):
             self.assertEqual(bend_source(cases, gpu=gpu),
-                             bend_source(cases, gpu=gpu, extrema_reference='AccurateGradient'))
+                             bend_source(cases, gpu=gpu, extrema_reference='AppleLibm'))
 
 
 if __name__ == '__main__':

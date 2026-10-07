@@ -43,7 +43,7 @@ class AngleRouteTests(unittest.TestCase):
             for gpu in (False, True):
                 with self.subTest(kind=kind, function=function, gpu=gpu):
                     with self.assertRaisesRegex(ValueError, 'fresh independent'):
-                        c.bend_source(cases, gpu=gpu, extrema_reference='GnuGradient')
+                        c.bend_source(cases, gpu=gpu, extrema_reference='Glibc239Libm')
                     for profile in c.ANGLE_REFERENCES:
                         with patch.object(c, 'gradient_reference', side_effect=AssertionError('gradient inferred')):
                             source = c.bend_source(cases, gpu=gpu, angle_reference=profile)
@@ -51,7 +51,7 @@ class AngleRouteTests(unittest.TestCase):
                         self.assertIn('s0 : J.Surface <- write_angle(', source)
 
     def test_invalid_choices_cannot_generate_source(self):
-        for profile in ('', 'native', 'GnuGradient', 'Sun1993Angle', 'Apple2007Angle',
+        for profile in ('', 'native', 'Glibc239Libm', 'Sun1993Angle', 'Apple2007Angle',
                         0, True, [], {}, receipt(), ['Glibc241AngleRn']):
             with self.subTest(profile=profile), self.assertRaisesRegex(ValueError, 'Unknown angle'):
                 c.bend_source(scene(), angle_reference=profile)
