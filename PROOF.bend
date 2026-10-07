@@ -493,3 +493,12 @@ def Laws.codec_native_pixels_zero(index, channels, pixels):
 
 def Laws.codec_native_rgba_is_canonical(width, height, pixels):
   {==}
+
+def Laws.surface_format_zero_keeps_owner(width, height, format, pixels):
+  {==}
+
+def Laws.surface_draw_word_rgba_is_color(color):
+  {==}
+
+def Laws.surface_fill_word_r32_is_zero(color):
+  {==}
