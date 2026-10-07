@@ -1,7 +1,7 @@
 # Original additions: zlib, Copyright (c) 2026 Jonathan Peris.
-# Altered Bend adaptation of rl_load_dds_from_memory from raylib 6.0's
-# rltexgpu.h (uncompressed, single-level files); notice retained in
-# LICENSES/raylib.txt. See THIRD_PARTY_NOTICES.md.
+# Altered Bend adaptation of rl_load_dds_from_memory and get_pixel_data_size
+# from raylib 6.0's rltexgpu.h; notice retained in LICENSES/raylib.txt. See
+# THIRD_PARTY_NOTICES.md.
 import Base
 import ./codec.bend as C
 import ./formats.bend as Formats
@@ -15,10 +15,11 @@ type Header is Data:
 type Image is Type:
   Image{width: U32, height: U32, format: U32, data: +List<U32>}
 
-# Decoded owners, files this profile does not hold (compressed blocks or mip
-# chains, which raylib loads as multi-level/compressed images) and invalid data.
+# Single-level uncompressed owners, compressed or multi-level data (the
+# complete level chain, largest first) and invalid data.
 type Outcome is Type:
   Decoded{image: Image}
+  Levels{image: Image, count: U32}
   Unsupported{}
   Invalid{error: C.Error}
 
@@ -84,21 +85,78 @@ def finished(+width: U32, +height: U32, outcome: Outcome) -> Outcome:
     case Decoded{Image{_, _, +format, data}}: Decoded{Image{width, height, format, reorder(format, data)}}
     case other: other
 
+# DXT1 (RGB without the alpha flag, RGBA with it), DXT3 and DXT5; 0 for other
+# FourCC codes, which raylib returns as data with format 0.
+def compressed(+fourcc: U32, +flags: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(fourcc, 827611204), Bool.pick(U32, U32.is_eq(flags, 4), 14, 15),
+  Bool.pick(U32, U32.is_eq(fourcc, 861165636), 16, Bool.pick(U32, U32.is_eq(fourcc, 894720068), 17, 0)))
+
+def bits_per_pixel(format: U32) -> U32:
+  match format:
+    case 4: 24
+    case 7: 32
+    case 14: 4
+    case 15: 4
+    case 16: 8
+    case 17: 8
+    case _: 16
+
+# get_pixel_data_size: compressed levels below 4x4 hold one 8- or 16-byte block.
+def level_size(+width: U32, +height: U32, +format: U32) -> U32:
+  +small = ((width < 4) && (height < 4) : U32)
+  Bool.pick(U32, small && ((format >= 14) && (format < 16) : U32), 8,
+    Bool.pick(U32, small && ((format >= 16) && (format < 24) : U32), 16, (width * height * bits_per_pixel(format) / 8 : U32)))
+
+# The level chain halves each dimension down to 1, as raylib uploads it.
+def chain(n: Nat, +width: U32, +height: U32, +format: U32, +total: U32) -> U32:
+  match n:
+    case 0n: total
+    case 1n+k: chain(k, U32.max((width / 2 : U32), 1), U32.max((height / 2 : U32), 1), format, (total + level_size(width, height, format) : U32))
+
+def levels.payload(+width: U32, +height: U32, +format: U32, +count: U32, +total: U32, data: +List<U32>) -> Outcome:
+  +bytes = List.take(&2, U32, data, U32.to_nat(total))
+  Bool.pick(Outcome, Nat.is_eq(C.byte_count(bytes, 0n), U32.to_nat(total)),
+    Levels{Image{width, height, format, reorder(format, bytes)}, count}, Invalid{C.Truncated{}})
+
+# Compressed or multi-level files keep every level the header describes, read
+# from the file: raylib copies only pitch (+pitch/3) or size (+size/3) bytes,
+# fewer than full compressed or non-square chains hold.
+def levels(+width: U32, +height: U32, +format: U32, +mipmaps: U32, data: +List<U32>) -> Outcome:
+  +count = U32.max(mipmaps, 1)
+  Bool.pick(Outcome, (count > 64 : U32), Invalid{C.BadSize{}},
+    levels.payload(width, height, format, count, chain(U32.to_nat(count), width, height, format, 0), data))
+
 # Header checks in raylib's order: 16-bit modes, 24-bit RGB, 32-bit RGBA, then
-# FourCC compression. Combinations it leaves without data are invalid.
-def selected(head: Header, data: +List<U32>) -> Outcome:
+# FourCC compression. Combinations it leaves without data are invalid. With
+# chains False (single uncompressed levels only), compressed or multi-level
+# headers are Unsupported before their data is read.
+def selected(chains: Bool, head: Header, +data: +List<U32>) -> Outcome:
   Header{+width, +height, +mipmaps, +flags, +fourcc, +bits, +alpha} = head
   +format = converted(0, bits, flags, alpha)
-  +compressed = U32.is_ne(bits, 16) && (U32.is_eq(flags, 4) || U32.is_eq(flags, 5)) && (fourcc > 0 : U32)
-  Bool.pick(Outcome, compressed || ((mipmaps > 1) && U32.is_ne(format, 0) : U32), Unsupported{},
-    Bool.pick(Outcome, U32.is_eq(format, 0), Invalid{C.BadHeader{}}, finished(width, height, payload(format, (width * height : U32), data))))
+  +packed = U32.is_ne(bits, 16) && (U32.is_eq(flags, 4) || U32.is_eq(flags, 5)) && (fourcc > 0 : U32)
+  +blocks = compressed(fourcc, flags)
+  +multiple = (mipmaps > 1 : U32) && U32.is_ne(format, 0)
+  Bool.pick(Outcome, Bool.not(chains) && (packed || multiple), Unsupported{},
+  Bool.pick(Outcome, packed && U32.is_eq(blocks, 0), Invalid{C.BadHeader{}},
+  Bool.pick(Outcome, packed, levels(width, height, blocks, mipmaps, data),
+  Bool.pick(Outcome, U32.is_eq(format, 0), Invalid{C.BadHeader{}},
+  Bool.pick(Outcome, multiple, levels(width, height, format, mipmaps, data),
+    finished(width, height, payload(format, (width * height : U32), data)))))))
 
-def parsed(state: Maybe<(+List<U32> & +List<U32>)>) -> Outcome:
+def parsed(chains: Bool, state: Maybe<(+List<U32> & +List<U32>)>) -> Outcome:
   match state:
     case None{}: Invalid{C.Truncated{}}
-    case Some{Tuple{+values, data}}: selected(header(values), data)
+    case Some{Tuple{+values, data}}: selected(chains, header(values), data)
 
-def decode(bytes: +List<U32>) -> Outcome:
+def decoded(chains: Bool, bytes: +List<U32>) -> Outcome:
   match bytes:
-    case Con{68, Con{68, Con{83, Con{32, rest}}}}: parsed(words(31n, Some{(Nil{}, rest)}))
+    case Con{68, Con{68, Con{83, Con{32, rest}}}}: parsed(chains, words(31n, Some{(Nil{}, rest)}))
     case _: Invalid{C.BadHeader{}}
+
+# One uncompressed level (Surface).
+def decode(bytes: +List<U32>) -> Outcome:
+  decoded(False{}, bytes)
+
+# Every file raylib loads, including compressed blocks and mipmap chains.
+def decode_levels(bytes: +List<U32>) -> Outcome:
+  decoded(True{}, bytes)

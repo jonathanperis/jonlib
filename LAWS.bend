@@ -690,3 +690,21 @@ law ray_quad_keeps_first_hit:
   for point: M.Vector3
   for normal: M.Vector3
   {J.Collision.ray.quad.second(arithmetic, ray, p2, p3, p4, J.RayCollision{True{}, distance, point, normal}) == J.RayCollision{True{}, distance, point, normal} : J.RayCollision}
+
+# Stored images: copies keep every level; compressed data has no Surface levels.
+law stored_copy_keeps_every_level:
+  for +width: U32
+  for +height: U32
+  for +format: U32
+  for +mipmaps: U32
+  for +data: +List<U32>
+  {J.Image.Stored.copy(J.Stored{width, height, format, mipmaps, data}) == (J.Stored{width, height, format, mipmaps, data}, J.Stored{width, height, format, mipmaps, data}) : J.Image.Stored & J.Image.Stored}
+
+law stored_compressed_levels_unsupported:
+  for image: J.Image.Stored
+  for width: U32
+  for height: U32
+  for format: U32
+  for count: U32
+  for data: +List<U32>
+  {J.Image.Stored.levels.checked(False{}, image, width, height, format, count, data) == Fail{(image, J.UnsupportedFormat{})} : Result<&1, &1, J.Image.Stored & J.Surface.Error, J.Image.Mipmaps>}

@@ -3614,11 +3614,11 @@
       "phase": 0,
       "sequence": 0,
       "status": "partial",
-      "jonlib": "Surface / Image.Mipmaps",
+      "jonlib": "Surface / Image.Mipmaps / Image.Stored",
       "mapping_state": "implemented",
-      "scope": "One owned Surface per image: dimensions 1..4096, one mip level and raylib PixelFormat 1..13 (R8G8B8A8 as canonical Color words, other byte formats, R32 and R16 as native sample words, formats 9, 10, 12 and 13 as Quads of sample bits). Image.Mipmaps owns complete base-to-1x1 levels in any of those formats.",
+      "scope": "One owned Surface per image: dimensions 1..4096, one mip level and raylib PixelFormat 1..13 (R8G8B8A8 as canonical Color words, other byte formats, R32 and R16 as native sample words, formats 9, 10, 12 and 13 as Quads of sample bits). Image.Mipmaps owns complete base-to-1x1 levels in any of those formats. Image.Stored keeps raylib's fields for loaded DXT1/DXT3/DXT5 blocks (formats 14..17) and mipmap chains, with every level as bytes.",
       "gaps": [
-        "Remaining image formats, existing/other-format mipmap chains and full dimension domain",
+        "Operations on compressed or mipmapped images beyond loading, copy, export and level splitting; full dimension domain",
         "Native allocation ABI and complete integration/target/resource/performance gates"
       ],
       "blocker": null,
@@ -3636,7 +3636,8 @@
         "docs/PIXELS.md",
         "docs/FLOAT-RGB.md",
         "docs/MIPMAPS.md",
-        "tests/transforms.bend"
+        "tests/transforms.bend",
+        "tools/stored_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -41556,7 +41557,7 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.load_image / Surface.load_image_for / Surface.load_qoi / Surface.load_dds / Surface.load_hdr / Surface.load_pnm / Surface.load_tga / Surface.load_bmp / Surface.load_png / Surface.load_pic / Surface.load_image_with",
+      "jonlib": "Surface.load_image / Surface.load_image_for / Surface.load_qoi / Surface.load_dds / Surface.load_hdr / Surface.load_pnm / Surface.load_tga / Surface.load_bmp / Surface.load_png / Surface.load_pic / Surface.load_image_with / Image.Stored.load_image",
       "mapping_state": "implemented",
       "scope": "Bounded ordinary-file loading returning the native format: last-dot suffix/token/content selection across the BMP/PNG/TGA/PNM/PSD/PIC/GIF profiles QOI (inclusive 83,886,102-byte cap) and DDS (67,109,000); Surface.load_{qoi,dds,png,bmp,tga,pnm,pic,hdr} select the codec regardless of filename (HDR: 1 MiB cap); raster files share an inclusive 1,048,576-byte pre-read cap. One exact-length read, close before decode and typed file/decode errors; Base does not report close failures.",
       "gaps": [
@@ -41830,11 +41831,11 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_dds / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Surface.decode_hdr",
+      "jonlib": "Surface.decode_image / Surface.decode_image_for / Surface.decode_qoi / Surface.decode_dds / Surface.decode_bmp / Surface.decode_tga / Surface.decode_pnm / Surface.decode_png / Surface.decode_psd / Surface.decode_psd_for / Surface.decode_pic / Surface.decode_gif / Surface.decode_hdr / Image.Stored.decode_image / Image.Stored.decode_dds",
       "mapping_state": "implemented",
       "scope": "Shared token/content dispatch decodes QOI, uncompressed single-level DDS, BMP, TGA, binary 8/16-bit PNM, PNG (1..16-bit, Adam7, native-default CgBI; 1 MiB encoded/64 MiB filtered caps), PSD (raw/PackBits, explicit matte arithmetic), PIC and first-frame GIF, dimensions 1..4096, keeping the native format (GRAYSCALE, GRAY_ALPHA, R8G8B8 or R8G8B8A8; PSD and GIF R8G8B8A8) and exact bytes; Surface.decode_hdr returns R32G32B32 with exact F32 bits. Malformed input returns typed errors.",
       "gaps": [
-        "JPEG and other payload codecs; compressed/multi-level DDS; HDR in the shared dispatch",
+        "JPEG and other payload codecs; configuration-gated KTX/PKM/PVR/ASTC; HDR in the shared dispatch",
         "Original pixel-format metadata for the remaining normalized codecs (PSD, GIF) and remaining dispatch families",
         "Nondefault external stb decoder flags, PSD out-of-range matte casts and permissive incomplete/excess raster recovery",
         "Other permissive malformed-stream recovery, dimensions above 4096, native pointer/allocation ABI and OOM parity",
@@ -41854,7 +41855,7 @@
         "docs/IMAGE-FILES.md",
         "docs/CODECS.md",
         "tools/image_memory_probe.py",
-        "tools/codec_formats.py",
+        "tools/stored_probe.py",
         "tools/png_probe.py",
         "tools/bmp_probe.py",
         "tools/tga_probe.py",
@@ -42020,11 +42021,10 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.is_valid",
+      "jonlib": "Surface.is_valid / Image.Stored.is_valid",
       "mapping_state": "implemented",
       "scope": "Returns the owner and raylib's validity verdict: positive dimensions and a format. Factory, decoder and loader owners always pass; hand-built records additionally need dimensions 1..4096, a format 1..13 and that format's storage variant (Words or Quads).",
       "gaps": [
-        "Compressed formats (14+) and multi-level images",
         "Native pointer/NULL-data ABI"
       ],
       "blocker": null,
@@ -42038,7 +42038,8 @@
       },
       "evidence": [
         "tests/transforms.bend",
-        "docs/API.md"
+        "docs/API.md",
+        "tools/stored_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42081,7 +42082,7 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.unload",
+      "jonlib": "Surface.unload / Image.Stored.unload",
       "mapping_state": "implemented",
       "scope": "Consumes the Surface owner, releasing its storage; affine ownership rules out double unloads and use after unload.",
       "gaps": [
@@ -42098,7 +42099,8 @@
       },
       "evidence": [
         "tests/transforms.bend",
-        "docs/API.md"
+        "docs/API.md",
+        "docs/IMAGE-FILES.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42140,7 +42142,7 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Surface.to_bmp/to_tga/to_qoi/write_bmp/write_tga/write_qoi/write_png/write_raw / Surface.write_raw/write_png/write_bmp/write_tga / Surface.write_image / Surface.write_image_with",
+      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Surface.to_bmp/to_tga/to_qoi/write_bmp/write_tga/write_qoi/write_png/write_raw / Surface.write_raw/write_png/write_bmp/write_tga / Surface.write_image / Surface.write_image_with / Image.Stored.write_raw",
       "mapping_state": "implemented",
       "scope": "Surface.write_image picks PNG/BMP/TGA/QOI/RAW by native ASCII-case-insensitive last-dot suffix. GRAYSCALE, GRAY_ALPHA, R8G8B8 and R8G8B8A8 write stored samples (24-bit/V4 BMP, 1..4-channel RLE TGA, default PNG); other formats use native LoadImageColors rules (R32 finite [0,1], R32G32B32 finite [0,1]); QOI only from R8G8B8/R8G8B8A8; RAW writes exact stored words. Rejected sources keep their owner before any file opens; accepted writes consume it, close the handle and return typed errors.",
       "gaps": [
@@ -42283,7 +42285,7 @@
       "phase": 1,
       "sequence": 9,
       "status": "partial",
-      "jonlib": "Surface.to_code / Surface.write_code / Surface.write_code_with",
+      "jonlib": "Surface.to_code / Surface.write_code / Surface.write_code_with / Image.Stored.to_code / Image.Stored.write_code",
       "mapping_state": "implemented",
       "scope": "Every Surface format (R32 finite [0,1]); payload at most 65536 bytes; non-NUL ASCII paths with 1..200-character basenames. Exact native banner/credits, uppercase basename/last-extension rules, dimensions/format/count, raw little-endian sample bytes, unpadded hex and default line breaks. Rejected requests keep their owner (InvalidRequest) before any file is opened; typed Base errors and handle closure.",
       "gaps": [
@@ -42309,7 +42311,8 @@
         "docs/R32.md",
         "tools/image_format_probe.py",
         "tools/r32_image_probe.py",
-        "tools/loaders_probe.py"
+        "tools/loaders_probe.py",
+        "tools/stored_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -42908,7 +42911,7 @@
       "phase": 1,
       "sequence": 7,
       "status": "partial",
-      "jonlib": "Surface.copy",
+      "jonlib": "Surface.copy / Image.Stored.copy",
       "mapping_state": "implemented",
       "scope": "Every Surface format; returns the source and an independent clone with exact stored samples. Every format 1..13 is compared with raylib on the surface-format profile.",
       "gaps": [
@@ -42927,7 +42930,8 @@
         "docs/API.md",
         "tools/float_rgb_transform_probe.py",
         "docs/FLOAT-RGB.md",
-        "tools/surface_format_probe.py"
+        "tools/surface_format_probe.py",
+        "tools/stored_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},

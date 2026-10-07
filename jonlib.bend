@@ -3777,12 +3777,14 @@ def Surface.dds.created(result: Maybe<Surface>) -> Result<&1, &1, Surface.Error,
 def Surface.dds.result(outcome: Dds.Outcome) -> Result<&1, &1, Surface.Error, Surface>:
   match outcome:
     case Dds.Decoded{Dds.Image{width, height, format, data}}: Surface.dds.created(Surface.from_bytes(width, height, format, data))
+    case Dds.Levels{_, _}: Fail{UnsupportedFormat{}}
     case Dds.Unsupported{}: Fail{UnsupportedFormat{}}
     case Dds.Invalid{error}: Fail{Image.codec.error(error)}
 
 # DDS (raylib's rl_load_dds_from_memory): uncompressed single-level R5G6B5,
 # A1R5G5B5, A4R4G4B4, 24-bit and 32-bit files in raylib's channel order;
-# compressed (DXT) files and mipmap chains are UnsupportedFormat.
+# compressed (DXT) files and mipmap chains are UnsupportedFormat here and load
+# as Image.Stored.
 def Surface.decode_dds(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   Surface.dds.result(Dds.decode(bytes))
 
@@ -4291,6 +4293,170 @@ def Surface.write.text_with(~save: String -> String -> IO(Result<&1, &1, Surface
 
 def Surface.write_code_with(~save: String -> String -> IO(Result<&1, &1, Surface.IOError, Unit>), surface: Surface, +path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
   Surface.write.text_with(~save, path, Surface.to_code(surface, path))
+
+# -----------------------------------------------------------------------------
+# Stored images: raylib's Image for compressed and multi-level data
+#
+# Surface holds one uncompressed level. raylib's LoadImage also returns DDS
+# DXT1/DXT3/DXT5 blocks (formats 14..17) and mipmap chains, which the Surface
+# operations cannot take; Image.Stored keeps raylib's Image fields with the
+# complete level chain, largest level first, each halving down to 1x1. raylib
+# copies only pitch (+pitch/3) or size (+size/3) bytes of a chain, fewer than
+# full compressed or non-square chains hold; Jonlib reads every level from the
+# file. Other files load as their one Surface level.
+type Image.Stored is Type:
+  Stored{width: U32, height: U32, format: U32, mipmaps: U32, data: +List<U32>}
+
+def Image.Stored.checked(valid: Bool, +width: U32, +height: U32, +format: U32, +mipmaps: U32, data: +List<U32>) -> Result<&1, &1, Surface.Error, Image.Stored>:
+  match valid:
+    case False{}: Fail{UnsupportedImageSize{}}
+    case True{}: Done{Stored{width, height, format, mipmaps, data}}
+
+def Image.Stored.created(+width: U32, +height: U32, +format: U32, +mipmaps: U32, data: +List<U32>) -> Result<&1, &1, Surface.Error, Image.Stored>:
+  Image.Stored.checked(((width >= 1) && (height >= 1) && (width <= 4096) && (height <= 4096) : U32), width, height, format, mipmaps, data)
+
+def Image.Stored.single(surface: Surface) -> Result<&1, &1, Surface.Error, Image.Stored>:
+  Surface{+width, +height, +format, pixels} = surface
+  Done{Stored{width, height, format, 1, Surface.raw(~&2, Surface{width, height, format, pixels})}}
+
+def Image.Stored.surface(result: Result<&1, &1, Surface.Error, Surface>) -> Result<&1, &1, Surface.Error, Image.Stored>:
+  match result:
+    case Fail{error}: Fail{error}
+    case Done{surface}: Image.Stored.single(surface)
+
+def Image.Stored.dds(outcome: Dds.Outcome) -> Result<&1, &1, Surface.Error, Image.Stored>:
+  match outcome:
+    case Dds.Decoded{Dds.Image{width, height, format, data}}: Image.Stored.created(width, height, format, 1, data)
+    case Dds.Levels{Dds.Image{width, height, format, data}, count}: Image.Stored.created(width, height, format, count, data)
+    case Dds.Unsupported{}: Fail{UnsupportedFormat{}}
+    case Dds.Invalid{error}: Fail{Image.codec.error(error)}
+
+# DDS as raylib loads it: every format Surface.decode_dds holds, DXT1 (RGB, or
+# RGBA with the alpha flag), DXT3 and DXT5 blocks, and mipmap chains of up to
+# 64 levels; the file must hold every level. Other FourCC codes, which raylib
+# returns as format 0, are InvalidImageHeader.
+def Image.Stored.decode_dds(bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Image.Stored>:
+  Image.Stored.dds(Dds.decode_levels(bytes))
+
+def Image.file.is_dds(kind: Image.FileKind) -> Bool:
+  match kind:
+    case DdsFile{}: True{}
+    case _: False{}
+
+def Image.Stored.decode.selected(dds: Bool, reference: M.Contraction, file_type: String, bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Image.Stored>:
+  match dds:
+    case True{}: Image.Stored.decode_dds(bytes)
+    case False{}: Image.Stored.surface(Surface.decode_image_for(reference, file_type, bytes))
+
+# LoadImageFromMemory with raylib's file-type tokens.
+def Image.Stored.decode_image_for(reference: M.Contraction, +file_type: String, bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Image.Stored>:
+  Image.Stored.decode.selected(Image.file.is_dds(Image.memory.kind(file_type)), reference, file_type, bytes)
+
+def Image.Stored.decode_image(file_type: String, bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Image.Stored>:
+  Image.Stored.decode_image_for(M.Uncontracted{}, file_type, bytes)
+
+def Image.Stored.file.dds(result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(Result<&1, &1, Surface.IOError, Image.Stored>):
+  match result:
+    case Fail{error}: IO.pure(Result<&1, &1, Surface.IOError, Image.Stored>, Fail{error})
+    case Done{bytes}: IO.pure(Result<&1, &1, Surface.IOError, Image.Stored>, Image.file.decoded(Image.Stored, Image.Stored.decode_dds(bytes)))
+
+def Image.Stored.file.lifted(result: Result<&1, &1, Surface.IOError, Surface>) -> IO(Result<&1, &1, Surface.IOError, Image.Stored>):
+  match result:
+    case Fail{error}: IO.pure(Result<&1, &1, Surface.IOError, Image.Stored>, Fail{error})
+    case Done{surface}: IO.pure(Result<&1, &1, Surface.IOError, Image.Stored>, Image.file.decoded(Image.Stored, Image.Stored.single(surface)))
+
+# A 4096x4096 R8G8B8A8 chain with its 128-byte header bounds DDS files.
+def Image.Stored.load.selected(dds: Bool, reference: M.Contraction, +path: String) -> IO(Result<&1, &1, Surface.IOError, Image.Stored>):
+  match dds:
+    case True{}: IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, Image.Stored>, Image.file.bytes(path, 89478612), Image.Stored.file.dds)
+    case False{}: IO.bind(Result<&1, &1, Surface.IOError, Surface>, Result<&1, &1, Surface.IOError, Image.Stored>, Surface.load_image_for(reference, path), Image.Stored.file.lifted)
+
+# LoadImage: DDS files by suffix, other files through Surface.load_image.
+def Image.Stored.load_image_for(reference: M.Contraction, +path: String) -> IO(Result<&1, &1, Surface.IOError, Image.Stored>):
+  Image.Stored.load.selected(Image.file.is_dds(Image.file.kind(path)), reference, path)
+
+def Image.Stored.load_image(path: String) -> IO(Result<&1, &1, Surface.IOError, Image.Stored>):
+  Image.Stored.load_image_for(M.Uncontracted{}, path)
+
+# GetPixelDataSize of one level (dimensions up to 4096).
+def Image.Stored.size.found(found: Maybe<&2, U32>) -> U32:
+  match found:
+    case None{}: 0
+    case Some{size}: size
+
+def Image.Stored.size(+width: U32, +height: U32, +format: U32) -> U32:
+  Image.Stored.size.found(Pixel.data_size(width, height, format))
+
+def Image.Stored.entries(image: Image.Stored) -> (U32 & U32) & ((U32 & U32) & +List<U32>):
+  Stored{width, height, format, mipmaps, data} = image
+  ((width, height), ((format, mipmaps), data))
+
+# ImageCopy: every level.
+def Image.Stored.copy(image: Image.Stored) -> Image.Stored & Image.Stored:
+  Stored{+width, +height, +format, +mipmaps, +data} = image
+  (Stored{width, height, format, mipmaps, data}, Stored{width, height, format, mipmaps, data})
+
+def Image.Stored.unload(image: Image.Stored) -> Unit:
+  Stored{_, _, _, _, _} = image
+  Unit{}
+
+# IsImageValid: data, positive dimensions, a format and at least one level.
+def Image.Stored.is_valid(image: Image.Stored) -> Image.Stored & Bool:
+  Stored{+width, +height, +format, +mipmaps, data} = image
+  (Stored{width, height, format, mipmaps, data}, ((width > 0) && (height > 0) && (format > 0) && (mipmaps > 0) : U32))
+
+def Image.Stored.level(found: Maybe<Surface>, levels: List<Surface>) -> List<Surface>:
+  match found:
+    case None{}: levels
+    case Some{surface}: Con{surface, levels}
+
+def Image.Stored.split(n: Nat, +width: U32, +height: U32, +format: U32, +data: +List<U32>, levels: List<Surface>) -> List<Surface>:
+  match n:
+    case 0n: List.reverse(&1, Surface, levels)
+    case 1n+k:
+      +size = U32.to_nat(Image.Stored.size(width, height, format))
+      Image.Stored.split(k, U32.max((width / 2 : U32), 1), U32.max((height / 2 : U32), 1), format, List.drop(&2, U32, data, size),
+        Image.Stored.level(Surface.from_bytes(width, height, format, List.take(&2, U32, data, size)), levels))
+
+def Image.Stored.levels.checked(valid: Bool, image: Image.Stored, +width: U32, +height: U32, +format: U32, +count: U32, data: +List<U32>) -> Result<&1, &1, Image.Stored & Surface.Error, Image.Mipmaps>:
+  match valid:
+    case False{}: Fail{(image, UnsupportedFormat{})}
+    case True{}: Done{Mipmaps{count, Image.Stored.split(U32.to_nat(count), width, height, format, data, Nil{})}}
+
+# The uncompressed levels as Surfaces; compressed blocks have no Surface form.
+def Image.Stored.levels(image: Image.Stored) -> Result<&1, &1, Image.Stored & Surface.Error, Image.Mipmaps>:
+  Stored{+width, +height, +format, +mipmaps, +data} = image
+  Image.Stored.levels.checked((format <= 13 : U32), Stored{width, height, format, mipmaps, data}, width, height, format, mipmaps, data)
+
+# ExportImage's .raw branch and ExportImageAsCode read GetPixelDataSize bytes:
+# the top level.
+def Image.Stored.raw(image: Image.Stored) -> +List<U32>:
+  Stored{+width, +height, +format, _, data} = image
+  List.take(&2, U32, data, U32.to_nat(Image.Stored.size(width, height, format)))
+
+def Image.Stored.code.checked(valid: Bool, name: Maybe<&2, String>, image: Image.Stored, +width: U32, +height: U32, +format: U32, +size: U32, bytes: +List<U32>) -> Result<&1, &1, Image.Stored & Surface.Error, String>:
+  match valid name:
+    case True{} Some{text}: Done{ImageCode.encode(~&2, text, width, height, format, size, bytes)}
+    case _ _: Fail{(image, InvalidRequest{})}
+
+# ExportImageAsCode: the top level's bytes up to 64 KiB, named from the path.
+def Image.Stored.to_code(image: Image.Stored, path: String) -> Result<&1, &1, Image.Stored & Surface.Error, String>:
+  Stored{+width, +height, +format, +mipmaps, +data} = image
+  +size = Image.Stored.size(width, height, format)
+  Image.Stored.code.checked((size <= 65536 : U32), ImageCode.name(path), Stored{width, height, format, mipmaps, data},
+    width, height, format, size, List.take(&2, U32, data, U32.to_nat(size)))
+
+def Image.Stored.write.text(path: String, result: Result<&1, &1, Image.Stored & Surface.Error, String>) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  match result:
+    case Fail{Tuple{_, error}}: IO.pure(Result<&1, &1, Surface.IOError, Unit>, Fail{DataError{error}})
+    case Done{text}: Surface.write.text(path, Done{text})
+
+def Image.Stored.write_code(image: Image.Stored, +path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  Image.Stored.write.text(path, Image.Stored.to_code(image, path))
+
+# ExportImage to a .raw file: the top level's bytes.
+def Image.Stored.write_raw(image: Image.Stored, path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  Surface.write.bytes(path, Done{Image.Stored.raw(image)})
 
 # -----------------------------------------------------------------------------
 # Files: rcore.c path and file-data utilities

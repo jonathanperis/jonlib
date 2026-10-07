@@ -97,9 +97,9 @@ order (`docs/PROGRESS.md` lists every ID):
    (`GetRayCollisionSphere/Box/Triangle/Quad`) are delivered with explicit
    contraction profiles ([COLLISION.md](COLLISION.md)); the mesh/model
    collisions wait for the Phase 5 types.
-5. **Image leftovers** — compressed formats (14+) and multi-level images (DDS
-   DXT and mip chains are loaded by default raylib; PKM/KTX/PVR/ASTC are
-   configuration options), which need a storage decision (below); the
+5. **Image leftovers** — DDS DXT blocks and mip chains, which default raylib
+   loads, are delivered as `Image.Stored` ([IMAGE-FILES.md](IMAGE-FILES.md));
+   the configuration-gated PKM/KTX/PVR/ASTC loaders remain; the
    text-to-image functions (`ImageText*`, `ImageDrawText*`), which need
    raylib's default font, UTF-8 decoding and text measurement and are best done
    as the first slice of Phase 3; the configuration-gated JPEG decoder; and
@@ -134,9 +134,13 @@ Decisions taken (2026-10-07, under Jonathan's "work on everything"; the
 recommended option in each case, revisable on his review):
 
 - **Phase 1 exit measure:** reported alongside the strict counts as above.
-- **Compressed and multi-level images:** a compressed-block `Surface.Pixels`
-  variant; multi-level loads return `Image.Mipmaps`; CPU operations raylib
-  does not support on compressed data return `UnsupportedFormat`.
+- **Compressed and multi-level images:** revised during implementation from
+  a compressed-block `Surface.Pixels` variant to `Image.Stored`, raylib's
+  Image fields with the complete level chain: a variant would have reached
+  every Surface operation, which would each refuse it at run time, while a
+  separate type rejects them statically. Surface loaders keep returning
+  `UnsupportedFormat` for such files; `Image.Stored.levels` gives
+  `Image.Mipmaps` for uncompressed chains.
 - **Enum mapping:** zero-argument U32 functions with raylib's spelling under
   the enum's name (`PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8()`).
 - **Global state:** explicit logger/loader values passed to the operations
