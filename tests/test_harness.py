@@ -1,3 +1,4 @@
+"""The conformance harness cannot pass vacuously: mismatches, missing or stale results and toolchain drift fail."""
 import copy
 import json
 import hashlib

@@ -5,20 +5,17 @@ Accepted complete native fixtures only; checked-invalid controls are never sent
 native. PNM is explicitly enabled in a fresh isolated native build. Actual native
 metadata/raw bytes precede normalization. CPU-1/CPU-2/JS; no GPU or file claim.
 
-Shared roles, native recording and lanes: tools/formatted_codec.py.
+Shared roles, native recording and lanes: tools/codec_formats.py.
 """
-import json
 import re
-from bmp_probe import bend_bytes
 from pnm_probe import fixtures as legacy_fixtures
-import formatted_codec
-from probekit import ROOT
+import codec_formats
 
 BATCH_SIZE = 32
 SPACE = b' \t\n\v\f\r'
 MAX_CASE_PIXELS = 8192
 MAX_TOTAL_BYTES = 2_000_000
-C_PREFIX = formatted_codec.C_PREFIX
+C_PREFIX = codec_formats.C_PREFIX
 
 
 def header(width=1, height=1, channels=1, maximum=255, separator=b'\n'):
@@ -150,13 +147,13 @@ QUALIFY=C_PREFIX+r'''int main(void){
 '''
 
 
-CODEC = formatted_codec.Codec(
+CODEC = codec_formats.Codec(
     name='pnm', token='.ppm', aliases=('.pgm', '.PPM', '.PGM'), contraction_token='.PPM', formats={1: 1, 3: 4}, raylib_options=('SUPPORT_FILEFORMAT_PNM=ON',), batch=32, qualification=(QUALIFY, dict(little_endian=True,pnm_enabled=True,wide_second_byte=True,formats=[1,4])),
     fixtures=fixtures, controls=controls, describe=__doc__)
 
 
 def main(argv=None):
-    formatted_codec.main(CODEC, argv)
+    codec_formats.main(CODEC, argv)
 
 
 if __name__ == '__main__':

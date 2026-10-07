@@ -21,6 +21,15 @@ def parse_results(text):
     return results
 
 
+# C side of the same protocol: byte() streams values in <=256-element JSON
+# chunks, word() emits a little-endian U32 and end() closes one result.
+C_EMITTER = '\n'.join([
+    'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
+    'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
+    'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+])
+
+
 BEND_EMITTER='''def chunk.put(full: Bool, partial: List<U32>, chunks: List<List<U32>>) -> List<U32> & List<List<U32>>:
   match full:
     case False{}: (partial, chunks)

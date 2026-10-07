@@ -5,10 +5,10 @@ and `ImageDither`.
 
 ```bend
 Pixel.data_size(width: U32, height: U32, format: U32) -> Maybe<&2, U32>
-Pixel.get_color(bytes: +List<U32>, format: U32) -> Result<&2, &2, Pixel.Error, U32>
-Pixel.set_color(bytes: +List<U32>, color: U32, format: U32) -> Result<&2, &2, Pixel.Error, +List<U32>>
-Surface.dither(surface, r_bits, g_bits, b_bits, a_bits) -> Result<&1, &1, Surface & Surface.Error, Image.Packed16>
-Image.Packed16.export(image) -> (width, height) & (format, words)
+Pixel.get_color(bytes: +List<U32>, format: U32) -> Result<&2, &2, Surface.Error, U32>
+Pixel.set_color(bytes: +List<U32>, color: U32, format: U32) -> Result<&2, &2, Surface.Error, +List<U32>>
+Surface.dither(surface, r_bits, g_bits, b_bits, a_bits) -> Result<&1, &1, Surface & Surface.Error, Surface>
+Surface.export(image) -> (width, height) & (format, bytes)
 ```
 
 ## Data sizes
@@ -36,7 +36,7 @@ trailing byte, adapting the C pointer mutation to an immutable value.
   Packed 16-bit words are little-endian bytes.
 - Every list value must be 0..255 and the list must contain the format's
   required prefix.
-- Errors are `UnsupportedPixelFormat`, `InvalidPixelByte` and
+- Errors are `UnsupportedFormat`, `InvalidPixelByte` and
   `TruncatedPixelData`, checked in that order (format, then byte validity, then
   length).
 
@@ -54,12 +54,13 @@ used by dithering.
 
 ## Dithering
 
-Each channel width of `Surface.dither` is a U32 in 0..8 and their sum must be at
-most 16. Invalid requests return the unchanged source with `InvalidDitherBits{}`.
-Success consumes the RGBA8 source and returns
-`Packed16{width, height, format, pixels}` with one low-16-bit U32 word per pixel.
-Construct these values through `dither`; manually inconsistent headers/storage
-are outside the contract.
+`Surface.dither` accepts the bit counts that name a 16-bit format: 5/6/5/0
+(R5G6B5, format 3), 5/5/5/1 (R5G5B5A1, format 5) and 4/4/4/4 (R4G4B4A4, format
+6). Other counts return the unchanged source with `InvalidDitherBits{}`: raylib
+would produce an image with the invalid format 0, which no `Surface` can hold.
+The source may have any format; it is read through `LoadImageColors` (an
+R32G32B32 source needs samples in `[0, 1]`). Success consumes the source and
+returns a Surface with one 16-bit word per pixel.
 
 The reference truncates channel bits, then diffuses the nonnegative RGB
 residuals in row-major order to right/down-left/down/down-right with weights
@@ -68,12 +69,8 @@ not diffused. These products and divisions are exact dyadic arithmetic before
 truncation, so integer operations reproduce the reference byte updates. The
 traversal is sequential because later pixels consume earlier error updates.
 
-Recognized layouts produce format 3 for 5/6/5/0, format 5 for 5/5/5/1 and
-format 6 for 4/4/4/4. Other valid layouts keep native format 0 and their raw
-packed words.
-
-`Image.Packed16.export` consumes the image and returns exactly width×height
-words with no RGBA reconstruction. This matters because `GetImageColor` and
+`Surface.export` consumes the image and returns exactly two little-endian bytes
+per pixel with no RGBA reconstruction. This matters because `GetImageColor` and
 `ImageFormat` use different 5/6-bit expansion expressions; normalizing early
 would hide an observable format detail.
 
@@ -81,7 +78,7 @@ would hide an observable format detail.
 
 | Gate | Probe | Compares |
 |---|---|---|
-| `pixel` | `tools/pixel_probe.py` | `GetPixelDataSize` across all declared formats and selected unknown codes; complete dithered images (thin images, alpha thresholds, saturation, custom layouts, zero-width channels) and retained owners of rejected requests |
+| `pixel` | `tools/pixel_probe.py` | `GetPixelDataSize` across all declared formats and selected unknown codes; complete dithered images (thin images, alpha thresholds, saturation) and rejected bit counts and retained owners of rejected requests |
 | `raw-pixel` | `tools/raw_pixel_probe.py` | Every two-byte word for each packed format against native `GetPixelColor`; complete write buffers and native readback; all RGB triples for grayscale writes; all packed-channel quantizers; typed failures for both APIs |
 
 Both run on CPU-1, CPU-2, JavaScript and, with `--gpu`, forced GPU. Rejected

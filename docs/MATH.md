@@ -194,7 +194,7 @@ the original Matrix; conformance separately checks the actual reference layout.
 
 `Matrix.rotate_x/y/z(angle)`, `rotate_xyz/zyx(angles)` and `rotate(axis, angle)`
 use radians. Each has a corresponding `_for(reference, ...)` entry point taking
-the existing `Gradient.Reference`; convenience calls select `AccurateGradient{}`.
+the existing `Libm`; convenience calls select `AppleLibm{}`.
 The initial profile bounds every angle component to absolute value ≤ 6.283186,
 matching the existing one-cycle F32 rotation profile. Wider angles remain gaps.
 
@@ -264,7 +264,7 @@ and normalization, including zero output for exactly opposite directions.
 the original half-angle construction and quaternion normalization.
 `from_euler(pitch, yaw, roll)` preserves the reference ZYX half-angle formulas.
 Both angle constructors have `_for(reference, ...)` variants; convenience calls
-select `AccurateGradient{}`, with each input angle bounded to absolute value
+select `AppleLibm{}`, with each input angle bounded to absolute value
 ≤ 6.283186. `cubic_hermite_spline(first, first_tangent, second, second_tangent,
 amount)` uses the reference four weights and then normalizes the result, retaining
 zero collapse without a replacement orientation.
@@ -303,18 +303,18 @@ does not enforce a fixed length for arbitrary caller-created lists.
 Angle profiles, the checked entry points and host profile selection are
 specified in [ANGLES.md](ANGLES.md). In summary:
 
-- `Vector2.angle_with_reference`, `Vector2.line_angle_with_reference` and
-  `Vector3.angle_with_reference` take an `Angle.Reference`
-  (`Apple2007AngleRn{}`, `Sun239AngleRn{}` or `Glibc241AngleRn{}`) and return
+- `Vector2.angle_for`, `Vector2.line_angle_for` and
+  `Vector3.angle_for` take an `M.Libm`
+  (`AppleLibm{}`, `Glibc239Libm{}` or `Glibc241Libm{}`) and return
   `Maybe<F32>`; they reject nonfinite components and nonzero subnormal
   intermediates or results.
-- The legacy `Vector2.angle(left, right)` (reference signed cross/dot angle),
-  `Vector2.line_angle(start, end)` (negated endpoint-difference angle) and
-  `Vector3.angle(left, right)` (cross-product length and dot product) keep their
-  unchecked contract. Each has an `_for(Gradient.Reference, ...)` variant:
-  `AccurateGradient{}` (the convenience default) selects the Apple algorithm,
-  which rounds π toward zero near the negative X axis, and `GnuGradient{}` the
-  Sun float algorithm with its own polynomial and quadrant corrections.
+- The convenience `Vector2.angle(left, right)` (reference signed cross/dot
+  angle), `Vector2.line_angle(start, end)` (negated endpoint-difference angle)
+  and `Vector3.angle(left, right)` (cross-product length and dot product) keep
+  their unchecked `F32` contract with the Apple algorithm, which rounds π toward
+  zero near the negative X axis. The Sun float algorithm (`Glibc239Libm`), with
+  its own polynomial and quadrant corrections, is reached through the checked
+  `_for` forms.
 
 Both legacy algorithms are evaluated in Bend (an independent polynomial
 evaluation and a licensed Sun-kernel adaptation, see

@@ -5,7 +5,7 @@ import json
 import random
 import struct
 
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 import probekit
 from probekit import ROOT, ProbeFailure
 
@@ -35,34 +35,41 @@ def word_bytes(n: Nat, +word: U32, values: List<U32>) -> List<U32>:
   match n:
     case 0n: values
     case 1n+rest: word_bytes(rest, (word >> 8n : U32), Con{(word .&. 255 : U32), values})
-def rgba(pixels: List<U32>, values: List<U32>) -> List<U32>:
-  match pixels:
+def pushed(bytes: List<U32>, values: List<U32>) -> List<U32>:
+  match bytes:
     case Nil{}: values
-    case Con{+color, rest}: rgba(rest, Con{J.Color.alpha(color), Con{J.Color.blue(color), Con{J.Color.green(color), Con{J.Color.red(color), values}}}})
+    case Con{byte, rest}: pushed(rest, Con{byte, values})
+def level_data(data: (U32 & U32) & (U32 & List<U32>), values: List<U32>) -> List<U32>:
+  ((width, height), (_, bytes)) = data
+  pushed(bytes, word_bytes(4n, height, word_bytes(4n, width, values)))
 def level_bytes(levels: List<J.Surface>, values: List<U32>) -> List<U32>:
   match levels:
     case Nil{}: List.reverse(&1, U32, values)
-    case Con{J.Surface{+width, +height, pixels}, rest}:
-      level_bytes(rest, rgba(J.Surface.colors(J.Surface{width, height, pixels}), word_bytes(4n, height, word_bytes(4n, width, values))))
+    case Con{level, rest}: level_bytes(rest, level_data(J.Surface.export(level), values))
 def mark(levels: List<J.Surface>) -> List<J.Surface>:
   match levels:
     case Con{first, Nil{}}: Con{J.Surface.draw_pixel(first, 0.0, 0.0, 305419896), Nil{}}
     case Con{first, Con{second, rest}}: Con{first, Con{J.Surface.draw_pixel(second, 0.0, 0.0, 305419896), rest}}
     case Nil{}: Nil{}
-def selected(mutate: Bool, chain: J.Image.Mipmaps) -> J.Image.Mipmaps:
-  match mutate chain:
-    case False{} _: chain
-    case True{} J.Mipmaps{count, levels}: J.Mipmaps{count, mark(levels)}
-def calculate(mutate: Bool, image: J.Image.Formatted) -> J.Image.Mipmaps:
-  selected(mutate, J.Surface.mipmaps(J.Image.Formatted.to_surface(image)))
+def selected(mutate: Bool, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Image.Mipmaps>) -> Maybe<J.Image.Mipmaps>:
+  match mutate result:
+    case False{} Done{chain}: Some{chain}
+    case True{} Done{J.Mipmaps{count, levels}}: Some{J.Mipmaps{count, mark(levels)}}
+    case _ Fail{_}: None{}
+def calculate(mutate: Bool, image: J.Surface) -> Maybe<J.Image.Mipmaps>:
+  selected(mutate, J.Surface.mipmaps(image))
 '''+BEND_EMITTER+'''
-def observed(result: U32 & List<J.Surface>) -> IO(Unit):
+def emitted(result: U32 & List<J.Surface>) -> IO(Unit):
   (count, levels) = result
   emit_bytes(~&1, level_bytes(levels, word_bytes(4n, count, Nil{})))
-def loaded(mutate: Bool, result: Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>) -> IO(Unit):
+def observed(result: Maybe<J.Image.Mipmaps>) -> IO(Unit):
+  match result:
+    case None{}: IO.die(Unit, 1, "mipmap request rejected")
+    case Some{chain}: emitted(J.Image.Mipmaps.entries(chain))
+def loaded(mutate: Bool, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "mipmap fixture read failed")
-    case Done{image}: observed(J.Image.Mipmaps.entries(calculateBANG(mutate, image)))
+    case Done{image}: observed(calculateBANG(mutate, image))
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -72,9 +79,7 @@ def main():
     probe=probekit.Probe('mipmap',probekit.arguments(__doc__));work=probe.work
     cases=fixtures()
     lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-           'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-           'static void end(void){if(used){puts("]");used=0;}puts("\\\"end\\\"");}',
+           C_EMITTER,
            'static void emit(Image image,int mutate){if(!image.data||image.format!=7)exit(3);word(image.mipmaps);int w=image.width,h=image.height;unsigned char *p=image.data;',
            'for(int level=0;level<image.mipmaps;level++){if(mutate&&level==(image.mipmaps>1?1:0)){p[0]=0x12;p[1]=0x34;p[2]=0x56;p[3]=0x78;}',
            'word(w);word(h);for(int i=0;i<w*h*4;i++)byte(p[i]);p+=w*h*4;w=w>1?w/2:1;h=h>1?h/2:1;}end();UnloadImage(image);}',
@@ -98,7 +103,7 @@ def main():
         body=PROGRAM.replace('BANG','!' if gpu else '')
         for i,case in selected:
             path=json.dumps(str((work/(str(i)+'.raw')).relative_to(ROOT)))
-            body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_raw({path}, {case["width"]}, {case["height"]}, 7, 0), loaded({"True" if case["mutate"] else "False"}{{}}))\n'
+            body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw({path}, {case["width"]}, {case["height"]}, 7, 0), loaded({"True" if case["mutate"] else "False"}{{}}))\n'
         return body
 
     actions=list(enumerate(cases))

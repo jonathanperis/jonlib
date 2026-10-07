@@ -47,9 +47,8 @@ class AngleRouteTests(unittest.TestCase):
                     for profile in c.ANGLE_REFERENCES:
                         with patch.object(c, 'gradient_reference', side_effect=AssertionError('gradient inferred')):
                             source = c.bend_source(cases, gpu=gpu, angle_reference=profile)
-                        self.assertIn(f'M.{namespace}.{function}_with_reference(M.{profile}{{}}, ', source)
+                        self.assertIn(f'M.{namespace}.{function}_for(M.{c.LIBM_FOR_PROFILE[profile]}{{}}, ', source)
                         self.assertIn('s0 : J.Surface <- write_angle(', source)
-                        self.assertNotIn(f'M.{namespace}.{function}_for(', source)
 
     def test_invalid_choices_cannot_generate_source(self):
         for profile in ('', 'native', 'GnuGradient', 'Sun1993Angle', 'Apple2007Angle',
@@ -79,7 +78,7 @@ class AngleRouteTests(unittest.TestCase):
             self.assertIn('do Result<&1, &1, J.Surface & Harness.Error, J.Surface>:', draw)
             self.assertLess(draw.index('s0 : J.Surface <- write_angle('), draw.index('J.Surface.clear(s0,'))
             self.assertLess(draw.index('J.Surface.clear(s0,'), draw.index('J.Surface.draw_pixel(s1,'))
-            self.assertIn('"checked-angle", 0, M.Vector2.line_angle_with_reference(', draw)
+            self.assertIn('"checked-angle", 0, M.Vector2.line_angle_for(', draw)
             self.assertNotIn('Bool.pick', draw)
             self.assertNotIn('4294967295', draw)
         native = c.c_source(cases)
@@ -94,7 +93,7 @@ class AngleRouteTests(unittest.TestCase):
                       dict(op='resize_canvas', width=4, height=2, x=0, y=0, color=[0,0,0,0]),
                       dict(op='rotate_degrees', degrees=0, result_width=4, result_height=2),
                       dict(op='to_pot', color=[0,0,0,0])]
-        with patch.object(c, 'gradient_reference', return_value='GnuGradient'):
+        with patch.object(c, 'gradient_reference', return_value='Glibc239Libm'):
             source = c.bend_source(scene(operations))
         for method in ('crop', 'resize_nn', 'resize', 'resize_canvas', 'rotate_degrees_for', 'to_pot'):
             self.assertIn('<- lift_surface(J.Surface.'+method+'(', source)

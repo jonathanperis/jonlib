@@ -1,0 +1,66 @@
+{
+ "gate": "surface-format",
+ "title": "Format-generic Surface operations on pixel formats 1..9",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 24.5,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/surface-format-probe/results.json": {
+   "sha256": "5b2fa5629f9aa7d6fcc42cbcbf5992fad7a75c194f6d59d96e2756b03e46dde2",
+   "summary": {
+    "passed": true,
+    "probe": "surface-format",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 864,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 864,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 864,
+      "different": []
+     }
+    },
+    "batches": 9,
+    "cases": 864,
+    "operations": 48,
+    "formats": 9,
+    "fixtures": 2,
+    "negative_controls": 22,
+    "inputs_sha256": "b5f69281799e4a685199d17093500b5ac0d481c80630b82efba02ac78cd0c0eb",
+    "reference_sha256": "e1fe227a9ef3a45be5ca6c15bad63cb788c8cd11952f273e5173775a1b978779"
+   }
+  }
+ }
+}

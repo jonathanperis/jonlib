@@ -6,7 +6,7 @@ import json
 import random
 import struct
 
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from conformance import source_gate
 import probekit
 from probekit import ROOT, ProbeFailure
@@ -42,7 +42,7 @@ def decoded(result: Maybe<&2, +List<U32>>) -> IO(Unit):
   match result:
     case None{}: IO.print("null")
     case Some{+bytes}: emit_bytes(~&1, decoded_bytes(bytes, word_bytes(4n, byte_count(bytes, 0), Nil{})))
-def observed(encode: Bool, result: Result<&1, &1, J.Image.LoadError, +List<U32>>) -> IO(Unit):
+def observed(encode: Bool, result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Unit):
   match encode result:
     case _ Fail{_}: IO.die(Unit, 1, "Base64 fixture read failed")
     case True{} Done{bytes}: encoded(J.Base64.encodeBANG(bytes))
@@ -67,9 +67,7 @@ def fixtures():
 
 def reference_program(all_cases, work):
     lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>','#include <string.h>',
-           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-           'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-           'static void end(void){if(used){puts("]");used=0;}puts("\\\"end\\\"");}',
+           C_EMITTER,
            'static void emit(unsigned char *data,int size){if(!data||size<0)exit(3);word(size);for(int i=0;i<size;i++)byte(data[i]);end();MemFree(data);}',
            'int main(void){SetTraceLogLevel(LOG_NONE);']
     for i,case in enumerate(all_cases):
@@ -103,7 +101,7 @@ def main():
         for action in selected:
             if action[0]=='file':
                 path=json.dumps(str((probe.work/f'{action[1]}.dat').relative_to(ROOT)))
-                body+=f'    IO.bind(Result<&1, &1, J.Image.LoadError, +List<U32>>, Unit, J.Image.file.bytes({path}, 2097152), observed({"True" if action[2] else "False"}{{}}))\n'
+                body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Image.file.bytes({path}, 2097152), observed({"True" if action[2] else "False"}{{}}))\n'
             elif action[0]=='encode-256':body+=f'    encoded(J.Base64.encode{bang}([256]))\n'
             else:body+=f'    decoded(J.Base64.decode{bang}("AA" ++ SCon{{Char.from_u32(256), "="}}))\n'
         return body

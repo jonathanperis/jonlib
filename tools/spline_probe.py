@@ -21,10 +21,10 @@ def calculate(samples: +List<Sample>, values: List<U32>) -> List<U32>:
   match samples:
     case Nil{}: List.reverse(&1, U32, values)
     case Con{Sample{+a, +b, +c, +d, +t}, rest}:
-      first = prepend(J.Spline.linear_for(J.PROFILE{}, a, b, t), values)
-      second = prepend(J.Spline.basis_for(J.PROFILE{}, a, b, c, d, t), first)
-      third = prepend(J.Spline.catmull_rom_for(J.PROFILE{}, a, b, c, d, t), second)
-      fourth = prepend(J.Spline.bezier_quad_for(J.PROFILE{}, a, b, c, t), third)
+      first = prepend(J.Spline.linear_for(M.PROFILE{}, a, b, t), values)
+      second = prepend(J.Spline.basis_for(M.PROFILE{}, a, b, c, d, t), first)
+      third = prepend(J.Spline.catmull_rom_for(M.PROFILE{}, a, b, c, d, t), second)
+      fourth = prepend(J.Spline.bezier_quad_for(M.PROFILE{}, a, b, c, t), third)
       calculate(rest, fourth)
 def main() -> IO(Unit):
   do IO<Unit>:
@@ -45,7 +45,7 @@ def main():
     args = probekit.arguments(__doc__,lambda parser:parser.add_argument('--uncontracted-control',action='store_true'))
     probe = probekit.Probe('spline-uncontracted' if args.uncontracted_control else 'spline',args)
     probe.report['sources'] = source_gate()
-    profile = 'UncontractedSpline' if args.uncontracted_control else spline_reference()
+    profile = 'Uncontracted' if args.uncontracted_control else spline_reference()
     values = samples()
     lines = ['#include "raylib.h"','#include <math.h>','#include <stdio.h>','#include <stdint.h>','#include <string.h>']
     if args.uncontracted_control:

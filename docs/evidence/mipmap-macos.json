@@ -1,0 +1,65 @@
+{
+ "gate": "mipmap",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 10.9,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/mipmap-probe/results.json": {
+   "sha256": "6e6b6bd6f8172d5bce10e4e270c69d6a4821686aa5d995e843a6505dddb78716",
+   "summary": {
+    "passed": true,
+    "probe": "mipmap",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 14,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 14,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 14,
+      "different": []
+     }
+    },
+    "batches": 1,
+    "native_cases": 14,
+    "levels": 72,
+    "pixels": 61127,
+    "mutated_chain_controls": 3,
+    "inputs_sha256": "ff61b92ead4cbc949999ca70b45a9a6ec84808b77358e41c6dd0dda99889d7a8",
+    "reference_sha256": "4a80032364222f0cdbfdf8dcc105aa84e0134583f83a9fa0afceb8e0abe2ca27"
+   }
+  }
+ }
+}

@@ -1,0 +1,67 @@
+{
+ "gate": "deflate",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 2.7,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/deflate-probe/results.json": {
+   "sha256": "2453889310a838478f7d9d1ca8b0246fe7da2dade7296610de5842658db31370",
+   "summary": {
+    "passed": true,
+    "probe": "deflate",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 17,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 17,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 17,
+      "different": []
+     }
+    },
+    "sources": {
+     "items": 48
+    },
+    "batches": 1,
+    "cases": 17,
+    "input_bytes": 237496,
+    "encoded_bytes": 170780,
+    "inputs_sha256": "1d5cdd3a3ef6338b1d468f2bc9db6d2d98259014688a75b0baf3dcce9d08bf4b",
+    "reference_sha256": "aed73732a7406d0500d93799bbdfcd5c6c20f17725d82ac7a27f31ad864b8ec3"
+   }
+  }
+ }
+}

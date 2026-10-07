@@ -1,0 +1,60 @@
+{
+ "gate": "perspective",
+ "title": "MatrixPerspective rounding record (diagnostic)",
+ "passed": true,
+ "diagnostic": true,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 0.4,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/perspective-probe/results.json": {
+   "sha256": "125288b07daf104011ccb1f564bfed6af5591c16667b0a443879b0366a79da89",
+   "summary": {
+    "passed": true,
+    "probe": "perspective",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {},
+    "probe_completed": true,
+    "candidate_passed": false,
+    "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+    "host": {
+     "system": "Darwin",
+     "machine": "arm64"
+    },
+    "fov_hex": "0x1.caac02dacfefep+0",
+    "near_hex": "0x1.99c7240652e10p-2",
+    "aspect": 1.0,
+    "far": 1000.0,
+    "native_tangent_bits": "3ff3fdc710f27cee",
+    "accurate_tangent_bits": "3ff3fdc710f27cef",
+    "native_m5_bits": "3f4ce392",
+    "accurate_m5_bits": "3f4ce390",
+    "candidate": "90-digit sine/cosine series, rounded to binary64 before reference matrix arithmetic",
+    "scope": "One retained counterexample; not an implementation or full-domain proof",
+    "diagnostic": true
+   }
+  }
+ }
+}

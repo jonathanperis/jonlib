@@ -1,7 +1,8 @@
+"""Vector min/max/clamp fixtures require an explicit, qualified native extrema profile."""
 import unittest
 from unittest.mock import patch
 
-from tools.conformance import bend_source, cases_from, c_source, has_extrema
+from tools.conformance import LIBM_FOR_PROFILE, bend_source, cases_from, c_source, has_extrema
 
 
 def scene(operations, **extra):
@@ -30,7 +31,7 @@ class ExtremaIntegrationTests(unittest.TestCase):
                     for profile in ('AccurateGradient', 'GnuGradient'):
                         for gpu in (False, True):
                             source = bend_source(cases, gpu=gpu, extrema_reference=profile)
-                            self.assertIn(f'M.{namespace}.{function}_for(M.{profile}{{}}, ', source)
+                            self.assertIn(f'M.{namespace}.{function}_for(M.{LIBM_FOR_PROFILE[profile]}{{}}, ', source)
 
     def test_unknown_profiles_fail_closed(self):
         cases = scene([operation('vector_value', 'min', [0.0, -0.0, -0.0, 0.0])])
@@ -47,18 +48,18 @@ class ExtremaIntegrationTests(unittest.TestCase):
             operation('number_value', 'clamp', [0.0, -1.0, 1.0], 7),
         ], gradient_linear={'direction': 45, 'outer': [255, 255, 255, 255]})
         native = c_source(cases)
-        with patch('tools.conformance.gradient_reference', return_value='GnuGradient'):
+        with patch('tools.conformance.gradient_reference', return_value='Glibc239Libm'):
             source = bend_source(cases, extrema_reference='AccurateGradient', angle_reference='Glibc241AngleRn')
-        self.assertIn('M.Vector2.min_for(M.AccurateGradient{}, ', source)
-        self.assertIn('M.Vector2.angle_with_reference(M.Glibc241AngleRn{}, ', source)
-        self.assertIn('M.Vector2.rotate_for(M.GnuGradient{}, ', source)
-        self.assertIn('J.Surface.create_gradient_linear_for(M.GnuGradient{}, ', source)
+        self.assertIn('M.Vector2.min_for(M.AppleLibm{}, ', source)
+        self.assertIn('M.Vector2.angle_for(M.Glibc241Libm{}, ', source)
+        self.assertIn('M.Vector2.rotate_for(M.Glibc239Libm{}, ', source)
+        self.assertIn('J.Surface.create_gradient_linear_for(M.Glibc239Libm{}, ', source)
         self.assertIn('M.Vector2.clamp_value(', source)
         self.assertIn('M.Math.clamp(', source)
         self.assertNotIn('M.Math.clamp_for(', source)
         self.assertEqual(native, c_source(cases))
-        self.assertNotIn('AccurateGradient', native)
-        self.assertNotIn('GnuGradient', native)
+        self.assertNotIn('AppleLibm', native)
+        self.assertNotIn('Glibc239Libm', native)
 
     def test_non_extrema_callers_remain_unchanged(self):
         cases = scene([dict(op='pixel', x=1, y=1, color=[1, 2, 3, 4])])

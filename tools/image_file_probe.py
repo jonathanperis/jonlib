@@ -56,21 +56,26 @@ def image_streams():
 
 PROGRAM='''import Base
 import ../../jonlib.bend as J
-def error_name(error: J.Image.LoadError) -> String:
+import ../../jonmath.bend as M
+def error_name(error: J.Surface.IOError) -> String:
   match error:
-    case J.ImageFileError{_, _}: "file"
-    case J.ImageDecodeError{J.UnsupportedImageSize{}}: "size"
+    case J.FileError{_, _}: "file"
+    case J.DataError{J.UnsupportedImageSize{}}: "size"
     case _: "decode"
-def observed(result: Result<&1, &1, J.Image.LoadError, J.Surface>) -> IO(Unit):
+def shown(+w: U32, +h: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "loaded image colors unavailable")
+    case Done{colors}:
+      IO.print("{\\"loaded\\":true,\\"width\\":" ++ U32.show(w) ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"pixels\\":" ++ List.show(~&1, ~U32, ~U32.show, colors) ++ "}")
+def observed(result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{error}: IO.print("{\\"loaded\\":false,\\"error\\":\\"" ++ error_name(error) ++ "\\"}")
-    case Done{J.Surface{+w, +h, pixels}}:
-      IO.print("{\\"loaded\\":true,\\"width\\":" ++ U32.show(w) ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"pixels\\":" ++ List.show(~&1, ~U32, ~U32.show, J.Surface.colors(J.Surface{w, h, pixels})) ++ "}")
+    case Done{J.Surface{+w, +h, format, pixels}}: shown(w, h, J.Surface.colors(J.Surface{w, h, format, pixels}))
 def checked(valid: Bool) -> IO(Unit):
   match valid:
     case True{}: IO.pure(Unit, Unit{})
     case False{}: IO.die(Unit, 1, "image-file outcome or closure differs")
-def required(expected: String, result: Result<&1, &1, J.Image.LoadError, J.Surface>) -> IO(Unit):
+def required(expected: String, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Done{_}: checked(String.eq(expected, "success"))
     case Fail{error}: checked(String.eq(expected, error_name(error)))
@@ -79,10 +84,10 @@ def closure_loop(n: Nat) -> IO(Unit):
     case 0n: IO.print("{\\"closure_checks\\":true}")
     case 1n+rest:
       do IO<Unit>:
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, VALID), required("success"))
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, INVALID), required("decode"))
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, DIRECTORY), required("file"))
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, LARGE), required("size"))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, VALID), required("success"))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, INVALID), required("decode"))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, DIRECTORY), required("file"))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_image_for(REFERENCE, LARGE), required("size"))
         closure_loop(rest)
 def main() -> IO(Unit):
   do IO<Unit>:
@@ -147,7 +152,7 @@ def main():
     if len(expected)!=len(cases):raise ProbeFailure('Incomplete native image-file results')
     if any(row['loaded']!=(case['error'] is None) for case,row in zip(cases,expected)):raise ProbeFailure('Native image-file acceptance differs from fixture profile')
     profile=image_decode_reference()
-    preamble=PROGRAM.replace('REFERENCE',f'J.{profile}{{}}')
+    preamble=PROGRAM.replace('REFERENCE',f'M.{profile}{{}}')
     for key,path in [('INVALID',work/'malformed.png'),('VALID',work/'alpha.psd'),('DIRECTORY',directory),('LARGE',work/'large.png')]:
         preamble=preamble.replace(key,json.dumps(str(path.relative_to(ROOT))))
     # Native pixels/dispatch plus the fixture's error kind; boundaries and closure have no native row.
@@ -160,8 +165,8 @@ def main():
         for kind,case in selected:
             if kind=='closure':body+='    closure_loop(100n)\n';continue
             function='load_qoi' if case['legacy'] else 'load_image_for'
-            reference='' if case['legacy'] else f'J.{profile}{{}}, '
-            body+=f'    IO.bind(Result<&1, &1, J.Image.LoadError, J.Surface>, Unit, J.Surface.{function}({reference}{json.dumps(case["path"])}), observed)\n'
+            reference='' if case['legacy'] else f'M.{profile}{{}}, '
+            body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.{function}({reference}{json.dumps(case["path"])}), observed)\n'
         return body
 
     def parse(text,selected):

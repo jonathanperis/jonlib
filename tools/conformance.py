@@ -628,31 +628,29 @@ def result_size(case):
 
 
 def gradient_reference():
+    """M.Libm constructor for the host's sinf/cosf (gradients, rotations) behavior."""
     if platform.system() == 'Darwin':
-        return 'AccurateGradient'
+        return 'AppleLibm'
     if platform.system() == 'Linux' and platform.libc_ver()[0] == 'glibc':
-        return 'GnuGradient'
+        return 'Glibc239Libm'
     raise ValueError('Declare a verified gradient math reference for this host')
 
 
-def collision_arithmetic():
+def contraction():
+    """M.Contraction constructor matching how the linked raylib build contracts a*b+c."""
     if platform.system() == 'Darwin' and platform.machine() == 'arm64':
-        return 'FusedCollision'
+        return 'Fused'
     if platform.system() == 'Linux' and platform.machine() == 'x86_64':
-        return 'UncontractedCollision'
-    raise ValueError('Declare a verified linked collision arithmetic profile for this host')
+        return 'Uncontracted'
+    raise ValueError('Declare a verified linked contraction profile for this host')
 
 
-def noise_reference():
-    return {'FusedCollision':'FusedNoise','UncontractedCollision':'UncontractedNoise'}[collision_arithmetic()]
+# One host contraction applies to collisions, noise, splines and PSD decoding alike.
+collision_arithmetic = noise_reference = spline_reference = image_decode_reference = contraction
 
-
-def spline_reference():
-    return {'FusedCollision':'FusedSpline','UncontractedCollision':'UncontractedSpline'}[collision_arithmetic()]
-
-
-def image_decode_reference():
-    return {'FusedCollision':'FusedDecode','UncontractedCollision':'UncontractedDecode'}[collision_arithmetic()]
+# Native selections use the frozen source-contract names; Jonmath names the libm.
+LIBM_FOR_PROFILE = {'Apple2007AngleRn': 'AppleLibm', 'Sun239AngleRn': 'Glibc239Libm', 'Glibc241AngleRn': 'Glibc241Libm',
+                    'AccurateGradient': 'AppleLibm', 'GnuGradient': 'Glibc239Libm'}
 
 
 def vector_arguments(signature, values, bend=False):
@@ -1077,11 +1075,27 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
              '  match value:',
              '    case None{}: Fail{(surface, AngleRejected{case_id, operation})}',
              '    case Some{angle}: Done{J.Surface.draw_pixel(surface, x, y, F32.bits(angle))}', '',
+             'def emit_colors(name: String, +w: U32, +h: U32, extra: String, result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> IO(Unit):',
+             '  match result:',
+             '    case Fail{_}: IO.die(Unit, 1, "surface colors unavailable")',
+             '    case Done{colors}:',
+             '      IO.print("{\\"id\\":\\"" ++ name ++ "\\",\\"width\\":" ++ U32.show(w)',
+             '        ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"pixels\\":"',
+             '        ++ List.show(~&1, ~U32, ~U32.show, colors) ++ extra ++ "}")', '',
              'def emit(name: String, image: J.Surface, extra: String) -> IO(Unit):',
-             '  J.Surface{+w, +h, pixels} = image',
-             '  IO.print("{\\"id\\":\\"" ++ name ++ "\\",\\"width\\":" ++ U32.show(w)',
-             '    ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"pixels\\":"',
-             '    ++ List.show(~&1, ~U32, ~U32.show, J.Surface.colors(J.Surface{w, h, pixels})) ++ extra ++ "}")', '']
+             '  J.Surface{+w, +h, format, pixels} = image',
+             '  emit_colors(name, w, h, extra, J.Surface.colors(J.Surface{w, h, format, pixels}))', '',
+             'def rgba_owner(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Maybe<J.Surface>:',
+             '  match result:',
+             '    case Fail{_}: None{}',
+             '    case Done{surface}: Some{surface}', '',
+             '# The native reference converts decoded QOI images to R8G8B8A8 (ImageFormat).',
+             'def rgba_decoded(result: Result<&1, &1, J.Surface.Error, J.Surface>) -> Maybe<J.Surface>:',
+             '  match result:',
+             '    case Fail{_}: None{}',
+             '    case Done{surface}: rgba_owner(J.Surface.format(surface, 7))', '',
+             'def decode_rgba(bytes: +List<U32>) -> Maybe<J.Surface>:',
+             '  rgba_decoded(J.Surface.decode_qoi(bytes))', '']
     lines += [
         'def create_noise(seed: U32, width: U32, height: U32, factor: F32) -> Maybe<J.Surface>:',
         '  Pair.snd(J.Random.State, Maybe<J.Surface>, J.Surface.create_white_noise(J.Random.seed(seed), width, height, factor))',
@@ -1130,15 +1144,24 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
         '    case Some{point}:',
         '      first = J.Surface.draw_pixel(surface, x, y, 1)',
         '      write_vector(first, (x + 1.0 : F32), y, point)',
-        'def emit_qoi_data(name: String, image: J.Surface, bytes: +List<U32>, extra: String) -> IO(Unit):',
-        '  J.Surface{+w, +h, pixels} = image',
-        '  IO.print("{\\"id\\":\\"" ++ name ++ "\\",\\"width\\":" ++ U32.show(w)',
-        '    ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"pixels\\":"',
-        '    ++ List.show(~&1, ~U32, ~U32.show, J.Surface.colors(J.Surface{w, h, pixels}))',
-        '    ++ ",\\"qoi\\":" ++ List.show(~&2, ~U32, ~U32.show, bytes) ++ extra ++ "}")',
+        'def emit_qoi_colors(name: String, +w: U32, +h: U32, bytes: +List<U32>, extra: String, result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> IO(Unit):',
+        '  match result:',
+        '    case Fail{_}: IO.die(Unit, 1, "surface colors unavailable")',
+        '    case Done{colors}:',
+        '      IO.print("{\\"id\\":\\"" ++ name ++ "\\",\\"width\\":" ++ U32.show(w)',
+        '        ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"pixels\\":"',
+        '        ++ List.show(~&1, ~U32, ~U32.show, colors)',
+        '        ++ ",\\"qoi\\":" ++ List.show(~&2, ~U32, ~U32.show, bytes) ++ extra ++ "}")',
+        'def emit_qoi_surface(name: String, image: J.Surface, bytes: +List<U32>, extra: String) -> IO(Unit):',
+        '  J.Surface{+w, +h, format, pixels} = image',
+        '  emit_qoi_colors(name, w, h, bytes, extra, J.Surface.colors(J.Surface{w, h, format, pixels}))',
+        'def emit_qoi_data(name: String, image: J.Surface, extra: String, result: Result<&1, &1, J.Surface & J.Surface.Error, +List<U32>>) -> IO(Unit):',
+        '  match result:',
+        '    case Fail{_}: IO.die(Unit, 1, "valid QOI export rejected")',
+        '    case Done{bytes}: emit_qoi_surface(name, image, bytes, extra)',
         'def emit_qoi(name: String, pair: J.Surface & J.Surface, extra: String) -> IO(Unit):',
         '  (original, copy) = pair',
-        f'  emit_qoi_data(name, original, J.Surface.to_qoi{"!" if gpu else ""}(copy), extra)',
+        f'  emit_qoi_data(name, original, extra, J.Surface.to_qoi{"!" if gpu else ""}(copy))',
         'def emit_choice(encoded: Bool, name: String, image: J.Surface, extra: String) -> IO(Unit):',
         '  match encoded:', '    case False{}: emit(name, image, extra)',
         '    case True{}: emit_qoi(name, J.Surface.copy(image), extra)',
@@ -1170,6 +1193,10 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
         '  match pair:', '    case Tuple{source, None{}}:',
         '      Fail{(source, SurfaceRejected{J.InvalidRectangle{}})}', '    case Tuple{source, Some{region}}:',
         '      Done{Bool.pick(J.Surface, keep, source, region)}', '',
+        'def channeled(keep: Bool, pair: J.Surface & Maybe<J.Surface>) -> Result<&1, &1, J.Surface & Harness.Error, J.Surface>:',
+        '  match pair:', '    case Tuple{source, None{}}:',
+        '      Fail{(source, SurfaceRejected{J.InvalidRequest{}})}', '    case Tuple{source, Some{channel}}:',
+        '      Done{Bool.pick(J.Surface, keep, source, channel)}', '',
         'def composed(keep: Bool, result: Result<&1, &1, (J.Surface & J.Surface) & J.Surface.Error, J.Surface & J.Surface>) -> Result<&1, &1, J.Surface & Harness.Error, J.Surface>:',
         '  match result:', '    case Fail{Tuple{Tuple{destination, source}, error}}:',
         '      Fail{(Bool.pick(J.Surface, keep, source, destination), SurfaceRejected{error})}',
@@ -1191,7 +1218,7 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
             lines += [f'def source_{i}_{j}() -> J.Surface:', f'  p0 = Array.new(U32, {depth}n, 0)']
             for k, pixel in enumerate(source['pixels']):
                 lines += [f'  p{k+1} = Array.set(U32, p{k}, {k}, {rgba(pixel)})']
-            lines += [f'  J.Surface{{{source["width"]}, {source["height"]}, p{len(source["pixels"])}}}', '']
+            lines += [f'  J.Surface{{{source["width"]}, {source["height"]}, 7, J.Words{{p{len(source["pixels"])}}}}}', '']
         lines += [f'def draw_{i}(surface: J.Surface) -> Result<&1, &1, J.Surface & Harness.Error, J.Surface>:',
                   '  do Result<&1, &1, J.Surface & Harness.Error, J.Surface>:']
         previous = 'surface'
@@ -1200,8 +1227,11 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
             if kind == 'from_channel':
                 draw = f'J.Surface.from_channel({previous}, {f32(op["channel"])})'
                 previous = f's{j}'
-                pick = 'fst' if op.get('observe_source') else 'snd'
-                lines += [f'    {previous} : J.Surface = Pair.{pick}(J.Surface, J.Surface, {draw})']
+                lines += [f'    {previous} : J.Surface <- channeled({"True{}" if op.get("observe_source") else "False{}"}, {draw})']
+                if not op.get('observe_source'):
+                    # ImageFromChannel yields GRAYSCALE; the reference then formats it to R8G8B8A8.
+                    previous = f's{j}_rgba'
+                    lines += [f'    {previous} : J.Surface <- lift_surface(J.Surface.format(s{j}, 7))']
                 continue
             if kind in ('rotate_degrees','to_pot'):
                 draw = f'J.Surface.rotate_degrees_for(M.{gradient_reference()}{{}}, {previous}, {f32(op["degrees"])})' if kind=='rotate_degrees' else f'J.Surface.to_pot({previous}, {rgba(op["color"])})'
@@ -1235,12 +1265,8 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
                 args += str(rgba(op['tint']))
                 function = {'blit':'draw_image', 'blit_region':'draw_image_region', 'blit_rect':'draw_image_rect'}[kind]
                 draw = f'J.Surface.{function}({args})'
-                pick = 'snd' if op.get('observe_source') else 'fst'
                 previous = f's{j}'
-                if kind in ('blit_region', 'blit_rect'):
-                    lines += [f'    {previous} : J.Surface <- composed({"True{}" if op.get("observe_source") else "False{}"}, {draw})']
-                else:
-                    lines += [f'    {previous} : J.Surface = Pair.{pick}(J.Surface, J.Surface, {draw})']
+                lines += [f'    {previous} : J.Surface <- composed({"True{}" if op.get("observe_source") else "False{}"}, {draw})']
                 continue
             if kind in ('crop', 'extract', 'resize_nn', 'resize'):
                 if kind in ('resize_nn', 'resize'):
@@ -1262,12 +1288,12 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
                 profiled = namespace=='Spline' or op['function'] in ('clamp','min','max') or (namespace,op['function']) in ROTATION_ANGLES
                 function_name = op['function']+'_for' if profiled else op['function']
                 if angle:
-                    function_name = op['function']+'_with_reference'
-                    profile = f'M.{angle_reference}{{}}, '
+                    function_name = op['function']+'_for'
+                    profile = f'M.{LIBM_FOR_PROFILE[angle_reference]}{{}}, '
                 elif (namespace, op['function']) in EXTREMA_QUERIES:
-                    profile = f'M.{extrema_reference}{{}}, '
+                    profile = f'M.{LIBM_FOR_PROFILE[extrema_reference]}{{}}, '
                 else:
-                    profile = (f'J.{spline_reference()}{{}}, ' if namespace=='Spline' else f'M.{gradient_reference()}{{}}, ') if profiled else ''
+                    profile = (f'M.{spline_reference()}{{}}, ' if namespace=='Spline' else f'M.{gradient_reference()}{{}}, ') if profiled else ''
                 module = 'M' if namespace in ('Math','Vector2','Vector3','Vector4','Matrix','Quaternion','Float64') else 'J'
                 expression = f'{module}.{namespace}.{function_name}({profile}{vector_arguments(signature,op["args"],bend=True)})'
                 if angle:
@@ -1291,7 +1317,7 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
                 function_name = op['function']
                 if function_name in CONTRACTED_COLLISIONS:
                     function_name += '_for'
-                    arguments = f'J.{collision_arithmetic()}{{}}, ' + arguments
+                    arguments = f'M.{collision_arithmetic()}{{}}, ' + arguments
                 expression = f'J.Collision.{function_name}({arguments})'
                 function = {'rectangle':'write_rectangle','hit':'write_hit','bool':'J.Surface.draw_pixel'}[result]
                 value = f'Bool.to_u32({expression})' if result=='bool' else expression
@@ -1300,14 +1326,14 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
                 continue
             if kind == 'alpha_clear':
                 previous = f's{j}'
-                lines += [f'    {previous} : J.Surface = J.Surface.alpha_clear({args[0]}, {rgba(op["color"])}, {f32(op["threshold"])})']
+                lines += [f'    {previous} : J.Surface <- lift_surface(J.Surface.alpha_clear({args[0]}, {rgba(op["color"])}, {f32(op["threshold"])}))']
                 continue
             if kind in COLOR_IMAGE_APIS:
                 args += [f32(op['amount'])] if kind in ('color_contrast', 'color_brightness') else [str(rgba(op['color']))]
                 if kind == 'color_replace':
                     args += [str(rgba(op['replacement']))]
                 previous = f's{j}'
-                lines += [f'    {previous} : J.Surface = J.Surface.{kind}({", ".join(args)})']
+                lines += [f'    {previous} : J.Surface <- lift_surface(J.Surface.{kind}({", ".join(args)}))']
                 continue
             if kind in ('line', 'line_v', 'line_ex', 'triangle', 'triangle_lines', 'triangle_ex'):
                 count = 2 if kind.startswith('line') else 3
@@ -1352,10 +1378,17 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
             if kind in ('blend_color', 'color_value', 'number_value'):
                 function = 'draw_pixel'
             previous = f's{j}'
-            lines += [f'    {previous} : J.Surface = J.Surface.{function}({", ".join(args)})']
-        created_type = 'Result<&1, &1, J.Image.DecodeError, J.Surface>' if 'qoi' in case else 'Maybe<J.Surface>'
-        failure = 'Fail{_}' if 'qoi' in case else 'None{}'
-        success = 'Done{surface}' if 'qoi' in case else 'Some{surface}'
+            if kind in ('color_invert', 'alpha_premultiply'):
+                lines += [f'    {previous} : J.Surface <- lift_surface(J.Surface.{function}({", ".join(args)}))']
+            elif kind == 'color_grayscale':
+                # ImageColorGrayscale yields GRAYSCALE; the reference then formats it to R8G8B8A8.
+                lines += [f'    {previous}_gray : J.Surface <- lift_surface(J.Surface.{function}({", ".join(args)}))',
+                          f'    {previous} : J.Surface <- lift_surface(J.Surface.format({previous}_gray, 7))']
+            else:
+                lines += [f'    {previous} : J.Surface = J.Surface.{function}({", ".join(args)})']
+        created_type = 'Maybe<J.Surface>'
+        failure = 'None{}'
+        success = 'Some{surface}'
         border = 'Some{' + f32(case['alpha_border']) + '}' if 'alpha_border' in case else 'None{}'
         palette = 'Some{' + str(case['palette']) + '}' if 'palette' in case else 'None{}'
         lines += [f'    return {previous}', '', f'def case_{i}(created: {created_type}) -> IO(Unit):',
@@ -1365,7 +1398,7 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
                   f'      emit_result("{case["id"]}", {"True{}" if case.get("export_qoi") else "False{}"}, {border}, {palette}, draw_{i}{"!" if gpu else ""}(surface))', '']
     lines += ['def main() -> IO(Unit):', '  do IO<Unit>:']
     for i, case in enumerate(cases):
-        creation = f'J.Surface.decode_qoi{"!" if gpu else ""}([' + ','.join(map(str,case['qoi'])) + '])' if 'qoi' in case else f'J.Surface.create({case["width"]}, {case["height"]}, {rgba(case["background"])})'
+        creation = f'decode_rgba{"!" if gpu else ""}([' + ','.join(map(str,case['qoi'])) + '])' if 'qoi' in case else f'J.Surface.create({case["width"]}, {case["height"]}, {rgba(case["background"])})'
         if 'text_bytes' in case:
             creation = f'J.Surface.create_text_bytes{"!" if gpu else ""}({case["width"]}, {case["height"]}, [' + ','.join(map(str,case['text_bytes'])) + '])'
         if 'white_noise' in case:
@@ -1376,7 +1409,7 @@ def bend_source(cases, gpu=False, extrema_reference=None, angle_reference=None):
             creation = f'create_cellular{"!" if gpu else ""}({cellular["seed"]}, {case["width"]}, {case["height"]}, {cellular["tile"]})'
         if 'perlin' in case:
             perlin = case['perlin']
-            creation = f'J.Surface.create_perlin_for{"!" if gpu else ""}(J.{noise_reference()}{{}}, {case["width"]}, {case["height"]}, {f32(perlin["offset_x"])}, {f32(perlin["offset_y"])}, {f32(perlin["scale"])})'
+            creation = f'J.Surface.create_perlin_for{"!" if gpu else ""}(M.{noise_reference()}{{}}, {case["width"]}, {case["height"]}, {f32(perlin["offset_x"])}, {f32(perlin["offset_y"])}, {f32(perlin["scale"])})'
         if 'checked' in case:
             checked = case['checked']
             creation = f'J.Surface.create_checked{"!" if gpu else ""}({case["width"]}, {case["height"]}, {checked["tile_width"]}, {checked["tile_height"]}, {rgba(case["background"])}, {rgba(checked["color"])})'

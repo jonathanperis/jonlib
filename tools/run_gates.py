@@ -61,11 +61,16 @@ def summarize(value, depth=0):
     return value
 
 
-def evidence(gate, started, passed, elapsed, os_name):
+def results_files():
+    """Every probe results file with its modification stamp and size."""
+    files = [p for p in (ROOT / '.build').rglob('results.json') if OUT not in p.parents]
+    files += [p for p in [ROOT / '.build/conformance.json'] if p.exists()]
+    return {p: (p.stat().st_mtime_ns, p.stat().st_size) for p in files}
+
+
+def evidence(gate, before, passed, elapsed, os_name):
     """Compact summary of every results file the gate wrote (full files stay CI artifacts)."""
-    files = sorted(p for p in (ROOT / '.build').rglob('results.json')
-                   if p.stat().st_mtime >= started and OUT not in p.parents)
-    files += [p for p in [ROOT / '.build/conformance.json'] if p.exists() and p.stat().st_mtime >= started]
+    files = sorted(p for p, stamp in results_files().items() if before.get(p) != stamp)
     reports = {}
     for path in files:
         raw = path.read_bytes()
@@ -107,12 +112,12 @@ def main(argv=None):
     failures = []
     for gate in selected:
         print(f'::group::{gate["id"]}' if os.environ.get('GITHUB_ACTIONS') else f'== {gate["id"]}', flush=True)
-        started, wall = time.monotonic(), time.time() - 1
+        started, before = time.monotonic(), results_files()
         env = dict(os.environ, BEND_NO_TELEMETRY='1', **({'PROBEKIT_JOBS': str(args.jobs)} if args.jobs else {}))
         result = subprocess.run(command(gate, args), cwd=ROOT, env=env)
         elapsed = round(time.monotonic() - started, 1)
         passed = result.returncode == 0
-        record = evidence(gate, wall, passed, elapsed, args.os)
+        record = evidence(gate, before, passed, elapsed, args.os)
         (OUT / f'{gate["id"]}.json').write_text(json.dumps(record, indent=1) + '\n')
         if args.record and passed:
             args.record.mkdir(parents=True, exist_ok=True)

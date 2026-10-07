@@ -1,0 +1,69 @@
+{
+ "gate": "binary64-fma",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 20.0,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/binary64-fma-probe/results.json": {
+   "sha256": "123ec29cf9d908ff4d38eb12807172f9fee233127d5817a4a4a1b9f7c19b7b6f",
+   "summary": {
+    "passed": true,
+    "probe": "binary64-fma",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 11038,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 11038,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 11038,
+      "different": []
+     }
+    },
+    "batches": 44,
+    "observations": 11038,
+    "native_checked": 11038,
+    "accepted": 10726,
+    "rejected": 312,
+    "kinds": {
+     "fma": 11038
+    },
+    "inputs_sha256": "4b7d0be3481fd39f030ab6a3a9313db09daeb80b8a1c03bfe415105fc0cd625b",
+    "oracle_sha256": "766d893dc8955ee24ea7cf48db4f43c8b44640b6a4c951d70edaa51ae79c08f5",
+    "reference_sha256": "1e93e6d929b54ce26dfefcacdeff7f3fb1a003cc1c0ec27f76e2be281fabcfe0"
+   }
+  }
+ }
+}

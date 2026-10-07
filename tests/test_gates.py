@@ -9,7 +9,9 @@ import os
 from pathlib import Path
 import re
 import sys
+import tempfile
 import unittest
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools'))
@@ -54,6 +56,22 @@ class ManifestTests(unittest.TestCase):
             ids = [g['id'] for shard in plan for g in shard]
             self.assertEqual(sorted(ids), sorted(g['id'] for g in self.gates))
             self.assertEqual(plan, run_gates.shards(self.gates, count)[0])
+
+
+class EvidenceTests(unittest.TestCase):
+    def test_records_only_results_the_gate_changed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'toolchain.json').write_text(json.dumps(
+                {'bend': {'revision': 'b'}, 'raylib': {'revision': 'r'}, 'bun': {'version': '1'}}))
+            for name in ('earlier-probe', 'own-probe'):
+                (root / '.build' / name).mkdir(parents=True)
+                (root / '.build' / name / 'results.json').write_text('{"passed": true}')
+            with mock.patch.object(run_gates, 'ROOT', root), mock.patch.object(run_gates, 'OUT', root / '.build/gates'):
+                before = run_gates.results_files()
+                (root / '.build/own-probe/results.json').write_text('{"passed": true, "cases": 2}')
+                record = run_gates.evidence({'id': 'own'}, before, True, 1.0, 'macos')
+        self.assertEqual(list(record['reports']), ['.build/own-probe/results.json'])
 
 
 class WorkflowTests(unittest.TestCase):

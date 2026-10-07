@@ -1,0 +1,105 @@
+{
+ "gate": "qoi-export",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 75.6,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/formatted-qoi-export-probe/results.json": {
+   "sha256": "f45e506f97f65a581427007dcee56b4094132a6fe3a9631e896d401d3624eeb4",
+   "summary": {
+    "passed": true,
+    "probe": "formatted-qoi-export",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 295,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 295,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 295,
+      "different": []
+     }
+    },
+    "batches": 19,
+    "images": 295,
+    "pixels": 382078,
+    "accepted": 273,
+    "rejected": 22,
+    "encoded_bytes": 1415214,
+    "decoded_bytes": 1373353,
+    "coverage": {
+     "opcodes": [
+      "DIFF",
+      "INDEX",
+      "LUMA",
+      "RGB",
+      "RGBA",
+      "RUN"
+     ],
+     "diff_opcodes": {
+      "items": 63
+     },
+     "index_slots": {
+      "items": 64
+     },
+     "zero_diff_uses_run": true,
+     "outside_diff_luma_controls": 12,
+     "large_encoded_bytes": 1315867
+    },
+    "typed_io": {
+     "ordinary": {
+      "iterations": 100,
+      "accepted_writes": 601,
+      "rejected_writes": 5400,
+      "file_descriptor_limit": 64,
+      "exact_base_code_and_message": true,
+      "post_open": false
+     },
+     "failure": {
+      "iterations": 100,
+      "accepted_writes": 200,
+      "rejected_writes": 1800,
+      "file_descriptor_limit": 64,
+      "exact_base_code_and_message": true,
+      "post_open": true
+     }
+    },
+    "file_descriptor_limit": 64,
+    "inputs_sha256": "2c606679424b0155431a4fa7d0b6413e63f3b76b40f453a83191f7795094e2c5",
+    "reference_sha256": "e5bde850a0a567778e37343b09a57c6904d70878911486be349030ee4d072087"
+   }
+  }
+ }
+}

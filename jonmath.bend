@@ -44,27 +44,34 @@ def Float64.internal.difference(left: Float64, right: Float64) -> F32:
   Float64{bh, bl} = right
   Float64Numeric.difference(ah, al, bh, bl)
 
-type Gradient.Reference is Data:
-  AccurateGradient{}
-  GnuGradient{}
+# Which C math library a reference result depends on (sin/cos/atan2 rounding,
+# fminf/fmaxf signed-zero ties). AppleLibm: macOS. Glibc239Libm: glibc before
+# 2.41 (Sun atan2f). Glibc241Libm: glibc 2.41 and later. See docs/ANGLES.md.
+type Libm is Data:
+  AppleLibm{}
+  Glibc239Libm{}
+  Glibc241Libm{}
 
-# Source/numerical contracts, independent of the historical gradient selector.
-# There is intentionally no implicit angle default or Gradient conversion.
-type Angle.Reference is Data:
-  Apple2007AngleRn{}
-  Sun239AngleRn{}
-  Glibc241AngleRn{}
+# Whether the reference build contracts a*b + c into one fused multiply-add.
+type Contraction is Data:
+  Uncontracted{}
+  Fused{}
 
-def Angle.internal.profile(reference: Angle.Reference) -> U32:
-  match reference:
-    case Apple2007AngleRn{}: 0
-    case Sun239AngleRn{}: 1
-    case Glibc241AngleRn{}: 2
+def Libm.gnu(libm: Libm) -> Bool:
+  match libm:
+    case AppleLibm{}: False{}
+    case _: True{}
 
-def Gradient.gnu(reference: Gradient.Reference) -> Bool:
-  match reference:
-    case AccurateGradient{}: False{}
-    case GnuGradient{}: True{}
+def Libm.angle(libm: Libm) -> U32:
+  match libm:
+    case AppleLibm{}: 0
+    case Glibc239Libm{}: 1
+    case Glibc241Libm{}: 2
+
+def Contraction.fused(contraction: Contraction) -> Bool:
+  match contraction:
+    case Uncontracted{}: False{}
+    case Fused{}: True{}
 
 def Math.clamp(+value: F32, +lower: F32, +upper: F32) -> F32:
   +first = Bool.pick(F32, (value < lower : F32), lower, value)
@@ -182,30 +189,26 @@ def Vector2.cross_product(left: Vector2, right: Vector2) -> F32:
   Vector2{u, v} = right
   (x * v - y * u : F32)
 
-def Vector2.angle_for(reference: Gradient.Reference, +left: Vector2, +right: Vector2) -> F32:
-  LegacyAngle.atan2(Gradient.gnu(reference), Vector2.cross_product(left, right), Vector2.dot_product(left, right))
-
-def Vector2.angle(left: Vector2, right: Vector2) -> F32:
-  Vector2.angle_for(AccurateGradient{}, left, right)
-
-def Vector2.line_angle_for(reference: Gradient.Reference, start: Vector2, end: Vector2) -> F32:
-  Vector2{x, y} = start
-  Vector2{u, v} = end
-  F32.neg(LegacyAngle.atan2(Gradient.gnu(reference), (v - y : F32), (u - x : F32)))
+# Convenience angles keep the unchecked Apple (macOS libm) behavior.
+def Vector2.angle(+left: Vector2, +right: Vector2) -> F32:
+  LegacyAngle.atan2(False{}, Vector2.cross_product(left, right), Vector2.dot_product(left, right))
 
 def Vector2.line_angle(start: Vector2, end: Vector2) -> F32:
-  Vector2.line_angle_for(AccurateGradient{}, start, end)
-
-# Finite original components, normal/zero staged intermediates and result.
-def Vector2.angle_with_reference(reference: Angle.Reference, left: Vector2, right: Vector2) -> Maybe<F32>:
-  Vector2{x, y} = left
-  Vector2{u, v} = right
-  CheckedAngle.maybe(CheckedAngle.vector2(Angle.internal.profile(reference), x, y, u, v))
-
-def Vector2.line_angle_with_reference(reference: Angle.Reference, start: Vector2, end: Vector2) -> Maybe<F32>:
   Vector2{x, y} = start
   Vector2{u, v} = end
-  CheckedAngle.maybe(CheckedAngle.line(Angle.internal.profile(reference), x, y, u, v))
+  F32.neg(LegacyAngle.atan2(False{}, (v - y : F32), (u - x : F32)))
+
+# Checked angles for an explicit libm: finite components and zero-or-normal
+# staged intermediates and result, otherwise None (docs/ANGLES.md).
+def Vector2.angle_for(libm: Libm, left: Vector2, right: Vector2) -> Maybe<F32>:
+  Vector2{x, y} = left
+  Vector2{u, v} = right
+  CheckedAngle.maybe(CheckedAngle.vector2(Libm.angle(libm), x, y, u, v))
+
+def Vector2.line_angle_for(libm: Libm, start: Vector2, end: Vector2) -> Maybe<F32>:
+  Vector2{x, y} = start
+  Vector2{u, v} = end
+  CheckedAngle.maybe(CheckedAngle.line(Libm.angle(libm), x, y, u, v))
 
 def Vector2.lerp(left: Vector2, right: Vector2, +amount: F32) -> Vector2:
   Vector2{x, y} = left
@@ -231,33 +234,33 @@ def Vector2.clamp.maximum(gnu: Bool, +left: F32, +right: F32) -> F32:
   zero = Bool.pick(F32, U32.is_ne(((F32.bits(left) .&. F32.bits(right)) .&. 2147483648 : U32), 0), F32.neg(0.0), 0.0)
   Bool.pick(F32, F32.is_eq(left, 0.0) && F32.is_eq(right, 0.0), Bool.pick(F32, gnu, left, zero), Bool.pick(F32, (left > right : F32), left, right))
 
-def Vector2.clamp_for(reference: Gradient.Reference, vector: Vector2, lower: Vector2, upper: Vector2) -> Vector2:
+def Vector2.clamp_for(reference: Libm, vector: Vector2, lower: Vector2, upper: Vector2) -> Vector2:
   Vector2{x, y} = vector
   Vector2{lx, ly} = lower
   Vector2{ux, uy} = upper
-  +gnu = Gradient.gnu(reference)
+  +gnu = Libm.gnu(reference)
   Vector2{Vector2.clamp.minimum(gnu, ux, Vector2.clamp.maximum(gnu, lx, x)), Vector2.clamp.minimum(gnu, uy, Vector2.clamp.maximum(gnu, ly, y))}
 
 def Vector2.clamp(vector: Vector2, lower: Vector2, upper: Vector2) -> Vector2:
-  Vector2.clamp_for(AccurateGradient{}, vector, lower, upper)
+  Vector2.clamp_for(AppleLibm{}, vector, lower, upper)
 
-def Vector2.min_for(reference: Gradient.Reference, left: Vector2, right: Vector2) -> Vector2:
+def Vector2.min_for(reference: Libm, left: Vector2, right: Vector2) -> Vector2:
   Vector2{x, y} = left
   Vector2{u, v} = right
-  +gnu = Gradient.gnu(reference)
+  +gnu = Libm.gnu(reference)
   Vector2{Vector2.clamp.minimum(gnu, x, u), Vector2.clamp.minimum(gnu, y, v)}
 
-def Vector2.max_for(reference: Gradient.Reference, left: Vector2, right: Vector2) -> Vector2:
+def Vector2.max_for(reference: Libm, left: Vector2, right: Vector2) -> Vector2:
   Vector2{x, y} = left
   Vector2{u, v} = right
-  +gnu = Gradient.gnu(reference)
+  +gnu = Libm.gnu(reference)
   Vector2{Vector2.clamp.maximum(gnu, x, u), Vector2.clamp.maximum(gnu, y, v)}
 
 def Vector2.min(left: Vector2, right: Vector2) -> Vector2:
-  Vector2.min_for(AccurateGradient{}, left, right)
+  Vector2.min_for(AppleLibm{}, left, right)
 
 def Vector2.max(left: Vector2, right: Vector2) -> Vector2:
-  Vector2.max_for(AccurateGradient{}, left, right)
+  Vector2.max_for(AppleLibm{}, left, right)
 
 def Vector2.clamp.magnitude(nonzero: Bool, +x: F32, +y: F32, square: F32, +lower: F32, +upper: F32) -> Vector2:
   match nonzero:
@@ -292,11 +295,11 @@ def Vector2.rotation(vector: Vector2, values: F32 & F32) -> Vector2:
   (+cosine, +sine) = values
   Vector2{(x * cosine - y * sine : F32), (x * sine + y * cosine : F32)}
 
-def Vector2.rotate_for(reference: Gradient.Reference, vector: Vector2, angle: F32) -> Vector2:
-  Vector2.rotation(vector, Trig.sincos_for(Gradient.gnu(reference), angle))
+def Vector2.rotate_for(reference: Libm, vector: Vector2, angle: F32) -> Vector2:
+  Vector2.rotation(vector, Trig.sincos_for(Libm.gnu(reference), angle))
 
 def Vector2.rotate(vector: Vector2, angle: F32) -> Vector2:
-  Vector2.rotate_for(AccurateGradient{}, vector, angle)
+  Vector2.rotate_for(AppleLibm{}, vector, angle)
 
 def Matrix.identity() -> Matrix:
   Matrix{1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
@@ -511,16 +514,13 @@ def Vector3.length_sqr(+vector: Vector3) -> F32:
 def Vector3.length(vector: Vector3) -> F32:
   F32.sqrt(Vector3.length_sqr(vector))
 
-def Vector3.angle_for(reference: Gradient.Reference, +left: Vector3, +right: Vector3) -> F32:
-  LegacyAngle.atan2(Gradient.gnu(reference), Vector3.length(Vector3.cross_product(left, right)), Vector3.dot_product(left, right))
+def Vector3.angle(+left: Vector3, +right: Vector3) -> F32:
+  LegacyAngle.atan2(False{}, Vector3.length(Vector3.cross_product(left, right)), Vector3.dot_product(left, right))
 
-def Vector3.angle(left: Vector3, right: Vector3) -> F32:
-  Vector3.angle_for(AccurateGradient{}, left, right)
-
-def Vector3.angle_with_reference(reference: Angle.Reference, left: Vector3, right: Vector3) -> Maybe<F32>:
+def Vector3.angle_for(libm: Libm, left: Vector3, right: Vector3) -> Maybe<F32>:
   Vector3{x, y, z} = left
   Vector3{u, v, w} = right
-  CheckedAngle.maybe(CheckedAngle.vector3(Angle.internal.profile(reference), x, y, z, u, v, w))
+  CheckedAngle.maybe(CheckedAngle.vector3(Libm.angle(libm), x, y, z, u, v, w))
 
 def Vector3.distance(left: Vector3, right: Vector3) -> F32:
   F32.sqrt(Vector3.distance_sqr(left, right))
@@ -581,17 +581,17 @@ def Vector3.move_towards(+vector: Vector3, +target: Vector3, +distance: F32) -> 
   +square = Vector3.dot_product(delta, delta)
   Vector3.move.route(F32.is_eq(square, 0.0) || (((distance >= 0.0) && (square <= distance * distance)) : F32), vector, target, delta, square, distance)
 
-def Vector3.clamp_for(reference: Gradient.Reference, vector: Vector3, lower: Vector3, upper: Vector3) -> Vector3:
+def Vector3.clamp_for(reference: Libm, vector: Vector3, lower: Vector3, upper: Vector3) -> Vector3:
   Vector3{x, y, z} = vector
   Vector3{lx, ly, lz} = lower
   Vector3{ux, uy, uz} = upper
-  +gnu = Gradient.gnu(reference)
+  +gnu = Libm.gnu(reference)
   Vector3{Vector2.clamp.minimum(gnu, ux, Vector2.clamp.maximum(gnu, lx, x)),
     Vector2.clamp.minimum(gnu, uy, Vector2.clamp.maximum(gnu, ly, y)),
     Vector2.clamp.minimum(gnu, uz, Vector2.clamp.maximum(gnu, lz, z))}
 
 def Vector3.clamp(vector: Vector3, lower: Vector3, upper: Vector3) -> Vector3:
-  Vector3.clamp_for(AccurateGradient{}, vector, lower, upper)
+  Vector3.clamp_for(AppleLibm{}, vector, lower, upper)
 
 def Vector3.clamp.magnitude(nonzero: Bool, vector: Vector3, square: F32, +lower: F32, +upper: F32) -> Vector3:
   match nonzero:
@@ -618,23 +618,23 @@ def Vector3.refract(+vector: Vector3, +normal: Vector3, +ratio: F32) -> Vector3:
   +determinant = (1.0 - ratio * ratio * (1.0 - dot * dot) : F32)
   Vector3.refraction((determinant >= 0.0 : F32), vector, normal, ratio, dot, determinant)
 
-def Vector3.min_for(reference: Gradient.Reference, left: Vector3, right: Vector3) -> Vector3:
+def Vector3.min_for(reference: Libm, left: Vector3, right: Vector3) -> Vector3:
   Vector3{x, y, z} = left
   Vector3{u, v, w} = right
-  +gnu = Gradient.gnu(reference)
+  +gnu = Libm.gnu(reference)
   Vector3{Vector2.clamp.minimum(gnu, x, u), Vector2.clamp.minimum(gnu, y, v), Vector2.clamp.minimum(gnu, z, w)}
 
-def Vector3.max_for(reference: Gradient.Reference, left: Vector3, right: Vector3) -> Vector3:
+def Vector3.max_for(reference: Libm, left: Vector3, right: Vector3) -> Vector3:
   Vector3{x, y, z} = left
   Vector3{u, v, w} = right
-  +gnu = Gradient.gnu(reference)
+  +gnu = Libm.gnu(reference)
   Vector3{Vector2.clamp.maximum(gnu, x, u), Vector2.clamp.maximum(gnu, y, v), Vector2.clamp.maximum(gnu, z, w)}
 
 def Vector3.min(left: Vector3, right: Vector3) -> Vector3:
-  Vector3.min_for(AccurateGradient{}, left, right)
+  Vector3.min_for(AppleLibm{}, left, right)
 
 def Vector3.max(left: Vector3, right: Vector3) -> Vector3:
-  Vector3.max_for(AccurateGradient{}, left, right)
+  Vector3.max_for(AppleLibm{}, left, right)
 
 def Vector3.barycenter(point: Vector3, +a: Vector3, b: Vector3, c: Vector3) -> Vector3:
   +v0 = Vector3.subtract(b, a)
@@ -690,33 +690,33 @@ def Matrix.rotation.x(values: F32 & F32) -> Matrix:
   Matrix{1.0, 0.0, 0.0, 0.0, 0.0, cosine, F32.neg(sine), 0.0,
     0.0, sine, cosine, 0.0, 0.0, 0.0, 0.0, 1.0}
 
-def Matrix.rotate_x_for(reference: Gradient.Reference, angle: F32) -> Matrix:
-  Matrix.rotation.x(Trig.sincos_for(Gradient.gnu(reference), angle))
+def Matrix.rotate_x_for(reference: Libm, angle: F32) -> Matrix:
+  Matrix.rotation.x(Trig.sincos_for(Libm.gnu(reference), angle))
 
 def Matrix.rotate_x(angle: F32) -> Matrix:
-  Matrix.rotate_x_for(AccurateGradient{}, angle)
+  Matrix.rotate_x_for(AppleLibm{}, angle)
 
 def Matrix.rotation.y(values: F32 & F32) -> Matrix:
   (+cosine, +sine) = values
   Matrix{cosine, 0.0, sine, 0.0, 0.0, 1.0, 0.0, 0.0,
     F32.neg(sine), 0.0, cosine, 0.0, 0.0, 0.0, 0.0, 1.0}
 
-def Matrix.rotate_y_for(reference: Gradient.Reference, angle: F32) -> Matrix:
-  Matrix.rotation.y(Trig.sincos_for(Gradient.gnu(reference), angle))
+def Matrix.rotate_y_for(reference: Libm, angle: F32) -> Matrix:
+  Matrix.rotation.y(Trig.sincos_for(Libm.gnu(reference), angle))
 
 def Matrix.rotate_y(angle: F32) -> Matrix:
-  Matrix.rotate_y_for(AccurateGradient{}, angle)
+  Matrix.rotate_y_for(AppleLibm{}, angle)
 
 def Matrix.rotation.z(values: F32 & F32) -> Matrix:
   (+cosine, +sine) = values
   Matrix{cosine, F32.neg(sine), 0.0, 0.0, sine, cosine, 0.0, 0.0,
     0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0}
 
-def Matrix.rotate_z_for(reference: Gradient.Reference, angle: F32) -> Matrix:
-  Matrix.rotation.z(Trig.sincos_for(Gradient.gnu(reference), angle))
+def Matrix.rotate_z_for(reference: Libm, angle: F32) -> Matrix:
+  Matrix.rotation.z(Trig.sincos_for(Libm.gnu(reference), angle))
 
 def Matrix.rotate_z(angle: F32) -> Matrix:
-  Matrix.rotate_z_for(AccurateGradient{}, angle)
+  Matrix.rotate_z_for(AppleLibm{}, angle)
 
 def Matrix.rotation.xyz(x_values: F32 & F32, y_values: F32 & F32, z_values: F32 & F32) -> Matrix:
   (+cx, +sx) = x_values
@@ -727,13 +727,13 @@ def Matrix.rotation.xyz(x_values: F32 & F32, y_values: F32 & F32, z_values: F32 
     (cz * sy * cx + sz * sx : F32), (sz * sy * cx - cz * sx : F32), (cy * cx : F32), 0.0,
     0.0, 0.0, 0.0, 1.0}
 
-def Matrix.rotate_xyz_for(reference: Gradient.Reference, angles: Vector3) -> Matrix:
+def Matrix.rotate_xyz_for(reference: Libm, angles: Vector3) -> Matrix:
   Vector3{x, y, z} = angles
-  +gnu = Gradient.gnu(reference)
+  +gnu = Libm.gnu(reference)
   Matrix.rotation.xyz(Trig.sincos_for(gnu, F32.neg(x)), Trig.sincos_for(gnu, F32.neg(y)), Trig.sincos_for(gnu, F32.neg(z)))
 
 def Matrix.rotate_xyz(angles: Vector3) -> Matrix:
-  Matrix.rotate_xyz_for(AccurateGradient{}, angles)
+  Matrix.rotate_xyz_for(AppleLibm{}, angles)
 
 def Matrix.rotation.zyx(x_values: F32 & F32, y_values: F32 & F32, z_values: F32 & F32) -> Matrix:
   (+cx, +sx) = x_values
@@ -743,13 +743,13 @@ def Matrix.rotation.zyx(x_values: F32 & F32, y_values: F32 & F32, z_values: F32 
     (cy * sz : F32), (cz * cx + sz * sy * sx : F32), (cx * sz * sy - cz * sx : F32), 0.0,
     F32.neg(sy), (cy * sx : F32), (cy * cx : F32), 0.0, 0.0, 0.0, 0.0, 1.0}
 
-def Matrix.rotate_zyx_for(reference: Gradient.Reference, angles: Vector3) -> Matrix:
+def Matrix.rotate_zyx_for(reference: Libm, angles: Vector3) -> Matrix:
   Vector3{x, y, z} = angles
-  +gnu = Gradient.gnu(reference)
+  +gnu = Libm.gnu(reference)
   Matrix.rotation.zyx(Trig.sincos_for(gnu, x), Trig.sincos_for(gnu, y), Trig.sincos_for(gnu, z))
 
 def Matrix.rotate_zyx(angles: Vector3) -> Matrix:
-  Matrix.rotate_zyx_for(AccurateGradient{}, angles)
+  Matrix.rotate_zyx_for(AppleLibm{}, angles)
 
 def Matrix.rotation.around(axis: Vector3, values: F32 & F32) -> Matrix:
   Vector3{+x, +y, +z} = axis
@@ -765,13 +765,13 @@ def Matrix.rotation.normalized(required: Bool, axis: Vector3, square: F32) -> Ve
     case False{}: axis
     case True{}: Vector3.scale(axis, (1.0 / F32.sqrt(square) : F32))
 
-def Matrix.rotate_for(reference: Gradient.Reference, +axis: Vector3, angle: F32) -> Matrix:
+def Matrix.rotate_for(reference: Libm, +axis: Vector3, angle: F32) -> Matrix:
   +square = Vector3.length_sqr(axis)
   normalized = Matrix.rotation.normalized(F32.is_ne(square, 0.0) && F32.is_ne(square, 1.0), axis, square)
-  Matrix.rotation.around(normalized, Trig.sincos_for(Gradient.gnu(reference), angle))
+  Matrix.rotation.around(normalized, Trig.sincos_for(Libm.gnu(reference), angle))
 
 def Matrix.rotate(axis: Vector3, angle: F32) -> Matrix:
-  Matrix.rotate_for(AccurateGradient{}, axis, angle)
+  Matrix.rotate_for(AppleLibm{}, axis, angle)
 
 def Vector4.zero() -> Vector4:
   Vector4{0.0, 0.0, 0.0, 0.0}
@@ -851,25 +851,25 @@ def Vector4.normalize(+vector: Vector4) -> Vector4:
   +length = Vector4.length(vector)
   Vector4.normalized((length > 0.0 : F32), vector, length)
 
-def Vector4.min_for(reference: Gradient.Reference, left: Vector4, right: Vector4) -> Vector4:
+def Vector4.min_for(reference: Libm, left: Vector4, right: Vector4) -> Vector4:
   Vector4{x, y, z, w} = left
   Vector4{a, b, c, d} = right
-  +gnu = Gradient.gnu(reference)
+  +gnu = Libm.gnu(reference)
   Vector4{Vector2.clamp.minimum(gnu, x, a), Vector2.clamp.minimum(gnu, y, b),
     Vector2.clamp.minimum(gnu, z, c), Vector2.clamp.minimum(gnu, w, d)}
 
-def Vector4.max_for(reference: Gradient.Reference, left: Vector4, right: Vector4) -> Vector4:
+def Vector4.max_for(reference: Libm, left: Vector4, right: Vector4) -> Vector4:
   Vector4{x, y, z, w} = left
   Vector4{a, b, c, d} = right
-  +gnu = Gradient.gnu(reference)
+  +gnu = Libm.gnu(reference)
   Vector4{Vector2.clamp.maximum(gnu, x, a), Vector2.clamp.maximum(gnu, y, b),
     Vector2.clamp.maximum(gnu, z, c), Vector2.clamp.maximum(gnu, w, d)}
 
 def Vector4.min(left: Vector4, right: Vector4) -> Vector4:
-  Vector4.min_for(AccurateGradient{}, left, right)
+  Vector4.min_for(AppleLibm{}, left, right)
 
 def Vector4.max(left: Vector4, right: Vector4) -> Vector4:
-  Vector4.max_for(AccurateGradient{}, left, right)
+  Vector4.max_for(AppleLibm{}, left, right)
 
 def Vector4.lerp(left: Vector4, right: Vector4, +amount: F32) -> Vector4:
   Vector4{x, y, z, w} = left
@@ -1074,19 +1074,19 @@ def Quaternion.axis.values(axis: Vector3, values: F32 & F32) -> Vector4:
   (cosine, +sine) = values
   Quaternion.normalize(Vector4{(x * sine : F32), (y * sine : F32), (z * sine : F32), cosine})
 
-def Quaternion.axis.checked(nonzero: Bool, reference: Gradient.Reference, axis: Vector3, length: F32, angle: F32) -> Vector4:
+def Quaternion.axis.checked(nonzero: Bool, reference: Libm, axis: Vector3, length: F32, angle: F32) -> Vector4:
   match nonzero:
     case False{}: Quaternion.identity()
     case True{}:
       normalized = Vector3.scale(axis, (1.0 / length : F32))
-      Quaternion.axis.values(normalized, Trig.sincos_for(Gradient.gnu(reference), (angle * 0.5 : F32)))
+      Quaternion.axis.values(normalized, Trig.sincos_for(Libm.gnu(reference), (angle * 0.5 : F32)))
 
-def Quaternion.from_axis_angle_for(reference: Gradient.Reference, +axis: Vector3, angle: F32) -> Vector4:
+def Quaternion.from_axis_angle_for(reference: Libm, +axis: Vector3, angle: F32) -> Vector4:
   +length = Vector3.length(axis)
   Quaternion.axis.checked(F32.is_ne(length, 0.0), reference, axis, length, angle)
 
 def Quaternion.from_axis_angle(axis: Vector3, angle: F32) -> Vector4:
-  Quaternion.from_axis_angle_for(AccurateGradient{}, axis, angle)
+  Quaternion.from_axis_angle_for(AppleLibm{}, axis, angle)
 
 def Quaternion.euler.values(pitch: F32 & F32, yaw: F32 & F32, roll: F32 & F32) -> Vector4:
   (+cx, +sx) = pitch
@@ -1095,12 +1095,12 @@ def Quaternion.euler.values(pitch: F32 & F32, yaw: F32 & F32, roll: F32 & F32) -
   Vector4{(sx * cy * cz - cx * sy * sz : F32), (cx * sy * cz + sx * cy * sz : F32),
     (cx * cy * sz - sx * sy * cz : F32), (cx * cy * cz + sx * sy * sz : F32)}
 
-def Quaternion.from_euler_for(reference: Gradient.Reference, pitch: F32, yaw: F32, roll: F32) -> Vector4:
-  +gnu = Gradient.gnu(reference)
+def Quaternion.from_euler_for(reference: Libm, pitch: F32, yaw: F32, roll: F32) -> Vector4:
+  +gnu = Libm.gnu(reference)
   Quaternion.euler.values(Trig.sincos_for(gnu, (pitch * 0.5 : F32)), Trig.sincos_for(gnu, (yaw * 0.5 : F32)), Trig.sincos_for(gnu, (roll * 0.5 : F32)))
 
 def Quaternion.from_euler(pitch: F32, yaw: F32, roll: F32) -> Vector4:
-  Quaternion.from_euler_for(AccurateGradient{}, pitch, yaw, roll)
+  Quaternion.from_euler_for(AppleLibm{}, pitch, yaw, roll)
 
 def Vector3.axis.rotated(+vector: Vector3, axis: Vector3, values: F32 & F32) -> Vector3:
   (cosine, sine) = values
@@ -1109,13 +1109,13 @@ def Vector3.axis.rotated(+vector: Vector3, axis: Vector3, values: F32 & F32) -> 
   second = Vector3.cross_product(spin, first)
   Vector3.add(Vector3.add(vector, Vector3.scale(first, (cosine * 2.0 : F32))), Vector3.scale(second, 2.0))
 
-def Vector3.rotate_by_axis_angle_for(reference: Gradient.Reference, vector: Vector3, +axis: Vector3, angle: F32) -> Vector3:
+def Vector3.rotate_by_axis_angle_for(reference: Libm, vector: Vector3, +axis: Vector3, angle: F32) -> Vector3:
   +length = Vector3.length(axis)
   normalized = Vector3.scale(axis, (1.0 / Bool.pick(F32, F32.is_eq(length, 0.0), 1.0, length) : F32))
-  Vector3.axis.rotated(vector, normalized, Trig.sincos_for(Gradient.gnu(reference), (angle / 2.0 : F32)))
+  Vector3.axis.rotated(vector, normalized, Trig.sincos_for(Libm.gnu(reference), (angle / 2.0 : F32)))
 
 def Vector3.rotate_by_axis_angle(vector: Vector3, axis: Vector3, angle: F32) -> Vector3:
-  Vector3.rotate_by_axis_angle_for(AccurateGradient{}, vector, axis, angle)
+  Vector3.rotate_by_axis_angle_for(AppleLibm{}, vector, axis, angle)
 
 def Quaternion.cubic_hermite_spline(first: Vector4, first_tangent: Vector4, second: Vector4, second_tangent: Vector4, +amount: F32) -> Vector4:
   +square = (amount * amount : F32)

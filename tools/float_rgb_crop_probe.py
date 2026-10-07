@@ -5,15 +5,13 @@ import json
 import struct
 
 from bmp_probe import bend_bytes
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from conformance import ROOT, source_gate
 import probekit
 from probekit import ProbeFailure
 
 PRELUDE = ['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-           'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-           'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+           C_EMITTER,
            'static void emit(Image image){word(image.width);word(image.height);for(int i=0;i<image.width*image.height*12;i++)byte(((unsigned char*)image.data)[i]);end();UnloadImage(image);}',
            'int main(void){SetTraceLogLevel(LOG_NONE);']
 PROGRAM = '''import Base
@@ -28,31 +26,32 @@ def input_bytes(chunks: +List<+List<U32>>, values: +List<U32>) -> +List<U32>:
     case Nil{}: List.reverse(&2, U32, values)
     case Con{head, tail}: input_bytes(tail, reverse_into(head, values))
 '''+BEND_EMITTER+'''
-def emitted(+width: U32, +height: U32, result: Result<&1, &1, J.Image.FloatRGB, +List<U32>>) -> IO(Unit):
-  match result:
-    case Fail{_}: IO.die(Unit, 1, "rectangle sample domain changed")
-    case Done{bytes}:
-      header = {[(width .&. 255 : U32), ((width >> 8n) .&. 255 : U32), 0, 0, (height .&. 255 : U32), ((height >> 8n) .&. 255 : U32), 0, 0] : +List<U32>}
-      emit_bytes(~&2, List.append(&2, U32, header, bytes))
-def observed(result: Maybe<J.Image.FloatRGB>) -> IO(Unit):
+def emitted.sized(+width: U32, +height: U32, bytes: List<U32>) -> IO(Unit):
+  header = {[(width .&. 255 : U32), ((width >> 8n) .&. 255 : U32), 0, 0, (height .&. 255 : U32), ((height >> 8n) .&. 255 : U32), 0, 0] : List<U32>}
+  emit_bytes(~&1, List.append(&1, U32, header, bytes))
+def emitted(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
+  match data:
+    case Tuple{Tuple{width, height}, Tuple{9, bytes}}: emitted.sized(width, height, bytes)
+    case _: IO.die(Unit, 1, "rectangle pixel format changed")
+def observed(result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "rectangle result/owner differs")
-    case Some{J.FloatRGB{+width, +height, pixels}}: emitted(width, height, J.Image.FloatRGB.to_bytes(J.FloatRGB{width, height, pixels}))
-def extracted(reject: Bool, result: J.Image.FloatRGB & Maybe<J.Image.FloatRGB>) -> Maybe<J.Image.FloatRGB>:
+    case Some{image}: emitted(J.Surface.export(image))
+def extracted(reject: Bool, result: J.Surface & Maybe<J.Surface>) -> Maybe<J.Surface>:
   match reject result:
     case True{} Tuple{source, None{}}: Some{source}
     case False{} Tuple{_, Some{region}}: Some{region}
     case _ _: None{}
-def cropped(reject: Bool, result: Result<&1, &1, J.Image.FloatRGB & J.Surface.Error, J.Image.FloatRGB>) -> Maybe<J.Image.FloatRGB>:
+def cropped(reject: Bool, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Maybe<J.Surface>:
   match reject result:
     case True{} Fail{Tuple{source, J.InvalidRectangle{}}}: Some{source}
     case False{} Done{image}: Some{image}
     case _ _: None{}
-def apply(crop: Bool, reject: Bool, rect: J.Rectangle, result: Maybe<J.Image.FloatRGB>) -> Maybe<J.Image.FloatRGB>:
+def apply(crop: Bool, reject: Bool, rect: J.Rectangle, result: Maybe<J.Surface>) -> Maybe<J.Surface>:
   match crop result:
     case _ None{}: None{}
-    case True{} Some{image}: cropped(reject, J.Image.FloatRGB.crop(image, rect))
-    case False{} Some{image}: extracted(reject, J.Image.FloatRGB.extract(image, rect))
+    case True{} Some{image}: cropped(reject, J.Surface.crop(image, rect))
+    case False{} Some{image}: extracted(reject, J.Surface.extract(image, rect))
 def source_read(result: Array<M.Vector3> & M.Vector3) -> Bool:
   match result:
     case Tuple{_, M.Vector3{x, y, z}}: F32.is_eq(x, 7.25) && F32.is_eq(y, 7.5) && F32.is_eq(z, 7.75)
@@ -60,15 +59,15 @@ def region_read(source: Array<M.Vector3>, result: Array<M.Vector3> & M.Vector3) 
   match result:
     case Tuple{_, M.Vector3{x, y, z}}:
       F32.is_eq(x, 0.0) && F32.is_eq(y, 0.0) && F32.is_eq(z, 0.0) && source_read(Array.get(M.Vector3, source, 7))
-def independent(result: J.Image.FloatRGB & Maybe<J.Image.FloatRGB>) -> Bool:
+def independent(result: J.Surface & Maybe<J.Surface>) -> Bool:
   match result:
-    case Tuple{J.FloatRGB{6, 4, source}, Some{J.FloatRGB{3, 2, region}}}:
+    case Tuple{J.Surface{6, 4, 9, J.Vectors{source}}, Some{J.Surface{3, 2, 9, J.Vectors{region}}}}:
       region_read(source, Array.get(M.Vector3, Array.set(M.Vector3, region, 0, M.Vector3{0.0, 0.0, 0.0}), 0))
     case _: False{}
-def ownership(result: Maybe<J.Image.FloatRGB>) -> Bool:
+def ownership(result: Maybe<J.Surface>) -> Bool:
   match result:
     case None{}: False{}
-    case Some{image}: independent(J.Image.FloatRGB.extract(image, J.Rectangle{1.0, 1.0, 3.0, 2.0}))
+    case Some{image}: independent(J.Surface.extract(image, J.Rectangle{1.0, 1.0, 3.0, 2.0}))
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -104,7 +103,7 @@ def main():
         if len(row)!=8+12*count:raise ProbeFailure('Native rectangle metadata/length differs')
         pixels+=count
     wanted=reference[:-1]+[reference[-1] for _ in controls]+[[1]];probe.report['sources']=source_gate()
-    image=f'J.Image.FloatRGB.from_bytes(6, 4, {bend_bytes(data)})';actions=[]
+    image=f'J.Surface.from_bytes(6, 4, 9, {bend_bytes(data)})';actions=[]
     for reject,group in ((False,cases),(True,controls)):
         for case in group:
             rectangle='J.Rectangle{'+', '.join(f'F32.neg({abs(v):.1f})' if v<0 else f'{v:.1f}' for v in case['rect'])+'}'

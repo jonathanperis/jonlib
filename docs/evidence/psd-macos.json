@@ -1,0 +1,67 @@
+{
+ "gate": "psd",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 5.7,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/psd-probe/results.json": {
+   "sha256": "c6e8a9c20f529627b40cdaa3eaba73590f9a7d86eba58c3b98c3337c0ef08381",
+   "summary": {
+    "passed": true,
+    "probe": "psd",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 61,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 61,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 61,
+      "different": []
+     }
+    },
+    "batches": 1,
+    "decode_cases": 36,
+    "error_cases": 25,
+    "export_cases": 0,
+    "decoded_pixels": 12729,
+    "export_bytes": 0,
+    "inputs_sha256": "7c0ea5dddcba1ee7e331d9b55a87e3241adad51a9a5d4a5df47d21011cf2a35c",
+    "reference_sha256": "483d6ae4f55c4c8242fadd56924bf60338cb6636742cb3a9485ef783c532bca9",
+    "decode_reference": "Fused"
+   }
+  }
+ }
+}

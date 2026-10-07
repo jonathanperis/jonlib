@@ -12,24 +12,29 @@ from probekit import ROOT, ProbeFailure
 
 PROGRAM='''import Base
 import ../../jonlib.bend as J
-def error_name(error: J.Image.LoadError) -> String:
+import ../../jonmath.bend as M
+def error_name(error: J.Surface.IOError) -> String:
   match error:
-    case J.ImageFileError{_, _}: "file"
-    case J.ImageDecodeError{J.UnsupportedImageSize{}}: "size"
+    case J.FileError{_, _}: "file"
+    case J.DataError{J.UnsupportedImageSize{}}: "size"
     case _: "decode"
+def emit_colors(result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "animation frame colors unavailable")
+    case Done{colors}: IO.print(List.show(~&1, ~U32, ~U32.show, colors))
 def emit_frames(frames: List<J.Surface>) -> IO(Unit):
   match frames:
     case Nil{}: IO.pure(Unit, Unit{})
     case Con{surface, rest}:
       do IO<Unit>:
-        IO.print(List.show(~&1, ~U32, ~U32.show, J.Surface.colors(surface)))
+        emit_colors(J.Surface.colors(surface))
         emit_frames(rest)
 def emit_animation(result: U32 & U32 & U32 & List<J.Surface>) -> IO(Unit):
   (width, height, count, frames) = result
   do IO<Unit>:
     IO.print("{\\"loaded\\":true,\\"width\\":" ++ U32.show(width) ++ ",\\"height\\":" ++ U32.show(height) ++ ",\\"count\\":" ++ U32.show(count) ++ "}")
     emit_frames(frames)
-def observed(result: Result<&1, &1, J.Image.LoadError, J.Image.Animation>) -> IO(Unit):
+def observed(result: Result<&1, &1, J.Surface.IOError, J.Image.Animation>) -> IO(Unit):
   match result:
     case Fail{error}: IO.print("{\\"loaded\\":false,\\"error\\":\\"" ++ error_name(error) ++ "\\"}")
     case Done{animation}: emit_animation(J.Image.Animation.entries(animation))
@@ -37,7 +42,7 @@ def checked(ok: Bool) -> IO(Unit):
   match ok:
     case True{}: IO.pure(Unit, Unit{})
     case False{}: IO.die(Unit, 1, "animation-file outcome or closure differs")
-def required(expected: String, result: Result<&1, &1, J.Image.LoadError, J.Image.Animation>) -> IO(Unit):
+def required(expected: String, result: Result<&1, &1, J.Surface.IOError, J.Image.Animation>) -> IO(Unit):
   match result:
     case Done{_}: checked(String.eq(expected, "success"))
     case Fail{error}: checked(String.eq(expected, error_name(error)))
@@ -46,11 +51,11 @@ def closure_loop(n: Nat) -> IO(Unit):
     case 0n: IO.print("{\\"closure_checks\\":true}")
     case 1n+rest:
       do IO<Unit>:
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Animation>, Unit, J.Image.Animation.load_image_for(REFERENCE, VALID, 3, 18), required("success"))
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Animation>, Unit, J.Image.Animation.load_image_for(REFERENCE, VALID, 2, 18), required("size"))
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Animation>, Unit, J.Image.Animation.load_image_for(REFERENCE, INVALID, 10, 100), required("decode"))
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Animation>, Unit, J.Image.Animation.load_image_for(REFERENCE, DIRECTORY, 10, 100), required("file"))
-        IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Animation>, Unit, J.Image.Animation.load_image_for(REFERENCE, LARGE, 10, 100), required("size"))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Image.Animation>, Unit, J.Image.Animation.load_image_for(REFERENCE, VALID, 3, 18), required("success"))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Image.Animation>, Unit, J.Image.Animation.load_image_for(REFERENCE, VALID, 2, 18), required("size"))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Image.Animation>, Unit, J.Image.Animation.load_image_for(REFERENCE, INVALID, 10, 100), required("decode"))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Image.Animation>, Unit, J.Image.Animation.load_image_for(REFERENCE, DIRECTORY, 10, 100), required("file"))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Image.Animation>, Unit, J.Image.Animation.load_image_for(REFERENCE, LARGE, 10, 100), required("size"))
         closure_loop(rest)
 def main() -> IO(Unit):
   do IO<Unit>:
@@ -108,7 +113,7 @@ def main():
         else:row['error']=case['error']
     if at!=len(expected):raise ProbeFailure('Incomplete native animation file output')
     profile=image_decode_reference()
-    preamble=PROGRAM.replace('REFERENCE',f'J.{profile}{{}}')
+    preamble=PROGRAM.replace('REFERENCE',f'M.{profile}{{}}')
     for key,path in [('INVALID',str((work/'malformed.gif').relative_to(ROOT))),('VALID',sequence),('DIRECTORY',str(directory.relative_to(ROOT))),('LARGE',controls[0]['path'])]:
         preamble=preamble.replace(key,json.dumps(path))
     actions=[('load',case) for case in [*cases,*controls]]+[('default',None),('closure',None)]
@@ -117,8 +122,8 @@ def main():
     def render(selected,gpu):
         body=preamble
         for kind,case in selected:
-            if kind=='load':body+=f'    IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Animation>, Unit, J.Image.Animation.load_image_for(J.{profile}{{}}, {json.dumps(case["path"])}, {case.get("frames",100)}, {case.get("pixels",16777216)}), observed)\n'
-            elif kind=='default':body+=f'    IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Animation>, Unit, J.Image.Animation.load_image({json.dumps(str(default.relative_to(ROOT)))}, 1, 1), observed)\n'
+            if kind=='load':body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Image.Animation>, Unit, J.Image.Animation.load_image_for(M.{profile}{{}}, {json.dumps(case["path"])}, {case.get("frames",100)}, {case.get("pixels",16777216)}), observed)\n'
+            elif kind=='default':body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Image.Animation>, Unit, J.Image.Animation.load_image({json.dumps(str(default.relative_to(ROOT)))}, 1, 1), observed)\n'
             else:body+='    closure_loop(100n)\n'
         return body
 

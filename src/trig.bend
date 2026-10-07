@@ -111,6 +111,3 @@ def evaluate(zero: Bool, gnu: Bool, +radians: F32) -> F32 & F32:
 
 def sincos_for(gnu: Bool, +radians: F32) -> F32 & F32:
   evaluate(F32.is_eq(radians, 0.0), gnu, radians)
-
-def sincos(+radians: F32) -> F32 & F32:
-  sincos_for(False{}, radians)

@@ -4,10 +4,10 @@ Jonlib adapts raylib 6.0 `ExportImageAsCode`, which renders an image as a C
 header containing its metadata and every storage byte.
 
 ```bend
-Image.Formatted.to_code(image, path) -> Result<&1, &1, Image.Formatted, String>
-Image.Formatted.write_code(image, path) -> IO(Result<&1, &1, Image.Formatted.CodeWriteError, Unit>)
-Image.FloatRGB.to_code(image, path) -> Result<&1, &1, Image.FloatRGB, String>
-Image.FloatRGB.write_code(image, path) -> IO(Result<&1, &1, Image.FloatRGB.CodeWriteError, Unit>)
+Surface.to_code(image, path) -> Result<&1, &1, Surface, String>
+Surface.write_code(image, path) -> IO(Result<&1, &1, Surface.IOError, Unit>)
+Surface.to_code(image, path) -> Result<&1, &1, Surface, String>
+Surface.write_code(image, path) -> IO(Result<&1, &1, Surface.IOError, Unit>)
 ```
 
 `to_code` returns the complete native text; `path` only supplies the exported
@@ -15,12 +15,12 @@ name and the pure operation performs no file IO. Success consumes the owner;
 an unsupported path, payload size or sample returns the original owner.
 
 ```bend
-type Image.Formatted.CodeWriteError is Type:
-  CodeSourceError{image: Image.Formatted}
+type Surface.IOError is Type:
+  CodeSourceError{image: Surface}
   CodeFileError{code: U32, message: String}
 
-type Image.FloatRGB.CodeWriteError is Type:
-  FloatCodeSourceError{image: Image.FloatRGB}
+type Surface.IOError is Type:
+  FloatCodeSourceError{image: Surface}
   FloatCodeFileError{code: U32, message: String}
 ```
 
@@ -30,9 +30,9 @@ consume the owner and close the handle.
 
 ## Contract
 
-- **Sources**: checked `Image.Formatted` formats 1..8 (format 8 within the
+- **Sources**: checked `Surface` formats 1..8 (format 8 within the
   [R32](R32.md) domain, exporting its exact little-endian sample words and native
-  format-8 metadata) and `Image.FloatRGB` format 9, under their existing
+  format-8 metadata) and `Surface` (format 9) format 9, under their existing
   dimension/storage invariants.
 - **Float payload**: format-9 metadata and all twelve little-endian RGB bytes per
   pixel, preserving every non-NaN sample word (signed zero, subnormals,

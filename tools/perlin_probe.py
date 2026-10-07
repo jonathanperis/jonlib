@@ -38,7 +38,7 @@ def main():
     args = probekit.arguments(__doc__,lambda parser:parser.add_argument('--uncontracted-control',action='store_true'))
     probe = probekit.Probe('perlin-uncontracted' if args.uncontracted_control else 'perlin',args)
     probe.report['sources'] = source_gate()
-    fused = not args.uncontracted_control and noise_reference()=='FusedNoise'
+    fused = not args.uncontracted_control and noise_reference()=='Fused'
     values = samples()
     text = probe.native('#include <stdio.h>\n#include <string.h>\n'+
         ('#pragma STDC FP_CONTRACT ON\n' if fused else '#pragma STDC FP_CONTRACT OFF\n')+

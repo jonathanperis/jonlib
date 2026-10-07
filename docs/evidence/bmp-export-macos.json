@@ -1,0 +1,76 @@
+{
+ "gate": "bmp-export",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 42.2,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/formatted-bmp-export-probe/results.json": {
+   "sha256": "61c8dc17a91158ecf1e39bc2e945c365d4e20dba51c6bde0f8b132306a850c42",
+   "summary": {
+    "passed": true,
+    "probe": "formatted-bmp-export",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 78,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 78,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 78,
+      "different": []
+     }
+    },
+    "batches": 10,
+    "images": 78,
+    "pixels": 331465,
+    "encoded_bytes": 1221952,
+    "decoded_bytes": 1325860,
+    "typed_io": {
+     "ordinary": {
+      "iterations": 100,
+      "writes": 2400
+     },
+     "failure": {
+      "iterations": 100,
+      "writes": 800
+     }
+    },
+    "file_descriptor_limit": 64,
+    "inputs_sha256": "78ef68aafbdad734dfa68c2aa2025fbd2ae6a979276f02080214bf3fb4489feb",
+    "reference_sha256": "57167fe5c6f9ff4f50758a7a4f91f2fcf7807e773ce540c7580716aa6ff18f2d"
+   }
+  }
+ }
+}

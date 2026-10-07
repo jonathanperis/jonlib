@@ -1,0 +1,36 @@
+{
+ "gate": "bend-overlay",
+ "title": "Compiler overlay against upstream regressions",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 10.4,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/bend-regressions/results.json": {
+   "sha256": "68bfe905ca3a6f9089380398db07b1ae7263c1f23f03943a3f761ab27bf576e5",
+   "summary": {
+    "passed": true,
+    "toolchain": {
+     "version": "2.0.27+jonlib-metal.1",
+     "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+     "patch": {
+      "path": "patches/bend-metal-dispatch.patch",
+      "sha256": "d4fbe3723f78bbcd456d4937b8f52f48454e7748d86799b22a95165a04cd9879",
+      "files": {
+       "items": 3
+      }
+     }
+    },
+    "results": {
+     "items": 16
+    }
+   }
+  }
+ }
+}

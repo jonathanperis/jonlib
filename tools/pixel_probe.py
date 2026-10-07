@@ -24,23 +24,29 @@ def fill(values: +List<U32>, +index: U32, +width: U32, surface: J.Surface) -> J.
   match values:
     case Nil{}: surface
     case Con{color, rest}: fill(rest, (index + 1 : U32), width, J.Surface.draw_pixel(surface, U32.to_f32((index % width : U32)), U32.to_f32((index / width : U32)), color))
-def dithered(result: Result<&1, &1, J.Surface & J.Surface.Error, J.Image.Packed16>) -> Maybe<J.Image.Packed16>:
+def pairs(bytes: List<U32>) -> List<U32>:
+  match bytes:
+    case Con{low, Con{high, rest}}: Con{(low + (high << 8n) : U32), pairs(rest)}
+    case _: Nil{}
+def emit(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
+  ((w, h), (format, bytes)) = data
+  IO.print("{\\"width\\":" ++ U32.show(w) ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"format\\":" ++ U32.show(format) ++ ",\\"words\\":" ++ List.show(~&1, ~U32, ~U32.show, pairs(bytes)) ++ "}")
+def kept(result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> IO(Unit):
   match result:
-    case Fail{_}: None{}
-    case Done{image}: Some{image}
-def created(image: Maybe<J.Surface>, width: U32, values: +List<U32>, r: U32, g: U32, b: U32, a: U32) -> Maybe<J.Image.Packed16>:
+    case Fail{_}: IO.die(Unit, 1, "rejected dithering owner unreadable")
+    case Done{colors}: IO.print("{\\"rejected\\":\\"InvalidDitherBits\\",\\"pixels\\":" ++ List.show(~&1, ~U32, ~U32.show, colors) ++ "}")
+def created(image: Maybe<J.Surface>, width: U32, values: +List<U32>, r: U32, g: U32, b: U32, a: U32) -> Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>:
   match image:
     case None{}: None{}
-    case Some{surface}: dithered(J.Surface.dither(fill(values, 0, width, surface), r, g, b, a))
-def calculate(+width: U32, height: U32, values: +List<U32>, r: U32, g: U32, b: U32, a: U32) -> Maybe<J.Image.Packed16>:
+    case Some{surface}: Some{J.Surface.dither(fill(values, 0, width, surface), r, g, b, a)}
+def calculate(+width: U32, height: U32, values: +List<U32>, r: U32, g: U32, b: U32, a: U32) -> Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>:
   created(J.Surface.create(width, height, 0), width, values, r, g, b, a)
-def emit(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
-  ((w, h), (format, words)) = data
-  IO.print("{\\"width\\":" ++ U32.show(w) ++ ",\\"height\\":" ++ U32.show(h) ++ ",\\"format\\":" ++ U32.show(format) ++ ",\\"words\\":" ++ List.show(~&1, ~U32, ~U32.show, words) ++ "}")
-def observed(result: Maybe<J.Image.Packed16>) -> IO(Unit):
+def observed(result: Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>) -> IO(Unit):
   match result:
-    case None{}: IO.die(Unit, 1, "valid dithering request rejected")
-    case Some{image}: emit(J.Image.Packed16.export(image))
+    case None{}: IO.die(Unit, 1, "dithering canvas rejected")
+    case Some{Done{image}}: emit(J.Surface.export(image))
+    case Some{Fail{Tuple{surface, J.InvalidDitherBits{}}}}: kept(J.Surface.colors(surface))
+    case Some{Fail{_}}: IO.die(Unit, 1, "dithering request failed")
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -85,7 +91,12 @@ def main():
     if len(reference)!=len(cases)+1 or len(reference[0])!=len(sizes):raise ProbeFailure('Incomplete pixel reference results')
     # The candidate prints sizes in 64-entry chunks, then one packed dithering result per case.
     actions = [('sizes',start) for start in range(0,len(sizes),64)]+[('dither',case) for case in cases]
-    expected = [reference[0][start:start+64] for start in range(0,len(sizes),64)]+reference[1:]
+    # Jonlib's dither contract accepts only the three 16-bit layouts raylib names
+    # (R5G6B5, R5G5B5A1, R4G4B4A4); for any other bit counts raylib leaves format 0
+    # and Jonlib rejects with InvalidDitherBits, returning the owner unchanged.
+    dithered = [row if row['format'] else dict(rejected='InvalidDitherBits', pixels=pixels)
+                for row,(_,_,pixels,_) in zip(reference[1:],cases)]
+    expected = [reference[0][start:start+64] for start in range(0,len(sizes),64)]+dithered
 
     def render(selected,gpu):
         bang = '!' if gpu else '';body = PROGRAM

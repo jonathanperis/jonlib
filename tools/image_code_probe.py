@@ -4,8 +4,8 @@ import hashlib
 import json
 import struct
 
-from byte_probe import BEND_EMITTER, parse_results
-from formatted_float_probe import fixtures as formatted_fixtures
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
+from format_float_probe import fixtures as formatted_fixtures
 from float_rgb_bytes_probe import fixtures as float_fixtures
 from image_file_probe import FILE_DESCRIPTOR_LIMIT
 import probekit
@@ -40,25 +40,26 @@ def formatted(result: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
   ((width, height), (format, bytes)) = result
   header = List.reverse(&1, U32, word_bytes(~&1, 4n, format, word_bytes(~&1, 4n, height, word_bytes(~&1, 4n, width, Nil{}))))
   emit_bytes(~&1, List.append(&1, U32, header, bytes))
-def observed(reject: Bool, result: Result<&1, &1, J.Image.Formatted, String>) -> IO(Unit):
+def observed(reject: Bool, result: Result<&1, &1, J.Surface & J.Surface.Error, String>) -> IO(Unit):
   match reject result:
     case False{} Done{text}: emit_bytes(~&1, text_bytes(text, Nil{}))
-    case True{} Fail{image}: formatted(J.Image.Formatted.export(image))
+    case True{} Fail{Tuple{image, J.InvalidRequest{}}}: formatted(J.Surface.export(image))
     case _ _: IO.die(Unit, 1, "image-as-code acceptance/owner differs")
-def loaded(path: String, reject: Bool, result: Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>) -> IO(Unit):
+def loaded(path: String, reject: Bool, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "code fixture read failed")
-    case Done{image}: observed(reject, J.Image.Formatted.to_codeBANG(image, path))
-def write_ok(result: Result<&1, &1, J.Image.Formatted.CodeWriteError, Unit>) -> IO(Unit):
+    case Done{image}: observed(reject, J.Surface.to_codeBANG(image, path))
+def write_ok(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
     case Done{_}: IO.pure(Unit, Unit{})
     case Fail{_}: IO.die(Unit, 1, "code file write failed")
-def saved(path: String, result: Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>) -> IO(Unit):
+def saved(path: String, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "code file source read failed")
-    case Done{image}: IO.bind(Result<&1, &1, J.Image.Formatted.CodeWriteError, Unit>, Unit, J.Image.Formatted.write_code(image, path), write_ok)
-def small() -> J.Image.Formatted:
-  J.FormattedImage{1, 1, 7, Array.new(U32, 0n, 67305985)}
+    case Done{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_code(image, path), write_ok)
+# Format 7 words are canonical Colors: 0x01020304 stores the bytes 1, 2, 3, 4.
+def small() -> J.Surface:
+  J.Surface{1, 1, 7, J.Words{Array.new(U32, 0n, 16909060)}}
 def invalid_path(kind: U32) -> String:
   match kind:
     case 0: ""
@@ -67,86 +68,93 @@ def invalid_path(kind: U32) -> String:
     case 3: "caf" ++ SCon{Char.from_u32(233), ".h"}
     case 4: SCon{Char.from_u32(0), "bad.h"}
     case _: OVERFLOW_NAME
-def reject_path(kind: U32) -> Result<&1, &1, J.Image.Formatted, String>:
-  J.Image.Formatted.to_code(small(), invalid_path(kind))
-def rejected_write(result: Result<&1, &1, J.Image.Formatted.CodeWriteError, Unit>) -> IO(Unit):
+def reject_path(kind: U32) -> Result<&1, &1, J.Surface & J.Surface.Error, String>:
+  J.Surface.to_code(small(), invalid_path(kind))
+def rejected_write(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.CodeSourceError{image}}: formatted(J.Image.Formatted.export(image))
+    case Fail{J.SourceError{image, J.InvalidRequest{}}}: formatted(J.Surface.export(image))
     case _: IO.die(Unit, 1, "code rejected write lost owner")
-def reject_large_write(result: Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>) -> IO(Unit):
+def reject_large_write(result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "large code source read failed")
-    case Done{image}: IO.bind(Result<&1, &1, J.Image.Formatted.CodeWriteError, Unit>, Unit, J.Image.Formatted.write_code(image, SENTINEL), rejected_write)
-def failed_write(result: Result<&1, &1, J.Image.Formatted.CodeWriteError, Unit>) -> IO(Unit):
+    case Done{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_code(image, SENTINEL), rejected_write)
+def failed_write(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.CodeFileError{_, _}}: IO.pure(Unit, Unit{})
+    case Fail{J.FileError{_, _}}: IO.pure(Unit, Unit{})
     case _: IO.die(Unit, 1, "code file error kind differs")
-def float_samples(pixels: List<M.Vector3>, values: List<U32>) -> List<U32>:
-  match pixels:
-    case Nil{}: List.reverse(&1, U32, values)
-    case Con{M.Vector3{r, g, b}, rest}:
-      float_samples(rest, word_bytes(~&1, 4n, F32.bits(b), word_bytes(~&1, 4n, F32.bits(g), word_bytes(~&1, 4n, F32.bits(r), values))))
-def float_entries(result: U32 & U32 & List<M.Vector3>) -> IO(Unit):
-  (width, height, pixels) = result
-  emit_bytes(~&1, float_samples(pixels, word_bytes(~&1, 4n, height, word_bytes(~&1, 4n, width, Nil{}))))
-def float_observed(reject: Bool, result: Result<&1, &1, J.Image.FloatRGB, String>) -> IO(Unit):
+def float_sized(+width: U32, +height: U32, bytes: List<U32>) -> IO(Unit):
+  emit_bytes(~&1, List.append(&1, U32, List.reverse(&1, U32, word_bytes(~&1, 4n, height, word_bytes(~&1, 4n, width, Nil{}))), bytes))
+def float_entries(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
+  match data:
+    case Tuple{Tuple{width, height}, Tuple{9, bytes}}: float_sized(width, height, bytes)
+    case _: IO.die(Unit, 1, "float code owner format changed")
+def float_observed(reject: Bool, result: Result<&1, &1, J.Surface & J.Surface.Error, String>) -> IO(Unit):
   match reject result:
     case False{} Done{text}: emit_bytes(~&1, text_bytes(text, Nil{}))
-    case True{} Fail{image}: float_entries(J.Image.FloatRGB.entries(image))
+    case True{} Fail{Tuple{image, J.InvalidRequest{}}}: float_entries(J.Surface.export(image))
     case _ _: IO.die(Unit, 1, "float code acceptance/owner differs")
-def float_loaded(path: String, reject: Bool, result: Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>) -> IO(Unit):
+def float_loaded(path: String, reject: Bool, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "float code fixture read failed")
-    case Done{image}: float_observed(reject, J.Image.FloatRGB.to_codeBANG(image, path))
-def float_write_ok(result: Result<&1, &1, J.Image.FloatRGB.CodeWriteError, Unit>) -> IO(Unit):
+    case Done{image}: float_observed(reject, J.Surface.to_codeBANG(image, path))
+def float_write_ok(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
     case Done{_}: IO.pure(Unit, Unit{})
     case Fail{_}: IO.die(Unit, 1, "float code file write failed")
-def float_saved(path: String, result: Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>) -> IO(Unit):
+def float_saved(path: String, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "float code file source read failed")
-    case Done{image}: IO.bind(Result<&1, &1, J.Image.FloatRGB.CodeWriteError, Unit>, Unit, J.Image.FloatRGB.write_code(image, path), float_write_ok)
-def float_small() -> J.Image.FloatRGB:
-  J.FloatRGB{1, 1, Array.new(M.Vector3, 0n, M.Vector3{0.5, 0.25, 0.75})}
-def float_nan() -> J.Image.FloatRGB:
-  J.FloatRGB{2, 1, Array.set(M.Vector3, Array.new(M.Vector3, 1n, M.Vector3{0.5, 0.25, 0.75}), 1, M.Vector3{H.float_bits(2143294004), 0.25, 0.75})}
-def nan_pixels(pixels: List<M.Vector3>) -> Bool:
-  match pixels:
-    case Con{M.Vector3{r, g, b}, Con{M.Vector3{x, y, z}, Nil{}}}:
-      U32.is_eq(F32.bits(r), 1056964608) && U32.is_eq(F32.bits(g), 1048576000) && U32.is_eq(F32.bits(b), 1061158912)
-        && U32.is_eq(F32.bits(x), F32.bits(H.float_bits(2143294004))) && U32.is_eq(F32.bits(y), 1048576000) && U32.is_eq(F32.bits(z), 1061158912)
+    case Done{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_code(image, path), float_write_ok)
+def float_small() -> J.Surface:
+  J.Surface{1, 1, 9, J.Vectors{Array.new(M.Vector3, 0n, M.Vector3{0.5, 0.25, 0.75})}}
+# NaN samples are outside the checked export domain: the owner comes back intact
+# (compared with same-backend bits: NaN payloads are not portable across backends).
+def float_nan() -> J.Surface:
+  J.Surface{2, 1, 9, J.Vectors{Array.set(M.Vector3, Array.new(M.Vector3, 1n, M.Vector3{0.5, 0.25, 0.75}), 1, M.Vector3{H.float_bits(2143294004), 0.25, 0.75})}}
+def vector_is.bits(+r: U32, +g: U32, +b: U32, value: M.Vector3) -> Bool:
+  M.Vector3{x, y, z} = value
+  U32.is_eq(F32.bits(x), r) && U32.is_eq(F32.bits(y), g) && U32.is_eq(F32.bits(z), b)
+def vector_is(+r: U32, +g: U32, +b: U32, result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Bool:
+  (values, value) = result
+  (values, vector_is.bits(r, g, b, value))
+def nan_owner.second(first: Bool, result: Array<M.Vector3> & Bool) -> Bool:
+  (_, second) = result
+  first && second
+def nan_owner.first(result: Array<M.Vector3> & Bool) -> Bool:
+  (values, first) = result
+  nan_owner.second(first, vector_is(F32.bits(H.float_bits(2143294004)), 1048576000, 1061158912, Array.get(M.Vector3, values, 1)))
+def nan_intact(image: J.Surface) -> Bool:
+  match image:
+    case J.Surface{2, 1, 9, J.Vectors{values}}: nan_owner.first(vector_is(1056964608, 1048576000, 1061158912, Array.get(M.Vector3, values, 0)))
     case _: False{}
-def nan_entries(result: U32 & U32 & List<M.Vector3>) -> Bool:
-  (width, height, pixels) = result
-  U32.is_eq(width, 2) && U32.is_eq(height, 1) && nan_pixels(pixels)
-def nan_rejected(result: Result<&1, &1, J.Image.FloatRGB, String>) -> Bool:
+def nan_rejected(result: Result<&1, &1, J.Surface & J.Surface.Error, String>) -> Bool:
   match result:
-    case Fail{image}: nan_entries(J.Image.FloatRGB.entries(image))
-    case Done{_}: False{}
+    case Fail{Tuple{image, J.OutOfDomain{}}}: nan_intact(image)
+    case _: False{}
 def checked(ok: Bool) -> IO(Unit):
   match ok:
     case True{}: IO.pure(Unit, Unit{})
     case False{}: IO.die(Unit, 1, "float code owner/file error differs")
-def nan_write_rejected(result: Result<&1, &1, J.Image.FloatRGB.CodeWriteError, Unit>) -> IO(Unit):
+def nan_write_rejected(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.FloatCodeSourceError{image}}: checked(nan_entries(J.Image.FloatRGB.entries(image)))
+    case Fail{J.SourceError{image, J.OutOfDomain{}}}: checked(nan_intact(image))
     case _: IO.die(Unit, 1, "float code write lost NaN owner")
-def float_rejected_write(result: Result<&1, &1, J.Image.FloatRGB.CodeWriteError, Unit>) -> IO(Unit):
+def float_rejected_write(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.FloatCodeSourceError{image}}: float_entries(J.Image.FloatRGB.entries(image))
+    case Fail{J.SourceError{image, J.InvalidRequest{}}}: float_entries(J.Surface.export(image))
     case _: IO.die(Unit, 1, "float code write lost large owner")
-def float_reject_large_write(result: Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>) -> IO(Unit):
+def float_reject_large_write(result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "large float code source read failed")
-    case Done{image}: IO.bind(Result<&1, &1, J.Image.FloatRGB.CodeWriteError, Unit>, Unit, J.Image.FloatRGB.write_code(image, SENTINEL), float_rejected_write)
-def float_failed_write(code: U32, message: String, result: Result<&1, &1, J.Image.FloatRGB.CodeWriteError, Unit>) -> IO(Unit):
+    case Done{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_code(image, SENTINEL), float_rejected_write)
+def float_failed_write(code: U32, message: String, result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.FloatCodeFileError{actual_code, actual_message}}: checked(U32.is_eq(code, actual_code) && String.eq(message, actual_message))
+    case Fail{J.FileError{actual_code, actual_message}}: checked(U32.is_eq(code, actual_code) && String.eq(message, actual_message))
     case _: IO.die(Unit, 1, "float code file error kind differs")
 def float_file_error(result: Result<&1, &1, U32 & String, File>) -> IO(Unit):
   match result:
     case Fail{Tuple{code, message}}:
-      IO.bind(Result<&1, &1, J.Image.FloatRGB.CodeWriteError, Unit>, Unit, J.Image.FloatRGB.write_code(float_small(), DIRECTORY), float_failed_write(code, message))
+      IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_code(float_small(), DIRECTORY), float_failed_write(code, message))
     case Done{file}:
       do IO<Unit>:
         File.close(file)
@@ -156,10 +164,10 @@ def closure_loop(n: Nat) -> IO(Unit):
     case 0n: emit_bytes(~&1, [1])
     case 1n+rest:
       do IO<Unit>:
-        IO.bind(Result<&1, &1, J.Image.Formatted.CodeWriteError, Unit>, Unit, J.Image.Formatted.write_code(small(), OUTPUT), write_ok)
-        IO.bind(Result<&1, &1, J.Image.Formatted.CodeWriteError, Unit>, Unit, J.Image.Formatted.write_code(small(), DIRECTORY), failed_write)
-        IO.bind(Result<&1, &1, J.Image.FloatRGB.CodeWriteError, Unit>, Unit, J.Image.FloatRGB.write_code(float_small(), OUTPUT), float_write_ok)
-        IO.bind(Result<&1, &1, J.Image.FloatRGB.CodeWriteError, Unit>, Unit, J.Image.FloatRGB.write_code(float_nan(), SENTINEL), nan_write_rejected)
+        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_code(small(), OUTPUT), write_ok)
+        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_code(small(), DIRECTORY), failed_write)
+        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_code(float_small(), OUTPUT), float_write_ok)
+        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_code(float_nan(), SENTINEL), nan_write_rejected)
         IO.bind(Result<&1, &1, U32 & String, File>, Unit, File.open(DIRECTORY, "w"), float_file_error)
         closure_loop(rest)
 def main() -> IO(Unit):
@@ -174,8 +182,7 @@ def main():
     probe=probekit.Probe('image-code',probekit.arguments(__doc__));work=probe.work
     (work/'reference').mkdir(exist_ok=True);(work/'candidate').mkdir(exist_ok=True);cases=fixtures()
     lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-           'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+           C_EMITTER,
            'int main(void){SetTraceLogLevel(LOG_NONE);']
     for i,case in enumerate(cases):
         path=work/(str(i)+'.raw');path.write_bytes(bytes(case['bytes']));output=work/'reference'/case['name']
@@ -205,7 +212,7 @@ def main():
     host=observed+[[large_expected],[float_large_expected],[[1]]]+[True]
     wanted=[[*group,digest(work/'reference'/cases[index]['name'])] if kind=='case' else group for (kind,index),group in zip(actions,host)]
     gpu_wanted=observed+[None]*len(HOST_ONLY)+[True]
-    load=lambda path,width,height,format_arg,owner:f'J.Image.{owner}.load_raw({json.dumps(str(path.relative_to(ROOT)))}, {width}, {height}, {format_arg}0)'
+    load=lambda path,width,height,format:f'J.Surface.load_raw({json.dumps(str(path.relative_to(ROOT)))}, {width}, {height}, {format}, 0)'
 
     def render(selected,gpu):
         bang='!' if gpu else '';body=PROGRAM.replace('BANG',bang).replace('LONG_NAME',json.dumps('a'*199+'.h')).replace('OVERFLOW_NAME',json.dumps('a'*253+'.h'))
@@ -215,17 +222,17 @@ def main():
             if gpu and kind in HOST_ONLY:continue
             if kind=='case':
                 case=cases[index];target=json.dumps(str((work/'candidate'/case['name']).relative_to(ROOT)))
-                floating=case['format']==9;owner='FloatRGB' if floating else 'Formatted';prefix='float_' if floating else ''
-                source=load(work/(str(index)+'.raw'),case['width'],case['height'],'' if floating else f'{case["format"]}, ',owner)
-                body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.{owner}>, Unit, {source}, {prefix}loaded({target}, False{{}}))\n'
-                if not gpu:body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.{owner}>, Unit, {source}, {prefix}saved({target}))\n'
+                prefix='float_' if case['format']==9 else ''
+                source=load(work/(str(index)+'.raw'),case['width'],case['height'],case['format'])
+                body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, {source}, {prefix}loaded({target}, False{{}}))\n'
+                if not gpu:body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, {source}, {prefix}saved({target}))\n'
             elif kind=='reject':body+=f'    observed(True{{}}, reject_path{bang}({index}))\n'
-            elif kind=='large':body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, {load(large,257,64,"7, ","Formatted")}, loaded("too_large.h", True{{}}))\n'
-            elif kind=='float_small':body+=f'    float_observed(True{{}}, J.Image.FloatRGB.to_code{bang}(float_small(), ""))\n'
-            elif kind=='float_large':body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>, Unit, {load(float_large,2731,2,"","FloatRGB")}, float_loaded("too_large.h", True{{}}))\n'
-            elif kind=='nan':body+=f'    emit_bytes(~&1, [Bool.to_u32(nan_rejected(J.Image.FloatRGB.to_code{bang}(float_nan(), "nan.h")))])\n'
-            elif kind=='large_write':body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, {load(large,257,64,"7, ","Formatted")}, reject_large_write)\n'
-            elif kind=='float_large_write':body+=f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.FloatRGB>, Unit, {load(float_large,2731,2,"","FloatRGB")}, float_reject_large_write)\n'
+            elif kind=='large':body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, {load(large,257,64,7)}, loaded("too_large.h", True{{}}))\n'
+            elif kind=='float_small':body+=f'    float_observed(True{{}}, J.Surface.to_code{bang}(float_small(), ""))\n'
+            elif kind=='float_large':body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, {load(float_large,2731,2,9)}, float_loaded("too_large.h", True{{}}))\n'
+            elif kind=='nan':body+=f'    emit_bytes(~&1, [Bool.to_u32(nan_rejected(J.Surface.to_code{bang}(float_nan(), "nan.h")))])\n'
+            elif kind=='large_write':body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, {load(large,257,64,7)}, reject_large_write)\n'
+            elif kind=='float_large_write':body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, {load(float_large,2731,2,9)}, float_reject_large_write)\n'
             elif kind=='closure':body+='    closure_loop(100n)\n'
         return body
 

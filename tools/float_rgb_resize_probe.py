@@ -5,16 +5,14 @@ import json
 import struct
 
 from bmp_probe import bend_bytes
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from conformance import ROOT, source_gate
 from float_rgb_probe import boundaries
 import probekit
 from probekit import ProbeFailure
 
 PRELUDE = ['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-           'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-           'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+           C_EMITTER,
            'static void emit(Image image){if(!image.data||image.format!=PIXELFORMAT_UNCOMPRESSED_R32G32B32)exit(2);word(image.width);word(image.height);',
            'for(int i=0;i<image.width*image.height*12;i++)byte(((unsigned char*)image.data)[i]);end();UnloadImage(image);}',
            'int main(void){SetTraceLogLevel(LOG_NONE);']
@@ -29,28 +27,31 @@ def input_bytes(chunks: +List<+List<U32>>, values: +List<U32>) -> +List<U32>:
     case Nil{}: List.reverse(&2, U32, values)
     case Con{head, tail}: input_bytes(tail, reverse_into(head, values))
 '''+BEND_EMITTER+'''
-def emitted(+width: U32, +height: U32, result: Result<&1, &1, J.Image.FloatRGB, +List<U32>>) -> IO(Unit):
-  match result:
-    case Fail{_}: IO.die(Unit, 1, "resize lost valid sample representation")
-    case Done{bytes}:
-      header = {[(width .&. 255 : U32), ((width >> 8n) .&. 255 : U32), 0, 0, (height .&. 255 : U32), ((height >> 8n) .&. 255 : U32), 0, 0] : +List<U32>}
-      emit_bytes(~&2, List.append(&2, U32, header, bytes))
-def image(image: J.Image.FloatRGB) -> IO(Unit):
-  J.FloatRGB{+width, +height, pixels} = image
-  emitted(width, height, J.Image.FloatRGB.to_bytes(J.FloatRGB{width, height, pixels}))
-def selected(reject: Bool, result: Result<&1, &1, J.Image.FloatRGB, J.Image.FloatRGB>) -> IO(Unit):
-  match reject result:
-    case False{} Done{value}: image(value)
-    case True{} Fail{value}: image(value)
-    case _ _: IO.die(Unit, 1, "resize acceptance or retained owner differs")
-def resized(width: U32, height: U32, result: Maybe<J.Image.FloatRGB>) -> Maybe<Result<&1, &1, J.Image.FloatRGB, J.Image.FloatRGB>>:
+def emitted.sized(+width: U32, +height: U32, bytes: List<U32>) -> IO(Unit):
+  header = {[(width .&. 255 : U32), ((width >> 8n) .&. 255 : U32), 0, 0, (height .&. 255 : U32), ((height >> 8n) .&. 255 : U32), 0, 0] : List<U32>}
+  emit_bytes(~&1, List.append(&1, U32, header, bytes))
+def emitted(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
+  match data:
+    case Tuple{Tuple{width, height}, Tuple{9, bytes}}: emitted.sized(width, height, bytes)
+    case _: IO.die(Unit, 1, "resize changed the pixel format")
+def image(image: J.Surface) -> IO(Unit):
+  emitted(J.Surface.export(image))
+# expected: 99 accepted, 1 InvalidSize, 2 UnsafeNearestMapping, 3 OutOfDomain (owner returned).
+def selected(expected: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):
+  match expected result:
+    case 99 Done{value}: image(value)
+    case 1 Fail{Tuple{value, J.InvalidSize{}}}: image(value)
+    case 2 Fail{Tuple{value, J.UnsafeNearestMapping{}}}: image(value)
+    case 3 Fail{Tuple{value, J.OutOfDomain{}}}: image(value)
+    case _ _: IO.die(Unit, 1, "resize acceptance, error or retained owner differs")
+def resized(width: U32, height: U32, result: Maybe<J.Surface>) -> Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>:
   match result:
     case None{}: None{}
-    case Some{image}: Some{J.Image.FloatRGB.resize_nn(image, width, height)}
-def observed(reject: Bool, result: Maybe<Result<&1, &1, J.Image.FloatRGB, J.Image.FloatRGB>>) -> IO(Unit):
+    case Some{image}: Some{J.Surface.resize_nn(image, width, height)}
+def observed(expected: U32, result: Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "valid resize source rejected")
-    case Some{value}: selected(reject, value)
+    case Some{value}: selected(expected, value)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -69,10 +70,10 @@ def fixtures(filtered=False):
             if ((width-1)*xr)>>16>=source['width'] or ((height-1)*yr)>>16>=source['height']:raise ValueError('Native resize fixture leaves source bounds')
             cases.append(dict(source,id=f'{i}-{width}-{height}',target_width=width,target_height=height))
     original=list(struct.pack('<fff',0.5,0.25,0.75))
-    controls=[dict(width=1,height=1,bytes=original,target_width=w,target_height=h) for w,h in ((0,1),(1,4097),(512,1),(1,512))]
-    controls.append(dict(width=1,height=1,bytes=list(struct.pack('<fff',2.0,0.5,0.75)),target_width=2,target_height=2))
+    controls=[dict(width=1,height=1,bytes=original,target_width=w,target_height=h,error=e) for w,h,e in ((0,1,1),(1,4097,1),(512,1,2),(1,512,2))]
+    controls.append(dict(width=1,height=1,bytes=list(struct.pack('<fff',2.0,0.5,0.75)),target_width=2,target_height=2,error=3))
     if filtered:
-        cases.extend(controls[2:4]);controls=controls[:2]+controls[4:]
+        cases.extend({k:v for k,v in c.items() if k!='error'} for c in controls[2:4]);controls=controls[:2]+controls[4:]
     return cases,controls
 
 
@@ -95,9 +96,9 @@ def main():
         w,h=case['target_width'],case['target_height']
         if row[:8]!=list(struct.pack('<II',w,h)) or len(row)!=8+w*h*12:raise ProbeFailure('Native resize shape differs')
     probe.report['sources']=source_gate()
-    program=PROGRAM.replace('J.Image.FloatRGB.resize_nn(','J.Image.FloatRGB.resize(') if args.filtered else PROGRAM
-    actions=[f'observed({"True" if i>=len(cases) else "False"}{{}}, resizedBANG({case["target_width"]}, {case["target_height"]}, J.Image.FloatRGB.from_bytes({case["width"]}, {case["height"]}, {bend_bytes(case["bytes"])})))'
-             for i,case in enumerate([*cases,*controls])]
+    program=PROGRAM.replace('J.Surface.resize_nn(','J.Surface.resize(') if args.filtered else PROGRAM
+    actions=[f'observed({case.get("error",99)}, resizedBANG({case["target_width"]}, {case["target_height"]}, J.Surface.from_bytes({case["width"]}, {case["height"]}, 9, {bend_bytes(case["bytes"])})))'
+             for case in [*cases,*controls]]
     render=lambda selected,gpu:program+''.join('    '+line.replace('BANG','!' if gpu else '')+'\n' for line in selected)
     probe.compare(expected,probe.candidates(render,actions,batch=len(actions),parse=lambda text,selected:parse_results(text)))
     probe.finish(mode=mode,native_cases=len(cases),pixels=sum(c['target_width']*c['target_height'] for c in cases),retained_owner_controls=len(controls),

@@ -1,30 +1,31 @@
 # Image memory and file loading
 
 Jonlib mirrors raylib's `LoadImageFromMemory`/`LoadImage` dispatch for its
-implemented codecs, plus dedicated per-codec loaders that keep raylib's native
-pixel format. All file loading goes through one bounded byte-file boundary.
+implemented codecs, plus dedicated per-codec loaders. Every decoder returns the
+native pixel format raylib produces (GRAYSCALE, GRAY_ALPHA, R8G8B8 or R8G8B8A8;
+PSD and GIF are R8G8B8A8; HDR is R32G32B32). All file loading goes through one
+bounded byte-file boundary.
 
 | API | Result |
 |---|---|
-| `Surface.decode_image(file_type, bytes)` | `Result<&1, &1, Image.DecodeError, Surface>`, normalized RGBA8 |
-| `Surface.decode_image_for(reference, file_type, bytes)` | same, with an explicit `Image.Decode.Reference` |
-| `Surface.load_image(path)` | `IO(Result<&1, &1, Image.LoadError, Surface>)`, normalized RGBA8 |
-| `Surface.load_image_for(reference, path)` | same, with an explicit `Image.Decode.Reference` |
-| `Surface.load_qoi(path)` | explicit QOI, normalized RGBA8 |
-| `Image.Formatted.load_qoi/load_png/load_pnm/load_tga/load_bmp/load_pic(path)` | `IO(Result<&1, &1, Image.LoadError, Image.Formatted>)`, native format |
+| `Surface.decode_image(file_type, bytes)` | `Result<&1, &1, Surface.Error, Surface>`, native format |
+| `Surface.decode_image_for(reference, file_type, bytes)` | same, with an explicit `M.Contraction` |
+| `Surface.load_image(path)` | `IO(Result<&1, &1, Surface.IOError, Surface>)`, native format |
+| `Surface.load_image_for(reference, path)` | same, with an explicit `M.Contraction` |
+| `Surface.load_qoi/load_png/load_pnm/load_tga/load_bmp/load_pic/load_hdr(path)` | `IO(Result<&1, &1, Surface.IOError, Surface>)`, explicit codec, native format |
 
 `file_type` is an extension token such as `.png`, not a filename. The
-`Image.Decode.Reference` choices are `J.FusedDecode{}` and
-`J.UncontractedDecode{}`; they affect only PSD white-matte arithmetic (see
+`M.Contraction` choices are `M.Fused{}` and
+`M.Uncontracted{}`; they affect only PSD white-matte arithmetic (see
 [PSD.md](PSD.md)), and the convenience calls select uncontracted. The same
 boundary also serves [owned animation loading](GIF-ANIMATION.md), whose GIF
 suffix selection additionally accepts mixed letter case, and
-`Image.FloatRGB.load_hdr(path)` ([HDR.md](HDR.md)), which selects the HDR float
+`Surface.load_hdr(path)` ([HDR.md](HDR.md)), which selects the HDR float
 decoder explicitly with a 1 MiB cap. Raw files use positional reads instead; see
 [RAW-FILES.md](RAW-FILES.md).
 
-`Image.LoadError` is `ImageFileError{code, message}` (a Base open/size/read
-error, preserved exactly) or `ImageDecodeError{error}` (an `Image.DecodeError`,
+`Surface.IOError` is `FileError{code, message}` (a Base open/size/read
+error, preserved exactly) or `DataError{error}` (a `Surface.Error`,
 wrapped exactly once).
 
 ## Suffix and content selection
@@ -41,7 +42,7 @@ Mixed-case forms and `.pnm` are unsupported, matching native dispatch.
   `GetFileExtension` does. A dot at position zero (the whole path `.png` or
   `.jpeg`) yields no suffix; a directory-qualified path such as `images/.png` is
   classified normally. Unsupported suffixes are still opened and read under the
-  1 MiB cap, then fail with `ImageDecodeError{InvalidImageHeader}`.
+  1 MiB cap, then fail with `DataError{InvalidImageHeader}`.
 - `.qoi`/`.QOI` select QOI directly. Every other recognized token selects the
   stb-style raster family, which detects content: PNG, BMP, P5/P6, PSD, PIC and
   GIF signatures are tried in that order, otherwise the TGA profile. PNG bytes
@@ -52,8 +53,8 @@ Mixed-case forms and `.pnm` are unsupported, matching native dispatch.
   not implemented.
 - Codec profiles: [PNG](PNG.md), [BMP](BMP.md), [TGA](TGA.md), [PNM](PNM.md),
   [PSD](PSD.md), [PIC](PIC.md), [GIF](GIF.md) (first frame), QOI in
-  [CODECS.md](CODECS.md). HDR's float path is separate from this RGBA8
-  dispatch.
+  [CODECS.md](CODECS.md). HDR is selected only explicitly (`load_hdr`,
+  `decode_hdr`); the shared dispatch does not recognize `.hdr`.
 
 Strings are ordinary extension/path text without embedded NULs.
 
@@ -61,21 +62,21 @@ Strings are ordinary extension/path text without embedded NULs.
 
 `Image.file.bytes(path, limit)` performs, in order:
 
-1. **Open.** Failure returns `ImageFileError{code, message}`; no suffix check
+1. **Open.** Failure returns `FileError{code, message}`; no suffix check
    precedes opening, so a missing path with a misleading suffix still reports
    the open error. A failed open acquires no handle.
 2. **Size.** A reported size above `limit` (through 4,294,967,295) returns
-   `ImageDecodeError{UnsupportedImageSize}` before any payload read. Pinned Base
+   `DataError{UnsupportedImageSize}` before any payload read. Pinned Base
    rejects sizes above U32_MAX with its host overflow file error, which stays an
-   `ImageFileError`. Size failures and size rejections close the file first.
+   `FileError`. Size failures and size rejections close the file first.
 3. **Read.** One bounded read of the reported size, then `File.close` **before**
    the read result is processed. Read errors keep Base's code/message. The
    returned list must have exactly the reported length; short or long results
-   return `ImageDecodeError{TruncatedImageData}`. There is no retry or
+   return `DataError{TruncatedImageData}`. There is no retry or
    streaming. A physically short file whose reported size is read in full
    reaches the decoder instead.
 4. **Decode** the complete bytes with the selected decoder; its error is wrapped
-   once as `ImageDecodeError{error}`.
+   once as `DataError{error}`.
 
 The decoding continuation receives only bytes or an error, never an open File.
 These are close-*call* guarantees: pinned `Base.File.close` returns `IO(Unit)`,
@@ -89,7 +90,7 @@ no guarantee of reported OS-close success. Ordinary byte files contain only
 | Selection | Inclusive encoded-file cap |
 |---|---|
 | Raster tokens, unsupported suffixes, `load_png/pnm/tga/bmp/pic`, `load_hdr` | 1,048,576 bytes (`RasterFile`) |
-| QOI tokens, `Surface.load_qoi`, `Image.Formatted.load_qoi` | 83,886,102 bytes = `14 + 5*(4096*4096) + 8` (`QoiFile`) |
+| QOI tokens, `Surface.load_qoi`, `Surface.load_qoi` | 83,886,102 bytes = `14 + 5*(4096*4096) + 8` (`QoiFile`) |
 
 Caps bound admitted encoded input only, not decoded area, total heap,
 allocation success or throughput; compressed input can describe far more pixel
@@ -97,24 +98,21 @@ storage. File bounds never enlarge a memory decoder's own domain.
 
 ## Format-preserving file loaders
 
-Each `Image.Formatted.load_<codec>(path)` is two functions: the public wrapper
-passes `Image.file.bytes(path, Image.file.limit(...))` to a dedicated
-continuation (`Image.Formatted.<codec>.file.loaded`), which forwards load errors
-or adapts `Image.Formatted.decode_<codec>` through `Image.file.decoded`. Common
-contract:
+Each `Surface.load_<codec>(path)` calls `Surface.load_with(~decode, limit, path)`,
+which reads with `Image.file.bytes` and adapts the given decoder through
+`Image.file.decoded`; passing the decoder as a parameter keeps each program to
+the one codec it uses. Common contract:
 
 - **Explicit selection.** The suffix is never consulted: lower/upper/mixed
   case, misleading (e.g. `.qoi` for PNG), arbitrary or absent suffixes, spaces,
   multiple dots and directory-qualified dotfiles all select the named codec.
-  There is no content sniffing, codec fallback, generic formatted dispatcher or
-  caller-supplied cap. A misleading `.qoi` name still gets the 1 MiB raster cap.
-- **Success** returns one affine `Image.Formatted` owner with width/height
+  There is no content sniffing, codec fallback or caller-supplied cap. A misleading `.qoi` name still gets the 1 MiB raster cap.
+- **Success** returns one affine `Surface` owner with width/height
   1..4096, one implicit mip level and the codec's native format. Export
   consumes it and returns exactly `width*height*channels` row-major bytes
   without padding; unused high bits of logical words are zero. Point reads
-  return the owner for accepted and rejected coordinates; export and the
-  Surface bridge consume it. Conversion and disposal use the
-  [formatted owner API](FORMATS.md).
+  return the owner for accepted and rejected coordinates; export and conversion
+  consume it (see [FORMATS.md](FORMATS.md)).
 - **Failure** returns no partial image and no open File.
 
 The memory decoder contract of each codec applies unchanged; only the
@@ -236,7 +234,7 @@ verified on CPU and JavaScript only; no GPU filesystem claim is made.
   success/decode/file/size loop runs under `RLIMIT_NOFILE=64`.
 - **Format-preserving file loaders** (gates `png-file`, `pnm-file`, `tga-file`,
   `bmp-file`, `pic-file`: `tools/<codec>_file_probe.py` on the shared driver
-  `tools/formatted_file.py`; gate `qoi-file`: `tools/qoi_file_probe.py`, its
+  `tools/codec_files.py`; gate `qoi-file`: `tools/qoi_file_probe.py`, its
   own runner because of the QOI cap). The native archive enables the BMP, PNG,
   TGA, JPG, GIF, PIC, PNM and PSD formats; a little-endian host is required.
   Every accepted memory fixture of the codec becomes a real file, plus
@@ -269,8 +267,8 @@ paths they exercise.
 
 ## Known gaps
 
-- Generic formatted/float dispatch (no `Image.Formatted.load_image`); JPEG
-  decoding; original-format metadata on the normalized dispatch paths.
+- JPEG decoding; HDR in the shared suffix dispatch; original source formats
+  for PSD and GIF (decoded as R8G8B8A8).
 - Concurrent or changing files, special files, native callbacks, native
   pointer/allocation ABI and OOM parity, OS-close failure reporting.
 - Maximum decoded-area, heap and performance qualification; nondefault stb

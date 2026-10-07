@@ -20,9 +20,10 @@ import ./src/codec.bend as Codec
 law clear_dimensions:
   for +width: U32
   for +height: U32
+  for format: U32
   for pixels: Array<U32>
   for color: U32
-  {J.Surface.dimensions(J.Surface.clear(J.Surface{width, height, pixels}, color))
+  {J.Surface.dimensions(J.Surface.clear(J.Surface{width, height, format, J.Words{pixels}}, color))
     == (width, height) : U32 & U32}
 
 law transpose_involution:
@@ -391,21 +392,6 @@ law checked_angle_vector3_input_reject:
   for w: F32
   {CA.vector3.valid(False{}, profile, x, y, z, u, v, w) == Fail{1} : Result<&2, &2, U32, F32>}
 
-law angle_vector2_default_preserved:
-  for +left: M.Vector2
-  for +right: M.Vector2
-  {M.Vector2.angle(left, right) == M.Vector2.angle_for(M.AccurateGradient{}, left, right) : F32}
-
-law angle_line_default_preserved:
-  for +left: M.Vector2
-  for +right: M.Vector2
-  {M.Vector2.line_angle(left, right) == M.Vector2.line_angle_for(M.AccurateGradient{}, left, right) : F32}
-
-law angle_vector3_default_preserved:
-  for +left: M.Vector3
-  for +right: M.Vector3
-  {M.Vector3.angle(left, right) == M.Vector3.angle_for(M.AccurateGradient{}, left, right) : F32}
-
 law checked_angle_scalar_some:
   for word: U32
   {CA.scalar_result(Some{word}) == CA.normal(32, CA.from_word(word)) : Result<&2, &2, U32, F32>}
@@ -430,18 +416,18 @@ law bmp_terminal_row:
   for bytes: +List<U32>
   {Bmp.encode24.row(True{}, padding, bytes) == Bmp.encode24.padding(padding, bytes) : +List<U32>}
 
-# Scoped TGA routing/structural laws; not a universal codec or numeric proof.
-law formatted_tga_gray_channels:
-  {J.Image.Formatted.tga.channels(1) == 1 : U32}
+# Scoped export routing/structural laws; not a universal codec or numeric proof.
+law export_gray_channels:
+  {J.Surface.png.channels(1) == 1 : U32}
 
-law formatted_tga_gray_alpha_channels:
-  {J.Image.Formatted.tga.channels(2) == 2 : U32}
+law export_gray_alpha_channels:
+  {J.Surface.png.channels(2) == 2 : U32}
 
-law formatted_tga_rgb_channels:
-  {J.Image.Formatted.tga.channels(4) == 3 : U32}
+law export_rgb_channels:
+  {J.Surface.png.channels(4) == 3 : U32}
 
-law formatted_tga_rgba_channels:
-  {J.Image.Formatted.tga.channels(7) == 4 : U32}
+law export_rgba_channels:
+  {J.Surface.png.channels(7) == 4 : U32}
 
 law tga_values_zero:
   for channels: U32
@@ -475,37 +461,37 @@ law image_file_complete_long:
   {J.Image.file.complete(1n, [1, 2]) == False{} : Bool}
 
 # Scoped QOI export routing/packing facts, not a universal encoder or IO theorem.
-law formatted_qoi_export_rgb_channels:
-  {J.Image.Formatted.qoi.channels(4) == 3 : U32}
+law qoi_export_rgb_channels:
+  {J.Surface.qoi.channels(4) == 3 : U32}
 
-law formatted_qoi_export_rgba_channels:
-  {J.Image.Formatted.qoi.channels(7) == 4 : U32}
+law qoi_export_rgba_channels:
+  {J.Surface.qoi.channels(7) == 4 : U32}
 
-law formatted_qoi_export_gray_rejected:
-  {J.Image.Formatted.qoi.channels(1) == 0 : U32}
+law qoi_export_gray_rejected:
+  {J.Surface.qoi.channels(1) == 0 : U32}
 
-law formatted_qoi_export_gray_alpha_rejected:
-  {J.Image.Formatted.qoi.channels(2) == 0 : U32}
+law qoi_export_gray_alpha_rejected:
+  {J.Surface.qoi.channels(2) == 0 : U32}
 
-law formatted_qoi_export_rgb565_rejected:
-  {J.Image.Formatted.qoi.channels(3) == 0 : U32}
+law qoi_export_rgb565_rejected:
+  {J.Surface.qoi.channels(3) == 0 : U32}
 
-law formatted_qoi_export_rgb5a1_rejected:
-  {J.Image.Formatted.qoi.channels(5) == 0 : U32}
+law qoi_export_rgb5a1_rejected:
+  {J.Surface.qoi.channels(5) == 0 : U32}
 
-law formatted_qoi_export_rgba4_rejected:
-  {J.Image.Formatted.qoi.channels(6) == 0 : U32}
+law qoi_export_rgba4_rejected:
+  {J.Surface.qoi.channels(6) == 0 : U32}
 
-law formatted_qoi_export_r32_rejected:
-  {J.Image.Formatted.qoi.channels(8) == 0 : U32}
+law qoi_export_r32_rejected:
+  {J.Surface.qoi.channels(8) == 0 : U32}
 
-law formatted_qoi_export_rgb_packing:
+law qoi_export_rgb_packing:
   {Formats.image_color(4, 5649426) == 305420031 : U32}
 
-law formatted_qoi_export_rgba_packing:
+law qoi_export_rgba_packing:
   {Formats.image_color(7, 2018915346) == 305419896 : U32}
 
-law formatted_qoi_export_packing_empty:
+law qoi_export_packing_empty:
   for index: U32
   for format: U32
   for pixels: Array<U32>
@@ -615,43 +601,43 @@ law pic_native_low_bits:
 law pic_native_alpha_low_bits:
   {Pic.native.channels([Pic.Packet{2, 31, 0}, Pic.Packet{0, 239, 0}]) == 4 : U32}
 
-# Native formatted packing shared by every codec decoder (scoped facts, not a
+# Native packing shared by every codec decoder (scoped facts, not a
 # universal decoding theorem): channel count -> raylib format, RGBA word -> native word.
-law formatted_native_format_1:
-  {J.Image.Formatted.native.format(1) == 1 : U32}
+law codec_native_format_1:
+  {J.Surface.codec.format(1) == 1 : U32}
 
-law formatted_native_format_2:
-  {J.Image.Formatted.native.format(2) == 2 : U32}
+law codec_native_format_2:
+  {J.Surface.codec.format(2) == 2 : U32}
 
-law formatted_native_format_3:
-  {J.Image.Formatted.native.format(3) == 4 : U32}
+law codec_native_format_3:
+  {J.Surface.codec.format(3) == 4 : U32}
 
-law formatted_native_format_4:
-  {J.Image.Formatted.native.format(4) == 7 : U32}
+law codec_native_format_4:
+  {J.Surface.codec.format(4) == 7 : U32}
 
-law formatted_native_word_1_2155905279:
-  {J.Image.Formatted.native.word(1, 2155905279) == 128 : U32}
+law codec_native_word_1_2155905279:
+  {J.Surface.codec.word(1, 2155905279) == 128 : U32}
 
-law formatted_native_word_2_2172748032:
-  {J.Image.Formatted.native.word(2, 2172748032) == 129 : U32}
+law codec_native_word_2_2172748032:
+  {J.Surface.codec.word(2, 2172748032) == 129 : U32}
 
-law formatted_native_word_2_305419896:
-  {J.Image.Formatted.native.word(2, 305419896) == 30738 : U32}
+law codec_native_word_2_305419896:
+  {J.Surface.codec.word(2, 305419896) == 30738 : U32}
 
-law formatted_native_word_3_305419896:
-  {J.Image.Formatted.native.word(3, 305419896) == 5649426 : U32}
+law codec_native_word_3_305419896:
+  {J.Surface.codec.word(3, 305419896) == 5649426 : U32}
 
-law formatted_native_word_3_305420031:
-  {J.Image.Formatted.native.word(3, 305420031) == 5649426 : U32}
+law codec_native_word_3_305420031:
+  {J.Surface.codec.word(3, 305420031) == 5649426 : U32}
 
-law formatted_native_word_4_2172748032:
-  {J.Image.Formatted.native.word(4, 2172748032) == 8487297 : U32}
-
-law formatted_native_word_4_305419896:
-  {J.Image.Formatted.native.word(4, 305419896) == 2018915346 : U32}
-
-law formatted_native_pixels_zero:
+law codec_native_pixels_zero:
   for index: U32
   for channels: U32
   for pixels: Array<U32>
-  {J.Image.Formatted.native.pixels(0n, index, channels, pixels) == pixels : Array<U32>}
+  {J.Surface.codec.pixels(0n, index, channels, pixels) == pixels : Array<U32>}
+
+law codec_native_rgba_is_canonical:
+  for +width: U32
+  for +height: U32
+  for pixels: Array<U32>
+  {J.Surface.codec.stored(4, width, height, 4, pixels) == J.Surface{width, height, 7, J.Words{pixels}} : J.Surface}

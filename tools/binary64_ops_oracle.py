@@ -5,9 +5,7 @@ FMA oracle; no candidate multiplication/division limbs or packing are modeled.
 Raw encoding helpers are deliberately distinguished from finite numeric equality.
 """
 from fractions import Fraction
-from binary64_fma_oracle import (FRACTION, SIGN, MAX_FINITE, OVERFLOW_ENDPOINT,
-                                decode64, in_domain, nearest64, positive64,
-                                power2, word)
+from binary64_fma_oracle import SIGN, decode64, in_domain, nearest64, power2, word
 
 KINDS = dict(mul=0, div=1, identity=2, promote=3, finite=4, negate=5,
              magnitude=6, equal=7, increment=8, decrement=9, power=10)

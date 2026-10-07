@@ -13,7 +13,7 @@ import struct
 import sys
 
 from bmp_probe import bend_bytes
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from float_rgb_formats_probe import fixtures as previous_fixtures
 from image_format_probe import r32_words, word_bytes
 import probekit
@@ -70,9 +70,11 @@ def controls():
     for word,component,position in itertools.product(INVALID_WORDS,range(3),range(3)):
         pixels = [p[:] for p in base];pixels[position][component] = word
         result.append(fixture(f'reject-{word:08x}-component{component}-position{position}',pixels,
-                              reject=True,targets=[8]))
-    for target in (0,9,0xffffffff):
-        result.append(fixture(f'unsupported-target-{target}',base,reject=True,targets=[target]))
+                              reject=True,error=1,targets=[8]))
+    # ImageFormat leaves the image unchanged for format 0 and the current format.
+    for target in (0,9):
+        result.append(fixture(f'unchanged-target-{target}',base,targets=[target]))
+    result.append(fixture(f'unsupported-target-{0xffffffff}',base,reject=True,error=2,targets=[0xffffffff]))
     # NaNs are constructed directly and compared against same-backend owner bits;
     # they never pass through a raw-byte bridge or claim NaN payload interoperability.
     for word,component,position in itertools.product(NAN_WORDS,range(3),range(3)):
@@ -91,7 +93,7 @@ def shapes(ops):
             # The retained owner is exported and independently copied/used.
             result.extend([dict(exact=row),dict(exact=row)])
         else:
-            target = op['targets'][-1]
+            target = op['targets'][-1] or op['source']
             result.append(dict(width=op['width'],height=op['height'],format=target,
                                size=(12 if target==9 else 4)*op['width']*op['height']))
     return result
@@ -124,11 +126,7 @@ C_PREAMBLE = r'''#include "raylib.h"
 #include <stdlib.h>
 #include <string.h>
 _Static_assert(sizeof(float)==4 && sizeof(unsigned)==4 && FLT_RADIX==2 && FLT_MANT_DIG==24 && FLT_MAX_EXP==128, "binary32 and 32-bit words required");
-static int used=0;
-static void byte(unsigned v){if(!used)putchar('[');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}
-static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}
-static void end(void){if(used){puts("]");used=0;}puts("\"end\"");}
-static void emit(Image image){if(!image.data||image.mipmaps!=1)exit(2);word(image.width);word(image.height);word(image.format);
+''' + C_EMITTER + '\n' + r'''static void emit(Image image){if(!image.data||image.mipmaps!=1)exit(2);word(image.width);word(image.height);word(image.format);
 int n=GetPixelDataSize(image.width,image.height,image.format);for(int i=0;i<n;i++)byte(((unsigned char*)image.data)[i]);end();}
 '''
 
@@ -199,63 +197,60 @@ def emitted(~q: Quant, width: U32, height: U32, format: U32, bytes: List<q, U32>
 def formatted(result: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
   ((width, height), (format, bytes)) = result
   emitted(~&1, width, height, format, bytes)
-def float_bytes(width: U32, height: U32, result: Result<&1, &1, J.Image.FloatRGB, +List<U32>>) -> IO(Unit):
-  match result:
-    case Done{bytes}: emitted(~&2, width, height, 9, bytes)
-    case _: IO.die(Unit, 1, "float owner byte export rejected")
-def float_image(image: J.Image.FloatRGB) -> IO(Unit):
-  J.FloatRGB{+width, +height, pixels} = image
-  float_bytes(width, height, J.Image.FloatRGB.to_bytes(J.FloatRGB{width, height, pixels}))
-def retained_copies(result: J.Image.FloatRGB & J.Image.FloatRGB) -> IO(Unit):
+def retained_copies(result: J.Surface & J.Surface) -> IO(Unit):
   (original, copy) = result
   do IO<Unit>:
-    float_image(original)
-    float_image(J.Image.FloatRGB.flip_horizontal(J.Image.FloatRGB.flip_horizontal(copy)))
-def selected(reject: Bool, targets: +List<U32>, result: Result<&1, &1, J.Image.FloatRGB, J.Image.Formatted>) -> IO(Unit):
-  match reject targets result:
-    case True{} _ Fail{image}: retained_copies(J.Image.FloatRGB.copy(image))
-    case False{} Nil{} Done{image}: formatted(J.Image.Formatted.export(image))
-    case False{} Con{9, Nil{}} Done{image}: float_image(J.Image.Formatted.to_float_rgb(image))
+    formatted(J.Surface.export(original))
+    formatted(J.Surface.export(J.Surface.flip_horizontal(J.Surface.flip_horizontal(copy))))
+# expected: 0 accepted, 1 OutOfDomain, 2 UnsupportedFormat (the owner is returned).
+def selected(expected: U32, targets: +List<U32>, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> IO(Unit):
+  match expected targets result:
+    case 1 _ Fail{Tuple{image, J.OutOfDomain{}}}: retained_copies(J.Surface.copy(image))
+    case 2 _ Fail{Tuple{image, J.UnsupportedFormat{}}}: retained_copies(J.Surface.copy(image))
+    case 0 Nil{} Done{image}: formatted(J.Surface.export(image))
+    case 0 Con{target, rest} Done{image}: selected(0, rest, J.Surface.format(image, target))
     case _ _ _: IO.die(Unit, 1, "FloatRGB/R32 conversion or ownership differs")
-def converted(reject: Bool, targets: +List<U32>, result: Maybe<J.Image.FloatRGB>) -> IO(Unit):
+def converted(expected: U32, targets: +List<U32>, result: Maybe<J.Surface>) -> IO(Unit):
   match targets result:
-    case Con{target, rest} Some{image}: selected(reject, rest, J.Image.FloatRGB.to_formatted(image, target))
+    case Con{target, rest} Some{image}: selected(expected, rest, J.Surface.format(image, target))
     case _ _: IO.die(Unit, 1, "FloatRGB/R32 source rejected")
-def from_r32(result: Maybe<J.Image.Formatted>) -> IO(Unit):
-  match result:
-    case Some{image}: selected(False{}, Nil{}, J.Image.FloatRGB.to_formatted(J.Image.Formatted.to_float_rgb(image), 8))
-    case _: IO.die(Unit, 1, "R32 round-trip source rejected")
 def invalid_pixel(component: U32, value: F32) -> M.Vector3:
   match component:
     case 0: M.Vector3{value, 0.5, 0.75}
     case 1: M.Vector3{0.25, value, 0.75}
     case _: M.Vector3{0.25, 0.5, value}
-def vector_bits(left: M.Vector3, right: M.Vector3) -> Bool:
-  M.Vector3{a, b, c} = left
-  M.Vector3{x, y, z} = right
-  U32.is_eq(F32.bits(a), F32.bits(x)) && U32.is_eq(F32.bits(b), F32.bits(y)) && U32.is_eq(F32.bits(c), F32.bits(z))
+def vector_words(value: M.Vector3, rest: List<U32>) -> List<U32>:
+  M.Vector3{r, g, b} = value
+  Con{F32.bits(r), Con{F32.bits(g), Con{F32.bits(b), rest}}}
 def expected_nan_pixel(selected: Bool, wanted: M.Vector3) -> M.Vector3:
   match selected:
     case True{}: wanted
     case False{}: M.Vector3{0.25, 0.5, 0.75}
-def nan_entries(n: Nat, +index: U32, +position: U32, +wanted: M.Vector3, entries: List<M.Vector3>) -> Bool:
-  match n entries:
-    case 0n Nil{}: True{}
-    case 1n+rest Con{pixel, tail}:
-      expected = expected_nan_pixel(U32.is_eq(index, position), wanted)
-      vector_bits(pixel, expected) && nan_entries(rest, (index + 1 : U32), position, wanted, tail)
+def expected_words(n: Nat, +index: U32, +position: U32, +wanted: M.Vector3) -> List<U32>:
+  match n:
+    case 0n: Nil{}
+    case 1n+rest: vector_words(expected_nan_pixel(U32.is_eq(index, position), wanted), expected_words(rest, (index + 1 : U32), position, wanted))
+def export_words(bytes: List<U32>, values: List<U32>) -> List<U32>:
+  match bytes:
+    case Con{a, Con{b, Con{c, Con{d, rest}}}}: export_words(rest, Con{(a .|. (b << 8n) .|. (c << 16n) .|. (d << 24n) : U32), values})
+    case _: List.reverse(&1, U32, values)
+def same_words(left: List<U32>, right: List<U32>) -> Bool:
+  match left right:
+    case Nil{} Nil{}: True{}
+    case Con{a, ra} Con{b, rb}: U32.is_eq(a, b) && same_words(ra, rb)
     case _ _: False{}
-def nan_owner_entries(position: U32, wanted: M.Vector3, result: U32 & U32 & List<M.Vector3>) -> Bool:
-  (width, height, entries) = result
-  U32.is_eq(width, 3) && U32.is_eq(height, 1) && nan_entries(3n, 0, position, wanted, entries)
-def nan_owner(position: U32, wanted: M.Vector3, result: Result<&1, &1, J.Image.FloatRGB, J.Image.Formatted>) -> Bool:
+def nan_owner_export(position: U32, wanted: M.Vector3, data: (U32 & U32) & (U32 & List<U32>)) -> Bool:
+  match data:
+    case Tuple{Tuple{3, 1}, Tuple{9, bytes}}: same_words(export_words(bytes, Nil{}), expected_words(3n, 0, position, wanted))
+    case _: False{}
+def nan_owner(position: U32, wanted: M.Vector3, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Bool:
   match result:
-    case Done{_}: False{}
-    case Fail{image}: nan_owner_entries(position, wanted, J.Image.FloatRGB.entries(image))
+    case Fail{Tuple{image, J.OutOfDomain{}}}: nan_owner_export(position, wanted, J.Surface.export(image))
+    case _: False{}
 def nan_control(word: U32, component: U32, +position: U32) -> IO(Unit):
   +wanted = invalid_pixel(component, H.float_bits(word))
   pixels = Array.set(M.Vector3, Array.new(M.Vector3, 2n, M.Vector3{0.25, 0.5, 0.75}), position, wanted)
-  emit_bytes(~&1, [Bool.to_u32(nan_owner(position, wanted, J.Image.FloatRGB.to_formatted(J.FloatRGB{3, 1, pixels}, 8)))])
+  emit_bytes(~&1, [Bool.to_u32(nan_owner(position, wanted, J.Surface.format(J.Surface{3, 1, 9, J.Vectors{pixels}}, 8)))])
 '''
 
 
@@ -267,10 +262,8 @@ def candidate_program(ops):
         else:
             data = (f'repeat_bytes({op["repeat_count"]}n, {bend_bytes(word_bytes(op["repeat_words"]))}, Nil{{}})'
                     if 'repeat_words' in op else bend_bytes(op['bytes']))
-            if op['source']==8:
-                expression = f'from_r32(J.Image.Formatted.from_bytes({op["width"]}, {op["height"]}, 8, {data}))'
-            else:
-                expression = f'converted({"True" if op.get("reject") else "False"}{{}}, [{", ".join(map(str,op["targets"]))}], J.Image.FloatRGB.from_bytes({op["width"]}, {op["height"]}, {data}))'
+            expression = (f'converted({op.get("error",0)}, [{", ".join(map(str,op["targets"]))}], '
+                          f'J.Surface.from_bytes({op["width"]}, {op["height"]}, {op["source"]}, {data}))')
         body += '    '+expression+'\n'
     return body
 

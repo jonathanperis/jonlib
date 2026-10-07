@@ -5,15 +5,13 @@ import json
 import struct
 
 from bmp_probe import bend_bytes
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from conformance import ROOT, source_gate
 import probekit
 from probekit import ProbeFailure
 
 PRELUDE = ['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-           'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-           'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+           C_EMITTER,
            'static void emit(Image image){if(!image.data||image.format!=PIXELFORMAT_UNCOMPRESSED_R32G32B32)exit(2);word(image.width);word(image.height);',
            'for(int i=0;i<image.width*image.height*12;i++)byte(((unsigned char*)image.data)[i]);end();UnloadImage(image);}',
            'int main(void){SetTraceLogLevel(LOG_NONE);']
@@ -28,26 +26,26 @@ def input_bytes(chunks: +List<+List<U32>>, values: +List<U32>) -> +List<U32>:
     case Nil{}: List.reverse(&2, U32, values)
     case Con{head, tail}: input_bytes(tail, reverse_into(head, values))
 '''+BEND_EMITTER+'''
-def emitted(+width: U32, +height: U32, result: Result<&1, &1, J.Image.FloatRGB, +List<U32>>) -> IO(Unit):
-  match result:
-    case Fail{_}: IO.die(Unit, 1, "canvas sample representation changed")
-    case Done{bytes}:
-      header = {[(width .&. 255 : U32), ((width >> 8n) .&. 255 : U32), 0, 0, (height .&. 255 : U32), ((height >> 8n) .&. 255 : U32), 0, 0] : +List<U32>}
-      emit_bytes(~&2, List.append(&2, U32, header, bytes))
-def image(image: J.Image.FloatRGB) -> IO(Unit):
-  J.FloatRGB{+width, +height, pixels} = image
-  emitted(width, height, J.Image.FloatRGB.to_bytes(J.FloatRGB{width, height, pixels}))
-def observed(expected: U32, result: Maybe<Result<&1, &1, J.Image.FloatRGB & J.Surface.Error, J.Image.FloatRGB>>) -> IO(Unit):
+def emitted.sized(+width: U32, +height: U32, bytes: List<U32>) -> IO(Unit):
+  header = {[(width .&. 255 : U32), ((width >> 8n) .&. 255 : U32), 0, 0, (height .&. 255 : U32), ((height >> 8n) .&. 255 : U32), 0, 0] : List<U32>}
+  emit_bytes(~&1, List.append(&1, U32, header, bytes))
+def emitted(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
+  match data:
+    case Tuple{Tuple{width, height}, Tuple{9, bytes}}: emitted.sized(width, height, bytes)
+    case _: IO.die(Unit, 1, "canvas sample representation changed")
+def image(image: J.Surface) -> IO(Unit):
+  emitted(J.Surface.export(image))
+def observed(expected: U32, result: Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>) -> IO(Unit):
   match expected result:
     case 99 Some{Done{value}}: image(value)
     case 0 Some{Fail{Tuple{value, J.InvalidSize{}}}}: image(value)
     case 1 Some{Fail{Tuple{value, J.InvalidRectangle{}}}}: image(value)
     case _ _: IO.die(Unit, 1, "canvas acceptance/error/owner differs")
-def apply(pot: Bool, width: U32, height: U32, x: F32, y: F32, fill: U32, result: Maybe<J.Image.FloatRGB>) -> Maybe<Result<&1, &1, J.Image.FloatRGB & J.Surface.Error, J.Image.FloatRGB>>:
+def apply(pot: Bool, width: U32, height: U32, x: F32, y: F32, fill: U32, result: Maybe<J.Surface>) -> Maybe<Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>>:
   match pot result:
     case _ None{}: None{}
-    case True{} Some{image}: Some{J.Image.FloatRGB.to_pot(image, fill)}
-    case False{} Some{image}: Some{J.Image.FloatRGB.resize_canvas(image, width, height, x, y, fill)}
+    case True{} Some{image}: Some{J.Surface.to_pot(image, fill)}
+    case False{} Some{image}: Some{J.Surface.resize_canvas(image, width, height, x, y, fill)}
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -85,7 +83,7 @@ def reference_program(cases,controls,work):
 def action(case):
     x,y=[f'F32.neg({abs(v):.1f})' if v<0 else f'{v:.1f}' for v in (case['x'],case['y'])]
     return (f'observed({case.get("error",99)}, applyBANG({"True" if case["kind"]=="pot" else "False"}{{}}, {case["target_width"]}, {case["target_height"]}, {x}, {y}, {case["fill"]}, '
-            f'J.Image.FloatRGB.from_bytes({case["width"]}, {case["height"]}, {bend_bytes(case["bytes"])})))')
+            f'J.Surface.from_bytes({case["width"]}, {case["height"]}, 9, {bend_bytes(case["bytes"])})))')
 
 
 def main():

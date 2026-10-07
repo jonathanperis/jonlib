@@ -5,9 +5,8 @@ P5 grayscale and P6 RGB input.
 
 | API | Contract |
 |---|---|
-| `Surface.decode_pnm(bytes: +List<U32>)` | `Result<&1, &1, Image.DecodeError, Surface>` with owned opaque RGBA8 pixels. |
-| `Image.Formatted.decode_pnm(bytes: +List<U32>)` | `Result<&1, &1, Image.DecodeError, Image.Formatted>` with native grayscale (1) or RGB888 (4) pixels and an implicit single mip level. |
-| `Image.Formatted.load_pnm(path: String)` | `IO(Result<&1, &1, Image.LoadError, Image.Formatted>)`; explicit P5/P6 selection independent of the suffix, inclusive 1 MiB encoded-file cap, same domain as `decode_pnm`. See [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-pnm-file-loading). |
+| `Surface.decode_pnm(bytes: +List<U32>)` | `Result<&1, &1, Surface.Error, Surface>` with native grayscale (1) or RGB888 (4) pixels and an implicit single mip level. |
+| `Surface.load_pnm(path: String)` | `IO(Result<&1, &1, Surface.IOError, Surface>)`; explicit P5/P6 selection independent of the suffix, inclusive 1 MiB encoded-file cap, same domain as `decode_pnm`. See [IMAGE-FILES.md](IMAGE-FILES.md#format-preserving-pnm-file-loading). |
 
 Shared suffix/content dispatch through `Surface.decode_image`/`Surface.load_image`
 is in [IMAGE-FILES.md](IMAGE-FILES.md). The separate `Surface.to_ppm` exporter
@@ -62,7 +61,7 @@ traverses the entire immutable input list.
 
 ## Format-preserving PNM memory loading
 
-`Image.Formatted.decode_pnm` preserves width/height and native P5 format
+`Surface.decode_pnm` preserves width/height and native P5 format
 **1 (grayscale)** or P6 format **4 (RGB888)**. Export consumes the owner and
 returns exactly `width*height` G bytes or `width*height*3` R,G,B bytes,
 row-major and without array padding. Grayscale logical U32 words have zero high
@@ -72,13 +71,12 @@ avoid floating-point luminance conversion, which could alter grayscale bytes.
 The immutable input list can be reused; success returns one affine pixel owner.
 Failure returns only the typed error, never a partial image. Point reads return
 ownership alongside their `Maybe` result, so callers thread the owner through
-both in-bounds and rejected reads. Export and `Image.Formatted.to_surface`
-consume the owner. `Surface.decode_pnm` and generic Surface dispatch keep their
-opaque RGBA8-normalized behavior.
+both in-bounds and rejected reads. Export and `Surface.format`
+consume the owner; the shared dispatch returns the same native result.
 
 ## Format-preserving PNM file loading
 
-`Image.Formatted.load_pnm(path)` applies the same format-1/4 decoder to ordinary
+`Surface.load_pnm(path)` applies the same format-1/4 decoder to ordinary
 files without consulting the suffix (`.pgm`, `.ppm`, `.pnm`, `.qoi`, mixed
 case, arbitrary or absent suffixes all select PNM). It neither sniffs another
 codec nor falls back to generic dispatch. The inclusive encoded-input cap is
@@ -92,7 +90,7 @@ full IO contract is in
 
 All gates compare exact output against pinned native raylib on the CPU-1,
 CPU-2 and JavaScript lanes (see [VERIFICATION.md](VERIFICATION.md)). Pinned
-raylib disables PNM by default; the formatted memory and file gates build their
+raylib disables PNM by default; the native-format memory and file gates build their
 native archive with `SUPPORT_FILEFORMAT_PNM=ON`.
 
 - **RGBA8 decode** (`tools/pnm_probe.py`, gate `pnm`, shared bitmap harness
@@ -106,7 +104,7 @@ native archive with `SUPPORT_FILEFORMAT_PNM=ON`.
   converts to RGBA8 before inspection, so it does not establish native
   format-1/4 metadata or raw byte lengths.
 - **Format-preserving memory decode** (`tools/pnm_format_probe.py`, gate
-  `pnm-format`, driver `tools/formatted_codec.py`): the native archive is first
+  `pnm-format`, driver `tools/codec_formats.py`): the native archive is first
   qualified (little-endian, PNM enabled, wide second-byte retention, formats
   1/4). For each accepted fixture, native width/height/mipmaps/format and every
   raw byte are recorded before a separate RGBA8 normalization, including the
@@ -117,7 +115,7 @@ native archive with `SUPPORT_FILEFORMAT_PNM=ON`.
   streams to native and never computes expected samples. Checked-invalid
   controls run only through Jonlib and check exact typed errors.
 - **Format-preserving file loading** (`tools/pnm_file_probe.py`, gate
-  `pnm-file`, driver `tools/formatted_file.py`): see
+  `pnm-file`, driver `tools/codec_files.py`): see
   [IMAGE-FILES.md](IMAGE-FILES.md#how-it-is-verified).
 
 ```sh
@@ -131,8 +129,8 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
   malformed-header recovery; dimensions above 4096.
 - Native pointer/allocation ABI, OOM parity, maximum-area resources and
   performance.
-- Generic formatted/float dispatch; ASCII P1..P3 and PBM P4 decoding.
-- GPU evidence is local only (`--gpu` on the `pnm` probe); the formatted memory
+- ASCII P1..P3 and PBM P4 decoding.
+- GPU evidence is local only (`--gpu` on the `pnm` probe); the native-format memory
   and file gates run on CPU and JavaScript.
 - In the API ledger this work is part of the partial
   `raylib:function:LoadImageFromMemory` and `raylib:function:LoadImage` entries;

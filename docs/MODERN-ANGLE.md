@@ -1,6 +1,6 @@
 # Private glibc 2.41 atan2f kernel
 
-`src/modern_angle.bend` is the scalar kernel behind the `Glibc241AngleRn{}`
+`src/modern_angle.bend` is the scalar kernel behind the `Glibc241Libm{}`
 angle profile. It implements the complete finite-input expression tree of the
 pinned glibc 2.41 `e_atan2f.c`. Profiles, the public checked wrappers and host
 profile selection are described in [ANGLES.md](ANGLES.md); this page covers the
@@ -23,7 +23,7 @@ performance are outside the contract.
 The kernel is private: public code reaches it only through
 `src/checked_angle.bend`, whose wrapper contract (finite components, zero-or-normal
 intermediates and outputs) is narrower than this scalar contract. The Apple2007
-and Sun 2.39 kernels and the legacy `*_for(Gradient.Reference, …)` functions are
+and Sun 2.39 kernels and the legacy `*_for(Libm, …)` functions are
 separate.
 
 ## Source identity and adaptation

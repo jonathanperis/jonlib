@@ -5,22 +5,20 @@ Accepted complete native fixtures only; checked-invalid controls are never sent
 native. TGA is explicitly enabled in a fresh isolated native build. Actual native
 metadata/raw bytes precede normalization. CPU-1/CPU-2/JS; no GPU or file claim.
 
-Shared roles, native recording and lanes: tools/formatted_codec.py.
+Shared roles, native recording and lanes: tools/codec_formats.py.
 """
 import json
 import re
 import struct
-from bmp_probe import bend_bytes
 from tga_probe import fixtures as legacy_fixtures, targa, indexed_targa
-import formatted_codec
-from probekit import ROOT
+import codec_formats
 
 BATCH_SIZE = 32
 SOURCE_BYTE_LIMIT = 196_608
 FORMATS = {1:1, 2:2, 3:4, 4:7}
 MAX_CASE_PIXELS = 8192
 MAX_TOTAL_BYTES = 2_000_000
-C_PREFIX = formatted_codec.C_PREFIX
+C_PREFIX = codec_formats.C_PREFIX
 
 
 def inspect_header(data):
@@ -228,13 +226,13 @@ def qualification_program():
     return '\n'.join(lines+['puts('+json.dumps(row)+');return 0;}'])+'\n'
 
 
-CODEC = formatted_codec.Codec(
+CODEC = codec_formats.Codec(
     name='tga', token='.tga', aliases=('.TGA',), contraction_token='.TGA', formats={1: 1, 2: 2, 3: 4, 4: 7}, raylib_options=('SUPPORT_FILEFORMAT_TGA=ON',), batch=32, qualification=(qualification_program(), dict(little_endian=True,tga_enabled=True,direct16_distinct=True,palette_index_widths=[8,16],formats=[1,2,4,7])),
     fixtures=fixtures, controls=controls, describe=__doc__)
 
 
 def main(argv=None):
-    formatted_codec.main(CODEC, argv)
+    codec_formats.main(CODEC, argv)
 
 
 if __name__ == '__main__':

@@ -1,36 +1,27 @@
 # Image export
 
-Jonlib adapts raylib 6.0 `ExportImage` and `ExportImageToMemory` for three image
-owners: canonical RGBA8 `Surface`, checked `Image.Formatted` (formats 1..8) and
-`Image.FloatRGB` (format 9). Every encoder is pure Bend and reproduces the
-complete native file bytes, not just the decoded pixels. `ExportImage` remains a
+Jonlib adapts raylib 6.0 `ExportImage` and `ExportImageToMemory` for every
+`Surface` pixel format. Every encoder is pure Bend and reproduces the complete
+native file bytes, not just the decoded pixels. `ExportImage` remains a
 **partial** mapping: only the slices below are covered.
 
 | API | Result |
 |---|---|
-| `Surface.write_image(surface, path)` | `IO(Result<&1, &1, Image.ExportError, Unit>)`; codec chosen by filename suffix |
-| `Surface.to_png` / `to_bmp` / `to_tga` / `to_qoi(surface)` | `+List<U32>` (complete file bytes) |
-| `Surface.write_png` / `write_bmp` / `write_tga` / `write_qoi(surface, path)` | `IO(Result<&1, &1, U32 & String, Unit>)` |
-| `Image.Formatted.to_png(image)` | `Result<&1, &1, Image.Formatted & Pixel.Error, +List<U32>>` |
-| `Image.Formatted.to_bmp` / `to_tga(image)` | `+List<U32>` |
-| `Image.Formatted.to_qoi(image)` | `Result<&1, &1, Image.Formatted & Pixel.Error, +List<U32>>` |
-| `Image.Formatted.write_png` / `write_bmp` / `write_tga` / `write_raw(image, path)` | `IO(Result<&1, &1, U32 & String, Unit>)` |
-| `Image.Formatted.write_qoi(image, path)` | `IO(Result<&1, &1, Image.Formatted.QoiWriteError, Unit>)` |
-| `Image.FloatRGB.to_png` / `to_bmp` / `to_tga(image)` | `Result<&1, &1, Image.FloatRGB, +List<U32>>` |
-| `Image.FloatRGB.write_png` / `write_bmp` / `write_tga` / `write_raw(image, path)` | `IO(Result<&1, &1, Image.FloatRGB.WriteError, Unit>)` |
+| `Surface.write_image(surface, path)` | `IO(Result<&1, &1, Surface.IOError, Unit>)`; codec chosen by filename suffix |
+| `Surface.to_png` / `to_bmp` / `to_tga` / `to_qoi(surface)` | `Result<&1, &1, Surface & Surface.Error, +List<U32>>` (complete file bytes) |
+| `Surface.export_to_memory(surface, ".png")` | `Result<&1, &1, Surface & Surface.Error, +List<U32>>` |
+| `Surface.write_png` / `write_bmp` / `write_tga` / `write_qoi` / `write_raw(surface, path)` | `IO(Result<&1, &1, Surface.IOError, Unit>)` |
 
 Every `write_<codec>` selects its codec explicitly, independently of the path
 extension (`.dat`, suffixless names and a misleading `.png` all work). Only
-`Surface.write_image` dispatches on the filename. `to_png` corresponds to
-`ExportImageToMemory(image, ".png")`; the pure BMP/TGA/QOI byte conveniences
-adapt `ExportImage` file output, because native `ExportImageToMemory` implements
-PNG only.
+`Surface.write_image` dispatches on the filename. `export_to_memory` corresponds
+to `ExportImageToMemory`, which implements PNG only; `to_png`/`to_bmp`/`to_tga`/
+`to_qoi` return the bytes `ExportImage` writes to a file.
 
 ## Filename-suffix dispatch
 
 `Surface.write_image` selects PNG, BMP, TGA, QOI or RAW from the filename and
-reuses the corresponding Surface encoder (RAW goes through
-`Surface.to_formatted` and `Image.Formatted.write_raw`).
+reuses the corresponding encoder.
 
 - Suffix matching is ASCII case-insensitive: `.png`, `.PNG` and `.PnG` select
   the same encoder. The filename itself is never lowercased.
@@ -42,41 +33,30 @@ reuses the corresponding Surface encoder (RAW goes through
 - This differs from the exact lowercase/all-uppercase memory-loading tokens in
   [IMAGE-FILES.md](IMAGE-FILES.md).
 
-```bend
-type Image.ExportError is Type:
-  UnsupportedImageExport{surface: Surface}
-  ImageExportFileError{code: U32, message: String}
-```
+An unsupported suffix returns `SourceError{surface, UnsupportedFileType}` with
+the unchanged owner before any file is opened, so unsupported paths cannot
+truncate existing files. `FileError{code, message}` preserves the Base file
+error. A selected encoder consumes its owner, including on open or write
+failure. Inputs are checked owners and ordinary non-NUL paths.
 
-`UnsupportedImageExport` returns the unchanged owned Surface before any file is
-opened, so unsupported paths cannot truncate existing files.
-`ImageExportFileError` preserves the Base file error. A selected encoder
-consumes its Surface, including on open or write failure. Inputs are checked
-Surface owners and ordinary non-NUL paths.
-
-RAW output is native RGBA byte order, not the host byte order of Surface's
-packed `0xRRGGBBAA` words. Dimensions and format are not stored in RAW files
-and must be tracked separately.
+RAW output is native byte order: R8G8B8A8 writes R, G, B, A bytes, not the host
+order of the canonical `0xRRGGBBAA` words. Dimensions and format are not stored
+in RAW files and must be tracked separately.
 
 ## Source domains
 
-- **Surface**: dimensions 1..4096 and row-major packed `0xRRGGBBAA` words. Only
-  logical pixels are encoded; array-capacity padding is excluded. Every export
-  consumes the Surface; use `Surface.copy` first when a separate owner is needed.
-- **Image.Formatted**: dimensions **1..4096** on each axis, format codes **1..8**,
-  one mip level and complete native-order samples, from `Image.Formatted.from_bytes`,
-  the format-preserving loaders, the Surface bridge or supported conversions.
-  R32 (format 8) samples are finite `[0,1]`, including both signed zeros and
-  positive subnormals. Manually inconsistent `FormattedImage` constructors are
-  outside the contract.
-- **Image.FloatRGB**: see the per-codec rules below; file-style paths accept
-  finite `[0,1]` samples only.
+Sources are checked owners: dimensions 1..4096, one mip level and complete
+samples, from the factories, decoders, loaders or conversions. Only logical
+pixels are encoded; array-capacity padding is excluded. Every export consumes
+the owner; use `Surface.copy` first when a separate owner is needed. R32
+samples are finite `[0,1]`; file-style exports of R32G32B32 need finite `[0,1]`
+samples and otherwise return the owner with `OutOfDomain`.
 
 ### Packed, R32 and float color expansion
 
 Native file export prepares non-RGBA8 sources with `LoadImageColors`, which
 differs from normalized `ImageFormat`. Jonlib follows it and therefore never
-routes these sources through `Image.Formatted.to_surface`:
+routes these sources through `Surface.format`:
 
 | Source | RGBA8 used by file export |
 |---|---|
@@ -84,7 +64,7 @@ routes these sources through `Image.Formatted.to_surface`:
 | 5: RGB5A1 | 5-bit channels ×8, alpha bit ×255; blue comes from bits 1..5, excluding alpha (unlike the pinned raw `GetPixelColor` quirk) |
 | 6: RGBA4 | Every nibble ×17 |
 | 8: R32 | Red is truncated F32 `sample*255`; green/blue 0; alpha 255 |
-| 9: FloatRGB | Each finite `[0,1]` channel truncated from F32 `component*255`; alpha 255. No tone mapping or clamping |
+| 9: R32G32B32 | Each finite `[0,1]` channel truncated from F32 `component*255`; alpha 255. No tone mapping or clamping |
 
 ## PNG
 
@@ -92,7 +72,7 @@ routes these sources through `Image.Formatted.to_surface`:
 one IHDR, one IDAT and IEND, matching native `ExportImageToMemory(image, ".png")`
 under the default writer settings.
 
-**Formatted memory export** (`Image.Formatted.to_png`) encodes byte formats
+**Memory export** (`Surface.export_to_memory`) encodes byte formats
 directly, retaining native channels and byte order instead of normalizing
 through RGBA8:
 
@@ -108,24 +88,24 @@ Filtering uses the channel count as its left-neighbor distance. R32 memory
 export feeds each stored four-byte word directly to the four-channel encoder,
 as native `ExportImageToMemory` does: it is an 8-bit RGBA PNG of those bytes,
 not a float PNG. Packed formats 3/5/6 return the original image with
-`UnsupportedPixelFormat`, dimensions, format and pixels intact (their native
+`UnsupportedFormat`, dimensions, format and pixels intact (their native
 default four-channel reads would exceed two-byte-per-pixel storage). Success
 consumes the owner.
 
-**Formatted file export** (`Image.Formatted.write_png`) accepts every checked
-format 1..8. Byte formats keep their channels; packed and R32 sources use the
+**File export** (`Surface.to_png`/`write_png`) accepts every format. Byte
+formats keep their channels; packed, R32 and R32G32B32 sources use the
 `LoadImageColors` expansion above and are encoded as RGBA8. Memory and file
 channel selection are deliberately separate: an R32 sample `0.5` decodes to
 `0000003f` from memory export and `7f0000ff` from file export.
 
-**FloatRGB** follows the same native split:
+**R32G32B32** follows the same native split:
 
-- `Image.FloatRGB.to_png` treats float storage as four byte channels and encodes
+- `Surface.export_to_memory` treats float storage as four byte channels and encodes
   the first `width*height*4` little-endian bytes without converting float values.
   This is a contiguous prefix of the RGB sample words, not one component per
   pixel. Non-NaN sample words, including infinities and subnormals, are
-  supported; rejection returns the owner.
-- `Image.FloatRGB.write_png` uses the normalized `LoadImageColors` path. For
+  supported; NaN samples return the owner with `OutOfDomain`.
+- `Surface.write_png` uses the normalized `LoadImageColors` path. For
   one RGB pixel `(0.5, 0.25, 0.75)` memory PNG decodes to **`0000003f`** and file
   PNG to **`7f3fbfff`**.
 
@@ -155,7 +135,7 @@ the existing runtime failure boundary.
 ## BMP
 
 `Surface.to_bmp`/`write_bmp` emit the native `ExportImage(..., ".bmp")` V4 layout
-(see [BMP.md](BMP.md)). Checked formatted sources select a layout by format:
+(see [BMP.md](BMP.md)). Sources select a layout by format:
 
 | Source | Native BMP layout | Pixel rule |
 |---|---|---|
@@ -174,7 +154,7 @@ also zero. At the checked maximum (16,777,216 pixels) the output is at most
 50,331,702 bytes (24-bit) or 67,108,986 bytes (V4), keeping size/index
 arithmetic within U32. This is an arithmetic bound, not a measured maximum.
 
-`Image.FloatRGB.to_bmp`/`write_bmp` encode the normalized opaque RGBA8 through
+`Surface.to_bmp`/`write_bmp` encode the normalized opaque RGBA8 through
 the same V4 writer.
 
 ## TGA
@@ -186,7 +166,7 @@ the same V4 writer.
 | 4 RGB888 | 3 | 10 | 24 | 0 | BGR |
 | 3/5/6/7/8 | 4 | 10 | 32 | 8 | BGRA |
 
-Surface and FloatRGB sources use the 32-bit BGRA row. The header is exactly 18
+R8G8B8A8 and R32G32B32 sources use the 32-bit BGRA row. The header is exactly 18
 bytes with little-endian dimensions and the type, depth and descriptor above;
 every other field is zero. Rows are bottom-up, pixels left-to-right; no
 padding, ID, color map or footer is emitted. Alpha and transparent hidden RGB
@@ -209,7 +189,7 @@ bound `18 + 5*width*height` is at most **83,886,098 bytes**, within U32.
 ## QOI
 
 `Surface.to_qoi`/`write_qoi` always write header channels 4 and colorspace 0.
-For formatted owners, pinned `rtextures.c` performs a second format check inside
+For every owner, pinned `rtextures.c` performs a second format check inside
 the QOI branch: only the **original** RGB888/RGBA8888 formats reach `qoi_write`,
 and its generic `LoadImageColors` preparation does not make other formats
 eligible. Jonlib rejects them before conversion or file IO; this is native QOI
@@ -217,13 +197,13 @@ behavior, not a missing conversion.
 
 | Original format | Result |
 |---|---|
-| 1, 2, 3, 5, 6, 8 | Reject and retain the owner (no gray replication, packed expansion, or either R32 PNG interpretation) |
+| 1, 2, 3, 5, 6, 8, 9 | Reject and retain the owner (no gray replication, packed expansion, or either R32 PNG interpretation) |
 | 4 RGB888 | Accept; header channels 3; exact R,G,B with internal alpha 255 |
 | 7 RGBA8888 | Accept; header channels 4 even when every pixel is opaque; exact R,G,B,A including hidden RGB at alpha 0 |
 
 Accepted conversion is integer-only through `Formats.packed_colors`: format 4
 `0x00BBGGRR` becomes `0xRRGGBBFF`, format 7 `0xAABBGGRR` becomes `0xRRGGBBAA`.
-It never uses normalized `Formats.decode`/`encode`, `Image.Formatted.convert`
+It never uses normalized `Formats.decode`/`encode`, `Surface.format`
 or `to_surface`. Only `width*height` samples are traversed.
 
 Encoded bytes: `qoif`, big-endian width/height, channels 3 or 4, colorspace
@@ -250,19 +230,19 @@ Surface. A format-4 source and an equivalent opaque format-7 source differ
 only at header byte 12.
 
 Re-export is canonical, not a stream copy: a decoded channel-3 owner stores RGB
-only, so RGBA opcodes in its input cannot resurrect alpha, and formatted owners
+only, so RGBA opcodes in its input cannot resurrect alpha, and owners
 do not store the input colorspace (colorspace 1 re-exports as 0). The bounds
 `22 + 4*width*height` (RGB) and `22 + 5*width*height` (RGBA) keep arithmetic
 within U32 and native int; at 4096×4096 they are **67,108,886** and
 **83,886,102** bytes.
 
-FloatRGB has no QOI export.
+QOI export accepts R8G8B8 and R8G8B8A8 only.
 
 ## RAW
 
-`Image.Formatted.write_raw` writes exactly the native-order image bytes without
-a header; `Image.FloatRGB.write_raw` writes the format-9 sample words. Neither
-stores dimensions or format. See [RAW-FILES.md](RAW-FILES.md) for the request,
+`Surface.write_raw` writes exactly the native-order image bytes (R32G32B32
+sample words included) without a header. It stores neither dimensions nor
+format. See [RAW-FILES.md](RAW-FILES.md) for the request,
 error and closure contract and [FLOAT-RGB.md](FLOAT-RGB.md) for exact non-NaN
 word export.
 
@@ -270,12 +250,9 @@ word export.
 
 | Operation | On rejection | On success / IO failure |
 |---|---|---|
-| `Surface.write_<codec>`, `Image.Formatted.write_png`/`write_bmp`/`write_tga`/`write_raw` | — | Consumes the owner; IO failure returns Base's exact `(code, message)` |
-| `Surface.write_image` | `UnsupportedImageExport{surface}` before opening | Consumes; `ImageExportFileError{code, message}` |
-| `Image.Formatted.to_png` / `to_qoi` | `(original_image, UnsupportedPixelFormat{})`, every byte retained | Consumes |
-| `Image.Formatted.write_qoi` | `QoiSourceError{image}` before `File.open`, even for missing-parent or directory paths | Consumes; `QoiFileError{code, message}` |
-| `Image.FloatRGB.to_*` | `Fail` with the original owner | Consumes |
-| `Image.FloatRGB.write_*` | `FloatRGBSampleError{image}` before opening | Consumes; `FloatRGBFileError{code, message}` |
+| `Surface.to_*` / `export_to_memory` | `Fail{(original, error)}` (`UnsupportedFormat`, `OutOfDomain` or `UnsupportedFileType`), every byte retained | Consumes |
+| `Surface.write_*` | `SourceError{original, error}` before `File.open`, even for missing-parent or directory paths | Consumes; `FileError{code, message}` |
+| `Surface.write_image` | `SourceError{surface, UnsupportedFileType}` before opening | Consumes; `FileError{code, message}` |
 
 Rejections before opening leave existing files unchanged and absent targets
 absent; rejected owners can be reused. Every successfully opened handle is
@@ -302,16 +279,16 @@ exactly EFBIG after open (EMFILE cannot substitute).
 | Gate | Probe | Compares |
 |---|---|---|
 | `image-export` | `tools/image_export_probe.py` | `Surface.write_image` for all five codecs: suffix rules, complete files, decoded pixels, rejected-owner retention, unchanged sentinels, typed errors and handle closure |
-| `png-export` | `tools/png_export_probe.py` | Surface and formatted PNG memory/file bytes (byte formats via memory and file; packed via file), complete decode round trips |
+| `png-export` | `tools/png_export_probe.py` | PNG memory/file bytes for byte formats (byte formats via memory and file; packed via file), complete decode round trips |
 | `deflate` | `tools/deflate_probe.py` | The private quality-8 compressor against linked stb (eviction, lazy matching, window edges, Adler boundaries, stored blocks) |
 | `r32-image` | `tools/r32_image_probe.py` | R32 memory PNG raw-word bytes and file PNG red-only output |
-| `formatted-bmp-export` | `tools/formatted_bmp_export_probe.py` | All eight formats: 24-bit/V4 bytes, padding widths 1..4, packed/R32 boundaries, 4096-pixel axes |
-| `formatted-tga-export` | `tools/formatted_tga_export_probe.py` | All eight formats: run/raw lengths around 128, ABA/ABBC sequences, packed/R32 expansion and collapse |
-| `formatted-qoi-export` | `tools/formatted_qoi_export_probe.py` | Accepted formats 4/7 (every opcode family, run caps, DIFF/LUMA thresholds, all 64 INDEX slots), rejected formats 1/2/3/5/6/8 with retained owners |
-| `float-rgb-png` | `tools/float_rgb_png_probe.py` | FloatRGB memory raw-prefix and normalized file PNG |
-| `float-rgb-raster-export` | `tools/float_rgb_raster_export_probe.py` | FloatRGB BMP/TGA file bytes, including the TGA 128-pixel run boundary |
+| `bmp-export` | `tools/bmp_export_probe.py` | All eight formats: 24-bit/V4 bytes, padding widths 1..4, packed/R32 boundaries, 4096-pixel axes |
+| `tga-export` | `tools/tga_export_probe.py` | All eight formats: run/raw lengths around 128, ABA/ABBC sequences, packed/R32 expansion and collapse |
+| `qoi-export` | `tools/qoi_export_probe.py` | Accepted formats 4/7 (every opcode family, run caps, DIFF/LUMA thresholds, all 64 INDEX slots), rejected formats 1/2/3/5/6/8 with retained owners |
+| `float-rgb-png` | `tools/float_rgb_png_probe.py` | R32G32B32 memory raw-prefix and normalized file PNG |
+| `float-rgb-raster-export` | `tools/float_rgb_raster_export_probe.py` | R32G32B32 BMP/TGA file bytes, including the TGA 128-pixel run boundary |
 
-The three formatted gates share `tools/formatted_export.py`, which runs native
+The three export gates share `tools/codec_exports.py`, which runs native
 qualification controls (endianness, rounding, packed/R32 `LoadImageColors`
 colors), builds native sources from correctly typed storage (a full byte
 comparison rejects any word normalization before export), parses every output
@@ -321,17 +298,16 @@ pixel count, marker and EOF without reimplementing encoder selection.
 
 `png-export`, `deflate`, `float-rgb-png` and `float-rgb-raster-export` accept
 `--gpu`; the forced-GPU lane covers pure encoding only, never filesystem IO.
-The formatted gates and `image-export` have no GPU lane.
+The export gates and `image-export` have no GPU lane.
 
 ```sh
-python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only formatted-qoi-export
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only qoi-export
 ```
 
 ## Known gaps
 
 - JPEG/KTX and other native export codecs.
-- Filename dispatch for owners other than Surface (no
-  `Image.Formatted.write_image`); FloatRGB QOI.
+- QOI export of formats other than R8G8B8/R8G8B8A8 (raylib rejects them too).
 - `ExportImageToMemory` beyond PNG; packed formats 3/5/6 in memory PNG.
 - Nondefault PNG compression/filter/flip settings, other TGA/BMP options and
   other float/half/compressed source formats or mipmaps.

@@ -1,7 +1,8 @@
 import Base
 import ../jonlib.bend as J
+import ../jonmath.bend as M
 
-def error_code(result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> U32:
+def error_code(result: Result<&1, &1, J.Surface.Error, J.Surface>) -> U32:
   match result:
     case Done{_}: 99
     case Fail{error}:
@@ -11,6 +12,7 @@ def error_code(result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> U32:
         case J.UnsupportedImageSize{}: 2
         case J.TruncatedImageData{}: 3
         case J.InvalidImageStream{}: 4
+        case _: 98
 
 def file_kind(kind: J.Image.FileKind) -> U32:
   match kind:
@@ -18,14 +20,14 @@ def file_kind(kind: J.Image.FileKind) -> U32:
     case J.RasterFile{}: 1
     case J.UnsupportedImageFile{}: 2
 
-def short_read(result: Result<&1, &1, J.Image.LoadError, +List<U32>>) -> Bool:
+def short_read(result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> Bool:
   match result:
-    case Fail{J.ImageDecodeError{J.TruncatedImageData{}}}: True{}
+    case Fail{J.DataError{J.TruncatedImageData{}}}: True{}
     case _: False{}
 
-def raw_short_read(result: Result<&1, &1, J.Image.RawLoadError, +List<U32>>) -> Bool:
+def raw_short_read(result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> Bool:
   match result:
-    case Fail{J.TruncatedRawImage{}}: True{}
+    case Fail{J.DataError{J.TruncatedImageData{}}}: True{}
     case _: False{}
 
 def one_color(expected: U32, colors: List<U32>) -> Bool:
@@ -33,16 +35,21 @@ def one_color(expected: U32, colors: List<U32>) -> Bool:
     case Con{actual, Nil{}}: U32.is_eq(expected, actual)
     case _: False{}
 
-def decoded_color(expected: U32, result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> Bool:
+def surface_colors(expected: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> Bool:
   match result:
-    case Done{J.Surface{1, 1, pixels}}: one_color(expected, J.Surface.colors(J.Surface{1, 1, pixels}))
+    case Done{colors}: one_color(expected, colors)
+    case _: False{}
+
+def decoded_color(expected: U32, result: Result<&1, &1, J.Surface.Error, J.Surface>) -> Bool:
+  match result:
+    case Done{J.Surface{1, 1, format, pixels}}: surface_colors(expected, J.Surface.colors(J.Surface{1, 1, format, pixels}))
     case _: False{}
 
 def psd_profiles() -> Bool:
   +bytes = {[56,66,80,83,0,1,0,0,0,0,0,0,0,4,0,0,0,1,0,0,0,1,0,8,0,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,255,11] : +List<U32>}
   decoded_color(J.Color.rgba(255, 255, 255, 11), J.Surface.decode_psd(bytes))
     && decoded_color(J.Color.rgba(255, 255, 255, 11), J.Surface.decode_image(".psd", bytes))
-    && decoded_color(J.Color.rgba(254, 254, 254, 11), J.Surface.decode_image_for(J.FusedDecode{}, ".psd", bytes))
+    && decoded_color(J.Color.rgba(254, 254, 254, 11), J.Surface.decode_image_for(M.Fused{}, ".psd", bytes))
 
 def checks() -> Bool:
   U32.is_eq(error_code(J.Surface.decode_qoi([113,111,105])), 0)

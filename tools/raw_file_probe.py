@@ -16,34 +16,35 @@ def limit_handles():
 
 PROGRAM='''import Base
 import ../../jonlib.bend as J
-def error_name(error: J.Image.RawLoadError) -> String:
+def error_name(error: J.Surface.IOError) -> String:
   match error:
-    case J.RawFileError{_, _}: "file"
-    case J.InvalidRawRequest{}: "request"
-    case J.InvalidRawSamples{}: "samples"
-    case J.TruncatedRawImage{}: "truncated"
-    case J.RawFileTooLarge{}: "large"
+    case J.FileError{_, _}: "file"
+    case J.DataError{J.InvalidRequest{}}: "request"
+    case J.DataError{J.OutOfDomain{}}: "samples"
+    case J.DataError{J.TruncatedImageData{}}: "truncated"
+    case J.DataError{J.UnsupportedImageSize{}}: "large"
+    case _: "other"
 def emit(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
   ((width, height), (format, bytes)) = data
   IO.print("{\\"loaded\\":true,\\"width\\":" ++ U32.show(width) ++ ",\\"height\\":" ++ U32.show(height) ++ ",\\"format\\":" ++ U32.show(format) ++ ",\\"bytes\\":" ++ List.show(~&1, ~U32, ~U32.show, bytes) ++ "}")
-def reloaded(result: Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>) -> IO(Unit):
+def reloaded(result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "raw file reload failed")
-    case Done{image}: emit(J.Image.Formatted.export(image))
-def written(path: String, width: U32, height: U32, format: U32, result: Result<&1, &1, U32 & String, Unit>) -> IO(Unit):
+    case Done{image}: emit(J.Surface.export(image))
+def written(path: String, width: U32, height: U32, format: U32, result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "raw file write failed")
-    case Done{_}: IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_raw(path, width, height, format, 0), reloaded)
-def matched(valid: Bool, +path: String, +width: U32, +height: U32, +format: U32, image: J.Image.Formatted) -> IO(Unit):
+    case Done{_}: IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw(path, width, height, format, 0), reloaded)
+def matched(valid: Bool, +path: String, +width: U32, +height: U32, +format: U32, image: J.Surface) -> IO(Unit):
   match valid:
     case False{}: IO.die(Unit, 1, "raw load metadata differs")
-    case True{}: IO.bind(Result<&1, &1, U32 & String, Unit>, Unit, J.Image.Formatted.write_raw(image, path), written(path, width, height, format))
-def loaded(path: String, width: U32, height: U32, format: U32, result: Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>) -> IO(Unit):
+    case True{}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_raw(image, path), written(path, width, height, format))
+def loaded(path: String, width: U32, height: U32, format: U32, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{error}: IO.print("{\\"loaded\\":false,\\"error\\":\\"" ++ error_name(error) ++ "\\"}")
-    case Done{J.FormattedImage{+w, +h, +f, pixels}}:
-      matched(U32.is_eq(w, width) && U32.is_eq(h, height) && U32.is_eq(f, format), path, w, h, f, J.FormattedImage{w, h, f, pixels})
-def required(result: Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>) -> IO(Unit):
+    case Done{J.Surface{+w, +h, +f, pixels}}:
+      matched(U32.is_eq(w, width) && U32.is_eq(h, height) && U32.is_eq(f, format), path, w, h, f, J.Surface{w, h, f, pixels})
+def required(result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Done{_}: IO.pure(Unit, Unit{})
     case Fail{_}: IO.die(Unit, 1, "file handles leaked or valid load failed")
@@ -51,26 +52,26 @@ def error_checked(valid: Bool) -> IO(Unit):
   match valid:
     case True{}: IO.pure(Unit, Unit{})
     case False{}: IO.die(Unit, 1, "raw error kind differs")
-def failure_checked(expected: String, result: Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>) -> IO(Unit):
+def failure_checked(expected: String, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Done{_}: IO.die(Unit, 1, "invalid raw-file request passed")
     case Fail{error}: error_checked(String.eq(expected, error_name(error)))
-def write_failed(result: Result<&1, &1, U32 & String, Unit>) -> IO(Unit):
+def write_failed(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
     case Fail{_}: IO.print("{\\"write_error\\":true}")
     case Done{_}: IO.die(Unit, 1, "invalid raw export path passed")
-def invalid_export(result: Maybe<J.Image.Formatted>) -> IO(Unit):
+def invalid_export(result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "valid raw export image rejected")
-    case Some{image}: IO.bind(Result<&1, &1, U32 & String, Unit>, Unit, J.Image.Formatted.write_raw(image, WRITE_FAILURE), write_failed)
+    case Some{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_raw(image, WRITE_FAILURE), write_failed)
 def closure_loop(n: Nat) -> IO(Unit):
   match n:
     case 0n: IO.print("{\\"closure_checks\\":true}")
     case 1n+rest:
       do IO<Unit>:
-        IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_raw(VALID, 3, 2, 7, 0), required)
-        IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_raw(SHORT, 1, 1, 7, 0), failure_checked("truncated"))
-        IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_raw(READ_ERROR, 1, 1, 1, 0), failure_checked("file"))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw(VALID, 3, 2, 7, 0), required)
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw(SHORT, 1, 1, 7, 0), failure_checked("truncated"))
+        IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw(READ_ERROR, 1, 1, 1, 0), failure_checked("file"))
         closure_loop(rest)
 def main() -> IO(Unit):
   do IO<Unit>:
@@ -101,7 +102,7 @@ def main():
     read_error = work/'read-error';read_error.mkdir(exist_ok=True)
     (read_error/'entry').write_bytes(b'x')
     controls = [dict(name='bad-size',path=str(missing.relative_to(ROOT)),width=0,height=1,format=7,header=0,error='request'),
-                dict(name='bad-format',path=str(missing.relative_to(ROOT)),width=1,height=1,format=9,header=0,error='request'),
+                dict(name='bad-format',path=str(missing.relative_to(ROOT)),width=1,height=1,format=10,header=0,error='request'),
                 dict(name='bad-header',path=str(missing.relative_to(ROOT)),width=1,height=1,format=7,header=2147483647,error='request'),
                 dict(name='large-file',path=str(oversized.relative_to(ROOT)),width=1,height=1,format=7,header=0,error='large'),
                 dict(name='read-error',path=str(read_error.relative_to(ROOT)),width=1,height=1,format=1,header=0,error='file')]
@@ -135,8 +136,8 @@ def main():
         for kind,case in selected:
             if kind in ('case','control'):
                 output=str(exported(case).relative_to(ROOT))
-                body += f'    IO.bind(Result<&1, &1, J.Image.RawLoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_raw({json.dumps(case["path"])}, {case["width"]}, {case["height"]}, {case["format"]}, {case["header"]}), loaded({json.dumps(output)}, {case["width"]}, {case["height"]}, {case["format"]}))\n'
-            elif kind=='write_error':body += '    invalid_export(J.Image.Formatted.from_bytes(1, 1, 7, [1,2,3,4]))\n'
+                body += f'    IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_raw({json.dumps(case["path"])}, {case["width"]}, {case["height"]}, {case["format"]}, {case["header"]}), loaded({json.dumps(output)}, {case["width"]}, {case["height"]}, {case["format"]}))\n'
+            elif kind=='write_error':body += '    invalid_export(J.Surface.from_bytes(1, 1, 7, [1,2,3,4]))\n'
             else:body += '    closure_loop(100n)\n'
         return body
 

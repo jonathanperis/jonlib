@@ -13,6 +13,8 @@ from probekit import ProbeFailure
 
 
 BYTES_PER_PIXEL = {1:1, 2:2, 3:2, 4:3, 5:2, 6:2, 7:4, 8:4}
+# Output sizes also cover R32G32B32 owners, which the unified factory accepts.
+OUTPUT_BYTES_PER_PIXEL = {**BYTES_PER_PIXEL, 9:12}
 
 
 def word_bytes(words):
@@ -80,6 +82,9 @@ def cases():
     pattern = [0,0x80000000,1,0x3f800000]
     result.append(dict(width=256,height=129,source=8,bytes=word_bytes(pattern*8256),
                        repeat_words=pattern,repeat_count=8256,targets=[0,8],bridge=False))
+    # The unified Surface factory accepts R32G32B32 bytes (formerly a rejected
+    # Formatted-factory control); native ImageFormat(0) keeps them exactly.
+    result.append(dict(width=1,height=1,source=9,bytes=word_bytes([0x3f000000]*3),targets=[0],bridge=False))
     return result
 
 
@@ -90,7 +95,6 @@ def invalid_cases():
     controls += [dict(base,**change) for change in (dict(width=0),dict(height=0),
                  dict(width=4097),dict(height=4097),dict(width=0xffffffff),
                  dict(source=0),dict(source=9),dict(source=0xffffffff))]
-    controls.append(dict(base,source=9,bytes=word_bytes([0x3f000000]*3)))
     invalid_words = [0x80000001,0x807fffff,0xbf000000,0x3f800001,0x7f7fffff,
                      0x7f800000,0xff800000,0x7fc00000,0x7f800001,0xffc12345]
     for word in invalid_words:
@@ -136,7 +140,7 @@ def parse_rows(text, inputs, controls=()):
             any(type(row[key]) is not int for key in ('width','height','format')) or
             (row['width'],row['height'],row['format']) != (case['width'],case['height'],format) or
             type(row['bytes']) is not list or
-            len(row['bytes']) != case['width']*case['height']*BYTES_PER_PIXEL[format] or
+            len(row['bytes']) != case['width']*case['height']*OUTPUT_BYTES_PER_PIXEL[format] or
             any(type(value) is not int or not 0 <= value <= 255 for value in row['bytes'])):
             raise ValueError(f'Malformed ImageFormat output at case {index}')
         if not case['bridge'] and all(target in (0,case['source']) for target in case['targets']):
@@ -189,32 +193,32 @@ def repeat_bytes(n: Nat, +chunk: +List<U32>, values: +List<U32>) -> +List<U32>:
   match n:
     case 0n: List.reverse(&2, U32, values)
     case 1n+rest: repeat_bytes(rest, chunk, reverse_into(chunk, values))
-def chain(targets: +List<U32>, result: Result<&1, &1, J.Image.Formatted & J.Pixel.Error, J.Image.Formatted>) -> Maybe<J.Image.Formatted>:
+def chain(targets: +List<U32>, result: Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>) -> Maybe<J.Surface>:
   match targets result:
     case _ Fail{_}: None{}
     case Nil{} Done{image}: Some{image}
-    case Con{target, rest} Done{image}: chain(rest, J.Image.Formatted.convert(image, target))
-def created(result: Maybe<J.Image.Formatted>, targets: +List<U32>) -> Maybe<J.Image.Formatted>:
+    case Con{target, rest} Done{image}: chain(rest, J.Surface.format(image, target))
+def created(result: Maybe<J.Surface>, targets: +List<U32>) -> Maybe<J.Surface>:
   match result:
     case None{}: None{}
     case Some{image}: chain(targets, Done{image})
-def bridged(bridge: Bool, result: Maybe<J.Image.Formatted>) -> Maybe<J.Image.Formatted>:
+def bridged(bridge: Bool, result: Maybe<J.Surface>) -> Maybe<J.Surface>:
   match bridge result:
     case False{} _: result
     case True{} None{}: None{}
-    case True{} Some{image}: Some{J.Surface.to_formatted(J.Image.Formatted.to_surface(image))}
-def calculate(width: U32, height: U32, format: U32, bytes: +List<U32>, targets: +List<U32>, bridge: Bool) -> Maybe<J.Image.Formatted>:
-  bridged(bridge, created(J.Image.Formatted.from_bytes(width, height, format, bytes), targets))
+    case True{} Some{image}: chain([7], Done{image})
+def calculate(width: U32, height: U32, format: U32, bytes: +List<U32>, targets: +List<U32>, bridge: Bool) -> Maybe<J.Surface>:
+  bridged(bridge, created(J.Surface.from_bytes(width, height, format, bytes), targets))
 def emit(data: (U32 & U32) & (U32 & List<U32>)) -> IO(Unit):
   ((width, height), (format, bytes)) = data
   do IO<Unit>:
     IO.print("{\\\"width\\\":" ++ U32.show(width) ++ ",\\\"height\\\":" ++ U32.show(height) ++ ",\\\"format\\\":" ++ U32.show(format) ++ ",\\\"chunked\\\":true}")
     emit_bytes(~&1, bytes)
-def observed(result: Maybe<J.Image.Formatted>) -> IO(Unit):
+def observed(result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "valid image-format request rejected")
-    case Some{image}: emit(J.Image.Formatted.export(image))
-def rejected(result: Maybe<J.Image.Formatted>) -> IO(Unit):
+    case Some{image}: emit(J.Surface.export(image))
+def rejected(result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: IO.print("{\\"rejected\\":true}")
     case Some{_}: IO.die(Unit, 1, "invalid image-format factory accepted")
@@ -228,7 +232,7 @@ def main() -> IO(Unit):
             targets = ','.join(map(str,case['targets']))
             program += f'    observed(calculate{bang}({case["width"]}, {case["height"]}, {case["source"]}, {input_expression(case)}, [{targets}], {"True{}" if case["bridge"] else "False{}"}))\n'
         else:
-            program += f'    rejected(J.Image.Formatted.from_bytes{bang}({case["width"]}, {case["height"]}, {case["source"]}, {bend_bytes(case["bytes"])}))\n'
+            program += f'    rejected(J.Surface.from_bytes{bang}({case["width"]}, {case["height"]}, {case["source"]}, {bend_bytes(case["bytes"])}))\n'
     return program
 
 

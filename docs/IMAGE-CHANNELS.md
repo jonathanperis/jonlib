@@ -4,21 +4,17 @@ Jonlib adapts raylib 6.0 `ImageFromChannel`, which extracts one channel of an
 image into a new grayscale image.
 
 ```bend
-Image.Formatted.from_channel(image, selected: F32) -> Image.Formatted & Maybe<Image.Formatted>
-Image.FloatRGB.from_channel(image, selected: F32) -> Image.FloatRGB & Maybe<Image.Formatted>
-Surface.from_channel(surface, selected: F32) -> Surface & Surface
+Surface.from_channel(image, selected: F32) -> Surface & Maybe<Surface>
 ```
 
 ## Contract
 
-- Sources: checked `Image.Formatted` formats 1..8 (format 8 within the
-  [R32](R32.md) domain) and `Image.FloatRGB` with finite `[0,1]` samples.
+- Sources: every format; R32 within the [R32](R32.md) domain and R32G32B32
+  with finite `[0,1]` samples.
 - Selectors are finite integral F32 values in **-32767..32767**.
 - The original image is always retained. Success returns an independent native
   format-1 (grayscale) owner with the source dimensions. Invalid selectors or
   unsupported float samples return the original with `None`.
-- `Surface.from_channel` keeps its existing normalized RGBA8 output interface;
-  the formatted/float operations expose native grayscale storage instead.
 
 ## Native selection and arithmetic
 

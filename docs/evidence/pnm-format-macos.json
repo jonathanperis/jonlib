@@ -1,0 +1,67 @@
+{
+ "gate": "pnm-format",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 206.9,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/pnm-format-probe/results.json": {
+   "sha256": "d240655a9fdddd0b51bbb23f8a3bba5afa831fb18013b8bf35c41f05609872ff",
+   "summary": {
+    "passed": true,
+    "probe": "pnm-format",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [
+     "SUPPORT_FILEFORMAT_PNM=ON"
+    ],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 637,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 637,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 637,
+      "different": []
+     }
+    },
+    "batches": 22,
+    "cases": 96,
+    "controls": 73,
+    "native_rejections": 0,
+    "observations": 637,
+    "compared_bytes": 885750,
+    "reference_sha256": "61ee804d95b8012d13be24cc7aceaa9bf87a13f14b0c395349206c249e4ba067"
+   }
+  }
+ }
+}

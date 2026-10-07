@@ -19,7 +19,7 @@ def observed(result: Maybe<&2, U32> & Maybe<&2, +List<U32>>) -> IO(Unit):
     case Tuple{Some{crc}, Some{words}}: IO.print(List.show(~&2, ~U32, ~U32.show, Con{crc, words}))
     case Tuple{None{}, None{}}: IO.print("null")
     case _: IO.die(Unit, 1, "checksum acceptance differs")
-def loaded(result: Result<&1, &1, J.Image.LoadError, +List<U32>>) -> IO(Unit):
+def loaded(result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "checksum fixture read failed")
     case Done{bytes}: observed(calculateBANG(bytes))
@@ -75,7 +75,7 @@ def main():
         for i,case in selected:
             if case['file']:
                 path=json.dumps(str((probe.work/f'{i}.dat').relative_to(ROOT)))
-                body+=f'    IO.bind(Result<&1, &1, J.Image.LoadError, +List<U32>>, Unit, J.Image.file.bytes({path}, 2097152), loaded)\n'
+                body+=f'    IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Image.file.bytes({path}, 2097152), loaded)\n'
             else:body+=f'    observed(calculate{bang}({probekit.bend_list(case["bytes"])}))\n'
         return body
 
