@@ -103,7 +103,8 @@ channel selection are deliberately separate: an R32 sample `0.5` decodes to
 - `Surface.export_to_memory` treats float storage as four byte channels and encodes
   the first `width*height*4` little-endian bytes without converting float values.
   This is a contiguous prefix of the RGB sample words, not one component per
-  pixel. Every stored word, including infinities and subnormals, is read as is.
+  pixel. Non-NaN sample words, including infinities and subnormals, are
+  supported; NaN samples return the owner with `OutOfDomain`.
 - `Surface.write_png` uses the normalized `LoadImageColors` path. For
   one RGB pixel `(0.5, 0.25, 0.75)` memory PNG decodes to **`0000003f`** and file
   PNG to **`7f3fbfff`**.

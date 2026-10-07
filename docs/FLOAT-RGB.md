@@ -50,8 +50,10 @@ Surface.export(image) -> (U32 & U32) & (U32 & List<U32>)
 values, reading three little-endian F32 words per pixel; it rejects NaN words
 before constructing floats, so no factory creates NaN samples. `export` consumes
 the image and emits the exact format-9 words without storage padding. No
-normalization, gamma or tone mapping is applied. Exact raw NaN-word
-interoperability is outside the profile.
+normalization, gamma or tone mapping is applied. Writers, `export_to_memory` and
+`to_code` reject NaN samples with `OutOfDomain`, returning the owner before any
+file is opened; NaN owners can only be built by hand and are outside the
+contract of `export`. Exact raw NaN-word interoperability is outside the profile.
 
 ## Lossless copy and orientation
 

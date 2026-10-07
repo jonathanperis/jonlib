@@ -679,15 +679,6 @@ type Surface.Blend is Type:
   BlendRect{rect: Rectangle, target: Rectangle, tint: U32}
   MaskAlpha{}
 
-type Surface.Codec is Data:
-  QoiCodec{}
-  PngCodec{}
-  BmpCodec{}
-  TgaCodec{}
-  PnmCodec{}
-  PicCodec{}
-  HdrCodec{}
-
 type Image.Animation is Type:
   Animation{width: U32, height: U32, count: U32, frames: List<Surface>}
 
@@ -2140,16 +2131,25 @@ def Surface.vector.color(value: M.Vector3) -> U32:
   M.Vector3{r, g, b} = value
   Color.rgba(F32.to_u32((r * 255.0 : F32)), F32.to_u32((g * 255.0 : F32)), F32.to_u32((b * 255.0 : F32)), 255)
 
-def Surface.vectors.checked.read(result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Bool:
-  (values, value) = result
-  (values, Surface.vector.valid(value))
+# Raw R32G32B32 words other than NaN: no factory creates NaN and backends do not
+# all keep NaN payloads, so writers reject it.
+def Surface.vector.word(word: U32) -> Bool:
+  ((word .&. 2147483647) <= 2139095040 : U32)
 
-def Surface.vectors.checked(n: Nat, +index: U32, state: Array<M.Vector3> & Bool) -> Array<M.Vector3> & Bool:
+def Surface.vector.ordered(value: M.Vector3) -> Bool:
+  M.Vector3{r, g, b} = value
+  Surface.vector.word(F32.bits(r)) && Surface.vector.word(F32.bits(g)) && Surface.vector.word(F32.bits(b))
+
+def Surface.vectors.checked.read(~valid: M.Vector3 -> Bool, result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Bool:
+  (values, value) = result
+  (values, valid(value))
+
+def Surface.vectors.checked(~valid: M.Vector3 -> Bool, n: Nat, +index: U32, state: Array<M.Vector3> & Bool) -> Array<M.Vector3> & Bool:
   match n state:
     case _ Tuple{values, False{}}: (values, False{})
     case 0n _: state
     case 1n+rest Tuple{values, True{}}:
-      Surface.vectors.checked(rest, (index + 1 : U32), Surface.vectors.checked.read(Array.get(M.Vector3, values, index)))
+      Surface.vectors.checked(~valid, rest, (index + 1 : U32), Surface.vectors.checked.read(~valid, Array.get(M.Vector3, values, index)))
 
 def Surface.vectors.colors.read(index: U32, output: Array<U32>, result: Array<M.Vector3> & M.Vector3) -> Array<M.Vector3> & Array<U32>:
   (values, value) = result
@@ -2200,7 +2200,7 @@ def Surface.to_rgba.selected(kind: U32, pixels: Surface.Pixels, +width: U32, +he
     case 7 Words{values}: Done{Rgba{width, height, values}}
     case _ Words{values}: Done{Rgba{width, height, Formats.packed_colors(U32.to_nat((width * height : U32)), 0, format, values)}}
     case _ Vectors{values}:
-      Surface.rgba.vectors(width, height, format, Surface.vectors.checked(U32.to_nat((width * height : U32)), 0, (values, True{})))
+      Surface.rgba.vectors(width, height, format, Surface.vectors.checked(~Surface.vector.valid, U32.to_nat((width * height : U32)), 0, (values, True{})))
 
 def Surface.to_rgba(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, Rgba>:
   Surface{width, height, +format, pixels} = surface
@@ -2256,7 +2256,7 @@ def Surface.format.checked(unchanged: Bool, supported: Bool, surface: Surface, +
     case False{} False{} _: Fail{(surface, UnsupportedFormat{})}
     case False{} True{} Surface{+width, +height, +format, Words{values}}: Done{Surface.format.words(target, width, height, format, target, values)}
     case False{} True{} Surface{+width, +height, format, Vectors{values}}:
-      Surface.format.vectors(width, height, format, target, Surface.vectors.checked(U32.to_nat((width * height : U32)), 0, (values, True{})))
+      Surface.format.vectors(width, height, format, target, Surface.vectors.checked(~Surface.vector.valid, U32.to_nat((width * height : U32)), 0, (values, True{})))
 
 def Surface.format(surface: Surface, +target: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
   Surface{width, height, +format, pixels} = surface
@@ -2904,7 +2904,7 @@ def Surface.channel.checked(valid: Bool, surface: Surface, selected: F32) -> Sur
         Image.channel.index(format, F32.to_u32(F32.max(0.0, selected))), (values, Array.new(U32, Surface.capacity(count), 0))))
     case True{} Surface{+width, +height, +format, Vectors{values}}:
       Surface.channel.vectors.checked(width, height, format, Image.channel.index(format, F32.to_u32(F32.max(0.0, selected))),
-        Surface.vectors.checked(U32.to_nat((width * height : U32)), 0, (values, True{})))
+        Surface.vectors.checked(~Surface.vector.valid, U32.to_nat((width * height : U32)), 0, (values, True{})))
 
 # ImageFromChannel: a GRAYSCALE image of one normalized channel; the source is kept.
 def Surface.from_channel(surface: Surface, +selected: F32) -> Surface & Maybe<Surface>:
@@ -2929,6 +2929,22 @@ def Surface.raw(~q: Quant, surface: Surface) -> List<q, U32>:
   Surface{width, height, format, pixels} = surface
   Surface.raw.selected(~q, pixels, width, height, format)
 
+def Surface.payload.vectors(+width: U32, +height: U32, format: U32, state: Array<M.Vector3> & Bool) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match state:
+    case Tuple{values, False{}}: Fail{(Surface{width, height, format, Vectors{values}}, OutOfDomain{})}
+    case Tuple{values, True{}}: Done{Surface{width, height, format, Vectors{values}}}
+
+def Surface.payload.selected(pixels: Surface.Pixels, +width: U32, +height: U32, format: U32) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match pixels:
+    case Words{values}: Done{Surface{width, height, format, Words{values}}}
+    case Vectors{values}:
+      Surface.payload.vectors(width, height, format, Surface.vectors.checked(~Surface.vector.ordered, U32.to_nat((width * height : U32)), 0, (values, True{})))
+
+# Owners whose stored words writers accept: every owner except NaN R32G32B32 samples.
+def Surface.payload(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface{width, height, format, pixels} = surface
+  Surface.payload.selected(pixels, width, height, format)
+
 # Consumes the owner: dimensions, format and its raw bytes without padding.
 def Surface.export(surface: Surface) -> (U32 & U32) & (U32 & List<U32>):
   Surface{+width, +height, +format, pixels} = surface
@@ -2944,16 +2960,13 @@ def Surface.vectors.raw.stored(valid: Bool, index: U32, r: U32, g: U32, b: U32, 
     case False{}: None{}
     case True{}: Some{(bytes, Array.set(M.Vector3, values, index, M.Vector3{Hdr.float_bits(r), Hdr.float_bits(g), Hdr.float_bits(b)}))}
 
-def Surface.vectors.raw.word(word: U32) -> Bool:
-  ((word .&. 2147483647) <= 2139095040 : U32)
-
 def Surface.vectors.raw.read(index: U32, values: Array<M.Vector3>, bytes: +List<U32>) -> Maybe<(+List<U32> & Array<M.Vector3>)>:
   match bytes:
     case Con{r0, Con{r1, Con{r2, Con{r3, Con{g0, Con{g1, Con{g2, Con{g3, Con{b0, Con{b1, Con{b2, Con{b3, rest}}}}}}}}}}}}:
       +r = (r0 .|. (r1 << 8n) .|. (r2 << 16n) .|. (r3 << 24n) : U32)
       +g = (g0 .|. (g1 << 8n) .|. (g2 << 16n) .|. (g3 << 24n) : U32)
       +b = (b0 .|. (b1 << 8n) .|. (b2 << 16n) .|. (b3 << 24n) : U32)
-      Surface.vectors.raw.stored(Surface.vectors.raw.word(r) && Surface.vectors.raw.word(g) && Surface.vectors.raw.word(b), index, r, g, b, rest, values)
+      Surface.vectors.raw.stored(Surface.vector.word(r) && Surface.vector.word(g) && Surface.vector.word(b), index, r, g, b, rest, values)
     case _: None{}
 
 def Surface.vectors.raw(n: Nat, +index: U32, state: Maybe<(+List<U32> & Array<M.Vector3>)>) -> Maybe<Array<M.Vector3>>:
@@ -3267,10 +3280,14 @@ def Surface.memory.typed(png: Bool, +channels: U32, surface: Surface) -> Result<
 # ExportImageToMemory (".png" only) hands stbi the raw storage with four
 # components for every format other than GRAYSCALE, GRAY_ALPHA and R8G8B8:
 # R32 and R32G32B32 bytes are read as RGBA, the 16-bit formats would overread.
+def Surface.memory.payload(png: Bool, result: Result<&1, &1, Surface & Surface.Error, Surface>) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>:
+  match result:
+    case Fail{failure}: Fail{failure}
+    case Done{Surface{width, height, +format, pixels}}:
+      Surface.memory.typed(png, Surface.memory.channels(format), Surface{width, height, format, pixels})
+
 def Surface.export_to_memory(surface: Surface, +file_type: String) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>:
-  Surface{width, height, +format, pixels} = surface
-  Surface.memory.typed(String.eq(file_type, ".png") || String.eq(file_type, ".PNG"), Surface.memory.channels(format),
-    Surface{width, height, format, pixels})
+  Surface.memory.payload(String.eq(file_type, ".png") || String.eq(file_type, ".PNG"), Surface.payload(surface))
 
 def Surface.code.exported(name: String, size: U32, result: (U32 & U32) & (U32 & List<U32>)) -> String:
   ((width, height), (format, bytes)) = result
@@ -3281,11 +3298,16 @@ def Surface.code.checked(valid: Bool, name: Maybe<&2, String>, size: U32, surfac
     case True{} Some{text}: Done{Surface.code.exported(text, size, Surface.export(surface))}
     case _ _: Fail{(surface, InvalidRequest{})}
 
+def Surface.code.payload(path: String, result: Result<&1, &1, Surface & Surface.Error, Surface>) -> Result<&1, &1, Surface & Surface.Error, String>:
+  match result:
+    case Fail{failure}: Fail{failure}
+    case Done{Surface{+width, +height, +format, pixels}}:
+      +size = (width * height * (Pixel.bits_per_pixel(format) / 8) : U32)
+      Surface.code.checked((size <= 65536 : U32), ImageCode.name(path), size, Surface{width, height, format, pixels})
+
 # ExportImageAsCode: raw bytes up to 64 KiB, named from the path.
 def Surface.to_code(surface: Surface, path: String) -> Result<&1, &1, Surface & Surface.Error, String>:
-  Surface{+width, +height, +format, pixels} = surface
-  +size = (width * height * (Pixel.bits_per_pixel(format) / 8) : U32)
-  Surface.code.checked((size <= 65536 : U32), ImageCode.name(path), size, Surface{width, height, format, pixels})
+  Surface.code.payload(path, Surface.payload(surface))
 
 # Writers: one file, closed before the status returns; rejected owners come back.
 def Surface.write.written(result: Result<&1, &1, U32 & String, Unit>) -> IO(Result<&1, &1, Surface.IOError, Unit>):
@@ -3321,8 +3343,13 @@ def Surface.write_tga(surface: Surface, path: String) -> IO(Result<&1, &1, Surfa
 def Surface.write_qoi(surface: Surface, path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
   Surface.write.bytes(path, Surface.to_qoi(surface))
 
+def Surface.raw.payload(result: Result<&1, &1, Surface & Surface.Error, Surface>) -> Result<&1, &1, Surface & Surface.Error, +List<U32>>:
+  match result:
+    case Fail{failure}: Fail{failure}
+    case Done{surface}: Done{Surface.raw(~&2, surface)}
+
 def Surface.write_raw(surface: Surface, path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
-  Surface.write.bytes(path, Done{Surface.raw(~&2, surface)})
+  Surface.write.bytes(path, Surface.raw.payload(Surface.payload(surface)))
 
 def Surface.write_code(surface: Surface, +path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
   Surface.write.text(path, Surface.to_code(surface, path))
@@ -3408,51 +3435,37 @@ def Surface.load_image_for(reference: M.Contraction, +path: String) -> IO(Result
 def Surface.load_image(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
   Surface.load_image_for(M.Uncontracted{}, path)
 
-def Surface.codec.decode(codec: Surface.Codec, bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
-  match codec:
-    case QoiCodec{}: Surface.decode_qoi(bytes)
-    case PngCodec{}: Surface.decode_png(bytes)
-    case BmpCodec{}: Surface.decode_bmp(bytes)
-    case TgaCodec{}: Surface.decode_tga(bytes)
-    case PnmCodec{}: Surface.decode_pnm(bytes)
-    case PicCodec{}: Surface.decode_pic(bytes)
-    case HdrCodec{}: Surface.decode_hdr(bytes)
-
-def Surface.codec.limit(codec: Surface.Codec) -> U32:
-  match codec:
-    case QoiCodec{}: Image.file.limit(QoiFile{})
-    case _: Image.file.limit(RasterFile{})
-
-def Surface.codec.loaded(codec: Surface.Codec, result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(Result<&1, &1, Surface.IOError, Surface>):
+def Surface.load.decoded(~decode: +List<U32> -> Result<&1, &1, Surface.Error, Surface>, result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(Result<&1, &1, Surface.IOError, Surface>):
   match result:
     case Fail{error}: IO.pure(Result<&1, &1, Surface.IOError, Surface>, Fail{error})
-    case Done{bytes}: IO.pure(Result<&1, &1, Surface.IOError, Surface>, Image.file.decoded(Surface, Surface.codec.decode(codec, bytes)))
+    case Done{bytes}: IO.pure(Result<&1, &1, Surface.IOError, Surface>, Image.file.decoded(Surface, decode(bytes)))
 
-# Explicit codec selection shares the bounded, complete, close-before-decode file boundary.
-def Surface.load_codec(+codec: Surface.Codec, path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
+# Explicit codec selection shares the bounded, complete, close-before-decode
+# file boundary. The decoder is a parameter so a program links only its codec.
+def Surface.load_with(~decode: +List<U32> -> Result<&1, &1, Surface.Error, Surface>, limit: U32, path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
   IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, Surface>,
-    Image.file.bytes(path, Surface.codec.limit(codec)), Surface.codec.loaded(codec))
+    Image.file.bytes(path, limit), Surface.load.decoded(~decode))
 
 def Surface.load_qoi(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
-  Surface.load_codec(QoiCodec{}, path)
+  Surface.load_with(~Surface.decode_qoi, Image.file.limit(QoiFile{}), path)
 
 def Surface.load_png(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
-  Surface.load_codec(PngCodec{}, path)
+  Surface.load_with(~Surface.decode_png, Image.file.limit(RasterFile{}), path)
 
 def Surface.load_bmp(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
-  Surface.load_codec(BmpCodec{}, path)
+  Surface.load_with(~Surface.decode_bmp, Image.file.limit(RasterFile{}), path)
 
 def Surface.load_tga(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
-  Surface.load_codec(TgaCodec{}, path)
+  Surface.load_with(~Surface.decode_tga, Image.file.limit(RasterFile{}), path)
 
 def Surface.load_pnm(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
-  Surface.load_codec(PnmCodec{}, path)
+  Surface.load_with(~Surface.decode_pnm, Image.file.limit(RasterFile{}), path)
 
 def Surface.load_pic(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
-  Surface.load_codec(PicCodec{}, path)
+  Surface.load_with(~Surface.decode_pic, Image.file.limit(RasterFile{}), path)
 
 def Surface.load_hdr(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
-  Surface.load_codec(HdrCodec{}, path)
+  Surface.load_with(~Surface.decode_hdr, Image.file.limit(RasterFile{}), path)
 
 def Image.Animation.file.token(+suffix: String) -> String:
   Bool.pick(String, String.eq(String.to_lower(suffix), ".gif"), ".gif", suffix)

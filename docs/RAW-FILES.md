@@ -48,8 +48,9 @@ rather than filled with synthetic pixels.
 
 `Surface.write_raw` consumes its owner and writes exactly the native-order
 image bytes, without a header or storage padding, then closes the file after
-the write result. R32 and R32G32B32 words are written unchanged; open/write
-failures are `FileError{code, message}`. The raw float domain and the
+the write result. R32 and R32G32B32 words are written unchanged; NaN
+R32G32B32 samples are rejected with `SourceError{owner, OutOfDomain}` before the
+file is opened, and open/write failures are `FileError{code, message}`. The raw float domain and the
 JavaScript NaN-representation gap are described in [FLOAT-RGB.md](FLOAT-RGB.md).
 
 ## How it is verified

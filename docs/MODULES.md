@@ -94,8 +94,7 @@ it too.
 Contract changes made with the merge: contrast/brightness amounts outside their
 C parameter domain are `InvalidRequest` in every format, and R32G32B32 brightness
 truncates fractional amounts like the other formats; `dither` accepts only the
-bit counts that name a 16-bit format; raw float export and memory PNG no longer
-reject NaN words (factories still never create them); `resize` on GRAYSCALE,
+bit counts that name a 16-bit format; `resize` on GRAYSCALE,
 GRAY_ALPHA and R8G8B8 is `UnsupportedFormat` until their 1..3-channel filters
 are ported.
 
