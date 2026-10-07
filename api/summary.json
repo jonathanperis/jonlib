@@ -6,16 +6,16 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1176,
-    "partial": 687
+    "not-started": 1170,
+    "partial": 693
   },
   "core_functions": {
     "total": 600,
     "blocked": 17,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 440,
-    "partial": 143
+    "not-started": 436,
+    "partial": 147
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 625,
-    "partial": 285
+    "not-started": 621,
+    "partial": 289
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 17,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 509,
-      "partial": 511
+      "not-started": 503,
+      "partial": 517
     },
     "raymath.h": {
       "total": 254,
@@ -108,8 +108,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 202,
-      "partial": 347
+      "not-started": 200,
+      "partial": 349
     },
     {
       "id": "numerics",
@@ -254,8 +254,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 7,
-      "partial": 14
+      "not-started": 3,
+      "partial": 18
     },
     {
       "id": "window",

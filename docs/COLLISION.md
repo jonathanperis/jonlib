@@ -55,14 +55,45 @@ rule. Segment intersections reject determinants with magnitude below
 `FLT_EPSILON` (2^-23). The optional result adapts raylib's Boolean/pointer pair:
 `Some{point}` on success and `None{}` on failure.
 
+## Ray queries
+
+`Ray{position, direction}` and `RayCollision{hit, distance, point, normal}`
+mirror raylib's structs; directions are not normalized. Adapted from pinned
+raylib `rmodels.c`, each query has a `_for` variant taking the arithmetic
+profile (below), and the convenience form uses `M.Uncontracted{}`:
+
+| Operation | Result and edge behavior |
+|---|---|
+| `Collision.ray_sphere(ray, center, radius)` | `RayCollision`; `hit` when the discriminant is not negative. From inside the sphere the distance is `v + sqrt(d)` and the normal points outwards. Misses keep raylib's NaN distance, point and normal. |
+| `Collision.ray_triangle(ray, p1, p2, p3)` | Moller-Trumbore with raylib's `1e-6` epsilon; parallel rays, points outside the triangle and hits not ahead of the origin are the all-zero miss. |
+| `Collision.ray_quad(ray, p1, p2, p3, p4)` | Triangle `(p1, p2, p4)`, then `(p2, p3, p4)` when the first misses. |
+| `Collision.ray_box(ray, box)` | `Maybe<RayCollision>`. Slab intersection; a ray starting strictly inside is traced backwards and its distance and normal negated. The normal is the hit point scaled to the unit box by `2.01` and truncated like the C `int` cast. |
+
+`Collision.ray_box_for(arithmetic, libm, ray, box)` also takes the `M.Libm`
+profile, since raylib chooses slab distances with `fmin`/`fmax`, whose
+signed-zero ties differ between Apple libm and glibc (as in
+`Vector2.clamp`). It returns `None` where raylib's result is not portable or
+not defined: a NaN slab distance (an origin on a slab plane with a zero direction
+component; the arm64 build compiles the hit test as `max(near, 0) <= far`,
+which differs from the C expression for NaN) or a normal component outside the
+int range before the cast (undefined in C, such as degenerate boxes). Sphere
+misses compare NaN as one class, since NaN sign and payload are not portable.
+
+The arm64 build fuses each inlined raymath helper: a dot product is
+`fma(z, w, fma(x, u, y*v))`, a cross-product component `fma(a, b, -(c*d))`,
+the sphere discriminant `fma(r, r, -fma(dist, dist, -(v*v)))` and the box
+center lerp `fma(0.5, max - min, min)`; `position + direction*t`, the normal
+scaling and divisions stay separate operations.
+
 ## Linked-reference arithmetic
 
 The Apple clang/macOS arm64 build of raylib contracts `a*b + c` into `fmadd` in
-nine collision queries; the Linux x86_64 build does not. Each therefore has an
-explicit `_for(arithmetic, ...)` variant taking `M.Uncontracted{}` or
-`M.Fused{}`, and its convenience form uses `M.Uncontracted{}`:
-`lines`, `circles`, `point_circle`, `circle_rec`, `point_triangle`, `point_line`,
-`circle_line`, `spheres` and `box_sphere`. The fused shapes were read from the
+nine collision queries and the four ray queries; the Linux x86_64 build does
+not. Each therefore has an explicit `_for(arithmetic, ...)` variant taking
+`M.Uncontracted{}` or `M.Fused{}`, and its convenience form uses
+`M.Uncontracted{}`: `lines`, `circles`, `point_circle`, `circle_rec`,
+`point_triangle`, `point_line`, `circle_line`, `spheres`, `box_sphere` and the
+ray queries above. The fused shapes were read from the
 disassembled linked library: every `a*b + c*d` is `fma(a, b, c*d)`, squared
 3D distance is `fma(dz, dz, fma(dx, dx, dy*dy))`, and `circle_line`'s
 `p1 - t*d` is a single fused subtraction. The `collision-contraction` fixtures
@@ -85,6 +116,8 @@ lose tiny addends at an F32 halfway boundary.
 |---|---|---|
 | `conformance` | `tools/conformance.py` | every Boolean and all rectangle/point result bits vs the linked raylib queries, with the host's arithmetic profile |
 | `fused` | `tools/fused_probe.py` | the internal finite-normal F32 multiply-add vs native `fmaf`, including double-rounding counterexamples, cancellation and signed zeros |
+| `ray` | `tools/ray_probe.py` | every ray-collision field bit vs the linked raylib with the host contraction and libm profiles; a C oracle repeating the box contract selects the expected `None` results |
+| `ray-uncontracted` | `tools/ray_probe.py --uncontracted-control` | the same cases against the pinned `rmodels.c` ray functions compiled without contraction, checking `M.Uncontracted{}` on every host |
 
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only fused

@@ -658,3 +658,35 @@ law surface_draw_word_rgba_is_color:
 law surface_fill_word_r32_is_zero:
   for color: U32
   {J.Surface.word.fill(8, 8, color) == 0 : U32}
+
+# Ray collisions: explicit refusal and early-exit structure, not a numeric
+# intersection theorem (the ray probe carries the differential evidence).
+law ray_box_undefined_is_none:
+  for arithmetic: M.Contraction
+  for inside: Bool
+  for hit: Bool
+  for distance: F32
+  for point: M.Vector3
+  for normal: M.Vector3
+  {J.Collision.ray.box.finish(False{}, arithmetic, inside, hit, distance, point, normal) == None{} : Maybe<J.RayCollision>}
+
+law ray_triangle_parallel_misses:
+  for arithmetic: M.Contraction
+  for ray: J.Ray
+  for p1: M.Vector3
+  for edge1: M.Vector3
+  for edge2: M.Vector3
+  for p: M.Vector3
+  for det: F32
+  {J.Collision.ray.triangle.u(True{}, arithmetic, ray, p1, edge1, edge2, p, det) == J.RayCollision.none() : J.RayCollision}
+
+law ray_quad_keeps_first_hit:
+  for arithmetic: M.Contraction
+  for ray: J.Ray
+  for p2: M.Vector3
+  for p3: M.Vector3
+  for p4: M.Vector3
+  for distance: F32
+  for point: M.Vector3
+  for normal: M.Vector3
+  {J.Collision.ray.quad.second(arithmetic, ray, p2, p3, p4, J.RayCollision{True{}, distance, point, normal}) == J.RayCollision{True{}, distance, point, normal} : J.RayCollision}
