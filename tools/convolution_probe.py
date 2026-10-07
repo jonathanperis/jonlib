@@ -5,7 +5,7 @@ import json
 import random
 import struct
 
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from conformance import f32
 import probekit
 from probekit import ROOT, ProbeFailure
@@ -78,9 +78,7 @@ def main():
     probe=probekit.Probe('convolution',probekit.arguments(__doc__));work=probe.work
     cases,controls=fixtures();all_cases=cases+controls
     lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-           'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-           'static void end(void){if(used){puts("]");used=0;}puts("\\\"end\\\"");}',
+           C_EMITTER,
            'static void emit(Image image){if(!image.data||image.format!=7)exit(3);word(image.width);word(image.height);for(int i=0;i<image.width*image.height*4;i++)byte(((unsigned char*)image.data)[i]);end();UnloadImage(image);}',
            'int main(void){SetTraceLogLevel(LOG_NONE);']
     for i,case in enumerate(all_cases):

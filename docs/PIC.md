@@ -90,7 +90,7 @@ CPU-1, CPU-2 and JavaScript lanes.
   extended runs, malformed counts and bounded no-progress streams. `--gpu` adds
   a forced-GPU lane (local only).
 - **Format-preserving memory loading** (`tools/pic_format_probe.py` on
-  `tools/formatted_codec.py`, gate `pic-format`): the native PIC feature is
+  `tools/codec_formats.py`, gate `pic-format`): the native PIC feature is
   disabled by default, so the probe builds raylib with
   `SUPPORT_FILEFORMAT_PIC=ON`. Native dimensions, format, mipmaps and raw bytes
   are observed before a separate normalized RGBA reference, then compared through
@@ -102,7 +102,7 @@ CPU-1, CPU-2 and JavaScript lanes.
   control, count and selected-sample byte without producing expected pixels; a
   `.pic` suffix alone proves no PIC identity because stb sniffs content.
 - **Format-preserving file loading** (`tools/pic_file_probe.py` on
-  `tools/formatted_file.py`, gate `pic-file`): memory fixtures as files with path
+  `tools/codec_files.py`, gate `pic-file`): memory fixtures as files with path
   variants, file controls and the shared closure, sparse/oversized and exact-cap
   resource runs.
 - Shared dispatch across supported extension families and both `.pic` suffix
@@ -114,11 +114,11 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 
 ## Known gaps
 
-- Generic formatted dispatch and native malformed recovery.
+- Native malformed recovery.
 - Maximum-area allocation, OOM/native pointer ABI and representative performance.
-- GPU for the formatted paths, Windows/browser and big-endian targets.
-- Ledger scope: formatted memory loading is partial
-  `raylib:function:LoadImageFromMemory` scope and formatted file loading partial
+- GPU for the native-format paths, Windows/browser and big-endian targets.
+- Ledger scope: native-format memory loading is partial
+  `raylib:function:LoadImageFromMemory` scope and native-format file loading partial
   `raylib:function:LoadImage` scope; no API is completed.
 
 ## Provenance

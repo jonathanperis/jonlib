@@ -8,8 +8,8 @@ claim. Native error-return parity is deliberately not claimed for short writes.
 import random
 import struct
 
-import formatted_export
-from formatted_export import BPP
+import codec_exports
+from codec_exports import BPP
 from image_format_probe import r32_words
 from probekit import ProbeFailure
 
@@ -122,11 +122,11 @@ def check_reference(cases, rows, work):
     if len(collapse)!=28 or collapse[18]!=133 or collapse[23]!=130: raise ProbeFailure('Native expanded R32 run collapse differs')
 
 
-CODEC = formatted_export.Raster('tga', fixtures, decode_tga, metadata, check_reference)
+CODEC = codec_exports.Raster('tga', fixtures, decode_tga, metadata, check_reference)
 
 
 def main(argv=None):
-    formatted_export.main(CODEC, __doc__, argv)
+    codec_exports.main(CODEC, __doc__, argv)
 
 
 if __name__ == '__main__':

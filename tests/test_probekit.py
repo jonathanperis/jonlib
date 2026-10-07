@@ -1,10 +1,10 @@
+"""The shared probe runner batches actions faithfully and reports failed commands and resource limits."""
 import json
 from pathlib import Path
 import sys
 import tempfile
 import unittest
 from types import SimpleNamespace
-from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 import probekit

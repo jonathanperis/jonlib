@@ -3,7 +3,7 @@
 
 Accepted fixtures are admitted by an independent header parse before any native
 call; checked-invalid controls only exercise Jonlib's typed errors. Shared roles
-and lanes: tools/formatted_codec.py.
+and lanes: tools/codec_formats.py.
 """
 import json
 import re
@@ -11,11 +11,11 @@ import struct
 
 from bmp_probe import (fixtures as legacy_fixtures, bitmap, bitmap16, bitfield_bitmap,
                        indexed_bitmap, core_bitmap, core_indexed_bitmap)
-import formatted_codec
+import codec_formats
 
 MAX_CASE_PIXELS = 8192
 MAX_TOTAL_BYTES = 2_000_000
-C_PREFIX = formatted_codec.C_PREFIX
+C_PREFIX = codec_formats.C_PREFIX
 
 
 def inspect_header(data, *, fixture_budget=True):
@@ -246,7 +246,7 @@ def qualification_program():
 
 QUALIFIED = dict(little_endian=True, bmp_enabled=True, effective_alpha_routing=True, formats=[4, 7])
 
-CODEC = formatted_codec.Codec(
+CODEC = codec_formats.Codec(
     name='bmp', token='.bmp', aliases=('.BMP',), contraction_token='.BMP', formats={3: 4, 4: 7},
     fixtures=fixtures, controls=controls, roles=('raw', 'bridge', 'surface', 'factory', 'owner', 'raw-roundtrip'),
     raylib_options=('SUPPORT_FILEFORMAT_BMP=ON',), batch=32, qualification=(qualification_program(), QUALIFIED),
@@ -254,7 +254,7 @@ CODEC = formatted_codec.Codec(
 
 
 def main(argv=None):
-    formatted_codec.main(CODEC, argv)
+    codec_formats.main(CODEC, argv)
 
 
 if __name__ == '__main__':

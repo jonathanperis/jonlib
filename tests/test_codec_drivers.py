@@ -5,9 +5,9 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
-import formatted_codec
-from formatted_codec import bend_bytes, bend_input, c_input, compact_segments, parse_rows
-import formatted_file
+import codec_formats
+from codec_formats import bend_bytes, bend_input, c_input, compact_segments, parse_rows
+import codec_files
 from probekit import ProbeFailure
 
 CODECS = ('bmp', 'tga', 'png', 'pic', 'pnm', 'qoi')
@@ -60,9 +60,9 @@ class CodecSpecTests(unittest.TestCase):
             with self.subTest(codec=name):
                 codec = __import__(f'{name}_format_probe').CODEC
                 cases, controls = codec.fixtures(), codec.controls()
-                formatted_codec.validate(codec, cases, controls)
+                codec_formats.validate(codec, cases, controls)
                 self.assertTrue(any(c['extended'] for c in cases))
-                program = formatted_codec.reference_program(codec, cases[:3])
+                program = codec_formats.reference_program(codec, cases[:3])
                 self.assertIn(f'LoadImageFromMemory("{codec.token}"', program)
 
     def test_native_expectations_drive_every_role(self):
@@ -70,27 +70,27 @@ class CodecSpecTests(unittest.TestCase):
         case = next(c for c in codec.fixtures() if c['extended'])
         fmt = codec.formats[case['channels']]
         raw = dict(id=case['id'], role='raw', width=case['width'], height=case['height'], mipmaps=1, format=fmt,
-                   bytes=[0] * (case['width'] * case['height'] * formatted_codec.CHANNEL_BYTES[fmt]))
+                   bytes=[0] * (case['width'] * case['height'] * codec_formats.CHANNEL_BYTES[fmt]))
         normal = dict(raw, role='normalized', format=7, bytes=[0] * (case['width'] * case['height'] * 4))
         rows = [raw, normal] + [dict(raw, role='alias-' + t[1:]) for t in codec.aliases]
-        actions, _ = formatted_codec.expectations(codec, [case], [], rows)
+        actions, _ = codec_formats.expectations(codec, [case], [], rows)
         roles = [a['role'] for a in actions]
         self.assertEqual(roles, list(codec.roles) + list(codec.dispatch_roles) + ['uncontracted', 'fused'])
-        program = formatted_codec.candidate_program(codec, actions)
+        program = codec_formats.candidate_program(codec, actions)
         self.assertIn('J.Surface.decode_image_for(M.Fused{}, ".BMP"', program)
         with self.assertRaises(ProbeFailure):
-            formatted_codec.expectations(codec, [case], [], [raw, normal] + [dict(raw, role='alias-BMP', format=7)])
+            codec_formats.expectations(codec, [case], [], [raw, normal] + [dict(raw, role='alias-BMP', format=7)])
 
     def test_file_specs_route_by_whole_path_extension(self):
-        self.assertEqual(formatted_file.extension('dir.bmp/leaf'), '.bmp/leaf')
-        self.assertEqual(formatted_file.extension('.bmp'), '')
+        self.assertEqual(codec_files.extension('dir.bmp/leaf'), '.bmp/leaf')
+        self.assertEqual(codec_files.extension('.bmp'), '')
         for name in FILES:
             with self.subTest(codec=name):
                 codec = __import__(f'{name}_file_probe').CODEC
-                cases, controls = formatted_file.fixtures(codec), formatted_file.controls(codec)
+                cases, controls = codec_files.fixtures(codec), codec_files.controls(codec)
                 self.assertEqual(len({c['id'] for c in cases + controls}), len(cases) + len(controls))
                 for c in cases:
-                    routed = formatted_file.extension('fixtures/' + c['filename']) in formatted_file.RECOGNIZED
+                    routed = codec_files.extension('fixtures/' + c['filename']) in codec_files.RECOGNIZED
                     self.assertEqual(c['route'] == 'LoadImage', routed, c['id'])
                 self.assertEqual({c['special'] for c in controls if 'special' in c} >= {'missing', 'directory', 'sparse', 'overflow'}, True)
 

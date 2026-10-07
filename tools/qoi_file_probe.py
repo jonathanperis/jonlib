@@ -4,7 +4,7 @@
 Explicit QOI selection ignores suffix; native LoadImage and explicit
 LoadFileData/LoadImageFromMemory references are recorded separately. QOI uses
 its own 83,886,102-byte file cap (not the 1 MiB raster cap), so it keeps its
-own runner on the shared prelude rather than formatted_file's driver.
+own runner on the shared prelude rather than codec_files's driver.
 """
 import errno
 import hashlib
@@ -12,9 +12,9 @@ import json
 import os
 import sys
 
-import formatted_codec
-from formatted_codec import bend_bytes
-import formatted_file
+import codec_formats
+from codec_formats import bend_bytes
+import codec_files
 import probekit
 from probekit import ROOT, ProbeFailure
 from qoi_format_probe import CODEC as MEMORY, stream
@@ -76,7 +76,7 @@ def prepare(work, cases, invalid):
 
 
 def reference_program(cases, rejected):
-    lines = [formatted_codec.C_PREFIX, 'int main(void){SetTraceLogLevel(LOG_NONE);']
+    lines = [codec_formats.C_PREFIX, 'int main(void){SetTraceLogLevel(LOG_NONE);']
     for c in cases:
         path = json.dumps(c['path'])
         lines.append('{')
@@ -98,7 +98,7 @@ def reference_program(cases, rejected):
 
 
 def prelude():
-    return formatted_file.bend_prelude(formatted_file.FileCodec(memory=MEMORY, suffixes=(), path_bases=(), other_codecs=(),
+    return codec_files.bend_prelude(codec_files.FileCodec(memory=MEMORY, suffixes=(), path_bases=(), other_codecs=(),
                                                                 sparse_prefix=[], exact_cap_base='', bad_size=[])) + r'''
 def bytes.eq(actual: List<U32>, expected: +List<U32>) -> Bool:
   match actual expected:
@@ -164,7 +164,7 @@ def candidate_program(actions):
             then = f'surface.emitted({ident}, {json.dumps(role)})'
             call = {'surface': f'J.Surface.load_qoi({path})', 'dispatch': f'J.Surface.load_image({path})'}.get(role) or \
                 f'J.Surface.load_image_for(M.{"Uncontracted" if role == "uncontracted" else "Fused"}{{}}, {path})'
-        lines.append(f'    IO.bind({formatted_file.LOADED}, Unit, {call}, {then})')
+        lines.append(f'    IO.bind({codec_files.LOADED}, Unit, {call}, {then})')
     return '\n'.join(lines) + '\n'
 
 
@@ -176,7 +176,7 @@ def boundary_program(by_id, reference):
             then = f'success.required({4 if by_id[name]["channels"] == 3 else 7}, {bend_bytes(reference[name][0]["bytes"])})'
         if name == 'host-size-overflow':
             then = f'file.code.required({errno.EOVERFLOW})'
-        lines.append(f'        IO.bind({formatted_file.LOADED}, Unit, J.Surface.load_qoi({json.dumps(by_id[name]["path"])}), {then})')
+        lines.append(f'        IO.bind({codec_files.LOADED}, Unit, J.Surface.load_qoi({json.dumps(by_id[name]["path"])}), {then})')
     valid = json.dumps(by_id['c3-s0-hidden-alpha-cache']['path'])
     lines += [f'        IO.bind(Result<&1, &1, U32 & String, File>, Unit, File.open({valid}, "r"), qoi.stage.opened({v}))' for v in ('False{}', 'True{}')]
     lines += ['        closure_loop(rest)', 'def main() -> IO(Unit):', '  do IO<Unit>:',
@@ -186,9 +186,9 @@ def boundary_program(by_id, reference):
                         ('J.Image.file.payload(2, Fail{(727, "payload-failure")})', 'exact.error(727, "payload-failure")'),
                         ('J.Image.file.payload(2, Done{[1]})', 'required(3)'), ('J.Image.file.payload(1, Done{[1, 2]})', 'required(3)'),
                         ('Done{[256]}', 'required(1)')]:
-        lines.append(f'    IO.bind({formatted_file.LOADED}, Unit, codec.loaded({value}), {then})')
+        lines.append(f'    IO.bind({codec_files.LOADED}, Unit, codec.loaded({value}), {then})')
     lines += ['    closure_loop(100n)',
-              f'    IO.bind({formatted_file.LOADED}, Unit, J.Surface.load_qoi({valid}), load.emitted("closure-final", "raw"))',
+              f'    IO.bind({codec_files.LOADED}, Unit, J.Surface.load_qoi({valid}), load.emitted("closure-final", "raw"))',
               '    IO.print(' + json.dumps(json.dumps(TERMINAL, separators=(',', ':'))) + ')']
     return '\n'.join(lines) + '\n'
 
@@ -200,28 +200,28 @@ def main(argv=None):
     rejected = [c for c in invalid if c.get('native')]
     text = probe.native(reference_program(cases, rejected))
     heads = [dict(id=c['id'], role=r) for c in cases for r in ('raw', 'normalized')] + [dict(id=c['id'], role='rejected') for c in rejected]
-    rows = formatted_codec.parse_rows(text, heads)
+    rows = codec_formats.parse_rows(text, heads)
     reference = {c['id']: (rows[2*i], rows[2*i+1]) for i, c in enumerate(cases)}
     actions = actions_for(cases, invalid, reference)
     lanes = probe.candidates(lambda selected, gpu: candidate_program(selected), actions, batch=BATCH,
-                             parse=lambda out, selected: formatted_codec.parse_rows(out, [a['expected'] for a in selected]))
+                             parse=lambda out, selected: codec_formats.parse_rows(out, [a['expected'] for a in selected]))
     probe.compare([a['expected'] for a in actions], lanes, describe=lambda i: f'{actions[i]["case"]["id"]}/{actions[i]["role"]}')
     by_id = {c['id']: c for c in cases + invalid}
     final = dict(reference['c3-s0-hidden-alpha-cache'][0], id='closure-final')
     for name, program, expected, ceiling in [
-            ('boundary', boundary_program(by_id, reference), [final], formatted_file.MAX_SPARSE_RSS),
+            ('boundary', boundary_program(by_id, reference), [final], codec_files.MAX_SPARSE_RSS),
             ('stress', candidate_program([dict(case=stress, role='formatted-error')]),
-             [dict(id=stress['id'], role='formatted-error', error=0)], formatted_file.MAX_STRESS_RSS)]:
+             [dict(id=stress['id'], role='formatted-error', error=0)], codec_files.MAX_STRESS_RSS)]:
         commands = probe._compile(name, lambda gpu: program)
         for lane, command in commands.items():
             usage = probe.work / f'{name}-{lane}.rss'
-            out = probekit.run([sys.executable, '-c', formatted_file.RSS_RUNNER, usage, *command], timeout=240)
+            out = probekit.run([sys.executable, '-c', codec_files.RSS_RUNNER, usage, *command], timeout=240)
             body = out.splitlines()
             if name == 'boundary':
                 if not body or json.loads(body[-1]) != TERMINAL:
                     raise ProbeFailure(f'qoi-file boundary: {lane} missing closure terminal')
                 body = body[:-1]
-            if formatted_codec.parse_rows('\n'.join(body), expected) != expected:
+            if codec_formats.parse_rows('\n'.join(body), expected) != expected:
                 raise ProbeFailure(f'qoi-file {name}: {lane} differs')
             rss = int(usage.read_text())
             if not 0 < rss <= ceiling:

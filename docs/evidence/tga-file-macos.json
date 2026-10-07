@@ -5,7 +5,7 @@
  "diagnostic": false,
  "os": "macos",
  "machine": "arm64",
- "seconds": 337.3,
+ "seconds": 425.6,
  "toolchain": {
   "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
   "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
@@ -13,7 +13,7 @@
  },
  "reports": {
   ".build/tga-file-probe/results.json": {
-   "sha256": "7b94f68f8b0f2734a215c28569fed7aad28bd11c66324c5ad23b68b512bb0856",
+   "sha256": "798e885abb7e740b201eae5b43a8255178d100b1784a43f8abe76a63225da6df",
    "summary": {
     "passed": true,
     "probe": "tga-file",

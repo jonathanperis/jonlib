@@ -5,7 +5,7 @@
  "diagnostic": false,
  "os": "macos",
  "machine": "arm64",
- "seconds": 146.3,
+ "seconds": 206.9,
  "toolchain": {
   "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
   "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",

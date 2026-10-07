@@ -43,7 +43,7 @@ misleading universal color decoder.
 ## How it is verified
 
 `tools/image_colors_probe.py` (gate `image-colors`) compares bulk and point
-colors with native `LoadImageColors` / `GetImageColor` over every formatted
+colors with native `LoadImageColors` / `GetImageColor` over every
 byte/packed layout and RGB float, on CPU-1, CPU-2, JavaScript and, with `--gpu`,
 forced GPU. After point reads every source word is compared with native
 storage. Controls cover out-of-bounds coordinates, rejected float samples, a

@@ -5,7 +5,7 @@ import json
 import struct
 
 from bmp_probe import bend_bytes
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from conformance import source_gate
 import probekit
 from probekit import ProbeFailure
@@ -14,11 +14,7 @@ REFERENCE = '''#include "raylib.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-static int used=0;
-static void byte(unsigned v){if(!used)putchar('[');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}
-static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}
-static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}
-static void emit(Image image){
+''' + C_EMITTER + '\n' + '''static void emit(Image image){
     word(image.width);word(image.height);
     if(image.format==PIXELFORMAT_UNCOMPRESSED_R32G32B32){for(int i=0;i<image.width*image.height*3;i++){unsigned bits;memcpy(&bits,(float*)image.data+i,4);word(bits);}}
     else {for(int i=0;i<image.width*image.height*4;i++)byte(((unsigned char*)image.data)[i]);}

@@ -153,7 +153,7 @@ oversized filtered-stream requirement yields `UnsupportedImageSize` before
 inflation. Invalid framing/DEFLATE, filters, exact raster lengths and palette
 indices yield `InvalidImageStream`. Trailing byte-valued data after a complete
 IEND remains ignored after whole-input validation. Checked rules can be stricter
-than native malformed-stream recovery; the formatted factory changes none of the
+than native malformed-stream recovery; the native-format factory changes none of the
 Surface decoder's admissions or error precedences.
 
 ### Native source contract
@@ -170,7 +170,7 @@ exercised profile.
 ## Format-preserving PNG file loading
 
 `Surface.load_png(path: String)` wraps the shared `RasterFile` reader
-and the unchanged formatted decoder. PNG is selected explicitly, independently
+and the unchanged decoder. PNG is selected explicitly, independently
 of the path suffix. The shared inclusive 1 MiB file cap, one exact-length read
 and close-before-decode call ordering neither enlarge nor replace the encoded and
 filtered-stream memory limits above. Native formats 1/2/4/7, exact 8-bit bytes
@@ -191,7 +191,7 @@ or `LoadImage`), compared exactly on the CPU-1, CPU-2 and JavaScript lanes.
   split IDATs, empty stored blocks and ignored checksums. `--gpu` adds a
   forced-GPU lane (local only).
 - **Format-preserving memory loading** (`tools/png_format_probe.py` on the shared
-  driver `tools/formatted_codec.py`, gate `png-format`): native dimensions,
+  driver `tools/codec_formats.py`, gate `png-format`): native dimensions,
   format, `mipmaps == 1` and every raw byte are captured before separate
   normalization, then compared with the raw export, checked factory, export/import
   round trip, retained point-read owner, consuming Surface bridge and the
@@ -205,7 +205,7 @@ or `LoadImage`), compared exactly on the CPU-1, CPU-2 and JavaScript lanes.
   CgBI vectors before the broad oracle. Malformed controls run only in checked
   Jonlib.
 - **Format-preserving file loading** (`tools/png_file_probe.py` on
-  `tools/formatted_file.py`, gate `png-file`): every accepted memory fixture as a
+  `tools/codec_files.py`, gate `png-file`): every accepted memory fixture as a
   real file plus path variants (case, suffixless, misleading, multi-dot and
   other-codec content); native recognized suffixes go through `LoadImage`, others
   through `LoadFileData` plus `LoadImageFromMemory(".png")`. Also file controls
@@ -224,11 +224,11 @@ Gates run in CI on Ubuntu and macOS (CPU/JavaScript); see [CI.md](CI.md).
 - Nondefault external stb decoder flags and broader native malformed-input
   recovery.
 - Original source bit depth (16-bit output).
-- GPU for the formatted paths, Windows/browser and big-endian targets.
+- GPU for the native-format paths, Windows/browser and big-endian targets.
 - Native pointer/allocation ABI, allocation-failure parity, maximum-area success
   and representative performance.
-- Ledger scope: the formatted memory factory is partial
-  `raylib:function:LoadImageFromMemory` scope and the formatted file loader
+- Ledger scope: the native-format memory factory is partial
+  `raylib:function:LoadImageFromMemory` scope and the native-format file loader
   partial `raylib:function:LoadImage` scope; neither completes an API.
 
 ## Provenance

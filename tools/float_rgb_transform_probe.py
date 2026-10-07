@@ -5,16 +5,14 @@ import json
 import struct
 
 from bmp_probe import bend_bytes
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from conformance import ROOT, source_gate
 from float_rgb_bytes_probe import fixtures as raw_fixtures
 import probekit
 from probekit import ProbeFailure
 
 PRELUDE = ['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-           'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-           'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+           C_EMITTER,
            'static void emit(Image image){word(image.width);word(image.height);for(int i=0;i<image.width*image.height*12;i++)byte(((unsigned char*)image.data)[i]);end();UnloadImage(image);}',
            'int main(void){SetTraceLogLevel(LOG_NONE);']
 NATIVE = {'h':'ImageFlipHorizontal','v':'ImageFlipVertical','cw':'ImageRotateCW','ccw':'ImageRotateCCW'}

@@ -136,7 +136,7 @@ CPU-2 and JavaScript lanes (see [VERIFICATION.md](VERIFICATION.md)).
   boundaries, cross-row runs, seeded mixed packets), and one `Surface.write_tga`
   file with the native file. The optional `--gpu` lane adds forced GPU.
 - **Format-preserving memory decode** (`tools/tga_format_probe.py`, gate
-  `tga-format`, driver `tools/formatted_codec.py`): a native build with TGA
+  `tga-format`, driver `tools/codec_formats.py`): a native build with TGA
   explicitly enabled is first qualified (little-endian storage, distinct direct
   16-bit routing, both palette index widths, formats 1/2/4/7). For each
   accepted fixture, native width/height/mipmaps/format and every raw byte are
@@ -147,7 +147,7 @@ CPU-2 and JavaScript lanes (see [VERIFICATION.md](VERIFICATION.md)).
   streams to native; it never computes expected pixels. Checked-invalid
   controls run only through Jonlib and check exact typed errors.
 - **Format-preserving file loading** (`tools/tga_file_probe.py`, gate
-  `tga-file`, driver `tools/formatted_file.py`): see
+  `tga-file`, driver `tools/codec_files.py`): see
   [IMAGE-FILES.md](IMAGE-FILES.md#how-it-is-verified).
 
 ```sh
@@ -164,7 +164,7 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
   performance. The file cap bounds encoded input only; RLE input can describe
   far more pixel storage.
 
-- GPU evidence is local only (`--gpu` on the `tga` probe); the formatted memory
+- GPU evidence is local only (`--gpu` on the `tga` probe); the native-format memory
   and file gates run on CPU and JavaScript. Windows, browser and big-endian
   hosts are unverified.
 - In the API ledger this work is part of the partial

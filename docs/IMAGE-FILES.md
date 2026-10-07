@@ -234,7 +234,7 @@ verified on CPU and JavaScript only; no GPU filesystem claim is made.
   success/decode/file/size loop runs under `RLIMIT_NOFILE=64`.
 - **Format-preserving file loaders** (gates `png-file`, `pnm-file`, `tga-file`,
   `bmp-file`, `pic-file`: `tools/<codec>_file_probe.py` on the shared driver
-  `tools/formatted_file.py`; gate `qoi-file`: `tools/qoi_file_probe.py`, its
+  `tools/codec_files.py`; gate `qoi-file`: `tools/qoi_file_probe.py`, its
   own runner because of the QOI cap). The native archive enables the BMP, PNG,
   TGA, JPG, GIF, PIC, PNM and PSD formats; a little-endian host is required.
   Every accepted memory fixture of the codec becomes a real file, plus

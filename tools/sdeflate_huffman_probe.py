@@ -5,7 +5,7 @@ import json
 import random
 import struct
 
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from conformance import source_gate
 import probekit
 from probekit import ROOT, ProbeFailure
@@ -71,9 +71,7 @@ def fixtures():
 
 def reference_program(cases, work):
     lines=['#include <stdio.h>','#include <stdlib.h>','#define SDEFL_IMPLEMENTATION','#include "sdefl.h"',
-           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-           'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-           'static void end(void){if(used){puts("]");used=0;}puts("\\\"end\\\"");}',
+           C_EMITTER,
            'static void observe(const char *path,unsigned count,unsigned maximum){unsigned freq[288]={0},codes[288]={0};unsigned char lengths[288]={0};FILE *file=fopen(path,"rb");if(!file)exit(2);',
            'for(unsigned i=0;i<count;i++){unsigned char b[4];if(fread(b,1,4,file)!=4)exit(3);freq[i]=(unsigned)b[0]|((unsigned)b[1]<<8)|((unsigned)b[2]<<16)|((unsigned)b[3]<<24);}fclose(file);',
            'sdefl_huff(lengths,codes,freq,count,maximum);for(unsigned i=0;i<count;i++)word(freq[i]);for(unsigned i=0;i<count;i++)word(lengths[i]);for(unsigned i=0;i<count;i++)word(codes[i]);end();}',

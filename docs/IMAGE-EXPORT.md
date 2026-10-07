@@ -282,13 +282,13 @@ exactly EFBIG after open (EMFILE cannot substitute).
 | `png-export` | `tools/png_export_probe.py` | PNG memory/file bytes for byte formats (byte formats via memory and file; packed via file), complete decode round trips |
 | `deflate` | `tools/deflate_probe.py` | The private quality-8 compressor against linked stb (eviction, lazy matching, window edges, Adler boundaries, stored blocks) |
 | `r32-image` | `tools/r32_image_probe.py` | R32 memory PNG raw-word bytes and file PNG red-only output |
-| `formatted-bmp-export` | `tools/formatted_bmp_export_probe.py` | All eight formats: 24-bit/V4 bytes, padding widths 1..4, packed/R32 boundaries, 4096-pixel axes |
-| `formatted-tga-export` | `tools/formatted_tga_export_probe.py` | All eight formats: run/raw lengths around 128, ABA/ABBC sequences, packed/R32 expansion and collapse |
-| `formatted-qoi-export` | `tools/formatted_qoi_export_probe.py` | Accepted formats 4/7 (every opcode family, run caps, DIFF/LUMA thresholds, all 64 INDEX slots), rejected formats 1/2/3/5/6/8 with retained owners |
+| `bmp-export` | `tools/bmp_export_probe.py` | All eight formats: 24-bit/V4 bytes, padding widths 1..4, packed/R32 boundaries, 4096-pixel axes |
+| `tga-export` | `tools/tga_export_probe.py` | All eight formats: run/raw lengths around 128, ABA/ABBC sequences, packed/R32 expansion and collapse |
+| `qoi-export` | `tools/qoi_export_probe.py` | Accepted formats 4/7 (every opcode family, run caps, DIFF/LUMA thresholds, all 64 INDEX slots), rejected formats 1/2/3/5/6/8 with retained owners |
 | `float-rgb-png` | `tools/float_rgb_png_probe.py` | R32G32B32 memory raw-prefix and normalized file PNG |
 | `float-rgb-raster-export` | `tools/float_rgb_raster_export_probe.py` | R32G32B32 BMP/TGA file bytes, including the TGA 128-pixel run boundary |
 
-The three formatted gates share `tools/formatted_export.py`, which runs native
+The three export gates share `tools/codec_exports.py`, which runs native
 qualification controls (endianness, rounding, packed/R32 `LoadImageColors`
 colors), builds native sources from correctly typed storage (a full byte
 comparison rejects any word normalization before export), parses every output
@@ -298,10 +298,10 @@ pixel count, marker and EOF without reimplementing encoder selection.
 
 `png-export`, `deflate`, `float-rgb-png` and `float-rgb-raster-export` accept
 `--gpu`; the forced-GPU lane covers pure encoding only, never filesystem IO.
-The formatted gates and `image-export` have no GPU lane.
+The export gates and `image-export` have no GPU lane.
 
 ```sh
-python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only formatted-qoi-export
+python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only qoi-export
 ```
 
 ## Known gaps

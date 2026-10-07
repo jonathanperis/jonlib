@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Native-format binary PGM/PPM file loading against pinned raylib (shared driver: formatted_file)."""
-import formatted_file
+"""Native-format binary PGM/PPM file loading against pinned raylib (shared driver: codec_files)."""
+import codec_files
 from pnm_format_probe import CODEC as MEMORY, header
 
 SUFFIXES = (('upper-pgm', '.PGM'), ('upper-ppm', '.PPM'), ('cross', lambda case: '.ppm' if case['channels'] == 1 else '.pgm'),
@@ -14,7 +14,7 @@ SPECIALS = (('missing', 'missing.qoi', 'missing', 5), ('missing-parent', 'missin
             ('cap-misleading', 'cap-plus-one.qoi', 'sparse', 2), ('larger-file', 'larger-file.pgm', 'large', 2),
             ('host-size-overflow', 'host-size-overflow.pnm', 'overflow', 5))
 
-CODEC = formatted_file.FileCodec(
+CODEC = codec_files.FileCodec(
     memory=MEMORY, suffixes=SUFFIXES, other_codecs=OTHER_CODECS, specials=SPECIALS,
     path_bases=('c1-max255-single', 'c1-max256-single', 'c3-max255-single', 'c3-max256-single'),
     loop_loads=('c1-max255-single', 'c3-max256-single', 'not-pnm-qoi', 'directory', 'cap-plus-one', 'host-size-overflow'),
@@ -23,7 +23,7 @@ CODEC = formatted_file.FileCodec(
 
 
 def main(argv=None):
-    formatted_file.main(CODEC, argv, __doc__)
+    codec_files.main(CODEC, argv, __doc__)
 
 
 if __name__ == '__main__':

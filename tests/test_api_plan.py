@@ -1,3 +1,4 @@
+"""The API ledger generator keeps source contracts, dependency order and completion rules honest."""
 import copy
 import io
 import json

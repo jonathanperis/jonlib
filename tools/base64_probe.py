@@ -6,7 +6,7 @@ import json
 import random
 import struct
 
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from conformance import source_gate
 import probekit
 from probekit import ROOT, ProbeFailure
@@ -67,9 +67,7 @@ def fixtures():
 
 def reference_program(all_cases, work):
     lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>','#include <string.h>',
-           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-           'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-           'static void end(void){if(used){puts("]");used=0;}puts("\\\"end\\\"");}',
+           C_EMITTER,
            'static void emit(unsigned char *data,int size){if(!data||size<0)exit(3);word(size);for(int i=0;i<size;i++)byte(data[i]);end();MemFree(data);}',
            'int main(void){SetTraceLogLevel(LOG_NONE);']
     for i,case in enumerate(all_cases):

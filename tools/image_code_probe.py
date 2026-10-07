@@ -4,8 +4,8 @@ import hashlib
 import json
 import struct
 
-from byte_probe import BEND_EMITTER, parse_results
-from formatted_float_probe import fixtures as formatted_fixtures
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
+from format_float_probe import fixtures as formatted_fixtures
 from float_rgb_bytes_probe import fixtures as float_fixtures
 from image_file_probe import FILE_DESCRIPTOR_LIMIT
 import probekit
@@ -182,8 +182,7 @@ def main():
     probe=probekit.Probe('image-code',probekit.arguments(__doc__));work=probe.work
     (work/'reference').mkdir(exist_ok=True);(work/'candidate').mkdir(exist_ok=True);cases=fixtures()
     lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>',
-           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-           'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+           C_EMITTER,
            'int main(void){SetTraceLogLevel(LOG_NONE);']
     for i,case in enumerate(cases):
         path=work/(str(i)+'.raw');path.write_bytes(bytes(case['bytes']));output=work/'reference'/case['name']

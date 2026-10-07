@@ -4,7 +4,7 @@ import hashlib
 import json
 
 from bmp_probe import bend_bytes
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 import probekit
 from probekit import ProbeFailure
 
@@ -78,9 +78,7 @@ def fixtures():
 
 def reference_program(inputs):
     lines=['#include "raylib.h"','#include <stdio.h>','#include <stdlib.h>','#include <string.h>',
-           'static int used=0;static void byte(unsigned v){if(!used)putchar(\'[\');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}',
-           'static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}',
-           'static void end(void){if(used){puts("]");used=0;}puts("\\"end\\"");}',
+           C_EMITTER,
            'static Image load(const unsigned char *data,int size){Image image=LoadImageFromMemory(".hdr",data,size);if(!image.data||image.format!=PIXELFORMAT_UNCOMPRESSED_R32G32B32)exit(2);return image;}',
            'static void emit(const unsigned char *data,int size){Image image=load(data,size);word(image.width);word(image.height);for(int i=0;i<image.width*image.height*3;i++){unsigned bits;memcpy(&bits,(float*)image.data+i,4);word(bits);}end();UnloadImage(image);}',
            'static void pairs(void){const char header[]="#?RGBE\\nFORMAT=32-bit_rle_rgbe\\n\\n-Y 256 +X 256\\n";',

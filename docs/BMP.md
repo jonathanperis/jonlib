@@ -175,7 +175,7 @@ CPU-1, CPU-2 and JavaScript lanes.
   entries, all native skip remainders and rejected undefined index domains.
   `--gpu` adds a forced-GPU lane (local only).
 - **Format-preserving memory loading** (`tools/bmp_format_probe.py` on
-  `tools/formatted_codec.py`, gate `bmp-format`): accepted fixtures are admitted
+  `tools/codec_formats.py`, gate `bmp-format`): accepted fixtures are admitted
   by an independent header parse before any native call; native format, mipmaps
   and raw bytes are recorded before separate normalization and compared through
   the raw, factory, owner, round-trip, bridge, Surface and dispatch roles
@@ -185,11 +185,11 @@ CPU-1, CPU-2 and JavaScript lanes.
   discriminators before the broad oracle. Checked-invalid controls only exercise
   Jonlib's typed errors.
 - **Format-preserving file loading** (`tools/bmp_file_probe.py` on
-  `tools/formatted_file.py`, gate `bmp-file`): accepted memory fixtures as files
+  `tools/codec_files.py`, gate `bmp-file`): accepted memory fixtures as files
   plus filename variants; native `LoadImage` for recognized suffixes and
   `LoadFileData` plus `LoadImageFromMemory(".bmp")` for explicit selection; file
   controls and the shared closure, sparse/oversized and exact-cap resource runs.
-- Formatted BMP export is gated by `formatted-bmp-export`
+- BMP export is gated by `bmp-export`
   ([IMAGE-EXPORT.md](IMAGE-EXPORT.md)); shared dispatch by `image-memory` and
   `image-file`.
 
@@ -201,12 +201,12 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 
 - The native decoder's permissive recovery of truncated input.
 - Wider export source formats and native callbacks/allocation ABI.
-- GPU for formatted memory/file paths and file IO, Windows/browser and big-endian
+- GPU for native-format memory/file paths and file IO, Windows/browser and big-endian
   targets, concurrent/special files.
 - Native pointer/allocation/OOM behavior, maximum decoded area/heap and full
   performance.
-- Ledger scope: formatted memory loading is partial
-  `raylib:function:LoadImageFromMemory` scope and formatted file loading partial
+- Ledger scope: native-format memory loading is partial
+  `raylib:function:LoadImageFromMemory` scope and native-format file loading partial
   `raylib:function:LoadImage` scope.
 
 ## Provenance

@@ -14,7 +14,7 @@ import sys
 import zlib
 
 from bmp_probe import bend_bytes
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from conformance import f32
 from image_format_probe import r32_words, word_bytes
 import probekit
@@ -189,11 +189,7 @@ C_PREAMBLE = r'''#include "raylib.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-static int used=0;
-static void byte(unsigned v){if(!used)putchar('[');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}
-static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}
-static void end(void){if(used){puts("]");used=0;}puts("\"end\"");}
-static void bytes(const unsigned char *p,int n){for(int i=0;i<n;i++)byte(p[i]);end();}
+''' + C_EMITTER + '\n' + r'''static void bytes(const unsigned char *p,int n){for(int i=0;i<n;i++)byte(p[i]);end();}
 static void emit(Image image){if(!image.data)exit(2);word(image.width);word(image.height);word(image.format);
 int n=GetPixelDataSize(image.width,image.height,image.format);for(int i=0;i<n;i++)byte(((unsigned char*)image.data)[i]);end();}
 static void file(const char *path){int n=0;unsigned char *p=LoadFileData(path,&n);if(!p||n<=0)exit(3);bytes(p,n);UnloadFileData(p);}

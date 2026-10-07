@@ -113,7 +113,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | Native-format file loading (`LoadImage`) | `Surface.load_bmp/load_tga/load_png/load_pic/load_pnm/load_qoi` | Explicit suffix-independent codec; inclusive 1 MiB pre-read cap (QOI: 83,886,102 bytes), complete reads, close-before-decode, typed errors; see [IMAGE-FILES.md](IMAGE-FILES.md) | `bmp-file`, `tga-file`, `png-file`, `pic-file`, `pnm-file`, `qoi-file` |
 | PNG export | `Surface.to_png/write_png`, `Surface.export_to_memory` | Default byte-format memory and file output; packed expansion, channel/header preservation, rejection, normalized round trips ([IMAGE-EXPORT.md](IMAGE-EXPORT.md)) | `png-export`, `deflate` |
 | Suffix-selected export | `Surface.write_image` | ASCII-insensitive PNG/BMP/TGA/QOI/RAW suffix selection, exact file bytes, retained unsupported owners, typed IO | `image-export` |
-| BMP/TGA/QOI export | `Surface.to_bmp/write_bmp`, `to_tga/write_tga`, `to_qoi/write_qoi` | Native bytes for formats 1..8 (QOI: original formats 4/7 only, other formats retain their owner before IO); consuming typed IO, closed handles | `formatted-bmp-export`, `formatted-tga-export`, `formatted-qoi-export` |
+| BMP/TGA/QOI export | `Surface.to_bmp/write_bmp`, `to_tga/write_tga`, `to_qoi/write_qoi` | Native bytes for formats 1..8 (QOI: original formats 4/7 only, other formats retain their owner before IO); consuming typed IO, closed handles | `bmp-export`, `tga-export`, `qoi-export` |
 | Image-as-code export | `Surface.to_code/write_code` | Banner/name/metadata/hex text from formats 1..9; bounded payloads ([IMAGE-CODE.md](IMAGE-CODE.md)) | `image-code` |
 | HDR float decoding | `Surface.decode_hdr` | Raw/RLE RGB F32, later-row origin reset, bounded packets, exhaustive sample bits including subnormals ([HDR.md](HDR.md)) | `hdr` |
 | HDR float file loading | `Surface.load_hdr` | Explicit Radiance selection, shared bounded/complete/closed-handle IO | `hdr-file` |
@@ -125,7 +125,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | RGB float canvas/POT | `Surface.resize_canvas/to_pot` | Sample movement, ignored fill/zero background, same-size no-ops | `float-rgb-canvas` |
 | RGB float color transforms | `Surface.color_*` | Native byte-quantized format-9 paths | `float-rgb-color` |
 | Direct RGB float formats | `Surface.format/color_grayscale` | Finite `[0,1]` channels to formats 1..8, packed rounding, uncontracted R32 luminance | `float-rgb-formats` |
-| Byte/integer to RGB float | `Surface.format` | Normalized F32 words from all seven layouts; packed precision; alpha discarded | `formatted-float` |
+| Byte/integer to RGB float | `Surface.format` | Normalized F32 words from all seven layouts; packed precision; alpha discarded | `format-float` |
 | Native grayscale channels | `Surface.from_channel` | Format-specific selection, normalized truncation ([IMAGE-CHANNELS.md](IMAGE-CHANNELS.md)) | `image-channel` |
 | Color observations | `Surface.colors/get` | Packed expansion/float truncation, bounded point reads ([IMAGE-COLORS.md](IMAGE-COLORS.md)) | `image-colors` |
 | RGB float PNG export | `Surface.export_to_memory/write_png` | Raw-storage memory prefix versus normalized file colors | `float-rgb-png` |
@@ -168,12 +168,12 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
   float-list exports, and native static/pointer buffers for checksums are adapted,
   not reproduced.
 - Exceptional and contracted F32 variants of raymath remain open.
-- Format-preserving loading covers only the listed codecs through explicit entry
-  points; generic formatted dispatch and other-platform/GPU qualification of the
-  formatted codecs remain open.
-- Filled-triangle fractional vertices beyond the documented truncation, other
-  pixel formats in drawing, broader mipmap integration and additional codecs are
-  open requirements.
+- Native-format loading covers the listed codecs; other-platform/GPU
+  qualification of the native-format codec paths remains open.
+- Filled-triangle fractional vertices beyond the documented truncation, mipmaps,
+  image composition and rotation for formats other than R8G8B8A8, filtered
+  resize for GRAYSCALE/GRAY_ALPHA/R8G8B8 and additional codecs are open
+  requirements.
 - No performance parity is claimed. The array-based image algorithms are a
   correctness foundation, not the production tiled rendering pipeline.
 - CUDA, Windows, browser graphics, live windows and live audio are unverified.

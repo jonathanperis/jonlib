@@ -13,7 +13,7 @@
  },
  "reports": {
   ".build/r32-raw-file-probe/results.json": {
-   "sha256": "1e13e2d52fb552bcd6061e1c98d4fa34a290069e2ff038b9559cc50c84b780ed",
+   "sha256": "c57682bc26cc36f2a1074c49f485906b2b931e78a95e0b1cc4f8ff16290596f6",
    "summary": {
     "passed": true,
     "probe": "r32-raw-file",
@@ -70,7 +70,7 @@
     "maximum_rss_bytes": {
      "cpu-1": 6733824,
      "cpu-2": 6750208,
-     "javascript": 182632448
+     "javascript": 184434688
     },
     "compared_payload_bytes": 154736,
     "inputs_sha256": "454a42799a306a4f66af569ae9e4ec4786e1424635d6f8aa37bf198b2f1f05c4",

@@ -10,10 +10,10 @@ selection and the shared bounded file boundary are documented in
 
 | Codec | Support | Page | Gates |
 |---|---|---|---|
-| QOI | Decode RGB/RGBA (native format 4/7), files, exact export | [below](#qoi) | `conformance`, `qoi-format`, `qoi-file`, `formatted-qoi-export` |
+| QOI | Decode RGB/RGBA (native format 4/7), files, exact export | [below](#qoi) | `conformance`, `qoi-format`, `qoi-file`, `qoi-export` |
 | PNG | Packed/8/16-bit, Adam7, native-default CgBI; native format 1/2/4/7; files | [PNG.md](PNG.md) | `png`, `png-format`, `png-file` |
-| BMP | CORE/INFO/56-byte/V4/V5, indexed/true-color/bitfields; native format 4/7; files; V4 export | [BMP.md](BMP.md) | `bmp`, `bmp-format`, `bmp-file`, `formatted-bmp-export` |
-| TGA | True-color/grayscale/indexed raw/RLE; native format 1/2/4/7; files; default RLE export | [TGA.md](TGA.md) | `tga`, `tga-format`, `tga-file`, `formatted-tga-export` |
+| BMP | CORE/INFO/56-byte/V4/V5, indexed/true-color/bitfields; native format 4/7; files; V4 export | [BMP.md](BMP.md) | `bmp`, `bmp-format`, `bmp-file`, `bmp-export` |
+| TGA | True-color/grayscale/indexed raw/RLE; native format 1/2/4/7; files; default RLE export | [TGA.md](TGA.md) | `tga`, `tga-format`, `tga-file`, `tga-export` |
 | PNM | Binary 8/16-bit P5/P6; native format 1/4 (8-bit); files | [PNM.md](PNM.md) | `pnm`, `pnm-format`, `pnm-file` |
 | PSD | Raw/PackBits RGB(A) planes, explicit matte profiles; R8G8B8A8 | [PSD.md](PSD.md) | `psd`, `psd-matte` |
 | PIC | Softimage raw/pure-RLE/mixed-RLE packets; native format 4/7; files | [PIC.md](PIC.md) | `pic`, `pic-format`, `pic-file` |
@@ -155,7 +155,7 @@ claimed as coverage of `ExportImageToMemory`.
   it back and prints its dimensions and packed pixels; the file is compared with
   raylib's export.
 - **Format-preserving memory loading** (`tools/qoi_format_probe.py` on
-  `tools/formatted_codec.py`, gate `qoi-format`): native format 4/7 metadata,
+  `tools/codec_formats.py`, gate `qoi-format`): native format 4/7 metadata,
   `mipmaps == 1` and every raw byte from `LoadImageFromMemory` are captured before
   separate normalization, then compared through the raw, factory, owner, bridge,
   Surface and lower/upper-case dispatch roles, with exact typed failures on
@@ -168,9 +168,9 @@ claimed as coverage of `ExportImageToMemory`.
   (`.qoi`/`.QOI`) and explicit-selection references for other suffixes, typed
   controls, and closure/resource runs. Because QOI has its own 83,886,102-byte
   cap rather than the 1 MiB raster cap, this probe keeps its own runner instead
-  of `tools/formatted_file.py`.
-- **Formatted export** (`tools/formatted_qoi_export_probe.py`, gate
-  `formatted-qoi-export`); see [IMAGE-EXPORT.md](IMAGE-EXPORT.md).
+  of `tools/codec_files.py`.
+- **Export** (`tools/qoi_export_probe.py`, gate
+  `qoi-export`); see [IMAGE-EXPORT.md](IMAGE-EXPORT.md).
 
 ### QOI known gaps
 

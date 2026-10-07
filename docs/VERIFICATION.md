@@ -51,7 +51,7 @@ of each results file) and fails if any parity gate fails.
 |---|---|---|
 | Main corpus | `tools/conformance.py`, `tests/fixtures/images.json` | Deterministic image/math/collision/codec scenarios, full RGBA pixels and result bits, contracts in `tests/*.bend`, the headless examples, `PROOF.bend`, module check verdicts and the API inventory |
 | Focused probes | `tools/*_probe.py` on [`tools/probekit.py`](../tools/probekit.py) | One API family each (codecs, files, exports, float images, compression, checksums, math kernels) against native raylib |
-| Shared drivers | `tools/formatted_codec.py`, `tools/formatted_file.py`, `tools/formatted_export.py`, `tools/binary64_harness.py` | Format-preserving decoding, file loading (with descriptor/size limits), formatted export and binary64 emulation against rational oracles |
+| Shared drivers | `tools/codec_formats.py`, `tools/codec_files.py`, `tools/codec_exports.py`, `tools/binary64_harness.py` | Format-preserving decoding, file loading (with descriptor/size limits), BMP/TGA export and binary64 emulation against rational oracles |
 | Resampling | `tools/resize_conformance.py` | Default-filter coefficients, kernels and whole-image resize outputs ([RESAMPLING.md](RESAMPLING.md)) |
 | API audit | `tools/api_plan.py check` | Pinned header catalog, generated ledger files and progress-record lint ([API-TRACKING.md](API-TRACKING.md)) |
 | Compiler overlay | `tools/verify_bend.py` | Selected upstream Bend regressions under the declared overlay |

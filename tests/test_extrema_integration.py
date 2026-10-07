@@ -1,3 +1,4 @@
+"""Vector min/max/clamp fixtures require an explicit, qualified native extrema profile."""
 import unittest
 from unittest.mock import patch
 

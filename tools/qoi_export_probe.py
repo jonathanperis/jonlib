@@ -12,8 +12,8 @@ import re
 import shutil
 import struct
 
-import formatted_export
-from formatted_export import BPP, COLOR_CONTROLS, SENTINEL, TYPED_PIXELS, strict_json
+import codec_exports
+from codec_exports import BPP, COLOR_CONTROLS, SENTINEL, TYPED_PIXELS, strict_json
 from byte_probe import BEND_EMITTER
 from image_format_probe import r32_words
 from probekit import ProbeFailure
@@ -479,7 +479,7 @@ def baseline(expected: U32, path: String, result: Result<&1, &1, U32 & String, U
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
-    paths=formatted_export.io_targets(work,failure)
+    paths=codec_exports.io_targets(work,failure)
     for path,code in paths:body+=f'    IO.bind(Result<&1, &1, U32 & String, Unit>, Unit, direct({json.dumps(str(path))}), baseline({code}, {json.dumps(str(path))}))\n'
     if not failure:
         body+=f'    write(0, "", {json.dumps(str(work/"repeated.dat"))}, J.Surface.from_bytes(1, 1, 7, [17, 17, 17, 17]))\n'
@@ -566,7 +566,7 @@ CODEC = Qoi()
 
 
 def main(argv=None):
-    formatted_export.main(CODEC, __doc__, argv)
+    codec_exports.main(CODEC, __doc__, argv)
 
 
 if __name__=='__main__':main()

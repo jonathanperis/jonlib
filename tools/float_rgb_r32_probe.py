@@ -13,7 +13,7 @@ import struct
 import sys
 
 from bmp_probe import bend_bytes
-from byte_probe import BEND_EMITTER, parse_results
+from byte_probe import C_EMITTER, BEND_EMITTER, parse_results
 from float_rgb_formats_probe import fixtures as previous_fixtures
 from image_format_probe import r32_words, word_bytes
 import probekit
@@ -126,11 +126,7 @@ C_PREAMBLE = r'''#include "raylib.h"
 #include <stdlib.h>
 #include <string.h>
 _Static_assert(sizeof(float)==4 && sizeof(unsigned)==4 && FLT_RADIX==2 && FLT_MANT_DIG==24 && FLT_MAX_EXP==128, "binary32 and 32-bit words required");
-static int used=0;
-static void byte(unsigned v){if(!used)putchar('[');printf("%s%u",used?",":"",v);if(++used==256){puts("]");used=0;}}
-static void word(unsigned v){for(int i=0;i<4;i++)byte((v>>(8*i))&255);}
-static void end(void){if(used){puts("]");used=0;}puts("\"end\"");}
-static void emit(Image image){if(!image.data||image.mipmaps!=1)exit(2);word(image.width);word(image.height);word(image.format);
+''' + C_EMITTER + '\n' + r'''static void emit(Image image){if(!image.data||image.mipmaps!=1)exit(2);word(image.width);word(image.height);word(image.format);
 int n=GetPixelDataSize(image.width,image.height,image.format);for(int i=0;i<n;i++)byte(((unsigned char*)image.data)[i]);end();}
 '''
 

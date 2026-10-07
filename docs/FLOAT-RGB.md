@@ -172,7 +172,7 @@ inputs return complete, unchanged owners.
 | `float-rgb-color` | `tools/float_rgb_color_probe.py` | Color transforms, clamping, alpha matching, nonfinite/fractional parameter rejection |
 | `float-rgb-formats` | `tools/float_rgb_formats_probe.py` | Direct targets 1..8 and grayscale at packed/grayscale rounding boundaries |
 | `float-rgb-r32` | `tools/float_rgb_r32_probe.py` | Format 9 → R32 conversion and NaN controls; CPU/JS only, with an independent native-archive qualification |
-| `formatted-float` | `tools/formatted_float_probe.py` | `Surface.format` to format 9 for every source layout, channel level and alpha pattern, plus return chains |
+| `format-float` | `tools/format_float_probe.py` | `Surface.format` to format 9 for every source layout, channel level and alpha pattern, plus return chains |
 
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only float-rgb
