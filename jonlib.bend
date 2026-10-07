@@ -1,6 +1,7 @@
 # Jonlib - zlib license, Copyright (c) 2026 Jonathan Peris.
 # Image/color algorithms adapted from raylib 6.0 rtextures.c; shared math in Jonmath.
-# Collision queries adapted from the same release's rshapes.c.
+# Collision queries adapted from the same release's rshapes.c; file and path
+# utilities from rcore.c.
 # 3D collision queries adapted from rmodels.c.
 # Altered Bend implementations; see THIRD_PARTY_NOTICES.md and LICENSES/raylib.txt.
 #
@@ -15,6 +16,7 @@
 #   8. Shared file boundary: suffix rules, bounded reads and closed writes
 #   9. Surface: the public image API, dispatching on pixel format
 #   10. Codecs, exporters, writers and loaders
+#   11. Files: rcore.c path and file-data utilities
 # Functions must be defined before use, so kernels precede the Surface layer
 # that dispatches to them.
 import Base
@@ -3923,3 +3925,270 @@ def Image.raw.parameters(valid: Bool, path: String, +width: U32, +height: U32, +
 def Surface.load_raw(path: String, +width: U32, +height: U32, +format: U32, header_size: U32) -> IO(Result<&1, &1, Surface.IOError, Surface>):
   Image.raw.parameters(((width > 0) && (height > 0) && (width <= 4096) && (height <= 4096)
     && (format >= 1) && (format <= 13) : U32), path, width, height, format, header_size)
+
+# -----------------------------------------------------------------------------
+# Files: rcore.c path and file-data utilities
+#
+# Paths are byte strings in raylib; ASCII paths compare byte for byte here.
+# Results raylib computes in fixed static buffers are None where the C code
+# would read past the input or overflow the buffer.
+
+def Files.slash(+character: Char) -> Bool:
+  U32.is_eq(Char.to_u32(character), 47) || U32.is_eq(Char.to_u32(character), 92)
+
+# One past the last '/' or '\\' (strprbrk), or 0 when there is none.
+def Files.after_slash(path: String, +position: Nat, after: Nat) -> Nat:
+  match path:
+    case SNil{}: after
+    case SCon{+character, rest}: Files.after_slash(rest, 1n+position, Bool.pick(Nat, Files.slash(character), 1n+position, after))
+
+# GetFileExtension: from the last '.' of the whole path, unless there is none
+# or it is the first character.
+def Files.extension(+path: String) -> Maybe<String>:
+  +position = Image.file.last_dot(path, 0n, 0n)
+  Bool.pick(Maybe<String>, Nat.is_lt(0n, position), Some{String.drop(path, position)}, None{})
+
+# GetFileName: the text after the last separator.
+def Files.name(+path: String) -> String:
+  String.drop(path, Files.after_slash(path, 0n, 0n))
+
+# GetFileNameWithoutExt: the name (at most 255 bytes) cut at its last '.' past
+# the first character.
+def Files.name_without_ext(path: String) -> String:
+  +name = String.take(Files.name(path), 255n)
+  +position = Image.file.last_dot(name, 0n, 0n)
+  Bool.pick(String, Nat.is_lt(0n, position), String.take(name, position), name)
+
+def Files.code.of(found: Maybe<&2, Char>) -> U32:
+  match found:
+    case None{}: 0
+    case Some{character}: Char.to_u32(character)
+
+def Files.code(+path: String, index: Nat) -> U32:
+  Files.code.of(String.get(path, index))
+
+# A path without a drive letter ("C:") or a leading separator.
+def Files.relative(+path: String) -> Bool:
+  Bool.not(U32.is_eq(Files.code(path, 1n), 58) || U32.is_eq(Files.code(path, 0n), 92) || U32.is_eq(Files.code(path, 0n), 47))
+
+def Files.directory.found(+path: String, +after: Nat) -> String:
+  +prefix = Bool.pick(String, Files.relative(path), "./", "")
+  Bool.pick(String, Nat.is_eq(after, 0n), prefix,
+    Bool.pick(String, Nat.is_eq(after, 1n), String.take(path, 1n), prefix ++ String.take(path, Nat.sub(after, 1n))))
+
+# GetDirectoryPath: "./" before relative paths, the path up to its last separator
+# ("/" or "\\" alone for a root file). Paths of 1..4093 bytes fit its buffer.
+def Files.directory(+path: String) -> Maybe<String>:
+  +length = String.length(path)
+  Bool.pick(Maybe<String>, Nat.is_lt(0n, length) && Nat.is_le(length, 4093n),
+    Some{Files.directory.found(path, Files.after_slash(path, 0n, 0n))}, None{})
+
+def Files.previous.cut(+path: String, +after: Nat) -> String:
+  +slash = Nat.sub(after, 1n)
+  +root = Nat.is_eq(slash, 0n) || (Nat.is_eq(slash, 2n) && U32.is_eq(Files.code(path, 1n), 58))
+  Bool.pick(String, Nat.is_eq(after, 0n), "", String.take(path, Bool.pick(Nat, root, after, slash)))
+
+# GetPrevDirectoryPath: paths of up to 3 bytes unchanged; otherwise the path up
+# to its last separator, keeping a root "/" or "C:\\". Paths up to 4096 bytes.
+def Files.previous_directory(+path: String) -> Maybe<String>:
+  +length = String.length(path)
+  Bool.pick(Maybe<String>, Nat.is_le(length, 4096n),
+    Some{Bool.pick(String, Nat.is_le(length, 3n), path, Files.previous.cut(path, Files.after_slash(path, 0n, 0n)))}, None{})
+
+def Files.lower(+character: Char) -> Char:
+  +code = Char.to_u32(character)
+  Bool.pick(Char, ((code >= 65) && (code <= 90) : U32), Char.from_u32((code + 32 : U32)), character)
+
+def Files.lowered(text: String, reversed: String) -> String:
+  match text:
+    case SNil{}: String.reverse(reversed)
+    case SCon{character, rest}: Files.lowered(rest, SCon{Files.lower(character), reversed})
+
+# The ';'-separated extension list: at most 31 entries, the last keeping any
+# further separators.
+def Files.extensions.limited(+pieces: List<&2, String>) -> List<&2, String>:
+  Bool.pick(List<&2, String>, Nat.is_le(List.length(&2, String, pieces), 31n), pieces,
+    List.append(&2, String, List.take(&2, String, pieces, 30n), [String.join(List.drop(&2, String, pieces, 30n), ";")]))
+
+def Files.extensions(text: String) -> List<&2, String>:
+  Files.extensions.limited(String.split(text, ';'))
+
+def Files.extension.matches(+extension: String, entries: List<&2, String>) -> Bool:
+  match entries:
+    case Nil{}: False{}
+    case Con{+entry, rest}:
+      +dotted = U32.is_eq(Files.code(entry, 0n), 46)
+      String.eq(Bool.pick(String, dotted, extension, String.drop(extension, 1n)), entry) || Files.extension.matches(extension, rest)
+
+def Files.has_extension.found(found: Maybe<String>, +extensions: String) -> Maybe<Bool>:
+  match found:
+    case None{}: Some{False{}}
+    case Some{+extension}:
+      Bool.pick(Maybe<Bool>, Nat.is_lt(String.length(extension), 16n),
+        Some{Files.extension.matches(Files.lowered(extension, ""), Files.extensions(Files.lowered(extensions, "")))}, None{})
+
+# IsFileExtension: ASCII-case-insensitive match of GetFileExtension against a
+# ';'-separated list (entries without a leading '.' compare without it). File
+# extensions of 16+ bytes overflow raylib's buffer: None.
+def Files.has_extension(path: String, extensions: String) -> Maybe<Bool>:
+  Files.has_extension.found(Files.extension(path), extensions)
+
+def Files.valid_name.scan(name: String, periods: Bool) -> Bool:
+  match name:
+    case SNil{}: Bool.not(periods)
+    case SCon{+character, rest}:
+      +code = Char.to_u32(character)
+      +invalid = (code < 32 : U32) || U32.is_eq(code, 60) || U32.is_eq(code, 62) || U32.is_eq(code, 58) || U32.is_eq(code, 34)
+        || U32.is_eq(code, 47) || U32.is_eq(code, 92) || U32.is_eq(code, 124) || U32.is_eq(code, 63) || U32.is_eq(code, 42)
+      Bool.not(invalid) && Files.valid_name.scan(rest, periods && U32.is_eq(code, 46))
+
+# IsFileNameValid: an empty name is valid; otherwise no <>:"/\\|?* or control
+# characters and not only periods.
+def Files.valid_name(+name: String) -> Bool:
+  Bool.pick(Bool, String.is_empty(name), True{}, Files.valid_name.scan(name, True{}))
+
+# File data. Reads close their handle before returning; the byte domain is 0..255.
+def Files.exists.opened(opened: Result<&1, &1, U32 & String, File>) -> IO(Bool):
+  match opened:
+    case Fail{_}: IO.pure(Bool, False{})
+    case Done{file}:
+      do IO<Bool>:
+        Unit <- File.close(file)
+        IO.pure(Bool, True{})
+
+# FileExists: the path opens for reading (raylib asks access(), which also
+# accepts unreadable files).
+def Files.exists(path: String) -> IO(Bool):
+  IO.bind(Result<&1, &1, U32 & String, File>, Bool, File.open(path, "r"), Files.exists.opened)
+
+def Files.length.value(size: Result<&1, &1, U32 & String, U32>) -> U32:
+  match size:
+    case Fail{_}: 0
+    case Done{value}: value
+
+def Files.length.sized(result: File & Result<&1, &1, U32 & String, U32>) -> IO(U32):
+  (file, size) = result
+  do IO<U32>:
+    Unit <- File.close(file)
+    IO.pure(U32, Files.length.value(size))
+
+def Files.length.opened(opened: Result<&1, &1, U32 & String, File>) -> IO(U32):
+  match opened:
+    case Fail{_}: IO.pure(U32, 0)
+    case Done{file}: IO.bind(File & Result<&1, &1, U32 & String, U32>, U32, File.size(file), Files.length.sized)
+
+# GetFileLength: the size in bytes, 0 when the file does not open.
+def Files.length(path: String) -> IO(U32):
+  IO.bind(Result<&1, &1, U32 & String, File>, U32, File.open(path, "r"), Files.length.opened)
+
+# LoadFileData: every byte of the file (up to raylib's INT_MAX size).
+def Files.load_data(path: String) -> IO(Result<&1, &1, Surface.IOError, +List<U32>>):
+  Image.file.bytes(path, 2147483647)
+
+def Files.unload_data(bytes: +List<U32>) -> Unit:
+  Unit{}
+
+def Files.saved(result: Result<&1, &1, U32 & String, Unit>) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  match result:
+    case Fail{Tuple{code, message}}: IO.pure(Result<&1, &1, Surface.IOError, Unit>, Fail{FileError{code, message}})
+    case Done{_}: IO.pure(Result<&1, &1, Surface.IOError, Unit>, Done{Unit{}})
+
+def Files.save.checked(valid: Bool, path: String, bytes: +List<U32>) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  match valid:
+    case False{}: IO.pure(Result<&1, &1, Surface.IOError, Unit>, Fail{DataError{InvalidRequest{}}})
+    case True{}:
+      IO.bind(Result<&1, &1, U32 & String, Unit>, Result<&1, &1, Surface.IOError, Unit>,
+        IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), Image.file.write.opened(bytes)), Files.saved)
+
+# SaveFileData: writes every byte (values above 255 are InvalidRequest, before opening).
+def Files.save_data(path: String, +bytes: +List<U32>) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  Files.save.checked(Codec.valid_bytes(bytes, True{}), path, bytes)
+
+def Files.text.chars(bytes: +List<U32>, reversed: String) -> String:
+  match bytes:
+    case Nil{}: String.reverse(reversed)
+    case Con{byte, rest}: Files.text.chars(rest, SCon{Char.from_u32(byte), reversed})
+
+def Files.text.loaded(result: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(Result<&1, &1, Surface.IOError, String>):
+  match result:
+    case Fail{error}: IO.pure(Result<&1, &1, Surface.IOError, String>, Fail{error})
+    case Done{bytes}: IO.pure(Result<&1, &1, Surface.IOError, String>, Done{Files.text.chars(bytes, "")})
+
+# LoadFileText: the file's bytes as characters 0..255 (text and binary modes
+# agree on the reference hosts).
+def Files.load_text(path: String) -> IO(Result<&1, &1, Surface.IOError, String>):
+  IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, String>, Files.load_data(path), Files.text.loaded)
+
+def Files.unload_text(text: String) -> Unit:
+  Unit{}
+
+# strstr: the first index where search starts (an empty search matches at 0).
+def Files.find(text: String, found: Bool, +search: String, +index: U32) -> Maybe<U32>:
+  match text found:
+    case _ True{}: Some{index}
+    case SNil{} False{}: None{}
+    case SCon{_, +rest} False{}: Files.find(rest, String.starts_with(rest, search), search, (index + 1 : U32))
+
+def Files.push.unless(stop: Bool, character: Char, reversed: String) -> String:
+  match stop:
+    case True{}: reversed
+    case False{}: SCon{character, reversed}
+
+# C strings end at the first NUL.
+def Files.until_nul(text: String, stop: Bool, reversed: String) -> String:
+  match text stop:
+    case _ True{}: String.reverse(reversed)
+    case SNil{} False{}: String.reverse(reversed)
+    case SCon{+character, rest} False{}:
+      Files.until_nul(rest, U32.is_eq(Char.to_u32(character), 0), Files.push.unless(U32.is_eq(Char.to_u32(character), 0), character, reversed))
+
+# fprintf("%s") stops at the first NUL; characters above 255 are not bytes.
+def Files.text.bytes(text: String, reversed: +List<U32>, valid: Bool) -> +List<U32> & Bool:
+  match text:
+    case SNil{}: (List.reverse(&2, U32, reversed), valid)
+    case SCon{+character, rest}:
+      Files.text.bytes(rest, Con{Char.to_u32(character), reversed}, valid && (Char.to_u32(character) <= 255 : U32))
+
+def Files.save_text.checked(path: String, encoded: +List<U32> & Bool) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  (bytes, valid) = encoded
+  Files.save.checked(valid, path, bytes)
+
+# SaveFileText: the text up to its first NUL as bytes (characters above 255 are
+# InvalidRequest, before opening).
+def Files.save_text(path: String, text: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  Files.save_text.checked(path, Files.text.bytes(Files.until_nul(text, False{}, ""), Nil{}, True{}))
+
+def Files.found(+text: String, +search: String) -> Maybe<U32>:
+  Files.find(text, String.starts_with(text, search), search, 0)
+
+def Files.find.loaded(+search: String, result: Result<&1, &1, Surface.IOError, String>) -> IO(Maybe<U32>):
+  match result:
+    case Fail{_}: IO.pure(Maybe<U32>, None{})
+    case Done{+text}: IO.pure(Maybe<U32>, Bool.pick(Maybe<U32>, String.is_empty(text), None{}, Files.found(Files.until_nul(text, False{}, ""), search)))
+
+# FileTextFindIndex: the byte index of the first occurrence of search in the
+# file's text (up to a NUL), None when absent or the file is missing; an empty
+# file, which raylib would scan through a NULL text, is None.
+def Files.text_find_index(path: String, +search: String) -> IO(Maybe<U32>):
+  IO.bind(Result<&1, &1, Surface.IOError, String>, Maybe<U32>, Files.load_text(path), Files.find.loaded(search))
+
+def Files.code.text(name: Maybe<&2, String>, +size: U32, bytes: +List<U32>) -> Maybe<String>:
+  match name:
+    case None{}: None{}
+    case Some{symbol}: Some{ImageCode.data.encode(~&2, symbol, size, bytes)}
+
+# ExportDataAsCode text: 1..1048576 bytes 0..255 and an ASCII basename of
+# 1..200 characters; None otherwise.
+def Files.data_as_code(+bytes: +List<U32>, path: String) -> Maybe<String>:
+  +size = U32.from_nat(Codec.byte_count(bytes, 0n))
+  Bool.pick(Maybe<String>, ((size >= 1) && (size <= 1048576) : U32) && Codec.valid_bytes(bytes, True{}),
+    Files.code.text(ImageCode.data.name(path), size, bytes), None{})
+
+def Files.export.text(path: String, text: Maybe<String>) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  match text:
+    case None{}: IO.pure(Result<&1, &1, Surface.IOError, Unit>, Fail{DataError{InvalidRequest{}}})
+    case Some{code}: Files.save_text(path, code)
+
+# ExportDataAsCode: the generated header written to path.
+def Files.export_data_as_code(bytes: +List<U32>, +path: String) -> IO(Result<&1, &1, Surface.IOError, Unit>):
+  Files.export.text(path, Files.data_as_code(bytes, path))

@@ -62,6 +62,8 @@ Native SHA-1/SHA-256 word lists, including the reference SHA-256 padding quirk,
 are documented in [SHA.md](SHA.md).
 Bounded quality-8 raw compression, including empty-input and native sequence-limit
 behavior, is documented in [COMPRESSION.md](COMPRESSION.md).
+Path utilities and file data/text/code IO (`Files.*`) are documented in
+[FILES.md](FILES.md).
 
 ## Shared types
 
