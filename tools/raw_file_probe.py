@@ -102,7 +102,7 @@ def main():
     read_error = work/'read-error';read_error.mkdir(exist_ok=True)
     (read_error/'entry').write_bytes(b'x')
     controls = [dict(name='bad-size',path=str(missing.relative_to(ROOT)),width=0,height=1,format=7,header=0,error='request'),
-                dict(name='bad-format',path=str(missing.relative_to(ROOT)),width=1,height=1,format=10,header=0,error='request'),
+                dict(name='bad-format',path=str(missing.relative_to(ROOT)),width=1,height=1,format=14,header=0,error='request'),
                 dict(name='bad-header',path=str(missing.relative_to(ROOT)),width=1,height=1,format=7,header=2147483647,error='request'),
                 dict(name='large-file',path=str(oversized.relative_to(ROOT)),width=1,height=1,format=7,header=0,error='large'),
                 dict(name='read-error',path=str(read_error.relative_to(ROOT)),width=1,height=1,format=1,header=0,error='file')]
