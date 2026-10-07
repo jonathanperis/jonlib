@@ -40772,23 +40772,27 @@
       "milestone": "images",
       "phase": 1,
       "sequence": 7,
-      "status": "not-started",
-      "jonlib": "Surface.is_image_valid",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Surface.is_valid",
+      "mapping_state": "implemented",
+      "scope": "Returns the owner and raylib's validity verdict: positive dimensions and a format. Factory, decoder and loader owners always pass; hand-built records additionally need dimensions 1..4096, a format 1..13 and that format's storage variant (Words or Quads).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Compressed formats (14+) and multi-level images",
+        "Native pointer/NULL-data ABI"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/transforms.bend",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -40803,7 +40807,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
-      "next_step": "Derive IsImageValid semantics from the linked source, add a reference fixture, then implement Surface.is_image_valid.",
+      "next_step": "Close documented gaps and unverified gates for IsImageValid.",
       "priority": 207
     },
     {
@@ -40829,23 +40833,26 @@
       "milestone": "images",
       "phase": 1,
       "sequence": 7,
-      "status": "not-started",
-      "jonlib": "Surface.unload_image",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Surface.unload",
+      "mapping_state": "implemented",
+      "scope": "Consumes the Surface owner, releasing its storage; affine ownership rules out double unloads and use after unload.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native pointer/allocator ABI and resource accounting"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/transforms.bend",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -40859,7 +40866,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare dimensions and every output pixel across formats, clipping, winding/endpoint rules, ownership and degenerate inputs.",
-      "next_step": "Derive UnloadImage semantics from the linked source, add a reference fixture, then implement Surface.unload_image.",
+      "next_step": "Close documented gaps and unverified gates for UnloadImage.",
       "priority": 207
     },
     {
@@ -43664,23 +43671,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
-      "jonlib": "Color.unload_image_colors",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Surface.unload_colors",
+      "mapping_state": "implemented",
+      "scope": "Consumes the color list returned by Surface.colors (LoadImageColors), releasing it; affine ownership rules out double unloads.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native pointer/allocator ABI and resource accounting"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tests/transforms.bend",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -43694,7 +43704,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive UnloadImageColors semantics from the linked source, add a reference fixture, then implement Color.unload_image_colors.",
+      "next_step": "Close documented gaps and unverified gates for UnloadImageColors.",
       "priority": 206
     },
     {

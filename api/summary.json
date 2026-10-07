@@ -6,16 +6,16 @@
     "blocked": 5,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1602,
-    "partial": 277
+    "not-started": 1599,
+    "partial": 280
   },
   "core_functions": {
     "total": 600,
     "blocked": 1,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 482,
-    "partial": 117
+    "not-started": 479,
+    "partial": 120
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 5,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 667,
-    "partial": 259
+    "not-started": 664,
+    "partial": 262
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 1,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 910,
-      "partial": 126
+      "not-started": 907,
+      "partial": 129
     },
     "raymath.h": {
       "total": 254,
@@ -194,8 +194,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 27,
-      "partial": 19
+      "not-started": 26,
+      "partial": 20
     },
     {
       "id": "images",
@@ -209,8 +209,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 2,
-      "partial": 52
+      "not-started": 0,
+      "partial": 54
     },
     {
       "id": "resampling",
