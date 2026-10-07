@@ -1,0 +1,115 @@
+{
+ "gate": "pic-file",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 389.9,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/pic-file-probe/results.json": {
+   "sha256": "4a1f54ff8b2c1800bc0c50f53454803de04c6e2e53ed3cbca08f2e3e50bc6331",
+   "summary": {
+    "passed": true,
+    "probe": "pic-file",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [
+     "SUPPORT_FILEFORMAT_BMP=ON",
+     "SUPPORT_FILEFORMAT_PNG=ON",
+     "SUPPORT_FILEFORMAT_TGA=ON",
+     "SUPPORT_FILEFORMAT_JPG=ON",
+     "SUPPORT_FILEFORMAT_GIF=ON",
+     "SUPPORT_FILEFORMAT_PIC=ON",
+     "SUPPORT_FILEFORMAT_PNM=ON",
+     "SUPPORT_FILEFORMAT_PSD=ON"
+    ],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 1724,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 1724,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 1724,
+      "different": []
+     }
+    },
+    "native_batches": 6,
+    "batches": 55,
+    "resources": {
+     "boundary": {
+      "cpu-1": {
+       "items": 2
+      },
+      "cpu-2": {
+       "items": 2
+      },
+      "javascript": {
+       "items": 2
+      }
+     },
+     "sparse": {
+      "cpu-1": {
+       "items": 2
+      },
+      "cpu-2": {
+       "items": 2
+      },
+      "javascript": {
+       "items": 2
+      }
+     },
+     "exact-cap": {
+      "cpu-1": {
+       "items": 2
+      },
+      "cpu-2": {
+       "items": 2
+      },
+      "javascript": {
+       "items": 2
+      }
+     }
+    },
+    "files": 170,
+    "file_controls": 203,
+    "synthetic_controls": 152,
+    "native_routes": {
+     "LoadImage": 148,
+     "explicit": 22
+    },
+    "observations": 1724,
+    "compared_bytes": 830752,
+    "closure_records": 1009,
+    "reference_sha256": "2b69b967b5b2106061bb873d44030280fd9a0181cff68100bbd9e24acbeec9be"
+   }
+  }
+ }
+}

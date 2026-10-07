@@ -1,0 +1,69 @@
+{
+ "gate": "animation-file",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 15.2,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/animation-file-probe/results.json": {
+   "sha256": "180d437dab20818488ca07f317c2939aeb8e0a6a38dac871c721fe624c5302b1",
+   "summary": {
+    "passed": true,
+    "probe": "animation-file",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 43,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 43,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 43,
+      "different": []
+     }
+    },
+    "batches": 1,
+    "native_cases": 34,
+    "frames": 61,
+    "pixels": 604,
+    "boundary_controls": 7,
+    "closure_iterations": 100,
+    "file_descriptor_limit": 64,
+    "default_reference_controls": 1,
+    "decode_reference": "Fused",
+    "inputs_sha256": "52c0b4cc9748c6b1742c95d4ace408884d164a39116af869ec56a1796da62213",
+    "reference_sha256": "46777211df425e04444d6334aaa56266c694c919d829068452718b7767054024"
+   }
+  }
+ }
+}

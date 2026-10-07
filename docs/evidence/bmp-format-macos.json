@@ -1,0 +1,67 @@
+{
+ "gate": "bmp-format",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 437.4,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/bmp-format-probe/results.json": {
+   "sha256": "9020944f0d1803e6e1efb0888998cbf0f5ac3ac28938a35d3bc965998f0d31c1",
+   "summary": {
+    "passed": true,
+    "probe": "bmp-format",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [
+     "SUPPORT_FILEFORMAT_BMP=ON"
+    ],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 2253,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 2253,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 2253,
+      "different": []
+     }
+    },
+    "batches": 73,
+    "cases": 224,
+    "controls": 597,
+    "native_rejections": 0,
+    "observations": 2253,
+    "compared_bytes": 873268,
+    "reference_sha256": "6c313f6bd8637b126bef5c6cf58d8a24b7166b4b3828cfba0698c13b87f3515c"
+   }
+  }
+ }
+}

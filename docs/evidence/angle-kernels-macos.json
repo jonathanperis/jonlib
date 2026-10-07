@@ -1,0 +1,198 @@
+{
+ "gate": "angle-kernels",
+ "title": "atan2f kernels vs pinned glibc/Sun sources (Apple vs native libm on Darwin) and checked wrappers vs raymath",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 167.2,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/angle-kernel-probe/results.json": {
+   "sha256": "63a32e8347fb0acc6e5f93e1828be62425f2c355780016066526511a0edbb1a2",
+   "summary": {
+    "passed": true,
+    "probe": "angle-kernel",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {
+     "kernel/cpu-1": {
+      "passed": true,
+      "rows": 8393,
+      "different": []
+     },
+     "kernel/cpu-2": {
+      "passed": true,
+      "rows": 8393,
+      "different": []
+     },
+     "kernel/javascript": {
+      "passed": true,
+      "rows": 8393,
+      "different": []
+     },
+     "modern-synthetic/cpu-1": {
+      "passed": true,
+      "rows": 28,
+      "different": []
+     },
+     "modern-synthetic/cpu-2": {
+      "passed": true,
+      "rows": 28,
+      "different": []
+     },
+     "modern-synthetic/javascript": {
+      "passed": true,
+      "rows": 28,
+      "different": []
+     },
+     "wrapper/cpu-1": {
+      "passed": true,
+      "rows": 428,
+      "different": []
+     },
+     "wrapper/cpu-2": {
+      "passed": true,
+      "rows": 428,
+      "different": []
+     },
+     "wrapper/javascript": {
+      "passed": true,
+      "rows": 428,
+      "different": []
+     },
+     "checked-synthetic/cpu-1": {
+      "passed": true,
+      "rows": 45,
+      "different": []
+     },
+     "checked-synthetic/cpu-2": {
+      "passed": true,
+      "rows": 45,
+      "different": []
+     },
+     "checked-synthetic/javascript": {
+      "passed": true,
+      "rows": 45,
+      "different": []
+     }
+    },
+    "host_profile": {
+     "contract": "native-angle-profile-v2",
+     "selected_profile": "Apple2007AngleRn",
+     "matching_profiles": [
+      "Apple2007AngleRn"
+     ],
+     "mismatch_counts": {
+      "Apple2007AngleRn": 0,
+      "Sun239AngleRn": 71,
+      "Glibc241AngleRn": 29
+     },
+     "scalar_controls": 76,
+     "wrapper_controls": 205,
+     "exact_intermediates": 1654
+    },
+    "profiles": {
+     "pinned_source": [
+      "Sun239AngleRn",
+      "Glibc241AngleRn"
+     ],
+     "host_qualified": [
+      "Apple2007AngleRn"
+     ],
+     "unverified": []
+    },
+    "kernel_rows": 8393,
+    "kernel_finite": 8339,
+    "historical": {
+     "rows": 1086,
+     "pinned_sun_differences": 178
+    },
+    "coverage": {
+     "branches": {
+      "rational": 6101,
+      "shortcut": 2198,
+      "ambiguous": 987,
+      "tiny": 718,
+      "tiny_boundary": 718,
+      "tiny_increment": 0,
+      "tiny_decrement": 718,
+      "general": 269,
+      "correction": 269,
+      "correction_up": 16,
+      "correction_down": 253,
+      "zero": 40,
+      "reject": 54
+     },
+     "tiny_products": {
+      "normal": 710,
+      "subnormal": 4,
+      "negative_zero": 4
+     },
+     "unhit": [
+      "tiny_increment",
+      "tiny_nonboundary",
+      "correction_guard_false"
+     ],
+     "unhit_reason": "RN-unreachable; implemented and exercised by the synthetic helper controls"
+    },
+    "host_pinned_differences": 1026,
+    "host_sun_differences": 2038,
+    "batches": 1,
+    "apple_outside_contract_differences": 13,
+    "apple_kernel_rows": 7414,
+    "wrapper_rows": 428,
+    "synthetic": 73,
+    "compared_profiles": "Apple2007/Sun239/Glibc241",
+    "wrapper_accepted": {
+     "Apple2007AngleRn": 310,
+     "Sun239AngleRn": 310,
+     "Glibc241AngleRn": 310
+    },
+    "rejection_stages": {
+     "0": 311,
+     "1": 84,
+     "10": 5,
+     "11": 4,
+     "12": 3,
+     "13": 2,
+     "14": 2,
+     "15": 3,
+     "22": 1,
+     "23": 1,
+     "16": 1,
+     "17": 1,
+     "18": 1,
+     "19": 1,
+     "20": 1,
+     "21": 2,
+     "26": 1,
+     "27": 1,
+     "28": 1,
+     "29": 1,
+     "30": 1
+    }
+   }
+  }
+ }
+}

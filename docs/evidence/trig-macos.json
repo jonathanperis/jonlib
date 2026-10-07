@@ -1,0 +1,67 @@
+{
+ "gate": "trig",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 2.3,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/trig-probe/results.json": {
+   "sha256": "d4bb3b1720e31f22745368fd2913d4dc901f97646943cef239d45d9ef3d88bd6",
+   "summary": {
+    "passed": true,
+    "probe": "trig",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 721,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 721,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 721,
+      "different": []
+     }
+    },
+    "source_sha256": {
+     "items": 48
+    },
+    "batches": 1,
+    "directions": 721,
+    "limit": 360,
+    "operation": "gradient",
+    "profile": "AppleLibm",
+    "reference": "native-libm"
+   }
+  }
+ }
+}

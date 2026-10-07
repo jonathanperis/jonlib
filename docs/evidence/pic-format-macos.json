@@ -1,0 +1,68 @@
+{
+ "gate": "pic-format",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 299.7,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/pic-format-probe/results.json": {
+   "sha256": "b659969cbf286697c0104f5c406cdfea8eddae3c3e85c293e3b575fe930cb24c",
+   "summary": {
+    "passed": true,
+    "probe": "pic-format",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [
+     "SUPPORT_FILEFORMAT_PIC=ON"
+    ],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 1193,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 1193,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 1193,
+      "different": []
+     }
+    },
+    "native_batches": 5,
+    "batches": 40,
+    "cases": 101,
+    "controls": 343,
+    "native_rejections": 0,
+    "observations": 1193,
+    "compared_bytes": 836048,
+    "reference_sha256": "84078fc34c6f41df1a6282bce3c2f8e32c32921d70491e15537cea7244a18a68"
+   }
+  }
+ }
+}

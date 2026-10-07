@@ -1,0 +1,22 @@
+{
+ "gate": "conformance",
+ "title": "Main differential corpus, contracts, examples and PROOF.bend",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 269.8,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/conformance.json": {
+   "sha256": "be3af0ad642f22d088009b0f99443432a2f1b95a5d4030666b7a6a824c6ff21a",
+   "summary": {
+    "items": 42
+   }
+  }
+ }
+}

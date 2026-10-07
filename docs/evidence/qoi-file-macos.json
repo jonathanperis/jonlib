@@ -1,0 +1,65 @@
+{
+ "gate": "qoi-file",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 61.2,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/qoi-file-probe/results.json": {
+   "sha256": "2a75013fa835fe33ba5b49d327d6656e72e53436fc959d34624c80c7415cabdc",
+   "summary": {
+    "passed": true,
+    "probe": "qoi-file",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 287,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 287,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 287,
+      "different": []
+     }
+    },
+    "batches": 5,
+    "files": 135,
+    "file_controls": 69,
+    "native_rejections": 8,
+    "observations": 287,
+    "compared_bytes": 138007,
+    "reference_sha256": "6c6c080497380b9681ad6d2a48f42754367c40aa9e781d7b3be37204f5fcea37"
+   }
+  }
+ }
+}

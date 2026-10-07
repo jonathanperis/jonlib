@@ -1,0 +1,66 @@
+{
+ "gate": "image-memory",
+ "title": "",
+ "passed": true,
+ "diagnostic": false,
+ "os": "macos",
+ "machine": "arm64",
+ "seconds": 74.5,
+ "toolchain": {
+  "bend": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+  "raylib": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
+  "bun": "1.3.12"
+ },
+ "reports": {
+  ".build/image-memory-probe/results.json": {
+   "sha256": "878503679eef861391a01666fae5bc9dad7981fcc198bdbb94d8e285234c4c6e",
+   "summary": {
+    "passed": true,
+    "probe": "image-memory",
+    "toolchain": {
+     "bend": {
+      "version": "2.0.27+jonlib-metal.1",
+      "revision": "b7ebee9217c8813067e200b0c0c9153a3be31c5e",
+      "patch": {
+       "items": 3
+      }
+     },
+     "raylib": {
+      "version": "6.0",
+      "revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28"
+     },
+     "bun": {
+      "version": "1.3.12"
+     },
+     "profile": "rgba8-cpu-images-v1"
+    },
+    "raylib_options": [],
+    "lanes": {
+     "cpu-1": {
+      "passed": true,
+      "rows": 539,
+      "different": []
+     },
+     "cpu-2": {
+      "passed": true,
+      "rows": 539,
+      "different": []
+     },
+     "javascript": {
+      "passed": true,
+      "rows": 539,
+      "different": []
+     }
+    },
+    "batches": 9,
+    "native_cases": 534,
+    "loaded_cases": 462,
+    "invalid_controls": 5,
+    "batch_size": 64,
+    "decode_reference": "Fused",
+    "inputs_sha256": "d0153e7547517faa6039ea36e9aa584f952547c2eb129892f1437dd4beac4a86",
+    "reference_sha256": "b2c8a45ef55b3eca843cb65c2264522643495664ea42235090912dbe954314db"
+   }
+  }
+ }
+}
