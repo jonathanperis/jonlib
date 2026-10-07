@@ -221,8 +221,8 @@ mipmaps, data}` holds raylib's Image fields for them:
 
 | Function | raylib | Contract |
 |---|---|---|
-| `Image.Stored.decode_image(file_type, bytes)` / `decode_image_for` | `LoadImageFromMemory` | DDS tokens decode every DDS raylib loads: Surface's uncompressed formats, DXT1 (format 14, or 15 with the alpha-pixels flag), DXT3 (16) and DXT5 (17) blocks and mipmap chains of up to 64 levels. Other tokens decode one Surface level (mipmaps 1). |
-| `Image.Stored.load_image(path)` / `load_image_for` | `LoadImage` | DDS files by suffix (both cases), other files through `Surface.load_image_for`. |
+| `Image.Stored.decode_image(file_type, bytes)` / `decode_image_for` | `LoadImageFromMemory` | DDS tokens decode every DDS raylib loads: Surface's uncompressed formats, DXT1 (format 14, or 15 with the alpha-pixels flag), DXT3 (16) and DXT5 (17) blocks and mipmap chains of up to 64 levels. KTX, PKM, PVR and ASTC tokens decode the single-level files raylib loads when built with `SUPPORT_FILEFORMAT_KTX/PKM/PVR/ASTC` (below). Other tokens decode one Surface level (mipmaps 1). |
+| `Image.Stored.load_image(path)` / `load_image_for` | `LoadImage` | DDS, KTX, PKM, PVR and ASTC files by suffix (both cases), other files through `Surface.load_image_for`. |
 | `Image.Stored.decode_dds(bytes)` | DDS `LoadImageFromMemory` | As above without the token dispatch. |
 | `Image.Stored.levels(image)` | — | The uncompressed levels as an `Image.Mipmaps` of Surfaces; compressed images are `UnsupportedFormat` (with their owner). |
 | `Image.Stored.copy(image)` | `ImageCopy` | Two equal images with every level. |
@@ -241,8 +241,27 @@ file instead. A file without every level is `TruncatedImageData`, other FourCC
 codes (raylib returns their data as format 0) `InvalidImageHeader`, more than
 64 levels `UnsupportedImageSize`. The Surface operations raylib cannot apply to
 compressed data (it warns, or converts uninitialized `LoadImageColors` output)
-have no `Image.Stored` form. KTX, PKM, PVR and ASTC files, which raylib loads
-only when configured to, are not decoded yet.
+have no `Image.Stored` form.
+
+The configuration-gated loaders keep one level of `GetPixelDataSize` bytes,
+the start of the bytes raylib copies:
+
+| Token | Formats | Contract |
+|---|---|---|
+| `.pkm` | ETC1 (18), ETC2 RGB (19), ETC2 EAC RGBA (20) | Big-endian format code 0, 1 or 3 and dimensions; `width*height*bpp/8` bytes after the 16-byte header. |
+| `.ktx` | the same, by GL internal format `0x8D64`, `0x9274`, `0x9278` | KTX 1.1 (`KTX 11` at bytes 1..6): key/value data skipped, then the first level's byte count and bytes. |
+| `.pvr` | GRAYSCALE, GRAY_ALPHA, R5G6B5, R8G8B8, R5G5B5A1, R4G4B4A4, R8G8B8A8, PVRTC RGB (21) and RGBA (22) | PVR v3 channel names and depths; metadata skipped; the first surface and face. |
+| `.astc` | ASTC 4x4 (23), 8x8 (24) | 24-bit dimensions; raylib's `128/(blockX*blockY)` bits per pixel, so any 8-bit block is 4x4 and any 2-bit block 8x8. |
+
+raylib keeps only the first level of a multi-level KTX or PVR chain while
+reporting every level, so those are `UnsupportedFormat`; codes raylib leaves
+as format 0 are `InvalidImageHeader`; a level whose copied bytes are fewer
+than `GetPixelDataSize` (sizes below one block, a short KTX image size) is
+`UnsupportedImageSize`; other ASTC block sizes (raylib returns no data) are
+`UnsupportedFormat`; files shorter than raylib's copy are `TruncatedImageData`.
+`ExportImage` to `.ktx` is not provided: raylib's `rl_save_ktx` writes a
+4-byte size per level past the buffer it allocates, and its GL format codes
+depend on the rlgl build.
 
 ## How it is verified
 
@@ -298,6 +317,11 @@ verified on CPU and JavaScript only; no GPU filesystem claim is made.
   agree on format, dimensions, level count and every byte of its own buffer.
   `ImageCopy` (its defined prefix), `ExportImage(".raw")`, `ExportImageAsCode`,
   the split levels, a QOI file and `.dds`/`.DDS` file loading are compared too.
+- **Configuration-gated loaders** (`tools/gputex_probe.py`, gate `gputex`):
+  PKM, KTX, PVR and ASTC files of every format above against raylib built with
+  them, including key/value and metadata blocks, larger copies and each
+  refusal (native data, format 0 or no data asserted where defined), plus
+  `.ktx`/`.PVR` file loading.
 
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only tga-file
@@ -310,8 +334,8 @@ paths they exercise.
 ## Known gaps
 
 - JPEG decoding; HDR in the shared suffix dispatch; original source formats
-  for PSD and GIF (decoded as R8G8B8A8); the configuration-gated KTX, PKM,
-  PVR and ASTC loaders; operations on mipmapped images.
+  for PSD and GIF (decoded as R8G8B8A8); multi-level KTX/PVR files and `.ktx`
+  export; operations on mipmapped images.
 - Concurrent or changing files, special files, native callbacks, native
   pointer/allocation ABI and OOM parity, OS-close failure reporting.
 - Maximum decoded-area, heap and performance qualification; nondefault stb

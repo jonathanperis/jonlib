@@ -39,8 +39,12 @@ identify the original sources and their required attribution.
   channel packing, retained unsupported owners and typed closed-handle IO.
   `Files.*` in `jonlib.bend` adapts the `rcore.c` path and file-data utilities;
   `src/image_code.bend` also retains the `ExportDataAsCode` banner/credits.
-  `src/dds.bend` adapts `rl_load_dds_from_memory` from `src/external/rltexgpu.h`
-  (same author and zlib license) for uncompressed single-level DDS files.
+  `src/dds.bend` adapts `rl_load_dds_from_memory` and `get_pixel_data_size`
+  from `src/external/rltexgpu.h` (same author and zlib license) for DDS files,
+  including DXT blocks and mipmap chains; `src/gputex.bend` adapts the same
+  file's `rl_load_ktx_from_memory`, `rl_load_pkm_from_memory`,
+  `rl_load_pvr_from_memory` and `rl_load_astc_from_memory` for single-level
+  files.
   `Image.Formatted.decode_pnm` adapts `LoadImageFromMemory`'s PNM component-to-format
   selection from `rtextures.c`, preserving grayscale/RGB888 in owned Bend storage.
   `Image.Formatted.decode_png` adapts the same source's lines 461–471 for native

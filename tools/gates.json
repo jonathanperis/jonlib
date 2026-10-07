@@ -1345,6 +1345,21 @@
    "minutes": 2
   },
   {
+   "id": "gputex",
+   "title": "Configuration-gated KTX, PKM, PVR and ASTC loaders (Image.Stored) against raylib built with them",
+   "run": [
+    "{python}",
+    "tools/gputex_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 3
+  },
+  {
    "id": "bmp-file",
    "title": "",
    "run": [

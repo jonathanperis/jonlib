@@ -98,9 +98,9 @@ order (`docs/PROGRESS.md` lists every ID):
    contraction profiles ([COLLISION.md](COLLISION.md)); the mesh/model
    collisions wait for the Phase 5 types.
 5. **Image leftovers** — DDS DXT blocks and mip chains, which default raylib
-   loads, are delivered as `Image.Stored` ([IMAGE-FILES.md](IMAGE-FILES.md));
-   the configuration-gated PKM/KTX/PVR/ASTC loaders remain; the
-   text-to-image functions (`ImageText*`, `ImageDrawText*`), which need
+   loads, and the configuration-gated PKM/KTX/PVR/ASTC loaders are delivered
+   as `Image.Stored` ([IMAGE-FILES.md](IMAGE-FILES.md)); the text-to-image
+   functions (`ImageText*`, `ImageDrawText*`), which need
    raylib's default font, UTF-8 decoding and text measurement and are best done
    as the first slice of Phase 3; the configuration-gated JPEG decoder; and
    wider domains (dimensions above 4096, samples outside the defined C casts).

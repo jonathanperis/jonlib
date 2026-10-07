@@ -3616,7 +3616,7 @@
       "status": "partial",
       "jonlib": "Surface / Image.Mipmaps / Image.Stored",
       "mapping_state": "implemented",
-      "scope": "One owned Surface per image: dimensions 1..4096, one mip level and raylib PixelFormat 1..13 (R8G8B8A8 as canonical Color words, other byte formats, R32 and R16 as native sample words, formats 9, 10, 12 and 13 as Quads of sample bits). Image.Mipmaps owns complete base-to-1x1 levels in any of those formats. Image.Stored keeps raylib's fields for loaded DXT1/DXT3/DXT5 blocks (formats 14..17) and mipmap chains, with every level as bytes.",
+      "scope": "One owned Surface per image: dimensions 1..4096, one mip level and raylib PixelFormat 1..13 (R8G8B8A8 as canonical Color words, other byte formats, R32 and R16 as native sample words, formats 9, 10, 12 and 13 as Quads of sample bits). Image.Mipmaps owns complete base-to-1x1 levels in any of those formats. Image.Stored keeps raylib's fields for loaded compressed blocks (DXT, ETC, PVRTC, ASTC) and DDS mipmap chains, with every level as bytes.",
       "gaps": [
         "Operations on compressed or mipmapped images beyond loading, copy, export and level splitting; full dimension domain",
         "Native allocation ABI and complete integration/target/resource/performance gates"
@@ -3637,7 +3637,8 @@
         "docs/FLOAT-RGB.md",
         "docs/MIPMAPS.md",
         "tests/transforms.bend",
-        "tools/stored_probe.py"
+        "tools/stored_probe.py",
+        "tools/gputex_probe.py"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -41835,7 +41836,7 @@
       "mapping_state": "implemented",
       "scope": "Shared token/content dispatch decodes QOI, uncompressed single-level DDS, BMP, TGA, binary 8/16-bit PNM, PNG (1..16-bit, Adam7, native-default CgBI; 1 MiB encoded/64 MiB filtered caps), PSD (raw/PackBits, explicit matte arithmetic), PIC and first-frame GIF, dimensions 1..4096, keeping the native format (GRAYSCALE, GRAY_ALPHA, R8G8B8 or R8G8B8A8; PSD and GIF R8G8B8A8) and exact bytes; Surface.decode_hdr returns R32G32B32 with exact F32 bits. Malformed input returns typed errors.",
       "gaps": [
-        "JPEG and other payload codecs; configuration-gated KTX/PKM/PVR/ASTC; HDR in the shared dispatch",
+        "JPEG and other payload codecs; multi-level KTX/PVR files; HDR in the shared dispatch",
         "Original pixel-format metadata for the remaining normalized codecs (PSD, GIF) and remaining dispatch families",
         "Nondefault external stb decoder flags, PSD out-of-range matte casts and permissive incomplete/excess raster recovery",
         "Other permissive malformed-stream recovery, dimensions above 4096, native pointer/allocation ABI and OOM parity",
