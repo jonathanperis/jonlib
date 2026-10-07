@@ -352,10 +352,11 @@ Every operation consumes its owner and returns the updated one (or the original
 in a failure). Do not reuse the previous handle. `Surface.get` returns a pair; destructure its
 computed result through a typed helper parameter, following Bend's rules.
 
-`LAWS.bend`/`PROOF.bend` establish that clearing preserves dimensions in every
-format, transposing
-a Matrix twice returns the original value, and Vector3/Matrix float-list exports
-contain exactly 3/16 elements. Full-pixel and numeric tests establish the
+`LAWS.bend`/`PROOF.bend` establish, among scoped codec facts, that clearing
+preserves dimensions in every format, format target 0 keeps the owner,
+R8G8B8A8 drawing stores the Color word unchanged, transposing a Matrix twice
+returns the original value, and Vector3/Matrix float-list exports contain
+exactly 3/16 elements. Full-pixel and numeric tests establish the
 exercised reference behaviors. These proofs and tests do not establish that all
 rendering, allocation, hardware or compiler behavior is formally proven.
 
