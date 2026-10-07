@@ -20,6 +20,9 @@ DELTA_FIELDS = ('status', 'jonlib', 'scope', 'gaps', 'gates', 'evidence', 'block
                 'gate_evidence', 'target_results', 'milestone', 'api_dependencies')
 # Progress records state contracts, not run history (see docs/API-TRACKING.md).
 MAX_SCOPE, MAX_GAPS, MAX_GAP, MAX_EVIDENCE = 600, 6, 200, 12
+# Phase 1 exit measure (docs/MASTER-PLAN.md): a gap may remain at exit only
+# when it is tagged as one of these categories.
+EXIT_GAP_PREFIXES = ('Targets:', 'Integration:', 'Performance:', 'Undefined native behavior:')
 RUN_HISTORY = (re.compile(r'\b[0-9a-fA-F]{40}\b'), re.compile(r'(?<![\d.,])\d{9,}(?!\d)'))
 
 
@@ -308,6 +311,17 @@ def make_ledger(reference, plan, progress):
     return dict(schema=1, reference_revision=reference['revision'], target_policy='Account for every applicable target in milestones.json; unsupported targets need source evidence.', entries=rows)
 
 
+def phase1_exit(rows):
+    """Phase 1 functions against the exit measure: partial or complete, behavior
+    and ownership verified, and every remaining gap tagged as allowed."""
+    functions = [r for r in rows if r['phase'] == 1 and r['kind'] == 'function']
+    implemented = [r for r in functions if r['status'] in ('partial', 'complete')]
+    verified = [r for r in implemented if r['gates']['behavior'] == 'verified' and r['gates']['ownership'] == 'verified']
+    allowed = lambda r: all(gap.startswith(EXIT_GAP_PREFIXES) for gap in r['gaps'])
+    return dict(total=len(functions), implemented=len(implemented), behavior_ownership_verified=len(verified),
+                only_allowed_gaps=sum(allowed(r) for r in implemented), meeting=sum(allowed(r) for r in verified))
+
+
 def summary(ledger, plan):
     rows = ledger['entries']
     core = [r for r in rows if r['header'] == 'raylib.h' and r['kind'] == 'function']
@@ -336,7 +350,7 @@ def summary(ledger, plan):
                 unique_c_function_names=len({r['name'] for r in functions}),
                 kinds=dict(sorted(Counter(r['kind'] for r in rows).items())),
                 headers={header: counts([r for r in rows if r['header'] == header]) for header in HEADERS},
-                milestones=groups,
+                milestones=groups, phase1_exit=phase1_exit(rows),
                 next_work=[{key:r[key] for key in ('id','name','milestone','status','jonlib','next_step','milestone_dependencies','api_dependencies')} for r in queue[:20]])
 
 
@@ -362,6 +376,7 @@ def generated(reference, plan, progress):
                  f'- **{report["function_declarations"]["total"]} C function declarations**, representing **{report["unique_c_function_names"]} unique names**.',
                   f'- Jonlib (`raylib.h` reference): **{report["core_functions"]["total"]} functions**, **{report["core_functions"]["partial"]} partial**, **{report["core_functions"]["complete"]} complete**.',
                   f'- Jonmath (`raymath.h` reference): **{report["math_functions"]["total"]} functions**, **{report["math_functions"]["partial"]} partial**, **{report["math_functions"]["complete"]} complete**.',
+                 f'- Phase 1 exit measure ([master plan](MASTER-PLAN.md)): **{report["phase1_exit"]["meeting"]} of {report["phase1_exit"]["total"]}** Phase 1 functions meet it; {report["phase1_exit"]["implemented"]} are partial or complete, {report["phase1_exit"]["behavior_ownership_verified"]} have behavior and ownership verified, and {report["phase1_exit"]["only_allowed_gaps"]} have only exit-allowed gaps (see [API-TRACKING.md](API-TRACKING.md)).',
                  '- Catalog coverage is not implementation completeness. Operators, constants, types and configuration controls have separate rows.',
                  '- Conditional variants and duplicate declarations are retained. Related IDs can share work, but do not automatically inherit completion.', '',
                  '## Complete checklists', '', '| Header | Entries | Checklist |', '|---|---:|---|']
@@ -464,7 +479,9 @@ def main():
     if args.command == 'report' and args.json:
         print(dump(report))
     else:
-        print(f'API plan {args.command}: {report["declaration_inventory"]["total"]} entries; {report["core_functions"]["partial"]}/600 core functions partial; {report["core_functions"]["complete"]} complete')
+        exit_measure = report['phase1_exit']
+        print(f'API plan {args.command}: {report["declaration_inventory"]["total"]} entries; {report["core_functions"]["partial"]}/600 core functions partial; {report["core_functions"]["complete"]} complete; '
+              f'Phase 1 exit {exit_measure["meeting"]}/{exit_measure["total"]}')
         if args.command == 'report':
             for row in report['next_work'][:5]:
                 print(f'  {row["id"]} [{row["status"]}]: {row["next_step"]}')

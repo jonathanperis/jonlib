@@ -141,6 +141,16 @@ inline Vec operator + (const Vec& lhs, const float& rhs) { return lhs; }
                 with self.assertRaises(ValueError):
                     plan.make_ledger(self.reference, self.policy, bad)
 
+    def test_phase1_exit_measure_requires_verified_gates_and_tagged_gaps(self):
+        def row(status='partial', behavior='verified', ownership='verified', gaps=(), phase=1, kind='function'):
+            return dict(status=status, phase=phase, kind=kind, gaps=list(gaps),
+                        gates=dict(behavior=behavior, ownership=ownership))
+        rows = [row(), row(gaps=['Targets: Android', 'Undefined native behavior: int overflow']),
+                row(gaps=['Exceptional inputs']), row(behavior='partial'), row(status='not-started'),
+                row(phase=2), row(kind='type')]
+        self.assertEqual(plan.phase1_exit(rows), dict(total=5, implemented=4, behavior_ownership_verified=3,
+                                                      only_allowed_gaps=3, meeting=2))
+
     def test_progress_records_state_contracts_not_run_history(self):
         self.assertEqual(plan.lint_progress(self.progress), [])
         key = 'raylib:function:ImageDraw'
@@ -172,7 +182,7 @@ inline Vec operator + (const Vec& lhs, const float& rhs) { return lhs; }
         with tempfile.TemporaryDirectory(dir=BUILD, prefix='api-plan-') as directory:
             root = Path(directory)
             file = root / 'generated.json'
-            report = dict(declaration_inventory={'total':1}, core_functions={'partial':0, 'complete':0})
+            report = dict(declaration_inventory={'total':1}, core_functions={'partial':0, 'complete':0}, phase1_exit={'meeting':0, 'total':0})
             with patch.object(plan, 'ROOT', root), patch.object(plan, 'generated', return_value=({'generated.json':'expected'}, report)), patch('sys.argv', ['api_plan.py','check']), patch('sys.stdout', new_callable=io.StringIO):
                 for content in (None, 'stale'):
                     if content is not None:

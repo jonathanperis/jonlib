@@ -83,6 +83,17 @@ is not automatically proof of parity. Existing `profile-covered` and
 `contract-checked` statuses survive only in the legacy conformance view; both
 mean `partial` in the authoritative ledger.
 
+## Phase 1 exit measure
+
+The strict status completes an item only with every target, which for most
+Phase 1 functions means Phase 7. The [master plan](MASTER-PLAN.md)'s Phase 1
+exit measure is reported alongside it by `tools/api_plan.py` (dashboard,
+`api/summary.json` `phase1_exit`): a Phase 1 function meets it when it is
+`partial` or `complete`, its `behavior` and `ownership` gates are `verified`
+(CI hosts' CPU and JavaScript lanes plus forced Metal), and every remaining
+gap starts with `Targets:`, `Integration:`, `Performance:` or
+`Undefined native behavior:`. Untagged gaps count as open behavior work.
+
 ## Work through one batch
 
 1. Pick stable IDs from `docs/PROGRESS.md`; inspect prerequisites and source:
