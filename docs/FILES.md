@@ -26,6 +26,31 @@ byte, on every lane.
 Writers open with Base's create/truncate mode and close their handle; errors are
 `Surface.IOError` values (`FileError{code, message}`, `DataError{InvalidRequest}`).
 
+## Explicit loaders
+
+raylib's `SetLoadFileDataCallback`, `SetSaveFileDataCallback`,
+`SetLoadFileTextCallback` and `SetSaveFileTextCallback` install process-wide
+callbacks. Bend has no global state, so Jonlib passes the callback to `_with`
+forms of the operations raylib routes through it, as a template argument
+(`~load`, `~save`) like `Log.trace_with`'s handler:
+
+| Callback | Type | `_with` forms (raylib routing) |
+|---|---|---|
+| load data | `String -> IO(Result<&1, &1, Surface.IOError, +List<U32>>)` | `Files.load_data_with`, `Surface.load_image_with`, `Surface.load_raw_with`, `Image.Animation.load_image_with` |
+| save data | `String -> +List<U32> -> IO(Result<&1, &1, Surface.IOError, Unit>)` | `Files.save_data_with`, `Surface.write_image_with` (PNG and raw only) |
+| load text | `String -> IO(Result<&1, &1, Surface.IOError, String>)` | `Files.load_text_with`, `Files.text_find_index_with` |
+| save text | `String -> String -> IO(Result<&1, &1, Surface.IOError, Unit>)` | `Files.save_text_with`, `Surface.write_code_with`, `Files.export_data_as_code_with` |
+
+The forms keep raylib's routing exactly: `ExportImage` writes BMP, TGA and QOI
+files itself, so `Surface.write_image_with` calls `~save` only for `.png` and
+`.raw`; `FileTextFindIndex` checks `FileExists` on disk before loading through
+the callback; `SaveFileText`'s callback receives the text up to its first NUL;
+the loaded bytes of an image keep the plain loader's size limits
+(`UnsupportedImageSize`) and `LoadImageRaw`'s header and truncation rules.
+Failures are typed `Surface.IOError` values instead of `NULL`/`false`.
+Requests the plain form rejects before opening a file (bytes above 255,
+invalid raw parameters) are rejected before calling the callback.
+
 ## Not yet available
 
 Base exposes only open, read, write, size and close, so the functions needing
@@ -35,8 +60,7 @@ other OS primitives are recorded as blocked: `FileRename`, `FileRemove`,
 `GetApplicationDirectory`, `MakeDirectory`, `ChangeDirectory`,
 `LoadDirectoryFiles(Ex)`, `UnloadDirectoryFiles` and
 `GetDirectoryFileCount(Ex)`. Dropped files need the window runtime (Phase 2);
-the `Set*FileCallback` replacements need a design for raylib's global loader
-hooks; `FileTextReplace` needs the text utilities (`TextReplaceAlloc`).
+`FileTextReplace` needs the text utilities (`TextReplaceAlloc`).
 
 ## How it is verified
 
@@ -46,3 +70,11 @@ compares existence, length, loaded data/text, text search and files each side
 saves (data, text, data-as-code) read back byte for byte, on CPU-1, CPU-2 and
 JavaScript. Inputs where raylib's C code is undefined are checked as `None`
 contracts without running them natively.
+
+`tools/loaders_probe.py` (gate `loaders`) installs native callbacks serving an
+in-memory file table and logging every call, passes the same callbacks to the
+`_with` forms, and compares the complete call logs and results: data and text
+loads and saves, `FileTextFindIndex` on a virtual-only and a real file,
+`LoadImage` (PNG, QOI, missing), `LoadImageRaw` (fitting, ignored and
+truncated headers), `LoadImageAnim`, `ExportImage` to `.png`, `.raw` and a
+directly written `.bmp`, `ExportImageAsCode` and `ExportDataAsCode`.

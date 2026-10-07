@@ -6,16 +6,16 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 942,
-    "partial": 921
+    "not-started": 934,
+    "partial": 929
   },
   "core_functions": {
     "total": 600,
     "blocked": 17,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 436,
-    "partial": 147
+    "not-started": 432,
+    "partial": 151
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 621,
-    "partial": 289
+    "not-started": 617,
+    "partial": 293
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 17,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 499,
-      "partial": 521
+      "not-started": 491,
+      "partial": 529
     },
     "raymath.h": {
       "total": 254,
@@ -150,8 +150,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 5,
-      "partial": 7
+      "not-started": 1,
+      "partial": 11
     },
     {
       "id": "files",
@@ -164,8 +164,8 @@
       "blocked": 16,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 8,
-      "partial": 25
+      "not-started": 4,
+      "partial": 29
     },
     {
       "id": "random",
@@ -589,7 +589,7 @@
       "name": "ExportImage",
       "milestone": "image-codecs",
       "status": "partial",
-      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Surface.to_bmp/to_tga/to_qoi/write_bmp/write_tga/write_qoi/write_png/write_raw / Surface.write_raw/write_png/write_bmp/write_tga / Surface.write_image",
+      "jonlib": "Surface.to_qoi/write_qoi / Surface.to_bmp/write_bmp / Surface.to_tga/write_tga / Surface.to_png/write_png / Surface.to_bmp/to_tga/to_qoi/write_bmp/write_tga/write_qoi/write_png/write_raw / Surface.write_raw/write_png/write_bmp/write_tga / Surface.write_image / Surface.write_image_with",
       "next_step": "Close documented gaps and unverified gates for ExportImage.",
       "milestone_dependencies": [
         "files",

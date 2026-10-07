@@ -933,6 +933,21 @@
    "minutes": 1
   },
   {
+   "id": "loaders",
+   "title": "File callbacks (Set*FileCallback) against Jonlib's explicit _with loaders",
+   "run": [
+    "{python}",
+    "tools/loaders_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1
+  },
+  {
    "id": "sha",
    "title": "",
    "run": [
