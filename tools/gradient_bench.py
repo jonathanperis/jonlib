@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 
 from conformance import BUILD, ROOT, checkout, run, source_gate
+from probekit import native_library
 
 
 def main():
@@ -34,7 +35,7 @@ int main(void) {
 }
 ''')
     reference = work/'reference'
-    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),c,BUILD/'raylib/raylib/libraylib.a','-lm','-o',reference])
+    run(['clang','-std=c11','-O2','-I'+str(args.raylib_source/'src'),c,native_library(args),'-lm','-o',reference])
     expected = int(run([reference]).strip())
     programs = {}
     for mode in ('serial','parallel', *(['gpu'] if args.gpu else [])):
