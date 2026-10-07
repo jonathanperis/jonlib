@@ -1,4 +1,4 @@
-"""Shared driver for checked formatted-export probes (Image.Formatted.to_<codec>/write_<codec>).
+"""Shared driver for checked native-format export probes (J.Surface.to_<codec>/write_<codec>).
 
 A codec spec supplies fixtures, the native program (actual pinned ExportImage on
 typed source pixels, never ExportImageToMemory or ImageFormat), a strict parser
@@ -94,32 +94,45 @@ def checked(value: Bool) -> IO(Unit):
   match value:
     case True{}: IO.pure(Unit, Unit{})
     case False{}: IO.die(Unit, 1, "BMP contract differs")
-def decoded(width: U32, height: U32, result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> IO(Unit):
+def colors(valid: Bool, result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "BMP decoded colors unavailable")
+    case Done{values}:
+      do IO<Unit>:
+        checked(valid)
+        emit_bytes(~&1, rgba(values, Nil{}))
+def decoded(width: U32, height: U32, result: Result<&1, &1, J.Surface.Error, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "BMP decode failed")
-    case Done{J.Surface{+w, +h, pixels}}:
-      do IO<Unit>:
-        checked(U32.is_eq(width, w) && U32.is_eq(height, h))
-        emit_bytes(~&1, rgba(J.Surface.colors(J.Surface{w, h, pixels}), Nil{}))
+    case Done{J.Surface{+w, +h, format, pixels}}:
+      colors(U32.is_eq(width, w) && U32.is_eq(height, h), J.Surface.colors(J.Surface{w, h, format, pixels}))
 def encoded(width: U32, height: U32, +bytes: +List<U32>) -> IO(Unit):
   do IO<Unit>:
     emit_bytes(~&2, bytes)
     decoded(width, height, J.Surface.decode_bmp(bytes))
-def pure(width: U32, height: U32, result: Maybe<J.Image.Formatted>) -> IO(Unit):
+def exported(width: U32, height: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, +List<U32>>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "BMP export rejected")
+    case Done{bytes}: encoded(width, height, bytes)
+def pure(width: U32, height: U32, result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "BMP source rejected")
-    case Some{image}: encoded(width, height, J.Image.Formatted.to_bmp(image))
-def save(path: String, result: Maybe<J.Image.Formatted>) -> IO(Unit):
+    case Some{image}: exported(width, height, J.Surface.to_bmp(image))
+def written(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "BMP write failed")
+    case Done{_}: IO.pure(Unit, Unit{})
+def save(path: String, result: Maybe<J.Surface>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "BMP write source rejected")
-    case Some{image}: IO.try(Unit, J.Image.Formatted.write_bmp(image, path))
+    case Some{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_bmp(image, path), written)
 def payload(+width: U32, +height: U32, +format: U32, path: String, result: Result<&1, &1, U32 & String, +List<U32>>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "BMP input read failed")
     case Done{+bytes}:
       do IO<Unit>:
-        pure(width, height, J.Image.Formatted.from_bytes(width, height, format, bytes))
-        save(path, J.Image.Formatted.from_bytes(width, height, format, bytes))
+        pure(width, height, J.Surface.from_bytes(width, height, format, bytes))
+        save(path, J.Surface.from_bytes(width, height, format, bytes))
 def received(width: U32, height: U32, format: U32, path: String, result: File & Result<&1, &1, U32 & String, +List<U32>>) -> IO(Unit):
   (file, status) = result
   do IO<Unit>:
@@ -134,14 +147,15 @@ def opened(width: U32, height: U32, format: U32, size: U32, path: String, result
 # formatted write must return them unchanged, rather than merely any error.
 RASTER_IO = '''def direct(path: String) -> IO(Result<&1, &1, U32 & String, Unit>):
   IO.bind(Result<&1, &1, U32 & String, File>, Result<&1, &1, U32 & String, Unit>, File.open(path, "w"), J.Image.file.write.opened([1]))
-def status(+code: U32, message: String, result: Result<&1, &1, U32 & String, Unit>) -> IO(Unit):
+def status(+code: U32, message: String, result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{Tuple{actual_code, actual_message}}: checked(U32.is_gt(code, 0) && U32.is_eq(code, actual_code) && String.eq(message, actual_message))
+    case Fail{J.FileError{actual_code, actual_message}}: checked(U32.is_gt(code, 0) && U32.is_eq(code, actual_code) && String.eq(message, actual_message))
     case Done{_}: checked(U32.is_eq(code, 0))
-def write(code: U32, message: String, path: String, image: Maybe<J.Image.Formatted>) -> IO(Unit):
+    case _: checked(False{})
+def write(code: U32, message: String, path: String, image: Maybe<J.Surface>) -> IO(Unit):
   match image:
     case None{}: IO.die(Unit, 1, "BMP IO fixture rejected")
-    case Some{owner}: IO.bind(Result<&1, &1, U32 & String, Unit>, Unit, J.Image.Formatted.write_bmp(owner, path), status(code, message))
+    case Some{owner}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_bmp(owner, path), status(code, message))
 def loop(n: Nat, +code: U32, +message: String, +path: String) -> IO(Unit):
   match n:
     case 0n: IO.print("{\\"iterations\\":100,\\"writes\\":800}")
@@ -247,7 +261,7 @@ class Raster:
         body = self.prefix+RASTER_IO.replace('BMP', self.name.upper()).replace('_bmp', '_'+self.name)
         for fmt,bpp in BPP.items():
             data = [0,0,0,63] if fmt==8 else [17]*bpp
-            body += f'        write(code, message, path, J.Image.Formatted.from_bytes(1, 1, {fmt}, [{", ".join(map(str,data))}]))\n'
+            body += f'        write(code, message, path, J.Surface.from_bytes(1, 1, {fmt}, [{", ".join(map(str,data))}]))\n'
         body += IO_TAIL
         for path,code in io_targets(work, failure):
             body += f'    IO.bind(Result<&1, &1, U32 & String, Unit>, Unit, direct({json.dumps(str(path))}), baseline({code}, {json.dumps(str(path))}))\n'

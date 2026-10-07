@@ -81,33 +81,31 @@ def saves_file(case):
 
 PROGRAM='''import Base
 import ../../jonlib.bend as J
-'''+BEND_EMITTER+'''def encoded.formatted(result: Result<&1, &1, J.Image.Formatted & J.Pixel.Error, +List<U32>>) -> Maybe<&2, +List<U32>>:
+'''+BEND_EMITTER+'''def encoded.formatted(result: Result<&1, &1, J.Surface & J.Surface.Error, +List<U32>>) -> Maybe<&2, +List<U32>>:
   match result:
     case Fail{_}: None{}
     case Done{bytes}: Some{bytes}
-def encoded(formatted: Bool, file_only: Bool, result: Maybe<J.Image.Formatted>) -> Maybe<&2, +List<U32>>:
+def encoded(formatted: Bool, file_only: Bool, result: Maybe<J.Surface>) -> Maybe<&2, +List<U32>>:
   match formatted file_only result:
     case _ _ None{}: None{}
-    case False{} _ Some{image}: Some{J.Surface.to_png(J.Image.Formatted.to_surface(image))}
-    case True{} False{} Some{image}: encoded.formatted(J.Image.Formatted.to_png(image))
-    case True{} True{} Some{image}: Some{J.Image.Formatted.png.file_bytes(image)}
+    case False{} _ Some{image}: encoded.formatted(J.Surface.to_png(image))
+    case True{} False{} Some{image}: encoded.formatted(J.Surface.export_to_memory(image, ".png"))
+    case True{} True{} Some{image}: encoded.formatted(J.Surface.to_png(image))
 def encode(formatted: Bool, file_only: Bool, width: U32, height: U32, format: U32, bytes: +List<U32>) -> Maybe<&2, +List<U32>>:
-  encoded(formatted, file_only, J.Image.Formatted.from_bytes(width, height, format, bytes))
-def expanded(bytes: +List<U32>, read: Array<U32> & U32) -> Array<U32> & +List<U32>:
-  (pixels, +value) = read
-  (pixels, Con{(value .&. 255 : U32), Con{((value >> 8n) .&. 255 : U32), Con{((value >> 16n) .&. 255 : U32), Con{(value >> 24n : U32), bytes}}}})
-def raw_bytes(n: Nat, +index: U32, state: Array<U32> & +List<U32>) -> +List<U32>:
-  match n state:
-    case 0n Tuple{_, bytes}: List.reverse(&2, U32, bytes)
-    case 1n+rest Tuple{pixels, bytes}: raw_bytes(rest, (index + 1 : U32), expanded(bytes, Array.get(U32, pixels, index)))
-def dimensions(valid: Bool, count: U32, pixels: Array<U32>) -> IO(Unit):
-  match valid:
-    case False{}: IO.die(Unit, 1, "PNG round-trip dimensions differ")
-    case True{}: emit_bytes(~&2, raw_bytes(U32.to_nat(count), 0, (pixels, Nil{})))
-def decoded(width: U32, height: U32, result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> IO(Unit):
+  encoded(formatted, file_only, J.Surface.from_bytes(width, height, format, bytes))
+def rgba(values: List<U32>, bytes: +List<U32>) -> +List<U32>:
+  match values:
+    case Nil{}: List.reverse(&2, U32, bytes)
+    case Con{+v, rest}: rgba(rest, Con{J.Color.alpha(v), Con{J.Color.blue(v), Con{J.Color.green(v), Con{J.Color.red(v), bytes}}}})
+def dimensions(valid: Bool, result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> IO(Unit):
+  match valid result:
+    case False{} _: IO.die(Unit, 1, "PNG round-trip dimensions differ")
+    case True{} Fail{_}: IO.die(Unit, 1, "PNG round-trip colors unavailable")
+    case True{} Done{values}: emit_bytes(~&2, rgba(values, Nil{}))
+def decoded(width: U32, height: U32, result: Result<&1, &1, J.Surface.Error, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "PNG candidate round trip failed")
-    case Done{J.Surface{+w, +h, pixels}}: dimensions(U32.is_eq(width, w) && U32.is_eq(height, h), (w * h : U32), pixels)
+    case Done{J.Surface{+w, +h, format, pixels}}: dimensions(U32.is_eq(width, w) && U32.is_eq(height, h), J.Surface.colors(J.Surface{w, h, format, pixels}))
 def observed(width: U32, height: U32, result: Maybe<&2, +List<U32>>) -> IO(Unit):
   match result:
     case None{}: IO.die(Unit, 1, "invalid PNG export fixture")
@@ -115,22 +113,25 @@ def observed(width: U32, height: U32, result: Maybe<&2, +List<U32>>) -> IO(Unit)
       do IO<Unit>:
         emit_bytes(~&2, bytes)
         decoded(width, height, J.Surface.decode_pngBANG(bytes))
-def saved(formatted: Bool, path: String, result: Maybe<J.Image.Formatted>) -> IO(Unit):
-  match formatted result:
-    case _ None{}: IO.die(Unit, 1, "invalid PNG file fixture")
-    case False{} Some{image}: IO.try(Unit, J.Surface.write_png(J.Image.Formatted.to_surface(image), path))
-    case True{} Some{image}: IO.try(Unit, J.Image.Formatted.write_png(image, path))
-def save_file(enabled: Bool, formatted: Bool, path: String, width: U32, height: U32, format: U32, bytes: +List<U32>) -> IO(Unit):
+def finished(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "PNG file export failed")
+    case Done{_}: IO.pure(Unit, Unit{})
+def saved(path: String, result: Maybe<J.Surface>) -> IO(Unit):
+  match result:
+    case None{}: IO.die(Unit, 1, "invalid PNG file fixture")
+    case Some{image}: IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_png(image, path), finished)
+def save_file(enabled: Bool, path: String, width: U32, height: U32, format: U32, bytes: +List<U32>) -> IO(Unit):
   match enabled:
     case False{}: IO.pure(Unit, Unit{})
-    case True{}: saved(formatted, path, J.Image.Formatted.from_bytes(width, height, format, bytes))
+    case True{}: saved(path, J.Surface.from_bytes(width, height, format, bytes))
 def payload(+formatted: Bool, file_only: Bool, +width: U32, +height: U32, +format: U32, save: Bool, path: String, result: Result<&1, &1, U32 & String, +List<U32>>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "PNG fixture read failed")
     case Done{+bytes}:
       do IO<Unit>:
         observed(width, height, encodeBANG(formatted, file_only, width, height, format, bytes))
-        save_file(save, formatted, path, width, height, format, bytes)
+        save_file(save, path, width, height, format, bytes)
 def received(formatted: Bool, file_only: Bool, width: U32, height: U32, format: U32, save: Bool, path: String, result: File & Result<&1, &1, U32 & String, +List<U32>>) -> IO(Unit):
   (file, status) = result
   do IO<Unit>:

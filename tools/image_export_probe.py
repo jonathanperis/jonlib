@@ -273,16 +273,21 @@ def input_bytes(chunks: +List<+List<U32>>, values: +List<U32>) -> +List<U32>:
   match chunks:
     case Nil{}: List.reverse(&2, U32, values)
     case Con{head, tail}: input_bytes(tail, reverse_into(head, values))
-def surface(result: Maybe<J.Image.Formatted>) -> J.Surface:
+def surface(result: Maybe<J.Surface>) -> J.Surface:
   match result:
-    case Some{image}: J.Image.Formatted.to_surface(image)
-    case None{}: J.Surface{1, 1, Array.new(U32, 0n, 0)}
+    case Some{image}: image
+    case None{}: J.Surface{1, 1, 7, J.Words{Array.new(U32, 0n, 0)}}
 def small() -> J.Surface:
-  surface(J.Image.Formatted.from_bytes(1, 1, 7, [1, 2, 3, 0]))
+  surface(J.Surface.from_bytes(1, 1, 7, [1, 2, 3, 0]))
+def emit_colors(prefix: String, +width: U32, +height: U32, result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> IO(Unit):
+  match result:
+    case Fail{_}: IO.die(Unit, 1, "image-export owner colors unavailable")
+    case Done{colors}:
+      IO.print(prefix ++ ",\\"width\\":" ++ U32.show(width) ++ ",\\"height\\":" ++ U32.show(height) ++ ",\\"pixels\\":" ++ List.show(~&1, ~U32, ~U32.show, colors) ++ "}")
 def emit_surface(prefix: String, owner: J.Surface) -> IO(Unit):
-  J.Surface{+width, +height, pixels} = owner
-  IO.print(prefix ++ ",\\"width\\":" ++ U32.show(width) ++ ",\\"height\\":" ++ U32.show(height) ++ ",\\"pixels\\":" ++ List.show(~&1, ~U32, ~U32.show, J.Surface.colors(J.Surface{width, height, pixels})) ++ "}")
-def decoded(prefix: String, result: Result<&1, &1, J.Image.DecodeError, J.Surface>) -> IO(Unit):
+  J.Surface{+width, +height, format, pixels} = owner
+  emit_colors(prefix, width, height, J.Surface.colors(J.Surface{width, height, format, pixels}))
+def decoded(prefix: String, result: Result<&1, &1, J.Surface.Error, J.Surface>) -> IO(Unit):
   match result:
     case Fail{_}: IO.die(Unit, 1, "image-export round trip failed")
     case Done{owner}: emit_surface(prefix, owner)
@@ -308,11 +313,12 @@ def opened(id: String, kind: U32, size: U32, result: Result<&1, &1, U32 & String
   match result:
     case Fail{_}: IO.die(Unit, 1, "image-export file reopen failed")
     case Done{file}: IO.bind(File & Result<&1, &1, U32 & String, +List<U32>>, Unit, File.read_bytes(file, size), received(id, kind))
-def written(id: String, path: String, kind: U32, size: U32, result: Result<&1, &1, J.Image.ExportError, Unit>) -> IO(Unit):
+def written(id: String, path: String, kind: U32, size: U32, result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
     case Done{_}: IO.bind(Result<&1, &1, U32 & String, File>, Unit, File.open(path, "r"), opened(id, kind, size))
-    case Fail{J.UnsupportedImageExport{owner}}: emit_surface("{\\"id\\":\\"" ++ id ++ "\\",\\"status\\":\\"unsupported\\"", owner)
-    case Fail{J.ImageExportFileError{code, message}}: IO.print("{\\"id\\":\\"" ++ id ++ "\\",\\"status\\":\\"file\\",\\"code\\":" ++ U32.show(code) ++ ",\\"message_empty\\":" ++ U32.show(Bool.to_u32(String.eq(message, ""))) ++ "}")
+    case Fail{J.SourceError{owner, J.UnsupportedFileType{}}}: emit_surface("{\\"id\\":\\"" ++ id ++ "\\",\\"status\\":\\"unsupported\\"", owner)
+    case Fail{J.FileError{code, message}}: IO.print("{\\"id\\":\\"" ++ id ++ "\\",\\"status\\":\\"file\\",\\"code\\":" ++ U32.show(code) ++ ",\\"message_empty\\":" ++ U32.show(Bool.to_u32(String.eq(message, ""))) ++ "}")
+    case _: IO.die(Unit, 1, "image-export unexpected error")
 def checked(ok: Bool) -> IO(Unit):
   match ok:
     case True{}: IO.pure(Unit, Unit{})
@@ -321,14 +327,19 @@ def owner_pixel(pixels: List<U32>) -> Bool:
   match pixels:
     case Con{color, Nil{}}: U32.is_eq(color, 16909056)
     case _: False{}
+def owner_colors(result: Result<&1, &1, J.Surface & J.Surface.Error, List<U32>>) -> Bool:
+  match result:
+    case Fail{_}: False{}
+    case Done{pixels}: owner_pixel(pixels)
 def owner_valid(owner: J.Surface) -> Bool:
-  J.Surface{+width, +height, pixels} = owner
-  U32.is_eq(width, 1) && U32.is_eq(height, 1) && owner_pixel(J.Surface.colors(J.Surface{width, height, pixels}))
-def required(expected: U32, result: Result<&1, &1, J.Image.ExportError, Unit>) -> IO(Unit):
+  J.Surface{+width, +height, format, pixels} = owner
+  U32.is_eq(width, 1) && U32.is_eq(height, 1) && owner_colors(J.Surface.colors(J.Surface{width, height, format, pixels}))
+def required(expected: U32, result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
     case Done{_}: checked(U32.is_eq(expected, 0))
-    case Fail{J.UnsupportedImageExport{owner}}: checked(U32.is_eq(expected, 1) && owner_valid(owner))
-    case Fail{J.ImageExportFileError{code, message}}: checked(U32.is_eq(expected, 2) && U32.is_gt(code, 0) && Bool.not(String.eq(message, "")))
+    case Fail{J.SourceError{owner, J.UnsupportedFileType{}}}: checked(U32.is_eq(expected, 1) && owner_valid(owner))
+    case Fail{J.FileError{code, message}}: checked(U32.is_eq(expected, 2) && U32.is_gt(code, 0) && Bool.not(String.eq(message, "")))
+    case _: checked(False{})
 def closure_loop(n: Nat) -> IO(Unit):
   match n:
     case 0n: IO.print("{\\"closure_checks\\":true,\\"iterations\\":100}")
@@ -345,14 +356,14 @@ def candidate_program(cases, expected):
     closure = []
     for codec in CODECS:
         for path, status in [('closure.'+codec, 0), ('directory.'+codec, 2), ('missing-parent/output.'+codec, 2)]:
-            closure.append(f'        IO.bind(Result<&1, &1, J.Image.ExportError, Unit>, Unit, J.Surface.write_image(small(), {json.dumps(path)}), required({status}))')
-    closure.append('        IO.bind(Result<&1, &1, J.Image.ExportError, Unit>, Unit, J.Surface.write_image(small(), "closure.data"), required(1))')
+            closure.append(f'        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_image(small(), {json.dumps(path)}), required({status}))')
+    closure.append('        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_image(small(), "closure.data"), required(1))')
     program = BEND_PROGRAM.replace('CLOSURE_BODY', '\n'.join(closure))
     for case, row in zip(cases, expected):
         kind = CODECS.index(case['codec'])+1 if case['codec'] else 0
-        owner = f'surface(J.Image.Formatted.from_bytes({case["width"]}, {case["height"]}, 7, {bend_bytes(list(rgba_bytes(case)))}))'
+        owner = f'surface(J.Surface.from_bytes({case["width"]}, {case["height"]}, 7, {bend_bytes(list(rgba_bytes(case)))}))'
         path = json.dumps(case['path'], ensure_ascii=False)
-        program += f'    IO.bind(Result<&1, &1, J.Image.ExportError, Unit>, Unit, J.Surface.write_image({owner}, {path}), written({json.dumps(case["id"])}, {path}, {kind}, {len(row.get("bytes", []))+1}))\n'
+        program += f'    IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_image({owner}, {path}), written({json.dumps(case["id"])}, {path}, {kind}, {len(row.get("bytes", []))+1}))\n'
     return program+f'    closure_loop({CLOSURE_ITERATIONS}n)\n'
 
 
@@ -360,9 +371,9 @@ def write_failure_program():
     # Reuse the ownership checks but give this process a dedicated main. The
     # exact EFBIG requirement rejects EMFILE/other errors caused by leaked FDs.
     program = BEND_PROGRAM[:BEND_PROGRAM.index('def closure_loop(')]
-    program += '''def write_failure_required(result: Result<&1, &1, J.Image.ExportError, Unit>) -> IO(Unit):
+    program += '''def write_failure_required(result: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   match result:
-    case Fail{J.ImageExportFileError{code, message}}: checked(U32.is_eq(code, ERROR_CODE) && Bool.not(String.eq(message, "")))
+    case Fail{J.FileError{code, message}}: checked(U32.is_eq(code, ERROR_CODE) && Bool.not(String.eq(message, "")))
     case _: IO.die(Unit, 1, "expected post-open image-export write failure")
 def write_failure_loop(n: Nat) -> IO(Unit):
   match n:
@@ -371,8 +382,8 @@ def write_failure_loop(n: Nat) -> IO(Unit):
       do IO<Unit>:
 '''.replace('ERROR_CODE', str(errno.EFBIG)).replace('MARKER', json.dumps(json.dumps(write_failure_marker())))
     for codec in CODECS:
-        program += f'        IO.bind(Result<&1, &1, J.Image.ExportError, Unit>, Unit, J.Surface.write_image(small(), "write-failure.{codec}"), write_failure_required)\n'
-    program += '''        IO.bind(Result<&1, &1, J.Image.ExportError, Unit>, Unit, J.Surface.write_image(small(), "write-failure.data"), required(1))
+        program += f'        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_image(small(), "write-failure.{codec}"), write_failure_required)\n'
+    program += '''        IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Surface.write_image(small(), "write-failure.data"), required(1))
         write_failure_loop(rest)
 def main() -> IO(Unit):
 '''

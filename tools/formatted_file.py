@@ -1,15 +1,16 @@
-"""Shared driver for original-format file-loading probes (Image.Formatted.load_<codec>).
+"""Shared driver for native-format file-loading probes (J.Surface.load_<codec>).
 
 Builds on a formatted_codec.Codec. Every accepted memory fixture becomes a real
 file; extra path variants exercise raylib's whole-path extension routing:
 recognized tokens go through native LoadImage, anything else through
 LoadFileData + LoadImageFromMemory(<codec token>). Candidate roles per file:
 
-  raw / owner / factory / raw-roundtrip   Image.Formatted.load_<codec>  -> native raw
-  bridge / surface                        RGBA8 bridges                 -> normalized
+  raw / owner / factory / raw-roundtrip   Surface.load_<codec>          -> native raw
+  bridge / surface                        Surface.format(7) / colors    -> normalized
   dispatch-<codec> / uncontracted / fused Surface.load_image(_for)      -> normalized
-  formatted-error                         typed errors on file controls (exact errno
-                                          and message for missing/directory/overflow)
+  formatted-error                         typed Surface.IOError codes on file controls
+                                          (exact errno and message for missing/
+                                          directory/overflow)
   surface-error                           generic dispatch rejects unrecognized paths
 
 Then three resource runs on every lane under RLIMIT_NOFILE=64 with RSS ceilings:
@@ -169,39 +170,43 @@ def qualification_program(codec):
     return '#include <string.h>\n' + program.replace('SetTraceLogLevel(LOG_NONE);', 'SetTraceLogLevel(LOG_NONE);' + checks, 1)
 
 
+LOADED = 'Result<&1, &1, J.Surface.IOError, J.Surface>'
+
+
 def bend_prelude(codec):
     from byte_probe import BEND_EMITTER
     n = codec.name
     return formatted_codec.BEND_PRELUDE.replace('def reverse_into(', BEND_EMITTER + 'def reverse_into(', 1) + rf'''
-def loaded(result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> Maybe<J.Image.Formatted>:
+def loaded(result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> Maybe<J.Surface>:
   match result:
     case Fail{{_}}: None{{}}
     case Done{{image}}: checked(image)
-def surface.loaded(result: Result<&1, &1, J.Image.LoadError, J.Surface>) -> Maybe<J.Image.Formatted>:
+def surface.loaded(result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> Maybe<J.Surface>:
   match result:
     case Fail{{_}}: None{{}}
-    case Done{{image}}: Some{{J.Surface.to_formatted(image)}}
-def load.error(error: J.Image.LoadError) -> U32:
+    case Done{{image}}: rgba(image)
+def load.error(error: J.Surface.IOError) -> U32:
   match error:
-    case J.ImageFileError{{_, _}}: 5
-    case J.ImageDecodeError{{error}}: error.code(error)
-def load.emitted(id: String, role: String, result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> IO(Unit):
+    case J.FileError{{_, _}}: 5
+    case J.DataError{{error}}: error.code(error)
+    case _: 97
+def load.emitted(id: String, role: String, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   observed(id, role, loaded(result))
-def bridge.emitted(id: String, result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> IO(Unit):
+def bridge.emitted(id: String, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   observed(id, "bridge", bridge(loaded(result)))
-def roundtrip.emitted(id: String, result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> IO(Unit):
+def roundtrip.emitted(id: String, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   observed(id, "raw-roundtrip", roundtrip(loaded(result)))
-def factory.emitted(id: String, width: U32, height: U32, format: U32, bytes: +List<U32>, result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> IO(Unit):
+def factory.emitted(id: String, width: U32, height: U32, format: U32, bytes: +List<U32>, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Fail{{_}}: IO.die(Unit, 1, "file factory source rejected")
-    case Done{{_}}: observed(id, "factory", J.Image.Formatted.from_bytes(width, height, format, bytes))
-def surface.emitted(id: String, role: String, result: Result<&1, &1, J.Image.LoadError, J.Surface>) -> IO(Unit):
+    case Done{{_}}: observed(id, "factory", J.Surface.from_bytes(width, height, format, bytes))
+def surface.emitted(id: String, role: String, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   observed(id, role, surface.loaded(result))
-def load.failed(id: String, result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> IO(Unit):
+def load.failed(id: String, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Done{{_}}: emit.error(id, "formatted-error", 99)
     case Fail{{error}}: emit.error(id, "formatted-error", load.error(error))
-def surface.failed(id: String, result: Result<&1, &1, J.Image.LoadError, J.Surface>) -> IO(Unit):
+def surface.failed(id: String, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Done{{_}}: emit.error(id, "surface-error", 99)
     case Fail{{error}}: emit.error(id, "surface-error", load.error(error))
@@ -209,49 +214,51 @@ def require(ok: Bool) -> IO(Unit):
   match ok:
     case True{{}}: IO.pure(Unit, Unit{{}})
     case False{{}}: IO.die(Unit, 1, "file boundary or closure differs")
-def required(expected: U32, result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> IO(Unit):
+def required(expected: U32, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
     case Done{{_}}: require(U32.is_eq(expected, 99))
     case Fail{{error}}: require(U32.is_eq(expected, load.error(error)))
-def exact.error(code: U32, message: String, result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> IO(Unit):
+def exact.error(code: U32, message: String, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   match result:
-    case Fail{{J.ImageFileError{{actual, text}}}}: require(U32.is_eq(code, actual) && String.eq(message, text))
+    case Fail{{J.FileError{{actual, text}}}}: require(U32.is_eq(code, actual) && String.eq(message, text))
     case _: require(False{{}})
-def file.failed(id: String, expected: U32, message: String, result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> IO(Unit):
+def file.failed(id: String, expected: U32, message: String, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   do IO<Unit>:
     exact.error(expected, message, result)
     emit.error(id, "formatted-error", 5)
-def surface.codec.loaded(result: Result<&1, &1, J.Image.LoadError, +List<U32>>) -> IO(Result<&1, &1, J.Image.LoadError, J.Surface>):
+def codec.loaded(result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Result<&1, &1, J.Surface.IOError, J.Surface>):
+  J.Surface.load.decoded(~J.Surface.decode_{n}, result)
+def surface.codec.loaded(result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Result<&1, &1, J.Surface.IOError, J.Surface>):
   match result:
-    case Fail{{error}}: IO.pure(Result<&1, &1, J.Image.LoadError, J.Surface>, Fail{{error}})
-    case Done{{bytes}}: IO.pure(Result<&1, &1, J.Image.LoadError, J.Surface>, J.Image.file.decoded(J.Surface, J.Surface.decode_{n}(bytes)))
-def surface.codec(path: String) -> IO(Result<&1, &1, J.Image.LoadError, J.Surface>):
-  IO.bind(Result<&1, &1, J.Image.LoadError, +List<U32>>, Result<&1, &1, J.Image.LoadError, J.Surface>, J.Image.file.bytes(path, J.Image.file.limit(J.RasterFile{{}})), surface.codec.loaded)
-def owner.emitted(id: String, +width: U32, +height: U32, first: U32, last: U32, result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> IO(Unit):
+    case Fail{{error}}: IO.pure(Result<&1, &1, J.Surface.IOError, J.Surface>, Fail{{error}})
+    case Done{{bytes}}: IO.pure(Result<&1, &1, J.Surface.IOError, J.Surface>, J.Image.file.decoded(J.Surface, J.Surface.decode_{n}(bytes)))
+def surface.codec(path: String) -> IO(Result<&1, &1, J.Surface.IOError, J.Surface>):
+  IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Result<&1, &1, J.Surface.IOError, J.Surface>, J.Image.file.bytes(path, J.Image.file.limit(J.RasterFile{{}})), surface.codec.loaded)
+def owner.emitted(id: String, +width: U32, +height: U32, first: U32, last: U32, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   observed(id, "owner", owner(loaded(result), width, height, first, last))
-def stage.emitted(id: String, +expected: U32, result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> IO(Unit):
+def stage.emitted(id: String, +expected: U32, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   do IO<Unit>:
     required(expected, result)
     emit.error(id, "formatted-error", expected)
-def stage.exact(id: String, code: U32, message: String, result: Result<&1, &1, J.Image.LoadError, J.Image.Formatted>) -> IO(Unit):
+def stage.exact(id: String, code: U32, message: String, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   do IO<Unit>:
     exact.error(code, message, result)
     emit.error(id, "formatted-error", 5)
-def stage.loaded(id: String, expected: U32, result: Result<&1, &1, J.Image.LoadError, +List<U32>>) -> IO(Unit):
-  IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Formatted>, Unit, J.Image.Formatted.{n}.file.loaded(result), stage.emitted(id, expected))
-def stage.failed(id: String, code: U32, message: String, result: Result<&1, &1, J.Image.LoadError, +List<U32>>) -> IO(Unit):
-  IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Formatted>, Unit, J.Image.Formatted.{n}.file.loaded(result), stage.exact(id, code, message))
+def stage.loaded(id: String, expected: U32, result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Unit):
+  IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, codec.loaded(result), stage.emitted(id, expected))
+def stage.failed(id: String, code: U32, message: String, result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Unit):
+  IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, codec.loaded(result), stage.exact(id, code, message))
 def stage.opened(mode: U32, result: Result<&1, &1, U32 & String, File>) -> IO(Unit):
   match mode result:
     case _ Fail{{_}}: IO.die(Unit, 1, "stage fixture open failed")
     case 0 Done{{file}}:
-      IO.bind(Result<&1, &1, J.Image.LoadError, +List<U32>>, Unit, J.Image.file.read(2, (file, Done{{[1]}})), stage.loaded("stage-short", 3))
+      IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Image.file.read(2, (file, Done{{[1]}})), stage.loaded("stage-short", 3))
     case 1 Done{{file}}:
-      IO.bind(Result<&1, &1, J.Image.LoadError, +List<U32>>, Unit, J.Image.file.read(2, (file, Fail{{(731, "stage-read-failure")}})), stage.failed("stage-read-failure", 731, "stage-read-failure"))
+      IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Image.file.read(2, (file, Fail{{(731, "stage-read-failure")}})), stage.failed("stage-read-failure", 731, "stage-read-failure"))
     case 2 Done{{file}}:
-      IO.bind(Result<&1, &1, J.Image.LoadError, +List<U32>>, Unit, J.Image.file.sized(1048576, (file, Fail{{(733, "stage-size-failure")}})), stage.failed("stage-size-failure", 733, "stage-size-failure"))
+      IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Image.file.sized(1048576, (file, Fail{{(733, "stage-size-failure")}})), stage.failed("stage-size-failure", 733, "stage-size-failure"))
     case _ Done{{file}}:
-      IO.bind(Result<&1, &1, J.Image.LoadError, +List<U32>>, Unit, J.Image.file.read(1, (file, Done{{[1, 2]}})), stage.loaded("stage-long", 3))
+      IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Image.file.read(1, (file, Done{{[1, 2]}})), stage.loaded("stage-long", 3))
 '''
 
 
@@ -278,10 +285,10 @@ def candidate_lines(codec, actions):
         c, role = a['case'], a['role']
         ident = json.dumps(c['id'])
         if a.get('synthetic'):
-            lines.append(f'IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Formatted>, Unit, J.Image.Formatted.{n}.file.loaded(Done{{{bend_input(c["bytes"])}}}), load.failed({ident}))')
+            lines.append(f'IO.bind({LOADED}, Unit, codec.loaded(Done{{{bend_input(c["bytes"])}}}), load.failed({ident}))')
             continue
         path = json.dumps(c['path'])
-        output, call = 'J.Image.Formatted', f'J.Image.Formatted.load_{n}({path})'
+        call = f'J.Surface.load_{n}({path})'
         if role == 'raw':
             then = f'load.emitted({ident}, "raw")'
         elif role == 'owner':
@@ -300,7 +307,7 @@ def candidate_lines(codec, actions):
             if code is not None:
                 then = f'file.failed({ident}, {code}, {json.dumps(os.strerror(code))})'
         elif role in ('surface', f'dispatch-{n}', 'uncontracted', 'fused', 'surface-error'):
-            output, then = 'J.Surface', f'surface.emitted({ident}, {json.dumps(role)})'
+            then = f'surface.emitted({ident}, {json.dumps(role)})'
             if role == 'surface':
                 call = f'surface.codec({path})'
             elif role in (f'dispatch-{n}', 'surface-error'):
@@ -311,7 +318,7 @@ def candidate_lines(codec, actions):
                 then = f'surface.failed({ident})'
         else:
             raise ProbeFailure(f'{n}: unknown file role {role}')
-        lines.append(f'IO.bind(Result<&1, &1, J.Image.LoadError, {output}>, Unit, {call}, {then})')
+        lines.append(f'IO.bind({LOADED}, Unit, {call}, {then})')
     return lines
 
 
@@ -324,7 +331,7 @@ def boundary(codec, cases, invalid, reference):
     """Closure program: helper contracts, staged failures, then ITERATIONS load cycles."""
     by_id = {c['id']: c for c in cases + invalid}
     loads = codec.loop_loads or tuple(codec.path_bases) + (codec.other_codecs[0][0], 'directory', 'cap-plus-one', 'host-size-overflow')
-    synthetic = [('Fail{J.ImageFileError{719, "continuation-failure"}}', 'stage.exact("continuation-error", 719, "continuation-failure")', 'continuation-error', 5),
+    synthetic = [('Fail{J.FileError{719, "continuation-failure"}}', 'stage.exact("continuation-error", 719, "continuation-failure")', 'continuation-error', 5),
                  ('J.Image.file.payload(2, Fail{(727, "payload-failure")})', 'stage.exact("payload-error", 727, "payload-failure")', 'payload-error', 5),
                  ('J.Image.file.payload(2, Done{[1]})', 'stage.emitted("payload-short", 3)', 'payload-short', 3),
                  ('J.Image.file.payload(1, Done{[1, 2]})', 'stage.emitted("payload-long", 3)', 'payload-long', 3),
@@ -354,11 +361,11 @@ def boundary(codec, cases, invalid, reference):
               '    require(U32.is_eq(J.Image.file.limit(J.RasterFile{}), 1048576) && (1048576 <= J.Image.file.limit(J.RasterFile{}) : U32) && Bool.not((1048577 <= J.Image.file.limit(J.RasterFile{}) : U32)))',
               f'    require(String.eq(J.Image.file.token("{token}"), "") && String.eq(J.Image.file.token("dir/{token}"), "{token}") && String.eq(J.Image.file.token("dir{token}/leaf"), "{token}/leaf"))',
               '    require(J.Image.file.complete(0n, Nil{}) && J.Image.file.complete(2n, [1, 2]) && Bool.not(J.Image.file.complete(2n, [1])) && Bool.not(J.Image.file.complete(1n, [1, 2])))']
-    lines += [f'    IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Formatted>, Unit, J.Image.Formatted.{n}.file.loaded({value}), {then})'
+    lines += [f'    IO.bind({LOADED}, Unit, codec.loaded({value}), {then})'
               for value, then, *_ in synthetic]
-    lines += ['    stage.emitted("wrapped-stream", 4, J.Image.file.decoded(J.Image.Formatted, Fail{J.InvalidImageStream{}}))',
+    lines += ['    stage.emitted("wrapped-stream", 4, J.Image.file.decoded(J.Surface, Fail{J.InvalidImageStream{}}))',
               f'    closure_loop({ITERATIONS}n)',
-              f'    IO.bind(Result<&1, &1, J.Image.LoadError, J.Image.Formatted>, Unit, J.Image.Formatted.load_{n}({valid}), load.emitted("closure-final", "raw"))']
+              f'    IO.bind({LOADED}, Unit, J.Surface.load_{n}({valid}), load.emitted("closure-final", "raw"))']
     return '\n'.join(lines) + '\n', expected
 
 
