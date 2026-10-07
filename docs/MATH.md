@@ -9,6 +9,14 @@ are documented in [MODULES.md](MODULES.md).
 
 ## Scalar API
 
+`Math.PI()`, `Math.DEG2RAD()`, `Math.RAD2DEG()` and `Math.EPSILON()` are the
+raylib/raymath macros as F32 values (`DEG2RAD`/`RAD2DEG` are the F32 quotients
+the C macros evaluate). raymath's C++ constants map to `Vector2/3/4.zero()`,
+`.one()`, `.unit_x()` ... `.unit_w()`, `Quaternion.identity()`
+(`QuaternionUnitX`, which raymath defines as `{0,0,0,1}`) and
+`Matrix.identity()` (`MatrixUnit`). Gate `constants` compares their bits with the
+pinned headers.
+
 - `Math.clamp(value, lower, upper)`: preserves the reference comparison order,
   including reversed bounds and signed zero.
 - `Math.lerp(start, end, amount)`: linear interpolation/extrapolation; no factor clamp.

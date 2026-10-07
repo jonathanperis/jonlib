@@ -92,6 +92,19 @@ def Contraction.fused(contraction: Contraction) -> Bool:
 # -----------------------------------------------------------------------------
 # Scalars (Clamp, Lerp, Normalize, Remap, Wrap, FloatEquals)
 
+# raymath/raylib PI, DEG2RAD, RAD2DEG and EPSILON: F32 literals and F32 quotients.
+def Math.PI() -> F32:
+  3.14159265358979323846
+
+def Math.DEG2RAD() -> F32:
+  (3.14159265358979323846 / 180.0 : F32)
+
+def Math.RAD2DEG() -> F32:
+  (180.0 / 3.14159265358979323846 : F32)
+
+def Math.EPSILON() -> F32:
+  0.000001
+
 def Math.clamp(+value: F32, +lower: F32, +upper: F32) -> F32:
   +first = Bool.pick(F32, (value < lower : F32), lower, value)
   Bool.pick(F32, (first > upper : F32), upper, first)
@@ -119,6 +132,13 @@ def Vector2.zero() -> Vector2:
 
 def Vector2.one() -> Vector2:
   Vector2{1.0, 1.0}
+
+# raymath's C++ constants: Vector2Zeros/Ones are Vector2.zero/one.
+def Vector2.unit_x() -> Vector2:
+  Vector2{1.0, 0.0}
+
+def Vector2.unit_y() -> Vector2:
+  Vector2{0.0, 1.0}
 
 def Vector2.add(left: Vector2, right: Vector2) -> Vector2:
   Vector2{x, y} = left
@@ -475,6 +495,16 @@ def Vector3.zero() -> Vector3:
 def Vector3.one() -> Vector3:
   Vector3{1.0, 1.0, 1.0}
 
+# raymath's C++ constants: Vector3Zeros/Ones are Vector3.zero/one.
+def Vector3.unit_x() -> Vector3:
+  Vector3{1.0, 0.0, 0.0}
+
+def Vector3.unit_y() -> Vector3:
+  Vector3{0.0, 1.0, 0.0}
+
+def Vector3.unit_z() -> Vector3:
+  Vector3{0.0, 0.0, 1.0}
+
 def Vector3.to_float_v(vector: Vector3) -> +List<F32>:
   Vector3{x, y, z} = vector
   [x, y, z]
@@ -803,6 +833,20 @@ def Vector4.zero() -> Vector4:
 
 def Vector4.one() -> Vector4:
   Vector4{1.0, 1.0, 1.0, 1.0}
+
+# raymath's C++ constants; QuaternionZeros/Ones are Vector4.zero/one,
+# QuaternionUnitX is Quaternion.identity and MatrixUnit is Matrix.identity.
+def Vector4.unit_x() -> Vector4:
+  Vector4{1.0, 0.0, 0.0, 0.0}
+
+def Vector4.unit_y() -> Vector4:
+  Vector4{0.0, 1.0, 0.0, 0.0}
+
+def Vector4.unit_z() -> Vector4:
+  Vector4{0.0, 0.0, 1.0, 0.0}
+
+def Vector4.unit_w() -> Vector4:
+  Vector4{0.0, 0.0, 0.0, 1.0}
 
 def Vector4.add(left: Vector4, right: Vector4) -> Vector4:
   Vector4{x, y, z, w} = left

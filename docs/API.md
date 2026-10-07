@@ -15,6 +15,8 @@ the unsigned bit pattern returned by `ColorToInt`.
 - `Color.rgba(r, g, b, a) -> U32`: keeps the low eight bits of each U32 channel,
   equivalent to conversion to C unsigned bytes.
 - `Color.red/green/blue/alpha(color) -> U32`: extract an 8-bit channel.
+- `Color.LIGHTGRAY()` ... `Color.RAYWHITE()`: raylib's 26 named colors (`LIGHTGRAY`,
+  `GRAY`, ..., `BLANK`, `MAGENTA`, `RAYWHITE`), compared bit for bit by gate `constants`.
 - `Color.alpha_blend(destination, source, tint) -> U32`: raylib's integer
   `ColorAlphaBlend`, including 256-based tint and alpha rounding.
 - `Color.is_equal(left, right) -> Bool`: exact RGBA equality.

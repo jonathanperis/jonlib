@@ -570,23 +570,26 @@
       "milestone": "numerics",
       "phase": 1,
       "sequence": 1,
-      "status": "not-started",
-      "jonlib": "Math.PI",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Math.PI",
+      "mapping_state": "implemented",
+      "scope": "The F32 value of 3.14159265358979323846f.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Preprocessor redefinition guards have no Bend counterpart"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -600,7 +603,7 @@
         "rgestures:macro:PI"
       ],
       "verification": "Exact integer/bit-pattern vectors and operation-specific floating-point contracts, including the retained default-resampling precision counterexamples.",
-      "next_step": "Derive PI semantics from the linked source, add a reference fixture, then implement Math.PI.",
+      "next_step": "Close documented gaps and unverified gates for PI.",
       "priority": 201
     },
     {
@@ -628,23 +631,26 @@
       "milestone": "numerics",
       "phase": 1,
       "sequence": 1,
-      "status": "not-started",
-      "jonlib": "Math.DEG2RAD",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Math.DEG2RAD",
+      "mapping_state": "implemented",
+      "scope": "The F32 quotient PI/180.0f.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Preprocessor redefinition guards have no Bend counterpart"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -657,7 +663,7 @@
         "raymath:macro:DEG2RAD"
       ],
       "verification": "Exact integer/bit-pattern vectors and operation-specific floating-point contracts, including the retained default-resampling precision counterexamples.",
-      "next_step": "Derive DEG2RAD semantics from the linked source, add a reference fixture, then implement Math.DEG2RAD.",
+      "next_step": "Close documented gaps and unverified gates for DEG2RAD.",
       "priority": 201
     },
     {
@@ -685,23 +691,26 @@
       "milestone": "numerics",
       "phase": 1,
       "sequence": 1,
-      "status": "not-started",
-      "jonlib": "Math.RAD2DEG",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Math.RAD2DEG",
+      "mapping_state": "implemented",
+      "scope": "The F32 quotient 180.0f/PI.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Preprocessor redefinition guards have no Bend counterpart"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -714,7 +723,7 @@
         "raymath:macro:RAD2DEG"
       ],
       "verification": "Exact integer/bit-pattern vectors and operation-specific floating-point contracts, including the retained default-resampling precision counterexamples.",
-      "next_step": "Derive RAD2DEG semantics from the linked source, add a reference fixture, then implement Math.RAD2DEG.",
+      "next_step": "Close documented gaps and unverified gates for RAD2DEG.",
       "priority": 201
     },
     {
@@ -1423,23 +1432,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.LIGHTGRAY",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's LIGHTGRAY (200, 200, 200, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1451,7 +1463,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive LIGHTGRAY semantics from the linked source, add a reference fixture, then implement Color.LIGHTGRAY.",
+      "next_step": "Close documented gaps and unverified gates for LIGHTGRAY.",
       "priority": 206
     },
     {
@@ -1478,23 +1490,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.GRAY",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's GRAY (130, 130, 130, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1506,7 +1521,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive GRAY semantics from the linked source, add a reference fixture, then implement Color.GRAY.",
+      "next_step": "Close documented gaps and unverified gates for GRAY.",
       "priority": 206
     },
     {
@@ -1533,23 +1548,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.DARKGRAY",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's DARKGRAY (80, 80, 80, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1561,7 +1579,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive DARKGRAY semantics from the linked source, add a reference fixture, then implement Color.DARKGRAY.",
+      "next_step": "Close documented gaps and unverified gates for DARKGRAY.",
       "priority": 206
     },
     {
@@ -1588,23 +1606,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.YELLOW",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's YELLOW (253, 249, 0, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1616,7 +1637,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive YELLOW semantics from the linked source, add a reference fixture, then implement Color.YELLOW.",
+      "next_step": "Close documented gaps and unverified gates for YELLOW.",
       "priority": 206
     },
     {
@@ -1643,23 +1664,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.GOLD",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's GOLD (255, 203, 0, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1671,7 +1695,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive GOLD semantics from the linked source, add a reference fixture, then implement Color.GOLD.",
+      "next_step": "Close documented gaps and unverified gates for GOLD.",
       "priority": 206
     },
     {
@@ -1698,23 +1722,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.ORANGE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's ORANGE (255, 161, 0, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1726,7 +1753,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive ORANGE semantics from the linked source, add a reference fixture, then implement Color.ORANGE.",
+      "next_step": "Close documented gaps and unverified gates for ORANGE.",
       "priority": 206
     },
     {
@@ -1753,23 +1780,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.PINK",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's PINK (255, 109, 194, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1781,7 +1811,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive PINK semantics from the linked source, add a reference fixture, then implement Color.PINK.",
+      "next_step": "Close documented gaps and unverified gates for PINK.",
       "priority": 206
     },
     {
@@ -1808,23 +1838,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.RED",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's RED (230, 41, 55, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1836,7 +1869,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive RED semantics from the linked source, add a reference fixture, then implement Color.RED.",
+      "next_step": "Close documented gaps and unverified gates for RED.",
       "priority": 206
     },
     {
@@ -1863,23 +1896,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.MAROON",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's MAROON (190, 33, 55, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1891,7 +1927,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive MAROON semantics from the linked source, add a reference fixture, then implement Color.MAROON.",
+      "next_step": "Close documented gaps and unverified gates for MAROON.",
       "priority": 206
     },
     {
@@ -1918,23 +1954,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.GREEN",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's GREEN (0, 228, 48, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -1946,7 +1985,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive GREEN semantics from the linked source, add a reference fixture, then implement Color.GREEN.",
+      "next_step": "Close documented gaps and unverified gates for GREEN.",
       "priority": 206
     },
     {
@@ -1973,23 +2012,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.LIME",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's LIME (0, 158, 47, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -2001,7 +2043,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive LIME semantics from the linked source, add a reference fixture, then implement Color.LIME.",
+      "next_step": "Close documented gaps and unverified gates for LIME.",
       "priority": 206
     },
     {
@@ -2028,23 +2070,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.DARKGREEN",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's DARKGREEN (0, 117, 44, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -2056,7 +2101,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive DARKGREEN semantics from the linked source, add a reference fixture, then implement Color.DARKGREEN.",
+      "next_step": "Close documented gaps and unverified gates for DARKGREEN.",
       "priority": 206
     },
     {
@@ -2083,23 +2128,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.SKYBLUE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's SKYBLUE (102, 191, 255, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -2111,7 +2159,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive SKYBLUE semantics from the linked source, add a reference fixture, then implement Color.SKYBLUE.",
+      "next_step": "Close documented gaps and unverified gates for SKYBLUE.",
       "priority": 206
     },
     {
@@ -2138,23 +2186,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.BLUE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's BLUE (0, 121, 241, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -2166,7 +2217,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive BLUE semantics from the linked source, add a reference fixture, then implement Color.BLUE.",
+      "next_step": "Close documented gaps and unverified gates for BLUE.",
       "priority": 206
     },
     {
@@ -2193,23 +2244,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.DARKBLUE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's DARKBLUE (0, 82, 172, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -2221,7 +2275,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive DARKBLUE semantics from the linked source, add a reference fixture, then implement Color.DARKBLUE.",
+      "next_step": "Close documented gaps and unverified gates for DARKBLUE.",
       "priority": 206
     },
     {
@@ -2248,23 +2302,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.PURPLE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's PURPLE (200, 122, 255, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -2276,7 +2333,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive PURPLE semantics from the linked source, add a reference fixture, then implement Color.PURPLE.",
+      "next_step": "Close documented gaps and unverified gates for PURPLE.",
       "priority": 206
     },
     {
@@ -2303,23 +2360,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.VIOLET",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's VIOLET (135, 60, 190, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -2331,7 +2391,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive VIOLET semantics from the linked source, add a reference fixture, then implement Color.VIOLET.",
+      "next_step": "Close documented gaps and unverified gates for VIOLET.",
       "priority": 206
     },
     {
@@ -2358,23 +2418,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.DARKPURPLE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's DARKPURPLE (112, 31, 126, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -2386,7 +2449,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive DARKPURPLE semantics from the linked source, add a reference fixture, then implement Color.DARKPURPLE.",
+      "next_step": "Close documented gaps and unverified gates for DARKPURPLE.",
       "priority": 206
     },
     {
@@ -2413,23 +2476,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.BEIGE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's BEIGE (211, 176, 131, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -2441,7 +2507,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive BEIGE semantics from the linked source, add a reference fixture, then implement Color.BEIGE.",
+      "next_step": "Close documented gaps and unverified gates for BEIGE.",
       "priority": 206
     },
     {
@@ -2468,23 +2534,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.BROWN",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's BROWN (127, 106, 79, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -2496,7 +2565,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive BROWN semantics from the linked source, add a reference fixture, then implement Color.BROWN.",
+      "next_step": "Close documented gaps and unverified gates for BROWN.",
       "priority": 206
     },
     {
@@ -2523,23 +2592,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.DARKBROWN",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's DARKBROWN (76, 63, 47, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -2551,7 +2623,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive DARKBROWN semantics from the linked source, add a reference fixture, then implement Color.DARKBROWN.",
+      "next_step": "Close documented gaps and unverified gates for DARKBROWN.",
       "priority": 206
     },
     {
@@ -2578,23 +2650,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.WHITE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's WHITE (255, 255, 255, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -2606,7 +2681,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive WHITE semantics from the linked source, add a reference fixture, then implement Color.WHITE.",
+      "next_step": "Close documented gaps and unverified gates for WHITE.",
       "priority": 206
     },
     {
@@ -2633,23 +2708,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.BLACK",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's BLACK (0, 0, 0, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -2661,7 +2739,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive BLACK semantics from the linked source, add a reference fixture, then implement Color.BLACK.",
+      "next_step": "Close documented gaps and unverified gates for BLACK.",
       "priority": 206
     },
     {
@@ -2688,23 +2766,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.BLANK",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's BLANK (0, 0, 0, 0).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -2716,7 +2797,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive BLANK semantics from the linked source, add a reference fixture, then implement Color.BLANK.",
+      "next_step": "Close documented gaps and unverified gates for BLANK.",
       "priority": 206
     },
     {
@@ -2743,23 +2824,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.MAGENTA",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's MAGENTA (255, 0, 255, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -2771,7 +2855,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive MAGENTA semantics from the linked source, add a reference fixture, then implement Color.MAGENTA.",
+      "next_step": "Close documented gaps and unverified gates for MAGENTA.",
       "priority": 206
     },
     {
@@ -2798,23 +2882,26 @@
       "milestone": "pixels",
       "phase": 1,
       "sequence": 6,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Color.RAYWHITE",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The canonical 0xRRGGBBAA word of raylib's RAYWHITE (245, 245, 245, 255).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C compound-literal/CLITERAL syntax has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -2826,7 +2913,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact channel/packing conversions, alpha/tint/blending, every format and quantization boundary.",
-      "next_step": "Derive RAYWHITE semantics from the linked source, add a reference fixture, then implement Color.RAYWHITE.",
+      "next_step": "Close documented gaps and unverified gates for RAYWHITE.",
       "priority": 206
     },
     {
@@ -59176,23 +59263,26 @@
       "milestone": "numerics",
       "phase": 1,
       "sequence": 1,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.PI",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Math.PI",
+      "mapping_state": "implemented",
+      "scope": "The F32 value of 3.14159265358979323846f.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Preprocessor redefinition guards have no Bend counterpart"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59206,7 +59296,7 @@
         "rgestures:macro:PI"
       ],
       "verification": "Exact integer/bit-pattern vectors and operation-specific floating-point contracts, including the retained default-resampling precision counterexamples.",
-      "next_step": "Derive PI semantics from the linked source, add a reference fixture, then implement jonmath.Math.PI.",
+      "next_step": "Close documented gaps and unverified gates for PI.",
       "priority": 201
     },
     {
@@ -59294,23 +59384,26 @@
       "milestone": "numerics",
       "phase": 1,
       "sequence": 1,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.EPSILON",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Math.EPSILON",
+      "mapping_state": "implemented",
+      "scope": "The F32 value of 0.000001f.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Preprocessor redefinition guards have no Bend counterpart"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59321,7 +59414,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact integer/bit-pattern vectors and operation-specific floating-point contracts, including the retained default-resampling precision counterexamples.",
-      "next_step": "Derive EPSILON semantics from the linked source, add a reference fixture, then implement jonmath.Math.EPSILON.",
+      "next_step": "Close documented gaps and unverified gates for EPSILON.",
       "priority": 201
     },
     {
@@ -59349,23 +59442,26 @@
       "milestone": "numerics",
       "phase": 1,
       "sequence": 1,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.DEG2RAD",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Math.DEG2RAD",
+      "mapping_state": "implemented",
+      "scope": "The F32 quotient PI/180.0f.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Preprocessor redefinition guards have no Bend counterpart"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59378,7 +59474,7 @@
         "raylib:macro:DEG2RAD"
       ],
       "verification": "Exact integer/bit-pattern vectors and operation-specific floating-point contracts, including the retained default-resampling precision counterexamples.",
-      "next_step": "Derive DEG2RAD semantics from the linked source, add a reference fixture, then implement jonmath.Math.DEG2RAD.",
+      "next_step": "Close documented gaps and unverified gates for DEG2RAD.",
       "priority": 201
     },
     {
@@ -59406,23 +59502,26 @@
       "milestone": "numerics",
       "phase": 1,
       "sequence": 1,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.RAD2DEG",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Math.RAD2DEG",
+      "mapping_state": "implemented",
+      "scope": "The F32 quotient 180.0f/PI.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Preprocessor redefinition guards have no Bend counterpart"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59435,7 +59534,7 @@
         "raylib:macro:RAD2DEG"
       ],
       "verification": "Exact integer/bit-pattern vectors and operation-specific floating-point contracts, including the retained default-resampling precision counterexamples.",
-      "next_step": "Derive RAD2DEG semantics from the linked source, add a reference fixture, then implement jonmath.Math.RAD2DEG.",
+      "next_step": "Close documented gaps and unverified gates for RAD2DEG.",
       "priority": 201
     },
     {
@@ -59463,23 +59562,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.MatrixToFloat",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Matrix.to_float_v",
+      "mapping_state": "implemented",
+      "scope": "MatrixToFloatV(mat).v: the 16 matrix fields as an F32 list in raymath's order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C array-member access syntax"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/MATH.md",
+        "tools/conformance.py"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59490,7 +59592,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixToFloat semantics from the linked source, add a reference fixture, then implement jonmath.Math.MatrixToFloat.",
+      "next_step": "Close documented gaps and unverified gates for MatrixToFloat.",
       "priority": 202
     },
     {
@@ -59518,23 +59620,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.Vector3ToFloat",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector3.to_float_v",
+      "mapping_state": "implemented",
+      "scope": "Vector3ToFloatV(vec).v: the three fields as an F32 list.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C array-member access syntax"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/MATH.md",
+        "tools/conformance.py"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59545,7 +59650,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3ToFloat semantics from the linked source, add a reference fixture, then implement jonmath.Math.Vector3ToFloat.",
+      "next_step": "Close documented gaps and unverified gates for Vector3ToFloat.",
       "priority": 202
     },
     {
@@ -69367,23 +69472,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.Vector2Zeros",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector2.zero",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ Vector2Zeros initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -69396,7 +69504,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector2Zeros semantics from the linked source, add a reference fixture, then implement jonmath.Math.Vector2Zeros.",
+      "next_step": "Close documented gaps and unverified gates for Vector2Zeros.",
       "priority": 202
     },
     {
@@ -69423,23 +69531,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.Vector2Ones",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector2.one",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ Vector2Ones initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -69452,7 +69563,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector2Ones semantics from the linked source, add a reference fixture, then implement jonmath.Math.Vector2Ones.",
+      "next_step": "Close documented gaps and unverified gates for Vector2Ones.",
       "priority": 202
     },
     {
@@ -69479,23 +69590,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.Vector2UnitX",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector2.unit_x",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ Vector2UnitX initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -69508,7 +69622,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector2UnitX semantics from the linked source, add a reference fixture, then implement jonmath.Math.Vector2UnitX.",
+      "next_step": "Close documented gaps and unverified gates for Vector2UnitX.",
       "priority": 202
     },
     {
@@ -69535,23 +69649,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.Vector2UnitY",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector2.unit_y",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ Vector2UnitY initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -69564,7 +69681,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector2UnitY semantics from the linked source, add a reference fixture, then implement jonmath.Math.Vector2UnitY.",
+      "next_step": "Close documented gaps and unverified gates for Vector2UnitY.",
       "priority": 202
     },
     {
@@ -70475,23 +70592,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.Vector3Zeros",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector3.zero",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ Vector3Zeros initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -70504,7 +70624,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3Zeros semantics from the linked source, add a reference fixture, then implement jonmath.Math.Vector3Zeros.",
+      "next_step": "Close documented gaps and unverified gates for Vector3Zeros.",
       "priority": 202
     },
     {
@@ -70531,23 +70651,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.Vector3Ones",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector3.one",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ Vector3Ones initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -70560,7 +70683,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3Ones semantics from the linked source, add a reference fixture, then implement jonmath.Math.Vector3Ones.",
+      "next_step": "Close documented gaps and unverified gates for Vector3Ones.",
       "priority": 202
     },
     {
@@ -70587,23 +70710,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.Vector3UnitX",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector3.unit_x",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ Vector3UnitX initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -70616,7 +70742,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3UnitX semantics from the linked source, add a reference fixture, then implement jonmath.Math.Vector3UnitX.",
+      "next_step": "Close documented gaps and unverified gates for Vector3UnitX.",
       "priority": 202
     },
     {
@@ -70643,23 +70769,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.Vector3UnitY",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector3.unit_y",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ Vector3UnitY initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -70672,7 +70801,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3UnitY semantics from the linked source, add a reference fixture, then implement jonmath.Math.Vector3UnitY.",
+      "next_step": "Close documented gaps and unverified gates for Vector3UnitY.",
       "priority": 202
     },
     {
@@ -70699,23 +70828,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.Vector3UnitZ",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector3.unit_z",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ Vector3UnitZ initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -70728,7 +70860,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector3UnitZ semantics from the linked source, add a reference fixture, then implement jonmath.Math.Vector3UnitZ.",
+      "next_step": "Close documented gaps and unverified gates for Vector3UnitZ.",
       "priority": 202
     },
     {
@@ -71639,23 +71771,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.Vector4Zeros",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector4.zero",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ Vector4Zeros initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -71668,7 +71803,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4Zeros semantics from the linked source, add a reference fixture, then implement jonmath.Math.Vector4Zeros.",
+      "next_step": "Close documented gaps and unverified gates for Vector4Zeros.",
       "priority": 202
     },
     {
@@ -71695,23 +71830,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.Vector4Ones",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector4.one",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ Vector4Ones initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -71724,7 +71862,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4Ones semantics from the linked source, add a reference fixture, then implement jonmath.Math.Vector4Ones.",
+      "next_step": "Close documented gaps and unverified gates for Vector4Ones.",
       "priority": 202
     },
     {
@@ -71751,23 +71889,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.Vector4UnitX",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector4.unit_x",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ Vector4UnitX initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -71780,7 +71921,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4UnitX semantics from the linked source, add a reference fixture, then implement jonmath.Math.Vector4UnitX.",
+      "next_step": "Close documented gaps and unverified gates for Vector4UnitX.",
       "priority": 202
     },
     {
@@ -71807,23 +71948,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.Vector4UnitY",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector4.unit_y",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ Vector4UnitY initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -71836,7 +71980,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4UnitY semantics from the linked source, add a reference fixture, then implement jonmath.Math.Vector4UnitY.",
+      "next_step": "Close documented gaps and unverified gates for Vector4UnitY.",
       "priority": 202
     },
     {
@@ -71863,23 +72007,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.Vector4UnitZ",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector4.unit_z",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ Vector4UnitZ initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -71892,7 +72039,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4UnitZ semantics from the linked source, add a reference fixture, then implement jonmath.Math.Vector4UnitZ.",
+      "next_step": "Close documented gaps and unverified gates for Vector4UnitZ.",
       "priority": 202
     },
     {
@@ -71919,23 +72066,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.Vector4UnitW",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector4.unit_w",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ Vector4UnitW initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -71948,7 +72098,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive Vector4UnitW semantics from the linked source, add a reference fixture, then implement jonmath.Math.Vector4UnitW.",
+      "next_step": "Close documented gaps and unverified gates for Vector4UnitW.",
       "priority": 202
     },
     {
@@ -72747,23 +72897,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.QuaternionZeros",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector4.zero",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ QuaternionZeros initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -72776,7 +72929,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive QuaternionZeros semantics from the linked source, add a reference fixture, then implement jonmath.Math.QuaternionZeros.",
+      "next_step": "Close documented gaps and unverified gates for QuaternionZeros.",
       "priority": 202
     },
     {
@@ -72803,23 +72956,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.QuaternionOnes",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Vector4.one",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ QuaternionOnes initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -72832,7 +72988,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive QuaternionOnes semantics from the linked source, add a reference fixture, then implement jonmath.Math.QuaternionOnes.",
+      "next_step": "Close documented gaps and unverified gates for QuaternionOnes.",
       "priority": 202
     },
     {
@@ -72859,23 +73015,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.QuaternionUnitX",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Quaternion.identity",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ QuaternionUnitX initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -72888,7 +73047,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive QuaternionUnitX semantics from the linked source, add a reference fixture, then implement jonmath.Math.QuaternionUnitX.",
+      "next_step": "Close documented gaps and unverified gates for QuaternionUnitX.",
       "priority": 202
     },
     {
@@ -73247,23 +73406,26 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "not-started",
-      "jonlib": "jonmath.Math.MatrixUnit",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "M.Matrix.identity",
+      "mapping_state": "implemented",
+      "scope": "raymath's C++ MatrixUnit initializer, field for field.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C++ static constexpr object identity has no Bend counterpart (a zero-argument function)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/constants_probe.py",
+        "docs/MATH.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -73276,7 +73438,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Derive MatrixUnit semantics from the linked source, add a reference fixture, then implement jonmath.Math.MatrixUnit.",
+      "next_step": "Close documented gaps and unverified gates for MatrixUnit.",
       "priority": 202
     },
     {

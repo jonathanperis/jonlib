@@ -6,8 +6,8 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1566,
-    "partial": 297
+    "not-started": 1512,
+    "partial": 351
   },
   "core_functions": {
     "total": 600,
@@ -54,16 +54,16 @@
       "blocked": 17,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 874,
-      "partial": 146
+      "not-started": 845,
+      "partial": 175
     },
     "raymath.h": {
       "total": 254,
       "blocked": 4,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 101,
-      "partial": 149
+      "not-started": 76,
+      "partial": 174
     },
     "rlgl.h": {
       "total": 403,
@@ -122,8 +122,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 8,
-      "partial": 6
+      "not-started": 1,
+      "partial": 13
     },
     {
       "id": "jonmath",
@@ -136,8 +136,8 @@
       "blocked": 4,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 81,
-      "partial": 136
+      "not-started": 60,
+      "partial": 157
     },
     {
       "id": "memory",
@@ -194,8 +194,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 26,
-      "partial": 20
+      "not-started": 0,
+      "partial": 46
     },
     {
       "id": "images",
