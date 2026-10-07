@@ -337,9 +337,34 @@ actual library behaviour is compared rather than compiler-folded literals.
 | `float64-ops` | `tools/float64_ops_probe.py` | internal normal binary64 multiply/divide vs native C bits |
 | `angle-legacy` | `tools/angle_probe.py --gnu-control` | legacy GNU angle vs the independent Sun C control |
 | `angle-kernels` | `tools/angle_kernel_probe.py` | angle kernels and checked wrappers (see [ANGLES.md](ANGLES.md)) |
+| `operators` | `tools/operators_probe.py` | raymath's C++ operators, compiled as C++, vs Jonmath's operator sugar and named functions |
 
 `tools/angle_probe.py` without `--gnu-control` compares the host-declared legacy
 profile with the host's native `atan2f`.
+
+## C++ operators
+
+raymath's optional C++ operators map to Bend by operand type. Bend's typed
+operators call `T.add`, `T.sub`, `T.mul` and `T.div`, so Jonmath defines
+`sub`, `mul` and `div` next to the existing `add` for `Vector2`, `Vector3`,
+`Vector4` (component-wise, as `Vector*Subtract/Multiply/Divide`) and `sub`
+and `mul` for `Matrix` (`MatrixSubtract`, `MatrixMultiply`):
+
+| C++ | Bend |
+|---|---|
+| `a + b`, `a - b`, `a * b`, `a / b` (same vector type) | `(a + b : M.Vector3)`, `(a - b : M.Vector3)`, ... |
+| `m + n`, `m - n`, `m * n` | `(m + n : M.Matrix)`, `(m - n : M.Matrix)`, `(m * n : M.Matrix)` |
+| `v * s`, `v / s` | `M.Vector3.scale(v, s)`, `M.Vector3.scale(v, (1.0 / s : F32))` |
+| `v * m` (Vector2/Vector3), `q * m` | `M.Vector3.transform(v, m)`, `M.Quaternion.transform(q, m)` |
+| `q + s`, `q - s` | `M.Quaternion.add_value(q, s)`, `M.Quaternion.subtract_value(q, s)` |
+| `m * s` | `M.Matrix.multiply_value(m, s)` |
+| `a == b`, `a != b` | `M.Vector3.equals(a, b)`, `Bool.not(M.Vector3.equals(a, b))` |
+
+A compound assignment (`a += b`) returns its updated left operand; Bend values
+are immutable, so it is the same expression bound to a new name. The
+`operators` gate compiles the pinned raymath.h as C++ with contraction off and
+compares every operator and compound assignment bit for bit, including zero
+divisors and nearly equal pairs.
 
 ## Floating-point contract and evidence
 

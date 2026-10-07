@@ -6,8 +6,8 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 1170,
-    "partial": 693
+    "not-started": 942,
+    "partial": 921
   },
   "core_functions": {
     "total": 600,
@@ -54,40 +54,40 @@
       "blocked": 17,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 503,
-      "partial": 517
+      "not-started": 499,
+      "partial": 521
     },
     "raymath.h": {
       "total": 254,
       "blocked": 4,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 76,
-      "partial": 174
+      "not-started": 16,
+      "partial": 234
     },
     "rlgl.h": {
       "total": 403,
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 403,
-      "partial": 0
+      "not-started": 272,
+      "partial": 131
     },
     "rcamera.h": {
       "total": 35,
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 34,
-      "partial": 1
+      "not-started": 21,
+      "partial": 14
     },
     "rgestures.h": {
       "total": 39,
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 38,
-      "partial": 1
+      "not-started": 18,
+      "partial": 21
     },
     "config.h": {
       "total": 116,
@@ -108,8 +108,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 200,
-      "partial": 349
+      "not-started": 32,
+      "partial": 517
     },
     {
       "id": "numerics",
@@ -136,8 +136,8 @@
       "blocked": 4,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 60,
-      "partial": 157
+      "not-started": 0,
+      "partial": 217
     },
     {
       "id": "memory",

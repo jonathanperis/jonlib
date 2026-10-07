@@ -68,11 +68,13 @@ Path utilities and file data/text/code IO (`Files.*`) are documented in
 [FILES.md](FILES.md).
 Trace logging and the memory helpers (`Log.*`, `Memory.*`) are documented in
 [LOGGING.md](LOGGING.md).
-raylib.h's enumerations are U32 constants named as in raylib under their enum,
-e.g. `PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8()` or
-`KeyboardKey.KEY_SPACE()`, generated into the last section of `jonlib.bend` by
-`tools/enums_probe.py --write` and checked against compiled raylib (gate `enums`).
-C's `bool` is Base's `Bool`.
+The enumerations of raylib.h, rlgl.h, rgestures.h and rcamera.h are U32
+constants named as in their header under their enum, e.g.
+`PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8()`, `KeyboardKey.KEY_SPACE()` or
+`rlBlendMode.RL_BLEND_ALPHA()`, generated into the last section of
+`jonlib.bend` by `tools/enums_probe.py --write` and checked against each
+compiled header (gate `enums`). rgestures.h's and rcamera.h's standalone copies
+of raylib.h enums share its constants. C's `bool` is Base's `Bool`.
 
 ## Shared types
 
@@ -92,6 +94,14 @@ detection; see [ANGLES.md](ANGLES.md). Existing `Libm` APIs retain their meaning
 `J.BoundingBox{min, max}` contains two `M.Vector3` values; supplied bounds are retained
 without reordering. Their numeric and collision operations are documented in
 [MATH.md](MATH.md) and [COLLISION.md](COLLISION.md).
+`J.Ray{position, direction}` and `J.RayCollision{hit, distance, point, normal}`
+are the ray-query values of [COLLISION.md](COLLISION.md).
+`J.Camera3D{position, target, up, fovy, projection}` (raylib's `Camera` alias),
+`J.Camera2D{offset, target, rotation, zoom}` and
+`J.Transform{translation, rotation, scale}` are immutable value structs for the
+later camera and model modules; `projection` is a `CameraProjection` U32 and
+`rotation` a Quaternion (`M.Vector4`). `tests/test_structs.py` checks these and
+the Jonmath structs field by field against the pinned headers.
 Jonmath's `M.Matrix` contains 16 F32 fields in the reference declaration order; its layout,
 identity/transpose operations and vector transforms are listed in [MATH.md](MATH.md).
 `M.Matrix.Decomposition` contains `M.Decomposed{translation, rotation, scale}` with
