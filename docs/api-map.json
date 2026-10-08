@@ -3167,6 +3167,28 @@
     "api_id": "raylib:function:GetFontDefault",
     "milestone": "fonts"
   },
+  "LoadFont": {
+    "jonlib": "Font.load",
+    "status": "profile-covered",
+    "scope": ".ttf/.otf/.bdf as LoadFontEx(32, NULL, 95), .fnt through LoadBMFont (one page, GRAYSCALE pages as GRAY_ALPHA, nine-value glyph lines), other files LoadImage then LoadFontFromImage(MAGENTA, 32) or the default font; POINT filter.",
+    "gaps": [
+      "Refused: BMFont files with other than one page (freed before use), glyph lines without nine values, rectangles outside the page, a missing page under pixels, missing header fields",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadFont",
+    "milestone": "fonts"
+  },
+  "LoadFontEx": {
+    "jonlib": "Font.load_ex",
+    "status": "profile-covered",
+    "scope": "LoadFileData then LoadFontFromMemory with the file extension; IO with the frame handed back. Fail for a file that does not load or is empty (raylib's empty Font).",
+    "gaps": [
+      "The refusals of LoadFontFromMemory are Done{None}",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadFontEx",
+    "milestone": "fonts"
+  },
   "LoadFontFromImage": {
     "jonlib": "Font.load_from_image",
     "status": "profile-covered",
@@ -3179,6 +3201,18 @@
     "api_id": "raylib:function:LoadFontFromImage",
     "milestone": "fonts"
   },
+  "LoadFontFromMemory": {
+    "jonlib": "Font.load_from_memory",
+    "status": "profile-covered",
+    "scope": ".ttf/.otf (any case) through LoadFontData and .bdf through LoadFontDataBDF, then GenImageFontAtlas (padding 4, rows) as the GRAY_ALPHA texture; glyph images are cut from the atlas; other types and fonts stb_truetype does not initialize give the default font.",
+    "gaps": [
+      "Undefined native behavior refused: LoadFontData/GenImageFontAtlas cases, rectangles outside the atlas, fonts without a found glyph, BDF NULL-derived writes and reads past the data",
+      "None when the 127 texture ids are in use",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadFontFromMemory",
+    "milestone": "fonts"
+  },
   "IsFontValid": {
     "jonlib": "Font.is_valid",
     "status": "profile-covered",
@@ -3189,6 +3223,40 @@
     "api_id": "raylib:function:IsFontValid",
     "milestone": "fonts"
   },
+  "LoadFontData": {
+    "jonlib": "Font.load_data",
+    "status": "profile-covered",
+    "scope": "stb_truetype 1.26 as raylib uses it (InitFont at offset 0, cmap formats 0/4/6/12/13, glyf simple and composite outlines, ScaleForPixelHeight, VMetrics, HMetrics, the version-2 rasterizer with its edge sort) for FONT_DEFAULT and FONT_BITMAP, and stbtt_GetCodepointSDF (padding 4, on-edge 128, scale 64) for FONT_SDF; per found codepoint the GlyphInfo fields and GRAYSCALE image byte for byte, the space and U+3000 as empty advanceX x fontSize images. Uncontracted F32 in the C order; Font.Data distinguishes raylib's NULL.",
+    "gaps": [
+      "Undefined native behavior refused: reads outside the font data, int overflow, invalid float-to-int conversions, uninitialized bitmaps, a codepoint list shorter than the count",
+      "Refused: CFF outlines, composites nested deeper than 6, SDF glyphs needing stbtt__solve_cubic (double pow/acos/cos), bitmaps beyond 4096, over 65536 codepoints",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadFontData",
+    "milestone": "fonts"
+  },
+  "GenImageFontAtlas": {
+    "jonlib": "Font.gen_image_atlas_for / Font.gen_image_atlas",
+    "status": "profile-covered",
+    "scope": "The GRAY_ALPHA atlas (every byte, the 3x3 white corner) and rectangle bits for packMethod 0 (rows, height doubling, clipped copies) and 1 (stb_rect_pack 1.01 skyline bottom-left, its rectangle sort reproducing the host qsort: glibc's stable merge sort or Apple Libc's FreeBSD introsort with heapsort fallback, selected by M.Libm); the glyphs are handed back.",
+    "gaps": [
+      "Undefined native behavior refused: a count beyond the glyphs, glyph images without their bytes, other packing methods",
+      "Refused: atlas sizes within 64 floats above a power of two (they depend on the C library's logf rounding), atlases beyond 4096, more than 4096 glyphs",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GenImageFontAtlas",
+    "milestone": "fonts"
+  },
+  "UnloadFontData": {
+    "jonlib": "Font.unload_data",
+    "status": "profile-covered",
+    "scope": "Consumes the GlyphInfo list (owned values; nothing to free).",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:UnloadFontData",
+    "milestone": "fonts"
+  },
   "UnloadFont": {
     "jonlib": "Font.unload",
     "status": "profile-covered",
@@ -3197,6 +3265,17 @@
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:UnloadFont",
+    "milestone": "fonts"
+  },
+  "ExportFontAsCode": {
+    "jonlib": "Font.as_code / Font.export_as_code",
+    "status": "profile-covered",
+    "scope": "The exact file text: banner, DEFLATE (CompressData) of LoadImageFromTexture's data (all zero bytes on rlsw), rectangles, GlyphInfo values and the LoadFont_<Name> function named by TextToPascal of the file name; export_as_code writes it with SaveFileText.",
+    "gaps": [
+      "None when TextToPascal is undefined, a rectangle is not integral or the text would overflow raylib's buffer",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:ExportFontAsCode",
     "milestone": "fonts"
   },
   "DrawFPS": {
@@ -3325,7 +3404,7 @@
   "GetGlyphInfo": {
     "jonlib": "Font.glyph_info",
     "status": "profile-covered",
-    "scope": "The glyph at GetGlyphIndex with an owned copy of its image (ImageFromImage of the atlas at its rectangle); None only for a rectangle outside the atlas.",
+    "scope": "The glyph at GetGlyphIndex with an owned copy of its image (ImageFromImage of the atlas at its rectangle), GlyphEmpty with its size for a rectangle 0 wide or high; None only for a rectangle outside the atlas.",
     "gaps": [
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],

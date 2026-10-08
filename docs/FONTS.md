@@ -1,8 +1,9 @@
 # Fonts and text drawing
 
-Phase 3, first slice ([MASTER-PLAN.md](MASTER-PLAN.md)): raylib 6.0's
-default font, fonts loaded from XNA-style images, glyph queries, text
-measurement, text drawn into the [Frame](FRAME.md) and image text. Altered
+Phase 3 ([MASTER-PLAN.md](MASTER-PLAN.md)): raylib 6.0's default font,
+fonts loaded from XNA-style images, TrueType/BDF/BMFont files and memory,
+glyph data and atlases, glyph queries, text measurement, text drawn into the
+[Frame](FRAME.md), image text and fonts exported as code. Altered
 Bend adaptations of `rtext.c` and of `rtextures.c`'s `ImageText*` functions
 (zlib, [LICENSES/raylib.txt](../LICENSES/raylib.txt)); drawing goes through
 the `rlsw.h` port of [FRAME.md](FRAME.md) and [TEXTURES.md](TEXTURES.md)
@@ -10,7 +11,11 @@ the `rlsw.h` port of [FRAME.md](FRAME.md) and [TEXTURES.md](TEXTURES.md)
 and text drawing" of `jonlib.bend` and `src/fonts.bend` (glyph table, atlas
 expansion, `GetGlyphIndex`, measurement, the `DrawTextEx` streams,
 `ImageTextEx`'s placement and `LoadFontFromImage`'s scan); the default font
-bitmap is `src/frame_font.bend`.
+bitmap is `src/frame_font.bend`. TrueType rasterization is an altered Bend
+adaptation of `stb_truetype.h` 1.26 (`src/truetype.bend`) and atlas packing
+of `stb_rect_pack.h` 1.01 (`src/font_data.bend`), both public domain / MIT
+([LICENSES/stb_truetype.txt](../LICENSES/stb_truetype.txt)); see
+[TrueType, BDF and BMFont fonts](#truetype-bdf-and-bmfont-fonts).
 
 ## Reference and profile
 
@@ -34,8 +39,11 @@ contract (not provided). `DrawTextPro` rotates with `rlRotatef`, whose
   `ImageFromImage(atlas, recs[i])`). Build fonts with `Font.default` and
   `Font.load_from_image`; a hand-built font without glyphs is outside the
   contract (raylib reads `glyphs[0]`).
-- `GlyphInfo{value, offset_x, offset_y, advance_x, image}`, `FontInfo{base_size,
-  glyph_count, glyph_padding, texture}` (the texture id).
+- `GlyphInfo{value, offset_x, offset_y, advance_x, image}` with `image` a
+  `GlyphImage`: `GlyphPixels{image}` (an owned Surface) or `GlyphEmpty{width,
+  height}` (raylib's image without pixels: no data, or 0 wide or high, with its
+  C int size), and `FontInfo{base_size, glyph_count, glyph_padding, texture}`
+  (the texture id).
 - **textLineSpacing.** raylib's global `textLineSpacing` (set by
   `SetTextLineSpacing`, initially 2) is an explicit argument: every function
   it affects has a `_spaced` form taking `line_spacing` (the C int, a
@@ -75,7 +83,7 @@ reset.
 | `LoadFontFromImage` | `Font.load_from_image(frame, image, key, first_char) -> Frame & (Surface & Maybe<Font>)` (the image is handed back) |
 | `IsFontValid` / `UnloadFont` | `Font.is_valid(font) -> Font & Bool`, `Font.unload(frame, font) -> Frame` |
 | font fields, `SetTextureFilter(font.texture, f)` | `Font.info(font) -> Font & FontInfo`, `Font.set_filter(font, filter)` |
-| `GetGlyphIndex` / `GetGlyphInfo` / `GetGlyphAtlasRec` | `Font.glyph_index`, `Font.glyph_info -> Font & Maybe<GlyphInfo>`, `Font.glyph_atlas_rec` |
+| `GetGlyphIndex` / `GetGlyphInfo` / `GetGlyphAtlasRec` | `Font.glyph_index`, `Font.glyph_info -> Font & Maybe<GlyphInfo>` (a rectangle 0 wide or high gives `GlyphEmpty`), `Font.glyph_atlas_rec` |
 | `MeasureText` | `Font.measure_text(text, size) -> Maybe<U32>` |
 | `MeasureTextEx` / `MeasureTextCodepoints` | `Font.measure_text_ex(_spaced)`, `Font.measure_text_codepoints(_spaced)` `-> Font & M.Vector2` |
 | `DrawText` | `Draw.text(frame, text, x, y, size, color)`, `Draw.text_spaced` |
@@ -153,6 +161,138 @@ is loaded as the texture (`LoadImageColors` reads any format). When
 `charSpacing` or `lineSpacing` is 0, raylib's security check returns the
 default font, and so does Jonlib.
 
+## TrueType, BDF and BMFont fonts
+
+| raylib | Jonlib |
+|---|---|
+| `LoadFontData` | `Font.load_data(bytes, size, codepoints, count, type) -> Font.Data` (`FontDataNull{}` for raylib's NULL, `FontDataGlyphs{glyphs}`, `FontDataRefused{}`) |
+| `UnloadFontData` | `Font.unload_data(glyphs) -> Unit` |
+| `GenImageFontAtlas` | `Font.gen_image_atlas_for(libm, glyphs, count, size, padding, method) -> List<GlyphInfo> & Maybe<(Surface & +List<Rectangle>)>`, `Font.gen_image_atlas` (Apple) |
+| `LoadFontFromMemory` | `Font.load_from_memory(frame, file_type, bytes, size, codepoints, count) -> Frame & Maybe<Font>` |
+| `LoadFontEx` | `Font.load_ex(frame, path, size, codepoints, count) -> IO(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>)` |
+| `LoadFont` | `Font.load(frame, path)` (same result); `.fnt` files go through `Font.load_bmfont(frame, path)` |
+| `ExportFontAsCode` | `Font.as_code(font, file_name) -> Font & Maybe<String>`, `Font.export_as_code(font, path) -> IO(Font & Result<&1, &1, Surface.IOError, Unit>)` |
+
+Sizes, counts and codepoints are C ints (two's-complement `U32` words). An
+empty `codepoints` list is raylib's NULL (`count` consecutive codepoints from
+32, 95 when `count` is not positive); otherwise its first `count` entries are
+used. Font bytes are `+List<U32>` (as `Files.load_data` returns them).
+
+### stb_truetype as raylib uses it
+
+`LoadFontData` runs `stbtt_InitFont` at offset 0 (TrueType outlines: `glyf`
+and `loca`), `stbtt_ScaleForPixelHeight(fontSize)` and
+`stbtt_GetFontVMetrics`; each requested codepoint that `stbtt_FindGlyphIndex`
+maps to an index above 0 (cmap formats 0, 4, 6, 12 and 13; the last Microsoft
+Unicode BMP/full or Unicode-platform subtable wins; format 2 and unknown
+formats map nothing) gives a glyph:
+
+- FONT_DEFAULT / FONT_BITMAP: `stbtt_GetCodepointBitmap` at the scale for
+  both axes: the glyph shape (simple contours with their flags and
+  coordinates, contours starting off the curve, composites with byte or short
+  offsets, scale, x/y scale or 2x2 transforms, the point-matching form leaving
+  its offsets 0 and its arguments unread), the integral box (floor/ceil of the
+  scaled `glyf` box), the outline flattened with flatness 0.35/scale, edges
+  sorted by stb's quicksort and insertion sort, and the version-2 rasterizer
+  (`stbtt__fill_active_edges_new` with its one-pixel, span and brute-force
+  clipping paths, `|coverage|*255 + 0.5` truncated and capped at 255). The
+  offsets are the box's, offsetY plus `(int)(ascent*scale)`; advanceX is
+  `(int)(advance*scale)`. FONT_BITMAP maps bytes below 80 to 0, others to 255.
+- FONT_SDF: `stbtt_GetCodepointSDF` (padding 4, on-edge 128, distance scale
+  64) for every codepoint but the space: crossings counted with
+  `stbtt__compute_crossings_x` and `stbtt__ray_intersect_bezier`, distances to
+  lines and to quadratic curves whose quadratic term vanishes. A pixel whose
+  search reaches a curve with a nonzero quadratic term needs
+  `stbtt__solve_cubic`, which calls the C library's double `pow`, `acos` and
+  `cos`: the whole load is refused (outside the profile). Fonts made of lines
+  (pixel fonts such as DotGothic16 and the generated box fonts) are
+  reproduced.
+- The space and U+3000 always get an empty `advanceX x fontSize` image (data
+  when advanceX > 0; a negative advance keeps its width and advanceX 0).
+- A glyph whose box is empty (or whose `w*h` is negative, which `malloc`
+  refuses) has no image and keeps the box offsets; a zero scale leaves them 0.
+
+All arithmetic is F32 in stb's order, uncontracted (the reference is built
+with `-ffp-contract=off`); the only libm function on this path is `sqrt`
+(exact). `STBTT_assert` is compiled out (release build), here too.
+
+### GenImageFontAtlas
+
+The atlas side is `(int)powf(2, ceilf(logf(sqrtf(totalArea))/logf(2)))` with
+`totalArea = totalWidth*(fontSize + 2*padding)*1.2f`, halved in height when
+`totalArea` is under half its square. Jonlib computes it exactly: a power of
+two gives itself (the probe checks the host `logf` there) and other sizes the
+next power, except the 64 floats just above a power of two, where the
+quotient's rounding depends on the C library's `logf`: refused. Method 0
+places glyphs left to right, starting a row when `offsetX >= width -
+glyphWidth - 2*padding` and doubling the height (once per row) when the row
+passes `height - fontSize - padding`; each glyph is copied clipped to the
+atlas size at that moment. Method 1 is `stb_rect_pack`'s skyline
+(bottom-left, `glyphCount` nodes, the width aligned to
+`ceil(width/glyphCount)` for the search); the rectangles are first sorted by
+`qsort` (taller, then wider), whose order of equal rectangles is the C
+library's: `M.Libm` selects glibc's stable merge sort (`Glibc239Libm{}`,
+`Glibc241Libm{}`) or Apple Libc's FreeBSD introsort with its depth limit and
+heapsort fallback (`AppleLibm{}`,
+[LICENSES/freebsd-sort.txt](../LICENSES/freebsd-sort.txt)). Unpacked
+rectangles are at `(float)INT_MAX + padding`. A 3x3 white corner is written
+at the bottom right, then the GRAYSCALE atlas becomes GRAY_ALPHA (gray 255,
+alpha the byte). raylib reads every glyph image as `width*height` GRAYSCALE
+bytes whatever its format, and so does Jonlib (the raw bytes).
+
+### LoadFontFromMemory, LoadFontEx, LoadFont
+
+`LoadFontFromMemory` lower-cases the file type: `.ttf`/`.otf` load with
+`LoadFontData(FONT_DEFAULT)`, `.bdf` with `LoadFontDataBDF`, then
+`GenImageFontAtlas(glyphs, glyphCount, baseSize, 4, 0)` becomes the texture
+and each glyph image is its atlas region; anything else, or a font
+`stbtt_InitFont` rejects, is the default font. `LoadFontEx` loads the file
+(`Fail` when it does not load or is empty: raylib returns an empty Font) and
+uses its extension. `LoadFont` picks by extension (`.ttf`, `.otf`, `.bdf`:
+size 32, 95 codepoints; `.fnt`: `LoadBMFont`; otherwise `LoadImage` then
+`LoadFontFromImage(image, MAGENTA, 32)`, the default font when the image
+does not load) and sets the POINT filter.
+
+**BDF.** raylib 6.0's `LoadFontDataBDF` reuses the glyph array pointer as the
+current glyph: `STARTCHAR` sets it to NULL, so a font with characters returns
+NULL (the default font) and a `BITMAP` whose `ENCODING` is a requested
+codepoint other than the first writes through a pointer derived from NULL
+(refused). A font without characters returns `count` zeroed glyphs (an atlas
+of empty rectangles), sized by the last `SIZE` line (`sscanf %i`: decimal,
+octal and hex). Lines come from `GetLine` (255 bytes or a newline, no
+terminator check), so a file without `ENDFONT` reads past its data
+(refused).
+
+**BMFont.** `LoadBMFont` reads `lineHeight`, `scaleW`, `scaleH` and `pages`
+from the second line, the page file name and the glyph count, then `count`
+lines of nine values (`char id x y width height xoffset yoffset xadvance
+page`): each rectangle is `(x, y + scaleH*page, width, height)` in the page
+image (next to the `.fnt`; GRAYSCALE pages become GRAY_ALPHA), padding 0,
+baseSize lineHeight. Fewer than four header values or no file name or count
+give raylib's empty Font (`Fail`); a page that does not load gives the
+default font when no glyph has pixels.
+
+### ExportFontAsCode
+
+`Font.as_code` builds raylib's file text byte for byte: the banner,
+`COMPRESSED_DATA_SIZE_FONT_<NAME>` and the DEFLATE (`CompressData`, the
+`sdefl` port) of `LoadImageFromTexture`'s data, which rlsw returns as zero
+bytes ([TEXTURES.md](TEXTURES.md)), 20 bytes per line; the rectangles
+(`%1.0f`) and GlyphInfo values; the `LoadFont_<Name>` function. The name is
+`TextToPascal` of the file name without extension (`TextToUpper` for the
+macro).
+
+### Input domain
+
+stb_truetype does no bounds checking. Jonlib checks every byte stb_truetype
+would read against the font data and refuses (`FontDataRefused`, `None`) a
+read outside it; it also refuses signed int overflows, float-to-int
+conversions out of range, glyphs whose outline has no contour under a
+non-empty box (raylib returns an uninitialized bitmap), an off-curve point
+ending a glyph (stb reads past its points), CFF (OpenType) outlines,
+composites nested deeper than 6, glyph bitmaps and atlases beyond 4096 and
+more than 65536 codepoints.
+
 ## Refusals and None
 
 - **Frame:** as in [FRAME.md](FRAME.md), a draw Jonlib does not reproduce marks
@@ -178,8 +318,17 @@ default font, and so does Jonlib.
   (`MAX_GLYPHS_FROM_IMAGE`), when `firstChar + glyphCount - 1` overflows an
   int, when `LoadImageColors` is out of domain, or when the 127 texture ids
   are in use (raylib returns a font whose texture id is 0).
-- `Font.glyph_info`: `None` only for a glyph rectangle that is not a positive
+- `Font.glyph_info`: `None` only for a glyph rectangle that is not an
   integral region of the atlas, which the loaders never build.
+- `Font.load_data` / `gen_image_atlas*` / `load_from_memory` / `load_ex` /
+  `load` / `load_bmfont` / `as_code`: the cases listed in
+  [TrueType, BDF and BMFont fonts](#truetype-bdf-and-bmfont-fonts); also
+  `LoadFontFromMemory` fonts where no requested glyph is found (raylib then
+  reads 95 glyphs from an empty array), glyph rectangles outside the atlas or
+  BMFont page (`ImageFromImage` reads past it), negative image sizes, BMFont
+  files with another page count than 1 (raylib frees the extra pages before
+  drawing them), BMFont glyph lines without nine values and header lines
+  without their field (raylib passes NULL to `sscanf`).
 
 ## Verification
 
@@ -187,8 +336,11 @@ default font, and so does Jonlib.
 |---|---|---|
 | `font` | `tools/font_probe.py` | 69 scenes (855 operations, 19 of them seeded random scenes): default-font fields and glyph table, glyph queries, `MeasureText`/`MeasureTextEx`/`MeasureTextCodepoints` bits, framebuffers with `DrawText`/`DrawTextEx`/`DrawTextPro`/`DrawTextCodepoint(s)`/`DrawFPS`, `LoadFontFromImage` fonts, `ImageText*` and `ImageDrawText*` bytes against the uncontracted memory-platform raylib on CPU-1, CPU-2 and JavaScript; refusal contracts |
 
+| `ttf` | `tools/ttf_probe.py` | 45 scenes (218 operations, 15 refusal contracts): `LoadFontData` glyphs (fields and every image byte) for FONT_DEFAULT, FONT_BITMAP and FONT_SDF, `GenImageFontAtlas` images and rectangle bits for both packing methods, fonts from `LoadFontFromMemory`, `LoadFontEx` and `LoadFont` (fields, whole glyph tables with every glyph image, `GetGlyphInfo`), `MeasureTextEx` bits, `ImageTextEx` bytes, `ExportFontAsCode` file bytes and `DrawTextEx` framebuffers, against the same reference on CPU-1, CPU-2 and JavaScript |
+
 ```sh
 python3 tools/font_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --jobs 3
+python3 tools/ttf_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --jobs 1
 ```
 
 The probe also checks that `src/fonts.bend`'s `charsWidth` and
@@ -214,13 +366,43 @@ R8G8B8A8, R8G8B8, R5G5B5A1 and GRAY_ALPHA sources, irregular gaps, exactly
 256 glyphs, images that return the default font) and the refusals above; a
 model of its scan in the probe decides which images raylib reads past.
 
+The `ttf` probe's fonts are generated by `tools/ttf_fonts.py` (no third-party
+glyph data): cmap formats 0, 4 (delta and range offsets), 6, 12, 13 and 2;
+short and long `loca`; quadratic contours mixing on- and off-curve points,
+repeated and short-vector flags and uncompressed coordinates, contours
+starting off the curve, single-point contours; composites with byte and short
+offsets, scale, x/y scale, 2x2, negative scale, nesting and the
+point-matching form; glyph boxes smaller than their outlines (the
+rasterizer's clipping path); line-only box fonts for SDF; a space with an
+outline, a negative space advance, a 2048-unit font at 64 and 120 pixels, no
+cmap, a CFF table and a truncated file. Two OFL fonts are read in place from
+the pinned raylib checkout (`examples/text/resources/anonymous_pro_bold.ttf`,
+`DotGothic16-Regular.ttf`, SIL Open Font License; not redistributed). The
+probe also writes BDF files (without characters, with a space only, with
+`SIZE` in hex and octal, the NULL-pointer write, no `ENDFONT`), AngelCode
+BMFont files with RGBA and GRAYSCALE PNG pages (and the refused shapes) and
+an XNA-style PNG for `LoadFont`. Atlases come from loaded glyphs and from
+synthetic glyph sets with many equal sizes (ties in the rectangle sort),
+heights built with McIlroy's quicksort adversary so Apple's introsort depth
+limit falls back to heapsort, atlas growth and clipping, glyphs wider than
+the atlas and unpacked rectangles. A native control checks that the host
+`logf` gives `GenImageFontAtlas` the power itself at powers of two. The probe
+selects the rectangle sort by the host's `M.Libm` profile; this host
+(macOS) verifies the Apple sort, CI's Linux hosts the glibc one.
+
 ## Gaps
 
-- `LoadFont`, `LoadFontEx`, `LoadFontFromMemory`, `LoadFontData`,
-  `GenImageFontAtlas`, `UnloadFontData` and `ExportFontAsCode` are not ported:
-  TTF/OTF needs `stb_truetype` (rasterization with floating-point coverage and
-  `stb_rect_pack`), BDF and BMFont their parsers. Fonts with offsets, advance
-  or padding are therefore only reachable by building a `Font` by hand.
+- CFF (OpenType `CFF ` outlines, stb's Type 2 charstring interpreter) is not
+  ported: such fonts are refused.
+- FONT_SDF glyphs with curves need `stbtt__solve_cubic` (the C library's
+  double `pow`, `acos` and `cos`): refused; only line outlines (and degenerate
+  curves) are reproduced.
+- BMFont files with other than one page, atlas sizes in the 64 floats above a
+  power of two (host `logf` rounding), composites nested deeper than 6,
+  bitmaps and atlases beyond 4096 and more than 65536 codepoints are refused;
+  BDF fonts behave as raylib 6.0's reader (characters give the default font).
+- The rectangle sort of `GenImageFontAtlas` method 1 follows glibc's stable
+  `qsort` or Apple Libc's; other C libraries are not modeled.
 - The default font's texture is not shared with the frame's shapes atlas
   (see above): filtering or updating it does not reach shapes or `Draw.text`.
 - Measurement is the uncontracted profile; contracted arm64 builds of raylib
