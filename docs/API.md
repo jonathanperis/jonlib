@@ -78,6 +78,13 @@ with an explicit clock, EndDrawing's timing and polling, GetFPS, automation
 recording/playback; `Input.*`: keyboard, mouse, touch and gamepads;
 `Gestures.*`: rgestures.h; `AutomationEventList.*`: load/export) are
 documented in [INPUT.md](INPUT.md).
+The desktop driver and programs (`Desktop.run`: a `Program` in a Base window
+with desktop input polling, `IO.now` timing and `Frame.present`;
+`Program.replay`: the same program headless against scripted automation
+events; `Core.end_drawing_desktop`, `Desktop.key`, `Frame.present`,
+`Frame.scan`, `Frame.refuse`, `Core.get_screen_width` and friends) and the
+ported raylib examples under `examples/` are documented in
+[DRIVER.md](DRIVER.md).
 Byte-string utilities and UTF-8 codepoints (`Text.*`, `Codepoint.*`, `UTF8.*`:
 rtext.c's text strings management functions) are documented in [TEXT.md](TEXT.md).
 The headless drawing frame and 2D shapes (`Frame.*`: InitWindow, Begin/EndDrawing,

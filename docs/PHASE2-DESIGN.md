@@ -125,7 +125,9 @@ through a program:
    representative examples (`core_basic_window`, `core_input_keys`,
    `core_input_mouse`, `core_2d_camera`, `shapes_basic_shapes`,
    `textures_logo_raylib`), each run headless against the reference
-   framebuffer and interactively on macOS and Linux.
+   framebuffer and interactively on macOS and Linux. Delivered in
+   [DRIVER.md](DRIVER.md) (with `shapes_logo_raylib`; `shapes_basic_shapes`
+   is refused by the libm profiles, and only macOS was run interactively).
 
 Text drawing (`DrawText*`, the default font) is the first Phase 3 slice; it
 reuses the texture path and also unblocks the `ImageText*` Phase 1 leftovers.

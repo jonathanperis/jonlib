@@ -61,7 +61,15 @@ identify the original sources and their required attribution.
   cursor functions from `src/platforms/rcore_memory.c`, the key/char callbacks
   from `src/platforms/rcore_desktop_glfw.c`, and the gesture state machine of
   `src/rgestures.h` (copyright Ramon Santamaria and contributors; zlib), with
-  explicit state and clock arguments.
+  explicit state and clock arguments. The desktop driver (`Desktop.*`,
+  `Core.end_drawing_desktop` in `jonlib.bend`, the desktop polling of
+  `src/input.bend` and `src/core_state.bend`) adapts `PollInputEvents` and the
+  key, mouse button and cursor position callbacks of
+  `src/platforms/rcore_desktop_glfw.c` (same author and license); the programs
+  under `examples/` (`core_basic_window`, `core_input_keys`,
+  `core_input_mouse`, `core_2d_camera`, `shapes_logo_raylib`,
+  `textures_logo_raylib`, `shapes_basic_shapes`) are altered Bend ports of the
+  raylib examples of the same names (copyright Ramon Santamaria; zlib/libpng).
   `src/dds.bend` adapts `rl_load_dds_from_memory` and `get_pixel_data_size`
   from `src/external/rltexgpu.h` (same author and zlib license) for DDS files,
   including DXT blocks and mipmap chains; `src/gputex.bend` adapts the same
@@ -159,6 +167,13 @@ gate also reads `anonymous_pro_bold.ttf` (Mark Simonson) and
 SIL Open Font License, in place from the pinned raylib checkout's
 `examples/text/resources/` (see its `LICENSE.md`). No font file is
 redistributed by Jonlib.
+
+## Example assets
+
+`examples/textures_logo_raylib.bend` and the `examples` gate read
+`raylib_logo.png` in place from the pinned raylib checkout's
+`examples/textures/resources/` (the raylib logo, by Ramon Santamaria; its
+`LICENSE.md` does not list it). No image file is redistributed by Jonlib.
 
 ## sdefl
 

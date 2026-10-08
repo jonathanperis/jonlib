@@ -394,6 +394,10 @@ def Touch.set_position(touch: Touch, +id: U32, +x: U32, +y: U32) -> Touch:
   Touch{count, ids, positions, previous_positions, current, previous} = touch
   Touch{count, ids, List.set(&2, Point, positions, U32.to_nat(id), vector.ints(x, y)), previous_positions, current, previous}
 
+def Touch.set_point(touch: Touch, +position: Point) -> Touch:
+  Touch{count, ids, positions, previous_positions, current, previous} = touch
+  Touch{count, ids, List.set(&2, Point, positions, 0n, position), previous_positions, current, previous}
+
 def Touch.poll(touch: Touch) -> Touch:
   Touch{count, ids, positions, previous_positions, +current, _} = touch
   Touch{count, ids, positions, previous_positions, current, current}
@@ -515,6 +519,50 @@ def play(+kind: U32, +p0: U32, +p1: U32, +p2: U32, input: Input) -> Maybe<Input>
 def poll(input: Input) -> Input:
   Input{keyboard, mouse, touch, gamepads} = input
   Input{Keyboard.poll(keyboard), mouse, Touch.poll(touch), Gamepads.poll(gamepads)}
+
+# -----------------------------------------------------------------------------
+# Desktop polling (src/platforms/rcore_desktop_glfw.c PollInputEvents, before
+# glfwPollEvents runs the callbacks), for the desktop driver: queues emptied,
+# previous key states copied for all 512 keys and repeats cleared, previous
+# mouse buttons, wheel and position registered (the wheel move reset), previous
+# touch states copied, touch point 0 moved to the mouse position, the last
+# gamepad button cleared and no gamepad ready (glfwJoystickPresent is false:
+# the driver has no gamepads, so no gamepad state is read).
+
+def Keyboard.poll_desktop(kb: Keyboard) -> Keyboard:
+  Keyboard{exit, +current, _, _, _, _} = kb
+  Keyboard{exit, current, current, words(16n), Nil{}, Nil{}}
+
+def MouseState.poll_desktop(mouse: MouseState) -> MouseState:
+  MouseState{offset, scale, +position, _, hidden, on_screen, +buttons, _, +wheel, _} = mouse
+  MouseState{offset, scale, position, position, hidden, on_screen, buttons, buttons, vector.zero(), wheel}
+
+def Touch.poll_desktop(touch: Touch, +mouse: Point) -> Touch:
+  Touch{count, ids, positions, previous_positions, +current, _} = touch
+  Touch{count, ids, List.set(&2, Point, positions, 0n, mouse), previous_positions, current, current}
+
+def Gamepads.poll_desktop(pads: Gamepads) -> Gamepads:
+  Gamepads{_, counts, _, current, previous, axes} = pads
+  Gamepads{0, counts, 0, current, previous, axes}
+
+def poll_desktop.with(+mouse: MouseState, keyboard: Keyboard, touch: Touch, gamepads: Gamepads) -> Input:
+  Input{Keyboard.poll_desktop(keyboard), MouseState.poll_desktop(mouse), Touch.poll_desktop(touch, MouseState.position(mouse)), Gamepads.poll_desktop(gamepads)}
+
+def poll_desktop(input: Input) -> Input:
+  Input{keyboard, +mouse, touch, gamepads} = input
+  poll_desktop.with(mouse, keyboard, touch, gamepads)
+
+# MouseButtonCallback's state: currentButtonState[button] and
+# currentTouchState[button] = action (buttons 0..7).
+def mouse_button_callback(input: Input, +button: U32, +down: Bool) -> Input:
+  Input{keyboard, mouse, touch, gamepads} = input
+  Input{keyboard, MouseState.set_button(mouse, button, down), Touch.set_state(touch, button, down), gamepads}
+
+# MouseCursorPosCallback's state: currentPosition = (float)(x, y), touch
+# point 0 at the same position.
+def cursor_position_callback(input: Input, +position: Point) -> Input:
+  Input{keyboard, mouse, touch, gamepads} = input
+  Input{keyboard, MouseState.set_position(mouse, position), Touch.set_point(touch, position), gamepads}
 
 # -----------------------------------------------------------------------------
 # Queries
