@@ -47,6 +47,14 @@ identify the original sources and their required attribution.
   `rtext.c`, keeping its static-buffer limits and returning owned values.
   `tools/text_probe.py` compiles those pinned rtext.c functions unaltered as a
   reference control.
+  `src/input.bend`, `src/gestures.bend`, `src/automation.bend` and
+  `src/core_state.bend` (with `Core.*`, `Input.*`, `Gestures.*` and
+  `AutomationEventList.*` in `jonlib.bend`) adapt `CORE.Input`, automation
+  events, frame timing and `GetFPS` from `rcore.c`, `PollInputEvents` and the
+  cursor functions from `src/platforms/rcore_memory.c`, the key/char callbacks
+  from `src/platforms/rcore_desktop_glfw.c`, and the gesture state machine of
+  `src/rgestures.h` (copyright Ramon Santamaria and contributors; zlib), with
+  explicit state and clock arguments.
   `src/dds.bend` adapts `rl_load_dds_from_memory` and `get_pixel_data_size`
   from `src/external/rltexgpu.h` (same author and zlib license) for DDS files,
   including DXT blocks and mipmap chains; `src/gputex.bend` adapts the same

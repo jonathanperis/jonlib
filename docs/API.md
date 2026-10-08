@@ -73,6 +73,11 @@ Trace logging and the memory helpers (`Log.*`, `Memory.*`) are documented in
 [LOGGING.md](LOGGING.md).
 Audio waves (`Wave.*`: WAV loading, crop, format conversion, samples and
 export) are documented in [AUDIO.md](AUDIO.md).
+Input, automation events, frame timing and gestures (`Core.*`: the CORE state
+with an explicit clock, EndDrawing's timing and polling, GetFPS, automation
+recording/playback; `Input.*`: keyboard, mouse, touch and gamepads;
+`Gestures.*`: rgestures.h; `AutomationEventList.*`: load/export) are
+documented in [INPUT.md](INPUT.md).
 Byte-string utilities and UTF-8 codepoints (`Text.*`, `Codepoint.*`, `UTF8.*`:
 rtext.c's text strings management functions) are documented in [TEXT.md](TEXT.md).
 The headless drawing frame and 2D shapes (`Frame.*`: InitWindow, Begin/EndDrawing,
