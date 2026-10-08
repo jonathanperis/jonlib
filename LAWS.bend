@@ -22,6 +22,8 @@ import ./src/fma.bend as Fma
 
 import ./src/wav.bend as Wav
 import ./src/wav_adpcm.bend as Adpcm
+import ./src/shapes.bend as Shapes
+import ./src/frame.bend as FrameCore
 
 law clear_dimensions:
   for +width: U32
@@ -809,3 +811,18 @@ law msadpcm_adapt_saturates:
 # ... and a negative header delta adapts to the floor of 16.
 law msadpcm_adapt_negative_floor:
   {Adpcm.ms.adapt(230, 4294966996) == 16 : U32}
+
+# Frame: InitWindow sizes are 1..4096; a zero or oversized width has no frame
+# whatever the height.
+law frame_init_window_zero_width:
+  for height: U32
+  {J.Frame.init_window(0, height) == None{} : Maybe<J.Frame>}
+
+law frame_init_window_wide:
+  for height: U32
+  {J.Frame.init_window(4097, height) == None{} : Maybe<J.Frame>}
+
+# A plan with an undefined C int conversion is refused whatever it draws.
+law frame_plan_refused:
+  for commands: +List<FrameCore.Command>
+  {Shapes.Plan.require(False{}, Shapes.Plan{True{}, commands}) == Shapes.Plan{False{}, commands} : Shapes.Plan}

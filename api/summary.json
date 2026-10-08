@@ -6,16 +6,16 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 866,
-    "partial": 997
+    "not-started": 827,
+    "partial": 1036
   },
   "core_functions": {
     "total": 600,
     "blocked": 19,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 377,
-    "partial": 204
+    "not-started": 338,
+    "partial": 243
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 550,
-    "partial": 360
+    "not-started": 511,
+    "partial": 399
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 19,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 435,
-      "partial": 583
+      "not-started": 396,
+      "partial": 622
     },
     "raymath.h": {
       "total": 254,
@@ -269,8 +269,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 57,
-      "partial": 0
+      "not-started": 55,
+      "partial": 2
     },
     {
       "id": "input",
@@ -299,8 +299,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 17,
-      "partial": 0
+      "not-started": 15,
+      "partial": 2
     },
     {
       "id": "rlgl-core",
@@ -332,8 +332,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 57,
-      "partial": 5
+      "not-started": 23,
+      "partial": 39
     },
     {
       "id": "textures",
@@ -348,8 +348,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 27,
-      "partial": 0
+      "not-started": 26,
+      "partial": 1
     },
     {
       "id": "text-utils",
