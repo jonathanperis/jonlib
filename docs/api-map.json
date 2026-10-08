@@ -1684,6 +1684,17 @@
     "api_id": "raylib:function:ExportWave",
     "milestone": "audio-codecs"
   },
+  "ExportWaveAsCode": {
+    "jonlib": "Wave.to_code / Wave.write_code",
+    "status": "profile-covered",
+    "scope": "raylib's header text: uppercased file name, frame/rate/size/channel defines, 0x%x bytes for 8/16-bit and exact %.4f floats for 32-bit waves, 20 per line; compared with the files raylib writes.",
+    "gaps": [
+      "Empty waves (raylib reads before the data) and NaN samples are refused",
+      "Very long all-huge-negative 32-bit waves can overflow raylib's text buffer"
+    ],
+    "api_id": "raylib:function:ExportWaveAsCode",
+    "milestone": "audio-codecs"
+  },
   "WaveCopy": {
     "jonlib": "Wave.copy",
     "status": "profile-covered",

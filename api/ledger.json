@@ -57235,23 +57235,28 @@
       "milestone": "audio-codecs",
       "phase": 4,
       "sequence": 19,
-      "status": "not-started",
-      "jonlib": "Audio.export_wave_as_code",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Wave.to_code / Wave.write_code",
+      "mapping_state": "implemented",
+      "scope": "raylib's header text: uppercased file name, frame/rate/size/channel defines, 0x%x bytes for 8/16-bit and exact %.4f floats for 32-bit waves, 20 per line; compared with the files raylib writes.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Empty waves (raylib reads before the data) and NaN samples are refused",
+        "Very long all-huge-negative 32-bit waves can overflow raylib's text buffer"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/wav_probe.py",
+        "tools/decimal_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -57267,7 +57272,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Decoded PCM, metadata, format conversion and malformed/truncated audio for every reference format.",
-      "next_step": "Derive ExportWaveAsCode semantics from the linked source, add a reference fixture, then implement Audio.export_wave_as_code.",
+      "next_step": "Close documented gaps and unverified gates for ExportWaveAsCode.",
       "priority": 519
     },
     {

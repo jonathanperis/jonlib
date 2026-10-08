@@ -12,7 +12,8 @@ both sides. Jonlib contracts (not native comparisons): RIFX, ADPCM and 64-bit
 float data are UnsupportedWaveFormat; formats dr_wav reads no frames from and
 NaN float samples, which leave raylib's samples uninitialized or undefined,
 are InvalidWaveData. IsWaveValid, WaveCopy, WaveCrop, LoadWaveSamples and
-ExportWave (.wav, .raw) on 8-, 16- and 32-bit waves are compared too. CPU/JS.
+ExportWave (.wav, .raw) and ExportWaveAsCode on 8-, 16- and 32-bit waves are
+compared too. CPU/JS.
 """
 import hashlib
 import json
@@ -95,7 +96,9 @@ EXPECTED = {'unsupported': ['error', 'unsupported'], 'data': ['error', 'data']}
 
 # Waves built in memory for the utilities: (size, channels, rate, samples).
 WAVES = [(8, 1, 8000, [0, 1, 127, 128, 129, 200, 255]), (16, 2, 22050, [0, 1, 32767, 32768, 65535, 12345, 40000, 7]),
-         (32, 1, 44100, [struct.unpack('<I', struct.pack('<f', v))[0] for v in (0.0, -0.5, 0.25, 1.75, -3.0)])]
+         (32, 1, 44100, [struct.unpack('<I', struct.pack('<f', v))[0] for v in (0.0, -0.5, 0.25, 1.75, -3.0)]),
+         (8, 1, 11025, [(i * 37) % 256 for i in range(43)]),
+         (32, 2, 48000, [struct.unpack('<I', struct.pack('<f', v))[0] for v in [(i - 23) / 7.0 for i in range(46)]])]
 
 
 def c_wave(size, channels, rate, samples):
@@ -121,7 +124,8 @@ def native(probe, items):
                      f'WaveCrop(&k,2,1);wave(k);UnloadWave(k);'
                      f'float *s=LoadWaveSamples(w);printf("[");for(unsigned i=0;i<w.frameCount*w.channels;i++){{unsigned b;memcpy(&b,s+i,4);printf("%s%u",i?",":"",b);}}puts("]");'
                      f'UnloadWaveSamples(s);ExportWave(w,"{WORK}/out{index}.wav");file("{WORK}/out{index}.wav");'
-                     f'ExportWave(w,"{WORK}/out{index}.RAW");file("{WORK}/out{index}.RAW");}}')
+                     f'ExportWave(w,"{WORK}/out{index}.RAW");file("{WORK}/out{index}.RAW");'
+                     f'ExportWaveAsCode(w,"{WORK}/native/wave_{index}.h");file("{WORK}/native/wave_{index}.h");}}')
     return probe.native('\n'.join(lines + ['return 0;}']) + '\n')
 
 
@@ -162,7 +166,7 @@ def cropped.wave(result: Result<&1, &1, J.Wave & J.Wave.Error, J.Wave>) -> J.Wav
   match result:
     case Fail{Tuple{w, _}}: w
     case Done{w}: w
-def utilities(+w: J.Wave, +last: U32, +wav: String, +raw: String) -> IO(Unit):
+def utilities(+w: J.Wave, +last: U32, +wav: String, +raw: String, +code: String) -> IO(Unit):
   do IO<Unit>:
     Unit <- IO.print(Bool.pick(String, J.Wave.is_valid(w), "1", "0"))
     Unit <- IO.print(wave(w))
@@ -170,7 +174,8 @@ def utilities(+w: J.Wave, +last: U32, +wav: String, +raw: String) -> IO(Unit):
     Unit <- IO.print(cropped(J.Wave.crop(cropped.wave(J.Wave.crop(w, 1, last)), 2, 1)))
     Unit <- IO.print(samples(J.Wave.samples(w)))
     Unit <- IO.bind(Result<&1, &1, J.Wave.IOError, Unit>, Unit, J.Wave.write(w, wav), written)
-    IO.bind(Result<&1, &1, J.Wave.IOError, Unit>, Unit, J.Wave.write(w, raw), written)
+    Unit <- IO.bind(Result<&1, &1, J.Wave.IOError, Unit>, Unit, J.Wave.write(w, raw), written)
+    IO.bind(Result<&1, &1, J.Wave.IOError, Unit>, Unit, J.Wave.write_code(w, code), written)
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
@@ -184,13 +189,14 @@ def render(selected, gpu):
         else:
             index, (size, channels, rate, samples) = payload
             body += (f'    Unit <- utilities(J.Wave{{{len(samples) // channels}, {rate}, {size}, {channels}, [{", ".join(map(str, samples))}]}}, '
-                     f'{len(samples) // channels - 1}, "{WORK}/jon{index}.wav", "{WORK}/jon{index}.RAW")\n')
+                     f'{len(samples) // channels - 1}, "{WORK}/jon{index}.wav", "{WORK}/jon{index}.RAW", "{WORK}/jon/wave_{index}.h")\n')
     return body + '    IO.print("\\"done\\"")\n'
 
 
 def main():
     probe = probekit.Probe('wav', probekit.arguments(__doc__), raylib_options=('SUPPORT_MODULE_RAUDIO=ON',))
-    (ROOT / WORK).mkdir(parents=True, exist_ok=True)
+    for folder in ('', '/native', '/jon'):
+        (ROOT / (WORK + folder)).mkdir(parents=True, exist_ok=True)
     items = cases()
     for index, case in enumerate(items):
         case['path'] = f'{WORK}/{index:02}-{case["id"]}.wav'
@@ -202,8 +208,7 @@ def main():
         raise ProbeFailure('wav: unexpected native outcomes')
     utility_rows = []
     for _ in WAVES:
-        valid, copy, crop, bad_crop, floats, wav, raw = (next(rows) for _ in range(7))
-        utility_rows.append([valid, copy, crop, bad_crop, floats, wav, raw])
+        utility_rows.append([next(rows) for _ in range(8)])
     actions = [('load', case['path']) for case in items] + [('utilities', (index, wave)) for index, wave in enumerate(WAVES)]
 
     def parse(text, selected):
@@ -215,9 +220,9 @@ def main():
             else:
                 index = payload[0]
                 got = [next(values) for _ in range(5)]
-                for name in ('wav', 'RAW'):
+                for name in (f'jon{index}.wav', f'jon{index}.RAW', f'jon/wave_{index}.h'):
                     status = next(values)
-                    got.append(list((ROOT / f'{WORK}/jon{index}.{name}').read_bytes()) if status == 'written' else None)
+                    got.append(list((ROOT / f'{WORK}/{name}').read_bytes()) if status == 'written' else None)
                 out.append(got)
         if next(values) != 'done':
             raise ValueError('wav: candidate output did not finish')

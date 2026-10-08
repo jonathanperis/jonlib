@@ -14,6 +14,7 @@ It is plain `Data`: copying a Wave copies its samples.
 | `Wave.copy(wave)` / `unload` | `WaveCopy` / `UnloadWave` | |
 | `Wave.crop(wave, init, final)` | `WaveCrop` | Frames `init..final-1` when `0 <= init < final <= frames` (C ints as U32 two's-complement words); other ranges return the wave unchanged with `InvalidWaveRequest`. |
 | `Wave.samples(wave)` | `LoadWaveSamples` | 8-bit as `(x - 128)/128`, 16-bit as `x/32768`, 32-bit as is (F32). |
+| `Wave.to_code(wave, path)` / `write_code` | `ExportWaveAsCode` | raylib's header text with the file name (without extension, a-z upper-cased), `0x%x` bytes for 8- and 16-bit waves and `%.4ff` floats for 32-bit ones (exact decimal rounding, `src/decimal.bend`), 20 per line. Empty waves (raylib reads before its data) and NaN samples are refused. |
 | `Wave.to_wav(wave)` / `Wave.write(wave, path)` | `ExportWave` | `.wav` (dr_wav's RIFF writer: a 16-byte `fmt ` chunk, IEEE float for 32-bit samples, PCM otherwise, the data chunk and a pad byte) and `.raw` sample bytes, by ASCII-insensitive suffix. `.qoa` is `UnsupportedWaveFormat`; other names write nothing (`InvalidWaveRequest`). |
 
 Sample sizes other than 8, 16 and 32 are `InvalidWaveRequest` for crop, samples
@@ -48,9 +49,12 @@ Jonlib contracts where raylib behaves differently or not definedly:
 `tools/wav_probe.py` (gate `wav`) builds raylib with its audio module and
 compares native `LoadWave` with `Wave.load` on 36 generated files covering
 each case above, then `IsWaveValid`, `WaveCopy`, `WaveCrop` (in and out of
-range), `LoadWaveSamples` and `ExportWave` to `.wav` and `.RAW` (the written
-bytes) on 8-, 16- and 32-bit waves, on CPU-1, CPU-2 and JavaScript.
+range), `LoadWaveSamples`, `ExportWave` to `.wav` and `.RAW` and
+`ExportWaveAsCode` (the written bytes) on 8-, 16- and 32-bit waves, on CPU-1,
+CPU-2 and JavaScript. `tools/decimal_probe.py` (gate `decimal`) compares the
+`%.Nf` formatter with native `printf` on 1024 values at 0, 1, 4, 6 and 9
+decimals, including exact half-way ties, subnormals and the largest values.
 
 Not yet available: OGG, MP3, QOA, FLAC, XM and MOD data, `WaveFormat`
-(miniaudio's format, channel and sample-rate conversion), `ExportWaveAsCode`,
-and sounds, music and audio devices.
+(miniaudio's format, channel and sample-rate conversion), and sounds, music
+and audio devices.
