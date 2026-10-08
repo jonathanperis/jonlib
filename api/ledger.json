@@ -42482,7 +42482,8 @@
         "Wider-angle platform libm rounding differences",
         "Other libm/reference profiles",
         "Zero normalization extents",
-        "Full numerical/target/performance matrix"
+        "Full numerical/target/performance matrix",
+        "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
       "blocker": null,
       "gates": {
@@ -44297,7 +44298,8 @@
       "gaps": [
         "Wider-angle reference behavior",
         "Pixel formats 10+ and mipmaps",
-        "Full target/performance gates"
+        "Full target/performance gates",
+        "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
       "blocker": null,
       "gates": {
@@ -63616,7 +63618,8 @@
       "gaps": [
         "Wider-angle and exceptional/subnormal domains",
         "Other libm/contracted variants",
-        "Full target/performance coverage"
+        "Full target/performance coverage",
+        "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
       "blocker": null,
       "gates": {
@@ -65486,7 +65489,8 @@
       "scope": "Finite vectors and bounded one-cycle radians; explicit reference trigonometry with the original two-cross-product Euler-Rodrigues order and zero-axis behavior.",
       "gaps": [
         "Wider-angle, exceptional/subnormal and contracted domains",
-        "Other libm/target/performance coverage"
+        "Other libm/target/performance coverage",
+        "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
       "blocker": null,
       "gates": {
@@ -68326,7 +68330,8 @@
       "scope": "Bounded one-cycle F32 angle and finite axis; reference skips normalization for zero/exactly-unit squared axes, with explicit trigonometric profile.",
       "gaps": [
         "Wider-angle, exceptional/subnormal and contracted profiles",
-        "Other libm/target/performance coverage"
+        "Other libm/target/performance coverage",
+        "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
       "blocker": null,
       "gates": {
@@ -68387,7 +68392,8 @@
       "scope": "Bounded one-cycle F32 radians, explicit reference trigonometry and exact raw cosine/sine fields with signed-zero behavior.",
       "gaps": [
         "Wider-angle and exceptional/subnormal profiles",
-        "Other libm/target/performance coverage"
+        "Other libm/target/performance coverage",
+        "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
       "blocker": null,
       "gates": {
@@ -68447,7 +68453,8 @@
       "scope": "Bounded one-cycle F32 radians with explicit reference trigonometry and reference field signs/order.",
       "gaps": [
         "Wider-angle and exceptional/subnormal profiles",
-        "Other libm/target/performance coverage"
+        "Other libm/target/performance coverage",
+        "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
       "blocker": null,
       "gates": {
@@ -68507,7 +68514,8 @@
       "scope": "Bounded one-cycle F32 radians with explicit reference trigonometry and reference field signs/order.",
       "gaps": [
         "Wider-angle and exceptional/subnormal profiles",
-        "Other libm/target/performance coverage"
+        "Other libm/target/performance coverage",
+        "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
       "blocker": null,
       "gates": {
@@ -68567,7 +68575,8 @@
       "scope": "Bounded one-cycle F32 Euler radians; explicit reference trigonometry and unchanged negative-angle XYZ formulas/accumulation order.",
       "gaps": [
         "Wider-angle, exceptional/subnormal and contracted profiles",
-        "Other libm/target/performance coverage"
+        "Other libm/target/performance coverage",
+        "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
       "blocker": null,
       "gates": {
@@ -68628,7 +68637,8 @@
       "scope": "Bounded one-cycle F32 Euler radians; explicit reference trigonometry and distinct reference ZYX formulas/accumulation order.",
       "gaps": [
         "Wider-angle, exceptional/subnormal and contracted profiles",
-        "Other libm/target/performance coverage"
+        "Other libm/target/performance coverage",
+        "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
       "blocker": null,
       "gates": {
@@ -70136,7 +70146,8 @@
       "scope": "Finite axis and bounded one-cycle radians with explicit reference trigonometry; zero axis returns identity, otherwise half-angle construction and reference quaternion normalization.",
       "gaps": [
         "Wider-angle, exceptional/subnormal and contracted domains",
-        "Other libm/target/performance coverage"
+        "Other libm/target/performance coverage",
+        "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
       "blocker": null,
       "gates": {
@@ -70260,7 +70271,8 @@
       "scope": "Bounded one-cycle pitch/yaw/roll radians with explicit reference trigonometry and unchanged half-angle coefficient order.",
       "gaps": [
         "Wider-angle, exceptional/subnormal and contracted domains",
-        "Other libm/target/performance coverage"
+        "Other libm/target/performance coverage",
+        "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
       "blocker": null,
       "gates": {

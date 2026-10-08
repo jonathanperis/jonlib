@@ -836,7 +836,8 @@
       "Wider-angle platform libm rounding differences",
       "Other libm/reference profiles",
       "Zero normalization extents",
-      "Full numerical/target/performance matrix"
+      "Full numerical/target/performance matrix",
+      "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
     ],
     "api_id": "raylib:function:GenImageGradientLinear",
     "milestone": "images"
@@ -1133,7 +1134,8 @@
     "gaps": [
       "Wider-angle reference behavior",
       "Pixel formats 10+ and mipmaps",
-      "Full target/performance gates"
+      "Full target/performance gates",
+      "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
     ],
     "api_id": "raylib:function:ImageRotate",
     "milestone": "images"
