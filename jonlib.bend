@@ -45,6 +45,7 @@ import ./src/pic.bend as Pic
 import ./src/gif.bend as Gif
 import ./src/jpeg.bend as Jpeg
 import ./src/wav.bend as Wav
+import ./src/decimal.bend as Decimal
 import ./src/gif_animation.bend as GifAnimation
 import ./src/hdr.bend as Hdr
 import ./src/image_code.bend as ImageCode
@@ -5058,6 +5059,95 @@ def Wave.write.kind(kind: U32, +wave: Wave, path: String) -> IO(Result<&1, &1, W
     case 2: Wave.write.bytes(path, Bool.pick(Result<&1, &1, Wave & Wave.Error, +List<U32>>, Wave.sized(Wave.size(wave)), Done{Wave.raw(wave)}, Fail{(wave, InvalidWaveRequest{})}))
     case 3: IO.pure(Result<&1, &1, Wave.IOError, Unit>, Fail{WaveDataError{UnsupportedWaveFormat{}}})
     case _: IO.pure(Result<&1, &1, Wave.IOError, Unit>, Fail{WaveDataError{InvalidWaveRequest{}}})
+
+def Wave.data(+wave: Wave) -> +List<U32>:
+  Wave{_, _, _, _, data} = wave
+  data
+
+def Wave.code.upper(name: String) -> String:
+  match name:
+    case SNil{}: SNil{}
+    case SCon{c, rest}:
+      +v = Char.to_u32(c)
+      SCon{Char.from_u32(Bool.pick(U32, ((v >= 97) && (v <= 122) : U32), (v - 32 : U32), v)), Wave.code.upper(rest)}
+
+def Wave.code.join(parts: List<String>) -> String:
+  match parts:
+    case Nil{}: ""
+    case Con{part, rest}: part ++ Wave.code.join(rest)
+
+# The values after the first: "v, " or, every 20th, "v,\n    "; the last ends the array.
+def Wave.code.items(values: List<String>, +index: U32, acc: List<String>) -> List<String>:
+  match values:
+    case Nil{}: List.reverse(&1, String, acc)
+    case Con{value, Nil{}}: List.reverse(&1, String, Con{value ++ " };\n", acc})
+    case Con{value, rest}: Wave.code.items(rest, (index + 1 : U32), Con{value ++ Bool.pick(String, U32.is_eq((index % 20 : U32), 0), ",\n    ", ", "), acc})
+
+def Wave.code.hex(bytes: +List<U32>) -> List<String>:
+  match bytes:
+    case Nil{}: Nil{}
+    case Con{b, rest}: Con{"0x" ++ ImageCode.hex_byte(b), Wave.code.hex(rest)}
+
+type Wave.Floats is Type:
+  WaveFloats{texts: List<String>, valid: Bool}
+
+def Wave.code.float.add(found: Maybe<String>, rest: Wave.Floats) -> Wave.Floats:
+  match found rest:
+    case Some{text} WaveFloats{texts, valid}: WaveFloats{Con{text ++ "f", texts}, valid}
+    case None{} WaveFloats{texts, _}: WaveFloats{texts, False{}}
+
+def Wave.code.floats(values: +List<U32>) -> Wave.Floats:
+  match values:
+    case Nil{}: WaveFloats{Nil{}, True{}}
+    case Con{v, rest}: Wave.code.float.add(Decimal.fixed(v, 4n), Wave.code.floats(rest))
+
+def Wave.code.text(+name: String, +wave: Wave, +size: U32, +count: U32, items: List<String>) -> String:
+  Wave{frames, rate, _, channels, _} = wave
+  Wave.code.join(Con{"\n//////////////////////////////////////////////////////////////////////////////////\n"
+    ++ "//                                                                              //\n"
+    ++ "// WaveAsCode exporter v1.1 - Wave data exported as an array of bytes           //\n"
+    ++ "//                                                                              //\n"
+    ++ "// more info and bugs-report:  github.com/raysan5/raylib                        //\n"
+    ++ "// feedback and support:       ray[at]raylib.com                                //\n"
+    ++ "//                                                                              //\n"
+    ++ "// Copyright (c) 2018-2026 Ramon Santamaria (@raysan5)                          //\n"
+    ++ "//                                                                              //\n"
+    ++ "//////////////////////////////////////////////////////////////////////////////////\n\n"
+    ++ "// Wave data information\n"
+    ++ "#define " ++ name ++ "_FRAME_COUNT      " ++ U32.show(frames) ++ "\n"
+    ++ "#define " ++ name ++ "_SAMPLE_RATE      " ++ U32.show(rate) ++ "\n"
+    ++ "#define " ++ name ++ "_SAMPLE_SIZE      " ++ U32.show(size) ++ "\n"
+    ++ "#define " ++ name ++ "_CHANNELS         " ++ U32.show(channels) ++ "\n\n"
+    ++ Bool.pick(String, U32.is_eq(size, 32), "static float " ++ name ++ "_DATA[" ++ U32.show(count) ++ "] = {\n",
+      "static unsigned char " ++ name ++ "_DATA[" ++ U32.show(count) ++ "] = { "), Wave.code.items(items, 1, Nil{})})
+
+def Wave.code.float.text(floats: Wave.Floats, +name: String, +wave: Wave, +count: U32) -> Result<&1, &1, Wave & Wave.Error, String>:
+  match floats:
+    case WaveFloats{_, False{}}: Fail{(wave, InvalidWaveData{})}
+    case WaveFloats{texts, True{}}: Done{Wave.code.text(name, wave, 32, count, texts)}
+
+def Wave.code.checked(kind: U32, +name: String, +wave: Wave) -> Result<&1, &1, Wave & Wave.Error, String>:
+  match kind:
+    case 0: Fail{(wave, InvalidWaveRequest{})}
+    case 32: Wave.code.float.text(Wave.code.floats(Wave.data(wave)), name, wave, U32.from_nat(List.length(&2, U32, Wave.data(wave))))
+    case _: Done{Wave.code.text(name, wave, Wave.size(wave), U32.from_nat(List.length(&2, U32, Wave.raw(wave))), Wave.code.hex(Wave.raw(wave)))}
+
+# ExportWaveAsCode: raylib's header text, the file name without extension
+# upper-cased (a-z), bytes as 0x%x for 8- and 16-bit waves and %.4ff floats for
+# 32-bit ones, 20 per line. Empty waves (raylib reads before the data) and NaN
+# samples are refused.
+def Wave.to_code(+wave: Wave, +path: String) -> Result<&1, &1, Wave & Wave.Error, String>:
+  Wave{frames, _, size, channels, _} = wave
+  Wave.code.checked(Bool.pick(U32, Wave.sized(size) && U32.is_ne((frames * channels : U32), 0), size, 0),
+    Wave.code.upper(Files.name_without_ext(path)), wave)
+
+def Wave.code.saved(+path: String, result: Result<&1, &1, Wave & Wave.Error, String>) -> IO(Result<&1, &1, Wave.IOError, Unit>):
+  match result:
+    case Fail{Tuple{_, error}}: IO.pure(Result<&1, &1, Wave.IOError, Unit>, Fail{WaveDataError{error}})
+    case Done{text}: IO.bind(Result<&1, &1, Surface.IOError, Unit>, Result<&1, &1, Wave.IOError, Unit>, Files.save_text(path, text), Wave.saved)
+
+def Wave.write_code(+wave: Wave, +path: String) -> IO(Result<&1, &1, Wave.IOError, Unit>):
+  Wave.code.saved(path, Wave.to_code(wave, path))
 
 # ExportWave: .wav and .raw files (ASCII-insensitive suffix); .qoa is not
 # written yet and other names write nothing.
