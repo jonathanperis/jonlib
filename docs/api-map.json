@@ -2184,6 +2184,18 @@
     "api_id": "raylib:function:WaveCrop",
     "milestone": "audio-codecs"
   },
+  "WaveFormat": {
+    "jonlib": "Wave.format_for / Wave.format",
+    "status": "profile-covered",
+    "scope": "miniaudio's ma_convert_frames as WaveFormat calls it: u8/s16/f32 conversions, default channel maps with rectangular mixing, linear resampling with its order-4 low-pass filter (binary64 coefficients certified against faithful libm sin), every output field and sample; M.Fused/M.Uncontracted profiles for the f32 filter and mixing; raylib's unchanged waves are InvalidWaveRequest.",
+    "gaps": [
+      "InvalidWaveData for undefined or alignment-dependent results: NaN samples, NaN from f32 arithmetic, s16 filter int32 overflow, f32 samples the SIMD s16 blocks convert differently",
+      "UnsupportedWaveFormat (not reproduced): reduced rates from 2^31, over 2^24 output samples, 4096-byte chunks ending the conversion early, uncertified filter coefficients",
+      "Sample sizes other than 8, 16 and 32"
+    ],
+    "api_id": "raylib:function:WaveFormat",
+    "milestone": "audio-codecs"
+  },
   "LoadWaveSamples": {
     "jonlib": "Wave.samples",
     "status": "profile-covered",
