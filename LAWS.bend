@@ -18,6 +18,7 @@ import ./src/pic.bend as Pic
 import ./src/formats.bend as Formats
 import ./src/codec.bend as Codec
 import ./src/qoa.bend as Qoa
+import ./src/fma.bend as Fma
 
 law clear_dimensions:
   for +width: U32
@@ -749,3 +750,42 @@ law pow_apple_none:
   for +x: F32
   for +exponent: U32
   {M.Libm.pow(M.AppleLibm{}, x, exponent) == None{} : Maybe<F32>}
+
+# Total binary32 FMA (src/fma.bend): input classification, exact significand
+# products and the final nearest-even step (concrete values; the arithmetic is
+# compared with fmaf by gate camera, not proven here).
+law fma_kind_nan_factor:
+  {Fma.kind(2143289344, 1065353216, 1065353216) == 0 : U32}
+
+law fma_kind_zero_factor:
+  {Fma.kind(0, 2139095040, 1065353216) == 0 : U32}
+
+law fma_kind_infinite_addend:
+  {Fma.kind(1065353216, 1065353216, 2139095040) == 1 : U32}
+
+law fma_kind_zero_addend:
+  {Fma.kind(1065353216, 1065353216, 0) == 2 : U32}
+
+law fma_product_largest_significands:
+  {Fma.product(16777215, 16777215) == Resize.Wide{65535, 4261412865} : Resize.Wide}
+
+law fma_round_odd_tie_up:
+  {Fma.rounded(Resize.Wide{0, 6}) == 2 : U32}
+
+law fma_round_even_tie_kept:
+  {Fma.rounded(Resize.Wide{0, 10}) == 2 : U32}
+
+# Cameras: CAMERA_PERSPECTIVE projections are None (no verified binary64 tan),
+# and the AppleLibm profile reproduces only a zero sinf/cosf argument.
+law camera_perspective_projection_none:
+  for position: M.Vector3
+  for target: M.Vector3
+  for up: M.Vector3
+  for fovy: F32
+  for aspect: F32
+  {J.Camera.projection_matrix(J.Camera3D{position, target, up, fovy, 0}, aspect) == None{} : Maybe<M.Matrix>}
+
+law camera_apple_zero_argument_only:
+  for angle: F32
+  for argument: F32
+  {J.Camera.turnable(M.AppleLibm{}, angle, argument) == Bool.or(F32.is_eq(argument, 0.0), False{}) : Bool}

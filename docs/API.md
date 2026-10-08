@@ -48,6 +48,9 @@ Pure geometry queries are listed in [COLLISION.md](COLLISION.md), including
 strict rectangle edges and inclusive circle tangency.
 Spline point queries and their explicit arithmetic profiles are listed in
 [SPLINES.md](SPLINES.md).
+Camera queries (`Camera.*`: rcamera.h and the rcore.c camera/screen-space
+functions), their arithmetic/libm profiles and `None` refusals are documented in
+[CAMERA.md](CAMERA.md).
 Owned random-stream APIs and their native rprand profile are described in
 [RANDOM.md](RANDOM.md).
 Pixel sizing, raw byte/integer reads and writes, and packed dithering are
@@ -101,7 +104,7 @@ are the ray-query values of [COLLISION.md](COLLISION.md).
 `J.Camera3D{position, target, up, fovy, projection}` (raylib's `Camera` alias),
 `J.Camera2D{offset, target, rotation, zoom}` and
 `J.Transform{translation, rotation, scale}` are immutable value structs for the
-later camera and model modules; `projection` is a `CameraProjection` U32 and
+camera queries of [CAMERA.md](CAMERA.md) and the later model modules; `projection` is a `CameraProjection` U32 and
 `rotation` a Quaternion (`M.Vector4`). `tests/test_structs.py` checks these and
 the Jonmath structs field by field against the pinned headers.
 Jonmath's `M.Matrix` contains 16 F32 fields in the reference declaration order; its layout,
