@@ -532,3 +532,6 @@ def Laws.jpeg_asr_negative():
 
 def Laws.wave_copy_twice(wave):
   {==}
+
+def Laws.qoa_encode_no_frames(samples, channels, rate):
+  {==}

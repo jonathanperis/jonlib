@@ -192,6 +192,14 @@ writer's header. dr_wav is public domain or MIT No Attribution; Jonlib uses the
 MIT-0 alternative, retained in [LICENSES/dr_wav.txt](LICENSES/dr_wav.txt).
 `Wave.*` in `jonlib.bend` adapts the Wave functions of raylib's `raudio.c`.
 
+## QOA
+
+`src/qoa.bend` is an altered Bend adaptation of `qoa_decode` and `qoa_encode`
+(its LMS filter, scalefactor search and tables) from pinned raylib's
+`src/external/qoa.h`, by Dominic Szablewski. It uses U32 two's-complement
+words for C ints and refuses files qoa.h would decode past its buffers. QOA's
+MIT notice and license are retained in [LICENSES/qoa.txt](LICENSES/qoa.txt).
+
 ## Arm numerical routines
 
 The GNU-reference polynomial in `src/trig.bend` and its independent C control
