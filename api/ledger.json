@@ -25247,23 +25247,30 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.init_window",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.init_window",
+      "mapping_state": "implemented",
+      "scope": "Headless memory-platform InitWindow for sizes 1..4096: rlglInit clears to (0, 0, 0, 255), the viewport and rlOrtho projection, identity modelview and the default font white block as shapes texture; Maybe<Frame>.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: no window, title, monitor, DPI or platform state (later Phase 2 slices)",
+        "Font loading beyond the shapes atlas is not exposed",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -25275,7 +25282,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive InitWindow semantics from the linked source, add a reference fixture, then implement Window.init_window.",
+      "next_step": "Close documented gaps and unverified gates for InitWindow.",
       "priority": 310
     },
     {
@@ -25301,23 +25308,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.close_window",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.close_window",
+      "mapping_state": "implemented",
+      "scope": "Consumes the Frame (its color buffer and render state).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: no window or platform to close",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -25329,7 +25342,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive CloseWindow semantics from the linked source, add a reference fixture, then implement Window.close_window.",
+      "next_step": "Close documented gaps and unverified gates for CloseWindow.",
       "priority": 310
     },
     {
@@ -28251,23 +28264,29 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.clear_background",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.clear_background",
+      "mapping_state": "implemented",
+      "scope": "rlClearColor(byte/255) stored to every pixel with rlsw truncation (each byte round-trips); alpha kept.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Scissor mode (slice 2) is not modeled",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -28283,7 +28302,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive ClearBackground semantics from the linked source, add a reference fixture, then implement Draw.clear_background.",
+      "next_step": "Close documented gaps and unverified gates for ClearBackground.",
       "priority": 314
     },
     {
@@ -28309,23 +28328,29 @@
       "milestone": "frame",
       "phase": 2,
       "sequence": 12,
-      "status": "not-started",
-      "jonlib": "App.begin_drawing",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.begin_drawing",
+      "mapping_state": "implemented",
+      "scope": "Resets the modelview to identity, so the MVP is the orthographic projection again (rlLoadIdentity with the identity screen scale).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: frame timing (GetTime, update time) is not modeled",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -28337,7 +28362,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled clocks/frame-event replay and real pacing/event-polling/lifecycle checks, including manual frame control.",
-      "next_step": "Derive BeginDrawing semantics from the linked source, add a reference fixture, then implement App.begin_drawing.",
+      "next_step": "Close documented gaps and unverified gates for BeginDrawing.",
       "priority": 312
     },
     {
@@ -28363,23 +28388,29 @@
       "milestone": "frame",
       "phase": 2,
       "sequence": 12,
-      "status": "not-started",
-      "jonlib": "App.end_drawing",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.end_drawing",
+      "mapping_state": "implemented",
+      "scope": "The software path has no render batch to flush; the color buffer is what SwapScreenBuffer copies.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: presentation, frame pacing, input polling and automation recording are not modeled",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -28391,7 +28422,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled clocks/frame-event replay and real pacing/event-polling/lifecycle checks, including manual frame control.",
-      "next_step": "Derive EndDrawing semantics from the linked source, add a reference fixture, then implement App.end_drawing.",
+      "next_step": "Close documented gaps and unverified gates for EndDrawing.",
       "priority": 312
     },
     {
@@ -37698,23 +37729,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_pixel",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.pixel",
+      "mapping_state": "implemented",
+      "scope": "C int position (F32, truncated) drawn as DrawPixelV: a textured 1x1 quad through rlsw blending.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -37730,7 +37768,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawPixel semantics from the linked source, add a reference fixture, then implement Draw.draw_pixel.",
+      "next_step": "Close documented gaps and unverified gates for DrawPixel.",
       "priority": 314
     },
     {
@@ -37756,23 +37794,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_pixel_v",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.pixel_v",
+      "mapping_state": "implemented",
+      "scope": "A textured quad (x, y)..(x + 1, y + 1) rasterized by rlsw's box rasterizer (pixel centers in (x0, x1] x [y0, y1)) with blending.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -37789,7 +37834,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawPixelV semantics from the linked source, add a reference fixture, then implement Draw.draw_pixel_v.",
+      "next_step": "Close documented gaps and unverified gates for DrawPixelV.",
       "priority": 314
     },
     {
@@ -37815,23 +37860,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_line",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.line",
+      "mapping_state": "implemented",
+      "scope": "C int endpoints; one untextured RL_LINES segment: Liang-Barsky clipping, int clamp and rlsw's DDA (column W-1 and row 0 never drawn).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -37847,7 +37899,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawLine semantics from the linked source, add a reference fixture, then implement Draw.draw_line.",
+      "next_step": "Close documented gaps and unverified gates for DrawLine.",
       "priority": 314
     },
     {
@@ -37873,23 +37925,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_line_v",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.line_v",
+      "mapping_state": "implemented",
+      "scope": "One untextured RL_LINES segment: Liang-Barsky clipping, int clamp of the endpoints and rlsw's DDA; blended when the color alpha is below 255.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -37906,7 +37965,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawLineV semantics from the linked source, add a reference fixture, then implement Draw.draw_line_v.",
+      "next_step": "Close documented gaps and unverified gates for DrawLineV.",
       "priority": 314
     },
     {
@@ -37932,23 +37991,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_line_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.line_ex",
+      "mapping_state": "implemented",
+      "scope": "sqrtf length, then a four-point DrawTriangleStrip around the segment; nothing for zero length or non-positive thickness.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -37965,7 +38031,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawLineEx semantics from the linked source, add a reference fixture, then implement Draw.draw_line_ex.",
+      "next_step": "Close documented gaps and unverified gates for DrawLineEx.",
       "priority": 314
     },
     {
@@ -37991,23 +38057,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_line_strip",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.line_strip",
+      "mapping_state": "implemented",
+      "scope": "RL_LINES between consecutive points (at least two); only the first segment carries the color's alpha flag, as in rlsw.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -38024,7 +38097,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawLineStrip semantics from the linked source, add a reference fixture, then implement Draw.draw_line_strip.",
+      "next_step": "Close documented gaps and unverified gates for DrawLineStrip.",
       "priority": 314
     },
     {
@@ -38168,23 +38241,31 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_circle",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.circle_for / Draw.circle",
+      "mapping_state": "implemented",
+      "scope": "C int center; DrawCircleV.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -38200,7 +38281,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawCircle semantics from the linked source, add a reference fixture, then implement Draw.draw_circle.",
+      "next_step": "Close documented gaps and unverified gates for DrawCircle.",
       "priority": 314
     },
     {
@@ -38226,23 +38307,31 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_circle_v",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.circle_v_for / Draw.circle_v",
+      "mapping_state": "implemented",
+      "scope": "DrawCircleSector(center, radius, 0, 360, 36): 18 textured quads at multiples of 10 degrees; radius <= 0 becomes 0.1.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -38259,7 +38348,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawCircleV semantics from the linked source, add a reference fixture, then implement Draw.draw_circle_v.",
+      "next_step": "Close documented gaps and unverified gates for DrawCircleV.",
       "priority": 314
     },
     {
@@ -38285,23 +38374,31 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_circle_gradient",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.circle_gradient_for / Draw.circle_gradient",
+      "mapping_state": "implemented",
+      "scope": "36 untextured triangles, inner color at the center and outer color on the circle.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -38318,7 +38415,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawCircleGradient semantics from the linked source, add a reference fixture, then implement Draw.draw_circle_gradient.",
+      "next_step": "Close documented gaps and unverified gates for DrawCircleGradient.",
       "priority": 314
     },
     {
@@ -38344,23 +38441,32 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_circle_sector",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.circle_sector_for / Draw.circle_sector",
+      "mapping_state": "implemented",
+      "scope": "Ordered angles, quads of two segments plus an odd last piece, angles accumulated in F32.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Segments below ceil((end - start)/90) (acosf/powf estimate) or above 4096 mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -38377,7 +38483,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawCircleSector semantics from the linked source, add a reference fixture, then implement Draw.draw_circle_sector.",
+      "next_step": "Close documented gaps and unverified gates for DrawCircleSector.",
       "priority": 314
     },
     {
@@ -38403,23 +38509,32 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_circle_sector_lines",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.circle_sector_lines_for / Draw.circle_sector_lines",
+      "mapping_state": "implemented",
+      "scope": "Cap lines from the center plus one RL_LINES segment per step.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Segments below ceil((end - start)/90) (acosf/powf estimate) or above 4096 mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -38436,7 +38551,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawCircleSectorLines semantics from the linked source, add a reference fixture, then implement Draw.draw_circle_sector_lines.",
+      "next_step": "Close documented gaps and unverified gates for DrawCircleSectorLines.",
       "priority": 314
     },
     {
@@ -38462,23 +38577,31 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_circle_lines",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.circle_lines_for / Draw.circle_lines",
+      "mapping_state": "implemented",
+      "scope": "C int center; DrawCircleLinesV.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -38494,7 +38617,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawCircleLines semantics from the linked source, add a reference fixture, then implement Draw.draw_circle_lines.",
+      "next_step": "Close documented gaps and unverified gates for DrawCircleLines.",
       "priority": 314
     },
     {
@@ -38520,23 +38643,31 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_circle_lines_v",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.circle_lines_v_for / Draw.circle_lines_v",
+      "mapping_state": "implemented",
+      "scope": "36 RL_LINES every 10 degrees, the color (and its alpha flag) set once.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -38553,7 +38684,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawCircleLinesV semantics from the linked source, add a reference fixture, then implement Draw.draw_circle_lines_v.",
+      "next_step": "Close documented gaps and unverified gates for DrawCircleLinesV.",
       "priority": 314
     },
     {
@@ -38579,23 +38710,31 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_ellipse",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.ellipse_for / Draw.ellipse",
+      "mapping_state": "implemented",
+      "scope": "C int center; DrawEllipseV.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -38611,7 +38750,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawEllipse semantics from the linked source, add a reference fixture, then implement Draw.draw_ellipse.",
+      "next_step": "Close documented gaps and unverified gates for DrawEllipse.",
       "priority": 314
     },
     {
@@ -38637,23 +38776,31 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_ellipse_v",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.ellipse_v_for / Draw.ellipse_v",
+      "mapping_state": "implemented",
+      "scope": "36 untextured triangles (center, i + 10, i) with horizontal and vertical radii.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -38670,7 +38817,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawEllipseV semantics from the linked source, add a reference fixture, then implement Draw.draw_ellipse_v.",
+      "next_step": "Close documented gaps and unverified gates for DrawEllipseV.",
       "priority": 314
     },
     {
@@ -38696,23 +38843,31 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_ellipse_lines",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.ellipse_lines_for / Draw.ellipse_lines",
+      "mapping_state": "implemented",
+      "scope": "C int center; DrawEllipseLinesV.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -38728,7 +38883,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawEllipseLines semantics from the linked source, add a reference fixture, then implement Draw.draw_ellipse_lines.",
+      "next_step": "Close documented gaps and unverified gates for DrawEllipseLines.",
       "priority": 314
     },
     {
@@ -38754,23 +38909,31 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_ellipse_lines_v",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.ellipse_lines_v_for / Draw.ellipse_lines_v",
+      "mapping_state": "implemented",
+      "scope": "36 RL_LINES (i + 10, i), the color set per segment.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -38787,7 +38950,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawEllipseLinesV semantics from the linked source, add a reference fixture, then implement Draw.draw_ellipse_lines_v.",
+      "next_step": "Close documented gaps and unverified gates for DrawEllipseLinesV.",
       "priority": 314
     },
     {
@@ -38813,23 +38976,32 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_ring",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.ring_for / Draw.ring",
+      "mapping_state": "implemented",
+      "scope": "Swapped radii and angles as rshapes.c; textured quads between the radii, or DrawCircleSector for a non-positive inner radius.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Segments below ceil((end - start)/90) (acosf/powf estimate) or above 4096 mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -38846,7 +39018,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawRing semantics from the linked source, add a reference fixture, then implement Draw.draw_ring.",
+      "next_step": "Close documented gaps and unverified gates for DrawRing.",
       "priority": 314
     },
     {
@@ -38931,23 +39103,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_rectangle",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.rectangle",
+      "mapping_state": "implemented",
+      "scope": "C int position and size drawn as DrawRectangleV.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -38963,7 +39142,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawRectangle semantics from the linked source, add a reference fixture, then implement Draw.draw_rectangle.",
+      "next_step": "Close documented gaps and unverified gates for DrawRectangle.",
       "priority": 314
     },
     {
@@ -38989,23 +39168,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_rectangle_v",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.rectangle_v",
+      "mapping_state": "implemented",
+      "scope": "DrawRectanglePro with origin (0, 0) and rotation 0: a textured quad, box-rasterized when axis aligned; negative sizes are culled.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39022,7 +39208,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawRectangleV semantics from the linked source, add a reference fixture, then implement Draw.draw_rectangle_v.",
+      "next_step": "Close documented gaps and unverified gates for DrawRectangleV.",
       "priority": 314
     },
     {
@@ -39048,23 +39234,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_rectangle_rec",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.rectangle_rec",
+      "mapping_state": "implemented",
+      "scope": "DrawRectanglePro with origin (0, 0) and rotation 0.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39081,7 +39274,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawRectangleRec semantics from the linked source, add a reference fixture, then implement Draw.draw_rectangle_rec.",
+      "next_step": "Close documented gaps and unverified gates for DrawRectangleRec.",
       "priority": 314
     },
     {
@@ -39107,23 +39300,31 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_rectangle_pro",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.rectangle_pro_for / Draw.rectangle_pro",
+      "mapping_state": "implemented",
+      "scope": "Rotation 0.0f skips sinf/cosf; others rotate the corners in rshapes.c's F32 order; textured quad, box or triangle fan after clipping.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39141,7 +39342,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawRectanglePro semantics from the linked source, add a reference fixture, then implement Draw.draw_rectangle_pro.",
+      "next_step": "Close documented gaps and unverified gates for DrawRectanglePro.",
       "priority": 314
     },
     {
@@ -39167,23 +39368,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_rectangle_gradient_v",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.rectangle_gradient_v",
+      "mapping_state": "implemented",
+      "scope": "C int rectangle; DrawRectangleGradientEx(top, bottom, bottom, top).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39199,7 +39407,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawRectangleGradientV semantics from the linked source, add a reference fixture, then implement Draw.draw_rectangle_gradient_v.",
+      "next_step": "Close documented gaps and unverified gates for DrawRectangleGradientV.",
       "priority": 314
     },
     {
@@ -39225,23 +39433,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_rectangle_gradient_h",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.rectangle_gradient_h",
+      "mapping_state": "implemented",
+      "scope": "C int rectangle; DrawRectangleGradientEx(left, left, right, right).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39257,7 +39472,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawRectangleGradientH semantics from the linked source, add a reference fixture, then implement Draw.draw_rectangle_gradient_h.",
+      "next_step": "Close documented gaps and unverified gates for DrawRectangleGradientH.",
       "priority": 314
     },
     {
@@ -39283,23 +39498,31 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_rectangle_gradient_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.rectangle_gradient_ex",
+      "mapping_state": "implemented",
+      "scope": "Per-corner colors; the box rasterizer interpolates from the screen bottom-left, bottom-right and top-left corners only (the top-right color has no effect).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Extrapolated corner colors leaving (-1, 256) after scaling are undefined in C and mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39316,7 +39539,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawRectangleGradientEx semantics from the linked source, add a reference fixture, then implement Draw.draw_rectangle_gradient_ex.",
+      "next_step": "Close documented gaps and unverified gates for DrawRectangleGradientEx.",
       "priority": 314
     },
     {
@@ -39342,23 +39565,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_rectangle_lines",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.rectangle_lines",
+      "mapping_state": "implemented",
+      "scope": "C int rectangle; four RL_LINES at 0.5 px offsets (rlGetMatrixTransform is the identity under OpenGL 1.1).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39374,7 +39604,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawRectangleLines semantics from the linked source, add a reference fixture, then implement Draw.draw_rectangle_lines.",
+      "next_step": "Close documented gaps and unverified gates for DrawRectangleLines.",
       "priority": 314
     },
     {
@@ -39400,23 +39630,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_rectangle_lines_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.rectangle_lines_ex",
+      "mapping_state": "implemented",
+      "scope": "Thickness clamped to half the smaller side when larger than a side, then four DrawRectangleRec bands.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39433,7 +39670,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawRectangleLinesEx semantics from the linked source, add a reference fixture, then implement Draw.draw_rectangle_lines_ex.",
+      "next_step": "Close documented gaps and unverified gates for DrawRectangleLinesEx.",
       "priority": 314
     },
     {
@@ -39636,23 +39873,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_triangle",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.triangle",
+      "mapping_state": "implemented",
+      "scope": "The textured quad (v1, v2, v3, v3): clockwise and degenerate triangles are culled; scanline rasterization in 16-pixel blocks, or the box path for axis-aligned degenerate quads.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39669,7 +39913,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawTriangle semantics from the linked source, add a reference fixture, then implement Draw.draw_triangle.",
+      "next_step": "Close documented gaps and unverified gates for DrawTriangle.",
       "priority": 314
     },
     {
@@ -39695,23 +39939,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_triangle_lines",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.triangle_lines",
+      "mapping_state": "implemented",
+      "scope": "Three RL_LINES (v1, v2), (v2, v3), (v3, v1).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39728,7 +39979,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawTriangleLines semantics from the linked source, add a reference fixture, then implement Draw.draw_triangle_lines.",
+      "next_step": "Close documented gaps and unverified gates for DrawTriangleLines.",
       "priority": 314
     },
     {
@@ -39754,23 +40005,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_triangle_fan",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.triangle_fan",
+      "mapping_state": "implemented",
+      "scope": "With at least three points, textured quads (p0, pi, pi+1, pi+1), the color set once.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39787,7 +40045,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawTriangleFan semantics from the linked source, add a reference fixture, then implement Draw.draw_triangle_fan.",
+      "next_step": "Close documented gaps and unverified gates for DrawTriangleFan.",
       "priority": 314
     },
     {
@@ -39813,23 +40071,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_triangle_strip",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.triangle_strip",
+      "mapping_state": "implemented",
+      "scope": "Untextured triangles (i, i-2, i-1) / (i, i-1, i-2); only the first carries the color's alpha flag.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39846,7 +40111,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawTriangleStrip semantics from the linked source, add a reference fixture, then implement Draw.draw_triangle_strip.",
+      "next_step": "Close documented gaps and unverified gates for DrawTriangleStrip.",
       "priority": 314
     },
     {
@@ -39872,23 +40137,32 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_poly",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.poly_for / Draw.poly",
+      "mapping_state": "implemented",
+      "scope": "Sides below 3 become 3; textured quads (center, p(a), p(a + step), p(a)) with F32-accumulated angles.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "More than 4096 sides mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39905,7 +40179,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawPoly semantics from the linked source, add a reference fixture, then implement Draw.draw_poly.",
+      "next_step": "Close documented gaps and unverified gates for DrawPoly.",
       "priority": 314
     },
     {
@@ -39931,23 +40205,32 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.draw_poly_lines",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.poly_lines_for / Draw.poly_lines",
+      "mapping_state": "implemented",
+      "scope": "Sides below 3 become 3; RL_LINES (p(a), p(a + step)) per side.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "More than 4096 sides mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -39964,7 +40247,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive DrawPolyLines semantics from the linked source, add a reference fixture, then implement Draw.draw_poly_lines.",
+      "next_step": "Close documented gaps and unverified gates for DrawPolyLines.",
       "priority": 314
     },
     {
@@ -42023,23 +42306,30 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.load_image_from_screen",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.load_image_from_screen",
+      "mapping_state": "implemented",
+      "scope": "Desktop contract: the color buffer top-down as an R8G8B8A8 Surface with alpha 255 (rlReadScreenPixels); Frame.framebuffer keeps the stored alpha. None after a refused draw.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The memory platform returns these bytes bottom-up with red and blue swapped (BGRA output); Jonlib follows the desktop contract",
+        "Render textures and screen scaling are not modeled",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/frame_probe.py",
+        "docs/FRAME.md",
+        "src/frame.bend",
+        "src/shapes.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -42054,7 +42344,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive LoadImageFromScreen semantics from the linked source, add a reference fixture, then implement Texture.load_image_from_screen.",
+      "next_step": "Close documented gaps and unverified gates for LoadImageFromScreen.",
       "priority": 315
     },
     {

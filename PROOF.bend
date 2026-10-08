@@ -580,3 +580,12 @@ def Laws.msadpcm_adapt_saturates():
 
 def Laws.msadpcm_adapt_negative_floor():
   {==}
+
+def Laws.frame_init_window_zero_width(height):
+  {==}
+
+def Laws.frame_init_window_wide(height):
+  {==}
+
+def Laws.frame_plan_refused(commands):
+  {==}

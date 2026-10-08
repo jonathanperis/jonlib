@@ -211,6 +211,20 @@ retained in [LICENSES/dr_wav.txt](LICENSES/dr_wav.txt).
 words for C ints and refuses files qoa.h would decode past its buffers. QOA's
 MIT notice and license are retained in [LICENSES/qoa.txt](LICENSES/qoa.txt).
 
+## rlsw
+
+`src/frame.bend` is an altered Bend adaptation of pinned raylib's
+`src/external/rlsw.h` 1.5, the OpenGL 1.1-style software renderer by Le Juez
+Victor (reviewed by Ramon Santamaria): its vertex transform, face culling,
+polygon and line clipping, projection, axis-aligned quad, triangle and line
+rasterizers, nearest texture sampling and SRC_ALPHA/ONE_MINUS_SRC_ALPHA
+blending, scalar and uncontracted, refusing its undefined float-to-int and
+uint8 conversions. It also adapts the rlgl.h OpenGL 1.1 immediate path that
+drives rlsw, and `src/shapes.bend` adapts the `rshapes.c` shape functions
+(raylib, zlib notice above). `src/frame_font.bend` holds `rtext.c`'s
+`defaultFontData` bitmap unchanged (raylib, zlib). rlsw's MIT notice and
+license are retained in [LICENSES/rlsw.txt](LICENSES/rlsw.txt).
+
 ## Arm numerical routines
 
 The GNU-reference polynomial in `src/trig.bend` and its independent C control

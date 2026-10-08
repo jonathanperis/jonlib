@@ -154,11 +154,12 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | Sphere/box queries | `Collision.spheres/boxes/box_sphere` | Inclusive contacts, signed radii, supplied-bound ordering | `conformance` |
 | Ray queries | `Collision.ray_sphere/ray_box/ray_triangle/ray_quad` | Every `RayCollision` field bit; host contraction and libm profiles; non-portable box inputs are `None` | `ray`, `ray-uncontracted` |
 | Cameras | `Camera.*` (rcamera.h, rcore.c camera/screen-space queries) | Every F32 result bit; host contraction and libm profiles; perspective projections, unreproduced `sinf`/`cosf` arguments (all nonzero under AppleLibm) and checked-contract misses are `None` ([CAMERA.md](CAMERA.md)) | `camera`, `camera-uncontracted`, `camera-glibc239`, `camera-fused-glibc241` |
+| Headless frame and 2D shapes | `Frame.*`, `Draw.*` (rcore.c frame, rlgl.h immediate path, rlsw.h, rshapes.c) | Every color-buffer byte of the memory-platform software renderer, scalar and uncontracted; host libm profile for `sinf`/`cosf`; undefined conversions, unverified arguments and unsupported segment counts mark the frame undefined ([FRAME.md](FRAME.md)) | `frame` |
 | Linear/B-spline/Catmull-Rom/quadratic Bezier points | `Spline` functions | XY and coefficient order with explicit arithmetic profiles ([SPLINES.md](SPLINES.md)) | `spline` |
 | GPU execution of image operations | Same Bend API | All corpus pixels and export bytes on forced Metal with the overlay | local `tools/conformance.py --gpu` |
-| GPU graphics-pipeline `Draw*` APIs | Future rasterizer | Not implemented; CPU `ImageDraw*` matches do not cover these | — |
+| GPU graphics-pipeline `Draw*` APIs | Future GPU presentation | Not a reference: `Draw.*` renders as raylib's software renderer does; driver-dependent OpenGL output and CPU `ImageDraw*` matches are other contracts | — |
 | Textures, text/fonts, further codecs, meshes, models, animation | Future modules | Not implemented | — |
-| Input, window, audio, native Windows/browser/Android | Future library and runtime work | Not implemented | — |
+| Input, interactive window (beyond the headless frame), audio devices, native Windows/browser/Android | Future library and runtime work | Not implemented | — |
 
 ## Known divergences and gaps
 
