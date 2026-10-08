@@ -654,10 +654,12 @@ def main():
     probe = probekit.Probe(name, args)
     # Clang contracts a*b + c per expression on every target; x86-64 needs -mfma to emit it.
     # M.Fused is arm64 clang's contraction (fnmadd folding, positive default NaNs); x86 FMA code differs in
-    # zero and NaN signs, so the fused control runs on arm64 hosts only.
+    # zero and NaN signs. On other hosts the fused control runs as the host's (uncontracted) control, as the
+    # linked-library gate selects its profile by host.
     fma_flags = {'arm64': [], 'aarch64': []}.get(platform.machine())
     if control == 'fused' and fma_flags is None:
-        raise ProbeFailure(f'camera: the fused control reproduces arm64 code generation; {platform.machine()} is not one')
+        control = 'uncontracted'
+        probe.report['fused_control'] = f'not on {platform.machine()}: run as the uncontracted control'
     arithmetic = {'uncontracted': 'Uncontracted', 'fused': 'Fused'}.get(control) or contraction()
     header, objects = '', []
     if args.gnu_libm:
