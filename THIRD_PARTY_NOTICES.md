@@ -42,6 +42,11 @@ identify the original sources and their required attribution.
   channel packing, retained unsupported owners and typed closed-handle IO.
   `Files.*` in `jonlib.bend` adapts the `rcore.c` path and file-data utilities;
   `src/image_code.bend` also retains the `ExportDataAsCode` banner/credits.
+  `src/text.bend` (with `Text.*`, `Codepoint.*` and `UTF8.*` in `jonlib.bend`)
+  adapts the text strings management and UTF-8 codepoint functions of
+  `rtext.c`, keeping its static-buffer limits and returning owned values.
+  `tools/text_probe.py` compiles those pinned rtext.c functions unaltered as a
+  reference control.
   `src/dds.bend` adapts `rl_load_dds_from_memory` and `get_pixel_data_size`
   from `src/external/rltexgpu.h` (same author and zlib license) for DDS files,
   including DXT blocks and mipmap chains; `src/gputex.bend` adapts the same
