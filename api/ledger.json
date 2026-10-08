@@ -4029,23 +4029,29 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "GlyphInfo",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "GlyphInfo{value, offset_x, offset_y, advance_x, image}: C ints as two's-complement words and an owned Surface copy of the glyph image.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No native struct layout or shared image pointer: GetGlyphInfo returns a copy",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -4056,7 +4062,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive GlyphInfo semantics from the linked source, add a reference fixture, then implement GlyphInfo.",
+      "next_step": "Close documented gaps and unverified gates for GlyphInfo.",
       "priority": 100
     },
     {
@@ -4089,23 +4095,29 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Font",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Font{base_size, glyph_padding, glyphs, texture, atlas}: the glyphs (GlyphInfo fields as C int words with their atlas rectangles), an owned Texture (id 1 for the default font) and the image glyph images are cut from. Drawing and image text hand it back; Font.info reads the fields.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No native struct layout: glyphCount is the glyph list length and recs live in the glyphs",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -4118,7 +4130,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive Font semantics from the linked source, add a reference fixture, then implement Font.",
+      "next_step": "Close documented gaps and unverified gates for Font.",
       "priority": 100
     },
     {
@@ -43917,23 +43929,31 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.image_text",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.image_text / Font.image_text_spaced",
+      "mapping_state": "implemented",
+      "scope": "ImageTextEx with the default font, fontSize raised to 10 and spacing fontSize/10; None for an empty (0-sized) result or undefined C code.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: undefined int conversions, negative sizes and resizes to 0 are None",
+        "Sizes above 4096 are None (Surface limit)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend",
+        "docs/RESAMPLING.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -43949,7 +43969,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive ImageText semantics from the linked source, add a reference fixture, then implement Font.image_text.",
+      "next_step": "Close documented gaps and unverified gates for ImageText.",
       "priority": 418
     },
     {
@@ -43975,23 +43995,31 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.image_text_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.image_text_ex / Font.image_text_ex_spaced",
+      "mapping_state": "implemented",
+      "scope": "MeasureTextEx at baseSize sizes a BLANK R8G8B8A8 image; glyph images are ImageDraw'n with the tint at int offsets (newline baseSize + baseSize/2); a different height resizes to (int)(size*ratio), NN for the default font, ImageResize otherwise; the font is handed back.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: undefined int conversions or overflows, negative sizes and resizes to 0 are None",
+        "Sizes above 4096 are None (Surface limit)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend",
+        "docs/RESAMPLING.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -44008,7 +44036,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive ImageTextEx semantics from the linked source, add a reference fixture, then implement Font.image_text_ex.",
+      "next_step": "Close documented gaps and unverified gates for ImageTextEx.",
       "priority": 418
     },
     {
@@ -47219,23 +47247,31 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.image_draw_text",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.image_draw_text / Font.image_draw_text_spaced",
+      "mapping_state": "implemented",
+      "scope": "ImageDrawTextEx with the default font, (float)fontSize as given and spacing 1; Fail (OutOfDomain) with the destination for refusals.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: undefined conversions, negative sizes and resizes to 0 fail",
+        "Positions beyond 32767 and images above 4096 fail",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47251,7 +47287,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive ImageDrawText semantics from the linked source, add a reference fixture, then implement Font.image_draw_text.",
+      "next_step": "Close documented gaps and unverified gates for ImageDrawText.",
       "priority": 418
     },
     {
@@ -47277,23 +47313,31 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.image_draw_text_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.image_draw_text_ex / Font.image_draw_text_ex_spaced",
+      "mapping_state": "implemented",
+      "scope": "ImageDraw of the ImageTextEx image at the position with WHITE into any destination format (ColorAlphaBlend, SetPixelColor); an empty text leaves it unchanged; Fail (OutOfDomain) hands back the destination and font.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: undefined conversions, negative sizes and resizes to 0 fail",
+        "Positions beyond 32767 and images above 4096 fail",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend",
+        "docs/API.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47311,7 +47355,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive ImageDrawTextEx semantics from the linked source, add a reference fixture, then implement Font.image_draw_text_ex.",
+      "next_step": "Close documented gaps and unverified gates for ImageDrawTextEx.",
       "priority": 418
     },
     {
@@ -49555,23 +49599,29 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.get_font_default",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.default",
+      "mapping_state": "implemented",
+      "scope": "LoadFontDefault as InitWindow runs it: 224 glyphs (codepoints 32..255) laid out from charsWidth with one-pixel separators wrapped at 128, baseSize 10, padding 0, offsets and advance 0, texture id 1 and the 128x128 GRAY_ALPHA atlas expanded from defaultFontData.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: the default font texture is not shared with the frame atlas; a filter or update of it reaches only text drawn with that Font value",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -49586,7 +49636,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive GetFontDefault semantics from the linked source, add a reference fixture, then implement Font.get_font_default.",
+      "next_step": "Close documented gaps and unverified gates for GetFontDefault.",
       "priority": 418
     },
     {
@@ -49726,23 +49776,30 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.load_font_from_image",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.load_from_image",
+      "mapping_state": "implemented",
+      "scope": "XNA-style scan: charSpacing and lineSpacing from the first non-key pixel row by row, charHeight below it, glyph runs per line, values firstChar + i; key pixels become BLANK in the R8G8B8A8 atlas texture. The default font when either spacing is 0; the image is handed back.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: reads past the image, no glyph, more than 256 glyphs or an int overflow of the values are None",
+        "None when LoadImageColors is out of domain or the 127 texture ids are in use (raylib returns texture id 0)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -49759,7 +49816,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive LoadFontFromImage semantics from the linked source, add a reference fixture, then implement Font.load_font_from_image.",
+      "next_step": "Close documented gaps and unverified gates for LoadFontFromImage.",
       "priority": 418
     },
     {
@@ -49842,23 +49899,28 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.is_font_valid",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.is_valid",
+      "mapping_state": "implemented",
+      "scope": "baseSize > 0 and at least one glyph; the texture is not checked; the font is handed back.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -49874,7 +49936,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive IsFontValid semantics from the linked source, add a reference fixture, then implement Font.is_font_valid.",
+      "next_step": "Close documented gaps and unverified gates for IsFontValid.",
       "priority": 418
     },
     {
@@ -50073,23 +50135,28 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.unload_font",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.unload",
+      "mapping_state": "implemented",
+      "scope": "Consumes the font; its texture id returns to the frame pool unless it is the default font's (id 1).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50104,7 +50171,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive UnloadFont semantics from the linked source, add a reference fixture, then implement Font.unload_font.",
+      "next_step": "Close documented gaps and unverified gates for UnloadFont.",
       "priority": 418
     },
     {
@@ -50188,23 +50255,32 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.draw_fps",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.fps",
+      "mapping_state": "implemented",
+      "scope": "DrawText(TextFormat(\"%2i FPS\", fps), x, y, 20) in LIME from 30, ORANGE from 15 and RED below, for the GetFPS value given (Core.get_fps).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: the FPS value is an argument rather than read from a global Core",
+        "Undefined native behavior: NaN or out-of-range C int conversions and undefined rasterizer conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50217,7 +50293,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive DrawFPS semantics from the linked source, add a reference fixture, then implement Font.draw_fps.",
+      "next_step": "Close documented gaps and unverified gates for DrawFPS.",
       "priority": 418
     },
     {
@@ -50243,23 +50319,32 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.draw_text",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.text / Draw.text_spaced",
+      "mapping_state": "implemented",
+      "scope": "DrawTextEx with the default font from the frame atlas (NEAREST), (int) position and fontSize raised to 10, spacing fontSize/10; rendered by rlsw byte for byte.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int conversions and undefined rasterizer conversions mark the frame undefined",
+        "Integration: the default font texture is not shared with the frame atlas; a filter or update of it reaches only text drawn with that Font value",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50277,7 +50362,7 @@
       ],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive DrawText semantics from the linked source, add a reference fixture, then implement Font.draw_text.",
+      "next_step": "Close documented gaps and unverified gates for DrawText.",
       "priority": 418
     },
     {
@@ -50303,23 +50388,31 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.draw_text_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.text_ex / Draw.text_ex_spaced",
+      "mapping_state": "implemented",
+      "scope": "Each codepoint but space, tab and newline is DrawTextCodepoint at the running offsets (recs.width*scale + spacing, or advanceX*scale + spacing); a newline moves down fontSize + textLineSpacing; the font's texture and filter; the font is handed back.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int conversions and undefined rasterizer conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50336,7 +50429,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive DrawTextEx semantics from the linked source, add a reference fixture, then implement Font.draw_text_ex.",
+      "next_step": "Close documented gaps and unverified gates for DrawTextEx.",
       "priority": 418
     },
     {
@@ -50362,23 +50455,32 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.draw_text_pro",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.text_pro_for / Draw.text_pro / Draw.text_pro_spaced_for / Draw.text_pro_spaced",
+      "mapping_state": "implemented",
+      "scope": "DrawTextEx at (0, 0) under rlPushMatrix, rlTranslatef(position), rlRotatef(rotation, 0, 0, 1) with sinf/cosf always evaluated in the M.Libm profile, rlTranslatef(-origin), rlPopMatrix.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int conversions and undefined rasterizer conversions mark the frame undefined",
+        "Undefined native behavior: sinf/cosf arguments outside the host M.Libm profile's verified set mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50395,7 +50497,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive DrawTextPro semantics from the linked source, add a reference fixture, then implement Font.draw_text_pro.",
+      "next_step": "Close documented gaps and unverified gates for DrawTextPro.",
       "priority": 418
     },
     {
@@ -50421,23 +50523,31 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.draw_text_codepoint",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.text_codepoint",
+      "mapping_state": "implemented",
+      "scope": "DrawTexturePro of the glyph rectangle grown by the padding to position + offset*scale - padding*scale, scaled by fontSize/baseSize, rotation 0.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int conversions and undefined rasterizer conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50454,7 +50564,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive DrawTextCodepoint semantics from the linked source, add a reference fixture, then implement Font.draw_text_codepoint.",
+      "next_step": "Close documented gaps and unverified gates for DrawTextCodepoint.",
       "priority": 418
     },
     {
@@ -50480,23 +50590,31 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.draw_text_codepoints",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.text_codepoints / Draw.text_codepoints_spaced",
+      "mapping_state": "implemented",
+      "scope": "The DrawTextEx loop over a codepoint list.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int conversions and undefined rasterizer conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50513,7 +50631,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive DrawTextCodepoints semantics from the linked source, add a reference fixture, then implement Font.draw_text_codepoints.",
+      "next_step": "Close documented gaps and unverified gates for DrawTextCodepoints.",
       "priority": 418
     },
     {
@@ -50539,23 +50657,29 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.set_text_line_spacing",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.text_spaced / Font.measure_text_ex_spaced (line_spacing argument)",
+      "mapping_state": "implemented",
+      "scope": "raylib's global textLineSpacing (initially 2) is the explicit line_spacing C int of every _spaced drawing, measurement and image-text function; the others use 2.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No global state: the spacing is passed per call (language adaptation)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50568,7 +50692,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive SetTextLineSpacing semantics from the linked source, add a reference fixture, then implement Font.set_text_line_spacing.",
+      "next_step": "Close documented gaps and unverified gates for SetTextLineSpacing.",
       "priority": 418
     },
     {
@@ -50594,23 +50718,29 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Font.measure_text",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "(int) of the default font's MeasureTextEx width with fontSize raised to 10 and spacing fontSize/10, as a two's-complement word; None when an int conversion is undefined.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range fontSize and widths are None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50623,7 +50753,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive MeasureText semantics from the linked source, add a reference fixture, then implement Font.measure_text.",
+      "next_step": "Close documented gaps and unverified gates for MeasureText.",
       "priority": 418
     },
     {
@@ -50649,23 +50779,29 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.measure_text_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.measure_text_ex / Font.measure_text_ex_spaced",
+      "mapping_state": "implemented",
+      "scope": "GetCodepointNext over the bytes before the NUL; widest line sum of advanceX or recs.width + offsetX times fontSize/baseSize plus (most glyphs on a line - 1)*spacing; height fontSize plus fontSize + textLineSpacing per newline; uncontracted F32.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Numeric profile: uncontracted F32; contracted arm64 builds fuse width*scale + spacing",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50681,7 +50817,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive MeasureTextEx semantics from the linked source, add a reference fixture, then implement Font.measure_text_ex.",
+      "next_step": "Close documented gaps and unverified gates for MeasureTextEx.",
       "priority": 418
     },
     {
@@ -50707,23 +50843,29 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.measure_text_codepoints",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.measure_text_codepoints / Font.measure_text_codepoints_spaced",
+      "mapping_state": "implemented",
+      "scope": "MeasureTextEx's arithmetic over a codepoint list (no decoding); no codepoints is (0, 0).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Numeric profile: uncontracted F32; contracted arm64 builds fuse width*scale + spacing",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50739,7 +50881,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive MeasureTextCodepoints semantics from the linked source, add a reference fixture, then implement Font.measure_text_codepoints.",
+      "next_step": "Close documented gaps and unverified gates for MeasureTextCodepoints.",
       "priority": 418
     },
     {
@@ -50765,23 +50907,28 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.get_glyph_index",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.glyph_index",
+      "mapping_state": "implemented",
+      "scope": "SUPPORT_UNORDERED_CHARSET search: the first glyph with the codepoint, else the last '?' glyph (or 0); 0 for an invalid font.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50796,7 +50943,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive GetGlyphIndex semantics from the linked source, add a reference fixture, then implement Font.get_glyph_index.",
+      "next_step": "Close documented gaps and unverified gates for GetGlyphIndex.",
       "priority": 418
     },
     {
@@ -50822,23 +50969,28 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.get_glyph_info",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.glyph_info",
+      "mapping_state": "implemented",
+      "scope": "The glyph at GetGlyphIndex with an owned copy of its image (ImageFromImage of the atlas at its rectangle); None only for a rectangle outside the atlas.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50854,7 +51006,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive GetGlyphInfo semantics from the linked source, add a reference fixture, then implement Font.get_glyph_info.",
+      "next_step": "Close documented gaps and unverified gates for GetGlyphInfo.",
       "priority": 418
     },
     {
@@ -50880,23 +51032,28 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.get_glyph_atlas_rec",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.glyph_atlas_rec",
+      "mapping_state": "implemented",
+      "scope": "recs[GetGlyphIndex(font, codepoint)].",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/font_probe.py",
+        "docs/FONTS.md",
+        "src/fonts.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50912,7 +51069,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive GetGlyphAtlasRec semantics from the linked source, add a reference fixture, then implement Font.get_glyph_atlas_rec.",
+      "next_step": "Close documented gaps and unverified gates for GetGlyphAtlasRec.",
       "priority": 418
     },
     {
