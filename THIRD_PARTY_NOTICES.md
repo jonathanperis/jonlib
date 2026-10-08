@@ -91,6 +91,13 @@ identify the original sources and their required attribution.
   16-bit packing; pixel-data sizing retains the pinned format table and edge rules.
   `src/formats.bend` adapts byte/integer `ImageFormat` and normalized pixel loading
   from the same pinned source, with owned logical-word storage and explicit byte export.
+  `src/mesh.bend`, `src/shapes3d.bend` and the "Models" section of
+  `jonlib.bend` adapt `rmodels.c`'s mesh generators (GenMeshPoly, Plane,
+  Cube, Heightmap, Cubicmap), GenMeshTangents, GetMeshBoundingBox, the
+  ExportMesh/ExportMeshAsCode text (retaining the generated upstream banners
+  and credits for exact text parity), GetRayCollisionMesh,
+  GetModelBoundingBox, the 3D shape drawing functions and `rcore.c`'s
+  BeginMode3D/EndMode3D; `src/par_shapes.bend` adapts par_shapes (below).
 - Reference testing: `tools/conformance.py` builds a separate raylib executable
   from a locally supplied checkout. Raylib is not linked into the Jonlib runner.
 - API documentation: `api/reference.json`, generated `api/ledger.json` and
@@ -294,6 +301,18 @@ drawing and rlsw's translate/rotate/scale matrices (raylib, zlib notice
 above). `src/frame_font.bend` holds `rtext.c`'s
 `defaultFontData` bitmap unchanged (raylib, zlib). rlsw's MIT notice and
 license are retained in [LICENSES/rlsw.txt](LICENSES/rlsw.txt).
+
+## par_shapes
+
+- Author: Philip Rideout. Source: <https://github.com/prideout/par>, as
+  vendored by the pinned raylib commit in `src/external/par_shapes.h`.
+- License: MIT; the notice is retained in [LICENSES/par_shapes.txt](LICENSES/par_shapes.txt).
+- `src/par_shapes.bend` is an altered Bend adaptation of its parametric
+  sphere, hemisphere and torus generators, `par_shapes_weld` (grid sort, point
+  welding and condensing), `par_shapes_compute_normals` and
+  `par_shapes_remove_degenerate`, used by `GenMeshSphere`,
+  `GenMeshHemiSphere` and `GenMeshTorus`. The qsort it calls is modeled as
+  glibc's stable merge sort.
 
 ## Arm numerical routines
 

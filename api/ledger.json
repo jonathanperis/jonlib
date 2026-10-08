@@ -4356,23 +4356,26 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Mesh",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "vertexCount, triangleCount and the CPU attribute arrays (vertices, texcoords, texcoords2, normals, tangents, colors, indices) as lists, None for NULL.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "animVertices, animNormals, bone data and GPU ids (vaoId, vboId) are not modeled"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/MODELS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -4381,7 +4384,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive Mesh semantics from the linked source, add a reference fixture, then implement Mesh.",
+      "next_step": "Close documented gaps and unverified gates for Mesh.",
       "priority": 100
     },
     {
@@ -4812,23 +4815,26 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Model",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "transform and meshes.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Materials, meshMaterial, skeleton and bind pose are not modeled"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/MODELS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -4843,7 +4849,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive Model semantics from the linked source, add a reference fixture, then implement Model.",
+      "next_step": "Close documented gaps and unverified gates for Model.",
       "priority": 100
     },
     {
@@ -28660,23 +28666,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.begin_mode3_d",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.begin_mode_3d",
+      "mapping_state": "implemented",
+      "scope": "Projection pushed and reset, swOrtho for CAMERA_ORTHOGRAPHIC (binary64 top/right exact, F32 cells), identity for other projection values, MatrixLookAt modelview (uncontracted) and the depth test enabled; aspect of the current color buffer.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "CAMERA_PERSPECTIVE is refused: rlFrustum needs the native binary64 tan (docs/PERSPECTIVE.md)",
+        "Orthographic cameras with a zero or nonfinite fovy, span or scale mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -28692,7 +28705,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive BeginMode3D semantics from the linked source, add a reference fixture, then implement Model.begin_mode3_d.",
+      "next_step": "Close documented gaps and unverified gates for BeginMode3D.",
       "priority": 622
     },
     {
@@ -28718,23 +28731,29 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.end_mode3_d",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.end_mode_3d",
+      "mapping_state": "implemented",
+      "scope": "Projection popped and modelview reset; the depth test stays enabled.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Popping the last projection (no matching BeginMode3D) is undefined in rlsw and marks the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -28748,7 +28767,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive EndMode3D semantics from the linked source, add a reference fixture, then implement Model.end_mode3_d.",
+      "next_step": "Close documented gaps and unverified gates for EndMode3D.",
       "priority": 622
     },
     {
@@ -53349,23 +53368,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_line3_d",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.line_3d",
+      "mapping_state": "implemented",
+      "scope": "One RL_LINES segment through the current matrices.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -53382,7 +53408,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawLine3D semantics from the linked source, add a reference fixture, then implement Model.draw_line3_d.",
+      "next_step": "Close documented gaps and unverified gates for DrawLine3D.",
       "priority": 622
     },
     {
@@ -53408,23 +53434,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_point3_d",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.point_3d",
+      "mapping_state": "implemented",
+      "scope": "A line from the translated origin to z = 0.1f, inside rlPushMatrix/rlPopMatrix.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -53441,7 +53474,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawPoint3D semantics from the linked source, add a reference fixture, then implement Model.draw_point3_d.",
+      "next_step": "Close documented gaps and unverified gates for DrawPoint3D.",
       "priority": 622
     },
     {
@@ -53467,23 +53500,31 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_circle3_d",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.circle_3d_for / Draw.circle_3d",
+      "mapping_state": "implemented",
+      "scope": "rlTranslatef, rlRotatef(angle, axis) and 36 lines every 10 degrees, the color set before each.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -53500,7 +53541,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawCircle3D semantics from the linked source, add a reference fixture, then implement Model.draw_circle3_d.",
+      "next_step": "Close documented gaps and unverified gates for DrawCircle3D.",
       "priority": 622
     },
     {
@@ -53526,23 +53567,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_triangle3_d",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.triangle_3d",
+      "mapping_state": "implemented",
+      "scope": "One RL_TRIANGLES triangle; culling and depth as rlsw.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -53559,7 +53607,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawTriangle3D semantics from the linked source, add a reference fixture, then implement Model.draw_triangle3_d.",
+      "next_step": "Close documented gaps and unverified gates for DrawTriangle3D.",
       "priority": 622
     },
     {
@@ -53585,23 +53633,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_triangle_strip3_d",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.triangle_strip_3d",
+      "mapping_state": "implemented",
+      "scope": "Triangles (i, i-2, i-1) for even i and (i, i-1, i-2) for odd i; nothing below three points.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -53618,7 +53673,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawTriangleStrip3D semantics from the linked source, add a reference fixture, then implement Model.draw_triangle_strip3_d.",
+      "next_step": "Close documented gaps and unverified gates for DrawTriangleStrip3D.",
       "priority": 622
     },
     {
@@ -53644,23 +53699,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_cube",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.cube",
+      "mapping_state": "implemented",
+      "scope": "Twelve triangles around the translated origin (0 - size/2 corners).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -53677,7 +53739,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawCube semantics from the linked source, add a reference fixture, then implement Model.draw_cube.",
+      "next_step": "Close documented gaps and unverified gates for DrawCube.",
       "priority": 622
     },
     {
@@ -53703,23 +53765,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_cube_v",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.cube_v",
+      "mapping_state": "implemented",
+      "scope": "DrawCube with the vector size.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -53736,7 +53805,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawCubeV semantics from the linked source, add a reference fixture, then implement Model.draw_cube_v.",
+      "next_step": "Close documented gaps and unverified gates for DrawCubeV.",
       "priority": 622
     },
     {
@@ -53762,23 +53831,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_cube_wires",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.cube_wires",
+      "mapping_state": "implemented",
+      "scope": "Twelve RL_LINES edges around the translated origin.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -53795,7 +53871,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawCubeWires semantics from the linked source, add a reference fixture, then implement Model.draw_cube_wires.",
+      "next_step": "Close documented gaps and unverified gates for DrawCubeWires.",
       "priority": 622
     },
     {
@@ -53821,23 +53897,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_cube_wires_v",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.cube_wires_v",
+      "mapping_state": "implemented",
+      "scope": "DrawCubeWires with the vector size.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -53854,7 +53937,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawCubeWiresV semantics from the linked source, add a reference fixture, then implement Model.draw_cube_wires_v.",
+      "next_step": "Close documented gaps and unverified gates for DrawCubeWiresV.",
       "priority": 622
     },
     {
@@ -53880,23 +53963,32 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_sphere",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.sphere_for / Draw.sphere",
+      "mapping_state": "implemented",
+      "scope": "DrawSphereEx with 16 rings and 16 slices.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Rings, slices and sides above 4096 mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -53913,7 +54005,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawSphere semantics from the linked source, add a reference fixture, then implement Model.draw_sphere.",
+      "next_step": "Close documented gaps and unverified gates for DrawSphere.",
       "priority": 622
     },
     {
@@ -53939,23 +54031,32 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_sphere_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.sphere_ex_for / Draw.sphere_ex",
+      "mapping_state": "implemented",
+      "scope": "Incremental y and z rotations by cosf/sinf of DEG2RAD*(180/(rings + 1)) and DEG2RAD*(360/slices), scaled by the radius.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Rings, slices and sides above 4096 mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -53972,7 +54073,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawSphereEx semantics from the linked source, add a reference fixture, then implement Model.draw_sphere_ex.",
+      "next_step": "Close documented gaps and unverified gates for DrawSphereEx.",
       "priority": 622
     },
     {
@@ -53998,14 +54099,14 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_sphere_wires",
+      "status": "blocked",
+      "jonlib": "Draw.sphere_wires_for / Draw.sphere_wires",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A verified sinf/cosf domain beyond 2*PI for the Apple and glibc profiles"
       ],
-      "blocker": null,
+      "blocker": "Its ring angles DEG2RAD*(270 + 180/(rings + 1)*i) reach 450 degrees; no M.Libm profile verifies sinf/cosf beyond one turn, so every drawn wire sphere is refused (the port is complete).",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -54014,7 +54115,12 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -54031,7 +54137,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawSphereWires semantics from the linked source, add a reference fixture, then implement Model.draw_sphere_wires.",
+      "next_step": "Resolve: Its ring angles DEG2RAD*(270 + 180/(rings + 1)*i) reach 450 degrees; no M.Libm profile verifies sinf/cosf beyond one turn, so every drawn wire sphere is refused (the port is complete).",
       "priority": 622
     },
     {
@@ -54057,23 +54163,32 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_cylinder",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.cylinder_for / Draw.cylinder",
+      "mapping_state": "implemented",
+      "scope": "Body and cap (or cone) and base triangles at angles (DEG2RAD*i)*(360/sides); sides below 3 become 3.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Rings, slices and sides above 4096 mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -54090,7 +54205,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawCylinder semantics from the linked source, add a reference fixture, then implement Model.draw_cylinder.",
+      "next_step": "Close documented gaps and unverified gates for DrawCylinder.",
       "priority": 622
     },
     {
@@ -54116,23 +54231,32 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_cylinder_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.cylinder_ex_for / Draw.cylinder_ex",
+      "mapping_state": "implemented",
+      "scope": "Triangles around start-end on the normalized perpendicular basis, angles ((2*PI)/sides)*i; nothing for start == end.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Rings, slices and sides above 4096 mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -54149,7 +54273,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawCylinderEx semantics from the linked source, add a reference fixture, then implement Model.draw_cylinder_ex.",
+      "next_step": "Close documented gaps and unverified gates for DrawCylinderEx.",
       "priority": 622
     },
     {
@@ -54175,23 +54299,32 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_cylinder_wires",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.cylinder_wires_for / Draw.cylinder_wires",
+      "mapping_state": "implemented",
+      "scope": "Four lines per side at angles (DEG2RAD*i)*(360/sides).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Rings, slices and sides above 4096 mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -54208,7 +54341,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawCylinderWires semantics from the linked source, add a reference fixture, then implement Model.draw_cylinder_wires.",
+      "next_step": "Close documented gaps and unverified gates for DrawCylinderWires.",
       "priority": 622
     },
     {
@@ -54234,23 +54367,32 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_cylinder_wires_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.cylinder_wires_ex_for / Draw.cylinder_wires_ex",
+      "mapping_state": "implemented",
+      "scope": "Three lines per side on the DrawCylinderEx basis.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Rings, slices and sides above 4096 mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -54267,7 +54409,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawCylinderWiresEx semantics from the linked source, add a reference fixture, then implement Model.draw_cylinder_wires_ex.",
+      "next_step": "Close documented gaps and unverified gates for DrawCylinderWiresEx.",
       "priority": 622
     },
     {
@@ -54293,23 +54435,32 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_capsule",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.capsule_for / Draw.capsule",
+      "mapping_state": "implemented",
+      "scope": "Two hemispheres and the middle (none for start == end) on the normalized basis, angles ((2*PI)/slices)*j and (PI*0.5/rings)*i.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Rings, slices and sides above 4096 mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -54326,7 +54477,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawCapsule semantics from the linked source, add a reference fixture, then implement Model.draw_capsule.",
+      "next_step": "Close documented gaps and unverified gates for DrawCapsule.",
       "priority": 622
     },
     {
@@ -54352,23 +54503,32 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_capsule_wires",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.capsule_wires_for / Draw.capsule_wires",
+      "mapping_state": "implemented",
+      "scope": "The DrawCapsule points joined by lines.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Rings, slices and sides above 4096 mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -54385,7 +54545,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawCapsuleWires semantics from the linked source, add a reference fixture, then implement Model.draw_capsule_wires.",
+      "next_step": "Close documented gaps and unverified gates for DrawCapsuleWires.",
       "priority": 622
     },
     {
@@ -54411,23 +54571,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_plane",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.plane",
+      "mapping_state": "implemented",
+      "scope": "One RL_QUADS quad on y = 0 after rlTranslatef and rlScalef(size.x, 1, size.y).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -54445,7 +54612,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawPlane semantics from the linked source, add a reference fixture, then implement Model.draw_plane.",
+      "next_step": "Close documented gaps and unverified gates for DrawPlane.",
       "priority": 622
     },
     {
@@ -54471,23 +54638,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_ray",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.ray",
+      "mapping_state": "implemented",
+      "scope": "A line from the position to position + direction*10000, the color set twice.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -54504,7 +54678,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawRay semantics from the linked source, add a reference fixture, then implement Model.draw_ray.",
+      "next_step": "Close documented gaps and unverified gates for DrawRay.",
       "priority": 622
     },
     {
@@ -54530,23 +54704,31 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_grid",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.grid",
+      "mapping_state": "implemented",
+      "scope": "Lines for i = -slices/2 .. slices/2 (C division), rlColor3f gray 0.5 on the axes and 0.75 elsewhere.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Grids above 4097 lines mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -54560,7 +54742,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawGrid semantics from the linked source, add a reference fixture, then implement Model.draw_grid.",
+      "next_step": "Close documented gaps and unverified gates for DrawGrid.",
       "priority": 622
     },
     {
@@ -54646,23 +54828,28 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.load_model_from_mesh",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Model.from_mesh",
+      "mapping_state": "implemented",
+      "scope": "A Model holding the mesh with an identity transform.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Materials, bones and animation are not modeled",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "src/mesh.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -54679,7 +54866,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive LoadModelFromMesh semantics from the linked source, add a reference fixture, then implement Model.load_model_from_mesh.",
+      "next_step": "Close documented gaps and unverified gates for LoadModelFromMesh.",
       "priority": 622
     },
     {
@@ -54764,23 +54951,28 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.unload_model",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Model.unload",
+      "mapping_state": "implemented",
+      "scope": "Consumes the model.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Materials and GPU buffers are not modeled",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "src/mesh.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -54796,7 +54988,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive UnloadModel semantics from the linked source, add a reference fixture, then implement Model.unload_model.",
+      "next_step": "Close documented gaps and unverified gates for UnloadModel.",
       "priority": 622
     },
     {
@@ -54822,23 +55014,30 @@
       "milestone": "collision",
       "phase": 1,
       "sequence": 25,
-      "status": "not-started",
-      "jonlib": "Collision.get_model_bounding_box",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Model.bounding_box_for / Model.bounding_box",
+      "mapping_state": "implemented",
+      "scope": "First mesh box widened with strict comparisons, corners transformed by Vector3Transform (contraction profiled); zero box transformed for no meshes.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A mesh box that is None makes the model box None",
+        "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "src/mesh.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -54852,7 +55051,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
-      "next_step": "Derive GetModelBoundingBox semantics from the linked source, add a reference fixture, then implement Collision.get_model_bounding_box.",
+      "next_step": "Close documented gaps and unverified gates for GetModelBoundingBox.",
       "priority": 225
     },
     {
@@ -55118,23 +55317,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_bounding_box",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.bounding_box",
+      "mapping_state": "implemented",
+      "scope": "DrawCubeWires around min + |max - min|/2.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/models_probe.py",
+        "docs/MODELS.md",
+        "src/shapes3d.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55151,7 +55357,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawBoundingBox semantics from the linked source, add a reference fixture, then implement Model.draw_bounding_box.",
+      "next_step": "Close documented gaps and unverified gates for DrawBoundingBox.",
       "priority": 622
     },
     {
@@ -55481,23 +55687,28 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.unload_mesh",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Mesh.unload",
+      "mapping_state": "implemented",
+      "scope": "Consumes the mesh (its lists).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "GPU buffers are not modeled",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "src/mesh.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55513,7 +55724,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive UnloadMesh semantics from the linked source, add a reference fixture, then implement Model.unload_mesh.",
+      "next_step": "Close documented gaps and unverified gates for UnloadMesh.",
       "priority": 622
     },
     {
@@ -55659,23 +55870,30 @@
       "milestone": "collision",
       "phase": 1,
       "sequence": 25,
-      "status": "not-started",
-      "jonlib": "Collision.get_mesh_bounding_box",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Mesh.bounding_box_for / Mesh.bounding_box",
+      "mapping_state": "implemented",
+      "scope": "Vector3Min/Vector3Max (fminf/fmaxf signed-zero profile) over the vertices; zero box without vertices.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "vertex_count 0 with vertices (raylib reads element 0) is None",
+        "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "src/mesh.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55689,7 +55907,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
-      "next_step": "Derive GetMeshBoundingBox semantics from the linked source, add a reference fixture, then implement Collision.get_mesh_bounding_box.",
+      "next_step": "Close documented gaps and unverified gates for GetMeshBoundingBox.",
       "priority": 225
     },
     {
@@ -55715,23 +55933,29 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.gen_mesh_tangents",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Mesh.gen_tangents_for / Mesh.gen_tangents",
+      "mapping_state": "implemented",
+      "scope": "Per-triangle sdir/tdir accumulated per vertex, Gram-Schmidt, perpendicular fallbacks below 0.0001f and handedness; contraction profiled.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "src/mesh.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55747,7 +55971,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive GenMeshTangents semantics from the linked source, add a reference fixture, then implement Model.gen_mesh_tangents.",
+      "next_step": "Close documented gaps and unverified gates for GenMeshTangents.",
       "priority": 622
     },
     {
@@ -55773,23 +55997,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.export_mesh",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Mesh.obj_text / Mesh.export",
+      "mapping_state": "implemented",
+      "scope": "OBJ text with raylib banner, counts, v/vt (%.6f), vn (%.4f) and f lines, exact C %.Nf formatting; written for .obj paths.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Meshes without texcoords or normals, NaN values and text beyond the estimated buffer are None; other extensions write nothing (InvalidRequest)",
+        "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "src/mesh.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55806,7 +56037,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive ExportMesh semantics from the linked source, add a reference fixture, then implement Model.export_mesh.",
+      "next_step": "Close documented gaps and unverified gates for ExportMesh.",
       "priority": 622
     },
     {
@@ -55832,23 +56063,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.export_mesh_as_code",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Mesh.code_text / Mesh.export_as_code",
+      "mapping_state": "implemented",
+      "scope": "Header with banner, counts and one array per present attribute (%.3ff floats, 0x%x colors, %i indices), names from GetFileNameWithoutExt upper-cased.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Empty present arrays (raylib reads element -1), NaN values and text beyond 64 MB are None",
+        "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "src/mesh.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55865,7 +56103,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive ExportMeshAsCode semantics from the linked source, add a reference fixture, then implement Model.export_mesh_as_code.",
+      "next_step": "Close documented gaps and unverified gates for ExportMeshAsCode.",
       "priority": 622
     },
     {
@@ -55891,23 +56129,29 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.gen_mesh_poly",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Mesh.gen_poly_for / Mesh.gen_poly",
+      "mapping_state": "implemented",
+      "scope": "sides triangles around the origin from sinf/cosf of DEG2RAD*d (d += 360/sides in F32), normals (0, 1, 0), zero texcoords; fewer than 3 sides the empty mesh.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "More than 4096 sides or sinf/cosf arguments outside the profile (AppleLibm: integral degrees up to 360 except 13, 19, 22, 103, 188; glibc |x| <= 6.283186f) are None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "src/mesh.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55923,7 +56167,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive GenMeshPoly semantics from the linked source, add a reference fixture, then implement Model.gen_mesh_poly.",
+      "next_step": "Close documented gaps and unverified gates for GenMeshPoly.",
       "priority": 622
     },
     {
@@ -55949,23 +56193,29 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.gen_mesh_plane",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Mesh.gen_plane",
+      "mapping_state": "implemented",
+      "scope": "CUSTOM_MESH_GEN_PLANE: (resX + 1)*(resZ + 1) vertices, texcoords and normals, unsigned short indices (modulo 2^16) of two triangles per face.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "U32 resolutions; 0 (a 0/0 NaN of platform-defined sign) and grids above 2^20 vertices are None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "src/mesh.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55981,7 +56231,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive GenMeshPlane semantics from the linked source, add a reference fixture, then implement Model.gen_mesh_plane.",
+      "next_step": "Close documented gaps and unverified gates for GenMeshPlane.",
       "priority": 622
     },
     {
@@ -56007,23 +56257,28 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.gen_mesh_cube",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Mesh.gen_cube",
+      "mapping_state": "implemented",
+      "scope": "CUSTOM_MESH_GEN_CUBE: 24 vertices with per-face normals and texcoords, 36 indices.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "src/mesh.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56039,7 +56294,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive GenMeshCube semantics from the linked source, add a reference fixture, then implement Model.gen_mesh_cube.",
+      "next_step": "Close documented gaps and unverified gates for GenMeshCube.",
       "priority": 622
     },
     {
@@ -56065,23 +56320,32 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.gen_mesh_sphere",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Mesh.gen_sphere_for / Mesh.gen_sphere",
+      "mapping_state": "implemented",
+      "scope": "par_shapes parametric sphere (binary64 u*PAR_PI angles, sinf/cosf), welded normals (grid sort, weld, condense, compute_normals), degenerate removal with area 0, scaled by the radius and unrolled; fewer than 3 rings or slices the empty mesh.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Glibc M.Libm profiles only: the weld sorts with the C library qsort (glibc stable merge sort modeled); AppleLibm is None",
+        "Meshes above 65535 points, undefined welds (a point welded to a later one) and nonfinite parameters are None",
+        "Fused contraction implemented but only the uncontracted glibc reference is compared",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "src/par_shapes.bend",
+        "src/mesh.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56097,7 +56361,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive GenMeshSphere semantics from the linked source, add a reference fixture, then implement Model.gen_mesh_sphere.",
+      "next_step": "Close documented gaps and unverified gates for GenMeshSphere.",
       "priority": 622
     },
     {
@@ -56123,23 +56387,32 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.gen_mesh_hemi_sphere",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Mesh.gen_hemi_sphere_for / Mesh.gen_hemi_sphere",
+      "mapping_state": "implemented",
+      "scope": "par_shapes hemisphere as GenMeshSphere; negative radius 0; degenerate removal with par_shapes' process-state area (0.0001f, or 0 after a GenMeshSphere: after_sphere).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Glibc M.Libm profiles only: the weld sorts with the C library qsort (glibc stable merge sort modeled); AppleLibm is None",
+        "Meshes above 65535 points, undefined welds (a point welded to a later one) and nonfinite parameters are None",
+        "Fused contraction implemented but only the uncontracted glibc reference is compared",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "src/par_shapes.bend",
+        "src/mesh.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56155,7 +56428,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive GenMeshHemiSphere semantics from the linked source, add a reference fixture, then implement Model.gen_mesh_hemi_sphere.",
+      "next_step": "Close documented gaps and unverified gates for GenMeshHemiSphere.",
       "priority": 622
     },
     {
@@ -56181,14 +56454,15 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "Model.gen_mesh_cylinder",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A verified binary64 cos/sin per profile",
+        "Port par_shapes with the profiled qsort"
       ],
-      "blocker": null,
+      "blocker": "Calls the binary64 cos/sin (par_shapes disk caps or trefoil), for which no verified reproduction exists; also uses the par_shapes weld above. par_shapes welded normals sort points with the C library qsort, whose order of equal keys is unspecified; host, stable and reverse-stable sorts give different normals for 26 of 27 meshes tried. par_shapes is not ported (Apple FreeBSD introsort and glibc merge sort are modeled for fonts).",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -56197,7 +56471,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/MODELS.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56213,7 +56489,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive GenMeshCylinder semantics from the linked source, add a reference fixture, then implement Model.gen_mesh_cylinder.",
+      "next_step": "Resolve: Calls the binary64 cos/sin (par_shapes disk caps or trefoil), for which no verified reproduction exists; also uses the par_shapes weld above. par_shapes welded normals sort points with the C library qsort, whose order of equal keys is unspecified; host, stable and reverse-stable sorts give different normals for 26 of 27 meshes tried. par_shapes is not ported (Apple FreeBSD introsort and glibc merge sort are modeled for fonts).",
       "priority": 622
     },
     {
@@ -56239,14 +56515,15 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "Model.gen_mesh_cone",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A verified binary64 cos/sin per profile",
+        "Port par_shapes with the profiled qsort"
       ],
-      "blocker": null,
+      "blocker": "Calls the binary64 cos/sin (par_shapes disk caps or trefoil), for which no verified reproduction exists; also uses the par_shapes weld above. par_shapes welded normals sort points with the C library qsort, whose order of equal keys is unspecified; host, stable and reverse-stable sorts give different normals for 26 of 27 meshes tried. par_shapes is not ported (Apple FreeBSD introsort and glibc merge sort are modeled for fonts).",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -56255,7 +56532,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/MODELS.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56271,7 +56550,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive GenMeshCone semantics from the linked source, add a reference fixture, then implement Model.gen_mesh_cone.",
+      "next_step": "Resolve: Calls the binary64 cos/sin (par_shapes disk caps or trefoil), for which no verified reproduction exists; also uses the par_shapes weld above. par_shapes welded normals sort points with the C library qsort, whose order of equal keys is unspecified; host, stable and reverse-stable sorts give different normals for 26 of 27 meshes tried. par_shapes is not ported (Apple FreeBSD introsort and glibc merge sort are modeled for fonts).",
       "priority": 622
     },
     {
@@ -56297,23 +56576,32 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.gen_mesh_torus",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Mesh.gen_torus_for / Mesh.gen_torus",
+      "mapping_state": "implemented",
+      "scope": "par_shapes torus (minor radius clamped to 0.1f..1, beta = 1 + minor*cos), welded normals, scaled by size/2 and unrolled.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Glibc M.Libm profiles only: the weld sorts with the C library qsort (glibc stable merge sort modeled); AppleLibm is None",
+        "Meshes above 65535 points, undefined welds (a point welded to a later one) and nonfinite parameters are None",
+        "Fused contraction implemented but only the uncontracted glibc reference is compared",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "src/par_shapes.bend",
+        "src/mesh.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56329,7 +56617,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive GenMeshTorus semantics from the linked source, add a reference fixture, then implement Model.gen_mesh_torus.",
+      "next_step": "Close documented gaps and unverified gates for GenMeshTorus.",
       "priority": 622
     },
     {
@@ -56355,14 +56643,15 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "Model.gen_mesh_knot",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A verified binary64 cos/sin per profile",
+        "Port par_shapes with the profiled qsort"
       ],
-      "blocker": null,
+      "blocker": "Calls the binary64 cos/sin (par_shapes disk caps or trefoil), for which no verified reproduction exists; also uses the par_shapes weld above. par_shapes welded normals sort points with the C library qsort, whose order of equal keys is unspecified; host, stable and reverse-stable sorts give different normals for 26 of 27 meshes tried. par_shapes is not ported (Apple FreeBSD introsort and glibc merge sort are modeled for fonts).",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -56371,7 +56660,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/MODELS.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56387,7 +56678,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive GenMeshKnot semantics from the linked source, add a reference fixture, then implement Model.gen_mesh_knot.",
+      "next_step": "Resolve: Calls the binary64 cos/sin (par_shapes disk caps or trefoil), for which no verified reproduction exists; also uses the par_shapes weld above. par_shapes welded normals sort points with the C library qsort, whose order of equal keys is unspecified; host, stable and reverse-stable sorts give different normals for 26 of 27 meshes tried. par_shapes is not ported (Apple FreeBSD introsort and glibc merge sort are modeled for fonts).",
       "priority": 622
     },
     {
@@ -56413,23 +56704,29 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.gen_mesh_heightmap",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Mesh.gen_heightmap_for / Mesh.gen_heightmap",
+      "mapping_state": "implemented",
+      "scope": "One quad per 2x2 pixels from LoadImageColors, heights (r + g + b)/3*size.y/255, per-triangle normals (fused cross product and normalization under M.Fused{}).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Images Jonlib cannot convert to colors return the image with its error",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "src/mesh.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56447,7 +56744,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive GenMeshHeightmap semantics from the linked source, add a reference fixture, then implement Model.gen_mesh_heightmap.",
+      "next_step": "Close documented gaps and unverified gates for GenMeshHeightmap.",
       "priority": 622
     },
     {
@@ -56473,23 +56770,29 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.gen_mesh_cubicmap",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Mesh.gen_cubicmap",
+      "mapping_state": "implemented",
+      "scope": "WHITE cells as cubes with sides toward BLACK neighbors or the border, BLACK cells floor and roof, other colors nothing; rmodels.c texcoord rectangles.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Images Jonlib cannot convert to colors return the image with its error",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "src/mesh.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56507,7 +56810,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive GenMeshCubicmap semantics from the linked source, add a reference fixture, then implement Model.gen_mesh_cubicmap.",
+      "next_step": "Close documented gaps and unverified gates for GenMeshCubicmap.",
       "priority": 622
     },
     {
@@ -57460,23 +57763,30 @@
       "milestone": "collision",
       "phase": 1,
       "sequence": 25,
-      "status": "not-started",
-      "jonlib": "Collision.get_ray_collision_mesh",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Collision.ray_mesh_for / Collision.ray_mesh",
+      "mapping_state": "implemented",
+      "scope": "Each triangle transformed by Vector3Transform and tested with GetRayCollisionTriangle, the nearest hit kept; no hit without vertices. Contraction profiled.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "src/mesh.bend",
+        "docs/COLLISION.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -57492,7 +57802,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact Boolean/topology results and defined numerical tolerances for contacts/distances, boundaries and degenerate shapes.",
-      "next_step": "Derive GetRayCollisionMesh semantics from the linked source, add a reference fixture, then implement Collision.get_ray_collision_mesh.",
+      "next_step": "Close documented gaps and unverified gates for GetRayCollisionMesh.",
       "priority": 225
     },
     {
