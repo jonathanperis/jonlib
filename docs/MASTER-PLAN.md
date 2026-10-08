@@ -93,13 +93,13 @@ order (`docs/PROGRESS.md` lists every ID):
    `QuaternionToAxisAngle`, `QuaternionToEuler` and the cubic Bézier spline
    need native `tanf`/`acosf`/`atan2f`/`powf` profiles. The diagnostic
    `perspective` and `inverse-trig` gates already record native behavior; the
-   work is accurate per-libm kernels, as for `sinf`/`cosf`. Open decision:
-   Apple's current `asinf`/`acosf`/`tanf` match neither its published Libm
-   sources nor correctly rounded results, so an Apple profile would mean
-   deriving kernels from the proprietary binary; the glibc profiles
-   (fdlibm-derived for 2.39, CORE-MATH for 2.41) can be adapted with their
-   notices. Pending Jonathan's choice: glibc profiles only (Apple hosts
-   refused or documented as differing), or another source for Apple. The ray collisions
+   work is accurate per-libm kernels, as for `sinf`/`cosf`. Apple's current
+   `asinf`/`acosf`/`tanf` match neither its published Libm sources nor
+   correctly rounded results, so an Apple profile would mean deriving kernels
+   from the proprietary binary; the glibc profiles (fdlibm-derived for 2.39,
+   CORE-MATH for 2.41) can be adapted with their notices. Decided below:
+   glibc profiles only, compared on Linux, with Apple hosts documented as
+   differing. The ray collisions
    (`GetRayCollisionSphere/Box/Triangle/Quad`) are delivered with explicit
    contraction profiles ([COLLISION.md](COLLISION.md)); the mesh/model
    collisions wait for the Phase 5 types.
@@ -153,6 +153,16 @@ recommended option in each case, revisable on his review):
 - **Global state:** explicit logger/loader values passed to the operations
   that log or load, recorded as language adaptations.
 - **Order:** finish the decision-free Phase 1 packages, then Phase 2.
+- **Blocked numerics (libm):** glibc 2.39 (fdlibm-derived) and 2.41
+  (CORE-MATH) profiles for `asinf`/`acosf`/`tanf`/`powf`, compared on Linux;
+  on Apple hosts the results are documented as differing (Apple's libm is not
+  reproducible from published sources), not claimed.
+- **Phase 2 entry:** a design note (window/event lifecycle, input state and
+  replay, frame timing over Base's App/Window, what stays headless) precedes
+  any Phase 2 code.
+- **Audio brought forward:** Wave loading/export (WAV through dr_wav, QOA
+  through qoa.h, [AUDIO.md](AUDIO.md)) is a headless Phase 4 slice delivered
+  early, since it needs no device; sounds, music and devices stay in Phase 4.
 
 ## Near-term sequence
 
