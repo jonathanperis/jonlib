@@ -291,8 +291,13 @@ basis used by `Matrix.compose`. Both results follow their respective reference
 implementations; no implicit normalization makes them interchangeable.
 The remaining quaternion operations and full integration/ABI/target/performance
 coverage remain ledger gaps.
-`QuaternionSlerp`, `QuaternionToAxisAngle` and `QuaternionToEuler` are blocked
-on native `asinf`/`acosf` profiles; see [INVERSE-TRIG.md](INVERSE-TRIG.md).
+`M.Libm.acos(libm, x)` and `M.Libm.pow(libm, x, exponent)` expose the glibc
+2.39 `acosf` and `powf` (exponents 2 and 3 on [-0, 1]) kernels as `Maybe`
+results; other profiles give `None` ([INVERSE-TRIG.md](INVERSE-TRIG.md),
+[SPLINES.md](SPLINES.md)).
+`Quaternion.slerp_for(libm, ...)` and `Quaternion.to_axis_angle_for(libm, ...)`
+return `Maybe` results under the `Glibc239Libm{}` acosf profile;
+`QuaternionToEuler` is blocked on `asinf`. See [INVERSE-TRIG.md](INVERSE-TRIG.md).
 
 ## Float-list exports
 

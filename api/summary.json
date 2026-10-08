@@ -3,35 +3,35 @@
   "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
   "declaration_inventory": {
     "total": 1884,
-    "blocked": 21,
+    "blocked": 18,
     "complete": 0,
     "in-progress": 0,
     "not-started": 923,
-    "partial": 940
+    "partial": 943
   },
   "core_functions": {
     "total": 600,
-    "blocked": 17,
+    "blocked": 16,
     "complete": 0,
     "in-progress": 0,
     "not-started": 422,
-    "partial": 161
+    "partial": 162
   },
   "math_functions": {
     "total": 146,
-    "blocked": 4,
+    "blocked": 2,
     "complete": 0,
     "in-progress": 0,
     "not-started": 0,
-    "partial": 142
+    "partial": 144
   },
   "function_declarations": {
     "total": 931,
-    "blocked": 21,
+    "blocked": 18,
     "complete": 0,
     "in-progress": 0,
     "not-started": 607,
-    "partial": 303
+    "partial": 306
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -51,19 +51,19 @@
   "headers": {
     "raylib.h": {
       "total": 1037,
-      "blocked": 17,
+      "blocked": 16,
       "complete": 0,
       "in-progress": 0,
       "not-started": 480,
-      "partial": 540
+      "partial": 541
     },
     "raymath.h": {
       "total": 254,
-      "blocked": 4,
+      "blocked": 2,
       "complete": 0,
       "in-progress": 0,
       "not-started": 16,
-      "partial": 234
+      "partial": 236
     },
     "rlgl.h": {
       "total": 403,
@@ -133,11 +133,11 @@
         "numerics"
       ],
       "total": 221,
-      "blocked": 4,
+      "blocked": 2,
       "complete": 0,
       "in-progress": 0,
       "not-started": 0,
-      "partial": 217
+      "partial": 219
     },
     {
       "id": "memory",
@@ -329,11 +329,11 @@
         "pixels"
       ],
       "total": 62,
-      "blocked": 1,
+      "blocked": 0,
       "complete": 0,
       "in-progress": 0,
       "not-started": 57,
-      "partial": 4
+      "partial": 5
     },
     {
       "id": "textures",
@@ -571,7 +571,7 @@
   ],
   "phase1_exit": {
     "total": 315,
-    "implemented": 288,
+    "implemented": 290,
     "behavior_ownership_verified": 0,
     "only_allowed_gaps": 0,
     "meeting": 0
@@ -622,9 +622,9 @@
       "id": "raylib:function:GetSplinePointBezierCubic",
       "name": "GetSplinePointBezierCubic",
       "milestone": "shapes",
-      "status": "blocked",
-      "jonlib": "Draw.get_spline_point_bezier_cubic",
-      "next_step": "Resolve: Native Apple powf(t,3) differs from a double-cube substitute on some inputs, producing an actual GetSplinePointBezierCubic coordinate mismatch.",
+      "status": "partial",
+      "jonlib": "Spline.bezier_cubic_for",
+      "next_step": "Close documented gaps and unverified gates for GetSplinePointBezierCubic.",
       "milestone_dependencies": [
         "frame",
         "rlgl-core",
@@ -637,9 +637,9 @@
       "id": "raymath:function:QuaternionSlerp",
       "name": "QuaternionSlerp",
       "milestone": "jonmath",
-      "status": "blocked",
-      "jonlib": "jonmath.Quaternion.slerp",
-      "next_step": "Resolve: Base and investigated inverse-trig models differ from the actual float libm; no verified acos profile is available yet.",
+      "status": "partial",
+      "jonlib": "jonmath.Quaternion.slerp_for",
+      "next_step": "Close documented gaps and unverified gates for QuaternionSlerp.",
       "milestone_dependencies": [
         "numerics"
       ],
@@ -649,9 +649,9 @@
       "id": "raymath:function:QuaternionToAxisAngle",
       "name": "QuaternionToAxisAngle",
       "milestone": "jonmath",
-      "status": "blocked",
-      "jonlib": "jonmath.Quaternion.to_axis_angle",
-      "next_step": "Resolve: Native acosf endpoint/tail values differ from Base and investigated numerical models.",
+      "status": "partial",
+      "jonlib": "jonmath.Quaternion.to_axis_angle_for",
+      "next_step": "Close documented gaps and unverified gates for QuaternionToAxisAngle.",
       "milestone_dependencies": [
         "numerics"
       ],
@@ -663,7 +663,7 @@
       "milestone": "jonmath",
       "status": "blocked",
       "jonlib": "jonmath.Quaternion.to_euler",
-      "next_step": "Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models.",
+      "next_step": "Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models; glibc 2.39's e_asinf.c carries LGPL-2.1+ single-precision modifications (Moshier), so adapting it needs a project licensing decision.",
       "milestone_dependencies": [
         "numerics"
       ],

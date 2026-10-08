@@ -38,18 +38,38 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 python3 tools/spline_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --uncontracted-control
 ```
 
-## Cubic Bezier blocker
+## Cubic Bezier
 
-`GetSplinePointBezierCubic` is **blocked**. The pinned
-[cubic Bezier implementation](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/rshapes.c#L2232)
-uses native `powf(t,3)`, and a binary64 cube rounded to F32 is not a substitute:
-it differs from Apple's native `powf` on sampled finite inputs, observably through
-the point API. Retained counterexample: first three control points `(0,0)`, final
-point `(1,0)`, t = `0x1.940af8p-2`:
+`Spline.bezier_cubic_for(contraction, libm, start, start_control, end_control,
+end, t) -> Maybe<Vector2>` follows the pinned
+[cubic Bezier implementation](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/rshapes.c#L2232):
+weights `powf(1-t, 3)`, `3*powf(1-t, 2)*t`, `3*(1-t)*powf(t, 2)` and
+`powf(t, 3)`, then the four-term accumulation under the given contraction.
+`powf` comes from the libm profile (`M.Libm.pow`):
 
-- Native point X bits: `3d7b9e4d`
-- Double-cube substitute bits: `3d7b9e4e`
+- `Glibc239Libm{}`: glibc 2.39's x86_64 `powf` (Arm optimized-routines,
+  `TOINT_INTRINSICS` 0), `src/power.bend`, for exponents 2 and 3 and x in
+  [-0, 1], every binary64 step through the checked helpers of
+  [BINARY64.md](BINARY64.md). Exhaustively, on all 1,065,353,217 x in [0, 1],
+  the host `powf(x, 2)` and `powf(x, 3)` of Ubuntu 24.04 x86_64 (glibc 2.39,
+  FMA build selected) equal this algorithm, with or without contraction; they
+  differ from `x*x` on 386,499 inputs and from the rounded binary64 cube on
+  238,337, so neither product is a substitute.
+- `AppleLibm{}` and `Glibc241Libm{}`: no `powf` kernel (`None`). Apple's
+  `powf(t, 3)` differs from the binary64 cube too (retained counterexample:
+  control points `(0,0)`, `(0,0)`, `(0,0)`, `(1,0)`, t = `0x1.940af8p-2`,
+  native X `3d7b9e4d`, cube `3d7b9e4e`), and its algorithm is not published.
 
-The `spline` probe records this input in its results (`cubic_power_diagnostic`)
-as a diagnostic alongside the implemented gates. Cubic Bezier is not counted as
-an implementation; no expectation or tolerance is relaxed.
+`None` also when t is outside [-0, 1], including NaN.
+
+`tools/spline_cubic_probe.py` (gate `spline-cubic`) compiles the unchanged
+pinned function with `powf` replaced by a C model of that algorithm,
+uncontracted on every host and contracted on arm64 for `M.Fused{}`, and
+compares on CPU-1, CPU-2 and JavaScript: the kernel on 7,909 inputs (random,
+signed zeros, subnormals, the underflow edges, 400 inputs where `powf` differs
+from the products, and refused values) and 526 cubic points (random, the
+counterexample, endpoints, tiny t and 1 - tiny, and refused t), plus `None`
+for the other profiles. On a Linux x86_64 glibc 2.39 host the linked raylib
+with the host `powf` must print the same rows. The `spline` probe still
+records the counterexample (`cubic_power_diagnostic`).
+

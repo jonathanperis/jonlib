@@ -738,3 +738,14 @@ law qoa_encode_no_frames:
   for +channels: U32
   for +rate: U32
   {Qoa.encode(samples, 0, channels, rate) == None{} : Maybe<&2, +List<U32>>}
+
+# Profiles without an acosf kernel never produce a value.
+law acos_apple_none:
+  for +x: F32
+  {M.Libm.acos(M.AppleLibm{}, x) == None{} : Maybe<F32>}
+
+# powf exists only under the glibc 2.39 profile, for exponents 2 and 3.
+law pow_apple_none:
+  for +x: F32
+  for +exponent: U32
+  {M.Libm.pow(M.AppleLibm{}, x, exponent) == None{} : Maybe<F32>}

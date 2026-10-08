@@ -144,6 +144,33 @@ def Spline.bezier_quad_for(reference: M.Contraction, start: M.Vector2, control: 
 def Spline.bezier_quad(start: M.Vector2, control: M.Vector2, end: M.Vector2, t: F32) -> M.Vector2:
   Spline.bezier_quad_for(M.Uncontracted{}, start, control, end, t)
 
+def Spline.cubic.weights(+t: F32, a: Maybe<F32>, b: Maybe<F32>, c: Maybe<F32>, d: Maybe<F32>) -> Maybe<SplineNumeric.Weights>:
+  match a b c d:
+    case Some{wa} Some{+square} Some{+t_square} Some{wd}:
+      Some{SplineNumeric.Weights{wa, (3.0 * square * t : F32), (3.0 * (1.0 - t) * t_square : F32), wd}}
+    case _ _ _ _: None{}
+
+def Spline.cubic.values(+fused: Bool, start: M.Vector2, start_control: M.Vector2, end_control: M.Vector2, end: M.Vector2, +w: SplineNumeric.Weights) -> M.Vector2:
+  M.Vector2{ax, ay} = start
+  M.Vector2{bx, by} = start_control
+  M.Vector2{cx, cy} = end_control
+  M.Vector2{dx, dy} = end
+  M.Vector2{SplineNumeric.bezier_cubic(fused, ax, bx, cx, dx, w), SplineNumeric.bezier_cubic(fused, ay, by, cy, dy, w)}
+
+def Spline.cubic.point(+fused: Bool, start: M.Vector2, start_control: M.Vector2, end_control: M.Vector2, end: M.Vector2, weights: Maybe<SplineNumeric.Weights>) -> Maybe<M.Vector2>:
+  match weights:
+    case None{}: None{}
+    case Some{w}: Some{Spline.cubic.values(fused, start, start_control, end_control, end, w)}
+
+# GetSplinePointBezierCubic: weights (1-t)^3, 3(1-t)^2 t, 3(1-t) t^2 and t^3
+# through the profile's powf, then the reference accumulation under the given
+# contraction. None when the libm profile has no powf (AppleLibm,
+# Glibc241Libm) or t is outside [-0, 1] (including NaN).
+def Spline.bezier_cubic_for(reference: M.Contraction, +libm: M.Libm, start: M.Vector2, start_control: M.Vector2, end_control: M.Vector2, end: M.Vector2, +t: F32) -> Maybe<M.Vector2>:
+  +one = (1.0 - t : F32)
+  Spline.cubic.point(M.Contraction.fused(reference), start, start_control, end_control, end,
+    Spline.cubic.weights(t, M.Libm.pow(libm, one, 3), M.Libm.pow(libm, one, 2), M.Libm.pow(libm, t, 2), M.Libm.pow(libm, t, 3)))
+
 # -----------------------------------------------------------------------------
 # Geometry and collision
 

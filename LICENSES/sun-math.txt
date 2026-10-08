@@ -8,3 +8,7 @@ is preserved.
 This notice applies to the float atan/atan2 algorithms adapted from
 glibc sysdeps/ieee754/flt-32/s_atanf.c and e_atan2f.c at revision
 ef321e23c20eebc6d6fb4044425c00e6df27b05f (glibc 2.39).
+
+It also applies to the float acosf algorithm adapted in src/inverse_trig.bend
+from glibc sysdeps/ieee754/flt-32/e_acosf.c at the same revision, whose exact
+copy is tools/reference/acos_sources/sun_e_acosf.c.

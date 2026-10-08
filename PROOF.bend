@@ -535,3 +535,9 @@ def Laws.wave_copy_twice(wave):
 
 def Laws.qoa_encode_no_frames(samples, channels, rate):
   {==}
+
+def Laws.acos_apple_none(x):
+  {==}
+
+def Laws.pow_apple_none(x, exponent):
+  {==}

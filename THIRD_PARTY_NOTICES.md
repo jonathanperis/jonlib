@@ -205,8 +205,12 @@ MIT notice and license are retained in [LICENSES/qoa.txt](LICENSES/qoa.txt).
 The GNU-reference polynomial in `src/trig.bend` and its independent C control
 in `tools/trig_probe.py` adapt `math/sincosf.h` and `math/sincosf_data.c` from
 [Arm optimized-routines at 47597821aaa52e9c055caf1ecf8f3aecfd751cd9](https://github.com/ARM-software/optimized-routines/tree/47597821aaa52e9c055caf1ecf8f3aecfd751cd9).
+`src/power.bend` and the C model in `tools/spline_cubic_probe.py` adapt
+`math/powf.c`, `math/powf_log2_data.c` and `math/exp2f_data.c` (as glibc 2.39
+ships them on x86_64) at the same revision, for `powf(x, 2)` and `powf(x, 3)`
+on [-0, 1].
 These are altered Bend/tooling implementations, limited to the documented
-gradient/rotation profiles. Jonlib selects the upstream MIT alternative; source copyright
+gradient/rotation and power profiles. Jonlib selects the upstream MIT alternative; source copyright
 notices and the selected license are retained in [LICENSES/arm-math.txt](LICENSES/arm-math.txt).
 
 ## Arctangent numerical references
@@ -278,6 +282,17 @@ No upstream NOTICE file was present at the base revision. This overlay is not
 an upstream-approved Bend release. See [patches/README.md](patches/README.md) for
 provenance and application instructions. Distributions containing Bend runtime
 artifacts must also retain their applicable Apache-2.0 notices.
+
+## Sun float acosf
+
+`src/inverse_trig.bend` is an altered Bend adaptation of the Sun float `acosf`
+as shipped in glibc 2.39 (`sysdeps/ieee754/flt-32/e_acosf.c`, commit
+`ef321e23c20eebc6d6fb4044425c00e6df27b05f`), keeping its constants, branches
+and operation order. `tools/reference/acos_sources/sun_e_acosf.c` is the exact
+original (SHA-256 `60a8c9b2d14409971adc930bfa386014230e3c7e21a8cd1fdc8178128800d8ba`),
+compiled only by reference tooling. Its Sun notice is retained there and in
+[LICENSES/sun-math.txt](LICENSES/sun-math.txt). glibc 2.39's `e_asinf.c` is not
+adapted: its single-precision modifications are LGPL-2.1+.
 
 ## Native angle qualification source controls
 
