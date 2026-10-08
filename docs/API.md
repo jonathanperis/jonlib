@@ -87,7 +87,12 @@ rendered as raylib's software renderer (rlsw) renders them, are documented in
 [FRAME.md](FRAME.md); the 2D camera, rlgl matrix stack, scissor and blend
 modes, textures and render textures (`Frame.begin_mode_2d`,
 `Frame.begin_scissor_mode`, `Frame.begin_texture_mode`, `Rlgl.*`,
-`Texture.*`, `RenderTexture.*`, `Draw.texture*`) in [TEXTURES.md](TEXTURES.md).
+`Texture.*`, `RenderTexture.*`, `Draw.texture*`) in [TEXTURES.md](TEXTURES.md);
+the rlgl immediate-mode API (`Rlgl.begin`, `Rlgl.vertex*`, matrix modes,
+`rlOrtho`/`rlFrustum`, viewport, depth, culling, polygon modes, line width,
+point size, clears and getters) and the remaining shapes (rounded rectangles,
+ring outlines, Bezier and dashed lines, splines, the shapes texture) in
+[RLGL.md](RLGL.md).
 The enumerations of raylib.h, rlgl.h, rgestures.h and rcamera.h are U32
 constants named as in their header under their enum, e.g.
 `PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8()`, `KeyboardKey.KEY_SPACE()` or

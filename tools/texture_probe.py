@@ -846,134 +846,133 @@ def Img.surface(+i: Img) -> Maybe<J.Surface>:
   Img{width, height, format, bpp, seed, mask, period, zero} = i
   img(width, height, format, bpp, seed, mask, period, zero)
 
-# Texture operations of a scene, applied to a slot's texture.
-type TexOp is Data:
-  TDraw{x: F32, y: F32, tint: U32}
-  TDrawV{x: F32, y: F32, tint: U32}
-  TDrawEx{x: F32, y: F32, rotation: F32, scale: F32, tint: U32}
-  TDrawRec{source: J.Rectangle, x: F32, y: F32, tint: U32}
-  TDrawPro{source: J.Rectangle, dest: J.Rectangle, ox: F32, oy: F32, rotation: F32, tint: U32}
-  TNPatch{info: J.NPatchInfo, dest: J.Rectangle, ox: F32, oy: F32, rotation: F32, tint: U32}
-  TFilter{filter: U32}
-  TWrap{wrap: U32}
-  TMipmaps{}
-  TUpdate{image: Img}
-  TUpdateRec{rec: J.Rectangle, image: Img}
-
 # A scene is data run by one interpreter: generated per-scene code made large
 # inlined segments that Apple clang 21's arm64 backend rejects ("live register
-# clobbered by inserted prologue instructions").
+# clobbered by inserted prologue instructions"). An operation is a kind and its
+# argument words (F32 bits, ints, colors), so no def takes the flattened
+# fields of a large sum type (which the same backend also rejected).
 type Op is Data:
-  OBegin{}
-  OEnd{}
-  OClear{color: U32}
-  ORect{x: F32, y: F32, w: F32, h: F32, color: U32}
-  ORectRec{x: F32, y: F32, w: F32, h: F32, color: U32}
-  ORectLines{x: F32, y: F32, w: F32, h: F32, color: U32}
-  OCircleV{x: F32, y: F32, r: F32, color: U32}
-  OLine{x0: F32, y0: F32, x1: F32, y1: F32, color: U32}
-  OLineV{x0: F32, y0: F32, x1: F32, y1: F32, color: U32}
-  OTri{x0: F32, y0: F32, x1: F32, y1: F32, x2: F32, y2: F32, color: U32}
-  OPixel{x: F32, y: F32, color: U32}
-  OPixelV{x: F32, y: F32, color: U32}
-  OMode2D{camera: J.Camera2D}
-  OEnd2D{}
-  OPush{}
-  OPop{}
-  OIdentity{}
-  OTranslate{x: F32, y: F32, z: F32}
-  OScale{x: F32, y: F32, z: F32}
-  ORotate{a: F32, x: F32, y: F32, z: F32}
-  OMult{matrix: M.Matrix}
-  OScissor{x: F32, y: F32, w: F32, h: F32}
-  OEndScissor{}
-  OBlend{mode: U32}
-  OEndBlend{}
-  OLoad{slot: U32, image: Img}
-  OLoadMany{slot: U32, count: U32, image: Img}
-  OUnload{slot: U32}
-  OInfo{slot: U32}
-  OImage{slot: U32}
-  OLoadRT{slot: U32, w: U32, h: U32}
-  OUnloadRT{slot: U32}
-  OBeginRT{slot: U32}
-  OEndRT{slot: U32}
-  ORTInfo{slot: U32}
-  ORTImage{slot: U32}
-  OTex{rt: Bool, slot: U32, call: TexOp}
+  Op{kind: U32, w: +List<U32>}
 
-def texop(op: TexOp, frame: J.Frame, tex: J.Texture) -> J.Frame & J.Texture:
-  match op:
-    case TDraw{x, y, tint}: J.Draw.texture(frame, tex, x, y, tint)
-    case TDrawV{x, y, tint}: J.Draw.texture_v(frame, tex, M.Vector2{x, y}, tint)
-    case TDrawEx{x, y, rotation, scale, tint}: J.Draw.texture_ex_for(libm(), frame, tex, M.Vector2{x, y}, rotation, scale, tint)
-    case TDrawRec{source, x, y, tint}: J.Draw.texture_rec(frame, tex, source, M.Vector2{x, y}, tint)
-    case TDrawPro{source, dest, ox, oy, rotation, tint}: J.Draw.texture_pro_for(libm(), frame, tex, source, dest, M.Vector2{ox, oy}, rotation, tint)
-    case TNPatch{info, dest, ox, oy, rotation, tint}: J.Draw.texture_npatch_for(libm(), frame, tex, info, dest, M.Vector2{ox, oy}, rotation, tint)
-    case TFilter{filter}: (frame, J.Texture.set_filter(tex, filter))
-    case TWrap{wrap}: (frame, J.Texture.set_wrap(tex, wrap))
-    case TMipmaps{}: (frame, J.Texture.gen_mipmaps(tex))
-    case TUpdate{image}: update.with(frame, tex, Img.surface(image))
-    case TUpdateRec{rec, image}: update_rec.with(frame, tex, rec, Img.surface(image))
+def word.at(n: Nat, ws: +List<U32>) -> U32:
+  match n ws:
+    case 0n Con{w, _}: w
+    case _ Nil{}: 0
+    case 1n+k Con{_, rest}: word.at(k, rest)
 
-def step.tex(rt: Bool, +slot: U32, +call: TexOp, s: St) -> St:
+def word.drop(n: Nat, ws: +List<U32>) -> +List<U32>:
+  match n ws:
+    case 0n _: ws
+    case _ Nil{}: Nil{}
+    case 1n+k Con{_, rest}: word.drop(k, rest)
+
+def wf(n: Nat, +ws: +List<U32>) -> F32:
+  FC.float(word.at(n, ws))
+
+def wu(n: Nat, +ws: +List<U32>) -> U32:
+  word.at(n, ws)
+
+def wb(n: Nat, +ws: +List<U32>) -> Bool:
+  Bool.not(U32.is_eq(word.at(n, ws), 0))
+
+def wv(n: Nat, +ws: +List<U32>) -> M.Vector2:
+  +rest = word.drop(n, ws)
+  M.Vector2{wf(0n, rest), wf(1n, rest)}
+
+def wrect(n: Nat, +ws: +List<U32>) -> J.Rectangle:
+  +rest = word.drop(n, ws)
+  J.Rectangle{wf(0n, rest), wf(1n, rest), wf(2n, rest), wf(3n, rest)}
+
+def wimg(n: Nat, +ws: +List<U32>) -> Img:
+  +r = word.drop(n, ws)
+  Img{wu(0n, r), wu(1n, r), wu(2n, r), wu(3n, r), wu(4n, r), wu(5n, r), wu(6n, r), wb(7n, r)}
+
+def wmatrix(+r: +List<U32>) -> M.Matrix:
+  M.Matrix{wf(0n, r), wf(4n, r), wf(8n, r), wf(12n, r), wf(1n, r), wf(5n, r), wf(9n, r), wf(13n, r), wf(2n, r), wf(6n, r), wf(10n, r), wf(14n, r),
+    wf(3n, r), wf(7n, r), wf(11n, r), wf(15n, r)}
+
+def wnpatch(+r: +List<U32>) -> J.NPatchInfo:
+  J.NPatchInfo{wrect(0n, r), wf(4n, r), wf(5n, r), wf(6n, r), wf(7n, r), wf(8n, r)}
+
+# Texture operations (kinds 100..): words after the slot and render-texture flag.
+def texop(kind: U32, +w: +List<U32>, frame: J.Frame, tex: J.Texture) -> J.Frame & J.Texture:
+  match kind:
+    case 100: J.Draw.texture(frame, tex, wf(0n, w), wf(1n, w), wu(2n, w))
+    case 101: J.Draw.texture_v(frame, tex, wv(0n, w), wu(2n, w))
+    case 102: J.Draw.texture_ex_for(libm(), frame, tex, wv(0n, w), wf(2n, w), wf(3n, w), wu(4n, w))
+    case 103: J.Draw.texture_rec(frame, tex, wrect(0n, w), wv(4n, w), wu(6n, w))
+    case 104: J.Draw.texture_pro_for(libm(), frame, tex, wrect(0n, w), wrect(4n, w), wv(8n, w), wf(10n, w), wu(11n, w))
+    case 105: J.Draw.texture_npatch_for(libm(), frame, tex, wnpatch(w), wrect(9n, w), wv(13n, w), wf(15n, w), wu(16n, w))
+    case 106: (frame, J.Texture.set_filter(tex, wu(0n, w)))
+    case 107: (frame, J.Texture.set_wrap(tex, wu(0n, w)))
+    case 108: (frame, J.Texture.gen_mipmaps(tex))
+    case 109: update.with(frame, tex, Img.surface(wimg(0n, w)))
+    case _: update_rec.with(frame, tex, wrect(0n, w), Img.surface(wimg(4n, w)))
+
+def step.tex(rt: Bool, +slot: U32, +kind: U32, +w: +List<U32>, s: St) -> St:
   match rt:
-    case False{}: St.tex(s, slot, fr => tx => texop(call, fr, tx))
-    case True{}: St.rt_tex(s, slot, fr => tx => texop(call, fr, tx))
+    case False{}: St.tex(s, slot, fr => tx => texop(kind, w, fr, tx))
+    case True{}: St.rt_tex(s, slot, fr => tx => texop(kind, w, fr, tx))
 
-def step.shape(op: Op, frame: J.Frame) -> J.Frame:
-  match op:
-    case OBegin{}: J.Frame.begin_drawing(frame)
-    case OEnd{}: J.Frame.end_drawing(frame)
-    case OClear{color}: J.Frame.clear_background(frame, color)
-    case ORect{x, y, w, h, color}: J.Draw.rectangle(frame, x, y, w, h, color)
-    case ORectRec{x, y, w, h, color}: J.Draw.rectangle_rec(frame, J.Rectangle{x, y, w, h}, color)
-    case ORectLines{x, y, w, h, color}: J.Draw.rectangle_lines(frame, x, y, w, h, color)
-    case OCircleV{x, y, r, color}: J.Draw.circle_v_for(libm(), frame, M.Vector2{x, y}, r, color)
-    case OLine{x0, y0, x1, y1, color}: J.Draw.line(frame, x0, y0, x1, y1, color)
-    case OLineV{x0, y0, x1, y1, color}: J.Draw.line_v(frame, M.Vector2{x0, y0}, M.Vector2{x1, y1}, color)
-    case OTri{x0, y0, x1, y1, x2, y2, color}: J.Draw.triangle(frame, M.Vector2{x0, y0}, M.Vector2{x1, y1}, M.Vector2{x2, y2}, color)
-    case OPixel{x, y, color}: J.Draw.pixel(frame, x, y, color)
-    case OPixelV{x, y, color}: J.Draw.pixel_v(frame, M.Vector2{x, y}, color)
+# Frame operations (kinds 0..39).
+def step.frame(kind: U32, +w: +List<U32>, frame: J.Frame) -> J.Frame:
+  match kind:
+    case 0: J.Frame.begin_drawing(frame)
+    case 1: J.Frame.end_drawing(frame)
+    case 2: J.Frame.clear_background(frame, wu(0n, w))
+    case 3: J.Draw.rectangle(frame, wf(0n, w), wf(1n, w), wf(2n, w), wf(3n, w), wu(4n, w))
+    case 4: J.Draw.rectangle_rec(frame, wrect(0n, w), wu(4n, w))
+    case 5: J.Draw.rectangle_lines(frame, wf(0n, w), wf(1n, w), wf(2n, w), wf(3n, w), wu(4n, w))
+    case 6: J.Draw.circle_v_for(libm(), frame, wv(0n, w), wf(2n, w), wu(3n, w))
+    case 7: J.Draw.line(frame, wf(0n, w), wf(1n, w), wf(2n, w), wf(3n, w), wu(4n, w))
+    case 8: J.Draw.line_v(frame, wv(0n, w), wv(2n, w), wu(4n, w))
+    case 9: J.Draw.triangle(frame, wv(0n, w), wv(2n, w), wv(4n, w), wu(6n, w))
+    case 10: J.Draw.pixel(frame, wf(0n, w), wf(1n, w), wu(2n, w))
+    case 11: J.Draw.pixel_v(frame, wv(0n, w), wu(2n, w))
+    case 12: J.Frame.begin_mode_2d_for(libm(), frame, J.Camera2D{wv(0n, w), wv(2n, w), wf(4n, w), wf(5n, w)})
+    case 13: J.Frame.end_mode_2d(frame)
+    case 14: J.Rlgl.push_matrix(frame)
+    case 15: J.Rlgl.pop_matrix(frame)
+    case 16: J.Rlgl.load_identity(frame)
+    case 17: J.Rlgl.translatef(frame, wf(0n, w), wf(1n, w), wf(2n, w))
+    case 18: J.Rlgl.scalef(frame, wf(0n, w), wf(1n, w), wf(2n, w))
+    case 19: J.Rlgl.rotatef_for(libm(), frame, wf(0n, w), wf(1n, w), wf(2n, w), wf(3n, w))
+    case 20: J.Rlgl.mult_matrixf(frame, wmatrix(w))
+    case 21: J.Frame.begin_scissor_mode(frame, wf(0n, w), wf(1n, w), wf(2n, w), wf(3n, w))
+    case 22: J.Frame.end_scissor_mode(frame)
+    case 23: J.Frame.begin_blend_mode(frame, wu(0n, w))
+    case 24: J.Frame.end_blend_mode(frame)
     case _: frame
-
-def step.state(op: Op, frame: J.Frame) -> J.Frame:
-  match op:
-    case OMode2D{camera}: J.Frame.begin_mode_2d_for(libm(), frame, camera)
-    case OEnd2D{}: J.Frame.end_mode_2d(frame)
-    case OPush{}: J.Rlgl.push_matrix(frame)
-    case OPop{}: J.Rlgl.pop_matrix(frame)
-    case OIdentity{}: J.Rlgl.load_identity(frame)
-    case OTranslate{x, y, z}: J.Rlgl.translatef(frame, x, y, z)
-    case OScale{x, y, z}: J.Rlgl.scalef(frame, x, y, z)
-    case ORotate{a, x, y, z}: J.Rlgl.rotatef_for(libm(), frame, a, x, y, z)
-    case OMult{matrix}: J.Rlgl.mult_matrixf(frame, matrix)
-    case OScissor{x, y, w, h}: J.Frame.begin_scissor_mode(frame, x, y, w, h)
-    case OEndScissor{}: J.Frame.end_scissor_mode(frame)
-    case OBlend{mode}: J.Frame.begin_blend_mode(frame, mode)
-    case OEndBlend{}: J.Frame.end_blend_mode(frame)
-    case _: step.shape(op, frame)
 
 def St.load.many(n: Nat, s: St, +slot: U32, +image: Img) -> St:
   match n:
     case 0n: s
     case 1n+rest: St.load.many(rest, St.load(s, slot, Img.surface(image)), slot, image)
 
+# Slot operations (kinds 40..99).
+def step.slot(kind: U32, +w: +List<U32>, s: St) -> St:
+  match kind:
+    case 40: St.load(s, wu(0n, w), Img.surface(wimg(1n, w)))
+    case 41: St.load.many(U32.to_nat(wu(1n, w)), s, wu(0n, w), wimg(2n, w))
+    case 42: St.unload(s, wu(0n, w))
+    case 43: St.log(s, wu(0n, w), 0)
+    case 44: St.log(s, wu(0n, w), 1)
+    case 45: St.load_rt(s, wu(0n, w), wu(1n, w), wu(2n, w))
+    case 46: St.rt(s, wu(0n, w), 0)
+    case 47: St.rt(s, wu(0n, w), 1)
+    case 48: St.end_rt(s, wu(0n, w))
+    case 49: St.rt_log(s, wu(0n, w), 0)
+    case 50: St.rt_log(s, wu(0n, w), 1)
+    case _: step.tex(wb(1n, w), wu(0n, w), wu(2n, w), word.drop(3n, w), s)
+
+def step.select(frame_op: Bool, +kind: U32, +w: +List<U32>, s: St) -> St:
+  match frame_op:
+    case True{}: St.frame(s, f => step.frame(kind, w, f))
+    case False{}: step.slot(kind, w, s)
+
 def step(op: Op, s: St) -> St:
-  match op:
-    case OLoad{slot, image}: St.load(s, slot, Img.surface(image))
-    case OLoadMany{slot, count, image}: St.load.many(U32.to_nat(count), s, slot, image)
-    case OUnload{slot}: St.unload(s, slot)
-    case OInfo{slot}: St.log(s, slot, 0)
-    case OImage{slot}: St.log(s, slot, 1)
-    case OLoadRT{slot, w, h}: St.load_rt(s, slot, w, h)
-    case OUnloadRT{slot}: St.rt(s, slot, 0)
-    case OBeginRT{slot}: St.rt(s, slot, 1)
-    case OEndRT{slot}: St.end_rt(s, slot)
-    case ORTInfo{slot}: St.rt_log(s, slot, 0)
-    case ORTImage{slot}: St.rt_log(s, slot, 1)
-    case OTex{rt, slot, call}: step.tex(rt, slot, call, s)
-    case _: St.frame(s, f => step.state(op, f))
+  Op{+kind, +w} = op
+  step.select((kind < 40 : U32), kind, w, s)
 
 def exec(ops: +List<Op>, s: St) -> St:
   match ops:
@@ -988,63 +987,61 @@ def St.run(ops: +List<Op>, +screen: Bool, frame: Maybe<J.Frame>) -> String:
 
 
 def bimg(spec):
-    zero = 'True{}' if spec['zero'] else 'False{}'
-    return (f'Img{{{spec["width"]}, {spec["height"]}, {spec["format"]}, {BPP[spec["format"]]}, {spec["seed"]}, {spec["mask"]}, '
-            f'{spec["period"]}, {zero}}}')
+    return [spec['width'], spec['height'], spec['format'], BPP[spec['format']], spec['seed'], spec['mask'], spec['period'], int(spec['zero'])]
 
 
-def brec(r):
-    return fp.brec(*r)
+def wrec(r):
+    return [fp.word(x) for x in r]
 
 
 NPATCH_RT = ('npatch', 0, ((0.0, 0.0, 8.0, 8.0), 2.0, 2.0, 2.0, 2.0, 0.0), (12.0, 2.0, 9.0, 14.0), (0.0, 0.0), 0.0, C(255, 255, 255))
 
+FRAME_KINDS = {'begin': 0, 'end': 1, 'clear': 2, 'rect': 3, 'rect_rec': 4, 'rect_lines': 5, 'circle_v': 6, 'line': 7, 'line_v': 8, 'tri': 9,
+               'pixel': 10, 'pixel_v': 11, 'mode2d': 12, 'end2d': 13, 'push': 14, 'pop': 15, 'identity': 16, 'translate': 17, 'scale': 18,
+               'rotate': 19, 'mult': 20, 'scissor': 21, 'end_scissor': 22, 'blend': 23, 'end_blend': 24}
+SLOT_KINDS = {'load': 40, 'load_many': 41, 'unload': 42, 'info': 43, 'image': 44, 'load_rt': 45, 'unload_rt': 46, 'begin_rt': 47, 'end_rt': 48,
+              'rt_info': 49, 'image_rt': 50}
+TEX_KINDS = {'draw': 100, 'draw_v': 101, 'draw_ex': 102, 'draw_rec': 103, 'draw_pro': 104, 'npatch': 105, 'filter': 106, 'wrap': 107,
+             'mipmaps': 108, 'update': 109, 'update_rec': 110}
+COLOR_LAST = {'clear', 'rect', 'rect_rec', 'rect_lines', 'circle_v', 'line', 'line_v', 'tri', 'pixel', 'pixel_v'}
 
-def b_texop(op):
+
+def op_words(op):
+    """(kind, words) of an operation: floats as F32 bits, ints and colors as they are."""
     name, a = op[0], op[1:]
-    base = name[:-3] if name.endswith('_rt') else name
-    calls = {
-        'draw': lambda: f'TDraw{{{bf(a[1])}, {bf(a[2])}, {a[3]}}}',
-        'draw_v': lambda: f'TDrawV{{{bf(a[1])}, {bf(a[2])}, {a[3]}}}',
-        'draw_ex': lambda: f'TDrawEx{{{bf(a[1])}, {bf(a[2])}, {bf(a[3])}, {bf(a[4])}, {a[5]}}}',
-        'draw_rec': lambda: f'TDrawRec{{{brec(a[1])}, {bf(a[2])}, {bf(a[3])}, {a[4]}}}',
-        'draw_pro': lambda: f'TDrawPro{{{brec(a[1])}, {brec(a[2])}, {bf(a[3][0])}, {bf(a[3][1])}, {bf(a[4])}, {a[5]}}}',
-        'npatch': lambda: (f'TNPatch{{J.NPatchInfo{{{brec(a[1][0])}, {bf(a[1][1])}, {bf(a[1][2])}, {bf(a[1][3])}, {bf(a[1][4])}, {bf(a[1][5])}}}, '
-                           f'{brec(a[2])}, {bf(a[3][0])}, {bf(a[3][1])}, {bf(a[4])}, {a[5]}}}'),
-        'filter': lambda: f'TFilter{{{a[1]}}}', 'wrap': lambda: f'TWrap{{{a[1]}}}', 'mipmaps': lambda: 'TMipmaps{}',
-        'update': lambda: f'TUpdate{{{bimg(a[1])}}}', 'update_rec': lambda: f'TUpdateRec{{{brec(a[1])}, {bimg(a[2])}}}',
-    }
-    return calls[base]()
+    if name in FRAME_KINDS:
+        if name in COLOR_LAST:
+            return FRAME_KINDS[name], [fp.word(x) for x in a[:-1]] + [a[-1]]
+        if name == 'mult':
+            return FRAME_KINDS[name], [fp.word(x) for x in a[0]]
+        if name == 'blend':
+            return FRAME_KINDS[name], [a[0]]
+        return FRAME_KINDS[name], [fp.word(x) for x in a]
+    if name == 'draw_npatch_rt':
+        return op_words(('npatch_rt', a[0]) + NPATCH_RT[2:])
+    if name in SLOT_KINDS:
+        if name in ('load', 'load_many'):
+            return SLOT_KINDS[name], list(a[:-1]) + bimg(a[-1])
+        return SLOT_KINDS[name], list(a)
+    rt = name.endswith('_rt')
+    base = name[:-3] if rt else name
+    slot, b = a[0], a[1:]
+    words = {
+        'draw': lambda: [fp.word(b[0]), fp.word(b[1]), b[2]],
+        'draw_v': lambda: [fp.word(b[0]), fp.word(b[1]), b[2]],
+        'draw_ex': lambda: [fp.word(x) for x in b[:4]] + [b[4]],
+        'draw_rec': lambda: wrec(b[0]) + [fp.word(b[1]), fp.word(b[2]), b[3]],
+        'draw_pro': lambda: wrec(b[0]) + wrec(b[1]) + [fp.word(b[2][0]), fp.word(b[2][1]), fp.word(b[3]), b[4]],
+        'npatch': lambda: wrec(b[0][0]) + [fp.word(x) for x in b[0][1:]] + wrec(b[1]) + [fp.word(b[2][0]), fp.word(b[2][1]), fp.word(b[3]), b[4]],
+        'filter': lambda: [b[0]], 'wrap': lambda: [b[0]], 'mipmaps': lambda: [],
+        'update': lambda: bimg(b[0]), 'update_rec': lambda: wrec(b[0]) + bimg(b[1]),
+    }[base]()
+    return 99, [slot, int(rt), TEX_KINDS[base]] + words
 
 
 def b_op(op):
-    name, a = op[0], op[1:]
-    simple = {
-        'begin': lambda: 'OBegin{}', 'end': lambda: 'OEnd{}', 'clear': lambda: f'OClear{{{a[0]}}}',
-        'rect': lambda: f'ORect{{{bf(a[0])}, {bf(a[1])}, {bf(a[2])}, {bf(a[3])}, {a[4]}}}',
-        'rect_rec': lambda: f'ORectRec{{{bf(a[0])}, {bf(a[1])}, {bf(a[2])}, {bf(a[3])}, {a[4]}}}',
-        'rect_lines': lambda: f'ORectLines{{{bf(a[0])}, {bf(a[1])}, {bf(a[2])}, {bf(a[3])}, {a[4]}}}',
-        'circle_v': lambda: f'OCircleV{{{bf(a[0])}, {bf(a[1])}, {bf(a[2])}, {a[3]}}}',
-        'line': lambda: f'OLine{{{bf(a[0])}, {bf(a[1])}, {bf(a[2])}, {bf(a[3])}, {a[4]}}}',
-        'line_v': lambda: f'OLineV{{{bf(a[0])}, {bf(a[1])}, {bf(a[2])}, {bf(a[3])}, {a[4]}}}',
-        'tri': lambda: f'OTri{{{", ".join(bf(v) for v in a[:6])}, {a[6]}}}',
-        'pixel': lambda: f'OPixel{{{bf(a[0])}, {bf(a[1])}, {a[2]}}}', 'pixel_v': lambda: f'OPixelV{{{bf(a[0])}, {bf(a[1])}, {a[2]}}}',
-        'mode2d': lambda: f'OMode2D{{J.Camera2D{{{fp.bv(a[0], a[1])}, {fp.bv(a[2], a[3])}, {bf(a[4])}, {bf(a[5])}}}}}',
-        'end2d': lambda: 'OEnd2D{}', 'push': lambda: 'OPush{}', 'pop': lambda: 'OPop{}', 'identity': lambda: 'OIdentity{}',
-        'translate': lambda: f'OTranslate{{{bf(a[0])}, {bf(a[1])}, {bf(a[2])}}}', 'scale': lambda: f'OScale{{{bf(a[0])}, {bf(a[1])}, {bf(a[2])}}}',
-        'rotate': lambda: f'ORotate{{{bf(a[0])}, {bf(a[1])}, {bf(a[2])}, {bf(a[3])}}}',
-        'mult': lambda: 'OMult{M.Matrix{' + ', '.join(bf(a[0][i]) for i in (0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15)) + '}}',
-        'scissor': lambda: f'OScissor{{{bf(a[0])}, {bf(a[1])}, {bf(a[2])}, {bf(a[3])}}}', 'end_scissor': lambda: 'OEndScissor{}',
-        'blend': lambda: f'OBlend{{{a[0]}}}', 'end_blend': lambda: 'OEndBlend{}',
-        'load': lambda: f'OLoad{{{a[0]}, {bimg(a[1])}}}', 'load_many': lambda: f'OLoadMany{{{a[0]}, {a[1]}, {bimg(a[2])}}}', 'unload': lambda: f'OUnload{{{a[0]}}}', 'info': lambda: f'OInfo{{{a[0]}}}',
-        'image': lambda: f'OImage{{{a[0]}}}', 'load_rt': lambda: f'OLoadRT{{{a[0]}, {a[1]}, {a[2]}}}', 'unload_rt': lambda: f'OUnloadRT{{{a[0]}}}',
-        'begin_rt': lambda: f'OBeginRT{{{a[0]}}}', 'end_rt': lambda: f'OEndRT{{{a[0]}}}', 'rt_info': lambda: f'ORTInfo{{{a[0]}}}',
-        'image_rt': lambda: f'ORTImage{{{a[0]}}}',
-        'draw_npatch_rt': lambda: f'OTex{{True{{}}, {a[0]}, {b_texop(NPATCH_RT)}}}',
-    }
-    if name in simple:
-        return simple[name]()
-    return f'OTex{{{"True{}" if name.endswith("_rt") else "False{}"}, {a[0]}, {b_texop(op)}}}'
+    kind, words = op_words(op)
+    return f'Op{{{kind}, [{", ".join(str(w) for w in words)}]}}'
 
 
 def b_scene(index, scene):

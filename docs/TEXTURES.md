@@ -67,6 +67,9 @@ Traced in the pinned sources and checked by the probe:
   `BeginMode2D` loads `GetCameraMatrix2D` (computed uncontracted, raymath
   order) after an identity; `EndMode2D` and `BeginDrawing` load the identity.
   A push beyond 8 entries is ignored; popping the last entry is undefined.
+  These calls act on the stack `rlMatrixMode` selects; the projection and
+  texture stacks and the rest of the immediate-mode API are in
+  [RLGL.md](RLGL.md).
 - **Scissor.** `BeginScissorMode(x, y, w, h)` calls `rlScissor(x,
   fboHeight - (y + h), w, h)` (on macOS through a float path with the memory
   platform's DPI scale 1, equal to the integer path on the accepted domain).
@@ -196,7 +199,8 @@ generated C ([VERIFICATION.md](VERIFICATION.md#known-toolchain-defects)).
   exposed; `DrawTextureNPatch` is checked on nearest and bilinear textures
   only through the scenes above.
 - `rlSetBlendFactors`, custom blend modes and shader modes have no effect on
-  the software renderer and are not exposed; the GPU (OpenGL 3.3) behavior of
+  the software renderer (`Rlgl.set_blend_factors` and the shader calls are
+  documented no-ops, [RLGL.md](RLGL.md)); the GPU (OpenGL 3.3) behavior of
   blend and wrap modes is a separate contract.
 - Text drawing with the default font (`DrawText*`) is the first Phase 3 slice.
 - Performance is not measured beyond slice 1's benchmark.
