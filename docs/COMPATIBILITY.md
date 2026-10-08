@@ -33,7 +33,7 @@ The [master plan](MASTER-PLAN.md) defines the full-capability completion gates.
   - gradient, image-rotation and profiled math trigonometry (`*_for` with
     `M.Libm`): `AppleLibm` on Darwin, `Glibc239Libm` on
     glibc Linux;
-  - linked collision/noise/spline/decode multiply-add contraction: fused on
+  - linked collision/noise/spline/decode/camera multiply-add contraction: fused on
     Darwin arm64, uncontracted on Linux x86-64.
 
   Other hosts must declare a verified profile before conformance runs. Libm
@@ -152,6 +152,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | 2D collision queries | `Collision` functions | Boolean/rectangle/hit-coordinate results; explicit segment contraction profiles ([COLLISION.md](COLLISION.md)) | `conformance`, `fused` |
 | Sphere/box queries | `Collision.spheres/boxes/box_sphere` | Inclusive contacts, signed radii, supplied-bound ordering | `conformance` |
 | Ray queries | `Collision.ray_sphere/ray_box/ray_triangle/ray_quad` | Every `RayCollision` field bit; host contraction and libm profiles; non-portable box inputs are `None` | `ray`, `ray-uncontracted` |
+| Cameras | `Camera.*` (rcamera.h, rcore.c camera/screen-space queries) | Every F32 result bit; host contraction and libm profiles; perspective projections, unreproduced `sinf`/`cosf` arguments (all nonzero under AppleLibm) and checked-contract misses are `None` ([CAMERA.md](CAMERA.md)) | `camera`, `camera-uncontracted`, `camera-glibc239`, `camera-fused-glibc241` |
 | Linear/B-spline/Catmull-Rom/quadratic Bezier points | `Spline` functions | XY and coefficient order with explicit arithmetic profiles ([SPLINES.md](SPLINES.md)) | `spline` |
 | GPU execution of image operations | Same Bend API | All corpus pixels and export bytes on forced Metal with the overlay | local `tools/conformance.py --gpu` |
 | GPU graphics-pipeline `Draw*` APIs | Future rasterizer | Not implemented; CPU `ImageDraw*` matches do not cover these | — |

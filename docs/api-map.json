@@ -1,4 +1,88 @@
 {
+  "GetScreenToWorldRayEx": {
+    "jonlib": "Camera.screen_to_world_ray_ex_for / Camera.screen_to_world_ray_ex",
+    "status": "profile-covered",
+    "scope": "Maybe<Ray> for orthographic and other non-perspective cameras: Vector3Unproject at depths 0, 1 and -1 (orthographic origin; zero origin for other projections) and the normalized direction; sizes 1..INT_MAX; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
+    "gaps": [
+      "CAMERA_PERSPECTIVE is None: MatrixPerspective's binary64 tan is blocked (docs/PERSPECTIVE.md)",
+      "Orthographic fovy beyond the checked binary64 multiplier (about 2^97) and nonfinite fovy",
+      "Cull distances set by rlSetClipPlanes",
+      "Other compilers' contraction and optimization choices",
+      "NaN sign and payload are not reproduced",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:GetScreenToWorldRayEx",
+    "milestone": "camera"
+  },
+  "GetWorldToScreenEx": {
+    "jonlib": "Camera.world_to_screen_ex_for / Camera.world_to_screen_ex",
+    "status": "profile-covered",
+    "scope": "Maybe<Vector2> for orthographic and other non-perspective cameras: binary64 aspect and orthographic span through the checked binary64 helpers, view and projection transforms, perspective division and the screen mapping; sizes 1..INT_MAX; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
+    "gaps": [
+      "CAMERA_PERSPECTIVE is None: MatrixPerspective's binary64 tan is blocked (docs/PERSPECTIVE.md)",
+      "Orthographic fovy beyond the checked binary64 multiplier (about 2^97) and nonfinite fovy",
+      "Cull distances set by rlSetClipPlanes",
+      "Other compilers' contraction and optimization choices",
+      "NaN sign and payload are not reproduced",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:GetWorldToScreenEx",
+    "milestone": "camera"
+  },
+  "GetWorldToScreen2D": {
+    "jonlib": "Camera.world_to_screen_2d_for / Camera.world_to_screen_2d",
+    "status": "profile-covered",
+    "scope": "Maybe<Vector2>: Vector3Transform of (x, y, 0) by GetCameraMatrix2D, every input; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm profile; None as for GetCameraMatrix2D.",
+    "gaps": [
+      "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
+      "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+      "Other compilers' contraction and optimization choices",
+      "NaN sign and payload are not reproduced",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:GetWorldToScreen2D",
+    "milestone": "camera"
+  },
+  "GetScreenToWorld2D": {
+    "jonlib": "Camera.screen_to_world_2d_for / Camera.screen_to_world_2d",
+    "status": "profile-covered",
+    "scope": "Maybe<Vector2>: Vector3Transform of (x, y, 0) by MatrixInvert(GetCameraMatrix2D), singular matrices included; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm profile; None as for GetCameraMatrix2D.",
+    "gaps": [
+      "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
+      "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+      "Other compilers' contraction and optimization choices",
+      "NaN sign and payload are not reproduced",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:GetScreenToWorld2D",
+    "milestone": "camera"
+  },
+  "GetCameraMatrix": {
+    "jonlib": "Camera.matrix_for / Camera.matrix",
+    "status": "profile-covered",
+    "scope": "MatrixLookAt(position, target, up) for every camera and projection (no projection is involved), every F32 bit, including the fnmadd translation row of the arm64 build; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
+    "gaps": [
+      "Other compilers' contraction and optimization choices",
+      "NaN sign and payload are not reproduced",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:GetCameraMatrix",
+    "milestone": "camera"
+  },
+  "GetCameraMatrix2D": {
+    "jonlib": "Camera.matrix_2d_for / Camera.matrix_2d",
+    "status": "profile-covered",
+    "scope": "Maybe<Matrix>: translate(-target) * (scale(zoom) * MatrixRotate(z, rotation*DEG2RAD)) * translate(offset) in raylib's order, every input; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm sinf/cosf profile. None when the rotation argument is not reproduced (zero always is).",
+    "gaps": [
+      "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
+      "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+      "Other compilers' contraction and optimization choices",
+      "NaN sign and payload are not reproduced",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:GetCameraMatrix2D",
+    "milestone": "camera"
+  },
   "SetRandomSeed": {
     "jonlib": "Random.seed",
     "status": "profile-covered",
@@ -419,6 +503,20 @@
     ],
     "api_id": "raylib:function:ComputeSHA256",
     "milestone": "files"
+  },
+  "UpdateCameraPro": {
+    "jonlib": "Camera.update_pro_for / Camera.update_pro",
+    "status": "profile-covered",
+    "scope": "Maybe<Camera3D>: input-free; pitch (lockView), yaw and roll by degrees, then world-plane forward and right moves, up and zoom, as raylib composes them; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm profile; None as for the rotations it applies.",
+    "gaps": [
+      "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
+      "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+      "Other compilers' contraction and optimization choices",
+      "NaN sign and payload are not reproduced",
+      "Full target/performance coverage"
+    ],
+    "api_id": "raylib:function:UpdateCameraPro",
+    "milestone": "camera"
   },
   "GetSplinePointLinear": {
     "jonlib": "Spline.linear_for / Spline.linear",
