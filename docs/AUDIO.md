@@ -22,27 +22,89 @@ and export.
 
 ## WAV decoding
 
-`src/wav.bend` follows `drwav_init_memory` and `drwav_read_pcm_frames_s16`
-exactly for RIFF files: the chunk walk with dr_wav's stream position (including
-a `fmt ` chunk shorter than 16 bytes, which reads into the next chunk, and the
-relative seek to a chunk's declared end), padding, LIST/fact/unknown chunks,
-seeks past the end that end the walk, `WAVE_FORMAT_EXTENSIBLE` headers (a
-22-byte extension whose subformat selects the codec), the rate/channel/bit
-limits, a data size clipped to the file and rounded down to whole frames, and
-an empty data chunk (a Wave with 0 frames, which `IsWaveValid` rejects). PCM
-samples of 1 byte are recentred, of 2 to 8 bytes keep their top two bytes and
-above 8 bytes are 0; 32-bit float samples are clamped to [-1, 1], offset by 1,
-scaled by 32767.5 in single precision and truncated; a-law and mu-law use
-dr_wav's tables.
+`src/wav.bend` (with `src/wav_adpcm.bend`) follows `drwav_init_memory` and
+`drwav_read_pcm_frames_s16` exactly, as `LoadWaveFromMemory` calls them: it
+reads `(unsigned int)totalPCMFrameCount` frames, so a 64-bit count keeps only
+its low 32 bits. dr_wav's 64-bit sizes, positions and counts are two U32
+words that wrap as in C.
 
-Jonlib contracts where raylib behaves differently or not definedly:
+- **Containers.** RIFF and RIFX (big-endian sizes, `fmt ` fields and
+  samples); Wave64 (GUID chunk ids, the `riff`/`wave` GUIDs, a size of at
+  least 80, 64-bit chunk sizes counting their 24-byte header, and dr_wav's
+  padding of the size modulo 8, not to the next multiple of 8); RF64 (a
+  RIFF size of 0xFFFFFFFF and a leading `ds64` chunk whose data size replaces
+  the `data` chunk's and whose sample count, when nonzero, is the frame count);
+  AIFF and AIFC (`COMM` and `SSND` chunks, below).
+- **The chunk walk.** dr_wav's memory stream position and its 64-bit cursor:
+  a `fmt ` chunk shorter than 16 bytes reads into the next chunk, its
+  remaining declared size is an int seek (it may move backwards) while the
+  cursor adds the 64-bit difference (a cursor past 4 GiB makes the data seek
+  fail), padding, LIST/fact/unknown chunks, seeks past the end that end the
+  walk, a missing header that ends it, `WAVE_FORMAT_EXTENSIBLE` headers (a
+  22-byte extension whose subformat selects the codec, read in the
+  container's byte order). The walk stops at `data` (RIFF, RIFX, RF64,
+  Wave64) and continues past `SSND`. A RIFF/RIFX `fact` chunk keeps no count
+  (dr_wav tests the format tag before it is known); Wave64's 8-byte count is
+  the frame count when nonzero.
+- **AIFF/AIFC.** `COMM` is exactly 18 bytes (AIFF) or at least 24 (AIFC);
+  its 80-bit extended rate goes through `drwav_aiff_extented_to_s64`
+  (fractions truncated; exponents below 16383 wrap to INT64 limits;
+  unnormalized significands and negated values above 2^63 can still give a
+  valid rate) and must lie in 0..0xFFFFFFFF. AIFC compression `NONE`,
+  `raw ` (8-bit samples unsigned), `sowt` (little-endian), `fl32`/`fl64`/
+  `FL32`/`FL64`, `alaw`/`ALAW` and `ulaw`/`ULAW` (above 8 bits read as 8);
+  `ima4` and other types fail. The block align is channels*bits/8, bits
+  are rounded up by `bits & 7`, AIFC skips the rest of `COMM` but neither
+  form skips its padding, and later `COMM` chunks replace earlier ones (the
+  `raw ` and `sowt` flags stay set). `SSND` data starts at its offset after
+  the 8-byte offset/block-size header and its size is the chunk size less
+  the offset (8 bytes more than the samples). The `COMM` frame count, when
+  nonzero, is the frame count. 8-bit AIFF bytes get dr_wav's +128 unless
+  `raw `, including a-law and mu-law bytes.
+- **Validation and size.** The rate/channel/bit limits and a nonzero block
+  align, the data position within the file, a data size clipped to the
+  file (in wrapping 64-bit arithmetic) and rounded down to whole frames for
+  uncompressed formats, and ADPCM with at most two channels. The frame count
+  is the data size over the frame size, or for ADPCM dr_wav's block formula
+  (a trailing partial block counts; 6 or 4 header bytes per channel).
+- **Samples.** PCM samples of 1 byte are recentred, of 2 to 8 bytes keep
+  their top two bytes (big-endian containers swap 2, 3, 4 and 8-byte
+  samples first) and above 8 bytes are 0. 32-bit float is clamped to
+  [-1, 1], offset by 1, scaled by 32767.5 in single precision and
+  truncated; 64-bit float does the same in binary64 through the checked
+  helpers (`src/binary64_add_sub.bend`, `src/binary64_ops.bend`), each
+  rounding once to nearest even, with the truncation read from the result's
+  words; other float widths are silence. a-law and mu-law use dr_wav's
+  tables. Frames over dr_wav's 4096-byte read buffer (outside the 16-bit
+  PCM fast path) and formats it does not convert read nothing.
+- **ADPCM.** Microsoft ADPCM block headers (predictor, delta, two samples
+  per channel, output oldest first), nibbles high first with dr_wav's
+  coefficient and adaptation tables, the delta clamped to [16, 0x7FFFFFFF]
+  and samples to 16 bits; IMA ADPCM headers (predictor and step index per
+  channel) and groups of 4 bytes per channel giving 8 frames, low nibble
+  first. Both read straight from the stream (past the `data` chunk when the
+  frame count asks for it), keep the remaining block size as an unsigned
+  32-bit count (small or uneven block alignments wrap it) and stop at a short
+  read or an invalid predictor (MS) or step index (IMA).
 
-- RIFX, Wave64, RF64 and AIFF containers, MS/IMA ADPCM and 64-bit float data
-  are `UnsupportedWaveFormat` (dr_wav decodes them; not ported yet);
-- data dr_wav reads no frames from (other format tags, sample widths that do
-  not divide a frame) and NaN float samples are `InvalidWaveData`: raylib
-  returns uninitialized samples for the first and converts NaN with an
-  undefined float-to-int cast.
+Jonlib contracts where raylib's result is not defined (all
+`InvalidWaveData`):
+
+- dr_wav reads fewer frames than raylib allocates (partial or truncated
+  ADPCM blocks, invalid predictors or step indices, frame counts above the
+  data, formats it does not convert, frames over its read buffer): raylib
+  returns those samples uninitialized;
+- NaN float samples (32- or 64-bit): an undefined float-to-int conversion;
+- MS ADPCM nibbles whose `nibble * delta` or prediction sum overflows an int
+  (signed overflow is undefined), wherever it occurs in the decoded blocks;
+- an AIFF rate whose significand is exactly 2^63 with the sign set and the
+  largest exponent (dr_wav negates INT64_MIN), and AIFF channel and bit
+  counts whose int product overflows;
+- 5- to 7-byte and wider samples in big-endian containers: dr_wav's byte
+  swap asserts (a debug build aborts, a release build leaves them
+  unswapped);
+- a chunk walk that returns to a position it has visited (a backward `fmt `
+  seek onto itself): dr_wav never returns.
 
 ## QOA
 
@@ -74,8 +136,17 @@ samples is not encoded (`InvalidWaveRequest`).
 ## How it is verified
 
 `tools/wav_probe.py` (gate `wav`) builds raylib with its audio module and
-compares native `LoadWave` with `Wave.load` on 36 generated files covering
-each case above, then `IsWaveValid`, `WaveCopy`, `WaveCrop` (in and out of
+compares native `LoadWave` with `Wave.load` on 179 generated files covering
+each case above in every container (PCM widths, float values next to the
+rounding boundaries of `(c + 1) * 32767.5`, infinities and subnormals,
+companded and extensible data, Wave64 sizes and GUIDs, RF64 `ds64` edge cases,
+integral, fractional, unnormalized, negative and special AIFF rates, every
+AIFC type, MS/IMA ADPCM with partial blocks, bad predictors and step indices,
+negative deltas and small block alignments). For each file the native program
+first runs dr_wav itself and reports when it reads fewer frames than raylib
+allocates; those files must be `InvalidWaveData`, the others must match
+exactly or fail on both sides. The other contracts above are checked on
+Jonlib alone. Then `IsWaveValid`, `WaveCopy`, `WaveCrop` (in and out of
 range), `LoadWaveSamples`, `ExportWave` to `.wav` and `.RAW` and
 `ExportWaveAsCode` (the written bytes) on 8-, 16- and 32-bit waves, on CPU-1,
 CPU-2 and JavaScript. `tools/qoa_probe.py` (gate `qoa`) compares native
