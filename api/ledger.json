@@ -50085,23 +50085,27 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.load_utf8",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "UTF8.load",
+      "mapping_state": "implemented",
+      "scope": "Concatenated CodepointToUTF8 bytes of every codepoint (\"\" for none, raylib NULL); codepoint 0 encodes a NUL byte.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50113,7 +50117,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive LoadUTF8 semantics from the linked source, add a reference fixture, then implement Text.load_utf8.",
+      "next_step": "Close documented gaps and unverified gates for LoadUTF8.",
       "priority": 417
     },
     {
@@ -50139,23 +50143,27 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.unload_utf8",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "UTF8.unload",
+      "mapping_state": "implemented",
+      "scope": "Consumes the owned text.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50167,7 +50175,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive UnloadUTF8 semantics from the linked source, add a reference fixture, then implement Text.unload_utf8.",
+      "next_step": "Close documented gaps and unverified gates for UnloadUTF8.",
       "priority": 417
     },
     {
@@ -50193,23 +50201,27 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.load_codepoints",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Codepoint.load",
+      "mapping_state": "implemented",
+      "scope": "GetCodepointNext codepoints up to the NUL as an owned U32 list (its length is the count).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50221,7 +50233,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive LoadCodepoints semantics from the linked source, add a reference fixture, then implement Text.load_codepoints.",
+      "next_step": "Close documented gaps and unverified gates for LoadCodepoints.",
       "priority": 417
     },
     {
@@ -50247,23 +50259,27 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.unload_codepoints",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Codepoint.unload",
+      "mapping_state": "implemented",
+      "scope": "Consumes the owned codepoint list.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50275,7 +50291,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive UnloadCodepoints semantics from the linked source, add a reference fixture, then implement Text.unload_codepoints.",
+      "next_step": "Close documented gaps and unverified gates for UnloadCodepoints.",
       "priority": 417
     },
     {
@@ -50301,23 +50317,25 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.get_codepoint_count",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
-      "gaps": [
-        "Implementation and full contract/platform verification pending."
-      ],
+      "status": "partial",
+      "jonlib": "Codepoint.count",
+      "mapping_state": "implemented",
+      "scope": "The GetCodepointNext steps up to the NUL.",
+      "gaps": [],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50329,7 +50347,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive GetCodepointCount semantics from the linked source, add a reference fixture, then implement Text.get_codepoint_count.",
+      "next_step": "Close documented gaps and unverified gates for GetCodepointCount.",
       "priority": 417
     },
     {
@@ -50355,23 +50373,25 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.get_codepoint",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
-      "gaps": [
-        "Implementation and full contract/platform verification pending."
-      ],
+      "status": "partial",
+      "jonlib": "Codepoint.get",
+      "mapping_state": "implemented",
+      "scope": "RFC 3629 decoding with raylib's error sizes: ? (63) for overlong, surrogate, out-of-range, truncated and invalid sequences.",
+      "gaps": [],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50383,7 +50403,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive GetCodepoint semantics from the linked source, add a reference fixture, then implement Text.get_codepoint.",
+      "next_step": "Close documented gaps and unverified gates for GetCodepoint.",
       "priority": 417
     },
     {
@@ -50409,23 +50429,25 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.get_codepoint_next",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
-      "gaps": [
-        "Implementation and full contract/platform verification pending."
-      ],
+      "status": "partial",
+      "jonlib": "Codepoint.next",
+      "mapping_state": "implemented",
+      "scope": "Lead-byte class and continuation checks only (overlong and surrogate forms decode); ? with size 1 otherwise.",
+      "gaps": [],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50437,7 +50459,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive GetCodepointNext semantics from the linked source, add a reference fixture, then implement Text.get_codepoint_next.",
+      "next_step": "Close documented gaps and unverified gates for GetCodepointNext.",
       "priority": 417
     },
     {
@@ -50463,23 +50485,27 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.get_codepoint_previous",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Codepoint.previous",
+      "mapping_state": "implemented",
+      "scope": "GetCodepointPrevious(text + position): back over continuation bytes, then GetCodepointNext there; position length + 1 reads the NUL as (0, 1).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: stepping before the text or starting past its NUL is None"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50491,7 +50517,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive GetCodepointPrevious semantics from the linked source, add a reference fixture, then implement Text.get_codepoint_previous.",
+      "next_step": "Close documented gaps and unverified gates for GetCodepointPrevious.",
       "priority": 417
     },
     {
@@ -50517,23 +50543,27 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.codepoint_to_utf8",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Codepoint.to_utf8",
+      "mapping_state": "implemented",
+      "scope": "1..4 UTF-8 bytes; negative codepoints one byte (the low byte), none above 0x10FFFF.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Static 6-byte buffer becomes a returned String (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50545,7 +50575,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive CodepointToUTF8 semantics from the linked source, add a reference fixture, then implement Text.codepoint_to_utf8.",
+      "next_step": "Close documented gaps and unverified gates for CodepointToUTF8.",
       "priority": 417
     },
     {
@@ -50571,23 +50601,27 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.load_text_lines",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.load_lines",
+      "mapping_state": "implemented",
+      "scope": "The text up to its NUL cut at every newline into newlines + 1 owned lines (carriage returns kept).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50599,7 +50633,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive LoadTextLines semantics from the linked source, add a reference fixture, then implement Text.load_text_lines.",
+      "next_step": "Close documented gaps and unverified gates for LoadTextLines.",
       "priority": 417
     },
     {
@@ -50625,23 +50659,27 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.unload_text_lines",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.unload_lines",
+      "mapping_state": "implemented",
+      "scope": "Consumes the owned line list.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50653,7 +50691,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive UnloadTextLines semantics from the linked source, add a reference fixture, then implement Text.unload_text_lines.",
+      "next_step": "Close documented gaps and unverified gates for UnloadTextLines.",
       "priority": 417
     },
     {
@@ -50679,23 +50717,28 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_copy",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.copy",
+      "mapping_state": "implemented",
+      "scope": "The text and its NUL written at the start of a buffer String of fixed size, returned with the bytes copied; other buffer bytes kept.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: a text and NUL that do not fit the buffer are None",
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50707,7 +50750,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextCopy semantics from the linked source, add a reference fixture, then implement Text.text_copy.",
+      "next_step": "Close documented gaps and unverified gates for TextCopy.",
       "priority": 417
     },
     {
@@ -50733,23 +50776,25 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_is_equal",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
-      "gaps": [
-        "Implementation and full contract/platform verification pending."
-      ],
+      "status": "partial",
+      "jonlib": "Text.is_equal",
+      "mapping_state": "implemented",
+      "scope": "strcmp equality of the two texts up to their NULs.",
+      "gaps": [],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50763,7 +50808,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextIsEqual semantics from the linked source, add a reference fixture, then implement Text.text_is_equal.",
+      "next_step": "Close documented gaps and unverified gates for TextIsEqual.",
       "priority": 417
     },
     {
@@ -50789,23 +50834,25 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_length",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
-      "gaps": [
-        "Implementation and full contract/platform verification pending."
-      ],
+      "status": "partial",
+      "jonlib": "Text.length",
+      "mapping_state": "implemented",
+      "scope": "The bytes before the first NUL as a U32.",
+      "gaps": [],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50817,7 +50864,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextLength semantics from the linked source, add a reference fixture, then implement Text.text_length.",
+      "next_step": "Close documented gaps and unverified gates for TextLength.",
       "priority": 417
     },
     {
@@ -50843,23 +50890,30 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_format",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.format",
+      "mapping_state": "implemented",
+      "scope": "Typed vsnprintf subset: literal bytes, %% and %d %i %u %x %X %o %c %s %f %F with flags, width and precision up to 4096 (%f precision 0..9, exact half-even digits); 1024+ byte output keeps 1020 bytes and appends \"...\"; a %c NUL ends the result.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: missing/mismatched arguments and C-undefined flag combinations are None",
+        "Conversions e, g, a, p, length modifiers, * widths and %f precisions above 9 are outside the subset",
+        "NaN arguments (C library spellings differ)",
+        "Four rotating static buffers become returned values (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50871,7 +50925,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextFormat semantics from the linked source, add a reference fixture, then implement Text.text_format.",
+      "next_step": "Close documented gaps and unverified gates for TextFormat.",
       "priority": 417
     },
     {
@@ -50897,23 +50951,28 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_subtext",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.subtext",
+      "mapping_state": "implemented",
+      "scope": "length bytes from position clamped to the text and to 1023 bytes; \"\" from positions at or past the end.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: negative lengths, reads before the text and overflowing textLength - position are None",
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50925,7 +50984,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextSubtext semantics from the linked source, add a reference fixture, then implement Text.text_subtext.",
+      "next_step": "Close documented gaps and unverified gates for TextSubtext.",
       "priority": 417
     },
     {
@@ -50951,23 +51010,28 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_remove_spaces",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.remove_spaces",
+      "mapping_state": "implemented",
+      "scope": "The non-space bytes among the first 1023, including raylib reading the loop condition at the output index.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: texts of up to 1021 bytes with two or more spaces read past the NUL: None",
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50979,7 +51043,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextRemoveSpaces semantics from the linked source, add a reference fixture, then implement Text.text_remove_spaces.",
+      "next_step": "Close documented gaps and unverified gates for TextRemoveSpaces.",
       "priority": 417
     },
     {
@@ -51005,23 +51069,27 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.get_text_between",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.between",
+      "mapping_state": "implemented",
+      "scope": "The bytes (at most 1023) between the first begin and the first end after it; \"\" when either is missing.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51033,7 +51101,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive GetTextBetween semantics from the linked source, add a reference fixture, then implement Text.get_text_between.",
+      "next_step": "Close documented gaps and unverified gates for GetTextBetween.",
       "priority": 417
     },
     {
@@ -51059,23 +51127,28 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_replace",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.replace",
+      "mapping_state": "implemented",
+      "scope": "Non-overlapping left-to-right replacement; \"\" for an empty search or a result of 1023+ bytes.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: int overflow of the result size is None",
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51087,7 +51160,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextReplace semantics from the linked source, add a reference fixture, then implement Text.text_replace.",
+      "next_step": "Close documented gaps and unverified gates for TextReplace.",
       "priority": 417
     },
     {
@@ -51113,23 +51186,28 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_replace_alloc",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.replace_alloc",
+      "mapping_state": "implemented",
+      "scope": "Non-overlapping left-to-right replacement without a size limit; None (NULL) for an empty search.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: int overflow of the allocation size is None",
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51141,7 +51219,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextReplaceAlloc semantics from the linked source, add a reference fixture, then implement Text.text_replace_alloc.",
+      "next_step": "Close documented gaps and unverified gates for TextReplaceAlloc.",
       "priority": 417
     },
     {
@@ -51167,23 +51245,28 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_replace_between",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.replace_between",
+      "mapping_state": "implemented",
+      "scope": "The text through begin, the replacement and the text from end; \"\" when a marker is missing.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: results of 1024+ bytes overflow or are unterminated: None",
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51195,7 +51278,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextReplaceBetween semantics from the linked source, add a reference fixture, then implement Text.text_replace_between.",
+      "next_step": "Close documented gaps and unverified gates for TextReplaceBetween.",
       "priority": 417
     },
     {
@@ -51221,23 +51304,27 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_replace_between_alloc",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.replace_between_alloc",
+      "mapping_state": "implemented",
+      "scope": "The text through begin, the replacement and the text from end without a limit; None (NULL) when a marker is missing.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51249,7 +51336,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextReplaceBetweenAlloc semantics from the linked source, add a reference fixture, then implement Text.text_replace_between_alloc.",
+      "next_step": "Close documented gaps and unverified gates for TextReplaceBetweenAlloc.",
       "priority": 417
     },
     {
@@ -51275,23 +51362,28 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_insert",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.insert",
+      "mapping_state": "implemented",
+      "scope": "raylib copies the tail from the wrong index: appending (position == length), position length + 1 (text unchanged) and one-byte overwrites inside the text are reproduced; \"\" for 1023+ bytes.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: other positions read past the text or write before the buffer: None",
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51303,7 +51395,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextInsert semantics from the linked source, add a reference fixture, then implement Text.text_insert.",
+      "next_step": "Close documented gaps and unverified gates for TextInsert.",
       "priority": 417
     },
     {
@@ -51329,23 +51421,28 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_insert_alloc",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.insert_alloc",
+      "mapping_state": "implemented",
+      "scope": "The TextInsert positions without the size limit (append, length + 1, one-byte overwrite).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: other positions read past the text or write before the buffer: None",
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51357,7 +51454,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextInsertAlloc semantics from the linked source, add a reference fixture, then implement Text.text_insert_alloc.",
+      "next_step": "Close documented gaps and unverified gates for TextInsertAlloc.",
       "priority": 417
     },
     {
@@ -51383,23 +51480,28 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_join",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.join",
+      "mapping_state": "implemented",
+      "scope": "Each text that fits the 1024-byte buffer (others skipped with their delimiter), with the delimiter after each copied text but the last item.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: a delimiter ending past byte 1022 overflows or leaves the buffer unterminated: None",
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51411,7 +51513,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextJoin semantics from the linked source, add a reference fixture, then implement Text.text_join.",
+      "next_step": "Close documented gaps and unverified gates for TextJoin.",
       "priority": 417
     },
     {
@@ -51437,23 +51539,28 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_split",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.split",
+      "mapping_state": "implemented",
+      "scope": "Substrings between delimiter bytes; at the 127th delimiter raylib stops and the 128th substring is empty; NUL never splits.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: an unterminated last substring within the 1024-byte buffer is None",
+        "Static pointer array becomes a returned list (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51465,7 +51572,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextSplit semantics from the linked source, add a reference fixture, then implement Text.text_split.",
+      "next_step": "Close documented gaps and unverified gates for TextSplit.",
       "priority": 417
     },
     {
@@ -51491,23 +51598,28 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_append",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.append",
+      "mapping_state": "implemented",
+      "scope": "The text and its NUL written at a position in a fixed-size buffer String, returned with the advanced position.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: writes past the buffer or at negative positions are None",
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51519,7 +51631,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextAppend semantics from the linked source, add a reference fixture, then implement Text.text_append.",
+      "next_step": "Close documented gaps and unverified gates for TextAppend.",
       "priority": 417
     },
     {
@@ -51545,23 +51657,25 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_find_index",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
-      "gaps": [
-        "Implementation and full contract/platform verification pending."
-      ],
+      "status": "partial",
+      "jonlib": "Text.find_index",
+      "mapping_state": "implemented",
+      "scope": "strstr byte index of the first occurrence (empty search at 0); None for -1.",
+      "gaps": [],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51573,7 +51687,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextFindIndex semantics from the linked source, add a reference fixture, then implement Text.text_find_index.",
+      "next_step": "Close documented gaps and unverified gates for TextFindIndex.",
       "priority": 417
     },
     {
@@ -51599,23 +51713,27 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_to_upper",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.to_upper",
+      "mapping_state": "implemented",
+      "scope": "ASCII a-z upper-cased, other bytes kept, at most 1023 bytes.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51627,7 +51745,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextToUpper semantics from the linked source, add a reference fixture, then implement Text.text_to_upper.",
+      "next_step": "Close documented gaps and unverified gates for TextToUpper.",
       "priority": 417
     },
     {
@@ -51653,23 +51771,27 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_to_lower",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.to_lower",
+      "mapping_state": "implemented",
+      "scope": "ASCII A-Z lower-cased, other bytes kept, at most 1023 bytes.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51681,7 +51803,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextToLower semantics from the linked source, add a reference fixture, then implement Text.text_to_lower.",
+      "next_step": "Close documented gaps and unverified gates for TextToLower.",
       "priority": 417
     },
     {
@@ -51707,23 +51829,28 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_to_pascal",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.to_pascal",
+      "mapping_state": "implemented",
+      "scope": "First byte upper-cased; _x becomes X (a-z), x (0-9) or a NUL ending the result; at most 1023 bytes.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: empty texts and a final underscore read past the NUL: None",
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51735,7 +51862,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextToPascal semantics from the linked source, add a reference fixture, then implement Text.text_to_pascal.",
+      "next_step": "Close documented gaps and unverified gates for TextToPascal.",
       "priority": 417
     },
     {
@@ -51761,23 +51888,28 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_to_snake",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.to_snake",
+      "mapping_state": "implemented",
+      "scope": "Underscore before each upper-case letter after output byte 0, letters lower-cased, at most 1023 bytes.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: a letter at output byte 1022 leaves the buffer unterminated: None",
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51789,7 +51921,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextToSnake semantics from the linked source, add a reference fixture, then implement Text.text_to_snake.",
+      "next_step": "Close documented gaps and unverified gates for TextToSnake.",
       "priority": 417
     },
     {
@@ -51815,23 +51947,28 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_to_camel",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.to_camel",
+      "mapping_state": "implemented",
+      "scope": "First byte lower-cased; _x becomes X for a-z, otherwise a NUL ending the result; at most 1023 bytes.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: empty texts and a final underscore read past the NUL: None",
+        "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51843,7 +51980,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextToCamel semantics from the linked source, add a reference fixture, then implement Text.text_to_camel.",
+      "next_step": "Close documented gaps and unverified gates for TextToCamel.",
       "priority": 417
     },
     {
@@ -51869,23 +52006,27 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_to_integer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.to_integer",
+      "mapping_state": "implemented",
+      "scope": "Optional sign and leading decimal digits as a two's-complement U32 (0 without digits, no whitespace skipping).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: digits beyond INT_MAX (signed overflow) are None"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51897,7 +52038,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextToInteger semantics from the linked source, add a reference fixture, then implement Text.text_to_integer.",
+      "next_step": "Close documented gaps and unverified gates for TextToInteger.",
       "priority": 417
     },
     {
@@ -51923,23 +52064,27 @@
       "milestone": "text-utils",
       "phase": 3,
       "sequence": 17,
-      "status": "not-started",
-      "jonlib": "Text.text_to_float",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Text.to_float_for / Text.to_float",
+      "mapping_state": "implemented",
+      "scope": "Optional sign, value*10 + digit in F32 under an explicit M.Contraction profile (fused once on the arm64 reference), then digit/divisor additions after the point; sign multiplied last.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: other hosts must declare their contraction profile"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/text_probe.py",
+        "docs/TEXT.md",
+        "src/text.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -51951,7 +52096,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Exact strings/codepoints/counts, malformed UTF-8, buffer lifetimes, delimiters, allocation and truncation behavior.",
-      "next_step": "Derive TextToFloat semantics from the linked source, add a reference fixture, then implement Text.text_to_float.",
+      "next_step": "Close documented gaps and unverified gates for TextToFloat.",
       "priority": 417
     },
     {

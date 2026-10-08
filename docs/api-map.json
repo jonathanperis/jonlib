@@ -1665,6 +1665,361 @@
     "api_id": "raylib:function:GetPixelDataSize",
     "milestone": "pixels"
   },
+  "LoadUTF8": {
+    "jonlib": "UTF8.load",
+    "status": "profile-covered",
+    "scope": "Concatenated CodepointToUTF8 bytes of every codepoint (\"\" for none, raylib NULL); codepoint 0 encodes a NUL byte.",
+    "gaps": [
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:LoadUTF8",
+    "milestone": "text-utils"
+  },
+  "UnloadUTF8": {
+    "jonlib": "UTF8.unload",
+    "status": "profile-covered",
+    "scope": "Consumes the owned text.",
+    "gaps": [
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:UnloadUTF8",
+    "milestone": "text-utils"
+  },
+  "LoadCodepoints": {
+    "jonlib": "Codepoint.load",
+    "status": "profile-covered",
+    "scope": "GetCodepointNext codepoints up to the NUL as an owned U32 list (its length is the count).",
+    "gaps": [
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:LoadCodepoints",
+    "milestone": "text-utils"
+  },
+  "UnloadCodepoints": {
+    "jonlib": "Codepoint.unload",
+    "status": "profile-covered",
+    "scope": "Consumes the owned codepoint list.",
+    "gaps": [
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:UnloadCodepoints",
+    "milestone": "text-utils"
+  },
+  "GetCodepointCount": {
+    "jonlib": "Codepoint.count",
+    "status": "profile-covered",
+    "scope": "The GetCodepointNext steps up to the NUL.",
+    "gaps": [],
+    "api_id": "raylib:function:GetCodepointCount",
+    "milestone": "text-utils"
+  },
+  "GetCodepoint": {
+    "jonlib": "Codepoint.get",
+    "status": "profile-covered",
+    "scope": "RFC 3629 decoding with raylib's error sizes: ? (63) for overlong, surrogate, out-of-range, truncated and invalid sequences.",
+    "gaps": [],
+    "api_id": "raylib:function:GetCodepoint",
+    "milestone": "text-utils"
+  },
+  "GetCodepointNext": {
+    "jonlib": "Codepoint.next",
+    "status": "profile-covered",
+    "scope": "Lead-byte class and continuation checks only (overlong and surrogate forms decode); ? with size 1 otherwise.",
+    "gaps": [],
+    "api_id": "raylib:function:GetCodepointNext",
+    "milestone": "text-utils"
+  },
+  "GetCodepointPrevious": {
+    "jonlib": "Codepoint.previous",
+    "status": "profile-covered",
+    "scope": "GetCodepointPrevious(text + position): back over continuation bytes, then GetCodepointNext there; position length + 1 reads the NUL as (0, 1).",
+    "gaps": [
+      "Undefined native behavior: stepping before the text or starting past its NUL is None"
+    ],
+    "api_id": "raylib:function:GetCodepointPrevious",
+    "milestone": "text-utils"
+  },
+  "CodepointToUTF8": {
+    "jonlib": "Codepoint.to_utf8",
+    "status": "profile-covered",
+    "scope": "1..4 UTF-8 bytes; negative codepoints one byte (the low byte), none above 0x10FFFF.",
+    "gaps": [
+      "Static 6-byte buffer becomes a returned String (language adaptation)"
+    ],
+    "api_id": "raylib:function:CodepointToUTF8",
+    "milestone": "text-utils"
+  },
+  "LoadTextLines": {
+    "jonlib": "Text.load_lines",
+    "status": "profile-covered",
+    "scope": "The text up to its NUL cut at every newline into newlines + 1 owned lines (carriage returns kept).",
+    "gaps": [
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:LoadTextLines",
+    "milestone": "text-utils"
+  },
+  "UnloadTextLines": {
+    "jonlib": "Text.unload_lines",
+    "status": "profile-covered",
+    "scope": "Consumes the owned line list.",
+    "gaps": [
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:UnloadTextLines",
+    "milestone": "text-utils"
+  },
+  "TextCopy": {
+    "jonlib": "Text.copy",
+    "status": "profile-covered",
+    "scope": "The text and its NUL written at the start of a buffer String of fixed size, returned with the bytes copied; other buffer bytes kept.",
+    "gaps": [
+      "Undefined native behavior: a text and NUL that do not fit the buffer are None",
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextCopy",
+    "milestone": "text-utils"
+  },
+  "TextIsEqual": {
+    "jonlib": "Text.is_equal",
+    "status": "profile-covered",
+    "scope": "strcmp equality of the two texts up to their NULs.",
+    "gaps": [],
+    "api_id": "raylib:function:TextIsEqual",
+    "milestone": "text-utils"
+  },
+  "TextLength": {
+    "jonlib": "Text.length",
+    "status": "profile-covered",
+    "scope": "The bytes before the first NUL as a U32.",
+    "gaps": [],
+    "api_id": "raylib:function:TextLength",
+    "milestone": "text-utils"
+  },
+  "TextFormat": {
+    "jonlib": "Text.format",
+    "status": "profile-covered",
+    "scope": "Typed vsnprintf subset: literal bytes, %% and %d %i %u %x %X %o %c %s %f %F with flags, width and precision up to 4096 (%f precision 0..9, exact half-even digits); 1024+ byte output keeps 1020 bytes and appends \"...\"; a %c NUL ends the result.",
+    "gaps": [
+      "Undefined native behavior: missing/mismatched arguments and C-undefined flag combinations are None",
+      "Conversions e, g, a, p, length modifiers, * widths and %f precisions above 9 are outside the subset",
+      "NaN arguments (C library spellings differ)",
+      "Four rotating static buffers become returned values (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextFormat",
+    "milestone": "text-utils"
+  },
+  "TextSubtext": {
+    "jonlib": "Text.subtext",
+    "status": "profile-covered",
+    "scope": "length bytes from position clamped to the text and to 1023 bytes; \"\" from positions at or past the end.",
+    "gaps": [
+      "Undefined native behavior: negative lengths, reads before the text and overflowing textLength - position are None",
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextSubtext",
+    "milestone": "text-utils"
+  },
+  "TextRemoveSpaces": {
+    "jonlib": "Text.remove_spaces",
+    "status": "profile-covered",
+    "scope": "The non-space bytes among the first 1023, including raylib reading the loop condition at the output index.",
+    "gaps": [
+      "Undefined native behavior: texts of up to 1021 bytes with two or more spaces read past the NUL: None",
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextRemoveSpaces",
+    "milestone": "text-utils"
+  },
+  "GetTextBetween": {
+    "jonlib": "Text.between",
+    "status": "profile-covered",
+    "scope": "The bytes (at most 1023) between the first begin and the first end after it; \"\" when either is missing.",
+    "gaps": [
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:GetTextBetween",
+    "milestone": "text-utils"
+  },
+  "TextReplace": {
+    "jonlib": "Text.replace",
+    "status": "profile-covered",
+    "scope": "Non-overlapping left-to-right replacement; \"\" for an empty search or a result of 1023+ bytes.",
+    "gaps": [
+      "Undefined native behavior: int overflow of the result size is None",
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextReplace",
+    "milestone": "text-utils"
+  },
+  "TextReplaceAlloc": {
+    "jonlib": "Text.replace_alloc",
+    "status": "profile-covered",
+    "scope": "Non-overlapping left-to-right replacement without a size limit; None (NULL) for an empty search.",
+    "gaps": [
+      "Undefined native behavior: int overflow of the allocation size is None",
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextReplaceAlloc",
+    "milestone": "text-utils"
+  },
+  "TextReplaceBetween": {
+    "jonlib": "Text.replace_between",
+    "status": "profile-covered",
+    "scope": "The text through begin, the replacement and the text from end; \"\" when a marker is missing.",
+    "gaps": [
+      "Undefined native behavior: results of 1024+ bytes overflow or are unterminated: None",
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextReplaceBetween",
+    "milestone": "text-utils"
+  },
+  "TextReplaceBetweenAlloc": {
+    "jonlib": "Text.replace_between_alloc",
+    "status": "profile-covered",
+    "scope": "The text through begin, the replacement and the text from end without a limit; None (NULL) when a marker is missing.",
+    "gaps": [
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextReplaceBetweenAlloc",
+    "milestone": "text-utils"
+  },
+  "TextInsert": {
+    "jonlib": "Text.insert",
+    "status": "profile-covered",
+    "scope": "raylib copies the tail from the wrong index: appending (position == length), position length + 1 (text unchanged) and one-byte overwrites inside the text are reproduced; \"\" for 1023+ bytes.",
+    "gaps": [
+      "Undefined native behavior: other positions read past the text or write before the buffer: None",
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextInsert",
+    "milestone": "text-utils"
+  },
+  "TextInsertAlloc": {
+    "jonlib": "Text.insert_alloc",
+    "status": "profile-covered",
+    "scope": "The TextInsert positions without the size limit (append, length + 1, one-byte overwrite).",
+    "gaps": [
+      "Undefined native behavior: other positions read past the text or write before the buffer: None",
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextInsertAlloc",
+    "milestone": "text-utils"
+  },
+  "TextJoin": {
+    "jonlib": "Text.join",
+    "status": "profile-covered",
+    "scope": "Each text that fits the 1024-byte buffer (others skipped with their delimiter), with the delimiter after each copied text but the last item.",
+    "gaps": [
+      "Undefined native behavior: a delimiter ending past byte 1022 overflows or leaves the buffer unterminated: None",
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextJoin",
+    "milestone": "text-utils"
+  },
+  "TextSplit": {
+    "jonlib": "Text.split",
+    "status": "profile-covered",
+    "scope": "Substrings between delimiter bytes; at the 127th delimiter raylib stops and the 128th substring is empty; NUL never splits.",
+    "gaps": [
+      "Undefined native behavior: an unterminated last substring within the 1024-byte buffer is None",
+      "Static pointer array becomes a returned list (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextSplit",
+    "milestone": "text-utils"
+  },
+  "TextAppend": {
+    "jonlib": "Text.append",
+    "status": "profile-covered",
+    "scope": "The text and its NUL written at a position in a fixed-size buffer String, returned with the advanced position.",
+    "gaps": [
+      "Undefined native behavior: writes past the buffer or at negative positions are None",
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextAppend",
+    "milestone": "text-utils"
+  },
+  "TextFindIndex": {
+    "jonlib": "Text.find_index",
+    "status": "profile-covered",
+    "scope": "strstr byte index of the first occurrence (empty search at 0); None for -1.",
+    "gaps": [],
+    "api_id": "raylib:function:TextFindIndex",
+    "milestone": "text-utils"
+  },
+  "TextToUpper": {
+    "jonlib": "Text.to_upper",
+    "status": "profile-covered",
+    "scope": "ASCII a-z upper-cased, other bytes kept, at most 1023 bytes.",
+    "gaps": [
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextToUpper",
+    "milestone": "text-utils"
+  },
+  "TextToLower": {
+    "jonlib": "Text.to_lower",
+    "status": "profile-covered",
+    "scope": "ASCII A-Z lower-cased, other bytes kept, at most 1023 bytes.",
+    "gaps": [
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextToLower",
+    "milestone": "text-utils"
+  },
+  "TextToPascal": {
+    "jonlib": "Text.to_pascal",
+    "status": "profile-covered",
+    "scope": "First byte upper-cased; _x becomes X (a-z), x (0-9) or a NUL ending the result; at most 1023 bytes.",
+    "gaps": [
+      "Undefined native behavior: empty texts and a final underscore read past the NUL: None",
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextToPascal",
+    "milestone": "text-utils"
+  },
+  "TextToSnake": {
+    "jonlib": "Text.to_snake",
+    "status": "profile-covered",
+    "scope": "Underscore before each upper-case letter after output byte 0, letters lower-cased, at most 1023 bytes.",
+    "gaps": [
+      "Undefined native behavior: a letter at output byte 1022 leaves the buffer unterminated: None",
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextToSnake",
+    "milestone": "text-utils"
+  },
+  "TextToCamel": {
+    "jonlib": "Text.to_camel",
+    "status": "profile-covered",
+    "scope": "First byte lower-cased; _x becomes X for a-z, otherwise a NUL ending the result; at most 1023 bytes.",
+    "gaps": [
+      "Undefined native behavior: empty texts and a final underscore read past the NUL: None",
+      "Pointer/allocator ABI: results are owned values, not shared char buffers (language adaptation)"
+    ],
+    "api_id": "raylib:function:TextToCamel",
+    "milestone": "text-utils"
+  },
+  "TextToInteger": {
+    "jonlib": "Text.to_integer",
+    "status": "profile-covered",
+    "scope": "Optional sign and leading decimal digits as a two's-complement U32 (0 without digits, no whitespace skipping).",
+    "gaps": [
+      "Undefined native behavior: digits beyond INT_MAX (signed overflow) are None"
+    ],
+    "api_id": "raylib:function:TextToInteger",
+    "milestone": "text-utils"
+  },
+  "TextToFloat": {
+    "jonlib": "Text.to_float_for / Text.to_float",
+    "status": "profile-covered",
+    "scope": "Optional sign, value*10 + digit in F32 under an explicit M.Contraction profile (fused once on the arm64 reference), then digit/divisor additions after the point; sign multiplied last.",
+    "gaps": [
+      "Targets: other hosts must declare their contraction profile"
+    ],
+    "api_id": "raylib:function:TextToFloat",
+    "milestone": "text-utils"
+  },
   "CheckCollisionSpheres": {
     "jonlib": "Collision.spheres_for / Collision.spheres",
     "status": "profile-covered",
