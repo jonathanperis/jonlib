@@ -153,6 +153,29 @@
     "api_id": "raylib:function:EndMode2D",
     "milestone": "shapes"
   },
+  "BeginMode3D": {
+    "jonlib": "Frame.begin_mode_3d",
+    "status": "profile-covered",
+    "scope": "Projection pushed and reset, swOrtho for CAMERA_ORTHOGRAPHIC (binary64 top/right exact, F32 cells), identity for other projection values, MatrixLookAt modelview (uncontracted) and the depth test enabled; aspect of the current color buffer.",
+    "gaps": [
+      "CAMERA_PERSPECTIVE is refused: rlFrustum needs the native binary64 tan (docs/PERSPECTIVE.md)",
+      "Orthographic cameras with a zero or nonfinite fovy, span or scale mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:BeginMode3D",
+    "milestone": "models"
+  },
+  "EndMode3D": {
+    "jonlib": "Frame.end_mode_3d",
+    "status": "profile-covered",
+    "scope": "Projection popped and modelview reset; the depth test stays enabled.",
+    "gaps": [
+      "Popping the last projection (no matching BeginMode3D) is undefined in rlsw and marks the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:EndMode3D",
+    "milestone": "models"
+  },
   "BeginTextureMode": {
     "jonlib": "Frame.begin_texture_mode",
     "status": "profile-covered",
@@ -4029,6 +4052,474 @@
     "api_id": "raylib:function:TextToFloat",
     "milestone": "text-utils"
   },
+  "DrawLine3D": {
+    "jonlib": "Draw.line_3d",
+    "status": "profile-covered",
+    "scope": "One RL_LINES segment through the current matrices.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawLine3D",
+    "milestone": "models"
+  },
+  "DrawPoint3D": {
+    "jonlib": "Draw.point_3d",
+    "status": "profile-covered",
+    "scope": "A line from the translated origin to z = 0.1f, inside rlPushMatrix/rlPopMatrix.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawPoint3D",
+    "milestone": "models"
+  },
+  "DrawCircle3D": {
+    "jonlib": "Draw.circle_3d_for / Draw.circle_3d",
+    "status": "profile-covered",
+    "scope": "rlTranslatef, rlRotatef(angle, axis) and 36 lines every 10 degrees, the color set before each.",
+    "gaps": [
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawCircle3D",
+    "milestone": "models"
+  },
+  "DrawTriangle3D": {
+    "jonlib": "Draw.triangle_3d",
+    "status": "profile-covered",
+    "scope": "One RL_TRIANGLES triangle; culling and depth as rlsw.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawTriangle3D",
+    "milestone": "models"
+  },
+  "DrawTriangleStrip3D": {
+    "jonlib": "Draw.triangle_strip_3d",
+    "status": "profile-covered",
+    "scope": "Triangles (i, i-2, i-1) for even i and (i, i-1, i-2) for odd i; nothing below three points.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawTriangleStrip3D",
+    "milestone": "models"
+  },
+  "DrawCube": {
+    "jonlib": "Draw.cube",
+    "status": "profile-covered",
+    "scope": "Twelve triangles around the translated origin (0 - size/2 corners).",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawCube",
+    "milestone": "models"
+  },
+  "DrawCubeV": {
+    "jonlib": "Draw.cube_v",
+    "status": "profile-covered",
+    "scope": "DrawCube with the vector size.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawCubeV",
+    "milestone": "models"
+  },
+  "DrawCubeWires": {
+    "jonlib": "Draw.cube_wires",
+    "status": "profile-covered",
+    "scope": "Twelve RL_LINES edges around the translated origin.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawCubeWires",
+    "milestone": "models"
+  },
+  "DrawCubeWiresV": {
+    "jonlib": "Draw.cube_wires_v",
+    "status": "profile-covered",
+    "scope": "DrawCubeWires with the vector size.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawCubeWiresV",
+    "milestone": "models"
+  },
+  "DrawSphere": {
+    "jonlib": "Draw.sphere_for / Draw.sphere",
+    "status": "profile-covered",
+    "scope": "DrawSphereEx with 16 rings and 16 slices.",
+    "gaps": [
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+      "Rings, slices and sides above 4096 mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawSphere",
+    "milestone": "models"
+  },
+  "DrawSphereEx": {
+    "jonlib": "Draw.sphere_ex_for / Draw.sphere_ex",
+    "status": "profile-covered",
+    "scope": "Incremental y and z rotations by cosf/sinf of DEG2RAD*(180/(rings + 1)) and DEG2RAD*(360/slices), scaled by the radius.",
+    "gaps": [
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+      "Rings, slices and sides above 4096 mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawSphereEx",
+    "milestone": "models"
+  },
+  "DrawCylinder": {
+    "jonlib": "Draw.cylinder_for / Draw.cylinder",
+    "status": "profile-covered",
+    "scope": "Body and cap (or cone) and base triangles at angles (DEG2RAD*i)*(360/sides); sides below 3 become 3.",
+    "gaps": [
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+      "Rings, slices and sides above 4096 mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawCylinder",
+    "milestone": "models"
+  },
+  "DrawCylinderEx": {
+    "jonlib": "Draw.cylinder_ex_for / Draw.cylinder_ex",
+    "status": "profile-covered",
+    "scope": "Triangles around start-end on the normalized perpendicular basis, angles ((2*PI)/sides)*i; nothing for start == end.",
+    "gaps": [
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+      "Rings, slices and sides above 4096 mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawCylinderEx",
+    "milestone": "models"
+  },
+  "DrawCylinderWires": {
+    "jonlib": "Draw.cylinder_wires_for / Draw.cylinder_wires",
+    "status": "profile-covered",
+    "scope": "Four lines per side at angles (DEG2RAD*i)*(360/sides).",
+    "gaps": [
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+      "Rings, slices and sides above 4096 mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawCylinderWires",
+    "milestone": "models"
+  },
+  "DrawCylinderWiresEx": {
+    "jonlib": "Draw.cylinder_wires_ex_for / Draw.cylinder_wires_ex",
+    "status": "profile-covered",
+    "scope": "Three lines per side on the DrawCylinderEx basis.",
+    "gaps": [
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+      "Rings, slices and sides above 4096 mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawCylinderWiresEx",
+    "milestone": "models"
+  },
+  "DrawCapsule": {
+    "jonlib": "Draw.capsule_for / Draw.capsule",
+    "status": "profile-covered",
+    "scope": "Two hemispheres and the middle (none for start == end) on the normalized basis, angles ((2*PI)/slices)*j and (PI*0.5/rings)*i.",
+    "gaps": [
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+      "Rings, slices and sides above 4096 mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawCapsule",
+    "milestone": "models"
+  },
+  "DrawCapsuleWires": {
+    "jonlib": "Draw.capsule_wires_for / Draw.capsule_wires",
+    "status": "profile-covered",
+    "scope": "The DrawCapsule points joined by lines.",
+    "gaps": [
+      "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+      "Rings, slices and sides above 4096 mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawCapsuleWires",
+    "milestone": "models"
+  },
+  "DrawPlane": {
+    "jonlib": "Draw.plane",
+    "status": "profile-covered",
+    "scope": "One RL_QUADS quad on y = 0 after rlTranslatef and rlScalef(size.x, 1, size.y).",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawPlane",
+    "milestone": "models"
+  },
+  "DrawRay": {
+    "jonlib": "Draw.ray",
+    "status": "profile-covered",
+    "scope": "A line from the position to position + direction*10000, the color set twice.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawRay",
+    "milestone": "models"
+  },
+  "DrawGrid": {
+    "jonlib": "Draw.grid",
+    "status": "profile-covered",
+    "scope": "Lines for i = -slices/2 .. slices/2 (C division), rlColor3f gray 0.5 on the axes and 0.75 elsewhere.",
+    "gaps": [
+      "Grids above 4097 lines mark the frame undefined",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawGrid",
+    "milestone": "models"
+  },
+  "LoadModelFromMesh": {
+    "jonlib": "Model.from_mesh",
+    "status": "profile-covered",
+    "scope": "A Model holding the mesh with an identity transform.",
+    "gaps": [
+      "Materials, bones and animation are not modeled",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadModelFromMesh",
+    "milestone": "models"
+  },
+  "UnloadModel": {
+    "jonlib": "Model.unload",
+    "status": "profile-covered",
+    "scope": "Consumes the model.",
+    "gaps": [
+      "Materials and GPU buffers are not modeled",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:UnloadModel",
+    "milestone": "models"
+  },
+  "GetModelBoundingBox": {
+    "jonlib": "Model.bounding_box_for / Model.bounding_box",
+    "status": "profile-covered",
+    "scope": "First mesh box widened with strict comparisons, corners transformed by Vector3Transform (contraction profiled); zero box transformed for no meshes.",
+    "gaps": [
+      "A mesh box that is None makes the model box None",
+      "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:GetModelBoundingBox",
+    "milestone": "collision"
+  },
+  "DrawBoundingBox": {
+    "jonlib": "Draw.bounding_box",
+    "status": "profile-covered",
+    "scope": "DrawCubeWires around min + |max - min|/2.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:DrawBoundingBox",
+    "milestone": "models"
+  },
+  "UnloadMesh": {
+    "jonlib": "Mesh.unload",
+    "status": "profile-covered",
+    "scope": "Consumes the mesh (its lists).",
+    "gaps": [
+      "GPU buffers are not modeled",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:UnloadMesh",
+    "milestone": "models"
+  },
+  "GetMeshBoundingBox": {
+    "jonlib": "Mesh.bounding_box_for / Mesh.bounding_box",
+    "status": "profile-covered",
+    "scope": "Vector3Min/Vector3Max (fminf/fmaxf signed-zero profile) over the vertices; zero box without vertices.",
+    "gaps": [
+      "vertex_count 0 with vertices (raylib reads element 0) is None",
+      "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:GetMeshBoundingBox",
+    "milestone": "collision"
+  },
+  "GenMeshTangents": {
+    "jonlib": "Mesh.gen_tangents_for / Mesh.gen_tangents",
+    "status": "profile-covered",
+    "scope": "Per-triangle sdir/tdir accumulated per vertex, Gram-Schmidt, perpendicular fallbacks below 0.0001f and handedness; contraction profiled.",
+    "gaps": [
+      "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:GenMeshTangents",
+    "milestone": "models"
+  },
+  "ExportMesh": {
+    "jonlib": "Mesh.obj_text / Mesh.export",
+    "status": "profile-covered",
+    "scope": "OBJ text with raylib banner, counts, v/vt (%.6f), vn (%.4f) and f lines, exact C %.Nf formatting; written for .obj paths.",
+    "gaps": [
+      "Meshes without texcoords or normals, NaN values and text beyond the estimated buffer are None; other extensions write nothing (InvalidRequest)",
+      "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:ExportMesh",
+    "milestone": "models"
+  },
+  "ExportMeshAsCode": {
+    "jonlib": "Mesh.code_text / Mesh.export_as_code",
+    "status": "profile-covered",
+    "scope": "Header with banner, counts and one array per present attribute (%.3ff floats, 0x%x colors, %i indices), names from GetFileNameWithoutExt upper-cased.",
+    "gaps": [
+      "Empty present arrays (raylib reads element -1), NaN values and text beyond 64 MB are None",
+      "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:ExportMeshAsCode",
+    "milestone": "models"
+  },
+  "GenMeshPoly": {
+    "jonlib": "Mesh.gen_poly_for / Mesh.gen_poly",
+    "status": "profile-covered",
+    "scope": "sides triangles around the origin from sinf/cosf of DEG2RAD*d (d += 360/sides in F32), normals (0, 1, 0), zero texcoords; fewer than 3 sides the empty mesh.",
+    "gaps": [
+      "More than 4096 sides or sinf/cosf arguments outside the profile (AppleLibm: integral degrees up to 360 except 13, 19, 22, 103, 188; glibc |x| <= 6.283186f) are None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:GenMeshPoly",
+    "milestone": "models"
+  },
+  "GenMeshPlane": {
+    "jonlib": "Mesh.gen_plane",
+    "status": "profile-covered",
+    "scope": "CUSTOM_MESH_GEN_PLANE: (resX + 1)*(resZ + 1) vertices, texcoords and normals, unsigned short indices (modulo 2^16) of two triangles per face.",
+    "gaps": [
+      "U32 resolutions; 0 (a 0/0 NaN of platform-defined sign) and grids above 2^20 vertices are None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:GenMeshPlane",
+    "milestone": "models"
+  },
+  "GenMeshCube": {
+    "jonlib": "Mesh.gen_cube",
+    "status": "profile-covered",
+    "scope": "CUSTOM_MESH_GEN_CUBE: 24 vertices with per-face normals and texcoords, 36 indices.",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:GenMeshCube",
+    "milestone": "models"
+  },
+  "GenMeshSphere": {
+    "jonlib": "Mesh.gen_sphere_for / Mesh.gen_sphere",
+    "status": "profile-covered",
+    "scope": "par_shapes parametric sphere (binary64 u*PAR_PI angles, sinf/cosf), welded normals (grid sort, weld, condense, compute_normals), degenerate removal with area 0, scaled by the radius and unrolled; fewer than 3 rings or slices the empty mesh.",
+    "gaps": [
+      "Glibc M.Libm profiles only: the weld sorts with the C library qsort (glibc stable merge sort modeled); AppleLibm is None",
+      "Meshes above 65535 points, undefined welds (a point welded to a later one) and nonfinite parameters are None",
+      "Fused contraction implemented but only the uncontracted glibc reference is compared",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:GenMeshSphere",
+    "milestone": "models"
+  },
+  "GenMeshHemiSphere": {
+    "jonlib": "Mesh.gen_hemi_sphere_for / Mesh.gen_hemi_sphere",
+    "status": "profile-covered",
+    "scope": "par_shapes hemisphere as GenMeshSphere; negative radius 0; degenerate removal with par_shapes' process-state area (0.0001f, or 0 after a GenMeshSphere: after_sphere).",
+    "gaps": [
+      "Glibc M.Libm profiles only: the weld sorts with the C library qsort (glibc stable merge sort modeled); AppleLibm is None",
+      "Meshes above 65535 points, undefined welds (a point welded to a later one) and nonfinite parameters are None",
+      "Fused contraction implemented but only the uncontracted glibc reference is compared",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:GenMeshHemiSphere",
+    "milestone": "models"
+  },
+  "GenMeshTorus": {
+    "jonlib": "Mesh.gen_torus_for / Mesh.gen_torus",
+    "status": "profile-covered",
+    "scope": "par_shapes torus (minor radius clamped to 0.1f..1, beta = 1 + minor*cos), welded normals, scaled by size/2 and unrolled.",
+    "gaps": [
+      "Glibc M.Libm profiles only: the weld sorts with the C library qsort (glibc stable merge sort modeled); AppleLibm is None",
+      "Meshes above 65535 points, undefined welds (a point welded to a later one) and nonfinite parameters are None",
+      "Fused contraction implemented but only the uncontracted glibc reference is compared",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:GenMeshTorus",
+    "milestone": "models"
+  },
+  "GenMeshHeightmap": {
+    "jonlib": "Mesh.gen_heightmap_for / Mesh.gen_heightmap",
+    "status": "profile-covered",
+    "scope": "One quad per 2x2 pixels from LoadImageColors, heights (r + g + b)/3*size.y/255, per-triangle normals (fused cross product and normalization under M.Fused{}).",
+    "gaps": [
+      "Images Jonlib cannot convert to colors return the image with its error",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:GenMeshHeightmap",
+    "milestone": "models"
+  },
+  "GenMeshCubicmap": {
+    "jonlib": "Mesh.gen_cubicmap",
+    "status": "profile-covered",
+    "scope": "WHITE cells as cubes with sides toward BLACK neighbors or the border, BLACK cells floor and roof, other colors nothing; rmodels.c texcoord rectangles.",
+    "gaps": [
+      "Images Jonlib cannot convert to colors return the image with its error",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:GenMeshCubicmap",
+    "milestone": "models"
+  },
   "CheckCollisionSpheres": {
     "jonlib": "Collision.spheres_for / Collision.spheres",
     "status": "profile-covered",
@@ -4084,6 +4575,18 @@
       "Full target/performance coverage"
     ],
     "api_id": "raylib:function:GetRayCollisionBox",
+    "milestone": "collision"
+  },
+  "GetRayCollisionMesh": {
+    "jonlib": "Collision.ray_mesh_for / Collision.ray_mesh",
+    "status": "profile-covered",
+    "scope": "Each triangle transformed by Vector3Transform and tested with GetRayCollisionTriangle, the nearest hit kept; no hit without vertices. Contraction profiled.",
+    "gaps": [
+      "Inconsistent attribute lists or triangle indices not below the vertex count (raylib reads outside its arrays) are None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+      "Performance: not measured"
+    ],
+    "api_id": "raylib:function:GetRayCollisionMesh",
     "milestone": "collision"
   },
   "GetRayCollisionTriangle": {

@@ -974,3 +974,22 @@ law rlgl_begin_lines:
 
 law rlgl_begin_points_ignored:
   {J.Rlgl.begin.count(0) == 0 : U32}
+
+# Meshes (rmodels.c): GenMeshCube always has 24 vertices and 12 triangles;
+# GenMeshPoly with fewer than 3 sides is the empty mesh (all arrays NULL).
+law mesh_cube_vertex_count:
+  for width: F32
+  for height: F32
+  for length: F32
+  {J.Mesh.vertex_count(J.Mesh.gen_cube(width, height, length)) == 24 : U32}
+
+law mesh_cube_triangle_count:
+  for width: F32
+  for height: F32
+  for length: F32
+  {J.Mesh.triangle_count(J.Mesh.gen_cube(width, height, length)) == 12 : U32}
+
+law mesh_poly_degenerate_empty:
+  for libm: M.Libm
+  for radius: F32
+  {J.Mesh.gen_poly_for(libm, 2, radius) == Some{J.Mesh.empty()} : Maybe<J.Mesh>}

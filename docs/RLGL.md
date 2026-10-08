@@ -189,9 +189,9 @@ clears and getters, and random immediate scenes.
   `rlEnableFramebuffer`/`rlDisableFramebuffer` and the rest of the low-level
   resource API (`rlLoad*`/`rlUnload*` buffers, shaders, framebuffers) are not
   exposed.
-- The depth buffer of render textures is not modeled; 3D drawing beyond
-  `rlVertex3f`, `rlFrustum` and the depth test (models, meshes, `rmodels.c`)
-  is a later slice.
+- The depth buffer of render textures is not modeled. `BeginMode3D` and the
+  `rmodels.c` 3D shapes are in [MODELS.md](MODELS.md); meshes and models
+  drawn with `DrawMesh`/`DrawModel` are a later slice.
 - Segment estimation under the Apple and glibc 2.41 profiles and
   `DrawSplineBezierCubic` under glibc 2.41 are refused, not approximated.
 - `rlOrtho`/`rlFrustum` outside the exact binary32 domain need a binary64
