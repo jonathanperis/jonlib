@@ -20,6 +20,9 @@ import ./src/codec.bend as Codec
 import ./src/qoa.bend as Qoa
 import ./src/fma.bend as Fma
 
+import ./src/wav.bend as Wav
+import ./src/wav_adpcm.bend as Adpcm
+
 law clear_dimensions:
   for +width: U32
   for +height: U32
@@ -789,3 +792,20 @@ law camera_apple_zero_argument_only:
   for angle: F32
   for argument: F32
   {J.Camera.turnable(M.AppleLibm{}, angle, argument) == Bool.or(F32.is_eq(argument, 0.0), False{}) : Bool}
+
+# drwav_aiff_extented_to_s64 reads 44100 from its 80-bit extended encoding.
+law wav_aiff_rate_44100:
+  {Wav.aiff.rate([64, 14, 172, 68, 0, 0, 0, 0, 0, 0], 0) == Wav.Rate{0, 44100} : Wav.Rate}
+
+# Sign set, largest exponent and significand 2^63: dr_wav negates INT64_MIN,
+# which is undefined (state 3), not a rate.
+law wav_aiff_rate_int64_min_undefined:
+  {Wav.aiff.rate([192, 62, 128, 0, 0, 0, 0, 0, 0, 0], 0) == Wav.Rate{3, 0} : Wav.Rate}
+
+# MS ADPCM delta adaptation saturates at 0x7FFFFFFF ...
+law msadpcm_adapt_saturates:
+  {Adpcm.ms.adapt(768, 2147483647) == 2147483647 : U32}
+
+# ... and a negative header delta adapts to the floor of 16.
+law msadpcm_adapt_negative_floor:
+  {Adpcm.ms.adapt(230, 4294966996) == 16 : U32}

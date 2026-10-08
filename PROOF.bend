@@ -568,3 +568,15 @@ def Laws.camera_perspective_projection_none(position, target, up, fovy, aspect):
 
 def Laws.camera_apple_zero_argument_only(angle, argument):
   {==}
+
+def Laws.wav_aiff_rate_44100():
+  {==}
+
+def Laws.wav_aiff_rate_int64_min_undefined():
+  {==}
+
+def Laws.msadpcm_adapt_saturates():
+  {==}
+
+def Laws.msadpcm_adapt_negative_floor():
+  {==}

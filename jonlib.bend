@@ -5547,12 +5547,13 @@ def Wave.decode.selected(kind: U32, bytes: +List<U32>) -> Result<&1, &1, Wave.Er
     case 2: Wave.decoded.qoa(Qoa.decode(bytes))
     case _: Fail{UnsupportedWaveFormat{}}
 
-# LoadWaveFromMemory: ".wav"/".WAV" data (dr_wav's RIFF PCM, 32-bit float,
-# a-law and mu-law) and ".qoa"/".QOA" data (qoa.h) as 16-bit samples. Other
-# tokens, RIFX/Wave64/RF64/AIFF containers, ADPCM and 64-bit float are
-# UnsupportedWaveFormat; data dr_wav would leave unread or convert from NaN,
-# and QOA data qoa.h would read past or decode beyond its buffer for, are
-# InvalidWaveData.
+# LoadWaveFromMemory: ".wav"/".WAV" data (dr_wav's RIFF, RIFX, Wave64, RF64
+# and AIFF/AIFC containers with PCM, 32/64-bit float, a-law, mu-law, MS and
+# IMA ADPCM) and ".qoa"/".QOA" data (qoa.h) as 16-bit samples. Other tokens
+# are UnsupportedWaveFormat; data dr_wav would leave partly unread, convert
+# from NaN, decode with signed overflow, byte-swap through its failing
+# assertion or walk forever, and QOA data qoa.h would read past or decode
+# beyond its buffer for, are InvalidWaveData.
 def Wave.decode(+file_type: String, bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
   Wave.decode.selected(Bool.pick(U32, String.eq(file_type, ".wav") || String.eq(file_type, ".WAV"), 1,
     Bool.pick(U32, String.eq(file_type, ".qoa") || String.eq(file_type, ".QOA"), 2, 0)), bytes)
