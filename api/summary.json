@@ -6,16 +6,16 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 826,
-    "partial": 1037
+    "not-started": 751,
+    "partial": 1112
   },
   "core_functions": {
     "total": 600,
     "blocked": 19,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 337,
-    "partial": 244
+    "not-started": 275,
+    "partial": 306
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 510,
-    "partial": 400
+    "not-started": 438,
+    "partial": 472
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 19,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 395,
-      "partial": 623
+      "not-started": 331,
+      "partial": 687
     },
     "raymath.h": {
       "total": 254,
@@ -86,8 +86,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 18,
-      "partial": 21
+      "not-started": 7,
+      "partial": 32
     },
     "config.h": {
       "total": 116,
@@ -108,8 +108,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 31,
-      "partial": 518
+      "not-started": 28,
+      "partial": 521
     },
     {
       "id": "numerics",
@@ -269,8 +269,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 55,
-      "partial": 2
+      "not-started": 48,
+      "partial": 9
     },
     {
       "id": "input",
@@ -284,8 +284,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 57,
-      "partial": 0
+      "not-started": 4,
+      "partial": 53
     },
     {
       "id": "frame",
@@ -299,8 +299,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 15,
-      "partial": 2
+      "not-started": 3,
+      "partial": 14
     },
     {
       "id": "rlgl-core",

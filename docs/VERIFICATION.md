@@ -94,6 +94,20 @@ complete verdict:
 BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 ```
 
+## Reference build configuration
+
+`tools/probekit.py` builds raylib with `CUSTOMIZE_BUILD=ON`. raylib 6.0's
+`cmake/ParseConfigHeader.cmake` turns every uncommented `#define SUPPORT_X`
+in `config.h` into `SUPPORT_X=ON`, whatever its value, so the reference
+library also enables the features `config.h` disables by default: the TGA,
+JPG, PSD, HDR, PIC, PNM, KTX, ASTC, PKM, PVR, BDF and FLAC formats,
+`SUPPORT_BUSY_WAIT_LOOP`, `SUPPORT_CUSTOM_FRAME_CONTROL` and
+`SUPPORT_GPU_SKINNING`. Every native expectation comes from that build, so
+the comparisons are consistent, and codec contracts describe raylib with those
+formats enabled (not which formats a default build accepts). Probes whose
+results depend on frame control (`input`) set those options back explicitly
+and check the build flags.
+
 ## Known toolchain defects
 
 - **`Bool.pick` result feeding `||` (native lanes).** In
