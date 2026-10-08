@@ -632,6 +632,42 @@ def Laws.gesture_tap_becomes_hold():
 def Laws.gesture_swipe_ends():
   {==}
 
+def Laws.desktop_poll_copies_all_keys():
+  {==}
+
+def Laws.desktop_poll_button_pressed_once():
+  {==}
+
+def Laws.desktop_button_pressed():
+  {==}
+
+def Laws.desktop_poll_wheel_reset():
+  {==}
+
+def Laws.desktop_screen_size(width, height):
+  {==}
+
+def Laws.desktop_key_letters():
+  {==}
+
+def Laws.desktop_key_escape():
+  {==}
+
+def Laws.desktop_key_arrows():
+  {==}
+
+def Laws.desktop_key_function():
+  {==}
+
+def Laws.desktop_key_shift():
+  {==}
+
+def Laws.desktop_key_shifted_symbol():
+  {==}
+
+def Laws.desktop_key_unknown():
+  {==}
+
 def Laws.frame_blend_mode_unchanged(frame, mode):
   {==}
 

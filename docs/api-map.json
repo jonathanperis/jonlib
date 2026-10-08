@@ -1,10 +1,10 @@
 {
   "InitWindow": {
-    "jonlib": "Frame.init_window",
+    "jonlib": "Frame.init_window / Core.init_window / Desktop.run",
     "status": "profile-covered",
-    "scope": "Headless memory-platform InitWindow for sizes 1..4096: rlglInit clears to (0, 0, 0, 255), the viewport and rlOrtho projection, identity modelview and the default font white block as shapes texture; Maybe<Frame>.",
+    "scope": "Headless memory-platform InitWindow for sizes 1..4096: rlglInit clears to (0, 0, 0, 255), the viewport and rlOrtho projection, identity modelview and the default font white block as shapes texture; Maybe<Frame>. Desktop.run opens a Base window of that size and title for a Program (docs/DRIVER.md).",
     "gaps": [
-      "Integration: no window, title, monitor, DPI or platform state (later Phase 2 slices)",
+      "Integration: no config flags, monitor, DPI or resizable window: Base windows are fixed-size (docs/DRIVER.md)",
       "Font loading beyond the shapes atlas is not exposed",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
@@ -12,11 +12,11 @@
     "milestone": "window"
   },
   "CloseWindow": {
-    "jonlib": "Frame.close_window",
+    "jonlib": "Frame.close_window / Core.close_window / Desktop.run",
     "status": "profile-covered",
-    "scope": "Consumes the Frame (its color buffer and render state).",
+    "scope": "Consumes the Frame (its color buffer and render state); Desktop.run closes its Base window when the loop ends.",
     "gaps": [
-      "Integration: no window or platform to close",
+      "Integration: macOS was exercised interactively; Linux (X11) windows were not run here",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:CloseWindow",
@@ -25,12 +25,56 @@
   "WindowShouldClose": {
     "jonlib": "Core.window_should_close",
     "status": "profile-covered",
-    "scope": "Bool: the close request WINDOW_CLOSE events set (and pressing the exit key through Input.key_callback); a Core is always ready.",
+    "scope": "Bool: the close request WINDOW_CLOSE events set (and pressing the exit key through Input.key_callback); a Core is always ready. In the desktop driver: the window close button or exit key of the last poll only (glfwWindowShouldClose reset per poll).",
     "gaps": [
-      "Integration: no OS close button; the memory platform's kbhit() ESC check of standard input is not modeled",
+      "Integration: the memory platform's kbhit() ESC check of standard input is not modeled",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:WindowShouldClose",
+    "milestone": "window"
+  },
+  "GetScreenWidth": {
+    "jonlib": "Core.get_screen_width",
+    "status": "profile-covered",
+    "scope": "The InitWindow size (1..4096): Base windows are fixed-size and have no DPI scaling, so the screen and render sizes are equal.",
+    "gaps": [
+      "Integration: no resize, fullscreen, high-DPI or render-texture-relative size (runtime workstream)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetScreenWidth",
+    "milestone": "window"
+  },
+  "GetScreenHeight": {
+    "jonlib": "Core.get_screen_height",
+    "status": "profile-covered",
+    "scope": "The InitWindow size (1..4096): Base windows are fixed-size and have no DPI scaling, so the screen and render sizes are equal.",
+    "gaps": [
+      "Integration: no resize, fullscreen, high-DPI or render-texture-relative size (runtime workstream)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetScreenHeight",
+    "milestone": "window"
+  },
+  "GetRenderWidth": {
+    "jonlib": "Core.get_render_width",
+    "status": "profile-covered",
+    "scope": "The InitWindow size (1..4096): Base windows are fixed-size and have no DPI scaling, so the screen and render sizes are equal.",
+    "gaps": [
+      "Integration: no resize, fullscreen, high-DPI or render-texture-relative size (runtime workstream)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetRenderWidth",
+    "milestone": "window"
+  },
+  "GetRenderHeight": {
+    "jonlib": "Core.get_render_height",
+    "status": "profile-covered",
+    "scope": "The InitWindow size (1..4096): Base windows are fixed-size and have no DPI scaling, so the screen and render sizes are equal.",
+    "gaps": [
+      "Integration: no resize, fullscreen, high-DPI or render-texture-relative size (runtime workstream)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetRenderHeight",
     "milestone": "window"
   },
   "ShowCursor": {
@@ -38,7 +82,7 @@
     "status": "profile-covered",
     "scope": "Clears the cursorHidden flag (memory platform: there is no OS cursor).",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base cannot hide, lock, center or track the OS cursor; the driver keeps the flags only (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:ShowCursor",
@@ -49,7 +93,7 @@
     "status": "profile-covered",
     "scope": "Sets the cursorHidden flag (memory platform: there is no OS cursor).",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base cannot hide, lock, center or track the OS cursor; the driver keeps the flags only (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:HideCursor",
@@ -60,7 +104,7 @@
     "status": "profile-covered",
     "scope": "The cursorHidden flag.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsCursorHidden",
@@ -71,7 +115,7 @@
     "status": "profile-covered",
     "scope": "rcore_memory.c: SetMousePosition to the screen center (unsigned halves of the size) and cursorHidden cleared; cursorLocked is not changed on this platform.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base cannot hide, lock, center or track the OS cursor; the driver keeps the flags only (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:EnableCursor",
@@ -82,7 +126,7 @@
     "status": "profile-covered",
     "scope": "rcore_memory.c: SetMousePosition to the screen center (unsigned halves of the size) and cursorHidden set; cursorLocked is not changed on this platform.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base cannot hide, lock, center or track the OS cursor; the driver keeps the flags only (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:DisableCursor",
@@ -93,7 +137,7 @@
     "status": "profile-covered",
     "scope": "The cursorOnScreen flag, which the memory platform never sets (false).",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base cannot hide, lock, center or track the OS cursor; the driver keeps the flags only (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsCursorOnScreen",
@@ -115,18 +159,18 @@
     "status": "profile-covered",
     "scope": "Resets the modelview to identity, so the MVP is the orthographic projection again (rlLoadIdentity with the identity screen scale); Core.begin_drawing(core, now) records the update time now - previous in binary64 (docs/INPUT.md).",
     "gaps": [
-      "Integration: the Frame and the Core are separate values a program advances together",
+      "Integration: Desktop.run and Program.replay advance the Frame and the Core together (docs/DRIVER.md); IO.now has millisecond resolution",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:BeginDrawing",
     "milestone": "frame"
   },
   "EndDrawing": {
-    "jonlib": "Frame.end_drawing / Core.end_drawing",
+    "jonlib": "Frame.end_drawing / Core.end_drawing / Core.end_drawing_desktop",
     "status": "profile-covered",
-    "scope": "The software path has no render batch to flush; the color buffer is what SwapScreenBuffer copies. Core.end_drawing(core, now, after): automation recording, draw/frame time, the SetTargetFPS wait (ending at after), PollInputEvents, the F12 screenshot request and the frame counter (docs/INPUT.md).",
+    "scope": "The software path has no render batch to flush; the color buffer is what SwapScreenBuffer copies. Core.end_drawing(core, now, after): automation recording, draw/frame time, the SetTargetFPS wait (ending at after), PollInputEvents, the F12 screenshot request and the frame counter (docs/INPUT.md); Core.end_drawing_desktop polls as rcore_desktop_glfw.c with Base events (docs/DRIVER.md).",
     "gaps": [
-      "Integration: presentation and the wait's sleep are the driver's",
+      "Integration: Desktop.run sleeps with IO.sleep then reads IO.now (millisecond resolution); F12 screenshots are counted, not written",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:EndDrawing",
@@ -330,7 +374,7 @@
     "status": "profile-covered",
     "scope": "Target frame time 1.0/(double)fps in binary64, 0 below 1 FPS (also ACTION_SETTARGETFPS); EndDrawing then waits until the clock reaches now + (target - frame), given by Core.frame_wait.",
     "gaps": [
-      "Integration: the driver sleeps; raylib sleeps seconds - seconds*0.05 and busy-waits the rest",
+      "Integration: Desktop.run sleeps whole milliseconds less one, then reads IO.now until the destination; macOS presentation waits for the display",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:SetTargetFPS",
@@ -341,7 +385,7 @@
     "status": "profile-covered",
     "scope": "(float) of the last frame's update + draw (+ wait) seconds, computed in binary64 from the explicit clock.",
     "gaps": [
-      "Integration: the clock is the driver's (a finer Base clock is a runtime workstream item)",
+      "Integration: the desktop clock is IO.now in milliseconds (a finer Base clock is a runtime workstream item)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetFrameTime",
@@ -358,12 +402,24 @@
     "api_id": "raylib:function:GetFPS",
     "milestone": "frame"
   },
-  "PollInputEvents": {
-    "jonlib": "Core.poll_input_events",
+  "SwapScreenBuffer": {
+    "jonlib": "Frame.present",
     "status": "profile-covered",
-    "scope": "rcore_memory.c PollInputEvents at time now: UpdateGestures, key/char queues emptied, repeats and the last gamepad button cleared, previous touch states and previous key states of keys 0..259 copied.",
+    "scope": "The screen color buffer as Base's quadtree Image (0x00RRGGBB, squares past the edges Pix 0, uniform quads collapsed) for Window.frame, which Desktop.run calls; None when a draw was refused or a render texture is the target.",
     "gaps": [
-      "Integration: desktop platforms poll differently (previous mouse/gamepad states, wheel, devices); kbhit() ESC not modeled",
+      "Integration: presentation through Base Window.frame (Metal on macOS, X11 XPutImage on Linux); only macOS was run here",
+      "Performance: about 2 ms for an 800x450 frame on CPU-1 (Apple M1); see docs/DRIVER.md",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SwapScreenBuffer",
+    "milestone": "frame"
+  },
+  "PollInputEvents": {
+    "jonlib": "Core.poll_input_events / Core.end_drawing_desktop",
+    "status": "profile-covered",
+    "scope": "rcore_memory.c PollInputEvents at time now: UpdateGestures, key/char queues emptied, repeats and the last gamepad button cleared, previous touch states and previous key states of keys 0..259 copied. Desktop (rcore_desktop_glfw.c): all 512 keys, mouse buttons, wheel and position registered, then the GLFW callbacks of Base events, inside Core.end_drawing_desktop.",
+    "gaps": [
+      "Integration: desktop polling is checked by laws, not a native GLFW build; no gamepads, wheel, text or touch from Base; kbhit() ESC not modeled",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:PollInputEvents",
@@ -867,7 +923,7 @@
     "status": "profile-covered",
     "scope": "Every event type as PlayAutomationEvent applies it (ignored while recording): input events, INPUT_GESTURE, WINDOW_CLOSE, memory-platform no-ops for maximize/minimize/resize, screenshot requests and SetTargetFPS. None for indexes outside raylib's arrays.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:PlayAutomationEvent",
@@ -878,7 +934,7 @@
     "status": "profile-covered",
     "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsKeyPressed",
@@ -900,7 +956,7 @@
     "status": "profile-covered",
     "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsKeyDown",
@@ -911,7 +967,7 @@
     "status": "profile-covered",
     "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsKeyReleased",
@@ -922,7 +978,7 @@
     "status": "profile-covered",
     "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsKeyUp",
@@ -933,7 +989,7 @@
     "status": "profile-covered",
     "scope": "Pops the pressed-key queue (16 entries; a key is queued when pressed while up in the previous frame); 0 when empty; Core & U32.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetKeyPressed",
@@ -955,7 +1011,7 @@
     "status": "profile-covered",
     "scope": "Stores the exit key (KEY_ESCAPE initially); Input.key_callback closes the window when it is pressed, as the desktop key callback does.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:SetExitKey",
@@ -966,7 +1022,7 @@
     "status": "profile-covered",
     "scope": "The ready bit of gamepads 0..3, false from 4; None for a negative gamepad.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsGamepadAvailable",
@@ -977,7 +1033,7 @@
     "status": "profile-covered",
     "scope": "The empty name of gamepads 0..3; None outside (raylib reads outside its array).",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetGamepadName",
@@ -988,7 +1044,7 @@
     "status": "profile-covered",
     "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsGamepadButtonPressed",
@@ -999,7 +1055,7 @@
     "status": "profile-covered",
     "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsGamepadButtonDown",
@@ -1010,7 +1066,7 @@
     "status": "profile-covered",
     "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsGamepadButtonReleased",
@@ -1021,7 +1077,7 @@
     "status": "profile-covered",
     "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsGamepadButtonUp",
@@ -1032,7 +1088,7 @@
     "status": "profile-covered",
     "scope": "The last button pressed, which the memory platform never sets (0, cleared by every poll).",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetGamepadButtonPressed",
@@ -1043,7 +1099,7 @@
     "status": "profile-covered",
     "scope": "The axis count of gamepads 0..3 (0 on the memory platform); None outside.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetGamepadAxisCount",
@@ -1054,7 +1110,7 @@
     "status": "profile-covered",
     "scope": "Rest value -1 for the trigger axes 4 and 5, else 0; a ready gamepad's axis replaces it when its (signed for triggers, absolute) movement is larger. None for a negative gamepad, or a negative axis of a ready gamepad.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetGamepadAxisMovement",
@@ -1065,7 +1121,7 @@
     "status": "profile-covered",
     "scope": "Buttons 0..6; a touch point with the same index counts as that button. The memory platform never updates the previous button states.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsMouseButtonPressed",
@@ -1076,7 +1132,7 @@
     "status": "profile-covered",
     "scope": "Buttons 0..6; a touch point with the same index counts as that button. The memory platform never updates the previous button states.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsMouseButtonDown",
@@ -1087,7 +1143,7 @@
     "status": "profile-covered",
     "scope": "Buttons 0..6; a touch point with the same index counts as that button. The memory platform never updates the previous button states.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsMouseButtonReleased",
@@ -1098,7 +1154,7 @@
     "status": "profile-covered",
     "scope": "Buttons 0..6; a touch point with the same index counts as that button. The memory platform never updates the previous button states.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:IsMouseButtonUp",
@@ -1109,7 +1165,7 @@
     "status": "profile-covered",
     "scope": "(int)((position.x + offset.x)*scale.x); None where the conversion is undefined.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetMouseX",
@@ -1120,7 +1176,7 @@
     "status": "profile-covered",
     "scope": "(int)((position.y + offset.y)*scale.y); None where the conversion is undefined.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetMouseY",
@@ -1131,7 +1187,7 @@
     "status": "profile-covered",
     "scope": "(position + offset)*scale in F32.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetMousePosition",
@@ -1142,7 +1198,7 @@
     "status": "profile-covered",
     "scope": "(position - previous)*scale; the memory platform updates the previous position only in SetMousePosition.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetMouseDelta",
@@ -1153,7 +1209,7 @@
     "status": "profile-covered",
     "scope": "Current and previous position = (float) of the ints (rcore_memory.c).",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:SetMousePosition",
@@ -1164,7 +1220,7 @@
     "status": "profile-covered",
     "scope": "Offset = (float) of the ints.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:SetMouseOffset",
@@ -1175,7 +1231,7 @@
     "status": "profile-covered",
     "scope": "Scale = the floats.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:SetMouseScale",
@@ -1186,7 +1242,7 @@
     "status": "profile-covered",
     "scope": "x when |x| > |y|, else y.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base has no mouse wheel events: the desktop driver never moves the wheel (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetMouseWheelMove",
@@ -1197,7 +1253,7 @@
     "status": "profile-covered",
     "scope": "The current wheel move (never reset on the memory platform).",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base has no mouse wheel events: the desktop driver never moves the wheel (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetMouseWheelMoveV",
@@ -1208,7 +1264,7 @@
     "status": "profile-covered",
     "scope": "(int) of touch point 0's x; None where undefined.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetTouchX",
@@ -1219,7 +1275,7 @@
     "status": "profile-covered",
     "scope": "(int) of touch point 0's y; None where undefined.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetTouchY",
@@ -1230,7 +1286,7 @@
     "status": "profile-covered",
     "scope": "Touch positions of points 0..7, (-1, -1) from 8; None for a negative index.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetTouchPosition",
@@ -1241,7 +1297,7 @@
     "status": "profile-covered",
     "scope": "Point ids of points 0..7 (0 on the memory platform), -1 from 8; None for a negative index.",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetTouchPointId",
@@ -1252,7 +1308,7 @@
     "status": "profile-covered",
     "scope": "The point count, which the memory platform never sets (0).",
     "gaps": [
-      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetTouchPointCount",

@@ -30,6 +30,7 @@ import ./src/fonts.bend as FontCore
 import ./src/input.bend as InputCore
 import ./src/gestures.bend as GestureCore
 import ./src/clock.bend as Clock
+import ./src/core_state.bend as CoreState
 
 law clear_dimensions:
   for +width: U32
@@ -892,6 +893,55 @@ law gesture_tap_becomes_hold:
 
 law gesture_swipe_ends:
   {GestureCore.Gestures.current(GestureCore.update(GestureCore.Gestures.with_current(GestureCore.Gestures.new(), 64), Clock.zero())) == 0 : U32}
+
+# Desktop polling (rcore_desktop_glfw.c, the desktop driver) copies every
+# key's previous state, F12 included, unlike the memory platform.
+law desktop_poll_copies_all_keys:
+  {InputCore.Keyboard.is_pressed(InputCore.Keyboard.poll_desktop(InputCore.Keyboard.press(InputCore.Keyboard.new(), 301)), 301) == False{} : Bool}
+
+# It registers the previous mouse buttons (and touch states), so a held
+# button is pressed for one frame only.
+law desktop_poll_button_pressed_once:
+  {InputCore.mouse.pressed(InputCore.poll_desktop(InputCore.mouse_button_callback(InputCore.Input.new(), 0, True{})), 0) == False{} : Bool}
+
+law desktop_button_pressed:
+  {InputCore.mouse.pressed(InputCore.mouse_button_callback(InputCore.Input.new(), 0, True{}), 0) == True{} : Bool}
+
+# It resets the wheel move.
+law desktop_poll_wheel_reset:
+  {InputCore.MouseState.wheel(InputCore.MouseState.poll_desktop(InputCore.MouseState.set_wheel(InputCore.MouseState.new(), InputCore.Point{0.0, 1.0})))
+    == InputCore.Point{0.0, 0.0} : InputCore.Point}
+
+# Base key codes as raylib keys (docs/DRIVER.md): letters, Escape, the Mac's
+# arrow and function-key characters, a modifier, a shifted US-layout symbol,
+# and a code with no raylib key.
+# GetScreenWidth/GetScreenHeight (and the render size) are the InitWindow size.
+law desktop_screen_size:
+  for +width: U32
+  for +height: U32
+  {(CoreState.Screen.width(CoreState.Core.window(CoreState.Core.new(width, height, Clock.zero()))),
+    CoreState.Screen.height(CoreState.Core.window(CoreState.Core.new(width, height, Clock.zero())))) == (width, height) : U32 & U32}
+
+law desktop_key_letters:
+  {(J.Desktop.key(97), J.Desktop.key(122)) == (65, 90) : U32 & U32}
+
+law desktop_key_escape:
+  {J.Desktop.key(27) == 256 : U32}
+
+law desktop_key_arrows:
+  {(J.Desktop.key(63232), J.Desktop.key(63235)) == (265, 262) : U32 & U32}
+
+law desktop_key_function:
+  {(J.Desktop.key(63236), J.Desktop.key(63247)) == (290, 301) : U32 & U32}
+
+law desktop_key_shift:
+  {J.Desktop.key(65592) == 340 : U32}
+
+law desktop_key_shifted_symbol:
+  {J.Desktop.key(33) == 49 : U32}
+
+law desktop_key_unknown:
+  {J.Desktop.key(65599) == 0 : U32}
 
 # The software renderer ignores blend modes (rlSetBlendMode is GL3-only) and
 # texture wrap modes (rlsw rejects GL_CLAMP_TO_EDGE): both leave their input.

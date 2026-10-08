@@ -256,10 +256,10 @@ queue bound, key repeats set by the key callback until the next poll, the
 
 ## Gaps
 
-- Desktop input: the key and char callbacks follow `rcore_desktop_glfw.c` but
-  are checked by laws, not against a native GLFW build; desktop
-  `PollInputEvents` (previous mouse/gamepad states, wheel reset, gamepad
-  polling, mouse gestures) and the Base window driver are slice 5.
+- Desktop input: the key and char callbacks and desktop `PollInputEvents`
+  (slice 5, [DRIVER.md](DRIVER.md): previous mouse states, wheel reset, mouse
+  gestures, the Base event table) follow `rcore_desktop_glfw.c` but are
+  checked by laws, not against a native GLFW build.
 - `GetTime` is the driver's clock (no function), `WaitTime` the driver's sleep;
   `SwapScreenBuffer` and `TakeScreenshot`'s image belong to the Frame.
 - Not modeled: `SetMouseCursor` (a warning on the memory platform),
