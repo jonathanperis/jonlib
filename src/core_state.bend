@@ -91,6 +91,14 @@ def Screen.should_close(+w: Screen) -> Bool:
   Screen{_, _, close, _} = w
   close
 
+def Screen.width(+w: Screen) -> U32:
+  Screen{width, _, _, _} = w
+  width
+
+def Screen.height(+w: Screen) -> U32:
+  Screen{_, height, _, _} = w
+  height
+
 def Screen.screenshots(+w: Screen) -> U32:
   Screen{_, _, _, shots} = w
   shots
@@ -568,3 +576,77 @@ def Core.process_gesture(+core: Core, +profile: U32, +action: U32, +count: U32, 
 
 def Core.set_gestures_enabled(+core: Core, +flags: U32) -> Core:
   Core.with_gestures(core, G.Gestures.with_enabled(Core.gestures(core), flags))
+
+# -----------------------------------------------------------------------------
+# Desktop platform (src/platforms/rcore_desktop_glfw.c) for the desktop
+# driver: EndDrawing split around PollInputEvents, so the driver can run the
+# GLFW callbacks for the events Base pumped where glfwPollEvents runs them.
+
+def Screen.reopen(w: Screen) -> Screen:
+  Screen{width, height, _, shots} = w
+  Screen{width, height, False{}, shots}
+
+def Screen.size(+w: Screen) -> In.Point:
+  Screen{+width, +height, _, _} = w
+  In.Point{U32.to_f32(width), U32.to_f32(height)}
+
+def end.timing.pair(+core: Core, pair: Time & W.Words) -> Maybe<(Core & W.Words)>:
+  (time, now) = pair
+  Some{(Core.with_time(core, time), now)}
+
+def end.timing.timed(+core: Core, timed: Maybe<(Time & W.Words)>) -> Maybe<(Core & W.Words)>:
+  match timed:
+    case None{}: None{}
+    case Some{pair}: end.timing.pair(core, pair)
+
+def end.timing.recorded(recorded: Maybe<Core>, +now: W.Words, +after: W.Words) -> Maybe<(Core & W.Words)>:
+  match recorded:
+    case None{}: None{}
+    case Some{+core}: end.timing.timed(core, Time.end(Core.time(core), now, after))
+
+# EndDrawing up to PollInputEvents: recording and frame timing (as
+# Core.end_drawing); also answers the clock PollInputEvents reads.
+def Core.end_timing(+core: Core, +now: W.Words, +after: W.Words) -> Maybe<(Core & W.Words)>:
+  end.timing.recorded(record(Core.recording(core), core), now, after)
+
+# EndDrawing after PollInputEvents: the F12 screenshot check and the frame
+# counter.
+def Core.end_finish(+core: Core) -> Core:
+  end.counted(Core.f12(core))
+
+# PollInputEvents (desktop) at time now, before the callbacks: UpdateGestures,
+# the input registration of src/input.bend poll_desktop, and the close request
+# cleared (glfwWindowShouldClose is read after the callbacks and reset every
+# poll, so WindowShouldClose answers the events of the last poll only).
+def Core.poll_desktop(+core: Core, +now: W.Words) -> Core:
+  Core.with_window(Core.with_input(Core.with_gestures(core, G.update(Core.gestures(core), now)), In.poll_desktop(Core.input(core))),
+    Screen.reopen(Core.window(core)))
+
+# The window's close button (glfwWindowShouldClose after the callbacks).
+def Core.request_close(+core: Core) -> Core:
+  Core.with_window(core, Screen.close(Core.window(core)))
+
+def desktop.divided(+x: F32, +y: F32, +size: In.Point) -> In.Point:
+  In.Point{sx, sy} = size
+  In.Point{(x / sx : F32), (y / sy : F32)}
+
+def desktop.normalized(+p: In.Point, +size: In.Point) -> In.Point:
+  In.Point{x, y} = p
+  desktop.divided(x, y, size)
+
+# MouseButtonCallback (buttons 0..7) at time now: the button and touch states,
+# then (SUPPORT_MOUSE_GESTURES) a one-point gesture event at
+# GetMousePosition()/screen size, TOUCH_ACTION_DOWN when the button went down
+# since the last poll and TOUCH_ACTION_UP (0) otherwise, as the zeroed event
+# of rcore_desktop_glfw.c is.
+def Core.mouse_button(+core: Core, +profile: U32, +button: U32, +down: Bool, +now: W.Words) -> Maybe<Core>:
+  +previous = In.bit.of(In.MouseState.previous_buttons(Core.mouse(core)), button)
+  +updated = Core.with_input(core, In.mouse_button_callback(Core.input(core), button, down))
+  Core.process_gesture(updated, profile, Bool.pick(U32, down && Bool.not(previous), 1, 0), 1,
+    desktop.normalized(In.MouseState.screen(Core.mouse(updated)), Screen.size(Core.window(core))), In.vector.zero(), now)
+
+# MouseCursorPosCallback at time now: the position (and touch point 0), then a
+# TOUCH_ACTION_MOVE gesture event at that position/screen size.
+def Core.cursor_position(+core: Core, +profile: U32, +position: In.Point, +now: W.Words) -> Maybe<Core>:
+  Core.process_gesture(Core.with_input(core, In.cursor_position_callback(Core.input(core), position)), profile, 2, 1,
+    desktop.normalized(position, Screen.size(Core.window(core))), In.vector.zero(), now)

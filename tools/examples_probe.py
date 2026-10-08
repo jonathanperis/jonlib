@@ -1,0 +1,629 @@
+#!/usr/bin/env python3
+"""Replay Jonlib's example programs headless against the unmodified raylib
+examples, frame by frame and byte for byte.
+
+Reference. Each raylib example source (examples/<module>/<name>.c of the
+pinned checkout, not modified) is compiled with
+"-include tools/reference/example_driver.h", which renames InitWindow,
+WindowShouldClose, BeginDrawing and EndDrawing in its translation unit to the
+hooks of this probe's driver (C_DRIVER below), and linked with the
+clock-injected memory-platform raylib of tools/input_probe.py
+(-ffp-contract=off, tools/reference/input_clock.h, config.h's frame control).
+The hooks read a script (JONLIB_EXAMPLE_SCRIPT): InitWindow sets the scripted
+clock and then SetRandomSeed(seed) (raylib seeds from time(NULL));
+WindowShouldClose plays the next frame's automation events with
+PlayAutomationEvent and answers the real WindowShouldClose (the loop ends
+after the last scripted frame); BeginDrawing and EndDrawing set the frame's
+clocks (a SetTargetFPS wait ends at the scripted `after`, computed in
+binary64 as raylib computes its destination) and EndDrawing prints the color
+buffer read with rlCopyFramebuffer (top-down, BGRA swapped to RGBA) as runs of
+0xRRGGBBAA words. Each script runs in a fresh process (stdin /dev/null for
+the memory platform's ESC check), textures_logo_raylib from
+examples/textures so that its relative resource path loads the pinned
+raylib_logo.png (the asset is read in place, never copied).
+
+Candidate. examples/<name>.bend's Program, replayed by J.Program.replay with
+the same events and clocks (setup as the example's InitWindow and
+SetTargetFPS, the same seed). Per frame it prints J.Frame.framebuffer as the
+same runs and J.Frame.present's quadtree Image in preorder ("q" for Qua,
+"p<color>" for Pix): the framebuffer must equal raylib's, and the Image must
+equal the one built here from raylib's bytes (0x00RRGGBB colors, squares past
+the edges Pix 0, uniform quads collapsed), so what the desktop driver
+presents is raylib's frame.
+
+Contracts (Jonlib must answer "null null" from the stated frame on): a mouse
+wheel move in core_2d_camera (its zoom needs expf/logf, without an M.Libm
+profile), camera rotations outside the host profile's verified sinf/cosf
+arguments (the Apple profile refuses 13, 19 and 22 degrees), and every frame
+of shapes_basic_shapes (DrawPoly turning by 0.2 degrees evaluates sinf/cosf
+outside every verified set). Frames before a refusal are compared with
+raylib. The refusals are computed for the host's M.Libm profile (Apple on
+macOS, glibc 2.39 on glibc hosts, conformance.gradient_reference): the
+13-degree rotation is a contract on macOS and compared on Linux. Native code
+only runs what C defines: the wheel and rotation scripts are defined in C
+(raylib computes expf/logf and sinf/cosf), and shapes_basic_shapes, refused
+from its first frame, is not run natively. CPU-1, CPU-2 and JavaScript lanes.
+
+--interactive (diagnostic, needs a desktop session) instead builds each
+example and runs it in a Base window for --frames frames on CPU-1 and CPU-2,
+recording the frame rates the driver reports.
+"""
+import hashlib
+import json
+import math
+import os
+import platform
+import re
+import shutil
+import struct
+import subprocess
+
+from conformance import gradient_reference
+import frame_probe as fp
+import input_probe as ip
+import probekit
+from probekit import ROOT, ProbeFailure
+
+SHIM = ROOT / 'tools/reference/example_driver.h'
+WIDTH, HEIGHT = 800, 450
+TARGET = 1.0 / 60
+
+(KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 18)
+KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_A, KEY_H, KEY_R, KEY_S = 262, 263, 264, 265, 65, 72, 82, 83
+
+# name: (raylib source, setup expression, State is Data, needs the logo image)
+EXAMPLES = {
+    'core_basic_window': ('core/core_basic_window.c', 'Ex.setup(core, frame)'),
+    'core_input_keys': ('core/core_input_keys.c', 'Ex.setup(core, frame)'),
+    'core_input_mouse': ('core/core_input_mouse.c', 'Ex.setup(core, frame)'),
+    'core_2d_camera': ('core/core_2d_camera.c', 'Ex.setup(seed, core, frame)'),
+    'shapes_logo_raylib': ('shapes/shapes_logo_raylib.c', 'Ex.setup(core, frame)'),
+    'textures_logo_raylib': ('textures/textures_logo_raylib.c', 'Ex.setup(Ex.image(logo), core, frame)'),
+    'shapes_basic_shapes': ('shapes/shapes_basic_shapes.c', 'Ex.setup(core, frame)'),
+}
+
+
+# -----------------------------------------------------------------------------
+# Scripts: frames of (automation events, gap before BeginDrawing, draw time)
+
+def key(code, down=True):
+    return (KEY_DOWN_EVENT if down else KEY_UP_EVENT, code, 0, 0)
+
+
+def mouse_at(x, y):
+    return (MOUSE_POSITION, x, y, 0)
+
+
+def button(index, down=True):
+    return (MOUSE_DOWN if down else MOUSE_UP, index, 0, 0)
+
+
+def script(example, name, frames, seed=0, start=0.25):
+    return dict(example=example, name=f'{example}-{name}', frames=frames, seed=seed, start=start)
+
+
+def quick(events=()):
+    """A frame shorter than the 60 FPS target: EndDrawing waits."""
+    return (list(events), 0.002, 0.004)
+
+
+def slow(events=()):
+    """A frame longer than the target: no wait."""
+    return (list(events), 0.003, 0.021)
+
+
+def scripts():
+    out = [
+        script('core_basic_window', 'frames', [quick(), slow(), quick()]),
+        script('core_basic_window', 'close', [quick(), quick(), quick([(WINDOW_CLOSE, 0, 0, 0)]), quick()]),
+        script('core_input_keys', 'arrows', [quick(), quick([key(KEY_RIGHT)]), slow(), quick([key(KEY_UP)]), quick([key(KEY_RIGHT, False)]),
+                                             slow([key(KEY_LEFT), key(KEY_DOWN)]), quick([key(KEY_UP, False)]), quick(),
+                                             quick([key(KEY_LEFT, False), key(KEY_DOWN, False)]), quick([key(KEY_RIGHT), key(KEY_LEFT)])]),
+        script('core_input_keys', 'close', [quick([key(KEY_DOWN)]), quick([(WINDOW_CLOSE, 0, 0, 0)]), quick()]),
+        script('core_input_mouse', 'buttons', [quick(), quick([mouse_at(120, 80)]), quick([button(0)]), slow([mouse_at(300, 200), button(0, False)]),
+                                               quick([button(2)]), quick([button(1), mouse_at(799, 449)]), quick([button(3), button(1, False)]),
+                                               quick([button(4)]), quick([button(5), mouse_at(0, 0)]), quick([button(6)]),
+                                               quick([key(KEY_H), mouse_at(400, 300)]), quick([key(KEY_H, False)]), quick([key(KEY_H)]),
+                                               quick([mouse_at(-30, 500)])]),
+        script('core_2d_camera', 'move-rotate', [quick(), quick([key(KEY_RIGHT)]), quick(), slow([key(KEY_RIGHT, False), key(KEY_LEFT)]),
+                                                 quick([key(KEY_LEFT, False), key(KEY_S)]), quick(), quick(), quick([key(KEY_S, False), key(KEY_A)]),
+                                                 quick(), quick([key(KEY_A, False), key(KEY_R)]), quick([key(KEY_R, False), key(KEY_A)]),
+                                                 slow(), quick([key(KEY_A, False)])], seed=0x5EED),
+        script('core_2d_camera', 'seed', [quick(), quick([key(KEY_LEFT)])], seed=1234567),
+        script('core_2d_camera', 'wheel', [quick(), quick([key(KEY_RIGHT)]), quick([(MOUSE_WHEEL, 0, 1, 0)]), quick(), quick([key(KEY_R)])],
+               seed=77),
+        script('core_2d_camera', 'rotate-13', [quick([key(KEY_S)])] + [quick() for _ in range(13)] + [quick([key(KEY_S, False), key(KEY_R)])],
+               seed=99),
+        script('shapes_logo_raylib', 'frames', [quick(), slow()]),
+        script('textures_logo_raylib', 'frames', [quick(), slow()]),
+        script('shapes_basic_shapes', 'refused', [quick(), quick()]),
+    ]
+    return [timed(item) for item in out]
+
+
+def timed(item):
+    """Scripted clocks: BeginDrawing after the frame's gap, EndDrawing after its
+    draw time, and the end of a SetTargetFPS wait exactly at raylib's
+    destination (binary64, as rcore.c's EndDrawing and WaitTime compute it)."""
+    previous = item['start']
+    frames = []
+    for events, gap, draw in item['frames']:
+        begin = previous + gap
+        update = begin - previous
+        end = begin + draw
+        frame = update + (end - begin)
+        after = end + (TARGET - frame) if frame < TARGET else end
+        frames.append(dict(events=events, begin=begin, end=end, after=after))
+        previous = after
+    return dict(item, frames=frames)
+
+
+# -----------------------------------------------------------------------------
+# Contract predictions
+
+def refusal(item, libm):
+    """The index of the first frame Jonlib refuses (None when none is)."""
+    if item['example'] == 'shapes_basic_shapes':
+        rotation = 0.0
+        for index in range(len(item['frames'])):
+            rotation = fp.f32(rotation + fp.f32(0.2))
+            central, step = fp.f32(rotation * fp.DEG2RAD), fp.f32(fp.f32(360.0 / 6.0) * fp.DEG2RAD)
+            angles = [central]
+            for _ in range(6):
+                central = fp.f32(central + step)
+                angles.append(central)
+            if not all(fp.accepted(libm, a) for a in angles):
+                return index
+        raise ProbeFailure('examples: shapes_basic_shapes is expected to be refused')
+    if item['example'] != 'core_2d_camera':
+        return None
+    down, previous, rotation, wheel = set(), set(), 0.0, False
+    for index, frame in enumerate(item['frames']):
+        for kind, p0, p1, _ in frame['events']:
+            if kind == KEY_DOWN_EVENT:
+                down.add(p0)
+            elif kind == KEY_UP_EVENT:
+                down.discard(p0)
+            elif kind == MOUSE_WHEEL:
+                wheel = wheel or p0 != 0 or p1 != 0
+        if KEY_A in down:
+            rotation -= 1.0
+        elif KEY_S in down:
+            rotation += 1.0
+        rotation = max(-40.0, min(40.0, rotation))
+        if KEY_R in down and KEY_R not in previous:
+            rotation = 0.0
+        if wheel or not fp.accepted(libm, fp.f32(rotation * fp.DEG2RAD)):
+            return index
+        previous = set(down)
+    return None
+
+
+# -----------------------------------------------------------------------------
+# Reference (raylib's own example sources)
+
+C_DRIVER = r'''#include "raylib.h"
+#include "rlgl.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
+static double probe_clock = 0.0, probe_after = 0.0;
+double JonlibProbeTime(void) { return probe_clock; }
+int JonlibProbeUsleep(unsigned int us) { (void)us; probe_clock = probe_after; return 0; }
+int JonlibProbeNanosleep(const struct timespec *req, struct timespec *rem) { (void)req; (void)rem; probe_clock = probe_after; return 0; }
+
+typedef struct { double begin, end, after; int count; int events[64][4]; } Frame;
+static Frame frames[64];
+static int frame_count = 0, frame_index = 0, width = 0, height = 0;
+static unsigned seed = 0;
+static double start = 0.0;
+
+static double dbl(unsigned long long b) { double d; memcpy(&d, &b, 8); return d; }
+
+static void load_script(void)
+{
+    const char *path = getenv("JONLIB_EXAMPLE_SCRIPT");
+    FILE *f = path ? fopen(path, "r") : NULL;
+    if (!f) { fprintf(stderr, "no script\n"); exit(2); }
+    unsigned long long b0, b1, b2;
+    if (fscanf(f, "seed %u start %llu", &seed, &b0) != 2) exit(3);
+    start = dbl(b0);
+    while (frame_count < 64 && fscanf(f, " frame %llu %llu %llu %d", &b0, &b1, &b2, &frames[frame_count].count) == 4)
+    {
+        Frame *fr = &frames[frame_count];
+        fr->begin = dbl(b0); fr->end = dbl(b1); fr->after = dbl(b2);
+        for (int i = 0; i < fr->count; i++)
+            if (fscanf(f, " event %d %d %d %d", &fr->events[i][0], &fr->events[i][1], &fr->events[i][2], &fr->events[i][3]) != 4) exit(4);
+        frame_count++;
+    }
+    fclose(f);
+}
+
+static void dump(void)
+{
+    unsigned char *p = malloc((size_t)width*height*4);
+    rlCopyFramebuffer(0, 0, width, height, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8, p);
+    printf("F ");
+    unsigned run = 0, count = 0;
+    for (int i = 0; i < width*height; i++)
+    {
+        unsigned w = ((unsigned)p[4*i + 2] << 24) | ((unsigned)p[4*i + 1] << 16) | ((unsigned)p[4*i] << 8) | p[4*i + 3];
+        if (count > 0 && w == run) { count++; continue; }
+        if (count > 0) printf("%u*%08x,", count, run);
+        run = w; count = 1;
+    }
+    printf("%u*%08x,\n", count, run);
+    fflush(stdout);
+    free(p);
+}
+
+void JonlibExampleInitWindow(int w, int h, const char *title)
+{
+    load_script();
+    width = w; height = h;
+    probe_clock = start;
+    SetTraceLogLevel(LOG_NONE);
+    InitWindow(w, h, title);
+    SetRandomSeed(seed);
+}
+
+bool JonlibExampleWindowShouldClose(void)
+{
+    if (frame_index >= frame_count) return true;
+    Frame *fr = &frames[frame_index];
+    for (int i = 0; i < fr->count; i++)
+    {
+        AutomationEvent e = { 0, (unsigned)fr->events[i][0], { fr->events[i][1], fr->events[i][2], fr->events[i][3], 0 } };
+        PlayAutomationEvent(e);
+    }
+    return WindowShouldClose();
+}
+
+void JonlibExampleBeginDrawing(void)
+{
+    probe_clock = frames[frame_index].begin;
+    BeginDrawing();
+}
+
+void JonlibExampleEndDrawing(void)
+{
+    probe_clock = frames[frame_index].end;
+    probe_after = frames[frame_index].after;
+    EndDrawing();
+    probe_clock = probe_after;
+    dump();
+    frame_index++;
+}
+'''
+
+
+def dbits(value):
+    return struct.unpack('<Q', struct.pack('<d', value))[0]
+
+
+def script_text(item):
+    lines = [f'seed {item["seed"]} start {dbits(item["start"])}']
+    for frame in item['frames']:
+        lines.append(f'frame {dbits(frame["begin"])} {dbits(frame["end"])} {dbits(frame["after"])} {len(frame["events"])}')
+        lines += [f'event {k} {a} {b} {c}' for k, a, b, c in frame['events']]
+    return '\n'.join(lines) + '\n'
+
+
+def build_reference(probe, name):
+    source, _ = EXAMPLES[name]
+    driver = probe.work / 'driver.c'
+    driver.write_text(C_DRIVER)
+    binary = probe.work / f'reference-{name}'
+    include = '-I' + str(probe.args.raylib_source / 'src')
+    probekit.run(['clang', '-std=c11', '-O2', '-ffp-contract=off', '-include', SHIM, include, '-c',
+                  probe.args.raylib_source / 'examples' / source, '-o', probe.work / f'{name}.o'])
+    probekit.run(['clang', '-std=c11', '-O2', '-ffp-contract=off', include, '-c', driver, '-o', probe.work / 'driver.o'])
+    probekit.run(['clang', probe.work / f'{name}.o', probe.work / 'driver.o', probe.library, '-lm', '-o', binary])
+    return binary
+
+
+def native_frames(probe, binary, index, item):
+    path = probe.work / f'script-{index}.txt'
+    path.write_text(script_text(item))
+    source, _ = EXAMPLES[item['example']]
+    cwd = probe.args.raylib_source / 'examples' / source.split('/')[0] if item['example'] == 'textures_logo_raylib' else probe.work
+    result = subprocess.run([str(binary)], cwd=cwd, env=dict(probekit.ENV, JONLIB_EXAMPLE_SCRIPT=str(path)), stdin=subprocess.DEVNULL,
+                            capture_output=True, text=True, timeout=600)
+    if result.returncode:
+        raise ProbeFailure(f'examples: native {item["name"]} failed ({result.returncode}): {result.stderr[-2000:]}')
+    return [line[2:] for line in result.stdout.splitlines() if line.startswith('F ')]
+
+
+# -----------------------------------------------------------------------------
+# The presented Image built from raylib's bytes (src/present.bend's rules)
+
+def decode(runs):
+    words = []
+    for token in runs.split(',')[:-1]:
+        count, word = token.split('*')
+        words += [int(word, 16)] * int(count)
+    if len(words) != WIDTH * HEIGHT:
+        raise ProbeFailure(f'examples: a frame decodes to {len(words)} words')
+    return words
+
+
+def quadtree(words, width, height):
+    """Canonical quadtree: ints are Pix colors, 4-tuples Qua; a quad of four
+    equal Pix is that Pix; squares past the edges are Pix 0."""
+    grid = [[w >> 8 for w in words[y * width:(y + 1) * width]] for y in range(height)]
+    k = 0
+    while (1 << k) < max(width, height):
+        k += 1
+    for _ in range(k):
+        rows = []
+        for y in range(0, len(grid), 2):
+            top = grid[y]
+            bottom = grid[y + 1] if y + 1 < len(grid) else []
+            row = []
+            for x in range(0, len(top), 2):
+                a = top[x]
+                b = top[x + 1] if x + 1 < len(top) else 0
+                c = bottom[x] if x < len(bottom) else 0
+                d = bottom[x + 1] if x + 1 < len(bottom) else 0
+                same = all(isinstance(v, int) for v in (a, b, c, d)) and a == b == c == d
+                row.append(a if same else (a, b, c, d))
+            rows.append(row)
+        grid = rows
+    return grid[0][0]
+
+
+def preorder(node):
+    out, stack = [], [node]
+    while stack:
+        n = stack.pop()
+        if isinstance(n, int):
+            out.append(f'p{n}')
+        else:
+            out.append('q')
+            stack.extend(reversed(n))
+    return ''.join(out)
+
+
+def expected_row(runs):
+    return runs + ' ' + preorder(quadtree(decode(runs), WIDTH, HEIGHT))
+
+
+# -----------------------------------------------------------------------------
+# Bend candidate: one program per example
+
+PROGRAM = '''import Base
+import ../../jonlib.bend as J
+import ../../jonmath.bend as M
+import ../../examples/EXAMPLE.bend as Ex
+
+def hex.digit(+d: U32) -> Char:
+  Chr{Bool.pick(U32, (d < 10 : U32), (d + 48 : U32), (d + 87 : U32))}
+
+def hex.word(+w: U32, rest: String) -> String:
+  SCon{hex.digit((w >> 28n : U32)), SCon{hex.digit(((w >> 24n) .&. 15 : U32)), SCon{hex.digit(((w >> 20n) .&. 15 : U32)),
+    SCon{hex.digit(((w >> 16n) .&. 15 : U32)), SCon{hex.digit(((w >> 12n) .&. 15 : U32)), SCon{hex.digit(((w >> 8n) .&. 15 : U32)),
+    SCon{hex.digit(((w >> 4n) .&. 15 : U32)), SCon{hex.digit((w .&. 15 : U32)), rest}}}}}}}}
+
+def run.token(+word: U32, +count: U32, rest: String) -> String:
+  U32.show(count) ++ "*" ++ hex.word(word, "," ++ rest)
+
+def run.flush(same: Bool, +word: U32, +count: U32, acc: String) -> String:
+  match same:
+    case True{}: acc
+    case False{}: run.token(word, count, acc)
+
+# Runs of the words from index i down to 0, in index order: (word, count) is
+# the run after index i.
+def runs(n: Nat, +i: U32, +word: U32, +count: U32, read: Array<U32> & U32, acc: String) -> String:
+  match n read:
+    case 0n _: run.token(word, count, acc)
+    case 1n+k Tuple{a, +w}:
+      +same = U32.is_eq(w, word) || U32.is_eq(count, 0)
+      runs(k, (i - 1 : U32), w, Bool.pick(U32, U32.is_eq(w, word), (count + 1 : U32), 1), Array.get(U32, a, (i - 1 : U32)), run.flush(same, word, count, acc))
+
+def runs.pixels(+count: U32, pixels: J.Surface.Pixels) -> String:
+  match pixels:
+    case J.Words{values}: runs(U32.to_nat(count), (count - 1 : U32), 0, 0, Array.get(U32, values, (count - 1 : U32)), "")
+    case J.Quads{_}: "quads"
+
+def runs.of(s: J.Surface) -> String:
+  J.Surface{+w, +h, _, pixels} = s
+  runs.pixels((w * h : U32), pixels)
+
+def runs.surface(surface: Maybe<J.Surface>) -> String:
+  match surface:
+    case None{}: "null"
+    case Some{s}: runs.of(s)
+
+def tree(img: Image, acc: String) -> String:
+  match img:
+    case Pix{+c}: "p" ++ U32.show(c) ++ acc
+    case Qua{a, b, c, d}: "q" ++ tree(a, tree(b, tree(c, tree(d, acc))))
+
+def tree.of(img: Maybe<Image>) -> String:
+  match img:
+    case None{}: "null"
+    case Some{i}: tree(i, "")
+
+def show.tree(+text: String, r: J.Frame & Maybe<Image>) -> J.Frame & String:
+  (frame, img) = r
+  (frame, text ++ " " ++ tree.of(img))
+
+def show.fb(r: J.Frame & Maybe<J.Surface>) -> J.Frame & String:
+  (frame, s) = r
+  show.tree(runs.surface(s), J.Frame.present(frame))
+
+def show(frame: J.Frame) -> J.Frame & String:
+  show.fb(J.Frame.framebuffer(frame))
+
+def show.fn() -> J.Frame -> J.Frame & String:
+  frame => show(frame)
+
+def ev(+kind: U32, +p0: U32, +p1: U32, +p2: U32) -> J.AutomationEvent:
+  J.AutomationEvent{0, kind, p0, p1, p2, 0}
+
+def f64(+high: U32, +low: U32) -> M.Float64:
+  M.Float64{high, low}
+
+def fr(events: +List<J.AutomationEvent>, +bh: U32, +bl: U32, +eh: U32, +el: U32, +ah: U32, +al: U32) -> J.ReplayFrame:
+  J.ReplayFrame{events, f64(bh, bl), f64(eh, el), f64(ah, al)}
+
+def join(lines: List<String>) -> String:
+  match lines:
+    case Nil{}: ""
+    case Con{line, rest}: line ++ "|" ++ join(rest)
+
+def replay.parts(+core: J.Core, script: +List<J.ReplayFrame>, parts: J.Frame & Ex.State) -> String:
+  (frame, state) = parts
+  join(J.Program.replay(~Ex.State, ~Ex.program(M.LIBM{}), ~show.fn(), script, core, frame, state))
+
+def replay.ready(script: +List<J.ReplayFrame>, ready: J.Core & (J.Frame & Ex.State)) -> String:
+  (+core, parts) = ready
+  replay.parts(core, script, parts)
+
+def replay(SETUP_PARAMS script: +List<J.ReplayFrame>, core: Maybe<J.Core>, frame: Maybe<J.Frame>) -> String:
+  match core frame:
+    case Some{+core} Some{frame}: replay.ready(script, SETUP)
+    case _ _: "no window"
+'''
+
+
+def bend_u32(value):
+    return str(value & 0xFFFFFFFF)
+
+
+def bend_script(item):
+    frames = []
+    for frame in item['frames']:
+        events = ', '.join(f'ev({k}, {bend_u32(a)}, {bend_u32(b)}, {bend_u32(c)})' for k, a, b, c in frame['events'])
+        words = []
+        for key_ in ('begin', 'end', 'after'):
+            bits = dbits(frame[key_])
+            words += [str(bits >> 32), str(bits & 0xFFFFFFFF)]
+        frames.append(f'fr([{events}], {", ".join(words)})')
+    return '[' + ', '.join(frames) + ']'
+
+
+def render(items, libm, logo):
+    """One program per example (actions are example names): every script of
+    the example, one output line each."""
+    def build(selected, gpu):
+        if len(selected) != 1:
+            raise ProbeFailure('examples: one example per batch')
+        name = selected[0]
+        _, setup = EXAMPLES[name]
+        setup_params = {'core_2d_camera': '+seed: U32, ', 'textures_logo_raylib': 'logo: Result<&1, &1, J.Surface.IOError, J.Surface>, '}.get(name, '')
+        body = (PROGRAM.replace('EXAMPLE', name).replace('LIBM', libm).replace('SETUP_PARAMS ', setup_params)
+                .replace('SETUP', setup))
+        indexes = [i for i, item in enumerate(items) if item['example'] == name]
+        logo_param = 'logo: Result<&1, &1, J.Surface.IOError, J.Surface>' if name == 'textures_logo_raylib' else ''
+        if logo_param and len(indexes) != 1:
+            raise ProbeFailure('examples: textures_logo_raylib takes one script (its image is consumed)')
+        calls = []
+        for index in indexes:
+            item = items[index]
+            start = dbits(item['start'])
+            window = f'J.Core.init_window({WIDTH}, {HEIGHT}, f64({start >> 32}, {start & 0xFFFFFFFF})), J.Frame.init_window({WIDTH}, {HEIGHT})'
+            args = {'core_2d_camera': f'{item["seed"]}, ', 'textures_logo_raylib': 'logo, '}.get(name, '')
+            calls.append(f'def script.{index}() -> +List<J.ReplayFrame>:\n  {bend_script(item)}\n\n'
+                         f'def run.{index}({logo_param}) -> String:\n  replay({args}script.{index}(), {window})\n')
+        if logo_param:
+            main = (f'def main.loaded(logo: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):\n'
+                    f'  IO.print(run.{indexes[0]}(logo))\n\n'
+                    f'def main() -> IO(Unit):\n  IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_png("{logo}"), main.loaded)\n')
+        else:
+            main = 'def main() -> IO(Unit):\n  do IO<Unit>:\n' + '\n'.join(f'    IO.print(run.{index}())' for index in indexes) + '\n'
+        return body + '\n' + '\n'.join(calls) + '\n' + main
+    return build
+
+
+# -----------------------------------------------------------------------------
+# Interactive frame rates (diagnostic)
+
+def interactive(probe, frames):
+    cli = ['bun', probe.args.bend_source / 'bend2/main.ts']
+    logo = probe.args.raylib_source / 'examples/textures/resources/raylib_logo.png'
+    results = {}
+    for name in EXAMPLES:
+        binary = probe.work / f'interactive-{name}'
+        probekit.run([*cli, ROOT / f'examples/{name}.bend', '-o', binary], timeout=probekit.COMPILE_TIMEOUT)
+        results[name] = {}
+        for lane, threads in (('cpu-1', '1'), ('cpu-2', '2')):
+            command = [binary, '--gpu', 'off', '--threads', threads, '--frames', str(frames)]
+            if name == 'textures_logo_raylib':
+                command += ['--logo', logo]
+            output = probekit.run(command, timeout=600).strip().splitlines()
+            line = output[-1] if output else ''
+            match = re.search(r'(\d+) frames in (\d+) ms \(([\d.]+) FPS\); per frame: render (\d+) ms, present (\d+) ms, wait (\d+) ms', line)
+            results[name][lane] = dict(report=line, fps=float(match.group(3)) if match else None,
+                                       frames=int(match.group(1)) if match else None)
+            print(f'{name} {lane}: {line}', flush=True)
+    (probe.work / 'interactive.json').write_text(json.dumps(results, indent=2) + '\n')
+    probe.diagnostic(**{f'{name}_{lane}_fps': r['fps'] for name, lanes in results.items() for lane, r in lanes.items()})
+
+
+# -----------------------------------------------------------------------------
+
+def configure(parser):
+    parser.add_argument('--interactive', type=int, metavar='FRAMES', default=0,
+                        help='run each example in a window for FRAMES frames and record its frame rate (diagnostic)')
+
+
+def main():
+    args = probekit.arguments(__doc__, configure)
+    probe = probekit.Probe('examples-interactive' if args.interactive else 'examples', args, raylib_options=ip.OPTIONS)
+    if args.interactive:
+        interactive(probe, args.interactive)
+        return
+    definitions = ip.variant_definitions(probe.library)
+    wanted = dict(SUPPORT_CUSTOM_FRAME_CONTROL=False, SUPPORT_BUSY_WAIT_LOOP=False, SUPPORT_PARTIALBUSY_WAIT_LOOP=True,
+                  SUPPORT_AUTOMATION_EVENTS=True, SUPPORT_GESTURES_SYSTEM=True, SUPPORT_SCREEN_CAPTURE=True)
+    if definitions != wanted:
+        raise ProbeFailure(f'examples: reference build definitions {definitions}, expected {wanted}')
+    libm = gradient_reference()
+    logo = probe.args.raylib_source / 'examples/textures/resources/raylib_logo.png'
+    if not logo.is_file():
+        raise ProbeFailure(f'examples: {logo} is missing from the pinned raylib checkout')
+
+    items = scripts()
+    names = [name for name in EXAMPLES if any(item['example'] == name for item in items)]
+    rows_by_script, refused, binaries = [], {}, {}
+    for index, item in enumerate(items):
+        cut = refusal(item, libm)
+        refused[item['name']] = cut
+        rows = []
+        if cut != 0:
+            name = item['example']
+            if name not in binaries:
+                binaries[name] = build_reference(probe, name)
+            rows = [expected_row(runs) for runs in native_frames(probe, binaries[name], index, item)]
+        if cut is not None:
+            rows = rows[:cut] + ['null null'] * (len(item['frames']) - cut)
+        rows_by_script.append('|'.join(rows) + '|')
+    expected = ['\n'.join(row for row, item in zip(rows_by_script, items) if item['example'] == name) for name in names]
+
+    lanes = probe.candidates(render(items, libm, logo), names, batch=1,
+                             parse=lambda text, chosen: ['\n'.join(line for line in text.splitlines() if line.strip())])
+
+    def describe(i):
+        scripts_of = [item for item in items if item['example'] == names[i]]
+        wanted, got = expected[i].split('\n'), lanes['cpu-1'][i].split('\n')
+        for item, a, b in zip(scripts_of, wanted, got):
+            if a != b:
+                fa, fb = a.split('|'), b.split('|')
+                first = next((k for k, (x, y) in enumerate(zip(fa, fb)) if x != y), min(len(fa), len(fb)))
+                return f'example {names[i]}, script {item["name"]}, frame {first} ({len(fa) - 1} frames expected, {len(fb) - 1} drawn)'
+        return f'example {names[i]} ({len(wanted)} scripts expected, {len(got)} printed)'
+
+    probe.compare(expected, lanes, describe=describe)
+    frames = sum(row.count('|') for row in rows_by_script)
+    contract_frames = sum(row.count('null null') for row in rows_by_script)
+    probe.finish(examples=len(names), scripts=len(items), frames=frames, compared_frames=frames - contract_frames,
+                 refused_frames=contract_frames, libm=libm, refusals=refused,
+                 scripts_sha256=hashlib.sha256(json.dumps(items, default=repr).encode()).hexdigest())
+
+
+if __name__ == '__main__':
+    main()
