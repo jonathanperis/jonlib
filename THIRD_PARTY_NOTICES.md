@@ -115,6 +115,44 @@ identify the original sources and their required attribution.
   diagnostic copy of the pinned header. Kernel and whole-image reference probes
   additionally execute the unmodified upstream header and raylib library.
 
+## stb_truetype and stb_rect_pack
+
+- stb_truetype.h v1.26 and stb_rect_pack.h v1.01 by Sean Barrett and
+  contributors, as vendored by the pinned raylib commit above in
+  `src/external/`. Source: <https://github.com/nothings/stb>.
+- Jonlib selects the MIT alternative; the complete dual-license notice is
+  retained in [LICENSES/stb_truetype.txt](LICENSES/stb_truetype.txt).
+- `src/truetype.bend` is an altered Bend adaptation of stb_truetype's font
+  initialization, cmap lookup (formats 0, 4, 6, 12, 13), TrueType glyph
+  shapes (simple and composite), metrics, curve flattening, edge sort,
+  version-2 antialiasing rasterizer and line-only signed distance fields,
+  with every read bounds-checked and undefined behavior refused.
+  `src/font_data.bend` adapts stb_rect_pack's skyline bottom-left packer
+  together with raylib's `LoadFontData`, `GenImageFontAtlas`,
+  `LoadFontDataBDF` and `LoadBMFont` from `rtext.c` (zlib, above).
+- `tools/ttf_probe.py` links the unmodified headers only through the pinned
+  raylib reference library; no stb code is linked into the Bend candidate.
+
+## FreeBSD qsort and heapsort (Apple Libc)
+
+`src/font_data.bend` reproduces the order Apple's C library `qsort` gives
+stb_rect_pack's rectangles by adapting the FreeBSD `qsort.c` and
+`heapsort.c` algorithms as Apple's Libc ships them
+(<https://github.com/apple-oss-distributions/Libc>, `stdlib/FreeBSD/`):
+the introsort depth limit, pseudomedian selection, three-way partition,
+bounded insertion sort and heapsort fallback. These are altered Bend
+implementations; the BSD notices (copyright The Regents of the University of
+California) are retained in [LICENSES/freebsd-sort.txt](LICENSES/freebsd-sort.txt).
+
+## Test fonts
+
+`tools/ttf_fonts.py` generates every TrueType font the `ttf` gate builds; the
+gate also reads `anonymous_pro_bold.ttf` (Mark Simonson) and
+`DotGothic16-Regular.ttf` (The DotGothic16 Project Authors), both under the
+SIL Open Font License, in place from the pinned raylib checkout's
+`examples/text/resources/` (see its `LICENSE.md`). No font file is
+redistributed by Jonlib.
+
 ## sdefl
 
 - Author: Micha Mettke, copyright 2020-2023.
