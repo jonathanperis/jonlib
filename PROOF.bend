@@ -529,3 +529,6 @@ def Laws.jpeg_short_wraps():
 
 def Laws.jpeg_asr_negative():
   {==}
+
+def Laws.wave_copy_twice(wave):
+  {==}

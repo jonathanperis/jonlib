@@ -5085,23 +5085,26 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Wave",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Immutable frames, sample rate, sample size, channels and interleaved samples (8-bit, 16-bit patterns or F32 bits), copied as Data.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No native pointer/allocation ABI"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/wav_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -5110,7 +5113,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive Wave semantics from the linked source, add a reference fixture, then implement Wave.",
+      "next_step": "Close documented gaps and unverified gates for Wave.",
       "priority": 100
     },
     {
@@ -56531,23 +56534,26 @@
       "milestone": "audio-codecs",
       "phase": 4,
       "sequence": 19,
-      "status": "not-started",
-      "jonlib": "Audio.load_wave",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Wave.load",
+      "mapping_state": "implemented",
+      "scope": "The file decoded by its extension as LoadWaveFromMemory.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "OGG, MP3, QOA, FLAC, XM and MOD data, RIFX/Wave64/RF64/AIFF containers, ADPCM and 64-bit float WAV"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/wav_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56562,7 +56568,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Decoded PCM, metadata, format conversion and malformed/truncated audio for every reference format.",
-      "next_step": "Derive LoadWave semantics from the linked source, add a reference fixture, then implement Audio.load_wave.",
+      "next_step": "Close documented gaps and unverified gates for LoadWave.",
       "priority": 519
     },
     {
@@ -56588,23 +56594,27 @@
       "milestone": "audio-codecs",
       "phase": 4,
       "sequence": 19,
-      "status": "not-started",
-      "jonlib": "Audio.load_wave_from_memory",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Wave.decode",
+      "mapping_state": "implemented",
+      "scope": "WAV data through dr_wav's RIFF chunk walk and s16 conversion (PCM 8..64-bit, 32-bit float, a-law, mu-law, extensible headers), every 16-bit sample compared with raylib.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "OGG, MP3, QOA, FLAC, XM and MOD data, RIFX/Wave64/RF64/AIFF containers, ADPCM and 64-bit float WAV",
+        "InvalidWaveData where dr_wav leaves samples unread or converts NaN"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/wav_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56619,7 +56629,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Decoded PCM, metadata, format conversion and malformed/truncated audio for every reference format.",
-      "next_step": "Derive LoadWaveFromMemory semantics from the linked source, add a reference fixture, then implement Audio.load_wave_from_memory.",
+      "next_step": "Close documented gaps and unverified gates for LoadWaveFromMemory.",
       "priority": 519
     },
     {
@@ -56645,23 +56655,26 @@
       "milestone": "audio-codecs",
       "phase": 4,
       "sequence": 19,
-      "status": "not-started",
-      "jonlib": "Audio.is_wave_valid",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Wave.is_valid",
+      "mapping_state": "implemented",
+      "scope": "Positive frames, sample rate, sample size and channels.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native NULL-data ABI"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/wav_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56677,7 +56690,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Decoded PCM, metadata, format conversion and malformed/truncated audio for every reference format.",
-      "next_step": "Derive IsWaveValid semantics from the linked source, add a reference fixture, then implement Audio.is_wave_valid.",
+      "next_step": "Close documented gaps and unverified gates for IsWaveValid.",
       "priority": 519
     },
     {
@@ -56988,23 +57001,26 @@
       "milestone": "audio-codecs",
       "phase": 4,
       "sequence": 19,
-      "status": "not-started",
-      "jonlib": "Audio.unload_wave",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Wave.unload",
+      "mapping_state": "implemented",
+      "scope": "Consumes the wave.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Native allocator ABI"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/wav_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -57019,7 +57035,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Decoded PCM, metadata, format conversion and malformed/truncated audio for every reference format.",
-      "next_step": "Derive UnloadWave semantics from the linked source, add a reference fixture, then implement Audio.unload_wave.",
+      "next_step": "Close documented gaps and unverified gates for UnloadWave.",
       "priority": 519
     },
     {
@@ -57157,23 +57173,27 @@
       "milestone": "audio-codecs",
       "phase": 4,
       "sequence": 19,
-      "status": "not-started",
-      "jonlib": "Audio.export_wave",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Wave.to_wav / Wave.write",
+      "mapping_state": "implemented",
+      "scope": "dr_wav's RIFF writer bytes for .wav and raw sample bytes for .raw, compared with the files raylib writes.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "QOA export",
+        "raylib returns false for a zero-frame .wav it still writes; Jonlib reports the write"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/wav_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -57189,7 +57209,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Decoded PCM, metadata, format conversion and malformed/truncated audio for every reference format.",
-      "next_step": "Derive ExportWave semantics from the linked source, add a reference fixture, then implement Audio.export_wave.",
+      "next_step": "Close documented gaps and unverified gates for ExportWave.",
       "priority": 519
     },
     {
@@ -57722,23 +57742,26 @@
       "milestone": "audio-codecs",
       "phase": 4,
       "sequence": 19,
-      "status": "not-started",
-      "jonlib": "Audio.wave_copy",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Wave.copy",
+      "mapping_state": "implemented",
+      "scope": "Two equal waves.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Sample sizes other than 8, 16 and 32"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/wav_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -57753,7 +57776,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Decoded PCM, metadata, format conversion and malformed/truncated audio for every reference format.",
-      "next_step": "Derive WaveCopy semantics from the linked source, add a reference fixture, then implement Audio.wave_copy.",
+      "next_step": "Close documented gaps and unverified gates for WaveCopy.",
       "priority": 519
     },
     {
@@ -57779,23 +57802,26 @@
       "milestone": "audio-codecs",
       "phase": 4,
       "sequence": 19,
-      "status": "not-started",
-      "jonlib": "Audio.wave_crop",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Wave.crop",
+      "mapping_state": "implemented",
+      "scope": "Frames init..final-1 for 0 <= init < final <= frames; other ranges keep the wave (InvalidWaveRequest).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Sample sizes other than 8, 16 and 32"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/wav_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -57810,7 +57836,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Decoded PCM, metadata, format conversion and malformed/truncated audio for every reference format.",
-      "next_step": "Derive WaveCrop semantics from the linked source, add a reference fixture, then implement Audio.wave_crop.",
+      "next_step": "Close documented gaps and unverified gates for WaveCrop.",
       "priority": 519
     },
     {
@@ -57893,23 +57919,26 @@
       "milestone": "audio-codecs",
       "phase": 4,
       "sequence": 19,
-      "status": "not-started",
-      "jonlib": "Audio.load_wave_samples",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Wave.samples",
+      "mapping_state": "implemented",
+      "scope": "F32 samples: (x-128)/128, x/32768 or the 32-bit value.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Sample sizes other than 8, 16 and 32"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/wav_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -57924,7 +57953,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Decoded PCM, metadata, format conversion and malformed/truncated audio for every reference format.",
-      "next_step": "Derive LoadWaveSamples semantics from the linked source, add a reference fixture, then implement Audio.load_wave_samples.",
+      "next_step": "Close documented gaps and unverified gates for LoadWaveSamples.",
       "priority": 519
     },
     {
@@ -57950,23 +57979,26 @@
       "milestone": "audio-codecs",
       "phase": 4,
       "sequence": 19,
-      "status": "not-started",
-      "jonlib": "Audio.unload_wave_samples",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "List<F32> (dropped)",
+      "mapping_state": "implemented",
+      "scope": "The sample list is an owned value; no unload step is needed.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No native pointer ABI (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/wav_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -57979,7 +58011,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Decoded PCM, metadata, format conversion and malformed/truncated audio for every reference format.",
-      "next_step": "Derive UnloadWaveSamples semantics from the linked source, add a reference fixture, then implement Audio.unload_wave_samples.",
+      "next_step": "Close documented gaps and unverified gates for UnloadWaveSamples.",
       "priority": 519
     },
     {
