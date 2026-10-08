@@ -84,7 +84,8 @@ with desktop input polling, `IO.now` timing and `Frame.present`;
 events; `Core.end_drawing_desktop`, `Desktop.key`, `Frame.present`,
 `Frame.scan`, `Frame.refuse`, `Core.get_screen_width` and friends) and the
 ported raylib examples under `examples/` are documented in
-[DRIVER.md](DRIVER.md).
+[DRIVER.md](DRIVER.md). Progress porting every upstream raylib example is
+tracked in [EXAMPLES.md](EXAMPLES.md) (`tools/examples_plan.py`).
 Byte-string utilities and UTF-8 codepoints (`Text.*`, `Codepoint.*`, `UTF8.*`:
 rtext.c's text strings management functions) are documented in [TEXT.md](TEXT.md).
 The headless drawing frame and 2D shapes (`Frame.*`: InitWindow, Begin/EndDrawing,

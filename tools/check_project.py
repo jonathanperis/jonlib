@@ -11,6 +11,7 @@ from conformance import ROOT, cases_from, source_gate
 
 def main():
     subprocess.run([sys.executable, ROOT / 'tools/api_plan.py', 'check'], cwd=ROOT, check=True)
+    subprocess.run([sys.executable, ROOT / 'tools/examples_plan.py', 'check'], cwd=ROOT, check=True)
     pins = json.loads((ROOT / 'toolchain.json').read_text())
     for dependency in ('bend', 'raylib'):
         if not re.fullmatch(r'[0-9a-f]{40}', pins[dependency]['revision']):
