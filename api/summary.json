@@ -3,19 +3,19 @@
   "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
   "declaration_inventory": {
     "total": 1884,
-    "blocked": 21,
+    "blocked": 24,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 934,
-    "partial": 929
+    "not-started": 912,
+    "partial": 948
   },
   "core_functions": {
     "total": 600,
-    "blocked": 17,
+    "blocked": 20,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 432,
-    "partial": 151
+    "not-started": 422,
+    "partial": 158
   },
   "math_functions": {
     "total": 146,
@@ -27,11 +27,11 @@
   },
   "function_declarations": {
     "total": 931,
-    "blocked": 21,
+    "blocked": 24,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 617,
-    "partial": 293
+    "not-started": 595,
+    "partial": 312
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -51,11 +51,11 @@
   "headers": {
     "raylib.h": {
       "total": 1037,
-      "blocked": 17,
+      "blocked": 20,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 491,
-      "partial": 529
+      "not-started": 481,
+      "partial": 536
     },
     "raymath.h": {
       "total": 254,
@@ -78,8 +78,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 21,
-      "partial": 14
+      "not-started": 9,
+      "partial": 26
     },
     "rgestures.h": {
       "total": 39,
@@ -499,11 +499,11 @@
         "frame"
       ],
       "total": 22,
-      "blocked": 0,
+      "blocked": 3,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 22,
-      "partial": 0
+      "not-started": 0,
+      "partial": 19
     },
     {
       "id": "vr",

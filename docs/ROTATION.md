@@ -64,5 +64,10 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 ```
 
 Pixel formats 10+, wider angle/size domains and complete target/performance
-coverage remain open. No tolerance or expected pixels are adjusted to hide a
+coverage remain open. The Apple sine/cosine rounds the exact value; macOS arm64
+`sinf`/`cosf` are not correctly rounded, and about 2.6% of random one-cycle
+arguments differ by one ulp (the gated integral-degree arguments all agree).
+The camera queries therefore accept only zero arguments under `M.AppleLibm{}`
+([CAMERA.md](CAMERA.md)); the glibc sine/cosine matched the Arm model on all
+40001 random arguments tried. No tolerance or expected pixels are adjusted to hide a
 mismatch.
