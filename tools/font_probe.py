@@ -289,7 +289,9 @@ def scenes(libm):
     add('image-text-ex', 4, 4, [('default', 0)] + [
         ('image_text_ex', 0, T(t), s, sp, c) for t, s, sp, c in (
             ('Ex', 10.0, 1.0, WHITE), ('Ex', 10.5, 1.0, RED), ('frac', 17.3, 0.5, BLUE), ('neg sp', 10.0, -2.0, WHITE),
-            ('wide', 20.0, 4.75, half[0]), ('mm', 7.0, 0.0, GREEN), ('x', 1.0, 1.0, WHITE), ('o\nk', 12.0, 1.0, half[1]))] + [
+            ('wide', 20.0, 4.75, half[0]), ('mm', 7.0, 0.0, GREEN), ('o\nk', 12.0, 1.0, half[1]))] + [
+        # Size 1 scales the 10-pixel-high image by 0.1 to width 0: ImageResizeNN divides by it (x86 traps, arm64 gives 0).
+        ('image_text_ex', 0, T('x'), 1.0, 1.0, WHITE, 'R'),
         ('image_text_ex', 0, T('bad'), 10.0, NAN, WHITE, 'R'), ('image_text_ex', 0, T('bad'), 0.0, 1.0, WHITE, 'R'),
         ('image_text_ex', 0, T('big'), 1e6, 1.0, WHITE, 'R')])
 

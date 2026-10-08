@@ -94,8 +94,12 @@ def c_int(value):
     return int(value)
 
 
-def sector_plan(start, end, segments):
-    """(start, step, segments) of DrawCircleSector(Lines)/DrawRing, [] for nothing, None when refused."""
+def sector_plan(start, end, segments, libm=None):
+    """(start, step, segments) of DrawCircleSector(Lines)/DrawRing, [] for nothing, None when refused.
+
+    Fewer segments than rshapes.c's minimum make it estimate them with acosf: Jonlib reproduces that under
+    M.Glibc239Libm only ('estimated'; its arguments stay within the verified glibc sine/cosine range, and
+    tools/rlgl_probe.py checks the estimates), and refuses it elsewhere."""
     if start == end:
         return []
     if end < start:
@@ -105,6 +109,8 @@ def sector_plan(start, end, segments):
     if minimum is None or c_int(float(minimum)) is None:
         return None
     segments = c_int(segments)
+    if segments is not None and segments < minimum and libm == 'Glibc239Libm':
+        return 'estimated'
     if segments is None or segments < minimum or segments > 4096:
         return None
     return start, f32(span / segments), segments
@@ -114,8 +120,10 @@ def rad(angle):
     return f32(DEG2RAD * angle)
 
 
-def sector_args(start, end, segments):
-    plan = sector_plan(start, end, segments)
+def sector_args(start, end, segments, libm=None):
+    plan = sector_plan(start, end, segments, libm)
+    if plan == 'estimated':
+        return []
     if not plan:
         return plan
     angle, step, segments = plan
@@ -128,9 +136,11 @@ def sector_args(start, end, segments):
     return args
 
 
-def stepped_args(start, end, segments):
+def stepped_args(start, end, segments, libm=None):
     """DrawCircleSectorLines and DrawRing: angle, angle + step per segment, then the final angle."""
-    plan = sector_plan(start, end, segments)
+    plan = sector_plan(start, end, segments, libm)
+    if plan == 'estimated':
+        return []
     if not plan:
         return plan
     angle, step, segments = plan
@@ -160,7 +170,7 @@ def circle_args():
     return [rad(float(d)) for d in range(0, 361, 10)]
 
 
-def trig_arguments(op):
+def trig_arguments(op, libm=None):
     """The sinf/cosf arguments an operation evaluates (None: refused regardless)."""
     name, a = op[0], op[1:]
     if name in ('circle', 'circle_v', 'circle_lines', 'circle_lines_v', 'ellipse', 'ellipse_v', 'ellipse_lines',
@@ -169,12 +179,12 @@ def trig_arguments(op):
     if name == 'rect_pro':
         return [] if a[6] == 0.0 else [f32(a[6] * DEG2RAD)]
     if name == 'sector':
-        return sector_args(a[3], a[4], a[5])
+        return sector_args(a[3], a[4], a[5], libm)
     if name == 'sector_lines':
-        return stepped_args(a[3], a[4], a[5])
+        return stepped_args(a[3], a[4], a[5], libm)
     if name == 'ring':
         inner, outer = (a[3], a[2]) if a[3] < a[2] else (a[2], a[3])
-        return sector_args(a[4], a[5], a[6]) if inner <= 0.0 else stepped_args(a[4], a[5], a[6])
+        return sector_args(a[4], a[5], a[6], libm) if inner <= 0.0 else stepped_args(a[4], a[5], a[6], libm)
     if name in ('poly', 'poly_lines'):
         return poly_args(a[2], a[4])
     return []
@@ -191,7 +201,7 @@ def refused(op, libm):
     count = INT_PARAMETERS.get(op[0], 0)
     if any(c_int(v) is None for v in op[1:1 + count]):
         return True
-    args = trig_arguments(op)
+    args = trig_arguments(op, libm)
     return args is None or not all(accepted(libm, x) for x in args)
 
 

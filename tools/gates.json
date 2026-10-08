@@ -258,7 +258,6 @@
     "--raylib-source={raylib}"
    ],
    "os": [
-    "linux",
     "macos"
    ],
    "minutes": 12
