@@ -22,11 +22,11 @@ rasterizer, and copies the result to a memory framebuffer in
 output is not a reference: rasterization and blending vary by driver.
 
 - Jonlib's renderer is a Bend port of the path a draw call takes there:
-  the vertex generation in `rshapes.c`/`rtextures.c`, `rlgl`'s immediate-mode
-  batch (matrix stack, texture/mode switches, `rlCheckRenderBatchLimit`
-  flushes) and `rlsw`'s rasterization, sampling and blending. Results compare
-  byte for byte with the framebuffer (`rlCopyFramebuffer`) or
-  `LoadImageFromScreen`.
+  the vertex generation in `rshapes.c`/`rtextures.c`, `rlgl`'s OpenGL 1.1
+  immediate path (software mode has no render batch: each primitive is
+  transformed and rasterized when its last vertex arrives, see the appendix)
+  and `rlsw`'s clipping, rasterization, sampling and blending. Results compare
+  byte for byte with the framebuffer the harness reads back.
 - `rlsw`'s SSE/AVX/NEON paths, including FMA, are opt-in
   (`RLSW_USE_SIMD_INTRINSICS`, off by default, which also selects its
   uint8-to-float lookup table). The reference build keeps them off and
@@ -66,9 +66,9 @@ through a program:
   state from `rgestures.h`), timing (current/previous/target/frame times and
   the FPS history), and the frame counter.
 - `Frame`: the render state between `begin_drawing` and `end_drawing`: the
-  framebuffer `Surface`, the `rlgl` batch (vertex buffers, draw calls,
-  current texture/mode), the matrix stack, scissor, blend mode, active render
-  texture and 2D camera mode.
+  framebuffer `Surface`, the immediate-mode primitive under construction
+  (current color, texcoord, bound texture), the matrix stack, scissor, blend
+  mode, culling, active render texture and 2D camera mode.
 - Functions keep raylib names under their module: for example
   `Core.begin_drawing(core) -> Frame`, `Frame.clear_background(frame, color)`,
   `Draw.rectangle(frame, x, y, w, h, color) -> Frame`,
@@ -141,3 +141,47 @@ reuses the texture path and also unblocks the `ImageText*` Phase 1 leftovers.
 - **(open)** Whether `Core` is passed explicitly everywhere (the current
   decision) or hidden behind an `App` combinator that threads it for user
   code (both can coexist; the combinator is sugar over the explicit API).
+
+## Appendix: the reference pipeline (pinned rlsw, scalar)
+
+Traced from the pinned sources (`src/rlgl.h`, `src/external/rlsw.h`,
+`src/rshapes.c`, `src/rcore.c`, `src/platforms/rcore_memory.c`); slice 1 turns
+each point into a probe case before relying on it.
+
+- **No batch.** With `GRAPHICS_API_OPENGL_SOFTWARE`, rlgl takes its GL 1.1
+  path: `rlBegin`/`rlVertex*`/`rlColor*` call `swBegin`/`swVertex*`/`swColor*`
+  directly and `rlDrawRenderBatch*`/`rlCheckRenderBatchLimit` do nothing.
+  Draw order is call order; `ClearBackground` clears immediately.
+- **Shapes are textured from the default font.** `InitWindow` points
+  `SetShapesTexture` at a 2x8 opaque-white block of the default font atlas
+  (128x128 gray-alpha, nearest, repeat). Because that texture has alpha, every
+  textured shape (pixels, rectangles, circles, triangles) goes through
+  blending; `DrawLine` is untextured and opaque lines write directly.
+- **State.** `rlOrtho(0, W, H, 0, 0, 1)`, identity modelview (no half-pixel
+  offset), blending `SRC_ALPHA, ONE_MINUS_SRC_ALPHA` (fixed: `rlSetBlendMode`
+  is GL3-only), back-face culling on (clockwise and zero-area triangles are
+  dropped), depth test off.
+- **Transform.** Clip x = 2/W*x - 1, y = 2/(-H)*y + 1; screen
+  X = (W/2 + ndc*W/2) + 0.5, Y likewise; the framebuffer is bottom-up.
+  Sutherland-Hodgman clipping with strict x/y planes.
+- **Quads.** A 4-vertex quad whose edges are all within 0.5 px of the axes is
+  filled by a box rasterizer (pixel centers x in (x0, x1], y in [y0, y1),
+  colors interpolated from three corners only, so a gradient rectangle's
+  top-right color has no effect); other quads become a triangle fan.
+- **Triangles.** Scanline DDA with per-row float accumulation of edge
+  gradients, spans covering (xl, xr], colors/UVs recomputed every 16 pixels.
+- **Lines.** Liang-Barsky clipping, then `sw_clamp` (which returns `int`)
+  truncates endpoints and a DDA covers [min, max) on the major axis: output row
+  0 and column W-1 are never drawn, and vertical lines land one column left.
+- **Writes.** Colors are floats (`c * 1/255` through a LUT), blending is in
+  float, and stores truncate `(uint8_t)(v*255)` (0x80 alpha over 0xff gives
+  126, where a GPU gives 127).
+- **Readback.** `SwapScreenBuffer`'s copy is top-down **BGRA**
+  (`SW_FRAMEBUFFER_OUTPUT_BGRA`); `LoadImageFromScreen` flips it again (so it
+  is bottom-up) and forces alpha 255. **(open)** Jonlib's
+  `LoadImageFromScreen` should follow raylib's desktop contract (top-down
+  RGBA); the harness normalizes the memory platform's output for comparison.
+- **Host dependence.** SIMD is opt-in and off. Clang's default contraction
+  can fuse projection, interpolation and blend arithmetic on arm64, and
+  circles/rotations use `sinf`/`cosf`: the reference build compiles raylib
+  with `-ffp-contract=off`, and trig-dependent shapes take an `M.Libm` profile.
