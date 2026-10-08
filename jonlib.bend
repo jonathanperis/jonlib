@@ -188,14 +188,16 @@ def Spline.cubic.point(+fused: Bool, start: M.Vector2, start_control: M.Vector2,
     case None{}: None{}
     case Some{w}: Some{Spline.cubic.values(fused, start, start_control, end_control, end, w)}
 
-# GetSplinePointBezierCubic: weights (1-t)^3, 3(1-t)^2 t, 3(1-t) t^2 and t^3
-# through the profile's powf, then the reference accumulation under the given
-# contraction. None when the libm profile has no powf (AppleLibm,
-# Glibc241Libm) or t is outside [-0, 1] (including NaN).
+# GetSplinePointBezierCubic: weights powf(1-t, 3), 3*powf(1-t, 2)*t,
+# 3*(1-t)*powf(t, 2) and powf(t, 3), then the reference accumulation under the
+# given contraction. C compilers fold powf(x, 2) into x*x (the linked build
+# calls powf only for the cubes), so the squares are products and only the
+# cubes use the profile's powf. None when the libm profile has no powf
+# (AppleLibm, Glibc241Libm) or t is outside [-0, 1] (including NaN).
 def Spline.bezier_cubic_for(reference: M.Contraction, +libm: M.Libm, start: M.Vector2, start_control: M.Vector2, end_control: M.Vector2, end: M.Vector2, +t: F32) -> Maybe<M.Vector2>:
   +one = (1.0 - t : F32)
   Spline.cubic.point(M.Contraction.fused(reference), start, start_control, end_control, end,
-    Spline.cubic.weights(t, M.Libm.pow(libm, one, 3), M.Libm.pow(libm, one, 2), M.Libm.pow(libm, t, 2), M.Libm.pow(libm, t, 3)))
+    Spline.cubic.weights(t, M.Libm.pow(libm, one, 3), Some{(one * one : F32)}, Some{(t * t : F32)}, M.Libm.pow(libm, t, 3)))
 
 # -----------------------------------------------------------------------------
 # Geometry and collision

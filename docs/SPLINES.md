@@ -45,7 +45,10 @@ end, t) -> Maybe<Vector2>` follows the pinned
 [cubic Bezier implementation](https://github.com/raysan5/raylib/blob/dbc56a87da87d973a9c5baa4e7438a9d20121d28/src/rshapes.c#L2232):
 weights `powf(1-t, 3)`, `3*powf(1-t, 2)*t`, `3*(1-t)*powf(t, 2)` and
 `powf(t, 3)`, then the four-term accumulation under the given contraction.
-`powf` comes from the libm profile (`M.Libm.pow`):
+C compilers fold `powf(x, 2)` into `x*x` (the linked arm64 object calls `powf`
+only for the two cubes, and the probe checks that the host clang does the
+same), so the squares are plain products; the cubes come from the libm
+profile (`M.Libm.pow`):
 
 - `Glibc239Libm{}`: glibc 2.39's x86_64 `powf` (Arm optimized-routines,
   `TOINT_INTRINSICS` 0), `src/power.bend`, for exponents 2 and 3 and x in
@@ -67,8 +70,9 @@ pinned function with `powf` replaced by a C model of that algorithm,
 uncontracted on every host and contracted on arm64 for `M.Fused{}`, and
 compares on CPU-1, CPU-2 and JavaScript: the kernel on 7,909 inputs (random,
 signed zeros, subnormals, the underflow edges, 400 inputs where `powf` differs
-from the products, and refused values) and 526 cubic points (random, the
-counterexample, endpoints, tiny t and 1 - tiny, and refused t), plus `None`
+from the products, and refused values) and 726 cubic points (random, the
+counterexample, endpoints, tiny t and 1 - tiny, 200 t where `powf` differs
+from the products, and refused t), plus `None`
 for the other profiles. On a Linux x86_64 glibc 2.39 host the linked raylib
 with the host `powf` must print the same rows. The `spline` probe still
 records the counterexample (`cubic_power_diagnostic`).

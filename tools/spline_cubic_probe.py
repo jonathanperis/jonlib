@@ -2,7 +2,9 @@
 """Compare the Glibc239Libm powf kernel and GetSplinePointBezierCubic.
 
 The reference compiles the unchanged GetSplinePointBezierCubic from the pinned
-rshapes.c with powf replaced by a C model of glibc 2.39's x86_64 powf (Arm
+rshapes.c with powf(x, 2) folded to x*x, as compilers do (checked: the host
+clang keeps exactly the two cube calls), and the cubes through a C model of
+glibc 2.39's x86_64 powf (Arm
 optimized-routines, TOINT_INTRINSICS 0; MIT, LICENSES/arm-math.txt):
 uncontracted on every host, and also contracted (FP_CONTRACT ON) on arm64
 hosts for M.Fused. On a Linux x86_64 glibc 2.39 host (the CI runner) the
@@ -184,7 +186,7 @@ def kernel_inputs(rng, found):
     return rows
 
 
-def cubic_inputs(rng):
+def cubic_inputs(rng, found):
     rows = []
     coords = lambda: [word(rng.uniform(-100, 100)) for _ in range(8)]
     for _ in range(500):
@@ -195,6 +197,8 @@ def cubic_inputs(rng):
         rows.append(coords() + [word(float.fromhex(t))])
     for t in (1.5, -0.25, 2.0, float('nan'), float('inf'), -1e-30):
         rows.append(coords() + [word(t)])
+    # t where powf(t, 2) or powf(t, 3) differs from the plain products.
+    rows += [coords() + [t] for t in found[:200]]
     return rows
 
 
@@ -226,11 +230,17 @@ def main():
 
     def control(name, pragma, flag):
         text = (DRIVER_HEAD + '/* Unaltered GetSplinePointBezierCubic from pinned raylib; zlib, LICENSES/raylib.txt. */\n'
-                + f'#pragma STDC FP_CONTRACT {pragma}\n#define powf model_powf\n' + function + '#undef powf\n'
+                + f'#pragma STDC FP_CONTRACT {pragma}\n#define powf(x, y) ((y) == 2 ? (x)*(x) : model_powf((x), (y)))\n' + function + '#undef powf\n'
                 + DRIVER_MAIN.replace('POWER', 'model_powf'))
         probe.native(text, name, extra_flags=[flag, model_object], link_raylib=False)
         return probe.work / name
 
+    fold = probe.work / 'fold.c'
+    fold.write_text('#include "raylib.h"\n#include <math.h>\n' + function)
+    assembly = probekit.run(['clang', '-std=c11', '-O2', '-S', '-o', '-', '-I' + str(args.raylib_source / 'src'), fold])
+    calls = sum(1 for line in assembly.splitlines() if 'powf' in line and ('bl' in line.split() or 'call' in line or 'jmp' in line or 'b\t' in line))
+    if calls != 2:
+        raise ProbeFailure(f'spline-cubic: expected the compiler to keep 2 powf calls (cubes) and fold the squares, found {calls}')
     uncontracted = control('control-off', 'OFF', '-ffp-contract=off')
     fused = control('control-on', 'ON', '-ffp-contract=on') if platform.machine() in ('arm64', 'aarch64') else None
 
@@ -240,7 +250,7 @@ def main():
     if len(found) < 100:
         raise ProbeFailure('spline-cubic: too few powf/product differences found')
     actions = []
-    for section, parts in (('kernel', chunks(kernel_inputs(rng, found), 2500)), ('cubic', chunks(cubic_inputs(rng), 200))):
+    for section, parts in (('kernel', chunks(kernel_inputs(rng, found), 2500)), ('cubic', chunks(cubic_inputs(rng, found), 200))):
         for index, part in enumerate(parts):
             path = f'{WORK}/{section}-{index}.bin'
             (ROOT / path).write_bytes(b''.join(struct.pack('<I', w) for row in part for w in row))
