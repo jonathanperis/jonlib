@@ -50,7 +50,7 @@ def Plan.draw(plan: Plan, canvas: F.Canvas) -> F.Canvas:
 # rlSetTexture(shapes) ... rlSetTexture(0) around a textured rlBegin block.
 def Plan.textured(+count: U32, plan: Plan) -> Plan:
   Plan{valid, commands} = plan
-  Plan{valid, Con{F.Texture{True{}}, Con{F.Begin{count}, List.append(&2, F.Command, commands, [F.End{}, F.Texture{False{}}])}}}
+  Plan{valid, Con{F.Texture{1}, Con{F.Begin{count}, List.append(&2, F.Command, commands, [F.End{}, F.Texture{0}])}}}
 
 def Plan.plain(+count: U32, plan: Plan) -> Plan:
   Plan{valid, commands} = plan

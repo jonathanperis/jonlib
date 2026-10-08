@@ -610,3 +610,15 @@ def Laws.frame_init_window_wide(height):
 
 def Laws.frame_plan_refused(commands):
   {==}
+
+def Laws.frame_blend_mode_unchanged(frame, mode):
+  {==}
+
+def Laws.texture_set_wrap_unchanged(texture, wrap):
+  {==}
+
+def Laws.texture_filter_point(linear):
+  {==}
+
+def Laws.texture_pool_reuses_freed(next, capacity, id, rest):
+  {==}

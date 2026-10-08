@@ -228,13 +228,17 @@ MIT notice and license are retained in [LICENSES/qoa.txt](LICENSES/qoa.txt).
 
 `src/frame.bend` is an altered Bend adaptation of pinned raylib's
 `src/external/rlsw.h` 1.5, the OpenGL 1.1-style software renderer by Le Juez
-Victor (reviewed by Ramon Santamaria): its vertex transform, face culling,
-polygon and line clipping, projection, axis-aligned quad, triangle and line
-rasterizers, nearest texture sampling and SRC_ALPHA/ONE_MINUS_SRC_ALPHA
-blending, scalar and uncontracted, refusing its undefined float-to-int and
-uint8 conversions. It also adapts the rlgl.h OpenGL 1.1 immediate path that
-drives rlsw, and `src/shapes.bend` adapts the `rshapes.c` shape functions
-(raylib, zlib notice above). `src/frame_font.bend` holds `rtext.c`'s
+Victor (reviewed by Ramon Santamaria): its matrix stacks and products, vertex
+transform, face culling, polygon and line clipping (with the scissor),
+projection, axis-aligned quad, triangle and line rasterizers, texel readers,
+nearest and bilinear texture sampling, SRC_ALPHA/ONE_MINUS_SRC_ALPHA
+blending, scissored clears, framebuffer objects and object pools, scalar and
+uncontracted, refusing its undefined float-to-int and uint8 conversions and
+out-of-bounds reads. It also adapts the rlgl.h OpenGL 1.1 immediate path and
+texture/framebuffer calls that drive rlsw; `src/shapes.bend` adapts the
+`rshapes.c` shape functions and `src/textures.bend` the `rtextures.c` texture
+drawing and rlsw's translate/rotate/scale matrices (raylib, zlib notice
+above). `src/frame_font.bend` holds `rtext.c`'s
 `defaultFontData` bitmap unchanged (raylib, zlib). rlsw's MIT notice and
 license are retained in [LICENSES/rlsw.txt](LICENSES/rlsw.txt).
 
