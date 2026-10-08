@@ -214,4 +214,5 @@ assumed before it is measured.
   with the modelview, scissor and target described in that page.
 - `M.Libm` arguments outside the verified sets above are refused rather than
   approximated; the glibc profiles are not exercised by this probe on macOS.
-- Interactive presentation, input and timing belong to later slices.
+- Interactive presentation (`Frame.present`), desktop input and timing are in
+  [DRIVER.md](DRIVER.md).

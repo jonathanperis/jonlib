@@ -128,6 +128,39 @@ numerical prerequisites (the [binary64 helpers](BINARY64.md) and the
 [modern angle kernel](MODERN-ANGLE.md)) back the [checked angle APIs](ANGLES.md);
 device/resource and wider-domain evidence remain Phase 1 work.
 
+## Phase 2: status
+
+All five slices of [PHASE2-DESIGN.md](PHASE2-DESIGN.md) are delivered. Against
+the exit gate ("deterministic input replay plus real desktop integration;
+representative raylib 2D examples work"):
+
+- **Deterministic input replay: met.** The `input` gate replays automation
+  events and scripted clocks against raylib's memory platform; the `examples`
+  gate replays seven ported raylib examples against their unmodified sources,
+  every framebuffer byte and the presented image of every frame, on CPU-1,
+  CPU-2 and JavaScript ([DRIVER.md](DRIVER.md)).
+- **Real desktop integration: met on macOS only.** `Desktop.run` opens a Base
+  window, presents the software-rendered frames, maps Base's key, mouse and
+  close events to raylib's desktop polling and paces frames with `IO.now`/
+  `IO.sleep`; the examples ran interactively on an Apple M1 at 50 to 55 FPS
+  (`core_2d_camera`: 33 to 37 FPS). Linux (X11) windows were not run; desktop
+  polling and the key table are checked by laws, not against a native GLFW
+  build.
+- **Representative examples: six of seven.** `core_basic_window`,
+  `core_input_keys`, `core_input_mouse`, `core_2d_camera`,
+  `shapes_logo_raylib` and `textures_logo_raylib` work headless (byte-exact)
+  and interactively; `shapes_basic_shapes` is ported but refused on every
+  frame, because its 0.2-degree rotation needs `sinf`/`cosf` outside every
+  verified `M.Libm` domain.
+
+So the exit gate is not fully met. Open before Phase 2 can close: an
+interactive run on Linux; `sinf`/`cosf` profiles beyond whole degrees (Apple)
+and one turn (glibc) for rotating shapes; the window functions Base has no
+facility for (state, flags, resize, fullscreen, monitors, DPI, clipboard,
+cursor shape/visibility) and desktop wheel, text, gamepad and touch input,
+all runtime-workstream items; a finer clock than `IO.now`'s milliseconds; and
+rendering speed for heavier scenes (the Bend renderer is single-threaded).
+
 ## Completion and phase exit
 
 No API is `complete` yet, and none can be during Phase 1: completion requires
@@ -171,7 +204,9 @@ recommended option in each case, revisable on his review):
   rings, ellipses and polygons rendered byte for byte as rlsw renders them, is
   in [FRAME.md](FRAME.md) with its performance measurement; slices 2 and 3
   (2D camera, matrix stack, scissor and blend modes, render textures and
-  textures) are in [TEXTURES.md](TEXTURES.md).
+  textures) are in [TEXTURES.md](TEXTURES.md); slice 4 (input, automation
+  events, timing, gestures) in [INPUT.md](INPUT.md); slice 5 (the Base window
+  driver and the ported examples) in [DRIVER.md](DRIVER.md).
 - **Audio brought forward:** Wave loading/export (WAV through dr_wav, QOA
   through qoa.h) and `WaveFormat` (miniaudio's conversion and resampling,
   [AUDIO.md](AUDIO.md)) are a headless Phase 4 slice delivered

@@ -1713,6 +1713,21 @@
    "minutes": 4
   },
   {
+   "id": "examples",
+   "title": "Ported raylib examples (core_basic_window, core_input_keys, core_input_mouse, core_2d_camera, shapes_logo_raylib, textures_logo_raylib, shapes_basic_shapes) replayed headless frame by frame against the unmodified example sources on the clock-injected memory-platform raylib (tools/reference/example_driver.h), framebuffer bytes and the presented quadtree Image, with refusal contracts",
+   "run": [
+    "{python}",
+    "tools/examples_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 6
+  },
+  {
    "id": "quaternion-angle",
    "title": "Glibc239Libm acosf, QuaternionSlerp and QuaternionToAxisAngle against raymath on the pinned glibc 2.39 acosf (and the host libm on Linux x86_64 glibc 2.39)",
    "run": [

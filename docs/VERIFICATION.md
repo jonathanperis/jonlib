@@ -140,7 +140,10 @@ and check the build flags.
   compactly (`Op{kind, words}`), `src/frame.bend` reads and updates the GL
   state through first-order defs (no closures over a `Canvas`), and keeps the
   GL state in a recursive, hence boxed, `GlBox` (a frame flattens to about 95
-  words instead of 130).
+  words instead of 130). The desktop driver's closures over a `Core` and a
+  `Frame` gave a 205-word bank and the same failure (with the examples'
+  programs); `jonlib.bend` now boxes `Frame` and `Core` the same way (a
+  never-used recursive field), which brought that build's bank to 102 words.
 
 ## What is claimed
 
@@ -156,8 +159,11 @@ and check the build flags.
 
 - Inputs outside a recorded scope, or exhaustive coverage of a scope: gates are
   finite unless a page states an exhaustive domain.
-- Desktop windows, input, audio devices, browsers, textures/fonts, 3D, Windows,
-  Android, CUDA or any platform not exercised by a gate.
+- Desktop windows and desktop input against a native platform build: the
+  `examples` gate replays the ported examples headless (memory platform);
+  interactive runs of the desktop driver are diagnostics
+  ([DRIVER.md](DRIVER.md)). Audio devices, browsers, Windows, Android, CUDA or
+  any platform not exercised by a gate.
 - Performance, latency or long-run resource parity with raylib, except where a
   page states a specific measured scope.
 - Reproduction of undefined C behavior, crashes or memory corruption in the

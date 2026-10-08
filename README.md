@@ -197,6 +197,21 @@ It writes `.build/qoi-roundtrip.qoi` and prints the loaded dimensions/pixels.
 The harness checks its exact bytes against actual raylib `ExportImage` and runs
 file/decode error checks. See [CODECS.md](docs/CODECS.md) and [MATH.md](docs/MATH.md).
 
+## Run a raylib example in a window
+
+Ported raylib examples (`core_basic_window`, `core_input_keys`,
+`core_input_mouse`, `core_2d_camera`, `shapes_logo_raylib`,
+`textures_logo_raylib`) open a Base window from a desktop session:
+
+```sh
+BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" examples/core_input_keys.bend -o .build/core_input_keys
+./.build/core_input_keys            # arrow keys move the ball; Escape or the close button quits
+```
+
+The `examples` gate replays the same programs headless against the unmodified
+raylib example sources, frame by frame and byte for byte. See
+[DRIVER.md](docs/DRIVER.md) for the driver, the key table and the gaps.
+
 ## Ownership and compatibility
 
 Drawing returns the updated `Surface`; the old value is consumed. Reads return

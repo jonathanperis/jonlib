@@ -162,7 +162,8 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | GPU execution of image operations | Same Bend API | All corpus pixels and export bytes on forced Metal with the overlay | local `tools/conformance.py --gpu` |
 | GPU graphics-pipeline `Draw*` APIs | Future GPU presentation | Not a reference: `Draw.*` renders as raylib's software renderer does; driver-dependent OpenGL output and CPU `ImageDraw*` matches are other contracts | — |
 | TTF/OTF/BDF/BMFont fonts, further codecs, meshes, models, animation | Future modules | Not implemented | — |
-| Input, interactive window (beyond the headless frame), audio devices, native Windows/browser/Android | Future library and runtime work | Not implemented | — |
+| Desktop driver and ported examples | `Desktop.run`, `Program.replay`, `Core.end_drawing_desktop`, `Frame.present` (rcore_desktop_glfw.c polling, Base `Window`) | Seven raylib examples replayed headless against their unmodified sources: every framebuffer byte and the presented quadtree per frame; desktop polling and the key table by laws; interactive runs on macOS are diagnostics ([DRIVER.md](DRIVER.md)) | `examples` |
+| Window state, monitors, clipboard, cursor shape, wheel/text/gamepad/touch input on the desktop, audio devices, native Windows/browser/Android | Future library and runtime work | Not implemented (no Base facility) | — |
 
 ## Known divergences and gaps
 

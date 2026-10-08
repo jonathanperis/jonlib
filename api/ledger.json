@@ -25295,11 +25295,11 @@
       "phase": 2,
       "sequence": 10,
       "status": "partial",
-      "jonlib": "Frame.init_window",
+      "jonlib": "Frame.init_window / Core.init_window / Desktop.run",
       "mapping_state": "implemented",
-      "scope": "Headless memory-platform InitWindow for sizes 1..4096: rlglInit clears to (0, 0, 0, 255), the viewport and rlOrtho projection, identity modelview and the default font white block as shapes texture; Maybe<Frame>.",
+      "scope": "Headless memory-platform InitWindow for sizes 1..4096: rlglInit clears to (0, 0, 0, 255), the viewport and rlOrtho projection, identity modelview and the default font white block as shapes texture; Maybe<Frame>. Desktop.run opens a Base window of that size and title for a Program (docs/DRIVER.md).",
       "gaps": [
-        "Integration: no window, title, monitor, DPI or platform state (later Phase 2 slices)",
+        "Integration: no config flags, monitor, DPI or resizable window: Base windows are fixed-size (docs/DRIVER.md)",
         "Font loading beyond the shapes atlas is not exposed",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
@@ -25308,7 +25308,7 @@
         "availability": "partial",
         "behavior": "partial",
         "ownership": "partial",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
@@ -25316,7 +25316,9 @@
         "tools/frame_probe.py",
         "docs/FRAME.md",
         "src/frame.bend",
-        "src/shapes.bend"
+        "src/shapes.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -25356,11 +25358,11 @@
       "phase": 2,
       "sequence": 10,
       "status": "partial",
-      "jonlib": "Frame.close_window",
+      "jonlib": "Frame.close_window / Core.close_window / Desktop.run",
       "mapping_state": "implemented",
-      "scope": "Consumes the Frame (its color buffer and render state).",
+      "scope": "Consumes the Frame (its color buffer and render state); Desktop.run closes its Base window when the loop ends.",
       "gaps": [
-        "Integration: no window or platform to close",
+        "Integration: macOS was exercised interactively; Linux (X11) windows were not run here",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -25368,7 +25370,7 @@
         "availability": "partial",
         "behavior": "partial",
         "ownership": "partial",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
@@ -25376,7 +25378,9 @@
         "tools/frame_probe.py",
         "docs/FRAME.md",
         "src/frame.bend",
-        "src/shapes.bend"
+        "src/shapes.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -25418,9 +25422,9 @@
       "status": "partial",
       "jonlib": "Core.window_should_close",
       "mapping_state": "implemented",
-      "scope": "Bool: the close request WINDOW_CLOSE events set (and pressing the exit key through Input.key_callback); a Core is always ready.",
+      "scope": "Bool: the close request WINDOW_CLOSE events set (and pressing the exit key through Input.key_callback); a Core is always ready. In the desktop driver: the window close button or exit key of the last poll only (glfwWindowShouldClose reset per poll).",
       "gaps": [
-        "Integration: no OS close button; the memory platform's kbhit() ESC check of standard input is not modeled",
+        "Integration: the memory platform's kbhit() ESC check of standard input is not modeled",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -25428,7 +25432,7 @@
         "availability": "partial",
         "behavior": "partial",
         "ownership": "partial",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
@@ -25436,7 +25440,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -26901,23 +26907,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_screen_width",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_screen_width",
+      "mapping_state": "implemented",
+      "scope": "The InitWindow size (1..4096): Base windows are fixed-size and have no DPI scaling, so the screen and render sizes are equal.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: no resize, fullscreen, high-DPI or render-texture-relative size (runtime workstream)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "LAWS.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26929,7 +26941,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetScreenWidth semantics from the linked source, add a reference fixture, then implement Window.get_screen_width.",
+      "next_step": "Close documented gaps and unverified gates for GetScreenWidth.",
       "priority": 310
     },
     {
@@ -26955,23 +26967,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_screen_height",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_screen_height",
+      "mapping_state": "implemented",
+      "scope": "The InitWindow size (1..4096): Base windows are fixed-size and have no DPI scaling, so the screen and render sizes are equal.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: no resize, fullscreen, high-DPI or render-texture-relative size (runtime workstream)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "LAWS.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26983,7 +27001,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetScreenHeight semantics from the linked source, add a reference fixture, then implement Window.get_screen_height.",
+      "next_step": "Close documented gaps and unverified gates for GetScreenHeight.",
       "priority": 310
     },
     {
@@ -27009,23 +27027,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_render_width",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_render_width",
+      "mapping_state": "implemented",
+      "scope": "The InitWindow size (1..4096): Base windows are fixed-size and have no DPI scaling, so the screen and render sizes are equal.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: no resize, fullscreen, high-DPI or render-texture-relative size (runtime workstream)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "LAWS.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27037,7 +27061,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetRenderWidth semantics from the linked source, add a reference fixture, then implement Window.get_render_width.",
+      "next_step": "Close documented gaps and unverified gates for GetRenderWidth.",
       "priority": 310
     },
     {
@@ -27063,23 +27087,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_render_height",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_render_height",
+      "mapping_state": "implemented",
+      "scope": "The InitWindow size (1..4096): Base windows are fixed-size and have no DPI scaling, so the screen and render sizes are equal.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: no resize, fullscreen, high-DPI or render-texture-relative size (runtime workstream)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "LAWS.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27091,7 +27121,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetRenderHeight semantics from the linked source, add a reference fixture, then implement Window.get_render_height.",
+      "next_step": "Close documented gaps and unverified gates for GetRenderHeight.",
       "priority": 310
     },
     {
@@ -27994,7 +28024,7 @@
       "mapping_state": "implemented",
       "scope": "Clears the cursorHidden flag (memory platform: there is no OS cursor).",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base cannot hide, lock, center or track the OS cursor; the driver keeps the flags only (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -28002,7 +28032,7 @@
         "availability": "partial",
         "behavior": "partial",
         "ownership": "partial",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
@@ -28010,7 +28040,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -28054,7 +28086,7 @@
       "mapping_state": "implemented",
       "scope": "Sets the cursorHidden flag (memory platform: there is no OS cursor).",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base cannot hide, lock, center or track the OS cursor; the driver keeps the flags only (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -28062,7 +28094,7 @@
         "availability": "partial",
         "behavior": "partial",
         "ownership": "partial",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
@@ -28070,7 +28102,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -28114,7 +28148,7 @@
       "mapping_state": "implemented",
       "scope": "The cursorHidden flag.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -28122,7 +28156,7 @@
         "availability": "partial",
         "behavior": "partial",
         "ownership": "partial",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
@@ -28130,7 +28164,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -28176,7 +28212,7 @@
       "mapping_state": "implemented",
       "scope": "rcore_memory.c: SetMousePosition to the screen center (unsigned halves of the size) and cursorHidden cleared; cursorLocked is not changed on this platform.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base cannot hide, lock, center or track the OS cursor; the driver keeps the flags only (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -28192,7 +28228,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -28236,7 +28274,7 @@
       "mapping_state": "implemented",
       "scope": "rcore_memory.c: SetMousePosition to the screen center (unsigned halves of the size) and cursorHidden set; cursorLocked is not changed on this platform.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base cannot hide, lock, center or track the OS cursor; the driver keeps the flags only (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -28252,7 +28290,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -28296,7 +28336,7 @@
       "mapping_state": "implemented",
       "scope": "The cursorOnScreen flag, which the memory platform never sets (false).",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base cannot hide, lock, center or track the OS cursor; the driver keeps the flags only (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -28312,7 +28352,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -28422,7 +28464,7 @@
       "mapping_state": "implemented",
       "scope": "Resets the modelview to identity, so the MVP is the orthographic projection again (rlLoadIdentity with the identity screen scale); Core.begin_drawing(core, now) records the update time now - previous in binary64 (docs/INPUT.md).",
       "gaps": [
-        "Integration: the Frame and the Core are separate values a program advances together",
+        "Integration: Desktop.run and Program.replay advance the Frame and the Core together (docs/DRIVER.md); IO.now has millisecond resolution",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -28430,7 +28472,7 @@
         "availability": "partial",
         "behavior": "partial",
         "ownership": "partial",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
@@ -28440,7 +28482,9 @@
         "src/frame.bend",
         "src/shapes.bend",
         "tools/input_probe.py",
-        "docs/INPUT.md"
+        "docs/INPUT.md",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -28480,11 +28524,11 @@
       "phase": 2,
       "sequence": 12,
       "status": "partial",
-      "jonlib": "Frame.end_drawing / Core.end_drawing",
+      "jonlib": "Frame.end_drawing / Core.end_drawing / Core.end_drawing_desktop",
       "mapping_state": "implemented",
-      "scope": "The software path has no render batch to flush; the color buffer is what SwapScreenBuffer copies. Core.end_drawing(core, now, after): automation recording, draw/frame time, the SetTargetFPS wait (ending at after), PollInputEvents, the F12 screenshot request and the frame counter (docs/INPUT.md).",
+      "scope": "The software path has no render batch to flush; the color buffer is what SwapScreenBuffer copies. Core.end_drawing(core, now, after): automation recording, draw/frame time, the SetTargetFPS wait (ending at after), PollInputEvents, the F12 screenshot request and the frame counter (docs/INPUT.md); Core.end_drawing_desktop polls as rcore_desktop_glfw.c with Base events (docs/DRIVER.md).",
       "gaps": [
-        "Integration: presentation and the wait's sleep are the driver's",
+        "Integration: Desktop.run sleeps with IO.sleep then reads IO.now (millisecond resolution); F12 screenshots are counted, not written",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -28492,7 +28536,7 @@
         "availability": "partial",
         "behavior": "partial",
         "ownership": "partial",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
@@ -28502,7 +28546,9 @@
         "src/frame.bend",
         "src/shapes.bend",
         "tools/input_probe.py",
-        "docs/INPUT.md"
+        "docs/INPUT.md",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -30633,7 +30679,7 @@
       "mapping_state": "implemented",
       "scope": "Target frame time 1.0/(double)fps in binary64, 0 below 1 FPS (also ACTION_SETTARGETFPS); EndDrawing then waits until the clock reaches now + (target - frame), given by Core.frame_wait.",
       "gaps": [
-        "Integration: the driver sleeps; raylib sleeps seconds - seconds*0.05 and busy-waits the rest",
+        "Integration: Desktop.run sleeps whole milliseconds less one, then reads IO.now until the destination; macOS presentation waits for the display",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -30641,7 +30687,7 @@
         "availability": "partial",
         "behavior": "partial",
         "ownership": "partial",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
@@ -30649,7 +30695,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/core_state.bend",
-        "src/clock.bend"
+        "src/clock.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -30693,7 +30741,7 @@
       "mapping_state": "implemented",
       "scope": "(float) of the last frame's update + draw (+ wait) seconds, computed in binary64 from the explicit clock.",
       "gaps": [
-        "Integration: the clock is the driver's (a finer Base clock is a runtime workstream item)",
+        "Integration: the desktop clock is IO.now in milliseconds (a finer Base clock is a runtime workstream item)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -30709,7 +30757,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/core_state.bend",
-        "src/clock.bend"
+        "src/clock.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -30862,23 +30912,30 @@
       "milestone": "frame",
       "phase": 2,
       "sequence": 12,
-      "status": "not-started",
-      "jonlib": "App.swap_screen_buffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.present",
+      "mapping_state": "implemented",
+      "scope": "The screen color buffer as Base's quadtree Image (0x00RRGGBB, squares past the edges Pix 0, uniform quads collapsed) for Window.frame, which Desktop.run calls; None when a draw was refused or a render texture is the target.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: presentation through Base Window.frame (Metal on macOS, X11 XPutImage on Linux); only macOS was run here",
+        "Performance: about 2 ms for an 800x450 frame on CPU-1 (Apple M1); see docs/DRIVER.md",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/examples_probe.py",
+        "docs/DRIVER.md",
+        "src/present.bend",
+        "src/frame.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30890,7 +30947,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled clocks/frame-event replay and real pacing/event-polling/lifecycle checks, including manual frame control.",
-      "next_step": "Derive SwapScreenBuffer semantics from the linked source, add a reference fixture, then implement App.swap_screen_buffer.",
+      "next_step": "Close documented gaps and unverified gates for SwapScreenBuffer.",
       "priority": 312
     },
     {
@@ -30917,11 +30974,11 @@
       "phase": 2,
       "sequence": 12,
       "status": "partial",
-      "jonlib": "Core.poll_input_events",
+      "jonlib": "Core.poll_input_events / Core.end_drawing_desktop",
       "mapping_state": "implemented",
-      "scope": "rcore_memory.c PollInputEvents at time now: UpdateGestures, key/char queues emptied, repeats and the last gamepad button cleared, previous touch states and previous key states of keys 0..259 copied.",
+      "scope": "rcore_memory.c PollInputEvents at time now: UpdateGestures, key/char queues emptied, repeats and the last gamepad button cleared, previous touch states and previous key states of keys 0..259 copied. Desktop (rcore_desktop_glfw.c): all 512 keys, mouse buttons, wheel and position registered, then the GLFW callbacks of Base events, inside Core.end_drawing_desktop.",
       "gaps": [
-        "Integration: desktop platforms poll differently (previous mouse/gamepad states, wheel, devices); kbhit() ESC not modeled",
+        "Integration: desktop polling is checked by laws, not a native GLFW build; no gamepads, wheel, text or touch from Base; kbhit() ESC not modeled",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -30929,7 +30986,7 @@
         "availability": "partial",
         "behavior": "partial",
         "ownership": "partial",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
@@ -30938,7 +30995,9 @@
         "docs/INPUT.md",
         "src/input.bend",
         "src/core_state.bend",
-        "src/gestures.bend"
+        "src/gestures.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -34995,7 +35054,7 @@
       "mapping_state": "implemented",
       "scope": "Every event type as PlayAutomationEvent applies it (ignored while recording): input events, INPUT_GESTURE, WINDOW_CLOSE, memory-platform no-ops for maximize/minimize/resize, screenshot requests and SetTargetFPS. None for indexes outside raylib's arrays.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -35012,7 +35071,9 @@
         "docs/INPUT.md",
         "src/automation.bend",
         "src/core_state.bend",
-        "src/input.bend"
+        "src/input.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35058,7 +35119,7 @@
       "mapping_state": "implemented",
       "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -35066,7 +35127,7 @@
         "availability": "partial",
         "behavior": "partial",
         "ownership": "partial",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
@@ -35074,7 +35135,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35183,7 +35246,7 @@
       "mapping_state": "implemented",
       "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -35191,7 +35254,7 @@
         "availability": "partial",
         "behavior": "partial",
         "ownership": "partial",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
@@ -35199,7 +35262,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35245,7 +35310,7 @@
       "mapping_state": "implemented",
       "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -35261,7 +35326,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35307,7 +35374,7 @@
       "mapping_state": "implemented",
       "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -35323,7 +35390,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35369,7 +35438,7 @@
       "mapping_state": "implemented",
       "scope": "Pops the pressed-key queue (16 entries; a key is queued when pressed while up in the previous frame); 0 when empty; Core & U32.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -35385,7 +35454,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35544,7 +35615,7 @@
       "mapping_state": "implemented",
       "scope": "Stores the exit key (KEY_ESCAPE initially); Input.key_callback closes the window when it is pressed, as the desktop key callback does.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -35560,7 +35631,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35604,7 +35677,7 @@
       "mapping_state": "implemented",
       "scope": "The ready bit of gamepads 0..3, false from 4; None for a negative gamepad.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -35620,7 +35693,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35666,7 +35741,7 @@
       "mapping_state": "implemented",
       "scope": "The empty name of gamepads 0..3; None outside (raylib reads outside its array).",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -35682,7 +35757,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35726,7 +35803,7 @@
       "mapping_state": "implemented",
       "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -35742,7 +35819,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35788,7 +35867,7 @@
       "mapping_state": "implemented",
       "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -35804,7 +35883,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35850,7 +35931,7 @@
       "mapping_state": "implemented",
       "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -35866,7 +35947,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35912,7 +35995,7 @@
       "mapping_state": "implemented",
       "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -35928,7 +36011,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -35974,7 +36059,7 @@
       "mapping_state": "implemented",
       "scope": "The last button pressed, which the memory platform never sets (0, cleared by every poll).",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -35990,7 +36075,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -36034,7 +36121,7 @@
       "mapping_state": "implemented",
       "scope": "The axis count of gamepads 0..3 (0 on the memory platform); None outside.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -36050,7 +36137,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -36094,7 +36183,7 @@
       "mapping_state": "implemented",
       "scope": "Rest value -1 for the trigger axes 4 and 5, else 0; a ready gamepad's axis replaces it when its (signed for triggers, absolute) movement is larger. None for a negative gamepad, or a negative axis of a ready gamepad.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -36110,7 +36199,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -36262,7 +36353,7 @@
       "mapping_state": "implemented",
       "scope": "Buttons 0..6; a touch point with the same index counts as that button. The memory platform never updates the previous button states.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -36270,7 +36361,7 @@
         "availability": "partial",
         "behavior": "partial",
         "ownership": "partial",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
@@ -36278,7 +36369,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -36324,7 +36417,7 @@
       "mapping_state": "implemented",
       "scope": "Buttons 0..6; a touch point with the same index counts as that button. The memory platform never updates the previous button states.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -36340,7 +36433,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -36386,7 +36481,7 @@
       "mapping_state": "implemented",
       "scope": "Buttons 0..6; a touch point with the same index counts as that button. The memory platform never updates the previous button states.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -36402,7 +36497,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -36448,7 +36545,7 @@
       "mapping_state": "implemented",
       "scope": "Buttons 0..6; a touch point with the same index counts as that button. The memory platform never updates the previous button states.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -36464,7 +36561,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -36510,7 +36609,7 @@
       "mapping_state": "implemented",
       "scope": "(int)((position.x + offset.x)*scale.x); None where the conversion is undefined.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -36526,7 +36625,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -36570,7 +36671,7 @@
       "mapping_state": "implemented",
       "scope": "(int)((position.y + offset.y)*scale.y); None where the conversion is undefined.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -36586,7 +36687,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -36630,7 +36733,7 @@
       "mapping_state": "implemented",
       "scope": "(position + offset)*scale in F32.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -36638,7 +36741,7 @@
         "availability": "partial",
         "behavior": "partial",
         "ownership": "partial",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
@@ -36646,7 +36749,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -36692,7 +36797,7 @@
       "mapping_state": "implemented",
       "scope": "(position - previous)*scale; the memory platform updates the previous position only in SetMousePosition.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -36708,7 +36813,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -36754,7 +36861,7 @@
       "mapping_state": "implemented",
       "scope": "Current and previous position = (float) of the ints (rcore_memory.c).",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -36770,7 +36877,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -36814,7 +36923,7 @@
       "mapping_state": "implemented",
       "scope": "Offset = (float) of the ints.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -36830,7 +36939,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -36874,7 +36985,7 @@
       "mapping_state": "implemented",
       "scope": "Scale = the floats.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: desktop polling (docs/DRIVER.md) follows rcore_desktop_glfw.c, checked by laws, not against a native GLFW build; the examples gate replays the memory platform",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -36890,7 +37001,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -36934,7 +37047,7 @@
       "mapping_state": "implemented",
       "scope": "x when |x| > |y|, else y.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base has no mouse wheel events: the desktop driver never moves the wheel (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -36942,7 +37055,7 @@
         "availability": "partial",
         "behavior": "partial",
         "ownership": "partial",
-        "integration": "unverified",
+        "integration": "partial",
         "targets": "partial",
         "performance": "unverified"
       },
@@ -36950,7 +37063,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -36994,7 +37109,7 @@
       "mapping_state": "implemented",
       "scope": "The current wheel move (never reset on the memory platform).",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base has no mouse wheel events: the desktop driver never moves the wheel (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -37010,7 +37125,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -37110,7 +37227,7 @@
       "mapping_state": "implemented",
       "scope": "(int) of touch point 0's x; None where undefined.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -37126,7 +37243,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -37170,7 +37289,7 @@
       "mapping_state": "implemented",
       "scope": "(int) of touch point 0's y; None where undefined.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -37186,7 +37305,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -37230,7 +37351,7 @@
       "mapping_state": "implemented",
       "scope": "Touch positions of points 0..7, (-1, -1) from 8; None for a negative index.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -37246,7 +37367,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -37292,7 +37415,7 @@
       "mapping_state": "implemented",
       "scope": "Point ids of points 0..7 (0 on the memory platform), -1 from 8; None for a negative index.",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -37308,7 +37431,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -37352,7 +37477,7 @@
       "mapping_state": "implemented",
       "scope": "The point count, which the memory platform never sets (0).",
       "gaps": [
-        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Integration: Base has no gamepad or touch events, so the desktop driver reports none (docs/DRIVER.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -37368,7 +37493,9 @@
         "tools/input_probe.py",
         "docs/INPUT.md",
         "src/input.bend",
-        "src/core_state.bend"
+        "src/core_state.bend",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md"
       ],
       "gate_evidence": {},
       "target_results": {},

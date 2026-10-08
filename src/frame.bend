@@ -18,6 +18,7 @@
 # coordinates beyond 2^24 and rows or columns outside the framebuffer (they
 # only arise from clipping round-off on huge inputs). See docs/FRAME.md.
 import Base
+import ./present.bend as Present
 import ./frame_font.bend as Font
 
 # -----------------------------------------------------------------------------
@@ -2700,3 +2701,80 @@ def read.target(target: Target, +mask: U32, +width: U32, +height: U32, matrix: M
 def Canvas.read(+opaque: Bool, canvas: Canvas) -> Canvas & Maybe<Array<U32>>:
   Canvas{width, height, matrix, state, raster, rig, target, gl} = canvas
   read.target(target, Bool.pick(U32, opaque, 255, 0), width, height, matrix, state, raster, rig, gl)
+
+# -----------------------------------------------------------------------------
+# Scan for presentation (the desktop driver): the color buffer's first
+# width*height words in storage order, bottom row first (one Array.get per
+# pixel, without the readback's flip and copy). Same None cases as the
+# readback.
+
+# Words count-1 down to 0, each put in front: the list is in index order.
+def scan.read(n: Nat, +i: U32, read: Array<U32> & U32, acc: +List<U32>) -> Array<U32> & +List<U32>:
+  match n read:
+    case 0n Tuple{a, +w}: (a, Con{w, acc})
+    case 1n+k Tuple{a, +w}: scan.read(k, (i - 1 : U32), Array.get(U32, a, (i - 1 : U32)), Con{w, acc})
+
+def scan.copied(+count: U32, pixels: Array<U32>) -> Array<U32> & +List<U32>:
+  scan.read(U32.to_nat((count - 1 : U32)), (count - 1 : U32), Array.get(U32, pixels, (count - 1 : U32)), Nil{})
+
+def scan.result(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, atlas: Array<U32>, sampler: Sampler, extra: Extra, rig: Rig, gl: GlBox, scanned: Array<U32> & +List<U32>) -> Canvas & Maybe<+List<U32>>:
+  (pixels, words) = scanned
+  (Canvas{width, height, matrix, state, Raster{pixels, atlas, sampler, True{}, extra}, rig, Screen{}, gl}, Some{words})
+
+def scan.checked(ok: Bool, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, pixels: Array<U32>, atlas: Array<U32>, sampler: Sampler, extra: Extra) -> Canvas & Maybe<+List<U32>>:
+  match ok:
+    case False{}: (Canvas{width, height, matrix, state, Raster{pixels, atlas, sampler, False{}, extra}, rig, Screen{}, gl}, None{})
+    case True{}: scan.result(width, height, matrix, state, atlas, sampler, extra, rig, gl, scan.copied((width * height : U32), pixels))
+
+def scan.screen(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, raster: Raster) -> Canvas & Maybe<+List<U32>>:
+  Raster{pixels, atlas, sampler, ok, extra} = raster
+  scan.checked(ok, width, height, matrix, state, rig, gl, pixels, atlas, sampler, extra)
+
+def scan.target(target: Target, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas & Maybe<+List<U32>>:
+  match target:
+    case Screen{}: scan.screen(width, height, matrix, state, rig, gl, raster)
+    case Offscreen{sw, sh, screen, meta}: (Canvas{width, height, matrix, state, raster, rig, Offscreen{sw, sh, screen, meta}, gl}, None{})
+
+def Canvas.scan(canvas: Canvas) -> Canvas & Maybe<+List<U32>>:
+  Canvas{width, height, matrix, state, raster, rig, target, gl} = canvas
+  scan.target(target, width, height, matrix, state, raster, rig, gl)
+
+def defined.raster(raster: Raster) -> Raster & Bool:
+  Raster{pixels, atlas, sampler, +ok, extra} = raster
+  (Raster{pixels, atlas, sampler, ok, extra}, ok)
+
+def defined.with(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, target: Target, gl: GlBox, checked: Raster & Bool) -> Canvas & Bool:
+  (raster, ok) = checked
+  (Canvas{width, height, matrix, state, raster, rig, target, gl}, ok)
+
+# Whether every draw so far was reproduced (the readbacks are not None for
+# this reason).
+def Canvas.defined(canvas: Canvas) -> Canvas & Bool:
+  Canvas{width, height, matrix, state, raster, rig, target, gl} = canvas
+  defined.with(width, height, matrix, state, rig, target, gl, defined.raster(raster))
+
+# -----------------------------------------------------------------------------
+# Presentation (the desktop driver): the screen's color buffer as Base's
+# quadtree Image (src/present.bend). Same None cases as the readback.
+
+def present.result(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, atlas: Array<U32>, sampler: Sampler, extra: Extra, rig: Rig, gl: GlBox, shown: Array<U32> & Image) -> Canvas & Maybe<Image>:
+  (pixels, image) = shown
+  (Canvas{width, height, matrix, state, Raster{pixels, atlas, sampler, True{}, extra}, rig, Screen{}, gl}, Some{image})
+
+def present.checked(ok: Bool, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, pixels: Array<U32>, atlas: Array<U32>, sampler: Sampler, extra: Extra) -> Canvas & Maybe<Image>:
+  match ok:
+    case False{}: (Canvas{width, height, matrix, state, Raster{pixels, atlas, sampler, False{}, extra}, rig, Screen{}, gl}, None{})
+    case True{}: present.result(width, height, matrix, state, atlas, sampler, extra, rig, gl, Present.from(pixels, width, height))
+
+def present.screen(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, raster: Raster) -> Canvas & Maybe<Image>:
+  Raster{pixels, atlas, sampler, ok, extra} = raster
+  present.checked(ok, width, height, matrix, state, rig, gl, pixels, atlas, sampler, extra)
+
+def present.target(target: Target, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas & Maybe<Image>:
+  match target:
+    case Screen{}: present.screen(width, height, matrix, state, rig, gl, raster)
+    case Offscreen{sw, sh, screen, meta}: (Canvas{width, height, matrix, state, raster, rig, Offscreen{sw, sh, screen, meta}, gl}, None{})
+
+def Canvas.present(canvas: Canvas) -> Canvas & Maybe<Image>:
+  Canvas{width, height, matrix, state, raster, rig, target, gl} = canvas
+  present.target(target, width, height, matrix, state, raster, rig, gl)
