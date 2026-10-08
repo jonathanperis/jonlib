@@ -22,6 +22,83 @@
     "api_id": "raylib:function:CloseWindow",
     "milestone": "window"
   },
+  "WindowShouldClose": {
+    "jonlib": "Core.window_should_close",
+    "status": "profile-covered",
+    "scope": "Bool: the close request WINDOW_CLOSE events set (and pressing the exit key through Input.key_callback); a Core is always ready.",
+    "gaps": [
+      "Integration: no OS close button; the memory platform's kbhit() ESC check of standard input is not modeled",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:WindowShouldClose",
+    "milestone": "window"
+  },
+  "ShowCursor": {
+    "jonlib": "Input.show_cursor",
+    "status": "profile-covered",
+    "scope": "Clears the cursorHidden flag (memory platform: there is no OS cursor).",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:ShowCursor",
+    "milestone": "window"
+  },
+  "HideCursor": {
+    "jonlib": "Input.hide_cursor",
+    "status": "profile-covered",
+    "scope": "Sets the cursorHidden flag (memory platform: there is no OS cursor).",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:HideCursor",
+    "milestone": "window"
+  },
+  "IsCursorHidden": {
+    "jonlib": "Input.is_cursor_hidden",
+    "status": "profile-covered",
+    "scope": "The cursorHidden flag.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsCursorHidden",
+    "milestone": "window"
+  },
+  "EnableCursor": {
+    "jonlib": "Input.enable_cursor",
+    "status": "profile-covered",
+    "scope": "rcore_memory.c: SetMousePosition to the screen center (unsigned halves of the size) and cursorHidden cleared; cursorLocked is not changed on this platform.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:EnableCursor",
+    "milestone": "window"
+  },
+  "DisableCursor": {
+    "jonlib": "Input.disable_cursor",
+    "status": "profile-covered",
+    "scope": "rcore_memory.c: SetMousePosition to the screen center (unsigned halves of the size) and cursorHidden set; cursorLocked is not changed on this platform.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:DisableCursor",
+    "milestone": "window"
+  },
+  "IsCursorOnScreen": {
+    "jonlib": "Input.is_cursor_on_screen",
+    "status": "profile-covered",
+    "scope": "The cursorOnScreen flag, which the memory platform never sets (false).",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsCursorOnScreen",
+    "milestone": "window"
+  },
   "ClearBackground": {
     "jonlib": "Frame.clear_background",
     "status": "profile-covered",
@@ -34,22 +111,22 @@
     "milestone": "shapes"
   },
   "BeginDrawing": {
-    "jonlib": "Frame.begin_drawing",
+    "jonlib": "Frame.begin_drawing / Core.begin_drawing",
     "status": "profile-covered",
-    "scope": "Resets the modelview to identity, so the MVP is the orthographic projection again (rlLoadIdentity with the identity screen scale).",
+    "scope": "Resets the modelview to identity, so the MVP is the orthographic projection again (rlLoadIdentity with the identity screen scale); Core.begin_drawing(core, now) records the update time now - previous in binary64 (docs/INPUT.md).",
     "gaps": [
-      "Integration: frame timing (GetTime, update time) is not modeled",
+      "Integration: the Frame and the Core are separate values a program advances together",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:BeginDrawing",
     "milestone": "frame"
   },
   "EndDrawing": {
-    "jonlib": "Frame.end_drawing",
+    "jonlib": "Frame.end_drawing / Core.end_drawing",
     "status": "profile-covered",
-    "scope": "The software path has no render batch to flush; the color buffer is what SwapScreenBuffer copies.",
+    "scope": "The software path has no render batch to flush; the color buffer is what SwapScreenBuffer copies. Core.end_drawing(core, now, after): automation recording, draw/frame time, the SetTargetFPS wait (ending at after), PollInputEvents, the F12 screenshot request and the frame counter (docs/INPUT.md).",
     "gaps": [
-      "Integration: presentation, frame pacing, input polling and automation recording are not modeled",
+      "Integration: presentation and the wait's sleep are the driver's",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:EndDrawing",
@@ -138,6 +215,50 @@
     ],
     "api_id": "raylib:function:GetCameraMatrix2D",
     "milestone": "camera"
+  },
+  "SetTargetFPS": {
+    "jonlib": "Core.set_target_fps",
+    "status": "profile-covered",
+    "scope": "Target frame time 1.0/(double)fps in binary64, 0 below 1 FPS (also ACTION_SETTARGETFPS); EndDrawing then waits until the clock reaches now + (target - frame), given by Core.frame_wait.",
+    "gaps": [
+      "Integration: the driver sleeps; raylib sleeps seconds - seconds*0.05 and busy-waits the rest",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetTargetFPS",
+    "milestone": "frame"
+  },
+  "GetFrameTime": {
+    "jonlib": "Core.get_frame_time",
+    "status": "profile-covered",
+    "scope": "(float) of the last frame's update + draw (+ wait) seconds, computed in binary64 from the explicit clock.",
+    "gaps": [
+      "Integration: the clock is the driver's (a finer Base clock is a runtime workstream item)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetFrameTime",
+    "milestone": "frame"
+  },
+  "GetFPS": {
+    "jonlib": "Core.get_fps",
+    "status": "profile-covered",
+    "scope": "GetFPS at time now: 30 samples of frameTime/30 taken at most every 0.5f/30 s, reset while the frame counter is 0, 0 while the frame time is 0, (int)roundf(1/average); Maybe<(Core & U32)>, None before the first sample (1/0).",
+    "gaps": [
+      "Time values must stay in the binary64 helpers' domain",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetFPS",
+    "milestone": "frame"
+  },
+  "PollInputEvents": {
+    "jonlib": "Core.poll_input_events",
+    "status": "profile-covered",
+    "scope": "rcore_memory.c PollInputEvents at time now: UpdateGestures, key/char queues emptied, repeats and the last gamepad button cleared, previous touch states and previous key states of keys 0..259 copied.",
+    "gaps": [
+      "Integration: desktop platforms poll differently (previous mouse/gamepad states, wheel, devices); kbhit() ESC not modeled",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:PollInputEvents",
+    "milestone": "frame"
   },
   "SetRandomSeed": {
     "jonlib": "Random.seed",
@@ -559,6 +680,562 @@
     ],
     "api_id": "raylib:function:ComputeSHA256",
     "milestone": "files"
+  },
+  "LoadAutomationEventList": {
+    "jonlib": "AutomationEventList.new / AutomationEventList.parse / AutomationEventList.load",
+    "status": "profile-covered",
+    "scope": "NULL: an empty list of capacity 16384. Files: fgets lines of up to 255 bytes, c %i ignored (count = e lines), e %d fields with unconverted ones 0, a last line without newline skipped; unreadable files give the empty list. None where the C reader is undefined.",
+    "gaps": [
+      "The binary .rae reader is commented out in the pinned source",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadAutomationEventList",
+    "milestone": "frame"
+  },
+  "UnloadAutomationEventList": {
+    "jonlib": "AutomationEventList.unload",
+    "status": "profile-covered",
+    "scope": "Consumes the list.",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:UnloadAutomationEventList",
+    "milestone": "frame"
+  },
+  "ExportAutomationEventList": {
+    "jonlib": "AutomationEventList.export_text / AutomationEventList.export",
+    "status": "profile-covered",
+    "scope": "The exact text (comment header, c <count>, e lines with the event type name) written with SaveFileText; None for an event type above 23.",
+    "gaps": [
+      "The binary .rae writer is commented out in the pinned source",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:ExportAutomationEventList",
+    "milestone": "frame"
+  },
+  "SetAutomationEventList": {
+    "jonlib": "Core.set_automation_event_list",
+    "status": "profile-covered",
+    "scope": "The list EndDrawing records into, held by the Core; Core.automation_event_list reads it back.",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetAutomationEventList",
+    "milestone": "frame"
+  },
+  "SetAutomationEventBaseFrame": {
+    "jonlib": "Core.set_automation_event_base_frame",
+    "status": "profile-covered",
+    "scope": "Sets the frame counter recorded events carry (it also resets GetFPS when 0).",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetAutomationEventBaseFrame",
+    "milestone": "frame"
+  },
+  "StartAutomationEventRecording": {
+    "jonlib": "Core.start_automation_event_recording",
+    "status": "profile-covered",
+    "scope": "Recording on: EndDrawing appends the frame's key, mouse, touch, gamepad and gesture events in raylib's order up to the capacity; Maybe<Core>, None without a list.",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:StartAutomationEventRecording",
+    "milestone": "frame"
+  },
+  "StopAutomationEventRecording": {
+    "jonlib": "Core.stop_automation_event_recording",
+    "status": "profile-covered",
+    "scope": "Recording off.",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:StopAutomationEventRecording",
+    "milestone": "frame"
+  },
+  "PlayAutomationEvent": {
+    "jonlib": "Core.play_automation_event",
+    "status": "profile-covered",
+    "scope": "Every event type as PlayAutomationEvent applies it (ignored while recording): input events, INPUT_GESTURE, WINDOW_CLOSE, memory-platform no-ops for maximize/minimize/resize, screenshot requests and SetTargetFPS. None for indexes outside raylib's arrays.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:PlayAutomationEvent",
+    "milestone": "frame"
+  },
+  "IsKeyPressed": {
+    "jonlib": "Input.is_key_pressed",
+    "status": "profile-covered",
+    "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsKeyPressed",
+    "milestone": "input"
+  },
+  "IsKeyPressedRepeat": {
+    "jonlib": "Input.is_key_pressed_repeat",
+    "status": "profile-covered",
+    "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
+    "gaps": [
+      "Key repeats come only from the desktop key callback (laws, no native GLFW reference)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsKeyPressedRepeat",
+    "milestone": "input"
+  },
+  "IsKeyDown": {
+    "jonlib": "Input.is_key_down",
+    "status": "profile-covered",
+    "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsKeyDown",
+    "milestone": "input"
+  },
+  "IsKeyReleased": {
+    "jonlib": "Input.is_key_released",
+    "status": "profile-covered",
+    "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsKeyReleased",
+    "milestone": "input"
+  },
+  "IsKeyUp": {
+    "jonlib": "Input.is_key_up",
+    "status": "profile-covered",
+    "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsKeyUp",
+    "milestone": "input"
+  },
+  "GetKeyPressed": {
+    "jonlib": "Input.get_key_pressed",
+    "status": "profile-covered",
+    "scope": "Pops the pressed-key queue (16 entries; a key is queued when pressed while up in the previous frame); 0 when empty; Core & U32.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetKeyPressed",
+    "milestone": "input"
+  },
+  "GetCharPressed": {
+    "jonlib": "Input.get_char_pressed",
+    "status": "profile-covered",
+    "scope": "Pops the char queue (16 codepoints, filled by Input.char_callback); 0 when empty; Core & U32.",
+    "gaps": [
+      "The memory platform has no char input: the queue is checked by laws, not against a native reference",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetCharPressed",
+    "milestone": "input"
+  },
+  "SetExitKey": {
+    "jonlib": "Input.set_exit_key",
+    "status": "profile-covered",
+    "scope": "Stores the exit key (KEY_ESCAPE initially); Input.key_callback closes the window when it is pressed, as the desktop key callback does.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetExitKey",
+    "milestone": "input"
+  },
+  "IsGamepadAvailable": {
+    "jonlib": "Input.is_gamepad_available",
+    "status": "profile-covered",
+    "scope": "The ready bit of gamepads 0..3, false from 4; None for a negative gamepad.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsGamepadAvailable",
+    "milestone": "input"
+  },
+  "GetGamepadName": {
+    "jonlib": "Input.get_gamepad_name",
+    "status": "profile-covered",
+    "scope": "The empty name of gamepads 0..3; None outside (raylib reads outside its array).",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetGamepadName",
+    "milestone": "input"
+  },
+  "IsGamepadButtonPressed": {
+    "jonlib": "Input.is_gamepad_button_pressed",
+    "status": "profile-covered",
+    "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsGamepadButtonPressed",
+    "milestone": "input"
+  },
+  "IsGamepadButtonDown": {
+    "jonlib": "Input.is_gamepad_button_down",
+    "status": "profile-covered",
+    "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsGamepadButtonDown",
+    "milestone": "input"
+  },
+  "IsGamepadButtonReleased": {
+    "jonlib": "Input.is_gamepad_button_released",
+    "status": "profile-covered",
+    "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsGamepadButtonReleased",
+    "milestone": "input"
+  },
+  "IsGamepadButtonUp": {
+    "jonlib": "Input.is_gamepad_button_up",
+    "status": "profile-covered",
+    "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsGamepadButtonUp",
+    "milestone": "input"
+  },
+  "GetGamepadButtonPressed": {
+    "jonlib": "Input.get_gamepad_button_pressed",
+    "status": "profile-covered",
+    "scope": "The last button pressed, which the memory platform never sets (0, cleared by every poll).",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetGamepadButtonPressed",
+    "milestone": "input"
+  },
+  "GetGamepadAxisCount": {
+    "jonlib": "Input.get_gamepad_axis_count",
+    "status": "profile-covered",
+    "scope": "The axis count of gamepads 0..3 (0 on the memory platform); None outside.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetGamepadAxisCount",
+    "milestone": "input"
+  },
+  "GetGamepadAxisMovement": {
+    "jonlib": "Input.get_gamepad_axis_movement",
+    "status": "profile-covered",
+    "scope": "Rest value -1 for the trigger axes 4 and 5, else 0; a ready gamepad's axis replaces it when its (signed for triggers, absolute) movement is larger. None for a negative gamepad, or a negative axis of a ready gamepad.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetGamepadAxisMovement",
+    "milestone": "input"
+  },
+  "IsMouseButtonPressed": {
+    "jonlib": "Input.is_mouse_button_pressed",
+    "status": "profile-covered",
+    "scope": "Buttons 0..6; a touch point with the same index counts as that button. The memory platform never updates the previous button states.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsMouseButtonPressed",
+    "milestone": "input"
+  },
+  "IsMouseButtonDown": {
+    "jonlib": "Input.is_mouse_button_down",
+    "status": "profile-covered",
+    "scope": "Buttons 0..6; a touch point with the same index counts as that button. The memory platform never updates the previous button states.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsMouseButtonDown",
+    "milestone": "input"
+  },
+  "IsMouseButtonReleased": {
+    "jonlib": "Input.is_mouse_button_released",
+    "status": "profile-covered",
+    "scope": "Buttons 0..6; a touch point with the same index counts as that button. The memory platform never updates the previous button states.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsMouseButtonReleased",
+    "milestone": "input"
+  },
+  "IsMouseButtonUp": {
+    "jonlib": "Input.is_mouse_button_up",
+    "status": "profile-covered",
+    "scope": "Buttons 0..6; a touch point with the same index counts as that button. The memory platform never updates the previous button states.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsMouseButtonUp",
+    "milestone": "input"
+  },
+  "GetMouseX": {
+    "jonlib": "Input.get_mouse_x",
+    "status": "profile-covered",
+    "scope": "(int)((position.x + offset.x)*scale.x); None where the conversion is undefined.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetMouseX",
+    "milestone": "input"
+  },
+  "GetMouseY": {
+    "jonlib": "Input.get_mouse_y",
+    "status": "profile-covered",
+    "scope": "(int)((position.y + offset.y)*scale.y); None where the conversion is undefined.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetMouseY",
+    "milestone": "input"
+  },
+  "GetMousePosition": {
+    "jonlib": "Input.get_mouse_position",
+    "status": "profile-covered",
+    "scope": "(position + offset)*scale in F32.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetMousePosition",
+    "milestone": "input"
+  },
+  "GetMouseDelta": {
+    "jonlib": "Input.get_mouse_delta",
+    "status": "profile-covered",
+    "scope": "(position - previous)*scale; the memory platform updates the previous position only in SetMousePosition.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetMouseDelta",
+    "milestone": "input"
+  },
+  "SetMousePosition": {
+    "jonlib": "Input.set_mouse_position",
+    "status": "profile-covered",
+    "scope": "Current and previous position = (float) of the ints (rcore_memory.c).",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetMousePosition",
+    "milestone": "input"
+  },
+  "SetMouseOffset": {
+    "jonlib": "Input.set_mouse_offset",
+    "status": "profile-covered",
+    "scope": "Offset = (float) of the ints.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetMouseOffset",
+    "milestone": "input"
+  },
+  "SetMouseScale": {
+    "jonlib": "Input.set_mouse_scale",
+    "status": "profile-covered",
+    "scope": "Scale = the floats.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetMouseScale",
+    "milestone": "input"
+  },
+  "GetMouseWheelMove": {
+    "jonlib": "Input.get_mouse_wheel_move",
+    "status": "profile-covered",
+    "scope": "x when |x| > |y|, else y.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetMouseWheelMove",
+    "milestone": "input"
+  },
+  "GetMouseWheelMoveV": {
+    "jonlib": "Input.get_mouse_wheel_move_v",
+    "status": "profile-covered",
+    "scope": "The current wheel move (never reset on the memory platform).",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetMouseWheelMoveV",
+    "milestone": "input"
+  },
+  "GetTouchX": {
+    "jonlib": "Input.get_touch_x",
+    "status": "profile-covered",
+    "scope": "(int) of touch point 0's x; None where undefined.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetTouchX",
+    "milestone": "input"
+  },
+  "GetTouchY": {
+    "jonlib": "Input.get_touch_y",
+    "status": "profile-covered",
+    "scope": "(int) of touch point 0's y; None where undefined.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetTouchY",
+    "milestone": "input"
+  },
+  "GetTouchPosition": {
+    "jonlib": "Input.get_touch_position",
+    "status": "profile-covered",
+    "scope": "Touch positions of points 0..7, (-1, -1) from 8; None for a negative index.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetTouchPosition",
+    "milestone": "input"
+  },
+  "GetTouchPointId": {
+    "jonlib": "Input.get_touch_point_id",
+    "status": "profile-covered",
+    "scope": "Point ids of points 0..7 (0 on the memory platform), -1 from 8; None for a negative index.",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetTouchPointId",
+    "milestone": "input"
+  },
+  "GetTouchPointCount": {
+    "jonlib": "Input.get_touch_point_count",
+    "status": "profile-covered",
+    "scope": "The point count, which the memory platform never sets (0).",
+    "gaps": [
+      "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetTouchPointCount",
+    "milestone": "input"
+  },
+  "SetGesturesEnabled": {
+    "jonlib": "Gestures.set_enabled",
+    "status": "profile-covered",
+    "scope": "The enabled-gestures mask.",
+    "gaps": [
+      "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetGesturesEnabled",
+    "milestone": "input"
+  },
+  "IsGestureDetected": {
+    "jonlib": "Gestures.is_detected",
+    "status": "profile-covered",
+    "scope": "(enabled & current) == gesture.",
+    "gaps": [
+      "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsGestureDetected",
+    "milestone": "input"
+  },
+  "GetGestureDetected": {
+    "jonlib": "Gestures.get_detected",
+    "status": "profile-covered",
+    "scope": "enabled & current.",
+    "gaps": [
+      "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetGestureDetected",
+    "milestone": "input"
+  },
+  "GetGestureHoldDuration": {
+    "jonlib": "Gestures.get_hold_duration",
+    "status": "profile-covered",
+    "scope": "At time now: (float)(now - hold start) in binary64 while GESTURE_HOLD, else 0.",
+    "gaps": [
+      "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetGestureHoldDuration",
+    "milestone": "input"
+  },
+  "GetGestureDragVector": {
+    "jonlib": "Gestures.get_drag_vector",
+    "status": "profile-covered",
+    "scope": "The drag vector from the down position.",
+    "gaps": [
+      "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetGestureDragVector",
+    "milestone": "input"
+  },
+  "GetGestureDragAngle": {
+    "jonlib": "Gestures.get_drag_angle",
+    "status": "profile-covered",
+    "scope": "360 - angle of the swipe, atan2f through the M.Libm profile times 180.0f/PI in binary64.",
+    "gaps": [
+      "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetGestureDragAngle",
+    "milestone": "input"
+  },
+  "GetGesturePinchVector": {
+    "jonlib": "Gestures.get_pinch_vector",
+    "status": "profile-covered",
+    "scope": "The vector between the two touch points.",
+    "gaps": [
+      "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetGesturePinchVector",
+    "milestone": "input"
+  },
+  "GetGesturePinchAngle": {
+    "jonlib": "Gestures.get_pinch_angle",
+    "status": "profile-covered",
+    "scope": "360 - angle between the two touch points, atan2f through the M.Libm profile.",
+    "gaps": [
+      "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetGesturePinchAngle",
+    "milestone": "input"
   },
   "UpdateCameraPro": {
     "jonlib": "Camera.update_pro_for / Camera.update_pro",

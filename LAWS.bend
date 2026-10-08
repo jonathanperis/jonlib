@@ -26,6 +26,9 @@ import ./src/resampler.bend as Resampler
 import ./src/lowpass.bend as Lowpass
 import ./src/shapes.bend as Shapes
 import ./src/frame.bend as FrameCore
+import ./src/input.bend as InputCore
+import ./src/gestures.bend as GestureCore
+import ./src/clock.bend as Clock
 
 law clear_dimensions:
   for +width: U32
@@ -858,3 +861,33 @@ law frame_init_window_wide:
 law frame_plan_refused:
   for commands: +List<FrameCore.Command>
   {Shapes.Plan.require(False{}, Shapes.Plan{True{}, commands}) == Shapes.Plan{False{}, commands} : Shapes.Plan}
+
+# Input (CORE.Input on the memory platform). The pressed-key and char queues
+# hold 16 entries (MAX_KEY_PRESSED_QUEUE, MAX_CHAR_PRESSED_QUEUE): a 17th is
+# dropped.
+law input_queue_bounded:
+  {InputCore.queue.push(True{}, [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], 17)
+    == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16] : +List<U32>}
+
+# A GLFW key repeat sets IsKeyPressedRepeat until the next PollInputEvents.
+law input_key_repeat_set:
+  {InputCore.Keyboard.is_pressed_repeat(InputCore.Keyboard.callback(InputCore.Keyboard.new(), 65, 2, 0), 65) == True{} : Bool}
+
+law input_key_repeat_cleared:
+  {InputCore.Keyboard.is_pressed_repeat(InputCore.Keyboard.poll(InputCore.Keyboard.callback(InputCore.Keyboard.new(), 65, 2, 0)), 65)
+    == False{} : Bool}
+
+# The memory platform's PollInputEvents copies previous key states for keys
+# 0..259 only: key 259 stops being pressed, key 301 (F12) stays pressed.
+law input_poll_copies_low_keys:
+  {InputCore.Keyboard.is_pressed(InputCore.Keyboard.poll(InputCore.Keyboard.press(InputCore.Keyboard.new(), 259)), 259) == False{} : Bool}
+
+law input_poll_keeps_high_keys:
+  {InputCore.Keyboard.is_pressed(InputCore.Keyboard.poll(InputCore.Keyboard.press(InputCore.Keyboard.new(), 301)), 301) == True{} : Bool}
+
+# rgestures.h UpdateGestures turns a tap into a hold and ends a swipe.
+law gesture_tap_becomes_hold:
+  {GestureCore.Gestures.current(GestureCore.update(GestureCore.Gestures.with_current(GestureCore.Gestures.new(), 1), Clock.zero())) == 4 : U32}
+
+law gesture_swipe_ends:
+  {GestureCore.Gestures.current(GestureCore.update(GestureCore.Gestures.with_current(GestureCore.Gestures.new(), 64), Clock.zero())) == 0 : U32}

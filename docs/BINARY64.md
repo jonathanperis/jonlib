@@ -19,9 +19,12 @@ FFI or compiler hook. Each computes the exact real result and rounds it
 | `src/binary64_ops.bend` | `checked_multiply`, `checked_divide`, word adapters | normal-result multiply/divide, promotion, decoding, raw stepping |
 | `src/binary64_gradual_multiply.bend` | `checked` | product with gradual (subnormal/zero) output |
 
-**Consumers.** The only library consumer is the private glibc 2.41 kernel
-`src/modern_angle.bend` ([MODERN-ANGLE.md](MODERN-ANGLE.md)), which feeds the
-public checked angle wrappers in `src/checked_angle.bend`. `LAWS.bend` imports the
+**Consumers.** The private glibc 2.41 kernel `src/modern_angle.bend`
+([MODERN-ANGLE.md](MODERN-ANGLE.md)) feeds the public checked angle wrappers in
+`src/checked_angle.bend`; `src/clock.bend` uses the addition/subtraction,
+division, multiplication, promotion and narrowing helpers within their domains
+for rcore.c's frame timing and rgestures.h's times ([INPUT.md](INPUT.md)),
+whose clock values are binary64 words passed in by the caller. `LAWS.bend` imports the
 modules for their laws. Nothing is re-exported from `jonlib.bend` or
 `jonmath.bend`. The older `float64.bend`, `float64_ops.bend` and
 `resize_numeric.bend` arithmetic (projection, resize, legacy angle profiles) and
