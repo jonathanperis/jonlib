@@ -6,16 +6,16 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 584,
-    "partial": 1279
+    "not-started": 577,
+    "partial": 1286
   },
   "core_functions": {
     "total": 600,
     "blocked": 19,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 208,
-    "partial": 373
+    "not-started": 201,
+    "partial": 380
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 278,
-    "partial": 632
+    "not-started": 271,
+    "partial": 639
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 19,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 257,
-      "partial": 761
+      "not-started": 250,
+      "partial": 768
     },
     "raymath.h": {
       "total": 254,
@@ -379,8 +379,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 7,
-      "partial": 22
+      "not-started": 0,
+      "partial": 29
     },
     {
       "id": "audio-codecs",

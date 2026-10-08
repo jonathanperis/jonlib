@@ -4032,7 +4032,7 @@
       "status": "partial",
       "jonlib": "GlyphInfo",
       "mapping_state": "implemented",
-      "scope": "GlyphInfo{value, offset_x, offset_y, advance_x, image}: C ints as two's-complement words and an owned Surface copy of the glyph image.",
+      "scope": "GlyphInfo{value, offset_x, offset_y, advance_x, image}: C ints as two's-complement words and the glyph image as GlyphPixels (an owned Surface copy) or GlyphEmpty (raylib's image without pixels, with its C int width and height).",
       "gaps": [
         "No native struct layout or shared image pointer: GetGlyphInfo returns a copy",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -49821,23 +49821,31 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.load_font",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.load",
+      "mapping_state": "implemented",
+      "scope": ".ttf/.otf/.bdf as LoadFontEx(32, NULL, 95), .fnt through LoadBMFont (one page, GRAYSCALE pages as GRAY_ALPHA, nine-value glyph lines), other files LoadImage then LoadFontFromImage(MAGENTA, 32) or the default font; POINT filter.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Refused: BMFont files with other than one page (freed before use), glyph lines without nine values, rectangles outside the page, a missing page under pixels, missing header fields",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/ttf_probe.py",
+        "tools/ttf_fonts.py",
+        "docs/FONTS.md",
+        "src/truetype.bend",
+        "src/font_data.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -49852,7 +49860,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive LoadFont semantics from the linked source, add a reference fixture, then implement Font.load_font.",
+      "next_step": "Close documented gaps and unverified gates for LoadFont.",
       "priority": 418
     },
     {
@@ -49878,23 +49886,31 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.load_font_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.load_ex",
+      "mapping_state": "implemented",
+      "scope": "LoadFileData then LoadFontFromMemory with the file extension; IO with the frame handed back. Fail for a file that does not load or is empty (raylib's empty Font).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The refusals of LoadFontFromMemory are Done{None}",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/ttf_probe.py",
+        "tools/ttf_fonts.py",
+        "docs/FONTS.md",
+        "src/truetype.bend",
+        "src/font_data.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -49909,7 +49925,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive LoadFontEx semantics from the linked source, add a reference fixture, then implement Font.load_font_ex.",
+      "next_step": "Close documented gaps and unverified gates for LoadFontEx.",
       "priority": 418
     },
     {
@@ -50001,23 +50017,32 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.load_font_from_memory",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.load_from_memory",
+      "mapping_state": "implemented",
+      "scope": ".ttf/.otf (any case) through LoadFontData and .bdf through LoadFontDataBDF, then GenImageFontAtlas (padding 4, rows) as the GRAY_ALPHA texture; glyph images are cut from the atlas; other types and fonts stb_truetype does not initialize give the default font.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior refused: LoadFontData/GenImageFontAtlas cases, rectangles outside the atlas, fonts without a found glyph, BDF NULL-derived writes and reads past the data",
+        "None when the 127 texture ids are in use",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/ttf_probe.py",
+        "tools/ttf_fonts.py",
+        "docs/FONTS.md",
+        "src/truetype.bend",
+        "src/font_data.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50032,7 +50057,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive LoadFontFromMemory semantics from the linked source, add a reference fixture, then implement Font.load_font_from_memory.",
+      "next_step": "Close documented gaps and unverified gates for LoadFontFromMemory.",
       "priority": 418
     },
     {
@@ -50121,23 +50146,32 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.load_font_data",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.load_data",
+      "mapping_state": "implemented",
+      "scope": "stb_truetype 1.26 as raylib uses it (InitFont at offset 0, cmap formats 0/4/6/12/13, glyf simple and composite outlines, ScaleForPixelHeight, VMetrics, HMetrics, the version-2 rasterizer with its edge sort) for FONT_DEFAULT and FONT_BITMAP, and stbtt_GetCodepointSDF (padding 4, on-edge 128, scale 64) for FONT_SDF; per found codepoint the GlyphInfo fields and GRAYSCALE image byte for byte, the space and U+3000 as empty advanceX x fontSize images. Uncontracted F32 in the C order; Font.Data distinguishes raylib's NULL.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior refused: reads outside the font data, int overflow, invalid float-to-int conversions, uninitialized bitmaps, a codepoint list shorter than the count",
+        "Refused: CFF outlines, composites nested deeper than 6, SDF glyphs needing stbtt__solve_cubic (double pow/acos/cos), bitmaps beyond 4096, over 65536 codepoints",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/ttf_probe.py",
+        "tools/ttf_fonts.py",
+        "docs/FONTS.md",
+        "src/truetype.bend",
+        "src/font_data.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50152,7 +50186,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive LoadFontData semantics from the linked source, add a reference fixture, then implement Font.load_font_data.",
+      "next_step": "Close documented gaps and unverified gates for LoadFontData.",
       "priority": 418
     },
     {
@@ -50178,23 +50212,32 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.gen_image_font_atlas",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.gen_image_atlas_for / Font.gen_image_atlas",
+      "mapping_state": "implemented",
+      "scope": "The GRAY_ALPHA atlas (every byte, the 3x3 white corner) and rectangle bits for packMethod 0 (rows, height doubling, clipped copies) and 1 (stb_rect_pack 1.01 skyline bottom-left, its rectangle sort reproducing the host qsort: glibc's stable merge sort or Apple Libc's FreeBSD introsort with heapsort fallback, selected by M.Libm); the glyphs are handed back.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior refused: a count beyond the glyphs, glyph images without their bytes, other packing methods",
+        "Refused: atlas sizes within 64 floats above a power of two (they depend on the C library's logf rounding), atlases beyond 4096, more than 4096 glyphs",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/ttf_probe.py",
+        "tools/ttf_fonts.py",
+        "docs/FONTS.md",
+        "src/truetype.bend",
+        "src/font_data.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50211,7 +50254,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive GenImageFontAtlas semantics from the linked source, add a reference fixture, then implement Font.gen_image_font_atlas.",
+      "next_step": "Close documented gaps and unverified gates for GenImageFontAtlas.",
       "priority": 418
     },
     {
@@ -50237,23 +50280,30 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.unload_font_data",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.unload_data",
+      "mapping_state": "implemented",
+      "scope": "Consumes the GlyphInfo list (owned values; nothing to free).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/ttf_probe.py",
+        "tools/ttf_fonts.py",
+        "docs/FONTS.md",
+        "src/truetype.bend",
+        "src/font_data.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50268,7 +50318,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive UnloadFontData semantics from the linked source, add a reference fixture, then implement Font.unload_font_data.",
+      "next_step": "Close documented gaps and unverified gates for UnloadFontData.",
       "priority": 418
     },
     {
@@ -50356,23 +50406,31 @@
       "milestone": "fonts",
       "phase": 3,
       "sequence": 18,
-      "status": "not-started",
-      "jonlib": "Font.export_font_as_code",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Font.as_code / Font.export_as_code",
+      "mapping_state": "implemented",
+      "scope": "The exact file text: banner, DEFLATE (CompressData) of LoadImageFromTexture's data (all zero bytes on rlsw), rectangles, GlyphInfo values and the LoadFont_<Name> function named by TextToPascal of the file name; export_as_code writes it with SaveFileText.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "None when TextToPascal is undefined, a rectangle is not integral or the text would overflow raylib's buffer",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/ttf_probe.py",
+        "tools/ttf_fonts.py",
+        "docs/FONTS.md",
+        "src/truetype.bend",
+        "src/font_data.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -50388,7 +50446,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Per-font-format glyph/metrics/layout/raster output, atlas/export behavior, default fonts and font resource lifetime.",
-      "next_step": "Derive ExportFontAsCode semantics from the linked source, add a reference fixture, then implement Font.export_font_as_code.",
+      "next_step": "Close documented gaps and unverified gates for ExportFontAsCode.",
       "priority": 418
     },
     {
@@ -51131,7 +51189,7 @@
       "status": "partial",
       "jonlib": "Font.glyph_info",
       "mapping_state": "implemented",
-      "scope": "The glyph at GetGlyphIndex with an owned copy of its image (ImageFromImage of the atlas at its rectangle); None only for a rectangle outside the atlas.",
+      "scope": "The glyph at GetGlyphIndex with an owned copy of its image (ImageFromImage of the atlas at its rectangle), GlyphEmpty with its size for a rectangle 0 wide or high; None only for a rectangle outside the atlas.",
       "gaps": [
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
