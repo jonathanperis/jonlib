@@ -3680,23 +3680,29 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Texture",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "An owned texture of the frame that loaded it: rlsw's pool id, size, format, filter, load-time alpha mode and texels (rlsw readColor8 words, None for float formats); mipmaps are 1. Drawing hands it back; unloading consumes it.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Fields are read through Texture.info (TextureInfo); no native struct layout",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -3705,7 +3711,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive Texture semantics from the linked source, add a reference fixture, then implement Texture.",
+      "next_step": "Close documented gaps and unverified gates for Texture.",
       "priority": 100
     },
     {
@@ -3730,23 +3736,25 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
-      "jonlib": "Texture2D",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Texture",
+      "mapping_state": "implemented",
+      "scope": "raylib's Texture2D is Texture.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No type alias declarations: the aliased type is used directly (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/TEXTURES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -3757,7 +3765,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive Texture2D semantics from the linked source, add a reference fixture, then implement Texture2D.",
+      "next_step": "Close documented gaps and unverified gates for Texture2D.",
       "priority": 100
     },
     {
@@ -3839,23 +3847,29 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "RenderTexture",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "RenderTexture{id, texture, depth}: the framebuffer id, the owned R8G8B8A8 color Texture and the depth renderbuffer id; the frame holds it during texture mode.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The texture field must be put back unchanged after use",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -3866,7 +3880,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive RenderTexture semantics from the linked source, add a reference fixture, then implement RenderTexture.",
+      "next_step": "Close documented gaps and unverified gates for RenderTexture.",
       "priority": 100
     },
     {
@@ -3891,23 +3905,25 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
-      "jonlib": "RenderTexture2D",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "RenderTexture",
+      "mapping_state": "implemented",
+      "scope": "raylib's RenderTexture2D is RenderTexture.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No type alias declarations: the aliased type is used directly (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/TEXTURES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -3918,7 +3934,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive RenderTexture2D semantics from the linked source, add a reference fixture, then implement RenderTexture2D.",
+      "next_step": "Close documented gaps and unverified gates for RenderTexture2D.",
       "priority": 100
     },
     {
@@ -3951,23 +3967,26 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "NPatchInfo",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Source Rectangle, then left, top, right, bottom and layout as integral F32 C int values, in header order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "C int fields are integral F32 values (language adaptation)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/TEXTURES.md",
+        "tools/texture_probe.py"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -3978,7 +3997,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive NPatchInfo semantics from the linked source, add a reference fixture, then implement NPatchInfo.",
+      "next_step": "Close documented gaps and unverified gates for NPatchInfo.",
       "priority": 100
     },
     {
@@ -4257,7 +4276,7 @@
       "mapping_state": "implemented",
       "scope": "Immutable offset and target Vector2 values and F32 rotation and zoom, in header order.",
       "gaps": [
-        "BeginMode2D and drawing integration arrive with the Phase 2 frame module"
+        "Window and input integration arrive with later Phase 2 slices (BeginMode2D: docs/TEXTURES.md)"
       ],
       "blocker": null,
       "gates": {
@@ -28448,23 +28467,29 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.begin_mode2_d",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.begin_mode_2d_for / Frame.begin_mode_2d",
+      "mapping_state": "implemented",
+      "scope": "The modelview becomes GetCameraMatrix2D (rlLoadIdentity then rlMultMatrixf into rlsw), computed uncontracted in raymath order with the profile's sinf/cosf of rotation*DEG2RAD; shapes and textures drawn after it see the camera through rlsw's MVP.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: sinf/cosf arguments outside the host M.Libm profile's verified set mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -28480,7 +28505,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive BeginMode2D semantics from the linked source, add a reference fixture, then implement Draw.begin_mode2_d.",
+      "next_step": "Close documented gaps and unverified gates for BeginMode2D.",
       "priority": 314
     },
     {
@@ -28506,23 +28531,28 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.end_mode2_d",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.end_mode_2d",
+      "mapping_state": "implemented",
+      "scope": "Loads the identity modelview (with the identity screen scale).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -28536,7 +28566,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive EndMode2D semantics from the linked source, add a reference fixture, then implement Draw.end_mode2_d.",
+      "next_step": "Close documented gaps and unverified gates for EndMode2D.",
       "priority": 314
     },
     {
@@ -28676,23 +28706,30 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.begin_texture_mode",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.begin_texture_mode",
+      "mapping_state": "implemented",
+      "scope": "The render texture's R8G8B8A8 color buffer becomes the target (the frame holds it), with its viewport, rlOrtho projection and an identity modelview; the scissor keeps the previous viewport's clip bounds.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A second BeginTextureMode before EndTextureMode is refused (frame undefined)",
+        "Readbacks are None while a render texture is the target",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -28707,7 +28744,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive BeginTextureMode semantics from the linked source, add a reference fixture, then implement Texture.begin_texture_mode.",
+      "next_step": "Close documented gaps and unverified gates for BeginTextureMode.",
       "priority": 315
     },
     {
@@ -28733,23 +28770,28 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.end_texture_mode",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.end_texture_mode",
+      "mapping_state": "implemented",
+      "scope": "Back to the screen's color buffer, viewport (SetupViewport) and identity modelview; the render texture is handed back (None without a texture mode, whose state is reset the same).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -28762,7 +28804,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive EndTextureMode semantics from the linked source, add a reference fixture, then implement Texture.end_texture_mode.",
+      "next_step": "Close documented gaps and unverified gates for EndTextureMode.",
       "priority": 315
     },
     {
@@ -28898,23 +28940,29 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.begin_blend_mode",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.begin_blend_mode",
+      "mapping_state": "implemented",
+      "scope": "No effect on the software renderer: rlSetBlendMode is compiled for OpenGL 3.3/ES2 only, so every mode keeps SRC_ALPHA/ONE_MINUS_SRC_ALPHA (checked for all eight modes).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The OpenGL 3.3 blend equations are a separate (GPU) contract",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -28928,7 +28976,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive BeginBlendMode semantics from the linked source, add a reference fixture, then implement Draw.begin_blend_mode.",
+      "next_step": "Close documented gaps and unverified gates for BeginBlendMode.",
       "priority": 314
     },
     {
@@ -28954,23 +29002,28 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.end_blend_mode",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.end_blend_mode",
+      "mapping_state": "implemented",
+      "scope": "No effect on the software renderer (see BeginBlendMode).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -28984,7 +29037,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive EndBlendMode semantics from the linked source, add a reference fixture, then implement Draw.end_blend_mode.",
+      "next_step": "Close documented gaps and unverified gates for EndBlendMode.",
       "priority": 314
     },
     {
@@ -29010,23 +29063,30 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.begin_scissor_mode",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.begin_scissor_mode",
+      "mapping_state": "implemented",
+      "scope": "rlScissor(x, fbo height - (y + h), w, h) into rlsw: four more polygon clip planes and Liang-Barsky terms with the clip-space bounds of the viewport current at the call; ClearBackground fills the clamped rectangle one pixel larger; negative sizes keep the previous rectangle. C int arguments up to 2^22 in magnitude.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Arguments beyond 2^22 in magnitude are refused (exact sums; macOS float and integer branches agree below)",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and out-of-bounds texel reads mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -29040,7 +29100,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive BeginScissorMode semantics from the linked source, add a reference fixture, then implement Draw.begin_scissor_mode.",
+      "next_step": "Close documented gaps and unverified gates for BeginScissorMode.",
       "priority": 314
     },
     {
@@ -29066,23 +29126,28 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "not-started",
-      "jonlib": "Draw.end_scissor_mode",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.end_scissor_mode",
+      "mapping_state": "implemented",
+      "scope": "rlDisableScissorTest.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -29096,7 +29161,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Derive EndScissorMode semantics from the linked source, add a reference fixture, then implement Draw.end_scissor_mode.",
+      "next_step": "Close documented gaps and unverified gates for EndScissorMode.",
       "priority": 314
     },
     {
@@ -42248,23 +42313,28 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.load_image_from_texture",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Texture.load_image",
+      "mapping_state": "implemented",
+      "scope": "rlsw defines glGetTexImage as a no-op, so rlReadTexturePixels returns its zeroed buffer: an all-zero Surface of the texture's format and size; None for float textures (no internal format).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -42280,7 +42350,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive LoadImageFromTexture semantics from the linked source, add a reference fixture, then implement Texture.load_image_from_texture.",
+      "next_step": "Close documented gaps and unverified gates for LoadImageFromTexture.",
       "priority": 315
     },
     {
@@ -42312,7 +42382,7 @@
       "scope": "Desktop contract: the color buffer top-down as an R8G8B8A8 Surface with alpha 255 (rlReadScreenPixels); Frame.framebuffer keeps the stored alpha. None after a refused draw.",
       "gaps": [
         "The memory platform returns these bytes bottom-up with red and blue swapped (BGRA output); Jonlib follows the desktop contract",
-        "Render textures and screen scaling are not modeled",
+        "Screen scaling is not modeled; None while a render texture is the target",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -46934,23 +47004,29 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.load_texture_from_image",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Texture.load_from_image",
+      "mapping_state": "implemented",
+      "scope": "Consumes a Surface: an id from rlsw's texture pool (most recently freed first; the font is 1), texels of formats 1..7 as rlsw's readColor8 reads them, rlsw's load-time alpha mode, NEAREST and REPEAT. Float formats get an id and no pixels (drawn untextured). None when the 127 ids are in use.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Mipmapped and compressed images (Image.Stored) are not accepted; raylib loads compressed formats as id 0",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -46966,7 +47042,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive LoadTextureFromImage semantics from the linked source, add a reference fixture, then implement Texture.load_texture_from_image.",
+      "next_step": "Close documented gaps and unverified gates for LoadTextureFromImage.",
       "priority": 315
     },
     {
@@ -47050,23 +47126,29 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.load_render_texture",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "RenderTexture.load",
+      "mapping_state": "implemented",
+      "scope": "Sizes 1..4096: a framebuffer id (None when the 7 are in use), a zeroed R8G8B8A8 color texture (alpha mode set, as rlsw assumes for a texture without data) and a depth renderbuffer from the texture pool.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Other sizes, fewer than two free texture ids and calls during texture mode are refused (frame undefined)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47081,7 +47163,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive LoadRenderTexture semantics from the linked source, add a reference fixture, then implement Texture.load_render_texture.",
+      "next_step": "Close documented gaps and unverified gates for LoadRenderTexture.",
       "priority": 315
     },
     {
@@ -47107,23 +47189,28 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.is_texture_valid",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Texture.is_valid",
+      "mapping_state": "implemented",
+      "scope": "id, width, height and format positive (mipmaps are 1).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47139,7 +47226,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive IsTextureValid semantics from the linked source, add a reference fixture, then implement Texture.is_texture_valid.",
+      "next_step": "Close documented gaps and unverified gates for IsTextureValid.",
       "priority": 315
     },
     {
@@ -47165,23 +47252,28 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.unload_texture",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Texture.unload",
+      "mapping_state": "implemented",
+      "scope": "Consumes the texture and returns its id to the frame's pool (reused next).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47196,7 +47288,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive UnloadTexture semantics from the linked source, add a reference fixture, then implement Texture.unload_texture.",
+      "next_step": "Close documented gaps and unverified gates for UnloadTexture.",
       "priority": 315
     },
     {
@@ -47222,23 +47314,28 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.is_render_texture_valid",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "RenderTexture.is_valid",
+      "mapping_state": "implemented",
+      "scope": "Framebuffer, color texture and depth ids positive.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47254,7 +47351,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive IsRenderTextureValid semantics from the linked source, add a reference fixture, then implement Texture.is_render_texture_valid.",
+      "next_step": "Close documented gaps and unverified gates for IsRenderTextureValid.",
       "priority": 315
     },
     {
@@ -47280,23 +47377,29 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.unload_render_texture",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "RenderTexture.unload",
+      "mapping_state": "implemented",
+      "scope": "Returns the color texture's id, then the depth renderbuffer's, to the texture pool and the framebuffer's to its pool.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Calls during texture mode are refused (rlgl rebinds framebuffer 0)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47311,7 +47414,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive UnloadRenderTexture semantics from the linked source, add a reference fixture, then implement Texture.unload_render_texture.",
+      "next_step": "Close documented gaps and unverified gates for UnloadRenderTexture.",
       "priority": 315
     },
     {
@@ -47337,23 +47440,28 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.update_texture",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Texture.update",
+      "mapping_state": "implemented",
+      "scope": "Consumes pixels of the texture's format and size; rlsw copies same-format data as raw bytes, so the alpha mode found at load stays. Float textures are not updated. A mismatched Surface fails with the texture handed back.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47368,7 +47476,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive UpdateTexture semantics from the linked source, add a reference fixture, then implement Texture.update_texture.",
+      "next_step": "Close documented gaps and unverified gates for UpdateTexture.",
       "priority": 315
     },
     {
@@ -47394,23 +47502,29 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.update_texture_rec",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Texture.update_rec",
+      "mapping_state": "implemented",
+      "scope": "(int) of the rectangle; swTexSubImage2D ignores non-positive sizes and rectangles outside the texture; otherwise pixels of the texture's format and the rectangle's size are copied raw (alpha mode kept).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: (int) conversions out of range and sums that could reach 2^31 fail with OutOfDomain",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47426,7 +47540,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive UpdateTextureRec semantics from the linked source, add a reference fixture, then implement Texture.update_texture_rec.",
+      "next_step": "Close documented gaps and unverified gates for UpdateTextureRec.",
       "priority": 315
     },
     {
@@ -47452,23 +47566,28 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.gen_texture_mipmaps",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Texture.gen_mipmaps",
+      "mapping_state": "implemented",
+      "scope": "rlGenTextureMipmaps only warns under OpenGL 1.1: the texture keeps one level.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47483,7 +47602,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive GenTextureMipmaps semantics from the linked source, add a reference fixture, then implement Texture.gen_texture_mipmaps.",
+      "next_step": "Close documented gaps and unverified gates for GenTextureMipmaps.",
       "priority": 315
     },
     {
@@ -47509,23 +47628,28 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.set_texture_filter",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Texture.set_filter",
+      "mapping_state": "implemented",
+      "scope": "POINT is NEAREST, BILINEAR and TRILINEAR (one level) LINEAR, for minification and magnification alike; anisotropic modes change nothing under OpenGL 1.1.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47540,7 +47664,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive SetTextureFilter semantics from the linked source, add a reference fixture, then implement Texture.set_texture_filter.",
+      "next_step": "Close documented gaps and unverified gates for SetTextureFilter.",
       "priority": 315
     },
     {
@@ -47566,23 +47690,29 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.set_texture_wrap",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Texture.set_wrap",
+      "mapping_state": "implemented",
+      "scope": "No effect on the software renderer: raylib passes GL_CLAMP_TO_EDGE and the mirror modes, which rlsw's swTexParameteri rejects, so textures keep REPEAT (checked with negative and repeating coordinates).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The OpenGL 3.3 wrap modes are a separate (GPU) contract",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47597,7 +47727,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive SetTextureWrap semantics from the linked source, add a reference fixture, then implement Texture.set_texture_wrap.",
+      "next_step": "Close documented gaps and unverified gates for SetTextureWrap.",
       "priority": 315
     },
     {
@@ -47623,23 +47753,29 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.draw_texture",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.texture",
+      "mapping_state": "implemented",
+      "scope": "DrawTextureEx at the converted int position, rotation 0, scale 1; the texture is handed back. rlsw nearest or bilinear REPEAT sampling times the tint, blended when the tint or the texture has alpha.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and out-of-bounds texel reads mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47655,7 +47791,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive DrawTexture semantics from the linked source, add a reference fixture, then implement Texture.draw_texture.",
+      "next_step": "Close documented gaps and unverified gates for DrawTexture.",
       "priority": 315
     },
     {
@@ -47681,23 +47817,29 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.draw_texture_v",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.texture_v",
+      "mapping_state": "implemented",
+      "scope": "DrawTextureEx with rotation 0 and scale 1.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and out-of-bounds texel reads mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47714,7 +47856,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive DrawTextureV semantics from the linked source, add a reference fixture, then implement Texture.draw_texture_v.",
+      "next_step": "Close documented gaps and unverified gates for DrawTextureV.",
       "priority": 315
     },
     {
@@ -47740,23 +47882,30 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.draw_texture_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.texture_ex_for / Draw.texture_ex",
+      "mapping_state": "implemented",
+      "scope": "The whole texture scaled from the position through DrawTexturePro.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and out-of-bounds texel reads mark the frame undefined",
+        "Undefined native behavior: sinf/cosf arguments outside the host M.Libm profile's verified set mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47773,7 +47922,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive DrawTextureEx semantics from the linked source, add a reference fixture, then implement Texture.draw_texture_ex.",
+      "next_step": "Close documented gaps and unverified gates for DrawTextureEx.",
       "priority": 315
     },
     {
@@ -47799,23 +47948,29 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.draw_texture_rec",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.texture_rec",
+      "mapping_state": "implemented",
+      "scope": "DrawTexturePro of the source at the position with |source| size (negative sizes flip).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and out-of-bounds texel reads mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47833,7 +47988,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive DrawTextureRec semantics from the linked source, add a reference fixture, then implement Texture.draw_texture_rec.",
+      "next_step": "Close documented gaps and unverified gates for DrawTextureRec.",
       "priority": 315
     },
     {
@@ -47859,23 +48014,30 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.draw_texture_pro",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.texture_pro_for / Draw.texture_pro",
+      "mapping_state": "implemented",
+      "scope": "rtextures.c's quad: flips for negative source sizes, absolute destination sizes, sinf/cosf rotation about the origin unless the rotation is 0; rasterized by rlsw (box or triangles) with its texel readers, REPEAT and nearest or bilinear filtering.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and out-of-bounds texel reads mark the frame undefined",
+        "Undefined native behavior: sinf/cosf arguments outside the host M.Libm profile's verified set mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47893,7 +48055,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive DrawTexturePro semantics from the linked source, add a reference fixture, then implement Texture.draw_texture_pro.",
+      "next_step": "Close documented gaps and unverified gates for DrawTexturePro.",
       "priority": 315
     },
     {
@@ -47919,23 +48081,31 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.draw_texture_n_patch",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.texture_npatch_for / Draw.texture_npatch",
+      "mapping_state": "implemented",
+      "scope": "Nine-patch and three-patch quads (borders scaled when they do not fit; other layouts draw nothing) under rlPushMatrix, rlTranslatef(dest), rlRotatef(rotation, 0, 0, 1) (always evaluated) and rlTranslatef(-origin).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Non-integral NPatchInfo borders or layout are refused",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and out-of-bounds texel reads mark the frame undefined",
+        "Undefined native behavior: sinf/cosf arguments outside the host M.Libm profile's verified set mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47954,7 +48124,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive DrawTextureNPatch semantics from the linked source, add a reference fixture, then implement Texture.draw_texture_n_patch.",
+      "next_step": "Close documented gaps and unverified gates for DrawTextureNPatch.",
       "priority": 315
     },
     {
@@ -89569,23 +89739,28 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.push_matrix",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "swPushMatrix on the modelview: at most 8 entries, a full stack changes nothing.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -89598,7 +89773,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlPushMatrix semantics from the linked source, add a reference fixture, then implement Rlgl.push_matrix.",
+      "next_step": "Close documented gaps and unverified gates for rlPushMatrix.",
       "priority": 713
     },
     {
@@ -89624,23 +89799,29 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.pop_matrix",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "swPopMatrix on the modelview; the MVP follows.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: popping the last entry is refused",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -89653,7 +89834,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlPopMatrix semantics from the linked source, add a reference fixture, then implement Rlgl.pop_matrix.",
+      "next_step": "Close documented gaps and unverified gates for rlPopMatrix.",
       "priority": 713
     },
     {
@@ -89679,23 +89860,28 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.load_identity",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "swLoadIdentity on the modelview.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -89708,7 +89894,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlLoadIdentity semantics from the linked source, add a reference fixture, then implement Rlgl.load_identity.",
+      "next_step": "Close documented gaps and unverified gates for rlLoadIdentity.",
       "priority": 713
     },
     {
@@ -89734,23 +89920,28 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.translatef",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "swTranslatef: M = T*M in rlsw's float[16] product and summation order.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -89763,7 +89954,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlTranslatef semantics from the linked source, add a reference fixture, then implement Rlgl.translatef.",
+      "next_step": "Close documented gaps and unverified gates for rlTranslatef.",
       "priority": 713
     },
     {
@@ -89789,23 +89980,29 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
-      "jonlib": "Rlgl.rotatef",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Rlgl.rotatef_for / Rlgl.rotatef",
+      "mapping_state": "implemented",
+      "scope": "swRotatef: the angle times SW_DEG2RAD, the axis normalized with sqrtf unless its squared length is 1 or 0, M = R*M.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: sinf/cosf arguments outside the host M.Libm profile's verified set mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -89818,7 +90015,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlRotatef semantics from the linked source, add a reference fixture, then implement Rlgl.rotatef.",
+      "next_step": "Close documented gaps and unverified gates for rlRotatef.",
       "priority": 713
     },
     {
@@ -89844,23 +90041,28 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.scalef",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "swScalef: M = S*M.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -89873,7 +90075,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlScalef semantics from the linked source, add a reference fixture, then implement Rlgl.scalef.",
+      "next_step": "Close documented gaps and unverified gates for rlScalef.",
       "priority": 713
     },
     {
@@ -89899,23 +90101,28 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.mult_matrixf",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "swMultMatrixf of MatrixToFloat(matrix): M = T*M.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/texture_probe.py",
+        "docs/TEXTURES.md",
+        "src/frame.bend",
+        "src/textures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -89928,7 +90135,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlMultMatrixf semantics from the linked source, add a reference fixture, then implement Rlgl.mult_matrixf.",
+      "next_step": "Close documented gaps and unverified gates for rlMultMatrixf.",
       "priority": 713
     },
     {

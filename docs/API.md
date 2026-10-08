@@ -79,7 +79,10 @@ The headless drawing frame and 2D shapes (`Frame.*`: InitWindow, Begin/EndDrawin
 ClearBackground, framebuffer readback; `Draw.*`: rshapes.c pixels, lines,
 rectangles, gradients, triangles, circles, sectors, rings, ellipses and polygons),
 rendered as raylib's software renderer (rlsw) renders them, are documented in
-[FRAME.md](FRAME.md).
+[FRAME.md](FRAME.md); the 2D camera, rlgl matrix stack, scissor and blend
+modes, textures and render textures (`Frame.begin_mode_2d`,
+`Frame.begin_scissor_mode`, `Frame.begin_texture_mode`, `Rlgl.*`,
+`Texture.*`, `RenderTexture.*`, `Draw.texture*`) in [TEXTURES.md](TEXTURES.md).
 The enumerations of raylib.h, rlgl.h, rgestures.h and rcamera.h are U32
 constants named as in their header under their enum, e.g.
 `PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8()`, `KeyboardKey.KEY_SPACE()` or

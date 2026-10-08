@@ -55,6 +55,92 @@
     "api_id": "raylib:function:EndDrawing",
     "milestone": "frame"
   },
+  "BeginMode2D": {
+    "jonlib": "Frame.begin_mode_2d_for / Frame.begin_mode_2d",
+    "status": "profile-covered",
+    "scope": "The modelview becomes GetCameraMatrix2D (rlLoadIdentity then rlMultMatrixf into rlsw), computed uncontracted in raymath order with the profile's sinf/cosf of rotation*DEG2RAD; shapes and textures drawn after it see the camera through rlsw's MVP.",
+    "gaps": [
+      "Undefined native behavior: sinf/cosf arguments outside the host M.Libm profile's verified set mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:BeginMode2D",
+    "milestone": "shapes"
+  },
+  "EndMode2D": {
+    "jonlib": "Frame.end_mode_2d",
+    "status": "profile-covered",
+    "scope": "Loads the identity modelview (with the identity screen scale).",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:EndMode2D",
+    "milestone": "shapes"
+  },
+  "BeginTextureMode": {
+    "jonlib": "Frame.begin_texture_mode",
+    "status": "profile-covered",
+    "scope": "The render texture's R8G8B8A8 color buffer becomes the target (the frame holds it), with its viewport, rlOrtho projection and an identity modelview; the scissor keeps the previous viewport's clip bounds.",
+    "gaps": [
+      "A second BeginTextureMode before EndTextureMode is refused (frame undefined)",
+      "Readbacks are None while a render texture is the target",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:BeginTextureMode",
+    "milestone": "textures"
+  },
+  "EndTextureMode": {
+    "jonlib": "Frame.end_texture_mode",
+    "status": "profile-covered",
+    "scope": "Back to the screen's color buffer, viewport (SetupViewport) and identity modelview; the render texture is handed back (None without a texture mode, whose state is reset the same).",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:EndTextureMode",
+    "milestone": "textures"
+  },
+  "BeginBlendMode": {
+    "jonlib": "Frame.begin_blend_mode",
+    "status": "profile-covered",
+    "scope": "No effect on the software renderer: rlSetBlendMode is compiled for OpenGL 3.3/ES2 only, so every mode keeps SRC_ALPHA/ONE_MINUS_SRC_ALPHA (checked for all eight modes).",
+    "gaps": [
+      "The OpenGL 3.3 blend equations are a separate (GPU) contract",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:BeginBlendMode",
+    "milestone": "shapes"
+  },
+  "EndBlendMode": {
+    "jonlib": "Frame.end_blend_mode",
+    "status": "profile-covered",
+    "scope": "No effect on the software renderer (see BeginBlendMode).",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:EndBlendMode",
+    "milestone": "shapes"
+  },
+  "BeginScissorMode": {
+    "jonlib": "Frame.begin_scissor_mode",
+    "status": "profile-covered",
+    "scope": "rlScissor(x, fbo height - (y + h), w, h) into rlsw: four more polygon clip planes and Liang-Barsky terms with the clip-space bounds of the viewport current at the call; ClearBackground fills the clamped rectangle one pixel larger; negative sizes keep the previous rectangle. C int arguments up to 2^22 in magnitude.",
+    "gaps": [
+      "Arguments beyond 2^22 in magnitude are refused (exact sums; macOS float and integer branches agree below)",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and out-of-bounds texel reads mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:BeginScissorMode",
+    "milestone": "shapes"
+  },
+  "EndScissorMode": {
+    "jonlib": "Frame.end_scissor_mode",
+    "status": "profile-covered",
+    "scope": "rlDisableScissorTest.",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:EndScissorMode",
+    "milestone": "shapes"
+  },
   "GetScreenToWorldRayEx": {
     "jonlib": "Camera.screen_to_world_ray_ex_for / Camera.screen_to_world_ray_ex",
     "status": "profile-covered",
@@ -1232,13 +1318,23 @@
     "api_id": "raylib:function:LoadImageFromMemory",
     "milestone": "image-codecs"
   },
+  "LoadImageFromTexture": {
+    "jonlib": "Texture.load_image",
+    "status": "profile-covered",
+    "scope": "rlsw defines glGetTexImage as a no-op, so rlReadTexturePixels returns its zeroed buffer: an all-zero Surface of the texture's format and size; None for float textures (no internal format).",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadImageFromTexture",
+    "milestone": "textures"
+  },
   "LoadImageFromScreen": {
     "jonlib": "Frame.load_image_from_screen",
     "status": "profile-covered",
     "scope": "Desktop contract: the color buffer top-down as an R8G8B8A8 Surface with alpha 255 (rlReadScreenPixels); Frame.framebuffer keeps the stored alpha. None after a refused draw.",
     "gaps": [
       "The memory platform returns these bytes bottom-up with red and blue swapped (BGRA output); Jonlib follows the desktop contract",
-      "Render textures and screen scaling are not modeled",
+      "Screen scaling is not modeled; None while a render texture is the target",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:LoadImageFromScreen",
@@ -1974,6 +2070,191 @@
     ],
     "api_id": "raylib:function:ImageDraw",
     "milestone": "resampling"
+  },
+  "LoadTextureFromImage": {
+    "jonlib": "Texture.load_from_image",
+    "status": "profile-covered",
+    "scope": "Consumes a Surface: an id from rlsw's texture pool (most recently freed first; the font is 1), texels of formats 1..7 as rlsw's readColor8 reads them, rlsw's load-time alpha mode, NEAREST and REPEAT. Float formats get an id and no pixels (drawn untextured). None when the 127 ids are in use.",
+    "gaps": [
+      "Mipmapped and compressed images (Image.Stored) are not accepted; raylib loads compressed formats as id 0",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadTextureFromImage",
+    "milestone": "textures"
+  },
+  "LoadRenderTexture": {
+    "jonlib": "RenderTexture.load",
+    "status": "profile-covered",
+    "scope": "Sizes 1..4096: a framebuffer id (None when the 7 are in use), a zeroed R8G8B8A8 color texture (alpha mode set, as rlsw assumes for a texture without data) and a depth renderbuffer from the texture pool.",
+    "gaps": [
+      "Other sizes, fewer than two free texture ids and calls during texture mode are refused (frame undefined)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadRenderTexture",
+    "milestone": "textures"
+  },
+  "IsTextureValid": {
+    "jonlib": "Texture.is_valid",
+    "status": "profile-covered",
+    "scope": "id, width, height and format positive (mipmaps are 1).",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsTextureValid",
+    "milestone": "textures"
+  },
+  "UnloadTexture": {
+    "jonlib": "Texture.unload",
+    "status": "profile-covered",
+    "scope": "Consumes the texture and returns its id to the frame's pool (reused next).",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:UnloadTexture",
+    "milestone": "textures"
+  },
+  "IsRenderTextureValid": {
+    "jonlib": "RenderTexture.is_valid",
+    "status": "profile-covered",
+    "scope": "Framebuffer, color texture and depth ids positive.",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsRenderTextureValid",
+    "milestone": "textures"
+  },
+  "UnloadRenderTexture": {
+    "jonlib": "RenderTexture.unload",
+    "status": "profile-covered",
+    "scope": "Returns the color texture's id, then the depth renderbuffer's, to the texture pool and the framebuffer's to its pool.",
+    "gaps": [
+      "Calls during texture mode are refused (rlgl rebinds framebuffer 0)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:UnloadRenderTexture",
+    "milestone": "textures"
+  },
+  "UpdateTexture": {
+    "jonlib": "Texture.update",
+    "status": "profile-covered",
+    "scope": "Consumes pixels of the texture's format and size; rlsw copies same-format data as raw bytes, so the alpha mode found at load stays. Float textures are not updated. A mismatched Surface fails with the texture handed back.",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:UpdateTexture",
+    "milestone": "textures"
+  },
+  "UpdateTextureRec": {
+    "jonlib": "Texture.update_rec",
+    "status": "profile-covered",
+    "scope": "(int) of the rectangle; swTexSubImage2D ignores non-positive sizes and rectangles outside the texture; otherwise pixels of the texture's format and the rectangle's size are copied raw (alpha mode kept).",
+    "gaps": [
+      "Undefined native behavior: (int) conversions out of range and sums that could reach 2^31 fail with OutOfDomain",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:UpdateTextureRec",
+    "milestone": "textures"
+  },
+  "GenTextureMipmaps": {
+    "jonlib": "Texture.gen_mipmaps",
+    "status": "profile-covered",
+    "scope": "rlGenTextureMipmaps only warns under OpenGL 1.1: the texture keeps one level.",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GenTextureMipmaps",
+    "milestone": "textures"
+  },
+  "SetTextureFilter": {
+    "jonlib": "Texture.set_filter",
+    "status": "profile-covered",
+    "scope": "POINT is NEAREST, BILINEAR and TRILINEAR (one level) LINEAR, for minification and magnification alike; anisotropic modes change nothing under OpenGL 1.1.",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetTextureFilter",
+    "milestone": "textures"
+  },
+  "SetTextureWrap": {
+    "jonlib": "Texture.set_wrap",
+    "status": "profile-covered",
+    "scope": "No effect on the software renderer: raylib passes GL_CLAMP_TO_EDGE and the mirror modes, which rlsw's swTexParameteri rejects, so textures keep REPEAT (checked with negative and repeating coordinates).",
+    "gaps": [
+      "The OpenGL 3.3 wrap modes are a separate (GPU) contract",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetTextureWrap",
+    "milestone": "textures"
+  },
+  "DrawTexture": {
+    "jonlib": "Draw.texture",
+    "status": "profile-covered",
+    "scope": "DrawTextureEx at the converted int position, rotation 0, scale 1; the texture is handed back. rlsw nearest or bilinear REPEAT sampling times the tint, blended when the tint or the texture has alpha.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and out-of-bounds texel reads mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:DrawTexture",
+    "milestone": "textures"
+  },
+  "DrawTextureV": {
+    "jonlib": "Draw.texture_v",
+    "status": "profile-covered",
+    "scope": "DrawTextureEx with rotation 0 and scale 1.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and out-of-bounds texel reads mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:DrawTextureV",
+    "milestone": "textures"
+  },
+  "DrawTextureEx": {
+    "jonlib": "Draw.texture_ex_for / Draw.texture_ex",
+    "status": "profile-covered",
+    "scope": "The whole texture scaled from the position through DrawTexturePro.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and out-of-bounds texel reads mark the frame undefined",
+      "Undefined native behavior: sinf/cosf arguments outside the host M.Libm profile's verified set mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:DrawTextureEx",
+    "milestone": "textures"
+  },
+  "DrawTextureRec": {
+    "jonlib": "Draw.texture_rec",
+    "status": "profile-covered",
+    "scope": "DrawTexturePro of the source at the position with |source| size (negative sizes flip).",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and out-of-bounds texel reads mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:DrawTextureRec",
+    "milestone": "textures"
+  },
+  "DrawTexturePro": {
+    "jonlib": "Draw.texture_pro_for / Draw.texture_pro",
+    "status": "profile-covered",
+    "scope": "rtextures.c's quad: flips for negative source sizes, absolute destination sizes, sinf/cosf rotation about the origin unless the rotation is 0; rasterized by rlsw (box or triangles) with its texel readers, REPEAT and nearest or bilinear filtering.",
+    "gaps": [
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and out-of-bounds texel reads mark the frame undefined",
+      "Undefined native behavior: sinf/cosf arguments outside the host M.Libm profile's verified set mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:DrawTexturePro",
+    "milestone": "textures"
+  },
+  "DrawTextureNPatch": {
+    "jonlib": "Draw.texture_npatch_for / Draw.texture_npatch",
+    "status": "profile-covered",
+    "scope": "Nine-patch and three-patch quads (borders scaled when they do not fit; other layouts draw nothing) under rlPushMatrix, rlTranslatef(dest), rlRotatef(rotation, 0, 0, 1) (always evaluated) and rlTranslatef(-origin).",
+    "gaps": [
+      "Non-integral NPatchInfo borders or layout are refused",
+      "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and out-of-bounds texel reads mark the frame undefined",
+      "Undefined native behavior: sinf/cosf arguments outside the host M.Libm profile's verified set mark the frame undefined",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:DrawTextureNPatch",
+    "milestone": "textures"
   },
   "ColorIsEqual": {
     "jonlib": "Color.is_equal",

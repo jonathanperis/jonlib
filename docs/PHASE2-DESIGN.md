@@ -36,7 +36,8 @@ output is not a reference: rasterization and blending vary by driver.
 - `rlsw.h` is MIT-licensed (Le Juez Victor, vendored by raylib); adapted
   functions get the usual "altered" marking and its notice
   ([LICENSES/rlsw.txt](../LICENSES/rlsw.txt)). Slice 1 is implemented and
-  measured in [FRAME.md](FRAME.md).
+  measured in [FRAME.md](FRAME.md), slices 2 and 3 in
+  [TEXTURES.md](TEXTURES.md).
 
 **Input: automation events.** The memory platform has no input system, but
 `SUPPORT_AUTOMATION_EVENTS` (on by default) lets a native harness inject
@@ -183,6 +184,13 @@ each point into a probe case before relying on it.
   is bottom-up) and forces alpha 255. **(open)** Jonlib's
   `LoadImageFromScreen` should follow raylib's desktop contract (top-down
   RGBA); the harness normalizes the memory platform's output for comparison.
+- **Slices 2 and 3** (checked in [TEXTURES.md](TEXTURES.md)): blend modes
+  and texture wrap modes never reach rlsw (`rlSetBlendMode` is GL3-only, and
+  raylib's CLAMP is `GL_CLAMP_TO_EDGE`, which `swTexParameteri` rejects), so
+  every texture repeats; `GenTextureMipmaps` is a no-op and
+  `LoadImageFromTexture` returns zero bytes (`glGetTexImage` is a no-op);
+  matrices live in rlsw's stacks; the scissor's clip-space bounds are those
+  of the viewport current when it was set.
 - **Host dependence.** SIMD is opt-in and off. Clang's default contraction
   can fuse projection, interpolation and blend arithmetic on arm64, and
   circles/rotations use `sinf`/`cosf`: the reference build compiles raylib
