@@ -949,3 +949,28 @@ law font_unload_default:
   for texels: Maybe<Array<U32>>
   for atlas: J.Surface
   {J.Font.unload(frame, J.Font{base, padding, glyphs, J.Texture{1, width, height, format, linear, alpha, texels}, atlas}) == frame : J.Frame}
+
+# rlgl under OpenGL 1.1 (GRAPHICS_API_OPENGL_SOFTWARE): rlSetBlendMode exists
+# for OpenGL 3.3/ES2 only and leaves the frame; rlGetVersion is
+# RL_OPENGL_SOFTWARE; rlMatrixMode(RL_PROJECTION) selects rlsw's projection
+# stack and an unknown mode selects none; rlBegin draws lines, triangles and
+# quads only (RL_LINES 1 takes 2 vertices, other modes record nothing).
+law rlgl_blend_mode_unchanged:
+  for frame: J.Frame
+  for mode: U32
+  {J.Rlgl.set_blend_mode(frame, mode) == frame : J.Frame}
+
+law rlgl_version_software:
+  {J.Rlgl.get_version() == 0 : U32}
+
+law rlgl_matrix_mode_projection:
+  {J.Rlgl.mode.of(5889) == 1 : U32}
+
+law rlgl_matrix_mode_unknown:
+  {J.Rlgl.mode.of(5891) == 3 : U32}
+
+law rlgl_begin_lines:
+  {J.Rlgl.begin.count(1) == 2 : U32}
+
+law rlgl_begin_points_ignored:
+  {J.Rlgl.begin.count(0) == 0 : U32}

@@ -128,7 +128,19 @@ and check the build flags.
   `preserve_none` segment function. Splitting the scene into chained defs did
   not avoid it; `tools/texture_probe.py` therefore runs scenes as data through
   one interpreter def. The failure is at build time (no wrong result); the
-  fix belongs to the toolchain, not to Jonlib.
+  fix belongs to the toolchain, not to Jonlib. What triggers it: the defs that
+  the compiler turns into work-loop segments (those taking or applying
+  closures, and the probes' interpreter steps) share one C signature whose
+  register bank is as wide as the widest such def's flattened parameters
+  (`WL_BANK` in the generated C), and a non-recursive datatype is flattened
+  into its holder's fields. The failing builds had banks of 161 (texture
+  probe, one def per scene) and 208 words (rlgl probe while `src/frame.bend`
+  passed closures over a `Canvas`); the exact trigger is not characterized
+  (a 167-word bank now builds). What avoided it: the probes encode operations
+  compactly (`Op{kind, words}`), `src/frame.bend` reads and updates the GL
+  state through first-order defs (no closures over a `Canvas`), and keeps the
+  GL state in a recursive, hence boxed, `GlBox` (a frame flattens to about 95
+  words instead of 130).
 
 ## What is claimed
 

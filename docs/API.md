@@ -87,7 +87,12 @@ rendered as raylib's software renderer (rlsw) renders them, are documented in
 [FRAME.md](FRAME.md); the 2D camera, rlgl matrix stack, scissor and blend
 modes, textures and render textures (`Frame.begin_mode_2d`,
 `Frame.begin_scissor_mode`, `Frame.begin_texture_mode`, `Rlgl.*`,
-`Texture.*`, `RenderTexture.*`, `Draw.texture*`) in [TEXTURES.md](TEXTURES.md).
+`Texture.*`, `RenderTexture.*`, `Draw.texture*`) in [TEXTURES.md](TEXTURES.md);
+the rlgl immediate-mode API (`Rlgl.begin`, `Rlgl.vertex*`, matrix modes,
+`rlOrtho`/`rlFrustum`, viewport, depth, culling, polygon modes, line width,
+point size, clears and getters) and the remaining shapes (rounded rectangles,
+ring outlines, Bezier and dashed lines, splines, the shapes texture) in
+[RLGL.md](RLGL.md).
 Fonts and text drawing (`Font.*`: the default font, LoadFontFromImage, glyph
 queries, MeasureText*, ImageText* and ImageDrawText*; `Draw.text*` and
 `Draw.fps`: DrawText, DrawTextEx, DrawTextPro, DrawTextCodepoint(s) and DrawFPS

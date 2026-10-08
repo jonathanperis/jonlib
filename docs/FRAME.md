@@ -72,6 +72,10 @@ window/platform/timing state are not modeled.
 | `DrawRing` | `Draw.ring_for` |
 | `DrawPoly` / `DrawPolyLines` | `Draw.poly_for`, `Draw.poly_lines_for` |
 
+Rounded rectangles, `DrawRingLines`, `DrawPolyLinesEx`, Bezier and dashed
+lines, splines, the shapes texture and the rlgl immediate-mode API are in
+[RLGL.md](RLGL.md).
+
 Every `_for` function also has a convenience form without `_for` and the
 profile. Colors are `0xRRGGBBAA` words, points `M.Vector2`, rectangles
 `J.Rectangle`. Parameters that are C `int`s (positions and sizes of
@@ -96,8 +100,9 @@ return `None` from then on (the frame is still returned and owned):
   `(-1, 256)` (a gradient whose three box corners extrapolate past 0 or 1);
 - an unverified `sinf`/`cosf` argument for the profile;
 - a circle sector or ring with fewer segments than `ceil((end - start)/90)`
-  (rshapes.c then estimates a count with `acosf`/`powf`), or more than 4096
-  segments or polygon sides (a loop bound of this profile);
+  (rshapes.c then estimates a count with `acosf`) under a profile other than
+  `M.Glibc239Libm{}` ([RLGL.md](RLGL.md)), or more than 4096 segments or
+  polygon sides (a loop bound of this profile);
 - conservatively, rasterizer integers beyond `2^24` and rows or columns
   outside the color buffer. Clipping keeps every primitive inside the
   viewport, so these only arise from clipping round-off with huge inputs
@@ -201,13 +206,12 @@ assumed before it is measured.
 
 ## Gaps
 
-- Not ported yet: `DrawCircleSector`/`DrawRing` segment estimation
-  (`acosf`/`powf`), `DrawRingLines`, `DrawPolyLinesEx`, `DrawLineBezier`,
-  `DrawLineDashed`, rounded rectangles, splines, `SetShapesTexture` and line
-  widths. Cameras, the matrix stack, scissor and blend modes, render textures
-  and textures (slices 2 and 3) are in [TEXTURES.md](TEXTURES.md); shapes
-  drawn there go through the same path, with the modelview, scissor and
-  target described in that page.
+- The remaining `rshapes.c` shapes, segment estimation (glibc 2.39 `acosf`
+  only), the shapes texture, line widths, depth and the rlgl immediate-mode
+  API are in [RLGL.md](RLGL.md). Cameras, the matrix stack, scissor and blend
+  modes, render textures and textures (slices 2 and 3) are in
+  [TEXTURES.md](TEXTURES.md); shapes drawn there go through the same path,
+  with the modelview, scissor and target described in that page.
 - `M.Libm` arguments outside the verified sets above are refused rather than
   approximated; the glibc profiles are not exercised by this probe on macOS.
 - Interactive presentation, input and timing belong to later slices.
