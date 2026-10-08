@@ -6,16 +6,16 @@
     "blocked": 18,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 923,
-    "partial": 943
+    "not-started": 888,
+    "partial": 978
   },
   "core_functions": {
     "total": 600,
     "blocked": 16,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 422,
-    "partial": 162
+    "not-started": 387,
+    "partial": 197
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 18,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 607,
-    "partial": 306
+    "not-started": 572,
+    "partial": 341
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 16,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 480,
-      "partial": 541
+      "not-started": 445,
+      "partial": 576
     },
     "raymath.h": {
       "total": 254,
@@ -363,8 +363,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 35,
-      "partial": 0
+      "not-started": 0,
+      "partial": 35
     },
     {
       "id": "fonts",

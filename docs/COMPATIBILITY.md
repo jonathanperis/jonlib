@@ -147,6 +147,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | Float-list exports | `Vector3.to_float_v`, `Matrix.to_float_v` | Values/order; 3/16-element lengths are checked laws | `conformance` |
 | raymath C++ operators | Typed operator sugar (`T.add/sub/mul/div`) and the named functions they call | All 60 operators and compound assignments, every result bit, uncontracted ([MATH.md](MATH.md#c-operators)) | `operators` |
 | WAV waves | `Wave.decode/load/copy/crop/samples/write` | dr_wav RIFF decoding to 16-bit samples, every sample and exported byte ([AUDIO.md](AUDIO.md)) | `wav` |
+| Text strings and UTF-8 codepoints | `Text.*`, `Codepoint.*`, `UTF8.*` | rtext.c's static-buffer limits and truncation, a typed `TextFormat` subset, contraction-profiled `TextToFloat`; undefined inputs are sanitizer-checked `None` contracts ([TEXT.md](TEXT.md)) | `text` |
 | Matrix arithmetic/inversion, affine constructors, vector transforms | `Matrix`, `Vector2.transform`, `Vector3.transform` | All 16 fields, noncommuting products, near-singular inversion; double transpose is a checked law | `conformance` |
 | View and rotation matrices | `Matrix.look_at`, `rotate_*_for`, `rotate_for` | Degenerate bases, bounded trigonometric profiles, distinct Euler orders | `conformance` |
 | 2D collision queries | `Collision` functions | Boolean/rectangle/hit-coordinate results; explicit segment contraction profiles ([COLLISION.md](COLLISION.md)) | `conformance`, `fused` |
