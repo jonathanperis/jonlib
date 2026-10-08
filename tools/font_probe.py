@@ -988,7 +988,10 @@ def blist(values):
 
 
 def bimg(spec):
-    return tp.bimg(spec)
+    # The Img{...} literal of the shared texture-image spec (texture_probe.bimg encodes words for its own scenes).
+    zero = 'True{}' if spec['zero'] else 'False{}'
+    return (f'Img{{{spec["width"]}, {spec["height"]}, {spec["format"]}, {tp.BPP[spec["format"]]}, {spec["seed"]}, {spec["mask"]}, '
+            f'{spec["period"]}, {zero}}}')
 
 
 def bfont_image(spec):
