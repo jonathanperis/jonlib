@@ -1721,7 +1721,8 @@ def main():
                                 ('transforms', 'transform contracts ok', 'transform_contracts'),
                                 ('decoding', 'decode contracts ok', 'decode_contracts')]:
         binary = BUILD / f'verify-{name}'
-        run([*cli, ROOT / f'tests/{name}.bend', '-o', binary, '-o', str(binary) + '.js'])
+        # A compile budget, like the candidates' 600 s: slow hosted runners exceeded 240 s.
+        run([*cli, ROOT / f'tests/{name}.bend', '-o', binary, '-o', str(binary) + '.js'], timeout=600)
         for lane, command in [('cpu', [binary]), ('javascript', ['bun', str(binary) + '.js'])]:
             if run(command).strip() != expected:
                 raise ValueError(f'{lane}: {name} contract failed')
