@@ -111,11 +111,11 @@ order (`docs/PROGRESS.md` lists every ID):
 5. **Image leftovers** — DDS DXT blocks and mip chains, which default raylib
    loads, and the configuration-gated PKM/KTX/PVR/ASTC loaders are delivered
    as `Image.Stored` ([IMAGE-FILES.md](IMAGE-FILES.md)), and the
-   configuration-gated JPEG decoder ([JPEG.md](JPEG.md)). Remaining: the
-   text-to-image functions (`ImageText*`, `ImageDrawText*`), which need
-   raylib's default font, UTF-8 decoding and text measurement and are best done
-   as the first slice of Phase 3; and wider domains (dimensions above 4096,
-   samples outside the defined C casts).
+   configuration-gated JPEG decoder ([JPEG.md](JPEG.md)). The text-to-image
+   functions (`ImageText*`, `ImageDrawText*`) are delivered with the default
+   font and image fonts as the first slice of Phase 3 ([FONTS.md](FONTS.md)).
+   Remaining: wider domains (dimensions above 4096, samples outside the
+   defined C casts).
 
 Undefined native behavior found on the way is refused, not reproduced: e.g.
 `ImageAlphaClear` on R5G5B5A1/R4G4B4A4 casts `round(channel*31)` to a byte,

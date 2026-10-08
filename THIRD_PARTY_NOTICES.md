@@ -47,6 +47,13 @@ identify the original sources and their required attribution.
   `rtext.c`, keeping its static-buffer limits and returning owned values.
   `tools/text_probe.py` compiles those pinned rtext.c functions unaltered as a
   reference control.
+  `src/fonts.bend` (with `Font.*`, `Draw.text*` and `Draw.fps` in
+  `jonlib.bend`) adapts `rtext.c`'s `LoadFontDefault` glyph table (its
+  `charsWidth` values unchanged), `LoadFontFromImage`, `GetGlyphIndex`, the
+  text measurement and drawing functions and `DrawFPS`, and `rtextures.c`'s
+  `ImageText*`/`ImageDrawText*`; `tools/font_probe.py` compiles `DrawFPS`'s
+  pinned body unaltered (with `GetFPS()` replaced by a parameter) as a
+  reference control.
   `src/input.bend`, `src/gestures.bend`, `src/automation.bend` and
   `src/core_state.bend` (with `Core.*`, `Input.*`, `Gestures.*` and
   `AutomationEventList.*` in `jonlib.bend`) adapt `CORE.Input`, automation

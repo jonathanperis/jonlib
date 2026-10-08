@@ -26,6 +26,7 @@ import ./src/resampler.bend as Resampler
 import ./src/lowpass.bend as Lowpass
 import ./src/shapes.bend as Shapes
 import ./src/frame.bend as FrameCore
+import ./src/fonts.bend as FontCore
 import ./src/input.bend as InputCore
 import ./src/gestures.bend as GestureCore
 import ./src/clock.bend as Clock
@@ -916,3 +917,35 @@ law texture_pool_reuses_freed:
   for id: U32
   for rest: +List<U32>
   {FrameCore.Pool.take(FrameCore.Pool{next, capacity, Con{id, rest}}) == (FrameCore.Pool{next, capacity, rest}, id) : FrameCore.Pool & U32}
+
+# Fonts (rtext.c): GetGlyphIndex of an invalid font (baseSize <= 0 or no
+# glyphs) is 0 whatever the codepoint.
+law font_index_invalid:
+  for glyphs: +List<FontCore.Glyph>
+  for base: U32
+  for padding: U32
+  for cp: U32
+  {FontCore.index(FontCore.Face{glyphs, base, padding, False{}}, cp) == 0 : U32}
+
+# MeasureTextEx and MeasureTextCodepoints of no codepoints are (0, 0).
+law font_measure_empty:
+  for face: FontCore.Face
+  for size: F32
+  for spacing: F32
+  for line: F32
+  {FontCore.measure(Nil{}, face, size, spacing, line) == FontCore.Extent{0.0, 0.0} : FontCore.Extent}
+
+# UnloadFont keeps the default font's texture (id 1): the frame is unchanged.
+law font_unload_default:
+  for frame: J.Frame
+  for base: U32
+  for padding: U32
+  for glyphs: +List<FontCore.Glyph>
+  for width: U32
+  for height: U32
+  for format: U32
+  for linear: Bool
+  for alpha: Bool
+  for texels: Maybe<Array<U32>>
+  for atlas: J.Surface
+  {J.Font.unload(frame, J.Font{base, padding, glyphs, J.Texture{1, width, height, format, linear, alpha, texels}, atlas}) == frame : J.Frame}
