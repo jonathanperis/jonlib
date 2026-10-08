@@ -610,3 +610,24 @@ def Laws.frame_init_window_wide(height):
 
 def Laws.frame_plan_refused(commands):
   {==}
+
+def Laws.input_queue_bounded():
+  {==}
+
+def Laws.input_key_repeat_set():
+  {==}
+
+def Laws.input_key_repeat_cleared():
+  {==}
+
+def Laws.input_poll_copies_low_keys():
+  {==}
+
+def Laws.input_poll_keeps_high_keys():
+  {==}
+
+def Laws.gesture_tap_becomes_hold():
+  {==}
+
+def Laws.gesture_swipe_ends():
+  {==}

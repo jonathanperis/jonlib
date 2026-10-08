@@ -47,6 +47,9 @@ mouse/wheel/touch/gesture queries after each `EndDrawing`; Jonlib replays the
 same script through its pure state machine and must give the same answers.
 There is no character event, so `GetCharPressed`'s queue is specified from
 `rcore.c` and checked by Jonlib's own replay tests, not by injection.
+Slice 4 is implemented in [INPUT.md](INPUT.md); its probe injects the clock
+into the pinned build with an include-only shim, as `GetTime` cannot be
+controlled otherwise.
 
 **Time: an explicit input.** `rcore_memory.c`'s `GetTime` reads
 `CLOCK_MONOTONIC` on Linux and Windows' performance counter, and returns 0 on

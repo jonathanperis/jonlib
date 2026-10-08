@@ -5596,23 +5596,28 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "AutomationEvent",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "frame, event_type and param0..param3 as U32 words (C unsigned/int bits).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/automation.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -5621,7 +5626,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive AutomationEvent semantics from the linked source, add a reference fixture, then implement AutomationEvent.",
+      "next_step": "Close documented gaps and unverified gates for AutomationEvent.",
       "priority": 100
     },
     {
@@ -5651,23 +5656,28 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "AutomationEventList",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "capacity, count and the events in order (an owned list instead of a pointer).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/automation.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -5678,7 +5688,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive AutomationEventList semantics from the linked source, add a reference fixture, then implement AutomationEventList.",
+      "next_step": "Close documented gaps and unverified gates for AutomationEventList.",
       "priority": 100
     },
     {
@@ -25368,23 +25378,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.window_should_close",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.window_should_close",
+      "mapping_state": "implemented",
+      "scope": "Bool: the close request WINDOW_CLOSE events set (and pressing the exit key through Input.key_callback); a Core is always ready.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: no OS close button; the memory platform's kbhit() ESC check of standard input is not modeled",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -25398,7 +25414,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive WindowShouldClose semantics from the linked source, add a reference fixture, then implement Window.window_should_close.",
+      "next_step": "Close documented gaps and unverified gates for WindowShouldClose.",
       "priority": 310
     },
     {
@@ -27936,23 +27952,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.show_cursor",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Input.show_cursor",
+      "mapping_state": "implemented",
+      "scope": "Clears the cursorHidden flag (memory platform: there is no OS cursor).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27964,7 +27986,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive ShowCursor semantics from the linked source, add a reference fixture, then implement Window.show_cursor.",
+      "next_step": "Close documented gaps and unverified gates for ShowCursor.",
       "priority": 310
     },
     {
@@ -27990,23 +28012,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.hide_cursor",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Input.hide_cursor",
+      "mapping_state": "implemented",
+      "scope": "Sets the cursorHidden flag (memory platform: there is no OS cursor).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -28018,7 +28046,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive HideCursor semantics from the linked source, add a reference fixture, then implement Window.hide_cursor.",
+      "next_step": "Close documented gaps and unverified gates for HideCursor.",
       "priority": 310
     },
     {
@@ -28044,23 +28072,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.is_cursor_hidden",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Input.is_cursor_hidden",
+      "mapping_state": "implemented",
+      "scope": "The cursorHidden flag.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -28074,7 +28108,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive IsCursorHidden semantics from the linked source, add a reference fixture, then implement Window.is_cursor_hidden.",
+      "next_step": "Close documented gaps and unverified gates for IsCursorHidden.",
       "priority": 310
     },
     {
@@ -28100,23 +28134,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.enable_cursor",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Input.enable_cursor",
+      "mapping_state": "implemented",
+      "scope": "rcore_memory.c: SetMousePosition to the screen center (unsigned halves of the size) and cursorHidden cleared; cursorLocked is not changed on this platform.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -28128,7 +28168,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive EnableCursor semantics from the linked source, add a reference fixture, then implement Window.enable_cursor.",
+      "next_step": "Close documented gaps and unverified gates for EnableCursor.",
       "priority": 310
     },
     {
@@ -28154,23 +28194,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.disable_cursor",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Input.disable_cursor",
+      "mapping_state": "implemented",
+      "scope": "rcore_memory.c: SetMousePosition to the screen center (unsigned halves of the size) and cursorHidden set; cursorLocked is not changed on this platform.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -28182,7 +28228,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive DisableCursor semantics from the linked source, add a reference fixture, then implement Window.disable_cursor.",
+      "next_step": "Close documented gaps and unverified gates for DisableCursor.",
       "priority": 310
     },
     {
@@ -28208,23 +28254,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.is_cursor_on_screen",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Input.is_cursor_on_screen",
+      "mapping_state": "implemented",
+      "scope": "The cursorOnScreen flag, which the memory platform never sets (false).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -28238,7 +28290,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive IsCursorOnScreen semantics from the linked source, add a reference fixture, then implement Window.is_cursor_on_screen.",
+      "next_step": "Close documented gaps and unverified gates for IsCursorOnScreen.",
       "priority": 310
     },
     {
@@ -28329,11 +28381,11 @@
       "phase": 2,
       "sequence": 12,
       "status": "partial",
-      "jonlib": "Frame.begin_drawing",
+      "jonlib": "Frame.begin_drawing / Core.begin_drawing",
       "mapping_state": "implemented",
-      "scope": "Resets the modelview to identity, so the MVP is the orthographic projection again (rlLoadIdentity with the identity screen scale).",
+      "scope": "Resets the modelview to identity, so the MVP is the orthographic projection again (rlLoadIdentity with the identity screen scale); Core.begin_drawing(core, now) records the update time now - previous in binary64 (docs/INPUT.md).",
       "gaps": [
-        "Integration: frame timing (GetTime, update time) is not modeled",
+        "Integration: the Frame and the Core are separate values a program advances together",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -28349,7 +28401,9 @@
         "tools/frame_probe.py",
         "docs/FRAME.md",
         "src/frame.bend",
-        "src/shapes.bend"
+        "src/shapes.bend",
+        "tools/input_probe.py",
+        "docs/INPUT.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -28389,11 +28443,11 @@
       "phase": 2,
       "sequence": 12,
       "status": "partial",
-      "jonlib": "Frame.end_drawing",
+      "jonlib": "Frame.end_drawing / Core.end_drawing",
       "mapping_state": "implemented",
-      "scope": "The software path has no render batch to flush; the color buffer is what SwapScreenBuffer copies.",
+      "scope": "The software path has no render batch to flush; the color buffer is what SwapScreenBuffer copies. Core.end_drawing(core, now, after): automation recording, draw/frame time, the SetTargetFPS wait (ending at after), PollInputEvents, the F12 screenshot request and the frame counter (docs/INPUT.md).",
       "gaps": [
-        "Integration: presentation, frame pacing, input polling and automation recording are not modeled",
+        "Integration: presentation and the wait's sleep are the driver's",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -28409,7 +28463,9 @@
         "tools/frame_probe.py",
         "docs/FRAME.md",
         "src/frame.bend",
-        "src/shapes.bend"
+        "src/shapes.bend",
+        "tools/input_probe.py",
+        "docs/INPUT.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -30476,23 +30532,29 @@
       "milestone": "frame",
       "phase": 2,
       "sequence": 12,
-      "status": "not-started",
-      "jonlib": "App.set_target_fps",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.set_target_fps",
+      "mapping_state": "implemented",
+      "scope": "Target frame time 1.0/(double)fps in binary64, 0 below 1 FPS (also ACTION_SETTARGETFPS); EndDrawing then waits until the clock reaches now + (target - frame), given by Core.frame_wait.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: the driver sleeps; raylib sleeps seconds - seconds*0.05 and busy-waits the rest",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/core_state.bend",
+        "src/clock.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30504,7 +30566,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled clocks/frame-event replay and real pacing/event-polling/lifecycle checks, including manual frame control.",
-      "next_step": "Derive SetTargetFPS semantics from the linked source, add a reference fixture, then implement App.set_target_fps.",
+      "next_step": "Close documented gaps and unverified gates for SetTargetFPS.",
       "priority": 312
     },
     {
@@ -30530,23 +30592,29 @@
       "milestone": "frame",
       "phase": 2,
       "sequence": 12,
-      "status": "not-started",
-      "jonlib": "App.get_frame_time",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_frame_time",
+      "mapping_state": "implemented",
+      "scope": "(float) of the last frame's update + draw (+ wait) seconds, computed in binary64 from the explicit clock.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: the clock is the driver's (a finer Base clock is a runtime workstream item)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/core_state.bend",
+        "src/clock.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30558,7 +30626,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled clocks/frame-event replay and real pacing/event-polling/lifecycle checks, including manual frame control.",
-      "next_step": "Derive GetFrameTime semantics from the linked source, add a reference fixture, then implement App.get_frame_time.",
+      "next_step": "Close documented gaps and unverified gates for GetFrameTime.",
       "priority": 312
     },
     {
@@ -30638,23 +30706,29 @@
       "milestone": "frame",
       "phase": 2,
       "sequence": 12,
-      "status": "not-started",
-      "jonlib": "App.get_fps",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_fps",
+      "mapping_state": "implemented",
+      "scope": "GetFPS at time now: 30 samples of frameTime/30 taken at most every 0.5f/30 s, reset while the frame counter is 0, 0 while the frame time is 0, (int)roundf(1/average); Maybe<(Core & U32)>, None before the first sample (1/0).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Time values must stay in the binary64 helpers' domain",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/core_state.bend",
+        "src/clock.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30666,7 +30740,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled clocks/frame-event replay and real pacing/event-polling/lifecycle checks, including manual frame control.",
-      "next_step": "Derive GetFPS semantics from the linked source, add a reference fixture, then implement App.get_fps.",
+      "next_step": "Close documented gaps and unverified gates for GetFPS.",
       "priority": 312
     },
     {
@@ -30746,23 +30820,30 @@
       "milestone": "frame",
       "phase": 2,
       "sequence": 12,
-      "status": "not-started",
-      "jonlib": "App.poll_input_events",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.poll_input_events",
+      "mapping_state": "implemented",
+      "scope": "rcore_memory.c PollInputEvents at time now: UpdateGestures, key/char queues emptied, repeats and the last gamepad button cleared, previous touch states and previous key states of keys 0..259 copied.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: desktop platforms poll differently (previous mouse/gamepad states, wheel, devices); kbhit() ESC not modeled",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend",
+        "src/gestures.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30774,7 +30855,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled clocks/frame-event replay and real pacing/event-polling/lifecycle checks, including manual frame control.",
-      "next_step": "Derive PollInputEvents semantics from the linked source, add a reference fixture, then implement App.poll_input_events.",
+      "next_step": "Close documented gaps and unverified gates for PollInputEvents.",
       "priority": 312
     },
     {
@@ -34389,23 +34470,29 @@
       "milestone": "frame",
       "phase": 2,
       "sequence": 12,
-      "status": "not-started",
-      "jonlib": "App.load_automation_event_list",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "AutomationEventList.new / AutomationEventList.parse / AutomationEventList.load",
+      "mapping_state": "implemented",
+      "scope": "NULL: an empty list of capacity 16384. Files: fgets lines of up to 255 bytes, c %i ignored (count = e lines), e %d fields with unconverted ones 0, a last line without newline skipped; unreadable files give the empty list. None where the C reader is undefined.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The binary .rae reader is commented out in the pinned source",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/automation.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -34419,7 +34506,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled clocks/frame-event replay and real pacing/event-polling/lifecycle checks, including manual frame control.",
-      "next_step": "Derive LoadAutomationEventList semantics from the linked source, add a reference fixture, then implement App.load_automation_event_list.",
+      "next_step": "Close documented gaps and unverified gates for LoadAutomationEventList.",
       "priority": 312
     },
     {
@@ -34445,23 +34532,28 @@
       "milestone": "frame",
       "phase": 2,
       "sequence": 12,
-      "status": "not-started",
-      "jonlib": "App.unload_automation_event_list",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "AutomationEventList.unload",
+      "mapping_state": "implemented",
+      "scope": "Consumes the list.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/automation.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -34475,7 +34567,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled clocks/frame-event replay and real pacing/event-polling/lifecycle checks, including manual frame control.",
-      "next_step": "Derive UnloadAutomationEventList semantics from the linked source, add a reference fixture, then implement App.unload_automation_event_list.",
+      "next_step": "Close documented gaps and unverified gates for UnloadAutomationEventList.",
       "priority": 312
     },
     {
@@ -34501,23 +34593,29 @@
       "milestone": "frame",
       "phase": 2,
       "sequence": 12,
-      "status": "not-started",
-      "jonlib": "App.export_automation_event_list",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "AutomationEventList.export_text / AutomationEventList.export",
+      "mapping_state": "implemented",
+      "scope": "The exact text (comment header, c <count>, e lines with the event type name) written with SaveFileText; None for an event type above 23.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The binary .rae writer is commented out in the pinned source",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/automation.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -34532,7 +34630,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled clocks/frame-event replay and real pacing/event-polling/lifecycle checks, including manual frame control.",
-      "next_step": "Derive ExportAutomationEventList semantics from the linked source, add a reference fixture, then implement App.export_automation_event_list.",
+      "next_step": "Close documented gaps and unverified gates for ExportAutomationEventList.",
       "priority": 312
     },
     {
@@ -34558,23 +34656,28 @@
       "milestone": "frame",
       "phase": 2,
       "sequence": 12,
-      "status": "not-started",
-      "jonlib": "App.set_automation_event_list",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.set_automation_event_list",
+      "mapping_state": "implemented",
+      "scope": "The list EndDrawing records into, held by the Core; Core.automation_event_list reads it back.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/automation.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -34588,7 +34691,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled clocks/frame-event replay and real pacing/event-polling/lifecycle checks, including manual frame control.",
-      "next_step": "Derive SetAutomationEventList semantics from the linked source, add a reference fixture, then implement App.set_automation_event_list.",
+      "next_step": "Close documented gaps and unverified gates for SetAutomationEventList.",
       "priority": 312
     },
     {
@@ -34614,23 +34717,28 @@
       "milestone": "frame",
       "phase": 2,
       "sequence": 12,
-      "status": "not-started",
-      "jonlib": "App.set_automation_event_base_frame",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.set_automation_event_base_frame",
+      "mapping_state": "implemented",
+      "scope": "Sets the frame counter recorded events carry (it also resets GetFPS when 0).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/automation.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -34642,7 +34750,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled clocks/frame-event replay and real pacing/event-polling/lifecycle checks, including manual frame control.",
-      "next_step": "Derive SetAutomationEventBaseFrame semantics from the linked source, add a reference fixture, then implement App.set_automation_event_base_frame.",
+      "next_step": "Close documented gaps and unverified gates for SetAutomationEventBaseFrame.",
       "priority": 312
     },
     {
@@ -34668,23 +34776,28 @@
       "milestone": "frame",
       "phase": 2,
       "sequence": 12,
-      "status": "not-started",
-      "jonlib": "App.start_automation_event_recording",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.start_automation_event_recording",
+      "mapping_state": "implemented",
+      "scope": "Recording on: EndDrawing appends the frame's key, mouse, touch, gamepad and gesture events in raylib's order up to the capacity; Maybe<Core>, None without a list.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/automation.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -34696,7 +34809,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled clocks/frame-event replay and real pacing/event-polling/lifecycle checks, including manual frame control.",
-      "next_step": "Derive StartAutomationEventRecording semantics from the linked source, add a reference fixture, then implement App.start_automation_event_recording.",
+      "next_step": "Close documented gaps and unverified gates for StartAutomationEventRecording.",
       "priority": 312
     },
     {
@@ -34722,23 +34835,28 @@
       "milestone": "frame",
       "phase": 2,
       "sequence": 12,
-      "status": "not-started",
-      "jonlib": "App.stop_automation_event_recording",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.stop_automation_event_recording",
+      "mapping_state": "implemented",
+      "scope": "Recording off.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/automation.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -34750,7 +34868,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled clocks/frame-event replay and real pacing/event-polling/lifecycle checks, including manual frame control.",
-      "next_step": "Derive StopAutomationEventRecording semantics from the linked source, add a reference fixture, then implement App.stop_automation_event_recording.",
+      "next_step": "Close documented gaps and unverified gates for StopAutomationEventRecording.",
       "priority": 312
     },
     {
@@ -34776,23 +34894,30 @@
       "milestone": "frame",
       "phase": 2,
       "sequence": 12,
-      "status": "not-started",
-      "jonlib": "App.play_automation_event",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.play_automation_event",
+      "mapping_state": "implemented",
+      "scope": "Every event type as PlayAutomationEvent applies it (ignored while recording): input events, INPUT_GESTURE, WINDOW_CLOSE, memory-platform no-ops for maximize/minimize/resize, screenshot requests and SetTargetFPS. None for indexes outside raylib's arrays.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/automation.bend",
+        "src/core_state.bend",
+        "src/input.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -34806,7 +34931,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled clocks/frame-event replay and real pacing/event-polling/lifecycle checks, including manual frame control.",
-      "next_step": "Derive PlayAutomationEvent semantics from the linked source, add a reference fixture, then implement App.play_automation_event.",
+      "next_step": "Close documented gaps and unverified gates for PlayAutomationEvent.",
       "priority": 312
     },
     {
@@ -34832,23 +34957,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.is_key_pressed",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -34862,7 +34993,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive IsKeyPressed semantics from the linked source, add a reference fixture, then implement Input.is_key_pressed.",
+      "next_step": "Close documented gaps and unverified gates for IsKeyPressed.",
       "priority": 311
     },
     {
@@ -34888,23 +35019,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.is_key_pressed_repeat",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Key repeats come only from the desktop key callback (laws, no native GLFW reference)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -34918,7 +35056,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive IsKeyPressedRepeat semantics from the linked source, add a reference fixture, then implement Input.is_key_pressed_repeat.",
+      "next_step": "Close documented gaps and unverified gates for IsKeyPressedRepeat.",
       "priority": 311
     },
     {
@@ -34944,23 +35082,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.is_key_down",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -34974,7 +35118,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive IsKeyDown semantics from the linked source, add a reference fixture, then implement Input.is_key_down.",
+      "next_step": "Close documented gaps and unverified gates for IsKeyDown.",
       "priority": 311
     },
     {
@@ -35000,23 +35144,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.is_key_released",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -35030,7 +35180,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive IsKeyReleased semantics from the linked source, add a reference fixture, then implement Input.is_key_released.",
+      "next_step": "Close documented gaps and unverified gates for IsKeyReleased.",
       "priority": 311
     },
     {
@@ -35056,23 +35206,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.is_key_up",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Current/previous key bits (and the repeat bits for IsKeyPressedRepeat) of keys 1..511, false otherwise; on the memory platform keys 260..511 keep their previous state.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -35086,7 +35242,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive IsKeyUp semantics from the linked source, add a reference fixture, then implement Input.is_key_up.",
+      "next_step": "Close documented gaps and unverified gates for IsKeyUp.",
       "priority": 311
     },
     {
@@ -35112,23 +35268,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_key_pressed",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Pops the pressed-key queue (16 entries; a key is queued when pressed while up in the previous frame); 0 when empty; Core & U32.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -35140,7 +35302,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetKeyPressed semantics from the linked source, add a reference fixture, then implement Input.get_key_pressed.",
+      "next_step": "Close documented gaps and unverified gates for GetKeyPressed.",
       "priority": 311
     },
     {
@@ -35166,23 +35328,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_char_pressed",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Pops the char queue (16 codepoints, filled by Input.char_callback); 0 when empty; Core & U32.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The memory platform has no char input: the queue is checked by laws, not against a native reference",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -35194,7 +35363,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetCharPressed semantics from the linked source, add a reference fixture, then implement Input.get_char_pressed.",
+      "next_step": "Close documented gaps and unverified gates for GetCharPressed.",
       "priority": 311
     },
     {
@@ -35274,23 +35443,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.set_exit_key",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Stores the exit key (KEY_ESCAPE initially); Input.key_callback closes the window when it is pressed, as the desktop key callback does.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -35302,7 +35477,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive SetExitKey semantics from the linked source, add a reference fixture, then implement Input.set_exit_key.",
+      "next_step": "Close documented gaps and unverified gates for SetExitKey.",
       "priority": 311
     },
     {
@@ -35328,23 +35503,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.is_gamepad_available",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The ready bit of gamepads 0..3, false from 4; None for a negative gamepad.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -35358,7 +35539,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive IsGamepadAvailable semantics from the linked source, add a reference fixture, then implement Input.is_gamepad_available.",
+      "next_step": "Close documented gaps and unverified gates for IsGamepadAvailable.",
       "priority": 311
     },
     {
@@ -35384,23 +35565,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_gamepad_name",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The empty name of gamepads 0..3; None outside (raylib reads outside its array).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -35412,7 +35599,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetGamepadName semantics from the linked source, add a reference fixture, then implement Input.get_gamepad_name.",
+      "next_step": "Close documented gaps and unverified gates for GetGamepadName.",
       "priority": 311
     },
     {
@@ -35438,23 +35625,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.is_gamepad_button_pressed",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -35468,7 +35661,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive IsGamepadButtonPressed semantics from the linked source, add a reference fixture, then implement Input.is_gamepad_button_pressed.",
+      "next_step": "Close documented gaps and unverified gates for IsGamepadButtonPressed.",
       "priority": 311
     },
     {
@@ -35494,23 +35687,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.is_gamepad_button_down",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -35524,7 +35723,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive IsGamepadButtonDown semantics from the linked source, add a reference fixture, then implement Input.is_gamepad_button_down.",
+      "next_step": "Close documented gaps and unverified gates for IsGamepadButtonDown.",
       "priority": 311
     },
     {
@@ -35550,23 +35749,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.is_gamepad_button_released",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -35580,7 +35785,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive IsGamepadButtonReleased semantics from the linked source, add a reference fixture, then implement Input.is_gamepad_button_released.",
+      "next_step": "Close documented gaps and unverified gates for IsGamepadButtonReleased.",
       "priority": 311
     },
     {
@@ -35606,23 +35811,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.is_gamepad_button_up",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Button bits of ready gamepads 0..3 (buttons from 32 false); None for a negative gamepad, or a negative button of a ready gamepad. The memory platform never updates the previous button states.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -35636,7 +35847,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive IsGamepadButtonUp semantics from the linked source, add a reference fixture, then implement Input.is_gamepad_button_up.",
+      "next_step": "Close documented gaps and unverified gates for IsGamepadButtonUp.",
       "priority": 311
     },
     {
@@ -35662,23 +35873,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_gamepad_button_pressed",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The last button pressed, which the memory platform never sets (0, cleared by every poll).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -35690,7 +35907,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetGamepadButtonPressed semantics from the linked source, add a reference fixture, then implement Input.get_gamepad_button_pressed.",
+      "next_step": "Close documented gaps and unverified gates for GetGamepadButtonPressed.",
       "priority": 311
     },
     {
@@ -35716,23 +35933,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_gamepad_axis_count",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The axis count of gamepads 0..3 (0 on the memory platform); None outside.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -35744,7 +35967,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetGamepadAxisCount semantics from the linked source, add a reference fixture, then implement Input.get_gamepad_axis_count.",
+      "next_step": "Close documented gaps and unverified gates for GetGamepadAxisCount.",
       "priority": 311
     },
     {
@@ -35770,23 +35993,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_gamepad_axis_movement",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Rest value -1 for the trigger axes 4 and 5, else 0; a ready gamepad's axis replaces it when its (signed for triggers, absolute) movement is larger. None for a negative gamepad, or a negative axis of a ready gamepad.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -35798,7 +36027,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetGamepadAxisMovement semantics from the linked source, add a reference fixture, then implement Input.get_gamepad_axis_movement.",
+      "next_step": "Close documented gaps and unverified gates for GetGamepadAxisMovement.",
       "priority": 311
     },
     {
@@ -35932,23 +36161,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.is_mouse_button_pressed",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Buttons 0..6; a touch point with the same index counts as that button. The memory platform never updates the previous button states.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -35962,7 +36197,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive IsMouseButtonPressed semantics from the linked source, add a reference fixture, then implement Input.is_mouse_button_pressed.",
+      "next_step": "Close documented gaps and unverified gates for IsMouseButtonPressed.",
       "priority": 311
     },
     {
@@ -35988,23 +36223,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.is_mouse_button_down",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Buttons 0..6; a touch point with the same index counts as that button. The memory platform never updates the previous button states.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36018,7 +36259,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive IsMouseButtonDown semantics from the linked source, add a reference fixture, then implement Input.is_mouse_button_down.",
+      "next_step": "Close documented gaps and unverified gates for IsMouseButtonDown.",
       "priority": 311
     },
     {
@@ -36044,23 +36285,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.is_mouse_button_released",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Buttons 0..6; a touch point with the same index counts as that button. The memory platform never updates the previous button states.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36074,7 +36321,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive IsMouseButtonReleased semantics from the linked source, add a reference fixture, then implement Input.is_mouse_button_released.",
+      "next_step": "Close documented gaps and unverified gates for IsMouseButtonReleased.",
       "priority": 311
     },
     {
@@ -36100,23 +36347,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.is_mouse_button_up",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Buttons 0..6; a touch point with the same index counts as that button. The memory platform never updates the previous button states.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36130,7 +36383,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive IsMouseButtonUp semantics from the linked source, add a reference fixture, then implement Input.is_mouse_button_up.",
+      "next_step": "Close documented gaps and unverified gates for IsMouseButtonUp.",
       "priority": 311
     },
     {
@@ -36156,23 +36409,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_mouse_x",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "(int)((position.x + offset.x)*scale.x); None where the conversion is undefined.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36184,7 +36443,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetMouseX semantics from the linked source, add a reference fixture, then implement Input.get_mouse_x.",
+      "next_step": "Close documented gaps and unverified gates for GetMouseX.",
       "priority": 311
     },
     {
@@ -36210,23 +36469,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_mouse_y",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "(int)((position.y + offset.y)*scale.y); None where the conversion is undefined.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36238,7 +36503,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetMouseY semantics from the linked source, add a reference fixture, then implement Input.get_mouse_y.",
+      "next_step": "Close documented gaps and unverified gates for GetMouseY.",
       "priority": 311
     },
     {
@@ -36264,23 +36529,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_mouse_position",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "(position + offset)*scale in F32.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36294,7 +36565,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetMousePosition semantics from the linked source, add a reference fixture, then implement Input.get_mouse_position.",
+      "next_step": "Close documented gaps and unverified gates for GetMousePosition.",
       "priority": 311
     },
     {
@@ -36320,23 +36591,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_mouse_delta",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "(position - previous)*scale; the memory platform updates the previous position only in SetMousePosition.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36350,7 +36627,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetMouseDelta semantics from the linked source, add a reference fixture, then implement Input.get_mouse_delta.",
+      "next_step": "Close documented gaps and unverified gates for GetMouseDelta.",
       "priority": 311
     },
     {
@@ -36376,23 +36653,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.set_mouse_position",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Current and previous position = (float) of the ints (rcore_memory.c).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36404,7 +36687,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive SetMousePosition semantics from the linked source, add a reference fixture, then implement Input.set_mouse_position.",
+      "next_step": "Close documented gaps and unverified gates for SetMousePosition.",
       "priority": 311
     },
     {
@@ -36430,23 +36713,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.set_mouse_offset",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Offset = (float) of the ints.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36458,7 +36747,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive SetMouseOffset semantics from the linked source, add a reference fixture, then implement Input.set_mouse_offset.",
+      "next_step": "Close documented gaps and unverified gates for SetMouseOffset.",
       "priority": 311
     },
     {
@@ -36484,23 +36773,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.set_mouse_scale",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Scale = the floats.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36512,7 +36807,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive SetMouseScale semantics from the linked source, add a reference fixture, then implement Input.set_mouse_scale.",
+      "next_step": "Close documented gaps and unverified gates for SetMouseScale.",
       "priority": 311
     },
     {
@@ -36538,23 +36833,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_mouse_wheel_move",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "x when |x| > |y|, else y.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36566,7 +36867,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetMouseWheelMove semantics from the linked source, add a reference fixture, then implement Input.get_mouse_wheel_move.",
+      "next_step": "Close documented gaps and unverified gates for GetMouseWheelMove.",
       "priority": 311
     },
     {
@@ -36592,23 +36893,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_mouse_wheel_move_v",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The current wheel move (never reset on the memory platform).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36622,7 +36929,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetMouseWheelMoveV semantics from the linked source, add a reference fixture, then implement Input.get_mouse_wheel_move_v.",
+      "next_step": "Close documented gaps and unverified gates for GetMouseWheelMoveV.",
       "priority": 311
     },
     {
@@ -36702,23 +37009,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_touch_x",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "(int) of touch point 0's x; None where undefined.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36730,7 +37043,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetTouchX semantics from the linked source, add a reference fixture, then implement Input.get_touch_x.",
+      "next_step": "Close documented gaps and unverified gates for GetTouchX.",
       "priority": 311
     },
     {
@@ -36756,23 +37069,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_touch_y",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "(int) of touch point 0's y; None where undefined.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36784,7 +37103,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetTouchY semantics from the linked source, add a reference fixture, then implement Input.get_touch_y.",
+      "next_step": "Close documented gaps and unverified gates for GetTouchY.",
       "priority": 311
     },
     {
@@ -36810,23 +37129,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_touch_position",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Touch positions of points 0..7, (-1, -1) from 8; None for a negative index.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36840,7 +37165,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetTouchPosition semantics from the linked source, add a reference fixture, then implement Input.get_touch_position.",
+      "next_step": "Close documented gaps and unverified gates for GetTouchPosition.",
       "priority": 311
     },
     {
@@ -36866,23 +37191,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_touch_point_id",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Point ids of points 0..7 (0 on the memory platform), -1 from 8; None for a negative index.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36894,7 +37225,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetTouchPointId semantics from the linked source, add a reference fixture, then implement Input.get_touch_point_id.",
+      "next_step": "Close documented gaps and unverified gates for GetTouchPointId.",
       "priority": 311
     },
     {
@@ -36920,23 +37251,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_touch_point_count",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The point count, which the memory platform never sets (0).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: memory-platform semantics; desktop polling and the Base window driver are slice 5",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/input.bend",
+        "src/core_state.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36948,7 +37285,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetTouchPointCount semantics from the linked source, add a reference fixture, then implement Input.get_touch_point_count.",
+      "next_step": "Close documented gaps and unverified gates for GetTouchPointCount.",
       "priority": 311
     },
     {
@@ -36974,23 +37311,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.set_gestures_enabled",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.set_enabled",
+      "mapping_state": "implemented",
+      "scope": "The enabled-gestures mask.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -37004,7 +37348,7 @@
         "rgestures:function:SetGesturesEnabled"
       ],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive SetGesturesEnabled semantics from the linked source, add a reference fixture, then implement Input.set_gestures_enabled.",
+      "next_step": "Close documented gaps and unverified gates for SetGesturesEnabled.",
       "priority": 311
     },
     {
@@ -37030,23 +37374,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.is_gesture_detected",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.is_detected",
+      "mapping_state": "implemented",
+      "scope": "(enabled & current) == gesture.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -37062,7 +37413,7 @@
         "rgestures:function:IsGestureDetected"
       ],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive IsGestureDetected semantics from the linked source, add a reference fixture, then implement Input.is_gesture_detected.",
+      "next_step": "Close documented gaps and unverified gates for IsGestureDetected.",
       "priority": 311
     },
     {
@@ -37088,23 +37439,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.get_gesture_detected",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.get_detected",
+      "mapping_state": "implemented",
+      "scope": "enabled & current.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -37118,7 +37476,7 @@
         "rgestures:function:GetGestureDetected"
       ],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetGestureDetected semantics from the linked source, add a reference fixture, then implement Input.get_gesture_detected.",
+      "next_step": "Close documented gaps and unverified gates for GetGestureDetected.",
       "priority": 311
     },
     {
@@ -37144,23 +37502,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.get_gesture_hold_duration",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.get_hold_duration",
+      "mapping_state": "implemented",
+      "scope": "At time now: (float)(now - hold start) in binary64 while GESTURE_HOLD, else 0.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -37174,7 +37539,7 @@
         "rgestures:function:GetGestureHoldDuration"
       ],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetGestureHoldDuration semantics from the linked source, add a reference fixture, then implement Input.get_gesture_hold_duration.",
+      "next_step": "Close documented gaps and unverified gates for GetGestureHoldDuration.",
       "priority": 311
     },
     {
@@ -37200,23 +37565,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.get_gesture_drag_vector",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.get_drag_vector",
+      "mapping_state": "implemented",
+      "scope": "The drag vector from the down position.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -37232,7 +37604,7 @@
         "rgestures:function:GetGestureDragVector"
       ],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetGestureDragVector semantics from the linked source, add a reference fixture, then implement Input.get_gesture_drag_vector.",
+      "next_step": "Close documented gaps and unverified gates for GetGestureDragVector.",
       "priority": 311
     },
     {
@@ -37258,23 +37630,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.get_gesture_drag_angle",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.get_drag_angle",
+      "mapping_state": "implemented",
+      "scope": "360 - angle of the swipe, atan2f through the M.Libm profile times 180.0f/PI in binary64.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -37288,7 +37667,7 @@
         "rgestures:function:GetGestureDragAngle"
       ],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetGestureDragAngle semantics from the linked source, add a reference fixture, then implement Input.get_gesture_drag_angle.",
+      "next_step": "Close documented gaps and unverified gates for GetGestureDragAngle.",
       "priority": 311
     },
     {
@@ -37314,23 +37693,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.get_gesture_pinch_vector",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.get_pinch_vector",
+      "mapping_state": "implemented",
+      "scope": "The vector between the two touch points.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -37346,7 +37732,7 @@
         "rgestures:function:GetGesturePinchVector"
       ],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetGesturePinchVector semantics from the linked source, add a reference fixture, then implement Input.get_gesture_pinch_vector.",
+      "next_step": "Close documented gaps and unverified gates for GetGesturePinchVector.",
       "priority": 311
     },
     {
@@ -37372,23 +37758,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.get_gesture_pinch_angle",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.get_pinch_angle",
+      "mapping_state": "implemented",
+      "scope": "360 - angle between the two touch points, atan2f through the M.Libm profile.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -37402,7 +37795,7 @@
         "rgestures:function:GetGesturePinchAngle"
       ],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetGesturePinchAngle semantics from the linked source, add a reference fixture, then implement Input.get_gesture_pinch_angle.",
+      "next_step": "Close documented gaps and unverified gates for GetGesturePinchAngle.",
       "priority": 311
     },
     {
@@ -102342,23 +102735,29 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "GestureEvent",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "touch_action, point_count, point_id and position lists (the first two positions are read).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102369,7 +102768,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive GestureEvent semantics from the linked source, add a reference fixture, then implement GestureEvent.",
+      "next_step": "Close documented gaps and unverified gates for GestureEvent.",
       "priority": 100
     },
     {
@@ -102395,23 +102794,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.process_gesture_event",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.process_event_for / Gestures.process_event",
+      "mapping_state": "implemented",
+      "scope": "rgestures.h ProcessGestureEvent at time now: taps, double taps, swipes, drags, two-point holds and pinches with binary32 distances, binary64 time differences and atan2f through the M.Libm profile; None outside the checked angle and time domains.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Glibc atan2f profiles are not exercised natively on macOS",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102425,7 +102831,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive ProcessGestureEvent semantics from the linked source, add a reference fixture, then implement Input.process_gesture_event.",
+      "next_step": "Close documented gaps and unverified gates for ProcessGestureEvent.",
       "priority": 311
     },
     {
@@ -102451,23 +102857,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.update_gestures",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.update",
+      "mapping_state": "implemented",
+      "scope": "At time now: tap/double tap become hold (fewer than two points), swipes end.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102479,7 +102892,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive UpdateGestures semantics from the linked source, add a reference fixture, then implement Input.update_gestures.",
+      "next_step": "Close documented gaps and unverified gates for UpdateGestures.",
       "priority": 311
     },
     {
@@ -102506,23 +102919,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.set_gestures_enabled",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.set_enabled",
+      "mapping_state": "implemented",
+      "scope": "The enabled-gestures mask.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102536,7 +102956,7 @@
         "raylib:function:SetGesturesEnabled"
       ],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive SetGesturesEnabled semantics from the linked source, add a reference fixture, then implement Input.set_gestures_enabled.",
+      "next_step": "Close documented gaps and unverified gates for SetGesturesEnabled.",
       "priority": 311
     },
     {
@@ -102563,23 +102983,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.is_gesture_detected",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.is_detected",
+      "mapping_state": "implemented",
+      "scope": "(enabled & current) == gesture.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102595,7 +103022,7 @@
         "raylib:function:IsGestureDetected"
       ],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive IsGestureDetected semantics from the linked source, add a reference fixture, then implement Input.is_gesture_detected.",
+      "next_step": "Close documented gaps and unverified gates for IsGestureDetected.",
       "priority": 311
     },
     {
@@ -102622,23 +103049,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.get_gesture_detected",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.get_detected",
+      "mapping_state": "implemented",
+      "scope": "enabled & current.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102652,7 +103086,7 @@
         "raylib:function:GetGestureDetected"
       ],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetGestureDetected semantics from the linked source, add a reference fixture, then implement Input.get_gesture_detected.",
+      "next_step": "Close documented gaps and unverified gates for GetGestureDetected.",
       "priority": 311
     },
     {
@@ -102679,23 +103113,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.get_gesture_hold_duration",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.get_hold_duration",
+      "mapping_state": "implemented",
+      "scope": "At time now: (float)(now - hold start) in binary64 while GESTURE_HOLD, else 0.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102709,7 +103150,7 @@
         "raylib:function:GetGestureHoldDuration"
       ],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetGestureHoldDuration semantics from the linked source, add a reference fixture, then implement Input.get_gesture_hold_duration.",
+      "next_step": "Close documented gaps and unverified gates for GetGestureHoldDuration.",
       "priority": 311
     },
     {
@@ -102736,23 +103177,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.get_gesture_drag_vector",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.get_drag_vector",
+      "mapping_state": "implemented",
+      "scope": "The drag vector from the down position.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102768,7 +103216,7 @@
         "raylib:function:GetGestureDragVector"
       ],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetGestureDragVector semantics from the linked source, add a reference fixture, then implement Input.get_gesture_drag_vector.",
+      "next_step": "Close documented gaps and unverified gates for GetGestureDragVector.",
       "priority": 311
     },
     {
@@ -102795,23 +103243,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.get_gesture_drag_angle",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.get_drag_angle",
+      "mapping_state": "implemented",
+      "scope": "360 - angle of the swipe, atan2f through the M.Libm profile times 180.0f/PI in binary64.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102825,7 +103280,7 @@
         "raylib:function:GetGestureDragAngle"
       ],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetGestureDragAngle semantics from the linked source, add a reference fixture, then implement Input.get_gesture_drag_angle.",
+      "next_step": "Close documented gaps and unverified gates for GetGestureDragAngle.",
       "priority": 311
     },
     {
@@ -102852,23 +103307,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.get_gesture_pinch_vector",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.get_pinch_vector",
+      "mapping_state": "implemented",
+      "scope": "The vector between the two touch points.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102884,7 +103346,7 @@
         "raylib:function:GetGesturePinchVector"
       ],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetGesturePinchVector semantics from the linked source, add a reference fixture, then implement Input.get_gesture_pinch_vector.",
+      "next_step": "Close documented gaps and unverified gates for GetGesturePinchVector.",
       "priority": 311
     },
     {
@@ -102911,23 +103373,30 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
-      "jonlib": "Input.get_gesture_pinch_angle",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Gestures.get_pinch_angle",
+      "mapping_state": "implemented",
+      "scope": "360 - angle between the two touch points, atan2f through the M.Libm profile.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Gesture events come from the driver (the memory platform has no touch/mouse gesture input)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/input_probe.py",
+        "docs/INPUT.md",
+        "src/gestures.bend",
+        "src/core_state.bend",
+        "LAWS.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -102941,7 +103410,7 @@
         "raylib:function:GetGesturePinchAngle"
       ],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetGesturePinchAngle semantics from the linked source, add a reference fixture, then implement Input.get_gesture_pinch_angle.",
+      "next_step": "Close documented gaps and unverified gates for GetGesturePinchAngle.",
       "priority": 311
     },
     {
