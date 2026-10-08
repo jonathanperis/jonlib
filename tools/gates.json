@@ -14,7 +14,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 12
+   "minutes": 30
   },
   {
    "id": "jonmath-example",
@@ -118,7 +118,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 4
+   "minutes": 30
   },
   {
    "id": "random",
@@ -321,7 +321,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 2
+   "minutes": 16
   },
   {
    "id": "r32-image",
@@ -336,7 +336,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 4
+   "minutes": 7
   },
   {
    "id": "r32-raw-file",
@@ -516,7 +516,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 1
+   "minutes": 2
   },
   {
    "id": "animation-file",
@@ -531,7 +531,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 1
+   "minutes": 2
   },
   {
    "id": "hdr",
@@ -561,7 +561,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 1
+   "minutes": 2
   },
   {
    "id": "float-rgb",
@@ -621,7 +621,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 2
+   "minutes": 3
   },
   {
    "id": "float-rgb-crop",
@@ -667,7 +667,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 1
+   "minutes": 3
   },
   {
    "id": "float-rgb-canvas",
@@ -697,7 +697,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 2
+   "minutes": 14
   },
   {
    "id": "float-rgb-formats",
@@ -817,7 +817,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 4
+   "minutes": 6
   },
   {
    "id": "image-file",
@@ -832,7 +832,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 1
+   "minutes": 2
   },
   {
    "id": "image-export",
@@ -907,7 +907,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 1
+   "minutes": 9
   },
   {
    "id": "blur",
@@ -937,7 +937,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 1
+   "minutes": 2
   },
   {
    "id": "base64",
@@ -982,7 +982,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 1
+   "minutes": 2
   },
   {
    "id": "log",
@@ -1012,7 +1012,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 1
+   "minutes": 3
   },
   {
    "id": "sha",
@@ -1027,7 +1027,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 1
+   "minutes": 2
   },
   {
    "id": "sdeflate-huffman",
@@ -1187,7 +1187,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 4
+   "minutes": 5
   },
   {
    "id": "binary64-gradual-multiply",
@@ -1201,7 +1201,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 2
+   "minutes": 3
   },
   {
    "id": "modern-angle-bounds",
@@ -1259,7 +1259,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 2
+   "minutes": 3
   },
   {
    "id": "tga-export",
@@ -1274,7 +1274,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 6
+   "minutes": 8
   },
   {
    "id": "qoi-export",
@@ -1289,7 +1289,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 6
+   "minutes": 7
   },
   {
    "id": "bmp-format",
@@ -1304,7 +1304,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 31
+   "minutes": 50
   },
   {
    "id": "tga-format",
@@ -1319,7 +1319,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 22
+   "minutes": 35
   },
   {
    "id": "png-format",
@@ -1349,7 +1349,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 11
+   "minutes": 35
   },
   {
    "id": "pnm-format",
@@ -1394,7 +1394,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 1
+   "minutes": 2
   },
   {
    "id": "stored",
@@ -1409,7 +1409,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 2
+   "minutes": 3
   },
   {
    "id": "gputex",
@@ -1454,7 +1454,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 31
+   "minutes": 47
   },
   {
    "id": "tga-file",
@@ -1484,7 +1484,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 51
+   "minutes": 81
   },
   {
    "id": "pic-file",
@@ -1499,7 +1499,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 28
+   "minutes": 36
   },
   {
    "id": "pnm-file",
@@ -1514,7 +1514,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 13
+   "minutes": 23
   },
   {
    "id": "qoi-file",
@@ -1529,7 +1529,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 4
+   "minutes": 5
   },
   {
    "id": "native-math-profiles",
