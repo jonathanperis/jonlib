@@ -643,3 +643,12 @@ def Laws.texture_filter_point(linear):
 
 def Laws.texture_pool_reuses_freed(next, capacity, id, rest):
   {==}
+
+def Laws.font_index_invalid(glyphs, base, padding, cp):
+  {==}
+
+def Laws.font_measure_empty(face, size, spacing, line):
+  {==}
+
+def Laws.font_unload_default(frame, base, padding, glyphs, width, height, format, linear, alpha, texels, atlas):
+  {==}
