@@ -16,9 +16,10 @@ It is plain `Data`: copying a Wave copies its samples.
 | `Wave.samples(wave)` | `LoadWaveSamples` | 8-bit as `(x - 128)/128`, 16-bit as `x/32768`, 32-bit as is (F32). |
 | `Wave.to_code(wave, path)` / `write_code` | `ExportWaveAsCode` | raylib's header text with the file name (without extension, a-z upper-cased), `0x%x` bytes for 8- and 16-bit waves and `%.4ff` floats for 32-bit ones (exact decimal rounding, `src/decimal.bend`), 20 per line. Empty waves (raylib reads before its data) and NaN samples are refused. |
 | `Wave.to_wav(wave)` / `Wave.write(wave, path)` | `ExportWave` | `.wav` (dr_wav's RIFF writer: a 16-byte `fmt ` chunk, IEEE float for 32-bit samples, PCM otherwise, the data chunk and a pad byte) and `.raw` sample bytes, and `.qoa` for 16-bit waves (qoa.h encoding, below), by ASCII-insensitive suffix; other names write nothing (`InvalidWaveRequest`). |
+| `Wave.format_for(profile, wave, rate, size, channels)` / `Wave.format` | `WaveFormat` | miniaudio's `ma_convert_frames` conversion (below); `rate`, `size` and `channels` are C ints as U32 words. `Wave.format` uses `M.Uncontracted{}`. |
 
-Sample sizes other than 8, 16 and 32 are `InvalidWaveRequest` for crop, samples
-and export.
+Sample sizes other than 8, 16 and 32 are `InvalidWaveRequest` for crop, samples,
+format and export.
 
 ## WAV decoding
 
@@ -133,6 +134,105 @@ more than 8 channels (past its LMS state) or more than 2^24 samples are
 `InvalidWaveData`; a wave whose sample list does not hold `frames * channels`
 samples is not encoded (`InvalidWaveRequest`).
 
+## WaveFormat
+
+`Wave.format_for` follows the miniaudio v0.11.24 code raylib's `WaveFormat`
+reaches (`src/convert.bend`, `src/resampler.bend`, `src/lowpass.bend`):
+`ma_convert_frames` with no dither, linear resampling with a low-pass filter
+of order 4, NULL (default) channel maps and the default rectangular mixing.
+Sample size 8 is u8, 16 is s16, anything else f32 (Jonlib accepts only 32).
+
+- **Paths.** Equal formats, channels and rates copy the samples. Equal
+  channels and rates convert each sample directly. Otherwise the channel
+  converter and resampler run in the *mid* format (the output format if it is
+  s16 or f32, else the input format if it is, else f32), with conversions to
+  and from it; the resampler runs on the side with fewer channels
+  (`channels_first` when the channel count does not grow).
+- **Samples.** u8 to s16 `(x - 128) << 8`; u8 to f32
+  `x * 0.00784313725490196078f - 1` (two roundings); s16 to u8
+  `(x >> 8) + 128`; s16 to f32 `x * 2^-15`; f32 to u8 and s16 add a zero
+  dither, clip to [-1, 1] and truncate `(x + 1) * 127.5` or `x * 32767`.
+- **Channels.** Microsoft default maps (mono; FL FR; FL FR FC; FL FR FC BC;
+  FL FR FC BL BR; FL FR FC LFE SL SR; FL FR FC LFE BC SL SR; then FL FR FC LFE
+  BL BR SL SR, AUX_0.. from the ninth channel and NONE from the 33rd). One
+  output channel averages the inputs: f32 sums in order and divides by the
+  count; s16 divides the int sum by the unsigned count (C's usual conversions),
+  so negative sums keep the low 16 bits of a large unsigned quotient, as raylib
+  does. One input channel is copied to every output. Otherwise weights:
+  1 for equal positions (NONE matches NONE), else miniaudio's rectangular plane
+  weights (0, 1/4, 1/2) between spatial channels missing from the other map;
+  s16 accumulates `(x * w) >> 12` clamped at every step, f32 adds `x * w` in
+  input order.
+- **Resampling.** Rates are reduced by their gcd. The output frame count is
+  `ceil(frames * rout / rin)` (what
+  `ma_linear_resampler_get_expected_output_frame_count` gives from the
+  initial state); the resampler then loads input frames as
+  they fall due (one before the first output frame), interpolates
+  `x0 + (x1 - x0) * (tfrac / rout)` in f32 (separate statements, so never
+  fused) or `(x0 * (4096 - a) + x1 * a) >> 12` with `a = (tfrac << 12) / rout`
+  in s16 (U32 arithmetic), and advances by `rin / rout` with the fraction
+  `rin % rout`. Downsampling filters each loaded frame, upsampling each output
+  frame. The filter is two biquad sections (direct form 2 transposed) per
+  channel; s16 sections use 2.14 fixed-point coefficients, int32 state and
+  clamp their outputs.
+- **Filter coefficients.** miniaudio computes them in binary64 with libm
+  `sin` (`cos(x)` is `sin(pi/2 - x)`): `w = 2*pi*(min/2)/max` for the reduced
+  rates, `q = 1/(2 cos((2i + 1) pi/8))` per section, then `b0 = b2 = (1 - c)/2`,
+  `b1 = 1 - c`, `a1 = -2c`, `a2 = 1 - a`, `a = s/(2q)`, normalized by
+  `a0 = 1 + a` and narrowed to binary32 (f32 filters) or truncated after
+  scaling by 2^14 (s16 filters). Jonlib evaluates every binary64 operation
+  through the checked helpers ([BINARY64.md](BINARY64.md), each rounding once)
+  and replaces `sin` by a 128-bit fixed-point Taylor series (error below
+  2^-110) rounded to the nearest double; every *faithful* libm `sin` returns
+  that double or a neighbour. Each coefficient is evaluated at the corners of
+  those brackets (it is monotone in `s`, `c` and each section's cosine) and is
+  used only when all corners agree. This assumes the reference libm's `sin` is
+  faithfully rounded (error below one ulp), as Apple's and glibc's are; the
+  probe compares the resulting filters with raylib on every rate pair it runs.
+
+### Profiles
+
+Clang's default `-ffp-contract=on` fuses `a*b + c` within one expression. In
+this path only the f32 biquad statements (`y = b0*x + r1`,
+`r1 = b1*x - a1*y + r2`, `r2 = b2*x - a2*y`, fused as `fma(b0, x, r1)`,
+`fma(b1, x, -(a1*y)) + r2` and `fma(b2, x, -(a2*y))`) and the f32 channel
+weights (`out += x*w`, `fma(x, w, out)`) are affected; the f32 interpolation
+and the sample conversions are separate statements. `M.Fused{}` reproduces
+raylib as built by default on macOS arm64 and `M.Uncontracted{}` a build with
+`-ffp-contract=off` or for baseline x86-64 (no FMA). miniaudio's SIMD
+conversions only matter for f32 to s16, whose NEON/SSE2 blocks skip the clip
+for 8-sample blocks of 16-byte-aligned buffers; the samples where that changes
+the result are refused (below), so the result does not depend on alignment.
+Dithering is off in this path.
+
+### Refusals
+
+raylib leaves the wave unchanged (Jonlib: `InvalidWaveRequest`, the wave
+returned unchanged) when `ma_convert_frames` returns 0: no frames, zero input
+or output channels, or a zero sample rate when the rates differ. Jonlib also
+returns the unchanged wave with:
+
+- `InvalidWaveRequest`: sample sizes other than 8, 16 and 32 (raylib reads or
+  allocates with a different width than it converts) and sample lists that do
+  not hold `frames * channels` samples;
+- `InvalidWaveData`: NaN f32 samples when the conversion is not a plain copy
+  (converting NaN to an integer is undefined, and f32 arithmetic on it is
+  host-specific); NaN produced by the f32 arithmetic (for example from
+  infinities), whose bits are the host's default NaN; signed int32 overflow in
+  the s16 filter (undefined in C; full-scale square waves at nearly equal
+  rates such as 44100 to 44101 reach it); f32 samples converted to s16 whose
+  product with 32767 rounds to -32768 or below, 2^31 or above (including
+  infinities), which the SIMD blocks convert differently from the scalar tail;
+- `UnsupportedWaveFormat`: reduced rates of 2^31 or more (miniaudio's U32 time
+  fraction would wrap), more than 2^24 output samples (Jonlib's bound, well
+  below the point where raylib's unsigned allocation size wraps), chunked
+  conversions (any format conversion around the channel converter or
+  resampler, or both of them) whose 4096-byte buffers, counted for the larger
+  channel count in the mid format, hold fewer frames than one output frame can
+  need (rin/rout + 1 when resampling, 1 otherwise; such chunks end the
+  conversion early or never advance), and filter coefficients the corner check
+  cannot certify (for example the f32 filter for a 1:1000000 rate ratio).
+
 ## How it is verified
 
 `tools/wav_probe.py` (gate `wav`) builds raylib with its audio module and
@@ -159,6 +259,21 @@ totals above and below the data, bad magic, zero fields, `.QOA` names).
 `%.Nf` formatter with native `printf` on 1024 values at 0, 1, 4, 6 and 9
 decimals, including exact half-way ties, subnormals and the largest values.
 
-Not yet available: OGG, MP3, FLAC, XM and MOD data, `WaveFormat`
-(miniaudio's format, channel and sample-rate conversion), and sounds, music
-and audio devices.
+`tools/wave_format_probe.py` (gates `wave-format` with the linked build's
+contraction profile and `wave-format-uncontracted` with raylib compiled
+`-ffp-contract=off`) runs native `WaveFormat` and `Wave.format_for` on 275
+waves: every input/output format pair, 1 to 8 channels and 9 to 40 (AUX and
+NONE positions), equal, up and down rates (44100/48000, 8000/44100,
+48000/11025, 2:1, 3:7, 44100/44101, 12:1, 160:1, 1000000:1), 1 to 3 frame
+waves, silence with both zeros, full-scale square waves, noise, sines,
+out-of-range and subnormal floats, infinities and NaN. Every field and sample
+must match on CPU-1, CPU-2 and JavaScript, and a wave raylib leaves unchanged
+(its data pointer kept) must be refused unchanged. An independent Python
+model of the same paths (exact binary32 rounding, libm `sin`) must equal
+raylib on every case it converts and classifies the refusals above; at least
+20 cases differ between the two profiles. Cases whose native result is
+undefined or huge (wrong widths and lengths, 2^31 rates, 2^25 output samples)
+are Jonlib contracts only.
+
+Not yet available: OGG, MP3, FLAC, XM and MOD data, and sounds, music and
+audio devices. Gaps of `WaveFormat`: the refusals above, and no GPU evidence.

@@ -3,7 +3,8 @@
 # Collision queries adapted from the same release's rshapes.c; file and path
 # utilities from rcore.c.
 # 3D collision queries adapted from rmodels.c; cameras from rcamera.h and rcore.c;
-# text and codepoint utilities from rtext.c.
+# text and codepoint utilities from rtext.c; WaveFormat's conversion from the
+# miniaudio vendored by raudio.c (src/convert.bend, LICENSES/miniaudio.txt).
 # Altered Bend implementations; see THIRD_PARTY_NOTICES.md and LICENSES/raylib.txt.
 #
 # Sections, in order (each starts with a "# ----" banner):
@@ -52,6 +53,7 @@ import ./src/gif.bend as Gif
 import ./src/jpeg.bend as Jpeg
 import ./src/wav.bend as Wav
 import ./src/qoa.bend as Qoa
+import ./src/convert.bend as WaveConvert
 import ./src/decimal.bend as Decimal
 import ./src/text.bend as TextCore
 import ./src/gif_animation.bend as GifAnimation
@@ -5604,6 +5606,41 @@ def Wave.crop.checked(valid: Bool, +wave: Wave, +init: U32, +final: U32) -> Resu
 def Wave.crop(+wave: Wave, +init: U32, +final: U32) -> Result<&1, &1, Wave & Wave.Error, Wave>:
   Wave{frames, _, size, _, _} = wave
   Wave.crop.checked((init < 2147483648 : U32) && (final < 2147483648 : U32) && (init < final : U32) && (final <= frames : U32) && Wave.sized(size), wave, init, final)
+
+def Wave.refusal(kind: U32) -> Wave.Error:
+  match kind:
+    case 0: InvalidWaveRequest{}
+    case 1: InvalidWaveData{}
+    case _: UnsupportedWaveFormat{}
+
+def Wave.formatted(outcome: WaveConvert.Outcome, +wave: Wave, +rate: U32, +size: U32, +channels: U32) -> Result<&1, &1, Wave & Wave.Error, Wave>:
+  match outcome:
+    case WaveConvert.Converted{frames, samples}: Done{Wave{frames, rate, size, channels, samples}}
+    case WaveConvert.Unchanged{}: Fail{(wave, InvalidWaveRequest{})}
+    case WaveConvert.Refused{kind}: Fail{(wave, Wave.refusal(kind))}
+
+# WaveFormat: miniaudio's ma_convert_frames (u8, s16 or f32 samples for sizes
+# 8, 16 and other; default channel maps with rectangular mixing; linear
+# resampling with its order-4 low-pass filter) under a contraction profile for
+# its f32 filter and channel mixing. rate, size and channels are C ints as U32
+# words. raylib leaves the wave unchanged (InvalidWaveRequest) without frames
+# or channels, or with a zero rate when resampling. Sample sizes other than 8,
+# 16 and 32 and sample lists that do not hold frames*channels samples are
+# InvalidWaveRequest; undefined or alignment-dependent native results (NaN
+# samples, NaN produced by f32 arithmetic, int32 overflow in the s16 filter,
+# f32 samples whose s16 conversion depends on SIMD alignment) are
+# InvalidWaveData; conversions Jonlib does not reproduce (reduced rates of 2^31
+# and more, more than 2^24 output samples, chunks that end the conversion
+# early, uncertified filter coefficients) are UnsupportedWaveFormat. See
+# docs/AUDIO.md.
+def Wave.format_for(contraction: M.Contraction, +wave: Wave, +rate: U32, +size: U32, +channels: U32) -> Result<&1, &1, Wave & Wave.Error, Wave>:
+  Wave{frames, wrate, wsize, wchannels, data} = wave
+  Wave.formatted(WaveConvert.convert(M.Contraction.fused(contraction), frames, wrate, wsize, wchannels, data, rate, size, channels), wave, rate, size, channels)
+
+# WaveFormat with uncontracted f32 arithmetic (raylib compiled with
+# -ffp-contract=off, or on hosts without FMA such as baseline x86-64).
+def Wave.format(+wave: Wave, +rate: U32, +size: U32, +channels: U32) -> Result<&1, &1, Wave & Wave.Error, Wave>:
+  Wave.format_for(M.Uncontracted{}, wave, rate, size, channels)
 
 def Wave.float_bits(value: U32) -> F32:
   U32{word} = value
