@@ -168,7 +168,8 @@ recommended option in each case, revisable on his review):
   replay for input, time as an explicit input, an explicit `Core`/`Frame`
   state, and the slice order).
 - **Audio brought forward:** Wave loading/export (WAV through dr_wav, QOA
-  through qoa.h, [AUDIO.md](AUDIO.md)) is a headless Phase 4 slice delivered
+  through qoa.h) and `WaveFormat` (miniaudio's conversion and resampling,
+  [AUDIO.md](AUDIO.md)) are a headless Phase 4 slice delivered
   early, since it needs no device; sounds, music and devices stay in Phase 4.
 
 ## Near-term sequence

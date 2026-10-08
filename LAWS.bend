@@ -22,6 +22,9 @@ import ./src/fma.bend as Fma
 
 import ./src/wav.bend as Wav
 import ./src/wav_adpcm.bend as Adpcm
+import ./src/convert.bend as WaveConvert
+import ./src/resampler.bend as Resampler
+import ./src/lowpass.bend as Lowpass
 
 law clear_dimensions:
   for +width: U32
@@ -809,3 +812,33 @@ law msadpcm_adapt_saturates:
 # ... and a negative header delta adapts to the floor of 16.
 law msadpcm_adapt_negative_floor:
   {Adpcm.ms.adapt(230, 4294966996) == 16 : U32}
+
+# WaveFormat (miniaudio ma_convert_frames). The resampler's output count from
+# its initial state is ceil(frames * rout / rin): 3 frames at 147:160 give 4.
+law wave_format_expected_frames:
+  {Resampler.expected(3, 147, 160) == Some{4} : Maybe<U32>}
+
+# Default channel maps past 8 channels: AUX_0 at index 8, NONE from index 32.
+law wave_format_aux_position:
+  {WaveConvert.position(9, 8) == 20 : U32}
+
+law wave_format_none_position:
+  {WaveConvert.position(40, 35) == 0 : U32}
+
+# Mono s16 output divides the int sum by the unsigned channel count, as C's
+# usual conversions make it: (-3 + 0) / 2 keeps the low 16 bits of
+# 0xFFFFFFFD / 2, which is -2, not -1.
+law wave_format_mono_unsigned_division:
+  {WaveConvert.mono.out([4294967293, 0], False{}, 2) == [4294967294] : +List<U32>}
+
+# The s16 filter's int32 products are checked: 2^16 * 2^15 overflows.
+law wave_format_filter_overflow:
+  {Resampler.mul_ok(65536, 32768) == False{} : Bool}
+
+# Integer sample rates convert to binary64 exactly.
+law wave_format_rate_double:
+  {Lowpass.from_u32(44100) == Lowpass.Ok{1088784512, 0} : Lowpass.V}
+
+# Sample sizes other than 8, 16 and 32 are refused with the wave unchanged.
+law wave_format_size_refused:
+  {J.Wave.format(J.Wave{2, 8000, 24, 1, [1, 2]}, 8000, 16, 1) == Fail{(J.Wave{2, 8000, 24, 1, [1, 2]}, J.InvalidWaveRequest{})} : Result<&1, &1, J.Wave & J.Wave.Error, J.Wave>}

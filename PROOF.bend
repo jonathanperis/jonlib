@@ -580,3 +580,24 @@ def Laws.msadpcm_adapt_saturates():
 
 def Laws.msadpcm_adapt_negative_floor():
   {==}
+
+def Laws.wave_format_expected_frames():
+  {==}
+
+def Laws.wave_format_aux_position():
+  {==}
+
+def Laws.wave_format_none_position():
+  {==}
+
+def Laws.wave_format_mono_unsigned_division():
+  {==}
+
+def Laws.wave_format_filter_overflow():
+  {==}
+
+def Laws.wave_format_rate_double():
+  {==}
+
+def Laws.wave_format_size_refused():
+  {==}

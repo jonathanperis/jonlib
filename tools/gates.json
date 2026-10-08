@@ -1638,6 +1638,37 @@
    "minutes": 2
   },
   {
+   "id": "wave-format",
+   "title": "WaveFormat (miniaudio ma_convert_frames: formats, channel maps, linear resampling and its low-pass filter) against raylib with its audio module and the host contraction profile",
+   "run": [
+    "{python}",
+    "tools/wave_format_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 4
+  },
+  {
+   "id": "wave-format-uncontracted",
+   "title": "WaveFormat against raylib with its audio module compiled with -ffp-contract=off (Uncontracted profile control)",
+   "run": [
+    "{python}",
+    "tools/wave_format_probe.py",
+    "--uncontracted-control",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 4
+  },
+  {
    "id": "text",
    "title": "rtext.c text strings and UTF-8 codepoint functions against raylib, with sanitizer-checked undefined-input contracts",
    "run": [

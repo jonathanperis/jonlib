@@ -6,16 +6,16 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 866,
-    "partial": 997
+    "not-started": 865,
+    "partial": 998
   },
   "core_functions": {
     "total": 600,
     "blocked": 19,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 377,
-    "partial": 204
+    "not-started": 376,
+    "partial": 205
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 550,
-    "partial": 360
+    "not-started": 549,
+    "partial": 361
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 19,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 435,
-      "partial": 583
+      "not-started": 434,
+      "partial": 584
     },
     "raymath.h": {
       "total": 254,
@@ -395,8 +395,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 1,
-      "partial": 10
+      "not-started": 0,
+      "partial": 11
     },
     {
       "id": "audio-device",
