@@ -56539,7 +56539,7 @@
       "mapping_state": "implemented",
       "scope": "The file decoded by its extension as LoadWaveFromMemory.",
       "gaps": [
-        "OGG, MP3, QOA, FLAC, XM and MOD data, RIFX/Wave64/RF64/AIFF containers, ADPCM and 64-bit float WAV"
+        "OGG, MP3, FLAC, XM and MOD data, RIFX/Wave64/RF64/AIFF containers, ADPCM and 64-bit float WAV"
       ],
       "blocker": null,
       "gates": {
@@ -56552,6 +56552,7 @@
       },
       "evidence": [
         "tools/wav_probe.py",
+        "tools/qoa_probe.py",
         "docs/AUDIO.md"
       ],
       "gate_evidence": {},
@@ -56597,10 +56598,11 @@
       "status": "partial",
       "jonlib": "Wave.decode",
       "mapping_state": "implemented",
-      "scope": "WAV data through dr_wav's RIFF chunk walk and s16 conversion (PCM 8..64-bit, 32-bit float, a-law, mu-law, extensible headers), every 16-bit sample compared with raylib.",
+      "scope": "WAV data through dr_wav's RIFF chunk walk and s16 conversion (PCM 8..64-bit, 32-bit float, a-law, mu-law, extensible headers) and QOA data through qoa_decode (frames ending at a failed frame header), every 16-bit sample compared with raylib.",
       "gaps": [
-        "OGG, MP3, QOA, FLAC, XM and MOD data, RIFX/Wave64/RF64/AIFF containers, ADPCM and 64-bit float WAV",
-        "InvalidWaveData where dr_wav leaves samples unread or converts NaN"
+        "OGG, MP3, FLAC, XM and MOD data, RIFX/Wave64/RF64/AIFF containers, ADPCM and 64-bit float WAV",
+        "InvalidWaveData where dr_wav leaves samples unread or converts NaN",
+        "InvalidWaveData for QOA frames decoding past the declared total, more than 8 channels or 2^24 samples"
       ],
       "blocker": null,
       "gates": {
@@ -56613,6 +56615,7 @@
       },
       "evidence": [
         "tools/wav_probe.py",
+        "tools/qoa_probe.py",
         "docs/AUDIO.md"
       ],
       "gate_evidence": {},
@@ -57176,10 +57179,10 @@
       "status": "partial",
       "jonlib": "Wave.to_wav / Wave.write",
       "mapping_state": "implemented",
-      "scope": "dr_wav's RIFF writer bytes for .wav and raw sample bytes for .raw, compared with the files raylib writes.",
+      "scope": "dr_wav's RIFF writer bytes for .wav, raw sample bytes for .raw and qoa_encode bytes for 16-bit .qoa (an empty file for waves qoa_encode refuses), compared with the files raylib writes.",
       "gaps": [
-        "QOA export",
-        "raylib returns false for a zero-frame .wav it still writes; Jonlib reports the write"
+        "raylib returns false for a zero-frame .wav it still writes; Jonlib reports the write",
+        "A wave whose sample list does not hold frames * channels samples is not QOA-encoded"
       ],
       "blocker": null,
       "gates": {
@@ -57192,6 +57195,7 @@
       },
       "evidence": [
         "tools/wav_probe.py",
+        "tools/qoa_probe.py",
         "docs/AUDIO.md"
       ],
       "gate_evidence": {},

@@ -45,6 +45,7 @@ import ./src/pic.bend as Pic
 import ./src/gif.bend as Gif
 import ./src/jpeg.bend as Jpeg
 import ./src/wav.bend as Wav
+import ./src/qoa.bend as Qoa
 import ./src/decimal.bend as Decimal
 import ./src/gif_animation.bend as GifAnimation
 import ./src/hdr.bend as Hdr
@@ -4916,17 +4917,27 @@ def Wave.decoded(outcome: Wav.Outcome) -> Result<&1, &1, Wave.Error, Wave>:
     case Wav.Unsupported{}: Fail{UnsupportedWaveFormat{}}
     case Wav.Invalid{error}: Fail{Wave.error(error)}
 
-def Wave.decode.selected(wav: Bool, bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
-  match wav:
-    case True{}: Wave.decoded(Wav.decode(bytes))
-    case False{}: Fail{UnsupportedWaveFormat{}}
+def Wave.decoded.qoa(outcome: Qoa.Outcome) -> Result<&1, &1, Wave.Error, Wave>:
+  match outcome:
+    case Qoa.Decoded{rate, channels, frames, samples}: Done{Wave{frames, rate, 16, channels, samples}}
+    case Qoa.Invalid{False{}}: Fail{InvalidWaveHeader{}}
+    case Qoa.Invalid{True{}}: Fail{InvalidWaveData{}}
+
+def Wave.decode.selected(kind: U32, bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
+  match kind:
+    case 1: Wave.decoded(Wav.decode(bytes))
+    case 2: Wave.decoded.qoa(Qoa.decode(bytes))
+    case _: Fail{UnsupportedWaveFormat{}}
 
 # LoadWaveFromMemory: ".wav"/".WAV" data (dr_wav's RIFF PCM, 32-bit float,
-# a-law and mu-law) as 16-bit samples. Other tokens, RIFX/Wave64/RF64/AIFF
-# containers, ADPCM and 64-bit float are UnsupportedWaveFormat; data dr_wav
-# would leave unread or convert from NaN is InvalidWaveData.
+# a-law and mu-law) and ".qoa"/".QOA" data (qoa.h) as 16-bit samples. Other
+# tokens, RIFX/Wave64/RF64/AIFF containers, ADPCM and 64-bit float are
+# UnsupportedWaveFormat; data dr_wav would leave unread or convert from NaN,
+# and QOA data qoa.h would read past or decode beyond its buffer for, are
+# InvalidWaveData.
 def Wave.decode(+file_type: String, bytes: +List<U32>) -> Result<&1, &1, Wave.Error, Wave>:
-  Wave.decode.selected(String.eq(file_type, ".wav") || String.eq(file_type, ".WAV"), bytes)
+  Wave.decode.selected(Bool.pick(U32, String.eq(file_type, ".wav") || String.eq(file_type, ".WAV"), 1,
+    Bool.pick(U32, String.eq(file_type, ".qoa") || String.eq(file_type, ".QOA"), 2, 0)), bytes)
 
 def Wave.load.decoded(result: Result<&1, &1, Wave.Error, Wave>) -> Result<&1, &1, Wave.IOError, Wave>:
   match result:
@@ -5053,11 +5064,36 @@ def Wave.flag(found: Maybe<Bool>) -> Bool:
     case Some{flag}: flag
     case None{}: False{}
 
+def Wave.qoa.saved(result: Result<&1, &1, Surface.IOError, Unit>) -> IO(Result<&1, &1, Wave.IOError, Unit>):
+  match result:
+    case Fail{FileError{code, message}}: IO.pure(Result<&1, &1, Wave.IOError, Unit>, Fail{WaveFileError{code, message}})
+    case _: IO.pure(Result<&1, &1, Wave.IOError, Unit>, Fail{WaveDataError{InvalidWaveRequest{}}})
+
+def Wave.qoa.encoded(encoded: Maybe<&2, +List<U32>>, path: String) -> IO(Result<&1, &1, Wave.IOError, Unit>):
+  match encoded:
+    case Some{bytes}: IO.bind(Result<&1, &1, Surface.IOError, Unit>, Result<&1, &1, Wave.IOError, Unit>, Files.save_data(path, bytes), Wave.saved)
+    case None{}: IO.bind(Result<&1, &1, Surface.IOError, Unit>, Result<&1, &1, Wave.IOError, Unit>, Files.save_data(path, Nil{}), Wave.qoa.saved)
+
+# 0: not 16-bit; 1: samples and frames disagree; 2: encodable.
+def Wave.qoa.kind(+wave: Wave) -> U32:
+  Wave{frames, _, size, channels, data} = wave
+  Bool.pick(U32, U32.is_ne(size, 16), 0, Bool.pick(U32, Nat.is_eq(List.length(&2, U32, data), U32.to_nat((frames * channels : U32))), 2, 1))
+
+# ExportWave to .qoa: 16-bit waves through qoa_encode. raylib's qoa_write opens
+# the file first, so a wave qoa_encode refuses (no frames, sample rate outside
+# 1..0xffffff, channels outside 1..8) leaves an empty file and fails.
+def Wave.write.qoa(kind: U32, +wave: Wave, path: String) -> IO(Result<&1, &1, Wave.IOError, Unit>):
+  match kind:
+    case 2:
+      Wave{frames, rate, _, channels, data} = wave
+      Wave.qoa.encoded(Qoa.encode(data, frames, channels, rate), path)
+    case _: IO.pure(Result<&1, &1, Wave.IOError, Unit>, Fail{WaveDataError{InvalidWaveRequest{}}})
+
 def Wave.write.kind(kind: U32, +wave: Wave, path: String) -> IO(Result<&1, &1, Wave.IOError, Unit>):
   match kind:
     case 1: Wave.write.bytes(path, Wave.to_wav(wave))
     case 2: Wave.write.bytes(path, Bool.pick(Result<&1, &1, Wave & Wave.Error, +List<U32>>, Wave.sized(Wave.size(wave)), Done{Wave.raw(wave)}, Fail{(wave, InvalidWaveRequest{})}))
-    case 3: IO.pure(Result<&1, &1, Wave.IOError, Unit>, Fail{WaveDataError{UnsupportedWaveFormat{}}})
+    case 3: Wave.write.qoa(Wave.qoa.kind(wave), wave, path)
     case _: IO.pure(Result<&1, &1, Wave.IOError, Unit>, Fail{WaveDataError{InvalidWaveRequest{}}})
 
 def Wave.data(+wave: Wave) -> +List<U32>:
@@ -5149,8 +5185,8 @@ def Wave.code.saved(+path: String, result: Result<&1, &1, Wave & Wave.Error, Str
 def Wave.write_code(+wave: Wave, +path: String) -> IO(Result<&1, &1, Wave.IOError, Unit>):
   Wave.code.saved(path, Wave.to_code(wave, path))
 
-# ExportWave: .wav and .raw files (ASCII-insensitive suffix); .qoa is not
-# written yet and other names write nothing.
+# ExportWave: .wav, .raw and .qoa files (ASCII-insensitive suffix); other
+# names write nothing.
 def Wave.write(+wave: Wave, +path: String) -> IO(Result<&1, &1, Wave.IOError, Unit>):
   Wave.write.kind(Bool.pick(U32, Wave.flag(Files.has_extension(path, ".wav")), 1, Bool.pick(U32, Wave.flag(Files.has_extension(path, ".raw")), 2,
     Bool.pick(U32, Wave.flag(Files.has_extension(path, ".qoa")), 3, 0))), wave, path)

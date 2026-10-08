@@ -17,6 +17,7 @@ import ./src/png.bend as Png
 import ./src/pic.bend as Pic
 import ./src/formats.bend as Formats
 import ./src/codec.bend as Codec
+import ./src/qoa.bend as Qoa
 
 law clear_dimensions:
   for +width: U32
@@ -730,3 +731,10 @@ law jpeg_asr_negative:
 law wave_copy_twice:
   for +wave: J.Wave
   {J.Wave.copy(wave) == (wave, wave) : J.Wave & J.Wave}
+
+# qoa_encode refuses a wave without frames, whatever its samples and fields.
+law qoa_encode_no_frames:
+  for +samples: +List<U32>
+  for +channels: U32
+  for +rate: U32
+  {Qoa.encode(samples, 0, channels, rate) == None{} : Maybe<&2, +List<U32>>}
