@@ -94,6 +94,19 @@ complete verdict:
 BEND_NO_TELEMETRY=1 bun "$BEND_SOURCE/bend2/main.ts" PROOF.bend
 ```
 
+## Known toolchain defects
+
+- **`Bool.pick` result feeding `||` (native lanes).** In
+  `tests/compiler/bool_pick_or.bend`, a `Bool.pick(Bool, ...)` result combined
+  with `||` in the same def gives the wrong value from the sixth call on the
+  CPU lanes of the pinned compiler overlay; JavaScript is correct. The same
+  value used directly or with `&&` is correct. Library code avoids the pattern
+  (`src/wav.bend` routes such choices through a `match`-based helper); an audit
+  found no other def that feeds a `Bool.pick(Bool, ...)` result into `||`.
+  The fix belongs in the declared Bend overlay. The diagnostic gate
+  `bend-defects` (`tools/bend_defects_probe.py`) records per lane whether the
+  defect is still present.
+
 ## What is claimed
 
 - For each mapped API, the scope recorded in `api/progress.json` matches the
