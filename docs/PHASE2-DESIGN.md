@@ -33,8 +33,10 @@ output is not a reference: rasterization and blending vary by driver.
   compiles with contraction off, so the declared profile is scalar `rlsw`,
   uncontracted F32, as for Jonmath. A SIMD profile is a later, separate
   contract.
-- `rlsw` is zlib-licensed raylib code; adapted functions get the usual
-  "altered" marking and raylib notice.
+- `rlsw.h` is MIT-licensed (Le Juez Victor, vendored by raylib); adapted
+  functions get the usual "altered" marking and its notice
+  ([LICENSES/rlsw.txt](../LICENSES/rlsw.txt)). Slice 1 is implemented and
+  measured in [FRAME.md](FRAME.md).
 
 **Input: automation events.** The memory platform has no input system, but
 `SUPPORT_AUTOMATION_EVENTS` (on by default) lets a native harness inject

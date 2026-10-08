@@ -1684,6 +1684,21 @@
    "minutes": 4
   },
   {
+   "id": "frame",
+   "title": "Headless frame and rshapes.c shapes (rlgl.h immediate path, rlsw.h scalar uncontracted rasterization) byte for byte against the memory-platform raylib built with -ffp-contract=off, with refusal contracts and the host sinf/cosf profile table",
+   "run": [
+    "{python}",
+    "tools/frame_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 4
+  },
+  {
    "id": "quaternion-angle",
    "title": "Glibc239Libm acosf, QuaternionSlerp and QuaternionToAxisAngle against raymath on the pinned glibc 2.39 acosf (and the host libm on Linux x86_64 glibc 2.39)",
    "run": [
