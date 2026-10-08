@@ -75,6 +75,11 @@ Audio waves (`Wave.*`: WAV loading, crop, format conversion, samples and
 export) are documented in [AUDIO.md](AUDIO.md).
 Byte-string utilities and UTF-8 codepoints (`Text.*`, `Codepoint.*`, `UTF8.*`:
 rtext.c's text strings management functions) are documented in [TEXT.md](TEXT.md).
+The headless drawing frame and 2D shapes (`Frame.*`: InitWindow, Begin/EndDrawing,
+ClearBackground, framebuffer readback; `Draw.*`: rshapes.c pixels, lines,
+rectangles, gradients, triangles, circles, sectors, rings, ellipses and polygons),
+rendered as raylib's software renderer (rlsw) renders them, are documented in
+[FRAME.md](FRAME.md).
 The enumerations of raylib.h, rlgl.h, rgestures.h and rcamera.h are U32
 constants named as in their header under their enum, e.g.
 `PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8()`, `KeyboardKey.KEY_SPACE()` or

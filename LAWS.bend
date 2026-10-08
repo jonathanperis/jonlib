@@ -19,12 +19,13 @@ import ./src/formats.bend as Formats
 import ./src/codec.bend as Codec
 import ./src/qoa.bend as Qoa
 import ./src/fma.bend as Fma
-
 import ./src/wav.bend as Wav
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
 import ./src/resampler.bend as Resampler
 import ./src/lowpass.bend as Lowpass
+import ./src/shapes.bend as Shapes
+import ./src/frame.bend as FrameCore
 
 law clear_dimensions:
   for +width: U32
@@ -842,3 +843,18 @@ law wave_format_rate_double:
 # Sample sizes other than 8, 16 and 32 are refused with the wave unchanged.
 law wave_format_size_refused:
   {J.Wave.format(J.Wave{2, 8000, 24, 1, [1, 2]}, 8000, 16, 1) == Fail{(J.Wave{2, 8000, 24, 1, [1, 2]}, J.InvalidWaveRequest{})} : Result<&1, &1, J.Wave & J.Wave.Error, J.Wave>}
+
+# Frame: InitWindow sizes are 1..4096; a zero or oversized width has no frame
+# whatever the height.
+law frame_init_window_zero_width:
+  for height: U32
+  {J.Frame.init_window(0, height) == None{} : Maybe<J.Frame>}
+
+law frame_init_window_wide:
+  for height: U32
+  {J.Frame.init_window(4097, height) == None{} : Maybe<J.Frame>}
+
+# A plan with an undefined C int conversion is refused whatever it draws.
+law frame_plan_refused:
+  for commands: +List<FrameCore.Command>
+  {Shapes.Plan.require(False{}, Shapes.Plan{True{}, commands}) == Shapes.Plan{False{}, commands} : Shapes.Plan}

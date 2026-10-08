@@ -601,3 +601,12 @@ def Laws.wave_format_rate_double():
 
 def Laws.wave_format_size_refused():
   {==}
+
+def Laws.frame_init_window_zero_width(height):
+  {==}
+
+def Laws.frame_init_window_wide(height):
+  {==}
+
+def Laws.frame_plan_refused(commands):
+  {==}
