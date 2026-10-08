@@ -203,6 +203,19 @@ public domain or MIT No Attribution; Jonlib uses the MIT-0 alternative,
 retained in [LICENSES/dr_wav.txt](LICENSES/dr_wav.txt).
 `Wave.*` in `jonlib.bend` adapts the Wave functions of raylib's `raudio.c`.
 
+## miniaudio
+
+`src/convert.bend`, `src/resampler.bend` and `src/lowpass.bend` are altered
+Bend adaptations of the paths raylib's `WaveFormat` reaches through
+`ma_convert_frames` in pinned raylib's `src/external/miniaudio.h` (miniaudio
+v0.11.24 by David Reid): `ma_data_converter` path selection, the u8/s16/f32
+`ma_pcm_*` conversions, `ma_channel_converter` with the default channel maps
+and rectangular weights, and `ma_linear_resampler` with its order-4
+`ma_lpf`/`ma_biquad` low-pass filter. The filter coefficients use Jonlib's own
+fixed-point sine bracket instead of libm `sin`. miniaudio is public domain or
+MIT No Attribution; Jonlib uses the MIT-0 alternative, retained in
+[LICENSES/miniaudio.txt](LICENSES/miniaudio.txt).
+
 ## QOA
 
 `src/qoa.bend` is an altered Bend adaptation of `qoa_decode` and `qoa_encode`

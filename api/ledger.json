@@ -58075,23 +58075,31 @@
       "milestone": "audio-codecs",
       "phase": 4,
       "sequence": 19,
-      "status": "not-started",
-      "jonlib": "Audio.wave_format",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Wave.format_for / Wave.format",
+      "mapping_state": "implemented",
+      "scope": "miniaudio's ma_convert_frames as WaveFormat calls it: u8/s16/f32 conversions, default channel maps with rectangular mixing, linear resampling with its order-4 low-pass filter (binary64 coefficients certified against faithful libm sin), every output field and sample; M.Fused/M.Uncontracted profiles for the f32 filter and mixing; raylib's unchanged waves are InvalidWaveRequest.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "InvalidWaveData for undefined or alignment-dependent results: NaN samples, NaN from f32 arithmetic, s16 filter int32 overflow, f32 samples the SIMD s16 blocks convert differently",
+        "UnsupportedWaveFormat (not reproduced): reduced rates from 2^31, over 2^24 output samples, 4096-byte chunks ending the conversion early, uncertified filter coefficients",
+        "Sample sizes other than 8, 16 and 32"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/wave_format_probe.py",
+        "docs/AUDIO.md",
+        "src/convert.bend",
+        "src/resampler.bend",
+        "src/lowpass.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -58106,7 +58114,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Decoded PCM, metadata, format conversion and malformed/truncated audio for every reference format.",
-      "next_step": "Derive WaveFormat semantics from the linked source, add a reference fixture, then implement Audio.wave_format.",
+      "next_step": "Close documented gaps and unverified gates for WaveFormat.",
       "priority": 519
     },
     {
