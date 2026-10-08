@@ -82,8 +82,10 @@ values converted as C converts them (truncation toward zero).
 
 The frame state is explicit, as the design note's state model asks: the
 color buffer, the MVP matrix and the immediate-mode state (current color and
-texture coordinate, the pending primitive, whether the shapes texture is
-bound, and rlsw's per-primitive alpha flag). Drawing never fails; instead a
+texture coordinate, the pending primitive, the bound texture, and rlsw's
+per-primitive alpha flag), and since slices 2 and 3 the projection and
+modelview stacks, the scissor, the render target and the texture and
+framebuffer id pools ([TEXTURES.md](TEXTURES.md)). Drawing never fails; instead a
 draw Jonlib does not reproduce marks the frame undefined, and both readbacks
 return `None` from then on (the frame is still returned and owned):
 
@@ -201,9 +203,11 @@ assumed before it is measured.
 
 - Not ported yet: `DrawCircleSector`/`DrawRing` segment estimation
   (`acosf`/`powf`), `DrawRingLines`, `DrawPolyLinesEx`, `DrawLineBezier`,
-  `DrawLineDashed`, rounded rectangles, splines, `DrawRectangle*` with
-  textures, cameras, render textures, scissor and blend modes
-  (slice 2), `SetShapesTexture` and line widths.
+  `DrawLineDashed`, rounded rectangles, splines, `SetShapesTexture` and line
+  widths. Cameras, the matrix stack, scissor and blend modes, render textures
+  and textures (slices 2 and 3) are in [TEXTURES.md](TEXTURES.md); shapes
+  drawn there go through the same path, with the modelview, scissor and
+  target described in that page.
 - `M.Libm` arguments outside the verified sets above are refused rather than
   approximated; the glibc profiles are not exercised by this probe on macOS.
 - Interactive presentation, input and timing belong to later slices.

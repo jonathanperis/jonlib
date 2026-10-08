@@ -120,6 +120,15 @@ and check the build flags.
   The fix belongs in the declared Bend overlay. The diagnostic gate
   `bend-defects` (`tools/bend_defects_probe.py`) records per lane whether the
   defect is still present.
+- **Apple clang 21 arm64 backend on large segments.** Building a native lane
+  of a program whose def inlines many texture and render-texture calls in one
+  segment (a generated texture-probe scene of about 30 steps) fails in clang
+  (`fatal error: error in backend: live register clobbered by inserted
+  prologue instructions`, Apple clang 21.0.0, arm64), in the generated
+  `preserve_none` segment function. Splitting the scene into chained defs did
+  not avoid it; `tools/texture_probe.py` therefore runs scenes as data through
+  one interpreter def. The failure is at build time (no wrong result); the
+  fix belongs to the toolchain, not to Jonlib.
 
 ## What is claimed
 

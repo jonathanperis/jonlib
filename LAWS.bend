@@ -891,3 +891,28 @@ law gesture_tap_becomes_hold:
 
 law gesture_swipe_ends:
   {GestureCore.Gestures.current(GestureCore.update(GestureCore.Gestures.with_current(GestureCore.Gestures.new(), 64), Clock.zero())) == 0 : U32}
+
+# The software renderer ignores blend modes (rlSetBlendMode is GL3-only) and
+# texture wrap modes (rlsw rejects GL_CLAMP_TO_EDGE): both leave their input.
+law frame_blend_mode_unchanged:
+  for frame: J.Frame
+  for mode: U32
+  {J.Frame.begin_blend_mode(frame, mode) == frame : J.Frame}
+
+law texture_set_wrap_unchanged:
+  for texture: J.Texture
+  for wrap: U32
+  {J.Texture.set_wrap(texture, wrap) == texture : J.Texture}
+
+# TEXTURE_FILTER_POINT selects nearest sampling whatever the previous filter.
+law texture_filter_point:
+  for linear: Bool
+  {J.Texture.filter(0, linear) == False{} : Bool}
+
+# rlsw's id pools reuse the most recently freed id first.
+law texture_pool_reuses_freed:
+  for next: U32
+  for capacity: U32
+  for id: U32
+  for rest: +List<U32>
+  {FrameCore.Pool.take(FrameCore.Pool{next, capacity, Con{id, rest}}) == (FrameCore.Pool{next, capacity, rest}, id) : FrameCore.Pool & U32}

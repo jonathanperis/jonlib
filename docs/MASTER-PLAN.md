@@ -169,7 +169,9 @@ recommended option in each case, revisable on his review):
   state, and the slice order). Slice 1's first part, the headless `Frame`
   and the rshapes.c pixels, lines, rectangles, triangles, circles, sectors,
   rings, ellipses and polygons rendered byte for byte as rlsw renders them, is
-  in [FRAME.md](FRAME.md) with its performance measurement.
+  in [FRAME.md](FRAME.md) with its performance measurement; slices 2 and 3
+  (2D camera, matrix stack, scissor and blend modes, render textures and
+  textures) are in [TEXTURES.md](TEXTURES.md).
 - **Audio brought forward:** Wave loading/export (WAV through dr_wav, QOA
   through qoa.h) and `WaveFormat` (miniaudio's conversion and resampling,
   [AUDIO.md](AUDIO.md)) are a headless Phase 4 slice delivered
