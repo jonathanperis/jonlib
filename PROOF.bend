@@ -643,3 +643,21 @@ def Laws.texture_filter_point(linear):
 
 def Laws.texture_pool_reuses_freed(next, capacity, id, rest):
   {==}
+
+def Laws.rlgl_blend_mode_unchanged(frame, mode):
+  {==}
+
+def Laws.rlgl_version_software():
+  {==}
+
+def Laws.rlgl_matrix_mode_projection():
+  {==}
+
+def Laws.rlgl_matrix_mode_unknown():
+  {==}
+
+def Laws.rlgl_begin_lines():
+  {==}
+
+def Laws.rlgl_begin_points_ignored():
+  {==}
