@@ -639,7 +639,8 @@ def gnu_objects(probe, symbol):
                       'float model_cosf(float x) { float c, s; arm_model(x, &c, &s); return c; }\n')
     probekit.run(['clang', '-std=c11', '-O2', '-ffp-contract=off', '-c', source, '-o', model_object])
     _cc, kernels, _driver = build_oracle(probe)
-    header = (f'#define sinf model_sinf\n#define cosf model_cosf\n#define atan2f {symbol}\n'
+    # <math.h> first: glibc's vector declarations expand the libm names, which must not be renamed yet.
+    header = (f'#include <math.h>\n#define sinf model_sinf\n#define cosf model_cosf\n#define atan2f {symbol}\n'
               f'float model_sinf(float);\nfloat model_cosf(float);\nfloat {symbol}(float, float);\n')
     return header, [model_object, *kernels]
 
