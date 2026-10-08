@@ -38,3 +38,8 @@ def bezier_quad(+fused: Bool, a: F32, b: F32, c: F32, +t: F32) -> F32:
   qb = (2.0 * one * t : F32)
   qc = (t * t : F32)
   mad(fused, qc, c, mad(fused, qa, a, (qb * b : F32)))
+
+# GetSplinePointBezierCubic's accumulation a*p0 + b*p1 + c*p2 + d*p3.
+def bezier_cubic(+fused: Bool, a: F32, b: F32, c: F32, d: F32, weights: Weights) -> F32:
+  Weights{wa, wb, wc, wd} = weights
+  mad(fused, wd, d, mad(fused, wc, c, mad(fused, wa, a, (wb * b : F32))))

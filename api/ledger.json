@@ -40836,25 +40836,26 @@
       "milestone": "shapes",
       "phase": 2,
       "sequence": 14,
-      "status": "blocked",
-      "jonlib": "Draw.get_spline_point_bezier_cubic",
-      "mapping_state": "proposed",
-      "scope": "The pinned cubic Bezier function calls native powf(t,3), whose result is observable directly in a returned point.",
+      "status": "partial",
+      "jonlib": "Spline.bezier_cubic_for",
+      "mapping_state": "implemented",
+      "scope": "Weights (1-t)^3, 3(1-t)^2 t, 3(1-t) t^2 and t^3 through the Glibc239Libm powf (glibc 2.39's x86_64 Arm powf on [-0, 1], exact binary64 steps) and the reference accumulation under M.Uncontracted or M.Fused; compared with the pinned rshapes.c function on the powf model (fused on arm64) and, on Linux x86_64 glibc 2.39, with linked raylib.",
       "gaps": [
-        "Verified native powf cube profile",
-        "Complete cubic Bezier parity"
+        "AppleLibm and Glibc241Libm powf (None)",
+        "t outside [-0, 1] (including NaN) is None",
+        "Other target/performance coverage"
       ],
-      "blocker": "Native Apple powf(t,3) differs from a double-cube substitute on some inputs, producing an actual GetSplinePointBezierCubic coordinate mismatch.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "tools/spline_probe.py",
+        "tools/spline_cubic_probe.py",
         "docs/SPLINES.md"
       ],
       "gate_evidence": {},
@@ -40872,7 +40873,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled framebuffer comparisons, clipping/AA/blend semantics, cameras and representative shape/spline examples.",
-      "next_step": "Resolve: Native Apple powf(t,3) differs from a double-cube substitute on some inputs, producing an actual GetSplinePointBezierCubic coordinate mismatch.",
+      "next_step": "Close documented gaps and unverified gates for GetSplinePointBezierCubic.",
       "priority": 3
     },
     {
@@ -69767,26 +69768,29 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "blocked",
-      "jonlib": "jonmath.Quaternion.slerp",
-      "mapping_state": "proposed",
-      "scope": "Reference spherical interpolation requires an exact native acosf path before sine weighting.",
+      "status": "partial",
+      "jonlib": "jonmath.Quaternion.slerp_for",
+      "mapping_state": "implemented",
+      "scope": "The reference hemisphere flip, copy (|cos| >= 1) and nlerp (cos > 0.95) branches, and acosf/sinf weighting under Glibc239Libm: glibc 2.39's Sun acosf and the GNU sinf kernel, uncontracted F32; compared with raymath built on the pinned acosf source and, on Linux x86_64 glibc 2.39, the host libm.",
       "gaps": [
-        "Verified native inverse-trig dependency",
-        "Complete spherical interpolation evidence"
+        "AppleLibm and Glibc241Libm acosf (None where the result needs acosf)",
+        "sinf arguments outside |x| <= 6.283186 and NaN cosines are None",
+        "Contracted (FMA) builds such as aarch64 glibc",
+        "Other target/performance coverage"
       ],
-      "blocker": "Base and investigated inverse-trig models differ from the actual float libm; no verified acos profile is available yet.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
       "evidence": [
-        "tools/inverse_trig_probe.py",
-        "docs/INVERSE-TRIG.md"
+        "tools/quaternion_angle_probe.py",
+        "docs/INVERSE-TRIG.md",
+        "docs/MATH.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -69800,7 +69804,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Resolve: Base and investigated inverse-trig models differ from the actual float libm; no verified acos profile is available yet.",
+      "next_step": "Close documented gaps and unverified gates for QuaternionSlerp.",
       "priority": 4
     },
     {
@@ -70131,26 +70135,29 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "blocked",
-      "jonlib": "jonmath.Quaternion.to_axis_angle",
-      "mapping_state": "proposed",
-      "scope": "Reference axis/angle extraction requires native acosf rounding and endpoint behavior.",
+      "status": "partial",
+      "jonlib": "jonmath.Quaternion.to_axis_angle_for",
+      "mapping_state": "implemented",
+      "scope": "Normalization for |w| > 1, angle 2*acosf(w) and axis (x, y, z)/sqrt(1 - w*w) or (1, 0, 0) at most 1e-6, under Glibc239Libm (glibc 2.39's Sun acosf, uncontracted F32); outputs returned as a pair instead of pointers.",
       "gaps": [
-        "Verified native acos dependency",
-        "Complete axis/angle extraction evidence"
+        "AppleLibm and Glibc241Libm acosf (None)",
+        "w outside [-1, 1] or NaN after normalization is None",
+        "Contracted (FMA) builds such as aarch64 glibc",
+        "Other target/performance coverage"
       ],
-      "blocker": "Native acosf endpoint/tail values differ from Base and investigated numerical models.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
       "evidence": [
-        "tools/inverse_trig_probe.py",
-        "docs/INVERSE-TRIG.md"
+        "tools/quaternion_angle_probe.py",
+        "docs/INVERSE-TRIG.md",
+        "docs/MATH.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -70165,7 +70172,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Resolve: Native acosf endpoint/tail values differ from Base and investigated numerical models.",
+      "next_step": "Close documented gaps and unverified gates for QuaternionToAxisAngle.",
       "priority": 5
     },
     {
@@ -70260,7 +70267,7 @@
         "Verified native asin dependency",
         "Complete Euler extraction evidence"
       ],
-      "blocker": "Native asinf endpoint/tail values differ from Base and investigated numerical models.",
+      "blocker": "Native asinf endpoint/tail values differ from Base and investigated numerical models; glibc 2.39's e_asinf.c carries LGPL-2.1+ single-precision modifications (Moshier), so adapting it needs a project licensing decision.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -70286,7 +70293,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models.",
+      "next_step": "Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models; glibc 2.39's e_asinf.c carries LGPL-2.1+ single-precision modifications (Moshier), so adapting it needs a project licensing decision.",
       "priority": 6
     },
     {

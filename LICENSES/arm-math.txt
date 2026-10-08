@@ -3,6 +3,7 @@ https://github.com/ARM-software/optimized-routines/blob/47597821aaa52e9c055caf1e
 
 Source notices:
 Copyright (c) 2018-2024, Arm Limited.
+Copyright (c) 2017-2026, Arm Limited. (math/powf.c, powf_log2_data.c, exp2f_data.c)
 Copyright (c) 2018-2019, Arm Limited.
 SPDX-License-Identifier: MIT OR Apache-2.0 WITH LLVM-exception
 

@@ -14,6 +14,8 @@
 # sections may extend an earlier type (e.g. Vector3 helpers after Matrix).
 import Base
 import ./src/trig.bend as Trig
+import ./src/inverse_trig.bend as InverseTrig
+import ./src/power.bend as Power
 import ./src/float64.bend as Float64Numeric
 import ./src/angle.bend as LegacyAngle
 import ./src/checked_angle.bend as CheckedAngle
@@ -1174,6 +1176,84 @@ def Quaternion.from_euler_for(reference: Libm, pitch: F32, yaw: F32, roll: F32) 
 
 def Quaternion.from_euler(pitch: F32, yaw: F32, roll: F32) -> Vector4:
   Quaternion.from_euler_for(AppleLibm{}, pitch, yaw, roll)
+
+# acosf under a reference profile: glibc 2.39's Sun acosf on [-1, 1]. None for
+# AppleLibm and Glibc241Libm (no reproducible kernel yet) and for inputs the
+# kernel refuses (|x| > 1, NaN).
+def Libm.acos(libm: Libm, +x: F32) -> Maybe<F32>:
+  match libm:
+    case Glibc239Libm{}: InverseTrig.acos(x)
+    case _: None{}
+
+def Libm.sin.value(values: F32 & F32) -> F32:
+  (_, sine) = values
+  sine
+
+# powf(x, exponent) under a reference profile: glibc 2.39's x86_64 powf for
+# exponent 2 or 3 and x in [-0, 1]. None for AppleLibm and Glibc241Libm and
+# outside that domain.
+def Libm.pow(libm: Libm, +x: F32, +exponent: U32) -> Maybe<F32>:
+  match libm:
+    case Glibc239Libm{}: Power.power(x, exponent)
+    case _: None{}
+
+# sinf through the bounded GNU/Apple kernels: None outside |x| <= 6.283186.
+def Libm.sin(libm: Libm, +x: F32) -> Maybe<F32>:
+  Bool.pick(Maybe<F32>, (F32.abs(x) <= 6.283186 : F32), Some{Libm.sin.value(Trig.sincos_for(Libm.gnu(libm), x))}, None{})
+
+def Quaternion.slerp.ratios(+left: Vector4, +right: Vector4, +sine: F32, first: Maybe<F32>, second: Maybe<F32>) -> Maybe<Vector4>:
+  match first second:
+    case Some{+a} Some{+b}: Some{Vector4.add(Vector4.scale(left, (a / sine : F32)), Vector4.scale(right, (b / sine : F32)))}
+    case _ _: None{}
+
+def Quaternion.slerp.angle(+libm: Libm, +left: Vector4, +right: Vector4, +cosine: F32, +amount: F32, angle: Maybe<F32>) -> Maybe<Vector4>:
+  match angle:
+    case None{}: None{}
+    case Some{+half}:
+      +sine = F32.sqrt((1.0 - cosine * cosine : F32))
+      Bool.pick(Maybe<Vector4>, (F32.abs(sine) < 0.000001 : F32),
+        Some{Vector4.add(Vector4.scale(left, 0.5), Vector4.scale(right, 0.5))},
+        Quaternion.slerp.ratios(left, right, sine, Libm.sin(libm, ((1.0 - amount) * half : F32)), Libm.sin(libm, (amount * half : F32))))
+
+def Quaternion.slerp.branch(kind: U32, +libm: Libm, +left: Vector4, +right: Vector4, +cosine: F32, +amount: F32) -> Maybe<Vector4>:
+  match kind:
+    case 0: Some{left}
+    case 1: Some{Quaternion.nlerp(left, right, amount)}
+    case _: Quaternion.slerp.angle(libm, left, right, cosine, amount, Libm.acos(libm, cosine))
+
+# QuaternionSlerp under a reference libm profile: the reference hemisphere
+# flip, the copy (|cos| >= 1) and nlerp (cos > 0.95) branches, and otherwise
+# acosf/sinf from the profile. None when that branch needs an acosf the
+# profile lacks (see Libm.acos), for a NaN cosine, or for a sinf argument
+# outside |x| <= 6.283186.
+def Quaternion.slerp_for(+libm: Libm, +left: Vector4, +right: Vector4, +amount: F32) -> Maybe<Vector4>:
+  +dot = Vector4.dot_product(left, right)
+  +flip = (dot < 0.0 : F32)
+  +other = Bool.pick(Vector4, flip, Vector4.negate(right), right)
+  +cosine = Bool.pick(F32, flip, F32.neg(dot), dot)
+  Quaternion.slerp.branch(Bool.pick(U32, (F32.abs(cosine) >= 1.0 : F32), 0, Bool.pick(U32, (cosine > 0.95 : F32), 1, 2)), libm, left, other, cosine, amount)
+
+def Quaternion.axis_angle.parts(+quaternion: Vector4, +half: F32) -> Vector3 & F32:
+  Vector4{x, y, z, w} = quaternion
+  +den = F32.sqrt((1.0 - w * w : F32))
+  (Bool.pick(Vector3, (den > 0.000001 : F32), Vector3{(x / den : F32), (y / den : F32), (z / den : F32)}, Vector3{1.0, 0.0, 0.0}), (2.0 * half : F32))
+
+def Quaternion.axis_angle.result(+quaternion: Vector4, angle: Maybe<F32>) -> Maybe<(Vector3 & F32)>:
+  match angle:
+    case None{}: None{}
+    case Some{half}: Some{Quaternion.axis_angle.parts(quaternion, half)}
+
+def Quaternion.axis_angle.w(+quaternion: Vector4) -> F32:
+  Vector4{_, _, _, w} = quaternion
+  w
+
+# QuaternionToAxisAngle under a reference libm profile: quaternions with
+# |w| > 1 are normalized first; the angle is 2*acosf(w) and the axis
+# (x, y, z)/sqrt(1 - w*w), or (1, 0, 0) when that is at most 1e-6. None when
+# the profile lacks acosf or w is outside [-1, 1] (or NaN) after normalization.
+def Quaternion.to_axis_angle_for(libm: Libm, +quaternion: Vector4) -> Maybe<(Vector3 & F32)>:
+  +q = Bool.pick(Vector4, (F32.abs(Quaternion.axis_angle.w(quaternion)) > 1.0 : F32), Quaternion.normalize(quaternion), quaternion)
+  Quaternion.axis_angle.result(q, Libm.acos(libm, Quaternion.axis_angle.w(q)))
 
 def Vector3.axis.rotated(+vector: Vector3, axis: Vector3, values: F32 & F32) -> Vector3:
   (cosine, sine) = values
