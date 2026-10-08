@@ -72,6 +72,7 @@ import ./src/frame.bend as FrameCore
 import ./src/shapes.bend as Shapes
 import ./src/textures.bend as TextureDraw
 import ./src/fonts.bend as FontCore
+import ./src/rlgl.bend as RlglCore
 import ./src/gif_animation.bend as GifAnimation
 import ./src/hdr.bend as Hdr
 import ./src/image_code.bend as ImageCode
@@ -6757,14 +6758,14 @@ def Draw.triangle_strip(frame: Frame, points: +List<M.Vector2>, +color: U32) -> 
 # acosf/powf estimate) or above 4096 are refused.
 def Draw.circle_sector_for(libm: M.Libm, frame: Frame, center: M.Vector2, +radius: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Frame:
   M.Vector2{x, y} = center
-  Frame.draw(frame, Shapes.sector(M.Libm.gnu(libm), x, y, radius, start, end, segments, color))
+  Frame.draw(frame, Shapes.sector(M.Libm.angle(libm), x, y, radius, start, end, segments, color))
 
 def Draw.circle_sector(frame: Frame, center: M.Vector2, +radius: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Frame:
   Draw.circle_sector_for(M.AppleLibm{}, frame, center, radius, start, end, segments, color)
 
 def Draw.circle_sector_lines_for(libm: M.Libm, frame: Frame, center: M.Vector2, +radius: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Frame:
   M.Vector2{x, y} = center
-  Frame.draw(frame, Shapes.sector_lines(M.Libm.gnu(libm), x, y, radius, start, end, segments, color))
+  Frame.draw(frame, Shapes.sector_lines(M.Libm.angle(libm), x, y, radius, start, end, segments, color))
 
 def Draw.circle_sector_lines(frame: Frame, center: M.Vector2, +radius: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Frame:
   Draw.circle_sector_lines_for(M.AppleLibm{}, frame, center, radius, start, end, segments, color)
@@ -6837,7 +6838,7 @@ def Draw.ellipse_lines(frame: Frame, +x: F32, +y: F32, +radius_h: F32, +radius_v
 # for DrawCircleSector.
 def Draw.ring_for(libm: M.Libm, frame: Frame, center: M.Vector2, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Frame:
   M.Vector2{x, y} = center
-  Frame.draw(frame, Shapes.ring(M.Libm.gnu(libm), x, y, inner, outer, start, end, segments, color))
+  Frame.draw(frame, Shapes.ring(M.Libm.angle(libm), x, y, inner, outer, start, end, segments, color))
 
 def Draw.ring(frame: Frame, center: M.Vector2, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Frame:
   Draw.ring_for(M.AppleLibm{}, frame, center, inner, outer, start, end, segments, color)
@@ -7375,6 +7376,572 @@ def Frame.texture_mode.ended(result: FrameCore.Canvas & Maybe<FrameCore.Detached
 def Frame.end_texture_mode(frame: Frame) -> Frame & Maybe<RenderTexture>:
   Frame{canvas} = frame
   Frame.texture_mode.ended(FrameCore.Canvas.end_target(canvas))
+
+# Remaining shapes, shapes texture and splines --------------------------------
+#
+# Altered Bend adaptation of rshapes.c (DrawLineBezier, DrawLineDashed,
+# DrawRingLines, DrawPolyLinesEx, DrawRectangleRounded*, DrawSpline*,
+# SetShapesTexture, GetShapesTexture*); see docs/FRAME.md and docs/RLGL.md.
+
+# DrawLineBezier: 24 cubic-eased steps as a DrawTriangleStrip ribbon.
+def Draw.line_bezier(frame: Frame, start: M.Vector2, end: M.Vector2, +thick: F32, +color: U32) -> Frame:
+  M.Vector2{x0, y0} = start
+  M.Vector2{x1, y1} = end
+  Frame.draw(frame, Shapes.line_bezier(x0, y0, x1, y1, thick, color))
+
+# DrawLineDashed(start, end, int dashSize, int spaceSize, color): sizes are C
+# ints (|value| <= 2^24); more than 4096 dashes are refused.
+def Draw.line_dashed(frame: Frame, start: M.Vector2, end: M.Vector2, +dash: F32, +space: F32, +color: U32) -> Frame:
+  M.Vector2{x0, y0} = start
+  M.Vector2{x1, y1} = end
+  Frame.draw(frame, Shapes.line_dashed(x0, y0, x1, y1, dash, space, color))
+
+# DrawRingLines: as DrawRing (segments below the minimum estimated with
+# glibc 2.39's acosf only).
+def Draw.ring_lines_for(libm: M.Libm, frame: Frame, center: M.Vector2, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Frame:
+  M.Vector2{x, y} = center
+  Frame.draw(frame, Shapes.ring_lines(M.Libm.angle(libm), x, y, inner, outer, start, end, segments, color))
+
+def Draw.ring_lines(frame: Frame, center: M.Vector2, +inner: F32, +outer: F32, +start: F32, +end: F32, +segments: F32, +color: U32) -> Frame:
+  Draw.ring_lines_for(M.AppleLibm{}, frame, center, inner, outer, start, end, segments, color)
+
+# DrawPolyLinesEx: quads between the radius and radius - lineThick*cosf of a
+# small angle (accepted for every sides value in the Apple profile, see
+# docs/RLGL.md).
+def Draw.poly_lines_ex_for(libm: M.Libm, frame: Frame, center: M.Vector2, +sides: F32, +radius: F32, +rotation: F32, +thick: F32, +color: U32) -> Frame:
+  M.Vector2{x, y} = center
+  Frame.draw(frame, Shapes.poly_lines_ex(M.Libm.gnu(libm), x, y, sides, radius, rotation, thick, color))
+
+def Draw.poly_lines_ex(frame: Frame, center: M.Vector2, +sides: F32, +radius: F32, +rotation: F32, +thick: F32, +color: U32) -> Frame:
+  Draw.poly_lines_ex_for(M.AppleLibm{}, frame, center, sides, radius, rotation, thick, color)
+
+# DrawRectangleRounded(rec, roundness, int segments, color): segments below 4
+# are estimated (glibc 2.39 profile only).
+def Draw.rectangle_rounded_for(libm: M.Libm, frame: Frame, rec: Rectangle, +roundness: F32, +segments: F32, +color: U32) -> Frame:
+  Rectangle{x, y, w, h} = rec
+  Frame.draw(frame, Shapes.rounded(M.Libm.angle(libm), x, y, w, h, roundness, segments, color))
+
+def Draw.rectangle_rounded(frame: Frame, rec: Rectangle, +roundness: F32, +segments: F32, +color: U32) -> Frame:
+  Draw.rectangle_rounded_for(M.AppleLibm{}, frame, rec, roundness, segments, color)
+
+def Draw.rectangle_rounded_lines_ex_for(libm: M.Libm, frame: Frame, rec: Rectangle, +roundness: F32, +segments: F32, +thick: F32, +color: U32) -> Frame:
+  Rectangle{x, y, w, h} = rec
+  Frame.draw(frame, Shapes.rounded_lines(M.Libm.angle(libm), x, y, w, h, roundness, segments, thick, color))
+
+def Draw.rectangle_rounded_lines_ex(frame: Frame, rec: Rectangle, +roundness: F32, +segments: F32, +thick: F32, +color: U32) -> Frame:
+  Draw.rectangle_rounded_lines_ex_for(M.AppleLibm{}, frame, rec, roundness, segments, thick, color)
+
+# DrawRectangleRoundedLines: DrawRectangleRoundedLinesEx with thickness 1.
+def Draw.rectangle_rounded_lines_for(libm: M.Libm, frame: Frame, rec: Rectangle, +roundness: F32, +segments: F32, +color: U32) -> Frame:
+  Draw.rectangle_rounded_lines_ex_for(libm, frame, rec, roundness, segments, 1.0, color)
+
+def Draw.rectangle_rounded_lines(frame: Frame, rec: Rectangle, +roundness: F32, +segments: F32, +color: U32) -> Frame:
+  Draw.rectangle_rounded_lines_ex_for(M.AppleLibm{}, frame, rec, roundness, segments, 1.0, color)
+
+# DrawSplineLinear: one quad per point pair (no miters).
+def Draw.spline_linear(frame: Frame, points: +List<M.Vector2>, +thick: F32, +color: U32) -> Frame:
+  Frame.draw(frame, Shapes.spline_linear(Draw.points(points), thick, color))
+
+# DrawSplineBasis: B-spline ribbons with circle caps (sinf/cosf of the
+# profile).
+def Draw.spline_basis_for(libm: M.Libm, frame: Frame, points: +List<M.Vector2>, +thick: F32, +color: U32) -> Frame:
+  Frame.draw(frame, Shapes.spline_basis(M.Libm.gnu(libm), Draw.points(points), thick, color))
+
+def Draw.spline_basis(frame: Frame, points: +List<M.Vector2>, +thick: F32, +color: U32) -> Frame:
+  Draw.spline_basis_for(M.AppleLibm{}, frame, points, thick, color)
+
+# DrawSplineCatmullRom: Catmull-Rom ribbons with circle caps.
+def Draw.spline_catmull_rom_for(libm: M.Libm, frame: Frame, points: +List<M.Vector2>, +thick: F32, +color: U32) -> Frame:
+  Frame.draw(frame, Shapes.spline_catmull(M.Libm.gnu(libm), Draw.points(points), thick, color))
+
+def Draw.spline_catmull_rom(frame: Frame, points: +List<M.Vector2>, +thick: F32, +color: U32) -> Frame:
+  Draw.spline_catmull_rom_for(M.AppleLibm{}, frame, points, thick, color)
+
+# DrawSplineBezierQuadratic: [p1, c2, p3, c4, p5, ...].
+def Draw.spline_bezier_quadratic(frame: Frame, points: +List<M.Vector2>, +thick: F32, +color: U32) -> Frame:
+  Frame.draw(frame, Shapes.spline_quadratic(Draw.points(points), thick, color))
+
+# DrawSplineBezierCubic: [p1, c2, c3, p4, c5, c6, p7, ...]; powf(x, 3) of the
+# profile (refused for glibc 2.41).
+def Draw.spline_bezier_cubic_for(libm: M.Libm, frame: Frame, points: +List<M.Vector2>, +thick: F32, +color: U32) -> Frame:
+  Frame.draw(frame, Shapes.spline_cubic(M.Libm.angle(libm), Draw.points(points), thick, color))
+
+def Draw.spline_bezier_cubic(frame: Frame, points: +List<M.Vector2>, +thick: F32, +color: U32) -> Frame:
+  Draw.spline_bezier_cubic_for(M.AppleLibm{}, frame, points, thick, color)
+
+def Draw.spline_segment_linear(frame: Frame, p1: M.Vector2, p2: M.Vector2, +thick: F32, +color: U32) -> Frame:
+  M.Vector2{x0, y0} = p1
+  M.Vector2{x1, y1} = p2
+  Frame.draw(frame, Shapes.spline_linear_segment(x0, y0, x1, y1, thick, color))
+
+def Draw.spline_segment_basis(frame: Frame, p1: M.Vector2, p2: M.Vector2, p3: M.Vector2, p4: M.Vector2, +thick: F32, +color: U32) -> Frame:
+  Frame.draw(frame, Shapes.spline_basis_segment(Draw.point(p1), Draw.point(p2), Draw.point(p3), Draw.point(p4), thick, color))
+
+def Draw.spline_segment_catmull_rom(frame: Frame, p1: M.Vector2, p2: M.Vector2, p3: M.Vector2, p4: M.Vector2, +thick: F32, +color: U32) -> Frame:
+  Frame.draw(frame, Shapes.spline_catmull_segment(Draw.point(p1), Draw.point(p2), Draw.point(p3), Draw.point(p4), thick, color))
+
+def Draw.spline_segment_bezier_quadratic(frame: Frame, p1: M.Vector2, c2: M.Vector2, p3: M.Vector2, +thick: F32, +color: U32) -> Frame:
+  Frame.draw(frame, Shapes.spline_quadratic_segment(Draw.point(p1), Draw.point(c2), Draw.point(p3), thick, color))
+
+def Draw.spline_segment_bezier_cubic_for(libm: M.Libm, frame: Frame, p1: M.Vector2, c2: M.Vector2, c3: M.Vector2, p4: M.Vector2, +thick: F32, +color: U32) -> Frame:
+  Frame.draw(frame, Shapes.spline_cubic_segment(M.Libm.angle(libm), Draw.point(p1), Draw.point(c2), Draw.point(c3), Draw.point(p4), thick, color))
+
+def Draw.spline_segment_bezier_cubic(frame: Frame, p1: M.Vector2, c2: M.Vector2, c3: M.Vector2, p4: M.Vector2, +thick: F32, +color: U32) -> Frame:
+  Draw.spline_segment_bezier_cubic_for(M.AppleLibm{}, frame, p1, c2, c3, p4, thick, color)
+
+# A held texture's frame-side parts and back.
+def Texture.parts(texture: Texture) -> FrameCore.Meta & FrameCore.Sampler:
+  Texture{+id, +width, +height, +format, +linear, +alpha, texels} = texture
+  (FrameCore.Meta{id, width, height, format, linear, alpha, (format <= 7 : U32)}, Texture.sampler(width, height, linear, texels))
+
+def Texture.of.meta(meta: FrameCore.Meta, sampler: FrameCore.Sampler) -> Texture:
+  FrameCore.Meta{id, width, height, format, linear, alpha, _} = meta
+  Texture{id, width, height, format, linear, alpha, Texture.unsampled(sampler)}
+
+def Texture.of.parts(parts: FrameCore.Meta & FrameCore.Sampler) -> Texture:
+  (meta, sampler) = parts
+  Texture.of.meta(meta, sampler)
+
+def Texture.of.maybe(parts: Maybe<(FrameCore.Meta & FrameCore.Sampler)>) -> Maybe<Texture>:
+  match parts:
+    case None{}: None{}
+    case Some{p}: Some{Texture.of.parts(p)}
+
+def Frame.held(result: FrameCore.Canvas & Maybe<(FrameCore.Meta & FrameCore.Sampler)>) -> Frame & Maybe<Texture>:
+  (canvas, parts) = result
+  (Frame{canvas}, Texture.of.maybe(parts))
+
+def Frame.shapes.done(kept: Maybe<Texture>, result: Frame & Maybe<Texture>) -> Frame & (Maybe<Texture> & Maybe<Texture>):
+  (frame, previous) = result
+  (frame, (previous, kept))
+
+def Frame.shapes.set(frame: Frame, +shapes: FrameCore.Shapes, sampler: FrameCore.Sampler, kept: Maybe<Texture>) -> Frame & (Maybe<Texture> & Maybe<Texture>):
+  Frame{canvas} = frame
+  Frame.shapes.done(kept, Frame.held(FrameCore.Canvas.set_shapes(shapes, sampler, canvas)))
+
+def Frame.shapes.parts(frame: Frame, +x: F32, +y: F32, +w: F32, +h: F32, parts: FrameCore.Meta & FrameCore.Sampler) -> Frame & (Maybe<Texture> & Maybe<Texture>):
+  (+meta, sampler) = parts
+  FrameCore.Meta{_, +width, +height, +format, _, _, _} = meta
+  Frame.shapes.set(frame, FrameCore.Shapes{meta, FrameCore.Meta.id(meta), width, height, format, x, y, w, h}, sampler, None{})
+
+def Frame.shapes.user(empty: Bool, frame: Frame, texture: Texture, +x: F32, +y: F32, +w: F32, +h: F32) -> Frame & (Maybe<Texture> & Maybe<Texture>):
+  match empty:
+    case True{}: Frame.shapes.set(frame, FrameCore.Shapes.reset(), FrameCore.Unbound{}, Some{texture})
+    case False{}: Frame.shapes.parts(frame, x, y, w, h, Texture.parts(texture))
+
+def Frame.shapes.texture(texture: Maybe<Texture>, frame: Frame, +x: F32, +y: F32, +w: F32, +h: F32) -> Frame & (Maybe<Texture> & Maybe<Texture>):
+  match texture:
+    case None{}: Frame.shapes.set(frame, FrameCore.Shapes.reset(), FrameCore.Unbound{}, None{})
+    case Some{t}: Frame.shapes.user(F32.is_eq(w, 0.0) || F32.is_eq(h, 0.0), frame, t, x, y, w, h)
+
+# SetShapesTexture(texture, source): the frame takes the texture and draws
+# textured shapes with it and the source rectangle (texture coordinates
+# source/size in F32, as rshapes.c divides by the texture's int size). None
+# (texture id 0) or a source of width or height 0 resets to rshapes.c's
+# (Texture2D){ 1, 1, 1, 1, 7 } and (0, 0, 1, 1), which samples rlsw's texture
+# 1, the whole default font atlas. Returns the shapes texture the frame held
+# before and the given texture when it was not taken.
+def Frame.set_shapes_texture(frame: Frame, texture: Maybe<Texture>, source: Rectangle) -> Frame & (Maybe<Texture> & Maybe<Texture>):
+  Rectangle{+x, +y, +w, +h} = source
+  Frame.shapes.texture(texture, frame, x, y, w, h)
+
+def Frame.shapes.info(result: FrameCore.Canvas & FrameCore.Shapes) -> Frame & (TextureInfo & Rectangle):
+  (canvas, shapes) = result
+  FrameCore.Shapes{_, id, width, height, format, x, y, w, h} = shapes
+  (Frame{canvas}, (TextureInfo{id, width, height, 1, format}, Rectangle{x, y, w, h}))
+
+def Frame.shapes.pick.texture(result: Frame & (TextureInfo & Rectangle)) -> Frame & TextureInfo:
+  (frame, pair) = result
+  (texture, _) = pair
+  (frame, texture)
+
+def Frame.shapes.pick.rectangle(result: Frame & (TextureInfo & Rectangle)) -> Frame & Rectangle:
+  (frame, pair) = result
+  (_, rectangle) = pair
+  (frame, rectangle)
+
+# GetShapesTexture's fields: the default font atlas (1, 128x128, 1 mipmap,
+# GRAY_ALPHA) after InitWindow, (1, 1x1, 1, R8G8B8A8) after a reset, or the
+# held texture's.
+def Frame.get_shapes_texture(frame: Frame) -> Frame & TextureInfo:
+  Frame{canvas} = frame
+  Frame.shapes.pick.texture(Frame.shapes.info(FrameCore.Canvas.shapes(canvas)))
+
+# GetShapesTextureRectangle: (41, 46, 2, 8) after InitWindow.
+def Frame.get_shapes_texture_rectangle(frame: Frame) -> Frame & Rectangle:
+  Frame{canvas} = frame
+  Frame.shapes.pick.rectangle(Frame.shapes.info(FrameCore.Canvas.shapes(canvas)))
+
+# rlgl immediate mode and render state ----------------------------------------
+#
+# Altered Bend adaptation of rlgl.h's OpenGL 1.1 path (GRAPHICS_API_OPENGL_
+# SOFTWARE) into rlsw.h; see docs/RLGL.md. Functions that only exist for
+# OpenGL 3.3/ES2 are documented no-ops returning what rlgl returns on the
+# software renderer.
+
+def Rlgl.commands(frame: Frame, valid: Bool, commands: +List<FrameCore.Command>) -> Frame:
+  Frame.draw(frame, Shapes.Plan.only(valid, commands))
+
+def Rlgl.mode.of(+mode: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(mode, 5888), 0, Bool.pick(U32, U32.is_eq(mode, 5889), 1, Bool.pick(U32, U32.is_eq(mode, 5890), 2, 3)))
+
+# rlMatrixMode(RL_MODELVIEW, RL_PROJECTION or RL_TEXTURE); other values change
+# nothing.
+def Rlgl.matrix_mode(frame: Frame, +mode: U32) -> Frame:
+  Rlgl.command(frame, FrameCore.Mode{Rlgl.mode.of(mode)})
+
+def Rlgl.post(frame: Frame, matrix: Maybe<FrameCore.Matrix4>) -> Frame:
+  match matrix:
+    case None{}: Rlgl.command(frame, FrameCore.Refuse{})
+    case Some{m}: Rlgl.command(frame, FrameCore.PostMultiply{m})
+
+# rlOrtho(left, right, bottom, top, near, far) multiplies the current matrix
+# by swOrtho's (F32 arguments with exact binary32 differences; others are
+# refused, see docs/RLGL.md).
+def Rlgl.ortho(frame: Frame, +left: F32, +right: F32, +bottom: F32, +top: F32, +near: F32, +far: F32) -> Frame:
+  Rlgl.post(frame, RlglCore.ortho(left, right, bottom, top, near, far))
+
+# rlFrustum: swFrustum's perspective matrix, same domain plus an exact
+# binary32 far*near.
+def Rlgl.frustum(frame: Frame, +left: F32, +right: F32, +bottom: F32, +top: F32, +near: F32, +far: F32) -> Frame:
+  Rlgl.post(frame, RlglCore.frustum(left, right, bottom, top, near, far))
+
+# rlViewport(int x, int y, int width, int height): negative sizes change
+# nothing (swViewport rejects them).
+def Rlgl.viewport(frame: Frame, +x: F32, +y: F32, +width: F32, +height: F32) -> Frame:
+  Rlgl.commands(frame, Frame.ints(x, y, width, height), [FrameCore.Viewport{Frame.int(x), Frame.int(y), Frame.int(width), Frame.int(height)}])
+
+def Rlgl.begin.count(+mode: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(mode, 1), 2, Bool.pick(U32, U32.is_eq(mode, 4), 3, Bool.pick(U32, U32.is_eq(mode, 7), 4, 0)))
+
+# rlBegin(RL_LINES, RL_TRIANGLES or RL_QUADS): swBegin (an rlsw error that
+# changes nothing while a primitive is active); other modes do nothing.
+def Rlgl.begin(frame: Frame, +mode: U32) -> Frame:
+  +count = Rlgl.begin.count(mode)
+  Rlgl.commands(frame, True{}, Bool.pick(+List<FrameCore.Command>, U32.is_eq(count, 0), Nil{}, [FrameCore.Begin{count}]))
+
+def Rlgl.end(frame: Frame) -> Frame:
+  Rlgl.command(frame, FrameCore.End{})
+
+# rlVertex2i(int x, int y)
+def Rlgl.vertex2i(frame: Frame, +x: F32, +y: F32) -> Frame:
+  Rlgl.commands(frame, Frame.ints(x, y, 0.0, 0.0), [FrameCore.Point{Frame.int(x), Frame.int(y)}])
+
+def Rlgl.vertex2f(frame: Frame, +x: F32, +y: F32) -> Frame:
+  Rlgl.command(frame, FrameCore.Point{x, y})
+
+def Rlgl.vertex3f(frame: Frame, +x: F32, +y: F32, +z: F32) -> Frame:
+  Rlgl.command(frame, FrameCore.Vertex3{x, y, z})
+
+def Rlgl.tex_coord2f(frame: Frame, +u: F32, +v: F32) -> Frame:
+  Rlgl.command(frame, FrameCore.TexCoord{u, v})
+
+# rlNormal3f: glNormal3f is a no-op in rlsw.
+def Rlgl.normal3f(frame: Frame, +x: F32, +y: F32, +z: F32) -> Frame:
+  frame
+
+# rlColor4ub(r, g, b, a): unsigned char channels (each taken mod 256).
+def Rlgl.color4ub(frame: Frame, +r: U32, +g: U32, +b: U32, +a: U32) -> Frame:
+  Rlgl.command(frame, FrameCore.Color{(((r .&. 255) << 24n) .|. ((g .&. 255) << 16n) .|. ((b .&. 255) << 8n) .|. (a .&. 255) : U32)})
+
+def Rlgl.color4f(frame: Frame, +r: F32, +g: F32, +b: F32, +a: F32) -> Frame:
+  Rlgl.command(frame, FrameCore.ColorF{r, g, b, a})
+
+def Rlgl.color3f(frame: Frame, +r: F32, +g: F32, +b: F32) -> Frame:
+  Rlgl.command(frame, FrameCore.ColorF{r, g, b, 1.0})
+
+def Rlgl.hold(parts: FrameCore.Meta & FrameCore.Sampler, canvas: FrameCore.Canvas) -> FrameCore.Canvas & Maybe<(FrameCore.Meta & FrameCore.Sampler)>:
+  (meta, sampler) = parts
+  FrameCore.Canvas.hold(meta, sampler, canvas)
+
+def Rlgl.set_texture.with(texture: Maybe<Texture>, canvas: FrameCore.Canvas) -> Frame & Maybe<Texture>:
+  match texture:
+    case None{}: Frame.held(FrameCore.Canvas.release(canvas))
+    case Some{t}: Frame.held(Rlgl.hold(Texture.parts(t), canvas))
+
+# rlSetTexture(texture.id) for a texture the frame takes until it is released
+# (Some) or rlSetTexture(0) (None): the frame hands back the texture it held
+# (or the given one when a primitive is being recorded and swBindTexture
+# refuses the bind). Draw* calls that bind and unbind their own texture leave
+# the held one unbound, as rlSetTexture(0) does in raylib.
+def Rlgl.set_texture(frame: Frame, texture: Maybe<Texture>) -> Frame & Maybe<Texture>:
+  Frame{canvas} = frame
+  Rlgl.set_texture.with(texture, canvas)
+
+# rlEnableTexture(id) / rlDisableTexture() are rlSetTexture under OpenGL 1.1.
+def Rlgl.enable_texture(frame: Frame, texture: Texture) -> Frame & Maybe<Texture>:
+  Rlgl.set_texture(frame, Some{texture})
+
+def Rlgl.disable_texture(frame: Frame) -> Frame & Maybe<Texture>:
+  Rlgl.set_texture(frame, None{})
+
+def Rlgl.enable_color_blend(frame: Frame) -> Frame:
+  Rlgl.command(frame, FrameCore.Enable{0, True{}})
+
+def Rlgl.disable_color_blend(frame: Frame) -> Frame:
+  Rlgl.command(frame, FrameCore.Enable{0, False{}})
+
+# rlEnableDepthTest: rlsw's depth test (fragments with z above the stored
+# depth are discarded, the others store z); depth-tested drawing into a
+# render texture is refused (its depth buffer is not modeled).
+def Rlgl.enable_depth_test(frame: Frame) -> Frame:
+  Rlgl.command(frame, FrameCore.Enable{1, True{}})
+
+def Rlgl.disable_depth_test(frame: Frame) -> Frame:
+  Rlgl.command(frame, FrameCore.Enable{1, False{}})
+
+# rlEnableDepthMask / rlDisableDepthMask: glDepthMask is a no-op in rlsw.
+def Rlgl.enable_depth_mask(frame: Frame) -> Frame:
+  frame
+
+def Rlgl.disable_depth_mask(frame: Frame) -> Frame:
+  frame
+
+def Rlgl.enable_backface_culling(frame: Frame) -> Frame:
+  Rlgl.command(frame, FrameCore.Enable{2, True{}})
+
+def Rlgl.disable_backface_culling(frame: Frame) -> Frame:
+  Rlgl.command(frame, FrameCore.Enable{2, False{}})
+
+# rlColorMask: glColorMask is a no-op in rlsw.
+def Rlgl.color_mask(frame: Frame, r: Bool, g: Bool, b: Bool, a: Bool) -> Frame:
+  frame
+
+# rlSetCullFace(RL_CULL_FACE_FRONT 0 or RL_CULL_FACE_BACK 1); other values
+# change nothing.
+def Rlgl.set_cull_face(frame: Frame, +mode: U32) -> Frame:
+  Rlgl.commands(frame, True{}, Bool.pick(+List<FrameCore.Command>, (mode <= 1 : U32), [FrameCore.CullFace{U32.is_eq(mode, 0)}], Nil{}))
+
+def Rlgl.enable_scissor_test(frame: Frame) -> Frame:
+  Rlgl.command(frame, FrameCore.Enable{3, True{}})
+
+def Rlgl.disable_scissor_test(frame: Frame) -> Frame:
+  Rlgl.command(frame, FrameCore.Enable{3, False{}})
+
+# rlScissor(int x, int y, int width, int height) in framebuffer pixels from
+# the bottom (|value| <= 2^22); negative sizes keep the previous rectangle.
+def Rlgl.scissor(frame: Frame, +x: F32, +y: F32, +width: F32, +height: F32) -> Frame:
+  Rlgl.commands(frame, Frame.scissor.int(x) && Frame.scissor.int(y) && Frame.scissor.int(width) && Frame.scissor.int(height),
+    [FrameCore.ScissorRect{Frame.int(x), Frame.int(y), Frame.int(width), Frame.int(height)}])
+
+# rlEnableWireMode / rlEnablePointMode: polygons drawn as their (unclipped,
+# unculled) edges or vertices; rlDisable* returns to filling.
+def Rlgl.enable_wire_mode(frame: Frame) -> Frame:
+  Rlgl.command(frame, FrameCore.PolyMode{1})
+
+def Rlgl.disable_wire_mode(frame: Frame) -> Frame:
+  Rlgl.command(frame, FrameCore.PolyMode{0})
+
+def Rlgl.enable_point_mode(frame: Frame) -> Frame:
+  Rlgl.command(frame, FrameCore.PolyMode{2})
+
+def Rlgl.disable_point_mode(frame: Frame) -> Frame:
+  Rlgl.command(frame, FrameCore.PolyMode{0})
+
+# rlSetLineWidth: rlsw stores roundf(width); widths of 2 or more draw thick
+# lines. Rounded widths above 4096 are refused.
+def Rlgl.set_line_width(frame: Frame, +width: F32) -> Frame:
+  +rounded = RlglCore.roundf(width)
+  Rlgl.commands(frame, Bool.not((rounded > 4096.0 : F32)), [FrameCore.LineWidth{rounded}])
+
+def Rlgl.wrap.f32(result: FrameCore.Canvas & F32) -> Frame & F32:
+  (canvas, value) = result
+  (Frame{canvas}, value)
+
+def Rlgl.get_line_width(frame: Frame) -> Frame & F32:
+  Frame{canvas} = frame
+  Rlgl.wrap.f32(FrameCore.Canvas.line_width(canvas))
+
+# rlSetPointSize: rlsw's point radius floorf(size*0.5f); a NaN radius or one
+# beyond 4096 in magnitude is refused.
+def Rlgl.set_point_size(frame: Frame, +size: F32) -> Frame:
+  +radius = F32.floor((size * 0.5 : F32))
+  Rlgl.commands(frame, (F32.abs(radius) <= 4096.0 : F32), [FrameCore.PointSize{radius}])
+
+# rlGetPointSize: 2*radius (0 until set).
+def Rlgl.get_point_size(frame: Frame) -> Frame & F32:
+  Frame{canvas} = frame
+  Rlgl.wrap.f32(FrameCore.Canvas.point_size(canvas))
+
+# rlEnableSmoothLines / rlDisableSmoothLines: GL_LINE_SMOOTH is not an rlsw
+# state (an ignored error).
+def Rlgl.enable_smooth_lines(frame: Frame) -> Frame:
+  frame
+
+def Rlgl.disable_smooth_lines(frame: Frame) -> Frame:
+  frame
+
+# Stereo rendering exists for OpenGL 3.3/ES2 only.
+def Rlgl.enable_stereo_render(frame: Frame) -> Frame:
+  frame
+
+def Rlgl.disable_stereo_render(frame: Frame) -> Frame:
+  frame
+
+def Rlgl.is_stereo_render_enabled(frame: Frame) -> Frame & Bool:
+  (frame, False{})
+
+# rlClearColor(r, g, b, a): the clear color (byte/255) for
+# rlClearScreenBuffers.
+def Rlgl.clear_color(frame: Frame, +r: U32, +g: U32, +b: U32, +a: U32) -> Frame:
+  Rlgl.command(frame, FrameCore.ClearColor{(((r .&. 255) << 24n) .|. ((g .&. 255) << 16n) .|. ((b .&. 255) << 8n) .|. (a .&. 255) : U32)})
+
+# rlClearScreenBuffers: the color buffer and the screen's depth buffer (1.0),
+# within the scissor rectangle when the test is enabled.
+def Rlgl.clear_screen_buffers(frame: Frame) -> Frame:
+  Rlgl.command(frame, FrameCore.Clear{})
+
+def Rlgl.check_errors(frame: Frame) -> Frame:
+  frame
+
+# rlSetBlendMode and rlSetBlendFactors(Separate) only exist for OpenGL
+# 3.3/ES2: blending stays SRC_ALPHA, ONE_MINUS_SRC_ALPHA.
+def Rlgl.set_blend_mode(frame: Frame, +mode: U32) -> Frame:
+  frame
+
+def Rlgl.set_blend_factors(frame: Frame, +source: U32, +destination: U32, +equation: U32) -> Frame:
+  frame
+
+def Rlgl.set_blend_factors_separate(frame: Frame, +source_rgb: U32, +destination_rgb: U32, +source_alpha: U32, +destination_alpha: U32, +equation_rgb: U32, +equation_alpha: U32) -> Frame:
+  frame
+
+# rlGetVersion: RL_OPENGL_SOFTWARE (0).
+def Rlgl.get_version() -> U32:
+  0
+
+def Rlgl.set_framebuffer_width(frame: Frame, +width: F32) -> Frame:
+  frame
+
+def Rlgl.set_framebuffer_height(frame: Frame, +height: F32) -> Frame:
+  frame
+
+# rlGetFramebufferWidth/Height, rlGetTextureIdDefault and
+# rlGetShaderIdDefault are 0 outside OpenGL 3.3/ES2.
+def Rlgl.get_framebuffer_width(frame: Frame) -> Frame & U32:
+  (frame, 0)
+
+def Rlgl.get_framebuffer_height(frame: Frame) -> Frame & U32:
+  (frame, 0)
+
+def Rlgl.get_texture_id_default() -> U32:
+  0
+
+def Rlgl.get_shader_id_default() -> U32:
+  0
+
+# Render batches only exist for OpenGL 3.3/ES2: drawing the active batch does
+# nothing and the batch limit is never reached.
+def Rlgl.draw_render_batch_active(frame: Frame) -> Frame:
+  frame
+
+def Rlgl.check_render_batch_limit(frame: Frame, +count: F32) -> Frame & Bool:
+  (frame, False{})
+
+def Frame.matrix.of(+m: FrameCore.Matrix4) -> M.Matrix:
+  FrameCore.Matrix4{m0, m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15} = m
+  M.Matrix{m0, m4, m8, m12, m1, m5, m9, m13, m2, m6, m10, m14, m3, m7, m11, m15}
+
+def Rlgl.matrix(result: FrameCore.Canvas & FrameCore.Matrix4) -> Frame & M.Matrix:
+  (canvas, +m) = result
+  (Frame{canvas}, Frame.matrix.of(m))
+
+# rlGetMatrixModelview / rlGetMatrixProjection: the stack tops
+# (glGetFloatv).
+def Rlgl.get_matrix_modelview(frame: Frame) -> Frame & M.Matrix:
+  Frame{canvas} = frame
+  Rlgl.matrix(FrameCore.Canvas.modelview(canvas))
+
+def Rlgl.get_matrix_projection(frame: Frame) -> Frame & M.Matrix:
+  Frame{canvas} = frame
+  Rlgl.matrix(FrameCore.Canvas.projection(canvas))
+
+# rlGetMatrixTransform and the stereo matrices are the identity outside
+# OpenGL 3.3/ES2; the rlSetMatrix* functions change nothing there.
+def Rlgl.get_matrix_transform() -> M.Matrix:
+  M.Matrix.identity()
+
+def Rlgl.get_matrix_projection_stereo(+eye: U32) -> M.Matrix:
+  M.Matrix.identity()
+
+def Rlgl.get_matrix_view_offset_stereo(+eye: U32) -> M.Matrix:
+  M.Matrix.identity()
+
+def Rlgl.set_matrix_modelview(frame: Frame, view: M.Matrix) -> Frame:
+  frame
+
+def Rlgl.set_matrix_projection(frame: Frame, projection: M.Matrix) -> Frame:
+  frame
+
+def Rlgl.set_matrix_projection_stereo(frame: Frame, right: M.Matrix, left: M.Matrix) -> Frame:
+  frame
+
+def Rlgl.set_matrix_view_offset_stereo(frame: Frame, right: M.Matrix, left: M.Matrix) -> Frame:
+  frame
+
+def Rlgl.wrap.u32(result: FrameCore.Canvas & U32) -> Frame & U32:
+  (canvas, value) = result
+  (Frame{canvas}, value)
+
+# rlGetActiveFramebuffer: the render texture's framebuffer id during texture
+# mode, else 0.
+def Rlgl.get_active_framebuffer(frame: Frame) -> Frame & U32:
+  Frame{canvas} = frame
+  Rlgl.wrap.u32(FrameCore.Canvas.framebuffer_id(canvas))
+
+# OpenGL 3.3/ES2-only calls: no effect on the software renderer.
+def Rlgl.active_texture_slot(frame: Frame, +slot: U32) -> Frame:
+  frame
+
+def Rlgl.enable_texture_cubemap(frame: Frame, +id: U32) -> Frame:
+  frame
+
+def Rlgl.disable_texture_cubemap(frame: Frame) -> Frame:
+  frame
+
+def Rlgl.cubemap_parameters(frame: Frame, +id: U32, +param: U32, +value: U32) -> Frame:
+  frame
+
+def Rlgl.enable_shader(frame: Frame, +id: U32) -> Frame:
+  frame
+
+def Rlgl.disable_shader(frame: Frame) -> Frame:
+  frame
+
+def Rlgl.enable_vertex_array(frame: Frame, +id: U32) -> Frame & Bool:
+  (frame, False{})
+
+def Rlgl.disable_vertex_array(frame: Frame) -> Frame:
+  frame
+
+def Rlgl.enable_vertex_buffer(frame: Frame, +id: U32) -> Frame:
+  frame
+
+def Rlgl.disable_vertex_buffer(frame: Frame) -> Frame:
+  frame
+
+def Rlgl.enable_vertex_buffer_element(frame: Frame, +id: U32) -> Frame:
+  frame
+
+def Rlgl.disable_vertex_buffer_element(frame: Frame) -> Frame:
+  frame
+
+def Rlgl.enable_vertex_attribute(frame: Frame, +index: U32) -> Frame:
+  frame
+
+def Rlgl.disable_vertex_attribute(frame: Frame, +index: U32) -> Frame:
+  frame
+
+def Rlgl.blit_framebuffer(frame: Frame, +sx: F32, +sy: F32, +sw: F32, +sh: F32, +dx: F32, +dy: F32, +dw: F32, +dh: F32, +mask: U32) -> Frame:
+  frame
+
+def Rlgl.active_draw_buffers(frame: Frame, +count: F32) -> Frame:
+  frame
+
+def Rlgl.load_draw_cube(frame: Frame) -> Frame:
+  frame
+
+def Rlgl.load_draw_quad(frame: Frame) -> Frame:
+  frame
 
 # -----------------------------------------------------------------------------
 # Fonts and text drawing: rtext.c fonts, glyphs, measurement and DrawText*,

@@ -652,3 +652,21 @@ def Laws.font_measure_empty(face, size, spacing, line):
 
 def Laws.font_unload_default(frame, base, padding, glyphs, width, height, format, linear, alpha, texels, atlas):
   {==}
+
+def Laws.rlgl_blend_mode_unchanged(frame, mode):
+  {==}
+
+def Laws.rlgl_version_software():
+  {==}
+
+def Laws.rlgl_matrix_mode_projection():
+  {==}
+
+def Laws.rlgl_matrix_mode_unknown():
+  {==}
+
+def Laws.rlgl_begin_lines():
+  {==}
+
+def Laws.rlgl_begin_points_ignored():
+  {==}
