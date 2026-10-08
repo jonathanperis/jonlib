@@ -529,3 +529,30 @@ def Laws.jpeg_short_wraps():
 
 def Laws.jpeg_asr_negative():
   {==}
+
+def Laws.fma_kind_nan_factor():
+  {==}
+
+def Laws.fma_kind_zero_factor():
+  {==}
+
+def Laws.fma_kind_infinite_addend():
+  {==}
+
+def Laws.fma_kind_zero_addend():
+  {==}
+
+def Laws.fma_product_largest_significands():
+  {==}
+
+def Laws.fma_round_odd_tie_up():
+  {==}
+
+def Laws.fma_round_even_tie_kept():
+  {==}
+
+def Laws.camera_perspective_projection_none(position, target, up, fovy, aspect):
+  {==}
+
+def Laws.camera_apple_zero_argument_only(angle, argument):
+  {==}

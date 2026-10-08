@@ -4136,7 +4136,7 @@
       "mapping_state": "implemented",
       "scope": "Immutable position, target and up Vector3 values, F32 fovy and the CameraProjection value as U32, in header order.",
       "gaps": [
-        "No camera operations yet (Phase 5 camera module)",
+        "UpdateCamera and the window-size queries arrive with Phase 2 (docs/CAMERA.md)",
         "C int field as U32 (enum value)"
       ],
       "blocker": null,
@@ -4257,7 +4257,7 @@
       "mapping_state": "implemented",
       "scope": "Immutable offset and target Vector2 values and F32 rotation and zoom, in header order.",
       "gaps": [
-        "No camera operations yet (Phase 2 frame/Phase 5 camera modules)"
+        "BeginMode2D and drawing integration arrive with the Phase 2 frame module"
       ],
       "blocker": null,
       "gates": {
@@ -29928,14 +29928,14 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "Camera.get_screen_to_world_ray",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Window size state (Phase 2 window module)"
       ],
-      "blocker": null,
+      "blocker": "Reads the window size (GetScreenWidth/GetScreenHeight); the window module is Phase 2. Camera.screen_to_world_ray_ex_for covers the explicit-size form.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -29944,7 +29944,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -29961,7 +29963,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive GetScreenToWorldRay semantics from the linked source, add a reference fixture, then implement Camera.get_screen_to_world_ray.",
+      "next_step": "Resolve: Reads the window size (GetScreenWidth/GetScreenHeight); the window module is Phase 2. Camera.screen_to_world_ray_ex_for covers the explicit-size form.",
       "priority": 626
     },
     {
@@ -29987,23 +29989,31 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.get_screen_to_world_ray_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.screen_to_world_ray_ex_for / Camera.screen_to_world_ray_ex",
+      "mapping_state": "implemented",
+      "scope": "Maybe<Ray> for orthographic and other non-perspective cameras: Vector3Unproject at depths 0, 1 and -1 (orthographic origin; zero origin for other projections) and the normalized direction; sizes 1..INT_MAX; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "CAMERA_PERSPECTIVE is None: MatrixPerspective's binary64 tan is blocked (docs/PERSPECTIVE.md)",
+        "Orthographic fovy beyond the checked binary64 multiplier (about 2^97) and nonfinite fovy",
+        "Cull distances set by rlSetClipPlanes",
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30020,7 +30030,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive GetScreenToWorldRayEx semantics from the linked source, add a reference fixture, then implement Camera.get_screen_to_world_ray_ex.",
+      "next_step": "Close documented gaps and unverified gates for GetScreenToWorldRayEx.",
       "priority": 626
     },
     {
@@ -30046,14 +30056,14 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "Camera.get_world_to_screen",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Window size state (Phase 2 window module)"
       ],
-      "blocker": null,
+      "blocker": "Reads the window size (GetScreenWidth/GetScreenHeight); the window module is Phase 2. Camera.world_to_screen_ex_for covers the explicit-size form.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -30062,7 +30072,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30079,7 +30091,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive GetWorldToScreen semantics from the linked source, add a reference fixture, then implement Camera.get_world_to_screen.",
+      "next_step": "Resolve: Reads the window size (GetScreenWidth/GetScreenHeight); the window module is Phase 2. Camera.world_to_screen_ex_for covers the explicit-size form.",
       "priority": 626
     },
     {
@@ -30105,23 +30117,31 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.get_world_to_screen_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.world_to_screen_ex_for / Camera.world_to_screen_ex",
+      "mapping_state": "implemented",
+      "scope": "Maybe<Vector2> for orthographic and other non-perspective cameras: binary64 aspect and orthographic span through the checked binary64 helpers, view and projection transforms, perspective division and the screen mapping; sizes 1..INT_MAX; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "CAMERA_PERSPECTIVE is None: MatrixPerspective's binary64 tan is blocked (docs/PERSPECTIVE.md)",
+        "Orthographic fovy beyond the checked binary64 multiplier (about 2^97) and nonfinite fovy",
+        "Cull distances set by rlSetClipPlanes",
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30138,7 +30158,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive GetWorldToScreenEx semantics from the linked source, add a reference fixture, then implement Camera.get_world_to_screen_ex.",
+      "next_step": "Close documented gaps and unverified gates for GetWorldToScreenEx.",
       "priority": 626
     },
     {
@@ -30164,23 +30184,30 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.get_world_to_screen2_d",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.world_to_screen_2d_for / Camera.world_to_screen_2d",
+      "mapping_state": "implemented",
+      "scope": "Maybe<Vector2>: Vector3Transform of (x, y, 0) by GetCameraMatrix2D, every input; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm profile; None as for GetCameraMatrix2D.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
+        "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30196,7 +30223,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive GetWorldToScreen2D semantics from the linked source, add a reference fixture, then implement Camera.get_world_to_screen2_d.",
+      "next_step": "Close documented gaps and unverified gates for GetWorldToScreen2D.",
       "priority": 626
     },
     {
@@ -30222,23 +30249,30 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.get_screen_to_world2_d",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.screen_to_world_2d_for / Camera.screen_to_world_2d",
+      "mapping_state": "implemented",
+      "scope": "Maybe<Vector2>: Vector3Transform of (x, y, 0) by MatrixInvert(GetCameraMatrix2D), singular matrices included; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm profile; None as for GetCameraMatrix2D.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
+        "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30254,7 +30288,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive GetScreenToWorld2D semantics from the linked source, add a reference fixture, then implement Camera.get_screen_to_world2_d.",
+      "next_step": "Close documented gaps and unverified gates for GetScreenToWorld2D.",
       "priority": 626
     },
     {
@@ -30280,23 +30314,28 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.get_camera_matrix",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.matrix_for / Camera.matrix",
+      "mapping_state": "implemented",
+      "scope": "MatrixLookAt(position, target, up) for every camera and projection (no projection is involved), every F32 bit, including the fnmadd translation row of the arm64 build; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30312,7 +30351,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive GetCameraMatrix semantics from the linked source, add a reference fixture, then implement Camera.get_camera_matrix.",
+      "next_step": "Close documented gaps and unverified gates for GetCameraMatrix.",
       "priority": 626
     },
     {
@@ -30338,23 +30377,30 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.get_camera_matrix2_d",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.matrix_2d_for / Camera.matrix_2d",
+      "mapping_state": "implemented",
+      "scope": "Maybe<Matrix>: translate(-target) * (scale(zoom) * MatrixRotate(z, rotation*DEG2RAD)) * translate(offset) in raylib's order, every input; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm sinf/cosf profile. None when the rotation argument is not reproduced (zero always is).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
+        "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30370,7 +30416,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive GetCameraMatrix2D semantics from the linked source, add a reference fixture, then implement Camera.get_camera_matrix2_d.",
+      "next_step": "Close documented gaps and unverified gates for GetCameraMatrix2D.",
       "priority": 626
     },
     {
@@ -37348,14 +37394,14 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "Camera.update_camera",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Input and frame-time state (Phase 2 input/frame modules)"
       ],
-      "blocker": null,
+      "blocker": "Reads keyboard, mouse, gamepad and frame-time state; the input and frame modules are Phase 2. Camera.update_pro_for covers the input-free update.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -37364,7 +37410,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -37384,7 +37432,7 @@
       ],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive UpdateCamera semantics from the linked source, add a reference fixture, then implement Camera.update_camera.",
+      "next_step": "Resolve: Reads keyboard, mouse, gamepad and frame-time state; the input and frame modules are Phase 2. Camera.update_pro_for covers the input-free update.",
       "priority": 626
     },
     {
@@ -37410,23 +37458,30 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.update_camera_pro",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.update_pro_for / Camera.update_pro",
+      "mapping_state": "implemented",
+      "scope": "Maybe<Camera3D>: input-free; pitch (lockView), yaw and roll by degrees, then world-plane forward and right moves, up and zoom, as raylib composes them; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm profile; None as for the rotations it applies.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
+        "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -37442,7 +37497,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive UpdateCameraPro semantics from the linked source, add a reference fixture, then implement Camera.update_camera_pro.",
+      "next_step": "Close documented gaps and unverified gates for UpdateCameraPro.",
       "priority": 626
     },
     {
@@ -98720,7 +98775,7 @@
       "scope": "rcamera.h's standalone Camera3D is Jonlib's Camera3D.",
       "gaps": [
         "Preprocessor type guards have no Bend counterpart",
-        "No camera operations yet (Phase 5 camera module)"
+        "UpdateCamera arrives with Phase 2 input (docs/CAMERA.md)"
       ],
       "blocker": null,
       "gates": {
@@ -99374,23 +99429,28 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.get_camera_forward",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.forward_for / Camera.forward",
+      "mapping_state": "implemented",
+      "scope": "Normalized target - position (a zero length leaves the vector unchanged), every F32 bit for every input, including zero, subnormal, huge and nonfinite components; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99406,7 +99466,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive GetCameraForward semantics from the linked source, add a reference fixture, then implement Camera.get_camera_forward.",
+      "next_step": "Close documented gaps and unverified gates for GetCameraForward.",
       "priority": 626
     },
     {
@@ -99432,23 +99492,28 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.get_camera_up",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.up_for / Camera.up",
+      "mapping_state": "implemented",
+      "scope": "The normalized up vector, not made perpendicular to the view, every F32 bit for every input; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99464,7 +99529,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive GetCameraUp semantics from the linked source, add a reference fixture, then implement Camera.get_camera_up.",
+      "next_step": "Close documented gaps and unverified gates for GetCameraUp.",
       "priority": 626
     },
     {
@@ -99490,23 +99555,28 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.get_camera_right",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.right_for / Camera.right",
+      "mapping_state": "implemented",
+      "scope": "normalize(cross(forward, up)) with raymath's zero-length rule, every F32 bit for every input; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99522,7 +99592,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive GetCameraRight semantics from the linked source, add a reference fixture, then implement Camera.get_camera_right.",
+      "next_step": "Close documented gaps and unverified gates for GetCameraRight.",
       "priority": 626
     },
     {
@@ -99548,23 +99618,28 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.camera_move_forward",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.move_forward_for / Camera.move_forward",
+      "mapping_state": "implemented",
+      "scope": "Returns the updated Camera3D (C updates *camera): position and target move by forward*distance, after the 0.7071f world-plane projection and renormalization when requested; every input; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99580,7 +99655,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive CameraMoveForward semantics from the linked source, add a reference fixture, then implement Camera.camera_move_forward.",
+      "next_step": "Close documented gaps and unverified gates for CameraMoveForward.",
       "priority": 626
     },
     {
@@ -99606,23 +99681,28 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.camera_move_up",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.move_up_for / Camera.move_up",
+      "mapping_state": "implemented",
+      "scope": "Returns the updated Camera3D: position and target move by the normalized up vector times distance; every input; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99637,7 +99717,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive CameraMoveUp semantics from the linked source, add a reference fixture, then implement Camera.camera_move_up.",
+      "next_step": "Close documented gaps and unverified gates for CameraMoveUp.",
       "priority": 626
     },
     {
@@ -99663,23 +99743,28 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.camera_move_right",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.move_right_for / Camera.move_right",
+      "mapping_state": "implemented",
+      "scope": "Returns the updated Camera3D: position and target move by GetCameraRight*distance, after the 0.7071f world-plane projection when requested; every input; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99695,7 +99780,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive CameraMoveRight semantics from the linked source, add a reference fixture, then implement Camera.camera_move_right.",
+      "next_step": "Close documented gaps and unverified gates for CameraMoveRight.",
       "priority": 626
     },
     {
@@ -99721,23 +99806,28 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.camera_move_to_target",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.move_to_target_for / Camera.move_to_target",
+      "mapping_state": "implemented",
+      "scope": "Returns the updated Camera3D: distance + delta, replaced by 0.001f unless positive (NaN kept), and position = target - forward*distance; every input; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99752,7 +99842,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive CameraMoveToTarget semantics from the linked source, add a reference fixture, then implement Camera.camera_move_to_target.",
+      "next_step": "Close documented gaps and unverified gates for CameraMoveToTarget.",
       "priority": 626
     },
     {
@@ -99778,23 +99868,30 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.camera_yaw",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.yaw_for / Camera.yaw",
+      "mapping_state": "implemented",
+      "scope": "Maybe<Camera3D>: Euler-Rodrigues rotation of the view vector around the normalized up, moving the position (around the target) or the target; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm sinf/cosf profile. None when the sinf/cosf argument (angle/2) is not reproduced.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
+        "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99810,7 +99907,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive CameraYaw semantics from the linked source, add a reference fixture, then implement Camera.camera_yaw.",
+      "next_step": "Close documented gaps and unverified gates for CameraYaw.",
       "priority": 626
     },
     {
@@ -99836,23 +99933,31 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.camera_pitch",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.pitch_for / Camera.pitch",
+      "mapping_state": "implemented",
+      "scope": "Maybe<Camera3D>: rotation of the view (and with rotateUp the up vector) around GetCameraRight; lockView clamps with two checked atan2f angles in raylib's order; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm profile. None outside the checked angle contract or the reproduced sinf/cosf arguments.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
+        "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+        "lockView angles outside the checked atan2f contract (subnormal intermediates or results)",
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99868,7 +99973,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive CameraPitch semantics from the linked source, add a reference fixture, then implement Camera.camera_pitch.",
+      "next_step": "Close documented gaps and unverified gates for CameraPitch.",
       "priority": 626
     },
     {
@@ -99894,23 +99999,30 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.camera_roll",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.roll_for / Camera.roll",
+      "mapping_state": "implemented",
+      "scope": "Maybe<Camera3D>: rotation of the up vector around GetCameraForward; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm sinf/cosf profile. None when the sinf/cosf argument (angle/2) is not reproduced.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
+        "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99925,7 +100037,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive CameraRoll semantics from the linked source, add a reference fixture, then implement Camera.camera_roll.",
+      "next_step": "Close documented gaps and unverified gates for CameraRoll.",
       "priority": 626
     },
     {
@@ -99951,23 +100063,28 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.get_camera_view_matrix",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.view_matrix_for / Camera.view_matrix",
+      "mapping_state": "implemented",
+      "scope": "MatrixLookAt(position, target, up) for every camera and projection, every F32 bit, including the arm64 build's fnmadd translation row (zero signs); explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Other compilers' contraction and optimization choices",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99983,7 +100100,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive GetCameraViewMatrix semantics from the linked source, add a reference fixture, then implement Camera.get_camera_view_matrix.",
+      "next_step": "Close documented gaps and unverified gates for GetCameraViewMatrix.",
       "priority": 626
     },
     {
@@ -100009,23 +100126,29 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "not-started",
-      "jonlib": "Camera.get_camera_projection_matrix",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Camera.projection_matrix",
+      "mapping_state": "implemented",
+      "scope": "Maybe<Matrix>: MatrixOrtho(-right, right, -top, top) with top = fovy/2.0, the exact binary64 span of the float aspect and rlgl's default cull distances, every input; the identity for projection values other than 0 and 1.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "CAMERA_PERSPECTIVE is None: MatrixPerspective's binary64 tan is blocked (docs/PERSPECTIVE.md)",
+        "Cull distances set by rlSetClipPlanes",
+        "NaN sign and payload are not reproduced",
+        "Full target/performance coverage"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/camera_probe.py",
+        "docs/CAMERA.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -100041,7 +100164,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Derive GetCameraProjectionMatrix semantics from the linked source, add a reference fixture, then implement Camera.get_camera_projection_matrix.",
+      "next_step": "Close documented gaps and unverified gates for GetCameraProjectionMatrix.",
       "priority": 626
     },
     {

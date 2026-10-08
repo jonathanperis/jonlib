@@ -197,6 +197,73 @@
    "minutes": 2
   },
   {
+   "id": "camera",
+   "title": "Cameras (rcamera.h, rcore.c camera and screen-space queries) against the linked raylib with the host contraction and libm profiles, and the total FMA kernel against fmaf",
+   "run": [
+    "{python}",
+    "tools/camera_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 12
+  },
+  {
+   "id": "camera-uncontracted",
+   "title": "Cameras against the pinned rcamera.h/rcore.c compiled without contraction (Uncontracted profile control, host libm)",
+   "run": [
+    "{python}",
+    "tools/camera_probe.py",
+    "--uncontracted-control",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 12
+  },
+  {
+   "id": "camera-glibc239",
+   "title": "Cameras against the pinned functions without contraction, with the Arm sinf/cosf model and glibc 2.39 (Sun) atan2f (Glibc239Libm control)",
+   "run": [
+    "{python}",
+    "tools/camera_probe.py",
+    "--uncontracted-control",
+    "--gnu-libm",
+    "glibc239",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 12
+  },
+  {
+   "id": "camera-fused-glibc241",
+   "title": "Cameras against the pinned functions with clang contraction into FMA, the Arm sinf/cosf model and glibc 2.41 atan2f (Fused/Glibc241Libm control)",
+   "run": [
+    "{python}",
+    "tools/camera_probe.py",
+    "--fused-control",
+    "--gnu-libm",
+    "glibc241",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 12
+  },
+  {
    "id": "pixel",
    "title": "",
    "run": [

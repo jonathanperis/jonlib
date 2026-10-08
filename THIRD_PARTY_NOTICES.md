@@ -27,6 +27,9 @@ identify the original sources and their required attribution.
 - Pure collision queries in `jonlib.bend` and spline formulas in `src/spline.bend`
   adapt the same release's `rshapes.c`.
   Sphere/box predicates adapt `rmodels.c`; vector/matrix/quaternion operations adapt `raymath.h`.
+  The `Camera.*` queries in `jonlib.bend` and `src/camera_span.bend` adapt
+  `rcamera.h` and the camera/screen-space functions of `rcore.c`
+  (copyright Christoph Wagner and Ramon Santamaria; zlib).
   General bilinear rotation, power-of-two canvases and channel extraction adapt
   `rtextures.c`; these remain modified Bend implementations with explicit profiles.
   `src/image_code.bend` adapts `ExportImageAsCode`, retaining the generated
