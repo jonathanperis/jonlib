@@ -2140,6 +2140,12 @@ def Canvas.dimensions(canvas: Canvas) -> Canvas & (U32 & U32):
   Canvas{+width, +height, matrix, state, raster, rig, target, gl} = canvas
   Canvas.sized(width, height, matrix, state, raster, rig, gl, Canvas.target.size(target, width, height))
 
+# CORE.Window.currentFbo: the current color buffer's size (the render
+# texture's in texture mode).
+def Canvas.fbo(canvas: Canvas) -> Canvas & (U32 & U32):
+  Canvas{+width, +height, matrix, state, raster, rig, target, gl} = canvas
+  (Canvas{width, height, matrix, state, raster, rig, target, gl}, (width, height))
+
 def Canvas.target.offscreen(target: Target) -> Target & Bool:
   match target:
     case Screen{}: (Screen{}, False{})
