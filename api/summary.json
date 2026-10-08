@@ -6,16 +6,16 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 751,
-    "partial": 1112
+    "not-started": 713,
+    "partial": 1150
   },
   "core_functions": {
     "total": 600,
     "blocked": 19,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 275,
-    "partial": 306
+    "not-started": 249,
+    "partial": 332
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 438,
-    "partial": 472
+    "not-started": 405,
+    "partial": 505
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 19,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 331,
-      "partial": 687
+      "not-started": 300,
+      "partial": 718
     },
     "raymath.h": {
       "total": 254,
@@ -70,8 +70,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 272,
-      "partial": 131
+      "not-started": 265,
+      "partial": 138
     },
     "rcamera.h": {
       "total": 35,
@@ -108,8 +108,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 28,
-      "partial": 521
+      "not-started": 23,
+      "partial": 526
     },
     {
       "id": "numerics",
@@ -315,8 +315,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 187,
-      "partial": 0
+      "not-started": 180,
+      "partial": 7
     },
     {
       "id": "shapes",
@@ -332,8 +332,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 23,
-      "partial": 39
+      "not-started": 17,
+      "partial": 45
     },
     {
       "id": "textures",
@@ -348,8 +348,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 26,
-      "partial": 1
+      "not-started": 6,
+      "partial": 21
     },
     {
       "id": "text-utils",

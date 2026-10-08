@@ -631,3 +631,15 @@ def Laws.gesture_tap_becomes_hold():
 
 def Laws.gesture_swipe_ends():
   {==}
+
+def Laws.frame_blend_mode_unchanged(frame, mode):
+  {==}
+
+def Laws.texture_set_wrap_unchanged(texture, wrap):
+  {==}
+
+def Laws.texture_filter_point(linear):
+  {==}
+
+def Laws.texture_pool_reuses_freed(next, capacity, id, rest):
+  {==}
