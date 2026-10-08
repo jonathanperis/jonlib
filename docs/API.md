@@ -97,6 +97,10 @@ Fonts and text drawing (`Font.*`: the default font, LoadFontFromImage, glyph
 queries, MeasureText*, ImageText* and ImageDrawText*; `Draw.text*` and
 `Draw.fps`: DrawText, DrawTextEx, DrawTextPro, DrawTextCodepoint(s) and DrawFPS
 into the frame) are documented in [FONTS.md](FONTS.md).
+Meshes and models (`Mesh.*`: GenMeshPoly/Plane/Cube/Sphere/HemiSphere/Torus/Heightmap/Cubicmap,
+GenMeshTangents, GetMeshBoundingBox, ExportMesh/ExportMeshAsCode; `Model.*`;
+`Collision.ray_mesh`), `Frame.begin_mode_3d`/`end_mode_3d` and the 3D shapes
+(`Draw.line_3d` ... `Draw.grid`) are documented in [MODELS.md](MODELS.md).
 The enumerations of raylib.h, rlgl.h, rgestures.h and rcamera.h are U32
 constants named as in their header under their enum, e.g.
 `PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8()`, `KeyboardKey.KEY_SPACE()` or
@@ -125,6 +129,10 @@ without reordering. Their numeric and collision operations are documented in
 [MATH.md](MATH.md) and [COLLISION.md](COLLISION.md).
 `J.Ray{position, direction}` and `J.RayCollision{hit, distance, point, normal}`
 are the ray-query values of [COLLISION.md](COLLISION.md).
+`J.Mesh{vertex_count, triangle_count, vertices, texcoords, texcoords2, normals,
+tangents, colors, indices}` holds raylib's CPU mesh arrays as lists (`None`
+for `NULL`) and `J.Model{transform, meshes}` a transform and its meshes; see
+[MODELS.md](MODELS.md).
 `J.Camera3D{position, target, up, fovy, projection}` (raylib's `Camera` alias),
 `J.Camera2D{offset, target, rotation, zoom}` and
 `J.Transform{translation, rotation, scale}` are immutable value structs for the

@@ -1817,6 +1817,84 @@
     "macos"
    ],
    "minutes": 30
+  },
+  {
+   "id": "models",
+   "title": "BeginMode3D/EndMode3D (orthographic and identity projections) and the rmodels.c 3D shapes byte for byte against the memory-platform raylib built with -ffp-contract=off and the host libm, with matrix getters and refusal contracts (perspective, unverified sinf/cosf arguments)",
+   "run": [
+    "{python}",
+    "tools/models_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 6
+  },
+  {
+   "id": "models-gnu",
+   "title": "The same 3D scenes against a reference raylib whose sinf/cosf are the Arm optimized-routines model, with Jonlib under M.Glibc239Libm{} (spheres, cylinders, capsules)",
+   "run": [
+    "{python}",
+    "tools/models_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}",
+    "--gnu-libm"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 8
+  },
+  {
+   "id": "mesh",
+   "title": "GenMeshPoly/Plane/Cube/Heightmap/Cubicmap, GenMeshTangents, GetMeshBoundingBox, ExportMesh/ExportMeshAsCode bytes, GetRayCollisionMesh and GetModelBoundingBox word for word against the linked raylib with the host contraction and libm profiles, with refusal contracts",
+   "run": [
+    "{python}",
+    "tools/mesh_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 8
+  },
+  {
+   "id": "mesh-uncontracted",
+   "title": "The mesh cases against the raylib built with -ffp-contract=off (M.Uncontracted{})",
+   "run": [
+    "{python}",
+    "tools/mesh_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}",
+    "--uncontracted-control"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 8
+  },
+  {
+   "id": "mesh-gnu",
+   "title": "The mesh cases (without fminf/fmaxf bounding boxes) against the Arm sinf/cosf model build (M.Uncontracted{}, M.Glibc239Libm{})",
+   "run": [
+    "{python}",
+    "tools/mesh_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}",
+    "--gnu-libm"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 8
   }
  ]
 }

@@ -68,6 +68,7 @@ profile (below), and the convenience form uses `M.Uncontracted{}`:
 | `Collision.ray_triangle(ray, p1, p2, p3)` | Moller-Trumbore with raylib's `1e-6` epsilon; parallel rays, points outside the triangle and hits not ahead of the origin are the all-zero miss. |
 | `Collision.ray_quad(ray, p1, p2, p3, p4)` | Triangle `(p1, p2, p4)`, then `(p2, p3, p4)` when the first misses. |
 | `Collision.ray_box(ray, box)` | `Maybe<RayCollision>`. Slab intersection; a ray starting strictly inside is traced backwards and its distance and normal negated. The normal is the hit point scaled to the unit box by `2.01` and truncated like the C `int` cast. |
+| `Collision.ray_mesh_for(arithmetic, ray, mesh, transform)` | `Maybe<RayCollision>`. `GetRayCollisionMesh`: each triangle transformed, the nearest triangle hit; `None` for inconsistent meshes or indices beyond the vertex count ([MODELS.md](MODELS.md#collision)). |
 
 `Collision.ray_box_for(arithmetic, libm, ray, box)` also takes the `M.Libm`
 profile, since raylib chooses slab distances with `fmin`/`fmax`, whose
@@ -118,6 +119,7 @@ lose tiny addends at an F32 halfway boundary.
 | `fused` | `tools/fused_probe.py` | the internal finite-normal F32 multiply-add vs native `fmaf`, including double-rounding counterexamples, cancellation and signed zeros |
 | `ray` | `tools/ray_probe.py` | every ray-collision field bit vs the linked raylib with the host contraction and libm profiles; a C oracle repeating the box contract selects the expected `None` results |
 | `ray-uncontracted` | `tools/ray_probe.py --uncontracted-control` | the same cases against the pinned `rmodels.c` ray functions compiled without contraction, checking `M.Uncontracted{}` on every host |
+| `mesh`, `mesh-uncontracted` | `tools/mesh_probe.py` | `GetRayCollisionMesh` (`Collision.ray_mesh_for`) and `GetModelBoundingBox` on generated and hand-built meshes under three transforms, every result bit ([MODELS.md](MODELS.md#collision)) |
 
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only fused

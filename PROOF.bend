@@ -670,3 +670,12 @@ def Laws.rlgl_begin_lines():
 
 def Laws.rlgl_begin_points_ignored():
   {==}
+
+def Laws.mesh_cube_vertex_count(width, height, length):
+  {==}
+
+def Laws.mesh_cube_triangle_count(width, height, length):
+  {==}
+
+def Laws.mesh_poly_degenerate_empty(libm, radius):
+  {==}
