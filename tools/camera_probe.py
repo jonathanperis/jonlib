@@ -653,9 +653,11 @@ def main():
     name = 'camera' + (f'-{control}' if control else '') + (f'-{args.gnu_libm}' if args.gnu_libm else '')
     probe = probekit.Probe(name, args)
     # Clang contracts a*b + c per expression on every target; x86-64 needs -mfma to emit it.
-    fma_flags = {'arm64': [], 'aarch64': [], 'x86_64': ['-mfma'], 'AMD64': ['-mfma']}.get(platform.machine())
+    # M.Fused is arm64 clang's contraction (fnmadd folding, positive default NaNs); x86 FMA code differs in
+    # zero and NaN signs, so the fused control runs on arm64 hosts only.
+    fma_flags = {'arm64': [], 'aarch64': []}.get(platform.machine())
     if control == 'fused' and fma_flags is None:
-        raise ProbeFailure(f'camera: declare how clang emits fused multiply-adds on {platform.machine()}')
+        raise ProbeFailure(f'camera: the fused control reproduces arm64 code generation; {platform.machine()} is not one')
     arithmetic = {'uncontracted': 'Uncontracted', 'fused': 'Fused'}.get(control) or contraction()
     header, objects = '', []
     if args.gnu_libm:

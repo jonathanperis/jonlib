@@ -111,7 +111,8 @@ def cases(libm, gnu):
         out.append(dict(id=name, mesh=mesh, action=action, words=list(words), contract=contract))
 
     def par(name, mesh, action='show', words=()):
-        refused = not par_small(mesh) and (not gnu or par_points(mesh) > 65535)
+        # par_shapes generators are glibc-profile only (qsort order): refused under AppleLibm, whatever the build.
+        refused = not par_small(mesh) and (libm == 'AppleLibm' or par_points(mesh) > 65535)
         add(name, mesh, action, words, contract=refused)
 
     # par_shapes meshes (glibc profile only): hemispheres first, before and after the first GenMeshSphere.
@@ -131,7 +132,7 @@ def cases(libm, gnu):
     par('ray-sphere', ('sphere', 2.0, 12, 12), 'ray', [W(f32(v)) for v in (0.1, 0.2, 5.0, 0.0, 0.0, -1.0)] + [W(v) for v in IDENTITY])
     par('ray-torus', ('torus', f32(0.3), 4.0, 16, 8), 'ray', [W(f32(v)) for v in (1.5, 0.1, 5.0, 0.0, 0.0, -1.0)] + [W(v) for v in IDENTITY])
     if not gnu:
-        add('bbox-sphere', ('sphere', 1.0, 6, 6), 'bbox', contract=True, fminf=True)
+        add('bbox-sphere', ('sphere', 1.0, 6, 6), 'bbox', contract=(libm == 'AppleLibm'), fminf=True)
 
     for sides in (0, 2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 18, 20, 24, 36, 7, 11, 100, 360, 5000):
         for radius in (1.0, f32(2.5), f32(-1.75)):

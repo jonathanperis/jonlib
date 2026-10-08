@@ -172,7 +172,7 @@ payload contract.
 | `camera` | `tools/camera_probe.py` | every result bit of the 19 functions above against the linked raylib with the host contraction and libm profiles, the refusals selected by a C oracle repeating the contract, and the total FMA kernel against the host `fmaf` |
 | `camera-uncontracted` | `tools/camera_probe.py --uncontracted-control` | the same cases against the pinned `rcamera.h`/`rcore.c` functions compiled without contraction, checking `M.Uncontracted{}` on any host |
 | `camera-glibc239` | `--uncontracted-control --gnu-libm glibc239` | the pinned functions without contraction, with `sinf`/`cosf` from the Arm model and `atan2f` from the pinned glibc 2.39 (Sun) source: `M.Uncontracted{}` with `M.Glibc239Libm{}` on any host |
-| `camera-fused-glibc241` | `--fused-control --gnu-libm glibc241` | the pinned functions compiled with clang contraction into FMA (arm64; `-mfma` on x86-64), the Arm model and the pinned glibc 2.41 `atan2f`: `M.Fused{}` with `M.Glibc241Libm{}` and nonzero rotations |
+| `camera-fused-glibc241` | `--fused-control --gnu-libm glibc241` | the pinned functions compiled with arm64 clang contraction into FMA, the Arm model and the pinned glibc 2.41 `atan2f`: `M.Fused{}` with `M.Glibc241Libm{}` and nonzero rotations. macOS only: x86-64 FMA code (`-mfma`) negates zeros and produces negative default NaNs where arm64's `fnmadd` folding does not, so `M.Fused{}` names the arm64 code generation |
 
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only camera
