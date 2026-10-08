@@ -89,9 +89,14 @@ order (`docs/PROGRESS.md` lists every ID):
    workstream); `AudioCallback` arrives with audio.
 3. **`pixels` macros and color utilities** — delivered, including the named
    color constants.
-4. **Blocked numerics** — `MatrixPerspective`, `QuaternionSlerp`,
-   `QuaternionToAxisAngle`, `QuaternionToEuler` and the cubic Bézier spline
-   need native `tanf`/`acosf`/`atan2f`/`powf` profiles. The diagnostic
+4. **Blocked numerics** — `QuaternionSlerp` and `QuaternionToAxisAngle` are
+   delivered under the glibc 2.39 `acosf` profile ([INVERSE-TRIG.md](INVERSE-TRIG.md)).
+   `QuaternionToEuler` waits on `asinf`, whose glibc 2.39 single-precision
+   code is LGPL-2.1+ (a licensing decision for Jonathan). The cubic Bézier
+   spline is delivered under the glibc 2.39 `powf` profile ([SPLINES.md](SPLINES.md)).
+   `MatrixPerspective` needs the native binary64 `tan`: glibc's is IBM's
+   LGPL-2.1+ code and Apple's is unpublished, so it waits on the same
+   licensing decision. The diagnostic
    `perspective` and `inverse-trig` gates already record native behavior; the
    work is accurate per-libm kernels, as for `sinf`/`cosf`. Apple's current
    `asinf`/`acosf`/`tanf` match neither its published Libm sources nor
@@ -157,9 +162,11 @@ recommended option in each case, revisable on his review):
   (CORE-MATH) profiles for `asinf`/`acosf`/`tanf`/`powf`, compared on Linux;
   on Apple hosts the results are documented as differing (Apple's libm is not
   reproducible from published sources), not claimed.
-- **Phase 2 entry:** a design note (window/event lifecycle, input state and
-  replay, frame timing over Base's App/Window, what stays headless) precedes
-  any Phase 2 code.
+- **Phase 2 entry:** a design note precedes any Phase 2 code:
+  [PHASE2-DESIGN.md](PHASE2-DESIGN.md) (raylib's memory platform with the
+  scalar `rlsw` software renderer as the drawing reference, automation-event
+  replay for input, time as an explicit input, an explicit `Core`/`Frame`
+  state, and the slice order).
 - **Audio brought forward:** Wave loading/export (WAV through dr_wav, QOA
   through qoa.h, [AUDIO.md](AUDIO.md)) is a headless Phase 4 slice delivered
   early, since it needs no device; sounds, music and devices stay in Phase 4.
