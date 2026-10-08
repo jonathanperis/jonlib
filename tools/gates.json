@@ -1528,7 +1528,7 @@
   },
   {
    "id": "wav",
-   "title": "WAV loading (dr_wav RIFF subset) and Wave utilities against raylib with its audio module",
+   "title": "WAV loading (dr_wav containers and codecs) and Wave utilities against raylib with its audio module",
    "run": [
     "{python}",
     "tools/wav_probe.py",

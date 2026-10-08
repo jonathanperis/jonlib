@@ -18,6 +18,8 @@ import ./src/pic.bend as Pic
 import ./src/formats.bend as Formats
 import ./src/codec.bend as Codec
 import ./src/qoa.bend as Qoa
+import ./src/wav.bend as Wav
+import ./src/wav_adpcm.bend as Adpcm
 
 law clear_dimensions:
   for +width: U32
@@ -738,3 +740,20 @@ law qoa_encode_no_frames:
   for +channels: U32
   for +rate: U32
   {Qoa.encode(samples, 0, channels, rate) == None{} : Maybe<&2, +List<U32>>}
+
+# drwav_aiff_extented_to_s64 reads 44100 from its 80-bit extended encoding.
+law wav_aiff_rate_44100:
+  {Wav.aiff.rate([64, 14, 172, 68, 0, 0, 0, 0, 0, 0], 0) == Wav.Rate{0, 44100} : Wav.Rate}
+
+# Sign set, largest exponent and significand 2^63: dr_wav negates INT64_MIN,
+# which is undefined (state 3), not a rate.
+law wav_aiff_rate_int64_min_undefined:
+  {Wav.aiff.rate([192, 62, 128, 0, 0, 0, 0, 0, 0, 0], 0) == Wav.Rate{3, 0} : Wav.Rate}
+
+# MS ADPCM delta adaptation saturates at 0x7FFFFFFF ...
+law msadpcm_adapt_saturates:
+  {Adpcm.ms.adapt(768, 2147483647) == 2147483647 : U32}
+
+# ... and a negative header delta adapts to the floor of 16.
+law msadpcm_adapt_negative_floor:
+  {Adpcm.ms.adapt(230, 4294966996) == 16 : U32}
