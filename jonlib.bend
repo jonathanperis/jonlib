@@ -73,6 +73,8 @@ import ./src/shapes.bend as Shapes
 import ./src/textures.bend as TextureDraw
 import ./src/fonts.bend as FontCore
 import ./src/rlgl.bend as RlglCore
+import ./src/font_data.bend as FontData
+import ./src/truetype.bend as TT
 import ./src/gif_animation.bend as GifAnimation
 import ./src/hdr.bend as Hdr
 import ./src/image_code.bend as ImageCode
@@ -7964,10 +7966,16 @@ def Rlgl.load_draw_quad(frame: Frame) -> Frame:
 # section) and U32 two's-complement words for codepoints, line spacing and FPS.
 # See docs/FONTS.md.
 
-# GlyphInfo: value, offsets, advance and the glyph image (ImageFromImage of
-# the font atlas at the glyph's rectangle).
+# GlyphInfo: value, offsets, advance and the glyph image (for a font, the
+# ImageFromImage of its atlas at the glyph's rectangle).
 type GlyphInfo is Type:
-  GlyphInfo{value: U32, offset_x: U32, offset_y: U32, advance_x: U32, image: Surface}
+  GlyphInfo{value: U32, offset_x: U32, offset_y: U32, advance_x: U32, image: GlyphImage}
+
+# A glyph's Image: pixels, or an image without them (raylib's width or height
+# 0 or below, or no data), kept with its C int width and height.
+type GlyphImage is Type:
+  GlyphPixels{image: Surface}
+  GlyphEmpty{width: U32, height: U32}
 
 # Font: baseSize, glyphPadding, the glyphs with their atlas rectangles (recs),
 # the texture (owned like any Texture; id 1 is the default font's) and the
@@ -8051,26 +8059,42 @@ def Font.glyph_atlas_rec(font: Font, +codepoint: U32) -> Font & Rectangle:
   Font{+base, +padding, +glyphs, texture, atlas} = font
   (Font{base, padding, glyphs, texture, atlas}, Font.glyph.rec(FontCore.Face.glyph(Font.face(base, padding, glyphs), codepoint)))
 
-def Font.glyph.with(+g: FontCore.Glyph, image: Surface) -> Maybe<GlyphInfo>:
+def Font.glyph.with(+g: FontCore.Glyph, image: GlyphImage) -> Maybe<GlyphInfo>:
   FontCore.Glyph{value, ox, oy, advance, _, _, _, _} = g
   Some{GlyphInfo{value, ox, oy, advance, image}}
 
 def Font.glyph.made(+g: FontCore.Glyph, image: Maybe<Surface>) -> Maybe<GlyphInfo>:
   match image:
     case None{}: None{}
-    case Some{surface}: Font.glyph.with(g, surface)
+    case Some{surface}: Font.glyph.with(g, GlyphPixels{surface})
 
 def Font.glyph.info(+base: U32, +padding: U32, +glyphs: +List<FontCore.Glyph>, texture: Texture, +g: FontCore.Glyph, extracted: Surface & Maybe<Surface>) -> Font & Maybe<GlyphInfo>:
   (atlas, image) = extracted
   (Font{base, padding, glyphs, texture, atlas}, Font.glyph.made(g, image))
 
+def Font.glyph.empty(+base: U32, +padding: U32, +glyphs: +List<FontCore.Glyph>, texture: Texture, atlas: Surface, +g: FontCore.Glyph) -> Font & Maybe<GlyphInfo>:
+  FontCore.Glyph{_, _, _, _, _, _, w, h} = g
+  (Font{base, padding, glyphs, texture, atlas}, Font.glyph.with(g, GlyphEmpty{F32.to_u32(w), F32.to_u32(h)}))
+
+# A rectangle 0 wide or high (integral, not negative).
+def Font.glyph.blank(+g: FontCore.Glyph) -> Bool:
+  FontCore.Glyph{_, _, _, _, _, _, +w, +h} = g
+  (F32.is_eq(w, 0.0) || F32.is_eq(h, 0.0)) && (w >= 0.0 : F32) && (h >= 0.0 : F32) && F32.is_eq(F32.trunc(w), w) && F32.is_eq(F32.trunc(h), h)
+
+def Font.glyph.region(empty: Bool, +base: U32, +padding: U32, +glyphs: +List<FontCore.Glyph>, texture: Texture, atlas: Surface, +g: FontCore.Glyph) -> Font & Maybe<GlyphInfo>:
+  match empty:
+    case True{}: Font.glyph.empty(base, padding, glyphs, texture, atlas, g)
+    case False{}: Font.glyph.info(base, padding, glyphs, texture, g, Surface.extract(atlas, Font.glyph.rec(g)))
+
 # GetGlyphInfo: glyphs[GetGlyphIndex(font, codepoint)], its image an owned
-# copy of the atlas region (None only for a glyph rectangle that is not a
-# positive integral region of the atlas, which the loaders never build).
+# copy of the atlas region (GlyphEmpty for a rectangle 0 wide or high, which
+# TrueType and BDF loading make for glyphs without pixels). None only for a
+# rectangle that is not an integral region of the atlas, which the loaders
+# never build.
 def Font.glyph_info(font: Font, +codepoint: U32) -> Font & Maybe<GlyphInfo>:
   Font{+base, +padding, +glyphs, texture, atlas} = font
   +g = FontCore.Face.glyph(Font.face(base, padding, glyphs), codepoint)
-  Font.glyph.info(base, padding, glyphs, texture, g, Surface.extract(atlas, Font.glyph.rec(g)))
+  Font.glyph.region(Font.glyph.blank(g), base, padding, glyphs, texture, atlas, g)
 
 def Font.extent(+e: FontCore.Extent) -> M.Vector2:
   FontCore.Extent{x, y} = e
@@ -8492,6 +8516,608 @@ def Font.load.copied(frame: Frame, +key: U32, +first: U32, pair: Surface & Surfa
 # LoadImageColors is out of domain or the 127 texture ids are in use.
 def Font.load_from_image(frame: Frame, image: Surface, +key: U32, +first: U32) -> Frame & (Surface & Maybe<Font>):
   Font.load.copied(frame, key, first, Surface.copy(image))
+
+# TrueType and BDF fonts: LoadFontData, GenImageFontAtlas, LoadFontFromMemory,
+# LoadFontEx, LoadFont, UnloadFontData, ExportFontAsCode -----------------------
+#
+# Altered Bend adaptations of rtext.c and of stb_truetype.h / stb_rect_pack.h
+# (Sean Barrett, public domain / MIT, LICENSES/stb_truetype.txt): see
+# src/truetype.bend and src/font_data.bend. C ints are U32 two's-complement
+# words. See docs/FONTS.md.
+
+# LoadFontData's result: raylib's NULL (stbtt_InitFont failed), the glyphs,
+# or a refusal (undefined C behavior, a CFF font, an SDF needing the cubic
+# solver; see docs/FONTS.md).
+type Font.Data is Type:
+  FontDataNull{}
+  FontDataGlyphs{glyphs: List<GlyphInfo>}
+  FontDataRefused{}
+
+def Font.data.image.surface(+w: U32, +h: U32, made: Maybe<Surface>) -> GlyphImage:
+  match made:
+    case None{}: GlyphEmpty{w, h}
+    case Some{s}: GlyphPixels{s}
+
+def Font.data.image.made(full: Bool, +w: U32, +h: U32, +pixels: +List<U32>) -> GlyphImage:
+  match full:
+    case False{}: GlyphEmpty{w, h}
+    case True{}: Font.data.image.surface(w, h, Surface.from_bytes(w, h, 1, pixels))
+
+def Font.data.image(+w: U32, +h: U32, +has: Bool, +pixels: +List<U32>) -> GlyphImage:
+  Font.data.image.made(has && Bool.not(FontCore.negative(w)) && Bool.not(FontCore.negative(h)) && Bool.not(U32.is_eq(w, 0)) && Bool.not(U32.is_eq(h, 0)),
+    w, h, pixels)
+
+def Font.data.glyph(+g: FontData.Glyph) -> GlyphInfo:
+  FontData.Glyph{value, ox, oy, adv, w, h, has, pixels} = g
+  GlyphInfo{value, ox, oy, adv, Font.data.image(w, h, has, pixels)}
+
+def Font.data.glyphs(gs: +List<FontData.Glyph>) -> List<GlyphInfo>:
+  match gs:
+    case Nil{}: Nil{}
+    case Con{+g, rest}: Con{Font.data.glyph(g), Font.data.glyphs(rest)}
+
+def Font.data.status(status: U32, +glyphs: +List<FontData.Glyph>) -> Font.Data:
+  match status:
+    case 0: FontDataNull{}
+    case 1: FontDataGlyphs{Font.data.glyphs(glyphs)}
+    case _: FontDataRefused{}
+
+def Font.data.loaded(+l: FontData.Loaded) -> Font.Data:
+  FontData.Loaded{status, glyphs} = l
+  Font.data.status(status, glyphs)
+
+# LoadFontData(fileData, dataSize, fontSize, codepoints, codepointCount, type):
+# codepoints empty is NULL (codepointCount consecutive codepoints from 32;
+# 95 when the count is not positive), otherwise its first codepointCount
+# entries (refused when shorter). type 0 FONT_DEFAULT, 1 FONT_BITMAP, 2
+# FONT_SDF (padding 4, on-edge 128, scale 64). One GlyphInfo per requested
+# codepoint the font maps: offsets from the bitmap box (offsetY plus the
+# scaled ascent), advanceX the scaled advance, GRAYSCALE images; the space and
+# U+3000 get an empty advanceX x fontSize image.
+def Font.load_data(+bytes: +List<U32>, +size: U32, +codepoints: +List<U32>, +count: U32, +kind: U32) -> Font.Data:
+  Font.data.loaded(FontData.load(bytes, size, codepoints, count, kind))
+
+# UnloadFontData: the glyphs are dropped.
+def Font.unload_data(glyphs: List<GlyphInfo>) -> Unit:
+  Unit{}
+
+# GlyphInfo to the atlas's input: raylib reads image.data as width*height
+# GRAYSCALE bytes whatever the format.
+def Font.atlas.glyph.bytes(+value: U32, +ox: U32, +oy: U32, +adv: U32, +w: U32, +h: U32, pair: Surface & Surface) -> GlyphInfo & FontData.Glyph:
+  (image, copy) = pair
+  (GlyphInfo{value, ox, oy, adv, GlyphPixels{image}}, FontData.Glyph{value, ox, oy, adv, w, h, True{}, Surface.raw(~&2, copy)})
+
+def Font.atlas.glyph.pixels(+value: U32, +ox: U32, +oy: U32, +adv: U32, image: Surface) -> GlyphInfo & FontData.Glyph:
+  Surface{+w, +h, format, pixels} = image
+  Font.atlas.glyph.bytes(value, ox, oy, adv, w, h, Surface.copy(Surface{w, h, format, pixels}))
+
+def Font.atlas.glyph.image(+value: U32, +ox: U32, +oy: U32, +adv: U32, image: GlyphImage) -> GlyphInfo & FontData.Glyph:
+  match image:
+    case GlyphEmpty{+w, +h}: (GlyphInfo{value, ox, oy, adv, GlyphEmpty{w, h}}, FontData.Glyph{value, ox, oy, adv, w, h, False{}, Nil{}})
+    case GlyphPixels{s}: Font.atlas.glyph.pixels(value, ox, oy, adv, s)
+
+def Font.atlas.glyph(g: GlyphInfo) -> GlyphInfo & FontData.Glyph:
+  GlyphInfo{+value, +ox, +oy, +adv, image} = g
+  Font.atlas.glyph.image(value, ox, oy, adv, image)
+
+def Font.atlas.split.cons(rest: List<GlyphInfo> & +List<FontData.Glyph>, one: GlyphInfo & FontData.Glyph) -> List<GlyphInfo> & +List<FontData.Glyph>:
+  (gs, +ds) = rest
+  (g, +d) = one
+  (Con{g, gs}, Con{d, ds})
+
+def Font.atlas.split(gs: List<GlyphInfo>) -> List<GlyphInfo> & +List<FontData.Glyph>:
+  match gs:
+    case Nil{}: (Nil{}, Nil{})
+    case Con{g, rest}: Font.atlas.split.cons(Font.atlas.split(rest), Font.atlas.glyph(g))
+
+def Font.atlas.rec(+r: FontData.Rec) -> Rectangle:
+  FontData.Rec{x, y, w, h} = r
+  Rectangle{x, y, w, h}
+
+def Font.atlas.recs(+rs: +List<FontData.Rec>) -> +List<Rectangle>:
+  match rs:
+    case Nil{}: Nil{}
+    case Con{+r, rest}: Con{Font.atlas.rec(r), Font.atlas.recs(rest)}
+
+# GRAY_ALPHA words from the GRAYSCALE atlas bytes (gray 255, alpha the byte).
+def Font.atlas.words(+bytes: +List<U32>, +i: U32, out: Array<U32>) -> Array<U32>:
+  match bytes:
+    case Nil{}: out
+    case Con{+b, rest}: Font.atlas.words(rest, (i + 1 : U32), Array.set(U32, out, i, (255 + (b << 8n) : U32)))
+
+def Font.atlas.surface(+w: U32, +h: U32, +bytes: +List<U32>) -> Surface:
+  Surface{w, h, 2, Words{Font.atlas.words(bytes, 0, Array.new(U32, Storage.depth((w * h : U32)), 0))}}
+
+def Font.atlas.some(+w: U32, +h: U32, +bytes: +List<U32>, +recs: +List<FontData.Rec>) -> Maybe<(Surface & +List<Rectangle>)>:
+  Some{(Font.atlas.surface(w, h, bytes), Font.atlas.recs(recs))}
+
+def Font.atlas.made(+a: FontData.Atlas) -> Maybe<(Surface & +List<Rectangle>)>:
+  FontData.Atlas{status, w, h, bytes, recs} = a
+  Bool.pick(Maybe<(Surface & +List<Rectangle>)>, U32.is_eq(status, 1), Font.atlas.some(w, h, bytes, recs), None{})
+
+def Font.atlas.run(+gnu: Bool, +count: U32, +size: U32, +padding: U32, +method: U32, split: List<GlyphInfo> & +List<FontData.Glyph>) -> List<GlyphInfo> & Maybe<(Surface & +List<Rectangle>)>:
+  (glyphs, +data) = split
+  (glyphs, Font.atlas.made(FontData.atlas(gnu, data, count, size, padding, method)))
+
+# GenImageFontAtlas(glyphs, &recs, glyphCount, fontSize, padding, packMethod):
+# the GRAY_ALPHA atlas and the glyph rectangles; the glyphs are handed back.
+# packMethod 0 places glyphs in rows (doubling the atlas height as needed),
+# 1 uses stb_rect_pack's skyline, whose rectangle sort is the C library's
+# qsort (libm selects it: glibc's stable merge sort, Apple's FreeBSD
+# introsort). None for raylib's undefined cases (a count beyond the glyphs,
+# missing image bytes, other methods) and atlases beyond 4096 or whose size
+# depends on the C library's logf rounding (docs/FONTS.md).
+def Font.gen_image_atlas_for(libm: M.Libm, glyphs: List<GlyphInfo>, +count: U32, +size: U32, +padding: U32, +method: U32) -> List<GlyphInfo> & Maybe<(Surface & +List<Rectangle>)>:
+  Font.atlas.run(M.Libm.gnu(libm), count, size, padding, method, Font.atlas.split(glyphs))
+
+def Font.gen_image_atlas(glyphs: List<GlyphInfo>, +count: U32, +size: U32, +padding: U32, +method: U32) -> List<GlyphInfo> & Maybe<(Surface & +List<Rectangle>)>:
+  Font.gen_image_atlas_for(M.AppleLibm{}, glyphs, count, size, padding, method)
+
+# LoadFontFromMemory ----------------------------------------------------------
+
+def Font.memory.glyph(+g: FontData.Glyph, +r: FontData.Rec) -> FontCore.Glyph:
+  FontData.Glyph{value, ox, oy, adv, _, _, _, _} = g
+  FontData.Rec{x, y, w, h} = r
+  FontCore.Glyph{value, ox, oy, adv, x, y, w, h}
+
+def Font.memory.glyphs(+gs: +List<FontData.Glyph>, +recs: +List<FontData.Rec>) -> +List<FontCore.Glyph>:
+  match gs recs:
+    case Con{+g, gr} Con{+r, rr}: Con{Font.memory.glyph(g, r), Font.memory.glyphs(gr, rr)}
+    case _ _: Nil{}
+
+def Font.memory.inside.one(+r: FontData.Rec, +w: U32, +h: U32) -> Bool:
+  FontData.Rec{x, y, rw, rh} = r
+  (x >= 0.0 : F32) && (y >= 0.0 : F32) && (rw >= 0.0 : F32) && (rh >= 0.0 : F32) && ((x + rw : F32) <= U32.to_f32(w) : F32) &&
+    ((y + rh : F32) <= U32.to_f32(h) : F32)
+
+# ImageFromImage reads each rectangle inside the atlas.
+def Font.memory.inside(+recs: +List<FontData.Rec>, +w: U32, +h: U32) -> Bool:
+  match recs:
+    case Nil{}: True{}
+    case Con{+r, rest}: Font.memory.inside.one(r, w, h) && Font.memory.inside(rest, w, h)
+
+def Font.memory.textured(+base: U32, +glyphs: +List<FontCore.Glyph>, atlas: Surface, loaded: Frame & Maybe<Texture>) -> Frame & Maybe<Font>:
+  match loaded:
+    case Tuple{frame, None{}}: (frame, None{})
+    case Tuple{frame, Some{texture}}: (frame, Some{Font{base, 4, glyphs, texture, atlas}})
+
+def Font.memory.copied(frame: Frame, +base: U32, +glyphs: +List<FontCore.Glyph>, pair: Surface & Surface) -> Frame & Maybe<Font>:
+  (atlas, copy) = pair
+  Font.memory.textured(base, glyphs, atlas, Texture.load_from_image(frame, copy))
+
+def Font.memory.placed(ok: Bool, frame: Frame, +base: U32, +glyphs: +List<FontCore.Glyph>, +w: U32, +h: U32, +bytes: +List<U32>) -> Frame & Maybe<Font>:
+  match ok:
+    case False{}: (frame, None{})
+    case True{}: Font.memory.copied(frame, base, glyphs, Surface.copy(Font.atlas.surface(w, h, bytes)))
+
+def Font.memory.atlas(frame: Frame, +base: U32, +gs: +List<FontData.Glyph>, +a: FontData.Atlas) -> Frame & Maybe<Font>:
+  FontData.Atlas{status, w, h, bytes, recs} = a
+  Font.memory.placed(U32.is_eq(status, 1) && Font.memory.inside(recs, w, h), frame, base, Font.memory.glyphs(gs, recs), w, h, bytes)
+
+# The glyphs (count of them) at baseSize, padding 4, packing method 0.
+def Font.memory.glyphed(frame: Frame, +base: U32, +gs: +List<FontData.Glyph>, +count: U32) -> Frame & Maybe<Font>:
+  Font.memory.atlas(frame, base, gs, FontData.atlas(False{}, gs, count, base, 4, 0))
+
+def Font.memory.ttf.status(status: U32, frame: Frame, +size: U32, +glyphs: +List<FontData.Glyph>) -> Frame & Maybe<Font>:
+  match status:
+    case 0: (frame, Some{Font.default()})
+    case 1: Font.memory.glyphed(frame, size, glyphs, FontData.count.glyphs(glyphs, 0))
+    case _: (frame, None{})
+
+def Font.memory.ttf(frame: Frame, +size: U32, +l: FontData.Loaded) -> Frame & Maybe<Font>:
+  FontData.Loaded{status, glyphs} = l
+  Font.memory.ttf.status(status, frame, size, glyphs)
+
+def Font.memory.bdf.zero() -> FontData.Glyph:
+  FontData.Glyph{0, 0, 0, 0, 0, 0, False{}, Nil{}}
+
+def Font.memory.bdf.status(status: U32, frame: Frame, +count: U32, +size: U32) -> Frame & Maybe<Font>:
+  match status:
+    case 0: (frame, Some{Font.default()})
+    case 1: Font.memory.glyphed(frame, size, List.replicate(FontData.Glyph, U32.to_nat(count), Font.memory.bdf.zero()), count)
+    case _: (frame, None{})
+
+def Font.memory.bdf(frame: Frame, +count: U32, +r: FontData.Bdf) -> Frame & Maybe<Font>:
+  FontData.Bdf{status, size} = r
+  Font.memory.bdf.status(status, frame, count, size)
+
+def Font.memory.bdf.valid(valid: Bool, frame: Frame, +bytes: +List<U32>, +size: U32, +required: +List<U32>, +count: U32) -> Frame & Maybe<Font>:
+  match valid:
+    case False{}: (frame, None{})
+    case True{}: Font.memory.bdf(frame, count, FontData.bdf(bytes, required, size))
+
+def Font.memory.kind(kind: U32, frame: Frame, +bytes: +List<U32>, +size: U32, +codepoints: +List<U32>, +count: U32) -> Frame & Maybe<Font>:
+  match kind:
+    case 1: Font.memory.ttf(frame, size, FontData.load(bytes, size, codepoints, count, 0))
+    case 2:
+      +given = FontData.count(codepoints, 0)
+      Font.memory.bdf.valid((U32.is_eq(given, 0) || Bool.not((given < count : U32))) && (count <= 65536 : U32), frame, bytes, size,
+        Bool.pick(+List<U32>, U32.is_eq(given, 0), FontData.range(U32.to_nat(count), 32, Nil{}), FontData.take(U32.to_nat(count), codepoints, Nil{})), count)
+    case _: (frame, Some{Font.default()})
+
+# LoadFontFromMemory(fileType, fileData, dataSize, fontSize, codepoints,
+# codepointCount): ".ttf"/".otf" (any case) through LoadFontData, ".bdf"
+# through LoadFontDataBDF (whose result raylib 6.0 only keeps for fonts
+# without characters, see docs/FONTS.md), then GenImageFontAtlas (padding 4,
+# rows) loaded as the GRAY_ALPHA texture; other types and fonts
+# stb_truetype does not initialize give the default font. None for the
+# refusals of LoadFontData and GenImageFontAtlas, glyph rectangles outside the
+# atlas (ImageFromImage would read past it) and when the 127 texture ids are
+# in use.
+def Font.load_from_memory(frame: Frame, file_type: String, +bytes: +List<U32>, +size: U32, +codepoints: +List<U32>, +count: U32) -> Frame & Maybe<Font>:
+  +ext = String.take(Text.to_lower(file_type), 15n)
+  +n = Bool.pick(U32, FontCore.negative(count) || U32.is_eq(count, 0), 95, count)
+  +kind = Bool.pick(U32, String.eq(ext, ".ttf") || String.eq(ext, ".otf"), 1, Bool.pick(U32, String.eq(ext, ".bdf"), 2, 0))
+  Font.memory.kind(kind, frame, bytes, size, codepoints, n)
+
+# LoadFontEx / LoadFont -------------------------------------------------------
+
+def Font.file.result(r: Frame & Maybe<Font>) -> Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>:
+  (frame, font) = r
+  (frame, Done{font})
+
+def Font.file.ext(found: Maybe<String>) -> String:
+  match found:
+    case None{}: ""
+    case Some{e}: e
+
+def Font.file.bytes(frame: Frame, +path: String, +size: U32, +codepoints: +List<U32>, +count: U32, loaded: Result<&1, &1, Surface.IOError, +List<U32>>) -> IO(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>):
+  match loaded:
+    case Fail{error}: IO.pure(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>, (frame, Fail{error}))
+    case Done{Nil{}}: IO.pure(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>, (frame, Fail{DataError{TruncatedImageData{}}}))
+    case Done{Con{+b, rest}}:
+      IO.pure(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>,
+        Font.file.result(Font.load_from_memory(frame, Font.file.ext(Files.extension(path)), Con{b, rest}, size, codepoints, count)))
+
+# LoadFontEx(fileName, fontSize, codepoints, codepointCount): the file's bytes
+# through LoadFontFromMemory with its extension. Fail when the file does not
+# load or is empty (raylib returns an empty Font, texture id 0); Done{None}
+# for LoadFontFromMemory's refusals.
+def Font.load_ex(frame: Frame, +path: String, +size: U32, +codepoints: +List<U32>, +count: U32) -> IO(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>):
+  IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>, Files.load_data(path),
+    loaded => Font.file.bytes(frame, path, size, codepoints, count, loaded))
+
+def Font.file.point(font: Maybe<Font>) -> Maybe<Font>:
+  match font:
+    case None{}: None{}
+    case Some{f}: Some{Font.set_filter(f, 0)}
+
+def Font.file.filtered(r: Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>) -> IO(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>):
+  match r:
+    case Tuple{frame, Fail{error}}: IO.pure(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>, (frame, Fail{error}))
+    case Tuple{frame, Done{font}}: IO.pure(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>, (frame, Done{Font.file.point(font)}))
+
+def Font.file.image.font(r: Frame & (Surface & Maybe<Font>)) -> Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>:
+  match r:
+    case Tuple{frame, Tuple{_, font}}: (frame, Done{font})
+
+def Font.file.image(frame: Frame, loaded: Result<&1, &1, Surface.IOError, Surface>) -> IO(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>):
+  match loaded:
+    case Fail{_}: IO.pure(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>, (frame, Done{Some{Font.default()}}))
+    case Done{image}: IO.pure(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>, Font.file.image.font(Font.load_from_image(frame, image, Color.MAGENTA(), 32)))
+
+# LoadBMFont ------------------------------------------------------------------
+
+def Font.code.length(+s: String, +n: U32) -> U32:
+  match s:
+    case SNil{}: n
+    case SCon{_, rest}: Font.code.length(rest, (n + 1 : U32))
+
+def Font.bm.codes(s: String, +acc: +List<U32>) -> +List<U32>:
+  match s:
+    case SNil{}: List.reverse(&2, U32, Con{0, acc})
+    case SCon{Chr{+c}, rest}: Font.bm.codes(rest, Con{c, acc})
+
+def Font.bm.string(+cs: +List<U32>) -> String:
+  match cs:
+    case Nil{}: SNil{}
+    case Con{+c, rest}: SCon{Chr{c}, Font.bm.string(rest)}
+
+# A glyph line's values: id, x, y, width, height, xoffset, yoffset, xadvance,
+# page; the rectangle is (x, y + scaleH*page, width, height).
+def Font.bm.glyph(+scale_h: U32, +v: +List<U32>) -> FontCore.Glyph:
+  +x = FontData.nth(1n, v)
+  +y = FontData.nth(2n, v)
+  FontCore.Glyph{FontData.nth(0n, v), FontData.nth(5n, v), FontData.nth(6n, v), FontData.nth(7n, v), FontCore.int.f32(x),
+    (FontCore.int.f32(y) + (FontCore.int.f32(scale_h) * FontCore.int.f32(FontData.nth(8n, v)) : F32) : F32),
+    FontCore.int.f32(FontData.nth(3n, v)), FontCore.int.f32(FontData.nth(4n, v))}
+
+def Font.bm.glyphs(+scale_h: U32, +vs: +List<+List<U32>>) -> +List<FontCore.Glyph>:
+  match vs:
+    case Nil{}: Nil{}
+    case Con{+v, rest}: Con{Font.bm.glyph(scale_h, v), Font.bm.glyphs(scale_h, rest)}
+
+def Font.bm.inside.one(+g: FontCore.Glyph, +w: U32, +h: U32) -> Bool:
+  FontCore.Glyph{_, _, _, _, x, y, rw, rh} = g
+  +empty = F32.is_eq(rw, 0.0) || F32.is_eq(rh, 0.0)
+  (rw >= 0.0 : F32) && (rh >= 0.0 : F32) && (empty || ((x >= 0.0 : F32) && (y >= 0.0 : F32) && ((x + rw : F32) <= U32.to_f32(w) : F32) &&
+    ((y + rh : F32) <= U32.to_f32(h) : F32)))
+
+# ImageFromImage reads each glyph rectangle with pixels inside the page; a
+# rectangle without pixels (0 wide or high) reads nothing.
+def Font.bm.inside(+gs: +List<FontCore.Glyph>, +w: U32, +h: U32) -> Bool:
+  match gs:
+    case Nil{}: True{}
+    case Con{+g, rest}: Font.bm.inside.one(g, w, h) && Font.bm.inside(rest, w, h)
+
+def Font.bm.pixels(+g: FontCore.Glyph) -> Bool:
+  FontCore.Glyph{_, _, _, _, _, _, rw, rh} = g
+  Bool.not(F32.is_eq(rw, 0.0)) && Bool.not(F32.is_eq(rh, 0.0))
+
+def Font.bm.any_pixels(+gs: +List<FontCore.Glyph>) -> Bool:
+  match gs:
+    case Nil{}: False{}
+    case Con{+g, rest}: Font.bm.pixels(g) || Font.bm.any_pixels(rest)
+
+def Font.bm.textured(+size: U32, +glyphs: +List<FontCore.Glyph>, atlas: Surface, loaded: Frame & Maybe<Texture>) -> Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>:
+  match loaded:
+    case Tuple{frame, None{}}: (frame, Done{Some{Font.default()}})
+    case Tuple{frame, Some{texture}}: (frame, Done{Some{Font{size, 0, glyphs, texture, atlas}}})
+
+def Font.bm.copied(frame: Frame, +size: U32, +glyphs: +List<FontCore.Glyph>, pair: Surface & Surface) -> Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>:
+  (atlas, copy) = pair
+  Font.bm.textured(size, glyphs, atlas, Texture.load_from_image(frame, copy))
+
+def Font.bm.placed(ok: Bool, frame: Frame, +size: U32, +glyphs: +List<FontCore.Glyph>, page: Surface) -> Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>:
+  match ok:
+    case False{}: (frame, Done{None{}})
+    case True{}: Font.bm.copied(frame, size, glyphs, Surface.copy(page))
+
+def Font.bm.page.gray(image: Surface) -> Surface:
+  Surface{+w, +h, format, pixels} = image
+  Font.atlas.surface(w, h, Surface.raw(~&2, Surface{w, h, format, pixels}))
+
+def Font.bm.page.format(gray: Bool, image: Surface) -> Surface:
+  match gray:
+    case False{}: image
+    case True{}: Font.bm.page.gray(image)
+
+# GRAYSCALE pages become GRAY_ALPHA (gray 255, alpha the byte).
+def Font.bm.page(image: Surface) -> Surface:
+  Surface{+w, +h, +format, pixels} = image
+  Font.bm.page.format(U32.is_eq(format, 1), Surface{w, h, format, pixels})
+
+def Font.bm.paged(frame: Frame, +size: U32, +glyphs: +List<FontCore.Glyph>, page: Surface) -> Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>:
+  Surface{+w, +h, format, pixels} = page
+  Font.bm.placed(Font.bm.inside(glyphs, w, h), frame, size, glyphs, Surface{w, h, format, pixels})
+
+def Font.bm.image(frame: Frame, +size: U32, +glyphs: +List<FontCore.Glyph>, loaded: Result<&1, &1, Surface.IOError, Surface>) -> IO(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>):
+  match loaded:
+    case Fail{_}: IO.pure(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>,
+      (frame, Done{Bool.pick(Maybe<Font>, Font.bm.any_pixels(glyphs), None{}, Some{Font.default()})}))
+    case Done{image}: IO.pure(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>, Font.bm.paged(frame, size, glyphs, Font.bm.page(image)))
+
+def Font.bm.dir(found: Maybe<String>) -> String:
+  match found:
+    case None{}: ""
+    case Some{d}: d
+
+def Font.bm.status(status: U32, frame: Frame, +full: String, +size: U32, +glyphs: +List<FontCore.Glyph>) -> IO(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>):
+  match status:
+    case 0: IO.pure(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>, (frame, Fail{DataError{InvalidImageHeader{}}}))
+    case 1: IO.bind(Result<&1, &1, Surface.IOError, Surface>, Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>, Surface.load_image(full),
+      loaded => Font.bm.image(frame, size, glyphs, loaded))
+    case _: IO.pure(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>, (frame, Done{None{}}))
+
+def Font.bm.dir.ok(found: Maybe<String>) -> Bool:
+  match found:
+    case None{}: False{}
+    case Some{_}: True{}
+
+def Font.bm.parsed(frame: Frame, +path: String, +h: FontData.BmHeader, +lines: FontData.BmGlyphs) -> IO(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>):
+  FontData.BmHeader{status, size, scale_h, _, name, _, _} = h
+  FontData.BmGlyphs{ok, _, values} = lines
+  +full = Font.bm.dir(Files.directory(path)) ++ "/" ++ Font.bm.string(name)
+  +defined = Font.bm.dir.ok(Files.directory(path)) && (Font.code.length(full, 0) < 1024 : U32)
+  Font.bm.status(Bool.pick(U32, U32.is_eq(status, 1), Bool.pick(U32, ok && defined, 1, 2), status), frame, full, size, Font.bm.glyphs(scale_h, values))
+
+def Font.bm.blob(frame: Frame, +path: String, +b: TT.Blob) -> IO(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>):
+  +h = FontData.bm.header(b)
+  Font.bm.parsed(frame, path, h, FontData.bm.lines(b, h))
+
+def Font.bm.text(frame: Frame, +path: String, loaded: Result<&1, &1, Surface.IOError, String>) -> IO(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>):
+  match loaded:
+    case Fail{error}: IO.pure(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>, (frame, Fail{error}))
+    case Done{text}: Font.bm.blob(frame, path, TT.Blob.new(Font.bm.codes(text, Nil{})))
+
+# LoadBMFont (AngelCode text .fnt): lineHeight (baseSize) and scaleH from the
+# second line, one page whose image (next to the .fnt) becomes the texture
+# (GRAYSCALE pages as GRAY_ALPHA), count glyph lines with id, rectangle,
+# offsets and advance; padding 0. Fail when the file does not load or raylib
+# returns an empty Font (fewer than 4 header values, no file name or count);
+# the default font when the page image does not load and no glyph has pixels;
+# None for raylib's undefined cases (a missing lineHeight, file or count field,
+# a glyph line without its nine values, a rectangle outside the page, an image
+# that does not load under glyphs with pixels) and for pages other than 1
+# (raylib frees the other pages before drawing them).
+def Font.load_bmfont(frame: Frame, +path: String) -> IO(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>):
+  IO.bind(Result<&1, &1, Surface.IOError, String>, Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>, Files.load_text(path),
+    loaded => Font.bm.text(frame, path, loaded))
+
+def Font.file.kind(kind: U32, frame: Frame, +path: String) -> IO(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>):
+  match kind:
+    case 1: Font.load_ex(frame, path, 32, Nil{}, 95)
+    case 2: Font.load_bmfont(frame, path)
+    case 3: Font.load_ex(frame, path, 32, Nil{}, 95)
+    case 4: IO.bind(Result<&1, &1, Surface.IOError, Surface>, Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>, Surface.load_image(path),
+      loaded => Font.file.image(frame, loaded))
+    case _: IO.pure(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>, (frame, Done{None{}}))
+
+def Font.file.is(found: Maybe<Bool>) -> U32:
+  match found:
+    case None{}: 2
+    case Some{True{}}: 1
+    case Some{False{}}: 0
+
+# LoadFont(fileName): .ttf/.otf and .bdf (any case) as LoadFontEx(fileName,
+# 32, NULL, 95), .fnt as LoadBMFont, anything else LoadImage then
+# LoadFontFromImage(image, MAGENTA, 32) (the default font when the image does
+# not load); the loaded font's texture filtered POINT. None as in LoadFontEx
+# and when an extension check is undefined (Files.has_extension).
+def Font.load(frame: Frame, +path: String) -> IO(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>):
+  +ttf = Font.file.is(Files.has_extension(path, ".ttf"))
+  +otf = Font.file.is(Files.has_extension(path, ".otf"))
+  +fnt = Font.file.is(Files.has_extension(path, ".fnt"))
+  +bdf = Font.file.is(Files.has_extension(path, ".bdf"))
+  +undefined = U32.is_eq(ttf, 2) || U32.is_eq(otf, 2) || U32.is_eq(fnt, 2) || U32.is_eq(bdf, 2)
+  +kind = Bool.pick(U32, undefined, 0, Bool.pick(U32, U32.is_eq(ttf, 1) || U32.is_eq(otf, 1), 1, Bool.pick(U32, U32.is_eq(fnt, 1), 2,
+    Bool.pick(U32, U32.is_eq(bdf, 1), 3, 4))))
+  IO.bind(Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>, Frame & Result<&1, &1, Surface.IOError, Maybe<Font>>, Font.file.kind(kind, frame, path),
+    Font.file.filtered)
+
+# ExportFontAsCode ------------------------------------------------------------
+
+def Font.code.hex.digit(+v: U32) -> Char:
+  Chr{Bool.pick(U32, (v < 10 : U32), (48 + v : U32), (87 + v : U32))}
+
+def Font.code.hex(+b: U32) -> String:
+  "0x" ++ SCon{Font.code.hex.digit(((b >> 4n) .&. 15 : U32)), SCon{Font.code.hex.digit((b .&. 15 : U32)), ""}}
+
+def Font.code.int(+v: U32) -> String:
+  Bool.pick(String, FontCore.negative(v), "-" ++ U32.show((0 - v : U32)), U32.show(v))
+
+# %1.0f of an integral float (glyph rectangles are integral).
+def Font.code.float(+v: F32) -> String:
+  Bool.pick(String, F32.is_eq(v, 0.0) && (F32.bits(v) >= 2147483648 : U32), "-0",
+    Bool.pick(String, (v < 0.0 : F32), "-" ++ U32.show(F32.to_u32(F32.neg(v))), U32.show(F32.to_u32(Bool.pick(F32, (v < 0.0 : F32), 0.0, v)))))
+
+def Font.code.float.ok(+v: F32) -> Bool:
+  F32.is_eq(F32.trunc(v), v) && (F32.abs(v) < 4294967296.0 : F32)
+
+# The compressed bytes: 20 per line (the first after one), the last apart.
+def Font.code.bytes(+bytes: +List<U32>, +i: U32) -> String:
+  match bytes:
+    case Nil{}: ""
+    case Con{+b, Nil{}}: Font.code.hex(b) ++ " };\n\n"
+    case Con{+b, rest}: Font.code.hex(b) ++ Bool.pick(String, U32.is_eq((i % 20 : U32), 0), ",\n    ", ", ") ++ Font.code.bytes(rest, (i + 1 : U32))
+
+def Font.code.rec(+g: FontCore.Glyph) -> String:
+  FontCore.Glyph{_, _, _, _, x, y, w, h} = g
+  "    { " ++ Font.code.float(x) ++ ", " ++ Font.code.float(y) ++ ", " ++ Font.code.float(w) ++ " , " ++ Font.code.float(h) ++ " },\n"
+
+def Font.code.recs(+gs: +List<FontCore.Glyph>) -> String:
+  match gs:
+    case Nil{}: ""
+    case Con{+g, rest}: Font.code.rec(g) ++ Font.code.recs(rest)
+
+def Font.code.rec.ok(+g: FontCore.Glyph) -> Bool:
+  FontCore.Glyph{_, _, _, _, x, y, w, h} = g
+  Font.code.float.ok(x) && Font.code.float.ok(y) && Font.code.float.ok(w) && Font.code.float.ok(h)
+
+def Font.code.recs.ok(+gs: +List<FontCore.Glyph>) -> Bool:
+  match gs:
+    case Nil{}: True{}
+    case Con{+g, rest}: Font.code.rec.ok(g) && Font.code.recs.ok(rest)
+
+def Font.code.glyph(+g: FontCore.Glyph) -> String:
+  FontCore.Glyph{value, ox, oy, adv, _, _, _, _} = g
+  "    { " ++ Font.code.int(value) ++ ", " ++ Font.code.int(ox) ++ ", " ++ Font.code.int(oy) ++ ", " ++ Font.code.int(adv) ++ ", { 0 }},\n"
+
+def Font.code.glyphs(+gs: +List<FontCore.Glyph>) -> String:
+  match gs:
+    case Nil{}: ""
+    case Con{+g, rest}: Font.code.glyph(g) ++ Font.code.glyphs(rest)
+
+def Font.code.header() -> String:
+  "////////////////////////////////////////////////////////////////////////////////////////\n" ++
+  "//                                                                                    //\n" ++
+  "// FontAsCode exporter v1.0 - Font data exported as an array of bytes                 //\n" ++
+  "//                                                                                    //\n" ++
+  "// more info and bugs-report:  github.com/raysan5/raylib                              //\n" ++
+  "// feedback and support:       ray[at]raylib.com                                      //\n" ++
+  "//                                                                                    //\n" ++
+  "// Copyright (c) 2018-2026 Ramon Santamaria (@raysan5)                                //\n" ++
+  "//                                                                                    //\n" ++
+  "// ---------------------------------------------------------------------------------- //\n" ++
+  "//                                                                                    //\n" ++
+  "// TODO: Fill the information and license of the exported font here:                  //\n" ++
+  "//                                                                                    //\n" ++
+  "// Font name:    ....                                                                 //\n" ++
+  "// Font creator: ....                                                                 //\n" ++
+  "// Font LICENSE: ....                                                                 //\n" ++
+  "//                                                                                    //\n" ++
+  "////////////////////////////////////////////////////////////////////////////////////////\n\n"
+
+def Font.code.text(+name: String, +base: U32, +padding: U32, +gs: +List<FontCore.Glyph>, +w: U32, +h: U32, +format: U32, +comp: +List<U32>) -> String:
+  +upper = Text.to_upper(name)
+  +count = Font.code.int(FontCore.count(gs))
+  Font.code.header() ++
+  "#define COMPRESSED_DATA_SIZE_FONT_" ++ upper ++ " " ++ U32.show(FontData.count(comp, 0)) ++ "\n\n" ++
+  "// Font image pixels data compressed (DEFLATE)\n" ++
+  "// NOTE: Original pixel data simplified to GRAYSCALE\n" ++
+  "static unsigned char fontData_" ++ name ++ "[COMPRESSED_DATA_SIZE_FONT_" ++ upper ++ "] = { " ++ Font.code.bytes(comp, 0) ++
+  "// Font characters rectangles data\n" ++
+  "static Rectangle fontRecs_" ++ name ++ "[" ++ count ++ "] = {\n" ++ Font.code.recs(gs) ++ "};\n\n" ++
+  "// Font glyphs info data\n" ++
+  "// NOTE: No glyphs.image data provided\n" ++
+  "static GlyphInfo fontGlyphs_" ++ name ++ "[" ++ count ++ "] = {\n" ++ Font.code.glyphs(gs) ++ "};\n\n" ++
+  "// Font loading function: " ++ name ++ "\n" ++
+  "static Font LoadFont_" ++ name ++ "(void)\n{\n" ++
+  "    Font font = { 0 };\n\n" ++
+  "    font.baseSize = " ++ Font.code.int(base) ++ ";\n" ++
+  "    font.glyphCount = " ++ count ++ ";\n" ++
+  "    font.glyphPadding = " ++ Font.code.int(padding) ++ ";\n\n" ++
+  "    // Custom font loading\n" ++
+  "    // NOTE: Compressed font image data (DEFLATE), it requires DecompressData() function\n" ++
+  "    int fontDataSize_" ++ name ++ " = 0;\n" ++
+  "    unsigned char *data = DecompressData(fontData_" ++ name ++ ", COMPRESSED_DATA_SIZE_FONT_" ++ upper ++ ", &fontDataSize_" ++ name ++ ");\n" ++
+  "    Image imFont = { data, " ++ U32.show(w) ++ ", " ++ U32.show(h) ++ ", 1, " ++ U32.show(format) ++ " };\n\n" ++
+  "    // Load texture from image\n" ++
+  "    font.texture = LoadTextureFromImage(imFont);\n" ++
+  "    UnloadImage(imFont);  // Uncompressed data can be unloaded from memory\n\n" ++
+  "    // Assign glyph recs and info data directly\n" ++
+  "    // WARNING: This font data must not be unloaded\n" ++
+  "    font.recs = fontRecs_" ++ name ++ ";\n" ++
+  "    font.glyphs = fontGlyphs_" ++ name ++ ";\n\n" ++
+  "    return font;\n" ++
+  "}\n"
+
+def Font.code.sized(+text: String, +limit: U32) -> Maybe<String>:
+  Bool.pick(Maybe<String>, (Font.code.length(text, 0) < limit : U32), Some{text}, None{})
+
+def Font.code.made(name: Maybe<String>, +base: U32, +padding: U32, +gs: +List<FontCore.Glyph>, +w: U32, +h: U32, +format: U32, +comp: Maybe<&2, +List<U32>>) -> Maybe<String>:
+  match name comp:
+    case Some{+n} Some{+c}:
+      +size = (w * h * (Pixel.bits_per_pixel(format) / 8) : U32)
+      Bool.pick(Maybe<String>, Font.code.recs.ok(gs) && Bool.not(U32.is_eq(FontData.count(c, 0), 0)),
+        Font.code.sized(Font.code.text(String.take(n, 255n), base, padding, gs, w, h, format, c), (size * 6 + FontCore.count(gs) * 128 + 32768 : U32)), None{})
+    case _ _: None{}
+
+def Font.code.texture(+name: String, +base: U32, +padding: U32, +gs: +List<FontCore.Glyph>, texture: Texture) -> Texture & Maybe<String>:
+  Texture{+id, +w, +h, +format, linear, alpha, texels} = texture
+  +size = (w * h * (Pixel.bits_per_pixel(format) / 8) : U32)
+  (Texture{id, w, h, format, linear, alpha, texels}, Bool.pick(Maybe<String>, (format >= 1 : U32) && (format <= 7 : U32),
+    Font.code.made(Text.to_pascal(Files.name_without_ext(name)), base, padding, gs, w, h, format,
+      Compression.compress(FontData.zeros(U32.to_nat(size), Nil{}))), None{}))
+
+def Font.code.back(+base: U32, +padding: U32, +glyphs: +List<FontCore.Glyph>, atlas: Surface, r: Texture & Maybe<String>) -> Font & Maybe<String>:
+  (texture, text) = r
+  (Font{base, padding, glyphs, texture, atlas}, text)
+
+# ExportFontAsCode's text for fileName: the DEFLATE-compressed
+# LoadImageFromTexture data (all zero bytes here: rlsw's glGetTexImage is a
+# no-op, see docs/TEXTURES.md), the glyph rectangles and GlyphInfo values and
+# a LoadFont_<Name> function, named by TextToPascal of the file name without
+# extension. None when TextToPascal is undefined, a rectangle is not
+# integral, or the text would overflow raylib's buffer.
+def Font.as_code(font: Font, +file_name: String) -> Font & Maybe<String>:
+  Font{+base, +padding, +glyphs, texture, atlas} = font
+  Font.code.back(base, padding, glyphs, atlas, Font.code.texture(file_name, base, padding, glyphs, texture))
+
+def Font.code.saved(font: Font, +path: String, text: Maybe<String>) -> IO(Font & Result<&1, &1, Surface.IOError, Unit>):
+  match text:
+    case None{}: IO.pure(Font & Result<&1, &1, Surface.IOError, Unit>, (font, Fail{DataError{InvalidRequest{}}}))
+    case Some{t}: IO.bind(Result<&1, &1, Surface.IOError, Unit>, Font & Result<&1, &1, Surface.IOError, Unit>, Files.save_text(path, t),
+      r => IO.pure(Font & Result<&1, &1, Surface.IOError, Unit>, (font, r)))
+
+def Font.code.export(+path: String, r: Font & Maybe<String>) -> IO(Font & Result<&1, &1, Surface.IOError, Unit>):
+  (font, text) = r
+  Font.code.saved(font, path, text)
+
+# ExportFontAsCode(font, fileName): writes Font.as_code's text (the font is
+# handed back); InvalidRequest when as_code is None.
+def Font.export_as_code(font: Font, +path: String) -> IO(Font & Result<&1, &1, Surface.IOError, Unit>):
+  Font.code.export(path, Font.as_code(font, path))
 
 # -----------------------------------------------------------------------------
 # Header enumerations (generated by tools/enums_probe.py --write)

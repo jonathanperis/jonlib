@@ -742,9 +742,14 @@ def table(font: J.Font) -> J.Font & String:
   J.Font{+base, +padding, +glyphs, texture, atlas} = font
   table.done(base, padding, glyphs, texture, table.go(glyphs, Nil{}, (atlas, "")))
 
+def glyph.image(image: J.GlyphImage) -> String:
+  match image:
+    case J.GlyphEmpty{_, _}: " i-"
+    case J.GlyphPixels{s}: image.out(s)
+
 def glyph.info.some(+index: U32, +rec: J.Rectangle, g: J.GlyphInfo) -> String:
   J.GlyphInfo{value, ox, oy, adv, image} = g
-  " g" ++ U32.show(index) ++ glyph.row(value, ox, oy, adv, rec, image.out(image))
+  " g" ++ U32.show(index) ++ glyph.row(value, ox, oy, adv, rec, glyph.image(image))
 
 def glyph.info(+index: U32, +rec: J.Rectangle, info: Maybe<J.GlyphInfo>) -> String:
   match info:
