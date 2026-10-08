@@ -464,6 +464,18 @@
     "api_id": "raylib:function:GetSplinePointBezierQuad",
     "milestone": "shapes"
   },
+  "GetSplinePointBezierCubic": {
+    "jonlib": "Spline.bezier_cubic_for",
+    "status": "profile-covered",
+    "scope": "Weights (1-t)^3, 3(1-t)^2 t, 3(1-t) t^2 and t^3 through the Glibc239Libm powf (glibc 2.39's x86_64 Arm powf on [-0, 1], exact binary64 steps) and the reference accumulation under M.Uncontracted or M.Fused; compared with the pinned rshapes.c function on the powf model (fused on arm64) and, on Linux x86_64 glibc 2.39, with linked raylib.",
+    "gaps": [
+      "AppleLibm and Glibc241Libm powf (None)",
+      "t outside [-0, 1] (including NaN) is None",
+      "Other target/performance coverage"
+    ],
+    "api_id": "raylib:function:GetSplinePointBezierCubic",
+    "milestone": "shapes"
+  },
   "CheckCollisionRecs": {
     "jonlib": "Collision.recs",
     "status": "profile-covered",
