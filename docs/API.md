@@ -68,6 +68,8 @@ Path utilities and file data/text/code IO (`Files.*`) are documented in
 [FILES.md](FILES.md).
 Trace logging and the memory helpers (`Log.*`, `Memory.*`) are documented in
 [LOGGING.md](LOGGING.md).
+Audio waves (`Wave.*`: WAV loading, crop, samples and export) are documented in
+[AUDIO.md](AUDIO.md).
 The enumerations of raylib.h, rlgl.h, rgestures.h and rcamera.h are U32
 constants named as in their header under their enum, e.g.
 `PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8()`, `KeyboardKey.KEY_SPACE()` or

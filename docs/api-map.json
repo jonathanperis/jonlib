@@ -1631,5 +1631,97 @@
     ],
     "api_id": "raylib:function:GetRayCollisionQuad",
     "milestone": "collision"
+  },
+  "LoadWave": {
+    "jonlib": "Wave.load",
+    "status": "profile-covered",
+    "scope": "The file decoded by its extension as LoadWaveFromMemory.",
+    "gaps": [
+      "OGG, MP3, QOA, FLAC, XM and MOD data, RIFX/Wave64/RF64/AIFF containers, ADPCM and 64-bit float WAV"
+    ],
+    "api_id": "raylib:function:LoadWave",
+    "milestone": "audio-codecs"
+  },
+  "LoadWaveFromMemory": {
+    "jonlib": "Wave.decode",
+    "status": "profile-covered",
+    "scope": "WAV data through dr_wav's RIFF chunk walk and s16 conversion (PCM 8..64-bit, 32-bit float, a-law, mu-law, extensible headers), every 16-bit sample compared with raylib.",
+    "gaps": [
+      "OGG, MP3, QOA, FLAC, XM and MOD data, RIFX/Wave64/RF64/AIFF containers, ADPCM and 64-bit float WAV",
+      "InvalidWaveData where dr_wav leaves samples unread or converts NaN"
+    ],
+    "api_id": "raylib:function:LoadWaveFromMemory",
+    "milestone": "audio-codecs"
+  },
+  "IsWaveValid": {
+    "jonlib": "Wave.is_valid",
+    "status": "profile-covered",
+    "scope": "Positive frames, sample rate, sample size and channels.",
+    "gaps": [
+      "Native NULL-data ABI"
+    ],
+    "api_id": "raylib:function:IsWaveValid",
+    "milestone": "audio-codecs"
+  },
+  "UnloadWave": {
+    "jonlib": "Wave.unload",
+    "status": "profile-covered",
+    "scope": "Consumes the wave.",
+    "gaps": [
+      "Native allocator ABI"
+    ],
+    "api_id": "raylib:function:UnloadWave",
+    "milestone": "audio-codecs"
+  },
+  "ExportWave": {
+    "jonlib": "Wave.to_wav / Wave.write",
+    "status": "profile-covered",
+    "scope": "dr_wav's RIFF writer bytes for .wav and raw sample bytes for .raw, compared with the files raylib writes.",
+    "gaps": [
+      "QOA export",
+      "raylib returns false for a zero-frame .wav it still writes; Jonlib reports the write"
+    ],
+    "api_id": "raylib:function:ExportWave",
+    "milestone": "audio-codecs"
+  },
+  "WaveCopy": {
+    "jonlib": "Wave.copy",
+    "status": "profile-covered",
+    "scope": "Two equal waves.",
+    "gaps": [
+      "Sample sizes other than 8, 16 and 32"
+    ],
+    "api_id": "raylib:function:WaveCopy",
+    "milestone": "audio-codecs"
+  },
+  "WaveCrop": {
+    "jonlib": "Wave.crop",
+    "status": "profile-covered",
+    "scope": "Frames init..final-1 for 0 <= init < final <= frames; other ranges keep the wave (InvalidWaveRequest).",
+    "gaps": [
+      "Sample sizes other than 8, 16 and 32"
+    ],
+    "api_id": "raylib:function:WaveCrop",
+    "milestone": "audio-codecs"
+  },
+  "LoadWaveSamples": {
+    "jonlib": "Wave.samples",
+    "status": "profile-covered",
+    "scope": "F32 samples: (x-128)/128, x/32768 or the 32-bit value.",
+    "gaps": [
+      "Sample sizes other than 8, 16 and 32"
+    ],
+    "api_id": "raylib:function:LoadWaveSamples",
+    "milestone": "audio-codecs"
+  },
+  "UnloadWaveSamples": {
+    "jonlib": "List<F32> (dropped)",
+    "status": "profile-covered",
+    "scope": "The sample list is an owned value; no unload step is needed.",
+    "gaps": [
+      "No native pointer ABI (language adaptation)"
+    ],
+    "api_id": "raylib:function:UnloadWaveSamples",
+    "milestone": "audio-codecs"
   }
 }

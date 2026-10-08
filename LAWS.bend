@@ -725,3 +725,8 @@ law jpeg_short_wraps:
 
 law jpeg_asr_negative:
   {Jpg.asr(4294967040, 4n) == 4294967280 : U32}
+
+# Waves are Data: a copy is the same wave twice.
+law wave_copy_twice:
+  for +wave: J.Wave
+  {J.Wave.copy(wave) == (wave, wave) : J.Wave & J.Wave}

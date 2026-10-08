@@ -182,6 +182,16 @@ quality-8 zlib compressor, stored fallback and checksums from the same pinned
 `stb_image_write.h`, with owned Bend input/dictionary arrays and byte lists.
 The retained stb MIT notice applies to these altered implementations too.
 
+## dr_wav
+
+`src/wav.bend` is an altered Bend adaptation of `drwav_init_memory`'s RIFF
+chunk walk and `drwav_read_pcm_frames_s16` (PCM, 32-bit float, a-law and
+mu-law, including dr_wav's conversion tables) from pinned raylib's
+`src/external/dr_wav.h` by David Reid, and `Wave.to_wav` reproduces its RIFF
+writer's header. dr_wav is public domain or MIT No Attribution; Jonlib uses the
+MIT-0 alternative, retained in [LICENSES/dr_wav.txt](LICENSES/dr_wav.txt).
+`Wave.*` in `jonlib.bend` adapts the Wave functions of raylib's `raudio.c`.
+
 ## Arm numerical routines
 
 The GNU-reference polynomial in `src/trig.bend` and its independent C control
