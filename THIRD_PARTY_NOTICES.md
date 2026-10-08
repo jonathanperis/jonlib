@@ -184,12 +184,15 @@ The retained stb MIT notice applies to these altered implementations too.
 
 ## dr_wav
 
-`src/wav.bend` is an altered Bend adaptation of `drwav_init_memory`'s RIFF
-chunk walk and `drwav_read_pcm_frames_s16` (PCM, 32-bit float, a-law and
-mu-law, including dr_wav's conversion tables) from pinned raylib's
-`src/external/dr_wav.h` by David Reid, and `Wave.to_wav` reproduces its RIFF
-writer's header. dr_wav is public domain or MIT No Attribution; Jonlib uses the
-MIT-0 alternative, retained in [LICENSES/dr_wav.txt](LICENSES/dr_wav.txt).
+`src/wav.bend` and `src/wav_adpcm.bend` are altered Bend adaptations of
+`drwav_init_memory` (container detection and the RIFF, RIFX, Wave64, RF64 and
+AIFF/AIFC chunk walks, including `drwav_aiff_extented_to_s64`) and
+`drwav_read_pcm_frames_s16` (PCM, 32- and 64-bit float, a-law, mu-law, MS
+ADPCM and IMA ADPCM, including dr_wav's conversion, coefficient, adaptation,
+index and step tables) from pinned raylib's `src/external/dr_wav.h` by David
+Reid, and `Wave.to_wav` reproduces its RIFF writer's header. dr_wav is
+public domain or MIT No Attribution; Jonlib uses the MIT-0 alternative,
+retained in [LICENSES/dr_wav.txt](LICENSES/dr_wav.txt).
 `Wave.*` in `jonlib.bend` adapts the Wave functions of raylib's `raudio.c`.
 
 ## QOA

@@ -1637,7 +1637,7 @@
     "status": "profile-covered",
     "scope": "The file decoded by its extension as LoadWaveFromMemory.",
     "gaps": [
-      "OGG, MP3, FLAC, XM and MOD data, RIFX/Wave64/RF64/AIFF containers, ADPCM and 64-bit float WAV"
+      "OGG, MP3, FLAC, XM and MOD data"
     ],
     "api_id": "raylib:function:LoadWave",
     "milestone": "audio-codecs"
@@ -1645,10 +1645,11 @@
   "LoadWaveFromMemory": {
     "jonlib": "Wave.decode",
     "status": "profile-covered",
-    "scope": "WAV data through dr_wav's RIFF chunk walk and s16 conversion (PCM 8..64-bit, 32-bit float, a-law, mu-law, extensible headers) and QOA data through qoa_decode (frames ending at a failed frame header), every 16-bit sample compared with raylib.",
+    "scope": "WAV data through drwav_init_memory (RIFF, RIFX, Wave64, RF64 and AIFF/AIFC containers, their chunk walks, 64-bit sizes and 80-bit AIFF rates) and drwav_read_pcm_frames_s16 (PCM 8..64-bit, 32- and 64-bit float, a-law, mu-law, MS and IMA ADPCM, extensible headers) and QOA data through qoa_decode (frames ending at a failed frame header), every 16-bit sample compared with raylib.",
     "gaps": [
-      "OGG, MP3, FLAC, XM and MOD data, RIFX/Wave64/RF64/AIFF containers, ADPCM and 64-bit float WAV",
-      "InvalidWaveData where dr_wav leaves samples unread or converts NaN",
+      "OGG, MP3, FLAC, XM and MOD data",
+      "InvalidWaveData where dr_wav leaves samples unread, converts NaN or walks chunks forever",
+      "InvalidWaveData for MS ADPCM or AIFF int overflow, an AIFF rate negating INT64_MIN and 5-7 or 9+ byte samples in big-endian containers",
       "InvalidWaveData for QOA frames decoding past the declared total, more than 8 channels or 2^24 samples"
     ],
     "api_id": "raylib:function:LoadWaveFromMemory",

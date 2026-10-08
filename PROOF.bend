@@ -535,3 +535,15 @@ def Laws.wave_copy_twice(wave):
 
 def Laws.qoa_encode_no_frames(samples, channels, rate):
   {==}
+
+def Laws.wav_aiff_rate_44100():
+  {==}
+
+def Laws.wav_aiff_rate_int64_min_undefined():
+  {==}
+
+def Laws.msadpcm_adapt_saturates():
+  {==}
+
+def Laws.msadpcm_adapt_negative_floor():
+  {==}
