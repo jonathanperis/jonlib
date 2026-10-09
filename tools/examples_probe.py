@@ -110,11 +110,13 @@ EXAMPLES = {
     'core_3d_picking': ('core/core_3d_picking.c', 'Ex.setup(core, frame)'),
     'models_basic_voxel': ('models/models_basic_voxel.c', 'Ex.setup(core, frame)'),
     'models_rotating_cube': ('models/models_rotating_cube.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_image_loading': ('textures/textures_image_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
 # examples/<module>/ directory) and the flags SetConfigFlags sets before InitWindow.
-IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_background_scrolling', 'models_rotating_cube'}
+IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_background_scrolling', 'models_rotating_cube',
+            'textures_image_loading'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -283,6 +285,7 @@ def scripts():
         script('models_basic_voxel', 'dig', [quick(), quick([mouse_at(400, 240)]), quick([button(0)]), quick([button(0, False), mouse_at(420, 236)]),
                                              slow([key(87)]), quick([key(87, False)])]),
         script('models_rotating_cube', 'turn', [quick() for _ in range(6)] + [slow(), quick()]),
+        script('textures_image_loading', 'frames', [quick(), slow()]),
     ]
     return [timed(item) for item in out]
 
@@ -696,8 +699,8 @@ def render(items, libm, logo, raylib_source):
         setup_params = '+seed: U32, ' if name in SEEDED else {'textures_logo_raylib': 'logo: Result<&1, &1, J.Surface.IOError, J.Surface>, '}.get(name, '')
         io = name in IO_SETUP
         resources = json.dumps(str(raylib_source / 'examples' / EXAMPLES[name][0].split('/')[0]) + '/')
-        body = (PROGRAM.replace('REPLAY', IO_REPLAY if io else PURE_REPLAY).replace('EXAMPLE', name).replace('LIBM', libm)
-                .replace('SETUP_PARAMS ', setup_params).replace('SETUP', setup).replace('RESOURCES', resources))
+        body = (PROGRAM.replace('REPLAY', IO_REPLAY if io else PURE_REPLAY).replace('EXAMPLE', name)
+                .replace('SETUP_PARAMS ', setup_params).replace('SETUP', setup).replace('LIBM', libm).replace('RESOURCES', resources))
         indexes = [i for i, item in enumerate(items) if item['example'] == name]
         logo_param = 'logo: Result<&1, &1, J.Surface.IOError, J.Surface>' if name == 'textures_logo_raylib' else ''
         if logo_param and len(indexes) != 1:
