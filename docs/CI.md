@@ -28,9 +28,11 @@ full local run (`--record docs/evidence`) are committed in
 [`docs/evidence/`](evidence/); the full dumps are not.
 
 Probes compile and run independent batches concurrently, bounded by CPUs (at
-most four) and by 6 GB of physical memory per batch: a JavaScript lane running a
-large codec batch peaks near 4.5 GB. Hosted Linux runners therefore run two
-batches at a time and macOS runners one. `--jobs N` (or `PROBEKIT_JOBS`) overrides.
+most four) and by 9 GB of memory per batch (physical memory, or a lower cgroup v2
+limit): compiling a candidate that imports `jonlib.bend` peaks near 8 GB in the
+Bend compiler (measured October 2026; two concurrent compiles exhausted a Linux
+runner). Hosted Linux and macOS runners therefore run one batch at a time.
+`--jobs N` (or `PROBEKIT_JOBS`) overrides.
 
 Run the same gates locally:
 
