@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and it includes no unported companion
 library (`raygui.h`); **waiting** otherwise.
 
-Totals: 212 examples; 24 ported, 106 ready, 82 waiting.
+Totals: 212 examples; 25 ported, 105 ready, 82 waiting.
 
 ## APIs that unblock the most examples
 
@@ -185,7 +185,7 @@ Totals: 212 examples; 24 ported, 106 ready, 82 waiting.
 | `text_font_loading` | text | ready |  |
 | `text_font_sdf` | text | waiting | `BeginShaderMode`, `EndShaderMode`, `LoadShader`, `UnloadShader` |
 | `text_format_text` | text | ported |  |
-| `text_input_box` | text | ready |  |
+| `text_input_box` | text | ported |  |
 | `text_writing_anim` | text | ported |  |
 | `text_rectangle_bounds` | text | ready |  |
 | `text_unicode_emojis` | text | ready |  |

@@ -98,6 +98,7 @@ EXAMPLES = {
     'shapes_starfield_effect': ('shapes/shapes_starfield_effect.c', 'Ex.setup(seed, core, frame)'),
     'text_writing_anim': ('text/text_writing_anim.c', 'Ex.setup(core, frame)'),
     'text_format_text': ('text/text_format_text.c', 'Ex.setup(core, frame)'),
+    'text_input_box': ('text/text_input_box.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -225,6 +226,11 @@ def scripts():
         script('text_writing_anim', 'reveal', [quick() for _ in range(10)] + [quick([key(KEY_SPACE)])] + [quick() for _ in range(48)]
                + [quick([key(KEY_SPACE, False)]), quick([key(KEY_ENTER)]), quick([key(KEY_ENTER, False)]), slow(), quick()]),
         script('text_format_text', 'frames', [quick(), slow(), quick(), slow([key(KEY_SPACE)])]),
+        # Replayed events never reach GetCharPressed's queue (raylib's PlayAutomationEvent fills key states only), so
+        # the name stays empty: hover, the caret blink, BACKSPACE and leaving the box.
+        script('text_input_box', 'hover', [quick(), quick([mouse_at(350, 200)])] + [quick() for _ in range(44)]
+               + [quick([key(259)]), quick([key(259, False), key(KEY_A)]), quick([key(KEY_A, False), mouse_at(600, 300)]), quick(),
+                  quick([mouse_at(524, 229)]), slow()]),
     ]
     return [timed(item) for item in out]
 
