@@ -52,19 +52,31 @@ def run(command, *, cwd=ROOT, timeout=600, fd_limit=None, env=None):
     return result.stdout
 
 
-# A JavaScript lane running one large codec batch peaks near 4.5 GB, so each
-# concurrent batch is budgeted 6 GB of physical memory (hosted runners: Linux
-# 16 GB -> 2 batches, macOS 7 GB -> 1). PROBEKIT_JOBS or --jobs override this.
-MEMORY_PER_BATCH = 6 << 30
+# Compiling one candidate that imports jonlib.bend peaks near 8 GB in the Bend
+# compiler (measured October 2026; the JavaScript lane of a large codec batch
+# peaks near 4.5 GB), so each concurrent batch is budgeted 9 GB of memory
+# (hosted runners: Linux 16 GB -> 1 batch, macOS 7 GB -> 1). Two concurrent
+# compiles exhausted a Linux runner. PROBEKIT_JOBS or --jobs override this.
+MEMORY_PER_BATCH = 9 << 30
+CGROUP_MEMORY = Path('/sys/fs/cgroup/memory.max')
 
 
-def default_jobs():
-    """Concurrent batches bounded by CPUs (at most 4) and physical memory."""
+def available_memory():
+    """Physical memory, or the cgroup v2 limit when one is lower (containers)."""
     try:
         memory = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
     except (AttributeError, OSError, ValueError):
         memory = 0
-    return max(1, min(4, os.cpu_count() or 1, memory // MEMORY_PER_BATCH or 1))
+    try:
+        limit = int(CGROUP_MEMORY.read_text())
+    except (OSError, ValueError):
+        limit = 0
+    return min(memory, limit) if memory and limit else memory or limit
+
+
+def default_jobs():
+    """Concurrent batches bounded by CPUs (at most 4) and available memory."""
+    return max(1, min(4, os.cpu_count() or 1, available_memory() // MEMORY_PER_BATCH or 1))
 
 
 def arguments(description, configure=None, argv=None, *, bend=True, raylib=True):

@@ -102,14 +102,25 @@ if __name__ == '__main__':
 
 
 class JobTests(unittest.TestCase):
-    def jobs(self, cpus, gib):
+    def jobs(self, cpus, gib, cgroup=None):
         pages = {'SC_PAGE_SIZE': 4096, 'SC_PHYS_PAGES': gib * (1 << 30) // 4096}
-        with mock.patch.object(probekit.os, 'cpu_count', return_value=cpus), \
-             mock.patch.object(probekit.os, 'sysconf', side_effect=pages.__getitem__):
-            return probekit.default_jobs()
+        with tempfile.TemporaryDirectory() as tmp:
+            limit = Path(tmp) / 'memory.max'
+            if cgroup is not None:
+                limit.write_text(cgroup)
+            with mock.patch.object(probekit.os, 'cpu_count', return_value=cpus), \
+                 mock.patch.object(probekit.os, 'sysconf', side_effect=pages.__getitem__), \
+                 mock.patch.object(probekit, 'CGROUP_MEMORY', limit):
+                return probekit.default_jobs()
 
     def test_memory_bounds_concurrent_batches(self):
-        self.assertEqual(self.jobs(4, 16), 2)   # hosted Linux runner
+        self.assertEqual(self.jobs(4, 16), 1)   # hosted Linux runner: one 8 GB compile at a time
         self.assertEqual(self.jobs(3, 7), 1)    # hosted macOS runner
         self.assertEqual(self.jobs(16, 64), 4)  # never above four
         self.assertEqual(self.jobs(8, 2), 1)    # small hosts still run
+        self.assertEqual(self.jobs(8, 32), 3)
+
+    def test_cgroup_limit_bounds_concurrent_batches(self):
+        self.assertEqual(self.jobs(8, 64, str(8 << 30)), 1)   # a container capped below the host
+        self.assertEqual(self.jobs(8, 64, str(20 << 30)), 2)
+        self.assertEqual(self.jobs(8, 64, 'max'), 4)          # unlimited cgroup
