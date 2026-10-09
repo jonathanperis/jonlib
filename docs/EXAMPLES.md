@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and it includes no unported companion
 library (`raygui.h`); **waiting** otherwise.
 
-Totals: 212 examples; 34 ported, 96 ready, 82 waiting.
+Totals: 212 examples; 35 ported, 95 ready, 82 waiting.
 
 ## APIs that unblock the most examples
 
@@ -218,7 +218,7 @@ Totals: 212 examples; 34 ported, 96 ready, 82 waiting.
 | `models_animation_gpu_skinning` | models | waiting | `LoadModelAnimations`, `LoadShader`, `UnloadModelAnimations`, `UnloadShader`, `UpdateModelAnimation` |
 | `models_bone_socket` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
 | `models_tesseract_view` | models | ready |  |
-| `models_basic_voxel` | models | ready |  |
+| `models_basic_voxel` | models | ported |  |
 | `models_rotating_cube` | models | ready |  |
 | `models_decals` | models | waiting | `UploadMesh` |
 | `models_directional_billboard` | models | ready |  |
