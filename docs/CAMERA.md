@@ -35,6 +35,9 @@ Every query has a `_for` variant taking the arithmetic profile
 | `GetWorldToScreenEx` | `Camera.world_to_screen_ex_for(arithmetic, position, camera, width, height)` | `Maybe<M.Vector2>` |
 | `GetScreenToWorldRayEx` | `Camera.screen_to_world_ray_ex_for(arithmetic, position, camera, width, height)` | `Maybe<J.Ray>` |
 | `UpdateCameraPro` | `Camera.update_pro_for(arithmetic, libm, camera, movement, rotation, zoom)` | `Maybe<Camera3D>` |
+| `UpdateCamera` | `Camera.update_for(arithmetic, libm, core, camera, mode)` | `Maybe<Camera3D>` (reads the `Core`'s input and frame time) |
+| `GetWorldToScreen` | `Camera.world_to_screen_for(arithmetic, position, camera, core)` | `Maybe<M.Vector2>` (`GetWorldToScreenEx` at the `Core`'s screen size) |
+| `GetScreenToWorldRay` | `Camera.screen_to_world_ray_for(arithmetic, position, camera, core)` | `Maybe<J.Ray>` (`GetScreenToWorldRayEx` at the screen size) |
 
 The convenience names drop `_for` and the profile arguments
 (`Camera.forward(camera)`, `Camera.pitch(camera, angle, lock_view,
@@ -64,6 +67,28 @@ The algorithms keep the reference order and edge behavior:
   `-rotation.x`, rolls by `rotation.z`, all around the position, then moves
   forward and right in the world plane, up, and toward the target. It reads no
   input state, unlike `UpdateCamera`.
+- `UpdateCamera(&camera, mode)` reads the `Core` ([INPUT.md](INPUT.md)):
+  `GetMouseDelta`, `GetFrameTime` (speeds `5.4f`, `0.03f`, `2.0f` and `0.5f`
+  times the frame time), `IsKeyDown`/`IsKeyPressed`, the middle button,
+  `GetMouseWheelMove` and gamepad 0, in raylib's order. `CAMERA_CUSTOM` (0)
+  changes nothing; `CAMERA_ORBITAL` (2) rotates the position around the target
+  by `MatrixRotate(GetCameraUp(camera), 0.5f*frameTime)` (an axis whose squared
+  length is not 1 or 0 is renormalized with `1.0f/sqrtf`); the other modes
+  pitch (down/up arrows, `lock_view` for FREE, FIRST_PERSON, THIRD_PERSON and
+  ORBITAL), yaw (right/left), roll (Q/E), pan by the mouse delta's signs while
+  FREE's middle button is down or else yaw and pitch by `-delta*0.003f`, move
+  with W/A/S/D (in the world plane for FIRST_PERSON and THIRD_PERSON), turn by
+  gamepad 0's right stick (`-(axis*2)*0.003f`) and move by its left stick past
+  `0.25f`, and (FREE) move up with space and down with left control. THIRD_PERSON
+  rotates around the target. THIRD_PERSON, ORBITAL and FREE then zoom by
+  `-GetMouseWheelMove()`, `+2` for a pressed `KEY_KP_SUBTRACT` and `-2` for
+  `KEY_KP_ADD`. Mode values outside 0..4 take the keyboard path with every
+  option off. On the memory platform `GetMouseDelta` measures from the last
+  `SetMousePosition` (the origin) and keys from 260 (`KEY_KP_*`) stay pressed
+  while held ([INPUT.md](INPUT.md#semantics)); both are reproduced, being the
+  `Core`'s answers.
+- `GetWorldToScreen` and `GetScreenToWorldRay` are the `Ex` forms at
+  `GetScreenWidth()`/`GetScreenHeight()`, the InitWindow size.
 - 2D cameras compose `translate(-target)`, `scale(zoom, zoom, 1)` times
   `MatrixRotate((0, 0, 1), rotation*DEG2RAD)`, and `translate(offset)` with
   raylib's multiplication order; `GetScreenToWorld2D` inverts that matrix with
@@ -129,8 +154,11 @@ result:
 
 - **Perspective projections.** `GetCameraProjectionMatrix`,
   `GetWorldToScreenEx` and `GetScreenToWorldRayEx` with `CAMERA_PERSPECTIVE`
-  need `MatrixPerspective`'s binary64 `tan`, which is blocked
-  ([PERSPECTIVE.md](PERSPECTIVE.md)); no F32 or F64 tangent is substituted.
+  need `MatrixPerspective`'s binary64 `tan(fovY*0.5)` for `fovY` the binary32
+  `fovy*DEG2RAD`, which is blocked: an exhaustive comparison over every
+  binary32 `fovY` found the native tangent incorrectly rounded for 23.7% of
+  them on macOS and 0.13% on glibc 2.39/2.41, so no correctly rounded (or
+  other) tangent is substituted ([PERSPECTIVE.md](PERSPECTIVE.md)).
   `GetCameraViewMatrix`/`GetCameraMatrix` (`MatrixLookAt`) do not depend on the
   projection and are defined for every camera.
 - **Rotation angles.** The angle checked is the one actually rotated by: the
@@ -156,11 +184,14 @@ Within these limits every input is supported, including NaN, infinite,
 signed-zero, subnormal and huge camera components; NaN results carry no sign or
 payload contract.
 
+`UpdateCamera` is `None` as soon as one of its steps is: a rotation outside
+the profile (under `M.AppleLibm{}` any nonzero rotation, so every orbital
+frame with a nonzero frame time and every keyboard, mouse or stick rotation)
+or a `lock_view` angle outside the checked `atan2f` contract. Moves and zooms
+are never refused.
+
 ## Not ported here
 
-- `GetWorldToScreen`, `GetScreenToWorldRay` read the window size and
-  `UpdateCamera` reads keyboard, mouse, gamepad and frame-time state; they
-  belong to the window/input/frame work of Phase 2.
 - `rlSetClipPlanes` cull distances other than rlgl's defaults.
 - A verified kernel for macOS arm64 `sinf`/`cosf` (nonzero `M.AppleLibm{}`
   rotations).
@@ -172,6 +203,8 @@ payload contract.
 | `camera` | `tools/camera_probe.py` | every result bit of the 19 functions above against the linked raylib with the host contraction and libm profiles, the refusals selected by a C oracle repeating the contract, and the total FMA kernel against the host `fmaf` |
 | `camera-uncontracted` | `tools/camera_probe.py --uncontracted-control` | the same cases against the pinned `rcamera.h`/`rcore.c` functions compiled without contraction, checking `M.Uncontracted{}` on any host |
 | `camera-glibc239` | `--uncontracted-control --gnu-libm glibc239` | the pinned functions without contraction, with `sinf`/`cosf` from the Arm model and `atan2f` from the pinned glibc 2.39 (Sun) source: `M.Uncontracted{}` with `M.Glibc239Libm{}` on any host |
+| `camera-update` | `tools/camera_update_probe.py` | `UpdateCamera` of 21 scripts (132 cameras in every mode and degenerate ones, 130 frames of keyboard, mouse, middle-button, wheel, gamepad and `KEY_KP_*` input with clocks around a 60 FPS target) against the clock-injected memory-platform raylib (uncontracted) with the host libm, every camera bit per frame; a C oracle repeating `UpdateCamera`'s steps with raylib's camera functions selects the refusals |
+| `camera-update-glibc239` | `tools/camera_update_probe.py --gnu-libm glibc239` | the same scripts against the pinned `rcamera.h` compiled into the harness (renamed, the library supplying the input state) with the Arm `sinf`/`cosf` model and the pinned glibc 2.39 `atan2f`: `M.Glibc239Libm{}` rotations on any host |
 | `camera-fused-glibc241` | `--fused-control --gnu-libm glibc241` | the pinned functions compiled with arm64 clang contraction into FMA, the Arm model and the pinned glibc 2.41 `atan2f`: `M.Fused{}` with `M.Glibc241Libm{}` and nonzero rotations. x86-64 FMA code (`-mfma`) negates zeros and produces negative default NaNs where arm64's `fnmadd` folding does not, so `M.Fused{}` names the arm64 code generation; on x86-64 hosts this gate runs the uncontracted control with the glibc 2.41 kernels instead |
 
 ```sh

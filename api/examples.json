@@ -102,7 +102,7 @@
   {
    "name": "core_input_gamepad",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",
@@ -136,11 +136,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "LoadTexture",
-    "SetConfigFlags",
-    "SetGamepadVibration"
-   ]
+   "missing": []
   },
   {
    "name": "core_input_multitouch",
@@ -401,7 +397,7 @@
   {
    "name": "core_3d_camera_free",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -423,14 +419,12 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
-   "missing": [
-    "UpdateCamera"
-   ]
+   "missing": []
   },
   {
    "name": "core_3d_camera_first_person",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -456,9 +450,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
-   "missing": [
-    "UpdateCamera"
-   ]
+   "missing": []
   },
   {
    "name": "core_3d_camera_split_screen",
@@ -539,7 +531,7 @@
   {
    "name": "core_3d_picking",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -566,15 +558,12 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
-   "missing": [
-    "GetScreenToWorldRay",
-    "UpdateCamera"
-   ]
+   "missing": []
   },
   {
    "name": "core_world_screen",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -595,15 +584,12 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
-   "missing": [
-    "GetWorldToScreen",
-    "UpdateCamera"
-   ]
+   "missing": []
   },
   {
    "name": "core_window_flags",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -630,21 +616,12 @@
     "ToggleFullscreen",
     "WindowShouldClose"
    ],
-   "missing": [
-    "ClearWindowState",
-    "IsWindowState",
-    "MaximizeWindow",
-    "MinimizeWindow",
-    "RestoreWindow",
-    "SetWindowState",
-    "ToggleBorderlessWindowed",
-    "ToggleFullscreen"
-   ]
+   "missing": []
   },
   {
    "name": "core_window_letterbox",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginTextureMode",
@@ -671,10 +648,7 @@
     "Vector2Clamp",
     "WindowShouldClose"
    ],
-   "missing": [
-    "SetConfigFlags",
-    "SetWindowMinSize"
-   ]
+   "missing": []
   },
   {
    "name": "core_window_should_close",
@@ -698,7 +672,7 @@
   {
    "name": "core_monitor_detector",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -726,19 +700,7 @@
     "TextFormat",
     "WindowShouldClose"
    ],
-   "missing": [
-    "GetCurrentMonitor",
-    "GetMonitorCount",
-    "GetMonitorHeight",
-    "GetMonitorName",
-    "GetMonitorPhysicalHeight",
-    "GetMonitorPhysicalWidth",
-    "GetMonitorPosition",
-    "GetMonitorRefreshRate",
-    "GetMonitorWidth",
-    "GetWindowPosition",
-    "SetWindowMonitor"
-   ]
+   "missing": []
   },
   {
    "name": "core_custom_logging",
@@ -760,7 +722,7 @@
   {
    "name": "core_drop_files",
    "category": "core",
-   "status": "waiting",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -777,11 +739,7 @@
     "UnloadDroppedFiles",
     "WindowShouldClose"
    ],
-   "missing": [
-    "IsFileDropped",
-    "LoadDroppedFiles",
-    "UnloadDroppedFiles"
-   ]
+   "missing": []
   },
   {
    "name": "core_random_values",
@@ -873,8 +831,7 @@
     "LoadVrStereoConfig",
     "SetShaderValue",
     "UnloadShader",
-    "UnloadVrStereoConfig",
-    "UpdateCamera"
+    "UnloadVrStereoConfig"
    ]
   },
   {
@@ -924,7 +881,7 @@
   {
    "name": "core_custom_frame_control",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -944,15 +901,12 @@
     "WaitTime",
     "WindowShouldClose"
    ],
-   "missing": [
-    "GetTime",
-    "WaitTime"
-   ]
+   "missing": []
   },
   {
    "name": "core_smooth_pixelperfect",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode2D",
@@ -976,9 +930,7 @@
     "UnloadRenderTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "GetTime"
-   ]
+   "missing": []
   },
   {
    "name": "core_random_sequence",
@@ -1007,7 +959,7 @@
   {
    "name": "core_automation_events",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode2D",
@@ -1044,16 +996,12 @@
     "UnloadDroppedFiles",
     "WindowShouldClose"
    ],
-   "missing": [
-    "IsFileDropped",
-    "LoadDroppedFiles",
-    "UnloadDroppedFiles"
-   ]
+   "missing": []
   },
   {
    "name": "core_highdpi_demo",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1079,14 +1027,7 @@
     "TextFormat",
     "WindowShouldClose"
    ],
-   "missing": [
-    "GetCurrentMonitor",
-    "GetMonitorCount",
-    "GetWindowScaleDPI",
-    "SetConfigFlags",
-    "SetWindowMinSize",
-    "SetWindowMonitor"
-   ]
+   "missing": []
   },
   {
    "name": "core_render_texture",
@@ -1137,7 +1078,7 @@
   {
    "name": "core_viewport_scaling",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginTextureMode",
@@ -1165,10 +1106,7 @@
     "UnloadRenderTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "IsWindowResized",
-    "SetConfigFlags"
-   ]
+   "missing": []
   },
   {
    "name": "core_input_actions",
@@ -1224,7 +1162,7 @@
   {
    "name": "core_highdpi_testbed",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1257,17 +1195,7 @@
     "ToggleFullscreen",
     "WindowShouldClose"
    ],
-   "missing": [
-    "GetCurrentMonitor",
-    "GetMonitorCount",
-    "GetMonitorHeight",
-    "GetMonitorWidth",
-    "GetWindowPosition",
-    "GetWindowScaleDPI",
-    "SetConfigFlags",
-    "ToggleBorderlessWindowed",
-    "ToggleFullscreen"
-   ]
+   "missing": []
   },
   {
    "name": "core_screen_recording",
@@ -1304,7 +1232,7 @@
   {
    "name": "core_clipboard_text",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1321,10 +1249,7 @@
     "TextCopy",
     "WindowShouldClose"
    ],
-   "missing": [
-    "GetClipboardText",
-    "SetClipboardText"
-   ]
+   "missing": []
   },
   {
    "name": "core_text_file_loading",
@@ -1454,7 +1379,7 @@
   {
    "name": "shapes_bouncing_ball",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1471,9 +1396,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
-   "missing": [
-    "SetConfigFlags"
-   ]
+   "missing": []
   },
   {
    "name": "shapes_bullet_hell",
@@ -1600,7 +1523,7 @@
   {
    "name": "shapes_lines_bezier",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointCircle",
@@ -1618,9 +1541,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
-   "missing": [
-    "SetConfigFlags"
-   ]
+   "missing": []
   },
   {
    "name": "shapes_collision_area",
@@ -1908,7 +1829,7 @@
   {
    "name": "shapes_splines_drawing",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointCircle",
@@ -1934,14 +1855,12 @@
     "TextFormat",
     "WindowShouldClose"
    ],
-   "missing": [
-    "SetConfigFlags"
-   ]
+   "missing": []
   },
   {
    "name": "shapes_digital_clock",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1963,14 +1882,12 @@
     "TextFormat",
     "WindowShouldClose"
    ],
-   "missing": [
-    "SetConfigFlags"
-   ]
+   "missing": []
   },
   {
    "name": "shapes_double_pendulum",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginTextureMode",
@@ -1993,9 +1910,7 @@
     "UnloadRenderTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "SetConfigFlags"
-   ]
+   "missing": []
   },
   {
    "name": "shapes_dashed_line",
@@ -2134,7 +2049,7 @@
   {
    "name": "shapes_clock_of_clocks",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "Clamp",
@@ -2155,14 +2070,12 @@
     "TextFormat",
     "WindowShouldClose"
    ],
-   "missing": [
-    "SetConfigFlags"
-   ]
+   "missing": []
   },
   {
    "name": "shapes_math_sine_cosine",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "Clamp",
@@ -2189,9 +2102,7 @@
     "WindowShouldClose",
     "Wrap"
    ],
-   "missing": [
-    "SetConfigFlags"
-   ]
+   "missing": []
   },
   {
    "name": "shapes_mouse_trail",
@@ -2318,7 +2229,7 @@
   {
    "name": "shapes_rlgl_color_wheel",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "Clamp",
@@ -2356,15 +2267,12 @@
     "rlEnd",
     "rlVertex2f"
    ],
-   "missing": [
-    "SetClipboardText",
-    "SetConfigFlags"
-   ]
+   "missing": []
   },
   {
    "name": "shapes_rlgl_triangle",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointCircle",
@@ -2391,9 +2299,7 @@
     "rlEnd",
     "rlVertex2f"
    ],
-   "missing": [
-    "SetConfigFlags"
-   ]
+   "missing": []
   },
   {
    "name": "shapes_ball_physics",
@@ -2427,7 +2333,7 @@
   {
    "name": "shapes_penrose_tile",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -2446,9 +2352,7 @@
     "TraceLog",
     "WindowShouldClose"
    ],
-   "missing": [
-    "SetConfigFlags"
-   ]
+   "missing": []
   },
   {
    "name": "shapes_hilbert_curve",
@@ -2492,7 +2396,7 @@
   {
    "name": "textures_clipboard_image",
    "category": "textures",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -2515,14 +2419,12 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "GetClipboardImage"
-   ]
+   "missing": []
   },
   {
    "name": "textures_magnifying_glass",
    "category": "textures",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginBlendMode",
     "BeginDrawing",
@@ -2554,9 +2456,7 @@
     "WindowShouldClose",
     "rlSetBlendFactorsSeparate"
    ],
-   "missing": [
-    "LoadTexture"
-   ]
+   "missing": []
   },
   {
    "name": "textures_logo_raylib",
@@ -2575,14 +2475,12 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "LoadTexture"
-   ]
+   "missing": []
   },
   {
    "name": "textures_srcrec_dstrec",
    "category": "textures",
-   "status": "waiting",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -2597,9 +2495,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "LoadTexture"
-   ]
+   "missing": []
   },
   {
    "name": "textures_image_drawing",
@@ -2802,7 +2698,7 @@
   {
    "name": "textures_particles_blending",
    "category": "textures",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginBlendMode",
     "BeginDrawing",
@@ -2822,14 +2718,12 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "LoadTexture"
-   ]
+   "missing": []
   },
   {
    "name": "textures_npatch_drawing",
    "category": "textures",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -2846,14 +2740,12 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "LoadTexture"
-   ]
+   "missing": []
   },
   {
    "name": "textures_background_scrolling",
    "category": "textures",
-   "status": "waiting",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -2868,14 +2760,12 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "LoadTexture"
-   ]
+   "missing": []
   },
   {
    "name": "textures_sprite_animation",
    "category": "textures",
-   "status": "waiting",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -2894,9 +2784,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "LoadTexture"
-   ]
+   "missing": []
   },
   {
    "name": "textures_sprite_button",
@@ -2927,7 +2815,6 @@
     "CloseAudioDevice",
     "InitAudioDevice",
     "LoadSound",
-    "LoadTexture",
     "PlaySound",
     "UnloadSound"
    ]
@@ -2959,7 +2846,6 @@
     "CloseAudioDevice",
     "InitAudioDevice",
     "LoadSound",
-    "LoadTexture",
     "PlaySound",
     "UnloadSound"
    ]
@@ -2967,7 +2853,7 @@
   {
    "name": "textures_bunnymark",
    "category": "textures",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -2990,9 +2876,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "LoadTexture"
-   ]
+   "missing": []
   },
   {
    "name": "textures_mouse_painting",
@@ -3066,7 +2950,7 @@
   {
    "name": "textures_tiled_drawing",
    "category": "textures",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",
@@ -3095,15 +2979,12 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "LoadTexture",
-    "SetConfigFlags"
-   ]
+   "missing": []
   },
   {
    "name": "textures_polygon_drawing",
    "category": "textures",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -3125,9 +3006,7 @@
     "rlTexCoord2f",
     "rlVertex2f"
    ],
-   "missing": [
-    "LoadTexture"
-   ]
+   "missing": []
   },
   {
    "name": "textures_fog_of_war",
@@ -3282,7 +3161,7 @@
   {
    "name": "textures_textured_curve",
    "category": "textures",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointCircle",
@@ -3318,15 +3197,12 @@
     "rlTexCoord2f",
     "rlVertex2f"
    ],
-   "missing": [
-    "LoadTexture",
-    "SetConfigFlags"
-   ]
+   "missing": []
   },
   {
    "name": "textures_sprite_stacking",
    "category": "textures",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "Clamp",
@@ -3345,9 +3221,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "LoadTexture"
-   ]
+   "missing": []
   },
   {
    "name": "textures_cellular_automata",
@@ -3417,8 +3291,7 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "MatrixPerspective",
-    "UpdateCamera"
+    "MatrixPerspective"
    ]
   },
   {
@@ -3464,7 +3337,7 @@
   {
    "name": "text_font_filters",
    "category": "text",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -3490,11 +3363,7 @@
     "UnloadFont",
     "WindowShouldClose"
    ],
-   "missing": [
-    "IsFileDropped",
-    "LoadDroppedFiles",
-    "UnloadDroppedFiles"
-   ]
+   "missing": []
   },
   {
    "name": "text_font_loading",
@@ -3581,7 +3450,7 @@
   {
    "name": "text_input_box",
    "category": "text",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",
@@ -3602,9 +3471,7 @@
     "TextFormat",
     "WindowShouldClose"
    ],
-   "missing": [
-    "SetMouseCursor"
-   ]
+   "missing": []
   },
   {
    "name": "text_writing_anim",
@@ -3658,7 +3525,7 @@
   {
    "name": "text_unicode_emojis",
    "category": "text",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",
@@ -3691,9 +3558,7 @@
     "UnloadFont",
     "WindowShouldClose"
    ],
-   "missing": [
-    "SetConfigFlags"
-   ]
+   "missing": []
   },
   {
    "name": "text_unicode_ranges",
@@ -3789,13 +3654,7 @@
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
-    "GetScreenToWorldRay",
-    "IsFileDropped",
-    "LoadDroppedFiles",
-    "LoadShader",
-    "SetConfigFlags",
-    "UnloadDroppedFiles",
-    "UpdateCamera"
+    "LoadShader"
    ]
   },
   {
@@ -3858,7 +3717,7 @@
   {
    "name": "text_words_alignment",
    "category": "text",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -3878,9 +3737,7 @@
     "TextSplit",
     "WindowShouldClose"
    ],
-   "missing": [
-    "GetTime"
-   ]
+   "missing": []
   },
   {
    "name": "text_strings_management",
@@ -3952,16 +3809,14 @@
    ],
    "missing": [
     "LoadModelAnimations",
-    "LoadTexture",
     "UnloadModelAnimations",
-    "UpdateCamera",
     "UpdateModelAnimation"
    ]
   },
   {
    "name": "models_billboard_rendering",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -3982,10 +3837,7 @@
     "Vector3Distance",
     "WindowShouldClose"
    ],
-   "missing": [
-    "LoadTexture",
-    "UpdateCamera"
-   ]
+   "missing": []
   },
   {
    "name": "models_box_collisions",
@@ -4020,7 +3872,7 @@
   {
    "name": "models_cubicmap_rendering",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4047,15 +3899,12 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
-   "missing": [
-    "LoadTexture",
-    "UpdateCamera"
-   ]
+   "missing": []
   },
   {
    "name": "models_first_person_maze",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4086,10 +3935,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
-   "missing": [
-    "LoadTexture",
-    "UpdateCamera"
-   ]
+   "missing": []
   },
   {
    "name": "models_geometric_shapes",
@@ -4163,7 +4009,6 @@
    "missing": [
     "GenMeshCylinder",
     "GenMeshKnot",
-    "UpdateCamera",
     "UploadMesh"
    ]
   },
@@ -4213,16 +4058,13 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawSphereWires",
-    "GetScreenToWorldRay",
-    "LoadTexture",
-    "UpdateCamera"
+    "DrawSphereWires"
    ]
   },
   {
    "name": "models_loading",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4255,14 +4097,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
-   "missing": [
-    "GetScreenToWorldRay",
-    "IsFileDropped",
-    "LoadDroppedFiles",
-    "LoadTexture",
-    "UnloadDroppedFiles",
-    "UpdateCamera"
-   ]
+   "missing": []
   },
   {
    "name": "models_loading_gltf",
@@ -4293,7 +4128,6 @@
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
-    "UpdateCamera",
     "UpdateModelAnimation"
    ]
   },
@@ -4342,7 +4176,6 @@
    "missing": [
     "DrawSphereWires",
     "GetShaderLocation",
-    "GetTime",
     "LoadShader",
     "SetShaderValue"
    ]
@@ -4381,7 +4214,6 @@
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
-    "UpdateCamera",
     "UpdateModelAnimation"
    ]
   },
@@ -4450,7 +4282,6 @@
    ],
    "missing": [
     "DrawSphereWires",
-    "UpdateCamera",
     "UploadMesh"
    ]
   },
@@ -4489,7 +4320,7 @@
   {
    "name": "models_yaw_pitch_roll",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4514,14 +4345,12 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "LoadTexture"
-   ]
+   "missing": []
   },
   {
    "name": "models_waving_cubes",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4538,14 +4367,12 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
-   "missing": [
-    "GetTime"
-   ]
+   "missing": []
   },
   {
    "name": "models_heightmap_rendering",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4570,9 +4397,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
-   "missing": [
-    "UpdateCamera"
-   ]
+   "missing": []
   },
   {
    "name": "models_skybox_rendering",
@@ -4645,16 +4470,10 @@
    ],
    "missing": [
     "GetShaderLocation",
-    "IsFileDropped",
-    "LoadDroppedFiles",
     "LoadShader",
-    "LoadTexture",
-    "LoadTextureCubemap",
     "MatrixPerspective",
     "SetShaderValue",
-    "UnloadDroppedFiles",
     "UnloadShader",
-    "UpdateCamera",
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
     "rlFramebufferAttach",
@@ -4671,7 +4490,7 @@
   {
    "name": "models_textured_cube",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4694,9 +4513,7 @@
     "rlTexCoord2f",
     "rlVertex3f"
    ],
-   "missing": [
-    "LoadTexture"
-   ]
+   "missing": []
   },
   {
    "name": "models_animation_gpu_skinning",
@@ -4731,7 +4548,6 @@
     "LoadShader",
     "UnloadModelAnimations",
     "UnloadShader",
-    "UpdateCamera",
     "UpdateModelAnimation"
    ]
   },
@@ -4772,14 +4588,13 @@
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
-    "UpdateCamera",
     "UpdateModelAnimation"
    ]
   },
   {
    "name": "models_tesseract_view",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4795,14 +4610,12 @@
     "Vector2Rotate",
     "WindowShouldClose"
    ],
-   "missing": [
-    "GetTime"
-   ]
+   "missing": []
   },
   {
    "name": "models_basic_voxel",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4828,9 +4641,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
-   "missing": [
-    "UpdateCamera"
-   ]
+   "missing": []
   },
   {
    "name": "models_rotating_cube",
@@ -4921,17 +4732,13 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "GetScreenToWorldRay",
-    "LoadTexture",
-    "SetConfigFlags",
-    "UpdateCamera",
     "UploadMesh"
    ]
   },
   {
    "name": "models_directional_billboard",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4954,10 +4761,7 @@
     "Vector3Zero",
     "WindowShouldClose"
    ],
-   "missing": [
-    "LoadTexture",
-    "UpdateCamera"
-   ]
+   "missing": []
   },
   {
    "name": "models_animation_blend_custom",
@@ -5003,7 +4807,6 @@
     "LoadShader",
     "UnloadModelAnimations",
     "UnloadShader",
-    "UpdateCamera",
     "rlUpdateVertexBuffer"
    ]
   },
@@ -5046,7 +4849,6 @@
     "LoadShader",
     "UnloadModelAnimations",
     "UnloadShader",
-    "UpdateCamera",
     "UpdateModelAnimation",
     "UpdateModelAnimationEx"
    ]
@@ -5083,7 +4885,6 @@
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
-    "UpdateCamera",
     "UpdateModelAnimation"
    ]
   },
@@ -5125,7 +4926,6 @@
     "EndShaderMode",
     "GetShaderLocation",
     "LoadShader",
-    "LoadTexture",
     "SetShaderValue",
     "UnloadShader"
    ]
@@ -5170,10 +4970,8 @@
     "EndShaderMode",
     "GetShaderLocation",
     "LoadShader",
-    "SetConfigFlags",
     "SetShaderValue",
-    "UnloadShader",
-    "UpdateCamera"
+    "UnloadShader"
    ]
   },
   {
@@ -5207,10 +5005,7 @@
    ],
    "missing": [
     "LoadShader",
-    "LoadTexture",
-    "SetConfigFlags",
-    "UnloadShader",
-    "UpdateCamera"
+    "UnloadShader"
    ]
   },
   {
@@ -5248,7 +5043,6 @@
     "BeginShaderMode",
     "EndShaderMode",
     "LoadShader",
-    "LoadTexture",
     "UnloadShader"
    ]
   },
@@ -5295,11 +5089,8 @@
     "EndShaderMode",
     "GetShaderLocation",
     "LoadShader",
-    "LoadTexture",
-    "SetConfigFlags",
     "SetShaderValue",
-    "UnloadShader",
-    "UpdateCamera"
+    "UnloadShader"
    ]
   },
   {
@@ -5344,10 +5135,7 @@
     "BeginShaderMode",
     "EndShaderMode",
     "LoadShader",
-    "LoadTexture",
-    "SetConfigFlags",
-    "UnloadShader",
-    "UpdateCamera"
+    "UnloadShader"
    ]
   },
   {
@@ -5417,12 +5205,9 @@
     "BeginShaderMode",
     "EndShaderMode",
     "GetShaderLocation",
-    "IsWindowResized",
     "LoadShader",
-    "SetConfigFlags",
     "SetShaderValue",
-    "UnloadShader",
-    "UpdateCamera"
+    "UnloadShader"
    ]
   },
   {
@@ -5456,7 +5241,6 @@
     "BeginShaderMode",
     "EndShaderMode",
     "GetShaderLocation",
-    "GetTime",
     "LoadShader",
     "SetShaderValue",
     "UnloadShader"
@@ -5494,7 +5278,6 @@
     "EndShaderMode",
     "GetShaderLocation",
     "LoadShader",
-    "LoadTexture",
     "SetShaderValue",
     "UnloadShader"
    ]
@@ -5530,7 +5313,6 @@
     "EndShaderMode",
     "GetShaderLocation",
     "LoadShader",
-    "LoadTexture",
     "SetShaderValue",
     "UnloadShader"
    ]
@@ -5654,7 +5436,6 @@
     "EndShaderMode",
     "GetShaderLocation",
     "LoadShader",
-    "LoadTexture",
     "SetShaderValue",
     "UnloadShader"
    ]
@@ -5732,11 +5513,8 @@
    "missing": [
     "GetShaderLocation",
     "LoadShader",
-    "LoadTexture",
-    "SetConfigFlags",
     "SetShaderValue",
-    "UnloadShader",
-    "UpdateCamera"
+    "UnloadShader"
    ]
   },
   {
@@ -5779,10 +5557,8 @@
    "missing": [
     "GetShaderLocation",
     "LoadShader",
-    "LoadTexture",
     "SetShaderValue",
-    "UnloadShader",
-    "UpdateCamera"
+    "UnloadShader"
    ]
   },
   {
@@ -5857,8 +5633,7 @@
    "missing": [
     "GetShaderLocation",
     "LoadShader",
-    "SetShaderValue",
-    "UpdateCamera"
+    "SetShaderValue"
    ]
   },
   {
@@ -5947,10 +5722,7 @@
     "DrawSphereWires",
     "EndShaderMode",
     "GetShaderLocation",
-    "GetTime",
     "LoadShader",
-    "LoadTexture",
-    "SetConfigFlags",
     "SetShaderValue",
     "UnloadShader"
    ]
@@ -5993,7 +5765,6 @@
     "EndShaderMode",
     "GetShaderLocation",
     "LoadShader",
-    "LoadTexture",
     "SetShaderValue",
     "UnloadShader"
    ]
@@ -6064,7 +5835,6 @@
     "LoadShader",
     "SetShaderValue",
     "UnloadShader",
-    "UpdateCamera",
     "rlBindFramebuffer",
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
@@ -6129,7 +5899,6 @@
     "LoadShader",
     "SetShaderValue",
     "UnloadShader",
-    "UpdateCamera",
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
     "rlFramebufferAttach",
@@ -6180,10 +5949,8 @@
     "EndShaderMode",
     "GetShaderLocation",
     "LoadShader",
-    "LoadTexture",
     "SetShaderValue",
-    "UnloadShader",
-    "UpdateCamera"
+    "UnloadShader"
    ]
   },
   {
@@ -6247,13 +6014,10 @@
     "GetShaderLocation",
     "LoadModelAnimations",
     "LoadShader",
-    "SetConfigFlags",
     "SetShaderValue",
     "SetShaderValueMatrix",
-    "TakeScreenshot",
     "UnloadModelAnimations",
     "UnloadShader",
-    "UpdateCamera",
     "UpdateModelAnimation",
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
@@ -6310,7 +6074,6 @@
     "LoadShader",
     "SetShaderValue",
     "UnloadShader",
-    "UpdateCamera",
     "rlSetUniformSampler"
    ]
   },
@@ -6356,7 +6119,6 @@
     "EndShaderMode",
     "LoadShader",
     "UnloadShader",
-    "UpdateCamera",
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
     "rlFramebufferAttach",
@@ -6406,11 +6168,8 @@
     "DrawSphereWires",
     "GetShaderLocation",
     "LoadShader",
-    "LoadTexture",
-    "SetConfigFlags",
     "SetShaderValue",
-    "UnloadShader",
-    "UpdateCamera"
+    "UnloadShader"
    ]
   },
   {
@@ -6457,10 +6216,7 @@
    ],
    "missing": [
     "LoadShader",
-    "LoadTexture",
-    "SetConfigFlags",
     "UnloadShader",
-    "UpdateCamera",
     "rlLoadVertexBuffer",
     "rlSetVertexAttribute"
    ]
@@ -6551,7 +6307,6 @@
     "SetShaderValue",
     "SetShaderValueTexture",
     "UnloadShader",
-    "UpdateCamera",
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
     "rlFramebufferAttach",
@@ -6712,12 +6467,9 @@
    ],
    "missing": [
     "GetShaderLocation",
-    "GetTime",
     "LoadShader",
-    "SetConfigFlags",
     "SetShaderValue",
-    "UnloadShader",
-    "UpdateCamera"
+    "UnloadShader"
    ]
   },
   {
@@ -6764,7 +6516,6 @@
     "PauseMusicStream",
     "PlayMusicStream",
     "ResumeMusicStream",
-    "SetConfigFlags",
     "SetMusicPitch",
     "StopMusicStream",
     "UnloadMusicStream",
@@ -6847,7 +6598,6 @@
    ],
    "missing": [
     "CloseAudioDevice",
-    "GetTime",
     "InitAudioDevice",
     "IsAudioStreamProcessed",
     "LoadAudioStream",
@@ -7043,15 +6793,13 @@
    ],
    "missing": [
     "CloseAudioDevice",
-    "GetTime",
     "InitAudioDevice",
     "IsSoundPlaying",
     "LoadSound",
     "PlaySound",
     "SetSoundPan",
     "SetSoundVolume",
-    "UnloadSound",
-    "UpdateCamera"
+    "UnloadSound"
    ]
   },
   {
@@ -7103,7 +6851,6 @@
     "CloseAudioDevice",
     "EndShaderMode",
     "GetShaderLocation",
-    "GetTime",
     "InitAudioDevice",
     "IsAudioStreamProcessed",
     "LoadAudioStream",

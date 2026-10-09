@@ -3,35 +3,35 @@
   "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
   "declaration_inventory": {
     "total": 1884,
-    "blocked": 25,
+    "blocked": 22,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 507,
-    "partial": 1352
+    "not-started": 449,
+    "partial": 1413
   },
   "core_functions": {
     "total": 600,
-    "blocked": 23,
+    "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 135,
-    "partial": 442
+    "not-started": 78,
+    "partial": 501
   },
   "math_functions": {
     "total": 146,
-    "blocked": 2,
+    "blocked": 1,
     "complete": 0,
     "in-progress": 0,
     "not-started": 0,
-    "partial": 144
+    "partial": 145
   },
   "function_declarations": {
     "total": 931,
-    "blocked": 25,
+    "blocked": 22,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 205,
-    "partial": 701
+    "not-started": 148,
+    "partial": 761
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -51,19 +51,19 @@
   "headers": {
     "raylib.h": {
       "total": 1037,
-      "blocked": 23,
+      "blocked": 21,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 180,
-      "partial": 834
+      "not-started": 122,
+      "partial": 894
     },
     "raymath.h": {
       "total": 254,
-      "blocked": 2,
+      "blocked": 1,
       "complete": 0,
       "in-progress": 0,
       "not-started": 16,
-      "partial": 236
+      "partial": 237
     },
     "rlgl.h": {
       "total": 403,
@@ -108,8 +108,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 17,
-      "partial": 532
+      "not-started": 16,
+      "partial": 533
     },
     {
       "id": "numerics",
@@ -133,11 +133,11 @@
         "numerics"
       ],
       "total": 221,
-      "blocked": 2,
+      "blocked": 1,
       "complete": 0,
       "in-progress": 0,
       "not-started": 0,
-      "partial": 219
+      "partial": 220
     },
     {
       "id": "memory",
@@ -164,8 +164,8 @@
       "blocked": 16,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 4,
-      "partial": 29
+      "not-started": 0,
+      "partial": 33
     },
     {
       "id": "random",
@@ -266,11 +266,11 @@
         "memory"
       ],
       "total": 57,
-      "blocked": 0,
+      "blocked": 1,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 44,
-      "partial": 13
+      "not-started": 0,
+      "partial": 56
     },
     {
       "id": "input",
@@ -284,8 +284,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 4,
-      "partial": 53
+      "not-started": 0,
+      "partial": 57
     },
     {
       "id": "frame",
@@ -299,8 +299,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 2,
-      "partial": 15
+      "not-started": 0,
+      "partial": 17
     },
     {
       "id": "rlgl-core",
@@ -348,8 +348,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 3,
-      "partial": 24
+      "not-started": 0,
+      "partial": 27
     },
     {
       "id": "text-utils",
@@ -499,11 +499,11 @@
         "frame"
       ],
       "total": 22,
-      "blocked": 3,
+      "blocked": 0,
       "complete": 0,
       "in-progress": 0,
       "not-started": 0,
-      "partial": 19
+      "partial": 22
     },
     {
       "id": "vr",
@@ -571,9 +571,9 @@
   ],
   "phase1_exit": {
     "total": 315,
-    "implemented": 293,
+    "implemented": 298,
     "behavior_ownership_verified": 0,
-    "only_allowed_gaps": 0,
+    "only_allowed_gaps": 3,
     "meeting": 0
   },
   "next_work": [
@@ -661,9 +661,9 @@
       "id": "raymath:function:QuaternionToEuler",
       "name": "QuaternionToEuler",
       "milestone": "jonmath",
-      "status": "blocked",
-      "jonlib": "jonmath.Quaternion.to_euler",
-      "next_step": "Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models; glibc 2.39's e_asinf.c carries LGPL-2.1+ single-precision modifications (Moshier), so adapting it needs a project licensing decision.",
+      "status": "partial",
+      "jonlib": "jonmath.Quaternion.to_euler_for",
+      "next_step": "Close documented gaps and unverified gates for QuaternionToEuler.",
       "milestone_dependencies": [
         "numerics"
       ],
@@ -675,7 +675,7 @@
       "milestone": "jonmath",
       "status": "blocked",
       "jonlib": "jonmath.Matrix.perspective",
-      "next_step": "Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.",
+      "next_step": "Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps, and no native tan is correctly rounded on raylib's arguments: exhaustively over every binary32 fovY (and BeginMode3D's fovy*0.5*DEG2RAD), macOS 27 arm64 differs from correct rounding on 23.7% (22.7%) and glibc 2.39/2.41 x86_64 on 0.13% (0.12%); glibc's agreeing set is characterized only by a 0.069-ulp distance from rounding boundaries, which would refuse about 14% of fovy values. The published Sun/FreeBSD kernel does not match macOS and glibc's LGPL s_tan.c is not adapted.",
       "milestone_dependencies": [
         "numerics"
       ],

@@ -292,6 +292,8 @@ we must supply the behavioral assertions they do not contain. In addition:
 Passing Jonlib's suite means the declared, exercised profile passes; it is not
 proof about every raylib program. See [VERIFICATION.md](VERIFICATION.md).
 
+Latest session handoff: [HANDOFF.md](HANDOFF.md).
+
 ## Examples as validation
 
 Full parity includes the upstream examples: every example in the pinned

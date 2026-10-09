@@ -436,7 +436,9 @@ current color buffer (the render texture's in texture mode).
   refused.
 - **Perspective** (`CAMERA_PERSPECTIVE`) is refused: its `rlFrustum` bounds
   are `0.05*tan(fovy*0.5*DEG2RAD)` in binary64 and the native `tan` is not
-  reproduced ([PERSPECTIVE.md](PERSPECTIVE.md)).
+  reproduced. Over every binary32 `fovy`, macOS misrounds that tangent for
+  22.7% of the arguments (`fovy = 45` included) and glibc 2.39/2.41 for 0.12%,
+  so neither equals a correctly rounded kernel ([PERSPECTIVE.md](PERSPECTIVE.md)).
 - **Other projection values** keep the identity projection, as raylib does.
 
 `Frame.end_mode_3d` pops the projection and resets the modelview; the depth

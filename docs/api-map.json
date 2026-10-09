@@ -4,7 +4,7 @@
     "status": "profile-covered",
     "scope": "Headless memory-platform InitWindow for sizes 1..4096: rlglInit clears to (0, 0, 0, 255), the viewport and rlOrtho projection, identity modelview and the default font white block as shapes texture; Maybe<Frame>. Desktop.run opens a Base window of that size and title for a Program (docs/DRIVER.md).",
     "gaps": [
-      "Integration: no config flags, monitor, DPI or resizable window: Base windows are fixed-size (docs/DRIVER.md)",
+      "Integration: no monitor, DPI or resizable window: Base windows are fixed-size; config flags reach only the memory platform state (docs/DRIVER.md)",
       "Font loading beyond the shapes atlas is not exposed",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
@@ -31,6 +31,291 @@
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:WindowShouldClose",
+    "milestone": "window"
+  },
+  "IsWindowReady": {
+    "jonlib": "Core.is_window_ready",
+    "status": "profile-covered",
+    "scope": "True: a Core is an initialized window (CloseWindow consumes it).",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsWindowReady",
+    "milestone": "window"
+  },
+  "IsWindowFullscreen": {
+    "jonlib": "Core.is_window_fullscreen",
+    "status": "profile-covered",
+    "scope": "FLAG_FULLSCREEN_MODE is set in the SetConfigFlags flags (the memory platform never toggles it).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsWindowFullscreen",
+    "milestone": "window"
+  },
+  "IsWindowHidden": {
+    "jonlib": "Core.is_window_hidden",
+    "status": "profile-covered",
+    "scope": "FLAG_WINDOW_HIDDEN is set in the SetConfigFlags flags.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsWindowHidden",
+    "milestone": "window"
+  },
+  "IsWindowMinimized": {
+    "jonlib": "Core.is_window_minimized",
+    "status": "profile-covered",
+    "scope": "FLAG_WINDOW_MINIMIZED is set in the SetConfigFlags flags.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsWindowMinimized",
+    "milestone": "window"
+  },
+  "IsWindowMaximized": {
+    "jonlib": "Core.is_window_maximized",
+    "status": "profile-covered",
+    "scope": "FLAG_WINDOW_MAXIMIZED is set in the SetConfigFlags flags.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsWindowMaximized",
+    "milestone": "window"
+  },
+  "IsWindowFocused": {
+    "jonlib": "Core.is_window_focused",
+    "status": "profile-covered",
+    "scope": "FLAG_WINDOW_UNFOCUSED is clear in the SetConfigFlags flags.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsWindowFocused",
+    "milestone": "window"
+  },
+  "IsWindowResized": {
+    "jonlib": "Core.is_window_resized",
+    "status": "profile-covered",
+    "scope": "False: the memory platform never resizes (resizedLastFrame stays false); Base windows are fixed-size.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsWindowResized",
+    "milestone": "window"
+  },
+  "IsWindowState": {
+    "jonlib": "Core.is_window_state",
+    "status": "profile-covered",
+    "scope": "FLAG_IS_SET: every bit of the flag is set in the SetConfigFlags flags (true for 0).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsWindowState",
+    "milestone": "window"
+  },
+  "SetWindowState": {
+    "jonlib": "Core.set_window_state",
+    "status": "profile-covered",
+    "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetWindowState",
+    "milestone": "window"
+  },
+  "ClearWindowState": {
+    "jonlib": "Core.clear_window_state",
+    "status": "profile-covered",
+    "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:ClearWindowState",
+    "milestone": "window"
+  },
+  "ToggleFullscreen": {
+    "jonlib": "Core.toggle_fullscreen",
+    "status": "profile-covered",
+    "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:ToggleFullscreen",
+    "milestone": "window"
+  },
+  "ToggleBorderlessWindowed": {
+    "jonlib": "Core.toggle_borderless_windowed",
+    "status": "profile-covered",
+    "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:ToggleBorderlessWindowed",
+    "milestone": "window"
+  },
+  "MaximizeWindow": {
+    "jonlib": "Core.maximize_window",
+    "status": "profile-covered",
+    "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:MaximizeWindow",
+    "milestone": "window"
+  },
+  "MinimizeWindow": {
+    "jonlib": "Core.minimize_window",
+    "status": "profile-covered",
+    "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:MinimizeWindow",
+    "milestone": "window"
+  },
+  "RestoreWindow": {
+    "jonlib": "Core.restore_window",
+    "status": "profile-covered",
+    "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:RestoreWindow",
+    "milestone": "window"
+  },
+  "SetWindowIcon": {
+    "jonlib": "Core.set_window_icon",
+    "status": "profile-covered",
+    "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included). The image comes back to the caller.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetWindowIcon",
+    "milestone": "window"
+  },
+  "SetWindowIcons": {
+    "jonlib": "Core.set_window_icons",
+    "status": "profile-covered",
+    "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included). The images come back to the caller.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetWindowIcons",
+    "milestone": "window"
+  },
+  "SetWindowTitle": {
+    "jonlib": "Core.set_window_title / Core.window_title",
+    "status": "profile-covered",
+    "scope": "Stores CORE.Window.title; Desktop.run opens the window with the stored title and calls Base Window.set_title when it changes.",
+    "gaps": [
+      "Integration: the title is applied after the frame that set it (Base retitles between frames)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetWindowTitle",
+    "milestone": "window"
+  },
+  "SetWindowPosition": {
+    "jonlib": "Core.set_window_position",
+    "status": "profile-covered",
+    "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetWindowPosition",
+    "milestone": "window"
+  },
+  "SetWindowMonitor": {
+    "jonlib": "Core.set_window_monitor",
+    "status": "profile-covered",
+    "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetWindowMonitor",
+    "milestone": "window"
+  },
+  "SetWindowMinSize": {
+    "jonlib": "Core.set_window_min_size / Core.window_min_size",
+    "status": "profile-covered",
+    "scope": "Stores CORE.Window.screenMin (C ints); nothing resizes, so it has no other effect.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetWindowMinSize",
+    "milestone": "window"
+  },
+  "SetWindowMaxSize": {
+    "jonlib": "Core.set_window_max_size / Core.window_max_size",
+    "status": "profile-covered",
+    "scope": "Stores CORE.Window.screenMax (C ints); nothing resizes, so it has no other effect.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetWindowMaxSize",
+    "milestone": "window"
+  },
+  "SetWindowSize": {
+    "jonlib": "Core.set_window_size",
+    "status": "profile-covered",
+    "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetWindowSize",
+    "milestone": "window"
+  },
+  "SetWindowOpacity": {
+    "jonlib": "Core.set_window_opacity",
+    "status": "profile-covered",
+    "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetWindowOpacity",
+    "milestone": "window"
+  },
+  "SetWindowFocused": {
+    "jonlib": "Core.set_window_focused",
+    "status": "profile-covered",
+    "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetWindowFocused",
+    "milestone": "window"
+  },
+  "GetWindowHandle": {
+    "jonlib": "Core.get_window_handle",
+    "status": "profile-covered",
+    "scope": "NULL (None): the memory platform has no native window.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetWindowHandle",
     "milestone": "window"
   },
   "GetScreenWidth": {
@@ -75,6 +360,182 @@
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetRenderHeight",
+    "milestone": "window"
+  },
+  "GetMonitorCount": {
+    "jonlib": "Core.get_monitor_count",
+    "status": "profile-covered",
+    "scope": "Memory platform: 1.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetMonitorCount",
+    "milestone": "window"
+  },
+  "GetCurrentMonitor": {
+    "jonlib": "Core.get_current_monitor",
+    "status": "profile-covered",
+    "scope": "Memory platform: 0.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetCurrentMonitor",
+    "milestone": "window"
+  },
+  "GetMonitorPosition": {
+    "jonlib": "Core.get_monitor_position",
+    "status": "profile-covered",
+    "scope": "Memory platform: (0, 0) for any monitor index.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetMonitorPosition",
+    "milestone": "window"
+  },
+  "GetMonitorWidth": {
+    "jonlib": "Core.get_monitor_width",
+    "status": "profile-covered",
+    "scope": "Memory platform: 0 for any monitor index.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetMonitorWidth",
+    "milestone": "window"
+  },
+  "GetMonitorHeight": {
+    "jonlib": "Core.get_monitor_height",
+    "status": "profile-covered",
+    "scope": "Memory platform: 0 for any monitor index.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetMonitorHeight",
+    "milestone": "window"
+  },
+  "GetMonitorPhysicalWidth": {
+    "jonlib": "Core.get_monitor_physical_width",
+    "status": "profile-covered",
+    "scope": "Memory platform: 0 for any monitor index.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetMonitorPhysicalWidth",
+    "milestone": "window"
+  },
+  "GetMonitorPhysicalHeight": {
+    "jonlib": "Core.get_monitor_physical_height",
+    "status": "profile-covered",
+    "scope": "Memory platform: 0 for any monitor index.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetMonitorPhysicalHeight",
+    "milestone": "window"
+  },
+  "GetMonitorRefreshRate": {
+    "jonlib": "Core.get_monitor_refresh_rate",
+    "status": "profile-covered",
+    "scope": "Memory platform: 0 for any monitor index.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetMonitorRefreshRate",
+    "milestone": "window"
+  },
+  "GetWindowPosition": {
+    "jonlib": "Core.get_window_position",
+    "status": "profile-covered",
+    "scope": "Memory platform: (0, 0).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetWindowPosition",
+    "milestone": "window"
+  },
+  "GetWindowScaleDPI": {
+    "jonlib": "Core.get_window_scale_dpi",
+    "status": "profile-covered",
+    "scope": "Memory platform: (1, 1).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetWindowScaleDPI",
+    "milestone": "window"
+  },
+  "GetMonitorName": {
+    "jonlib": "Core.get_monitor_name",
+    "status": "profile-covered",
+    "scope": "Memory platform: \"\" for any monitor index.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetMonitorName",
+    "milestone": "window"
+  },
+  "SetClipboardText": {
+    "jonlib": "Core.set_clipboard_text",
+    "status": "profile-covered",
+    "scope": "Memory platform: a warning only (nothing is stored).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetClipboardText",
+    "milestone": "window"
+  },
+  "GetClipboardText": {
+    "jonlib": "Core.get_clipboard_text",
+    "status": "profile-covered",
+    "scope": "Memory platform: NULL (None).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetClipboardText",
+    "milestone": "window"
+  },
+  "GetClipboardImage": {
+    "jonlib": "Core.get_clipboard_image",
+    "status": "profile-covered",
+    "scope": "Memory platform: an empty image (data NULL, 0x0): None.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetClipboardImage",
+    "milestone": "window"
+  },
+  "EnableEventWaiting": {
+    "jonlib": "Core.enable_event_waiting / Core.is_event_waiting",
+    "status": "profile-covered",
+    "scope": "Sets CORE.Window.eventWaiting, which no memory-platform function reads.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:EnableEventWaiting",
+    "milestone": "window"
+  },
+  "DisableEventWaiting": {
+    "jonlib": "Core.disable_event_waiting / Core.is_event_waiting",
+    "status": "profile-covered",
+    "scope": "Clears CORE.Window.eventWaiting, which no memory-platform function reads.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:DisableEventWaiting",
     "milestone": "window"
   },
   "ShowCursor": {
@@ -285,6 +746,17 @@
     "api_id": "raylib:function:EndScissorMode",
     "milestone": "shapes"
   },
+  "GetScreenToWorldRay": {
+    "jonlib": "Camera.screen_to_world_ray_for / Camera.screen_to_world_ray",
+    "status": "profile-covered",
+    "scope": "GetScreenToWorldRayEx at the Core screen size; None as the Ex form.",
+    "gaps": [
+      "CAMERA_PERSPECTIVE is None: MatrixPerspective needs the blocked binary64 tan (docs/PERSPECTIVE.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetScreenToWorldRay",
+    "milestone": "camera"
+  },
   "GetScreenToWorldRayEx": {
     "jonlib": "Camera.screen_to_world_ray_ex_for / Camera.screen_to_world_ray_ex",
     "status": "profile-covered",
@@ -298,6 +770,17 @@
       "Full target/performance coverage"
     ],
     "api_id": "raylib:function:GetScreenToWorldRayEx",
+    "milestone": "camera"
+  },
+  "GetWorldToScreen": {
+    "jonlib": "Camera.world_to_screen_for / Camera.world_to_screen",
+    "status": "profile-covered",
+    "scope": "GetWorldToScreenEx at the Core screen size (GetScreenWidth/GetScreenHeight); None as the Ex form (perspective projections among them).",
+    "gaps": [
+      "CAMERA_PERSPECTIVE is None: MatrixPerspective needs the blocked binary64 tan (docs/PERSPECTIVE.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetWorldToScreen",
     "milestone": "camera"
   },
   "GetWorldToScreenEx": {
@@ -391,6 +874,17 @@
     "api_id": "raylib:function:GetFrameTime",
     "milestone": "frame"
   },
+  "GetTime": {
+    "jonlib": "Core.get_time",
+    "status": "profile-covered",
+    "scope": "The explicit clock of the last Core timing step (InitWindow, BeginDrawing, EndDrawing after its wait, WaitTime): raylib's GetTime() at those points in Program.replay's scripted frames; the desktop driver's IO.now reading of that step.",
+    "gaps": [
+      "Integration: not a live reading (a busy loop on GetTime would not advance); the desktop clock has millisecond resolution",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetTime",
+    "milestone": "frame"
+  },
   "GetFPS": {
     "jonlib": "Core.get_fps",
     "status": "profile-covered",
@@ -423,6 +917,18 @@
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:PollInputEvents",
+    "milestone": "frame"
+  },
+  "WaitTime": {
+    "jonlib": "Core.wait_time",
+    "status": "profile-covered",
+    "scope": "SUPPORT_PARTIALBUSY_WAIT_LOOP: negative seconds (-infinity too) return at once; otherwise the clock becomes GetTime() + seconds (binary64). Desktop.run sleeps and busy-reads IO.now until the real clock reaches it.",
+    "gaps": [
+      "Undefined native behavior: NaN, +infinity and more than 4096 seconds are None (raylib's sleep conversion)",
+      "Integration: measured from the last timing step, not the live clock",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:WaitTime",
     "milestone": "frame"
   },
   "SetRandomSeed": {
@@ -468,6 +974,30 @@
     ],
     "api_id": "raylib:function:UnloadRandomSequence",
     "milestone": "random"
+  },
+  "TakeScreenshot": {
+    "jonlib": "Frame.take_screenshot",
+    "status": "profile-covered",
+    "scope": "A name with ' is rejected; otherwise LoadImageFromScreen's desktop-contract image (top-down RGBA, alpha 255) is exported with ExportImage's suffix rules to the name in the working directory; answers FileExists afterwards, None for a refused frame.",
+    "gaps": [
+      "The memory platform writes the same pixels bottom-up with red and blue swapped (normalized by the probe; docs/TEXTURES.md)",
+      "raylib's basePath join and TextFormat truncation at 1024 bytes are not modeled (the name is written relative)",
+      "F12/ACTION_TAKE_SCREENSHOT captures in EndDrawing are counted, not written",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:TakeScreenshot",
+    "milestone": "textures"
+  },
+  "SetConfigFlags": {
+    "jonlib": "Core.set_config_flags / Core.init_window_flags / Frame.init_window_flags / Desktop.run_flags",
+    "status": "profile-covered",
+    "scope": "CORE.Window.flags |= flags, before InitWindow (the init_window_flags forms) or after it (only stored, as raylib). Only FLAG_MSAA_4X_HINT reaches the memory platform frame: the shapes texture rectangle becomes (42, 47, 1, 1).",
+    "gaps": [
+      "Integration: a desktop platform applies the flags (vsync, resizable, fullscreen, MSAA); Base has no such facility (docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetConfigFlags",
+    "milestone": "window"
   },
   "SetTraceLogLevel": {
     "jonlib": "Log.level / Log.default",
@@ -648,6 +1178,18 @@
     "api_id": "raylib:function:SetSaveFileTextCallback",
     "milestone": "files"
   },
+  "FileTextReplace": {
+    "jonlib": "Files.text_replace",
+    "status": "profile-covered",
+    "scope": "0 for a missing file; otherwise LoadFileText, TextReplaceAlloc of the text up to its first NUL and SaveFileText of the result (1 or 0). None where raylib passes NULL to fprintf: an empty file or an empty search.",
+    "gaps": [
+      "Characters above 255 in the result and TextReplaceAlloc int overflows are None",
+      "Pointer/allocator ABI and complete target/resource coverage",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:FileTextReplace",
+    "milestone": "files"
+  },
   "FileTextFindIndex": {
     "jonlib": "Files.text_find_index / Files.text_find_index_with",
     "status": "profile-covered",
@@ -751,6 +1293,39 @@
       "Non-ASCII byte paths compare per character, not per byte"
     ],
     "api_id": "raylib:function:IsFileNameValid",
+    "milestone": "files"
+  },
+  "IsFileDropped": {
+    "jonlib": "Core.is_file_dropped",
+    "status": "profile-covered",
+    "scope": "False: no platform Jonlib runs on delivers dropped files (the memory platform has no events, Base no drop event).",
+    "gaps": [
+      "Integration: Base has no drop event (docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsFileDropped",
+    "milestone": "files"
+  },
+  "LoadDroppedFiles": {
+    "jonlib": "Core.load_dropped_files",
+    "status": "profile-covered",
+    "scope": "The internal list: FilePathList{0, []}.",
+    "gaps": [
+      "Integration: Base has no drop event (docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadDroppedFiles",
+    "milestone": "files"
+  },
+  "UnloadDroppedFiles": {
+    "jonlib": "Core.unload_dropped_files",
+    "status": "profile-covered",
+    "scope": "Nothing to free for the empty internal list; the Core comes back.",
+    "gaps": [
+      "Integration: Base has no drop event (docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:UnloadDroppedFiles",
     "milestone": "files"
   },
   "CompressData": {
@@ -1006,6 +1581,17 @@
     "api_id": "raylib:function:GetCharPressed",
     "milestone": "input"
   },
+  "GetKeyName": {
+    "jonlib": "Input.get_key_name",
+    "status": "profile-covered",
+    "scope": "Memory platform: \"\" for any key.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetKeyName",
+    "milestone": "input"
+  },
   "SetExitKey": {
     "jonlib": "Input.set_exit_key",
     "status": "profile-covered",
@@ -1114,6 +1700,28 @@
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetGamepadAxisMovement",
+    "milestone": "input"
+  },
+  "SetGamepadMappings": {
+    "jonlib": "Input.set_gamepad_mappings",
+    "status": "profile-covered",
+    "scope": "Memory platform: 0 (no mapping database).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetGamepadMappings",
+    "milestone": "input"
+  },
+  "SetGamepadVibration": {
+    "jonlib": "Input.set_gamepad_vibration",
+    "status": "profile-covered",
+    "scope": "Memory platform: a warning only.",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetGamepadVibration",
     "milestone": "input"
   },
   "IsMouseButtonPressed": {
@@ -1259,6 +1867,17 @@
     "api_id": "raylib:function:GetMouseWheelMoveV",
     "milestone": "input"
   },
+  "SetMouseCursor": {
+    "jonlib": "Input.set_mouse_cursor",
+    "status": "profile-covered",
+    "scope": "Memory platform: a warning only (the cursor shape is not stored).",
+    "gaps": [
+      "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetMouseCursor",
+    "milestone": "input"
+  },
   "GetTouchX": {
     "jonlib": "Input.get_touch_x",
     "status": "profile-covered",
@@ -1401,6 +2020,20 @@
     ],
     "api_id": "raylib:function:GetGesturePinchAngle",
     "milestone": "input"
+  },
+  "UpdateCamera": {
+    "jonlib": "Camera.update_for / Camera.update",
+    "status": "profile-covered",
+    "scope": "Maybe<Camera3D>: rcamera.h's UpdateCamera steps in order over the Core's GetMouseDelta, GetFrameTime, keys, middle button, wheel and gamepad 0, for every mode (others take the manual path with options off); explicit contraction and M.Libm profiles; None as soon as a rotation or lockView angle leaves the profile.",
+    "gaps": [
+      "AppleLibm: nonzero sinf/cosf arguments are None (orbital frames and every rotation)",
+      "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+      "Fused profile: the camera steps are checked by the camera gate; the input-driven sequence only uncontracted",
+      "NaN sign and payload are not reproduced",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:UpdateCamera",
+    "milestone": "camera"
   },
   "UpdateCameraPro": {
     "jonlib": "Camera.update_pro_for / Camera.update_pro",
@@ -3128,6 +3761,17 @@
     "api_id": "raylib:function:ImageDrawTextEx",
     "milestone": "fonts"
   },
+  "LoadTexture": {
+    "jonlib": "Texture.load",
+    "status": "profile-covered",
+    "scope": "LoadImage (Surface.load_image) then LoadTextureFromImage of the decoded image; None with the frame unchanged when the file does not load or the 127 texture ids are in use (raylib: id 0).",
+    "gaps": [
+      "Image formats and sizes as Surface.load_image's profile (docs/IMAGE-FILES.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadTexture",
+    "milestone": "textures"
+  },
   "LoadTextureFromImage": {
     "jonlib": "Texture.load_from_image",
     "status": "profile-covered",
@@ -3137,6 +3781,17 @@
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:LoadTextureFromImage",
+    "milestone": "textures"
+  },
+  "LoadTextureCubemap": {
+    "jonlib": "Texture.load_cubemap",
+    "status": "profile-covered",
+    "scope": "rlLoadTextureCubemap is OpenGL 3.3/ES2 only: under the software renderer the cubemap keeps id 0, mipmaps 0 and format 0, width = height = the face size of the layout (auto-detected from the aspect, else 0). The image stays the caller's.",
+    "gaps": [
+      "GPU (OpenGL 3.3) cubemaps are a separate contract; no Jonlib renderer samples cubemaps",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadTextureCubemap",
     "milestone": "textures"
   },
   "LoadRenderTexture": {

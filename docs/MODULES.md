@@ -125,6 +125,8 @@ public API's profile. Their checked domains and proof limits are in
   under its own 34-limb invariants.
 - `src/binary64_ops.bend` and `src/binary64_gradual_multiply.bend`: checked
   normal multiply/divide with word adapters, and the gradual-output product.
+- `src/binary64_sqrt.bend`: checked square root of a signed zero or positive
+  normal, rounded once (exact restoring integer square root).
 
 `src/modern_angle.bend` is a private finite-input scalar adapter for the pinned
 glibc 2.41 round-to-nearest-even `atan2f` algorithm. It consumes the helpers above,
@@ -132,3 +134,6 @@ accepts raw F32 words and returns a checked F32 result word; diagnostic traces
 are also private. See [MODERN-ANGLE.md](MODERN-ANGLE.md) for source provenance
 and exact operation order. The public checked angle wrappers consume it through
 `src/checked_angle.bend`; see [ANGLES.md](ANGLES.md).
+`src/asin.bend` is the private adaptation of glibc 2.41's correctly rounded
+`asinf` on those helpers, consumed by `M.Libm.asin`; see
+[INVERSE-TRIG.md](INVERSE-TRIG.md).
