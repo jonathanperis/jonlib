@@ -10,7 +10,8 @@ rcamera.h and rgestures.h), and a status:
   against the native example (the `examples` gate);
 - ready: every API the example calls is at least partial in the ledger, so it
   can be ported now;
-- waiting: some API it calls is not-started or blocked (listed in `missing`).
+- waiting: some API it calls is not-started or blocked, or it includes a
+  companion library Jonlib has not ported (raygui.h), listed in `missing`.
 
 `build --raylib-source <pinned raylib>` re-reads the example sources;
 `refresh` recomputes the statuses from the stored API lists and the current
@@ -68,6 +69,16 @@ def calls(source, functions):
     return sorted(used & set(functions))
 
 
+# Companion headers some examples include besides raylib's own (raygui.h ships
+# in the examples directories); none is ported yet, so they keep an example waiting.
+COMPANIONS = ('raygui',)
+PORTED_COMPANIONS = set()
+
+
+def libraries(source):
+    return [lib for lib in COMPANIONS if re.search(rf'#\s*include\s+"{lib}\.h"', source)]
+
+
 def status_rows(rows):
     """Statuses from each row's API list, the current ledger and the ported examples."""
     functions = ledger_functions()
@@ -77,7 +88,8 @@ def status_rows(rows):
         if r['status'] == 'missing-source':
             out.append(r)
             continue
-        missing = [a for a in r['apis'] if functions.get(a) not in ('partial', 'complete')]
+        missing = ([a for a in r['apis'] if functions.get(a) not in ('partial', 'complete')]
+                   + [f'{lib}.h' for lib in r.get('libraries', []) if lib not in PORTED_COMPANIONS])
         status = 'ported' if r['name'] in ported else ('ready' if not missing else 'waiting')
         out.append(dict(r, status=status, missing=missing))
     return out
@@ -91,7 +103,8 @@ def plan(raylib):
         if not path.is_file():
             rows.append(dict(name=name, category=category, status='missing-source', apis=[], missing=[]))
             continue
-        rows.append(dict(name=name, category=category, status='', apis=calls(path.read_text(errors='replace'), functions), missing=[]))
+        text = path.read_text(errors='replace')
+        rows.append(dict(name=name, category=category, status='', apis=calls(text, functions), libraries=libraries(text), missing=[]))
     return status_rows(rows)
 
 
@@ -106,7 +119,8 @@ def document(rows):
              '`examples/examples_list.txt`; do not edit by hand. An example is **ported**',
              'when `examples/<name>.bend` exists and the `examples` gate replays it against',
              'the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it',
-             'calls is at least partial in the ledger; **waiting** otherwise.', '',
+             'calls is at least partial in the ledger and it includes no unported companion',
+             'library (`raygui.h`); **waiting** otherwise.', '',
              f'Totals: {len(rows)} examples; {counts["ported"]} ported, {counts["ready"]} ready, '
              f'{counts["waiting"]} waiting' + (f', {counts["missing-source"]} without source' if counts['missing-source'] else '') + '.', '',
              '## APIs that unblock the most examples', '', '| API | Examples waiting on it |', '|---|---|']

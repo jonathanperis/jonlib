@@ -15,6 +15,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -37,6 +38,7 @@
     "TextFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -55,6 +57,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -78,6 +81,7 @@
     "ShowCursor",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -97,6 +101,7 @@
     "TextFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -136,6 +141,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -156,6 +162,7 @@
     "TextFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -181,6 +188,7 @@
     "TextCopy",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -217,6 +225,7 @@
     "TextSubtext",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -240,6 +249,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -267,6 +277,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -309,6 +320,7 @@
     "rlRotatef",
     "rlTranslatef"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -339,6 +351,7 @@
     "Vector2Subtract",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -370,6 +383,7 @@
     "UnloadRenderTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -392,6 +406,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -419,6 +434,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -450,6 +466,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -481,6 +498,7 @@
     "UnloadRenderTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -526,6 +544,7 @@
     "Vector3Scale",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -558,6 +577,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -584,6 +604,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -616,6 +637,7 @@
     "ToggleFullscreen",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -648,6 +670,7 @@
     "Vector2Clamp",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -667,6 +690,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -700,6 +724,7 @@
     "TextFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -717,6 +742,7 @@
     "SetTraceLogCallback",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -739,6 +765,7 @@
     "UnloadDroppedFiles",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -757,6 +784,7 @@
     "TextFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -780,6 +808,7 @@
     "UnloadFileData",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -821,6 +850,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "BeginVrStereoMode",
@@ -857,6 +887,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -876,6 +907,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -901,6 +933,7 @@
     "WaitTime",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -930,6 +963,7 @@
     "UnloadRenderTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -954,6 +988,7 @@
     "UnloadRandomSequence",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -996,6 +1031,7 @@
     "UnloadDroppedFiles",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1027,6 +1063,7 @@
     "TextFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1050,6 +1087,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1073,6 +1111,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1106,6 +1145,7 @@
     "UnloadRenderTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1129,6 +1169,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1152,11 +1193,15 @@
     "UnloadDirectoryFiles",
     "WindowShouldClose"
    ],
+   "libraries": [
+    "raygui"
+   ],
    "missing": [
     "GetWorkingDirectory",
     "LoadDirectoryFiles",
     "LoadDirectoryFilesEx",
-    "UnloadDirectoryFiles"
+    "UnloadDirectoryFiles",
+    "raygui.h"
    ]
   },
   {
@@ -1195,6 +1240,7 @@
     "ToggleFullscreen",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1225,6 +1271,7 @@
     "UnloadImage",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "GetApplicationDirectory"
    ]
@@ -1232,7 +1279,7 @@
   {
    "name": "core_clipboard_text",
    "category": "core",
-   "status": "ready",
+   "status": "waiting",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1249,7 +1296,12 @@
     "TextCopy",
     "WindowShouldClose"
    ],
-   "missing": []
+   "libraries": [
+    "raygui"
+   ],
+   "missing": [
+    "raygui.h"
+   ]
   },
   {
    "name": "core_text_file_loading",
@@ -1279,12 +1331,13 @@
     "UnloadTextLines",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
    "name": "core_compute_hash",
    "category": "core",
-   "status": "ready",
+   "status": "waiting",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1302,7 +1355,12 @@
     "TextFormat",
     "WindowShouldClose"
    ],
-   "missing": []
+   "libraries": [
+    "raygui"
+   ],
+   "missing": [
+    "raygui.h"
+   ]
   },
   {
    "name": "core_keyboard_testbed",
@@ -1328,6 +1386,7 @@
     "TraceLog",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1344,6 +1403,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1374,6 +1434,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1396,6 +1457,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1427,6 +1489,7 @@
     "UnloadRenderTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1453,6 +1516,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1470,6 +1534,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1492,6 +1557,7 @@
     "TextSubtext",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1518,6 +1584,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1541,6 +1608,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1569,6 +1637,7 @@
     "TextFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1590,6 +1659,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1610,6 +1680,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1631,6 +1702,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1649,12 +1721,13 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
    "name": "shapes_recursive_tree",
    "category": "shapes",
-   "status": "ready",
+   "status": "waiting",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1672,12 +1745,17 @@
     "TextFormat",
     "WindowShouldClose"
    ],
-   "missing": []
+   "libraries": [
+    "raygui"
+   ],
+   "missing": [
+    "raygui.h"
+   ]
   },
   {
    "name": "shapes_ring_drawing",
    "category": "shapes",
-   "status": "ready",
+   "status": "waiting",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1698,12 +1776,17 @@
     "TextFormat",
     "WindowShouldClose"
    ],
-   "missing": []
+   "libraries": [
+    "raygui"
+   ],
+   "missing": [
+    "raygui.h"
+   ]
   },
   {
    "name": "shapes_circle_sector_drawing",
    "category": "shapes",
-   "status": "ready",
+   "status": "waiting",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1723,12 +1806,17 @@
     "TextFormat",
     "WindowShouldClose"
    ],
-   "missing": []
+   "libraries": [
+    "raygui"
+   ],
+   "missing": [
+    "raygui.h"
+   ]
   },
   {
    "name": "shapes_rounded_rectangle_drawing",
    "category": "shapes",
-   "status": "ready",
+   "status": "waiting",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1749,7 +1837,12 @@
     "TextFormat",
     "WindowShouldClose"
    ],
-   "missing": []
+   "libraries": [
+    "raygui"
+   ],
+   "missing": [
+    "raygui.h"
+   ]
   },
   {
    "name": "shapes_top_down_lights",
@@ -1798,6 +1891,7 @@
     "rlSetBlendFactors",
     "rlSetBlendMode"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1824,12 +1918,13 @@
     "rlTexCoord2f",
     "rlVertex2f"
    ],
+   "libraries": [],
    "missing": []
   },
   {
    "name": "shapes_splines_drawing",
    "category": "shapes",
-   "status": "ready",
+   "status": "waiting",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointCircle",
@@ -1855,7 +1950,12 @@
     "TextFormat",
     "WindowShouldClose"
    ],
-   "missing": []
+   "libraries": [
+    "raygui"
+   ],
+   "missing": [
+    "raygui.h"
+   ]
   },
   {
    "name": "shapes_digital_clock",
@@ -1882,6 +1982,7 @@
     "TextFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1910,6 +2011,7 @@
     "UnloadRenderTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -1935,12 +2037,13 @@
     "TextFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
    "name": "shapes_triangle_strip",
    "category": "shapes",
-   "status": "ready",
+   "status": "waiting",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1959,7 +2062,12 @@
     "TextFormat",
     "WindowShouldClose"
    ],
-   "missing": []
+   "libraries": [
+    "raygui"
+   ],
+   "missing": [
+    "raygui.h"
+   ]
   },
   {
    "name": "shapes_vector_angle",
@@ -1988,12 +2096,13 @@
     "Vector2Subtract",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
    "name": "shapes_pie_chart",
    "category": "shapes",
-   "status": "ready",
+   "status": "waiting",
    "apis": [
     "BeginDrawing",
     "BeginScissorMode",
@@ -2017,12 +2126,17 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
-   "missing": []
+   "libraries": [
+    "raygui"
+   ],
+   "missing": [
+    "raygui.h"
+   ]
   },
   {
    "name": "shapes_kaleidoscope",
    "category": "shapes",
-   "status": "ready",
+   "status": "waiting",
    "apis": [
     "BeginDrawing",
     "BeginMode2D",
@@ -2044,7 +2158,12 @@
     "Vector2Subtract",
     "WindowShouldClose"
    ],
-   "missing": []
+   "libraries": [
+    "raygui"
+   ],
+   "missing": [
+    "raygui.h"
+   ]
   },
   {
    "name": "shapes_clock_of_clocks",
@@ -2070,12 +2189,13 @@
     "TextFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
    "name": "shapes_math_sine_cosine",
    "category": "shapes",
-   "status": "ready",
+   "status": "waiting",
    "apis": [
     "BeginDrawing",
     "Clamp",
@@ -2102,7 +2222,12 @@
     "WindowShouldClose",
     "Wrap"
    ],
-   "missing": []
+   "libraries": [
+    "raygui"
+   ],
+   "missing": [
+    "raygui.h"
+   ]
   },
   {
    "name": "shapes_mouse_trail",
@@ -2121,6 +2246,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2146,6 +2272,7 @@
     "TextFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2173,6 +2300,7 @@
     "TextFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2205,6 +2333,7 @@
     "Vector2Zero",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2224,12 +2353,13 @@
     "TextFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
    "name": "shapes_rlgl_color_wheel",
    "category": "shapes",
-   "status": "ready",
+   "status": "waiting",
    "apis": [
     "BeginDrawing",
     "Clamp",
@@ -2267,7 +2397,12 @@
     "rlEnd",
     "rlVertex2f"
    ],
-   "missing": []
+   "libraries": [
+    "raygui"
+   ],
+   "missing": [
+    "raygui.h"
+   ]
   },
   {
    "name": "shapes_rlgl_triangle",
@@ -2299,6 +2434,7 @@
     "rlEnd",
     "rlVertex2f"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2328,6 +2464,7 @@
     "TextFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2352,12 +2489,13 @@
     "TraceLog",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
    "name": "shapes_hilbert_curve",
    "category": "shapes",
-   "status": "ready",
+   "status": "waiting",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -2370,7 +2508,12 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
-   "missing": []
+   "libraries": [
+    "raygui"
+   ],
+   "missing": [
+    "raygui.h"
+   ]
   },
   {
    "name": "shapes_easings_testbed",
@@ -2391,6 +2534,7 @@
     "TextFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2419,6 +2563,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2456,6 +2601,7 @@
     "WindowShouldClose",
     "rlSetBlendFactorsSeparate"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2475,6 +2621,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2495,6 +2642,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2527,6 +2675,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2559,6 +2708,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2580,6 +2730,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2621,6 +2772,7 @@
     "UpdateTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2648,6 +2800,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2670,6 +2823,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2693,6 +2847,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2718,6 +2873,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2740,6 +2896,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2760,6 +2917,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2784,6 +2942,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2811,6 +2970,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "CloseAudioDevice",
     "InitAudioDevice",
@@ -2842,6 +3002,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "CloseAudioDevice",
     "InitAudioDevice",
@@ -2876,6 +3037,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2921,6 +3083,7 @@
     "UnloadRenderTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2945,6 +3108,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -2979,6 +3143,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3006,6 +3171,7 @@
     "rlTexCoord2f",
     "rlVertex2f"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3036,6 +3202,7 @@
     "UnloadRenderTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3063,6 +3230,7 @@
     "UpdateTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3086,6 +3254,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3109,6 +3278,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3132,6 +3302,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3156,6 +3327,7 @@
     "UpdateTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3197,6 +3369,7 @@
     "rlTexCoord2f",
     "rlVertex2f"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3221,6 +3394,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3252,6 +3426,7 @@
     "UpdateTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3290,6 +3465,7 @@
     "Vector3Distance",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3311,6 +3487,7 @@
     "UnloadFont",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3330,6 +3507,7 @@
     "UnloadFont",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3361,6 +3539,7 @@
     "UnloadFont",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3384,6 +3563,7 @@
     "UnloadFont",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3420,6 +3600,7 @@
     "UnloadShader",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -3443,6 +3624,7 @@
     "TextFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3469,6 +3651,7 @@
     "TextFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3488,6 +3671,7 @@
     "TextSubtext",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3518,6 +3702,7 @@
     "TextLength",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3556,6 +3741,7 @@
     "UnloadFont",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3584,6 +3770,7 @@
     "UnloadFont",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3649,6 +3836,7 @@
     "rlTranslatef",
     "rlVertex3f"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -3685,6 +3873,7 @@
     "UnloadFont",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3710,6 +3899,7 @@
     "TextLength",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3735,6 +3925,7 @@
     "TextSplit",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3775,6 +3966,7 @@
     "TextToUpper",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3805,6 +3997,7 @@
     "UpdateModelAnimation",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
@@ -3835,6 +4028,7 @@
     "Vector3Distance",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3863,6 +4057,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "DrawSphereWires"
    ]
@@ -3897,6 +4092,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3933,6 +4129,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -3960,6 +4157,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "DrawSphereWires"
    ]
@@ -4004,6 +4202,7 @@
     "UploadMesh",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "GenMeshCylinder",
     "GenMeshKnot",
@@ -4055,6 +4254,7 @@
     "Vector3Barycenter",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "DrawSphereWires"
    ]
@@ -4095,6 +4295,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -4123,6 +4324,7 @@
     "UpdateModelAnimation",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
@@ -4171,6 +4373,7 @@
     "Vector3Zero",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "DrawSphereWires",
     "GetShaderLocation",
@@ -4209,6 +4412,7 @@
     "UpdateModelAnimation",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
@@ -4241,6 +4445,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "DrawSphereWires"
    ]
@@ -4278,6 +4483,7 @@
     "rlEnableBackfaceCulling",
     "rlEnablePointMode"
    ],
+   "libraries": [],
    "missing": [
     "DrawSphereWires",
     "UploadMesh"
@@ -4313,6 +4519,7 @@
     "rlTranslatef",
     "rlVertex3f"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -4343,6 +4550,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -4365,6 +4573,7 @@
     "SetTargetFPS",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -4395,6 +4604,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -4466,6 +4676,7 @@
     "rlUnloadFramebuffer",
     "rlViewport"
    ],
+   "libraries": [],
    "missing": [
     "GetShaderLocation",
     "LoadShader",
@@ -4510,6 +4721,7 @@
     "rlTexCoord2f",
     "rlVertex3f"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -4540,6 +4752,7 @@
     "UpdateModelAnimation",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "LoadModelAnimations",
     "LoadShader",
@@ -4582,6 +4795,7 @@
     "UpdateModelAnimation",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
@@ -4607,6 +4821,7 @@
     "Vector2Rotate",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -4638,6 +4853,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -4666,6 +4882,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -4728,6 +4945,7 @@
     "Vector3Transform",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "UploadMesh"
    ]
@@ -4758,6 +4976,7 @@
     "Vector3Zero",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": []
   },
   {
@@ -4799,6 +5018,7 @@
     "WindowShouldClose",
     "rlUpdateVertexBuffer"
    ],
+   "libraries": [],
    "missing": [
     "LoadModelAnimations",
     "LoadShader",
@@ -4841,13 +5061,17 @@
     "UpdateModelAnimationEx",
     "WindowShouldClose"
    ],
+   "libraries": [
+    "raygui"
+   ],
    "missing": [
     "LoadModelAnimations",
     "LoadShader",
     "UnloadModelAnimations",
     "UnloadShader",
     "UpdateModelAnimation",
-    "UpdateModelAnimationEx"
+    "UpdateModelAnimationEx",
+    "raygui.h"
    ]
   },
   {
@@ -4879,10 +5103,14 @@
     "UpdateModelAnimation",
     "WindowShouldClose"
    ],
+   "libraries": [
+    "raygui"
+   ],
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
-    "UpdateModelAnimation"
+    "UpdateModelAnimation",
+    "raygui.h"
    ]
   },
   {
@@ -4918,6 +5146,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -4961,6 +5190,7 @@
     "Vector3Zero",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "DrawSphereWires",
@@ -5000,6 +5230,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "LoadShader",
     "UnloadShader"
@@ -5036,6 +5267,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -5081,6 +5313,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -5128,6 +5361,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -5160,6 +5394,7 @@
     "UnloadShader",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -5198,6 +5433,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -5234,6 +5470,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -5270,6 +5507,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -5305,6 +5543,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -5347,6 +5586,7 @@
     "UnloadShader",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -5389,6 +5629,7 @@
     "UnloadShader",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -5428,13 +5669,17 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [
+    "raygui"
+   ],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
     "GetShaderLocation",
     "LoadShader",
     "SetShaderValue",
-    "UnloadShader"
+    "UnloadShader",
+    "raygui.h"
    ]
   },
   {
@@ -5463,6 +5708,7 @@
     "UnloadShader",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -5507,6 +5753,7 @@
     "Vector3Zero",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "GetShaderLocation",
     "LoadShader",
@@ -5551,6 +5798,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "GetShaderLocation",
     "LoadShader",
@@ -5586,6 +5834,7 @@
     "WindowShouldClose",
     "rlGetShaderIdDefault"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -5627,6 +5876,7 @@
     "Vector3Zero",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "GetShaderLocation",
     "LoadShader",
@@ -5662,6 +5912,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -5714,6 +5965,7 @@
     "Vector3Zero",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "DrawSphereWires",
@@ -5757,6 +6009,7 @@
     "Vector2Multiply",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -5826,6 +6079,7 @@
     "rlUnloadFramebuffer",
     "rlUnloadTexture"
    ],
+   "libraries": [],
    "missing": [
     "DrawSphereWires",
     "GetShaderLocation",
@@ -5889,6 +6143,7 @@
     "rlUnloadFramebuffer",
     "rlUnloadTexture"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -5941,6 +6196,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -6007,6 +6263,7 @@
     "rlSetUniform",
     "rlUnloadFramebuffer"
    ],
+   "libraries": [],
    "missing": [
     "GetShaderLocation",
     "LoadModelAnimations",
@@ -6064,6 +6321,7 @@
     "rlEnableTexture",
     "rlSetUniformSampler"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -6111,6 +6369,7 @@
     "rlUnloadFramebuffer",
     "rlUnloadTexture"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -6161,6 +6420,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "DrawSphereWires",
     "GetShaderLocation",
@@ -6211,6 +6471,7 @@
     "rlLoadVertexBuffer",
     "rlSetVertexAttribute"
    ],
+   "libraries": [],
    "missing": [
     "LoadShader",
     "UnloadShader",
@@ -6241,6 +6502,7 @@
     "UnloadShader",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -6296,6 +6558,7 @@
     "rlUnloadFramebuffer",
     "rlUnloadTexture"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -6356,13 +6619,17 @@
     "UpdateTextureRec",
     "WindowShouldClose"
    ],
+   "libraries": [
+    "raygui"
+   ],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
     "GetShaderLocation",
     "LoadShader",
     "SetShaderValue",
-    "UnloadShader"
+    "UnloadShader",
+    "raygui.h"
    ]
   },
   {
@@ -6409,6 +6676,7 @@
     "rlUnloadShaderProgram",
     "rlUpdateShaderBuffer"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "EndShaderMode",
@@ -6462,6 +6730,7 @@
     "WindowShouldClose",
     "rlSetCullFace"
    ],
+   "libraries": [],
    "missing": [
     "GetShaderLocation",
     "LoadShader",
@@ -6504,6 +6773,7 @@
     "UpdateMusicStream",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "CloseAudioDevice",
     "GetMusicTimeLength",
@@ -6550,6 +6820,7 @@
     "UpdateMusicStream",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "CloseAudioDevice",
     "GetMusicTimeLength",
@@ -6593,6 +6864,7 @@
     "UpdateAudioStream",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "CloseAudioDevice",
     "InitAudioDevice",
@@ -6625,6 +6897,7 @@
     "UnloadSound",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "CloseAudioDevice",
     "InitAudioDevice",
@@ -6662,6 +6935,7 @@
     "UpdateMusicStream",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "AttachAudioMixedProcessor",
     "CloseAudioDevice",
@@ -6706,6 +6980,7 @@
     "UpdateMusicStream",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "AttachAudioStreamProcessor",
     "CloseAudioDevice",
@@ -6744,6 +7019,7 @@
     "UnloadSoundAlias",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "CloseAudioDevice",
     "InitAudioDevice",
@@ -6788,6 +7064,7 @@
     "Vector3Subtract",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "CloseAudioDevice",
     "InitAudioDevice",
@@ -6843,6 +7120,7 @@
     "WaveFormat",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "BeginShaderMode",
     "CloseAudioDevice",
@@ -6886,6 +7164,7 @@
     "UnloadAudioStream",
     "WindowShouldClose"
    ],
+   "libraries": [],
    "missing": [
     "CloseAudioDevice",
     "InitAudioDevice",
