@@ -71000,7 +71000,7 @@
       "status": "partial",
       "jonlib": "jonmath.Matrix.perspective_for",
       "mapping_state": "implemented",
-      "scope": "Maybe<Matrix>: top = near*tan(fovY*0.5) and right = top*aspect in binary64 with the profile's M.Libm.tan, then MatrixFrustum(-right, right, -top, top, near, far)'s F32 cells. Glibc239Libm and Glibc241Libm: glibc's x86_64 tan as its FMA ifunc variant runs (LGPL-2.1+ module src/lgpl/tan.bend), equal to native glibc 2.39 on every binary32 fovY*0.5 and BeginMode3D argument (exhaustive) and to glibc 2.41 on the hardest arguments.",
+      "scope": "Maybe<Matrix>: top = near*tan(fovY*0.5) and right = top*aspect in binary64 with the profile's M.Libm.tan, then MatrixFrustum(-right, right, -top, top, near, far)'s F32 cells. Glibc239Libm and Glibc241Libm: glibc's x86_64 tan as its FMA ifunc variant runs (LGPL-2.1+ module src/lgpl/tan.bend), equal to native glibc 2.39 and 2.41 on every binary32 fovY*0.5 and BeginMode3D argument (exhaustive).",
       "gaps": [
         "AppleLibm is None (Apple's binary64 tan is unpublished and not correctly rounded)",
         "glibc hosts without FMA/AVX2 (the SSE2/AVX ifunc variants) and non-x86 glibc are not modelled",
