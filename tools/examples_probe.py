@@ -66,6 +66,12 @@ from probekit import ROOT, ProbeFailure
 
 SHIM = ROOT / 'tools/reference/example_driver.h'
 WIDTH, HEIGHT = 800, 450
+# Examples whose InitWindow is not 800x450.
+SIZES = {'core_2d_camera_split_screen': (800, 440)}
+
+
+def size_of(name):
+    return SIZES.get(name, (WIDTH, HEIGHT))
 TARGET = 1.0 / 60
 
 (KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 18)
@@ -119,6 +125,7 @@ EXAMPLES = {
     'textures_bunnymark': ('textures/textures_bunnymark.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'textures_image_generation': ('textures/textures_image_generation.c', 'Ex.setup(seed, M.LIBM{}, core, frame)'),
     'shapes_easings_rectangles': ('shapes/shapes_easings_rectangles.c', 'Ex.setup(core, frame)'),
+    'core_2d_camera_split_screen': ('core/core_2d_camera_split_screen.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -313,6 +320,10 @@ def scripts():
         script('textures_image_generation', 'cycle', [quick()] + [f([button(0, i % 2 == 0)]) for i, f in enumerate([quick] * 18)], seed=0x6E1),
         # The 240-frame animation to its end, then SPACE plays it again.
         script('shapes_easings_rectangles', 'play', [quick() for _ in range(242)] + [quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), quick()]),
+        # Both players move (S and W together: the first test wins, as raylib's else-if).
+        script('core_2d_camera_split_screen', 'move', [quick(), quick([key(68), key(83)]), quick(), slow([key(68, False), key(83, False), key(KEY_UP)]),
+                                                       quick([key(KEY_LEFT)]), quick([key(KEY_UP, False), key(KEY_LEFT, False), key(83), key(87)]),
+                                                       quick([key(83, False), key(87, False), key(65)]), quick([key(65, False)])]),
     ]
     return [timed(item) for item in out]
 
@@ -554,12 +565,12 @@ def native_frames(probe, binary, index, item):
 # -----------------------------------------------------------------------------
 # The presented Image built from raylib's bytes (src/present.bend's rules)
 
-def decode(runs):
+def decode(runs, width=WIDTH, height=HEIGHT):
     words = []
     for token in runs.split(',')[:-1]:
         count, word = token.split('*')
         words += [int(word, 16)] * int(count)
-    if len(words) != WIDTH * HEIGHT:
+    if len(words) != width * height:
         raise ProbeFailure(f'examples: a frame decodes to {len(words)} words')
     return words
 
@@ -601,8 +612,8 @@ def preorder(node):
     return ''.join(out)
 
 
-def expected_row(runs):
-    return runs + ' ' + preorder(quadtree(decode(runs), WIDTH, HEIGHT))
+def expected_row(runs, width=WIDTH, height=HEIGHT):
+    return runs + ' ' + preorder(quadtree(decode(runs, width, height), width, height))
 
 
 # -----------------------------------------------------------------------------
@@ -752,8 +763,9 @@ def render(items, libm, logo, raylib_source):
             item = items[index]
             start = dbits(item['start'])
             flags = CONFIG_FLAGS.get(name, 0)
-            window = (f'J.Core.init_window_flags({flags}, {WIDTH}, {HEIGHT}, f64({start >> 32}, {start & 0xFFFFFFFF})), '
-                      f'J.Frame.init_window_flags({flags}, {WIDTH}, {HEIGHT})')
+            width, height = size_of(name)
+            window = (f'J.Core.init_window_flags({flags}, {width}, {height}, f64({start >> 32}, {start & 0xFFFFFFFF})), '
+                      f'J.Frame.init_window_flags({flags}, {width}, {height})')
             args = f'{item["seed"]}, ' if name in SEEDED else {'textures_logo_raylib': 'logo, '}.get(name, '')
             result = 'IO(String)' if io else 'String'
             calls.append(f'def script.{index}() -> +List<J.ReplayFrame>:\n  {bend_script(item)}\n\n'
@@ -839,7 +851,7 @@ def main():
             name = item['example']
             if name not in binaries:
                 binaries[name] = build_reference(probe, name)
-            rows = [expected_row(runs) for runs in native_frames(probe, binaries[name], index, item)]
+            rows = [expected_row(runs, *size_of(name)) for runs in native_frames(probe, binaries[name], index, item)]
         if cut is not None:
             rows = rows[:cut] + ['null null'] * (len(item['frames']) - cut)
         rows_by_script.append('|'.join(rows) + '|')
