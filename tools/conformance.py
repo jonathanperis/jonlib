@@ -1484,7 +1484,10 @@ def source_gate():
             raise ValueError(f"Unsafe library implementation: {path}")
         for line in text.splitlines():
             if line.strip().startswith('import '):
-                if line.startswith((' ', '\t')) or not re.fullmatch(r'import (Base|\./[\w/.-]+\.bend(?: as \w+)?)', line):
+                # Base, or a repository file (./x.bend, or ../x.bend from src/ subdirectories such as src/lgpl).
+                found = re.fullmatch(r'import (Base|((?:\./|(?:\.\./)+)[\w/.-]+\.bend)(?: as \w+)?)', line)
+                inside = found and (found[1] == 'Base' or (path.parent / found[2]).resolve().is_relative_to(ROOT))
+                if line.startswith((' ', '\t')) or not inside:
                     raise ValueError(f"Unexpected library import: {path}: {line}")
     return {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sources}
 

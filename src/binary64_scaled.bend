@@ -99,7 +99,7 @@ def add.normal(+ah: U32, +al: U32, +bh: U32, +bl: U32) -> Maybe<F.Words>:
   +ea = stored(ah)
   +eb = stored(bh)
   +m = U32.max(ea, eb)
-  add.shifted(((ea + 900) >= m) && ((eb + 900) >= m) : U32), ah, al, bh, bl, m)
+  add.shifted((((ea + 900) >= m) && ((eb + 900) >= m) : U32), ah, al, bh, bl, m)
 
 def add.at(code: U32, +ah: U32, +al: U32, +bh: U32, +bl: U32) -> Maybe<F.Words>:
   match code:

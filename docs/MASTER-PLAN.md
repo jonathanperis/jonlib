@@ -91,12 +91,14 @@ order (`docs/PROGRESS.md` lists every ID):
    color constants.
 4. **Blocked numerics** — `QuaternionSlerp` and `QuaternionToAxisAngle` are
    delivered under the glibc 2.39 `acosf` profile ([INVERSE-TRIG.md](INVERSE-TRIG.md)).
-   `QuaternionToEuler` waits on `asinf`, whose glibc 2.39 single-precision
-   code is LGPL-2.1+ (a licensing decision for Jonathan). The cubic Bézier
+   `QuaternionToEuler` is delivered with the correctly rounded `asinf` of
+   glibc 2.41, glibc 2.39's own `asinf` (an LGPL-2.1+ module) and, for Apple,
+   the subset where macOS agrees with correct rounding. The cubic Bézier
    spline is delivered under the glibc 2.39 `powf` profile ([SPLINES.md](SPLINES.md)).
-   `MatrixPerspective` needs the native binary64 `tan`: glibc's is IBM's
-   LGPL-2.1+ code and Apple's is unpublished, so it waits on the same
-   licensing decision. The diagnostic
+   `MatrixPerspective`, perspective `BeginMode3D` and the perspective camera
+   queries are delivered under the glibc profiles with IBM's binary64 `tan`
+   as an isolated LGPL-2.1+ module ([PERSPECTIVE.md](PERSPECTIVE.md));
+   Apple's `tan` is unpublished, so AppleLibm refuses them. The diagnostic
    `perspective` and `inverse-trig` gates already record native behavior; the
    work is accurate per-libm kernels, as for `sinf`/`cosf`. Apple's current
    `asinf`/`acosf`/`tanf` match neither its published Libm sources nor
@@ -195,6 +197,15 @@ recommended option in each case, revisable on his review):
   (CORE-MATH) profiles for `asinf`/`acosf`/`tanf`/`powf`, compared on Linux;
   on Apple hosts the results are documented as differing (Apple's libm is not
   reproducible from published sources), not claimed.
+- **LGPL modules (2026-10-09, Jonathan):** glibc's LGPL-2.1+ `tan` and
+  `asinf` may be ported, isolated in `src/lgpl/` with their full notices
+  (`LICENSES/lgpl-2.1.txt`, [THIRD_PARTY_NOTICES](../THIRD_PARTY_NOTICES.md));
+  every other Jonlib file stays zlib. The modules are `src/lgpl/tan.bend`
+  (with `tan_table.bend`), glibc 2.39/2.41's x86_64 `tan` as its FMA ifunc
+  variant runs, for `M.Libm.tan`, and `src/lgpl/asin.bend`, glibc 2.39's
+  `asinf`, for `M.Libm.asin` under `Glibc239Libm`.
+  Apple's libm is unpublished, so Apple profiles stay refused where they
+  cannot be reproduced.
 - **Phase 2 entry:** a design note precedes any Phase 2 code:
   [PHASE2-DESIGN.md](PHASE2-DESIGN.md) (raylib's memory platform with the
   scalar `rlsw` software renderer as the drawing reference, automation-event

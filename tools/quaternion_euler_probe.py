@@ -1,26 +1,29 @@
 #!/usr/bin/env python3
 """Compare M.Libm.asin and Quaternion.to_euler_for (raymath QuaternionToEuler).
 
-The asinf reference is the pinned glibc 2.41 e_asinf.c (CORE-MATH, MIT;
-tools/reference/core_math), compiled with contraction off: it is correctly
-rounded on [-1, 1] (tools/libm_survey.py checks it exhaustively against
-CORE-MATH and the exact oracle). Expected rows per profile:
+The asinf references are the pinned glibc 2.41 e_asinf.c (CORE-MATH, MIT;
+tools/reference/core_math), correctly rounded on [-1, 1] (tools/libm_survey.py
+checks it exhaustively against CORE-MATH and the exact oracle), and the pinned
+glibc 2.39 e_asinf.c (Sun/Moshier, LGPL-2.1+; tools/reference/glibc239), both
+compiled with contraction off. Expected rows per profile:
 
-- Glibc241Libm: the source's result on [-1, 1], None for |x| > 1 and NaN;
-- AppleLibm and Glibc239Libm: the same result for |x| below 0x39e89768 and
-  0x39e8974f respectively (where those native asinf equal correct rounding),
-  None elsewhere.
+- Glibc241Libm: the 2.41 source's result on [-1, 1], None for |x| > 1 and NaN;
+- Glibc239Libm: the 2.39 source's result on [-1, 1] (the LGPL module
+  src/lgpl/asin.bend), None for |x| > 1 and NaN;
+- AppleLibm: the 2.41 result for |x| below 0x39e89768 (where macOS asinf
+  equals correct rounding), None elsewhere.
 
 QuaternionToEuler is the pinned raymath.h compiled with contraction off, with
-asinf routed to that source and atan2f to the profile's kernel (the pinned glibc
+asinf routed to the profile's source and atan2f to its kernel (the pinned glibc
 2.41 and Sun 2.39 sources; native atan2f for AppleLibm, on Darwin only); a C
 oracle repeats Jonmath's refusal contract (finite components, signed-zero or
 normal intermediates and atan2f results, the profile's asinf domain).
 
 On the host whose libm a profile names (Darwin arm64: AppleLibm; Linux x86_64
 glibc 2.39: Glibc239Libm) the probe also requires the native asinf to equal the
-pinned source on every binary32 below that profile's bound (exhaustively), and
-native raymath (host asinf and atan2f) to equal every accepted Euler row.
+profile's source on every binary32 of its domain (exhaustively: below the Apple
+bound, or all of [-1, 1] for glibc 2.39), and native raymath (host asinf and
+atan2f) to equal every accepted Euler row.
 The private binary64 square root (src/binary64_sqrt.bend) the kernel uses is
 compared with an exact integer-square-root oracle on zeros, exact squares,
 every exponent parity, the asinf argument grid 1 - |x| and rejected inputs.
@@ -41,7 +44,14 @@ import cr_libm_oracle as oracle
 WORK = '.build/quaternion-euler-probe/cases'
 SOURCE = ROOT / 'tools/reference/core_math/glibc241_e_asinf.c'
 SOURCE_SHA256 = '8b34f085bb2a64a15c75212ec4a0cc3a2eddc7d35583bf2c5921257158339061'
-BOUNDS = {'AppleLibm': 0x39E89768, 'Glibc239Libm': 0x39E8974F, 'Glibc241Libm': 0x7FFFFFFF}
+BOUNDS = {'AppleLibm': 0x39E89768, 'Glibc239Libm': 0x7FFFFFFF, 'Glibc241Libm': 0x7FFFFFFF}
+# Exhaustive host checks stop at |x| = 1: beyond it the sources return a NaN whose bits depend on the host.
+HOST_BOUNDS = {'AppleLibm': 0x39E89768, 'Glibc239Libm': 0x3F800001}
+GLIBC239 = ROOT / 'tools/reference/glibc239/e_asinf.c'
+GLIBC239_SHA256 = 'bb3e68b0ae3736d4c4f41c9e8d11416d8423ab8577696a33dade0b5afd402ffd'
+GLIBC_SHIMS = ROOT / 'tools/reference/glibc_tan'
+# The asinf source each profile's rows and Euler oracle use.
+ASINF = {'Glibc241Libm': 'glibc241_asinf', 'Glibc239Libm': 'glibc239_asinf', 'AppleLibm': 'glibc241_asinf'}
 PROFILES = ('Glibc241Libm', 'Glibc239Libm', 'AppleLibm')
 ATAN2F = {'Glibc241Libm': 'glibc241_atan2f', 'Glibc239Libm': 'sun239_atan2f', 'AppleLibm': None}
 
@@ -60,7 +70,8 @@ def kernel_inputs(rng, slow):
     words = [0, 0x80000000, 0x3F800000, 0xBF800000, 0x3F800001, 0xBF800001, 0x7F800000, 0xFF800000, 0x7FC00000,
              0xFFC00000, 1, 0x80000001, 0x007FFFFF, 0x807FFFFF, 0x00800000, 0x40000000, 0xC0000000, 0x3F2AB445,
              0xBF2AB445, 0x3F083A1A, 0xBF083A1A]
-    for edge in (0x39800000, 0x3F000000, 0x3F614800, 0x3F7FFFFF, *(BOUNDS[p] for p in ('AppleLibm', 'Glibc239Libm'))):
+    # 2.41 branch edges, the Apple bound, the former glibc 2.39 bound and the 2.39 source's branches (2^-27, 0.5, 0.975).
+    for edge in (0x39800000, 0x3F000000, 0x3F614800, 0x3F7FFFFF, 0x39E89768, 0x39E8974F, 0x32000000, 0x3F79999A):
         for delta in range(-3, 4):
             words += [(edge + delta) & 0x7FFFFFFF, ((edge + delta) & 0x7FFFFFFF) | 0x80000000]
     words += slow
@@ -348,6 +359,8 @@ def main():
     probe = probekit.Probe('quaternion-euler', args)
     if hashlib.sha256(SOURCE.read_bytes()).hexdigest() != SOURCE_SHA256:
         raise ProbeFailure('quaternion-euler: pinned glibc 2.41 e_asinf.c changed')
+    if hashlib.sha256(GLIBC239.read_bytes()).hexdigest() != GLIBC239_SHA256:
+        raise ProbeFailure('quaternion-euler: pinned glibc 2.39 e_asinf.c changed')
     include = probe.work / 'asinf-include'  # build_oracle owns probe.work/include
     include.mkdir(parents=True, exist_ok=True)
     from libm_survey import SHIMS
@@ -356,10 +369,15 @@ def main():
     asinf_object = probe.work / 'glibc241_asinf.o'
     probekit.run(['clang', '-std=gnu11', '-O2', '-ffp-contract=off', '-I' + str(include), '-D__ieee754_asinf=glibc241_asinf',
                   '-c', SOURCE, '-o', asinf_object])
+    glibc239_object = probe.work / 'glibc239_asinf.o'
+    probekit.run(['clang', '-std=gnu11', '-O2', '-ffp-contract=off', '-iquote', GLIBC_SHIMS / 'quote', '-I', GLIBC_SHIMS / 'shim',
+                  '-I', GLIBC239.parent, '-D__ieee754_asinf=glibc239_asinf', '-c', GLIBC239, '-o', glibc239_object])
     _cc, atan2_objects, _driver = build_oracle(probe)
     flags = ['-ffp-contract=off', '-fno-builtin']
     probe.native(KERNEL, 'kernel-build', extra_flags=[*flags, asinf_object], link_raylib=False)
     kernel_binary = probe.work / 'kernel-build'
+    probe.native(KERNEL, 'kernel239-build', extra_flags=[*flags, '-Dglibc241_asinf=glibc239_asinf', glibc239_object], link_raylib=False)
+    kernel_binaries = {'glibc241_asinf': kernel_binary, 'glibc239_asinf': probe.work / 'kernel239-build'}
     slow = [int(w) for w in probekit.run([kernel_binary, 'slow', '120']).split()]
     if len(slow) < 40:
         raise ProbeFailure('quaternion-euler: too few slow-path asinf inputs found')
@@ -378,6 +396,8 @@ def main():
     kernel_paths = [path for section, path in actions if section == 'kernel']
     euler_paths = [path for section, path in actions if section == 'euler']
     kernel_lines = probekit.run([kernel_binary, *kernel_paths]).splitlines()
+    source_lines = {'glibc241_asinf': kernel_lines,
+                    'glibc239_asinf': probekit.run([kernel_binaries['glibc239_asinf'], *kernel_paths]).splitlines()}
     # The pinned source is correctly rounded; spot-check it with the exact oracle.
     checked = 0
     for path, line in zip(kernel_paths, kernel_lines):
@@ -390,15 +410,17 @@ def main():
     euler = {}
     available = [p for p in PROFILES if ATAN2F[p] or platform.system() == 'Darwin']
     for profile in available:
-        defines = ['-DROUTE_ASINF'] + ([f'-DATAN2F={ATAN2F[profile]}'] if ATAN2F[profile] else [])
-        probe.native(EULER, f'euler-{profile}', extra_flags=[*flags, *defines, asinf_object, *atan2_objects], link_raylib=False)
+        defines = (['-DROUTE_ASINF', f'-Dglibc241_asinf={ASINF[profile]}'] + ([f'-DATAN2F={ATAN2F[profile]}'] if ATAN2F[profile] else []))
+        probe.native(EULER, f'euler-{profile}', extra_flags=[*flags, *defines, asinf_object, glibc239_object, *atan2_objects],
+                     link_raylib=False)
         euler[profile] = probekit.run([probe.work / f'euler-{profile}', f'{BOUNDS[profile]:x}', *euler_paths]).splitlines()
     host = host_profile()
     host_check = None
     if host:
-        count, bad, first, edge = map(int, probekit.run([kernel_binary, 'host', f'{BOUNDS[host]:x}'], timeout=3600).split())
+        checker = kernel_binaries[ASINF[host]]
+        count, bad, first, edge = map(int, probekit.run([checker, 'host', f'{HOST_BOUNDS[host]:x}'], timeout=3600).split())
         if bad:
-            raise ProbeFailure(f'quaternion-euler: host asinf differs from correct rounding below the {host} bound '
+            raise ProbeFailure(f'quaternion-euler: host asinf differs from the {host} source ({ASINF[host]}) in its domain '
                                f'on {bad} inputs, first {first:08x}')
         probe.native(EULER, 'euler-native', extra_flags=[*flags, *atan2_objects], link_raylib=False)
         native = probekit.run([probe.work / 'euler-native', f'{BOUNDS[host]:x}', *euler_paths]).splitlines()
@@ -409,17 +431,18 @@ def main():
         host_check = dict(profile=host, inputs_below_bound=count, bound_word_differs=bool(edge))
     expected = []
     euler_index = 0
-    kernel_iter = iter(kernel_lines)
+    kernel_iters = {name: iter(lines) for name, lines in source_lines.items()}
     for section, _path in actions:
         if section == 'sqrt':
             data = (ROOT / _path).read_bytes()
             words = [struct.unpack_from('<I', data, 4 * i)[0] for i in range(len(data) // 4)]
             rows = [[sqrt_expected(words[i], words[i + 1]) for i in range(0, len(words), 2)]]
         elif section == 'kernel':
-            items = next(kernel_iter).split()
+            items = {name: next(lines).split() for name, lines in kernel_iters.items()}
             data = (ROOT / _path).read_bytes()
             inputs = [struct.unpack_from('<I', data, 4 * i)[0] for i in range(len(data) // 4)]
-            rows = [[r if r == 'none' or (x & 0x7FFFFFFF) < BOUNDS[p] else 'none' for x, r in zip(inputs, items)] for p in PROFILES]
+            rows = [[r if r == 'none' or (x & 0x7FFFFFFF) < BOUNDS[p] else 'none' for x, r in zip(inputs, items[ASINF[p]])]
+                    for p in PROFILES]
         else:
             rows = [euler[p][euler_index].split() if p in euler else None for p in PROFILES]
             euler_index += 1
@@ -438,7 +461,7 @@ def main():
                  sqrt_inputs=sum(len(p) for p in sections['sqrt']),
                  euler_cases=sum(len(p) for p in sections['euler']), euler_profiles=sorted(euler),
                  euler_refused=flat.count('none'), oracle_checked=checked, host_check=host_check,
-                 source_sha256=SOURCE_SHA256)
+                 source_sha256=SOURCE_SHA256, glibc239_source_sha256=GLIBC239_SHA256)
 
 
 if __name__ == '__main__':
