@@ -105,6 +105,7 @@ EXAMPLES = {
     'core_render_texture': ('core/core_render_texture.c', 'Ex.setup(core, frame)'),
     'core_delta_time': ('core/core_delta_time.c', 'Ex.setup(core, frame)'),
     'core_3d_camera_mode': ('core/core_3d_camera_mode.c', 'Ex.setup(core, frame)'),
+    'core_3d_camera_free': ('core/core_3d_camera_free.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -113,7 +114,7 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
-PERSPECTIVE = {'core_3d_camera_mode'}
+PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32}
 
@@ -257,6 +258,11 @@ def scripts():
         script('core_delta_time', 'targets', [quick(), slow(), quick([(MOUSE_WHEEL, 0, 1, 0)]), quick(), slow(), quick([(MOUSE_WHEEL, 0, -70, 0)]),
                                               quick(), slow(), quick([(MOUSE_WHEEL, 0, 90, 0)]), quick(), slow([key(KEY_R)]), quick([key(KEY_R, False)])]),
         script('core_3d_camera_mode', 'frames', [quick(), slow(), quick()]),
+        # Mouse look, wheel zoom, a middle-button pan and Z back to the origin.
+        script('core_3d_camera_free', 'controls', [quick(), quick([mouse_at(410, 230)]), quick([mouse_at(450, 210)]), slow([mouse_at(380, 260)]),
+                                                   quick([(MOUSE_WHEEL, 0, 2, 0)]), quick([(MOUSE_WHEEL, 0, -1, 0)]), quick([button(2)]),
+                                                   quick([mouse_at(420, 250)]), quick([mouse_at(470, 280), button(2, False)]), quick([key(90)]),
+                                                   quick([key(90, False)]), quick()]),
     ]
     return [timed(item) for item in out]
 

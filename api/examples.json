@@ -412,7 +412,7 @@
   {
    "name": "core_3d_camera_free",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
