@@ -70,6 +70,7 @@ TARGET = 1.0 / 60
 
 (KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 18)
 KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_A, KEY_H, KEY_R, KEY_S = 262, 263, 264, 265, 65, 72, 82, 83
+KEY_G, KEY_SPACE = 71, 32
 
 # name: (raylib source, setup expression, State is Data, needs the logo image)
 EXAMPLES = {
@@ -80,7 +81,18 @@ EXAMPLES = {
     'shapes_logo_raylib': ('shapes/shapes_logo_raylib.c', 'Ex.setup(core, frame)'),
     'textures_logo_raylib': ('textures/textures_logo_raylib.c', 'Ex.setup(Ex.image(logo), core, frame)'),
     'shapes_basic_shapes': ('shapes/shapes_basic_shapes.c', 'Ex.setup(core, frame)'),
+    'textures_srcrec_dstrec': ('textures/textures_srcrec_dstrec.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_sprite_animation': ('textures/textures_sprite_animation.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_background_scrolling': ('textures/textures_background_scrolling.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'core_drop_files': ('core/core_drop_files.c', 'Ex.setup(core, frame)'),
+    'shapes_bouncing_ball': ('shapes/shapes_bouncing_ball.c', 'Ex.setup(core, frame)'),
+    'shapes_lines_bezier': ('shapes/shapes_lines_bezier.c', 'Ex.setup(core, frame)'),
 }
+
+# Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
+# examples/<module>/ directory) and the flags SetConfigFlags sets before InitWindow.
+IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_background_scrolling'}
+CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32}
 
 
 # -----------------------------------------------------------------------------
@@ -137,6 +149,17 @@ def scripts():
         script('shapes_logo_raylib', 'frames', [quick(), slow()]),
         script('textures_logo_raylib', 'frames', [quick(), slow()]),
         script('shapes_basic_shapes', 'refused', [quick(), quick()]),
+        script('textures_srcrec_dstrec', 'rotate', [quick() for _ in range(14)] + [slow()]),
+        script('textures_sprite_animation', 'speed', [quick(), quick(), slow(), quick([key(KEY_RIGHT)]), quick(), quick([key(KEY_RIGHT, False)]),
+                                                      quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]), quick(), slow(), quick(), quick()]),
+        script('textures_background_scrolling', 'scroll', [quick(), slow(), quick(), quick()]),
+        script('core_drop_files', 'frames', [quick(), slow(), quick([(WINDOW_CLOSE, 0, 0, 0)]), quick()]),
+        script('shapes_bouncing_ball', 'keys', [quick(), quick(), slow(), quick([key(KEY_G)]), quick([key(KEY_G, False)]), quick(),
+                                                quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), quick(), slow(), quick([key(KEY_SPACE)]),
+                                                quick([key(KEY_SPACE, False), key(KEY_G)]), quick()]),
+        script('shapes_lines_bezier', 'drag', [quick(), quick([mouse_at(31, 28)]), quick([button(0)]), quick([mouse_at(120, 200)]),
+                                               slow([mouse_at(400, 100), button(0, False)]), quick([mouse_at(765, 425)]), quick([button(0)]),
+                                               quick([mouse_at(600, 300)]), quick([mouse_at(-20, 500)])]),
     ]
     return [timed(item) for item in out]
 
@@ -175,6 +198,12 @@ def refusal(item, libm):
             if not all(fp.accepted(libm, a) for a in angles):
                 return index
         raise ProbeFailure('examples: shapes_basic_shapes is expected to be refused')
+    if item['example'] == 'textures_srcrec_dstrec':
+        # DrawTexturePro's sinf/cosf of (float)rotation*DEG2RAD, rotation = frame + 1.
+        for index in range(len(item['frames'])):
+            if not fp.accepted(libm, fp.f32(float(index + 1) * fp.DEG2RAD)):
+                return index
+        return None
     if item['example'] != 'core_2d_camera':
         return None
     down, previous, rotation, wheel = set(), set(), 0.0, False
@@ -328,7 +357,8 @@ def native_frames(probe, binary, index, item):
     path = probe.work / f'script-{index}.txt'
     path.write_text(script_text(item))
     source, _ = EXAMPLES[item['example']]
-    cwd = probe.args.raylib_source / 'examples' / source.split('/')[0] if item['example'] == 'textures_logo_raylib' else probe.work
+    in_module = item['example'] == 'textures_logo_raylib' or item['example'] in IO_SETUP
+    cwd = probe.args.raylib_source / 'examples' / source.split('/')[0] if in_module else probe.work
     result = subprocess.run([str(binary)], cwd=cwd, env=dict(probekit.ENV, JONLIB_EXAMPLE_SCRIPT=str(path)), stdin=subprocess.DEVNULL,
                             capture_output=True, text=True, timeout=600)
     if result.returncode:
@@ -483,10 +513,19 @@ def replay.ready(script: +List<J.ReplayFrame>, ready: J.Core & (J.Frame & Ex.Sta
   (+core, parts) = ready
   replay.parts(core, script, parts)
 
-def replay(SETUP_PARAMS script: +List<J.ReplayFrame>, core: Maybe<J.Core>, frame: Maybe<J.Frame>) -> String:
+REPLAY
+'''
+
+PURE_REPLAY = '''def replay(SETUP_PARAMS script: +List<J.ReplayFrame>, core: Maybe<J.Core>, frame: Maybe<J.Frame>) -> String:
   match core frame:
     case Some{+core} Some{frame}: replay.ready(script, SETUP)
     case _ _: "no window"
+'''
+
+IO_REPLAY = '''def replay(script: +List<J.ReplayFrame>, core: Maybe<J.Core>, frame: Maybe<J.Frame>) -> IO(String):
+  match core frame:
+    case Some{+core} Some{frame}: IO.bind(J.Core & (J.Frame & Ex.State), String, SETUP, ready => IO.pure(String, replay.ready(script, ready)))
+    case _ _: IO.pure(String, "no window")
 '''
 
 
@@ -506,7 +545,7 @@ def bend_script(item):
     return '[' + ', '.join(frames) + ']'
 
 
-def render(items, libm, logo):
+def render(items, libm, logo, raylib_source):
     """One program per example (actions are example names): every script of
     the example, one output line each."""
     def build(selected, gpu):
@@ -515,8 +554,10 @@ def render(items, libm, logo):
         name = selected[0]
         _, setup = EXAMPLES[name]
         setup_params = {'core_2d_camera': '+seed: U32, ', 'textures_logo_raylib': 'logo: Result<&1, &1, J.Surface.IOError, J.Surface>, '}.get(name, '')
-        body = (PROGRAM.replace('EXAMPLE', name).replace('LIBM', libm).replace('SETUP_PARAMS ', setup_params)
-                .replace('SETUP', setup))
+        io = name in IO_SETUP
+        resources = json.dumps(str(raylib_source / 'examples' / EXAMPLES[name][0].split('/')[0]) + '/')
+        body = (PROGRAM.replace('REPLAY', IO_REPLAY if io else PURE_REPLAY).replace('EXAMPLE', name).replace('LIBM', libm)
+                .replace('SETUP_PARAMS ', setup_params).replace('SETUP', setup).replace('RESOURCES', resources))
         indexes = [i for i, item in enumerate(items) if item['example'] == name]
         logo_param = 'logo: Result<&1, &1, J.Surface.IOError, J.Surface>' if name == 'textures_logo_raylib' else ''
         if logo_param and len(indexes) != 1:
@@ -525,14 +566,20 @@ def render(items, libm, logo):
         for index in indexes:
             item = items[index]
             start = dbits(item['start'])
-            window = f'J.Core.init_window({WIDTH}, {HEIGHT}, f64({start >> 32}, {start & 0xFFFFFFFF})), J.Frame.init_window({WIDTH}, {HEIGHT})'
+            flags = CONFIG_FLAGS.get(name, 0)
+            window = (f'J.Core.init_window_flags({flags}, {WIDTH}, {HEIGHT}, f64({start >> 32}, {start & 0xFFFFFFFF})), '
+                      f'J.Frame.init_window_flags({flags}, {WIDTH}, {HEIGHT})')
             args = {'core_2d_camera': f'{item["seed"]}, ', 'textures_logo_raylib': 'logo, '}.get(name, '')
+            result = 'IO(String)' if io else 'String'
             calls.append(f'def script.{index}() -> +List<J.ReplayFrame>:\n  {bend_script(item)}\n\n'
-                         f'def run.{index}({logo_param}) -> String:\n  replay({args}script.{index}(), {window})\n')
+                         f'def run.{index}({logo_param}) -> {result}:\n  replay({args}script.{index}(), {window})\n')
         if logo_param:
             main = (f'def main.loaded(logo: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):\n'
                     f'  IO.print(run.{indexes[0]}(logo))\n\n'
                     f'def main() -> IO(Unit):\n  IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, Unit, J.Surface.load_png("{logo}"), main.loaded)\n')
+        elif io:
+            main = 'def main() -> IO(Unit):\n  do IO<Unit>:\n' + '\n'.join(f'    Unit <- IO.bind(String, Unit, run.{index}(), IO.print)'
+                                                                       for index in indexes) + '\n    IO.pure(Unit, Unit{})\n'
         else:
             main = 'def main() -> IO(Unit):\n  do IO<Unit>:\n' + '\n'.join(f'    IO.print(run.{index}())' for index in indexes) + '\n'
         return body + '\n' + '\n'.join(calls) + '\n' + main
@@ -546,7 +593,7 @@ def interactive(probe, frames):
     cli = ['bun', probe.args.bend_source / 'bend2/main.ts']
     logo = probe.args.raylib_source / 'examples/textures/resources/raylib_logo.png'
     results = {}
-    for name in EXAMPLES:
+    for name in (probe.args.example or EXAMPLES):
         binary = probe.work / f'interactive-{name}'
         probekit.run([*cli, ROOT / f'examples/{name}.bend', '-o', binary], timeout=probekit.COMPILE_TIMEOUT)
         results[name] = {}
@@ -554,6 +601,8 @@ def interactive(probe, frames):
             command = [binary, '--gpu', 'off', '--threads', threads, '--frames', str(frames)]
             if name == 'textures_logo_raylib':
                 command += ['--logo', logo]
+            if name in IO_SETUP:
+                command += ['--resources', str(probe.args.raylib_source / 'examples' / EXAMPLES[name][0].split('/')[0]) + '/']
             output = probekit.run(command, timeout=600).strip().splitlines()
             line = output[-1] if output else ''
             match = re.search(r'(\d+) frames in (\d+) ms \(([\d.]+) FPS\); per frame: render (\d+) ms, present (\d+) ms, wait (\d+) ms', line)
@@ -569,11 +618,14 @@ def interactive(probe, frames):
 def configure(parser):
     parser.add_argument('--interactive', type=int, metavar='FRAMES', default=0,
                         help='run each example in a window for FRAMES frames and record its frame rate (diagnostic)')
+    parser.add_argument('--example', action='append', choices=sorted(EXAMPLES),
+                        help='only these examples (diagnostic subset; the gate runs every example)')
 
 
 def main():
     args = probekit.arguments(__doc__, configure)
-    probe = probekit.Probe('examples-interactive' if args.interactive else 'examples', args, raylib_options=ip.OPTIONS)
+    name = 'examples-interactive' if args.interactive else 'examples' + ('-subset' if args.example else '')
+    probe = probekit.Probe(name, args, raylib_options=ip.OPTIONS)
     if args.interactive:
         interactive(probe, args.interactive)
         return
@@ -587,7 +639,7 @@ def main():
     if not logo.is_file():
         raise ProbeFailure(f'examples: {logo} is missing from the pinned raylib checkout')
 
-    items = scripts()
+    items = [item for item in scripts() if not args.example or item['example'] in args.example]
     names = [name for name in EXAMPLES if any(item['example'] == name for item in items)]
     rows_by_script, refused, binaries = [], {}, {}
     for index, item in enumerate(items):
@@ -604,7 +656,7 @@ def main():
         rows_by_script.append('|'.join(rows) + '|')
     expected = ['\n'.join(row for row, item in zip(rows_by_script, items) if item['example'] == name) for name in names]
 
-    lanes = probe.candidates(render(items, libm, logo), names, batch=1,
+    lanes = probe.candidates(render(items, libm, logo, probe.args.raylib_source), names, batch=1,
                              parse=lambda text, chosen: ['\n'.join(line for line in text.splitlines() if line.strip())])
 
     def describe(i):

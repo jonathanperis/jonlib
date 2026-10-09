@@ -5587,23 +5587,27 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "FilePathList",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "FilePathList{count, paths}: the entries count and the paths (owned Strings).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Pointer/allocator ABI: paths are owned values",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "jonlib.bend",
+        "docs/FILES.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -5612,7 +5616,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive FilePathList semantics from the linked source, add a reference fixture, then implement FilePathList.",
+      "next_step": "Close documented gaps and unverified gates for FilePathList.",
       "priority": 100
     },
     {
@@ -25308,7 +25312,7 @@
       "mapping_state": "implemented",
       "scope": "Headless memory-platform InitWindow for sizes 1..4096: rlglInit clears to (0, 0, 0, 255), the viewport and rlOrtho projection, identity modelview and the default font white block as shapes texture; Maybe<Frame>. Desktop.run opens a Base window of that size and title for a Program (docs/DRIVER.md).",
       "gaps": [
-        "Integration: no config flags, monitor, DPI or resizable window: Base windows are fixed-size (docs/DRIVER.md)",
+        "Integration: no monitor, DPI or resizable window: Base windows are fixed-size; config flags reach only the memory platform state (docs/DRIVER.md)",
         "Font loading beyond the shapes atlas is not exposed",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
@@ -25492,23 +25496,28 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.is_window_ready",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.is_window_ready",
+      "mapping_state": "implemented",
+      "scope": "True: a Core is an initialized window (CloseWindow consumes it).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -25522,7 +25531,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive IsWindowReady semantics from the linked source, add a reference fixture, then implement Window.is_window_ready.",
+      "next_step": "Close documented gaps and unverified gates for IsWindowReady.",
       "priority": 310
     },
     {
@@ -25548,23 +25557,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.is_window_fullscreen",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.is_window_fullscreen",
+      "mapping_state": "implemented",
+      "scope": "FLAG_FULLSCREEN_MODE is set in the SetConfigFlags flags (the memory platform never toggles it).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -25578,7 +25593,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive IsWindowFullscreen semantics from the linked source, add a reference fixture, then implement Window.is_window_fullscreen.",
+      "next_step": "Close documented gaps and unverified gates for IsWindowFullscreen.",
       "priority": 310
     },
     {
@@ -25604,23 +25619,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.is_window_hidden",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.is_window_hidden",
+      "mapping_state": "implemented",
+      "scope": "FLAG_WINDOW_HIDDEN is set in the SetConfigFlags flags.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -25634,7 +25655,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive IsWindowHidden semantics from the linked source, add a reference fixture, then implement Window.is_window_hidden.",
+      "next_step": "Close documented gaps and unverified gates for IsWindowHidden.",
       "priority": 310
     },
     {
@@ -25660,23 +25681,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.is_window_minimized",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.is_window_minimized",
+      "mapping_state": "implemented",
+      "scope": "FLAG_WINDOW_MINIMIZED is set in the SetConfigFlags flags.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -25690,7 +25717,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive IsWindowMinimized semantics from the linked source, add a reference fixture, then implement Window.is_window_minimized.",
+      "next_step": "Close documented gaps and unverified gates for IsWindowMinimized.",
       "priority": 310
     },
     {
@@ -25716,23 +25743,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.is_window_maximized",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.is_window_maximized",
+      "mapping_state": "implemented",
+      "scope": "FLAG_WINDOW_MAXIMIZED is set in the SetConfigFlags flags.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -25746,7 +25779,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive IsWindowMaximized semantics from the linked source, add a reference fixture, then implement Window.is_window_maximized.",
+      "next_step": "Close documented gaps and unverified gates for IsWindowMaximized.",
       "priority": 310
     },
     {
@@ -25772,23 +25805,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.is_window_focused",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.is_window_focused",
+      "mapping_state": "implemented",
+      "scope": "FLAG_WINDOW_UNFOCUSED is clear in the SetConfigFlags flags.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -25802,7 +25841,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive IsWindowFocused semantics from the linked source, add a reference fixture, then implement Window.is_window_focused.",
+      "next_step": "Close documented gaps and unverified gates for IsWindowFocused.",
       "priority": 310
     },
     {
@@ -25828,23 +25867,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.is_window_resized",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.is_window_resized",
+      "mapping_state": "implemented",
+      "scope": "False: the memory platform never resizes (resizedLastFrame stays false); Base windows are fixed-size.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -25858,7 +25903,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive IsWindowResized semantics from the linked source, add a reference fixture, then implement Window.is_window_resized.",
+      "next_step": "Close documented gaps and unverified gates for IsWindowResized.",
       "priority": 310
     },
     {
@@ -25884,23 +25929,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.is_window_state",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.is_window_state",
+      "mapping_state": "implemented",
+      "scope": "FLAG_IS_SET: every bit of the flag is set in the SetConfigFlags flags (true for 0).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -25914,7 +25965,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive IsWindowState semantics from the linked source, add a reference fixture, then implement Window.is_window_state.",
+      "next_step": "Close documented gaps and unverified gates for IsWindowState.",
       "priority": 310
     },
     {
@@ -25940,23 +25991,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.set_window_state",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.set_window_state",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -25968,7 +26025,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive SetWindowState semantics from the linked source, add a reference fixture, then implement Window.set_window_state.",
+      "next_step": "Close documented gaps and unverified gates for SetWindowState.",
       "priority": 310
     },
     {
@@ -25994,23 +26051,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.clear_window_state",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.clear_window_state",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26022,7 +26085,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive ClearWindowState semantics from the linked source, add a reference fixture, then implement Window.clear_window_state.",
+      "next_step": "Close documented gaps and unverified gates for ClearWindowState.",
       "priority": 310
     },
     {
@@ -26048,23 +26111,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.toggle_fullscreen",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.toggle_fullscreen",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26076,7 +26145,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive ToggleFullscreen semantics from the linked source, add a reference fixture, then implement Window.toggle_fullscreen.",
+      "next_step": "Close documented gaps and unverified gates for ToggleFullscreen.",
       "priority": 310
     },
     {
@@ -26102,23 +26171,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.toggle_borderless_windowed",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.toggle_borderless_windowed",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26130,7 +26205,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive ToggleBorderlessWindowed semantics from the linked source, add a reference fixture, then implement Window.toggle_borderless_windowed.",
+      "next_step": "Close documented gaps and unverified gates for ToggleBorderlessWindowed.",
       "priority": 310
     },
     {
@@ -26156,23 +26231,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.maximize_window",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.maximize_window",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26184,7 +26265,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive MaximizeWindow semantics from the linked source, add a reference fixture, then implement Window.maximize_window.",
+      "next_step": "Close documented gaps and unverified gates for MaximizeWindow.",
       "priority": 310
     },
     {
@@ -26210,23 +26291,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.minimize_window",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.minimize_window",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26238,7 +26325,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive MinimizeWindow semantics from the linked source, add a reference fixture, then implement Window.minimize_window.",
+      "next_step": "Close documented gaps and unverified gates for MinimizeWindow.",
       "priority": 310
     },
     {
@@ -26264,23 +26351,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.restore_window",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.restore_window",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26292,7 +26385,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive RestoreWindow semantics from the linked source, add a reference fixture, then implement Window.restore_window.",
+      "next_step": "Close documented gaps and unverified gates for RestoreWindow.",
       "priority": 310
     },
     {
@@ -26318,23 +26411,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.set_window_icon",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.set_window_icon",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included). The image comes back to the caller.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26348,7 +26447,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive SetWindowIcon semantics from the linked source, add a reference fixture, then implement Window.set_window_icon.",
+      "next_step": "Close documented gaps and unverified gates for SetWindowIcon.",
       "priority": 310
     },
     {
@@ -26374,23 +26473,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.set_window_icons",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.set_window_icons",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included). The images come back to the caller.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26404,7 +26509,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive SetWindowIcons semantics from the linked source, add a reference fixture, then implement Window.set_window_icons.",
+      "next_step": "Close documented gaps and unverified gates for SetWindowIcons.",
       "priority": 310
     },
     {
@@ -26430,23 +26535,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.set_window_title",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.set_window_title / Core.window_title",
+      "mapping_state": "implemented",
+      "scope": "Stores CORE.Window.title; Desktop.run opens the window with the stored title and calls Base Window.set_title when it changes.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: the title is applied after the frame that set it (Base retitles between frames)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26458,7 +26569,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive SetWindowTitle semantics from the linked source, add a reference fixture, then implement Window.set_window_title.",
+      "next_step": "Close documented gaps and unverified gates for SetWindowTitle.",
       "priority": 310
     },
     {
@@ -26484,23 +26595,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.set_window_position",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.set_window_position",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26512,7 +26629,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive SetWindowPosition semantics from the linked source, add a reference fixture, then implement Window.set_window_position.",
+      "next_step": "Close documented gaps and unverified gates for SetWindowPosition.",
       "priority": 310
     },
     {
@@ -26538,23 +26655,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.set_window_monitor",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.set_window_monitor",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26566,7 +26689,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive SetWindowMonitor semantics from the linked source, add a reference fixture, then implement Window.set_window_monitor.",
+      "next_step": "Close documented gaps and unverified gates for SetWindowMonitor.",
       "priority": 310
     },
     {
@@ -26592,23 +26715,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.set_window_min_size",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.set_window_min_size / Core.window_min_size",
+      "mapping_state": "implemented",
+      "scope": "Stores CORE.Window.screenMin (C ints); nothing resizes, so it has no other effect.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26620,7 +26749,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive SetWindowMinSize semantics from the linked source, add a reference fixture, then implement Window.set_window_min_size.",
+      "next_step": "Close documented gaps and unverified gates for SetWindowMinSize.",
       "priority": 310
     },
     {
@@ -26646,23 +26775,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.set_window_max_size",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.set_window_max_size / Core.window_max_size",
+      "mapping_state": "implemented",
+      "scope": "Stores CORE.Window.screenMax (C ints); nothing resizes, so it has no other effect.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26674,7 +26809,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive SetWindowMaxSize semantics from the linked source, add a reference fixture, then implement Window.set_window_max_size.",
+      "next_step": "Close documented gaps and unverified gates for SetWindowMaxSize.",
       "priority": 310
     },
     {
@@ -26700,23 +26835,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.set_window_size",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.set_window_size",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26728,7 +26869,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive SetWindowSize semantics from the linked source, add a reference fixture, then implement Window.set_window_size.",
+      "next_step": "Close documented gaps and unverified gates for SetWindowSize.",
       "priority": 310
     },
     {
@@ -26754,23 +26895,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.set_window_opacity",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.set_window_opacity",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26782,7 +26929,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive SetWindowOpacity semantics from the linked source, add a reference fixture, then implement Window.set_window_opacity.",
+      "next_step": "Close documented gaps and unverified gates for SetWindowOpacity.",
       "priority": 310
     },
     {
@@ -26808,23 +26955,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.set_window_focused",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.set_window_focused",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: a warning only; the Core comes back unchanged (flags, screen size and position included).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26836,7 +26989,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive SetWindowFocused semantics from the linked source, add a reference fixture, then implement Window.set_window_focused.",
+      "next_step": "Close documented gaps and unverified gates for SetWindowFocused.",
       "priority": 310
     },
     {
@@ -26862,23 +27015,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_window_handle",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_window_handle",
+      "mapping_state": "implemented",
+      "scope": "NULL (None): the memory platform has no native window.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -26890,7 +27049,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetWindowHandle semantics from the linked source, add a reference fixture, then implement Window.get_window_handle.",
+      "next_step": "Close documented gaps and unverified gates for GetWindowHandle.",
       "priority": 310
     },
     {
@@ -27156,23 +27315,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_monitor_count",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_monitor_count",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: 1.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27184,7 +27349,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetMonitorCount semantics from the linked source, add a reference fixture, then implement Window.get_monitor_count.",
+      "next_step": "Close documented gaps and unverified gates for GetMonitorCount.",
       "priority": 310
     },
     {
@@ -27210,23 +27375,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_current_monitor",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_current_monitor",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: 0.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27238,7 +27409,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetCurrentMonitor semantics from the linked source, add a reference fixture, then implement Window.get_current_monitor.",
+      "next_step": "Close documented gaps and unverified gates for GetCurrentMonitor.",
       "priority": 310
     },
     {
@@ -27264,23 +27435,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_monitor_position",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_monitor_position",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: (0, 0) for any monitor index.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27294,7 +27471,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetMonitorPosition semantics from the linked source, add a reference fixture, then implement Window.get_monitor_position.",
+      "next_step": "Close documented gaps and unverified gates for GetMonitorPosition.",
       "priority": 310
     },
     {
@@ -27320,23 +27497,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_monitor_width",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_monitor_width",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: 0 for any monitor index.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27348,7 +27531,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetMonitorWidth semantics from the linked source, add a reference fixture, then implement Window.get_monitor_width.",
+      "next_step": "Close documented gaps and unverified gates for GetMonitorWidth.",
       "priority": 310
     },
     {
@@ -27374,23 +27557,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_monitor_height",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_monitor_height",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: 0 for any monitor index.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27402,7 +27591,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetMonitorHeight semantics from the linked source, add a reference fixture, then implement Window.get_monitor_height.",
+      "next_step": "Close documented gaps and unverified gates for GetMonitorHeight.",
       "priority": 310
     },
     {
@@ -27428,23 +27617,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_monitor_physical_width",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_monitor_physical_width",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: 0 for any monitor index.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27456,7 +27651,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetMonitorPhysicalWidth semantics from the linked source, add a reference fixture, then implement Window.get_monitor_physical_width.",
+      "next_step": "Close documented gaps and unverified gates for GetMonitorPhysicalWidth.",
       "priority": 310
     },
     {
@@ -27482,23 +27677,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_monitor_physical_height",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_monitor_physical_height",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: 0 for any monitor index.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27510,7 +27711,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetMonitorPhysicalHeight semantics from the linked source, add a reference fixture, then implement Window.get_monitor_physical_height.",
+      "next_step": "Close documented gaps and unverified gates for GetMonitorPhysicalHeight.",
       "priority": 310
     },
     {
@@ -27536,23 +27737,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_monitor_refresh_rate",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_monitor_refresh_rate",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: 0 for any monitor index.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27564,7 +27771,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetMonitorRefreshRate semantics from the linked source, add a reference fixture, then implement Window.get_monitor_refresh_rate.",
+      "next_step": "Close documented gaps and unverified gates for GetMonitorRefreshRate.",
       "priority": 310
     },
     {
@@ -27590,23 +27797,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_window_position",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_window_position",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: (0, 0).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27620,7 +27833,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetWindowPosition semantics from the linked source, add a reference fixture, then implement Window.get_window_position.",
+      "next_step": "Close documented gaps and unverified gates for GetWindowPosition.",
       "priority": 310
     },
     {
@@ -27646,23 +27859,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_window_scale_dpi",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_window_scale_dpi",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: (1, 1).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27676,7 +27895,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetWindowScaleDPI semantics from the linked source, add a reference fixture, then implement Window.get_window_scale_dpi.",
+      "next_step": "Close documented gaps and unverified gates for GetWindowScaleDPI.",
       "priority": 310
     },
     {
@@ -27702,23 +27921,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_monitor_name",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_monitor_name",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: \"\" for any monitor index.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27730,7 +27955,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetMonitorName semantics from the linked source, add a reference fixture, then implement Window.get_monitor_name.",
+      "next_step": "Close documented gaps and unverified gates for GetMonitorName.",
       "priority": 310
     },
     {
@@ -27756,23 +27981,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.set_clipboard_text",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.set_clipboard_text",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: a warning only (nothing is stored).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27784,7 +28015,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive SetClipboardText semantics from the linked source, add a reference fixture, then implement Window.set_clipboard_text.",
+      "next_step": "Close documented gaps and unverified gates for SetClipboardText.",
       "priority": 310
     },
     {
@@ -27810,23 +28041,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_clipboard_text",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_clipboard_text",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: NULL (None).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27838,7 +28075,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetClipboardText semantics from the linked source, add a reference fixture, then implement Window.get_clipboard_text.",
+      "next_step": "Close documented gaps and unverified gates for GetClipboardText.",
       "priority": 310
     },
     {
@@ -27864,23 +28101,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.get_clipboard_image",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_clipboard_image",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: an empty image (data NULL, 0x0): None.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27894,7 +28137,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive GetClipboardImage semantics from the linked source, add a reference fixture, then implement Window.get_clipboard_image.",
+      "next_step": "Close documented gaps and unverified gates for GetClipboardImage.",
       "priority": 310
     },
     {
@@ -27920,23 +28163,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.enable_event_waiting",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.enable_event_waiting / Core.is_event_waiting",
+      "mapping_state": "implemented",
+      "scope": "Sets CORE.Window.eventWaiting, which no memory-platform function reads.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -27948,7 +28197,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive EnableEventWaiting semantics from the linked source, add a reference fixture, then implement Window.enable_event_waiting.",
+      "next_step": "Close documented gaps and unverified gates for EnableEventWaiting.",
       "priority": 310
     },
     {
@@ -27974,23 +28223,29 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.disable_event_waiting",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.disable_event_waiting / Core.is_event_waiting",
+      "mapping_state": "implemented",
+      "scope": "Clears CORE.Window.eventWaiting, which no memory-platform function reads.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -28002,7 +28257,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive DisableEventWaiting semantics from the linked source, add a reference fixture, then implement Window.disable_event_waiting.",
+      "next_step": "Close documented gaps and unverified gates for DisableEventWaiting.",
       "priority": 310
     },
     {
@@ -30169,24 +30424,28 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "blocked",
-      "jonlib": "Camera.get_screen_to_world_ray",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Camera.screen_to_world_ray_for / Camera.screen_to_world_ray",
+      "mapping_state": "implemented",
+      "scope": "GetScreenToWorldRayEx at the Core screen size; None as the Ex form.",
       "gaps": [
-        "Window size state (Phase 2 window module)"
+        "CAMERA_PERSPECTIVE is None: MatrixPerspective needs the blocked binary64 tan (docs/PERSPECTIVE.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
-      "blocker": "Reads the window size (GetScreenWidth/GetScreenHeight); the window module is Phase 2. Camera.screen_to_world_ray_ex_for covers the explicit-size form.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/CAMERA.md"
+        "tools/window_probe.py",
+        "tools/camera_probe.py",
+        "docs/CAMERA.md",
+        "jonlib.bend"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -30204,7 +30463,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Resolve: Reads the window size (GetScreenWidth/GetScreenHeight); the window module is Phase 2. Camera.screen_to_world_ray_ex_for covers the explicit-size form.",
+      "next_step": "Close documented gaps and unverified gates for GetScreenToWorldRay.",
       "priority": 626
     },
     {
@@ -30297,24 +30556,28 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "blocked",
-      "jonlib": "Camera.get_world_to_screen",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Camera.world_to_screen_for / Camera.world_to_screen",
+      "mapping_state": "implemented",
+      "scope": "GetWorldToScreenEx at the Core screen size (GetScreenWidth/GetScreenHeight); None as the Ex form (perspective projections among them).",
       "gaps": [
-        "Window size state (Phase 2 window module)"
+        "CAMERA_PERSPECTIVE is None: MatrixPerspective needs the blocked binary64 tan (docs/PERSPECTIVE.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
-      "blocker": "Reads the window size (GetScreenWidth/GetScreenHeight); the window module is Phase 2. Camera.world_to_screen_ex_for covers the explicit-size form.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/CAMERA.md"
+        "tools/window_probe.py",
+        "tools/camera_probe.py",
+        "docs/CAMERA.md",
+        "jonlib.bend"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -30332,7 +30595,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Resolve: Reads the window size (GetScreenWidth/GetScreenHeight); the window module is Phase 2. Camera.world_to_screen_ex_for covers the explicit-size form.",
+      "next_step": "Close documented gaps and unverified gates for GetWorldToScreen.",
       "priority": 626
     },
     {
@@ -30807,23 +31070,29 @@
       "milestone": "frame",
       "phase": 2,
       "sequence": 12,
-      "status": "not-started",
-      "jonlib": "App.get_time",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.get_time",
+      "mapping_state": "implemented",
+      "scope": "The explicit clock of the last Core timing step (InitWindow, BeginDrawing, EndDrawing after its wait, WaitTime): raylib's GetTime() at those points in Program.replay's scripted frames; the desktop driver's IO.now reading of that step.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: not a live reading (a busy loop on GetTime would not advance); the desktop clock has millisecond resolution",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30835,7 +31104,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled clocks/frame-event replay and real pacing/event-polling/lifecycle checks, including manual frame control.",
-      "next_step": "Derive GetTime semantics from the linked source, add a reference fixture, then implement App.get_time.",
+      "next_step": "Close documented gaps and unverified gates for GetTime.",
       "priority": 312
     },
     {
@@ -31045,23 +31314,30 @@
       "milestone": "frame",
       "phase": 2,
       "sequence": 12,
-      "status": "not-started",
-      "jonlib": "App.wait_time",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.wait_time",
+      "mapping_state": "implemented",
+      "scope": "SUPPORT_PARTIALBUSY_WAIT_LOOP: negative seconds (-infinity too) return at once; otherwise the clock becomes GetTime() + seconds (binary64). Desktop.run sleeps and busy-reads IO.now until the real clock reaches it.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Undefined native behavior: NaN, +infinity and more than 4096 seconds are None (raylib's sleep conversion)",
+        "Integration: measured from the last timing step, not the live clock",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31073,7 +31349,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Controlled clocks/frame-event replay and real pacing/event-polling/lifecycle checks, including manual frame control.",
-      "next_step": "Derive WaitTime semantics from the linked source, add a reference fixture, then implement App.wait_time.",
+      "next_step": "Close documented gaps and unverified gates for WaitTime.",
       "priority": 312
     },
     {
@@ -31332,23 +31608,30 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.take_screenshot",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.take_screenshot",
+      "mapping_state": "implemented",
+      "scope": "A name with ' is rejected; otherwise LoadImageFromScreen's desktop-contract image (top-down RGBA, alpha 255) is exported with ExportImage's suffix rules to the name in the working directory; answers FileExists afterwards, None for a refused frame.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The memory platform writes the same pixels bottom-up with red and blue swapped (normalized by the probe; docs/TEXTURES.md)",
+        "raylib's basePath join and TextFormat truncation at 1024 bytes are not modeled (the name is written relative)",
+        "F12/ACTION_TAKE_SCREENSHOT captures in EndDrawing are counted, not written",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/TEXTURES.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31361,7 +31644,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive TakeScreenshot semantics from the linked source, add a reference fixture, then implement Texture.take_screenshot.",
+      "next_step": "Close documented gaps and unverified gates for TakeScreenshot.",
       "priority": 315
     },
     {
@@ -31387,23 +31670,32 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
-      "jonlib": "Window.set_config_flags",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.set_config_flags / Core.init_window_flags / Frame.init_window_flags / Desktop.run_flags",
+      "mapping_state": "implemented",
+      "scope": "CORE.Window.flags |= flags, before InitWindow (the init_window_flags forms) or after it (only stored, as raylib). Only FLAG_MSAA_4X_HINT reaches the memory platform frame: the shapes texture rectangle becomes (42, 47, 1, 1).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform applies the flags (vsync, resizable, fullscreen, MSAA); Base has no such facility (docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "tools/examples_probe.py",
+        "docs/DRIVER.md",
+        "docs/FRAME.md",
+        "src/core_state.bend",
+        "src/frame.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31415,7 +31707,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive SetConfigFlags semantics from the linked source, add a reference fixture, then implement Window.set_config_flags.",
+      "next_step": "Close documented gaps and unverified gates for SetConfigFlags.",
       "priority": 310
     },
     {
@@ -31441,14 +31733,14 @@
       "milestone": "window",
       "phase": 2,
       "sequence": 10,
-      "status": "not-started",
+      "status": "blocked",
       "jonlib": "Window.open_url",
       "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "scope": "Entire declared contract.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Runtime process/URL-launch primitive in Bend Base"
       ],
-      "blocker": null,
+      "blocker": "The memory platform spawns a shell (system(\"explorer ...\")) unless the URL contains ' ; Base has no process or URL-launch primitive.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -31457,7 +31749,9 @@
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/DRIVER.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -31469,7 +31763,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Real per-platform lifecycle/state/monitor/DPI/clipboard/cursor integration; normalized event traces and error cases.",
-      "next_step": "Derive OpenURL semantics from the linked source, add a reference fixture, then implement Window.open_url.",
+      "next_step": "Resolve: The memory platform spawns a shell (system(\"explorer ...\")) unless the URL contains ' ; Base has no process or URL-launch primitive.",
       "priority": 310
     },
     {
@@ -32697,23 +32991,29 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.file_text_replace",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Files.text_replace",
+      "mapping_state": "implemented",
+      "scope": "0 for a missing file; otherwise LoadFileText, TextReplaceAlloc of the text up to its first NUL and SaveFileText of the result (1 or 0). None where raylib passes NULL to fprintf: an empty file or an empty search.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Characters above 255 in the result and TextReplaceAlloc int overflows are None",
+        "Pointer/allocator ABI and complete target/resource coverage",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/files_probe.py",
+        "docs/FILES.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -32724,7 +33024,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive FileTextReplace semantics from the linked source, add a reference fixture, then implement File.file_text_replace.",
+      "next_step": "Close documented gaps and unverified gates for FileTextReplace.",
       "priority": 204
     },
     {
@@ -33885,23 +34185,29 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.is_file_dropped",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.is_file_dropped",
+      "mapping_state": "implemented",
+      "scope": "False: no platform Jonlib runs on delivers dropped files (the memory platform has no events, Base no drop event).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: Base has no drop event (docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/FILES.md",
+        "docs/DRIVER.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -33914,7 +34220,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive IsFileDropped semantics from the linked source, add a reference fixture, then implement File.is_file_dropped.",
+      "next_step": "Close documented gaps and unverified gates for IsFileDropped.",
       "priority": 204
     },
     {
@@ -33940,23 +34246,29 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.load_dropped_files",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.load_dropped_files",
+      "mapping_state": "implemented",
+      "scope": "The internal list: FilePathList{0, []}.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: Base has no drop event (docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/FILES.md",
+        "docs/DRIVER.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -33969,7 +34281,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive LoadDroppedFiles semantics from the linked source, add a reference fixture, then implement File.load_dropped_files.",
+      "next_step": "Close documented gaps and unverified gates for LoadDroppedFiles.",
       "priority": 204
     },
     {
@@ -33995,23 +34307,29 @@
       "milestone": "files",
       "phase": 1,
       "sequence": 4,
-      "status": "not-started",
-      "jonlib": "File.unload_dropped_files",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Core.unload_dropped_files",
+      "mapping_state": "implemented",
+      "scope": "Nothing to free for the empty internal list; the Core comes back.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: Base has no drop event (docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/FILES.md",
+        "docs/DRIVER.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -34024,7 +34342,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Temporary-file fixtures, exact bytes/path results, missing/truncated input, compression round trips and resource closure.",
-      "next_step": "Derive UnloadDroppedFiles semantics from the linked source, add a reference fixture, then implement File.unload_dropped_files.",
+      "next_step": "Close documented gaps and unverified gates for UnloadDroppedFiles.",
       "priority": 204
     },
     {
@@ -35565,23 +35883,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.get_key_name",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: \"\" for any key.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -35593,7 +35917,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive GetKeyName semantics from the linked source, add a reference fixture, then implement Input.get_key_name.",
+      "next_step": "Close documented gaps and unverified gates for GetKeyName.",
       "priority": 311
     },
     {
@@ -36249,23 +36573,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.set_gamepad_mappings",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: 0 (no mapping database).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36277,7 +36607,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive SetGamepadMappings semantics from the linked source, add a reference fixture, then implement Input.set_gamepad_mappings.",
+      "next_step": "Close documented gaps and unverified gates for SetGamepadMappings.",
       "priority": 311
     },
     {
@@ -36303,23 +36633,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.set_gamepad_vibration",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: a warning only.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -36331,7 +36667,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive SetGamepadVibration semantics from the linked source, add a reference fixture, then implement Input.set_gamepad_vibration.",
+      "next_step": "Close documented gaps and unverified gates for SetGamepadVibration.",
       "priority": 311
     },
     {
@@ -37177,23 +37513,29 @@
       "milestone": "input",
       "phase": 2,
       "sequence": 11,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Input.set_mouse_cursor",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Memory platform: a warning only (the cursor shape is not stored).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Integration: a desktop platform answers from the OS; Base has no window-state, monitor, clipboard or cursor facility (the driver keeps the memory platform's answer, docs/DRIVER.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/DRIVER.md",
+        "src/core_state.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -37205,7 +37547,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Deterministic pressed/held/released and gesture traces plus real device/platform integration and disconnect handling.",
-      "next_step": "Derive SetMouseCursor semantics from the linked source, add a reference fixture, then implement Input.set_mouse_cursor.",
+      "next_step": "Close documented gaps and unverified gates for SetMouseCursor.",
       "priority": 311
     },
     {
@@ -38053,24 +38395,31 @@
       "milestone": "camera",
       "phase": 5,
       "sequence": 26,
-      "status": "blocked",
-      "jonlib": "Camera.update_camera",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Camera.update_for / Camera.update",
+      "mapping_state": "implemented",
+      "scope": "Maybe<Camera3D>: rcamera.h's UpdateCamera steps in order over the Core's GetMouseDelta, GetFrameTime, keys, middle button, wheel and gamepad 0, for every mode (others take the manual path with options off); explicit contraction and M.Libm profiles; None as soon as a rotation or lockView angle leaves the profile.",
       "gaps": [
-        "Input and frame-time state (Phase 2 input/frame modules)"
+        "AppleLibm: nonzero sinf/cosf arguments are None (orbital frames and every rotation)",
+        "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+        "Fused profile: the camera steps are checked by the camera gate; the input-driven sequence only uncontracted",
+        "NaN sign and payload are not reproduced",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
-      "blocker": "Reads keyboard, mouse, gamepad and frame-time state; the input and frame modules are Phase 2. Camera.update_pro_for covers the input-free update.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/CAMERA.md"
+        "tools/camera_update_probe.py",
+        "tools/camera_probe.py",
+        "docs/CAMERA.md",
+        "jonlib.bend"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -38091,7 +38440,7 @@
       ],
       "related_declarations": [],
       "verification": "Controlled motion/input traces, handedness, view/projection and screen/world conversions for all camera modes.",
-      "next_step": "Resolve: Reads keyboard, mouse, gamepad and frame-time state; the input and frame modules are Phase 2. Camera.update_pro_for covers the input-free update.",
+      "next_step": "Close documented gaps and unverified gates for UpdateCamera.",
       "priority": 626
     },
     {
@@ -47695,23 +48044,30 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.load_texture",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Texture.load",
+      "mapping_state": "implemented",
+      "scope": "LoadImage (Surface.load_image) then LoadTextureFromImage of the decoded image; None with the frame unchanged when the file does not load or the 127 texture ids are in use (raylib: id 0).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Image formats and sizes as Surface.load_image's profile (docs/IMAGE-FILES.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
-        "integration": "unverified",
-        "targets": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
+        "integration": "partial",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "tools/examples_probe.py",
+        "docs/TEXTURES.md",
+        "docs/DRIVER.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47729,7 +48085,7 @@
       ],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive LoadTexture semantics from the linked source, add a reference fixture, then implement Texture.load_texture.",
+      "next_step": "Close documented gaps and unverified gates for LoadTexture.",
       "priority": 315
     },
     {
@@ -47819,23 +48175,28 @@
       "milestone": "textures",
       "phase": 2,
       "sequence": 15,
-      "status": "not-started",
-      "jonlib": "Texture.load_texture_cubemap",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Texture.load_cubemap",
+      "mapping_state": "implemented",
+      "scope": "rlLoadTextureCubemap is OpenGL 3.3/ES2 only: under the software renderer the cubemap keeps id 0, mipmaps 0 and format 0, width = height = the face size of the layout (auto-detected from the aspect, else 0). The image stays the caller's.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "GPU (OpenGL 3.3) cubemaps are a separate contract; no Jonlib renderer samples cubemaps",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/window_probe.py",
+        "docs/TEXTURES.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -47851,7 +48212,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Texture upload/readback, sampling/filter/wrap, render targets, mipmaps and repeated resource lifecycle under real graphics backends.",
-      "next_step": "Derive LoadTextureCubemap semantics from the linked source, add a reference fixture, then implement Texture.load_texture_cubemap.",
+      "next_step": "Close documented gaps and unverified gates for LoadTextureCubemap.",
       "priority": 315
     },
     {
@@ -70758,7 +71119,7 @@
         "Verified native-reference binary64 tangent behavior on target hosts",
         "Complete perspective matrix parity"
       ],
-      "blocker": "A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.",
+      "blocker": "A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps, and no native tan is correctly rounded on raylib's arguments: exhaustively over every binary32 fovY (and BeginMode3D's fovy*0.5*DEG2RAD), macOS 27 arm64 differs from correct rounding on 23.7% (22.7%) and glibc 2.39/2.41 x86_64 on 0.13% (0.12%); glibc's agreeing set is characterized only by a 0.069-ulp distance from rounding boundaries, which would refuse about 14% of fovy values. The published Sun/FreeBSD kernel does not match macOS and glibc's LGPL s_tan.c is not adapted.",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -70768,6 +71129,8 @@
         "performance": "unverified"
       },
       "evidence": [
+        "tools/libm_survey.py",
+        "tools/reference/libm_tan_margin.c",
         "tools/perspective_probe.py",
         "docs/PERSPECTIVE.md"
       ],
@@ -70783,7 +71146,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps; the permitted published Sun/FreeBSD kernel does not match the exercised macOS implementation.",
+      "next_step": "Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps, and no native tan is correctly rounded on raylib's arguments: exhaustively over every binary32 fovY (and BeginMode3D's fovy*0.5*DEG2RAD), macOS 27 arm64 differs from correct rounding on 23.7% (22.7%) and glibc 2.39/2.41 x86_64 on 0.13% (0.12%); glibc's agreeing set is characterized only by a 0.069-ulp distance from rounding boundaries, which would refuse about 14% of fovy values. The published Sun/FreeBSD kernel does not match macOS and glibc's LGPL s_tan.c is not adapted.",
       "priority": 7
     },
     {
@@ -72263,25 +72626,28 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "blocked",
-      "jonlib": "jonmath.Quaternion.to_euler",
-      "mapping_state": "proposed",
-      "scope": "Reference Euler extraction requires exact native asinf in addition to the explicit atan2 profile.",
+      "status": "partial",
+      "jonlib": "jonmath.Quaternion.to_euler_for",
+      "mapping_state": "implemented",
+      "scope": "Maybe<Vector3> (roll, pitch, yaw) in raymath's uncontracted F32 order with the profile's atan2f and M.Libm.asin, the correctly rounded asinf of glibc 2.41 (CORE-MATH, through checked binary64 helpers): every clamped pitch under Glibc241Libm; under AppleLibm and Glibc239Libm only pitch arguments below 0x1.d12edp-12 and 0x1.d12e9ep-12, where macOS 27 arm64 and glibc 2.39 x86_64 asinf were exhaustively found equal to correct rounding; finite components with signed-zero or normal intermediates and atan2f results (checked angle contract).",
       "gaps": [
-        "Verified native asin dependency",
-        "Complete Euler extraction evidence"
+        "AppleLibm and Glibc239Libm pitch arguments at or above their bounds (None: those native asinf are not correctly rounded there)",
+        "Subnormal, overflowing or nonfinite intermediates are None",
+        "Contracted (FMA) builds; glibc 2.41 binaries not run (source model)",
+        "Other target/performance coverage"
       ],
-      "blocker": "Native asinf endpoint/tail values differ from Base and investigated numerical models; glibc 2.39's e_asinf.c carries LGPL-2.1+ single-precision modifications (Moshier), so adapting it needs a project licensing decision.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
       "evidence": [
-        "tools/inverse_trig_probe.py",
+        "tools/quaternion_euler_probe.py",
+        "tools/libm_survey.py",
         "docs/INVERSE-TRIG.md"
       ],
       "gate_evidence": {},
@@ -72297,7 +72663,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Resolve: Native asinf endpoint/tail values differ from Base and investigated numerical models; glibc 2.39's e_asinf.c carries LGPL-2.1+ single-precision modifications (Moshier), so adapting it needs a project licensing decision.",
+      "next_step": "Close documented gaps and unverified gates for QuaternionToEuler.",
       "priority": 6
     },
     {
