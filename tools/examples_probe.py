@@ -95,11 +95,14 @@ EXAMPLES = {
     'shapes_mouse_trail': ('shapes/shapes_mouse_trail.c', 'Ex.setup(core, frame)'),
     'shapes_lines_drawing': ('shapes/shapes_lines_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_rlgl_triangle': ('shapes/shapes_rlgl_triangle.c', 'Ex.setup(core, frame)'),
+    'shapes_starfield_effect': ('shapes/shapes_starfield_effect.c', 'Ex.setup(seed, core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
 # examples/<module>/ directory) and the flags SetConfigFlags sets before InitWindow.
 IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_background_scrolling'}
+# Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
+SEEDED = {'core_2d_camera', 'shapes_starfield_effect'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32}
 
 
@@ -210,6 +213,12 @@ def scripts():
                                                 quick([button(0)]), quick([mouse_at(600, 320)]), quick([button(0, False), key(KEY_RIGHT)]),
                                                 quick([key(KEY_RIGHT, False)]), quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]),
                                                 quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_R)]), quick([key(KEY_R, False)])]),
+        # The wheel clamps the speed at 2 on the second frame, so stars pass the viewer (z < 0) and respawn within
+        # about 30 frames; SPACE switches to circles and back; a large negative move resets the speed to 0.1.
+        # (The JavaScript lane needs about 9 s a frame for 420 stars.)
+        script('shapes_starfield_effect', 'fly', [quick(), quick([(MOUSE_WHEEL, 0, 9, 0)])] + [quick() for _ in range(30)]
+               + [quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), slow([(MOUSE_WHEEL, 0, -30, 0)]), quick(),
+                  quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)])], seed=0x57A2),
     ]
     return [timed(item) for item in out]
 
@@ -612,7 +621,7 @@ def render(items, libm, logo, raylib_source):
             raise ProbeFailure('examples: one example per batch')
         name = selected[0]
         _, setup = EXAMPLES[name]
-        setup_params = {'core_2d_camera': '+seed: U32, ', 'textures_logo_raylib': 'logo: Result<&1, &1, J.Surface.IOError, J.Surface>, '}.get(name, '')
+        setup_params = '+seed: U32, ' if name in SEEDED else {'textures_logo_raylib': 'logo: Result<&1, &1, J.Surface.IOError, J.Surface>, '}.get(name, '')
         io = name in IO_SETUP
         resources = json.dumps(str(raylib_source / 'examples' / EXAMPLES[name][0].split('/')[0]) + '/')
         body = (PROGRAM.replace('REPLAY', IO_REPLAY if io else PURE_REPLAY).replace('EXAMPLE', name).replace('LIBM', libm)
@@ -628,7 +637,7 @@ def render(items, libm, logo, raylib_source):
             flags = CONFIG_FLAGS.get(name, 0)
             window = (f'J.Core.init_window_flags({flags}, {WIDTH}, {HEIGHT}, f64({start >> 32}, {start & 0xFFFFFFFF})), '
                       f'J.Frame.init_window_flags({flags}, {WIDTH}, {HEIGHT})')
-            args = {'core_2d_camera': f'{item["seed"]}, ', 'textures_logo_raylib': 'logo, '}.get(name, '')
+            args = f'{item["seed"]}, ' if name in SEEDED else {'textures_logo_raylib': 'logo, '}.get(name, '')
             result = 'IO(String)' if io else 'String'
             calls.append(f'def script.{index}() -> +List<J.ReplayFrame>:\n  {bend_script(item)}\n\n'
                          f'def run.{index}({logo_param}) -> {result}:\n  replay({args}script.{index}(), {window})\n')
