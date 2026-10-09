@@ -2879,7 +2879,7 @@
   {
    "name": "textures_npatch_drawing",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
