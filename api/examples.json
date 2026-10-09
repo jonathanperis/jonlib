@@ -3611,7 +3611,7 @@
   {
    "name": "text_format_text",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -3657,7 +3657,7 @@
   {
    "name": "text_writing_anim",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
