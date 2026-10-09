@@ -29228,23 +29228,28 @@
       "milestone": "shaders",
       "phase": 6,
       "sequence": 16,
-      "status": "not-started",
-      "jonlib": "Shader.begin_shader_mode",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.begin_shader_mode",
+      "mapping_state": "implemented",
+      "scope": "rlSetShader does nothing on the software renderer: drawing continues with the fixed pipeline (the frame is unchanged).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/shader_probe.py",
+        "docs/SHADERS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -29258,7 +29263,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Shader loading/diagnostics, uniform/state behavior and equivalent effects; resolve the complete GLSL compatibility contract.",
-      "next_step": "Derive BeginShaderMode semantics from the linked source, add a reference fixture, then implement Shader.begin_shader_mode.",
+      "next_step": "Close documented gaps and unverified gates for BeginShaderMode.",
       "priority": 716
     },
     {
@@ -29284,23 +29289,28 @@
       "milestone": "shaders",
       "phase": 6,
       "sequence": 16,
-      "status": "not-started",
-      "jonlib": "Shader.end_shader_mode",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Frame.end_shader_mode",
+      "mapping_state": "implemented",
+      "scope": "rlSetShader with the default (0) shader does nothing on the software renderer.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/shader_probe.py",
+        "docs/SHADERS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -29312,7 +29322,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Shader loading/diagnostics, uniform/state behavior and equivalent effects; resolve the complete GLSL compatibility contract.",
-      "next_step": "Derive EndShaderMode semantics from the linked source, add a reference fixture, then implement Shader.end_shader_mode.",
+      "next_step": "Close documented gaps and unverified gates for EndShaderMode.",
       "priority": 716
     },
     {
@@ -29808,23 +29818,28 @@
       "milestone": "shaders",
       "phase": 6,
       "sequence": 16,
-      "status": "not-started",
-      "jonlib": "Shader.load_shader",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Shader.load",
+      "mapping_state": "implemented",
+      "scope": "Shader{0, 32 locations of -1}: rlLoadShaderProgram answers 0 on the software renderer, so LoadShaderFromMemory takes its failure branch; the file text is never compiled.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/shader_probe.py",
+        "docs/SHADERS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -29838,7 +29853,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Shader loading/diagnostics, uniform/state behavior and equivalent effects; resolve the complete GLSL compatibility contract.",
-      "next_step": "Derive LoadShader semantics from the linked source, add a reference fixture, then implement Shader.load_shader.",
+      "next_step": "Close documented gaps and unverified gates for LoadShader.",
       "priority": 716
     },
     {
@@ -29864,23 +29879,28 @@
       "milestone": "shaders",
       "phase": 6,
       "sequence": 16,
-      "status": "not-started",
-      "jonlib": "Shader.load_shader_from_memory",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Shader.load_from_memory",
+      "mapping_state": "implemented",
+      "scope": "Shader{0, 32 locations of -1}, the software renderer's failure branch, for any code or NULL.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/shader_probe.py",
+        "docs/SHADERS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -29894,7 +29914,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Shader loading/diagnostics, uniform/state behavior and equivalent effects; resolve the complete GLSL compatibility contract.",
-      "next_step": "Derive LoadShaderFromMemory semantics from the linked source, add a reference fixture, then implement Shader.load_shader_from_memory.",
+      "next_step": "Close documented gaps and unverified gates for LoadShaderFromMemory.",
       "priority": 716
     },
     {
@@ -29920,23 +29940,28 @@
       "milestone": "shaders",
       "phase": 6,
       "sequence": 16,
-      "status": "not-started",
-      "jonlib": "Shader.is_shader_valid",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Shader.is_valid",
+      "mapping_state": "implemented",
+      "scope": "id > 0 with allocated locations: False for every shader the software renderer loads.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/shader_probe.py",
+        "docs/SHADERS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -29951,7 +29976,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Shader loading/diagnostics, uniform/state behavior and equivalent effects; resolve the complete GLSL compatibility contract.",
-      "next_step": "Derive IsShaderValid semantics from the linked source, add a reference fixture, then implement Shader.is_shader_valid.",
+      "next_step": "Close documented gaps and unverified gates for IsShaderValid.",
       "priority": 716
     },
     {
@@ -29977,23 +30002,28 @@
       "milestone": "shaders",
       "phase": 6,
       "sequence": 16,
-      "status": "not-started",
-      "jonlib": "Shader.get_shader_location",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Shader.get_location",
+      "mapping_state": "implemented",
+      "scope": "-1 (rlGetLocationUniform on the software renderer).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/shader_probe.py",
+        "docs/SHADERS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30007,7 +30037,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Shader loading/diagnostics, uniform/state behavior and equivalent effects; resolve the complete GLSL compatibility contract.",
-      "next_step": "Derive GetShaderLocation semantics from the linked source, add a reference fixture, then implement Shader.get_shader_location.",
+      "next_step": "Close documented gaps and unverified gates for GetShaderLocation.",
       "priority": 716
     },
     {
@@ -30033,23 +30063,28 @@
       "milestone": "shaders",
       "phase": 6,
       "sequence": 16,
-      "status": "not-started",
-      "jonlib": "Shader.get_shader_location_attrib",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Shader.get_location_attrib",
+      "mapping_state": "implemented",
+      "scope": "-1 (rlGetLocationAttrib on the software renderer).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/shader_probe.py",
+        "docs/SHADERS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30063,7 +30098,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Shader loading/diagnostics, uniform/state behavior and equivalent effects; resolve the complete GLSL compatibility contract.",
-      "next_step": "Derive GetShaderLocationAttrib semantics from the linked source, add a reference fixture, then implement Shader.get_shader_location_attrib.",
+      "next_step": "Close documented gaps and unverified gates for GetShaderLocationAttrib.",
       "priority": 716
     },
     {
@@ -30089,23 +30124,28 @@
       "milestone": "shaders",
       "phase": 6,
       "sequence": 16,
-      "status": "not-started",
-      "jonlib": "Shader.set_shader_value",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Shader.set_value",
+      "mapping_state": "implemented",
+      "scope": "A -1 location is skipped; any other reaches rlSetUniform, which does nothing on the software renderer.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/shader_probe.py",
+        "docs/SHADERS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30119,7 +30159,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Shader loading/diagnostics, uniform/state behavior and equivalent effects; resolve the complete GLSL compatibility contract.",
-      "next_step": "Derive SetShaderValue semantics from the linked source, add a reference fixture, then implement Shader.set_shader_value.",
+      "next_step": "Close documented gaps and unverified gates for SetShaderValue.",
       "priority": 716
     },
     {
@@ -30145,23 +30185,28 @@
       "milestone": "shaders",
       "phase": 6,
       "sequence": 16,
-      "status": "not-started",
-      "jonlib": "Shader.set_shader_value_v",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Shader.set_value_v",
+      "mapping_state": "implemented",
+      "scope": "As SetShaderValue for count values.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/shader_probe.py",
+        "docs/SHADERS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30175,7 +30220,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Shader loading/diagnostics, uniform/state behavior and equivalent effects; resolve the complete GLSL compatibility contract.",
-      "next_step": "Derive SetShaderValueV semantics from the linked source, add a reference fixture, then implement Shader.set_shader_value_v.",
+      "next_step": "Close documented gaps and unverified gates for SetShaderValueV.",
       "priority": 716
     },
     {
@@ -30201,23 +30246,28 @@
       "milestone": "shaders",
       "phase": 6,
       "sequence": 16,
-      "status": "not-started",
-      "jonlib": "Shader.set_shader_value_matrix",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Shader.set_value_matrix",
+      "mapping_state": "implemented",
+      "scope": "A -1 location is skipped; rlSetUniformMatrix does nothing on the software renderer.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/shader_probe.py",
+        "docs/SHADERS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30232,7 +30282,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Shader loading/diagnostics, uniform/state behavior and equivalent effects; resolve the complete GLSL compatibility contract.",
-      "next_step": "Derive SetShaderValueMatrix semantics from the linked source, add a reference fixture, then implement Shader.set_shader_value_matrix.",
+      "next_step": "Close documented gaps and unverified gates for SetShaderValueMatrix.",
       "priority": 716
     },
     {
@@ -30258,23 +30308,28 @@
       "milestone": "shaders",
       "phase": 6,
       "sequence": 16,
-      "status": "not-started",
-      "jonlib": "Shader.set_shader_value_texture",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Shader.set_value_texture",
+      "mapping_state": "implemented",
+      "scope": "A -1 location is skipped; rlSetUniformSampler does nothing on the software renderer.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/shader_probe.py",
+        "docs/SHADERS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30289,7 +30344,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Shader loading/diagnostics, uniform/state behavior and equivalent effects; resolve the complete GLSL compatibility contract.",
-      "next_step": "Derive SetShaderValueTexture semantics from the linked source, add a reference fixture, then implement Shader.set_shader_value_texture.",
+      "next_step": "Close documented gaps and unverified gates for SetShaderValueTexture.",
       "priority": 716
     },
     {
@@ -30315,23 +30370,28 @@
       "milestone": "shaders",
       "phase": 6,
       "sequence": 16,
-      "status": "not-started",
-      "jonlib": "Shader.unload_shader",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Shader.unload",
+      "mapping_state": "implemented",
+      "scope": "Nothing to free: the id is 0, the default shader id on the software renderer.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/shader_probe.py",
+        "docs/SHADERS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -30345,7 +30405,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Shader loading/diagnostics, uniform/state behavior and equivalent effects; resolve the complete GLSL compatibility contract.",
-      "next_step": "Derive UnloadShader semantics from the linked source, add a reference fixture, then implement Shader.unload_shader.",
+      "next_step": "Close documented gaps and unverified gates for UnloadShader.",
       "priority": 716
     },
     {

@@ -1789,6 +1789,21 @@
    "minutes": 5
   },
   {
+   "id": "shader",
+   "title": "The shader API (LoadShader*, IsShaderValid, GetShaderLocation*, SetShaderValue*, Begin/EndShaderMode, UnloadShader) against the memory-platform raylib, whose GL 1.1 software renderer has no shader programs; shader mode must leave the frame unchanged",
+   "run": [
+    "{python}",
+    "tools/shader_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2
+  },
+  {
    "id": "examples-core",
    "title": "The ported raylib core examples replayed frame by frame against the unmodified native examples (clock-injected memory-platform raylib), framebuffers byte for byte and the presented Image",
    "run": [

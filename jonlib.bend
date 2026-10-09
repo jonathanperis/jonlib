@@ -7503,6 +7503,74 @@ def Frame.begin_blend_mode(frame: Frame, +mode: U32) -> Frame:
 def Frame.end_blend_mode(frame: Frame) -> Frame:
   frame
 
+# Shaders (rcore.c) ------------------------------------------------------------
+#
+# The software renderer has no shader programs: rlgl.h compiles the program,
+# uniform and binding functions only for OpenGL 3.3 and ES2, so on the GL 1.1
+# rlsw path rlLoadShaderProgram and rlGetShaderIdDefault answer 0,
+# rlGetLocationUniform/rlGetLocationAttrib answer -1 and rlSetShader,
+# rlEnableShader and rlSetUniform* do nothing. LoadShaderFromMemory therefore
+# always takes its failure branch: id 0 and RL_MAX_SHADER_LOCATIONS (32)
+# locations of -1 (C ints as U32 two's complement). Drawing inside
+# BeginShaderMode/EndShaderMode is drawing with the fixed pipeline. See
+# docs/SHADERS.md.
+
+type Shader is Data:
+  Shader{id: U32, locs: +List<U32>}
+
+def Shader.unset(n: Nat) -> +List<U32>:
+  match n:
+    case 0n: Nil{}
+    case 1n+p: Con{4294967295, Shader.unset(p)}
+
+# LoadShaderFromMemory(vsCode, fsCode) (either may be NULL, None here): the
+# code is never compiled.
+def Shader.load_from_memory(vs: Maybe<String>, fs: Maybe<String>) -> Shader:
+  Shader{0, Shader.unset(32n)}
+
+# LoadShader(vsFileName, fsFileName): LoadFileText of each file, then
+# LoadShaderFromMemory, whose result does not depend on the text.
+def Shader.load(vs: Maybe<String>, fs: Maybe<String>) -> Shader:
+  Shader.load_from_memory(vs, fs)
+
+# IsShaderValid: id > 0 (and allocated locations).
+def Shader.is_valid(+shader: Shader) -> Bool:
+  Shader{+id, _} = shader
+  (id > 0 : U32)
+
+# UnloadShader: nothing to free for id 0, the default shader id here.
+def Shader.unload(shader: Shader) -> Unit:
+  Unit{}
+
+# GetShaderLocation / GetShaderLocationAttrib: -1.
+def Shader.get_location(+shader: Shader, name: String) -> U32:
+  4294967295
+
+def Shader.get_location_attrib(+shader: Shader, name: String) -> U32:
+  4294967295
+
+# SetShaderValue(V) / SetShaderValueMatrix / SetShaderValueTexture: a
+# location of -1 is skipped; any other reaches rlSetUniform*, which does
+# nothing on the software renderer. The value is given as its words.
+def Shader.set_value(+shader: Shader, +location: U32, value: +List<U32>, +uniform_type: U32) -> Shader:
+  shader
+
+def Shader.set_value_v(+shader: Shader, +location: U32, value: +List<U32>, +uniform_type: U32, +count: U32) -> Shader:
+  shader
+
+def Shader.set_value_matrix(+shader: Shader, +location: U32, matrix: M.Matrix) -> Shader:
+  shader
+
+def Shader.set_value_texture(+shader: Shader, +location: U32, texture: TextureInfo) -> Shader:
+  shader
+
+# BeginShaderMode / EndShaderMode: rlSetShader does nothing here.
+def Frame.begin_shader_mode(frame: Frame, +shader: Shader) -> Frame:
+  frame
+
+def Frame.end_shader_mode(frame: Frame) -> Frame:
+  frame
+
 # A BeginScissorMode argument: a C int with |value| <= 2^22, where every
 # sum the call forms is exact and the macOS (float) and integer branches of
 # rcore.c agree.

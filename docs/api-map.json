@@ -703,6 +703,28 @@
     "api_id": "raylib:function:EndTextureMode",
     "milestone": "textures"
   },
+  "BeginShaderMode": {
+    "jonlib": "Frame.begin_shader_mode",
+    "status": "profile-covered",
+    "scope": "rlSetShader does nothing on the software renderer: drawing continues with the fixed pipeline (the frame is unchanged).",
+    "gaps": [
+      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:BeginShaderMode",
+    "milestone": "shaders"
+  },
+  "EndShaderMode": {
+    "jonlib": "Frame.end_shader_mode",
+    "status": "profile-covered",
+    "scope": "rlSetShader with the default (0) shader does nothing on the software renderer.",
+    "gaps": [
+      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:EndShaderMode",
+    "milestone": "shaders"
+  },
   "BeginBlendMode": {
     "jonlib": "Frame.begin_blend_mode",
     "status": "profile-covered",
@@ -745,6 +767,116 @@
     ],
     "api_id": "raylib:function:EndScissorMode",
     "milestone": "shapes"
+  },
+  "LoadShader": {
+    "jonlib": "Shader.load",
+    "status": "profile-covered",
+    "scope": "Shader{0, 32 locations of -1}: rlLoadShaderProgram answers 0 on the software renderer, so LoadShaderFromMemory takes its failure branch; the file text is never compiled.",
+    "gaps": [
+      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadShader",
+    "milestone": "shaders"
+  },
+  "LoadShaderFromMemory": {
+    "jonlib": "Shader.load_from_memory",
+    "status": "profile-covered",
+    "scope": "Shader{0, 32 locations of -1}, the software renderer's failure branch, for any code or NULL.",
+    "gaps": [
+      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadShaderFromMemory",
+    "milestone": "shaders"
+  },
+  "IsShaderValid": {
+    "jonlib": "Shader.is_valid",
+    "status": "profile-covered",
+    "scope": "id > 0 with allocated locations: False for every shader the software renderer loads.",
+    "gaps": [
+      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsShaderValid",
+    "milestone": "shaders"
+  },
+  "GetShaderLocation": {
+    "jonlib": "Shader.get_location",
+    "status": "profile-covered",
+    "scope": "-1 (rlGetLocationUniform on the software renderer).",
+    "gaps": [
+      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetShaderLocation",
+    "milestone": "shaders"
+  },
+  "GetShaderLocationAttrib": {
+    "jonlib": "Shader.get_location_attrib",
+    "status": "profile-covered",
+    "scope": "-1 (rlGetLocationAttrib on the software renderer).",
+    "gaps": [
+      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GetShaderLocationAttrib",
+    "milestone": "shaders"
+  },
+  "SetShaderValue": {
+    "jonlib": "Shader.set_value",
+    "status": "profile-covered",
+    "scope": "A -1 location is skipped; any other reaches rlSetUniform, which does nothing on the software renderer.",
+    "gaps": [
+      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetShaderValue",
+    "milestone": "shaders"
+  },
+  "SetShaderValueV": {
+    "jonlib": "Shader.set_value_v",
+    "status": "profile-covered",
+    "scope": "As SetShaderValue for count values.",
+    "gaps": [
+      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetShaderValueV",
+    "milestone": "shaders"
+  },
+  "SetShaderValueMatrix": {
+    "jonlib": "Shader.set_value_matrix",
+    "status": "profile-covered",
+    "scope": "A -1 location is skipped; rlSetUniformMatrix does nothing on the software renderer.",
+    "gaps": [
+      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetShaderValueMatrix",
+    "milestone": "shaders"
+  },
+  "SetShaderValueTexture": {
+    "jonlib": "Shader.set_value_texture",
+    "status": "profile-covered",
+    "scope": "A -1 location is skipped; rlSetUniformSampler does nothing on the software renderer.",
+    "gaps": [
+      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetShaderValueTexture",
+    "milestone": "shaders"
+  },
+  "UnloadShader": {
+    "jonlib": "Shader.unload",
+    "status": "profile-covered",
+    "scope": "Nothing to free: the id is 0, the default shader id on the software renderer.",
+    "gaps": [
+      "The GL 1.1 software renderer has no shader programs: an OpenGL 3.3/ES2 or GPU path where shaders run is not a target",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:UnloadShader",
+    "milestone": "shaders"
   },
   "GetScreenToWorldRay": {
     "jonlib": "Camera.screen_to_world_ray_for / Camera.screen_to_world_ray",
