@@ -48,6 +48,8 @@ Pure geometry queries are listed in [COLLISION.md](COLLISION.md), including
 strict rectangle edges and inclusive circle tangency.
 Spline point queries and their explicit arithmetic profiles are listed in
 [SPLINES.md](SPLINES.md).
+The shader API (`Shader.*`, `Frame.begin_shader_mode`/`end_shader_mode`) is the
+software renderer's, where shader programs do not exist; see [SHADERS.md](SHADERS.md).
 Camera queries (`Camera.*`: rcamera.h and the rcore.c camera/screen-space
 functions), their arithmetic/libm profiles and `None` refusals are documented in
 [CAMERA.md](CAMERA.md).

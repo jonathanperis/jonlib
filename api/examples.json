@@ -852,15 +852,9 @@
    ],
    "libraries": [],
    "missing": [
-    "BeginShaderMode",
     "BeginVrStereoMode",
-    "EndShaderMode",
     "EndVrStereoMode",
-    "GetShaderLocation",
-    "LoadShader",
     "LoadVrStereoConfig",
-    "SetShaderValue",
-    "UnloadShader",
     "UnloadVrStereoConfig"
    ]
   },
@@ -3569,7 +3563,7 @@
   {
    "name": "text_font_sdf",
    "category": "text",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -3601,12 +3595,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "LoadShader",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "text_format_text",
@@ -3776,7 +3765,7 @@
   {
    "name": "text_3d_drawing",
    "category": "text",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -3837,11 +3826,7 @@
     "rlVertex3f"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "LoadShader"
-   ]
+   "missing": []
   },
   {
    "name": "text_codepoints_loading",
@@ -4375,10 +4360,7 @@
    ],
    "libraries": [],
    "missing": [
-    "DrawSphereWires",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue"
+    "DrawSphereWires"
    ]
   },
   {
@@ -4678,10 +4660,6 @@
    ],
    "libraries": [],
    "missing": [
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader",
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
     "rlFramebufferAttach",
@@ -4755,9 +4733,7 @@
    "libraries": [],
    "missing": [
     "LoadModelAnimations",
-    "LoadShader",
     "UnloadModelAnimations",
-    "UnloadShader",
     "UpdateModelAnimation"
    ]
   },
@@ -5021,9 +4997,7 @@
    "libraries": [],
    "missing": [
     "LoadModelAnimations",
-    "LoadShader",
     "UnloadModelAnimations",
-    "UnloadShader",
     "rlUpdateVertexBuffer"
    ]
   },
@@ -5066,9 +5040,7 @@
    ],
    "missing": [
     "LoadModelAnimations",
-    "LoadShader",
     "UnloadModelAnimations",
-    "UnloadShader",
     "UpdateModelAnimation",
     "UpdateModelAnimationEx",
     "raygui.h"
@@ -5116,7 +5088,7 @@
   {
    "name": "shaders_ascii_rendering",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -5147,14 +5119,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_basic_lighting",
@@ -5192,19 +5157,13 @@
    ],
    "libraries": [],
    "missing": [
-    "BeginShaderMode",
-    "DrawSphereWires",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
+    "DrawSphereWires"
    ]
   },
   {
    "name": "shaders_model_shader",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -5231,15 +5190,12 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "LoadShader",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_shapes_textures",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -5268,17 +5224,12 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "LoadShader",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_custom_uniform",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -5314,19 +5265,12 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_postprocessing",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -5362,17 +5306,12 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "LoadShader",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_palette_switch",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -5395,19 +5334,12 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValueV",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_raymarching_rendering",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -5434,19 +5366,12 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_texture_rendering",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -5471,19 +5396,12 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_texture_outline",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -5508,19 +5426,12 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_texture_waves",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -5544,19 +5455,12 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_julia_set",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -5587,19 +5491,12 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_mandelbrot_set",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -5630,14 +5527,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_color_correction",
@@ -5673,19 +5563,13 @@
     "raygui"
    ],
    "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader",
     "raygui.h"
    ]
   },
   {
    "name": "shaders_eratosthenes_sieve",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -5709,17 +5593,12 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "LoadShader",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_fog_rendering",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -5754,17 +5633,12 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_simple_mask",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -5799,12 +5673,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_hot_reloading",
@@ -5836,19 +5705,13 @@
    ],
    "libraries": [],
    "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetFileModTime",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
+    "GetFileModTime"
    ]
   },
   {
    "name": "shaders_mesh_instancing",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -5877,16 +5740,12 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_multi_sample2d",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -5913,15 +5772,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "SetShaderValueTexture",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_normalmap_rendering",
@@ -5967,19 +5818,13 @@
    ],
    "libraries": [],
    "missing": [
-    "BeginShaderMode",
-    "DrawSphereWires",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
+    "DrawSphereWires"
    ]
   },
   {
    "name": "shaders_spotlight_rendering",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -6010,14 +5855,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_deferred_rendering",
@@ -6082,10 +5920,6 @@
    "libraries": [],
    "missing": [
     "DrawSphereWires",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader",
     "rlBindFramebuffer",
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
@@ -6145,12 +5979,6 @@
    ],
    "libraries": [],
    "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader",
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
     "rlFramebufferAttach",
@@ -6165,7 +5993,7 @@
   {
    "name": "shaders_texture_tiling",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -6197,14 +6025,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_shadowmap_rendering",
@@ -6265,13 +6086,8 @@
    ],
    "libraries": [],
    "missing": [
-    "GetShaderLocation",
     "LoadModelAnimations",
-    "LoadShader",
-    "SetShaderValue",
-    "SetShaderValueMatrix",
     "UnloadModelAnimations",
-    "UnloadShader",
     "UpdateModelAnimation",
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
@@ -6323,12 +6139,6 @@
    ],
    "libraries": [],
    "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader",
     "rlSetUniformSampler"
    ]
   },
@@ -6371,10 +6181,6 @@
    ],
    "libraries": [],
    "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "LoadShader",
-    "UnloadShader",
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
     "rlFramebufferAttach",
@@ -6422,11 +6228,7 @@
    ],
    "libraries": [],
    "missing": [
-    "DrawSphereWires",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
+    "DrawSphereWires"
    ]
   },
   {
@@ -6473,8 +6275,6 @@
    ],
    "libraries": [],
    "missing": [
-    "LoadShader",
-    "UnloadShader",
     "rlLoadVertexBuffer",
     "rlSetVertexAttribute"
    ]
@@ -6482,7 +6282,7 @@
   {
    "name": "shaders_rounded_rectangle",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -6503,14 +6303,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_depth_rendering",
@@ -6560,13 +6353,6 @@
    ],
    "libraries": [],
    "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "SetShaderValueTexture",
-    "UnloadShader",
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
     "rlFramebufferAttach",
@@ -6623,12 +6409,6 @@
     "raygui"
    ],
    "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader",
     "raygui.h"
    ]
   },
@@ -6678,12 +6458,6 @@
    ],
    "libraries": [],
    "missing": [
-    "BeginShaderMode",
-    "EndShaderMode",
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader",
     "rlBindShaderBuffer",
     "rlComputeShaderDispatch",
     "rlLoadShader",
@@ -6698,7 +6472,7 @@
   {
    "name": "shaders_cel_shading",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -6731,12 +6505,7 @@
     "rlSetCullFace"
    ],
    "libraries": [],
-   "missing": [
-    "GetShaderLocation",
-    "LoadShader",
-    "SetShaderValue",
-    "UnloadShader"
-   ]
+   "missing": []
   },
   {
    "name": "audio_module_playing",
@@ -7122,20 +6891,13 @@
    ],
    "libraries": [],
    "missing": [
-    "BeginShaderMode",
     "CloseAudioDevice",
-    "EndShaderMode",
-    "GetShaderLocation",
     "InitAudioDevice",
     "IsAudioStreamProcessed",
     "LoadAudioStream",
-    "LoadShader",
     "PlayAudioStream",
     "SetAudioStreamBufferSizeDefault",
-    "SetShaderValue",
-    "SetShaderValueTexture",
     "UnloadAudioStream",
-    "UnloadShader",
     "UpdateAudioStream"
    ]
   },

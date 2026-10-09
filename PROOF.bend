@@ -608,6 +608,12 @@ def Laws.libm_tan_apple_none(x):
 def Laws.camera_projection_matrix_apple(camera, aspect):
   {==}
 
+def Laws.shader_load_never_valid(vs, fs):
+  {==}
+
+def Laws.shader_location_unset(shader, name):
+  {==}
+
 def Laws.camera_perspective_projection_none(position, target, up, fovy, aspect):
   {==}
 

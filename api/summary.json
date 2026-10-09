@@ -6,16 +6,16 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 449,
-    "partial": 1414
+    "not-started": 437,
+    "partial": 1426
   },
   "core_functions": {
     "total": 600,
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 78,
-    "partial": 501
+    "not-started": 66,
+    "partial": 513
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 148,
-    "partial": 762
+    "not-started": 136,
+    "partial": 774
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 21,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 122,
-      "partial": 894
+      "not-started": 110,
+      "partial": 906
     },
     "raymath.h": {
       "total": 254,
@@ -439,8 +439,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 12,
-      "partial": 0
+      "not-started": 0,
+      "partial": 12
     },
     {
       "id": "models",

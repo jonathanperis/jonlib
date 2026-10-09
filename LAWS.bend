@@ -857,6 +857,18 @@ law camera_projection_matrix_apple:
   for aspect: F32
   {J.Camera.projection_matrix(camera, aspect) == J.Camera.projection_matrix_for(M.AppleLibm{}, camera, aspect) : Maybe<M.Matrix>}
 
+# Shaders on the software renderer (docs/SHADERS.md): every load fails
+# (id 0, 32 locations of -1) and no shader is valid.
+law shader_load_never_valid:
+  for vs: Maybe<String>
+  for fs: Maybe<String>
+  {J.Shader.is_valid(J.Shader.load(vs, fs)) == False{} : Bool}
+
+law shader_location_unset:
+  for shader: J.Shader
+  for name: String
+  {J.Shader.get_location(shader, name) == 4294967295 : U32}
+
 law camera_perspective_projection_none:
   for position: M.Vector3
   for target: M.Vector3
