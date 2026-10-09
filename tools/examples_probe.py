@@ -111,12 +111,13 @@ EXAMPLES = {
     'models_basic_voxel': ('models/models_basic_voxel.c', 'Ex.setup(core, frame)'),
     'models_rotating_cube': ('models/models_rotating_cube.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_image_loading': ('textures/textures_image_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_image_rotate': ('textures/textures_image_rotate.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
 # examples/<module>/ directory) and the flags SetConfigFlags sets before InitWindow.
 IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_background_scrolling', 'models_rotating_cube',
-            'textures_image_loading'}
+            'textures_image_loading', 'textures_image_rotate'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -286,6 +287,8 @@ def scripts():
                                              slow([key(87)]), quick([key(87, False)])]),
         script('models_rotating_cube', 'turn', [quick() for _ in range(6)] + [slow(), quick()]),
         script('textures_image_loading', 'frames', [quick(), slow()]),
+        script('textures_image_rotate', 'cycle', [quick(), quick([button(0)]), quick([button(0, False)]), quick([key(KEY_RIGHT)]),
+                                                  quick([key(KEY_RIGHT, False), button(0)]), quick([button(0, False)])]),
     ]
     return [timed(item) for item in out]
 
