@@ -715,3 +715,21 @@ def Laws.mesh_cube_triangle_count(width, height, length):
 
 def Laws.mesh_poly_degenerate_empty(libm, radius):
   {==}
+
+def Laws.window_ready(core):
+  {==}
+
+def Laws.window_never_resized(core):
+  {==}
+
+def Laws.window_set_state_unchanged(core, flags):
+  {==}
+
+def Laws.window_toggle_fullscreen_unchanged(core):
+  {==}
+
+def Laws.window_monitor_count_one(core):
+  {==}
+
+def Laws.window_no_dropped_files(core):
+  {==}

@@ -48,12 +48,15 @@ copies its color buffer. GPU OpenGL output is not a reference.
 memory platform for sizes 1..4096: `rlglInit` clears to (0, 0, 0, 255),
 `SetupViewport` sets `rlOrtho(0, width, height, 0, 0, 1)` and an identity
 modelview, and the shapes texture is the default font atlas with the
-rectangle `(41, 46, 2, 8)` (glyph 95 inset by one pixel). The title and the
-window/platform/timing state are not modeled.
+rectangle `(41, 46, 2, 8)` (glyph 95 inset by one pixel). After
+`SetConfigFlags(FLAG_MSAA_4X_HINT)`, `Frame.init_window_flags(flags, width,
+height)` uses `(42, 47, 1, 1)` (inset by two pixels); no other flag reaches
+the frame. The title and the window/platform/timing state are the `Core`'s
+([INPUT.md](INPUT.md), [DRIVER.md](DRIVER.md#window-state)).
 
 | raylib | Jonlib |
 |---|---|
-| `InitWindow` | `Frame.init_window(width, height) -> Maybe<Frame>` |
+| `InitWindow` | `Frame.init_window(width, height) -> Maybe<Frame>`, `Frame.init_window_flags(flags, width, height)` after `SetConfigFlags` |
 | `CloseWindow` | `Frame.close_window(frame) -> Unit` |
 | `BeginDrawing` | `Frame.begin_drawing(frame) -> Frame` (identity modelview) |
 | `EndDrawing` | `Frame.end_drawing(frame) -> Frame` (no batch to flush) |

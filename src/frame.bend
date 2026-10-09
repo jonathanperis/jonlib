@@ -1621,6 +1621,12 @@ def Rig.room(+rig: Rig) -> U32:
 def Shapes.initial() -> Shapes:
   Shapes{Meta.none(), 1, 128, 128, 2, 41.0, 46.0, 2.0, 8.0}
 
+# InitWindow after SetConfigFlags(FLAG_MSAA_4X_HINT): glyph 95 inset by two
+# pixels, one pixel square, (42, 47, 1, 1) (rcore.c pads it more against MSAA
+# filtering).
+def Shapes.msaa() -> Shapes:
+  Shapes{Meta.none(), 1, 128, 128, 2, 42.0, 47.0, 1.0, 1.0}
+
 # SetShapesTexture with id 0 or an empty source: (Texture2D){ 1, 1, 1, 1, 7 }
 # (rlsw's id 1 is the font atlas) and (0, 0, 1, 1).
 def Shapes.reset() -> Shapes:
@@ -1630,9 +1636,12 @@ def Shapes.reset() -> Shapes:
 # off, filled polygons, line width and point radius 0 (rlsw's zeroed state),
 # GL_TEXTURE_2D off, clear color (0, 0, 0, 1), modelview mode, the viewport
 # (0, 0, width, height) and identity texture matrix.
-def Gl.initial(+width: U32, +height: U32) -> Gl:
+def Gl.initial.with(+width: U32, +height: U32, shapes: Shapes) -> Gl:
   Gl{True{}, False{}, True{}, False{}, 0, 0.0, 0.0, False{}, 255, 0, 0.0, 0.0, U32.to_f32(width), U32.to_f32(height), Nil{}, [Matrix4.identity()],
-    Shapes.initial(), Meta.none()}
+    shapes, Meta.none()}
+
+def Gl.initial(+width: U32, +height: U32) -> Gl:
+  Gl.initial.with(width, height, Shapes.initial())
 
 def Gl.mode(+gl: Gl) -> U32:
   Gl{_, _, _, _, _, _, _, _, _, mode, _, _, _, _, _, _, _, _} = gl
@@ -2051,10 +2060,18 @@ def Canvas.clear(+color: U32, canvas: Canvas) -> Canvas:
   Canvas.clear.buffers(Canvas.clear_color(color, canvas))
 
 # rlglInit: swInit, then glClear with the clear color (0, 0, 0, 1) and depth 1.
-def Canvas.new(+width: U32, +height: U32) -> Canvas:
+def Canvas.new.with(+width: U32, +height: U32, shapes: Shapes) -> Canvas:
   Canvas.clear(255, Canvas.build(width, height, Immediate.initial(),
     Raster{Array.new(U32, 0n, 0), Font.atlas(), Unbound{}, True{}, Extra{Array.new(U32, 0n, 0), Unbound{}, Unbound{}}},
-    Rig.initial(width, height), Screen{}, GlBox{Gl.initial(width, height), Nil{}}))
+    Rig.initial(width, height), Screen{}, GlBox{Gl.initial.with(width, height, shapes), Nil{}}))
+
+def Canvas.new(+width: U32, +height: U32) -> Canvas:
+  Canvas.new.with(width, height, Shapes.initial())
+
+# InitWindow after SetConfigFlags(flags): FLAG_MSAA_4X_HINT (32) selects the
+# shapes rectangle; no other flag changes the memory platform's frame.
+def Canvas.new_flags(+flags: U32, +width: U32, +height: U32) -> Canvas:
+  Canvas.new.with(width, height, Bool.pick(Shapes, U32.is_eq((flags .&. 32 : U32), 32), Shapes.msaa(), Shapes.initial()))
 
 def Canvas.adjusted(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, target: Target, gl: GlBox, result: Rig & Bool) -> Canvas:
   (rig, valid) = result
