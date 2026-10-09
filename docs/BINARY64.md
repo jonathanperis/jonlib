@@ -18,13 +18,17 @@ FFI or compiler hook. Each computes the exact real result and rounds it
 | `src/binary64_add_sub.bend` | `checked_add`, `checked_sub` | bounded addition/subtraction |
 | `src/binary64_ops.bend` | `checked_multiply`, `checked_divide`, word adapters | normal-result multiply/divide, promotion, decoding, raw stepping |
 | `src/binary64_gradual_multiply.bend` | `checked` | product with gradual (subnormal/zero) output |
+| `src/binary64_sqrt.bend` | `checked` | square root of a signed zero or positive normal |
 
 **Consumers.** The private glibc 2.41 kernel `src/modern_angle.bend`
 ([MODERN-ANGLE.md](MODERN-ANGLE.md)) feeds the public checked angle wrappers in
 `src/checked_angle.bend`; `src/clock.bend` uses the addition/subtraction,
 division, multiplication, promotion and narrowing helpers within their domains
 for rcore.c's frame timing and rgestures.h's times ([INPUT.md](INPUT.md)),
-whose clock values are binary64 words passed in by the caller. `LAWS.bend` imports the
+whose clock values are binary64 words passed in by the caller; the private
+glibc 2.41 `asinf` kernel `src/asin.bend` ([INVERSE-TRIG.md](INVERSE-TRIG.md))
+uses promotion, multiplication, addition/subtraction, the square root and
+narrowing. `LAWS.bend` imports the
 modules for their laws. Nothing is re-exported from `jonlib.bend` or
 `jonmath.bend`. The older `float64.bend`, `float64_ops.bend` and
 `resize_numeric.bend` arithmetic (projection, resize, legacy angle profiles) and
@@ -415,3 +419,33 @@ parities, the double-rounding witnesses and DAZ/FTZ detection
 (subnormal-input-to-normal and normal-input-to-subnormal products). Some
 preflights lie outside the candidate rectangle solely to qualify native
 behaviour; the candidate must still reject those inputs.
+
+## Square root
+
+`binary64_sqrt.checked(high, low) -> Maybe<Words>` rounds the exact square
+root once, to nearest even.
+
+**Domain.** Signed zeros (returned unchanged: `sqrt(-0) = -0`) and every
+positive normal. Negative nonzero values, subnormals, infinities and NaN return
+`None`. The root of a normal is always normal, so no overflow or underflow case
+exists.
+
+**Algorithm and rounding.** For `x = M * 2^(E-52)` (`2^52 <= M < 2^53`) the
+radicand `N = M * 2^56` (E even) or `M * 2^57` (E odd) lies in
+`[2^108, 2^110)`, held in a four-limb `Quad`. A 55-step restoring integer
+square root (the trial bit runs over the powers of four from `2^108` to 1)
+gives `R = floor(sqrt(N))` in `[2^54, 2^55)` and the exact remainder
+`N - R^2`. `sqrt(x) = sqrt(N) * 2^(floor(E/2) - 54)`; the 56-bit window
+`(R << 1) | [remainder != 0]` holds the 53 result bits, two more and a sticky
+bit and goes through `binary64_fma.pack` (nearest even, carry into the next
+exponent), with stored exponent `(e + 1022 + (e & 1)) / 2` for the stored input
+exponent `e`. A square root is never exactly halfway between two binary64
+values, so only the sticky bit decides those windows.
+
+**Verification.** Gate `quaternion-euler` (`tools/quaternion_euler_probe.py`)
+compares 600 inputs with an independent oracle using Python's exact
+`math.isqrt` on the scaled significand: both zeros, exact squares of every
+exponent parity, non-squares, the minimum and maximum normals, the
+`1 - |x|` grid of the `asinf` kernel (`k * 2^-24`), seeded normals of every
+exponent and the rejected classes. `LAWS.bend` pins `sqrt(4) = 2`,
+`sqrt(-0) = -0` and the rejection of `-1`.

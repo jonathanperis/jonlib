@@ -19,6 +19,8 @@ import ./src/formats.bend as Formats
 import ./src/codec.bend as Codec
 import ./src/qoa.bend as Qoa
 import ./src/fma.bend as Fma
+import ./src/asin.bend as Asin
+import ./src/binary64_sqrt.bend as Sqrt
 import ./src/wav.bend as Wav
 import ./src/wav_adpcm.bend as Adpcm
 import ./src/convert.bend as WaveConvert
@@ -762,6 +764,40 @@ law pow_apple_none:
   for +x: F32
   for +exponent: U32
   {M.Libm.pow(M.AppleLibm{}, x, exponent) == None{} : Maybe<F32>}
+
+# asinf (src/asin.bend, glibc 2.41): |x| = 1 takes the square-root branch,
+# |x| > 1 and NaN are refused; AppleLibm and Glibc239Libm stop below
+# 0x1.d12edp-12 and 0x1.d12e9ep-12, where their native asinf leaves correct
+# rounding (exhaustive results in docs/INVERSE-TRIG.md).
+law asin_region_one:
+  {Asin.region(2130706432) == 3 : U32}
+
+law asin_region_above_one:
+  {Asin.region(2130706434) == 0 : U32}
+
+law asin_region_tiny:
+  {Asin.region(1929379838) == 1 : U32}
+
+# Binary64 square root (src/binary64_sqrt.bend): exact roots, signed zeros
+# and the refused negative input.
+law sqrt_four:
+  {Sqrt.checked(1074790400, 0) == Some{F.Words{1073741824, 0}} : Maybe<F.Words>}
+
+law sqrt_negative_zero:
+  {Sqrt.checked(2147483648, 0) == Some{F.Words{2147483648, 0}} : Maybe<F.Words>}
+
+law sqrt_negative_none:
+  {Sqrt.checked(3220176896, 0) == None{} : Maybe<F.Words>}
+
+# QuaternionToEuler: a quaternion with a nonfinite component fails at stage 1,
+# before any arithmetic or profile kernel.
+law euler_invalid_first:
+  for libm: M.Libm
+  for x: F32
+  for y: F32
+  for z: F32
+  for w: F32
+  {M.Quaternion.euler.valid(False{}, libm, x, y, z, w) == Fail{1} : Result<&2, &2, U32, M.Vector3>}
 
 # Total binary32 FMA (src/fma.bend): input classification, exact significand
 # products and the final nearest-even step (concrete values; the arithmetic is

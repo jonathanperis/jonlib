@@ -542,6 +542,27 @@ def Laws.acos_apple_none(x):
 def Laws.pow_apple_none(x, exponent):
   {==}
 
+def Laws.asin_region_one():
+  {==}
+
+def Laws.asin_region_above_one():
+  {==}
+
+def Laws.asin_region_tiny():
+  {==}
+
+def Laws.sqrt_four():
+  {==}
+
+def Laws.sqrt_negative_zero():
+  {==}
+
+def Laws.sqrt_negative_none():
+  {==}
+
+def Laws.euler_invalid_first(libm, x, y, z, w):
+  {==}
+
 def Laws.fma_kind_nan_factor():
   {==}
 

@@ -15,6 +15,7 @@
 import Base
 import ./src/trig.bend as Trig
 import ./src/inverse_trig.bend as InverseTrig
+import ./src/asin.bend as Asin
 import ./src/power.bend as Power
 import ./src/float64.bend as Float64Numeric
 import ./src/angle.bend as LegacyAngle
@@ -1254,6 +1255,81 @@ def Quaternion.axis_angle.w(+quaternion: Vector4) -> F32:
 def Quaternion.to_axis_angle_for(libm: Libm, +quaternion: Vector4) -> Maybe<(Vector3 & F32)>:
   +q = Bool.pick(Vector4, (F32.abs(Quaternion.axis_angle.w(quaternion)) > 1.0 : F32), Quaternion.normalize(quaternion), quaternion)
   Quaternion.axis_angle.result(q, Libm.acos(libm, Quaternion.axis_angle.w(q)))
+
+def Libm.asin.within(inside: Bool, +x: F32) -> Maybe<F32>:
+  match inside:
+    case True{}: Asin.asin(x)
+    case False{}: None{}
+
+# asinf under a reference profile, from the correctly rounded kernel of glibc
+# 2.41 (CORE-MATH): every x in [-1, 1] for Glibc241Libm; for AppleLibm and
+# Glibc239Libm only |x| < 0x1.d12edp-12 and |x| < 0x1.d12e9ep-12, below which
+# their native asinf was exhaustively found equal to correct rounding (see
+# docs/INVERSE-TRIG.md). None elsewhere, for |x| > 1 and for NaN.
+def Libm.asin(libm: Libm, +x: F32) -> Maybe<F32>:
+  match libm:
+    case AppleLibm{}: Libm.asin.within(((F32.bits(x) .&. 2147483647) < 971544424 : U32), x)
+    case Glibc239Libm{}: Libm.asin.within(((F32.bits(x) .&. 2147483647) < 971544399 : U32), x)
+    case Glibc241Libm{}: Asin.asin(x)
+
+def Quaternion.euler.pitch(value: Maybe<F32>) -> Result<&2, &2, U32, F32>:
+  match value:
+    case None{}: Fail{40}
+    case Some{angle}: Done{angle}
+
+def Quaternion.euler.clamp(+value: F32) -> F32:
+  +upper = Bool.pick(F32, (value > 1.0 : F32), 1.0, value)
+  Bool.pick(F32, (upper < F32.neg(1.0) : F32), F32.neg(1.0), upper)
+
+def Quaternion.euler.valid(valid: Bool, +libm: Libm, +x: F32, +y: F32, +z: F32, +w: F32) -> Result<&2, &2, U32, Vector3>:
+  match valid:
+    case False{}: Fail{1}
+    case True{}:
+      +profile = Libm.angle(libm)
+      do Result<&2, &2, U32, Vector3>:
+        a0 : F32 <- CheckedAngle.normal(10, (w * x : F32))
+        a1 : F32 <- CheckedAngle.normal(11, (y * z : F32))
+        a2 : F32 <- CheckedAngle.normal(12, (a0 + a1 : F32))
+        x0 : F32 <- CheckedAngle.normal(13, (2.0 * a2 : F32))
+        b0 : F32 <- CheckedAngle.normal(14, (x * x : F32))
+        b1 : F32 <- CheckedAngle.normal(15, (y * y : F32))
+        b2 : F32 <- CheckedAngle.normal(16, (b0 + b1 : F32))
+        b3 : F32 <- CheckedAngle.normal(17, (2.0 * b2 : F32))
+        x1 : F32 <- CheckedAngle.normal(18, (1.0 - b3 : F32))
+        c0 : F32 <- CheckedAngle.normal(19, (w * y : F32))
+        c1 : F32 <- CheckedAngle.normal(20, (z * x : F32))
+        c2 : F32 <- CheckedAngle.normal(21, (c0 - c1 : F32))
+        y0 : F32 <- CheckedAngle.normal(22, (2.0 * c2 : F32))
+        d0 : F32 <- CheckedAngle.normal(23, (w * z : F32))
+        d1 : F32 <- CheckedAngle.normal(24, (x * y : F32))
+        d2 : F32 <- CheckedAngle.normal(25, (d0 + d1 : F32))
+        z0 : F32 <- CheckedAngle.normal(26, (2.0 * d2 : F32))
+        e0 : F32 <- CheckedAngle.normal(27, (y * y : F32))
+        e1 : F32 <- CheckedAngle.normal(28, (z * z : F32))
+        e2 : F32 <- CheckedAngle.normal(29, (e0 + e1 : F32))
+        e3 : F32 <- CheckedAngle.normal(30, (2.0 * e2 : F32))
+        z1 : F32 <- CheckedAngle.normal(31, (1.0 - e3 : F32))
+        roll : F32 <- CheckedAngle.scalar(profile, x0, x1)
+        pitch : F32 <- Quaternion.euler.pitch(Libm.asin(libm, Quaternion.euler.clamp(y0)))
+        yaw : F32 <- CheckedAngle.scalar(profile, z0, z1)
+        return Vector3{roll, pitch, yaw}
+
+def Quaternion.euler.maybe(result: Result<&2, &2, U32, Vector3>) -> Maybe<Vector3>:
+  match result:
+    case Fail{_}: None{}
+    case Done{angles}: Some{angles}
+
+# QuaternionToEuler under a reference libm profile: (roll, pitch, yaw) =
+# (atan2f(x0, x1), asinf(clamp(y0, -1, 1)), atan2f(z0, z1)) in raymath's
+# uncontracted F32 order, with the profile's atan2f and asinf (Libm.asin).
+# None unless every component is finite, every intermediate (products, sums,
+# x0, x1, y0, z0, z1) and both atan2f results are signed zero or normal (the
+# checked angle contract of docs/ANGLES.md), and the profile has the asinf
+# result.
+def Quaternion.to_euler_for(+libm: Libm, quaternion: Vector4) -> Maybe<Vector3>:
+  Vector4{+x, +y, +z, +w} = quaternion
+  Quaternion.euler.maybe(Quaternion.euler.valid(CheckedAngle.finite(x) && CheckedAngle.finite(y) &&
+    CheckedAngle.finite(z) && CheckedAngle.finite(w), libm, x, y, z, w))
 
 def Vector3.axis.rotated(+vector: Vector3, axis: Vector3, values: F32 & F32) -> Vector3:
   (cosine, sine) = values
