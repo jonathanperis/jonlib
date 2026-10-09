@@ -87,6 +87,7 @@ EXAMPLES = {
     'core_drop_files': ('core/core_drop_files.c', 'Ex.setup(core, frame)'),
     'shapes_bouncing_ball': ('shapes/shapes_bouncing_ball.c', 'Ex.setup(core, frame)'),
     'shapes_lines_bezier': ('shapes/shapes_lines_bezier.c', 'Ex.setup(core, frame)'),
+    'shapes_colors_palette': ('shapes/shapes_colors_palette.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -160,6 +161,9 @@ def scripts():
         script('shapes_lines_bezier', 'drag', [quick(), quick([mouse_at(31, 28)]), quick([button(0)]), quick([mouse_at(120, 200)]),
                                                slow([mouse_at(400, 100), button(0, False)]), quick([mouse_at(765, 425)]), quick([button(0)]),
                                                quick([mouse_at(600, 300)]), quick([mouse_at(-20, 500)])]),
+        script('shapes_colors_palette', 'hover', [quick(), quick([mouse_at(50, 100)]), slow(), quick([key(KEY_SPACE)]), quick([mouse_at(400, 250)]),
+                                                  quick([key(KEY_SPACE, False)]), quick([mouse_at(129, 120)]), quick([mouse_at(130, 120)]),
+                                                  quick([mouse_at(790, 440)]), quick([mouse_at(-5, -5)])]),
     ]
     return [timed(item) for item in out]
 

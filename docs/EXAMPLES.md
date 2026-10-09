@@ -6,7 +6,7 @@ when `examples/<name>.bend` exists and the `examples` gate replays it against
 the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger; **waiting** otherwise.
 
-Totals: 212 examples; 13 ported, 130 ready, 69 waiting.
+Totals: 212 examples; 14 ported, 129 ready, 69 waiting.
 
 ## APIs that unblock the most examples
 
@@ -109,7 +109,7 @@ Totals: 212 examples; 13 ported, 130 ready, 69 waiting.
 | `shapes_basic_shapes` | shapes | ported |  |
 | `shapes_bouncing_ball` | shapes | ported |  |
 | `shapes_bullet_hell` | shapes | ready |  |
-| `shapes_colors_palette` | shapes | ready |  |
+| `shapes_colors_palette` | shapes | ported |  |
 | `shapes_logo_raylib` | shapes | ported |  |
 | `shapes_logo_raylib_anim` | shapes | ready |  |
 | `shapes_rectangle_scaling` | shapes | ready |  |
