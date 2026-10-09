@@ -242,8 +242,11 @@ remain gaps. The public carrier API provides storage and promotion; arithmetic
 helpers are internal and reuse finite-normal integer-limb operations.
 
 `MatrixPerspective` is blocked: the native binary64 tangent rounding survives
-into F32 matrix fields, so a correctly rounded tangent is not a substitute. The
-counterexample and diagnostic gate are in [PERSPECTIVE.md](PERSPECTIVE.md).
+into F32 matrix fields, and neither macOS nor glibc (2.39 and 2.41) `tan` is
+correctly rounded on the arguments raylib's binary32 callers produce
+(exhaustively: 23.7% and 0.13% of them differ), so a correctly rounded tangent
+is not a substitute. The survey, counterexamples and diagnostic gates are in
+[PERSPECTIVE.md](PERSPECTIVE.md).
 
 ## Quaternion API
 
@@ -294,10 +297,15 @@ coverage remain ledger gaps.
 `M.Libm.acos(libm, x)` and `M.Libm.pow(libm, x, exponent)` expose the glibc
 2.39 `acosf` and `powf` (exponents 2 and 3 on [-0, 1]) kernels as `Maybe`
 results; other profiles give `None` ([INVERSE-TRIG.md](INVERSE-TRIG.md),
-[SPLINES.md](SPLINES.md)).
+[SPLINES.md](SPLINES.md)). `M.Libm.asin(libm, x)` is the correctly rounded
+`asinf` of glibc 2.41 (CORE-MATH): on [-1, 1] for `Glibc241Libm{}`, and below
+0x1.d12edp-12 (`AppleLibm{}`) and 0x1.d12e9ep-12 (`Glibc239Libm{}`), where those
+native `asinf` were exhaustively found correctly rounded.
 `Quaternion.slerp_for(libm, ...)` and `Quaternion.to_axis_angle_for(libm, ...)`
 return `Maybe` results under the `Glibc239Libm{}` acosf profile;
-`QuaternionToEuler` is blocked on `asinf`. See [INVERSE-TRIG.md](INVERSE-TRIG.md).
+`Quaternion.to_euler_for(libm, q)` (`QuaternionToEuler`) returns
+`Maybe<Vector3>` with the profile's `atan2f` and `Libm.asin`. See
+[INVERSE-TRIG.md](INVERSE-TRIG.md).
 
 ## Float-list exports
 

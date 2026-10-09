@@ -378,6 +378,28 @@ finite-input boundary for reference tooling; both are compiled only by
 implementation is linked into the Bend candidate. No glibc LGPL testcase table
 is copied; controls are independently generated. See [the private contract](docs/MODERN-ANGLE.md).
 
+## Correctly rounded arcsine kernel
+
+`src/asin.bend` is an altered Bend adaptation of the correctly rounded binary32
+arcsine in
+[glibc 2.41 e_asinf.c](https://github.com/bminor/glibc/blob/74f59e9271cbb4071671e5a474e7d4f1622b186f/sysdeps/ieee754/flt-32/e_asinf.c),
+Copyright (c) 2023–2024 Alexei Sibidanov, copied there from CORE-MATH
+`src/binary32/asin/asinf.c` (revision `bc385c2`, abbreviated in the source).
+Pin: glibc release commit `74f59e9271cbb4071671e5a474e7d4f1622b186f`, Git blob
+`944bf6f5ce0b4138fb2f7d2c479ac46fff3ea7e4`, SHA-256
+`8b34f085bb2a64a15c75212ec4a0cc3a2eddc7d35583bf2c5921257158339061`. The MIT
+notice is retained in the Bend file and
+[LICENSES/core-math-asinf.txt](LICENSES/core-math-asinf.txt); the unmodified
+source is `tools/reference/core_math/glibc241_e_asinf.c` (reference tooling).
+`src/binary64_sqrt.bend` (its binary64 square root) is original.
+
+Reference tooling only, never linked into Jonlib: the unmodified CORE-MATH
+`asinf.c` and `tan.c` (`tools/reference/core_math`, commit
+`a6509c5bee5e66e56d9e474e2996ac3c379fed0c`, MIT, by Alexei Sibidanov and by
+Paul Zimmermann and Tom Hubrecht) are the correctly rounded oracles of
+`tools/libm_survey.py`; hashes are listed in the same license file. glibc
+2.39's LGPL `e_asinf.c` and `s_tan.c` are neither copied nor adapted.
+
 ## stb_perlin
 
 `src/perlin.bend` is an altered Bend adaptation of stb_perlin.h v0.5 from pinned
