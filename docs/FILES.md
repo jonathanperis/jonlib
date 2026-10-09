@@ -21,6 +21,8 @@ byte, on every lane.
 | `Files.load_text(path)` / `unload_text` | `LoadFileText` / `UnloadFileText` | Every byte as a character, including NULs. |
 | `Files.save_text(path, text)` | `SaveFileText` | The text up to its first NUL; characters above 255 are `InvalidRequest`. |
 | `Files.text_find_index(path, search) -> IO(Maybe<U32>)` | `FileTextFindIndex` | Byte index of the first occurrence in the text up to its first NUL; `None` when absent or the file is missing. An empty file, which raylib scans through a `NULL` text, is `None`. |
+| `Files.text_replace(path, search, replacement) -> IO(Maybe<U32>)` | `FileTextReplace` | 0 when the file does not exist; otherwise `LoadFileText`, `TextReplaceAlloc` of its text up to the first NUL and `SaveFileText` of the result (so the file is rewritten even without a match, ending at the first NUL), answering 1 or 0. `None` where raylib passes a `NULL` text to `fprintf("%s")`: an empty or unreadable file and an empty search; also for characters above 255 in the result and `TextReplaceAlloc`'s int overflow. |
+| `Core.is_file_dropped(core) -> Bool`, `Core.load_dropped_files(core) -> FilePathList`, `Core.unload_dropped_files(core, files)` | `IsFileDropped`, `LoadDroppedFiles`, `UnloadDroppedFiles` | `CORE.Window.dropFileCount` stays 0: the memory platform has no drop events and Base's windows report none, so `IsFileDropped` is false, `LoadDroppedFiles` is `FilePathList{0, []}` and unloading it frees nothing. A desktop platform with drop events would fill the list (Base gap, [DRIVER.md](DRIVER.md#gaps)). |
 | `Files.data_as_code(bytes, path)` / `export_data_as_code(bytes, path)` | `ExportDataAsCode` | raylib's header text (banner, `NAME_DATA_SIZE`, 20 lower-case hex bytes per line) for 1..1048576 bytes and an ASCII basename of 1..200 characters; the name drops its last extension, upper-cases a-z and maps `.-?!+` to `_`. |
 
 Writers open with Base's create/truncate mode and close their handle; errors are
@@ -53,22 +55,27 @@ invalid raw parameters) are rejected before calling the callback.
 
 ## Not yet available
 
-Base exposes only open, read, write, size and close, so the functions needing
-other OS primitives are recorded as blocked: `FileRename`, `FileRemove`,
-`FileCopy`/`FileMove` (directory creation and removal), `DirectoryExists`,
-`IsPathFile`, `GetFileModTime`, `GetWorkingDirectory`,
+Base's file effects (pinned Bend revision, re-checked for this slice) are
+`File.open`, `File.read`/`read_bytes`/`read_at`, `File.size`, `File.write`/
+`write_bytes` and `File.close`: no rename, remove, stat, directory listing or
+working-directory primitive. The functions needing them stay blocked (runtime
+workstream, [MASTER-PLAN.md](MASTER-PLAN.md#compiler-and-runtime-workstream)):
+`FileRename`, `FileRemove`, `FileCopy`/`FileMove` (remove and the modification
+check), `DirectoryExists`, `IsPathFile`, `GetFileModTime`, `GetWorkingDirectory`,
 `GetApplicationDirectory`, `MakeDirectory`, `ChangeDirectory`,
-`LoadDirectoryFiles(Ex)`, `UnloadDirectoryFiles` and
-`GetDirectoryFileCount(Ex)`. Dropped files need the window runtime (Phase 2);
-`FileTextReplace` needs the text utilities (`TextReplaceAlloc`).
+`LoadDirectoryFiles(Ex)`, `UnloadDirectoryFiles` and `GetDirectoryFileCount(Ex)`.
 
 ## How it is verified
 
 `tools/files_probe.py` (gate `files`) runs the pure functions over a corpus of
 drive, root, relative, dotted and long paths, extension lists and names, then
 compares existence, length, loaded data/text, text search and files each side
-saves (data, text, data-as-code) read back byte for byte, on CPU-1, CPU-2 and
-JavaScript. Inputs where raylib's C code is undefined are checked as `None`
+saves (data, text, data-as-code) read back byte for byte, and `FileTextReplace`
+on fresh copies of fixtures (matches, empty replacements, overlapping and
+absent searches, a NUL inside the text, a missing file), its result and the
+rewritten file, on CPU-1, CPU-2 and JavaScript. The dropped-file functions are
+compared with the memory platform by `tools/window_probe.py`
+([DRIVER.md](DRIVER.md#window-state)). Inputs where raylib's C code is undefined are checked as `None`
 contracts without running them natively.
 
 `tools/loaders_probe.py` (gate `loaders`) installs native callbacks serving an
