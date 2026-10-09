@@ -241,12 +241,14 @@ subnormal projection arithmetic, and unverified non-finite promotion payloads,
 remain gaps. The public carrier API provides storage and promotion; arithmetic
 helpers are internal and reuse finite-normal integer-limb operations.
 
-`MatrixPerspective` is blocked: the native binary64 tangent rounding survives
-into F32 matrix fields, and neither macOS nor glibc (2.39 and 2.41) `tan` is
-correctly rounded on the arguments raylib's binary32 callers produce
-(exhaustively: 23.7% and 0.13% of them differ), so a correctly rounded tangent
-is not a substitute. The survey, counterexamples and diagnostic gates are in
-[PERSPECTIVE.md](PERSPECTIVE.md).
+`Matrix.perspective_for(libm, fovy, aspect, near, far) -> Maybe<Matrix>`
+(`MatrixPerspective`, binary64 `M.Float64` inputs) computes `top =
+near*tan(fovY*0.5)` and `right = top*aspect` in binary64 with
+`M.Libm.tan(libm, x)`, then `Matrix.frustum`'s cells. The native tangent
+rounding survives into the F32 fields and neither macOS nor glibc `tan` is
+correctly rounded, so `M.Libm.tan` reproduces glibc's x86_64 function exactly
+for the glibc profiles (an LGPL-2.1+ module) and is `None` for `AppleLibm`;
+see [PERSPECTIVE.md](PERSPECTIVE.md).
 
 ## Quaternion API
 

@@ -3257,7 +3257,7 @@
   {
    "name": "textures_framebuffer_rendering",
    "category": "textures",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -3290,9 +3290,7 @@
     "Vector3Distance",
     "WindowShouldClose"
    ],
-   "missing": [
-    "MatrixPerspective"
-   ]
+   "missing": []
   },
   {
    "name": "text_sprite_fonts",
@@ -4471,7 +4469,6 @@
    "missing": [
     "GetShaderLocation",
     "LoadShader",
-    "MatrixPerspective",
     "SetShaderValue",
     "UnloadShader",
     "rlDisableFramebuffer",

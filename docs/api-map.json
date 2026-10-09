@@ -659,12 +659,12 @@
     "milestone": "shapes"
   },
   "BeginMode3D": {
-    "jonlib": "Frame.begin_mode_3d",
+    "jonlib": "Frame.begin_mode_3d_for / Frame.begin_mode_3d",
     "status": "profile-covered",
-    "scope": "Projection pushed and reset, swOrtho for CAMERA_ORTHOGRAPHIC (binary64 top/right exact, F32 cells), identity for other projection values, MatrixLookAt modelview (uncontracted) and the depth test enabled; aspect of the current color buffer.",
+    "scope": "Projection pushed and reset; CAMERA_PERSPECTIVE multiplies it by swFrustum with top = 0.05*tan(fovy*0.5*DEG2RAD) and right = top*aspect in binary64 under the profile's M.Libm.tan (glibc profiles), CAMERA_ORTHOGRAPHIC by swOrtho (binary64 top/right exact, F32 cells), other projection values leave the identity; MatrixLookAt modelview (uncontracted) and the depth test enabled; aspect of the current color buffer.",
     "gaps": [
-      "CAMERA_PERSPECTIVE is refused: rlFrustum needs the native binary64 tan (docs/PERSPECTIVE.md)",
-      "Orthographic cameras with a zero or nonfinite fovy, span or scale mark the frame undefined",
+      "CAMERA_PERSPECTIVE under AppleLibm (the default form) marks the frame undefined: Apple's binary64 tan is unpublished (docs/PERSPECTIVE.md)",
+      "Perspective cameras with a zero or nonfinite frustum scale and orthographic cameras with a zero or nonfinite fovy, span or scale mark the frame undefined",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:BeginMode3D",
@@ -751,7 +751,7 @@
     "status": "profile-covered",
     "scope": "GetScreenToWorldRayEx at the Core screen size; None as the Ex form.",
     "gaps": [
-      "CAMERA_PERSPECTIVE is None: MatrixPerspective needs the blocked binary64 tan (docs/PERSPECTIVE.md)",
+      "CAMERA_PERSPECTIVE is None under AppleLibm (the profile-free forms; docs/PERSPECTIVE.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetScreenToWorldRay",
@@ -760,9 +760,9 @@
   "GetScreenToWorldRayEx": {
     "jonlib": "Camera.screen_to_world_ray_ex_for / Camera.screen_to_world_ray_ex",
     "status": "profile-covered",
-    "scope": "Maybe<Ray> for orthographic and other non-perspective cameras: Vector3Unproject at depths 0, 1 and -1 (orthographic origin; zero origin for other projections) and the normalized direction; sizes 1..INT_MAX; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
+    "scope": "Maybe<Ray> for perspective (MatrixPerspective with the profile's M.Libm.tan; the ray starts at the camera position), orthographic and other cameras: Vector3Unproject at depths 0, 1 and -1 (orthographic origin; zero origin for other projections) and the normalized direction; sizes 1..INT_MAX; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
     "gaps": [
-      "CAMERA_PERSPECTIVE is None: MatrixPerspective's binary64 tan is blocked (docs/PERSPECTIVE.md)",
+      "CAMERA_PERSPECTIVE is None under AppleLibm (the profile-free forms) and for a nonfinite fovy*DEG2RAD (docs/PERSPECTIVE.md)",
       "Orthographic fovy beyond the checked binary64 multiplier (about 2^97) and nonfinite fovy",
       "Cull distances set by rlSetClipPlanes",
       "Other compilers' contraction and optimization choices",
@@ -777,7 +777,7 @@
     "status": "profile-covered",
     "scope": "GetWorldToScreenEx at the Core screen size (GetScreenWidth/GetScreenHeight); None as the Ex form (perspective projections among them).",
     "gaps": [
-      "CAMERA_PERSPECTIVE is None: MatrixPerspective needs the blocked binary64 tan (docs/PERSPECTIVE.md)",
+      "CAMERA_PERSPECTIVE is None under AppleLibm (the profile-free forms; docs/PERSPECTIVE.md)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:GetWorldToScreen",
@@ -786,9 +786,9 @@
   "GetWorldToScreenEx": {
     "jonlib": "Camera.world_to_screen_ex_for / Camera.world_to_screen_ex",
     "status": "profile-covered",
-    "scope": "Maybe<Vector2> for orthographic and other non-perspective cameras: binary64 aspect and orthographic span through the checked binary64 helpers, view and projection transforms, perspective division and the screen mapping; sizes 1..INT_MAX; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
+    "scope": "Maybe<Vector2> for perspective (MatrixPerspective with the profile's M.Libm.tan; the ray starts at the camera position), orthographic and other cameras: binary64 aspect and orthographic span through the checked binary64 helpers, view and projection transforms, perspective division and the screen mapping; sizes 1..INT_MAX; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
     "gaps": [
-      "CAMERA_PERSPECTIVE is None: MatrixPerspective's binary64 tan is blocked (docs/PERSPECTIVE.md)",
+      "CAMERA_PERSPECTIVE is None under AppleLibm (the profile-free forms) and for a nonfinite fovy*DEG2RAD (docs/PERSPECTIVE.md)",
       "Orthographic fovy beyond the checked binary64 multiplier (about 2^97) and nonfinite fovy",
       "Cull distances set by rlSetClipPlanes",
       "Other compilers' contraction and optimization choices",

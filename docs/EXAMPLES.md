@@ -6,7 +6,7 @@ when `examples/<name>.bend` exists and the `examples` gate replays it against
 the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger; **waiting** otherwise.
 
-Totals: 212 examples; 13 ported, 129 ready, 70 waiting.
+Totals: 212 examples; 13 ported, 130 ready, 69 waiting.
 
 ## APIs that unblock the most examples
 
@@ -177,7 +177,7 @@ Totals: 212 examples; 13 ported, 129 ready, 70 waiting.
 | `textures_textured_curve` | textures | ready |  |
 | `textures_sprite_stacking` | textures | ready |  |
 | `textures_cellular_automata` | textures | ready |  |
-| `textures_framebuffer_rendering` | textures | waiting | `MatrixPerspective` |
+| `textures_framebuffer_rendering` | textures | ready |  |
 | `text_sprite_fonts` | text | ready |  |
 | `text_font_spritefont` | text | ready |  |
 | `text_font_filters` | text | ready |  |
@@ -212,7 +212,7 @@ Totals: 212 examples; 13 ported, 129 ready, 70 waiting.
 | `models_yaw_pitch_roll` | models | ready |  |
 | `models_waving_cubes` | models | ready |  |
 | `models_heightmap_rendering` | models | ready |  |
-| `models_skybox_rendering` | models | waiting | `GetShaderLocation`, `LoadShader`, `MatrixPerspective`, `SetShaderValue`, `UnloadShader`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlGetCullDistanceFar`, `rlGetCullDistanceNear`, `rlLoadFramebuffer`, `rlLoadTextureCubemap`, `rlLoadTextureDepth`, `rlSetUniformMatrix`, `rlUnloadFramebuffer` |
+| `models_skybox_rendering` | models | waiting | `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlGetCullDistanceFar`, `rlGetCullDistanceNear`, `rlLoadFramebuffer`, `rlLoadTextureCubemap`, `rlLoadTextureDepth`, `rlSetUniformMatrix`, `rlUnloadFramebuffer` |
 | `models_textured_cube` | models | ready |  |
 | `models_animation_gpu_skinning` | models | waiting | `LoadModelAnimations`, `LoadShader`, `UnloadModelAnimations`, `UnloadShader`, `UpdateModelAnimation` |
 | `models_bone_socket` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |

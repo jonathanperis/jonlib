@@ -55,6 +55,14 @@ class HarnessTests(unittest.TestCase):
                 for invalid in ('@unsafe\ndef hidden() -> U32:\n  0\n','import "hidden.c"\n'):
                     math.write_text(invalid)
                     with self.assertRaises(ValueError):source_gate()
+                math.write_text('import Base\n')
+                (root/'src/lgpl').mkdir()
+                kernel=root/'src/lgpl/kernel.bend'
+                kernel.write_text('import Base\nimport ../helper.bend as H\nimport ./table.bend as T\n')
+                self.assertEqual(set(source_gate()),{'jonlib.bend','jonmath.bend','src/lgpl/kernel.bend'})
+                for invalid in ('import ../../../outside.bend as O\n','import /tmp/x.bend as X\n','import 0xabc/main.bend as P\n'):
+                    kernel.write_text(invalid)
+                    with self.assertRaises(ValueError):source_gate()
 
     def test_inflate_chunk_protocol_rejects_incomplete_results(self):
         encoded=lambda rows:'\n'.join(json.dumps(row) for row in rows)

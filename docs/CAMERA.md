@@ -10,8 +10,9 @@ camera/screen-space part of `rcore.c` (altered Bend adaptations; zlib,
 ## API
 
 Every query has a `_for` variant taking the arithmetic profile
-(`M.Uncontracted{}` or `M.Fused{}`, below) and, where `sinf`, `cosf` or
-`atan2f` is involved, the `M.Libm` profile. The convenience forms use
+(`M.Uncontracted{}` or `M.Fused{}`, below) and, where `sinf`, `cosf`,
+`atan2f` or the binary64 `tan` of perspective projections is involved, the
+`M.Libm` profile. The convenience forms use
 `M.Uncontracted{}` and `M.AppleLibm{}`, like the collision queries.
 
 | raylib | Jonlib | Result |
@@ -27,22 +28,23 @@ Every query has a `_for` variant taking the arithmetic profile
 | `CameraPitch` | `Camera.pitch_for(arithmetic, libm, camera, angle, lock_view, around_target, rotate_up)` | `Maybe<Camera3D>` |
 | `CameraRoll` | `Camera.roll_for(arithmetic, libm, camera, angle)` | `Maybe<Camera3D>` |
 | `GetCameraViewMatrix` | `Camera.view_matrix_for(arithmetic, camera)` | `M.Matrix` (`MatrixLookAt`) |
-| `GetCameraProjectionMatrix` | `Camera.projection_matrix(camera, aspect)` | `Maybe<M.Matrix>` |
+| `GetCameraProjectionMatrix` | `Camera.projection_matrix_for(libm, camera, aspect)` | `Maybe<M.Matrix>` |
 | `GetCameraMatrix` | `Camera.matrix_for(arithmetic, camera)` | `M.Matrix` (`MatrixLookAt`) |
 | `GetCameraMatrix2D` | `Camera.matrix_2d_for(arithmetic, libm, camera2d)` | `Maybe<M.Matrix>` |
 | `GetWorldToScreen2D` | `Camera.world_to_screen_2d_for(arithmetic, libm, position, camera2d)` | `Maybe<M.Vector2>` |
 | `GetScreenToWorld2D` | `Camera.screen_to_world_2d_for(arithmetic, libm, position, camera2d)` | `Maybe<M.Vector2>` |
-| `GetWorldToScreenEx` | `Camera.world_to_screen_ex_for(arithmetic, position, camera, width, height)` | `Maybe<M.Vector2>` |
-| `GetScreenToWorldRayEx` | `Camera.screen_to_world_ray_ex_for(arithmetic, position, camera, width, height)` | `Maybe<J.Ray>` |
+| `GetWorldToScreenEx` | `Camera.world_to_screen_ex_for(arithmetic, libm, position, camera, width, height)` | `Maybe<M.Vector2>` |
+| `GetScreenToWorldRayEx` | `Camera.screen_to_world_ray_ex_for(arithmetic, libm, position, camera, width, height)` | `Maybe<J.Ray>` |
 | `UpdateCameraPro` | `Camera.update_pro_for(arithmetic, libm, camera, movement, rotation, zoom)` | `Maybe<Camera3D>` |
 | `UpdateCamera` | `Camera.update_for(arithmetic, libm, core, camera, mode)` | `Maybe<Camera3D>` (reads the `Core`'s input and frame time) |
-| `GetWorldToScreen` | `Camera.world_to_screen_for(arithmetic, position, camera, core)` | `Maybe<M.Vector2>` (`GetWorldToScreenEx` at the `Core`'s screen size) |
-| `GetScreenToWorldRay` | `Camera.screen_to_world_ray_for(arithmetic, position, camera, core)` | `Maybe<J.Ray>` (`GetScreenToWorldRayEx` at the screen size) |
+| `GetWorldToScreen` | `Camera.world_to_screen_for(arithmetic, libm, position, camera, core)` | `Maybe<M.Vector2>` (`GetWorldToScreenEx` at the `Core`'s screen size) |
+| `GetScreenToWorldRay` | `Camera.screen_to_world_ray_for(arithmetic, libm, position, camera, core)` | `Maybe<J.Ray>` (`GetScreenToWorldRayEx` at the screen size) |
 
 The convenience names drop `_for` and the profile arguments
 (`Camera.forward(camera)`, `Camera.pitch(camera, angle, lock_view,
 around_target, rotate_up)`, `Camera.world_to_screen_ex(position, camera,
-width, height)`, ...); `Camera.projection_matrix` has no profile argument.
+width, height)`, `Camera.projection_matrix(camera, aspect)`, ...); under
+their `M.AppleLibm{}` every perspective projection is `None`.
 Angles are radians, except `UpdateCameraPro`'s degrees and `Camera2D.rotation`.
 Screen sizes are `U32` values standing for C `int`s.
 
@@ -108,6 +110,10 @@ The algorithms keep the reference order and edge behavior:
   ([BINARY64.md](BINARY64.md)) before the F32 casts. The cull distances are
   rlgl's defaults, `0.05` and `4000.0` (raylib's `rlSetClipPlanes` state is not
   modelled).
+- `CAMERA_PERSPECTIVE` (0) is `MatrixPerspective(fovy*DEG2RAD, aspect, 0.05,
+  4000.0)` with the F32 product `fovy*DEG2RAD` and the profile's binary64 `tan`
+  (`M.Libm.tan`, [PERSPECTIVE.md](PERSPECTIVE.md)); a perspective ray starts at
+  the camera position.
 - Projection values other than `CAMERA_PERSPECTIVE` (0) and
   `CAMERA_ORTHOGRAPHIC` (1) give the identity projection, as in raylib.
 
@@ -152,13 +158,14 @@ where every libm returns the signed zero and one.
 Jonlib returns `None` where it has no verified implementation of the native
 result:
 
-- **Perspective projections.** `GetCameraProjectionMatrix`,
+- **Perspective projections under AppleLibm.** `GetCameraProjectionMatrix`,
   `GetWorldToScreenEx` and `GetScreenToWorldRayEx` with `CAMERA_PERSPECTIVE`
-  need `MatrixPerspective`'s binary64 `tan(fovY*0.5)` for `fovY` the binary32
-  `fovy*DEG2RAD`, which is blocked: an exhaustive comparison over every
-  binary32 `fovY` found the native tangent incorrectly rounded for 23.7% of
-  them on macOS and 0.13% on glibc 2.39/2.41, so no correctly rounded (or
-  other) tangent is substituted ([PERSPECTIVE.md](PERSPECTIVE.md)).
+  need `MatrixPerspective`'s binary64 `tan(fovY*0.5)`, whose native rounding
+  reaches the matrix. The glibc profiles reproduce glibc's x86_64 `tan`
+  exactly (an LGPL-2.1+ module); Apple's is unpublished and misrounds 23.7% of
+  raylib's arguments, so `AppleLibm` (the convenience forms' profile) answers
+  `None`, as do a nonfinite `fovy*DEG2RAD` or aspect
+  ([PERSPECTIVE.md](PERSPECTIVE.md)).
   `GetCameraViewMatrix`/`GetCameraMatrix` (`MatrixLookAt`) do not depend on the
   projection and are defined for every camera.
 - **Rotation angles.** The angle checked is the one actually rotated by: the
