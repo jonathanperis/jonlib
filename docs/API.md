@@ -139,8 +139,10 @@ without reordering. Their numeric and collision operations are documented in
 are the ray-query values of [COLLISION.md](COLLISION.md).
 `J.Mesh{vertex_count, triangle_count, vertices, texcoords, texcoords2, normals,
 tangents, colors, indices}` holds raylib's CPU mesh arrays as lists (`None`
-for `NULL`) and `J.Model{transform, meshes}` a transform and its meshes; see
-[MODELS.md](MODELS.md).
+for `NULL`), `J.Material{maps, params}` raylib's 12 `J.MaterialMap{texture,
+color, value}` maps (textures as `TextureInfo` structs) and
+`J.Model{transform, meshes, materials, mesh_material}` a transform, its meshes,
+materials and the material index of each mesh; see [MODELS.md](MODELS.md).
 `J.Camera3D{position, target, up, fovy, projection}` (raylib's `Camera` alias),
 `J.Camera2D{offset, target, rotation, zoom}` and
 `J.Transform{translation, rotation, scale}` are immutable value structs for the

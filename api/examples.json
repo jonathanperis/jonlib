@@ -3808,10 +3808,7 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModelEx",
-    "LoadModel",
     "LoadModelAnimations",
-    "SetMaterialTexture",
     "UnloadModelAnimations",
     "UpdateModelAnimation"
    ]
@@ -3819,7 +3816,7 @@
   {
    "name": "models_billboard_rendering",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -3840,10 +3837,7 @@
     "Vector3Distance",
     "WindowShouldClose"
    ],
-   "missing": [
-    "DrawBillboard",
-    "DrawBillboardPro"
-   ]
+   "missing": []
   },
   {
    "name": "models_box_collisions",
@@ -3878,7 +3872,7 @@
   {
    "name": "models_cubicmap_rendering",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -3905,14 +3899,12 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
-   "missing": [
-    "DrawModel"
-   ]
+   "missing": []
   },
   {
    "name": "models_first_person_maze",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -3943,9 +3935,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
-   "missing": [
-    "DrawModel"
-   ]
+   "missing": []
   },
   {
    "name": "models_geometric_shapes",
@@ -4017,7 +4007,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
     "GenMeshCylinder",
     "GenMeshKnot",
     "UploadMesh"
@@ -4069,15 +4058,13 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
-    "DrawSphereWires",
-    "LoadModel"
+    "DrawSphereWires"
    ]
   },
   {
    "name": "models_loading",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4110,10 +4097,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
-   "missing": [
-    "DrawModel",
-    "LoadModel"
-   ]
+   "missing": []
   },
   {
    "name": "models_loading_gltf",
@@ -4142,8 +4126,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
-    "LoadModel",
     "LoadModelAnimations",
     "UnloadModelAnimations",
     "UpdateModelAnimation"
@@ -4192,10 +4174,8 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
     "DrawSphereWires",
     "GetShaderLocation",
-    "LoadModel",
     "LoadShader",
     "SetShaderValue"
    ]
@@ -4232,8 +4212,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
-    "LoadModel",
     "LoadModelAnimations",
     "UnloadModelAnimations",
     "UpdateModelAnimation"
@@ -4303,8 +4281,6 @@
     "rlEnablePointMode"
    ],
    "missing": [
-    "DrawModel",
-    "DrawModelEx",
     "DrawSphereWires",
     "UploadMesh"
    ]
@@ -4344,7 +4320,7 @@
   {
    "name": "models_yaw_pitch_roll",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4369,10 +4345,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "DrawModel",
-    "LoadModel"
-   ]
+   "missing": []
   },
   {
    "name": "models_waving_cubes",
@@ -4399,7 +4372,7 @@
   {
    "name": "models_heightmap_rendering",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4424,9 +4397,7 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
-   "missing": [
-    "DrawModel"
-   ]
+   "missing": []
   },
   {
    "name": "models_skybox_rendering",
@@ -4498,7 +4469,6 @@
     "rlViewport"
    ],
    "missing": [
-    "DrawModel",
     "GetShaderLocation",
     "LoadShader",
     "MatrixPerspective",
@@ -4574,8 +4544,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
-    "LoadModel",
     "LoadModelAnimations",
     "LoadShader",
     "UnloadModelAnimations",
@@ -4618,8 +4586,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawMesh",
-    "LoadModel",
     "LoadModelAnimations",
     "UnloadModelAnimations",
     "UpdateModelAnimation"
@@ -4649,7 +4615,7 @@
   {
    "name": "models_basic_voxel",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4675,14 +4641,12 @@
     "UpdateCamera",
     "WindowShouldClose"
    ],
-   "missing": [
-    "DrawModel"
-   ]
+   "missing": []
   },
   {
    "name": "models_rotating_cube",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4705,9 +4669,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "DrawModelEx"
-   ]
+   "missing": []
   },
   {
    "name": "models_decals",
@@ -4770,16 +4732,13 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
-    "LoadMaterialDefault",
-    "LoadModel",
     "UploadMesh"
    ]
   },
   {
    "name": "models_directional_billboard",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4802,9 +4761,7 @@
     "Vector3Zero",
     "WindowShouldClose"
    ],
-   "missing": [
-    "DrawBillboardPro"
-   ]
+   "missing": []
   },
   {
    "name": "models_animation_blend_custom",
@@ -4846,8 +4803,6 @@
     "rlUpdateVertexBuffer"
    ],
    "missing": [
-    "DrawModel",
-    "LoadModel",
     "LoadModelAnimations",
     "LoadShader",
     "UnloadModelAnimations",
@@ -4890,8 +4845,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
-    "LoadModel",
     "LoadModelAnimations",
     "LoadShader",
     "UnloadModelAnimations",
@@ -4930,8 +4883,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
-    "LoadModel",
     "LoadModelAnimations",
     "UnloadModelAnimations",
     "UpdateModelAnimation"
@@ -5053,8 +5004,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
-    "LoadModel",
     "LoadShader",
     "UnloadShader"
    ]
@@ -5137,10 +5086,8 @@
    ],
    "missing": [
     "BeginShaderMode",
-    "DrawModel",
     "EndShaderMode",
     "GetShaderLocation",
-    "LoadModel",
     "LoadShader",
     "SetShaderValue",
     "UnloadShader"
@@ -5186,9 +5133,7 @@
    ],
    "missing": [
     "BeginShaderMode",
-    "DrawModel",
     "EndShaderMode",
-    "LoadModel",
     "LoadShader",
     "UnloadShader"
    ]
@@ -5566,7 +5511,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
     "GetShaderLocation",
     "LoadShader",
     "SetShaderValue",
@@ -5611,8 +5555,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
-    "DrawModelEx",
     "GetShaderLocation",
     "LoadShader",
     "SetShaderValue",
@@ -5689,10 +5631,7 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawMesh",
-    "DrawMeshInstanced",
     "GetShaderLocation",
-    "LoadMaterialDefault",
     "LoadShader",
     "SetShaderValue"
    ]
@@ -5780,11 +5719,9 @@
    ],
    "missing": [
     "BeginShaderMode",
-    "DrawModel",
     "DrawSphereWires",
     "EndShaderMode",
     "GetShaderLocation",
-    "LoadModel",
     "LoadShader",
     "SetShaderValue",
     "UnloadShader"
@@ -5893,8 +5830,6 @@
     "rlUnloadTexture"
    ],
    "missing": [
-    "DrawModel",
-    "DrawModelEx",
     "DrawSphereWires",
     "GetShaderLocation",
     "LoadShader",
@@ -6011,7 +5946,6 @@
    ],
    "missing": [
     "BeginShaderMode",
-    "DrawModel",
     "EndShaderMode",
     "GetShaderLocation",
     "LoadShader",
@@ -6077,9 +6011,7 @@
     "rlUnloadFramebuffer"
    ],
    "missing": [
-    "DrawModelEx",
     "GetShaderLocation",
-    "LoadModel",
     "LoadModelAnimations",
     "LoadShader",
     "SetShaderValue",
@@ -6137,7 +6069,6 @@
    ],
    "missing": [
     "BeginShaderMode",
-    "DrawModel",
     "EndShaderMode",
     "GetShaderLocation",
     "LoadShader",
@@ -6234,13 +6165,10 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
     "DrawSphereWires",
     "GetShaderLocation",
-    "LoadModel",
     "LoadShader",
     "SetShaderValue",
-    "UnloadMaterial",
     "UnloadShader"
    ]
   },
@@ -6287,8 +6215,6 @@
     "rlSetVertexAttribute"
    ],
    "missing": [
-    "DrawMesh",
-    "LoadMaterialDefault",
     "LoadShader",
     "UnloadShader",
     "rlLoadVertexBuffer",
@@ -6375,7 +6301,6 @@
    ],
    "missing": [
     "BeginShaderMode",
-    "DrawModel",
     "EndShaderMode",
     "GetShaderLocation",
     "LoadShader",
@@ -6541,9 +6466,7 @@
     "rlSetCullFace"
    ],
    "missing": [
-    "DrawModel",
     "GetShaderLocation",
-    "LoadModel",
     "LoadShader",
     "SetShaderValue",
     "UnloadShader"

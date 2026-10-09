@@ -1986,6 +1986,52 @@
     "macos"
    ],
    "minutes": 8
+  },
+  {
+   "id": "model-draw",
+   "title": "Materials (LoadMaterialDefault, IsMaterialValid, SetMaterialTexture, UnloadMaterial), IsModelValid, SetModelMeshMaterial, DrawMesh (OpenGL 1.1 vertex arrays into rlsw), DrawMeshInstanced, DrawModel(Ex), DrawModelWires(Ex) and DrawBillboard(Rec, Pro) byte for byte against the memory-platform raylib built with -ffp-contract=off and the host libm, with refusal contracts",
+   "run": [
+    "{python}",
+    "tools/model_draw_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 30
+  },
+  {
+   "id": "obj",
+   "title": "LoadModel (OBJ through tinyobj_loader_c with MTL materials and textures) and LoadMaterials word for word against the linked raylib with the host contraction (tryParseDouble fraction digits), with refusal contracts",
+   "run": [
+    "{python}",
+    "tools/obj_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 20
+  },
+  {
+   "id": "obj-uncontracted",
+   "title": "The OBJ and MTL cases against the raylib built with -ffp-contract=off (M.Uncontracted{})",
+   "run": [
+    "{python}",
+    "tools/obj_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}",
+    "--uncontracted-control"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 20
   }
  ]
 }

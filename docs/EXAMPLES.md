@@ -6,7 +6,7 @@ when `examples/<name>.bend` exists and the `examples` gate replays it against
 the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger; **waiting** otherwise.
 
-Totals: 212 examples; 13 ported, 120 ready, 79 waiting.
+Totals: 212 examples; 13 ported, 129 ready, 70 waiting.
 
 ## APIs that unblock the most examples
 
@@ -17,16 +17,13 @@ Totals: 212 examples; 13 ported, 120 ready, 79 waiting.
 | `GetShaderLocation` | 33 |
 | `SetShaderValue` | 32 |
 | `BeginShaderMode` | 30 |
-| `DrawModel` | 30 |
 | `EndShaderMode` | 30 |
-| `LoadModel` | 20 |
 | `CloseAudioDevice` | 12 |
 | `InitAudioDevice` | 12 |
 | `DrawSphereWires` | 10 |
 | `LoadModelAnimations` | 9 |
 | `UnloadModelAnimations` | 9 |
 | `UpdateModelAnimation` | 8 |
-| `DrawModelEx` | 6 |
 | `LoadSound` | 6 |
 | `PlaySound` | 6 |
 | `rlDisableFramebuffer` | 6 |
@@ -43,15 +40,18 @@ Totals: 212 examples; 13 ported, 120 ready, 79 waiting.
 | `UpdateMusicStream` | 4 |
 | `rlLoadTexture` | 4 |
 | `rlUnloadTexture` | 4 |
-| `DrawMesh` | 3 |
 | `GetMusicTimeLength` | 3 |
 | `GetMusicTimePlayed` | 3 |
 | `LoadAudioStream` | 3 |
-| `LoadMaterialDefault` | 3 |
 | `PauseMusicStream` | 3 |
 | `PlayAudioStream` | 3 |
 | `ResumeMusicStream` | 3 |
 | `SetAudioStreamBufferSizeDefault` | 3 |
+| `SetShaderValueTexture` | 3 |
+| `StopMusicStream` | 3 |
+| `UnloadAudioStream` | 3 |
+| `UploadMesh` | 3 |
+| `IsAudioStreamProcessed` | 2 |
 
 ## Examples
 
@@ -194,42 +194,42 @@ Totals: 212 examples; 13 ported, 120 ready, 79 waiting.
 | `text_inline_styling` | text | ready |  |
 | `text_words_alignment` | text | ready |  |
 | `text_strings_management` | text | ready |  |
-| `models_loading_iqm` | models | waiting | `DrawModelEx`, `LoadModel`, `LoadModelAnimations`, `SetMaterialTexture`, `UnloadModelAnimations`, `UpdateModelAnimation` |
-| `models_billboard_rendering` | models | waiting | `DrawBillboard`, `DrawBillboardPro` |
+| `models_loading_iqm` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
+| `models_billboard_rendering` | models | ready |  |
 | `models_box_collisions` | models | waiting | `DrawSphereWires` |
-| `models_cubicmap_rendering` | models | waiting | `DrawModel` |
-| `models_first_person_maze` | models | waiting | `DrawModel` |
+| `models_cubicmap_rendering` | models | ready |  |
+| `models_first_person_maze` | models | ready |  |
 | `models_geometric_shapes` | models | waiting | `DrawSphereWires` |
-| `models_mesh_generation` | models | waiting | `DrawModel`, `GenMeshCylinder`, `GenMeshKnot`, `UploadMesh` |
-| `models_mesh_picking` | models | waiting | `DrawModel`, `DrawSphereWires`, `LoadModel` |
-| `models_loading` | models | waiting | `DrawModel`, `LoadModel` |
-| `models_loading_gltf` | models | waiting | `DrawModel`, `LoadModel`, `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
-| `models_loading_vox` | models | waiting | `DrawModel`, `DrawSphereWires`, `GetShaderLocation`, `LoadModel`, `LoadShader`, `SetShaderValue` |
-| `models_loading_m3d` | models | waiting | `DrawModel`, `LoadModel`, `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
+| `models_mesh_generation` | models | waiting | `GenMeshCylinder`, `GenMeshKnot`, `UploadMesh` |
+| `models_mesh_picking` | models | waiting | `DrawSphereWires` |
+| `models_loading` | models | ready |  |
+| `models_loading_gltf` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
+| `models_loading_vox` | models | waiting | `DrawSphereWires`, `GetShaderLocation`, `LoadShader`, `SetShaderValue` |
+| `models_loading_m3d` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
 | `models_orthographic_projection` | models | waiting | `DrawSphereWires` |
-| `models_point_rendering` | models | waiting | `DrawModel`, `DrawModelEx`, `DrawSphereWires`, `UploadMesh` |
+| `models_point_rendering` | models | waiting | `DrawSphereWires`, `UploadMesh` |
 | `models_rlgl_solar_system` | models | ready |  |
-| `models_yaw_pitch_roll` | models | waiting | `DrawModel`, `LoadModel` |
+| `models_yaw_pitch_roll` | models | ready |  |
 | `models_waving_cubes` | models | ready |  |
-| `models_heightmap_rendering` | models | waiting | `DrawModel` |
-| `models_skybox_rendering` | models | waiting | `DrawModel`, `GetShaderLocation`, `LoadShader`, `MatrixPerspective`, `SetShaderValue`, `UnloadShader`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlGetCullDistanceFar`, `rlGetCullDistanceNear`, `rlLoadFramebuffer`, `rlLoadTextureCubemap`, `rlLoadTextureDepth`, `rlSetUniformMatrix`, `rlUnloadFramebuffer` |
+| `models_heightmap_rendering` | models | ready |  |
+| `models_skybox_rendering` | models | waiting | `GetShaderLocation`, `LoadShader`, `MatrixPerspective`, `SetShaderValue`, `UnloadShader`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlGetCullDistanceFar`, `rlGetCullDistanceNear`, `rlLoadFramebuffer`, `rlLoadTextureCubemap`, `rlLoadTextureDepth`, `rlSetUniformMatrix`, `rlUnloadFramebuffer` |
 | `models_textured_cube` | models | ready |  |
-| `models_animation_gpu_skinning` | models | waiting | `DrawModel`, `LoadModel`, `LoadModelAnimations`, `LoadShader`, `UnloadModelAnimations`, `UnloadShader`, `UpdateModelAnimation` |
-| `models_bone_socket` | models | waiting | `DrawMesh`, `LoadModel`, `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
+| `models_animation_gpu_skinning` | models | waiting | `LoadModelAnimations`, `LoadShader`, `UnloadModelAnimations`, `UnloadShader`, `UpdateModelAnimation` |
+| `models_bone_socket` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
 | `models_tesseract_view` | models | ready |  |
-| `models_basic_voxel` | models | waiting | `DrawModel` |
-| `models_rotating_cube` | models | waiting | `DrawModelEx` |
-| `models_decals` | models | waiting | `DrawModel`, `LoadMaterialDefault`, `LoadModel`, `UploadMesh` |
-| `models_directional_billboard` | models | waiting | `DrawBillboardPro` |
-| `models_animation_blend_custom` | models | waiting | `DrawModel`, `LoadModel`, `LoadModelAnimations`, `LoadShader`, `UnloadModelAnimations`, `UnloadShader`, `rlUpdateVertexBuffer` |
-| `models_animation_blending` | models | waiting | `DrawModel`, `LoadModel`, `LoadModelAnimations`, `LoadShader`, `UnloadModelAnimations`, `UnloadShader`, `UpdateModelAnimation`, `UpdateModelAnimationEx` |
-| `models_animation_timing` | models | waiting | `DrawModel`, `LoadModel`, `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
+| `models_basic_voxel` | models | ready |  |
+| `models_rotating_cube` | models | ready |  |
+| `models_decals` | models | waiting | `UploadMesh` |
+| `models_directional_billboard` | models | ready |  |
+| `models_animation_blend_custom` | models | waiting | `LoadModelAnimations`, `LoadShader`, `UnloadModelAnimations`, `UnloadShader`, `rlUpdateVertexBuffer` |
+| `models_animation_blending` | models | waiting | `LoadModelAnimations`, `LoadShader`, `UnloadModelAnimations`, `UnloadShader`, `UpdateModelAnimation`, `UpdateModelAnimationEx` |
+| `models_animation_timing` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
 | `shaders_ascii_rendering` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
 | `shaders_basic_lighting` | shaders | waiting | `BeginShaderMode`, `DrawSphereWires`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
-| `shaders_model_shader` | shaders | waiting | `DrawModel`, `LoadModel`, `LoadShader`, `UnloadShader` |
+| `shaders_model_shader` | shaders | waiting | `LoadShader`, `UnloadShader` |
 | `shaders_shapes_textures` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `LoadShader`, `UnloadShader` |
-| `shaders_custom_uniform` | shaders | waiting | `BeginShaderMode`, `DrawModel`, `EndShaderMode`, `GetShaderLocation`, `LoadModel`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
-| `shaders_postprocessing` | shaders | waiting | `BeginShaderMode`, `DrawModel`, `EndShaderMode`, `LoadModel`, `LoadShader`, `UnloadShader` |
+| `shaders_custom_uniform` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
+| `shaders_postprocessing` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `LoadShader`, `UnloadShader` |
 | `shaders_palette_switch` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValueV`, `UnloadShader` |
 | `shaders_raymarching_rendering` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
 | `shaders_texture_rendering` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
@@ -239,26 +239,26 @@ Totals: 212 examples; 13 ported, 120 ready, 79 waiting.
 | `shaders_mandelbrot_set` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
 | `shaders_color_correction` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
 | `shaders_eratosthenes_sieve` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `LoadShader`, `UnloadShader` |
-| `shaders_fog_rendering` | shaders | waiting | `DrawModel`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
-| `shaders_simple_mask` | shaders | waiting | `DrawModel`, `DrawModelEx`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
+| `shaders_fog_rendering` | shaders | waiting | `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
+| `shaders_simple_mask` | shaders | waiting | `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
 | `shaders_hot_reloading` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `GetFileModTime`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
-| `shaders_mesh_instancing` | shaders | waiting | `DrawMesh`, `DrawMeshInstanced`, `GetShaderLocation`, `LoadMaterialDefault`, `LoadShader`, `SetShaderValue` |
+| `shaders_mesh_instancing` | shaders | waiting | `GetShaderLocation`, `LoadShader`, `SetShaderValue` |
 | `shaders_multi_sample2d` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `SetShaderValueTexture`, `UnloadShader` |
-| `shaders_normalmap_rendering` | shaders | waiting | `BeginShaderMode`, `DrawModel`, `DrawSphereWires`, `EndShaderMode`, `GetShaderLocation`, `LoadModel`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
+| `shaders_normalmap_rendering` | shaders | waiting | `BeginShaderMode`, `DrawSphereWires`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
 | `shaders_spotlight_rendering` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
-| `shaders_deferred_rendering` | shaders | waiting | `DrawModel`, `DrawModelEx`, `DrawSphereWires`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader`, `rlBindFramebuffer`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlGetLocationUniform`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
+| `shaders_deferred_rendering` | shaders | waiting | `DrawSphereWires`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader`, `rlBindFramebuffer`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlGetLocationUniform`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
 | `shaders_hybrid_rendering` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
-| `shaders_texture_tiling` | shaders | waiting | `BeginShaderMode`, `DrawModel`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
-| `shaders_shadowmap_rendering` | shaders | waiting | `DrawModelEx`, `GetShaderLocation`, `LoadModel`, `LoadModelAnimations`, `LoadShader`, `SetShaderValue`, `SetShaderValueMatrix`, `UnloadModelAnimations`, `UnloadShader`, `UpdateModelAnimation`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTextureDepth`, `rlSetUniform`, `rlUnloadFramebuffer` |
-| `shaders_vertex_displacement` | shaders | waiting | `BeginShaderMode`, `DrawModel`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader`, `rlSetUniformSampler` |
+| `shaders_texture_tiling` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
+| `shaders_shadowmap_rendering` | shaders | waiting | `GetShaderLocation`, `LoadModelAnimations`, `LoadShader`, `SetShaderValue`, `SetShaderValueMatrix`, `UnloadModelAnimations`, `UnloadShader`, `UpdateModelAnimation`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTextureDepth`, `rlSetUniform`, `rlUnloadFramebuffer` |
+| `shaders_vertex_displacement` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader`, `rlSetUniformSampler` |
 | `shaders_depth_writing` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `LoadShader`, `UnloadShader`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
-| `shaders_basic_pbr` | shaders | waiting | `DrawModel`, `DrawSphereWires`, `GetShaderLocation`, `LoadModel`, `LoadShader`, `SetShaderValue`, `UnloadMaterial`, `UnloadShader` |
-| `shaders_lightmap_rendering` | shaders | waiting | `DrawMesh`, `LoadMaterialDefault`, `LoadShader`, `UnloadShader`, `rlLoadVertexBuffer`, `rlSetVertexAttribute` |
+| `shaders_basic_pbr` | shaders | waiting | `DrawSphereWires`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
+| `shaders_lightmap_rendering` | shaders | waiting | `LoadShader`, `UnloadShader`, `rlLoadVertexBuffer`, `rlSetVertexAttribute` |
 | `shaders_rounded_rectangle` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
-| `shaders_depth_rendering` | shaders | waiting | `BeginShaderMode`, `DrawModel`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `SetShaderValueTexture`, `UnloadShader`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
+| `shaders_depth_rendering` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `SetShaderValueTexture`, `UnloadShader`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
 | `shaders_game_of_life` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
 | `shaders_rlgl_compute` | shaders | waiting | `BeginShaderMode`, `EndShaderMode`, `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader`, `rlBindShaderBuffer`, `rlComputeShaderDispatch`, `rlLoadShader`, `rlLoadShaderBuffer`, `rlLoadShaderProgramCompute`, `rlUnloadShader`, `rlUnloadShaderBuffer`, `rlUnloadShaderProgram`, `rlUpdateShaderBuffer` |
-| `shaders_cel_shading` | shaders | waiting | `DrawModel`, `GetShaderLocation`, `LoadModel`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
+| `shaders_cel_shading` | shaders | waiting | `GetShaderLocation`, `LoadShader`, `SetShaderValue`, `UnloadShader` |
 | `audio_module_playing` | audio | waiting | `CloseAudioDevice`, `GetMusicTimeLength`, `GetMusicTimePlayed`, `InitAudioDevice`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `SetMusicPitch`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
 | `audio_music_stream` | audio | waiting | `CloseAudioDevice`, `GetMusicTimeLength`, `GetMusicTimePlayed`, `InitAudioDevice`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `SetMusicPan`, `SetMusicVolume`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
 | `audio_raw_stream` | audio | waiting | `CloseAudioDevice`, `InitAudioDevice`, `IsAudioStreamProcessed`, `LoadAudioStream`, `PlayAudioStream`, `SetAudioStreamBufferSizeDefault`, `SetAudioStreamPan`, `UnloadAudioStream`, `UpdateAudioStream` |

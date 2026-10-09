@@ -6,16 +6,16 @@
     "blocked": 22,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 468,
-    "partial": 1394
+    "not-started": 449,
+    "partial": 1413
   },
   "core_functions": {
     "total": 600,
     "blocked": 21,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 95,
-    "partial": 484
+    "not-started": 78,
+    "partial": 501
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 22,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 165,
-    "partial": 744
+    "not-started": 148,
+    "partial": 761
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 21,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 141,
-      "partial": 875
+      "not-started": 122,
+      "partial": 894
     },
     "raymath.h": {
       "total": 254,
@@ -108,8 +108,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 18,
-      "partial": 531
+      "not-started": 16,
+      "partial": 533
     },
     {
       "id": "numerics",
@@ -456,8 +456,8 @@
       "blocked": 4,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 13,
-      "partial": 37
+      "not-started": 2,
+      "partial": 48
     },
     {
       "id": "materials",
@@ -471,8 +471,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 6,
-      "partial": 0
+      "not-started": 0,
+      "partial": 6
     },
     {
       "id": "animation",

@@ -737,6 +737,12 @@ def Laws.mesh_cube_triangle_count(width, height, length):
 def Laws.mesh_poly_degenerate_empty(libm, radius):
   {==}
 
+def Laws.material_never_valid(material):
+  {==}
+
+def Laws.model_from_mesh_material(mesh):
+  {==}
+
 def Laws.window_ready(core):
   {==}
 

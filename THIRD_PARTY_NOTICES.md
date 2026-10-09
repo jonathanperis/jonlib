@@ -106,6 +106,12 @@ identify the original sources and their required attribution.
   and credits for exact text parity), GetRayCollisionMesh,
   GetModelBoundingBox, the 3D shape drawing functions and `rcore.c`'s
   BeginMode3D/EndMode3D; `src/par_shapes.bend` adapts par_shapes (below).
+  `src/mesh_draw.bend` and the same section adapt DrawMesh (its OpenGL 1.1
+  branch), DrawModel(Ex), DrawModelWires(Ex), DrawBillboard(Rec, Pro), the
+  material functions (LoadMaterialDefault, IsMaterialValid, UnloadMaterial,
+  SetMaterialTexture, SetModelMeshMaterial, IsModelValid) and LoadModel,
+  LoadOBJ, ProcessMaterialsOBJ and LoadMaterials; `src/obj.bend` adapts
+  tinyobj_loader_c (below).
 - Reference testing: `tools/conformance.py` builds a separate raylib executable
   from a locally supplied checkout. Raylib is not linked into the Jonlib runner.
 - API documentation: `api/reference.json`, generated `api/ledger.json` and
@@ -328,6 +334,20 @@ license are retained in [LICENSES/rlsw.txt](LICENSES/rlsw.txt).
   `par_shapes_remove_degenerate`, used by `GenMeshSphere`,
   `GenMeshHemiSphere` and `GenMeshTorus`. The qsort it calls is modeled as
   glibc's stable merge sort.
+
+## tinyobj_loader_c
+
+- Author: Syoyo Fujita and many contributors. Source:
+  <https://github.com/syoyo/tinyobjloader-c>, as vendored by the pinned raylib
+  commit in `src/external/tinyobj_loader_c.h` (with raylib's local changes).
+- License: MIT; the notice is retained in
+  [LICENSES/tinyobj_loader_c.txt](LICENSES/tinyobj_loader_c.txt).
+- `src/obj.bend` is an altered Bend adaptation of its OBJ line splitting,
+  `parseLine`, `tryParseDouble` (evaluated with Jonlib's checked binary64
+  helpers), `my_atoi`, `fixIndex`, triangulation, the djb2 material hash table,
+  the MTL parser (`tinyobj_parse_and_index_mtl_file`, `dynamic_fgets` line
+  semantics) and the shape construction, used by `Model.load_for` and
+  `Material.load_materials_for`.
 
 ## Arm numerical routines
 

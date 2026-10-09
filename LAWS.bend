@@ -1080,6 +1080,16 @@ law mesh_poly_degenerate_empty:
   for radius: F32
   {J.Mesh.gen_poly_for(libm, 2, radius) == Some{J.Mesh.empty()} : Maybe<J.Mesh>}
 
+# Materials on the software renderer: no material is valid (every shader id
+# is 0); LoadModelFromMesh's model has the default material and uses it.
+law material_never_valid:
+  for material: J.Material
+  {J.Material.is_valid(material) == False{} : Bool}
+
+law model_from_mesh_material:
+  for mesh: J.Mesh
+  {J.Model.from_mesh(mesh) == J.Model{M.Matrix.identity(), [mesh], [J.Material.load_default()], [0]} : J.Model}
+
 # Window state on the memory platform (docs/DRIVER.md#window-state): a Core is
 # a ready window that is never resized; SetWindowState and the toggles leave
 # it unchanged; one monitor; no dropped files; the flags SetConfigFlags sets

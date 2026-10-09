@@ -4468,23 +4468,27 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "MaterialMap",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The map's Texture2D struct as a TextureInfo (the texels stay with the Texture value), color and value.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Textures are owned values: a material refers to them by id and draws take the textures as a list",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/MODELS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -4496,7 +4500,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive MaterialMap semantics from the linked source, add a reference fixture, then implement MaterialMap.",
+      "next_step": "Close documented gaps and unverified gates for MaterialMap.",
       "priority": 100
     },
     {
@@ -4526,23 +4530,27 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Material",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The 12 maps and four params; the shader is not modeled (every shader id is 0 on the software renderer).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Shaders are not modeled",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "docs/MODELS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -4554,7 +4562,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive Material semantics from the linked source, add a reference fixture, then implement Material.",
+      "next_step": "Close documented gaps and unverified gates for Material.",
       "priority": 100
     },
     {
@@ -4818,9 +4826,10 @@
       "status": "partial",
       "jonlib": "Model",
       "mapping_state": "implemented",
-      "scope": "transform and meshes.",
+      "scope": "transform, meshes, materials and meshMaterial (U32 words for C ints).",
       "gaps": [
-        "Materials, meshMaterial, skeleton and bind pose are not modeled"
+        "Skeleton, bind pose and bone matrices are not modeled",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
@@ -55256,23 +55265,33 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.load_model",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Model.load_for / Model.load",
+      "mapping_state": "implemented",
+      "scope": "OBJ (case-insensitive extension) through raylib's tinyobj_loader_c: lines, commands, tryParseDouble in binary64 (contraction profiled), relative indices, fan triangulation, the djb2 material table, shapes, LoadOBJ's mesh split, MTL materials and their textures (returned with the model); other extensions and OBJ files that do not open give the empty model with the default material.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "IQM, glTF/GLB, VOX and M3D files are UnsupportedFileType",
+        "Undefined reference behavior (asserts, int overflow, reads outside tinyobj's arrays, byte casts, table insertions that loop) and binary64 steps outside the checked helpers' domains are refused",
+        "Texture files Jonlib's LoadImage does not decode are refused",
+        "Paths and names must be printable ASCII (OBJ paths without backslashes); animations are not modeled",
+        "Performance: not measured",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/obj_probe.py",
+        "docs/MODELS.md",
+        "src/obj.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55290,7 +55309,7 @@
       ],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive LoadModel semantics from the linked source, add a reference fixture, then implement Model.load_model.",
+      "next_step": "Close documented gaps and unverified gates for LoadModel.",
       "priority": 622
     },
     {
@@ -55319,9 +55338,9 @@
       "status": "partial",
       "jonlib": "Model.from_mesh",
       "mapping_state": "implemented",
-      "scope": "A Model holding the mesh with an identity transform.",
+      "scope": "A Model holding the mesh with an identity transform, Material.load_default() and mesh material 0.",
       "gaps": [
-        "Materials, bones and animation are not modeled",
+        "Bones and animation are not modeled",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -55335,6 +55354,7 @@
       },
       "evidence": [
         "tools/mesh_probe.py",
+        "tools/model_draw_probe.py",
         "docs/MODELS.md",
         "src/mesh.bend"
       ],
@@ -55380,23 +55400,29 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.is_model_valid",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Model.is_valid",
+      "mapping_state": "implemented",
+      "scope": "Meshes, materials and mesh materials present and no mesh attribute without a GPU buffer: on the software renderer (no buffers) only models whose meshes have no attributes are valid.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Meshes are assumed uploaded (raylib dereferences a NULL vboId otherwise)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_draw_probe.py",
+        "tools/obj_probe.py",
+        "docs/MODELS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55413,7 +55439,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive IsModelValid semantics from the linked source, add a reference fixture, then implement Model.is_model_valid.",
+      "next_step": "Close documented gaps and unverified gates for IsModelValid.",
       "priority": 622
     },
     {
@@ -55442,9 +55468,9 @@
       "status": "partial",
       "jonlib": "Model.unload",
       "mapping_state": "implemented",
-      "scope": "Consumes the model.",
+      "scope": "Consumes the model (meshes, materials, mesh materials); the textures its materials reference stay loaded, as in raylib (the caller owns them).",
       "gaps": [
-        "Materials and GPU buffers are not modeled",
+        "GPU buffers are not modeled",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -55565,23 +55591,29 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_model",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.model",
+      "mapping_state": "implemented",
+      "scope": "DrawModelEx about (0, 1, 0) by 0 degrees with a uniform scale.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "As DrawModelEx",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_draw_probe.py",
+        "docs/MODELS.md",
+        "src/mesh_draw.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55599,7 +55631,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawModel semantics from the linked source, add a reference fixture, then implement Model.draw_model.",
+      "next_step": "Close documented gaps and unverified gates for DrawModel.",
       "priority": 622
     },
     {
@@ -55625,23 +55657,31 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_model_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.model_ex_for / Draw.model_ex",
+      "mapping_state": "implemented",
+      "scope": "Model transform times scale, MatrixRotate(axis, angle*DEG2RAD) (M.Libm profile) and translation (uncontracted), DrawMesh of each mesh with its material tinted per channel (c*t)/255.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "sinf/cosf arguments outside the profile's verified set and mesh material indices beyond the materials are refused",
+        "Bone matrices and shaders are not modeled",
+        "Performance: not measured",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_draw_probe.py",
+        "docs/MODELS.md",
+        "src/mesh_draw.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55659,7 +55699,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawModelEx semantics from the linked source, add a reference fixture, then implement Model.draw_model_ex.",
+      "next_step": "Close documented gaps and unverified gates for DrawModelEx.",
       "priority": 622
     },
     {
@@ -55685,23 +55725,29 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_model_wires",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.model_wires",
+      "mapping_state": "implemented",
+      "scope": "rlEnableWireMode, DrawModel, rlDisableWireMode.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "As DrawModelEx",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_draw_probe.py",
+        "docs/MODELS.md",
+        "src/mesh_draw.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55719,7 +55765,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawModelWires semantics from the linked source, add a reference fixture, then implement Model.draw_model_wires.",
+      "next_step": "Close documented gaps and unverified gates for DrawModelWires.",
       "priority": 622
     },
     {
@@ -55745,23 +55791,29 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_model_wires_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.model_wires_ex_for / Draw.model_wires_ex",
+      "mapping_state": "implemented",
+      "scope": "rlEnableWireMode, DrawModelEx, rlDisableWireMode.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "As DrawModelEx",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_draw_probe.py",
+        "docs/MODELS.md",
+        "src/mesh_draw.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55779,7 +55831,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawModelWiresEx semantics from the linked source, add a reference fixture, then implement Model.draw_model_wires_ex.",
+      "next_step": "Close documented gaps and unverified gates for DrawModelWiresEx.",
       "priority": 622
     },
     {
@@ -55871,23 +55923,29 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_billboard",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.billboard",
+      "mapping_state": "implemented",
+      "scope": "DrawBillboardRec of the whole texture with size (scale*fabsf(width/height), scale).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "As DrawBillboardPro",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_draw_probe.py",
+        "docs/MODELS.md",
+        "src/mesh_draw.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55906,7 +55964,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawBillboard semantics from the linked source, add a reference fixture, then implement Model.draw_billboard.",
+      "next_step": "Close documented gaps and unverified gates for DrawBillboard.",
       "priority": 622
     },
     {
@@ -55932,23 +55990,29 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_billboard_rec",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.billboard_rec",
+      "mapping_state": "implemented",
+      "scope": "DrawBillboardPro with up (0, 1, 0), origin size*0.5 and rotation 0.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "As DrawBillboardPro",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_draw_probe.py",
+        "docs/MODELS.md",
+        "src/mesh_draw.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -55969,7 +56033,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawBillboardRec semantics from the linked source, add a reference fixture, then implement Model.draw_billboard_rec.",
+      "next_step": "Close documented gaps and unverified gates for DrawBillboardRec.",
       "priority": 622
     },
     {
@@ -55995,23 +56059,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_billboard_pro",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.billboard_pro_for / Draw.billboard_pro",
+      "mapping_state": "implemented",
+      "scope": "Right from MatrixLookAt (uncontracted), flips for negative sizes, origin offset, Vector3RotateByAxisAngle for nonzero rotations (M.Libm profile), one textured RL_QUADS.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Rotations whose half angle is outside the profile's verified sinf/cosf set are refused",
+        "Perspective cameras for the surrounding BeginMode3D are refused (docs/PERSPECTIVE.md)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_draw_probe.py",
+        "docs/MODELS.md",
+        "src/mesh_draw.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56032,7 +56103,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawBillboardPro semantics from the linked source, add a reference fixture, then implement Model.draw_billboard_pro.",
+      "next_step": "Close documented gaps and unverified gates for DrawBillboardPro.",
       "priority": 622
     },
     {
@@ -56238,23 +56309,31 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_mesh",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.mesh",
+      "mapping_state": "implemented",
+      "scope": "The OpenGL 1.1 branch through rlsw's swDrawArrays/swDrawElements: diffuse texture bound for meshes with texcoords and a positive id (from the given textures), push, rlMultMatrixf, diffuse color, per-vertex texcoord/color/position as GL_TRIANGLES, pop, texture disabled; byte for byte against the memory platform.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Inconsistent lists, indices not below the vertex count, color values above 255, a diffuse id missing from the textures and a primitive being recorded are refused",
+        "Normals, tangents and texcoords2 are not used by the software renderer",
+        "Performance: not measured",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_draw_probe.py",
+        "docs/MODELS.md",
+        "src/mesh_draw.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56272,7 +56351,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawMesh semantics from the linked source, add a reference fixture, then implement Model.draw_mesh.",
+      "next_step": "Close documented gaps and unverified gates for DrawMesh.",
       "priority": 622
     },
     {
@@ -56298,23 +56377,28 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.draw_mesh_instanced",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Draw.mesh_instanced",
+      "mapping_state": "implemented",
+      "scope": "No-op: compiled only for OpenGL 3.3/ES2.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_draw_probe.py",
+        "docs/MODELS.md",
+        "src/mesh_draw.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56332,7 +56416,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive DrawMeshInstanced semantics from the linked source, add a reference fixture, then implement Model.draw_mesh_instanced.",
+      "next_step": "Close documented gaps and unverified gates for DrawMeshInstanced.",
       "priority": 622
     },
     {
@@ -57324,23 +57408,29 @@
       "milestone": "materials",
       "phase": 5,
       "sequence": 23,
-      "status": "not-started",
-      "jonlib": "Material.load_materials",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Material.load_materials_for / Material.load_materials",
+      "mapping_state": "implemented",
+      "scope": "A .mtl file's materials through tinyobj_parse_mtl_file and ProcessMaterialsOBJ (texture names from the working directory); other extensions and files that do not open give none.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "As LoadModel's MTL handling",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/obj_probe.py",
+        "docs/MODELS.md",
+        "src/obj.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -57354,7 +57444,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Material/map assignment, defaults, imports and rendered results, with explicit shared-resource ownership.",
-      "next_step": "Derive LoadMaterials semantics from the linked source, add a reference fixture, then implement Material.load_materials.",
+      "next_step": "Close documented gaps and unverified gates for LoadMaterials.",
       "priority": 623
     },
     {
@@ -57380,23 +57470,28 @@
       "milestone": "materials",
       "phase": 5,
       "sequence": 23,
-      "status": "not-started",
-      "jonlib": "Material.load_material_default",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Material.load_default",
+      "mapping_state": "implemented",
+      "scope": "12 zeroed maps; diffuse texture (Texture2D){ 0, 1, 1, 1, 7 } (rlGetTextureIdDefault is 0 under OpenGL 1.1), diffuse and specular WHITE.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_draw_probe.py",
+        "tools/obj_probe.py",
+        "docs/MODELS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -57410,7 +57505,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Material/map assignment, defaults, imports and rendered results, with explicit shared-resource ownership.",
-      "next_step": "Derive LoadMaterialDefault semantics from the linked source, add a reference fixture, then implement Material.load_material_default.",
+      "next_step": "Close documented gaps and unverified gates for LoadMaterialDefault.",
       "priority": 623
     },
     {
@@ -57436,23 +57531,28 @@
       "milestone": "materials",
       "phase": 5,
       "sequence": 23,
-      "status": "not-started",
-      "jonlib": "Material.is_material_valid",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Material.is_valid",
+      "mapping_state": "implemented",
+      "scope": "False on the software renderer: it needs shader.id > 0 and every shader id is 0 there (checked natively).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Shaders are not modeled",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_draw_probe.py",
+        "docs/MODELS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -57467,7 +57567,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Material/map assignment, defaults, imports and rendered results, with explicit shared-resource ownership.",
-      "next_step": "Derive IsMaterialValid semantics from the linked source, add a reference fixture, then implement Material.is_material_valid.",
+      "next_step": "Close documented gaps and unverified gates for IsMaterialValid.",
       "priority": 623
     },
     {
@@ -57493,23 +57593,30 @@
       "milestone": "materials",
       "phase": 5,
       "sequence": 23,
-      "status": "not-started",
-      "jonlib": "Material.unload_material",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Material.unload",
+      "mapping_state": "implemented",
+      "scope": "Unloads, in map order, every map texture with a nonzero id, taken from the given textures (ids return to the pool; others handed back); a repeated id is an rlsw no-op.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "An id missing from the textures (raylib would unload a texture Jonlib does not hold) or a primitive being recorded is refused",
+        "Shaders are not modeled",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_draw_probe.py",
+        "docs/MODELS.md",
+        "src/mesh_draw.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -57523,7 +57630,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Material/map assignment, defaults, imports and rendered results, with explicit shared-resource ownership.",
-      "next_step": "Derive UnloadMaterial semantics from the linked source, add a reference fixture, then implement Material.unload_material.",
+      "next_step": "Close documented gaps and unverified gates for UnloadMaterial.",
       "priority": 623
     },
     {
@@ -57549,23 +57656,29 @@
       "milestone": "materials",
       "phase": 5,
       "sequence": 23,
-      "status": "not-started",
-      "jonlib": "Material.set_material_texture",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Material.set_texture",
+      "mapping_state": "implemented",
+      "scope": "Stores the texture struct (TextureInfo) in the map; the previous one is not unloaded.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Map types of 12 or more (raylib writes past the maps) are None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_draw_probe.py",
+        "docs/MODELS.md",
+        "src/mesh_draw.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -57580,7 +57693,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Material/map assignment, defaults, imports and rendered results, with explicit shared-resource ownership.",
-      "next_step": "Derive SetMaterialTexture semantics from the linked source, add a reference fixture, then implement Material.set_material_texture.",
+      "next_step": "Close documented gaps and unverified gates for SetMaterialTexture.",
       "priority": 623
     },
     {
@@ -57606,23 +57719,29 @@
       "milestone": "materials",
       "phase": 5,
       "sequence": 23,
-      "status": "not-started",
-      "jonlib": "Material.set_model_mesh_material",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Model.set_mesh_material",
+      "mapping_state": "implemented",
+      "scope": "Mesh ids at or beyond the mesh count and non-negative material ids at or beyond the material count change nothing; negative material ids are stored (drawing that mesh is refused).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Negative mesh ids (raylib writes before the array) are None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_draw_probe.py",
+        "docs/MODELS.md",
+        "src/mesh_draw.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -57636,7 +57755,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Material/map assignment, defaults, imports and rendered results, with explicit shared-resource ownership.",
-      "next_step": "Derive SetModelMeshMaterial semantics from the linked source, add a reference fixture, then implement Material.set_model_mesh_material.",
+      "next_step": "Close documented gaps and unverified gates for SetModelMeshMaterial.",
       "priority": 623
     },
     {
