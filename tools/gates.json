@@ -1579,6 +1579,20 @@
    "diagnostic": true
   },
   {
+   "id": "libm-survey",
+   "title": "Host tan/asinf against correct rounding (CORE-MATH, exact oracle) on the MatrixPerspective, BeginMode3D and QuaternionToEuler argument sets, every 64th input (diagnostic; --stride 1 is exhaustive)",
+   "run": [
+    "{python}",
+    "tools/libm_survey.py"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 2,
+   "diagnostic": true
+  },
+  {
    "id": "inverse-trig",
    "title": "Inverse-trig libm record (diagnostic)",
    "run": [
@@ -1742,6 +1756,21 @@
     "macos"
    ],
    "minutes": 2
+  },
+  {
+   "id": "quaternion-euler",
+   "title": "Libm.asin (the glibc 2.41 correctly rounded asinf; Apple and glibc 2.39 below their exhaustively verified bounds) and QuaternionToEuler against raymath on the pinned glibc 2.41 asinf and the profile atan2f kernels, with the host asinf below its bound and host raymath on Darwin arm64 and Linux x86_64 glibc 2.39",
+   "run": [
+    "{python}",
+    "tools/quaternion_euler_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 4
   },
   {
    "id": "spline-cubic",
