@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and it includes no unported companion
 library (`raygui.h`); **waiting** otherwise.
 
-Totals: 212 examples; 25 ported, 105 ready, 82 waiting.
+Totals: 212 examples; 27 ported, 103 ready, 82 waiting.
 
 ## APIs that unblock the most examples
 
@@ -62,7 +62,7 @@ Totals: 212 examples; 25 ported, 105 ready, 82 waiting.
 | `core_delta_time` | core | ready |  |
 | `core_input_keys` | core | ported |  |
 | `core_input_mouse` | core | ported |  |
-| `core_input_mouse_wheel` | core | ready |  |
+| `core_input_mouse_wheel` | core | ported |  |
 | `core_input_gamepad` | core | ready |  |
 | `core_input_multitouch` | core | ready |  |
 | `core_input_gestures` | core | ready |  |
@@ -88,7 +88,7 @@ Totals: 212 examples; 25 ported, 105 ready, 82 waiting.
 | `core_random_values` | core | ready |  |
 | `core_storage_values` | core | ready |  |
 | `core_vr_simulator` | core | waiting | `BeginShaderMode`, `BeginVrStereoMode`, `EndShaderMode`, `EndVrStereoMode`, `GetShaderLocation`, `LoadShader`, `LoadVrStereoConfig`, `SetShaderValue`, `UnloadShader`, `UnloadVrStereoConfig` |
-| `core_scissor_test` | core | ready |  |
+| `core_scissor_test` | core | ported |  |
 | `core_basic_screen_manager` | core | ready |  |
 | `core_custom_frame_control` | core | ready |  |
 | `core_smooth_pixelperfect` | core | ready |  |

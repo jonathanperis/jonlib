@@ -87,7 +87,7 @@
   {
    "name": "core_input_mouse_wheel",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -867,7 +867,7 @@
   {
    "name": "core_scissor_test",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginScissorMode",
