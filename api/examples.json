@@ -1563,7 +1563,7 @@
   {
    "name": "shapes_rectangle_scaling",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",

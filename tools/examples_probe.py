@@ -89,6 +89,7 @@ EXAMPLES = {
     'shapes_lines_bezier': ('shapes/shapes_lines_bezier.c', 'Ex.setup(core, frame)'),
     'shapes_colors_palette': ('shapes/shapes_colors_palette.c', 'Ex.setup(core, frame)'),
     'shapes_logo_raylib_anim': ('shapes/shapes_logo_raylib_anim.c', 'Ex.setup(core, frame)'),
+    'shapes_rectangle_scaling': ('shapes/shapes_rectangle_scaling.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -168,6 +169,10 @@ def scripts():
         # Every state: the blinking box (120 frames), both bar pairs (60 each), ten letters and the
         # fade to state 4, then R replays from state 0.
         script('shapes_logo_raylib_anim', 'replay', [quick() for _ in range(420)] + [quick([key(KEY_R)]), quick([key(KEY_R, False)]), quick(), quick(), quick()]),
+        script('shapes_rectangle_scaling', 'drag', [quick(), quick([mouse_at(250, 150)]), quick([mouse_at(295, 175)]), quick([button(0)]),
+                                                    quick([mouse_at(500, 300)]), slow([mouse_at(50, 50)]), quick([mouse_at(900, 600)]),
+                                                    quick([mouse_at(640, 333)]), quick([button(0, False)]), quick([mouse_at(400, 200)]),
+                                                    quick([button(0)]), quick([button(0, False)])]),
     ]
     return [timed(item) for item in out]
 
