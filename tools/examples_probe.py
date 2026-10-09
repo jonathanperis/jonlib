@@ -70,7 +70,7 @@ TARGET = 1.0 / 60
 
 (KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 18)
 KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_A, KEY_H, KEY_R, KEY_S = 262, 263, 264, 265, 65, 72, 82, 83
-KEY_G, KEY_SPACE, KEY_C = 71, 32, 67
+KEY_G, KEY_SPACE, KEY_C, KEY_ENTER = 71, 32, 67, 257
 
 # name: (raylib source, setup expression, State is Data, needs the logo image)
 EXAMPLES = {
@@ -96,6 +96,8 @@ EXAMPLES = {
     'shapes_lines_drawing': ('shapes/shapes_lines_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_rlgl_triangle': ('shapes/shapes_rlgl_triangle.c', 'Ex.setup(core, frame)'),
     'shapes_starfield_effect': ('shapes/shapes_starfield_effect.c', 'Ex.setup(seed, core, frame)'),
+    'text_writing_anim': ('text/text_writing_anim.c', 'Ex.setup(core, frame)'),
+    'text_format_text': ('text/text_format_text.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -219,6 +221,10 @@ def scripts():
         script('shapes_starfield_effect', 'fly', [quick(), quick([(MOUSE_WHEEL, 0, 9, 0)])] + [quick() for _ in range(30)]
                + [quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), slow([(MOUSE_WHEEL, 0, -30, 0)]), quick(),
                   quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)])], seed=0x57A2),
+        # SPACE reveals the whole message (72 characters, 8 counts a frame), ENTER restarts it.
+        script('text_writing_anim', 'reveal', [quick() for _ in range(10)] + [quick([key(KEY_SPACE)])] + [quick() for _ in range(48)]
+               + [quick([key(KEY_SPACE, False)]), quick([key(KEY_ENTER)]), quick([key(KEY_ENTER, False)]), slow(), quick()]),
+        script('text_format_text', 'frames', [quick(), slow(), quick(), slow([key(KEY_SPACE)])]),
     ]
     return [timed(item) for item in out]
 
