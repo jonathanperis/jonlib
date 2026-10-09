@@ -2829,7 +2829,7 @@
   {
    "name": "textures_raw_data",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",

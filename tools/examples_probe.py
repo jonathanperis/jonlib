@@ -115,13 +115,14 @@ EXAMPLES = {
     'textures_to_image': ('textures/textures_to_image.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_blend_modes': ('textures/textures_blend_modes.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_npatch_drawing': ('textures/textures_npatch_drawing.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_raw_data': ('textures/textures_raw_data.c', 'Ex.setup(RESOURCES, core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
 # examples/<module>/ directory) and the flags SetConfigFlags sets before InitWindow.
 IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_background_scrolling', 'models_rotating_cube',
             'textures_image_loading', 'textures_image_rotate', 'textures_to_image', 'textures_blend_modes',
-            'textures_npatch_drawing'}
+            'textures_npatch_drawing', 'textures_raw_data'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -300,6 +301,7 @@ def scripts():
         # Every clamp: sizes below 1 (mouse up-left), widths beyond 300 (far right) and ordinary stretches.
         script('textures_npatch_drawing', 'stretch', [quick(), quick([mouse_at(100, 100)]), quick([mouse_at(500, 300)]), slow([mouse_at(790, 440)]),
                                                       quick([mouse_at(300, 200)]), quick([mouse_at(181, 175)])]),
+        script('textures_raw_data', 'frames', [quick(), slow()]),
     ]
     return [timed(item) for item in out]
 
