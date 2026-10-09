@@ -2407,7 +2407,7 @@
   {
    "name": "shapes_rlgl_triangle",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointCircle",

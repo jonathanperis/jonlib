@@ -94,12 +94,13 @@ EXAMPLES = {
     'shapes_dashed_line': ('shapes/shapes_dashed_line.c', 'Ex.setup(core, frame)'),
     'shapes_mouse_trail': ('shapes/shapes_mouse_trail.c', 'Ex.setup(core, frame)'),
     'shapes_lines_drawing': ('shapes/shapes_lines_drawing.c', 'Ex.setup(core, frame)'),
+    'shapes_rlgl_triangle': ('shapes/shapes_rlgl_triangle.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
 # examples/<module>/ directory) and the flags SetConfigFlags sets before InitWindow.
 IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_background_scrolling'}
-CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32}
+CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32}
 
 
 # -----------------------------------------------------------------------------
@@ -201,6 +202,14 @@ def scripts():
                                                  quick([(MOUSE_WHEEL, 0, 3, 0)]), quick([button(0), mouse_at(200, 300)]), quick([mouse_at(260, 330)]),
                                                  quick([button(0, False), (MOUSE_WHEEL, 0, -20, 0)]), quick([button(2)]), quick([button(2, False)]),
                                                  quick([mouse_at(500, 100)])]),
+        # Drag a vertex, toggle lines, then drag vertex 1 past vertex 2 (the triangle turns back-facing) with the
+        # culling disabled and enabled again, and reset with R.
+        script('shapes_rlgl_triangle', 'drag', [quick(), quick([mouse_at(402, 152)]), quick([button(0)]), quick([mouse_at(420, 120)]),
+                                                quick([mouse_at(450, 100)]), quick([button(0, False)]), quick([key(KEY_SPACE)]),
+                                                quick([key(KEY_SPACE, False)]), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False), mouse_at(300, 300)]),
+                                                quick([button(0)]), quick([mouse_at(600, 320)]), quick([button(0, False), key(KEY_RIGHT)]),
+                                                quick([key(KEY_RIGHT, False)]), quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]),
+                                                quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_R)]), quick([key(KEY_R, False)])]),
     ]
     return [timed(item) for item in out]
 
