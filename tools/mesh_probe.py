@@ -656,9 +656,7 @@ def main():
         options, name, arith, libm = (), 'mesh', contraction(), gradient_reference()
     probe = probekit.Probe(name, args, raylib_options=options)
     if args.gnu_libm:
-        model_object = mp.GNU_DIR / 'glibc_model.o'
-        probekit.run(['clang', '-std=c11', '-O2', '-ffp-contract=off', '-c', source, '-o', model_object])
-        extra = (str(model_object),)
+        extra = mp.gnu_objects(probe, source)
     if options:
         fused = fp.fused_instructions(probe.library)
         if any(fused.values()):
