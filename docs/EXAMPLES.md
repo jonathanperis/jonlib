@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and it includes no unported companion
 library (`raygui.h`); **waiting** otherwise.
 
-Totals: 212 examples; 29 ported, 101 ready, 82 waiting.
+Totals: 212 examples; 30 ported, 100 ready, 82 waiting.
 
 ## APIs that unblock the most examples
 
@@ -59,7 +59,7 @@ Totals: 212 examples; 29 ported, 101 ready, 82 waiting.
 | Example | Category | Status | Missing APIs |
 |---|---|---|---|
 | `core_basic_window` | core | ported |  |
-| `core_delta_time` | core | ready |  |
+| `core_delta_time` | core | ported |  |
 | `core_input_keys` | core | ported |  |
 | `core_input_mouse` | core | ported |  |
 | `core_input_mouse_wheel` | core | ported |  |

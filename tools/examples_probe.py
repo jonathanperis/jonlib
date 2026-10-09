@@ -103,6 +103,7 @@ EXAMPLES = {
     'core_scissor_test': ('core/core_scissor_test.c', 'Ex.setup(core, frame)'),
     'core_random_values': ('core/core_random_values.c', 'Ex.setup(seed, core, frame)'),
     'core_render_texture': ('core/core_render_texture.c', 'Ex.setup(core, frame)'),
+    'core_delta_time': ('core/core_delta_time.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -247,6 +248,10 @@ def scripts():
         script('core_random_values', 'seed', [quick(), slow()], seed=42),
         # The ball bounces off the right edge at frame 26 and the bottom at frame 32 while the texture turns.
         script('core_render_texture', 'spin', [quick() for _ in range(34)] + [slow(), quick()]),
+        # The wheel changes the target (61, unlimited at 0 or below, then 90); R resets the circles. Targets below 60
+        # are not scripted: the frozen scripted clock would never reach raylib's later busy-wait destination.
+        script('core_delta_time', 'targets', [quick(), slow(), quick([(MOUSE_WHEEL, 0, 1, 0)]), quick(), slow(), quick([(MOUSE_WHEEL, 0, -70, 0)]),
+                                              quick(), slow(), quick([(MOUSE_WHEEL, 0, 90, 0)]), quick(), slow([key(KEY_R)]), quick([key(KEY_R, False)])]),
     ]
     return [timed(item) for item in out]
 
