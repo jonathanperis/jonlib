@@ -109,15 +109,16 @@ EXAMPLES = {
     'core_world_screen': ('core/core_world_screen.c', 'Ex.setup(core, frame)'),
     'core_3d_picking': ('core/core_3d_picking.c', 'Ex.setup(core, frame)'),
     'models_basic_voxel': ('models/models_basic_voxel.c', 'Ex.setup(core, frame)'),
+    'models_rotating_cube': ('models/models_rotating_cube.c', 'Ex.setup(RESOURCES, core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
 # examples/<module>/ directory) and the flags SetConfigFlags sets before InitWindow.
-IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_background_scrolling'}
+IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_background_scrolling', 'models_rotating_cube'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
-PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen', 'core_3d_picking', 'models_basic_voxel'}
+PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen', 'core_3d_picking', 'models_basic_voxel', 'models_rotating_cube'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32}
 
@@ -281,6 +282,7 @@ def scripts():
         # the screen center and the camera steps forward.
         script('models_basic_voxel', 'dig', [quick(), quick([mouse_at(400, 240)]), quick([button(0)]), quick([button(0, False), mouse_at(420, 236)]),
                                              slow([key(87)]), quick([key(87, False)])]),
+        script('models_rotating_cube', 'turn', [quick() for _ in range(6)] + [slow(), quick()]),
     ]
     return [timed(item) for item in out]
 
