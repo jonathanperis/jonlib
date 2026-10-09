@@ -93,11 +93,10 @@ and CORE-MATH's correctly rounded `cr_tan`
 The pinned builds equal their models on both sets (0 differences), and with
 `GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX2,-FMA,-FMA4` the native function equals
 the SSE2 model on every begin3d argument (`begin3d-sse2.json`), so the profile
-is the CPU's ifunc variant, not the library version alone. glibc 2.41 (Debian trixie, `2.41-12+deb13u4`, the same CPU)
-equals the FMA model on the 2,158 hardest perspective arguments (every
-argument where the FMA and SSE2 variants differ, and every one glibc
-misrounds), run in a container from the same survey binary (the exhaustive 2.41
-run of both sets is in progress and will be recorded here).
+is the CPU's ifunc variant, not the library version alone. glibc 2.41 (Debian trixie, `2.41-12+deb13u4`, the same CPU, run in a
+container from the same survey binary) equals the FMA model on every argument
+of both sets too (0 differences; `glibc241-perspective-fma.json`,
+`glibc241-begin3d-fma.json`), so both glibc profiles are verified natively.
 
 The Bend kernel was compared with the FMA model on 14,488 arguments of both
 sets (a stratified sample of every binary32 exponent plus the 2,158 hard
