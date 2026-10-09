@@ -117,6 +117,7 @@ EXAMPLES = {
     'textures_npatch_drawing': ('textures/textures_npatch_drawing.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_raw_data': ('textures/textures_raw_data.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_bunnymark': ('textures/textures_bunnymark.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
+    'textures_image_generation': ('textures/textures_image_generation.c', 'Ex.setup(seed, M.LIBM{}, core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -128,7 +129,7 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
 PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen', 'core_3d_picking', 'models_basic_voxel', 'models_rotating_cube'}
-SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'textures_bunnymark'}
+SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'textures_bunnymark', 'textures_image_generation'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32}
 
 
@@ -307,6 +308,8 @@ def scripts():
         script('textures_bunnymark', 'bunnies', [quick(), quick([mouse_at(400, 225), button(0)]), quick([mouse_at(150, 300)]), quick([button(0, False)]),
                                                  slow(), quick(), quick([key(80)]), quick([key(80, False)]), quick(), quick([key(80)]),
                                                  quick([key(80, False)]), slow()], seed=0xB077),
+        # Every procedural texture in turn (left clicks), back to the first.
+        script('textures_image_generation', 'cycle', [quick()] + [f([button(0, i % 2 == 0)]) for i, f in enumerate([quick] * 18)], seed=0x6E1),
     ]
     return [timed(item) for item in out]
 

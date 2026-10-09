@@ -2681,7 +2681,7 @@
   {
    "name": "textures_image_generation",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
