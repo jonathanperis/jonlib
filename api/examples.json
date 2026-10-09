@@ -1708,7 +1708,7 @@
   {
    "name": "shapes_easings_rectangles",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
