@@ -88,6 +88,7 @@ EXAMPLES = {
     'shapes_bouncing_ball': ('shapes/shapes_bouncing_ball.c', 'Ex.setup(core, frame)'),
     'shapes_lines_bezier': ('shapes/shapes_lines_bezier.c', 'Ex.setup(core, frame)'),
     'shapes_colors_palette': ('shapes/shapes_colors_palette.c', 'Ex.setup(core, frame)'),
+    'shapes_logo_raylib_anim': ('shapes/shapes_logo_raylib_anim.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -164,14 +165,23 @@ def scripts():
         script('shapes_colors_palette', 'hover', [quick(), quick([mouse_at(50, 100)]), slow(), quick([key(KEY_SPACE)]), quick([mouse_at(400, 250)]),
                                                   quick([key(KEY_SPACE, False)]), quick([mouse_at(129, 120)]), quick([mouse_at(130, 120)]),
                                                   quick([mouse_at(790, 440)]), quick([mouse_at(-5, -5)])]),
+        # Every state: the blinking box (120 frames), both bar pairs (60 each), ten letters and the
+        # fade to state 4, then R replays from state 0.
+        script('shapes_logo_raylib_anim', 'replay', [quick() for _ in range(420)] + [quick([key(KEY_R)]), quick([key(KEY_R, False)]), quick(), quick(), quick()]),
     ]
     return [timed(item) for item in out]
+
+
+# The C driver's script capacity (MAX_FRAMES, MAX_EVENTS in C_DRIVER below).
+MAX_FRAMES, MAX_EVENTS = 1024, 64
 
 
 def timed(item):
     """Scripted clocks: BeginDrawing after the frame's gap, EndDrawing after its
     draw time, and the end of a SetTargetFPS wait exactly at raylib's
     destination (binary64, as rcore.c's EndDrawing and WaitTime compute it)."""
+    if len(item['frames']) >= MAX_FRAMES or any(len(events) > MAX_EVENTS for events, _, _ in item['frames']):
+        raise ProbeFailure(f'examples: {item["name"]} exceeds the driver\'s {MAX_FRAMES - 1} frames or {MAX_EVENTS} events per frame')
     previous = item['start']
     frames = []
     for events, gap, draw in item['frames']:
@@ -247,8 +257,10 @@ double JonlibProbeTime(void) { return probe_clock; }
 int JonlibProbeUsleep(unsigned int us) { (void)us; probe_clock = probe_after; return 0; }
 int JonlibProbeNanosleep(const struct timespec *req, struct timespec *rem) { (void)req; (void)rem; probe_clock = probe_after; return 0; }
 
-typedef struct { double begin, end, after; int count; int events[64][4]; } Frame;
-static Frame frames[64];
+#define MAX_FRAMES 1024
+#define MAX_EVENTS 64
+typedef struct { double begin, end, after; int count; int events[MAX_EVENTS][4]; } Frame;
+static Frame frames[MAX_FRAMES];
 static int frame_count = 0, frame_index = 0, width = 0, height = 0;
 static unsigned seed = 0;
 static double start = 0.0;
@@ -263,9 +275,10 @@ static void load_script(void)
     unsigned long long b0, b1, b2;
     if (fscanf(f, "seed %u start %llu", &seed, &b0) != 2) exit(3);
     start = dbl(b0);
-    while (frame_count < 64 && fscanf(f, " frame %llu %llu %llu %d", &b0, &b1, &b2, &frames[frame_count].count) == 4)
+    while (fscanf(f, " frame %llu %llu %llu %d", &b0, &b1, &b2, &frames[frame_count].count) == 4)
     {
         Frame *fr = &frames[frame_count];
+        if (frame_count == MAX_FRAMES - 1 || fr->count > MAX_EVENTS) exit(5);
         fr->begin = dbl(b0); fr->end = dbl(b1); fr->after = dbl(b2);
         for (int i = 0; i < fr->count; i++)
             if (fscanf(f, " event %d %d %d %d", &fr->events[i][0], &fr->events[i][1], &fr->events[i][2], &fr->events[i][3]) != 4) exit(4);

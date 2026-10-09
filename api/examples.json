@@ -1540,7 +1540,7 @@
   {
    "name": "shapes_logo_raylib_anim",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
