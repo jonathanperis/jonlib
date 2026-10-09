@@ -5021,23 +5021,49 @@
     "api_id": "raylib:function:DrawGrid",
     "milestone": "models"
   },
+  "LoadModel": {
+    "jonlib": "Model.load_for / Model.load",
+    "status": "profile-covered",
+    "scope": "OBJ (case-insensitive extension) through raylib's tinyobj_loader_c: lines, commands, tryParseDouble in binary64 (contraction profiled), relative indices, fan triangulation, the djb2 material table, shapes, LoadOBJ's mesh split, MTL materials and their textures (returned with the model); other extensions and OBJ files that do not open give the empty model with the default material.",
+    "gaps": [
+      "IQM, glTF/GLB, VOX and M3D files are UnsupportedFileType",
+      "Undefined reference behavior (asserts, int overflow, reads outside tinyobj's arrays, byte casts, table insertions that loop) and binary64 steps outside the checked helpers' domains are refused",
+      "Texture files Jonlib's LoadImage does not decode are refused",
+      "Paths and names must be printable ASCII (OBJ paths without backslashes); animations are not modeled",
+      "Performance: not measured",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadModel",
+    "milestone": "models"
+  },
   "LoadModelFromMesh": {
     "jonlib": "Model.from_mesh",
     "status": "profile-covered",
-    "scope": "A Model holding the mesh with an identity transform.",
+    "scope": "A Model holding the mesh with an identity transform, Material.load_default() and mesh material 0.",
     "gaps": [
-      "Materials, bones and animation are not modeled",
+      "Bones and animation are not modeled",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:LoadModelFromMesh",
     "milestone": "models"
   },
+  "IsModelValid": {
+    "jonlib": "Model.is_valid",
+    "status": "profile-covered",
+    "scope": "Meshes, materials and mesh materials present and no mesh attribute without a GPU buffer: on the software renderer (no buffers) only models whose meshes have no attributes are valid.",
+    "gaps": [
+      "Meshes are assumed uploaded (raylib dereferences a NULL vboId otherwise)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsModelValid",
+    "milestone": "models"
+  },
   "UnloadModel": {
     "jonlib": "Model.unload",
     "status": "profile-covered",
-    "scope": "Consumes the model.",
+    "scope": "Consumes the model (meshes, materials, mesh materials); the textures its materials reference stay loaded, as in raylib (the caller owns them).",
     "gaps": [
-      "Materials and GPU buffers are not modeled",
+      "GPU buffers are not modeled",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:UnloadModel",
@@ -5056,6 +5082,52 @@
     "api_id": "raylib:function:GetModelBoundingBox",
     "milestone": "collision"
   },
+  "DrawModel": {
+    "jonlib": "Draw.model",
+    "status": "profile-covered",
+    "scope": "DrawModelEx about (0, 1, 0) by 0 degrees with a uniform scale.",
+    "gaps": [
+      "As DrawModelEx",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:DrawModel",
+    "milestone": "models"
+  },
+  "DrawModelEx": {
+    "jonlib": "Draw.model_ex_for / Draw.model_ex",
+    "status": "profile-covered",
+    "scope": "Model transform times scale, MatrixRotate(axis, angle*DEG2RAD) (M.Libm profile) and translation (uncontracted), DrawMesh of each mesh with its material tinted per channel (c*t)/255.",
+    "gaps": [
+      "sinf/cosf arguments outside the profile's verified set and mesh material indices beyond the materials are refused",
+      "Bone matrices and shaders are not modeled",
+      "Performance: not measured",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:DrawModelEx",
+    "milestone": "models"
+  },
+  "DrawModelWires": {
+    "jonlib": "Draw.model_wires",
+    "status": "profile-covered",
+    "scope": "rlEnableWireMode, DrawModel, rlDisableWireMode.",
+    "gaps": [
+      "As DrawModelEx",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:DrawModelWires",
+    "milestone": "models"
+  },
+  "DrawModelWiresEx": {
+    "jonlib": "Draw.model_wires_ex_for / Draw.model_wires_ex",
+    "status": "profile-covered",
+    "scope": "rlEnableWireMode, DrawModelEx, rlDisableWireMode.",
+    "gaps": [
+      "As DrawModelEx",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:DrawModelWiresEx",
+    "milestone": "models"
+  },
   "DrawBoundingBox": {
     "jonlib": "Draw.bounding_box",
     "status": "profile-covered",
@@ -5068,6 +5140,40 @@
     "api_id": "raylib:function:DrawBoundingBox",
     "milestone": "models"
   },
+  "DrawBillboard": {
+    "jonlib": "Draw.billboard",
+    "status": "profile-covered",
+    "scope": "DrawBillboardRec of the whole texture with size (scale*fabsf(width/height), scale).",
+    "gaps": [
+      "As DrawBillboardPro",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:DrawBillboard",
+    "milestone": "models"
+  },
+  "DrawBillboardRec": {
+    "jonlib": "Draw.billboard_rec",
+    "status": "profile-covered",
+    "scope": "DrawBillboardPro with up (0, 1, 0), origin size*0.5 and rotation 0.",
+    "gaps": [
+      "As DrawBillboardPro",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:DrawBillboardRec",
+    "milestone": "models"
+  },
+  "DrawBillboardPro": {
+    "jonlib": "Draw.billboard_pro_for / Draw.billboard_pro",
+    "status": "profile-covered",
+    "scope": "Right from MatrixLookAt (uncontracted), flips for negative sizes, origin offset, Vector3RotateByAxisAngle for nonzero rotations (M.Libm profile), one textured RL_QUADS.",
+    "gaps": [
+      "Rotations whose half angle is outside the profile's verified sinf/cosf set are refused",
+      "Perspective cameras for the surrounding BeginMode3D are refused (docs/PERSPECTIVE.md)",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:DrawBillboardPro",
+    "milestone": "models"
+  },
   "UnloadMesh": {
     "jonlib": "Mesh.unload",
     "status": "profile-covered",
@@ -5077,6 +5183,29 @@
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:UnloadMesh",
+    "milestone": "models"
+  },
+  "DrawMesh": {
+    "jonlib": "Draw.mesh",
+    "status": "profile-covered",
+    "scope": "The OpenGL 1.1 branch through rlsw's swDrawArrays/swDrawElements: diffuse texture bound for meshes with texcoords and a positive id (from the given textures), push, rlMultMatrixf, diffuse color, per-vertex texcoord/color/position as GL_TRIANGLES, pop, texture disabled; byte for byte against the memory platform.",
+    "gaps": [
+      "Inconsistent lists, indices not below the vertex count, color values above 255, a diffuse id missing from the textures and a primitive being recorded are refused",
+      "Normals, tangents and texcoords2 are not used by the software renderer",
+      "Performance: not measured",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:DrawMesh",
+    "milestone": "models"
+  },
+  "DrawMeshInstanced": {
+    "jonlib": "Draw.mesh_instanced",
+    "status": "profile-covered",
+    "scope": "No-op: compiled only for OpenGL 3.3/ES2.",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:DrawMeshInstanced",
     "milestone": "models"
   },
   "GetMeshBoundingBox": {
@@ -5230,6 +5359,72 @@
     ],
     "api_id": "raylib:function:GenMeshCubicmap",
     "milestone": "models"
+  },
+  "LoadMaterials": {
+    "jonlib": "Material.load_materials_for / Material.load_materials",
+    "status": "profile-covered",
+    "scope": "A .mtl file's materials through tinyobj_parse_mtl_file and ProcessMaterialsOBJ (texture names from the working directory); other extensions and files that do not open give none.",
+    "gaps": [
+      "As LoadModel's MTL handling",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadMaterials",
+    "milestone": "materials"
+  },
+  "LoadMaterialDefault": {
+    "jonlib": "Material.load_default",
+    "status": "profile-covered",
+    "scope": "12 zeroed maps; diffuse texture (Texture2D){ 0, 1, 1, 1, 7 } (rlGetTextureIdDefault is 0 under OpenGL 1.1), diffuse and specular WHITE.",
+    "gaps": [
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:LoadMaterialDefault",
+    "milestone": "materials"
+  },
+  "IsMaterialValid": {
+    "jonlib": "Material.is_valid",
+    "status": "profile-covered",
+    "scope": "False on the software renderer: it needs shader.id > 0 and every shader id is 0 there (checked natively).",
+    "gaps": [
+      "Shaders are not modeled",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsMaterialValid",
+    "milestone": "materials"
+  },
+  "UnloadMaterial": {
+    "jonlib": "Material.unload",
+    "status": "profile-covered",
+    "scope": "Unloads, in map order, every map texture with a nonzero id, taken from the given textures (ids return to the pool; others handed back); a repeated id is an rlsw no-op.",
+    "gaps": [
+      "An id missing from the textures (raylib would unload a texture Jonlib does not hold) or a primitive being recorded is refused",
+      "Shaders are not modeled",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:UnloadMaterial",
+    "milestone": "materials"
+  },
+  "SetMaterialTexture": {
+    "jonlib": "Material.set_texture",
+    "status": "profile-covered",
+    "scope": "Stores the texture struct (TextureInfo) in the map; the previous one is not unloaded.",
+    "gaps": [
+      "Map types of 12 or more (raylib writes past the maps) are None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetMaterialTexture",
+    "milestone": "materials"
+  },
+  "SetModelMeshMaterial": {
+    "jonlib": "Model.set_mesh_material",
+    "status": "profile-covered",
+    "scope": "Mesh ids at or beyond the mesh count and non-negative material ids at or beyond the material count change nothing; negative material ids are stored (drawing that mesh is refused).",
+    "gaps": [
+      "Negative mesh ids (raylib writes before the array) are None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:SetModelMeshMaterial",
+    "milestone": "materials"
   },
   "CheckCollisionSpheres": {
     "jonlib": "Collision.spheres_for / Collision.spheres",

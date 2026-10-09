@@ -560,7 +560,7 @@ def act(action: U32, +aw: +List<U32>, +path: String, +mesh: J.Mesh) -> String:
     case 3: file.text(J.Mesh.obj_text(mesh))
     case 4: file.text(code.of(U32.is_eq(wu(0n, aw), 1), mesh, path))
     case 5: ray.text(J.Collision.ray_mesh_for(arith(), J.Ray{wv3(0n, aw), wv3(3n, aw)}, mesh, wmatrix(word.drop(6n, aw))))
-    case _: box.text(J.Model.bounding_box_for(arith(), libm(), J.Model{wmatrix(aw), [mesh, model.plane()]}))
+    case _: box.text(J.Model.bounding_box_for(arith(), libm(), J.Model{wmatrix(aw), [mesh, model.plane()], [J.Material.load_default()], [0, 0]}))
 
 def run.with(+action: U32, +aw: +List<U32>, +path: String, m: Maybe<J.Mesh>) -> String:
   match m:
