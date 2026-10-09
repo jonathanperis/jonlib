@@ -550,7 +550,7 @@
   {
    "name": "core_3d_picking",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
