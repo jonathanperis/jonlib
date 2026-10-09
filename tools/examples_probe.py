@@ -107,6 +107,7 @@ EXAMPLES = {
     'core_3d_camera_mode': ('core/core_3d_camera_mode.c', 'Ex.setup(core, frame)'),
     'core_3d_camera_free': ('core/core_3d_camera_free.c', 'Ex.setup(core, frame)'),
     'core_world_screen': ('core/core_world_screen.c', 'Ex.setup(core, frame)'),
+    'core_3d_picking': ('core/core_3d_picking.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -115,7 +116,7 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
-PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'}
+PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen', 'core_3d_picking'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32}
 
@@ -268,6 +269,11 @@ def scripts():
         script('core_world_screen', 'orbit', [quick(), quick([mouse_at(420, 230)]), quick([mouse_at(470, 215)]), slow([key(87)]), quick(),
                                               quick([key(87, False), key(68)]), quick(), quick([key(68, False), key(83), mouse_at(380, 240)]),
                                               quick([key(83, False), key(65)]), quick([key(65, False)]), quick()]),
+        # Select the cube, deselect it, miss it (the ray stays drawn), then toggle first-person controls and look around.
+        script('core_3d_picking', 'pick', [quick(), quick([mouse_at(400, 220)]), quick([button(0)]), quick([button(0, False)]), quick([button(0)]),
+                                           quick([button(0, False), mouse_at(120, 90)]), quick([button(0)]), quick([button(0, False)]),
+                                           quick([button(1)]), quick([button(1, False), mouse_at(140, 100)]), quick([mouse_at(170, 95)]),
+                                           slow([key(87)]), quick([key(87, False), button(1)]), quick([button(1, False)]), quick()]),
     ]
     return [timed(item) for item in out]
 
