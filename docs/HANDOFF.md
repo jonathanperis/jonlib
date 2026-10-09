@@ -61,12 +61,19 @@ projection/screen functions; port glibc 2.39 `e_asinf.c` (LGPL) to extend
 examples.
 
 ### `wip/models-drawing-obj`
-Agent WIP: Material/MaterialMap, DrawMesh/DrawModel paths, OBJ loading via
-tinyobj, `tools/model_draw_probe.py` and `tools/obj_probe.py` with gates. Its
-status at interruption was "updating MODELS.md verification/gaps": rebase on
-`feature/audio-waves`, run both probes (`--jobs 1`), unit tests,
-`check_project.py`, `PROOF.bend`, `api_plan.py build`, `examples_plan.py
-refresh`, then merge.
+76ac541, rebased on `feature/audio-waves` at 9cf1748. Adds Material/MaterialMap
+and their functions, DrawMesh/DrawModel(Ex)/DrawModelWires(Ex)/DrawBillboard*
+(rlsw vertex-array paths; DrawMeshInstanced is a GL3-only no-op), OBJ+MTL
+loading via a tinyobj_loader_c port (`src/obj.bend`, binary64 number parsing
+with a contraction profile), `tools/model_draw_probe.py` (27 scenes) and
+`tools/obj_probe.py` (40 cases), gates `model-draw`, `obj`, `obj-uncontracted`.
+Verified: type checks, PROOF, unit tests, check_project, and the JavaScript
+lane of both probes (all match). **Not yet verified:** the full CPU-1/CPU-2
+runs (compiles timed out under load; about 2.5 min on a quiet machine), the
+`obj-uncontracted` gate, and the `mesh`/`models`/`frame`/`texture` probes
+after `tools/mesh_probe.py` changed for the new `Model` constructor. Then merge
+`feature/audio-waves` in, rebuild the plans and merge. Gaps: IQM/glTF/VOX/M3D
+unsupported, OBJ faces of 6+ vertices refused (tinyobj asserts).
 
 ## Next steps, in order
 
