@@ -160,7 +160,7 @@ and check the build flags.
 - Inputs outside a recorded scope, or exhaustive coverage of a scope: gates are
   finite unless a page states an exhaustive domain.
 - Desktop windows and desktop input against a native platform build: the
-  `examples` gate replays the ported examples headless (memory platform);
+  `examples-<category>` gates replay the ported examples headless (memory platform);
   interactive runs of the desktop driver are diagnostics
   ([DRIVER.md](DRIVER.md)). Audio devices, browsers, Windows, Android, CUDA or
   any platform not exercised by a gate.

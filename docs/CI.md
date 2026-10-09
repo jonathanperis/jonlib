@@ -8,12 +8,13 @@ API ledger and documentation links).
 
 **Conformance** runs every gate in [`tools/gates.json`](../tools/gates.json) on
 `ubuntu-24.04` and `macos-15`. `tools/run_gates.py` splits the manifest into
-eight duration-balanced shards per host. Hosted macOS allows five concurrent
-jobs, so three macOS shards wait for a free runner; five shards no longer fit
-the 210-minute limit per shard once the Phase 2-5 gates landed. The `minutes`
-estimates in `gates.json` are the observed macOS durations (the slower host;
-gates not yet measured there use 2.7 times their Linux time), which keeps
-shards near 140 minutes. The two aggregate jobs (`CPU and
+ten duration-balanced shards per host. Hosted macOS allows five concurrent
+jobs, so five macOS shards wait for a free runner; eight shards approached
+the 210-minute limit per shard once the examples gates (`examples-core`,
+`-shapes`, `-text`, `-textures`) and one compile batch at a time landed. The
+`minutes` estimates in `gates.json` are the observed macOS durations (the
+slower host; gates not yet measured there use 2.7 times their Linux time),
+which keeps shards near 135 minutes. The two aggregate jobs (`CPU and
 JavaScript (ubuntu-24.04)` / `(macos-15)`) pass only when every shard passed.
 Documentation-only changes skip this workflow. The pinned Bend checkout, its
 declared overlay and the pinned raylib checkout come from `toolchain.json`
