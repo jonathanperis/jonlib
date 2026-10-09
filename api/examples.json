@@ -771,7 +771,7 @@
   {
    "name": "core_random_values",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1069,7 +1069,7 @@
   {
    "name": "core_render_texture",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginTextureMode",
