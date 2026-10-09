@@ -1079,3 +1079,32 @@ law mesh_poly_degenerate_empty:
   for libm: M.Libm
   for radius: F32
   {J.Mesh.gen_poly_for(libm, 2, radius) == Some{J.Mesh.empty()} : Maybe<J.Mesh>}
+
+# Window state on the memory platform (docs/DRIVER.md#window-state): a Core is
+# a ready window that is never resized; SetWindowState and the toggles leave
+# it unchanged; one monitor; no dropped files; the flags SetConfigFlags sets
+# are the ones IsWindowState reads (checked by tools/window_probe.py).
+law window_ready:
+  for core: J.Core
+  {J.Core.is_window_ready(core) == True{} : Bool}
+
+law window_never_resized:
+  for core: J.Core
+  {J.Core.is_window_resized(core) == False{} : Bool}
+
+law window_set_state_unchanged:
+  for core: J.Core
+  for flags: U32
+  {J.Core.set_window_state(core, flags) == core : J.Core}
+
+law window_toggle_fullscreen_unchanged:
+  for core: J.Core
+  {J.Core.toggle_fullscreen(core) == core : J.Core}
+
+law window_monitor_count_one:
+  for core: J.Core
+  {J.Core.get_monitor_count(core) == 1 : U32}
+
+law window_no_dropped_files:
+  for core: J.Core
+  {J.Core.is_file_dropped(core) == False{} : Bool}
