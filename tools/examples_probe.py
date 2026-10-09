@@ -70,7 +70,7 @@ TARGET = 1.0 / 60
 
 (KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 18)
 KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_A, KEY_H, KEY_R, KEY_S = 262, 263, 264, 265, 65, 72, 82, 83
-KEY_G, KEY_SPACE = 71, 32
+KEY_G, KEY_SPACE, KEY_C = 71, 32, 67
 
 # name: (raylib source, setup expression, State is Data, needs the logo image)
 EXAMPLES = {
@@ -91,6 +91,7 @@ EXAMPLES = {
     'shapes_logo_raylib_anim': ('shapes/shapes_logo_raylib_anim.c', 'Ex.setup(core, frame)'),
     'shapes_rectangle_scaling': ('shapes/shapes_rectangle_scaling.c', 'Ex.setup(core, frame)'),
     'shapes_collision_area': ('shapes/shapes_collision_area.c', 'Ex.setup(core, frame)'),
+    'shapes_dashed_line': ('shapes/shapes_dashed_line.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -180,6 +181,12 @@ def scripts():
                                                     quick([mouse_at(790, 445)]), quick([mouse_at(5, 5)])]),
         # boxA reaches the right edge after 148 frames and bounces back.
         script('shapes_collision_area', 'bounce', [quick([mouse_at(400, 300)])] + [quick() for _ in range(169)]),
+        # The dash length falls to its floor of 1 while DOWN is held; C wraps through all 8 colors.
+        script('shapes_dashed_line', 'controls', [quick(), quick([mouse_at(400, 300)]), quick([key(KEY_UP)]), quick(), slow([key(KEY_UP, False)]),
+                                                  quick([key(KEY_DOWN)])] + [quick() for _ in range(30)]
+               + [quick([key(KEY_DOWN, False), key(KEY_RIGHT)]), quick(), quick([key(KEY_RIGHT, False), key(KEY_LEFT)])] + [quick() for _ in range(18)]
+               + [quick([key(KEY_LEFT, False)])] + [f([key(KEY_C, i % 2 == 0)]) for i, f in enumerate([quick] * 18)]
+               + [quick([mouse_at(20, 50)]), quick([mouse_at(-40, 500)])]),
     ]
     return [timed(item) for item in out]
 
