@@ -2278,7 +2278,7 @@
   {
    "name": "shapes_starfield_effect",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "Clamp",
