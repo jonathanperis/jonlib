@@ -2017,7 +2017,7 @@
   {
    "name": "shapes_dashed_line",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
