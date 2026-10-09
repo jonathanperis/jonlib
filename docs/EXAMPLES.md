@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and it includes no unported companion
 library (`raygui.h`); **waiting** otherwise.
 
-Totals: 212 examples; 36 ported, 94 ready, 82 waiting.
+Totals: 212 examples; 37 ported, 93 ready, 82 waiting.
 
 ## APIs that unblock the most examples
 
@@ -153,7 +153,7 @@ Totals: 212 examples; 36 ported, 94 ready, 82 waiting.
 | `textures_srcrec_dstrec` | textures | ported |  |
 | `textures_image_drawing` | textures | ready |  |
 | `textures_image_generation` | textures | ready |  |
-| `textures_image_loading` | textures | ready |  |
+| `textures_image_loading` | textures | ported |  |
 | `textures_image_processing` | textures | ready |  |
 | `textures_image_text` | textures | ready |  |
 | `textures_to_image` | textures | ready |  |
