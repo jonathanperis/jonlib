@@ -1432,7 +1432,7 @@
   {
    "name": "shapes_colors_palette",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",
