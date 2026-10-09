@@ -6,8 +6,9 @@ paths; inputs where raylib's static buffers would overflow or read past the
 string (empty or overlong paths, file extensions of 16+ bytes) are Jonlib
 None contracts and are not run natively. File cases write the same fixtures,
 then compare existence, length, loaded data/text, text search, and files each
-side saves (data, text, data-as-code) read back byte for byte. CPU and
-JavaScript lanes; no GPU claim.
+side saves (data, text, data-as-code) read back byte for byte, and
+FileTextReplace on fresh copies of text fixtures (its result and the
+rewritten file). CPU and JavaScript lanes; no GPU claim.
 """
 import hashlib
 import json
@@ -89,6 +90,13 @@ def actions(work):
     out += [('find', (rel('missing.bin'), 'abc')), ('find', (rel('empty.bin'), 'abc'))]
     out += [('save-data', ('saved.bin', list(data[:40]))), ('save-text', ('saved.txt', 'line one\nsecond\0hidden')),
             ('export-code', ('my-data.v2+x.h', list(data[:47])))]
+    # FileTextReplace on a fresh copy of a fixture (None: the file is missing):
+    # (copy name, fixture bytes, search, replacement).
+    replaced = b'abc abcabc ab\nabc\0abc after'
+    out += [('replace', (f'replace-{i}.txt', list(fixture) if fixture is not None else None, search, replacement))
+            for i, (fixture, search, replacement) in enumerate([
+                (replaced, 'abc', 'XYZW'), (replaced, 'abc', ''), (replaced, 'c a', 'Q'), (replaced, 'zz', 'never'),
+                (text, 'o', '00'), (replaced, 'abc', 'abc'), (None, 'abc', 'x'), (b'', 'abc', 'x'), (replaced, '', 'x')])]
     return out
 
 
@@ -102,6 +110,11 @@ def defined(kind, arg):
     if kind == 'find':
         # raylib would strstr() through the NULL text of an empty file.
         return not arg[0].endswith('empty.bin')
+    if kind == 'replace':
+        # An empty file (LoadFileText's NULL) or an empty search (TextReplaceAlloc's
+        # NULL) would reach fprintf("%s", NULL).
+        _, fixture, search, _ = arg
+        return fixture is None or (len(fixture) > 0 and search != '')
     return True
 
 
@@ -156,6 +169,13 @@ def native_source(acts, work):
         elif kind == 'export-code':
             name, data = arg
             lines.append(f'{{static unsigned char d[]={{{",".join(map(str, data))}}};readback({rel("c/" + name)},ExportDataAsCode(d,sizeof d,{rel("c/" + name)}));}}')
+        elif kind == 'replace':
+            # One result: the int FileTextReplace returns, then the file's bytes.
+            name, fixture, search, replacement = arg
+            path = rel('c/' + name)
+            setup = '' if fixture is None else f'{{static unsigned char d[]={{{",".join(map(str, fixture or [0]))}}};SaveFileData({path},d,{len(fixture)});}}'
+            lines.append(f'{setup}{{int r=FileTextReplace({path},{c_string(search)},{c_string(replacement)});int n=0;'
+                         f'unsigned char *d=LoadFileData({path},&n);word(r);for(int i=0;i<n;i++)byte(d[i]);end();UnloadFileData(d);}}')
     return '\n'.join(lines + ['return 0;}']) + '\n'
 
 
@@ -207,6 +227,14 @@ def readback.ok(saved: Result<&1, &1, J.Surface.IOError, Unit>) -> Bool:
     case Done{_}: True{}
 def readback(path: String, saved: Result<&1, &1, J.Surface.IOError, Unit>) -> IO(Unit):
   IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Files.load_data(path), readback.bytes(readback.ok(saved)))
+def replaced.bytes(+r: U32, result: Result<&1, &1, J.Surface.IOError, +List<U32>>) -> IO(Unit):
+  match result:
+    case Fail{_}: emit_bytes(~&1, word_bytes(r))
+    case Done{bytes}: emit_bytes(~&2, Con{(r .&. 255 : U32), Con{((r >> 8n) .&. 255 : U32), Con{((r >> 16n) .&. 255 : U32), Con{(r >> 24n : U32), bytes}}}})
+def replaced(path: String, result: Maybe<U32>) -> IO(Unit):
+  match result:
+    case None{}: IO.print("null")
+    case Some{+r}: IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Unit, J.Files.load_data(path), replaced.bytes(r))
 '''
 
 
@@ -248,6 +276,13 @@ def render(acts, work):
                 name, value = arg
                 line = (f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Files.save_text({rel("bend/" + name)}, '
                         f'{bend_string(value)}), readback({rel("bend/" + name)}))')
+            elif kind == 'replace':
+                name, fixture, search, replacement = arg
+                path = rel('bend/' + name)
+                replace = (f'IO.bind(Maybe<U32>, Unit, J.Files.text_replace({path}, {bend_string(search)}, {bend_string(replacement)}), '
+                           f'replaced({path}))')
+                line = replace if fixture is None else (f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, '
+                                                        f'J.Files.save_data({path}, [{",".join(map(str, fixture))}]), u => {replace})')
             else:
                 name, values = arg
                 line = (f'IO.bind(Result<&1, &1, J.Surface.IOError, Unit>, Unit, J.Files.export_data_as_code([{",".join(map(str, values))}], '

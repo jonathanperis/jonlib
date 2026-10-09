@@ -38,7 +38,12 @@ runs in two ways:
 | Output | `Frame.present` to `Window.frame` | `show(frame)` per frame |
 
 `setup: Core -> Frame -> IO(Core & (Frame & S))` runs after InitWindow
-(`SetTargetFPS`, `LoadTexture`, ...). `limit` stops after that many presented
+(`SetTargetFPS`, `LoadTexture`, ...). `Desktop.run_flags(~S, ~program, ~libm,
+flags, title, width, height, limit, setup)` is `SetConfigFlags(flags)` before
+InitWindow (`Core.init_window_flags`, `Frame.init_window_flags`); the window
+opens with the title the `Core` holds after setup and the first frame, and
+the driver calls Base's `Window.set_title` whenever a program's
+`Core.set_window_title` changes it. `limit` stops after that many presented
 frames (0: until `WindowShouldClose`); `Desktop.frames_arg(args)` reads a
 `--frames N` argument for it. `libm` is the profile of mouse gestures'
 `atan2f` (and examples pass their own profile for `sinf`/`cosf`). `~` marks
@@ -68,6 +73,13 @@ the user state, the start time and statistics:
 3. Unless `WindowShouldClose` (or the limit): `update`, `IO.now`,
    `Core.begin_drawing` and `Frame.begin_drawing`, `draw`,
    `Frame.end_drawing`; a frame with a refused draw ends the loop.
+
+`GetTime` is the `Core`'s clock (`Core.get_time`): the clock of its last
+timing step, which the driver reads from `IO.now` at InitWindow (0),
+BeginDrawing and after EndDrawing's wait. A program's `Core.wait_time` moves
+that clock ahead; before BeginDrawing (and before EndDrawing's timing, for a
+wait during draw) the driver sleeps and busy-reads `IO.now` until the real
+clock reaches it, as raylib's `WaitTime` blocks.
 
 The clock is `Desktop.seconds(ms)`: whole seconds plus the correctly rounded
 remaining milliseconds over 1000, one binary64 rounding in the sum (monotone;
@@ -144,6 +156,40 @@ macOS); without modifier flags the CAPS/NUM lock rule of the key callback
 never applies. X11 auto-repeat arrives as release/press pairs (GLFW uses
 detectable auto-repeat), so a held key is pressed again on each repeat there.
 
+## Window state
+
+The window, monitor, clipboard and dropped-file functions follow raylib's
+memory platform (`src/platforms/rcore_memory.c` with `rcore.c`'s generic
+functions), the reference of every gate; the `Core` holds the state those keep
+(code: "Window state, monitors, clipboard, dropped files and the clock" in
+`jonlib.bend`, `src/core_state.bend`'s `Config`).
+
+| raylib | Jonlib | Memory platform (and Jonlib) |
+|---|---|---|
+| `SetConfigFlags` | `Core.set_config_flags(core, flags)`, `Core.init_window_flags(flags, w, h, now)`, `Frame.init_window_flags(flags, w, h)` | `CORE.Window.flags \|= flags`. Only `FLAG_MSAA_4X_HINT` reaches the frame: InitWindow then sets the shapes texture rectangle to the white glyph inset by two pixels, `(42, 47, 1, 1)`, instead of `(41, 46, 2, 8)` |
+| `IsWindowState`, `IsWindowFullscreen/Hidden/Minimized/Maximized/Focused` | `Core.is_window_state(core, flag)`, `Core.is_window_fullscreen(core)`, ... | `(flags & flag) == flag` (true for 0); focused is `FLAG_WINDOW_UNFOCUSED` clear |
+| `IsWindowReady`, `IsWindowResized` | `Core.is_window_ready`, `Core.is_window_resized` | true; false (never resized) |
+| `SetWindowState`, `ClearWindowState`, `ToggleFullscreen`, `ToggleBorderlessWindowed`, `MaximizeWindow`, `MinimizeWindow`, `RestoreWindow`, `SetWindowIcon(s)`, `SetWindowPosition`, `SetWindowMonitor`, `SetWindowSize`, `SetWindowOpacity`, `SetWindowFocused` | `Core.set_window_state(core, flags)`, ... (the icons are handed back) | a warning only: nothing changes (the flags and the screen size included) |
+| `SetWindowTitle`, `SetWindowMinSize`, `SetWindowMaxSize` | `Core.set_window_title`, `Core.set_window_min_size`, `Core.set_window_max_size` (read back with `Core.window_title`, `Core.window_min_size`, `Core.window_max_size`) | stored; the desktop driver shows the title |
+| `EnableEventWaiting`, `DisableEventWaiting` | `Core.enable_event_waiting`, `Core.disable_event_waiting` (`Core.is_event_waiting`) | stored; nothing reads it on this platform |
+| `GetWindowHandle` | `Core.get_window_handle(core) -> Maybe<Unit>` | `NULL` (`None`) |
+| `GetMonitorCount`, `GetCurrentMonitor`, `GetMonitorPosition`, `GetMonitorWidth/Height`, `GetMonitorPhysicalWidth/Height`, `GetMonitorRefreshRate`, `GetMonitorName`, `GetWindowPosition`, `GetWindowScaleDPI` | `Core.get_monitor_count(core)`, ... | 1, 0, (0, 0), 0, 0, 0, `""` for any monitor index, (0, 0) and (1, 1) |
+| `SetClipboardText`, `GetClipboardText`, `GetClipboardImage` | `Core.set_clipboard_text`, `Core.get_clipboard_text -> Maybe<String>`, `Core.get_clipboard_image -> Maybe<Surface>` | a warning; `NULL` (`None`); an empty image (`None`) |
+| `SetMouseCursor`, `GetKeyName`, `SetGamepadMappings`, `SetGamepadVibration` | `Input.set_mouse_cursor`, `Input.get_key_name -> String`, `Input.set_gamepad_mappings -> U32`, `Input.set_gamepad_vibration` | a warning; `""`; 0; a warning |
+| `IsFileDropped`, `LoadDroppedFiles`, `UnloadDroppedFiles` | `Core.is_file_dropped`, `Core.load_dropped_files -> FilePathList`, `Core.unload_dropped_files` | no drops: false, `FilePathList{0, []}` |
+| `GetTime`, `WaitTime` | `Core.get_time(core) -> M.Float64`, `Core.wait_time(core, seconds) -> Maybe<Core>` | the explicit clock ([INPUT.md](INPUT.md#reference-and-the-explicit-clock)); `WaitTime` returns at once for negative seconds and otherwise ends at `GetTime() + seconds`; `None` for NaN, +infinity and more than 4096 seconds, where raylib's sleep conversion is undefined on some hosts |
+| `OpenURL` | none (blocked) | the memory platform runs `system("explorer \"url\"")` (a process spawn, Windows' browser launcher on any host) unless the URL contains `'`; Base has no process or URL-launch primitive |
+
+`TakeScreenshot` and `LoadTexture`/`LoadTextureCubemap` are the Frame's
+([TEXTURES.md](TEXTURES.md#files-cubemaps-and-screenshots)).
+
+The desktop driver keeps these memory-platform answers except the title,
+which it shows with `Window.set_title`, and `WindowShouldClose`/`WaitTime`
+(above): Base has no window state, monitors, clipboard, cursor shapes, key
+names, gamepads or drop events, so a GLFW build's answers (real monitor sizes,
+a working clipboard, fullscreen) are desktop gaps, recorded per function in
+the ledger.
+
 ## Presentation
 
 `Frame.present(frame) -> Frame & Maybe<Image>` (SwapScreenBuffer) builds
@@ -182,6 +228,12 @@ is 102 words.
 | [`shapes_logo_raylib`](../examples/shapes_logo_raylib.bend) | `examples/shapes/shapes_logo_raylib.c` | |
 | [`textures_logo_raylib`](../examples/textures_logo_raylib.bend) | `examples/textures/textures_logo_raylib.c` | reads `raylib_logo.png` in place (run from raylib's `examples/textures`, or `--logo <path>`) |
 | [`shapes_basic_shapes`](../examples/shapes_basic_shapes.bend) | `examples/shapes/shapes_basic_shapes.c` | refused: its hexagons turn by 0.2 degrees, so `DrawPoly*` evaluate `sinf`/`cosf` outside every verified profile (Apple: whole degrees; glibc: the closing vertex passes 6.283186); the interactive run stops at the first frame |
+| [`shapes_bouncing_ball`](../examples/shapes_bouncing_ball.bend) | `examples/shapes/shapes_bouncing_ball.c` | `SetConfigFlags(FLAG_MSAA_4X_HINT)` through `Desktop.run_flags`; `DrawFPS` reads `GetFPS` at the `Core`'s clock |
+| [`shapes_lines_bezier`](../examples/shapes_lines_bezier.bend) | `examples/shapes/shapes_lines_bezier.c` | `FLAG_MSAA_4X_HINT`; on the memory platform `IsMouseButtonReleased` never fires, so a grabbed point keeps following the mouse (reproduced) |
+| [`core_drop_files`](../examples/core_drop_files.bend) | `examples/core/core_drop_files.c` | no platform here delivers dropped files: the list stays empty |
+| [`textures_srcrec_dstrec`](../examples/textures_srcrec_dstrec.bend) | `examples/textures/textures_srcrec_dstrec.c` | `LoadTexture` of `resources/scarfy.png` (`--resources <dir/>`); `DrawTexturePro` turns one degree per frame: refused from 13 degrees under the Apple profile, compared under glibc; the interactive run uses glibc 2.39's |
+| [`textures_sprite_animation`](../examples/textures_sprite_animation.bend) | `examples/textures/textures_sprite_animation.c` | `LoadTexture`; Right/Left (keys from 260 stay pressed while held on the memory platform) |
+| [`textures_background_scrolling`](../examples/textures_background_scrolling.bend) | `examples/textures/textures_background_scrolling.c` | three `LoadTexture` layers drawn with `DrawTextureEx` at scale 2 |
 
 Build and run one (a native binary; Base windows need a desktop session):
 
@@ -195,7 +247,8 @@ bun "$BEND_SOURCE/bend2/main.ts" examples/core_input_keys.bend -o core_input_key
 
 | Gate | Tool | Compares |
 |---|---|---|
-| `examples` | `tools/examples_probe.py` | 12 scripts of the 7 examples (71 frames: 63 compared, 8 refusal contracts) against the **unmodified** raylib example sources on the clock-injected memory-platform raylib, every framebuffer byte and the presented quadtree, on CPU-1, CPU-2 and JavaScript |
+| `window` | `tools/window_probe.py` | 12 scripts against the clock-injected memory-platform raylib, each in a fresh process and directory: `SetConfigFlags` before and after InitWindow and every `IsWindow*` query, the logging-only setters followed by queries, monitor, DPI, clipboard, key-name, handle and gamepad-mapping answers, dropped files, `GetTime`/`WaitTime` (with NaN, +infinity and over-4096 contracts), MSAA and plain framebuffers, `LoadTexture`, `LoadTextureCubemap`, `TakeScreenshot` files and `GetWorldToScreen`/`GetScreenToWorldRay`, on CPU-1, CPU-2 and JavaScript |
+| `examples` | `tools/examples_probe.py` | 18 scripts of the 13 examples (126 frames: 115 compared and 11 refusal contracts under the Apple profile, 121 and 5 under glibc) against the **unmodified** raylib example sources on the clock-injected memory-platform raylib, every framebuffer byte and the presented quadtree, on CPU-1, CPU-2 and JavaScript |
 
 ```sh
 python3 tools/examples_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --jobs 2
@@ -213,9 +266,13 @@ and release the examples' keys and buttons, move the mouse (also off
 screen), toggle the cursor flag, close the window mid-script with
 `WINDOW_CLOSE`, use two seeds, and alternate frames shorter than the 60 FPS
 target (EndDrawing waits) with longer ones. Contracts: a wheel move in
-`core_2d_camera` (refused from that frame on), a rotation to 13 degrees
-(refused under the Apple profile, compared under glibc), and
-`shapes_basic_shapes` (every frame refused).
+`core_2d_camera` (refused from that frame on), rotations to 13 degrees in
+`core_2d_camera` and `textures_srcrec_dstrec` (refused under the Apple
+profile, compared under glibc), and `shapes_basic_shapes` (every frame
+refused). Examples that load resources (`LoadTexture`) run natively in
+raylib's `examples/<module>` directory and take that directory as their
+setup argument; `SetConfigFlags` examples start both sides with the same
+flags. `--example NAME` runs a subset (diagnostic).
 
 `LAWS.bend` states the desktop parts the gate cannot reach: polling copies all
 512 previous key states, a held mouse button is pressed for one frame, the
@@ -252,23 +309,24 @@ conversion are sequential.
 
 ## Gaps
 
-Window functions Base has no facility for stay `not-started` (runtime
-workstream, [MASTER-PLAN.md](MASTER-PLAN.md#compiler-and-runtime-workstream)):
-`SetWindowTitle` after the window opens (Base has `Window.set_title`, the
-driver does not hand programs the window yet), window state and flags
-(`SetConfigFlags`, fullscreen, borderless, maximize/minimize/restore,
-resizable, `IsWindowResized/Focused/Hidden/Minimized/Maximized`), position,
-size limits, opacity, icons, monitors, DPI (`GetWindowScaleDPI`), clipboard,
-`OpenURL`, cursor shape and visibility (`SetMouseCursor`; `HideCursor`,
-`DisableCursor` only set the flags), event waiting, vsync control, and a
-window handle. Input without Base events: the mouse wheel, text input
+The window functions answer as the memory platform does ([Window
+state](#window-state)); what a desktop platform would add needs Base
+facilities (runtime workstream,
+[MASTER-PLAN.md](MASTER-PLAN.md#compiler-and-runtime-workstream)): real window
+state and flags (fullscreen, borderless, maximize/minimize/restore, resizable
+windows and `IsWindowResized`, focus, hidden, topmost), position, size limits,
+opacity, icons, monitors and DPI, clipboard, `OpenURL`, cursor shape and
+visibility (`SetMouseCursor`; `HideCursor`, `DisableCursor` only set the
+flags), key names, gamepad mappings and vibration, dropped files, event
+waiting, vsync control and a window handle. Input without Base events: the mouse wheel, text input
 (`GetCharPressed` stays empty on the desktop), cursor enter/leave
 (`IsCursorOnScreen` stays false), gamepads, touch, window resize/focus
 events; mouse positions are clipped to the window by Base (GLFW reports
 positions outside while dragging). Timing: `IO.now` has millisecond
 resolution (raylib's `GetTime` is sub-millisecond) and `Window.frame` waits for
 the display on macOS (Base enables display sync), so frame rates do not
-reach raylib's pacing exactly; there is no `WaitTime`/`GetTime` function apart
-from the driver's clock. The JavaScript lane has no window (`Window.open`
+reach raylib's pacing exactly. `Core.get_time` answers the clock of the last
+timing step rather than a live reading (a busy loop on `GetTime` would not
+advance), and a program's `WaitTime` is measured from that clock. The JavaScript lane has no window (`Window.open`
 fails there); the headless replay runs on it. Linux (X11) presentation was
 not run here; only macOS was exercised interactively.

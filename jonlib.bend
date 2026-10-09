@@ -5986,6 +5986,50 @@ def Text.replace(text: String, search: String, replacement: String) -> Maybe<Str
 def Text.replace_alloc(text: String, search: String, replacement: String) -> Maybe<String>:
   TextCore.replace(TextCore.bytes(text), TextCore.bytes(search), TextCore.bytes(replacement), False{})
 
+def Files.replace.saved(saved: Result<&1, &1, Surface.IOError, Unit>) -> IO(Maybe<U32>):
+  match saved:
+    case Fail{_}: IO.pure(Maybe<U32>, Some{0})
+    case Done{_}: IO.pure(Maybe<U32>, Some{1})
+
+def Files.replace.valid(valid: Bool, path: String, bytes: +List<U32>) -> IO(Maybe<U32>):
+  match valid:
+    case False{}: IO.pure(Maybe<U32>, None{})
+    case True{}: IO.bind(Result<&1, &1, Surface.IOError, Unit>, Maybe<U32>, Files.save_data(path, bytes), Files.replace.saved)
+
+def Files.replace.checked(path: String, encoded: +List<U32> & Bool) -> IO(Maybe<U32>):
+  (bytes, valid) = encoded
+  Files.replace.valid(valid, path, bytes)
+
+def Files.replace.result(path: String, replaced: Maybe<String>) -> IO(Maybe<U32>):
+  match replaced:
+    case None{}: IO.pure(Maybe<U32>, None{})
+    case Some{text}: Files.replace.checked(path, Files.text.bytes(Files.until_nul(text, False{}, ""), Nil{}, True{}))
+
+def Files.replace.text(empty: Bool, path: String, text: String, search: String, replacement: String) -> IO(Maybe<U32>):
+  match empty:
+    case True{}: IO.pure(Maybe<U32>, None{})
+    case False{}: Files.replace.result(path, Text.replace_alloc(Files.until_nul(text, False{}, ""), search, replacement))
+
+def Files.replace.loaded(path: String, search: String, replacement: String, result: Result<&1, &1, Surface.IOError, String>) -> IO(Maybe<U32>):
+  match result:
+    case Fail{_}: IO.pure(Maybe<U32>, None{})
+    case Done{+text}: Files.replace.text(String.is_empty(text), path, text, search, replacement)
+
+def Files.replace.existing(+path: String, search: String, replacement: String, exists: Bool) -> IO(Maybe<U32>):
+  match exists:
+    case False{}: IO.pure(Maybe<U32>, Some{0})
+    case True{}: IO.bind(Result<&1, &1, Surface.IOError, String>, Maybe<U32>, Files.load_text(path), Files.replace.loaded(path, search, replacement))
+
+# FileTextReplace(fileName, search, replacement): 0 when the file does not
+# exist; otherwise LoadFileText, TextReplaceAlloc and SaveFileText of the
+# result (its text up to the first NUL, so the file is rewritten even without
+# a match), answering SaveFileText's 1 or 0. None where raylib would pass a
+# NULL text to fprintf: an empty or unreadable file (LoadFileText's NULL), an
+# empty search (TextReplaceAlloc's NULL); also for characters above 255 in
+# the result and int overflows of TextReplaceAlloc.
+def Files.text_replace(+path: String, search: String, replacement: String) -> IO(Maybe<U32>):
+  IO.bind(Bool, Maybe<U32>, Files.exists(path), Files.replace.existing(path, search, replacement))
+
 # TextReplaceBetween: the bytes between the first begin and the next end
 # replaced (both delimiters kept); "" when either is missing, None when the
 # result needs 1024 or more bytes (raylib overflows or leaves it unterminated).
@@ -6271,6 +6315,230 @@ def Core.get_fps(+core: Core, +now: M.Float64) -> Maybe<(Core & U32)>:
   Core.wrap.maybe_pair(CoreState.Core.get_fps(Core.state(core), Core.words(now)))
 
 # -----------------------------------------------------------------------------
+# Window state, monitors, clipboard, dropped files and the clock
+#
+# Altered Bend adaptation of raylib 6.0 rcore.c (SetConfigFlags, IsWindow*,
+# GetTime, WaitTime, IsFileDropped/LoadDroppedFiles/UnloadDroppedFiles) and of
+# src/platforms/rcore_memory.c (zlib, LICENSES/raylib.txt), the reference
+# platform: there SetWindowState, ClearWindowState, the fullscreen/borderless
+# toggles, Maximize/Minimize/RestoreWindow, SetWindowIcon(s), SetWindowPosition,
+# SetWindowMonitor, SetWindowSize, SetWindowOpacity, SetWindowFocused,
+# SetClipboardText, SetMouseCursor and SetGamepadVibration only log a warning,
+# and the monitor and clipboard queries answer constants. The flags are the
+# ones SetConfigFlags set. A desktop platform answers these from the OS; Base
+# has no facility for them (docs/DRIVER.md).
+
+# InitWindow after SetConfigFlags(flags): Core.init_window with the flags set
+# (Frame.init_window_flags takes the same flags; FLAG_MSAA_4X_HINT moves the
+# shapes texture rectangle).
+def Core.init_window_flags.set(+flags: U32, core: Maybe<Core>) -> Maybe<Core>:
+  match core:
+    case None{}: None{}
+    case Some{+c}: Some{Core{CoreState.Core.set_config_flags(Core.state(c), flags), Nil{}}}
+
+def Core.init_window_flags(+flags: U32, +width: U32, +height: U32, +now: M.Float64) -> Maybe<Core>:
+  Core.init_window_flags.set(flags, Core.init_window(width, height, now))
+
+# SetConfigFlags: CORE.Window.flags |= flags. Called after InitWindow it only
+# sets them (raylib logs a warning), as here.
+def Core.set_config_flags(+core: Core, +flags: U32) -> Core:
+  Core{CoreState.Core.set_config_flags(Core.state(core), flags), Nil{}}
+
+# IsWindowState(flag): every bit of flag is set (true for 0).
+def Core.is_window_state(+core: Core, +flag: U32) -> Bool:
+  CoreState.Core.flag(Core.state(core), flag)
+
+# IsWindowReady: a Core is an initialized window.
+def Core.is_window_ready(+core: Core) -> Bool:
+  True{}
+
+def Core.is_window_fullscreen(+core: Core) -> Bool:
+  Core.is_window_state(core, 2)
+
+def Core.is_window_hidden(+core: Core) -> Bool:
+  Core.is_window_state(core, 128)
+
+def Core.is_window_minimized(+core: Core) -> Bool:
+  Core.is_window_state(core, 512)
+
+def Core.is_window_maximized(+core: Core) -> Bool:
+  Core.is_window_state(core, 1024)
+
+# IsWindowFocused: FLAG_WINDOW_UNFOCUSED is not set.
+def Core.is_window_focused(+core: Core) -> Bool:
+  Bool.not(Core.is_window_state(core, 2048))
+
+# IsWindowResized: the memory platform never resizes (and Base windows are
+# fixed-size).
+def Core.is_window_resized(+core: Core) -> Bool:
+  False{}
+
+# SetWindowState/ClearWindowState and the window toggles: a warning on the
+# memory platform; the flags do not change.
+def Core.set_window_state(core: Core, +flags: U32) -> Core:
+  core
+
+def Core.clear_window_state(core: Core, +flags: U32) -> Core:
+  core
+
+def Core.toggle_fullscreen(core: Core) -> Core:
+  core
+
+def Core.toggle_borderless_windowed(core: Core) -> Core:
+  core
+
+def Core.maximize_window(core: Core) -> Core:
+  core
+
+def Core.minimize_window(core: Core) -> Core:
+  core
+
+def Core.restore_window(core: Core) -> Core:
+  core
+
+# SetWindowIcon/SetWindowIcons: a warning; the images stay the caller's.
+def Core.set_window_icon(core: Core, image: Surface) -> Core & Surface:
+  (core, image)
+
+def Core.set_window_icons(core: Core, images: List<Surface>) -> Core & List<Surface>:
+  (core, images)
+
+# SetWindowTitle: CORE.Window.title (the desktop driver shows it).
+def Core.set_window_title(+core: Core, title: String) -> Core:
+  Core{CoreState.Core.set_title(Core.state(core), title), Nil{}}
+
+# Jonlib-specific: the title SetWindowTitle stored ("" until one is set).
+def Core.window_title(+core: Core) -> String:
+  CoreState.Config.title(CoreState.Core.config(Core.state(core)))
+
+def Core.set_window_position(core: Core, +x: U32, +y: U32) -> Core:
+  core
+
+def Core.set_window_monitor(core: Core, +monitor: U32) -> Core:
+  core
+
+# SetWindowMinSize/SetWindowMaxSize: stored (CORE.Window.screenMin/screenMax,
+# C ints), with no effect on a window that is never resized.
+def Core.set_window_min_size(+core: Core, +width: U32, +height: U32) -> Core:
+  Core{CoreState.Core.set_min_size(Core.state(core), width, height), Nil{}}
+
+def Core.set_window_max_size(+core: Core, +width: U32, +height: U32) -> Core:
+  Core{CoreState.Core.set_max_size(Core.state(core), width, height), Nil{}}
+
+# Jonlib-specific: the stored minimum and maximum sizes.
+def Core.window_min_size(+core: Core) -> U32 & U32:
+  CoreState.Config.min_size(CoreState.Core.config(Core.state(core)))
+
+def Core.window_max_size(+core: Core) -> U32 & U32:
+  CoreState.Config.max_size(CoreState.Core.config(Core.state(core)))
+
+# SetWindowSize: a warning; GetScreenWidth/Height keep the InitWindow size.
+def Core.set_window_size(core: Core, +width: U32, +height: U32) -> Core:
+  core
+
+def Core.set_window_opacity(core: Core, +opacity: F32) -> Core:
+  core
+
+def Core.set_window_focused(core: Core) -> Core:
+  core
+
+# GetWindowHandle: NULL.
+def Core.get_window_handle(+core: Core) -> Maybe<Unit>:
+  None{}
+
+# Monitor queries of the memory platform: one monitor (index 0) answering
+# zero sizes, rate and position and an empty name for any index, the window
+# at (0, 0) and a DPI scale of (1, 1).
+def Core.get_monitor_count(+core: Core) -> U32:
+  1
+
+def Core.get_current_monitor(+core: Core) -> U32:
+  0
+
+def Core.get_monitor_position(+core: Core, +monitor: U32) -> M.Vector2:
+  M.Vector2{0.0, 0.0}
+
+def Core.get_monitor_width(+core: Core, +monitor: U32) -> U32:
+  0
+
+def Core.get_monitor_height(+core: Core, +monitor: U32) -> U32:
+  0
+
+def Core.get_monitor_physical_width(+core: Core, +monitor: U32) -> U32:
+  0
+
+def Core.get_monitor_physical_height(+core: Core, +monitor: U32) -> U32:
+  0
+
+def Core.get_monitor_refresh_rate(+core: Core, +monitor: U32) -> U32:
+  0
+
+def Core.get_monitor_name(+core: Core, +monitor: U32) -> String:
+  ""
+
+def Core.get_window_position(+core: Core) -> M.Vector2:
+  M.Vector2{0.0, 0.0}
+
+def Core.get_window_scale_dpi(+core: Core) -> M.Vector2:
+  M.Vector2{1.0, 1.0}
+
+# SetClipboardText: a warning. GetClipboardText answers NULL (None) and
+# GetClipboardImage an empty image (data NULL, 0x0: None).
+def Core.set_clipboard_text(core: Core, text: String) -> Core:
+  core
+
+def Core.get_clipboard_text(+core: Core) -> Maybe<String>:
+  None{}
+
+def Core.get_clipboard_image(+core: Core) -> Maybe<Surface>:
+  None{}
+
+# EnableEventWaiting/DisableEventWaiting: CORE.Window.eventWaiting, which no
+# memory-platform function reads.
+def Core.enable_event_waiting(+core: Core) -> Core:
+  Core{CoreState.Core.set_event_waiting(Core.state(core), True{}), Nil{}}
+
+def Core.disable_event_waiting(+core: Core) -> Core:
+  Core{CoreState.Core.set_event_waiting(Core.state(core), False{}), Nil{}}
+
+# Jonlib-specific: whether event waiting is enabled.
+def Core.is_event_waiting(+core: Core) -> Bool:
+  CoreState.Config.waiting(CoreState.Core.config(Core.state(core)))
+
+# GetTime in the explicit-clock model: the clock of the Core's last timing
+# step (InitWindow's now, BeginDrawing's now, the clock EndDrawing's
+# PollInputEvents read after a SetTargetFPS wait, or the end of WaitTime).
+# Program.replay's scripted clocks make this raylib's GetTime() at those
+# points; the desktop driver's is the IO.now reading of that step.
+def Core.get_time(+core: Core) -> M.Float64:
+  Core.seconds(CoreState.Core.clock(Core.state(core)))
+
+# WaitTime(seconds) (SUPPORT_PARTIALBUSY_WAIT_LOOP): negative values (and
+# -infinity) return at once; otherwise the clock becomes GetTime() + seconds,
+# when raylib's busy loop ends. None for NaN, +infinity, more than 4096
+# seconds (raylib's sleep conversion is undefined on some hosts) and outside
+# the binary64 helpers' domain. Desktop.run sleeps until the clock is reached.
+def Core.wait_time(+core: Core, +seconds: M.Float64) -> Maybe<Core>:
+  Core.wrap(CoreState.Core.wait_time(Core.state(core), Core.words(seconds)))
+
+# FilePathList: the entries count and the paths.
+type FilePathList is Data:
+  FilePathList{count: U32, paths: +List<String>}
+
+# IsFileDropped: no platform Jonlib runs on delivers dropped files (the memory
+# platform has no events, Base has no drop event), so dropFileCount stays 0.
+def Core.is_file_dropped(+core: Core) -> Bool:
+  False{}
+
+# LoadDroppedFiles: the internal list, empty (count 0, paths NULL).
+def Core.load_dropped_files(+core: Core) -> FilePathList:
+  FilePathList{0, Nil{}}
+
+# UnloadDroppedFiles: nothing is freed for an empty list.
+def Core.unload_dropped_files(core: Core, files: FilePathList) -> Core:
+  core
+
+# -----------------------------------------------------------------------------
 # Automation events
 
 def AutomationEvent.internal(+e: AutomationEvent) -> AutomationCore.AutoEvent:
@@ -6541,6 +6809,223 @@ def Input.get_gamepad_axis_count(+core: Core, +gamepad: U32) -> Maybe<U32>:
 def Input.get_gamepad_axis_movement(+core: Core, +gamepad: U32, +axis: U32) -> Maybe<F32>:
   InputCore.gamepad.axis_movement(Core.input(core), gamepad, axis)
 
+# SetMouseCursor: a warning on the memory platform (the cursor shape is not
+# stored; Base has no cursor shapes).
+def Input.set_mouse_cursor(core: Core, +cursor: U32) -> Core:
+  core
+
+# GetKeyName: "" on the memory platform (no keyboard layout to ask).
+def Input.get_key_name(+core: Core, +key: U32) -> String:
+  ""
+
+# SetGamepadMappings: 0 on the memory platform (no mapping database).
+def Input.set_gamepad_mappings(+core: Core, mappings: String) -> U32:
+  0
+
+# SetGamepadVibration: a warning on the memory platform.
+def Input.set_gamepad_vibration(core: Core, +gamepad: U32, +left: F32, +right: F32, +duration: F32) -> Core:
+  core
+
+# -----------------------------------------------------------------------------
+# UpdateCamera (rcamera.h), driven by the Core's input state and frame time
+#
+# Altered Bend adaptation of raylib 6.0 rcamera.h UpdateCamera (zlib,
+# LICENSES/raylib.txt) over the camera steps of the "Cameras" section: every
+# step raylib takes is applied in its order, and the result is None as soon as
+# a rotation leaves the M.Libm profile (see docs/CAMERA.md).
+
+def Camera.step.pitch.go(+arithmetic: M.Contraction, +libm: M.Libm, camera: Maybe<Camera3D>, +angle: F32, +lock: Bool, +around: Bool) -> Maybe<Camera3D>:
+  match camera:
+    case None{}: None{}
+    case Some{c}: Camera.pitch_for(arithmetic, libm, c, angle, lock, around, False{})
+
+# if (cond) CameraPitch(camera, angle, lockView, rotateAroundTarget, false)
+def Camera.step.pitch(cond: Bool, +arithmetic: M.Contraction, +libm: M.Libm, camera: Maybe<Camera3D>, +angle: F32, +lock: Bool, +around: Bool) -> Maybe<Camera3D>:
+  match cond:
+    case False{}: camera
+    case True{}: Camera.step.pitch.go(arithmetic, libm, camera, angle, lock, around)
+
+def Camera.step.yaw.go(+arithmetic: M.Contraction, +libm: M.Libm, camera: Maybe<Camera3D>, +angle: F32, +around: Bool) -> Maybe<Camera3D>:
+  match camera:
+    case None{}: None{}
+    case Some{c}: Camera.yaw_for(arithmetic, libm, c, angle, around)
+
+def Camera.step.yaw(cond: Bool, +arithmetic: M.Contraction, +libm: M.Libm, camera: Maybe<Camera3D>, +angle: F32, +around: Bool) -> Maybe<Camera3D>:
+  match cond:
+    case False{}: camera
+    case True{}: Camera.step.yaw.go(arithmetic, libm, camera, angle, around)
+
+def Camera.step.roll.go(+arithmetic: M.Contraction, +libm: M.Libm, camera: Maybe<Camera3D>, +angle: F32) -> Maybe<Camera3D>:
+  match camera:
+    case None{}: None{}
+    case Some{c}: Camera.roll_for(arithmetic, libm, c, angle)
+
+def Camera.step.roll(cond: Bool, +arithmetic: M.Contraction, +libm: M.Libm, camera: Maybe<Camera3D>, +angle: F32) -> Maybe<Camera3D>:
+  match cond:
+    case False{}: camera
+    case True{}: Camera.step.roll.go(arithmetic, libm, camera, angle)
+
+# Moves: 0 CameraMoveForward, 1 CameraMoveRight (both in the world plane when
+# asked), 2 CameraMoveUp, 3 CameraMoveToTarget.
+def Camera.step.move.apply(+arithmetic: M.Contraction, +kind: U32, c: Camera3D, +amount: F32, +plane: Bool) -> Camera3D:
+  match kind:
+    case 0: Camera.move_forward_for(arithmetic, c, amount, plane)
+    case 1: Camera.move_right_for(arithmetic, c, amount, plane)
+    case 2: Camera.move_up_for(arithmetic, c, amount)
+    case _: Camera.move_to_target_for(arithmetic, c, amount)
+
+def Camera.step.move.go(+arithmetic: M.Contraction, +kind: U32, camera: Maybe<Camera3D>, +amount: F32, +plane: Bool) -> Maybe<Camera3D>:
+  match camera:
+    case None{}: None{}
+    case Some{c}: Some{Camera.step.move.apply(arithmetic, kind, c, amount, plane)}
+
+def Camera.step.move(cond: Bool, +arithmetic: M.Contraction, +kind: U32, camera: Maybe<Camera3D>, +amount: F32, +plane: Bool) -> Maybe<Camera3D>:
+  match cond:
+    case False{}: camera
+    case True{}: Camera.step.move.go(arithmetic, kind, camera, amount, plane)
+
+# MatrixRotate's axis: renormalized (1.0f/sqrtf) unless its squared length is
+# 1 or 0.
+def Camera.rotation_axis(+arithmetic: M.Contraction, +axis: M.Vector3) -> M.Vector3:
+  +length = Camera.length_sqr(arithmetic, axis)
+  Bool.pick(M.Vector3, F32.is_ne(length, 1.0) && F32.is_ne(length, 0.0), M.Vector3.scale(axis, (1.0 / F32.sqrt(length) : F32)), axis)
+
+def Camera.orbit.turn(+arithmetic: M.Contraction, libm: M.Libm, camera: Camera3D, +up: M.Vector3, +angle: F32) -> Camera3D:
+  Camera3D{+position, +target, cup, fovy, projection} = camera
+  rotation = Camera.rotation(arithmetic, Camera.rotation_axis(arithmetic, up), Trig.sincos_for(M.Libm.gnu(libm), angle))
+  Camera3D{M.Vector3.add(target, Camera.transform(arithmetic, M.Vector3.subtract(position, target), rotation)), target, cup, fovy, projection}
+
+# CAMERA_ORBITAL: the position rotates around the target by
+# MatrixRotate(GetCameraUp(camera), angle) (sinf/cosf of the whole angle).
+def Camera.orbit(turnable: Bool, +arithmetic: M.Contraction, libm: M.Libm, +camera: Camera3D, +angle: F32) -> Maybe<Camera3D>:
+  match turnable:
+    case False{}: None{}
+    case True{}: Some{Camera.orbit.turn(arithmetic, libm, camera, Camera.up_for(arithmetic, camera), angle)}
+
+def Camera.gamepad.axis(value: Maybe<F32>) -> F32:
+  match value:
+    case None{}: 0.0
+    case Some{v}: v
+
+def Camera.gamepad.ready(value: Maybe<Bool>) -> Bool:
+  match value:
+    case None{}: False{}
+    case Some{b}: b
+
+# -(GetGamepadAxisMovement(0, axis)*2)*CAMERA_MOUSE_MOVE_SENSITIVITY
+def Camera.gamepad.turn(+core: Core, +axis: U32) -> F32:
+  (F32.neg((Camera.gamepad.axis(Input.get_gamepad_axis_movement(core, 0, axis)) * 2.0 : F32)) * Camera.float(994352038) : F32)
+
+def Camera.gamepad.moves(+arithmetic: M.Contraction, +core: Core, camera: Maybe<Camera3D>, +speed: F32, +plane: Bool) -> Maybe<Camera3D>:
+  +x = Camera.gamepad.axis(Input.get_gamepad_axis_movement(core, 0, 0))
+  +y = Camera.gamepad.axis(Input.get_gamepad_axis_movement(core, 0, 1))
+  +quarter = Camera.float(1048576000)
+  c1 = Camera.step.move((y <= F32.neg(quarter) : F32), arithmetic, 0, camera, speed, plane)
+  c2 = Camera.step.move((x <= F32.neg(quarter) : F32), arithmetic, 1, c1, F32.neg(speed), plane)
+  c3 = Camera.step.move((y >= quarter : F32), arithmetic, 0, c2, F32.neg(speed), plane)
+  Camera.step.move((x >= quarter : F32), arithmetic, 1, c3, speed, plane)
+
+# Gamepad 0's right stick turns and its left stick moves, when it is available.
+def Camera.gamepad(ready: Bool, +arithmetic: M.Contraction, +libm: M.Libm, +core: Core, camera: Maybe<Camera3D>, +speed: F32, +plane: Bool, +lock: Bool, +around: Bool) -> Maybe<Camera3D>:
+  match ready:
+    case False{}: camera
+    case True{}:
+      c1 = Camera.step.yaw(True{}, arithmetic, libm, camera, Camera.gamepad.turn(core, 2), around)
+      c2 = Camera.step.pitch(True{}, arithmetic, libm, c1, Camera.gamepad.turn(core, 3), lock, around)
+      Camera.gamepad.moves(arithmetic, core, c2, speed, plane)
+
+# CAMERA_FREE with the middle button down pans by the mouse delta's signs;
+# otherwise the mouse delta yaws and pitches.
+def Camera.mouse.pan(+arithmetic: M.Contraction, camera: Maybe<Camera3D>, +delta: M.Vector2, +speed: F32, +plane: Bool) -> Maybe<Camera3D>:
+  M.Vector2{+dx, +dy} = delta
+  c1 = Camera.step.move((dx > 0.0 : F32), arithmetic, 1, camera, speed, plane)
+  c2 = Camera.step.move((dx < 0.0 : F32), arithmetic, 1, c1, F32.neg(speed), plane)
+  c3 = Camera.step.move((dy > 0.0 : F32), arithmetic, 2, c2, F32.neg(speed), False{})
+  Camera.step.move((dy < 0.0 : F32), arithmetic, 2, c3, speed, False{})
+
+def Camera.mouse.turn(+arithmetic: M.Contraction, +libm: M.Libm, camera: Maybe<Camera3D>, +delta: M.Vector2, +lock: Bool, +around: Bool) -> Maybe<Camera3D>:
+  M.Vector2{+dx, +dy} = delta
+  c1 = Camera.step.yaw(True{}, arithmetic, libm, camera, (F32.neg(dx) * Camera.float(994352038) : F32), around)
+  Camera.step.pitch(True{}, arithmetic, libm, c1, (F32.neg(dy) * Camera.float(994352038) : F32), lock, around)
+
+def Camera.mouse(pan: Bool, +arithmetic: M.Contraction, +libm: M.Libm, camera: Maybe<Camera3D>, +delta: M.Vector2, +speed: F32, +plane: Bool, +lock: Bool, +around: Bool) -> Maybe<Camera3D>:
+  match pan:
+    case True{}: Camera.mouse.pan(arithmetic, camera, delta, speed, plane)
+    case False{}: Camera.mouse.turn(arithmetic, libm, camera, delta, lock, around)
+
+# The keyboard, mouse and gamepad part of every mode except CAMERA_CUSTOM and
+# CAMERA_ORBITAL.
+def Camera.manual(+arithmetic: M.Contraction, +libm: M.Libm, +core: Core, camera: Camera3D, +mode: U32, +frame: F32) -> Maybe<Camera3D>:
+  +plane = U32.is_eq(mode, 3) || U32.is_eq(mode, 4)
+  +around = U32.is_eq(mode, 4) || U32.is_eq(mode, 2)
+  +lock = U32.is_eq(mode, 1) || U32.is_eq(mode, 3) || U32.is_eq(mode, 4) || U32.is_eq(mode, 2)
+  +free = U32.is_eq(mode, 1)
+  +move = (Camera.float(1085066445) * frame : F32)
+  +turn = (Camera.float(1022739087) * frame : F32)
+  +pan = (2.0 * frame : F32)
+  c1 = Camera.step.pitch(Input.is_key_down(core, 264), arithmetic, libm, Some{camera}, F32.neg(turn), lock, around)
+  c2 = Camera.step.pitch(Input.is_key_down(core, 265), arithmetic, libm, c1, turn, lock, around)
+  c3 = Camera.step.yaw(Input.is_key_down(core, 262), arithmetic, libm, c2, F32.neg(turn), around)
+  c4 = Camera.step.yaw(Input.is_key_down(core, 263), arithmetic, libm, c3, turn, around)
+  c5 = Camera.step.roll(Input.is_key_down(core, 81), arithmetic, libm, c4, F32.neg(turn))
+  c6 = Camera.step.roll(Input.is_key_down(core, 69), arithmetic, libm, c5, turn)
+  c7 = Camera.mouse(free && Input.is_mouse_button_down(core, 2), arithmetic, libm, c6, Input.get_mouse_delta(core), pan, plane, lock, around)
+  c8 = Camera.step.move(Input.is_key_down(core, 87), arithmetic, 0, c7, move, plane)
+  c9 = Camera.step.move(Input.is_key_down(core, 65), arithmetic, 1, c8, F32.neg(move), plane)
+  c10 = Camera.step.move(Input.is_key_down(core, 83), arithmetic, 0, c9, F32.neg(move), plane)
+  c11 = Camera.step.move(Input.is_key_down(core, 68), arithmetic, 1, c10, move, plane)
+  c12 = Camera.gamepad(Camera.gamepad.ready(Input.is_gamepad_available(core, 0)), arithmetic, libm, core, c11, move, plane, lock, around)
+  c13 = Camera.step.move(free && Input.is_key_down(core, 32), arithmetic, 2, c12, move, False{})
+  Camera.step.move(free && Input.is_key_down(core, 341), arithmetic, 2, c13, F32.neg(move), False{})
+
+def Camera.update.mode(+arithmetic: M.Contraction, +libm: M.Libm, +core: Core, +camera: Camera3D, +mode: U32, +frame: F32) -> Maybe<Camera3D>:
+  match mode:
+    case 0: Some{camera}
+    case 2:
+      +angle = (0.5 * frame : F32)
+      Camera.orbit(Camera.turnable(libm, angle, angle), arithmetic, libm, camera, angle)
+    case _: Camera.manual(arithmetic, libm, core, camera, mode, frame)
+
+# CAMERA_THIRD_PERSON, CAMERA_ORBITAL and CAMERA_FREE: CameraMoveToTarget by
+# -GetMouseWheelMove(), then 2 when KEY_KP_SUBTRACT and -2 when KEY_KP_ADD is
+# pressed.
+def Camera.zoom(zooming: Bool, +arithmetic: M.Contraction, +core: Core, camera: Maybe<Camera3D>) -> Maybe<Camera3D>:
+  match zooming:
+    case False{}: camera
+    case True{}:
+      c1 = Camera.step.move(True{}, arithmetic, 3, camera, F32.neg(Input.get_mouse_wheel_move(core)), False{})
+      c2 = Camera.step.move(Input.is_key_pressed(core, 333), arithmetic, 3, c1, 2.0, False{})
+      Camera.step.move(Input.is_key_pressed(core, 334), arithmetic, 3, c2, F32.neg(2.0), False{})
+
+# UpdateCamera(&camera, mode) with the Core's GetFrameTime, keys, mouse delta,
+# middle button, wheel and gamepad 0 (modes: 0 CAMERA_CUSTOM, 1 FREE,
+# 2 ORBITAL, 3 FIRST_PERSON, 4 THIRD_PERSON; other values take the manual
+# path with every option off). Speeds are 5.4f, 0.03f, 2.0f and 0.5f times the
+# frame time, the mouse sensitivity 0.003f. None when a rotation leaves the
+# M.Libm profile or a lockView angle the checked atan2f contract.
+def Camera.update_for(+arithmetic: M.Contraction, +libm: M.Libm, +core: Core, camera: Camera3D, +mode: U32) -> Maybe<Camera3D>:
+  Camera.zoom(U32.is_eq(mode, 4) || U32.is_eq(mode, 2) || U32.is_eq(mode, 1), arithmetic, core,
+    Camera.update.mode(arithmetic, libm, core, camera, mode, Core.get_frame_time(core)))
+
+def Camera.update(+core: Core, camera: Camera3D, +mode: U32) -> Maybe<Camera3D>:
+  Camera.update_for(M.Uncontracted{}, M.AppleLibm{}, core, camera, mode)
+
+# GetWorldToScreen: GetWorldToScreenEx at the screen size (GetScreenWidth and
+# GetScreenHeight, the InitWindow size). None as for Camera.world_to_screen_ex_for
+# (perspective cameras among them).
+def Camera.world_to_screen_for(+arithmetic: M.Contraction, position: M.Vector3, +camera: Camera3D, +core: Core) -> Maybe<M.Vector2>:
+  Camera.world_to_screen_ex_for(arithmetic, position, camera, Core.get_screen_width(core), Core.get_screen_height(core))
+
+def Camera.world_to_screen(position: M.Vector3, camera: Camera3D, +core: Core) -> Maybe<M.Vector2>:
+  Camera.world_to_screen_for(M.Uncontracted{}, position, camera, core)
+
+# GetScreenToWorldRay: GetScreenToWorldRayEx at the screen size.
+def Camera.screen_to_world_ray_for(+arithmetic: M.Contraction, position: M.Vector2, +camera: Camera3D, +core: Core) -> Maybe<Ray>:
+  Camera.screen_to_world_ray_ex_for(arithmetic, position, camera, Core.get_screen_width(core), Core.get_screen_height(core))
+
+def Camera.screen_to_world_ray(position: M.Vector2, camera: Camera3D, +core: Core) -> Maybe<Ray>:
+  Camera.screen_to_world_ray_for(M.Uncontracted{}, position, camera, core)
+
 # -----------------------------------------------------------------------------
 # Gestures (rgestures.h)
 
@@ -6622,6 +7107,18 @@ def Frame.window(valid: Bool, +width: U32, +height: U32) -> Maybe<Frame>:
 def Frame.init_window(+width: U32, +height: U32) -> Maybe<Frame>:
   Frame.window(((width >= 1) && (width <= 4096) && (height >= 1) && (height <= 4096) : U32), width, height)
 
+def Frame.window_flags(valid: Bool, +flags: U32, +width: U32, +height: U32) -> Maybe<Frame>:
+  match valid:
+    case False{}: None{}
+    case True{}: Some{Frame{FrameCore.Canvas.new_flags(flags, width, height), Nil{}}}
+
+# InitWindow after SetConfigFlags(flags) (Core.init_window_flags takes the
+# same flags): with FLAG_MSAA_4X_HINT, rcore.c sets the shapes texture
+# rectangle to the white glyph inset by two pixels, (42, 47, 1, 1), instead of
+# (41, 46, 2, 8). No other flag changes the memory platform's frame.
+def Frame.init_window_flags(+flags: U32, +width: U32, +height: U32) -> Maybe<Frame>:
+  Frame.window_flags(((width >= 1) && (width <= 4096) && (height >= 1) && (height <= 4096) : U32), flags, width, height)
+
 # CloseWindow: consumes the frame.
 def Frame.close_window(frame: Frame) -> Unit:
   Unit{}
@@ -6678,6 +7175,41 @@ def Frame.framebuffer(frame: Frame) -> Frame & Maybe<Surface>:
 # same bytes bottom-up with red and blue swapped; see docs/FRAME.md.
 def Frame.load_image_from_screen(frame: Frame) -> Frame & Maybe<Surface>:
   Frame.read(True{}, Frame.dimensions(frame))
+
+def Frame.screenshot.quote(name: String) -> Bool:
+  match name:
+    case SNil{}: False{}
+    case SCon{+character, rest}: U32.is_eq(Char.to_u32(character), 39) || Frame.screenshot.quote(rest)
+
+def Frame.screenshot.check(frame: Frame, path: String) -> IO(Frame & Maybe<Bool>):
+  IO.bind(Bool, Frame & Maybe<Bool>, Files.exists(path), saved => IO.pure(Frame & Maybe<Bool>, (frame, Some{saved})))
+
+def Frame.screenshot.image(frame: Frame, +path: String, image: Maybe<Surface>) -> IO(Frame & Maybe<Bool>):
+  match image:
+    case None{}: IO.pure(Frame & Maybe<Bool>, (frame, None{}))
+    case Some{surface}: IO.bind(Result<&1, &1, Surface.IOError, Unit>, Frame & Maybe<Bool>, Surface.write_image(surface, path), written => Frame.screenshot.check(frame, path))
+
+def Frame.screenshot.read(+path: String, result: Frame & Maybe<Surface>) -> IO(Frame & Maybe<Bool>):
+  (frame, image) = result
+  Frame.screenshot.image(frame, path, image)
+
+def Frame.screenshot.named(quoted: Bool, frame: Frame, +path: String) -> IO(Frame & Maybe<Bool>):
+  match quoted:
+    case True{}: IO.pure(Frame & Maybe<Bool>, (frame, Some{False{}}))
+    case False{}: Frame.screenshot.read(path, Frame.load_image_from_screen(frame))
+
+# TakeScreenshot(fileName): a name containing ' is rejected (nothing is
+# written); otherwise the screen (LoadImageFromScreen's desktop contract:
+# top-down R8G8B8A8, alpha 255) is exported with ExportImage's suffix rules to
+# fileName in the working directory. Answers whether the file exists
+# afterwards (raylib's FileExists log check); None, with nothing written, when
+# a draw was refused or a render texture is the target. raylib builds the path
+# from CORE.Storage.basePath (the working directory at InitWindow) with
+# TextFormat, which truncates paths of 1024 bytes or more; Jonlib writes the
+# relative name. The memory platform's own screenshot is the same image
+# bottom-up with red and blue swapped (see docs/TEXTURES.md).
+def Frame.take_screenshot(frame: Frame, +file_name: String) -> IO(Frame & Maybe<Bool>):
+  Frame.screenshot.named(Frame.screenshot.quote(file_name), frame, file_name)
 
 def Frame.draw(frame: Frame, plan: Shapes.Plan) -> Frame:
   Frame{canvas, _} = frame
@@ -7063,6 +7595,49 @@ def Texture.unload(frame: Frame, texture: Texture) -> Frame:
   Frame{canvas, _} = frame
   Texture{+id, _, _, _, _, _, _} = texture
   Frame{FrameCore.Canvas.give(False{}, id, canvas), Nil{}}
+
+def Texture.load.image(frame: Frame, result: Result<&1, &1, Surface.IOError, Surface>) -> IO(Frame & Maybe<Texture>):
+  match result:
+    case Fail{_}: IO.pure(Frame & Maybe<Texture>, (frame, None{}))
+    case Done{image}: IO.pure(Frame & Maybe<Texture>, Texture.load_from_image(frame, image))
+
+# LoadTexture(fileName): LoadImage, then LoadTextureFromImage of the decoded
+# image (which UnloadImage frees). None, the frame unchanged, when the file
+# does not load (raylib returns texture id 0) or the 127 texture ids are in
+# use.
+def Texture.load(frame: Frame, path: String) -> IO(Frame & Maybe<Texture>):
+  IO.bind(Result<&1, &1, Surface.IOError, Surface>, Frame & Maybe<Texture>, Surface.load_image(path), Texture.load.image(frame))
+
+# The face size LoadTextureCubemap derives (C int divisions), with the layout
+# auto-detection: line or cross layouts by the image's aspect.
+def Texture.cubemap.size(+layout: U32, +w: U32, +h: U32) -> U32 & U32:
+  match layout:
+    case 0:
+      Bool.pick(U32 & U32, (w > h : U32),
+        Bool.pick(U32 & U32, U32.is_eq((w / 6 : U32), h), (2, (w / 6 : U32)), Bool.pick(U32 & U32, U32.is_eq((w / 4 : U32), (h / 3 : U32)), (4, (w / 4 : U32)), (0, 0))),
+        Bool.pick(U32 & U32, (h > w : U32),
+          Bool.pick(U32 & U32, U32.is_eq((h / 6 : U32), w), (1, (h / 6 : U32)), Bool.pick(U32 & U32, U32.is_eq((w / 3 : U32), (h / 4 : U32)), (3, (w / 3 : U32)), (0, 0))),
+          (0, 0)))
+    case 1: (1, (h / 6 : U32))
+    case 2: (2, (w / 6 : U32))
+    case 3: (3, (w / 3 : U32))
+    case 4: (4, (w / 4 : U32))
+    case _: (layout, 0)
+
+def Texture.cubemap.info(size: U32 & U32) -> TextureInfo:
+  (_, +side) = size
+  TextureInfo{0, side, side, 0, 0}
+
+# LoadTextureCubemap(image, layout): the face size from the layout (0
+# CUBEMAP_LAYOUT_AUTO_DETECT guesses it from the aspect; unrecognized images
+# and layouts give 0), then rlLoadTextureCubemap, which the software
+# renderer's OpenGL 1.1 path does not implement: the cubemap keeps id 0,
+# mipmaps 0 and format 0, with width = height = the face size (rtextures.c
+# sets them before loading). The image stays the caller's; no texture id is
+# taken.
+def Texture.load_cubemap(frame: Frame, image: Surface, +layout: U32) -> Frame & (Surface & TextureInfo):
+  Surface{+w, +h, format, pixels} = image
+  (frame, (Surface{w, h, format, pixels}, Texture.cubemap.info(Texture.cubemap.size(layout, w, h))))
 
 def Texture.info(texture: Texture) -> Texture & TextureInfo:
   Texture{+id, +width, +height, +format, linear, alpha, texels} = texture
@@ -10214,6 +10789,22 @@ def Desktop.wait(+start: Nat, +now: M.Float64, wait: Maybe<M.Float64>) -> IO(M.F
     case None{}: IO.pure(M.Float64, now)
     case Some{+w}: Desktop.wait.zero(Clock.is_zero(Core.words(w)), start, now, w)
 
+def Desktop.ahead.wait(late: Bool, +start: Nat, +now: M.Float64, +gap: Binary64Words.Words) -> IO(M.Float64):
+  match late:
+    case False{}: IO.pure(M.Float64, now)
+    case True{}: Desktop.wait(start, now, Some{Core.seconds(gap)})
+
+def Desktop.ahead(+start: Nat, +now: M.Float64, gap: Maybe<Binary64Words.Words>) -> IO(M.Float64):
+  match gap:
+    case None{}: IO.pure(M.Float64, now)
+    case Some{+g}: Desktop.ahead.wait(Clock.greater(g, Clock.zero()), start, now, g)
+
+# WaitTime in a program moves the Core's clock (Core.get_time) ahead of the
+# real one: the driver waits until IO.now reaches it, as raylib's WaitTime
+# would have, and answers the clock then (`now` when it is not ahead).
+def Desktop.catch_up(+start: Nat, +core: Core, +now: M.Float64) -> IO(M.Float64):
+  Desktop.ahead(start, now, Clock.sub(Core.words(Core.get_time(core)), Core.words(now)))
+
 def Desktop.per(+total: U32, +frames: U32) -> String:
   U32.show((total / Bool.pick(U32, U32.is_eq(frames, 0), 1, frames) : U32))
 
@@ -10261,7 +10852,8 @@ def Desktop.begun(-S: Type, draw: Core -> S -> Frame -> Core & (S & Frame), +sta
 
 def Desktop.updated(-S: Type, draw: Core -> S -> Frame -> Core & (S & Frame), +start: Nat, +limit: U32, +stats: Desktop.Stats, +t1: Nat, +t2: Nat, +t3: Nat, frame: Frame, updated: Core & S) -> IO(Maybe<Desktop.State<S>>):
   (+core, user) = updated
-  Desktop.begun(S, draw, start, limit, stats, t1, t2, t3, frame, user, Core.begin_drawing(core, Desktop.now(start, t3)))
+  IO.bind(M.Float64, Maybe<Desktop.State<S>>, Desktop.catch_up(start, core, Desktop.now(start, t3)),
+    now => Desktop.begun(S, draw, start, limit, stats, t1, t2, t3, frame, user, Core.begin_drawing(core, now)))
 
 def Desktop.go(-S: Type, program: Program<S>, +start: Nat, +limit: U32, +stats: Desktop.Stats, +t1: Nat, +t2: Nat, +core: Core, frame: Frame, user: S) -> IO(Maybe<Desktop.State<S>>):
   Program{update, draw} = program
@@ -10289,22 +10881,65 @@ def Desktop.ended(-S: Type, program: Program<S>, libm: M.Libm, events: List<Even
 # PollInputEvents with the presented frame's events; then, unless the window
 # should close (or `limit` frames were presented), update, BeginDrawing, draw
 # and EndDrawing's flush, so that the next view presents the new frame.
-def Desktop.tick.at(-S: Type, program: Program<S>, libm: M.Libm, events: List<Event>, +core: Core, frame: Frame, user: S, +start: Nat, +limit: U32, +stats: Desktop.Stats, +t1: Nat) -> IO(Maybe<Desktop.State<S>>):
-  +now = Desktop.now(start, t1)
+def Desktop.tick.caught(-S: Type, program: Program<S>, libm: M.Libm, events: List<Event>, +core: Core, frame: Frame, user: S, +start: Nat, +limit: U32, +stats: Desktop.Stats, +t1: Nat, +now: M.Float64) -> IO(Maybe<Desktop.State<S>>):
   IO.bind(M.Float64, Maybe<Desktop.State<S>>, Desktop.wait(start, now, Core.frame_wait(core, now)),
     after => Desktop.ended(S, program, libm, events, core, frame, user, start, limit, stats, t1, now, after))
+
+def Desktop.tick.at(-S: Type, program: Program<S>, libm: M.Libm, events: List<Event>, +core: Core, frame: Frame, user: S, +start: Nat, +limit: U32, +stats: Desktop.Stats, +t1: Nat) -> IO(Maybe<Desktop.State<S>>):
+  IO.bind(M.Float64, Maybe<Desktop.State<S>>, Desktop.catch_up(start, core, Desktop.now(start, t1)),
+    now => Desktop.tick.caught(S, program, libm, events, core, frame, user, start, limit, stats, t1, now))
 
 def Desktop.tick(-S: Type, program: Program<S>, libm: M.Libm, events: List<Event>, state: Desktop.State<S>) -> IO(Maybe<Desktop.State<S>>):
   DesktopState{+core, frame, user, +start, +limit, +stats} = state
   IO.bind(Nat, Maybe<Desktop.State<S>>, IO.now(), t1 => Desktop.tick.at(S, program, libm, events, core, frame, user, start, limit, stats, t1))
 
-def Desktop.app(~S: Type, ~program: Program<S>, ~libm: M.Libm) -> App<Desktop.State<S>>:
-  App{state => Desktop.view(S, state), events => state => Desktop.tick(S, program, libm, events, state)}
+# The state and the title its Core holds (SetWindowTitle).
+def Desktop.title(-S: Type, state: Desktop.State<S>) -> Desktop.State<S> & String:
+  DesktopState{+core, frame, user, +start, +limit, +stats} = state
+  (DesktopState{core, frame, user, start, limit, stats}, Core.window_title(core))
 
-def Desktop.opened(~S: Type, ~program: Program<S>, ~libm: M.Libm, title: String, +width: U32, +height: U32, first: Maybe<Desktop.State<S>>) -> IO(Unit):
+def Desktop.loop.set(-S: Type, same: Bool, window: Window, +title: String, rest: Window -> String -> Desktop.State<S> -> IO(Unit), state: Desktop.State<S>) -> IO(Unit):
+  match same:
+    case True{}: rest(window, title, state)
+    case False{}: IO.bind(Window, Unit, Window.set_title(window, title), w => rest(w, title, state))
+
+def Desktop.loop.retitle(-S: Type, window: Window, +shown: String, rest: Window -> String -> Desktop.State<S> -> IO(Unit), titled: Desktop.State<S> & String) -> IO(Unit):
+  (state, +title) = titled
+  Desktop.loop.set(S, String.eq(title, shown), window, title, rest, state)
+
+def Desktop.loop.next(-S: Type, window: Window, +shown: String, rest: Window -> String -> Desktop.State<S> -> IO(Unit), next: Maybe<Desktop.State<S>>) -> IO(Unit):
+  match next:
+    case None{}: Window.close(window)
+    case Some{state}: Desktop.loop.retitle(S, window, shown, rest, Desktop.title(S, state))
+
+def Desktop.loop.turn(-S: Type, program: Program<S>, libm: M.Libm, presented: Window & Image & List<Event>, state: Desktop.State<S>, +shown: String, rest: Window -> String -> Desktop.State<S> -> IO(Unit)) -> IO(Unit):
+  (window, image, events) = presented
+  do IO<Unit>:
+    Unit <- IO.pure(Unit, Image.drop!(image))
+    IO.bind(Maybe<Desktop.State<S>>, Unit, Desktop.tick(S, program, libm, events, state), Desktop.loop.next(S, window, shown, rest))
+
+def Desktop.loop.drawn(-S: Type, program: Program<S>, libm: M.Libm, window: Window, +shown: String, rest: Window -> String -> Desktop.State<S> -> IO(Unit), viewed: Desktop.State<S> & Image) -> IO(Unit):
+  (state, image) = viewed
+  IO.bind(Window & Image & List<Event>, Unit, Window.frame(window, image), presented => Desktop.loop.turn(S, program, libm, presented, state, shown, rest))
+
+# Base's App.run loop over a Desktop.State (view, Window.frame, tick), which
+# also calls Window.set_title when the Core's title (SetWindowTitle) differs
+# from the one shown.
+def Desktop.loop(~S: Type, ~program: Program<S>, ~libm: M.Libm, fuel: Nat, window: Window, +shown: String, state: Desktop.State<S>) -> IO(Unit):
+  match fuel:
+    case 0n: Window.close(window)
+    case 1n+f: Desktop.loop.drawn(S, program, libm, window, shown, w => title => s => Desktop.loop(~S, ~program, ~libm, f, w, title, s), Desktop.view(S, state))
+
+def Desktop.open(~S: Type, ~program: Program<S>, ~libm: M.Libm, +width: U32, +height: U32, titled: Desktop.State<S> & String) -> IO(Unit):
+  (state, +title) = titled
+  IO.bind(Window, Unit, IO.try(Window, Window.open(title, width, height)), window => Desktop.loop(~S, ~program, ~libm, U32.to_nat(4294967295), window, title, state))
+
+# The window opens with the title the Core holds after setup and the first
+# frame.
+def Desktop.opened(~S: Type, ~program: Program<S>, ~libm: M.Libm, +width: U32, +height: U32, first: Maybe<Desktop.State<S>>) -> IO(Unit):
   match first:
     case None{}: IO.pure(Unit, Unit{})
-    case Some{state}: App.run(~Desktop.State<S>, ~Desktop.app(~S, ~program, ~libm), title, width, height, state)
+    case Some{state}: Desktop.open(~S, ~program, ~libm, width, height, Desktop.title(S, state))
 
 def Desktop.setup.parts(-S: Type, program: Program<S>, +limit: U32, +start: Nat, +core: Core, rest: Frame & S) -> IO(Maybe<Desktop.State<S>>):
   (frame, user) = rest
@@ -10314,12 +10949,17 @@ def Desktop.setup.done(-S: Type, program: Program<S>, +limit: U32, +start: Nat, 
   (+core, rest) = ready
   Desktop.setup.parts(S, program, limit, start, core, rest)
 
-def Desktop.started(~S: Type, ~program: Program<S>, ~libm: M.Libm, title: String, +width: U32, +height: U32, +limit: U32, setup: Core -> Frame -> IO(Core & (Frame & S)), +start: Nat, core: Maybe<Core>, frame: Maybe<Frame>) -> IO(Unit):
+def Desktop.started(~S: Type, ~program: Program<S>, ~libm: M.Libm, +width: U32, +height: U32, +limit: U32, setup: Core -> Frame -> IO(Core & (Frame & S)), +start: Nat, core: Maybe<Core>, frame: Maybe<Frame>) -> IO(Unit):
   match core frame:
     case Some{+c} Some{f}:
       IO.bind(Core & (Frame & S), Unit, setup(c, f), ready =>
-        IO.bind(Maybe<Desktop.State<S>>, Unit, Desktop.setup.done(S, program, limit, start, ready), first => Desktop.opened(~S, ~program, ~libm, title, width, height, first)))
+        IO.bind(Maybe<Desktop.State<S>>, Unit, Desktop.setup.done(S, program, limit, start, ready), first => Desktop.opened(~S, ~program, ~libm, width, height, first)))
     case _ _: IO.print("Jonlib: InitWindow needs a size in 1..4096")
+
+def Desktop.titled(title: String, core: Maybe<Core>) -> Maybe<Core>:
+  match core:
+    case None{}: None{}
+    case Some{+c}: Some{Core.set_window_title(c, title)}
 
 # InitWindow, the program's loop and CloseWindow in a Base window: `setup`
 # runs after InitWindow (SetTargetFPS, loading textures, ...), then each
@@ -10331,8 +10971,15 @@ def Desktop.started(~S: Type, ~program: Program<S>, ~libm: M.Libm, title: String
 # Core or draw step leaves the reproduced domain (the loop then stops). libm
 # is the profile for mouse gestures' atan2f.
 def Desktop.run(~S: Type, ~program: Program<S>, ~libm: M.Libm, title: String, +width: U32, +height: U32, +limit: U32, setup: Core -> Frame -> IO(Core & (Frame & S))) -> IO(Unit):
-  IO.bind(Nat, Unit, IO.now(), start => Desktop.started(~S, ~program, ~libm, title, width, height, limit, setup, start,
-    Core.init_window(width, height, M.Float64{0, 0}), Frame.init_window(width, height)))
+  IO.bind(Nat, Unit, IO.now(), start => Desktop.started(~S, ~program, ~libm, width, height, limit, setup, start,
+    Desktop.titled(title, Core.init_window(width, height, M.Float64{0, 0})), Frame.init_window(width, height)))
+
+# Desktop.run after SetConfigFlags(flags): the Core and the Frame start with
+# them (Core.init_window_flags, Frame.init_window_flags). Base windows have
+# no window state, so only the flags' memory-platform effects apply.
+def Desktop.run_flags(~S: Type, ~program: Program<S>, ~libm: M.Libm, +flags: U32, title: String, +width: U32, +height: U32, +limit: U32, setup: Core -> Frame -> IO(Core & (Frame & S))) -> IO(Unit):
+  IO.bind(Nat, Unit, IO.now(), start => Desktop.started(~S, ~program, ~libm, width, height, limit, setup, start,
+    Desktop.titled(title, Core.init_window_flags(flags, width, height, M.Float64{0, 0})), Frame.init_window_flags(flags, width, height)))
 
 def Desktop.frames_arg.value(value: Maybe<&2, U32>) -> U32:
   match value:
