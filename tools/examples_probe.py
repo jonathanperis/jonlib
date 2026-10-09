@@ -90,6 +90,7 @@ EXAMPLES = {
     'shapes_colors_palette': ('shapes/shapes_colors_palette.c', 'Ex.setup(core, frame)'),
     'shapes_logo_raylib_anim': ('shapes/shapes_logo_raylib_anim.c', 'Ex.setup(core, frame)'),
     'shapes_rectangle_scaling': ('shapes/shapes_rectangle_scaling.c', 'Ex.setup(core, frame)'),
+    'shapes_collision_area': ('shapes/shapes_collision_area.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -173,6 +174,12 @@ def scripts():
                                                     quick([mouse_at(500, 300)]), slow([mouse_at(50, 50)]), quick([mouse_at(900, 600)]),
                                                     quick([mouse_at(640, 333)]), quick([button(0, False)]), quick([mouse_at(400, 200)]),
                                                     quick([button(0)]), quick([button(0, False)])]),
+        script('shapes_collision_area', 'overlap', [quick(), quick([mouse_at(120, 220)]), quick(), slow([mouse_at(215, 260)]),
+                                                    quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), quick([mouse_at(90, 180)]), quick(),
+                                                    quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False), mouse_at(700, 30)]),
+                                                    quick([mouse_at(790, 445)]), quick([mouse_at(5, 5)])]),
+        # boxA reaches the right edge after 148 frames and bounces back.
+        script('shapes_collision_area', 'bounce', [quick([mouse_at(400, 300)])] + [quick() for _ in range(169)]),
     ]
     return [timed(item) for item in out]
 

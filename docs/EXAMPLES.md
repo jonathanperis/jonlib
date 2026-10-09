@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and it includes no unported companion
 library (`raygui.h`); **waiting** otherwise.
 
-Totals: 212 examples; 16 ported, 114 ready, 82 waiting.
+Totals: 212 examples; 17 ported, 113 ready, 82 waiting.
 
 ## APIs that unblock the most examples
 
@@ -115,7 +115,7 @@ Totals: 212 examples; 16 ported, 114 ready, 82 waiting.
 | `shapes_logo_raylib_anim` | shapes | ported |  |
 | `shapes_rectangle_scaling` | shapes | ported |  |
 | `shapes_lines_bezier` | shapes | ported |  |
-| `shapes_collision_area` | shapes | ready |  |
+| `shapes_collision_area` | shapes | ported |  |
 | `shapes_following_eyes` | shapes | ready |  |
 | `shapes_easings_ball` | shapes | ready |  |
 | `shapes_easings_box` | shapes | ready |  |
