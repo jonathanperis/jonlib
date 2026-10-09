@@ -92,6 +92,7 @@ EXAMPLES = {
     'shapes_rectangle_scaling': ('shapes/shapes_rectangle_scaling.c', 'Ex.setup(core, frame)'),
     'shapes_collision_area': ('shapes/shapes_collision_area.c', 'Ex.setup(core, frame)'),
     'shapes_dashed_line': ('shapes/shapes_dashed_line.c', 'Ex.setup(core, frame)'),
+    'shapes_mouse_trail': ('shapes/shapes_mouse_trail.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -187,6 +188,9 @@ def scripts():
                + [quick([key(KEY_DOWN, False), key(KEY_RIGHT)]), quick(), quick([key(KEY_RIGHT, False), key(KEY_LEFT)])] + [quick() for _ in range(18)]
                + [quick([key(KEY_LEFT, False)])] + [f([key(KEY_C, i % 2 == 0)]) for i, f in enumerate([quick] * 18)]
                + [quick([mouse_at(20, 50)]), quick([mouse_at(-40, 500)])]),
+        # A 36-step path fills the 30 positions; the mouse then rests at (0, 0), which the trail skips.
+        script('shapes_mouse_trail', 'path', [quick()] + [quick([mouse_at(100 + 17 * i, 80 + (i * 37) % 300)]) for i in range(36)]
+               + [quick([mouse_at(0, 0)]), quick(), slow()]),
     ]
     return [timed(item) for item in out]
 
