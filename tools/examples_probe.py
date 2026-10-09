@@ -116,18 +116,19 @@ EXAMPLES = {
     'textures_blend_modes': ('textures/textures_blend_modes.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_npatch_drawing': ('textures/textures_npatch_drawing.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_raw_data': ('textures/textures_raw_data.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_bunnymark': ('textures/textures_bunnymark.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
 # examples/<module>/ directory) and the flags SetConfigFlags sets before InitWindow.
 IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_background_scrolling', 'models_rotating_cube',
             'textures_image_loading', 'textures_image_rotate', 'textures_to_image', 'textures_blend_modes',
-            'textures_npatch_drawing', 'textures_raw_data'}
+            'textures_npatch_drawing', 'textures_raw_data', 'textures_bunnymark'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
 PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen', 'core_3d_picking', 'models_basic_voxel', 'models_rotating_cube'}
-SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values'}
+SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'textures_bunnymark'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32}
 
 
@@ -302,6 +303,10 @@ def scripts():
         script('textures_npatch_drawing', 'stretch', [quick(), quick([mouse_at(100, 100)]), quick([mouse_at(500, 300)]), slow([mouse_at(790, 440)]),
                                                       quick([mouse_at(300, 200)]), quick([mouse_at(181, 175)])]),
         script('textures_raw_data', 'frames', [quick(), slow()]),
+        # Two frames with the button down add 200 bunnies; they bounce off the edges; P pauses and resumes.
+        script('textures_bunnymark', 'bunnies', [quick(), quick([mouse_at(400, 225), button(0)]), quick([mouse_at(150, 300)]), quick([button(0, False)]),
+                                                 slow(), quick(), quick([key(80)]), quick([key(80, False)]), quick(), quick([key(80)]),
+                                                 quick([key(80, False)]), slow()], seed=0xB077),
     ]
     return [timed(item) for item in out]
 
@@ -681,7 +686,7 @@ PURE_REPLAY = '''def replay(SETUP_PARAMS script: +List<J.ReplayFrame>, core: May
     case _ _: "no window"
 '''
 
-IO_REPLAY = '''def replay(script: +List<J.ReplayFrame>, core: Maybe<J.Core>, frame: Maybe<J.Frame>) -> IO(String):
+IO_REPLAY = '''def replay(SETUP_PARAMS script: +List<J.ReplayFrame>, core: Maybe<J.Core>, frame: Maybe<J.Frame>) -> IO(String):
   match core frame:
     case Some{+core} Some{frame}: IO.bind(J.Core & (J.Frame & Ex.State), String, SETUP, ready => IO.pure(String, replay.ready(script, ready)))
     case _ _: IO.pure(String, "no window")
