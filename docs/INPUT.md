@@ -77,6 +77,8 @@ raylib's C is undefined (see [Refusals](#refusals)).
 | `WindowShouldClose` | `Core.window_should_close(core) -> Bool` |
 | `BeginDrawing` / `EndDrawing` (timing, recording, polling) | `Core.begin_drawing(core, now)`, `Core.end_drawing(core, now, after) -> Maybe<Core>`; `Core.frame_wait(core, now) -> Maybe<M.Float64>` |
 | `PollInputEvents` | `Core.poll_input_events(core, now) -> Core` |
+| `GetTime` / `WaitTime` | `Core.get_time(core) -> M.Float64` (the clock of the last timing step), `Core.wait_time(core, seconds) -> Maybe<Core>` (the clock moves to `GetTime() + seconds`) |
+| `SetMouseCursor` / `GetKeyName` / `SetGamepadMappings` / `SetGamepadVibration` | `Input.set_mouse_cursor`, `Input.get_key_name -> String` (`""`), `Input.set_gamepad_mappings -> U32` (0), `Input.set_gamepad_vibration`: the memory platform only warns ([DRIVER.md](DRIVER.md#window-state)) |
 | `SetTargetFPS` / `GetFrameTime` / `GetFPS` | `Core.set_target_fps(core, fps)`, `Core.get_frame_time(core) -> F32`, `Core.get_fps(core, now) -> Maybe<(Core & U32)>` |
 | screenshot requests (F12, `ACTION_TAKE_SCREENSHOT`) | `Core.screenshot_count(core) -> U32` |
 | `PlayAutomationEvent` | `Core.play_automation_event(core, event) -> Maybe<Core>` |
@@ -149,6 +151,19 @@ ready answers false and the rest values (-1 for the trigger axes 4 and 5, 0
 otherwise); an axis value replaces the rest value when its movement (signed
 for triggers, absolute otherwise) is larger. The axis count, last button and
 names (empty) are never set on the memory platform.
+
+**The clock.** The `Core` keeps the clock `GetTime()` last answered in
+`CORE.Time.current` (which raylib only writes): InitWindow's `now`,
+BeginDrawing's `now`, the clock EndDrawing's `PollInputEvents` reads (`after`
+when it waited) and the end of `WaitTime`. `Core.get_time` answers it, which
+is raylib's `GetTime()` wherever a program calls it in `Program.replay`'s
+scripted frames (the reference driver sets the same clocks). `WaitTime(seconds)`
+(`SUPPORT_PARTIALBUSY_WAIT_LOOP`) returns at once for negative seconds
+(-infinity included); otherwise its busy loop ends when the clock reaches
+`GetTime() + seconds` (binary64), which becomes the clock. NaN, +infinity and
+more than 4096 seconds are `None`: raylib converts `sleepSeconds*1000000.0`
+to `usleep`'s 32-bit `useconds_t` on macOS (undefined from about 4521
+seconds) and NaN/infinity to `time_t` on Linux.
 
 **Timing.** `BeginDrawing`: `update = now - previous`. `EndDrawing`, after
 recording: `draw = now - previous`, `frame = update + draw`; when
@@ -227,6 +242,7 @@ verified domain:
 
 | Gate | Tool | Compares |
 |---|---|---|
+| `window` | `tools/window_probe.py` | `GetTime` after InitWindow, BeginDrawing, EndDrawing and `WaitTime` (negative, zero, fractional and -infinity seconds, with the shim ending the sleep at raylib's destination), the NaN/+infinity/over-4096 contracts, and the input setters above ([DRIVER.md](DRIVER.md#window-state)) |
 | `input` | `tools/input_probe.py` | 37 scripts (1015 operations, 381 rows, 20 refusal contracts) row for row against the shimmed memory-platform raylib on CPU-1, CPU-2 and JavaScript; on macOS the 29 scripts whose clock stays 0 also against the unshimmed build |
 
 ```sh
@@ -260,11 +276,13 @@ queue bound, key repeats set by the key callback until the next poll, the
   (slice 5, [DRIVER.md](DRIVER.md): previous mouse states, wheel reset, mouse
   gestures, the Base event table) follow `rcore_desktop_glfw.c` but are
   checked by laws, not against a native GLFW build.
-- `GetTime` is the driver's clock (no function), `WaitTime` the driver's sleep;
+- `GetTime` answers the last timing step's clock, not a live reading; the
+  desktop driver performs `WaitTime`'s sleep ([DRIVER.md](DRIVER.md#one-frame)).
   `SwapScreenBuffer` and `TakeScreenshot`'s image belong to the Frame.
-- Not modeled: `SetMouseCursor` (a warning on the memory platform),
-  `GetKeyName`, `SetGamepadMappings`, `SetGamepadVibration`, window state
-  functions, event waiting, and state kept across a second `InitWindow`.
+- `SetMouseCursor`, `GetKeyName`, `SetGamepadMappings` and
+  `SetGamepadVibration` answer as the memory platform (warnings, `""`, 0);
+  desktop cursor shapes, key names and gamepads need Base facilities. State
+  kept across a second `InitWindow` is not modeled.
 - The glibc `atan2f` profiles are not exercised by this probe on macOS (the
   gate selects the host profile from native controls).
 - Toolchain: Apple clang 21.0.0 crashed in its backend ("live register

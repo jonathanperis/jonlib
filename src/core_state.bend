@@ -20,9 +20,17 @@ type Time is Data:
 type Fps is Data:
   Fps{index: U32, history: +List<F32>, average: F32, last: F32}
 
-# The screen size, CORE.Window.shouldClose and the screenshot counter.
+# The window state of the memory platform's CORE.Window that no other field
+# holds: the configuration flags (SetConfigFlags; SetWindowState and the
+# toggles only log there), the title, the minimum and maximum sizes of a
+# resizable window and the event-waiting flag.
+type Config is Data:
+  Config{flags: U32, title: String, min_width: U32, min_height: U32, max_width: U32, max_height: U32, waiting: Bool}
+
+# The screen size, CORE.Window.shouldClose, the screenshot counter and the
+# window configuration.
 type Screen is Data:
-  Screen{width: U32, height: U32, should_close: Bool, screenshots: U32}
+  Screen{width: U32, height: U32, should_close: Bool, screenshots: U32, config: Config}
 
 type Core is Data:
   Core{window: Screen, input: In.Input, gestures: G.Gestures, time: Time, fps: Fps, recording: Bool, list: Maybe<&2, A.AutoList>}
@@ -30,10 +38,15 @@ type Core is Data:
 def Fps.new() -> Fps:
   Fps{0, List.replicate(F32, 30n, 0.0), 0.0, 0.0}
 
+def Config.new() -> Config:
+  Config{0, "", 0, 0, 0, 0, False{}}
+
 # InitWindow(width, height) at time now (InitTimer sets CORE.Time.previous).
+# CORE.Time.current, which raylib only writes, holds the clock GetTime() last
+# read: now here (see Core.clock).
 def Core.new(+width: U32, +height: U32, +now: W.Words) -> Core:
-  Core{Screen{width, height, False{}, 0}, In.Input.new(), G.Gestures.new(),
-    Time{Clock.zero(), now, Clock.zero(), Clock.zero(), Clock.zero(), Clock.zero(), 0}, Fps.new(), False{}, None{}}
+  Core{Screen{width, height, False{}, 0, Config.new()}, In.Input.new(), G.Gestures.new(),
+    Time{now, now, Clock.zero(), Clock.zero(), Clock.zero(), Clock.zero(), 0}, Fps.new(), False{}, None{}}
 
 def Core.window(+core: Core) -> Screen:
   Core{window, _, _, _, _, _, _} = core
@@ -88,28 +101,28 @@ def Core.with_list(core: Core, list: Maybe<&2, A.AutoList>) -> Core:
   Core{window, input, gestures, time, fps, recording, list}
 
 def Screen.should_close(+w: Screen) -> Bool:
-  Screen{_, _, close, _} = w
+  Screen{_, _, close, _, _} = w
   close
 
 def Screen.width(+w: Screen) -> U32:
-  Screen{width, _, _, _} = w
+  Screen{width, _, _, _, _} = w
   width
 
 def Screen.height(+w: Screen) -> U32:
-  Screen{_, height, _, _} = w
+  Screen{_, height, _, _, _} = w
   height
 
 def Screen.screenshots(+w: Screen) -> U32:
-  Screen{_, _, _, shots} = w
+  Screen{_, _, _, shots, _} = w
   shots
 
 def Screen.close(w: Screen) -> Screen:
-  Screen{width, height, _, shots} = w
-  Screen{width, height, True{}, shots}
+  Screen{width, height, _, shots, config} = w
+  Screen{width, height, True{}, shots, config}
 
 def Screen.screenshot(w: Screen) -> Screen:
-  Screen{width, height, close, +shots} = w
-  Screen{width, height, close, (shots + 1 : U32)}
+  Screen{width, height, close, +shots, config} = w
+  Screen{width, height, close, (shots + 1 : U32), config}
 
 def Time.counter(+t: Time) -> U32:
   Time{_, _, _, _, _, _, counter} = t
@@ -537,7 +550,7 @@ def Core.set_cursor_hidden(+core: Core, hidden: Bool) -> Core:
 # EnableCursor/DisableCursor (memory platform): SetMousePosition to the screen
 # center (unsigned halves), then show/hide.
 def Screen.center(+w: Screen) -> U32 & U32:
-  Screen{+width, +height, _, _} = w
+  Screen{+width, +height, _, _, _} = w
   ((width / 2 : U32), (height / 2 : U32))
 
 def center.moved(+core: Core, center: U32 & U32) -> Core:
@@ -583,11 +596,11 @@ def Core.set_gestures_enabled(+core: Core, +flags: U32) -> Core:
 # GLFW callbacks for the events Base pumped where glfwPollEvents runs them.
 
 def Screen.reopen(w: Screen) -> Screen:
-  Screen{width, height, _, shots} = w
-  Screen{width, height, False{}, shots}
+  Screen{width, height, _, shots, config} = w
+  Screen{width, height, False{}, shots, config}
 
 def Screen.size(+w: Screen) -> In.Point:
-  Screen{+width, +height, _, _} = w
+  Screen{+width, +height, _, _, _} = w
   In.Point{U32.to_f32(width), U32.to_f32(height)}
 
 def end.timing.pair(+core: Core, pair: Time & W.Words) -> Maybe<(Core & W.Words)>:
@@ -650,3 +663,121 @@ def Core.mouse_button(+core: Core, +profile: U32, +button: U32, +down: Bool, +no
 def Core.cursor_position(+core: Core, +profile: U32, +position: In.Point, +now: W.Words) -> Maybe<Core>:
   Core.process_gesture(Core.with_input(core, In.cursor_position_callback(Core.input(core), position)), profile, 2, 1,
     desktop.normalized(position, Screen.size(Core.window(core))), In.vector.zero(), now)
+
+# -----------------------------------------------------------------------------
+# Window configuration (memory platform) and the clock GetTime reads
+
+def Screen.config(+w: Screen) -> Config:
+  Screen{_, _, _, _, config} = w
+  config
+
+def Screen.with_config(w: Screen, config: Config) -> Screen:
+  Screen{width, height, close, shots, _} = w
+  Screen{width, height, close, shots, config}
+
+def Core.config(+core: Core) -> Config:
+  Screen.config(Core.window(core))
+
+def Core.with_config(+core: Core, config: Config) -> Core:
+  Core.with_window(core, Screen.with_config(Core.window(core), config))
+
+def Config.flags(+c: Config) -> U32:
+  Config{flags, _, _, _, _, _, _} = c
+  flags
+
+def Config.title(+c: Config) -> String:
+  Config{_, title, _, _, _, _, _} = c
+  title
+
+def Config.min_size(+c: Config) -> U32 & U32:
+  Config{_, _, +w, +h, _, _, _} = c
+  (w, h)
+
+def Config.max_size(+c: Config) -> U32 & U32:
+  Config{_, _, _, _, +w, +h, _} = c
+  (w, h)
+
+def Config.waiting(+c: Config) -> Bool:
+  Config{_, _, _, _, _, _, waiting} = c
+  waiting
+
+def Config.with_flags(c: Config, +flags: U32) -> Config:
+  Config{+old, title, a, b, d, e, waiting} = c
+  Config{(old .|. flags : U32), title, a, b, d, e, waiting}
+
+def Config.with_title(c: Config, title: String) -> Config:
+  Config{flags, _, a, b, d, e, waiting} = c
+  Config{flags, title, a, b, d, e, waiting}
+
+def Config.with_min(c: Config, +w: U32, +h: U32) -> Config:
+  Config{flags, title, _, _, d, e, waiting} = c
+  Config{flags, title, w, h, d, e, waiting}
+
+def Config.with_max(c: Config, +w: U32, +h: U32) -> Config:
+  Config{flags, title, a, b, _, _, waiting} = c
+  Config{flags, title, a, b, w, h, waiting}
+
+def Config.with_waiting(c: Config, waiting: Bool) -> Config:
+  Config{flags, title, a, b, d, e, _} = c
+  Config{flags, title, a, b, d, e, waiting}
+
+# SetConfigFlags: CORE.Window.flags |= flags. Nothing is evaluated here; after
+# InitWindow raylib logs a warning and still sets them.
+def Core.set_config_flags(+core: Core, +flags: U32) -> Core:
+  Core.with_config(core, Config.with_flags(Core.config(core), flags))
+
+# FLAG_IS_SET(CORE.Window.flags, flag): every bit of flag is set (true for 0).
+def Core.flag(+core: Core, +flag: U32) -> Bool:
+  U32.is_eq((Config.flags(Core.config(core)) .&. flag : U32), flag)
+
+def Core.set_title(+core: Core, title: String) -> Core:
+  Core.with_config(core, Config.with_title(Core.config(core), title))
+
+def Core.set_min_size(+core: Core, +w: U32, +h: U32) -> Core:
+  Core.with_config(core, Config.with_min(Core.config(core), w, h))
+
+def Core.set_max_size(+core: Core, +w: U32, +h: U32) -> Core:
+  Core.with_config(core, Config.with_max(Core.config(core), w, h))
+
+def Core.set_event_waiting(+core: Core, waiting: Bool) -> Core:
+  Core.with_config(core, Config.with_waiting(Core.config(core), waiting))
+
+def Time.current(+t: Time) -> W.Words:
+  Time{current, _, _, _, _, _, _} = t
+  current
+
+def Time.with_current(t: Time, current: W.Words) -> Time:
+  Time{_, previous, update, draw, frame, target, counter} = t
+  Time{current, previous, update, draw, frame, target, counter}
+
+# The clock GetTime() last read in the explicit-clock model: InitWindow's,
+# BeginDrawing's, the one EndDrawing's PollInputEvents read (after a
+# SetTargetFPS wait) or the end of the last WaitTime.
+def Core.clock(+core: Core) -> W.Words:
+  Time.current(Core.time(core))
+
+def wait.until(+core: Core, destination: Maybe<W.Words>) -> Maybe<Core>:
+  match destination:
+    case None{}: None{}
+    case Some{d}: Some{Core.with_time(core, Time.with_current(Core.time(core), d))}
+
+# 4096.0 seconds: below the 2^32 microseconds usleep's useconds_t takes on
+# macOS (sleepSeconds*1000000.0 converted to an unsigned int).
+def wait.bound() -> W.Words:
+  W.Words{1085276160, 0}
+
+def wait.positive(+core: Core, +seconds: W.Words) -> Maybe<Core>:
+  Bool.pick(Maybe<Core>, Clock.greater(seconds, wait.bound()), None{}, wait.until(core, Clock.add(Core.clock(core), seconds)))
+
+def wait.finite(finite: Bool, +core: Core, +seconds: W.Words) -> Maybe<Core>:
+  match finite:
+    case True{}: Bool.pick(Maybe<Core>, U32.is_eq(Clock.sign(seconds), 1), Some{core}, wait.positive(core, seconds))
+    case False{}: Bool.pick(Maybe<Core>, U32.is_eq(Clock.high(seconds), 4293918720) && U32.is_eq(Clock.low(seconds), 0), Some{core}, None{})
+
+# WaitTime(seconds) with SUPPORT_PARTIALBUSY_WAIT_LOOP: a negative value
+# (-infinity included) returns at once; otherwise the wait ends when GetTime()
+# reaches GetTime() + seconds, which becomes the clock. None for NaN, +infinity
+# and values above 4096 seconds (raylib's sleep converts them with undefined
+# behavior on some hosts) and outside the binary64 helpers' domain.
+def Core.wait_time(+core: Core, +seconds: W.Words) -> Maybe<Core>:
+  wait.finite(Clock.finite(seconds), core, seconds)

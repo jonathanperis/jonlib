@@ -125,6 +125,36 @@ values converted as C converts them; `NPatchInfo`'s borders and layout hold
 integral F32 values. The `_for` functions take the `M.Libm` profile; the
 others use `M.AppleLibm{}`.
 
+## Files, cubemaps and screenshots
+
+- **LoadTexture.** `Texture.load(frame, path) -> IO(Frame & Maybe<Texture>)` is
+  `LoadImage` (`Surface.load_image`, [IMAGE-FILES.md](IMAGE-FILES.md)) and then
+  `LoadTextureFromImage` of the decoded image. A file that does not load and
+  an exhausted id pool are `None` with the frame unchanged (raylib returns
+  texture id 0, which every draw skips).
+- **LoadTextureCubemap.** rlgl's `rlLoadTextureCubemap` is compiled only for
+  OpenGL 3.3 and ES2: under the software renderer it returns id 0 without
+  touching rlsw, so no cubemap is ever loaded. `Texture.load_cubemap(frame,
+  image, layout) -> Frame & (Surface & TextureInfo)` keeps the fields raylib
+  leaves: id 0, mipmaps 0, format 0 and width = height = the face size
+  `rtextures.c` derives (line layouts `height/6` or `width/6`, crosses
+  `width/3` or `width/4`; `CUBEMAP_LAYOUT_AUTO_DETECT` picks one from the
+  aspect, else 0; other layout values 0). The image stays the caller's.
+- **TakeScreenshot.** `Frame.take_screenshot(frame, name) -> IO(Frame &
+  Maybe<Bool>)`: a name containing `'` is rejected (nothing written);
+  otherwise the screen image is exported with `ExportImage`'s suffix rules
+  (`Surface.write_image`) to `name` in the working directory, and the answer
+  is whether the file exists afterwards (raylib's log check). The image
+  follows `LoadImageFromScreen`'s desktop contract (top-down R8G8B8A8, alpha
+  255, [FRAME.md](FRAME.md#readback)); the memory platform writes the same
+  pixels bottom-up with red and blue swapped (`rlReadScreenPixels` over rlsw's
+  BGRA buffer), which the probe normalizes. raylib joins the name to
+  `CORE.Storage.basePath` (the working directory at InitWindow) through
+  `TextFormat`, which truncates paths of 1024 bytes or more; Jonlib writes the
+  relative name. `None` (nothing written) when a draw was refused or a render
+  texture is the target. The F12/`ACTION_TAKE_SCREENSHOT` captures of
+  `EndDrawing` are still only counted (`Core.screenshot_count`).
+
 ## Refusals and None
 
 As in slice 1, a draw Jonlib does not reproduce marks the frame undefined
@@ -164,6 +194,7 @@ conversions of the rectangle or sums that could reach 2^31.
 
 | Gate | Tool | Compares |
 |---|---|---|
+| `window` | `tools/window_probe.py` | `LoadTexture` of PNG fixtures (RGBA with translucent texels, RGB) drawn into the frame and of a missing file, `LoadTextureCubemap`'s fields for every layout and auto-detected aspect, and `TakeScreenshot` to `.png`, `.BMP`, a name without suffix and one with a quote: Jonlib's file must equal raylib's flipped, swapped screenshot re-exported by raylib, byte for byte ([DRIVER.md](DRIVER.md#window-state)) |
 | `texture` | `tools/texture_probe.py` | 118 scenes (1410 operations, sizes 8x6 to 32x32, 10 random scenes) byte for byte against the uncontracted memory-platform raylib on CPU-1, CPU-2 and JavaScript, with texture ids, sizes, mipmaps, formats, validity and `LoadImageFromTexture` sums; 13 contract scenes (9 on glibc hosts) must be refused |
 | `frame` | `tools/frame_probe.py` | slice 1, unchanged |
 
@@ -194,9 +225,9 @@ generated C ([VERIFICATION.md](VERIFICATION.md#known-toolchain-defects)).
 
 ## Gaps
 
-- `LoadTexture` (from a file), `LoadTextureCubemap`, multi-level
-  `Image.Stored` textures and compressed formats (id 0 in raylib) are not
-  exposed; `DrawTextureNPatch` is checked on nearest and bilinear textures
+- Multi-level `Image.Stored` textures and compressed formats (id 0 in
+  raylib) are not exposed; cubemaps load nowhere under the software renderer
+  (above), so their OpenGL 3.3 behavior is a separate (GPU) contract; `DrawTextureNPatch` is checked on nearest and bilinear textures
   only through the scenes above.
 - `rlSetBlendFactors`, custom blend modes and shader modes have no effect on
   the software renderer (`Rlgl.set_blend_factors` and the shader calls are
