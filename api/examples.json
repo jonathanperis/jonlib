@@ -3630,7 +3630,7 @@
   {
    "name": "text_input_box",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",
