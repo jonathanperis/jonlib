@@ -190,8 +190,10 @@ clears and getters, and random immediate scenes.
   resource API (`rlLoad*`/`rlUnload*` buffers, shaders, framebuffers) are not
   exposed.
 - The depth buffer of render textures is not modeled. `BeginMode3D` and the
-  `rmodels.c` 3D shapes are in [MODELS.md](MODELS.md); meshes and models
-  drawn with `DrawMesh`/`DrawModel` are a later slice.
+  `rmodels.c` 3D shapes, and meshes and models drawn with
+  `DrawMesh`/`DrawModel` (rlgl's vertex arrays into rlsw's
+  `swDrawArrays`/`swDrawElements`), are in [MODELS.md](MODELS.md);
+  `rlEnableStatePointer` and the vertex-array calls are not exposed.
 - Segment estimation under the Apple and glibc 2.41 profiles and
   `DrawSplineBezierCubic` under glibc 2.41 are refused, not approximated.
 - `rlOrtho`/`rlFrustum` outside the exact binary32 domain need a binary64

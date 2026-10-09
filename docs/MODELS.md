@@ -1,10 +1,11 @@
-# Models: meshes, BeginMode3D and 3D shapes
+# Models: meshes, materials, BeginMode3D, 3D shapes and model files
 
-Phase 5, first slice: raylib's CPU mesh data, the mesh generators (the
+Phase 5: raylib's CPU mesh data, the mesh generators (the
 `par_shapes` sphere, hemisphere and torus included, under the glibc
 profiles), mesh utilities and export, mesh/model
-collision queries, `BeginMode3D`/`EndMode3D` for orthographic cameras and
-every `rmodels.c` 3D shape, all reproducing pinned raylib 6.0 exactly.
+collision queries, `BeginMode3D`/`EndMode3D` for orthographic cameras,
+every `rmodels.c` 3D shape, materials, `DrawMesh`/`DrawModel*`/billboards and
+OBJ (with MTL) loading, all reproducing pinned raylib 6.0 exactly.
 Altered Bend adaptations of `rmodels.c` and of `rcore.c`'s
 `BeginMode3D`/`EndMode3D` (zlib, [LICENSES/raylib.txt](../LICENSES/raylib.txt));
 3D drawing renders through the Bend port of `rlsw.h` 1.5 (MIT,
@@ -12,8 +13,11 @@ Altered Bend adaptations of `rmodels.c` and of `rcore.c`'s
 and [RLGL.md](RLGL.md). Code: the section "Models" of `jonlib.bend`,
 `src/mesh.bend` (attribute generation, tangents, bounding boxes, OBJ and
 code text), `src/par_shapes.bend` (the `par_shapes` adaptation, MIT,
-[LICENSES/par_shapes.txt](../LICENSES/par_shapes.txt)) and
-`src/shapes3d.bend` (the rlgl streams of the 3D shapes).
+[LICENSES/par_shapes.txt](../LICENSES/par_shapes.txt)),
+`src/shapes3d.bend` (the rlgl streams of the 3D shapes),
+`src/mesh_draw.bend` (the `DrawMesh` and `DrawBillboardPro` streams) and
+`src/obj.bend` (the `tinyobj_loader_c` adaptation raylib vendors, MIT,
+[LICENSES/tinyobj_loader_c.txt](../LICENSES/tinyobj_loader_c.txt)).
 
 ## Mesh and Model
 
@@ -23,19 +27,36 @@ type Mesh is Data:
     texcoords2: Maybe<&2, +List<F32>>, normals: Maybe<&2, +List<F32>>, tangents: Maybe<&2, +List<F32>>,
     colors: Maybe<&2, +List<U32>>, indices: Maybe<&2, +List<U32>>}
 
+type MaterialMap is Data:
+  MaterialMap{texture: TextureInfo, color: U32, value: F32}
+
+type Material is Data:
+  Material{maps: +List<MaterialMap>, params: +List<F32>}
+
 type Model is Data:
-  Model{transform: M.Matrix, meshes: +List<Mesh>}
+  Model{transform: M.Matrix, meshes: +List<Mesh>, materials: +List<Material>, mesh_material: +List<U32>}
 ```
 
 A `Mesh` holds raylib's CPU attribute arrays as F32 (or byte/index) lists in
 raylib's order, `None` where raylib's pointer is `NULL`. Indices are the
 unsigned short values (generators take them modulo 2^16, as C converts).
 Vertex arrays raylib allocates with zero elements (`malloc(0)`) are
-`Some{Nil}`. GPU buffer ids (`vaoId`, `vboId`), animation data
-(`animVertices`, bones) and materials are not modeled; `UnloadMesh` and
-`UnloadModel` consume the value. A `Model` keeps its meshes and transform;
-`LoadModelFromMesh` is `Model.from_mesh` (identity transform, the default
-material not modeled).
+`Some{Nil}`. GPU buffer ids (`vaoId`, `vboId`, all 0 on the software
+renderer) and animation data (`animVertices`, bones) are not modeled;
+`UnloadMesh` and `UnloadModel` consume the value. A `Model` keeps its
+transform, meshes, materials and the material index of each mesh
+(`meshMaterial`, C ints as U32 words); `LoadModelFromMesh` is
+`Model.from_mesh` (identity transform, `Material.load_default()`, mesh
+material 0).
+
+A `Material` holds raylib's 12 maps (`MAX_MATERIAL_MAPS`) and four params.
+A map's texture is raylib's `Texture2D` struct as a `TextureInfo` (id 0: no
+texture); the texels stay with the `Texture` value that owns them (Jonlib
+textures are affine, [TEXTURES.md](TEXTURES.md)). Drawing a mesh whose
+diffuse map names a texture therefore takes the textures as a list and hands
+them back: the one with the map's id is bound, as raylib binds the id it holds.
+Shaders are not modeled: on the software renderer every shader id is 0
+(`rlGetShaderIdDefault`, and `LoadShader` compiles nothing under OpenGL 1.1).
 
 Consumers check that a mesh is *consistent*: each present attribute holds
 `vertex_count` elements, indices `3*triangle_count`, counts below 2^22
@@ -61,6 +82,17 @@ answers `None`.
 | `ExportMeshAsCode` | `Mesh.code_text(mesh, path) -> Maybe<String>`, `Mesh.export_as_code(mesh, path)` | text / `IO(Result<...>)` |
 | `UnloadMesh` | `Mesh.unload(mesh) -> Unit` | |
 | `LoadModelFromMesh` / `UnloadModel` | `Model.from_mesh(mesh)`, `Model.unload(model)` | |
+| `IsModelValid` | `Model.is_valid(model)` | `Bool` |
+| `SetModelMeshMaterial` | `Model.set_mesh_material(model, mesh_id, material_id)` | `Maybe<Model>` |
+| `LoadModel` | `Model.load_for(arithmetic, frame, path)`, `Model.load(frame, path)` | `IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>)` |
+| `LoadMaterials` | `Material.load_materials_for(arithmetic, frame, path)`, `Material.load_materials` | `IO(Frame & Result<&1, &1, Surface.IOError, LoadedMaterials>)` |
+| `LoadMaterialDefault` / `IsMaterialValid` | `Material.load_default()`, `Material.is_valid(material)` | `Material` / `Bool` |
+| `UnloadMaterial` | `Material.unload(frame, textures, material)` | `Frame & List<Texture>` |
+| `SetMaterialTexture` | `Material.set_texture(material, map_type, info)` | `Maybe<Material>` |
+| `DrawMesh` / `DrawMeshInstanced` | `Draw.mesh(frame, textures, mesh, material, transform)`, `Draw.mesh_instanced(frame, textures, mesh, material, transforms)` | `Frame & List<Texture>` |
+| `DrawModel` / `DrawModelEx` | `Draw.model(frame, textures, model, position, scale, tint)`, `Draw.model_ex_for(libm, frame, textures, model, position, axis, angle, scale, tint)`, `Draw.model_ex` | `Frame & List<Texture>` |
+| `DrawModelWires` / `DrawModelWiresEx` | `Draw.model_wires`, `Draw.model_wires_ex_for`, `Draw.model_wires_ex` (the same parameters) | `Frame & List<Texture>` |
+| `DrawBillboard` / `DrawBillboardRec` / `DrawBillboardPro` | `Draw.billboard(frame, camera, texture, position, scale, tint)`, `Draw.billboard_rec(frame, camera, texture, source, position, size, tint)`, `Draw.billboard_pro_for(libm, frame, camera, texture, source, position, up, size, origin, rotation, tint)`, `Draw.billboard_pro` | `Frame & Texture` |
 | `GetModelBoundingBox` | `Model.bounding_box_for(arithmetic, libm, model)`, `Model.bounding_box` | `Maybe<BoundingBox>` |
 | `GetRayCollisionMesh` | `Collision.ray_mesh_for(arithmetic, ray, mesh, transform)`, `Collision.ray_mesh` | `Maybe<RayCollision>` |
 | `BeginMode3D` / `EndMode3D` | `Frame.begin_mode_3d(frame, camera)`, `Frame.end_mode_3d(frame)` | `Frame` |
@@ -201,6 +233,175 @@ call the binary64 `cos`/`sin`, for which no verified reproduction exists
   `GetFileNameWithoutExt` with a-z upper-cased. A present empty array makes
   raylib read element -1: `None`; text beyond the 64 MB buffer is `None`.
 
+## Materials
+
+- **LoadMaterialDefault** (`Material.load_default`): 12 zeroed maps; the
+  diffuse map holds `(Texture2D){ rlGetTextureIdDefault(), 1, 1, 1, 7 }`, whose
+  id is 0 under OpenGL 1.1, and the diffuse and specular colors are WHITE.
+- **IsMaterialValid** needs `shader.id > 0`: always false on the software
+  renderer (the probe checks it natively).
+- **SetMaterialTexture** stores the texture struct (`TextureInfo`, from
+  `Texture.info`) in the map; the previous texture is not unloaded. A map type
+  of 12 or more makes raylib write past the maps: `None`.
+- **UnloadMaterial** unloads, in map order, every map texture whose id is not
+  0 (`rlGetTextureIdDefault()`). Those textures are taken from the list passed
+  in and unloaded into the frame (their ids return to the pool, so the next
+  texture reuses them); the others are handed back. A second map with an id
+  already unloaded is an rlsw no-op (`swDeleteTextures` ignores invalid ids).
+  Refused (the frame marked undefined): an id that is not in the list (raylib
+  would unload a texture Jonlib does not hold) or a primitive being recorded.
+- **SetModelMeshMaterial** with C int ids as U32 words: a mesh id at or beyond
+  the mesh count, or a non-negative material id at or beyond the material
+  count, changes nothing (raylib warns); a negative material id is stored as
+  raylib stores it (drawing that mesh is refused); a negative mesh id makes
+  raylib write before the array: `None`.
+- **IsModelValid** requires meshes, materials and mesh materials, and every
+  present attribute uploaded to a GPU buffer. `UploadMesh` creates no buffers
+  under OpenGL 1.1, so on the software renderer only models whose meshes have
+  no attributes at all (raylib's empty generated meshes) are valid. Meshes are
+  assumed uploaded, as every generator and loader leaves them (raylib
+  dereferences a NULL `vboId` for a mesh it never uploaded).
+
+## Drawing meshes, models and billboards
+
+What `rmodels.c` does under `GRAPHICS_API_OPENGL_SOFTWARE` (which defines
+`GRAPHICS_API_OPENGL_11`), traced in the pinned sources and checked by the
+probe:
+
+- **DrawMesh** takes its OpenGL 1.1 branch: `rlEnableTexture(diffuse id)` when
+  the mesh has texcoords and the id is positive, `rlEnableStatePointer` for
+  vertices, texcoords and colors (rlsw ignores normals), `rlPushMatrix`,
+  `rlMultMatrixf(transform)`, `rlColor4ub(diffuse color)`, then
+  `rlDrawVertexArray(0, vertexCount)` or
+  `rlDrawVertexArrayElements(0, 3*triangleCount, indices)`, `rlPopMatrix`,
+  the state pointers disabled and `rlDisableTexture`. rlsw's
+  `swDrawArrays`/`swDrawElements` push every vertex through the immediate
+  path as `GL_TRIANGLES`: the texcoord (through the texture matrix), the
+  color (`byte*SW_INV_255`) when the mesh has colors, then the position; a
+  vertex count that is not a multiple of 3 leaves its last vertices pending.
+  Their begin resets rlsw's per-primitive alpha flag, so a translucent
+  material color alone does not blend: the triangles are stored with the
+  material's alpha, unblended. A mesh without vertices draws nothing (an
+  rlsw error) but still sets the color and the texture state. Inside an
+  `rlBegin` primitive rlsw refuses the arrays: Jonlib refuses the call.
+- **DrawMeshInstanced** is compiled only for OpenGL 3.3 and ES2: a no-op.
+- **DrawModelEx** multiplies the model transform by
+  `MatrixMultiply(MatrixMultiply(MatrixScale, MatrixRotate(axis,
+  angle*DEG2RAD)), MatrixTranslate)` (raymath, uncontracted as the reference
+  renderer is built; `sinf`/`cosf` from the `M.Libm` profile, an unverified
+  argument refuses the draw), then draws each mesh with its material, whose
+  diffuse color is tinted per channel as `(c*t)/255`. **DrawModel** is
+  `DrawModelEx` about (0, 1, 0) by 0 degrees with a uniform scale. The
+  `Wires` forms wrap them in `rlEnableWireMode`/`rlDisableWireMode` (polygons
+  are filled afterwards, whatever the mode was). `DrawModelPoints(Ex)` is not
+  part of raylib 6.0.
+- **DrawBillboardPro** takes the first row of `MatrixLookAt(camera)` as the
+  right vector (scaled by `size.x`) and `up*size.y`; a negative size flips the
+  source, the vector and the origin; the corners 0, right, up + right and up,
+  less `Normalize(right)*origin.x + Normalize(up)*origin.y`, are rotated with
+  `Vector3RotateByAxisAngle(cross(right, up), rotation*DEG2RAD)` when the
+  rotation is not 0 (`sinf`/`cosf` of half the angle, checked for the
+  profile) and moved to the position; texcoords are the source over the
+  texture's int size. One textured `RL_QUADS` with the tint.
+  **DrawBillboardRec** uses up (0, 1, 0), origin `size*0.5` and no rotation;
+  **DrawBillboard** the whole texture with size `(scale*fabsf(width/height),
+  scale)`. Billboards use the camera only through `MatrixLookAt` and draw
+  through the current projection (orthographic in `BeginMode3D`).
+
+Refused draws mark the frame undefined: inconsistent attribute lists, indices
+not below the vertex count, color values above 255, a diffuse id missing from
+the textures, a mesh material index beyond the materials, unverified `sinf`/
+`cosf` arguments, and the rules of [RLGL.md](RLGL.md#refusals).
+
+## Loading models (OBJ and MTL)
+
+`Model.load_for(arithmetic, frame, path)` is `LoadModel`: `.obj`
+(case-insensitive, as `IsFileExtension`) through `LoadOBJ`; IQM, glTF/GLB,
+VOX and M3D files (which raylib loads) are `UnsupportedFileType`; other
+extensions, and OBJ files that do not open or are empty, give raylib's model
+without meshes and with the default material. The result is a
+`LoadedModel{model, textures}`: the textures the MTL file's materials loaded
+into the frame, which raylib's `UnloadModel` leaves loaded (the caller
+unloads them). `LoadModel` sets an identity transform and uploads nothing on
+the software renderer. The contraction profile is the reference's for
+`tryParseDouble` (below); the convenience `Model.load` uses
+`M.Uncontracted{}`.
+
+- **Text.** `LoadFileText` and `strlen`: the text ends at its first NUL. A
+  text whose first byte is NUL makes `tinyobj_parse_obj` fail, after which
+  `LoadOBJ` returns without restoring the working directory: refused.
+- **Lines** (`tinyobj_parse_obj`). Lines end at `\n` and at a `\r` followed by
+  another byte than `\n`; a line's `\r` before its `\n` is dropped. The last
+  line runs to the end of the text, except that when the text has no
+  terminator at all tinyobj drops its last byte. An empty line after a lone
+  `\r` underflows its length, and lines of 4095 bytes or more fail
+  `assert(p_len < 4095)`: refused.
+- **Commands** (`parseLine`). `v`, `vn`, `vt` (`parseFloat`: spaces, then the
+  token up to NUL, space, tab or `\r`), `f` (`i`, `i/j`, `i//k`, `i/j/k` with
+  `my_atoi`; more than 5 vertices fail tinyobj's `assert(3*num_f < 16)`:
+  refused), `usemtl` (the rest of the line, trailing spaces included; an empty
+  name keeps the material), `mtllib` (the last one is loaded), `g` and `o`
+  (shapes). `mtllib`, `g` or `o` with nothing after their space make tinyobj
+  read past the line, and an int overflow in an index or exponent is
+  undefined: refused.
+- **Numbers** (`tryParseDouble`). The C grammar (`[sign] digits ['.' digits]
+  [e [sign] digits]`, greedy; a failed parse leaves 0) evaluated in binary64
+  as tinyobj writes it: `mantissa*10 + digit`, `frac_value = 0.1^read` by
+  repeated products, `mantissa += digit*frac_value` (one rounding under
+  `M.Fused{}`, as the arm64 Apple clang reference contracts it; the probe
+  includes literals near binary32 midpoints that round differently in the
+  two profiles), `5^e` and `2^e` by repeated products (inverted for a
+  negative exponent), `mantissa*a*b` and `(float)`. The operations run
+  through Jonlib's checked binary64 helpers ([BINARY64.md](BINARY64.md)); a
+  value whose steps leave their domains (more than about 39 integer digits,
+  about 80 fraction digits, exponents above 54) is refused when `LoadOBJ`
+  reads it (unread values do not matter).
+- **Indices and faces.** `fixIndex` makes indices zero-based, negative ones
+  relative to the counts read so far; faces are triangulated as fans
+  `(f0, f[k-1], f[k])`. Materials come from the MTL file's table (djb2
+  hashes of the names, 64-bit, in tinyobj's open table of capacity 10 grown
+  to `2*max(capacity, n + 1)` with quadratic probing; an insertion that finds
+  no slot loops forever in C: refused); an unknown name is -1.
+- **Shapes and meshes** (`LoadOBJ`). tinyobj's shapes record face offsets in
+  face *lines*; `LoadOBJ` compares them with triangle indices, starting a new
+  mesh at each shape boundary it crosses and at each material change after a
+  known material (a change from -1 does not split). A mesh holds 3 vertices
+  per triangle: positions, normals ((0, 1, 0) without a valid index) and,
+  when the file has texcoords, texcoords with v flipped as `1 - v` (0 without
+  a valid index); colors are NULL under OpenGL 1.1. Its material is that of
+  its last face (0 when that is not an MTL index). A vertex index that is
+  negative or beyond the vertices, or a valid normal or texcoord index beyond
+  its array, makes `LoadOBJ` read outside tinyobj's arrays: refused.
+- **MTL files** (`tinyobj_parse_and_index_mtl_file`) open relative to the
+  OBJ's directory: `LoadOBJ` changes the working directory to
+  `GetDirectoryPath(fileName)`, and Jonlib prefixes relative names with it
+  instead. Lines come from `dynamic_fgets`, so a last line without `\n` is
+  never parsed. `newmtl` takes `sscanf("%s")` (a missing name, one of 4096
+  bytes or more, or a longer line is refused); properties before the first
+  `newmtl` are lost; `Kd`, `Ks`, `Ke`, `Ns` and the texture names `map_Kd`,
+  `map_Ks`, `map_bump`/`bump` and `disp` (the rest of the line up to `\r` or
+  `\n`, after one separator) are used; the other keywords are parsed (and
+  checked for undefined behavior) but unused. A file that does not open
+  leaves no materials; NUL bytes are refused.
+- **ProcessMaterialsOBJ.** Per material: `LoadMaterialDefault`, the diffuse
+  texture (else the `Kd` color), the specular texture and `Ks` color, the
+  bump texture as the normal map (WHITE, value `Ns`), the `Ke` emission color
+  and the displacement texture as the height map. Colors are
+  `(unsigned char)(x*255.0f)` with alpha 255 (a product outside (-1, 256) is
+  undefined: refused). Textures load in that order with `LoadTexture`: a file
+  that does not open (or an empty name) gives `(Texture2D){ 0 }`; a file
+  Jonlib's `LoadImage` does not decode is refused (raylib may decode it), as
+  are exhausted texture ids.
+- **LoadMaterials** (`Material.load_materials_for`): a `.mtl` file's
+  materials through the same parser and `ProcessMaterialsOBJ`, with texture
+  names opened from the working directory as they are; other extensions and
+  files that do not open give no materials.
+- **Paths.** OBJ paths and MTL and texture names must be printable ASCII
+  (Jonlib passes them to the file system unchanged); OBJ paths must not
+  contain backslashes (`GetDirectoryPath` splits at them, `chdir` would not)
+  and must fit `GetDirectoryPath`'s buffer. Paths that name directories are
+  outside the contract.
+
 ## Collision
 
 - **GetRayCollisionMesh** transforms each triangle's vertices with
@@ -274,12 +475,15 @@ rlsw's per-primitive alpha flag ([FRAME.md](FRAME.md#the-rendering-path)).
 | `mesh` | `tools/mesh_probe.py` | every attribute word, bounding box, collision and exported byte of the generators, tangents, exports, ray and model queries against the linked raylib with the host contraction and libm (on macOS arm64 `M.Fused{}`: 244 cases, 198 compared, 46 refused, the `par_shapes` ones among them) |
 | `mesh-uncontracted` | `tools/mesh_probe.py --uncontracted-control` | the same cases against the raylib built with `-ffp-contract=off` (`M.Uncontracted{}`) |
 | `mesh-gnu` | `tools/mesh_probe.py --gnu-libm` | the same cases plus the `par_shapes` spheres, hemispheres (before and after a GenMeshSphere) and tori with their tangents, exports and ray queries (bounding boxes left out: their `fminf` is the host's), against the glibc-model build with `M.Uncontracted{}` and `M.Glibc239Libm{}` (232 cases, 220 compared, 12 refused) |
+| `model-draw` | `tools/model_draw_probe.py` | 27 scenes (216 operations, 6 random orthographic scenes of custom meshes) byte for byte against the uncontracted memory-platform raylib with the host libm: `DrawMesh` of generated, empty and custom meshes (indexed or not, texcoords, colors, no vertices, leftover vertices, translucent materials, textures from the scene's slots), `DrawModel(Ex)`, `DrawModelWires(Ex)` (also after point mode), two-mesh models with `SetModelMeshMaterial` and a model transform, `DrawMeshInstanced`, `DrawBillboard(Rec, Pro)` (negative sizes, origins, rotations), and logged `IsMaterialValid`, `IsModelValid`, `LoadMaterialDefault`/`SetMaterialTexture` maps and `UnloadMaterial` (its ids reused by the next texture); contracts must be refused (on macOS 20 compared, 7 refused; on glibc 22 and 5) |
+| `obj` | `tools/obj_probe.py` | 40 OBJ/MTL loads (written by the probe with PNG textures) word for word against the linked raylib with the host contraction (on macOS arm64 the fused `tryParseDouble`, `M.Fused{}`): mesh and material counts, `IsModelValid`, every mesh's counts, material index and vertex, normal and texcoord word, every material map; 27 compared, 13 refused |
+| `obj-uncontracted` | `tools/obj_probe.py --uncontracted-control` | the same files against the raylib built with `-ffp-contract=off` (`M.Uncontracted{}`); the corpus includes literals whose fused and unfused parses round to different floats |
 
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only models
 ```
 
-Both probes run CPU-1, CPU-2 and JavaScript lanes. Attributes of more than
+Every probe runs CPU-1, CPU-2 and JavaScript lanes. Attributes of more than
 3000 words are compared through an FNV-1a hash of all their words plus the
 count; image inputs are read from files. The largest meshes (a 256x256-vertex
 plane, a 32x32 heightmap) also exercise the JavaScript lane's stack: the
@@ -294,6 +498,15 @@ attribute builders are tail-recursive.
 - Perspective cameras; `DrawSphereWires` (no verified argument domain);
   the Apple profile's `sinf`/`cosf` beyond the integral degrees (most curved
   shapes are verified only under the glibc profile).
-- `DrawMesh`, `DrawModel*`, materials, shaders, `UploadMesh`/GPU buffers,
-  billboards, model loading (OBJ, IQM, glTF, VOX, M3D) and animation.
+- Shaders (no shader is compiled under OpenGL 1.1), `UploadMesh`/GPU
+  buffers, `UpdateMeshBuffer`, `GenMeshCylinder`/`Cone`/`Knot` (above) and
+  model animation (`LoadModelAnimations`, `UpdateModelAnimation*`).
+- IQM, glTF/GLB, VOX and M3D files: `LoadModel` answers
+  `UnsupportedFileType` (raylib loads them; their parsers, binary formats and
+  for glTF its JSON and accessor handling are not ported).
+- OBJ: faces of 6 or 7 vertices (accepted by builds without asserts, refused
+  here), numbers beyond the checked binary64 domains, non-ASCII names, and
+  texture files Jonlib's `LoadImage` does not decode.
+- Textures shared between models: a material holds a texture's struct, but
+  the drawing call needs the owning `Texture` value in its list.
 - Metal lane and performance: not measured.

@@ -3951,11 +3951,8 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModelEx",
-    "LoadModel",
     "LoadModelAnimations",
     "LoadTexture",
-    "SetMaterialTexture",
     "UnloadModelAnimations",
     "UpdateCamera",
     "UpdateModelAnimation"
@@ -3986,8 +3983,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawBillboard",
-    "DrawBillboardPro",
     "LoadTexture",
     "UpdateCamera"
    ]
@@ -4053,7 +4048,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
     "LoadTexture",
     "UpdateCamera"
    ]
@@ -4093,7 +4087,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
     "LoadTexture",
     "UpdateCamera"
    ]
@@ -4168,7 +4161,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
     "GenMeshCylinder",
     "GenMeshKnot",
     "UpdateCamera",
@@ -4221,10 +4213,8 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
     "DrawSphereWires",
     "GetScreenToWorldRay",
-    "LoadModel",
     "LoadTexture",
     "UpdateCamera"
    ]
@@ -4266,11 +4256,9 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
     "GetScreenToWorldRay",
     "IsFileDropped",
     "LoadDroppedFiles",
-    "LoadModel",
     "LoadTexture",
     "UnloadDroppedFiles",
     "UpdateCamera"
@@ -4303,8 +4291,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
-    "LoadModel",
     "LoadModelAnimations",
     "UnloadModelAnimations",
     "UpdateCamera",
@@ -4354,11 +4340,9 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
     "DrawSphereWires",
     "GetShaderLocation",
     "GetTime",
-    "LoadModel",
     "LoadShader",
     "SetShaderValue"
    ]
@@ -4395,8 +4379,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
-    "LoadModel",
     "LoadModelAnimations",
     "UnloadModelAnimations",
     "UpdateCamera",
@@ -4467,8 +4449,6 @@
     "rlEnablePointMode"
    ],
    "missing": [
-    "DrawModel",
-    "DrawModelEx",
     "DrawSphereWires",
     "UpdateCamera",
     "UploadMesh"
@@ -4535,8 +4515,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
-    "LoadModel",
     "LoadTexture"
    ]
   },
@@ -4593,7 +4571,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
     "UpdateCamera"
    ]
   },
@@ -4667,7 +4644,6 @@
     "rlViewport"
    ],
    "missing": [
-    "DrawModel",
     "GetShaderLocation",
     "IsFileDropped",
     "LoadDroppedFiles",
@@ -4751,8 +4727,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
-    "LoadModel",
     "LoadModelAnimations",
     "LoadShader",
     "UnloadModelAnimations",
@@ -4796,8 +4770,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawMesh",
-    "LoadModel",
     "LoadModelAnimations",
     "UnloadModelAnimations",
     "UpdateCamera",
@@ -4857,14 +4829,13 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
     "UpdateCamera"
    ]
   },
   {
    "name": "models_rotating_cube",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4887,9 +4858,7 @@
     "UnloadTexture",
     "WindowShouldClose"
    ],
-   "missing": [
-    "DrawModelEx"
-   ]
+   "missing": []
   },
   {
    "name": "models_decals",
@@ -4952,10 +4921,7 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
     "GetScreenToWorldRay",
-    "LoadMaterialDefault",
-    "LoadModel",
     "LoadTexture",
     "SetConfigFlags",
     "UpdateCamera",
@@ -4989,7 +4955,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawBillboardPro",
     "LoadTexture",
     "UpdateCamera"
    ]
@@ -5034,8 +4999,6 @@
     "rlUpdateVertexBuffer"
    ],
    "missing": [
-    "DrawModel",
-    "LoadModel",
     "LoadModelAnimations",
     "LoadShader",
     "UnloadModelAnimations",
@@ -5079,8 +5042,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
-    "LoadModel",
     "LoadModelAnimations",
     "LoadShader",
     "UnloadModelAnimations",
@@ -5120,8 +5081,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
-    "LoadModel",
     "LoadModelAnimations",
     "UnloadModelAnimations",
     "UpdateCamera",
@@ -5247,8 +5206,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
-    "LoadModel",
     "LoadShader",
     "LoadTexture",
     "SetConfigFlags",
@@ -5335,10 +5292,8 @@
    ],
    "missing": [
     "BeginShaderMode",
-    "DrawModel",
     "EndShaderMode",
     "GetShaderLocation",
-    "LoadModel",
     "LoadShader",
     "LoadTexture",
     "SetConfigFlags",
@@ -5387,9 +5342,7 @@
    ],
    "missing": [
     "BeginShaderMode",
-    "DrawModel",
     "EndShaderMode",
-    "LoadModel",
     "LoadShader",
     "LoadTexture",
     "SetConfigFlags",
@@ -5777,7 +5730,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
     "GetShaderLocation",
     "LoadShader",
     "LoadTexture",
@@ -5825,8 +5777,6 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
-    "DrawModelEx",
     "GetShaderLocation",
     "LoadShader",
     "LoadTexture",
@@ -5905,10 +5855,7 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawMesh",
-    "DrawMeshInstanced",
     "GetShaderLocation",
-    "LoadMaterialDefault",
     "LoadShader",
     "SetShaderValue",
     "UpdateCamera"
@@ -5997,12 +5944,10 @@
    ],
    "missing": [
     "BeginShaderMode",
-    "DrawModel",
     "DrawSphereWires",
     "EndShaderMode",
     "GetShaderLocation",
     "GetTime",
-    "LoadModel",
     "LoadShader",
     "LoadTexture",
     "SetConfigFlags",
@@ -6114,8 +6059,6 @@
     "rlUnloadTexture"
    ],
    "missing": [
-    "DrawModel",
-    "DrawModelEx",
     "DrawSphereWires",
     "GetShaderLocation",
     "LoadShader",
@@ -6234,7 +6177,6 @@
    ],
    "missing": [
     "BeginShaderMode",
-    "DrawModel",
     "EndShaderMode",
     "GetShaderLocation",
     "LoadShader",
@@ -6302,9 +6244,7 @@
     "rlUnloadFramebuffer"
    ],
    "missing": [
-    "DrawModelEx",
     "GetShaderLocation",
-    "LoadModel",
     "LoadModelAnimations",
     "LoadShader",
     "SetConfigFlags",
@@ -6365,7 +6305,6 @@
    ],
    "missing": [
     "BeginShaderMode",
-    "DrawModel",
     "EndShaderMode",
     "GetShaderLocation",
     "LoadShader",
@@ -6464,15 +6403,12 @@
     "WindowShouldClose"
    ],
    "missing": [
-    "DrawModel",
     "DrawSphereWires",
     "GetShaderLocation",
-    "LoadModel",
     "LoadShader",
     "LoadTexture",
     "SetConfigFlags",
     "SetShaderValue",
-    "UnloadMaterial",
     "UnloadShader",
     "UpdateCamera"
    ]
@@ -6520,8 +6456,6 @@
     "rlSetVertexAttribute"
    ],
    "missing": [
-    "DrawMesh",
-    "LoadMaterialDefault",
     "LoadShader",
     "LoadTexture",
     "SetConfigFlags",
@@ -6611,7 +6545,6 @@
    ],
    "missing": [
     "BeginShaderMode",
-    "DrawModel",
     "EndShaderMode",
     "GetShaderLocation",
     "LoadShader",
@@ -6778,10 +6711,8 @@
     "rlSetCullFace"
    ],
    "missing": [
-    "DrawModel",
     "GetShaderLocation",
     "GetTime",
-    "LoadModel",
     "LoadShader",
     "SetConfigFlags",
     "SetShaderValue",
