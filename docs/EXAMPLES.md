@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and it includes no unported companion
 library (`raygui.h`); **waiting** otherwise.
 
-Totals: 212 examples; 27 ported, 103 ready, 82 waiting.
+Totals: 212 examples; 29 ported, 101 ready, 82 waiting.
 
 ## APIs that unblock the most examples
 
@@ -85,7 +85,7 @@ Totals: 212 examples; 27 ported, 103 ready, 82 waiting.
 | `core_monitor_detector` | core | ready |  |
 | `core_custom_logging` | core | ready |  |
 | `core_drop_files` | core | ported |  |
-| `core_random_values` | core | ready |  |
+| `core_random_values` | core | ported |  |
 | `core_storage_values` | core | ready |  |
 | `core_vr_simulator` | core | waiting | `BeginShaderMode`, `BeginVrStereoMode`, `EndShaderMode`, `EndVrStereoMode`, `GetShaderLocation`, `LoadShader`, `LoadVrStereoConfig`, `SetShaderValue`, `UnloadShader`, `UnloadVrStereoConfig` |
 | `core_scissor_test` | core | ported |  |
@@ -95,7 +95,7 @@ Totals: 212 examples; 27 ported, 103 ready, 82 waiting.
 | `core_random_sequence` | core | ready |  |
 | `core_automation_events` | core | ready |  |
 | `core_highdpi_demo` | core | ready |  |
-| `core_render_texture` | core | ready |  |
+| `core_render_texture` | core | ported |  |
 | `core_undo_redo` | core | ready |  |
 | `core_viewport_scaling` | core | ready |  |
 | `core_input_actions` | core | ready |  |

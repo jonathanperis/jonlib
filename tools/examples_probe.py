@@ -101,13 +101,15 @@ EXAMPLES = {
     'text_input_box': ('text/text_input_box.c', 'Ex.setup(core, frame)'),
     'core_input_mouse_wheel': ('core/core_input_mouse_wheel.c', 'Ex.setup(core, frame)'),
     'core_scissor_test': ('core/core_scissor_test.c', 'Ex.setup(core, frame)'),
+    'core_random_values': ('core/core_random_values.c', 'Ex.setup(seed, core, frame)'),
+    'core_render_texture': ('core/core_render_texture.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
 # examples/<module>/ directory) and the flags SetConfigFlags sets before InitWindow.
 IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_background_scrolling'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
-SEEDED = {'core_2d_camera', 'shapes_starfield_effect'}
+SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32}
 
 
@@ -240,6 +242,11 @@ def scripts():
         script('core_scissor_test', 'reveal', [quick(), quick([mouse_at(400, 210)]), quick([mouse_at(250, 230)]), slow([key(KEY_S)]),
                                                quick([key(KEY_S, False)]), quick([key(KEY_S)]), quick([key(KEY_S, False), mouse_at(50, 50)]),
                                                quick([mouse_at(790, 440)]), quick([mouse_at(401, 199)])]),
+        # Two new values, at frames 120 and 240.
+        script('core_random_values', 'rolls', [quick() for _ in range(245)], seed=0xD1CE),
+        script('core_random_values', 'seed', [quick(), slow()], seed=42),
+        # The ball bounces off the right edge at frame 26 and the bottom at frame 32 while the texture turns.
+        script('core_render_texture', 'spin', [quick() for _ in range(34)] + [slow(), quick()]),
     ]
     return [timed(item) for item in out]
 
@@ -288,6 +295,12 @@ def refusal(item, libm):
         # DrawTexturePro's sinf/cosf of (float)rotation*DEG2RAD, rotation = frame + 1.
         for index in range(len(item['frames'])):
             if not fp.accepted(libm, fp.f32(float(index + 1) * fp.DEG2RAD)):
+                return index
+        return None
+    if item['example'] == 'core_render_texture':
+        # DrawTexturePro's sinf/cosf of rotation*DEG2RAD, rotation = 0.5*(frame + 1) degrees.
+        for index in range(len(item['frames'])):
+            if not fp.accepted(libm, fp.f32(fp.f32(0.5 * (index + 1)) * fp.DEG2RAD)):
                 return index
         return None
     if item['example'] != 'core_2d_camera':
