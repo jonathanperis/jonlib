@@ -4,6 +4,10 @@
 #
 # A PNG loaded as an image, uploaded as a texture and drawn centered. See
 # docs/DRIVER.md.
+# LoadImage of a .png file is raylib's PNG loader (LoadImage selects it by the
+# extension), Surface.load_png here: the generic J.Surface.load_image would
+# compile every image decoder into the program (about 1.5 GB more compiler
+# memory).
 import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M
@@ -54,7 +58,7 @@ def setup.loaded(+core: J.Core, frame: J.Frame, result: Result<&1, &1, J.Surface
 
 # After InitWindow(800, 450): LoadImage, LoadTextureFromImage, SetTargetFPS(60).
 def setup(dir: String, +core: J.Core, frame: J.Frame) -> IO(J.Core & (J.Frame & State)):
-  IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, J.Core & (J.Frame & State), J.Surface.load_image(dir ++ "resources/raylib_logo.png"),
+  IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, J.Core & (J.Frame & State), J.Surface.load_png(dir ++ "resources/raylib_logo.png"),
     result => IO.pure(J.Core & (J.Frame & State), setup.loaded(core, frame, result)))
 
 def run(args: List<String>) -> IO(Unit):

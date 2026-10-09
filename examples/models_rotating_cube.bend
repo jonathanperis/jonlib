@@ -5,6 +5,10 @@
 # A cube model textured with a quarter of the cubicmap atlas, turning one
 # degree a frame about (0.5, 1, 0). The perspective needs the libm profile's
 # binary64 tan (docs/PERSPECTIVE.md). See docs/DRIVER.md.
+# LoadImage of a .png file is raylib's PNG loader (LoadImage selects it by the
+# extension), Surface.load_png here: the generic J.Surface.load_image would
+# compile every image decoder into the program (about 1.5 GB more compiler
+# memory).
 import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M
@@ -86,7 +90,7 @@ def setup.loaded(+core: J.Core, frame: J.Frame, result: Result<&1, &1, J.Surface
 # After InitWindow(800, 450): the cube model with the atlas crop as its
 # diffuse texture, rotation 0, SetTargetFPS(60).
 def setup(dir: String, +core: J.Core, frame: J.Frame) -> IO(J.Core & (J.Frame & State)):
-  IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, J.Core & (J.Frame & State), J.Surface.load_image(dir ++ "resources/cubicmap_atlas.png"),
+  IO.bind(Result<&1, &1, J.Surface.IOError, J.Surface>, J.Core & (J.Frame & State), J.Surface.load_png(dir ++ "resources/cubicmap_atlas.png"),
     result => IO.pure(J.Core & (J.Frame & State), setup.loaded(core, frame, result)))
 
 def run(args: List<String>) -> IO(Unit):

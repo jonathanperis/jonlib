@@ -3284,7 +3284,7 @@
   {
    "name": "textures_image_rotate",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
