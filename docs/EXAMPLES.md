@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and it includes no unported companion
 library (`raygui.h`); **waiting** otherwise.
 
-Totals: 212 examples; 45 ported, 85 ready, 82 waiting.
+Totals: 212 examples; 46 ported, 84 ready, 82 waiting.
 
 ## APIs that unblock the most examples
 
@@ -71,7 +71,7 @@ Totals: 212 examples; 45 ported, 85 ready, 82 waiting.
 | `core_2d_camera` | core | ported |  |
 | `core_2d_camera_mouse_zoom` | core | ready |  |
 | `core_2d_camera_platformer` | core | ready |  |
-| `core_2d_camera_split_screen` | core | ready |  |
+| `core_2d_camera_split_screen` | core | ported |  |
 | `core_3d_camera_mode` | core | ported |  |
 | `core_3d_camera_free` | core | ported |  |
 | `core_3d_camera_first_person` | core | ready |  |

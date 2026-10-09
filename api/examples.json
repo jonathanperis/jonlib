@@ -357,7 +357,7 @@
   {
    "name": "core_2d_camera_split_screen",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode2D",
