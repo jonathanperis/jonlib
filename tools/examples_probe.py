@@ -99,6 +99,8 @@ EXAMPLES = {
     'text_writing_anim': ('text/text_writing_anim.c', 'Ex.setup(core, frame)'),
     'text_format_text': ('text/text_format_text.c', 'Ex.setup(core, frame)'),
     'text_input_box': ('text/text_input_box.c', 'Ex.setup(core, frame)'),
+    'core_input_mouse_wheel': ('core/core_input_mouse_wheel.c', 'Ex.setup(core, frame)'),
+    'core_scissor_test': ('core/core_scissor_test.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -231,6 +233,13 @@ def scripts():
         script('text_input_box', 'hover', [quick(), quick([mouse_at(350, 200)])] + [quick() for _ in range(44)]
                + [quick([key(259)]), quick([key(259, False), key(KEY_A)]), quick([key(KEY_A, False), mouse_at(600, 300)]), quick(),
                   quick([mouse_at(524, 229)]), slow()]),
+        # The wheel moves the box both ways, then 60 notches up take it above the screen (a negative %03i).
+        script('core_input_mouse_wheel', 'scroll', [quick(), quick([(MOUSE_WHEEL, 0, 1, 0)]), quick(), slow([(MOUSE_WHEEL, 0, 3, 0)]),
+                                                    quick([(MOUSE_WHEEL, 0, -2, 0)]), quick([(MOUSE_WHEEL, 0, 60, 0)]), quick(),
+                                                    quick([(MOUSE_WHEEL, 0, -20, 0)])]),
+        script('core_scissor_test', 'reveal', [quick(), quick([mouse_at(400, 210)]), quick([mouse_at(250, 230)]), slow([key(KEY_S)]),
+                                               quick([key(KEY_S, False)]), quick([key(KEY_S)]), quick([key(KEY_S, False), mouse_at(50, 50)]),
+                                               quick([mouse_at(790, 440)]), quick([mouse_at(401, 199)])]),
     ]
     return [timed(item) for item in out]
 
