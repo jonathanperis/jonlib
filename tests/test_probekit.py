@@ -101,6 +101,15 @@ if __name__ == '__main__':
     unittest.main()
 
 
+class CompileTests(unittest.TestCase):
+    def test_one_compiler_process_per_output(self):
+        calls = []
+        with mock.patch.object(probekit, 'run', side_effect=lambda command, **kw: calls.append((command, kw))):
+            probekit.compile_outputs(['bun', 'main.ts'], 'p.bend', 'p', 'p.js')
+        self.assertEqual([c for c, _ in calls], [['bun', 'main.ts', 'p.bend', '-o', 'p'], ['bun', 'main.ts', 'p.bend', '-o', 'p.js']])
+        self.assertTrue(all(kw['timeout'] == probekit.COMPILE_TIMEOUT for _, kw in calls))
+
+
 class JobTests(unittest.TestCase):
     def jobs(self, cpus, gib, cgroup=None):
         pages = {'SC_PAGE_SIZE': 4096, 'SC_PHYS_PAGES': gib * (1 << 30) // 4096}

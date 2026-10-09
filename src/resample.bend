@@ -351,40 +351,61 @@ def filter_width(+size: U32, +output: U32) -> F32:
 
 # stbir__compute_weights rows for 1/2/3-channel layouts and the 7-channel
 # alpha-weighted RGBA layout (layout 4 here), indexed by v_classification.
+def cost.table.l1(class: U32) -> Cost:
+  match class:
+    case 0: Cost{1.00000, 1.00000, 0.31250, 1.00000}
+    case 1: Cost{0.56250, 0.59375, 0.00000, 0.96875}
+    case 2: Cost{1.00000, 0.06250, 0.00000, 1.00000}
+    case 3: Cost{0.00000, 0.09375, 1.00000, 1.00000}
+    case 4: Cost{1.00000, 1.00000, 0.31250, 1.00000}
+    case 5: Cost{0.03125, 0.12500, 1.00000, 1.00000}
+    case 6: Cost{1.00000, 1.00000, 0.06250, 1.00000}
+    case 7: Cost{0.00000, 1.00000, 0.00000, 0.03125}
+    case _: Cost{0.00000, 1.00000, 0.03125, 0.34375}
+
+def cost.table.l2(class: U32) -> Cost:
+  match class:
+    case 0: Cost{0.00000, 0.84375, 0.00000, 0.03125}
+    case 1: Cost{0.09375, 0.93750, 0.00000, 0.78125}
+    case 2: Cost{0.87500, 0.21875, 0.00000, 0.96875}
+    case 3: Cost{0.09375, 0.09375, 1.00000, 1.00000}
+    case 4: Cost{0.00000, 0.84375, 0.00000, 0.03125}
+    case 5: Cost{0.03125, 0.12500, 1.00000, 1.00000}
+    case 6: Cost{1.00000, 1.00000, 0.06250, 1.00000}
+    case 7: Cost{0.00000, 1.00000, 0.00000, 0.53125}
+    case _: Cost{0.00000, 1.00000, 0.03125, 0.34375}
+
+def cost.table.l3(class: U32) -> Cost:
+  match class:
+    case 0: Cost{0.00000, 0.53125, 0.00000, 0.03125}
+    case 1: Cost{0.06250, 0.96875, 0.00000, 0.53125}
+    case 2: Cost{0.87500, 0.18750, 0.00000, 0.93750}
+    case 3: Cost{0.00000, 0.09375, 1.00000, 1.00000}
+    case 4: Cost{0.00000, 0.53125, 0.00000, 0.03125}
+    case 5: Cost{0.03125, 0.12500, 1.00000, 1.00000}
+    case 6: Cost{1.00000, 1.00000, 0.06250, 1.00000}
+    case 7: Cost{0.00000, 1.00000, 0.00000, 0.56250}
+    case _: Cost{0.00000, 1.00000, 0.03125, 0.34375}
+
+def cost.table.rgba(class: U32) -> Cost:
+  match class:
+    case 0: Cost{0.00000, 0.59375, 0.00000, 0.96875}
+    case 1: Cost{0.06250, 0.81250, 0.06250, 0.59375}
+    case 2: Cost{0.75000, 0.43750, 0.12500, 0.96875}
+    case 3: Cost{0.87500, 0.06250, 0.18750, 0.43750}
+    case 4: Cost{0.00000, 0.59375, 0.00000, 0.96875}
+    case 5: Cost{0.15625, 0.12500, 1.00000, 1.00000}
+    case 6: Cost{1.00000, 1.00000, 0.06250, 1.00000}
+    case _: Cost{0.00000, 1.00000, 0.03125, 0.34375}
+
+# One scrutinee per match: a two-scrutinee U32 literal match compiles to a
+# decision tree that repeats its fallthrough rows (1.2 MB of C for this table).
 def cost.table(layout: U32, class: U32) -> Cost:
-  match layout class:
-    case 1 0: Cost{1.00000, 1.00000, 0.31250, 1.00000}
-    case 1 1: Cost{0.56250, 0.59375, 0.00000, 0.96875}
-    case 1 2: Cost{1.00000, 0.06250, 0.00000, 1.00000}
-    case 1 3: Cost{0.00000, 0.09375, 1.00000, 1.00000}
-    case 1 4: Cost{1.00000, 1.00000, 0.31250, 1.00000}
-    case 1 5: Cost{0.03125, 0.12500, 1.00000, 1.00000}
-    case 1 6: Cost{1.00000, 1.00000, 0.06250, 1.00000}
-    case 1 7: Cost{0.00000, 1.00000, 0.00000, 0.03125}
-    case 2 0: Cost{0.00000, 0.84375, 0.00000, 0.03125}
-    case 2 1: Cost{0.09375, 0.93750, 0.00000, 0.78125}
-    case 2 2: Cost{0.87500, 0.21875, 0.00000, 0.96875}
-    case 2 3: Cost{0.09375, 0.09375, 1.00000, 1.00000}
-    case 2 4: Cost{0.00000, 0.84375, 0.00000, 0.03125}
-    case 2 5: Cost{0.03125, 0.12500, 1.00000, 1.00000}
-    case 2 6: Cost{1.00000, 1.00000, 0.06250, 1.00000}
-    case 2 7: Cost{0.00000, 1.00000, 0.00000, 0.53125}
-    case 3 0: Cost{0.00000, 0.53125, 0.00000, 0.03125}
-    case 3 1: Cost{0.06250, 0.96875, 0.00000, 0.53125}
-    case 3 2: Cost{0.87500, 0.18750, 0.00000, 0.93750}
-    case 3 3: Cost{0.00000, 0.09375, 1.00000, 1.00000}
-    case 3 4: Cost{0.00000, 0.53125, 0.00000, 0.03125}
-    case 3 5: Cost{0.03125, 0.12500, 1.00000, 1.00000}
-    case 3 6: Cost{1.00000, 1.00000, 0.06250, 1.00000}
-    case 3 7: Cost{0.00000, 1.00000, 0.00000, 0.56250}
-    case _ 0: Cost{0.00000, 0.59375, 0.00000, 0.96875}
-    case _ 1: Cost{0.06250, 0.81250, 0.06250, 0.59375}
-    case _ 2: Cost{0.75000, 0.43750, 0.12500, 0.96875}
-    case _ 3: Cost{0.87500, 0.06250, 0.18750, 0.43750}
-    case _ 4: Cost{0.00000, 0.59375, 0.00000, 0.96875}
-    case _ 5: Cost{0.15625, 0.12500, 1.00000, 1.00000}
-    case _ 6: Cost{1.00000, 1.00000, 0.06250, 1.00000}
-    case _ _: Cost{0.00000, 1.00000, 0.03125, 0.34375}
+  match layout:
+    case 1: cost.table.l1(class)
+    case 2: cost.table.l2(class)
+    case 3: cost.table.l3(class)
+    case _: cost.table.rgba(class)
 
 # stbir__should_do_vertical_first classification.
 def cost.class(+nw: U32, +nh: U32, +vertical_scale: F32, +gather: Bool) -> U32:

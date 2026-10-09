@@ -31,7 +31,10 @@ Probes compile and run independent batches concurrently, bounded by CPUs (at
 most four) and by 9 GB of memory per batch (physical memory, or a lower cgroup v2
 limit): compiling a candidate that imports `jonlib.bend` peaks near 8 GB in the
 Bend compiler (measured October 2026; two concurrent compiles exhausted a Linux
-runner). Hosted Linux and macOS runners therefore run one batch at a time.
+runner). Hosted Linux and macOS runners therefore run one batch at a time, and
+each candidate's native binary and JavaScript are compiled by separate compiler
+processes (`probekit.compile_outputs`): one process emitting both peaked near
+8.5 GB with the C compiler, against 6.5 and 4 GB separately.
 `--jobs N` (or `PROBEKIT_JOBS`) overrides.
 
 Run the same gates locally:

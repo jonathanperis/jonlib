@@ -875,7 +875,7 @@ def benchmark(probe, libm):
         source = source.replace('    IO.print(run(~scene.0, False{}, J.Frame.init_window(640, 480)))', '    IO.print(bench(J.Frame.init_window(640, 480)))')
         source = source.replace('def main()', BENCH_BEND.replace('DRAW', draw) + 'def main()')
         (probe.work / f'{name}.bend').write_text(source)
-        probekit.run([*cli, probe.work / f'{name}.bend', '-o', probe.work / name, '-o', probe.work / f'{name}.js'], timeout=probekit.COMPILE_TIMEOUT)
+        probekit.compile_outputs(cli, probe.work / f'{name}.bend', probe.work / name, probe.work / f'{name}.js')
         timings[name] = time_lanes(probe.work / name, probe.work / f'{name}.js', expected)
     report = dict(native_rlsw_seconds=native_seconds, jonlib_seconds=timings['bench'], empty_frame_seconds=timings['bench-empty'],
                   machine=platform.machine(), system=platform.system(), shapes=100, size='640x480', checksum=drawn)

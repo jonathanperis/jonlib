@@ -133,6 +133,17 @@ def native_library(args, options=()):
     return library
 
 
+def compile_outputs(cli, source, *outputs, timeout=COMPILE_TIMEOUT):
+    """Compile a Bend program once per output (native binary, .js, .c).
+
+    One compiler process per output: a single process emitting both the native
+    binary and the JavaScript peaks above their separate peaks combined with the
+    C compiler (about 8.5 GB against 6.5 and 4 GB for a probe that reaches the
+    TrueType and frame paths), which exceeds the hosted macOS runners' memory."""
+    for output in outputs:
+        run([*cli, source, '-o', output], timeout=timeout)
+
+
 class Probe:
     """One probe run: a work directory, the native oracle and candidate lanes."""
 
@@ -181,7 +192,7 @@ class Probe:
                                   self.work / f'candidate-{index}.js')
         source.write_text(render(False))
         # Compile time grows with batch size and machine load; it is a budget, not a check.
-        run([*cli, source, '-o', binary, '-o', script], timeout=COMPILE_TIMEOUT)
+        compile_outputs(cli, source, binary, script)
         commands = {'cpu-1': [binary, '--gpu', 'off', '--threads', '1'],
                     'cpu-2': [binary, '--gpu', 'off', '--threads', '2'],
                     'javascript': ['bun', script]}
