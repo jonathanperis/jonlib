@@ -1614,7 +1614,7 @@
   {
    "name": "shapes_collision_area",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionRecs",
