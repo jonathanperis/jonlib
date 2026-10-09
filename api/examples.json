@@ -2806,7 +2806,7 @@
   {
    "name": "textures_to_image",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -3089,7 +3089,7 @@
   {
    "name": "textures_blend_modes",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginBlendMode",
     "BeginDrawing",

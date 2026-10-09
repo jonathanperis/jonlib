@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and it includes no unported companion
 library (`raygui.h`); **waiting** otherwise.
 
-Totals: 212 examples; 38 ported, 92 ready, 82 waiting.
+Totals: 212 examples; 40 ported, 90 ready, 82 waiting.
 
 ## APIs that unblock the most examples
 
@@ -156,7 +156,7 @@ Totals: 212 examples; 38 ported, 92 ready, 82 waiting.
 | `textures_image_loading` | textures | ported |  |
 | `textures_image_processing` | textures | ready |  |
 | `textures_image_text` | textures | ready |  |
-| `textures_to_image` | textures | ready |  |
+| `textures_to_image` | textures | ported |  |
 | `textures_raw_data` | textures | ready |  |
 | `textures_particles_blending` | textures | ready |  |
 | `textures_npatch_drawing` | textures | ready |  |
@@ -166,7 +166,7 @@ Totals: 212 examples; 38 ported, 92 ready, 82 waiting.
 | `textures_sprite_explosion` | textures | waiting | `CloseAudioDevice`, `InitAudioDevice`, `LoadSound`, `PlaySound`, `UnloadSound` |
 | `textures_bunnymark` | textures | ready |  |
 | `textures_mouse_painting` | textures | ready |  |
-| `textures_blend_modes` | textures | ready |  |
+| `textures_blend_modes` | textures | ported |  |
 | `textures_tiled_drawing` | textures | ready |  |
 | `textures_polygon_drawing` | textures | ready |  |
 | `textures_fog_of_war` | textures | ready |  |
