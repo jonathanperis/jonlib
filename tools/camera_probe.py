@@ -13,11 +13,13 @@ conformance.qualify_angles). --uncontracted-control and --fused-control
 instead compile the pinned functions without or with clang contraction (no
 linked raylib); --gnu-libm then replaces sinf/cosf with the Arm
 optimized-routines model of tools/trig_probe.py and atan2f with the pinned
-glibc 2.39 (Sun) or 2.41 source, checking the glibc profiles on any host.
+glibc 2.39 (Sun) or 2.41 source and tan with the glibc x86_64 FMA-variant
+model (tools/glibc_tan.py), checking the glibc profiles on any host.
 
 A C oracle repeats the refusal contract to decide where Jonlib must answer
-None: CAMERA_PERSPECTIVE projections (MatrixPerspective's binary64 tan is
-blocked, docs/PERSPECTIVE.md), nonzero sinf/cosf arguments under AppleLibm
+None: CAMERA_PERSPECTIVE projections under AppleLibm (Apple's binary64 tan
+is unpublished, docs/PERSPECTIVE.md) and with a nonfinite fovy*DEG2RAD or
+aspect, nonzero sinf/cosf arguments under AppleLibm
 (Jonmath's Apple sine/cosine is not macOS arm64's), glibc arguments that are
 subnormal or come from |angle| > 6.283186f, lockView angles outside the
 checked atan2f contract, screen sizes outside 1..INT_MAX and orthographic spans
@@ -40,6 +42,7 @@ import re
 import struct
 
 from conformance import LIBM_FOR_PROFILE, contraction, gradient_reference, qualify_angles
+import glibc_tan
 import probekit
 from probekit import ROOT, ProbeFailure
 
@@ -324,9 +327,14 @@ static int pitch_ok(Camera c, float angle, int lock) {
   }
   return half_turnable(angle);
 }
+/* MatrixPerspective: the glibc profiles' tan; Jonlib refuses a nonfinite fovY or aspect. */
+static int perspective_ok(float fovy, double aspect) {
+  float angle = fovy*DEG2RAD;
+  return GNU && isfinite(angle) && isfinite(aspect);
+}
 static int screen_ok(Camera c, unsigned width, unsigned height) {
-  if (c.projection == CAMERA_PERSPECTIVE) return 0;
   if (width < 1 || width > INT_MAX || height < 1 || height > INT_MAX) return 0;
+  if (c.projection == CAMERA_PERSPECTIVE) return perspective_ok(c.fovy, 1.0);
   if (c.projection == CAMERA_ORTHOGRAPHIC) {
     if (!isfinite(c.fovy)) return 0;
     if (c.fovy != 0.0f) {
@@ -354,7 +362,8 @@ static void basis_section(int n) {
     Camera c = cam(in + i);
     v3(GetCameraForward(&c)); putchar('/'); v3(GetCameraUp(&c)); putchar('/'); v3(GetCameraRight(&c)); putchar('/');
     mat(GetCameraViewMatrix(&c)); putchar('/'); mat(GetCameraMatrix(c)); putchar('/');
-    if (c.projection == CAMERA_PERSPECTIVE) printf("none"); else mat(GetCameraProjectionMatrix(&c, value(in[i+11])));
+    if (c.projection == CAMERA_PERSPECTIVE && !perspective_ok(c.fovy, value(in[i+11]))) printf("none");
+    else mat(GetCameraProjectionMatrix(&c, value(in[i+11])));
     putchar(' ');
   }
 }
@@ -534,7 +543,7 @@ def basis(values: +List<U32>) -> String:
   match values:
     case PATTERN_basis:
       +c = camera(w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10)
-      v3(J.Camera.forward_for(ARITH, c)) ++ "/" ++ v3(J.Camera.up_for(ARITH, c)) ++ "/" ++ v3(J.Camera.right_for(ARITH, c)) ++ "/" ++ matrix(J.Camera.view_matrix_for(ARITH, c)) ++ "/" ++ matrix(J.Camera.matrix_for(ARITH, c)) ++ "/" ++ maybe_matrix(J.Camera.projection_matrix(c, float(w11))) ++ " " ++ basis(rest)
+      v3(J.Camera.forward_for(ARITH, c)) ++ "/" ++ v3(J.Camera.up_for(ARITH, c)) ++ "/" ++ v3(J.Camera.right_for(ARITH, c)) ++ "/" ++ matrix(J.Camera.view_matrix_for(ARITH, c)) ++ "/" ++ matrix(J.Camera.matrix_for(ARITH, c)) ++ "/" ++ maybe_matrix(J.Camera.projection_matrix_for(LIBM, c, float(w11))) ++ " " ++ basis(rest)
     case _: ""
 def move(values: +List<U32>) -> String:
   match values:
@@ -555,7 +564,7 @@ def screen(values: +List<U32>) -> String:
   match values:
     case PATTERN_screen:
       +c = camera(w0, w1, w2, w3, w4, w5, w6, w7, w8, w9, w10)
-      maybe_v2(J.Camera.world_to_screen_ex_for(ARITH, vector(w11, w12, w13), c, w16, w17)) ++ "/" ++ maybe_ray(J.Camera.screen_to_world_ray_ex_for(ARITH, point(w14, w15), c, w16, w17)) ++ " " ++ screen(rest)
+      maybe_v2(J.Camera.world_to_screen_ex_for(ARITH, LIBM, vector(w11, w12, w13), c, w16, w17)) ++ "/" ++ maybe_ray(J.Camera.screen_to_world_ray_ex_for(ARITH, LIBM, point(w14, w15), c, w16, w17)) ++ " " ++ screen(rest)
     case _: ""
 def view2d(values: +List<U32>) -> String:
   match values:
@@ -630,7 +639,7 @@ def configure(parser):
 
 
 def gnu_objects(probe, symbol):
-    """The Arm sinf/cosf model and the pinned glibc atan2f kernels as objects (contraction off)."""
+    """The Arm sinf/cosf model, the pinned glibc atan2f kernels and the glibc tan model as objects (contraction off)."""
     from angle_kernel_probe import build_oracle
     from trig_probe import REFERENCE as TRIG_REFERENCE
     model = TRIG_REFERENCE[TRIG_REFERENCE.index('/* Arm'):TRIG_REFERENCE.index('int main')].replace('\\\\', '\\')
@@ -641,8 +650,9 @@ def gnu_objects(probe, symbol):
     _cc, kernels, _driver = build_oracle(probe)
     # <math.h> first: glibc's vector declarations expand the libm names, which must not be renamed yet.
     header = (f'#include <math.h>\n#define sinf model_sinf\n#define cosf model_cosf\n#define atan2f {symbol}\n'
-              f'float model_sinf(float);\nfloat model_cosf(float);\nfloat {symbol}(float, float);\n')
-    return header, [model_object, *kernels]
+              f'#define tan {glibc_tan.SYMBOL}\n'
+              f'float model_sinf(float);\nfloat model_cosf(float);\nfloat {symbol}(float, float);\ndouble {glibc_tan.SYMBOL}(double);\n')
+    return header, [model_object, *kernels, *glibc_tan.objects(probe)]
 
 
 def main():
@@ -671,6 +681,8 @@ def main():
         libm = LIBM_FOR_PROFILE[angle_profile]
         if (libm == 'AppleLibm') != (rotation_libm == 'AppleLibm'):
             raise ProbeFailure(f'camera: atan2f profile {angle_profile} and sinf/cosf profile {rotation_libm} need different M.Libm values')
+        if libm != 'AppleLibm' and not glibc_tan.host_is_model(probe):
+            raise ProbeFailure('camera: the host tan is not the glibc x86_64 FMA-variant model of the glibc profiles')
     rng = random.Random(0xCA3E7A)
     work = probe.work / 'cases'
     work.mkdir(parents=True, exist_ok=True)

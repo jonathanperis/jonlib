@@ -454,7 +454,7 @@ def branred.reduce(+r0: V, +r1: V, +r2: V, +r3: V, +r4: V, +r5: V) -> Part:
   branred.tail(sub(r0, s0), sub(r1, s1), sub(r2, s2), r3, r4, r5, add(add(add(zero(), s0), s1), s2))
 
 def branred.part.at(+x: V, +k: U32) -> Part:
-  +gor0 = Ok{(1676673024 - ((24 * k) << 20n) : U32), 0}
+  +gor0 = {Ok{(1676673024 - ((24 * k) << 20n) : U32), 0} : V}
   +gor1 = mul(gor0, tm24())
   +gor2 = mul(gor1, tm24())
   +gor3 = mul(gor2, tm24())
@@ -467,7 +467,7 @@ def branred.part(+x: V) -> Part:
   branred.part.at(x, branred.k(x))
 
 # The parity of an integral |value| below 2^20 ((int) sum & 1).
-def parity(a: V) -> U32:
+def parity(+a: V) -> U32:
   (truncate(Bool.pick(V, negative(a), neg(a), a)) .&. 1 : U32)
 
 type Fold is Data:
@@ -475,7 +475,7 @@ type Fold is Data:
 
 # if (b > 0.5) {b -= 1; sum += 1} else if (b < -0.5) {b += 1; sum -= 1}
 def branred.fold(+b: V, +sum: V) -> Fold:
-  +half = Ok{1071644672, 0}
+  +half = {Ok{1071644672, 0} : V}
   Bool.pick(Fold, greater(b, half), Fold{sub(b, one()), add(sum, one())},
     Bool.pick(Fold, less(b, neg(half)), Fold{add(b, one()), sub(sum, one())}, Fold{b, sum}))
 

@@ -6,8 +6,8 @@ Same reference as tools/rlgl_probe.py: pinned raylib on PLATFORM=Memory
 (rlgl.h's OpenGL 1.1 path into src/external/rlsw.h) built with
 CMAKE_C_FLAGS=-ffp-contract=off, read back with rlCopyFramebuffer. Each
 scene runs InitWindow and a sequence of operations: the texture and rlgl
-probes' ones plus BeginMode3D/EndMode3D (orthographic cameras, projection
-values other than 0 and 1, nested modes), DrawLine3D, DrawPoint3D,
+probes' ones plus BeginMode3D/EndMode3D (perspective and orthographic
+cameras, projection values other than 0 and 1, nested modes), DrawLine3D, DrawPoint3D,
 DrawCircle3D, DrawTriangle3D, DrawTriangleStrip3D, DrawCube(V),
 DrawCubeWires(V), DrawSphere(Ex), DrawSphereWires, DrawCylinder(Ex),
 DrawCylinderWires(Ex), DrawCapsule(Wires), DrawPlane, DrawRay, DrawGrid and
@@ -16,15 +16,18 @@ rlGetMatrixProjection/rlGetMatrixModelview.
 
 With --gnu-libm the reference library is built with sinf/cosf replaced by
 the C model of the Arm optimized-routines polynomial that glibc ships
-(tools/trig_probe.py) and qsort by a stable merge sort (glibc's msort order),
+(tools/trig_probe.py), tan by the glibc x86_64 FMA-variant model
+(tools/glibc_tan.py) and qsort by a stable merge sort (glibc's msort order),
 every source including <math.h> and <stdlib.h> first, and Jonlib runs with
 M.Glibc239Libm{}: the glibc profile on any host. Without it the
 host libm decides (M.AppleLibm{} on macOS, whose verified set is the
-integral degrees of docs/FRAME.md, so most curved shapes are refused there).
+integral degrees of docs/FRAME.md, so most curved shapes and every
+perspective camera are refused there; on glibc hosts the native tan must
+pass tools/glibc_tan.py's controls).
 
-Contracts (Jonlib must answer null): CAMERA_PERSPECTIVE (its rlFrustum needs
-the native binary64 tan), orthographic cameras with a zero or nonfinite
-fovy or span, popping the last projection (nested modes ended twice),
+Contracts (Jonlib must answer null): CAMERA_PERSPECTIVE under AppleLibm or
+with a zero or nonfinite frustum scale, orthographic cameras with a zero or
+nonfinite fovy or span, popping the last projection (nested modes ended twice),
 depth-tested drawing into a render texture, sinf/cosf arguments outside the
 profile's verified set (DrawSphereWires always: its ring angles reach 450
 degrees) and loop counts beyond 4096. CPU-1, CPU-2 and JavaScript lanes.
@@ -36,6 +39,7 @@ import random
 
 from conformance import gradient_reference
 import frame_probe as fp
+import glibc_tan
 import probekit
 import rlgl_probe as rp
 import texture_probe as tp
@@ -74,6 +78,24 @@ def ortho_ok(fovy, width, height):
     return finite_nonzero(fovy) and finite_nonzero(span) and finite_nonzero(f32(2.0 / span)) and finite_nonzero(f32(2.0 / fovy))
 
 
+TENTH = f32(0.1)
+NEAR = 0.05
+DEG2RAD64 = float(DEG2RAD)
+
+
+def perspective_ok(libm, fovy, width, height):
+    """Frame.mode_3d.perspective: the profile's binary64 tan and finite, nonzero F32 scales
+    (float)(0.1f/(2*right)) and (float)(0.1f/(2*top)). The host tan stands in for the profile's
+    here; it only decides finiteness, which no corpus camera puts near a boundary."""
+    if libm == 'AppleLibm' or not math.isfinite(fovy):
+        return False
+    top = NEAR * math.tan((fovy * 0.5) * DEG2RAD64)
+    right = top * f32(f32(width) / f32(height))
+    if top == 0.0 or right == 0.0:
+        return False
+    return finite_nonzero(f32(TENTH / (2.0 * right))) and finite_nonzero(f32(TENTH / (2.0 * top)))
+
+
 def all_ok(libm, args):
     return all(fp.accepted(libm, x) for x in args)
 
@@ -87,7 +109,7 @@ def op_refused(op, libm, size):
     name, a = op[0], op[1:]
     if name == 'mode3d':
         projection, fovy = a[10], a[9]
-        return projection == 0 or (projection == 1 and not ortho_ok(fovy, *size))
+        return (projection == 0 and not perspective_ok(libm, fovy, *size)) or (projection == 1 and not ortho_ok(fovy, *size))
     if name == 'circle3d':
         return not all_ok(libm, [f32(a[7] * DEG2RAD)] + [f32(DEG2RAD * float(d)) for d in range(0, 370, 10)])
     if name in ('sphere', 'sphere_ex'):
@@ -213,7 +235,32 @@ def scenes():
                               ('get', 'projection'), ('plane',) + v3(0.0, 0.0, 0.0) + (f32(3.0), f32(4.0)) + (HALF[0],),
                               ('cube_wires',) + v3(0.0, 0.0, 0.0) + (2.0, 1.0, 3.0, WHITE), ('end3d',), ('end',)])
 
+    # Perspective cameras: the profile's binary64 tan reaches the frustum's m0/m5 (refused under AppleLibm).
+    classic = camera((10.0, 10.0, 10.0), (0.0, 0.0, 0.0), fovy=45.0, projection=0)
+    add('m3-persp-classic', 40, 30, [('begin',), ('clear', C(245, 245, 245)), classic, ('get', 'projection'), ('get', 'modelview'),
+                                     ('cube',) + v3(0.0, 0.0, 0.0) + (2.0, 2.0, 2.0, RED), ('cube_wires',) + v3(0.0, 0.0, 0.0) + (2.0, 2.0, 2.0, C(190, 33, 55)),
+                                     ('grid', 10.0, 1.0), ('end3d',), ('end',)])
+    add('m3-persp-wide', 32, 24, [('begin',), ('clear', BLACK), camera((0.0, 2.0, 6.0), (0.0, 0.5, 0.0), fovy=90.0, projection=0), ('get', 'projection'),
+                                  ('plane',) + v3(0.0, 0.0, 0.0) + (f32(6.0), f32(6.0)) + (GREEN,),
+                                  ('cube_v',) + v3(-1.0, 0.5, 0.0) + v3(1.0, 1.0, 1.0) + (BLUE,),
+                                  ('line3d',) + v3(-3.0, 0.0, 2.0) + v3(3.0, 2.0, -2.0) + (WHITE,), ('point3d',) + v3(1.5, 1.5, 1.0) + (RED,),
+                                  ('tri3d',) + v3(0.5, 0.0, 1.0) + v3(2.5, 0.0, 1.0) + v3(1.5, 1.5, 0.0) + (HALF[2],),
+                                  ('bbox',) + v3(1.0, 0.0, -1.5) + v3(2.0, 1.0, -0.5) + (HALF[1],),
+                                  ('ray',) + v3(-2.0, 0.25, 2.0) + v3(0.5, 0.0, -0.25) + (RED,), ('end3d',), ('end',)])
+    add('m3-persp-portrait', 24, 40, [('begin',), ('clear', C(10, 10, 30)), camera((3.0, 4.0, 5.0), (0.0, 0.0, 0.0), fovy=20.5, projection=0),
+                                      ('get', 'projection'), ('cube',) + v3(0.0, 0.5, 0.0) + (1.0, 1.0, 1.0, HALF[0]),
+                                      ('cube_wires',) + v3(0.0, 0.5, 0.0) + (1.0, 1.0, 1.0, WHITE), ('grid', 6.0, 0.5), ('end3d',), ('end',)])
+    add('m3-persp-negative-fovy', 32, 24, [('begin',), ('clear', BLACK), camera((4.0, 3.0, 4.0), (0.0, 0.0, 0.0), fovy=-45.0, projection=0),
+                                           ('get', 'projection'), ('cube',) + v3(0.0, 0.0, 0.0) + (1.5, 1.0, 0.5, RED), ('grid', 4.0, 1.0), ('end3d',), ('end',)])
+    add('m3-persp-inside', 32, 24, [('begin',), ('clear', BLACK), camera((0.0, 0.0, 0.0), (0.0, 0.0, -1.0), fovy=60.0, projection=0),
+                                    ('toggle', 'cull', False), ('cube',) + v3(0.0, 0.0, 0.0) + (3.0, 2.0, 4.0, HALF[1]),
+                                    ('tri3d',) + v3(-5.0, -1.0, 1.0) + v3(5.0, -1.0, 1.0) + v3(0.0, 1.0, -8.0) + (GREEN,), ('end3d',), ('end',)])
+    # As m3-nested: the second push is ignored (rlsw's two-entry stack), so one EndMode3D ends both.
+    add('m3-persp-nested', 32, 24, [('begin',), ('clear', BLACK), classic, front, ('cube',) + v3(0.0, 0.0, 0.0) + (1.0, 1.0, 1.0, RED), ('end3d',),
+                                    ('get', 'projection'), ('end',)])
+
     # Contracts.
+    add('m3-persp-fovy-zero', 16, 12, [camera((0.0, 0.0, 5.0), (0.0, 0.0, 0.0), fovy=0.0, projection=0)])
     add('m3-perspective', 16, 12, [camera((0.0, 0.0, 5.0), (0.0, 0.0, 0.0), fovy=45.0, projection=0)])
     add('m3-fovy-zero', 16, 12, [camera((0.0, 0.0, 5.0), (0.0, 0.0, 0.0), fovy=0.0)])
     add('m3-fovy-nan', 16, 12, [camera((0.0, 0.0, 5.0), (0.0, 0.0, 0.0), fovy=math.nan)])
@@ -249,6 +296,29 @@ def scenes():
                 ops.append((kind,) + p + q + (color,))
         ops += [('end3d',), ('end',)]
         add(f'm3-random-{index}', w, h, ops)
+
+    # Random perspective scenes, as raylib's examples use them.
+    for index in range(4):
+        w, h = rng.choice(((32, 24), (40, 30), (24, 32)))
+        position = (rng.uniform(-12, 12), rng.uniform(1, 12), rng.uniform(-12, 12))
+        ops = [('begin',), ('clear', C(rng.randrange(256), rng.randrange(256), rng.randrange(256))),
+               camera(position, (rng.uniform(-1, 1), rng.uniform(0, 1), rng.uniform(-1, 1)), fovy=rng.uniform(20, 100), projection=0),
+               ('get', 'projection'), ('grid', 10.0, 1.0)]
+        for _ in range(rng.randint(3, 6)):
+            kind = rng.choice(('cube', 'cube_wires', 'line3d', 'tri3d', 'point3d'))
+            color = C(rng.randrange(256), rng.randrange(256), rng.randrange(256), rng.choice((255, 255, 128)))
+            p = v3(rng.uniform(-3, 3), rng.uniform(0, 3), rng.uniform(-3, 3))
+            if kind in ('cube', 'cube_wires'):
+                ops.append((kind,) + p + (f32(rng.uniform(0.5, 3)), f32(rng.uniform(0.5, 3)), f32(rng.uniform(0.5, 3)), color))
+            elif kind == 'line3d':
+                ops.append((kind,) + p + v3(rng.uniform(-4, 4), rng.uniform(0, 4), rng.uniform(-4, 4)) + (color,))
+            elif kind == 'tri3d':
+                ops.append((kind,) + p + v3(rng.uniform(-4, 4), rng.uniform(0, 4), rng.uniform(-4, 4))
+                           + v3(rng.uniform(-4, 4), rng.uniform(0, 4), rng.uniform(-4, 4)) + (color,))
+            else:
+                ops.append((kind,) + p + (color,))
+        ops += [('end3d',), ('end',)]
+        add(f'm3-persp-random-{index}', w, h, ops)
     return out
 
 
@@ -319,7 +389,7 @@ def wcamera(+w: +List<U32>) -> J.Camera3D:
 # 3D operations (kinds 300..).
 def m3.draw(kind: U32, +w: +List<U32>, frame: J.Frame) -> J.Frame:
   match kind:
-    case 300: J.Frame.begin_mode_3d(frame, wcamera(w))
+    case 300: J.Frame.begin_mode_3d_for(libm(), frame, wcamera(w))
     case 301: J.Frame.end_mode_3d(frame)
     case 302: J.Draw.line_3d(frame, wv3(0n, w), wv3(3n, w), wu(6n, w))
     case 303: J.Draw.point_3d(frame, wv3(0n, w), wu(3n, w))
@@ -444,7 +514,9 @@ def gnu_model():
     header = GNU_DIR / 'glibc_model.h'
     # <math.h> and <stdlib.h> first: glibc's declarations expand the names, which must not be renamed yet.
     header.write_text('#include <math.h>\n#include <stdlib.h>\n#define sinf model_sinf\n#define cosf model_cosf\n#define qsort model_qsort\n'
+                      f'#define tan {glibc_tan.SYMBOL}\n'
                       'float model_sinf(float);\nfloat model_cosf(float);\n'
+                      f'double {glibc_tan.SYMBOL}(double);\n'
                       'void model_qsort(void *, size_t, size_t, int (*)(const void *, const void *));\n')
     return source, header
 
@@ -469,7 +541,9 @@ def main():
     if args.gnu_libm:
         model_object = GNU_DIR / 'glibc_model.o'
         probekit.run(['clang', '-std=c11', '-O2', '-ffp-contract=off', '-c', source, '-o', model_object])
-        extra += (str(model_object),)
+        extra += (str(model_object), *map(str, glibc_tan.objects(probe)))
+    elif libm != 'AppleLibm' and not glibc_tan.host_is_model(probe):
+        raise ProbeFailure('models: the host tan is not the glibc x86_64 FMA-variant model of the glibc profiles')
     items = scenes()
     native_items = [s for s in items if not refused(s, libm)]
     contracts = [s for s in items if s not in native_items]

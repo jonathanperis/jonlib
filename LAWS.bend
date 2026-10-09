@@ -20,6 +20,7 @@ import ./src/codec.bend as Codec
 import ./src/qoa.bend as Qoa
 import ./src/fma.bend as Fma
 import ./src/asin.bend as Asin
+import ./src/lgpl/asin.bend as GlibcAsin
 import ./src/binary64_sqrt.bend as Sqrt
 import ./src/wav.bend as Wav
 import ./src/wav_adpcm.bend as Adpcm
@@ -766,9 +767,9 @@ law pow_apple_none:
   {M.Libm.pow(M.AppleLibm{}, x, exponent) == None{} : Maybe<F32>}
 
 # asinf (src/asin.bend, glibc 2.41): |x| = 1 takes the square-root branch,
-# |x| > 1 and NaN are refused; AppleLibm and Glibc239Libm stop below
-# 0x1.d12edp-12 and 0x1.d12e9ep-12, where their native asinf leaves correct
-# rounding (exhaustive results in docs/INVERSE-TRIG.md).
+# |x| > 1 and NaN are refused; AppleLibm stops below 0x1.d12edp-12, where
+# macOS asinf leaves correct rounding (exhaustive results in
+# docs/INVERSE-TRIG.md). Glibc239Libm uses glibc 2.39's kernel (laws below).
 law asin_region_one:
   {Asin.region(2130706432) == 3 : U32}
 
@@ -777,6 +778,26 @@ law asin_region_above_one:
 
 law asin_region_tiny:
   {Asin.region(1929379838) == 1 : U32}
+
+# glibc 2.39 asinf (src/lgpl/asin.bend): the source's branches at |x| = 1,
+# |x| > 1, 2^-27, 0.5 and 0x3F79999A (0.975).
+law glibc_asin_region_one:
+  {GlibcAsin.region(3212836864) == 0 : U32}
+
+law glibc_asin_region_above_one:
+  {GlibcAsin.region(1065353217) == 1 : U32}
+
+law glibc_asin_region_tiny:
+  {GlibcAsin.region(838860799) == 2 : U32}
+
+law glibc_asin_region_small:
+  {GlibcAsin.region(1056964607) == 3 : U32}
+
+law glibc_asin_region_near_one:
+  {GlibcAsin.region(1064933786) == 4 : U32}
+
+law glibc_asin_region_middle:
+  {GlibcAsin.region(1064933785) == 5 : U32}
 
 # Binary64 square root (src/binary64_sqrt.bend): exact roots, signed zeros
 # and the refused negative input.
@@ -823,8 +844,19 @@ law fma_round_odd_tie_up:
 law fma_round_even_tie_kept:
   {Fma.rounded(Resize.Wide{0, 10}) == 2 : U32}
 
-# Cameras: CAMERA_PERSPECTIVE projections are None (no verified binary64 tan),
-# and the AppleLibm profile reproduces only a zero sinf/cosf argument.
+# Cameras: CAMERA_PERSPECTIVE projections are None under AppleLibm, the
+# profile-free form's (Apple's binary64 tan is unpublished, M.Libm.tan is
+# None for it), and the AppleLibm profile reproduces only a zero sinf/cosf
+# argument.
+law libm_tan_apple_none:
+  for x: M.Float64
+  {M.Libm.tan(M.AppleLibm{}, x) == None{} : Maybe<M.Float64>}
+
+law camera_projection_matrix_apple:
+  for camera: J.Camera3D
+  for aspect: F32
+  {J.Camera.projection_matrix(camera, aspect) == J.Camera.projection_matrix_for(M.AppleLibm{}, camera, aspect) : Maybe<M.Matrix>}
+
 law camera_perspective_projection_none:
   for position: M.Vector3
   for target: M.Vector3

@@ -551,6 +551,24 @@ def Laws.asin_region_above_one():
 def Laws.asin_region_tiny():
   {==}
 
+def Laws.glibc_asin_region_one():
+  {==}
+
+def Laws.glibc_asin_region_above_one():
+  {==}
+
+def Laws.glibc_asin_region_tiny():
+  {==}
+
+def Laws.glibc_asin_region_small():
+  {==}
+
+def Laws.glibc_asin_region_near_one():
+  {==}
+
+def Laws.glibc_asin_region_middle():
+  {==}
+
 def Laws.sqrt_four():
   {==}
 
@@ -582,6 +600,12 @@ def Laws.fma_round_odd_tie_up():
   {==}
 
 def Laws.fma_round_even_tie_kept():
+  {==}
+
+def Laws.libm_tan_apple_none(x):
+  {==}
+
+def Laws.camera_projection_matrix_apple(camera, aspect):
   {==}
 
 def Laws.camera_perspective_projection_none(position, target, up, fovy, aspect):

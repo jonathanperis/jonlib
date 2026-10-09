@@ -398,7 +398,47 @@ Reference tooling only, never linked into Jonlib: the unmodified CORE-MATH
 `a6509c5bee5e66e56d9e474e2996ac3c379fed0c`, MIT, by Alexei Sibidanov and by
 Paul Zimmermann and Tom Hubrecht) are the correctly rounded oracles of
 `tools/libm_survey.py`; hashes are listed in the same license file. glibc
-2.39's LGPL `e_asinf.c` and `s_tan.c` are neither copied nor adapted.
+2.39's LGPL `e_asinf.c` and `s_tan.c` are adapted separately, in the LGPL
+modules below.
+
+## glibc LGPL modules: binary64 tangent and binary32 arcsine (LGPL-2.1+)
+
+`src/lgpl/tan.bend` and `src/lgpl/tan_table.bend` are an altered Bend
+adaptation of the IBM Accurate Mathematical Library's binary64 `tan` as
+shipped in glibc 2.39 (`sysdeps/ieee754/dbl-64/s_tan.c` with `utan.h`,
+`utan.tbl`, `dla.h`, `mydefs.h`, `branred.c` and `branred.h`, release commit
+`ef321e23c20eebc6d6fb4044425c00e6df27b05f`), written by International Business
+Machines Corp., Copyright (C) 2001-2024 Free Software Foundation, Inc. glibc
+2.41 (commit `74f59e9271cbb4071671e5a474e7d4f1622b186f`) ships the same files,
+differing only in the copyright year.
+
+`src/lgpl/asin.bend` is an altered Bend adaptation of glibc 2.39's binary32
+`asinf` (`sysdeps/ieee754/flt-32/e_asinf.c`, same commit): Sun Microsystems'
+`e_asin.c`, Copyright (C) 1993 Sun Microsystems, Inc. (permission notice
+retained), with single-precision modifications Copyright (C) 2001 Stephen L.
+Moshier distributed under LGPL-2.1-or-later. Its change notice records the
+Bend rewrite, the uncontracted F32 order and the refused NaN results.
+
+These three Bend files are licensed under
+the **GNU Lesser General Public License, version 2.1 or (at your option) any
+later version**, whose text is in [LICENSES/lgpl-2.1.txt](LICENSES/lgpl-2.1.txt);
+each carries the original notices and a dated change notice (for the tangent:
+written in Bend, every double operation through Jonlib's exact binary64
+helpers in the source's order, the `__tan_fma` build's FMA contraction made
+explicit, errno/flags/rounding modes out of contract). They are the only LGPL
+files of Jonlib: Jonmath imports them as separate modules for `M.Libm.tan`
+and the `Glibc239Libm` profile of `M.Libm.asin`, and the
+rest of Jonlib and Jonmath stays under the zlib license. A combined work must
+let its users replace or modify these modules as LGPL-2.1 section 6 requires;
+the Bend sources are the preferred form for modification.
+
+Reference tooling, never part of the library: the unmodified glibc 2.39
+sources in `tools/reference/glibc239` (SHA-256 recorded in
+[docs/PERSPECTIVE.md](docs/PERSPECTIVE.md)) and
+`tools/reference/glibc_tan/model.c`, an LGPL-2.1+ explicit-operation C model of
+the same function with its own change notice, built by `tools/glibc_tan.py`
+and the survey in `tools/reference/glibc_tan`; their build shims are original
+(zlib).
 
 ## stb_perlin
 
@@ -442,8 +482,9 @@ as shipped in glibc 2.39 (`sysdeps/ieee754/flt-32/e_acosf.c`, commit
 and operation order. `tools/reference/acos_sources/sun_e_acosf.c` is the exact
 original (SHA-256 `60a8c9b2d14409971adc930bfa386014230e3c7e21a8cd1fdc8178128800d8ba`),
 compiled only by reference tooling. Its Sun notice is retained there and in
-[LICENSES/sun-math.txt](LICENSES/sun-math.txt). glibc 2.39's `e_asinf.c` is not
-adapted: its single-precision modifications are LGPL-2.1+.
+[LICENSES/sun-math.txt](LICENSES/sun-math.txt). glibc 2.39's `e_asinf.c`, whose
+single-precision modifications are LGPL-2.1+, is adapted separately in
+`src/lgpl/asin.bend` (above).
 
 ## Native angle qualification source controls
 
