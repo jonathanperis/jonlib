@@ -93,6 +93,7 @@ EXAMPLES = {
     'shapes_collision_area': ('shapes/shapes_collision_area.c', 'Ex.setup(core, frame)'),
     'shapes_dashed_line': ('shapes/shapes_dashed_line.c', 'Ex.setup(core, frame)'),
     'shapes_mouse_trail': ('shapes/shapes_mouse_trail.c', 'Ex.setup(core, frame)'),
+    'shapes_lines_drawing': ('shapes/shapes_lines_drawing.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -191,6 +192,15 @@ def scripts():
         # A 36-step path fills the 30 positions; the mouse then rests at (0, 0), which the trail skips.
         script('shapes_mouse_trail', 'path', [quick()] + [quick([mouse_at(100 + 17 * i, 80 + (i * 37) % 300)]) for i in range(36)]
                + [quick([mouse_at(0, 0)]), quick(), slow()]),
+        # Paint (long strokes wrap the hue past 360), erase with the right button, change the thickness with the
+        # wheel and clear with the middle button.
+        script('shapes_lines_drawing', 'paint', [quick(), quick([mouse_at(300, 200)]), quick([button(0)]), quick([mouse_at(340, 230)]),
+                                                 quick([mouse_at(750, 400)]), quick([mouse_at(50, 50)]), slow([mouse_at(760, 420)]),
+                                                 quick([mouse_at(60, 40)]), quick([button(0, False)]), quick([mouse_at(400, 220)]),
+                                                 quick([button(1)]), quick([mouse_at(420, 260)]), quick([button(1, False)]),
+                                                 quick([(MOUSE_WHEEL, 0, 3, 0)]), quick([button(0), mouse_at(200, 300)]), quick([mouse_at(260, 330)]),
+                                                 quick([button(0, False), (MOUSE_WHEEL, 0, -20, 0)]), quick([button(2)]), quick([button(2, False)]),
+                                                 quick([mouse_at(500, 100)])]),
     ]
     return [timed(item) for item in out]
 
