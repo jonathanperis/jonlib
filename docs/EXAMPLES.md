@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and it includes no unported companion
 library (`raygui.h`); **waiting** otherwise.
 
-Totals: 212 examples; 44 ported, 86 ready, 82 waiting.
+Totals: 212 examples; 45 ported, 85 ready, 82 waiting.
 
 ## APIs that unblock the most examples
 
@@ -119,7 +119,7 @@ Totals: 212 examples; 44 ported, 86 ready, 82 waiting.
 | `shapes_following_eyes` | shapes | ready |  |
 | `shapes_easings_ball` | shapes | ready |  |
 | `shapes_easings_box` | shapes | ready |  |
-| `shapes_easings_rectangles` | shapes | ready |  |
+| `shapes_easings_rectangles` | shapes | ported |  |
 | `shapes_recursive_tree` | shapes | waiting | `raygui.h` |
 | `shapes_ring_drawing` | shapes | waiting | `raygui.h` |
 | `shapes_circle_sector_drawing` | shapes | waiting | `raygui.h` |

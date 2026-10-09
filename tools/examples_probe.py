@@ -118,6 +118,7 @@ EXAMPLES = {
     'textures_raw_data': ('textures/textures_raw_data.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_bunnymark': ('textures/textures_bunnymark.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'textures_image_generation': ('textures/textures_image_generation.c', 'Ex.setup(seed, M.LIBM{}, core, frame)'),
+    'shapes_easings_rectangles': ('shapes/shapes_easings_rectangles.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -310,6 +311,8 @@ def scripts():
                                                  quick([key(80, False)]), slow()], seed=0xB077),
         # Every procedural texture in turn (left clicks), back to the first.
         script('textures_image_generation', 'cycle', [quick()] + [f([button(0, i % 2 == 0)]) for i, f in enumerate([quick] * 18)], seed=0x6E1),
+        # The 240-frame animation to its end, then SPACE plays it again.
+        script('shapes_easings_rectangles', 'play', [quick() for _ in range(242)] + [quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), quick()]),
     ]
     return [timed(item) for item in out]
 
@@ -367,6 +370,21 @@ def refusal(item, libm):
         for index in range(len(item['frames'])):
             if not fp.accepted(libm, fp.f32(fp.f32(0.5 * (index + 1)) * fp.DEG2RAD)):
                 return index
+        return None
+    if item['example'] == 'shapes_easings_rectangles':
+        # DrawRectanglePro turns by EaseLinearIn(frames, 0, 360, 240) degrees while playing (240 frames); a zero
+        # rotation takes no sinf/cosf. SPACE restarts the count.
+        frames, playing = 0, True
+        for index, frame in enumerate(item['frames']):
+            space = any(kind == KEY_DOWN_EVENT and code == KEY_SPACE for kind, code, _, _ in frame['events'])
+            if playing:
+                frames += 1
+                rotation = fp.f32(fp.f32(fp.f32(360.0 * frames) / 240.0) + 0.0)
+                if rotation != 0.0 and not fp.accepted(libm, fp.f32(rotation * fp.DEG2RAD)):
+                    return index
+                playing = frames < 240
+            elif space:
+                frames, playing = 0, True
         return None
     if item['example'] != 'core_2d_camera':
         return None
