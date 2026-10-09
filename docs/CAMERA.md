@@ -129,8 +129,11 @@ result:
 
 - **Perspective projections.** `GetCameraProjectionMatrix`,
   `GetWorldToScreenEx` and `GetScreenToWorldRayEx` with `CAMERA_PERSPECTIVE`
-  need `MatrixPerspective`'s binary64 `tan`, which is blocked
-  ([PERSPECTIVE.md](PERSPECTIVE.md)); no F32 or F64 tangent is substituted.
+  need `MatrixPerspective`'s binary64 `tan(fovY*0.5)` for `fovY` the binary32
+  `fovy*DEG2RAD`, which is blocked: an exhaustive comparison over every
+  binary32 `fovY` found the native tangent incorrectly rounded for 23.7% of
+  them on macOS and 0.13% on glibc 2.39/2.41, so no correctly rounded (or
+  other) tangent is substituted ([PERSPECTIVE.md](PERSPECTIVE.md)).
   `GetCameraViewMatrix`/`GetCameraMatrix` (`MatrixLookAt`) do not depend on the
   projection and are defined for every camera.
 - **Rotation angles.** The angle checked is the one actually rotated by: the
