@@ -56,8 +56,8 @@ where that profile's native `asinf` was found equal to correct rounding by an
 
 | Profile | Native libm compared | Differences from correct rounding | Smallest differing input | `Libm.asin` returns `Some` for |
 |---|---|---:|---|---|
-| `Glibc241Libm{}` | glibc 2.41 `e_asinf.c` source (CORE-MATH; glibc 2.41 binaries were not run) | 0 | none | every x in [-1, 1] |
-| `Glibc239Libm{}` | Ubuntu 24.04 amd64 glibc 2.39 (container) | 4,581,700 | `0x39e8974f` (0x1.d12e9ep-12): native `39e89750`, correct `39e8974f` | \|x\| < 0x1.d12e9ep-12 (words below `0x39e8974f`) |
+| `Glibc241Libm{}` | glibc 2.41 `e_asinf.c` source (CORE-MATH), and native Debian trixie glibc 2.41-12 x86_64 (container), equal to that source on every input | 0 | none | every x in [-1, 1] |
+| `Glibc239Libm{}` | Ubuntu 24.04 amd64 glibc 2.39 (container) | 4,581,700 | `0x39e8974f` (0x1.d12e9ep-12): native `39e89750`, correct `39e8974f` | every x in [-1, 1], from glibc 2.39's own kernel (below) |
 | `AppleLibm{}` | macOS 27.0.1 arm64 libm | 581,248 | `0x39e89768` (0x1.d12edp-12): native `39e89768`, correct `39e89769` | \|x\| < 0x1.d12edp-12 (words below `0x39e89768`) |
 
 Both signs are included; below each bound every input agrees, and the bound
@@ -66,9 +66,24 @@ FMA-disabled run gave the same 4,581,700 differences). |x| > 1 and NaN are
 `None` in every profile (the native result is a NaN whose bits depend on the
 host). Further examples: Apple `asinf(0x3abffffc)` is `3ac00000`, correct
 `3ac00001`; glibc 2.39 `asinf(0x3a1285ef)` is `3a1285f0`, correct `3a1285ef`.
-glibc 2.39's own `e_asinf.c` (Moshier's LGPL-2.1+ modifications) is neither
-copied nor adapted: its results are reproduced only where they equal correct
-rounding.
+
+## Glibc239Libm asinf: glibc 2.39's kernel (LGPL)
+
+Since the LGPL decision (2026-10-09, [MASTER-PLAN](MASTER-PLAN.md)),
+`Libm.asin(Glibc239Libm{}, x)` is glibc 2.39's own `e_asinf.c` on all of
+[-1, 1] rather than the correctly rounded kernel below a bound.
+`src/lgpl/asin.bend` adapts it (Sun's `e_asin.c` with Stephen L. Moshier's
+single-precision modifications, LGPL-2.1-or-later; pinned unmodified in
+`tools/reference/glibc239/e_asinf.c`, SHA-256
+`bb3e68b0ae3736d4c4f41c9e8d11416d8423ab8577696a33dade0b5afd402ffd`, notices in
+[THIRD_PARTY_NOTICES](../THIRD_PARTY_NOTICES.md)): the same constants, branches
+(|x| = 1, |x| < 2^-27, |x| < 0.5 with the degree-5 polynomial, 0.975 < |x| < 1
+and 0.5 <= |x| <= 0.975 with the truncated square root) and F32 operation
+order, uncontracted. The pinned source compiled with contraction off equals
+the native glibc 2.39 x86_64 `asinf` (Ubuntu 24.04, the CI runner) on all
+2,130,706,434 inputs of [-1, 1] (0 differences); the `quaternion-euler` gate
+repeats that exhaustive check on such hosts and compares the Bend kernel with
+the source on every lane.
 
 ## Quaternion functions
 
@@ -93,9 +108,9 @@ rounding.
   four components are finite, every intermediate (the products, sums, `x0`,
   `x1`, `y0`, `z0`, `z1`) and both `atan2f` results are signed zero or normal
   (the checked angle contract), and the profile has the clamped pitch's
-  `asinf` (any pitch under `Glibc241Libm{}`; a pitch argument below the bounds
-  above under `AppleLibm{}` and `Glibc239Libm{}`, which covers rotations about
-  the x or z axis alone, where `y0` is exactly zero).
+  `asinf` (any pitch under `Glibc241Libm{}` and `Glibc239Libm{}`; under
+  `AppleLibm{}` a pitch argument below the bound above, which covers rotations
+  about the x or z axis alone, where `y0` is exactly zero).
 
 ## Verification
 
@@ -133,17 +148,17 @@ on CPU-1, CPU-2 and JavaScript:
   non-unit, single-axis rotations, tiny pitches on both sides of the bounds,
   gimbal-lock neighbourhoods with clamping, identity, zero, signed zeros,
   subnormal, huge and nonfinite components) against raymath's
-  `QuaternionToEuler` with `asinf` routed to the pinned source and `atan2f` to
+  `QuaternionToEuler` with `asinf` routed to the profile's pinned source (glibc
+  2.39's for `Glibc239Libm{}`, 2.41's otherwise) and `atan2f` to
   the profile kernel (the pinned glibc 2.41 and Sun 2.39 sources; native
   `atan2f` for `AppleLibm{}`, on Darwin only), with a C oracle repeating the
   refusal contract.
 
 On the host a profile names (Darwin arm64: `AppleLibm{}`; Linux x86_64 glibc
 2.39: `Glibc239Libm{}`) the probe also requires the native `asinf` to equal the
-pinned source on every binary32 below that profile's bound (1,943,088,848
-inputs on macOS 27.0.1), and native raymath (host `asinf` and `atan2f`) to
-equal every accepted Euler row; in an Ubuntu 24.04 amd64 container the native
-glibc 2.39 rows equalled all 126 accepted `Glibc239Libm{}` rows.
+profile's source on its whole domain (below the bound: 1,943,088,848 inputs on
+macOS 27.0.1; all 2,130,706,434 inputs of [-1, 1] for glibc 2.39), and native
+raymath (host `asinf` and `atan2f`) to equal every accepted Euler row.
 
 `tools/libm_survey.py` (diagnostic gate `libm-survey`, every 64th input;
 `--stride 1` is exhaustive) records the native-versus-correct-rounding

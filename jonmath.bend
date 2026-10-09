@@ -20,6 +20,10 @@ import ./src/power.bend as Power
 import ./src/float64.bend as Float64Numeric
 import ./src/angle.bend as LegacyAngle
 import ./src/checked_angle.bend as CheckedAngle
+import ./src/binary64_fma.bend as Binary64Fma
+import ./src/binary64_scaled.bend as Binary64Scaled
+import ./src/lgpl/tan.bend as GlibcTan
+import ./src/lgpl/asin.bend as GlibcAsin
 
 # -----------------------------------------------------------------------------
 # Shared types: vectors, matrix, binary64 words
@@ -487,6 +491,72 @@ def Matrix.ortho(+left: Float64, +right: Float64, +bottom: Float64, +top: Float6
   Matrix{(2.0 / rl : F32), 0.0, 0.0, (F32.neg((lf + rf : F32)) / rl : F32),
     0.0, (2.0 / tb : F32), 0.0, (F32.neg((tf + bf : F32)) / tb : F32),
     0.0, 0.0, (F32.neg(2.0) / fn : F32), (F32.neg((ff + nf : F32)) / fn : F32), 0.0, 0.0, 0.0, 1.0}
+
+# -----------------------------------------------------------------------------
+# Binary64 tangent and MatrixPerspective (docs/PERSPECTIVE.md)
+
+def Float64.internal.lift(result: Maybe<Binary64Fma.Words>) -> Maybe<Float64>:
+  match result:
+    case None{}: None{}
+    case Some{Binary64Fma.Words{high, low}}: Some{Float64{high, low}}
+
+# a*b rounded once to binary64; None for nonfinite or subnormal operands and
+# results (the exact scaled helper's domain, src/binary64_scaled.bend).
+def Float64.internal.multiply(left: Float64, right: Float64) -> Maybe<Float64>:
+  Float64{ah, al} = left
+  Float64{bh, bl} = right
+  Float64.internal.lift(Binary64Scaled.multiply(ah, al, bh, bl))
+
+def Float64.internal.negate(value: Float64) -> Float64:
+  Float64{high, low} = value
+  Float64{(high .^. 2147483648 : U32), low}
+
+def Libm.tan.words(value: Float64) -> Maybe<Float64>:
+  Float64{high, low} = value
+  Float64.internal.lift(GlibcTan.tan(high, low))
+
+# tan under a reference profile. Glibc239Libm and Glibc241Libm (whose s_tan.c
+# is the same source): glibc's x86_64 tan as its FMA ifunc variant runs it on
+# CPUs with FMA and AVX2, through the LGPL-2.1+ module src/lgpl/tan.bend; equal
+# to the native function on every argument raylib passes (exhaustive). None
+# for AppleLibm (Apple's tan is unpublished), infinities and NaN.
+def Libm.tan(libm: Libm, value: Float64) -> Maybe<Float64>:
+  match libm:
+    case AppleLibm{}: None{}
+    case _: Libm.tan.words(value)
+
+def Matrix.perspective.frustum(right: Maybe<Float64>, +top: Float64, +near: Float64, +far: Float64) -> Maybe<Matrix>:
+  match right:
+    case None{}: None{}
+    case Some{+r}: Some{Matrix.frustum(Float64.internal.negate(r), r, Float64.internal.negate(top), top, near, far)}
+
+def Matrix.perspective.top(top: Maybe<Float64>, +aspect: Float64, +near: Float64, +far: Float64) -> Maybe<Matrix>:
+  match top:
+    case None{}: None{}
+    case Some{+t}: Matrix.perspective.frustum(Float64.internal.multiply(t, aspect), t, near, far)
+
+def Matrix.perspective.tangent(tangent: Maybe<Float64>, +aspect: Float64, +near: Float64, +far: Float64) -> Maybe<Matrix>:
+  match tangent:
+    case None{}: None{}
+    case Some{t}: Matrix.perspective.top(Float64.internal.multiply(near, t), aspect, near, far)
+
+def Matrix.perspective.half(libm: Libm, half: Maybe<Float64>, +aspect: Float64, +near: Float64, +far: Float64) -> Maybe<Matrix>:
+  match half:
+    case None{}: None{}
+    case Some{h}: Matrix.perspective.tangent(Libm.tan(libm, h), aspect, near, far)
+
+# MatrixPerspective(fovY, aspect, near, far): top = near*tan(fovY*0.5) and
+# right = top*aspect in binary64, then MatrixFrustum(-right, right, -top, top,
+# near, far)'s cells. None where Libm.tan is None and where a binary64 product
+# is not a normal number or zero.
+def Matrix.perspective.glibc(libm: Libm, fovy: Float64, +aspect: Float64, +near: Float64, +far: Float64) -> Maybe<Matrix>:
+  Matrix.perspective.half(libm, Float64.internal.multiply(fovy, Float64{1071644672, 0}), aspect, near, far)
+
+def Matrix.perspective_for(libm: Libm, fovy: Float64, +aspect: Float64, +near: Float64, +far: Float64) -> Maybe<Matrix>:
+  match libm:
+    case AppleLibm{}: None{}
+    case Glibc239Libm{}: Matrix.perspective.glibc(Glibc239Libm{}, fovy, aspect, near, far)
+    case Glibc241Libm{}: Matrix.perspective.glibc(Glibc241Libm{}, fovy, aspect, near, far)
 
 def Vector2.transform(vector: Vector2, matrix: Matrix) -> Vector2:
   Vector2{+x, +y} = vector
@@ -1261,15 +1331,16 @@ def Libm.asin.within(inside: Bool, +x: F32) -> Maybe<F32>:
     case True{}: Asin.asin(x)
     case False{}: None{}
 
-# asinf under a reference profile, from the correctly rounded kernel of glibc
-# 2.41 (CORE-MATH): every x in [-1, 1] for Glibc241Libm; for AppleLibm and
-# Glibc239Libm only |x| < 0x1.d12edp-12 and |x| < 0x1.d12e9ep-12, below which
-# their native asinf was exhaustively found equal to correct rounding (see
+# asinf under a reference profile: for Glibc241Libm the correctly rounded
+# kernel of glibc 2.41 (CORE-MATH) on [-1, 1]; for Glibc239Libm glibc 2.39's
+# own kernel (the LGPL-2.1+ module src/lgpl/asin.bend) on [-1, 1]; for
+# AppleLibm the correctly rounded kernel only for |x| < 0x1.d12edp-12, below
+# which macOS asinf was exhaustively found equal to correct rounding (see
 # docs/INVERSE-TRIG.md). None elsewhere, for |x| > 1 and for NaN.
 def Libm.asin(libm: Libm, +x: F32) -> Maybe<F32>:
   match libm:
     case AppleLibm{}: Libm.asin.within(((F32.bits(x) .&. 2147483647) < 971544424 : U32), x)
-    case Glibc239Libm{}: Libm.asin.within(((F32.bits(x) .&. 2147483647) < 971544399 : U32), x)
+    case Glibc239Libm{}: GlibcAsin.asin(x)
     case Glibc241Libm{}: Asin.asin(x)
 
 def Quaternion.euler.pitch(value: Maybe<F32>) -> Result<&2, &2, U32, F32>:

@@ -95,7 +95,7 @@ answers `None`.
 | `DrawBillboard` / `DrawBillboardRec` / `DrawBillboardPro` | `Draw.billboard(frame, camera, texture, position, scale, tint)`, `Draw.billboard_rec(frame, camera, texture, source, position, size, tint)`, `Draw.billboard_pro_for(libm, frame, camera, texture, source, position, up, size, origin, rotation, tint)`, `Draw.billboard_pro` | `Frame & Texture` |
 | `GetModelBoundingBox` | `Model.bounding_box_for(arithmetic, libm, model)`, `Model.bounding_box` | `Maybe<BoundingBox>` |
 | `GetRayCollisionMesh` | `Collision.ray_mesh_for(arithmetic, ray, mesh, transform)`, `Collision.ray_mesh` | `Maybe<RayCollision>` |
-| `BeginMode3D` / `EndMode3D` | `Frame.begin_mode_3d(frame, camera)`, `Frame.end_mode_3d(frame)` | `Frame` |
+| `BeginMode3D` / `EndMode3D` | `Frame.begin_mode_3d_for(libm, frame, camera)` (`Frame.begin_mode_3d(frame, camera)`: `AppleLibm`), `Frame.end_mode_3d(frame)` | `Frame` |
 | `DrawLine3D` / `DrawPoint3D` | `Draw.line_3d(frame, start, end, color)`, `Draw.point_3d(frame, position, color)` | `Frame` |
 | `DrawCircle3D` | `Draw.circle_3d_for(libm, frame, center, radius, axis, angle, color)` | `Frame` |
 | `DrawTriangle3D` / `DrawTriangleStrip3D` | `Draw.triangle_3d(frame, v1, v2, v3, color)`, `Draw.triangle_strip_3d(frame, points, color)` | `Frame` |
@@ -212,7 +212,8 @@ The generated mesh is scaled (`radius`, or `size/2` for the torus) and unrolled
 per triangle corner as raylib does (no indices). `GenMeshCylinder`,
 `GenMeshCone` and `GenMeshKnot` remain refused: their disk caps and trefoil
 call the binary64 `cos`/`sin`, for which no verified reproduction exists
-([PERSPECTIVE.md](PERSPECTIVE.md) has the same problem with `tan`).
+([PERSPECTIVE.md](PERSPECTIVE.md) solved the same problem for `tan` by
+reproducing glibc's function).
 
 ## Export
 
@@ -434,11 +435,16 @@ current color buffer (the render texture's in texture mode).
   scales must be finite and nonzero; otherwise a cell is a NaN of
   platform-defined sign (or an infinity that makes one) and the frame is
   refused.
-- **Perspective** (`CAMERA_PERSPECTIVE`) is refused: its `rlFrustum` bounds
-  are `0.05*tan(fovy*0.5*DEG2RAD)` in binary64 and the native `tan` is not
-  reproduced. Over every binary32 `fovy`, macOS misrounds that tangent for
-  22.7% of the arguments (`fovy = 45` included) and glibc 2.39/2.41 for 0.12%,
-  so neither equals a correctly rounded kernel ([PERSPECTIVE.md](PERSPECTIVE.md)).
+- **Perspective** (`CAMERA_PERSPECTIVE`, `Frame.begin_mode_3d_for(libm,
+  frame, camera)`): `rlFrustum(-right, right, -top, top, 0.05, 4000.0)` with
+  `top = 0.05*tan(fovy*0.5*DEG2RAD)` and `right = top*aspect` in binary64,
+  the tangent from the profile's `M.Libm.tan` ([PERSPECTIVE.md](PERSPECTIVE.md)).
+  swFrustum divides `(float)0.1` by the binary64 spans `2*right` and `2*top`
+  and narrows m0/m5 to F32; m8/m9 are `+0.0` over the spans (the sign of
+  `fovy`) and m10, m11, m14 are constants (`0xBF8000D2`, `-1`, `0xBDCCCD75`).
+  A zero or nonfinite m0/m5 refuses the frame. Under `AppleLibm` (and so
+  `Frame.begin_mode_3d`) every perspective camera is refused: macOS misrounds
+  22.7% of these tangents, `fovy = 45` included, and its `tan` is unpublished.
 - **Other projection values** keep the identity projection, as raylib does.
 
 `Frame.end_mode_3d` pops the projection and resets the modelview; the depth

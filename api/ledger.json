@@ -28977,12 +28977,12 @@
       "phase": 5,
       "sequence": 22,
       "status": "partial",
-      "jonlib": "Frame.begin_mode_3d",
+      "jonlib": "Frame.begin_mode_3d_for / Frame.begin_mode_3d",
       "mapping_state": "implemented",
-      "scope": "Projection pushed and reset, swOrtho for CAMERA_ORTHOGRAPHIC (binary64 top/right exact, F32 cells), identity for other projection values, MatrixLookAt modelview (uncontracted) and the depth test enabled; aspect of the current color buffer.",
+      "scope": "Projection pushed and reset; CAMERA_PERSPECTIVE multiplies it by swFrustum with top = 0.05*tan(fovy*0.5*DEG2RAD) and right = top*aspect in binary64 under the profile's M.Libm.tan (glibc profiles), CAMERA_ORTHOGRAPHIC by swOrtho (binary64 top/right exact, F32 cells), other projection values leave the identity; MatrixLookAt modelview (uncontracted) and the depth test enabled; aspect of the current color buffer.",
       "gaps": [
-        "CAMERA_PERSPECTIVE is refused: rlFrustum needs the native binary64 tan (docs/PERSPECTIVE.md)",
-        "Orthographic cameras with a zero or nonfinite fovy, span or scale mark the frame undefined",
+        "CAMERA_PERSPECTIVE under AppleLibm (the default form) marks the frame undefined: Apple's binary64 tan is unpublished (docs/PERSPECTIVE.md)",
+        "Perspective cameras with a zero or nonfinite frustum scale and orthographic cameras with a zero or nonfinite fovy, span or scale mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -28997,6 +28997,7 @@
       "evidence": [
         "tools/models_probe.py",
         "docs/MODELS.md",
+        "docs/PERSPECTIVE.md",
         "src/shapes3d.bend",
         "src/frame.bend"
       ],
@@ -30429,7 +30430,7 @@
       "mapping_state": "implemented",
       "scope": "GetScreenToWorldRayEx at the Core screen size; None as the Ex form.",
       "gaps": [
-        "CAMERA_PERSPECTIVE is None: MatrixPerspective needs the blocked binary64 tan (docs/PERSPECTIVE.md)",
+        "CAMERA_PERSPECTIVE is None under AppleLibm (the profile-free forms; docs/PERSPECTIVE.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -30445,7 +30446,8 @@
         "tools/window_probe.py",
         "tools/camera_probe.py",
         "docs/CAMERA.md",
-        "jonlib.bend"
+        "jonlib.bend",
+        "docs/PERSPECTIVE.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -30492,9 +30494,9 @@
       "status": "partial",
       "jonlib": "Camera.screen_to_world_ray_ex_for / Camera.screen_to_world_ray_ex",
       "mapping_state": "implemented",
-      "scope": "Maybe<Ray> for orthographic and other non-perspective cameras: Vector3Unproject at depths 0, 1 and -1 (orthographic origin; zero origin for other projections) and the normalized direction; sizes 1..INT_MAX; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
+      "scope": "Maybe<Ray> for perspective (MatrixPerspective with the profile's M.Libm.tan; the ray starts at the camera position), orthographic and other cameras: Vector3Unproject at depths 0, 1 and -1 (orthographic origin; zero origin for other projections) and the normalized direction; sizes 1..INT_MAX; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
       "gaps": [
-        "CAMERA_PERSPECTIVE is None: MatrixPerspective's binary64 tan is blocked (docs/PERSPECTIVE.md)",
+        "CAMERA_PERSPECTIVE is None under AppleLibm (the profile-free forms) and for a nonfinite fovy*DEG2RAD (docs/PERSPECTIVE.md)",
         "Orthographic fovy beyond the checked binary64 multiplier (about 2^97) and nonfinite fovy",
         "Cull distances set by rlSetClipPlanes",
         "Other compilers' contraction and optimization choices",
@@ -30512,7 +30514,8 @@
       },
       "evidence": [
         "tools/camera_probe.py",
-        "docs/CAMERA.md"
+        "docs/CAMERA.md",
+        "docs/PERSPECTIVE.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -30561,7 +30564,7 @@
       "mapping_state": "implemented",
       "scope": "GetWorldToScreenEx at the Core screen size (GetScreenWidth/GetScreenHeight); None as the Ex form (perspective projections among them).",
       "gaps": [
-        "CAMERA_PERSPECTIVE is None: MatrixPerspective needs the blocked binary64 tan (docs/PERSPECTIVE.md)",
+        "CAMERA_PERSPECTIVE is None under AppleLibm (the profile-free forms; docs/PERSPECTIVE.md)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -30577,7 +30580,8 @@
         "tools/window_probe.py",
         "tools/camera_probe.py",
         "docs/CAMERA.md",
-        "jonlib.bend"
+        "jonlib.bend",
+        "docs/PERSPECTIVE.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -30624,9 +30628,9 @@
       "status": "partial",
       "jonlib": "Camera.world_to_screen_ex_for / Camera.world_to_screen_ex",
       "mapping_state": "implemented",
-      "scope": "Maybe<Vector2> for orthographic and other non-perspective cameras: binary64 aspect and orthographic span through the checked binary64 helpers, view and projection transforms, perspective division and the screen mapping; sizes 1..INT_MAX; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
+      "scope": "Maybe<Vector2> for perspective (MatrixPerspective with the profile's M.Libm.tan; the ray starts at the camera position), orthographic and other cameras: binary64 aspect and orthographic span through the checked binary64 helpers, view and projection transforms, perspective division and the screen mapping; sizes 1..INT_MAX; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel).",
       "gaps": [
-        "CAMERA_PERSPECTIVE is None: MatrixPerspective's binary64 tan is blocked (docs/PERSPECTIVE.md)",
+        "CAMERA_PERSPECTIVE is None under AppleLibm (the profile-free forms) and for a nonfinite fovy*DEG2RAD (docs/PERSPECTIVE.md)",
         "Orthographic fovy beyond the checked binary64 multiplier (about 2^97) and nonfinite fovy",
         "Cull distances set by rlSetClipPlanes",
         "Other compilers' contraction and optimization choices",
@@ -30644,7 +30648,8 @@
       },
       "evidence": [
         "tools/camera_probe.py",
-        "docs/CAMERA.md"
+        "docs/CAMERA.md",
+        "docs/PERSPECTIVE.md"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -71111,27 +71116,31 @@
       "milestone": "jonmath",
       "phase": 1,
       "sequence": 2,
-      "status": "blocked",
-      "jonlib": "jonmath.Matrix.perspective",
-      "mapping_state": "proposed",
-      "scope": "Binary64 inputs are supported, but native-reference tangent rounding has no verified implementation yet.",
+      "status": "partial",
+      "jonlib": "jonmath.Matrix.perspective_for",
+      "mapping_state": "implemented",
+      "scope": "Maybe<Matrix>: top = near*tan(fovY*0.5) and right = top*aspect in binary64 with the profile's M.Libm.tan, then MatrixFrustum(-right, right, -top, top, near, far)'s F32 cells. Glibc239Libm and Glibc241Libm: glibc's x86_64 tan as its FMA ifunc variant runs (LGPL-2.1+ module src/lgpl/tan.bend), equal to native glibc 2.39 and 2.41 on every binary32 fovY*0.5 and BeginMode3D argument (exhaustive).",
       "gaps": [
-        "Verified native-reference binary64 tangent behavior on target hosts",
-        "Complete perspective matrix parity"
+        "AppleLibm is None (Apple's binary64 tan is unpublished and not correctly rounded)",
+        "glibc hosts without FMA/AVX2 (the SSE2/AVX ifunc variants) and non-x86 glibc are not modelled",
+        "Nonfinite inputs and binary64 products that are subnormal or overflow are None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
-      "blocker": "A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps, and no native tan is correctly rounded on raylib's arguments: exhaustively over every binary32 fovY (and BeginMode3D's fovy*0.5*DEG2RAD), macOS 27 arm64 differs from correct rounding on 23.7% (22.7%) and glibc 2.39/2.41 x86_64 on 0.13% (0.12%); glibc's agreeing set is characterized only by a 0.069-ulp distance from rounding boundaries, which would refuse about 14% of fovy values. The published Sun/FreeBSD kernel does not match macOS and glibc's LGPL s_tan.c is not adapted.",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
+        "tools/camera_probe.py",
+        "tools/models_probe.py",
+        "tools/glibc_tan.py",
+        "tools/reference/glibc_tan/model.c",
         "tools/libm_survey.py",
-        "tools/reference/libm_tan_margin.c",
-        "tools/perspective_probe.py",
         "docs/PERSPECTIVE.md"
       ],
       "gate_evidence": {},
@@ -71146,7 +71155,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Compare values, orientation conventions, singular/zero cases, interpolation and transforms against the pinned raymath functions.",
-      "next_step": "Resolve: A one-ULP native binary64 tangent difference changes the final F32 m5 by two steps, and no native tan is correctly rounded on raylib's arguments: exhaustively over every binary32 fovY (and BeginMode3D's fovy*0.5*DEG2RAD), macOS 27 arm64 differs from correct rounding on 23.7% (22.7%) and glibc 2.39/2.41 x86_64 on 0.13% (0.12%); glibc's agreeing set is characterized only by a 0.069-ulp distance from rounding boundaries, which would refuse about 14% of fovy values. The published Sun/FreeBSD kernel does not match macOS and glibc's LGPL s_tan.c is not adapted.",
+      "next_step": "Close documented gaps and unverified gates for MatrixPerspective.",
       "priority": 7
     },
     {
@@ -72629,11 +72638,11 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.to_euler_for",
       "mapping_state": "implemented",
-      "scope": "Maybe<Vector3> (roll, pitch, yaw) in raymath's uncontracted F32 order with the profile's atan2f and M.Libm.asin, the correctly rounded asinf of glibc 2.41 (CORE-MATH, through checked binary64 helpers): every clamped pitch under Glibc241Libm; under AppleLibm and Glibc239Libm only pitch arguments below 0x1.d12edp-12 and 0x1.d12e9ep-12, where macOS 27 arm64 and glibc 2.39 x86_64 asinf were exhaustively found equal to correct rounding; finite components with signed-zero or normal intermediates and atan2f results (checked angle contract).",
+      "scope": "Maybe<Vector3> (roll, pitch, yaw) in raymath's uncontracted F32 order with the profile's atan2f and M.Libm.asin: every clamped pitch under Glibc241Libm (glibc 2.41's correctly rounded asinf, CORE-MATH) and Glibc239Libm (glibc 2.39's own asinf, LGPL module src/lgpl/asin.bend, equal to native glibc 2.39 x86_64 on [-1, 1]); under AppleLibm only pitches below 0x1.d12edp-12, where macOS asinf is correctly rounded (exhaustive); finite components with signed-zero or normal intermediates and atan2f results (checked angle contract).",
       "gaps": [
-        "AppleLibm and Glibc239Libm pitch arguments at or above their bounds (None: those native asinf are not correctly rounded there)",
+        "AppleLibm pitch arguments at or above 0x1.d12edp-12 (None: macOS asinf is not correctly rounded there)",
         "Subnormal, overflowing or nonfinite intermediates are None",
-        "Contracted (FMA) builds; glibc 2.41 binaries not run (source model)",
+        "Contracted (FMA) builds; glibc 2.41 checked natively only on x86_64 (Debian trixie, exhaustive)",
         "Other target/performance coverage"
       ],
       "blocker": null,
@@ -72648,7 +72657,8 @@
       "evidence": [
         "tools/quaternion_euler_probe.py",
         "tools/libm_survey.py",
-        "docs/INVERSE-TRIG.md"
+        "docs/INVERSE-TRIG.md",
+        "src/lgpl/asin.bend"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -102975,11 +102985,11 @@
       "phase": 5,
       "sequence": 26,
       "status": "partial",
-      "jonlib": "Camera.projection_matrix",
+      "jonlib": "Camera.projection_matrix_for / Camera.projection_matrix",
       "mapping_state": "implemented",
-      "scope": "Maybe<Matrix>: MatrixOrtho(-right, right, -top, top) with top = fovy/2.0, the exact binary64 span of the float aspect and rlgl's default cull distances, every input; the identity for projection values other than 0 and 1.",
+      "scope": "Maybe<Matrix>: MatrixPerspective(fovy*DEG2RAD, aspect, 0.05, 4000.0) under the profile's M.Libm.tan for CAMERA_PERSPECTIVE; MatrixOrtho(-right, right, -top, top) with top = fovy/2.0, the exact binary64 span of the float aspect and rlgl's default cull distances, every input; the identity for projection values other than 0 and 1.",
       "gaps": [
-        "CAMERA_PERSPECTIVE is None: MatrixPerspective's binary64 tan is blocked (docs/PERSPECTIVE.md)",
+        "CAMERA_PERSPECTIVE is None under AppleLibm (the profile-free form) and for a nonfinite fovy*DEG2RAD or aspect (docs/PERSPECTIVE.md)",
         "Cull distances set by rlSetClipPlanes",
         "NaN sign and payload are not reproduced",
         "Full target/performance coverage"
@@ -102995,7 +103005,8 @@
       },
       "evidence": [
         "tools/camera_probe.py",
-        "docs/CAMERA.md"
+        "docs/CAMERA.md",
+        "docs/PERSPECTIVE.md"
       ],
       "gate_evidence": {},
       "target_results": {},
