@@ -521,6 +521,14 @@ def gnu_model():
     return source, header
 
 
+def gnu_objects(probe, source):
+    """The objects every reference built with gnu_model()'s header links: the Arm sinf/cosf model (and stable
+    qsort) and the glibc tan model the header routes tan to."""
+    model_object = GNU_DIR / 'glibc_model.o'
+    probekit.run(['clang', '-std=c11', '-O2', '-ffp-contract=off', '-c', source, '-o', model_object])
+    return (str(model_object), *map(str, glibc_tan.objects(probe)))
+
+
 def configure(parser):
     parser.add_argument('--gnu-libm', action='store_true',
                         help='build the reference with the Arm sinf/cosf model and run Jonlib with M.Glibc239Libm{}')
@@ -539,9 +547,7 @@ def main():
     if any(fused.values()):
         raise ProbeFailure(f'models: the reference build contains fused multiply-adds: {fused}')
     if args.gnu_libm:
-        model_object = GNU_DIR / 'glibc_model.o'
-        probekit.run(['clang', '-std=c11', '-O2', '-ffp-contract=off', '-c', source, '-o', model_object])
-        extra += (str(model_object), *map(str, glibc_tan.objects(probe)))
+        extra += gnu_objects(probe, source)
     elif libm != 'AppleLibm' and not glibc_tan.host_is_model(probe):
         raise ProbeFailure('models: the host tan is not the glibc x86_64 FMA-variant model of the glibc profiles')
     items = scenes()
