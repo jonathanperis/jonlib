@@ -733,12 +733,15 @@ def configure(parser):
     parser.add_argument('--interactive', type=int, metavar='FRAMES', default=0,
                         help='run each example in a window for FRAMES frames and record its frame rate (diagnostic)')
     parser.add_argument('--example', action='append', choices=sorted(EXAMPLES),
-                        help='only these examples (diagnostic subset; the gate runs every example)')
+                        help='only these examples (diagnostic subset)')
+    parser.add_argument('--category', choices=sorted({name.split('_')[0] for name in EXAMPLES}),
+                        help="only one category's examples (the examples-<category> gates)")
 
 
 def main():
     args = probekit.arguments(__doc__, configure)
-    name = 'examples-interactive' if args.interactive else 'examples' + ('-subset' if args.example else '')
+    name = ('examples-interactive' if args.interactive else f'examples-{args.category}' if args.category
+            else 'examples' + ('-subset' if args.example else ''))
     probe = probekit.Probe(name, args, raylib_options=ip.OPTIONS)
     if args.interactive:
         interactive(probe, args.interactive)
@@ -753,7 +756,8 @@ def main():
     if not logo.is_file():
         raise ProbeFailure(f'examples: {logo} is missing from the pinned raylib checkout')
 
-    items = [item for item in scripts() if not args.example or item['example'] in args.example]
+    items = [item for item in scripts() if (not args.example or item['example'] in args.example)
+             and (not args.category or item['example'].split('_')[0] == args.category)]
     names = [name for name in EXAMPLES if any(item['example'] == name for item in items)]
     rows_by_script, refused, binaries = [], {}, {}
     for index, item in enumerate(items):

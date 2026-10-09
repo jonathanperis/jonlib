@@ -1789,19 +1789,68 @@
    "minutes": 5
   },
   {
-   "id": "examples",
-   "title": "Ported raylib examples (core_basic_window, core_input_keys, core_input_mouse, core_2d_camera, core_drop_files, shapes_logo_raylib, shapes_basic_shapes, shapes_bouncing_ball, shapes_lines_bezier, textures_logo_raylib, textures_srcrec_dstrec, textures_sprite_animation, textures_background_scrolling) replayed headless frame by frame against the unmodified example sources on the clock-injected memory-platform raylib (tools/reference/example_driver.h), framebuffer bytes and the presented quadtree Image, with refusal contracts",
+   "id": "examples-core",
+   "title": "The ported raylib core examples replayed frame by frame against the unmodified native examples (clock-injected memory-platform raylib), framebuffers byte for byte and the presented Image",
    "run": [
     "{python}",
     "tools/examples_probe.py",
     "--bend-source={bend}",
-    "--raylib-source={raylib}"
+    "--raylib-source={raylib}",
+    "--category=core"
    ],
    "os": [
     "linux",
     "macos"
    ],
-   "minutes": 12
+   "minutes": 25
+  },
+  {
+   "id": "examples-shapes",
+   "title": "The ported raylib shapes examples replayed frame by frame against the unmodified native examples (clock-injected memory-platform raylib), framebuffers byte for byte and the presented Image",
+   "run": [
+    "{python}",
+    "tools/examples_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}",
+    "--category=shapes"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 40
+  },
+  {
+   "id": "examples-text",
+   "title": "The ported raylib text examples replayed frame by frame against the unmodified native examples (clock-injected memory-platform raylib), framebuffers byte for byte and the presented Image",
+   "run": [
+    "{python}",
+    "tools/examples_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}",
+    "--category=text"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 10
+  },
+  {
+   "id": "examples-textures",
+   "title": "The ported raylib textures examples replayed frame by frame against the unmodified native examples (clock-injected memory-platform raylib), framebuffers byte for byte and the presented Image",
+   "run": [
+    "{python}",
+    "tools/examples_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}",
+    "--category=textures"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 15
   },
   {
    "id": "quaternion-angle",
