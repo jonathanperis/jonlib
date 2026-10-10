@@ -4869,7 +4869,6 @@
     "rlLoadFramebuffer",
     "rlLoadTextureCubemap",
     "rlLoadTextureDepth",
-    "rlSetUniformMatrix",
     "rlUnloadFramebuffer"
    ]
   },
@@ -6344,14 +6343,13 @@
     "rlFramebufferComplete",
     "rlLoadFramebuffer",
     "rlLoadTextureDepth",
-    "rlSetUniform",
     "rlUnloadFramebuffer"
    ]
   },
   {
    "name": "shaders_vertex_displacement",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -6388,9 +6386,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "rlSetUniformSampler"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_depth_writing",
