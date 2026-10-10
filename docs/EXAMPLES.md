@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 83 ported, 87 ready, 42 waiting.
+Totals: 212 examples; 85 ported, 85 ready, 42 waiting.
 
 ## APIs that unblock the most examples
 
@@ -128,7 +128,7 @@ Totals: 212 examples; 83 ported, 87 ready, 42 waiting.
 | `shapes_rectangle_advanced` | shapes | ready |  |
 | `shapes_splines_drawing` | shapes | waiting | `GuiDropdownBox` |
 | `shapes_digital_clock` | shapes | ready |  |
-| `shapes_double_pendulum` | shapes | ready |  |
+| `shapes_double_pendulum` | shapes | ported |  |
 | `shapes_dashed_line` | shapes | ported |  |
 | `shapes_triangle_strip` | shapes | ported |  |
 | `shapes_vector_angle` | shapes | ready |  |
@@ -221,7 +221,7 @@ Totals: 212 examples; 83 ported, 87 ready, 42 waiting.
 | `models_basic_voxel` | models | ported |  |
 | `models_rotating_cube` | models | ported |  |
 | `models_decals` | models | waiting | `UploadMesh` |
-| `models_directional_billboard` | models | ready |  |
+| `models_directional_billboard` | models | ported |  |
 | `models_animation_blend_custom` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `rlUpdateVertexBuffer` |
 | `models_animation_blending` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `UpdateModelAnimationEx`, `GuiDropdownBox`, `GuiProgressBar` |
 | `models_animation_timing` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `GuiDropdownBox`, `GuiProgressBar` |

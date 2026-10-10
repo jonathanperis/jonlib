@@ -135,6 +135,7 @@ EXAMPLES = {
     'models_orthographic_projection': ('models/models_orthographic_projection.c', 'Ex.setup(core, frame)'),
     'shaders_basic_lighting': ('shaders/shaders_basic_lighting.c', 'Ex.setup(core, frame)'),
     'shapes_bullet_hell': ('shapes/shapes_bullet_hell.c', 'Ex.setup(M.LIBM{}, core, frame)'),
+    'shapes_double_pendulum': ('shapes/shapes_double_pendulum.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shaders_texture_waves': ('shaders/shaders_texture_waves.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_eratosthenes_sieve': ('shaders/shaders_eratosthenes_sieve.c', 'Ex.setup(core, frame)'),
     'shaders_texture_outline': ('shaders/shaders_texture_outline.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -154,6 +155,7 @@ EXAMPLES = {
     'shapes_following_eyes': ('shapes/shapes_following_eyes.c', 'Ex.setup(core, frame)'),
     'text_font_spritefont': ('text/text_font_spritefont.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_billboard_rendering': ('models/models_billboard_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'models_directional_billboard': ('models/models_directional_billboard.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shapes_circle_sector_drawing': ('shapes/shapes_circle_sector_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_ring_drawing': ('shapes/shapes_ring_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_rounded_rectangle_drawing': ('shapes/shapes_rounded_rectangle_drawing.c', 'Ex.setup(core, frame)'),
@@ -176,18 +178,18 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'textures_npatch_drawing', 'textures_raw_data', 'textures_bunnymark', 'shaders_texture_waves',
             'shaders_texture_outline', 'shaders_shapes_textures', 'shaders_texture_tiling', 'text_font_spritefont',
             'models_billboard_rendering', 'shaders_color_correction', 'textures_particles_blending',
-            'text_sprite_fonts'}
+            'text_sprite_fonts', 'models_directional_billboard'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
 PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen', 'core_3d_picking', 'models_basic_voxel', 'models_rotating_cube',
                'models_geometric_shapes', 'models_box_collisions', 'models_orthographic_projection',
                'shaders_basic_lighting', 'shaders_texture_tiling', 'models_billboard_rendering',
-               'models_tesseract_view'}
+               'models_tesseract_view', 'models_directional_billboard'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
-                'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68}
+                'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192}
 
 
 # -----------------------------------------------------------------------------
@@ -399,6 +401,10 @@ def scripts():
                                                  quick([mouse_at(-40, 500)]), quick([mouse_at(300, 400)])]),
         script('text_font_spritefont', 'frames', [quick(), slow()]),
         script('models_billboard_rendering', 'orbit', [quick(), quick(), slow(), quick()]),
+        # Fifth-of-a-second frames: the animation steps every third one and the orbit crosses a direction row.
+        # The first frame has no frame time (the pendulum rests); then quick, slow and long steps of the swing.
+        script('shapes_double_pendulum', 'swing', [quick(), quick(), slow(), quick()] + [([], 0.003, 0.05) for _ in range(6)] + [quick(), slow()]),
+        script('models_directional_billboard', 'orbit', [quick(), slow()] + [([], 0.003, 0.2) for _ in range(9)] + [quick()]),
         # raygui slider bars: hover StartAngle, press it (360 degrees) and drag left, on past the bounds (the
         # drag keeps following), release; then the radius, the end angle and few segments (the estimated count).
         script('shapes_circle_sector_drawing', 'sliders', [quick(), quick([mouse_at(660, 50)]), quick([button(0)]), quick([mouse_at(630, 52)]),
@@ -619,7 +625,8 @@ def bullet_hell_refusal(item, libm):
 # the glibc profiles
 # they refuse nothing and every frame is compared. Under AppleLibm the refusal frame is the one Jonlib
 # reports (every frame before it is still compared with raylib); it is not predicted independently.
-REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect'}
+REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
+            'shapes_double_pendulum'}
 
 
 def refusal(item, libm):
