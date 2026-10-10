@@ -699,7 +699,7 @@
   {
    "name": "core_window_should_close",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
