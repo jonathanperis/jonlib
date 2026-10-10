@@ -4703,7 +4703,7 @@
   {
    "name": "models_yaw_pitch_roll",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -5389,7 +5389,7 @@
   {
    "name": "shaders_model_shader",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",

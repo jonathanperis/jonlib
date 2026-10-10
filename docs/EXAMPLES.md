@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 105 ported, 65 ready, 42 waiting.
+Totals: 212 examples; 107 ported, 63 ready, 42 waiting.
 
 ## APIs that unblock the most examples
 
@@ -210,7 +210,7 @@ Totals: 212 examples; 105 ported, 65 ready, 42 waiting.
 | `models_orthographic_projection` | models | ported |  |
 | `models_point_rendering` | models | waiting | `UploadMesh` |
 | `models_rlgl_solar_system` | models | ready |  |
-| `models_yaw_pitch_roll` | models | ready |  |
+| `models_yaw_pitch_roll` | models | ported |  |
 | `models_waving_cubes` | models | ready |  |
 | `models_heightmap_rendering` | models | ported |  |
 | `models_skybox_rendering` | models | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlGetCullDistanceFar`, `rlGetCullDistanceNear`, `rlLoadFramebuffer`, `rlLoadTextureCubemap`, `rlLoadTextureDepth`, `rlSetUniformMatrix`, `rlUnloadFramebuffer` |
@@ -227,7 +227,7 @@ Totals: 212 examples; 105 ported, 65 ready, 42 waiting.
 | `models_animation_timing` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `GuiDropdownBox`, `GuiProgressBar` |
 | `shaders_ascii_rendering` | shaders | ready |  |
 | `shaders_basic_lighting` | shaders | ported |  |
-| `shaders_model_shader` | shaders | ready |  |
+| `shaders_model_shader` | shaders | ported |  |
 | `shaders_shapes_textures` | shaders | ported |  |
 | `shaders_custom_uniform` | shaders | ready |  |
 | `shaders_postprocessing` | shaders | ready |  |
