@@ -630,6 +630,12 @@ def Laws.float64_to_int_infinity_none(low):
 def Laws.float64_to_f32_infinity_none():
   {==}
 
+def Laws.glibc_pow2_126_none():
+  {==}
+
+def Laws.glibc_pow2_infinity_none():
+  {==}
+
 def Laws.gui_default_text_size():
   {==}
 

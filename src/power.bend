@@ -3,8 +3,11 @@
 # and exp2_inline, with the powf_log2_data and exp2f_data tables), as glibc
 # 2.39 ships it on x86_64 (TOINT_INTRINSICS 0, POWF_SCALE 1). Copyright (c)
 # 2017-2026 Arm Limited; MIT alternative, see LICENSES/arm-math.txt.
-# Restricted to powf(x, 2) and powf(x, 3) for x in [-0, 1], every binary64
-# operation through the checked helpers (each rounds once, to nearest even).
+# Restricted to powf(x, 2) and powf(x, 3) for x in [-0, 1], and to powf(2, y)
+# (the same as exp2f(y)) for |y| < 126, every binary64 operation through the
+# checked helpers (each rounds once, to nearest even). For powf(2, y) the
+# unfused arithmetic here gives the result of both the SSE2 and the FMA
+# variants glibc 2.39 and 2.41 select (tools/reference/glibc_pow2).
 import Base
 import ./binary64_fma.bend as F
 import ./binary64_add_sub.bend as A
@@ -126,6 +129,23 @@ def exp2.checked(+xd: V) -> Maybe<F32>:
       +magnitude = (high .&. 2147483647 : U32)
       +under = (high >= 2147483648 : U32) && (magnitude >= 1080213504 : U32)
       Bool.pick(Maybe<F32>, large && under, Some{0.0}, exp2.at(xd, add(xd, shift())))
+
+def exp2.inside(inside: Bool, +bits: U32) -> Maybe<F32>:
+  match inside:
+    case False{}: None{}
+    case True{}: exp2.at(promote(bits), add(promote(bits), shift()))
+
+# powf(2, y) and exp2f(y) for the binary32 word of y: exp2_inline on y itself
+# (log2_inline(2.0f) is exactly 1, so powf's y*log2(x) is y). A finite y with
+# |y| < 126 only: the result is normal and no special case of powf or exp2f
+# is reached. None otherwise.
+def exp2.word(+bits: U32) -> Maybe<F32>:
+  exp2.inside(((bits .&. 2147483647) < 1123811328 : U32), bits)
+
+# glibc 2.39 and 2.41 (x86_64) powf(2, y) and exp2f(y) for a finite y with
+# |y| < 126; None otherwise.
+def exp2(+y: F32) -> Maybe<F32>:
+  exp2.word(F32.bits(y))
 
 # The word of x normalized as powf does for subnormals (x * 2^23, minus 23 in
 # the exponent), in integer arithmetic.

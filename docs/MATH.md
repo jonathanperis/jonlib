@@ -303,9 +303,11 @@ nearest even, gradual underflow, overflow to infinity; `None` for infinities
 and NaN), for example `(float)GetTime()`. `M.Float64.to_int(value)` is `(int)`
 (truncation toward zero as a two's-complement word; `None` at or beyond 2^31
 in magnitude, where C's conversion is undefined, and for infinities and NaN).
-`M.Libm.pow2(libm, k)` is `powf(2, k)` (and the `exp2f(k)` compilers
-substitute for it) for an integral `k` in [-20, 30]: exactly `2^k` under both
-glibc profiles (gate `pow2`), `None` for `AppleLibm` and every other `k`.
+`M.Libm.pow2(libm, y)` is `powf(2, y)` (and the `exp2f(y)` compilers
+substitute for it) under both glibc profiles for every finite `y` below 126
+in magnitude, where the result is normal (exactly `2^y` for an integral
+`y`); `None` for `AppleLibm` and every other `y` (gate `pow2`,
+[Powers of two](#powers-of-two)).
 `M.Libm.acos(libm, x)` and `M.Libm.pow(libm, x, exponent)` expose the glibc
 2.39 `acosf` and `powf` (exponents 2 and 3 on [-0, 1]) kernels as `Maybe`
 results; other profiles give `None` ([INVERSE-TRIG.md](INVERSE-TRIG.md),
@@ -410,3 +412,37 @@ component divisors. Exceptional/subnormal behavior, contracted builds, remaining
 raymath functions and the full target/performance matrix remain open. These
 are partial mappings, not completed raymath APIs. See the
 [progress dashboard](PROGRESS.md) and [VERIFICATION.md](VERIFICATION.md).
+
+## Powers of two
+
+`src/power.bend`'s `exp2` is the `exp2_inline` of glibc's `powf` (Arm
+optimized-routines, MIT alternative, [LICENSES/arm-math.txt](../LICENSES/arm-math.txt))
+on `y` itself: `log2_inline(2.0f)` is exactly 1, so `powf`'s `y*log2(x)` is
+`y`, and `exp2f`'s core is the same table and cubic. The domain is a finite
+`y` with `|y| < 126`: the result is normal and no overflow, underflow or
+special case of either function is reached.
+
+`tools/reference/glibc_pow2/model.c` is the explicit-operation C model
+(`FUSED=1` for the `-mfma -mavx2` ifunc variants, where the polynomial's three
+`a*b + c` are one `fma` each; `FUSED=0` for the SSE2 default), and
+`exhaustive.c` evaluates it on every binary32 `y` of the domain against the
+host's `powf(2.0f, y)` and `exp2f(y)`, each called through a volatile
+pointer. `run_exhaustive.sh` runs both variants (the SSE2 one with
+`GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX2,-FMA,-FMA4`):
+
+| Host | Variant | Arguments | powf | exp2f | Result |
+|---|---|---:|---:|---:|---|
+| Ubuntu 24.04, glibc 2.39-0ubuntu8.9 | FMA | 2,247,622,656 | 0 | 0 | identical |
+| Ubuntu 24.04, glibc 2.39-0ubuntu8.9 | SSE2 | 2,247,622,656 | 0 | 0 | identical |
+| Debian trixie container, glibc 2.41-12+deb13u4 | FMA | 2,247,622,656 | 0 | 0 | identical |
+| Debian trixie container, glibc 2.41-12+deb13u4 | SSE2 | 2,247,622,656 | 0 | 0 | identical |
+
+`variants.c` compares the two models with each other on the same arguments:
+no difference, so the kernel uses the unfused arithmetic for both (every
+operation through the checked binary64 helpers, whose domain no intermediate
+of the SSE2 model leaves; the fused model's `z*r2 + q` would leave the fused
+helper's exponent window for subnormal `y`). The JSON results are in
+`tools/reference/glibc_pow2/results`. Gate `pow2` (`tools/pow2_probe.py`)
+evaluates the same arithmetic in Python's binary64 for 280 arguments, checks
+the host's two functions against it on glibc hosts and Jonmath's result on
+every lane. macOS's `powf` and `exp2f` are not modeled: `AppleLibm` is `None`.

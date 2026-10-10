@@ -367,10 +367,13 @@ used by `tools/glibc_sinf.py`, `tools/sincosf_probe.py` and
 `tools/trig_probe.py`) adapt `math/sinf.c`, `math/cosf.c`, `math/sincosf.h`
 and `math/sincosf_data.c` (as glibc 2.39/2.41 ship them on x86_64) from
 [Arm optimized-routines at 47597821aaa52e9c055caf1ecf8f3aecfd751cd9](https://github.com/ARM-software/optimized-routines/tree/47597821aaa52e9c055caf1ecf8f3aecfd751cd9).
-`src/power.bend` and the C model in `tools/spline_cubic_probe.py` adapt
+`src/power.bend`, the C models in `tools/spline_cubic_probe.py` and
+`tools/reference/glibc_pow2` (and that kernel's arithmetic in
+`tools/pow2_probe.py`) adapt
 `math/powf.c`, `math/powf_log2_data.c` and `math/exp2f_data.c` (as glibc 2.39
 ships them on x86_64) at the same revision, for `powf(x, 2)` and `powf(x, 3)`
-on [-0, 1].
+on [-0, 1] and for `powf(2, y)`, which is `exp2f(y)`, with `|y| < 126` (glibc
+2.39 and 2.41).
 These are altered Bend/tooling implementations, limited to the documented
 sinf/cosf and power profiles. Jonlib selects the upstream MIT alternative; source copyright
 notices and the selected license are retained in [LICENSES/arm-math.txt](LICENSES/arm-math.txt).
