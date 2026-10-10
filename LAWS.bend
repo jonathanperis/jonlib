@@ -22,6 +22,7 @@ import ./src/fma.bend as Fma
 import ./src/asin.bend as Asin
 import ./src/lgpl/asin.bend as GlibcAsin
 import ./src/sincosf.bend as Sincosf
+import ./src/power.bend as Power
 import ./jongui.bend as JG
 import ./src/binary64_sqrt.bend as Sqrt
 import ./src/wav.bend as Wav
@@ -889,6 +890,16 @@ law float64_to_int_infinity_none:
 
 law float64_to_f32_infinity_none:
   {M.Float64.to_f32(M.Float64{2146435072, 0}) == None{} : Maybe<F32>}
+
+# glibc powf(2, y) / exp2f(y) (src/power.bend): the kernel answers a finite y
+# below 126 in magnitude only; 126 and an infinity are refused (the answered
+# words go through binary64 helpers the checker does not evaluate; the pow2
+# gate covers them).
+law glibc_pow2_126_none:
+  {Power.exp2.word(1123811328) == None{} : Maybe<F32>}
+
+law glibc_pow2_infinity_none:
+  {Power.exp2.word(2139095040) == None{} : Maybe<F32>}
 
 # Jongui (raygui): the default style, GuiSetStyle's propagation of a DEFAULT
 # base property (and only those), and GuiEnable/GuiDisable.
