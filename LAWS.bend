@@ -23,6 +23,7 @@ import ./src/asin.bend as Asin
 import ./src/lgpl/asin.bend as GlibcAsin
 import ./src/sincosf.bend as Sincosf
 import ./src/power.bend as Power
+import ./src/libc_rand.bend as CRand
 import ./jongui.bend as JG
 import ./src/binary64_sqrt.bend as Sqrt
 import ./src/wav.bend as Wav
@@ -923,6 +924,26 @@ law glibc_logf_negative_none:
 
 law glibc_logf_infinity_none:
   {Power.log.word(2139095040) == None{} : Maybe<F32>}
+
+# glibc's rand() (src/libc_rand.bend): the seeds come from the minimal
+# standard generator, a program that never calls srand gets 1804289383 first
+# (the seed 1), a seed of 0 is the seed 1, a seed from 2^31 on is refused,
+# and the Apple profile has no generator.
+law glibc_rand_minimal_standard_step:
+  {CRand.lcg(1) == 16807 : U32}
+
+law glibc_rand_first_value:
+  {CRand.value(CRand.seed(1)) == Some{1804289383} : Maybe<U32>}
+
+law glibc_rand_seed_zero_is_one:
+  {CRand.value(CRand.seed(0)) == Some{1804289383} : Maybe<U32>}
+
+law glibc_rand_large_seed_none:
+  {CRand.seed(2147483648) == None{} : Maybe<CRand.Rand>}
+
+law libc_rand_apple_none:
+  for seed: U32
+  {M.Libc.srand(M.AppleLibm{}, seed) == None{} : Maybe<M.Libc.Rand>}
 
 # Jongui (raygui): the default style, GuiSetStyle's propagation of a DEFAULT
 # base property (and only those), and GuiEnable/GuiDisable.

@@ -18,6 +18,7 @@ import ./src/sincosf.bend as Sincosf
 import ./src/inverse_trig.bend as InverseTrig
 import ./src/asin.bend as Asin
 import ./src/power.bend as Power
+import ./src/libc_rand.bend as CRand
 import ./src/float64.bend as Float64Numeric
 import ./src/angle.bend as LegacyAngle
 import ./src/checked_angle.bend as CheckedAngle
@@ -1317,6 +1318,33 @@ def Libm.log(libm: Libm, +x: F32) -> Maybe<F32>:
   match libm:
     case AppleLibm{}: None{}
     case _: Power.log(x)
+
+# The state of the reference C library's rand().
+type Libc.Rand is Data:
+  LibcRand{window: +List<U32>}
+
+def Libc.rand.wrapped(rand: Maybe<CRand.Rand>) -> Maybe<Libc.Rand>:
+  match rand:
+    case None{}: None{}
+    case Some{CRand.Rand{window}}: Some{LibcRand{window}}
+
+# srand(seed) of the reference C library: glibc's generator under both glibc
+# profiles, for a seed below 2^31 (0 seeds as 1). A program that never calls
+# srand starts from Libc.srand(libm, 1). None for AppleLibm (Apple's rand()
+# is another generator, not modeled) and for a larger seed.
+def Libc.srand(libm: Libm, +seed: U32) -> Maybe<Libc.Rand>:
+  match libm:
+    case AppleLibm{}: None{}
+    case _: Libc.rand.wrapped(CRand.seed(seed))
+
+def Libc.rand.result(result: CRand.Rand & U32) -> Libc.Rand & U32:
+  (CRand.Rand{window}, value) = result
+  (LibcRand{window}, value)
+
+# rand(): the generator after the call and its value (0 to RAND_MAX, 2^31 - 1).
+def Libc.rand(rand: Libc.Rand) -> Libc.Rand & U32:
+  LibcRand{window} = rand
+  Libc.rand.result(CRand.next(CRand.Rand{window}))
 
 def Libm.cos.value(values: F32 & F32) -> F32:
   (cosine, _) = values
