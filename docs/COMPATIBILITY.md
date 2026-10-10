@@ -71,7 +71,7 @@ Gate IDs refer to `tools/gates.json`; `conformance` is the main corpus.
 | `ImageMipmaps` | `Surface.mipmaps`, `Image.Mipmaps.entries/unload` | Formats 1..13: owned base-to-1x1 levels, sequential `ImageResize` in the image's format, complete-level comparison | `mipmap` |
 | `ImageBlurGaussian` | `Surface.blur_gaussian` | Four-iteration RGBA8 box approximation, premultiply/unpremultiply quantization, bounded sizes, retained rejected owners | `blur` |
 | `ImageKernelConvolution` | `Surface.kernel_convolution` | Bounded square RGBA8 kernels, native flat-index row wrapping; original retained for unsupported kernels/alpha casts | `convolution` |
-| `LoadImageColors` / `GetImageColor` | `Surface.colors` / `Surface.get` | Full export; direct reads, ownership and out-of-bounds `None` | `conformance` |
+| `LoadImageColors` / `GetImageColor` | `Surface.colors` / `Surface.get`; `Surface.colors_image` (the Colors as an R8G8B8A8 image, for `UpdateTexture`) | Full export; direct reads, ownership and out-of-bounds `None`; `colors_image` through `textures_image_processing` | `conformance`, `examples-textures` |
 | `ImageCopy` | `Surface.copy` | Independent mutation; original pixels preserved | `conformance` |
 | `GetColor` / `ColorToInt` | `Color.rgba` / channel extractors | Packing with unsigned-byte truncation | `conformance` |
 | `ColorAlphaBlend` | `Color.alpha_blend` | Transparent/opaque/tinted reference vectors | `conformance` |

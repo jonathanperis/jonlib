@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 97 ported, 73 ready, 42 waiting.
+Totals: 212 examples; 102 ported, 68 ready, 42 waiting.
 
 ## APIs that unblock the most examples
 
@@ -148,13 +148,13 @@ Totals: 212 examples; 97 ported, 73 ready, 42 waiting.
 | `shapes_hilbert_curve` | shapes | waiting | `GuiSpinner` |
 | `shapes_easings_testbed` | shapes | ready |  |
 | `textures_clipboard_image` | textures | ready |  |
-| `textures_magnifying_glass` | textures | ready |  |
+| `textures_magnifying_glass` | textures | ported |  |
 | `textures_logo_raylib` | textures | ported |  |
 | `textures_srcrec_dstrec` | textures | ported |  |
 | `textures_image_drawing` | textures | ported |  |
 | `textures_image_generation` | textures | ported |  |
 | `textures_image_loading` | textures | ported |  |
-| `textures_image_processing` | textures | ready |  |
+| `textures_image_processing` | textures | ported |  |
 | `textures_image_text` | textures | ported |  |
 | `textures_to_image` | textures | ported |  |
 | `textures_raw_data` | textures | ported |  |
@@ -168,11 +168,11 @@ Totals: 212 examples; 97 ported, 73 ready, 42 waiting.
 | `textures_mouse_painting` | textures | ready |  |
 | `textures_blend_modes` | textures | ported |  |
 | `textures_tiled_drawing` | textures | ported |  |
-| `textures_polygon_drawing` | textures | ready |  |
+| `textures_polygon_drawing` | textures | ported |  |
 | `textures_fog_of_war` | textures | ported |  |
 | `textures_gif_player` | textures | ready |  |
-| `textures_image_kernel` | textures | ready |  |
-| `textures_image_channel` | textures | ready |  |
+| `textures_image_kernel` | textures | ported |  |
+| `textures_image_channel` | textures | ported |  |
 | `textures_image_rotate` | textures | ported |  |
 | `textures_screen_buffer` | textures | ready |  |
 | `textures_textured_curve` | textures | ready |  |

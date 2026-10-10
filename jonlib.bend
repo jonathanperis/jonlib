@@ -4106,6 +4106,17 @@ def Surface.unload_colors(colors: List<U32>) -> Unit:
 def Surface.colors(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, List<U32>>:
   Surface.colors.rgba(Surface.rgba.load(surface))
 
+def Surface.colors_image.rgba(result: Result<&1, &1, Surface & Surface.Error, Rgba>) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match result:
+    case Fail{failure}: Fail{failure}
+    case Done{Rgba{width, height, pixels}}: Done{Surface{width, height, 7, Words{pixels}}}
+
+# LoadImageColors kept as an image: the canonical Colors as an R8G8B8A8
+# Surface of the same size, which is what UpdateTexture(texture,
+# LoadImageColors(image)) uploads. Consumes the owner; Fail as Surface.colors.
+def Surface.colors_image(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface.colors_image.rgba(Surface.rgba.load(surface))
+
 def Surface.get.words(+width: U32, height: U32, +format: U32, result: Array<U32> & U32) -> Surface & Maybe<&2, U32>:
   (values, +word) = result
   (Surface{width, height, format, Words{values}}, Some{Bool.pick(U32, U32.is_eq(format, 7), word, Formats.image_color(format, word))})
