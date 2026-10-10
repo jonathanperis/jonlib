@@ -20,6 +20,7 @@ import ./src/asin.bend as Asin
 import ./src/power.bend as Power
 import ./src/libc_rand.bend as CRand
 import ./src/hypot.bend as Hypot
+import ./src/strtod.bend as Strtod
 import ./src/float64.bend as Float64Numeric
 import ./src/angle.bend as LegacyAngle
 import ./src/checked_angle.bend as CheckedAngle
@@ -523,6 +524,16 @@ def Float64.internal.lift(result: Maybe<Binary64Fma.Words>) -> Maybe<Float64>:
   match result:
     case None{}: None{}
     case Some{Binary64Fma.Words{high, low}}: Some{Float64{high, low}}
+
+# The binary64 value the C library's strtod (and atof) gives the bytes of a
+# decimal number in JSON's grammar, -? (0 | [1-9][0-9]*) (. [0-9]+)?
+# ([eE] [+-]? [0-9]+)?: correctly rounded, to nearest with ties to even, by
+# exact integer arithmetic (Strtod.double, docs/MATH.md). None for another
+# form, more than 19 significant digits, a decimal exponent beyond 60 in
+# magnitude once the fraction digits are counted, or an exponent field of
+# more than three digits. Float64.to_f32 then gives (float)strtod(...).
+def Float64.from_decimal(bytes: +List<U32>) -> Maybe<Float64>:
+  Float64.internal.lift(Strtod.double(bytes))
 
 # a*b rounded once to binary64; None for nonfinite or subnormal operands and
 # results (the exact scaled helper's domain, src/binary64_scaled.bend).

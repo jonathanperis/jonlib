@@ -25,6 +25,7 @@ import ./src/sincosf.bend as Sincosf
 import ./src/power.bend as Power
 import ./src/libc_rand.bend as CRand
 import ./src/hypot.bend as Hypot
+import ./src/strtod.bend as Strtod
 import ./jongui.bend as JG
 import ./src/binary64_sqrt.bend as Sqrt
 import ./src/wav.bend as Wav
@@ -945,6 +946,38 @@ law glibc_rand_large_seed_none:
 law libc_rand_apple_none:
   for seed: U32
   {M.Libc.srand(M.AppleLibm{}, seed) == None{} : Maybe<M.Libc.Rand>}
+
+# strtod (src/strtod.bend, docs/MATH.md): 1 is 0x3ff0000000000000; 0.1 rounds
+# to 0x3fb999999999999a; 2^53 + 1 and 2^53 + 3, halfway between two doubles,
+# go to the even one (2^53 and 2^53 + 4); a sign, a fraction and an exponent
+# combine; -0 keeps its sign; twenty significant digits, a leading plus and
+# an exponent without digits are refused.
+law strtod_one:
+  {Strtod.double([49]) == Some{F.Words{1072693248, 0}} : Maybe<F.Words>}
+
+law strtod_tenth:
+  {Strtod.double([48, 46, 49]) == Some{F.Words{1069128089, 2576980378}} : Maybe<F.Words>}
+
+law strtod_tie_to_even:
+  {Strtod.double([57, 48, 48, 55, 49, 57, 57, 50, 53, 52, 55, 52, 48, 57, 57, 51]) == Some{F.Words{1128267776, 0}} : Maybe<F.Words>}
+
+law strtod_tie_to_even_up:
+  {Strtod.double([57, 48, 48, 55, 49, 57, 57, 50, 53, 52, 55, 52, 48, 57, 57, 53]) == Some{F.Words{1128267776, 2}} : Maybe<F.Words>}
+
+law strtod_exponent:
+  {Strtod.double([45, 49, 46, 50, 53, 101, 45, 51]) == Some{F.Words{3209984737, 1202590843}} : Maybe<F.Words>}
+
+law strtod_negative_zero:
+  {Strtod.double([45, 48]) == Some{F.Words{2147483648, 0}} : Maybe<F.Words>}
+
+law strtod_twenty_digits_none:
+  {Strtod.double([49, 50, 51, 52, 53, 54, 55, 56, 57, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 48]) == None{} : Maybe<F.Words>}
+
+law strtod_plus_none:
+  {Strtod.double([43, 49]) == None{} : Maybe<F.Words>}
+
+law strtod_empty_exponent_none:
+  {Strtod.double([49, 101]) == None{} : Maybe<F.Words>}
 
 # hypot(x, y) <= r for every faithful hypot (src/hypot.bend), from the order
 # of the rounded x*x + y*y and r*r (0 equal, 1 less, 2 greater, 3 unknown):
