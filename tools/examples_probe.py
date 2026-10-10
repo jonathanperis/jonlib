@@ -76,7 +76,7 @@ def size_of(name):
     return SIZES.get(name, (WIDTH, HEIGHT))
 TARGET = 1.0 / 60
 # Examples whose SetTargetFPS is not 60 (the scripted wait ends where raylib's does).
-TARGET_FPS = {'shapes_kaleidoscope': 20}
+TARGET_FPS = {'shapes_kaleidoscope': 20, 'shapes_penrose_tile': 120}
 
 (KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, INPUT_GESTURE, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 17, 18)
 KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_A, KEY_H, KEY_R, KEY_S = 262, 263, 264, 265, 65, 72, 82, 83
@@ -93,6 +93,9 @@ EXAMPLES = {
     'textures_logo_raylib': ('textures/textures_logo_raylib.c', 'Ex.setup(Ex.image(logo), core, frame)'),
     'shapes_basic_shapes': ('shapes/shapes_basic_shapes.c', 'Ex.setup(core, frame)'),
     'textures_srcrec_dstrec': ('textures/textures_srcrec_dstrec.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_tiled_drawing': ('textures/textures_tiled_drawing.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_image_drawing': ('textures/textures_image_drawing.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_fog_of_war': ('textures/textures_fog_of_war.c', 'Ex.setup(seed, core, frame)'),
     'textures_sprite_animation': ('textures/textures_sprite_animation.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_background_scrolling': ('textures/textures_background_scrolling.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_drop_files': ('core/core_drop_files.c', 'Ex.setup(core, frame)'),
@@ -113,6 +116,7 @@ EXAMPLES = {
     'core_input_mouse_wheel': ('core/core_input_mouse_wheel.c', 'Ex.setup(core, frame)'),
     'core_scissor_test': ('core/core_scissor_test.c', 'Ex.setup(core, frame)'),
     'core_random_values': ('core/core_random_values.c', 'Ex.setup(seed, core, frame)'),
+    'core_random_sequence': ('core/core_random_sequence.c', 'Ex.setup(seed, core, frame)'),
     'core_render_texture': ('core/core_render_texture.c', 'Ex.setup(core, frame)'),
     'core_delta_time': ('core/core_delta_time.c', 'Ex.setup(core, frame)'),
     'core_3d_camera_mode': ('core/core_3d_camera_mode.c', 'Ex.setup(core, frame)'),
@@ -138,6 +142,7 @@ EXAMPLES = {
     'shapes_bullet_hell': ('shapes/shapes_bullet_hell.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shapes_double_pendulum': ('shapes/shapes_double_pendulum.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shapes_vector_angle': ('shapes/shapes_vector_angle.c', 'Ex.setup(core, frame)'),
+    'shapes_penrose_tile': ('shapes/shapes_penrose_tile.c', 'Ex.setup(core, frame)'),
     'shaders_texture_waves': ('shaders/shaders_texture_waves.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_eratosthenes_sieve': ('shaders/shaders_eratosthenes_sieve.c', 'Ex.setup(core, frame)'),
     'shaders_texture_outline': ('shaders/shaders_texture_outline.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -153,6 +158,8 @@ EXAMPLES = {
     'core_basic_screen_manager': ('core/core_basic_screen_manager.c', 'Ex.setup(core, frame)'),
     'core_window_letterbox': ('core/core_window_letterbox.c', 'Ex.setup(seed, core, frame)'),
     'core_input_multitouch': ('core/core_input_multitouch.c', 'Ex.setup(core, frame)'),
+    'core_input_gestures': ('core/core_input_gestures.c', 'Ex.setup(core, frame)'),
+    'core_input_virtual_controls': ('core/core_input_virtual_controls.c', 'Ex.setup(core, frame)'),
     'shapes_math_angle_rotation': ('shapes/shapes_math_angle_rotation.c', 'Ex.setup(core, frame)'),
     'shapes_following_eyes': ('shapes/shapes_following_eyes.c', 'Ex.setup(core, frame)'),
     'text_font_spritefont': ('text/text_font_spritefont.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -167,6 +174,7 @@ EXAMPLES = {
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_window_web': ('core/core_window_web.c', 'Ex.setup(core, frame)'),
     'text_sprite_fonts': ('text/text_sprite_fonts.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'text_font_loading': ('text/text_font_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
     'text_words_alignment': ('text/text_words_alignment.c', 'Ex.setup(core, frame)'),
     'core_smooth_pixelperfect': ('core/core_smooth_pixelperfect.c', 'Ex.setup(core, frame)'),
     'models_tesseract_view': ('models/models_tesseract_view.c', 'Ex.setup(core, frame)'),
@@ -180,7 +188,8 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'textures_npatch_drawing', 'textures_raw_data', 'textures_bunnymark', 'shaders_texture_waves',
             'shaders_texture_outline', 'shaders_shapes_textures', 'shaders_texture_tiling', 'text_font_spritefont',
             'models_billboard_rendering', 'shaders_color_correction', 'textures_particles_blending',
-            'text_sprite_fonts', 'models_directional_billboard'}
+            'text_sprite_fonts', 'models_directional_billboard', 'textures_tiled_drawing',
+            'textures_image_drawing', 'text_font_loading'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -188,10 +197,11 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'models_geometric_shapes', 'models_box_collisions', 'models_orthographic_projection',
                'shaders_basic_lighting', 'shaders_texture_tiling', 'models_billboard_rendering',
                'models_tesseract_view', 'models_directional_billboard'}
-SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'textures_bunnymark', 'textures_image_generation',
+SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
-                'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192}
+                'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
+                'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32}
 
 
 # -----------------------------------------------------------------------------
@@ -207,6 +217,10 @@ def mouse_at(x, y):
 
 def button(index, down=True):
     return (MOUSE_DOWN if down else MOUSE_UP, index, 0, 0)
+
+
+def gesture(value):
+    return (INPUT_GESTURE, value, 0, 0)
 
 
 def script(example, name, frames, seed=0, start=0.25):
@@ -429,6 +443,49 @@ def scripts():
             quick([key(KEY_C)]), long([key(KEY_C, False), key(KEY_RIGHT)]), long(), long(), long(), long(), long([key(KEY_SPACE)]),
             long([key(KEY_SPACE, False)]), long([key(KEY_RIGHT, False), key(KEY_LEFT)]), long(), long(), long(), long(), long(), long(), long(), long(),
             quick([key(KEY_LEFT, False), key(KEY_R)]), quick([key(KEY_R, False), key(KEY_C)]), quick()]),
+        # The second pattern and a color by clicks, a turn, a larger scale, reset, 0.75 turned back, the flat
+        # pattern, then down to the smallest scale (DOWN at 0.25 stays there). A short script: every frame
+        # filters the whole tiled area, which the JavaScript lane takes many seconds for.
+        script('textures_tiled_drawing', 'tiles', [quick(), quick([mouse_at(120, 90), button(0)]), quick([button(0, False), mouse_at(100, 295)]),
+                                                   slow([button(0)]), quick([button(0, False), key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_UP)]),
+                                                   quick([key(KEY_UP, False), key(KEY_SPACE)]), quick([key(KEY_SPACE, False), key(KEY_DOWN), key(KEY_LEFT)]),
+                                                   quick([key(KEY_DOWN, False), key(KEY_LEFT, False), mouse_at(140, 180), button(0)]),
+                                                   quick([button(0, False), key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]), quick([key(KEY_DOWN)]),
+                                                   quick([key(KEY_DOWN, False)]), quick([key(KEY_DOWN)])]),
+        # Shuffles, more bars, fewer bars down to three (DOWN then does nothing), a shuffle and a new count in one frame.
+        script('core_random_sequence', 'bars', [quick(), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), slow([key(KEY_SPACE)]),
+                                                quick([key(KEY_SPACE, False), key(KEY_UP)]), quick([key(KEY_UP, False)]), quick([key(KEY_UP)]),
+                                                quick([key(KEY_UP, False), key(KEY_SPACE)]), quick([key(KEY_SPACE, False)])]
+               + [f for _ in range(20) for f in (quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]))]
+               + [quick([key(KEY_SPACE), key(KEY_UP)]), quick([key(KEY_SPACE, False), key(KEY_UP, False)]), quick([key(KEY_UP), key(KEY_DOWN)]), quick()],
+               seed=0x5EC0),
+        # Right and down into the next tiles, then back left and up (a short walk: every frame redraws the
+        # 375 tiles, which the JavaScript lane takes many seconds for).
+        script('textures_fog_of_war', 'walk', [quick(), quick([key(KEY_RIGHT), key(KEY_DOWN)])] + [quick() for _ in range(5)]
+               + [slow([key(KEY_RIGHT, False), key(KEY_DOWN, False), key(KEY_LEFT), key(KEY_UP)]), quick([key(KEY_LEFT, False), key(KEY_UP, False)])], seed=0xF06),
+        # Gestures (INPUT_GESTURE) inside the area: a tap, the same again (not logged), hold, drag, the swipes
+        # and pinches; one outside the area; then taps and holds past the twentieth entry (the log restarts).
+        script('core_input_gestures', 'log', [quick(), quick([mouse_at(400, 200)]), quick([gesture(1)]), quick([gesture(1)]), slow([gesture(4)]),
+                                              quick([gesture(8), mouse_at(450, 260)]), quick([gesture(16)]), quick([gesture(32)]), quick([gesture(64)]),
+                                              quick([gesture(128)]), quick([gesture(256)]), quick([gesture(512), mouse_at(700, 400)]),
+                                              quick([gesture(0)]), quick([mouse_at(100, 100), gesture(2)]), quick([mouse_at(300, 50)]), quick([gesture(0)])]
+               + [quick([gesture(g)]) for _ in range(6) for g in (1, 4)] + [quick(), quick([gesture(0)]), quick([gesture(2)])]),
+        # One generation drawn out (12 symbols a frame), a second partly, back to one (rebuilt), to none (the
+        # tiling stays undrawn), UP with DOWN (UP wins), then up to the fourth and UP again (no rebuild).
+        script('shapes_penrose_tile', 'generations', [quick(), quick([key(KEY_UP)]), quick([key(KEY_UP, False)])] + [quick() for _ in range(9)]
+               + [slow([key(KEY_UP)]), quick([key(KEY_UP, False)])] + [quick() for _ in range(14)]
+               + [quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]), quick(), quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]),
+                  quick([key(KEY_UP), key(KEY_DOWN)]), quick([key(KEY_UP, False), key(KEY_DOWN, False)]), quick([key(KEY_UP)]), quick([key(KEY_UP, False)]),
+                  quick([key(KEY_UP)]), quick([key(KEY_UP, False)]), quick([key(KEY_UP)]), quick([key(KEY_UP, False)]), slow(), quick([key(KEY_UP)]), quick()]),
+        script('textures_image_drawing', 'frames', [quick(), slow()]),
+        # The mouse over each pad button, moving the player only while the left button is down; the taxicab
+        # edge of a button (29 inside, 30 outside); between two buttons the first in order wins.
+        script('core_input_virtual_controls', 'pad', [quick(), quick([mouse_at(100, 305)]), quick(), quick([button(0)]), long(), slow(),
+                                                      quick([mouse_at(55, 350)]), long(), quick([mouse_at(145, 350)]), long(), long(),
+                                                      quick([mouse_at(100, 395)]), long(), quick([mouse_at(100, 424)]), quick([mouse_at(100, 425)]),
+                                                      quick([mouse_at(120, 330)]), long(), quick([button(0, False)]), quick([mouse_at(400, 200)]),
+                                                      quick([button(0)]), quick([button(0, False)])]),
+        script('text_font_loading', 'fonts', [quick(), slow(), quick([key(KEY_SPACE)]), quick(), quick([key(KEY_SPACE, False)])]),
         script('models_directional_billboard', 'orbit', [quick(), slow()] + [([], 0.003, 0.2) for _ in range(9)] + [quick()]),
         # raygui slider bars: hover StartAngle, press it (360 degrees) and drag left, on past the bounds (the
         # drag keeps following), release; then the radius, the end angle and few segments (the estimated count).
@@ -525,6 +582,9 @@ def scripts():
                                                        quick([key(KEY_LEFT)]), quick([key(KEY_UP, False), key(KEY_LEFT, False), key(83), key(87)]),
                                                        quick([key(83, False), key(87, False), key(65)]), quick([key(65, False)])]),
     ]
+    repeated = sorted({item['name'] for item in out if sum(other['name'] == item['name'] for other in out) > 1})
+    if repeated:
+        raise ProbeFailure(f'examples: script names used more than once: {repeated}')
     return [timed(item) for item in out]
 
 
@@ -651,7 +711,7 @@ def bullet_hell_refusal(item, libm):
 # they refuse nothing and every frame is compared. Under AppleLibm the refusal frame is the one Jonlib
 # reports (every frame before it is still compared with raylib); it is not predicted independently.
 REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
-            'shapes_double_pendulum', 'shapes_vector_angle'}
+            'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile'}
 
 
 def refusal(item, libm):
@@ -870,7 +930,8 @@ def build_reference(probe, name):
     driver.write_text(C_DRIVER)
     binary = probe.work / f'reference-{name}'
     include = '-I' + str(probe.args.raylib_source / 'src')
-    probekit.run(['clang', '-std=c11', '-O2', '-ffp-contract=off', '-include', SHIM, include, '-c',
+    # -D_DEFAULT_SOURCE as raylib's examples/Makefile passes it (strnlen in shapes_penrose_tile).
+    probekit.run(['clang', '-std=c11', '-D_DEFAULT_SOURCE', '-O2', '-ffp-contract=off', '-include', SHIM, include, '-c',
                   probe.args.raylib_source / 'examples' / source, '-o', probe.work / f'{name}.o'])
     probekit.run(['clang', '-std=c11', '-O2', '-ffp-contract=off', include, '-c', driver, '-o', probe.work / 'driver.o'])
     probekit.run(['clang', probe.work / f'{name}.o', probe.work / 'driver.o', probe.library, '-lm', '-o', binary])

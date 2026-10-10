@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 87 ported, 83 ready, 42 waiting.
+Totals: 212 examples; 95 ported, 75 ready, 42 waiting.
 
 ## APIs that unblock the most examples
 
@@ -65,9 +65,9 @@ Totals: 212 examples; 87 ported, 83 ready, 42 waiting.
 | `core_input_mouse_wheel` | core | ported |  |
 | `core_input_gamepad` | core | ready |  |
 | `core_input_multitouch` | core | ported |  |
-| `core_input_gestures` | core | ready |  |
+| `core_input_gestures` | core | ported |  |
 | `core_input_gestures_testbed` | core | ready |  |
-| `core_input_virtual_controls` | core | ready |  |
+| `core_input_virtual_controls` | core | ported |  |
 | `core_2d_camera` | core | ported |  |
 | `core_2d_camera_mouse_zoom` | core | ready |  |
 | `core_2d_camera_platformer` | core | ported |  |
@@ -92,7 +92,7 @@ Totals: 212 examples; 87 ported, 83 ready, 42 waiting.
 | `core_basic_screen_manager` | core | ported |  |
 | `core_custom_frame_control` | core | ready |  |
 | `core_smooth_pixelperfect` | core | ported |  |
-| `core_random_sequence` | core | ready |  |
+| `core_random_sequence` | core | ported |  |
 | `core_automation_events` | core | ready |  |
 | `core_highdpi_demo` | core | ready |  |
 | `core_render_texture` | core | ported |  |
@@ -144,14 +144,14 @@ Totals: 212 examples; 87 ported, 83 ready, 42 waiting.
 | `shapes_rlgl_color_wheel` | shapes | ready |  |
 | `shapes_rlgl_triangle` | shapes | ported |  |
 | `shapes_ball_physics` | shapes | ready |  |
-| `shapes_penrose_tile` | shapes | ready |  |
+| `shapes_penrose_tile` | shapes | ported |  |
 | `shapes_hilbert_curve` | shapes | waiting | `GuiSpinner` |
 | `shapes_easings_testbed` | shapes | ready |  |
 | `textures_clipboard_image` | textures | ready |  |
 | `textures_magnifying_glass` | textures | ready |  |
 | `textures_logo_raylib` | textures | ported |  |
 | `textures_srcrec_dstrec` | textures | ported |  |
-| `textures_image_drawing` | textures | ready |  |
+| `textures_image_drawing` | textures | ported |  |
 | `textures_image_generation` | textures | ported |  |
 | `textures_image_loading` | textures | ported |  |
 | `textures_image_processing` | textures | ready |  |
@@ -167,9 +167,9 @@ Totals: 212 examples; 87 ported, 83 ready, 42 waiting.
 | `textures_bunnymark` | textures | ported |  |
 | `textures_mouse_painting` | textures | ready |  |
 | `textures_blend_modes` | textures | ported |  |
-| `textures_tiled_drawing` | textures | ready |  |
+| `textures_tiled_drawing` | textures | ported |  |
 | `textures_polygon_drawing` | textures | ready |  |
-| `textures_fog_of_war` | textures | ready |  |
+| `textures_fog_of_war` | textures | ported |  |
 | `textures_gif_player` | textures | ready |  |
 | `textures_image_kernel` | textures | ready |  |
 | `textures_image_channel` | textures | ready |  |
@@ -182,7 +182,7 @@ Totals: 212 examples; 87 ported, 83 ready, 42 waiting.
 | `text_sprite_fonts` | text | ported |  |
 | `text_font_spritefont` | text | ported |  |
 | `text_font_filters` | text | ready |  |
-| `text_font_loading` | text | ready |  |
+| `text_font_loading` | text | ported |  |
 | `text_font_sdf` | text | ready |  |
 | `text_format_text` | text | ported |  |
 | `text_input_box` | text | ported |  |
