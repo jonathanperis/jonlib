@@ -171,6 +171,7 @@ EXAMPLES = {
     'shaders_multi_sample2d': ('shaders/shaders_multi_sample2d.c', 'Ex.setup(core, frame)'),
     'shaders_shapes_textures': ('shaders/shaders_shapes_textures.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_texture_tiling': ('shaders/shaders_texture_tiling.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_vertex_displacement': ('shaders/shaders_vertex_displacement.c', 'Ex.setup(core, frame)'),
     'shaders_model_shader': ('shaders/shaders_model_shader.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_fog_rendering': ('shaders/shaders_fog_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shaders_ascii_rendering': ('shaders/shaders_ascii_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -271,7 +272,8 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering', 'shaders_simple_mask',
                'core_3d_camera_first_person', 'models_rlgl_solar_system', 'models_textured_cube',
                'core_3d_camera_split_screen', 'shaders_postprocessing', 'textures_framebuffer_rendering',
-               'shaders_custom_uniform', 'shaders_mesh_instancing', 'models_mesh_picking', 'core_3d_camera_fps'}
+               'shaders_custom_uniform', 'shaders_mesh_instancing', 'models_mesh_picking', 'core_3d_camera_fps',
+               'shaders_vertex_displacement'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'core_3d_camera_first_person', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer', 'shaders_mesh_instancing',
           'core_undo_redo', 'text_inline_styling', 'text_strings_management', 'shapes_top_down_lights',
@@ -493,6 +495,8 @@ def scripts():
         script('shaders_model_shader', 'look', [quick(), quick([mouse_at(420, 235)]), slow([key(87)]), quick([key(87, False)])]),
         script('shaders_texture_tiling', 'look', [quick(), quick([mouse_at(420, 235)]), slow([mouse_at(380, 250)]), quick([key(90)]),
                                                   quick([key(90, False)])]),
+        # The flat plane of 5000 triangles (the displacement shader does nothing): a mouse turn, W forward.
+        script('shaders_vertex_displacement', 'look', [quick(), quick([mouse_at(420, 235)]), slow([key(87)]), quick([key(87, False)])]),
         script('shaders_shapes_textures', 'frames', [quick(), slow()]),
         # RIGHT held, then LEFT past zero (the clamp); only the ignored divider uniform changes.
         script('shaders_multi_sample2d', 'divider', [quick(), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_LEFT)])]
