@@ -162,6 +162,7 @@ EXAMPLES = {
     'shaders_multi_sample2d': ('shaders/shaders_multi_sample2d.c', 'Ex.setup(core, frame)'),
     'shaders_shapes_textures': ('shaders/shaders_shapes_textures.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_texture_tiling': ('shaders/shaders_texture_tiling.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_model_shader': ('shaders/shaders_model_shader.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_mandelbrot_set': ('shaders/shaders_mandelbrot_set.c', 'Ex.setup(core, frame)'),
     'shaders_raymarching_rendering': ('shaders/shaders_raymarching_rendering.c', 'Ex.setup(core, frame)'),
     'core_basic_screen_manager': ('core/core_basic_screen_manager.c', 'Ex.setup(core, frame)'),
@@ -177,6 +178,7 @@ EXAMPLES = {
     'models_heightmap_rendering': ('models/models_heightmap_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_cubicmap_rendering': ('models/models_cubicmap_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_first_person_maze': ('models/models_first_person_maze.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'models_yaw_pitch_roll': ('models/models_yaw_pitch_roll.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shapes_circle_sector_drawing': ('shapes/shapes_circle_sector_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_ring_drawing': ('shapes/shapes_ring_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_rounded_rectangle_drawing': ('shapes/shapes_rounded_rectangle_drawing.c', 'Ex.setup(core, frame)'),
@@ -206,7 +208,8 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'text_font_filters', 'textures_image_channel', 'textures_image_kernel',
             'textures_image_processing', 'textures_polygon_drawing', 'textures_magnifying_glass',
             'models_heightmap_rendering', 'models_cubicmap_rendering',
-            'models_first_person_maze'}
+            'models_first_person_maze', 'shaders_model_shader',
+            'models_yaw_pitch_roll'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -214,12 +217,13 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'models_geometric_shapes', 'models_box_collisions', 'models_orthographic_projection',
                'shaders_basic_lighting', 'shaders_texture_tiling', 'models_billboard_rendering',
                'models_tesseract_view', 'models_directional_billboard', 'models_heightmap_rendering',
-               'models_cubicmap_rendering', 'models_first_person_maze'}
+               'models_cubicmap_rendering', 'models_first_person_maze', 'shaders_model_shader',
+               'models_yaw_pitch_roll'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
-                'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32}
+                'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32}
 
 
 # -----------------------------------------------------------------------------
@@ -411,6 +415,7 @@ def scripts():
         # The first-person camera moves (mouse, W) without any visible change.
         script('shaders_raymarching_rendering', 'walk', [quick(), quick([mouse_at(430, 240)]), slow([key(87)]), quick([key(87, False)])]),
         # Mouse look around the cube, then Z looks back at (0, 0.5, 0).
+        script('shaders_model_shader', 'look', [quick(), quick([mouse_at(420, 235)]), slow([key(87)]), quick([key(87, False)])]),
         script('shaders_texture_tiling', 'look', [quick(), quick([mouse_at(420, 235)]), slow([mouse_at(380, 250)]), quick([key(90)]),
                                                   quick([key(90, False)])]),
         script('shaders_shapes_textures', 'frames', [quick(), slow()]),
@@ -444,6 +449,10 @@ def scripts():
         script('models_heightmap_rendering', 'orbit', [quick(), slow(), quick()]),
         # The orbit, paused by P (the camera stays), resumed.
         script('models_cubicmap_rendering', 'pause', [quick(), slow(), quick([key(KEY_P)]), quick([key(KEY_P, False)]), quick([key(KEY_P)]), quick()]),
+        # Pitch down and its ease back, yaw with A against S (S wins), roll right, all easing to rest.
+        script('models_yaw_pitch_roll', 'steer', [quick(), quick([key(KEY_DOWN)]), quick(), slow([key(KEY_DOWN, False), key(KEY_A)]),
+                                                  quick([key(KEY_S), key(KEY_RIGHT)]), quick([key(KEY_A, False), key(KEY_S, False), key(KEY_UP)]),
+                                                  quick([key(KEY_RIGHT, False), key(KEY_UP, False), key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]), quick()]),
         # W walks forward in tenth-of-a-second steps until a wall stops the player (the position is restored),
         # the mouse turns, D strafes, S backs away.
         script('models_first_person_maze', 'walk', [quick(), quick([key(87)])] + [long() for _ in range(8)]

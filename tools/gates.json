@@ -1909,7 +1909,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 40
+   "minutes": 48
   },
   {
    "id": "examples-shaders",
@@ -1925,7 +1925,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 45
+   "minutes": 50
   },
   {
    "id": "quaternion-angle",
