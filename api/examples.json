@@ -202,7 +202,7 @@
   {
    "name": "core_input_gestures_testbed",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",
