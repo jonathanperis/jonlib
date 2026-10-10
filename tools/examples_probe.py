@@ -164,6 +164,8 @@ EXAMPLES = {
     'shaders_texture_tiling': ('shaders/shaders_texture_tiling.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_model_shader': ('shaders/shaders_model_shader.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_fog_rendering': ('shaders/shaders_fog_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'shaders_ascii_rendering': ('shaders/shaders_ascii_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_simple_mask': ('shaders/shaders_simple_mask.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shaders_mandelbrot_set': ('shaders/shaders_mandelbrot_set.c', 'Ex.setup(core, frame)'),
     'shaders_raymarching_rendering': ('shaders/shaders_raymarching_rendering.c', 'Ex.setup(core, frame)'),
     'core_basic_screen_manager': ('core/core_basic_screen_manager.c', 'Ex.setup(core, frame)'),
@@ -214,7 +216,7 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'models_heightmap_rendering', 'models_cubicmap_rendering',
             'models_first_person_maze', 'shaders_model_shader',
             'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering',
-            'core_text_file_loading'}
+            'core_text_file_loading', 'shaders_ascii_rendering', 'shaders_simple_mask'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -223,7 +225,7 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'shaders_basic_lighting', 'shaders_texture_tiling', 'models_billboard_rendering',
                'models_tesseract_view', 'models_directional_billboard', 'models_heightmap_rendering',
                'models_cubicmap_rendering', 'models_first_person_maze', 'shaders_model_shader',
-               'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering'}
+               'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering', 'shaders_simple_mask'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
@@ -421,6 +423,10 @@ def scripts():
         # The first-person camera moves (mouse, W) without any visible change.
         script('shaders_raymarching_rendering', 'walk', [quick(), quick([mouse_at(430, 240)]), slow([key(87)]), quick([key(87, False)])]),
         # Mouse look around the cube, then Z looks back at (0, 0.5, 0).
+        script('shaders_simple_mask', 'look', [quick(), quick([mouse_at(420, 235)]), slow([key(KEY_W)]), quick([key(KEY_W, False)])]),
+        # The moving texture; RIGHT grows the font size, LEFT at 9 does nothing after one step back.
+        script('shaders_ascii_rendering', 'sizes', [quick(), slow([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_LEFT)]),
+                                                    quick([key(KEY_LEFT, False)]), quick([key(KEY_LEFT)])]),
         # Three frames (the scene has over twenty thousand triangles): the density up, then down.
         script('shaders_fog_rendering', 'density', [quick(), slow([key(KEY_UP)]), quick([key(KEY_UP, False), key(KEY_DOWN)])]),
         script('shaders_model_shader', 'look', [quick(), quick([mouse_at(420, 235)]), slow([key(87)]), quick([key(87, False)])]),
