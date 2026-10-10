@@ -3499,7 +3499,7 @@
   {
    "name": "textures_textured_curve",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointCircle",
