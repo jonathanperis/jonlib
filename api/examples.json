@@ -2349,8 +2349,7 @@
     "GuiToggle"
    ],
    "missing": [
-    "GuiGroupBox",
-    "GuiToggle"
+    "GuiGroupBox"
    ]
   },
   {
@@ -5770,7 +5769,7 @@
   {
    "name": "shaders_color_correction",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -5805,9 +5804,7 @@
     "GuiSliderBar",
     "GuiToggleGroup"
    ],
-   "missing": [
-    "GuiToggleGroup"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_eratosthenes_sieve",
@@ -6623,7 +6620,7 @@
   {
    "name": "shaders_game_of_life",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -6668,9 +6665,7 @@
     "GuiButton",
     "GuiToggleGroup"
    ],
-   "missing": [
-    "GuiToggleGroup"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_rlgl_compute",

@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 76 ported, 92 ready, 44 waiting.
+Totals: 212 examples; 77 ported, 93 ready, 42 waiting.
 
 ## APIs that unblock the most examples
 
@@ -48,11 +48,11 @@ Totals: 212 examples; 76 ported, 92 ready, 44 waiting.
 | `UploadMesh` | 3 |
 | `GuiProgressBar` | 2 |
 | `GuiSpinner` | 2 |
-| `GuiToggleGroup` | 2 |
 | `IsAudioStreamProcessed` | 2 |
 | `UpdateAudioStream` | 2 |
 | `AttachAudioMixedProcessor` | 1 |
 | `AttachAudioStreamProcessor` | 1 |
+| `BeginVrStereoMode` | 1 |
 
 ## Examples
 
@@ -135,7 +135,7 @@ Totals: 212 examples; 76 ported, 92 ready, 44 waiting.
 | `shapes_pie_chart` | shapes | waiting | `GuiLine`, `GuiScrollPanel`, `GuiSpinner`, `GuiTextBox` |
 | `shapes_kaleidoscope` | shapes | ported |  |
 | `shapes_clock_of_clocks` | shapes | ready |  |
-| `shapes_math_sine_cosine` | shapes | waiting | `GuiGroupBox`, `GuiToggle` |
+| `shapes_math_sine_cosine` | shapes | waiting | `GuiGroupBox` |
 | `shapes_mouse_trail` | shapes | ported |  |
 | `shapes_simple_particles` | shapes | ready |  |
 | `shapes_starfield_effect` | shapes | ported |  |
@@ -238,7 +238,7 @@ Totals: 212 examples; 76 ported, 92 ready, 44 waiting.
 | `shaders_texture_waves` | shaders | ported |  |
 | `shaders_julia_set` | shaders | ported |  |
 | `shaders_mandelbrot_set` | shaders | ported |  |
-| `shaders_color_correction` | shaders | waiting | `GuiToggleGroup` |
+| `shaders_color_correction` | shaders | ported |  |
 | `shaders_eratosthenes_sieve` | shaders | ported |  |
 | `shaders_fog_rendering` | shaders | ready |  |
 | `shaders_simple_mask` | shaders | ready |  |
@@ -257,7 +257,7 @@ Totals: 212 examples; 76 ported, 92 ready, 44 waiting.
 | `shaders_lightmap_rendering` | shaders | waiting | `rlLoadVertexBuffer`, `rlSetVertexAttribute` |
 | `shaders_rounded_rectangle` | shaders | ported |  |
 | `shaders_depth_rendering` | shaders | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
-| `shaders_game_of_life` | shaders | waiting | `GuiToggleGroup` |
+| `shaders_game_of_life` | shaders | ready |  |
 | `shaders_rlgl_compute` | shaders | waiting | `rlBindShaderBuffer`, `rlComputeShaderDispatch`, `rlLoadShader`, `rlLoadShaderBuffer`, `rlLoadShaderProgramCompute`, `rlUnloadShader`, `rlUnloadShaderBuffer`, `rlUnloadShaderProgram`, `rlUpdateShaderBuffer` |
 | `shaders_cel_shading` | shaders | ready |  |
 | `audio_module_playing` | audio | waiting | `CloseAudioDevice`, `GetMusicTimeLength`, `GetMusicTimePlayed`, `InitAudioDevice`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `SetMusicPitch`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
