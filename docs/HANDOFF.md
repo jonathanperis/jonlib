@@ -1,7 +1,7 @@
 # Session handoff (2026-10-10)
 
 Snapshot for continuing on another machine or in a new session. Everything
-described here is committed and pushed to `feature/audio-waves`; nothing lives
+described here is committed and pushed to `feature/examples-gui`; nothing lives
 only on one machine except throwaway caches (`.build/`).
 
 ## Goal in force
@@ -15,19 +15,16 @@ Bend and replaying it against the native example. Work autonomously; merge to
 
 | Branch | Content | State |
 |---|---|---|
-| `main` | e3afa23: Phase 1 work, CI timeout fix | CI green |
-| `feature/audio-waves` | everything since: audio, math profiles, text, fonts, camera, Phase 2 (frame, shapes, textures, rlgl, input, gestures, timing, desktop driver), meshes/3D shapes, materials/models/OBJ, perspective cameras (LGPL `tan`/`asinf`), the shader API, glibc's own `sinf`/`cosf`, Jongui (raygui), 71 example ports | **merge to `main` once its CI concludes `success`** |
-| `wip/models-drawing-obj`, `wip/lgpl-tan-asinf`, `integrate/models-lgpl` | merged into `feature/audio-waves` | delete locally and remotely after the merge to `main` |
+| `main` | cd7ac01: everything through the glibc `sinf`/`cosf` kernel, the shader API and 63 example ports | CI green (run 38017845114 on this commit, merged 2026-10-10) |
+| `feature/examples-gui` | on top of `main`: Jongui (raygui), `M.Libm.pow2`, 16 more example ports, per-example frame targets and reported refusals in the examples probe | **merge to `main` once its CI concludes `success`** |
 
-The last complete CI run on this branch (3b965ad) failed only in the macOS
-`models` gate. The probe expected a bare `null` for refused scenes that also
-query matrices; that is fixed in cd7ac01. The run for cd7ac01 is the one to
-watch.
+`feature/audio-waves`, `wip/models-drawing-obj`, `wip/lgpl-tan-asinf` and
+`integrate/models-lgpl` are merged into `main` and deleted.
 
 Coverage (`python3 tools/api_plan.py check`): raylib.h 514/600 partial
 (20 blocked, 66 not started); raymath.h 146/146; rlgl.h 93/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **71/212 ported**, 97 ready, 44 waiting. No API
+[EXAMPLES.md](EXAMPLES.md)): **79/212 ported**, 91 ready, 42 waiting. No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -61,9 +58,11 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 - **Shaders** ([SHADERS.md](SHADERS.md)): the API as the software renderer
   runs it (no-ops), which makes most `shaders_*` examples portable.
 - **Jongui** ([GUI.md](GUI.md)): raygui's style table, global state, label,
-  button, check box, slider and slider bar as `jongui.bend`; the examples
-  plan tracks raygui per function (`api/jongui.json`).
-- **Examples**: 71 ported; gates `examples-core`, `-shapes`, `-text`,
+  button, check box, toggle, toggle group, slider and slider bar as
+  `jongui.bend`; the examples plan tracks raygui per function
+  (`api/jongui.json`). Spinner, dropdown box and text box need raygui's
+  icons first.
+- **Examples**: 79 ported; gates `examples-core`, `-shapes`, `-text`,
   `-textures`, `-models`, `-shaders`.
 - **Compile memory**: per-output compiler processes and a cgroup-aware job
   budget in probekit; `LoadImage` of a `.png` in ports is `Surface.load_png`
@@ -71,8 +70,8 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Next steps, in order
 
-1. When `feature/audio-waves` CI is green: merge to `main`, push, delete the
-   merged branches.
+1. When `feature/examples-gui` CI is green: merge to `main`, push, delete the
+   branch.
 2. Keep porting the ready examples ([EXAMPLES.md](EXAMPLES.md)), smallest
    first. `textures_sprite_stacking` is written and parked
    (`.build/pending/`, not in the repository): its `booth.png` is 112x11468
