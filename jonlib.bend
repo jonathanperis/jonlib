@@ -1400,11 +1400,57 @@ def Color.to_hsv(+color: U32) -> M.Vector3:
   +delta = (maximum - minimum : F32)
   Color.hsv.components((delta < 0.00001 : F32), r, g, b, maximum, delta)
 
+# The binary32 word of 6*2^j (j up to 125).
+def Color.hsv.term(+j: U32) -> U32:
+  (1086324736 + (j << 23n) : U32)
+
+# The doublings of 6 to start from for a magnitude of at least 6: its
+# exponent above 6.0's, so that the magnitude is below twice 6*2^steps (the
+# word is the magnitude's, sign cleared).
+def Color.hsv.steps(+word: U32) -> U32:
+  Bool.pick(U32, (word < 1086324736 : U32), 0, ((word >> 23n) - 129 : U32))
+
+def Color.hsv.word(+word: U32) -> F32:
+  U32{bits} = word
+  F32{bits}
+
+# The value less the term when it has reached it. The value is below twice
+# the term, so the difference is exact.
+def Color.hsv.less(+x: F32, +term: F32) -> F32:
+  Bool.pick(F32, (x >= term : F32), (x - term : F32), x)
+
+# fmodf(x, 6) for a finite x of at least 6, by the terms 6*2^j from the
+# largest the value can reach down to 6: every subtraction is exact and the
+# value ends below 6.
+def Color.hsv.reduce(j: Nat, +x: F32, +term: F32) -> F32:
+  match j:
+    case 0n: Color.hsv.less(x, term)
+    case 1n+p: Color.hsv.reduce(p, Color.hsv.less(x, term), (term * 0.5 : F32))
+
+def Color.hsv.reduced(large: Bool, +negative: Bool, +magnitude: U32, +phase: F32) -> F32:
+  match large:
+    case False{}: phase
+    case True{}:
+      +steps = Color.hsv.steps(magnitude)
+      +rest = Color.hsv.reduce(U32.to_nat(steps), Color.hsv.word(magnitude), Color.hsv.word(Color.hsv.term(steps)))
+      Bool.pick(F32, negative, F32.neg(rest), rest)
+
+# fmodf(phase, 6): the phase itself below 6 in magnitude, else the exact
+# remainder with the phase's sign; a NaN for an infinite or NaN phase.
+def Color.hsv.remainder(+phase: F32) -> F32:
+  +word = F32.bits(phase)
+  +magnitude = (word .&. 2147483647 : U32)
+  Bool.pick(F32, (magnitude >= 2139095040 : U32), Color.hsv.word(2143289344),
+    Color.hsv.reduced((magnitude >= 1086324736 : U32) && (magnitude < 2139095040 : U32), (word >= 2147483648 : U32), magnitude, phase))
+
+# One channel of ColorFromHSV: k = fmodf(offset + hue/60, 6), then
+# k = min(4 - k, k) kept within 0..1 by the reference's comparisons.
 def Color.hsv.channel(offset: F32, hue: F32, saturation: F32, +value: F32) -> U32:
-  # Hue 0..360 makes the shifted phase 1..11, requiring at most one remainder subtraction.
-  +phase = (offset + hue / 60.0 : F32)
-  +k = Bool.pick(F32, (phase >= 6.0 : F32), (phase - 6.0 : F32), phase)
-  gain = F32.clamp(F32.min((4.0 - k : F32), k), 0.0, 1.0)
+  +k = Color.hsv.remainder((offset + hue / 60.0 : F32))
+  +t = (4.0 - k : F32)
+  +low = Bool.pick(F32, (t < k : F32), t, k)
+  +high = Bool.pick(F32, (low < 1.0 : F32), low, 1.0)
+  gain = Bool.pick(F32, (high > 0.0 : F32), high, 0.0)
   F32.to_u32(((value - value * saturation * gain) * 255.0 : F32))
 
 def Color.from_hsv(+hue: F32, +saturation: F32, +value: F32) -> U32:

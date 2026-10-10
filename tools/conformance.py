@@ -489,8 +489,8 @@ def cases_from(document):
                     rgba(values)
                 if namespace=='Color' and function=='from_normalized' and any(not 0<=v<=1 for v in values):
                     raise ValueError(f'{name}: normalized color components must be in 0..1')
-                if namespace=='Color' and function=='from_hsv' and (not 0<=values[0]<=360 or any(not 0<=v<=1 for v in values[1:])):
-                    raise ValueError(f'{name}: HSV requires hue 0..360 and saturation/value 0..1')
+                if namespace=='Color' and function=='from_hsv' and any(not 0<=v<=1 for v in values[1:]):
+                    raise ValueError(f'{name}: HSV requires saturation/value 0..1 (any hue the corpus can hold)')
                 divisors = values[dimensions:] if function=='divide' else values if function=='invert' and namespace in ('Vector2','Vector3','Vector4') else []
                 if any(struct.unpack('f',struct.pack('f',v))[0] == 0 for v in divisors):
                     raise ValueError(f'{name}: vector divisors must remain nonzero in F32')

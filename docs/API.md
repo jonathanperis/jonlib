@@ -33,10 +33,15 @@ the unsigned bit pattern returned by `ColorToInt`.
   multiplied by 255 in F32 and truncated to bytes.
 - `Color.to_hsv(color) -> Vector3`: hue in degrees, saturation and value in 0..1;
   ignores alpha and returns zero hue/saturation for achromatic colors.
-- `Color.from_hsv(hue, saturation, value) -> U32`: hue 0..360 and saturation/value
-  0..1; preserves reference sector arithmetic and byte truncation, with alpha 255.
-  Wider hue inputs remain outside this profile. RGB→HSV→RGB is not promised to
-  recover every byte, because the reference itself rounds intermediate values.
+- `Color.from_hsv(hue, saturation, value) -> U32`: any finite hue and
+  saturation/value 0..1; preserves reference sector arithmetic and byte
+  truncation, with alpha 255. Each channel's `fmodf(offset + hue/60, 6)` is
+  exact: the terms `6*2^j` are subtracted from the largest the value can
+  reach down to 6, and every such difference is exact, so a hue beyond one
+  turn or a negative one gives the reference's bytes (the corpus holds hues
+  from -32767 to 32767). RGB→HSV→RGB is not
+  promised to recover every byte, because the reference itself rounds
+  intermediate values.
 
 ## API families documented elsewhere
 

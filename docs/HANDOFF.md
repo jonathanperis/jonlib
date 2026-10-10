@@ -20,31 +20,37 @@ of batches of many commits behind one long run.
 | Branch | Content | State |
 |---|---|---|
 | `main` | everything through Jongui's first controls, the change-scoped Conformance workflow ([CI.md](CI.md)) and, once its run is green, `feature/examples-batch-4` (142 example ports, render-texture depth buffers, `Font.texture_size`, `Surface.colors_image`, `M.Float64.to_f32`/`to_int`) | CI green on every commit merged |
-| `stack/final` | 28 single-purpose commits on top of that, in landing order (below). The name starts no CI run: it is the backup of work not yet on `main` | each piece goes to `main` through its own `feature/**` branch |
+| `stack/final` | single-purpose commits on top of that, in landing order (below). The name starts no CI run: it is the backup of work not yet on `main` | each piece goes to `main` through a `feature/**` branch |
 
-Landing order of `stack/final` (`python3 tools/ci_scope.py --base <parent> --head <commit>` prints each one's scope):
+Landing order of `stack/final` (`python3 tools/ci_scope.py --base <parent> --head <commit>` prints each commit's scope):
 
-1. Eleven example ports that need nothing new (`models_mesh_picking`,
-   `text_rectangle_bounds`, `shapes_rlgl_color_wheel`, `text_inline_styling`,
-   `core_keyboard_testbed`, `shapes_rectangle_advanced`,
-   `core_input_gestures_testbed`, `textures_clipboard_image`,
-   `core_3d_camera_fps`, `text_strings_management`, `core_input_gamepad`),
-   the laws for the last library changes and the example-table generators:
-   scoped runs, minutes each.
-2. One group that needs a complete run, verified together at its head: the
-   compiler's memory hint in containers (`tools/probekit.py`), `M.Libm.pow2`
-   for every exponent, `M.Libm.exp`/`log`, `M.Libc.srand`/`rand`, `J.Until`
-   (a program whose loop has its own exit condition) and
-   `M.Libm.hypot_within`.
-3. Nine ports on top of those (`shapes_easings_ball`, `_box`, `_testbed`,
-   `core_2d_camera_mouse_zoom`, `shapes_simple_particles`,
-   `textures_textured_curve`, `shapes_top_down_lights`,
-   `core_window_should_close`, `shapes_ball_physics`): scoped runs.
+1. Thirteen commits that need nothing new, each a scoped run of minutes:
+   eleven example ports (`models_mesh_picking`, `text_rectangle_bounds`,
+   `shapes_rlgl_color_wheel`, `text_inline_styling`, `core_keyboard_testbed`,
+   `shapes_rectangle_advanced`, `core_input_gestures_testbed`,
+   `textures_clipboard_image`, `core_3d_camera_fps`,
+   `text_strings_management`, `core_input_gamepad`), the laws for the last
+   library changes and the example-table generators. They go first, in a
+   few `feature/**` branches of two or three commits, each merged
+   (fast-forward) when green.
+2. Everything above them needs one complete run, because it starts with
+   changes to existing definitions and to shared tools: the compiler's
+   memory hint in containers (`tools/probekit.py`), `M.Libm.pow2` for every
+   exponent, `M.Libm.exp`/`log`, `M.Libc.srand`/`rand`, `J.Until`,
+   `M.Libm.hypot_within`, nine ports on those (`shapes_easings_ball`,
+   `_box`, `_testbed`, `core_2d_camera_mouse_zoom`,
+   `shapes_simple_particles`, `textures_textured_curve`,
+   `shapes_top_down_lights`, `core_window_should_close`,
+   `shapes_ball_physics`), the rlgl uniform setters with
+   `shaders_vertex_displacement`, `UploadMesh`, and `ColorFromHSV` for any
+   finite hue with `models_point_rendering`. The stack's tip is pushed as
+   one `feature/**` branch: its complete run verifies all of them, and
+   `main` is fast-forwarded to the tip (a push to an intermediate commit
+   would be classified again).
 
 A branch is classified against its merge base with `main`, so a piece is
-pushed (as `feature/<name>`, at its commit of the stack) once the pieces under
-it are on `main`; pieces of the same kind may share one branch and are then
-verified at its head. `feature/examples-batch-5` held items 1 and 2 as one
+pushed only once the pieces under it are on `main` (or with them, verified at
+the branch's head). `feature/examples-batch-5` held part of this as one
 branch; its run was cancelled in favour of the pieces and the branch can be
 deleted when they are on `main`.
 
@@ -94,6 +100,10 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
   `M.Libm.hypot_within(x, y, r)` is the comparison `hypot(x, y) <= r` for
   every faithful `hypot`, on any profile, refusing the band where two could
   disagree. Gates `pow2`, `explog`, `rand`, `hypot`.
+- **Small unlocks**: the rlgl uniform setters and `rlSetShader` (no effect on
+  the software renderer), `UploadMesh` (`Mesh.upload`, the mesh given), and
+  `ColorFromHSV` for any finite hue (an exact `fmodf` by 6; it was limited
+  to one turn).
 - **`J.Until`** ([DRIVER.md](DRIVER.md)): a program whose loop ends on its
   own condition (`while (!exitWindow)`), for the replay and the desktop
   driver.
@@ -146,8 +156,9 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 3. Small library pieces that each unblock examples (a new definition is a
    scoped run; changing one is a complete run):
    - an IO step in `J.Program`'s update (`core_storage_values`);
-   - `tanf`, `GuiGroupBox`/`GuiLine` and `DrawSplineLinear`
-     (`shapes_math_sine_cosine`);
+   - `tanf` and `GuiGroupBox` (`shapes_math_sine_cosine`);
+   - `GetFileModTime` (`shaders_hot_reloading`), `GetApplicationDirectory`
+     (`core_screen_recording`); `models_decals` is ready since `UploadMesh`;
    - binary64 `sin`/`cos` (`models_waving_cubes`,
      `shaders_spotlight_rendering`, `GenMeshCylinder`);
    - the wall clock (`shapes_digital_clock`, `shapes_clock_of_clocks`,

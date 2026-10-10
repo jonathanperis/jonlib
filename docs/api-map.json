@@ -4164,9 +4164,10 @@
   "ColorFromHSV": {
     "jonlib": "Color.from_hsv",
     "status": "profile-covered",
-    "scope": "Hue 0..360 and saturation/value 0..1; exact bounded remainder, reference channel arithmetic and byte truncation; opaque output alpha.",
+    "scope": "Any finite hue and saturation/value 0..1; exact fmodf by 6, reference channel arithmetic and byte truncation; opaque output alpha.",
     "gaps": [
-      "Wider hue and exceptional/subnormal domains",
+      "Saturation/value outside 0..1 and non-finite hues",
+      "Hues beyond 32767 in magnitude are not in the corpus",
       "Other arithmetic/target/performance coverage"
     ],
     "api_id": "raylib:function:ColorFromHSV",
