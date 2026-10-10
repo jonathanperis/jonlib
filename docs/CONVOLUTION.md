@@ -49,6 +49,17 @@ owners, including rejection after an earlier pixel was computed.
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only convolution
 ```
 
+## The raylib example
+
+`examples/textures_image_kernel.bend` ports `textures_image_kernel.c`, but the
+native example is itself undefined: its normalized sharpen kernel
+(`0 -1 0 / -1 5 -1 / 0 -1 0`) sums to 2 where the row above or below is
+outside the image, and its Sobel kernel to -2 on the first pixel, so
+`(unsigned char)(alpha*255.0f)` converts 510.0f and -510.0f. Jonlib returns
+`InvalidKernel` for both images and the port refuses every frame; the
+examples probe lists the example under `UNDEFINED_NATIVE` and compares no
+frame of it.
+
 ## Known gaps
 
 Other kernel/coefficient domains, source formats and mipmaps, the native
