@@ -37,7 +37,9 @@ profile), camera rotations outside the host profile's verified sinf/cosf
 arguments (the Apple profile refuses 13, 19 and 22 degrees), and every frame
 of shapes_basic_shapes (DrawPoly turning by 0.2 degrees evaluates sinf/cosf
 outside every verified set). Frames before a refusal are compared with
-raylib. The refusals are computed for the host's M.Libm profile (Apple on
+raylib. A few examples (REPORTED) take the refusal frame Jonlib reports under
+the Apple profile instead of an independent prediction; the report lists them
+(reported_refusals). The refusals are computed for the host's M.Libm profile (Apple on
 macOS, glibc 2.39 on glibc hosts, conformance.gradient_reference): the
 13-degree rotation is a contract on macOS and compared on Linux. Native code
 only runs what C defines: the wheel and rotation scripts are defined in C
@@ -153,6 +155,8 @@ EXAMPLES = {
     'shapes_circle_sector_drawing': ('shapes/shapes_circle_sector_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_ring_drawing': ('shapes/shapes_ring_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_rounded_rectangle_drawing': ('shapes/shapes_rounded_rectangle_drawing.c', 'Ex.setup(core, frame)'),
+    'shapes_triangle_strip': ('shapes/shapes_triangle_strip.c', 'Ex.setup(core, frame)'),
+    'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -406,6 +410,14 @@ def scripts():
                                                                 slow([button(0, False), mouse_at(651, 250)]), quick([button(0)]),
                                                                 quick([button(0, False), mouse_at(700, 330)]), quick([button(0)]),
                                                                 quick([button(0, False)]), quick()]),
+        # More segments by a slider drag (the count is the truncated value), the outlines off and on again.
+        script('shapes_triangle_strip', 'segments', [quick(), quick([mouse_at(660, 50), button(0)]), quick([mouse_at(700, 52)]),
+                                                     quick([button(0, False), mouse_at(650, 80)]), quick([button(0)]), slow([button(0, False)]),
+                                                     quick([button(0)]), quick([button(0, False)])]),
+        # The full tree, a shallower one (depth slider), a wider angle, thicker Bezier branches.
+        script('shapes_recursive_tree', 'grow', [quick(), quick([mouse_at(690, 140), button(0)]), quick([button(0, False), mouse_at(700, 50)]),
+                                                 quick([button(0)]), quick([button(0, False), mouse_at(680, 170)]), quick([button(0)]),
+                                                 slow([button(0, False), mouse_at(650, 200)]), quick([button(0)]), quick([button(0, False)]), quick()]),
         script('models_orthographic_projection', 'switch', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False)]), quick([key(KEY_SPACE)]),
                                                             quick([key(KEY_SPACE, False)])]),
         # RIGHT walks the player into the sphere (touching at exactly the radius: z 2 - 0.5 = 1.5), UP goes deeper,
@@ -556,8 +568,16 @@ def bullet_hell_refusal(item, libm):
     return None
 
 
+# Examples whose own geometry takes sinf/cosf of values their controls change. Under the glibc profiles
+# they refuse nothing and every frame is compared. Under AppleLibm the refusal frame is the one Jonlib
+# reports (every frame before it is still compared with raylib); it is not predicted independently.
+REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree'}
+
+
 def refusal(item, libm):
-    """The index of the first frame Jonlib refuses (None when none is)."""
+    """The index of the first frame Jonlib refuses (None when none is; 'reported' to take Jonlib's own)."""
+    if item['example'] in REPORTED:
+        return 'reported' if libm == 'AppleLibm' else None
     if item['example'] in PERSPECTIVE and libm == 'AppleLibm':
         return 0
     if item['example'] == 'shapes_basic_shapes':
@@ -1073,9 +1093,24 @@ def main():
     items = [item for item in scripts() if (not args.example or item['example'] in args.example)
              and (not args.category or item['example'].split('_')[0] == args.category)]
     names = [name for name in EXAMPLES if any(item['example'] == name for item in items)]
-    rows_by_script, refused, binaries = [], {}, {}
+    lanes = probe.candidates(render(items, libm, logo, probe.args.raylib_source), names, batch=1,
+                             parse=lambda text, chosen: ['\n'.join(line for line in text.splitlines() if line.strip())])
+
+    def reported(item):
+        """The first frame the CPU-1 lane refused in this script (None when it refused none)."""
+        scripts_of = [other['name'] for other in items if other['example'] == item['example']]
+        printed = lanes['cpu-1'][names.index(item['example'])].split('\n')
+        if len(printed) != len(scripts_of):
+            raise ProbeFailure(f'examples: {item["example"]} printed {len(printed)} scripts, expected {len(scripts_of)}')
+        frames_of = printed[scripts_of.index(item['name'])].split('|')[:-1]
+        return next((k for k, frame in enumerate(frames_of) if frame == 'null null'), None)
+
+    rows_by_script, refused, binaries, unpredicted = [], {}, {}, []
     for index, item in enumerate(items):
         cut = refusal(item, libm)
+        if cut == 'reported':
+            cut = reported(item)
+            unpredicted.append(item['name'])
         refused[item['name']] = cut
         rows = []
         if cut != 0:
@@ -1087,9 +1122,6 @@ def main():
             rows = rows[:cut] + ['null null'] * (len(item['frames']) - cut)
         rows_by_script.append('|'.join(rows) + '|')
     expected = ['\n'.join(row for row, item in zip(rows_by_script, items) if item['example'] == name) for name in names]
-
-    lanes = probe.candidates(render(items, libm, logo, probe.args.raylib_source), names, batch=1,
-                             parse=lambda text, chosen: ['\n'.join(line for line in text.splitlines() if line.strip())])
 
     def describe(i):
         scripts_of = [item for item in items if item['example'] == names[i]]
@@ -1105,7 +1137,7 @@ def main():
     frames = sum(row.count('|') for row in rows_by_script)
     contract_frames = sum(row.count('null null') for row in rows_by_script)
     probe.finish(examples=len(names), scripts=len(items), frames=frames, compared_frames=frames - contract_frames,
-                 refused_frames=contract_frames, libm=libm, refusals=refused,
+                 refused_frames=contract_frames, libm=libm, refusals=refused, reported_refusals=unpredicted,
                  scripts_sha256=hashlib.sha256(json.dumps(items, default=repr).encode()).hexdigest())
 
 

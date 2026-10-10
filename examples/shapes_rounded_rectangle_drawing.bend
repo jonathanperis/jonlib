@@ -58,11 +58,11 @@ def rounded_lines(visible: Bool, +libm: M.Libm, +v: +List<F32>, frame: J.Frame) 
     case True{}: J.Draw.rectangle_rounded_lines_ex_for(libm, frame, rec(v), at(v, 2n), F32.trunc(at(v, 4n)), at(v, 3n), J.Color.with_alpha(J.Color.MAROON(), 0.4))
 
 def bars() -> +List<G.Gui.Bar>:
-  [G.GuiBar{J.Rectangle{640.0, 40.0, 105.0, 20.0}, "Width", 0.0, (800.0 - 300.0 : F32)},
-   G.GuiBar{J.Rectangle{640.0, 70.0, 105.0, 20.0}, "Height", 0.0, (450.0 - 50.0 : F32)},
-   G.GuiBar{J.Rectangle{640.0, 140.0, 105.0, 20.0}, "Roundness", 0.0, 1.0},
-   G.GuiBar{J.Rectangle{640.0, 170.0, 105.0, 20.0}, "Thickness", 0.0, 20.0},
-   G.GuiBar{J.Rectangle{640.0, 240.0, 105.0, 20.0}, "Segments", 0.0, 60.0}]
+  [G.GuiBar{J.Rectangle{640.0, 40.0, 105.0, 20.0}, "Width", "%.2f", 0.0, (800.0 - 300.0 : F32)},
+   G.GuiBar{J.Rectangle{640.0, 70.0, 105.0, 20.0}, "Height", "%.2f", 0.0, (450.0 - 50.0 : F32)},
+   G.GuiBar{J.Rectangle{640.0, 140.0, 105.0, 20.0}, "Roundness", "%.2f", 0.0, 1.0},
+   G.GuiBar{J.Rectangle{640.0, 170.0, 105.0, 20.0}, "Thickness", "%.2f", 0.0, 20.0},
+   G.GuiBar{J.Rectangle{640.0, 240.0, 105.0, 20.0}, "Segments", "%.2f", 0.0, 60.0}]
 
 def boxes() -> +List<G.Gui.Box>:
   [G.GuiBox{J.Rectangle{640.0, 320.0, 20.0, 20.0}, "DrawRoundedRect"},
@@ -101,7 +101,7 @@ def draw(+libm: M.Libm, +core: J.Core, +state: State, frame: J.Frame) -> J.Core 
   f1 = J.Draw.line(J.Frame.clear_background(frame, J.Color.RAYWHITE()), 560.0, 0.0, 560.0, 450.0, J.Color.with_alpha(J.Color.LIGHTGRAY(), 0.6))
   f2 = J.Draw.rectangle(f1, 560.0, 0.0, (800.0 - 500.0 : F32), 450.0, J.Color.with_alpha(J.Color.LIGHTGRAY(), 0.3))
   f3 = rounded_lines(on(checks, 1n), libm, values, rounded(on(checks, 0n), libm, values, plain(on(checks, 2n), values, f2)))
-  draw.bars(core, checks, G.Gui.slider_bars(gui, core, f3, bars(), values, "%.2f"))
+  draw.bars(core, checks, G.Gui.slider_bars(gui, core, f3, bars(), values))
 
 # The main loop's body; libm is the profile of the corners' sinf/cosf and segment estimate.
 def program(+libm: M.Libm) -> J.Program<State>:

@@ -1804,7 +1804,7 @@
   {
    "name": "shapes_recursive_tree",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -2140,7 +2140,7 @@
   {
    "name": "shapes_triangle_strip",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",

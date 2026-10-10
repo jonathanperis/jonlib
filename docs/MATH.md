@@ -298,6 +298,9 @@ basis used by `Matrix.compose`. Both results follow their respective reference
 implementations; no implicit normalization makes them interchangeable.
 The remaining quaternion operations and full integration/ABI/target/performance
 coverage remain ledger gaps.
+`M.Libm.pow2(libm, k)` is `powf(2, k)` (and the `exp2f(k)` compilers
+substitute for it) for an integral `k` in [-20, 30]: exactly `2^k` under both
+glibc profiles (gate `pow2`), `None` for `AppleLibm` and every other `k`.
 `M.Libm.acos(libm, x)` and `M.Libm.pow(libm, x, exponent)` expose the glibc
 2.39 `acosf` and `powf` (exponents 2 and 3 on [-0, 1]) kernels as `Maybe`
 results; other profiles give `None` ([INVERSE-TRIG.md](INVERSE-TRIG.md),

@@ -273,7 +273,13 @@ profile, compared under glibc), and `shapes_basic_shapes` (every frame
 refused under the Apple profile, compared under glibc). Examples that load resources (`LoadTexture`) run natively in
 raylib's `examples/<module>` directory and take that directory as their
 setup argument; `SetConfigFlags` examples start both sides with the same
-flags. `--example NAME` runs a subset (diagnostic). `--assume-libm AppleLibm`
+flags. A few ports compute their own geometry with `sinf`/`cosf` of values
+their controls change (`shapes_triangle_strip`, `shapes_recursive_tree`): under
+the glibc profiles they refuse nothing and every frame is compared; under the
+Apple profile the probe takes the refusal frame Jonlib reports (every frame
+before it is still compared with raylib) instead of an independent prediction,
+and lists those scripts as `reported_refusals`. `--example NAME` runs a subset
+(diagnostic). `--assume-libm AppleLibm`
 (also on `tools/models_probe.py`) runs Jonlib and the refusal oracle under
 another host's profile, a diagnostic for checking where a port must refuse on
 macOS from a Linux machine: the frames before a refusal are still compared

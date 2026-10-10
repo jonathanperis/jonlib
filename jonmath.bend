@@ -1269,6 +1269,23 @@ def Libm.pow(libm: Libm, +x: F32, +exponent: U32) -> Maybe<F32>:
     case Glibc239Libm{}: Power.power(x, exponent)
     case _: None{}
 
+def Libm.pow2.word(+word: U32) -> F32:
+  U32{w} = word
+  F32{w}
+
+def Libm.pow2.exact(+k: F32) -> Maybe<F32>:
+  +integral = F32.is_eq(F32.trunc(k), k) && (k >= F32.neg(20.0) : F32) && (k <= 30.0 : F32)
+  Bool.pick(Maybe<F32>, integral, Some{Libm.pow2.word((F32.to_u32((k + 127.0 : F32)) << 23n : U32))}, None{})
+
+# powf(2, k), and the exp2f(k) compilers substitute for it, under a reference
+# profile for an integral k in [-20, 30]: exactly 2^k under both glibc
+# profiles (tools/pow2_probe.py). None for AppleLibm (not verified) and for
+# every other k.
+def Libm.pow2(libm: Libm, +k: F32) -> Maybe<F32>:
+  match libm:
+    case AppleLibm{}: None{}
+    case _: Libm.pow2.exact(k)
+
 def Libm.cos.value(values: F32 & F32) -> F32:
   (cosine, _) = values
   cosine

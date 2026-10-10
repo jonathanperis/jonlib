@@ -36,9 +36,9 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 
 Two additions have no raygui counterpart. They run a row of controls in order
 for programs that keep their values in lists (Bend has no pointers to write
-through): `Gui.slider_bars(gui, core, frame, bars, values, format)` (one
-`GuiSliderBar` per `G.GuiBar{bounds, left, low, high}`, the right text being
-the value formatted by `format`) and `Gui.check_boxes(gui, core, frame, boxes,
+through): `Gui.slider_bars(gui, core, frame, bars, values)` (one
+`GuiSliderBar` per `G.GuiBar{bounds, left, format, low, high}`, the right
+text being the value formatted by the bar's `format`) and `Gui.check_boxes(gui, core, frame, boxes,
 checked)` (one `GuiCheckBox` per `G.GuiBox{bounds, text}`).
 
 The enums are functions (`G.Gui.SLIDER()`, `G.Gui.TEXT_SIZE()`,
