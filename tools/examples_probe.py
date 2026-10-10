@@ -161,6 +161,8 @@ EXAMPLES = {
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'core_window_web': ('core/core_window_web.c', 'Ex.setup(core, frame)'),
+    'textures_particles_blending': ('textures/textures_particles_blending.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -169,7 +171,7 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'textures_image_loading', 'textures_image_rotate', 'textures_to_image', 'textures_blend_modes',
             'textures_npatch_drawing', 'textures_raw_data', 'textures_bunnymark', 'shaders_texture_waves',
             'shaders_texture_outline', 'shaders_shapes_textures', 'shaders_texture_tiling', 'text_font_spritefont',
-            'models_billboard_rendering', 'shaders_color_correction'}
+            'models_billboard_rendering', 'shaders_color_correction', 'textures_particles_blending'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -177,7 +179,7 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'models_geometric_shapes', 'models_box_collisions', 'models_orthographic_projection',
                'shaders_basic_lighting', 'shaders_texture_tiling', 'models_billboard_rendering'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'textures_bunnymark', 'textures_image_generation',
-          'core_window_letterbox'}
+          'core_window_letterbox', 'textures_particles_blending'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68}
 
@@ -436,6 +438,12 @@ def scripts():
                                                         quick([button(0, False), mouse_at(660, 170)]), quick([button(0)]),
                                                         slow([button(0, False), mouse_at(665, 200)]), quick([button(0)]), quick([button(0, False)]),
                                                         quick([mouse_at(675, 80), button(0)]), quick([button(0, False)]), quick()]),
+        script('core_window_web', 'frames', [quick(), slow()]),
+        # A particle starts each frame at the mouse; SPACE switches to additive blending and back.
+        script('textures_particles_blending', 'tail', [quick(), quick([mouse_at(300, 150)]), quick([mouse_at(360, 180)]), quick([mouse_at(420, 160)]),
+                                                       quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), mouse_at(500, 220)]),
+                                                       quick([mouse_at(520, 300)]), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), quick()],
+               seed=0x5A0),
         script('models_orthographic_projection', 'switch', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False)]), quick([key(KEY_SPACE)]),
                                                             quick([key(KEY_SPACE, False)])]),
         # RIGHT walks the player into the sphere (touching at exactly the radius: z 2 - 0.5 = 1.5), UP goes deeper,
@@ -587,10 +595,11 @@ def bullet_hell_refusal(item, libm):
     return None
 
 
-# Examples whose own geometry takes sinf/cosf of values their controls change. Under the glibc profiles
+# Examples whose own geometry takes sinf/cosf of values their controls change, or whose rotations come from
+# the seeded random stream (textures_particles_blending). Under the glibc profiles
 # they refuse nothing and every frame is compared. Under AppleLibm the refusal frame is the one Jonlib
 # reports (every frame before it is still compared with raylib); it is not predicted independently.
-REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree'}
+REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending'}
 
 
 def refusal(item, libm):
