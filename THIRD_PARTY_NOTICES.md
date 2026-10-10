@@ -351,15 +351,18 @@ license are retained in [LICENSES/rlsw.txt](LICENSES/rlsw.txt).
 
 ## Arm numerical routines
 
-The GNU-reference polynomial in `src/trig.bend` and its independent C control
-in `tools/trig_probe.py` adapt `math/sincosf.h` and `math/sincosf_data.c` from
+The glibc `sinf`/`cosf` kernel in `src/sincosf.bend` and its C model
+`tools/reference/glibc_sinf/model.c` (with the exhaustive check beside it,
+used by `tools/glibc_sinf.py`, `tools/sincosf_probe.py` and
+`tools/trig_probe.py`) adapt `math/sinf.c`, `math/cosf.c`, `math/sincosf.h`
+and `math/sincosf_data.c` (as glibc 2.39/2.41 ship them on x86_64) from
 [Arm optimized-routines at 47597821aaa52e9c055caf1ecf8f3aecfd751cd9](https://github.com/ARM-software/optimized-routines/tree/47597821aaa52e9c055caf1ecf8f3aecfd751cd9).
 `src/power.bend` and the C model in `tools/spline_cubic_probe.py` adapt
 `math/powf.c`, `math/powf_log2_data.c` and `math/exp2f_data.c` (as glibc 2.39
 ships them on x86_64) at the same revision, for `powf(x, 2)` and `powf(x, 3)`
 on [-0, 1].
 These are altered Bend/tooling implementations, limited to the documented
-gradient/rotation and power profiles. Jonlib selects the upstream MIT alternative; source copyright
+sinf/cosf and power profiles. Jonlib selects the upstream MIT alternative; source copyright
 notices and the selected license are retained in [LICENSES/arm-math.txt](LICENSES/arm-math.txt).
 
 ## Arctangent numerical references
@@ -454,7 +457,11 @@ the Bend sources are the preferred form for modification.
 
 Reference tooling, never part of the library: the unmodified glibc 2.39
 sources in `tools/reference/glibc239` (SHA-256 recorded in
-[docs/PERSPECTIVE.md](docs/PERSPECTIVE.md)) and
+[docs/PERSPECTIVE.md](docs/PERSPECTIVE.md) and, for the `sinf`/`cosf` files
+`s_sinf.c`, `s_cosf.c`, `s_sincosf.h`, `sincosf_poly.h` and
+`s_sincosf_data.c`, in [docs/SINCOSF.md](docs/SINCOSF.md); Jonlib's
+`sinf`/`cosf` kernel is written from Arm's MIT-licensed originals, not from
+these LGPL copies) and
 `tools/reference/glibc_tan/model.c`, an LGPL-2.1+ explicit-operation C model of
 the same function with its own change notice, built by `tools/glibc_tan.py`
 and the survey in `tools/reference/glibc_tan`; their build shims are original

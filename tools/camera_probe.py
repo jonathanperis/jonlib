@@ -21,7 +21,7 @@ None: CAMERA_PERSPECTIVE projections under AppleLibm (Apple's binary64 tan
 is unpublished, docs/PERSPECTIVE.md) and with a nonfinite fovy*DEG2RAD or
 aspect, nonzero sinf/cosf arguments under AppleLibm
 (Jonmath's Apple sine/cosine is not macOS arm64's), glibc arguments that are
-subnormal or come from |angle| > 6.283186f, lockView angles outside the
+subnormal or nonfinite, lockView angles outside the
 checked atan2f contract, screen sizes outside 1..INT_MAX and orthographic spans
 outside the checked binary64 multiplier. The total binary32 FMA kernel
 (src/fma.bend) behind M.Fused{} is also compared with the host fmaf over every
@@ -301,8 +301,8 @@ static Vector3 norm3(Vector3 v) {
   return v;
 }
 static int normal_or_zero(float x) { unsigned b = bits(x) & 0x7fffffffu; return b == 0 || (b >= 0x00800000u && b < 0x7f800000u); }
-/* sinf/cosf arguments Jonlib reproduces: zero, or (glibc profiles) normal with |angle| <= 6.283186f. */
-static int turnable(float angle, float argument) { return argument == 0.0f || (GNU && fabsf(angle) <= 6.283186f && normal_or_zero(argument)); }
+/* sinf/cosf arguments Jonlib reproduces: zero, or (glibc profiles) any normal argument. */
+static int turnable(float angle, float argument) { (void) angle; return argument == 0.0f || (GNU && normal_or_zero(argument)); }
 static int half_turnable(float angle) { return turnable(angle, angle/2.0f); }
 static int angle_ok(Vector3 a, Vector3 b, float *out) {
   Vector3 c = cross3(a, b);

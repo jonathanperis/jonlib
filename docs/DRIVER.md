@@ -227,7 +227,7 @@ is 102 words.
 | [`core_2d_camera`](../examples/core_2d_camera.bend) | `examples/core/core_2d_camera.c` | seed as a setup argument (raylib seeds from `time(NULL)`); zoom only at 1 without wheel moves (no `expf`/`logf` profile; Base has no wheel); the interactive run uses the glibc 2.39 `sinf`/`cosf` profile, since the Apple one refuses rotations of 13, 19 and 22 degrees |
 | [`shapes_logo_raylib`](../examples/shapes_logo_raylib.bend) | `examples/shapes/shapes_logo_raylib.c` | |
 | [`textures_logo_raylib`](../examples/textures_logo_raylib.bend) | `examples/textures/textures_logo_raylib.c` | reads `raylib_logo.png` in place (run from raylib's `examples/textures`, or `--logo <path>`) |
-| [`shapes_basic_shapes`](../examples/shapes_basic_shapes.bend) | `examples/shapes/shapes_basic_shapes.c` | refused: its hexagons turn by 0.2 degrees, so `DrawPoly*` evaluate `sinf`/`cosf` outside every verified profile (Apple: whole degrees; glibc: the closing vertex passes 6.283186); the interactive run stops at the first frame |
+| [`shapes_basic_shapes`](../examples/shapes_basic_shapes.bend) | `examples/shapes/shapes_basic_shapes.c` | compared under glibc (glibc's own `sinf`/`cosf`, [SINCOSF.md](SINCOSF.md)); refused under the Apple profile: its hexagons turn by 0.2 degrees, so `DrawPoly*` evaluate `sinf`/`cosf` outside whole degrees, and the interactive run (Apple profile) stops at the first frame |
 | [`shapes_bouncing_ball`](../examples/shapes_bouncing_ball.bend) | `examples/shapes/shapes_bouncing_ball.c` | `SetConfigFlags(FLAG_MSAA_4X_HINT)` through `Desktop.run_flags`; `DrawFPS` reads `GetFPS` at the `Core`'s clock |
 | [`shapes_lines_bezier`](../examples/shapes_lines_bezier.bend) | `examples/shapes/shapes_lines_bezier.c` | `FLAG_MSAA_4X_HINT`; on the memory platform `IsMouseButtonReleased` never fires, so a grabbed point keeps following the mouse (reproduced) |
 | [`core_drop_files`](../examples/core_drop_files.bend) | `examples/core/core_drop_files.c` | no platform here delivers dropped files: the list stays empty |
@@ -269,7 +269,7 @@ target (EndDrawing waits) with longer ones. Contracts: a wheel move in
 `core_2d_camera` (refused from that frame on), rotations to 13 degrees in
 `core_2d_camera` and `textures_srcrec_dstrec` (refused under the Apple
 profile, compared under glibc), and `shapes_basic_shapes` (every frame
-refused). Examples that load resources (`LoadTexture`) run natively in
+refused under the Apple profile, compared under glibc). Examples that load resources (`LoadTexture`) run natively in
 raylib's `examples/<module>` directory and take that directory as their
 setup argument; `SetConfigFlags` examples start both sides with the same
 flags. `--example NAME` runs a subset (diagnostic).

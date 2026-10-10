@@ -32,7 +32,7 @@ leaves (-1, 256) (uint8 conversion undefined), segment counts below
 rshapes.c's minimum (acosf/powf estimate) or above 4096, and sinf/cosf
 arguments outside the host M.Libm profile's verified set (Apple: fl(DEG2RAD*d)
 for integral |d| <= 360 except 13, 19, 22, 103 and 188; glibc: normal or
-zero |x| <= 6.283186). A trig table checks every accepted DEG2RAD*d
+zero, glibc's own sinf/cosf, docs/SINCOSF.md). A trig table checks every accepted DEG2RAD*d
 argument's sine and cosine bits against the host sinf/cosf. CPU-1, CPU-2
 and JavaScript lanes.
 
@@ -55,7 +55,6 @@ from probekit import ROOT, ProbeFailure
 OPTIONS = ('CMAKE_C_FLAGS=-ffp-contract=off',)
 DEG2RAD_BITS = 1016003125
 APPLE_EXCLUDED = (13, 19, 22, 103, 188)
-TRIG_BOUND = 6.283186
 
 
 def word(value):
@@ -84,7 +83,7 @@ def accepted(libm, arg):
         d = math.floor(abs(d) + 0.5) * (1 if d >= 0 else -1)
         return abs(d) <= 360 and f32(DEG2RAD * d) == arg and abs(d) not in APPLE_EXCLUDED
     magnitude = word(arg) & 0x7FFFFFFF
-    return abs(arg) <= f32(TRIG_BOUND) and (magnitude == 0 or 0x00800000 <= magnitude < 0x7F800000)
+    return magnitude == 0 or 0x00800000 <= magnitude < 0x7F800000
 
 
 def c_int(value):

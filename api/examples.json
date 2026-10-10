@@ -4019,7 +4019,7 @@
   {
    "name": "models_box_collisions",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4043,9 +4043,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "DrawSphereWires"
-   ]
+   "missing": []
   },
   {
    "name": "models_cubicmap_rendering",
@@ -4120,7 +4118,7 @@
   {
    "name": "models_geometric_shapes",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4143,9 +4141,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "DrawSphereWires"
-   ]
+   "missing": []
   },
   {
    "name": "models_mesh_generation",
@@ -4197,7 +4193,7 @@
   {
    "name": "models_mesh_picking",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4240,9 +4236,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "DrawSphereWires"
-   ]
+   "missing": []
   },
   {
    "name": "models_loading",
@@ -4319,7 +4313,7 @@
   {
    "name": "models_loading_vox",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4359,9 +4353,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "DrawSphereWires"
-   ]
+   "missing": []
   },
   {
    "name": "models_loading_m3d",
@@ -4404,7 +4396,7 @@
   {
    "name": "models_orthographic_projection",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4428,9 +4420,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "DrawSphereWires"
-   ]
+   "missing": []
   },
   {
    "name": "models_point_rendering",
@@ -4467,7 +4457,6 @@
    ],
    "libraries": [],
    "missing": [
-    "DrawSphereWires",
     "UploadMesh"
    ]
   },
@@ -5124,7 +5113,7 @@
   {
    "name": "shaders_basic_lighting",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -5156,9 +5145,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "DrawSphereWires"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_model_shader",
@@ -5777,7 +5764,7 @@
   {
    "name": "shaders_normalmap_rendering",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -5817,9 +5804,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "DrawSphereWires"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_spotlight_rendering",
@@ -5919,7 +5904,6 @@
    ],
    "libraries": [],
    "missing": [
-    "DrawSphereWires",
     "rlBindFramebuffer",
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
@@ -6195,7 +6179,7 @@
   {
    "name": "shaders_basic_pbr",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -6227,9 +6211,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
-   "missing": [
-    "DrawSphereWires"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_lightmap_rendering",

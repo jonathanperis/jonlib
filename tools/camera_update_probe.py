@@ -22,8 +22,8 @@ source, checking the glibc profiles on any host.
 Contracts. A C oracle repeats UpdateCamera's steps on a copy with raylib's
 camera functions and decides where Jonlib must answer None (from then on the
 camera is "none"): a sinf/cosf argument outside the M.Libm profile (any
-nonzero one under AppleLibm; under the glibc profiles subnormal ones and
-|angle| > 6.283186f), and lockView angles outside the checked atan2f contract
+nonzero one under AppleLibm; under the glibc profiles subnormal and
+nonfinite ones), and lockView angles outside the checked atan2f contract
 (docs/CAMERA.md). Frames before a refusal are compared bit for bit (NaN words
 as one class). CPU-1, CPU-2 and JavaScript lanes.
 

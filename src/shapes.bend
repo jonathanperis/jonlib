@@ -84,9 +84,9 @@ def trig.apple(+arg: F32) -> Bool:
   +d = F32.round((arg / deg2rad() : F32))
   (F32.abs(d) <= 360.0 : F32) && F32.is_eq((deg2rad() * d : F32), arg) && trig.apple.degree(F32.abs(d))
 
-# glibc: normal or zero arguments within one turn (docs/ROTATION.md).
+# glibc: normal or zero arguments (glibc's own sinf/cosf, docs/SINCOSF.md).
 def trig.gnu(+arg: F32) -> Bool:
-  (F32.abs(arg) <= F.float(1086918620) : F32) && CheckedAngle.normal_or_zero(arg)
+  CheckedAngle.normal_or_zero(arg)
 
 def trig.ok(gnu: Bool, +arg: F32) -> Bool:
   match gnu:

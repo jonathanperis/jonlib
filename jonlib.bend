@@ -707,11 +707,11 @@ def Camera.normalize(+arithmetic: M.Contraction, +vector: M.Vector3) -> M.Vector
 
 # Whether sinf/cosf of argument (angle, or angle/2 for axis rotations) is
 # reproduced: a signed zero under every libm (sine is the zero, cosine one);
-# under the glibc profiles also a normal argument with |angle| <= 6.283186f.
+# under the glibc profiles also any normal argument (glibc's own sinf/cosf).
 # Jonmath's AppleLibm sine/cosine rounds the exact value, which macOS arm64
 # sinf/cosf do not always do, so nonzero Apple arguments are None.
 def Camera.turnable(libm: M.Libm, +angle: F32, +argument: F32) -> Bool:
-  F32.is_eq(argument, 0.0) || (M.Libm.gnu(libm) && (F32.abs(angle) <= Camera.float(1086918620) : F32) && CheckedAngle.normal_or_zero(argument))
+  F32.is_eq(argument, 0.0) || (M.Libm.gnu(libm) && CheckedAngle.normal_or_zero(argument))
 
 def Camera.rotated(+arithmetic: M.Contraction, +vector: M.Vector3, axis: M.Vector3, values: F32 & F32) -> M.Vector3:
   (cosine, sine) = values

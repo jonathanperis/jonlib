@@ -1,31 +1,25 @@
 #!/usr/bin/env python3
-"""Check bounded gradient trigonometry against the host's actual sinf/cosf."""
+"""Check gradient/rotation trigonometry against the host's actual sinf/cosf (or, with --gnu-control, the glibc model)."""
 from conformance import gradient_reference, source_gate
 import probekit
-from probekit import ProbeFailure
+from probekit import ROOT, ProbeFailure
 
-REFERENCE = '''/* Arm optimized-routines polynomial; MIT alternative, see LICENSES/arm-math.txt. */
+MODEL = (ROOT / 'tools/reference/glibc_sinf/model.c').read_text()
+
+# arm_model: glibc's x86_64 sinf/cosf (the FMA ifunc variants) on every
+# binary32 argument; tools/reference/glibc_sinf/model.c, docs/SINCOSF.md.
+REFERENCE = '''/* Arm optimized-routines sinf/cosf as glibc x86_64 runs them; MIT alternative, see LICENSES/arm-math.txt. */
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
 #pragma STDC FP_CONTRACT OFF
-static void arm_model(float input, float *co, float *si) {
-  double x=(double)input;
-  unsigned bits; memcpy(&bits,&input,4);
-  int n=0;
-  if (((bits>>20)&0x7ff) >= 0x3f4) {
-    n=((int32_t)(x*0x1.45F306DC9C883p+23)+0x800000)>>24;
-    x -= n*0x1.921FB54442D18p0;
-  }
-  double x2=x*x,x3=x*x2,x4=x2*x2,x5=x3*x2,x6=x4*x2;
-  double s1=0x1.1107605230bc4p-7+x2*(-0x1.994eb3774cf24p-13);
-  double c2=-0x1.6c087e89a359dp-10+x2*0x1.99343027bf8c3p-16;
-  double s=x+x3*(-0x1.555545995a603p-3);
-  double c1=1+x2*(-0x1.ffffffd0c621cp-2);
-  double c=c1+x4*0x1.55553e1068f19p-5;
-  float sr=s+x5*s1,cr=c+x6*c2;
-  switch(n&3) { case 0:*co=cr;*si=sr;break;case 1:*co=-sr;*si=cr;break;case 2:*co=-cr;*si=-sr;break;default:*co=sr;*si=-cr; }
+#define FUSED 1
+#define MODEL_SINF arm_model_sinf
+#define MODEL_COSF arm_model_cosf
+''' + MODEL + '''static void arm_model(float input, float *co, float *si) {
+  *co = arm_model_cosf(input);
+  *si = arm_model_sinf(input);
 }
 int main(void) {
   for(int i=-LIMIT;i<=LIMIT;i++) {
@@ -79,12 +73,10 @@ def main():
     def configure(p):
         parser.append(p)
         p.add_argument('--full', action='store_true', help='Check every integral direction in -32767..32767')
-        p.add_argument('--gnu-control', action='store_true', help='Check the Arm/GNU polynomial against its independent C model on any host')
+        p.add_argument('--gnu-control', action='store_true', help='Check the GNU profile against the glibc sinf/cosf model on any host')
         p.add_argument('--rotation', action='store_true', help='Use ImageRotate degree-to-radian evaluation instead of linear gradients')
 
     args = probekit.arguments(__doc__, configure, raylib=False)
-    if args.gnu_control and args.full:
-        parser[0].error('The independent GNU control covers the one-cycle fast-reduction domain')
     probe = probekit.Probe('trig', args)
     limit = 32767 if args.full else 360
     count = 2*limit+1

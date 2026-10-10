@@ -194,7 +194,8 @@ def scripts():
                seed=99),
         script('shapes_logo_raylib', 'frames', [quick(), slow()]),
         script('textures_logo_raylib', 'frames', [quick(), slow()]),
-        script('shapes_basic_shapes', 'refused', [quick(), quick()]),
+        # The hexagons turn 0.2 degrees a frame (refused under the Apple profile from the first one).
+        script('shapes_basic_shapes', 'turn', [quick(), quick(), slow(), quick()]),
         script('textures_srcrec_dstrec', 'rotate', [quick() for _ in range(14)] + [slow()]),
         script('textures_sprite_animation', 'speed', [quick(), quick(), slow(), quick([key(KEY_RIGHT)]), quick(), quick([key(KEY_RIGHT, False)]),
                                                       quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]), quick(), slow(), quick(), quick()]),
@@ -369,7 +370,7 @@ def refusal(item, libm):
                 angles.append(central)
             if not all(fp.accepted(libm, a) for a in angles):
                 return index
-        raise ProbeFailure('examples: shapes_basic_shapes is expected to be refused')
+        return None
     if item['example'] == 'textures_srcrec_dstrec':
         # DrawTexturePro's sinf/cosf of (float)rotation*DEG2RAD, rotation = frame + 1.
         for index in range(len(item['frames'])):

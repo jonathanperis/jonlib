@@ -30759,7 +30759,7 @@
       "scope": "Maybe<Vector2>: Vector3Transform of (x, y, 0) by GetCameraMatrix2D, every input; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm profile; None as for GetCameraMatrix2D.",
       "gaps": [
         "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
-        "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+        "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
         "Full target/performance coverage"
@@ -30824,7 +30824,7 @@
       "scope": "Maybe<Vector2>: Vector3Transform of (x, y, 0) by MatrixInvert(GetCameraMatrix2D), singular matrices included; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm profile; None as for GetCameraMatrix2D.",
       "gaps": [
         "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
-        "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+        "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
         "Full target/performance coverage"
@@ -30952,7 +30952,7 @@
       "scope": "Maybe<Matrix>: translate(-target) * (scale(zoom) * MatrixRotate(z, rotation*DEG2RAD)) * translate(offset) in raylib's order, every input; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm sinf/cosf profile. None when the rotation argument is not reproduced (zero always is).",
       "gaps": [
         "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
-        "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+        "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
         "Full target/performance coverage"
@@ -38466,7 +38466,7 @@
       "scope": "Maybe<Camera3D>: rcamera.h's UpdateCamera steps in order over the Core's GetMouseDelta, GetFrameTime, keys, middle button, wheel and gamepad 0, for every mode (others take the manual path with options off); explicit contraction and M.Libm profiles; None as soon as a rotation or lockView angle leaves the profile.",
       "gaps": [
         "AppleLibm: nonzero sinf/cosf arguments are None (orbital frames and every rotation)",
-        "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+        "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
         "Fused profile: the camera steps are checked by the camera gate; the input-driven sequence only uncontracted",
         "NaN sign and payload are not reproduced",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -38537,7 +38537,7 @@
       "scope": "Maybe<Camera3D>: input-free; pitch (lockView), yaw and roll by degrees, then world-plane forward and right moves, up and zoom, as raylib composes them; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm profile; None as for the rotations it applies.",
       "gaps": [
         "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
-        "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+        "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
         "Full target/performance coverage"
@@ -39316,7 +39316,7 @@
       "mapping_state": "implemented",
       "scope": "C int center; DrawCircleV.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -39382,7 +39382,7 @@
       "mapping_state": "implemented",
       "scope": "DrawCircleSector(center, radius, 0, 360, 36): 18 textured quads at multiples of 10 degrees; radius <= 0 becomes 0.1.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -39449,7 +39449,7 @@
       "mapping_state": "implemented",
       "scope": "36 untextured triangles, inner color at the center and outer color on the circle.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -39517,7 +39517,7 @@
       "scope": "Ordered angles, quads of two segments plus an odd last piece, angles accumulated in F32.",
       "gaps": [
         "Segments below ceil((end - start)/90) are estimated with acosf for M.Glibc239Libm only (other profiles mark the frame undefined); above 4096 the frame is marked undefined",
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -39587,7 +39587,7 @@
       "scope": "Cap lines from the center plus one RL_LINES segment per step.",
       "gaps": [
         "Segments below ceil((end - start)/90) are estimated with acosf for M.Glibc239Libm only (other profiles mark the frame undefined); above 4096 the frame is marked undefined",
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -39656,7 +39656,7 @@
       "mapping_state": "implemented",
       "scope": "C int center; DrawCircleLinesV.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -39722,7 +39722,7 @@
       "mapping_state": "implemented",
       "scope": "36 RL_LINES every 10 degrees, the color (and its alpha flag) set once.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -39789,7 +39789,7 @@
       "mapping_state": "implemented",
       "scope": "C int center; DrawEllipseV.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -39855,7 +39855,7 @@
       "mapping_state": "implemented",
       "scope": "36 untextured triangles (center, i + 10, i) with horizontal and vertical radii.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -39922,7 +39922,7 @@
       "mapping_state": "implemented",
       "scope": "C int center; DrawEllipseLinesV.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -39988,7 +39988,7 @@
       "mapping_state": "implemented",
       "scope": "36 RL_LINES (i + 10, i), the color set per segment.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -40056,7 +40056,7 @@
       "scope": "Swapped radii and angles as rshapes.c; textured quads between the radii, or DrawCircleSector for a non-positive inner radius.",
       "gaps": [
         "Segments below ceil((end - start)/90) are estimated with acosf for M.Glibc239Libm only (other profiles mark the frame undefined); above 4096 the frame is marked undefined",
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -40126,7 +40126,7 @@
       "scope": "Swapped radii and angles as rshapes.c; outer and inner arcs as RL_LINES plus both end caps (showCapLines is always true), or DrawCircleSectorLines for a non-positive inner radius.",
       "gaps": [
         "Segment estimation (acosf of rshapes.c) only for M.Glibc239Libm; under other profiles, or above 4096 segments, the frame is marked undefined",
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -40390,7 +40390,7 @@
       "mapping_state": "implemented",
       "scope": "Rotation 0.0f skips sinf/cosf; others rotate the corners in rshapes.c's F32 order; textured quad, box or triangle fan after clipping.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -40787,7 +40787,7 @@
       "scope": "Corner arcs and the middle in rshapes.c quad/triangle order with the shapes texture coordinates; roundness <= 0 draws DrawRectangleRec; segments below 4 are estimated.",
       "gaps": [
         "Segment estimation (acosf of rshapes.c) only for M.Glibc239Libm; under other profiles, or above 4096 segments, the frame is marked undefined",
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -40855,7 +40855,7 @@
       "scope": "DrawRectangleRoundedLinesEx with thickness 1.",
       "gaps": [
         "Segment estimation (acosf of rshapes.c) only for M.Glibc239Libm; under other profiles, or above 4096 segments, the frame is marked undefined",
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -40923,7 +40923,7 @@
       "scope": "Thick outlines (thickness > 1) as quads with triangle corner arcs, otherwise RL_LINES, as rshapes.c; roundness <= 0 draws DrawRectangleLinesEx.",
       "gaps": [
         "Segment estimation (acosf of rshapes.c) only for M.Glibc239Libm; under other profiles, or above 4096 segments, the frame is marked undefined",
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -41255,7 +41255,7 @@
       "scope": "Sides below 3 become 3; textured quads (center, p(a), p(a + step), p(a)) with F32-accumulated angles.",
       "gaps": [
         "More than 4096 sides mark the frame undefined",
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -41323,7 +41323,7 @@
       "scope": "Sides below 3 become 3; RL_LINES (p(a), p(a + step)) per side.",
       "gaps": [
         "More than 4096 sides mark the frame undefined",
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -41391,7 +41391,7 @@
       "scope": "Quads between the radius and radius - lineThick/cosf(DEG2RAD*(360/sides*DEG2RAD)/2) per side; the Apple host cosf is correctly rounded on every such argument for 3..4096 sides (checked by the probe).",
       "gaps": [
         "More than 4096 sides mark the frame undefined",
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -41525,7 +41525,7 @@
       "scope": "B-spline segments of 24 divisions per group of 4 points drawn as triangle-strip ribbons, with circle caps at the start and end.",
       "gaps": [
         "Fewer than 4 points draw nothing",
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -41593,7 +41593,7 @@
       "scope": "Catmull-Rom segments of 24 divisions drawn as triangle-strip ribbons, with circle caps at the start and end.",
       "gaps": [
         "Fewer than 4 points draw nothing",
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; others mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); others mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions and uint8 stores outside (-1, 256) mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: about 23x slower than native rlsw for a 640x480 frame of 100 shapes, single-threaded (docs/FRAME.md)"
@@ -54067,7 +54067,7 @@
       "mapping_state": "implemented",
       "scope": "rlTranslatef, rlRotatef(angle, axis) and 36 lines every 10 degrees, the color set before each.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); other sinf/cosf arguments mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured"
@@ -54530,7 +54530,7 @@
       "mapping_state": "implemented",
       "scope": "DrawSphereEx with 16 rings and 16 slices.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); other sinf/cosf arguments mark the frame undefined",
         "Rings, slices and sides above 4096 mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -54598,7 +54598,7 @@
       "mapping_state": "implemented",
       "scope": "Incremental y and z rotations by cosf/sinf of DEG2RAD*(180/(rings + 1)) and DEG2RAD*(360/slices), scaled by the radius.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); other sinf/cosf arguments mark the frame undefined",
         "Rings, slices and sides above 4096 mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -54661,25 +54661,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "blocked",
+      "status": "partial",
       "jonlib": "Draw.sphere_wires_for / Draw.sphere_wires",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "mapping_state": "implemented",
+      "scope": "RL_LINES between ring points at DEG2RAD*(270 + 180/(rings + 1)*i) and slice angles DEG2RAD*(360*j/slices), scaled by the radius, as rmodels.c; the ring angles reach 450 degrees, so only the glibc profiles (glibc's own sinf/cosf, docs/SINCOSF.md) draw them.",
       "gaps": [
-        "A verified sinf/cosf domain beyond 2*PI for the Apple and glibc profiles"
+        "Libm: AppleLibm verifies one turn only, so every wire sphere is refused there; glibc every normal or zero argument",
+        "Rings above 4094 and slices above 4096 mark the frame undefined",
+        "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+        "Performance: not measured"
       ],
-      "blocker": "Its ring angles DEG2RAD*(270 + 180/(rings + 1)*i) reach 450 degrees; no M.Libm profile verifies sinf/cosf beyond one turn, so every drawn wire sphere is refused (the port is complete).",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
         "tools/models_probe.py",
         "docs/MODELS.md",
+        "docs/SINCOSF.md",
         "src/shapes3d.bend",
         "src/frame.bend"
       ],
@@ -54699,7 +54704,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Resolve: Its ring angles DEG2RAD*(270 + 180/(rings + 1)*i) reach 450 degrees; no M.Libm profile verifies sinf/cosf beyond one turn, so every drawn wire sphere is refused (the port is complete).",
+      "next_step": "Close documented gaps and unverified gates for DrawSphereWires.",
       "priority": 622
     },
     {
@@ -54730,7 +54735,7 @@
       "mapping_state": "implemented",
       "scope": "Body and cap (or cone) and base triangles at angles (DEG2RAD*i)*(360/sides); sides below 3 become 3.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); other sinf/cosf arguments mark the frame undefined",
         "Rings, slices and sides above 4096 mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -54798,7 +54803,7 @@
       "mapping_state": "implemented",
       "scope": "Triangles around start-end on the normalized perpendicular basis, angles ((2*PI)/sides)*i; nothing for start == end.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); other sinf/cosf arguments mark the frame undefined",
         "Rings, slices and sides above 4096 mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -54866,7 +54871,7 @@
       "mapping_state": "implemented",
       "scope": "Four lines per side at angles (DEG2RAD*i)*(360/sides).",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); other sinf/cosf arguments mark the frame undefined",
         "Rings, slices and sides above 4096 mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -54934,7 +54939,7 @@
       "mapping_state": "implemented",
       "scope": "Three lines per side on the DrawCylinderEx basis.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); other sinf/cosf arguments mark the frame undefined",
         "Rings, slices and sides above 4096 mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -55002,7 +55007,7 @@
       "mapping_state": "implemented",
       "scope": "Two hemispheres and the middle (none for start == end) on the normalized basis, angles ((2*PI)/slices)*j and (PI*0.5/rings)*i.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); other sinf/cosf arguments mark the frame undefined",
         "Rings, slices and sides above 4096 mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -55070,7 +55075,7 @@
       "mapping_state": "implemented",
       "scope": "The DrawCapsule points joined by lines.",
       "gaps": [
-        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc normal or zero |x| <= 6.283186f; other sinf/cosf arguments mark the frame undefined",
+        "Libm: AppleLibm accepts fl(DEG2RAD*d), integral |d| <= 360 except 13, 19, 22, 103, 188; glibc every normal or zero argument (glibc's own sinf/cosf); other sinf/cosf arguments mark the frame undefined",
         "Rings, slices and sides above 4096 mark the frame undefined",
         "Undefined native behavior: NaN or out-of-range C int and float-to-int conversions mark the frame undefined",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -56771,7 +56776,7 @@
       "mapping_state": "implemented",
       "scope": "sides triangles around the origin from sinf/cosf of DEG2RAD*d (d += 360/sides in F32), normals (0, 1, 0), zero texcoords; fewer than 3 sides the empty mesh.",
       "gaps": [
-        "More than 4096 sides or sinf/cosf arguments outside the profile (AppleLibm: integral degrees up to 360 except 13, 19, 22, 103, 188; glibc |x| <= 6.283186f) are None",
+        "More than 4096 sides or sinf/cosf arguments outside the profile (AppleLibm: integral degrees up to 360 except 13, 19, 22, 103, 188; glibc every finite argument) are None",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
         "Performance: not measured"
       ],
@@ -65976,9 +65981,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector2.rotate_for / jonmath.Vector2.rotate",
       "mapping_state": "implemented",
-      "scope": "Bounded finite F32 radians within one cycle, explicit AppleLibm/Glibc239Libm numerical reference, uncontracted component arithmetic.",
+      "scope": "Finite F32 radians (AppleLibm one cycle; glibc profiles any finite, docs/SINCOSF.md), explicit numerical reference, uncontracted component arithmetic.",
       "gaps": [
-        "Wider-angle and exceptional/subnormal domains",
+        "Wider AppleLibm angles; wide-angle fixtures (the glibc kernel is gated by glibc-sinf); exceptional/subnormal domains",
         "Other libm/contracted variants",
         "Full target/performance coverage",
         "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
@@ -67848,9 +67853,9 @@
       "status": "partial",
       "jonlib": "jonmath.Vector3.rotate_by_axis_angle_for / jonmath.Vector3.rotate_by_axis_angle",
       "mapping_state": "implemented",
-      "scope": "Finite vectors and bounded one-cycle radians; explicit reference trigonometry with the original two-cross-product Euler-Rodrigues order and zero-axis behavior.",
+      "scope": "Finite vectors and radians (AppleLibm one cycle; glibc profiles any finite, docs/SINCOSF.md); explicit reference trigonometry with the original two-cross-product Euler-Rodrigues order and zero-axis behavior.",
       "gaps": [
-        "Wider-angle, exceptional/subnormal and contracted domains",
+        "Wider AppleLibm angles; wide-angle fixtures (the glibc kernel is gated by glibc-sinf); exceptional/subnormal and contracted domains",
         "Other libm/target/performance coverage",
         "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
@@ -70689,9 +70694,9 @@
       "status": "partial",
       "jonlib": "jonmath.Matrix.rotate_for / jonmath.Matrix.rotate",
       "mapping_state": "implemented",
-      "scope": "Bounded one-cycle F32 angle and finite axis; reference skips normalization for zero/exactly-unit squared axes, with explicit trigonometric profile.",
+      "scope": "F32 angle (AppleLibm one cycle; glibc profiles any finite, docs/SINCOSF.md) and finite axis; reference skips normalization for zero/exactly-unit squared axes, with explicit trigonometric profile.",
       "gaps": [
-        "Wider-angle, exceptional/subnormal and contracted profiles",
+        "Wider AppleLibm angles; wide-angle fixtures (the glibc kernel is gated by glibc-sinf); exceptional/subnormal and contracted profiles",
         "Other libm/target/performance coverage",
         "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
@@ -70751,9 +70756,9 @@
       "status": "partial",
       "jonlib": "jonmath.Matrix.rotate_x_for / jonmath.Matrix.rotate_x",
       "mapping_state": "implemented",
-      "scope": "Bounded one-cycle F32 radians, explicit reference trigonometry and exact raw cosine/sine fields with signed-zero behavior.",
+      "scope": "F32 radians (AppleLibm one cycle; glibc profiles any finite, docs/SINCOSF.md), explicit reference trigonometry and exact raw cosine/sine fields with signed-zero behavior.",
       "gaps": [
-        "Wider-angle and exceptional/subnormal profiles",
+        "Wider AppleLibm angles; wide-angle fixtures (the glibc kernel is gated by glibc-sinf); exceptional/subnormal profiles",
         "Other libm/target/performance coverage",
         "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
@@ -70812,9 +70817,9 @@
       "status": "partial",
       "jonlib": "jonmath.Matrix.rotate_y_for / jonmath.Matrix.rotate_y",
       "mapping_state": "implemented",
-      "scope": "Bounded one-cycle F32 radians with explicit reference trigonometry and reference field signs/order.",
+      "scope": "F32 radians (AppleLibm one cycle; glibc profiles any finite, docs/SINCOSF.md) with explicit reference trigonometry and reference field signs/order.",
       "gaps": [
-        "Wider-angle and exceptional/subnormal profiles",
+        "Wider AppleLibm angles; wide-angle fixtures (the glibc kernel is gated by glibc-sinf); exceptional/subnormal profiles",
         "Other libm/target/performance coverage",
         "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
@@ -70873,9 +70878,9 @@
       "status": "partial",
       "jonlib": "jonmath.Matrix.rotate_z_for / jonmath.Matrix.rotate_z",
       "mapping_state": "implemented",
-      "scope": "Bounded one-cycle F32 radians with explicit reference trigonometry and reference field signs/order.",
+      "scope": "F32 radians (AppleLibm one cycle; glibc profiles any finite, docs/SINCOSF.md) with explicit reference trigonometry and reference field signs/order.",
       "gaps": [
-        "Wider-angle and exceptional/subnormal profiles",
+        "Wider AppleLibm angles; wide-angle fixtures (the glibc kernel is gated by glibc-sinf); exceptional/subnormal profiles",
         "Other libm/target/performance coverage",
         "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
@@ -70934,9 +70939,9 @@
       "status": "partial",
       "jonlib": "jonmath.Matrix.rotate_xyz_for / jonmath.Matrix.rotate_xyz",
       "mapping_state": "implemented",
-      "scope": "Bounded one-cycle F32 Euler radians; explicit reference trigonometry and unchanged negative-angle XYZ formulas/accumulation order.",
+      "scope": "F32 Euler radians (AppleLibm one cycle; glibc profiles any finite, docs/SINCOSF.md); explicit reference trigonometry and unchanged negative-angle XYZ formulas/accumulation order.",
       "gaps": [
-        "Wider-angle, exceptional/subnormal and contracted profiles",
+        "Wider AppleLibm angles; wide-angle fixtures (the glibc kernel is gated by glibc-sinf); exceptional/subnormal and contracted profiles",
         "Other libm/target/performance coverage",
         "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
@@ -70996,9 +71001,9 @@
       "status": "partial",
       "jonlib": "jonmath.Matrix.rotate_zyx_for / jonmath.Matrix.rotate_zyx",
       "mapping_state": "implemented",
-      "scope": "Bounded one-cycle F32 Euler radians; explicit reference trigonometry and distinct reference ZYX formulas/accumulation order.",
+      "scope": "F32 Euler radians (AppleLibm one cycle; glibc profiles any finite, docs/SINCOSF.md); explicit reference trigonometry and distinct reference ZYX formulas/accumulation order.",
       "gaps": [
-        "Wider-angle, exceptional/subnormal and contracted profiles",
+        "Wider AppleLibm angles; wide-angle fixtures (the glibc kernel is gated by glibc-sinf); exceptional/subnormal and contracted profiles",
         "Other libm/target/performance coverage",
         "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
@@ -72208,7 +72213,7 @@
       "scope": "The reference hemisphere flip, copy (|cos| >= 1) and nlerp (cos > 0.95) branches, and acosf/sinf weighting under Glibc239Libm: glibc 2.39's Sun acosf and the GNU sinf kernel, uncontracted F32; compared with raymath built on the pinned acosf source and, on Linux x86_64 glibc 2.39, the host libm.",
       "gaps": [
         "AppleLibm and Glibc241Libm acosf (None where the result needs acosf)",
-        "sinf arguments outside |x| <= 6.283186 and NaN cosines are None",
+        "sinf arguments Libm.sin refuses (Apple outside |x| <= 6.283186, glibc nonfinite) and NaN cosines are None",
         "Contracted (FMA) builds such as aarch64 glibc",
         "Other target/performance coverage"
       ],
@@ -72511,9 +72516,9 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.from_axis_angle_for / jonmath.Quaternion.from_axis_angle",
       "mapping_state": "implemented",
-      "scope": "Finite axis and bounded one-cycle radians with explicit reference trigonometry; zero axis returns identity, otherwise half-angle construction and reference quaternion normalization.",
+      "scope": "Finite axis and radians (AppleLibm one cycle; glibc profiles any finite, glibc's sinf/cosf, docs/SINCOSF.md) with explicit reference trigonometry; zero axis returns identity, otherwise half-angle construction and reference quaternion normalization.",
       "gaps": [
-        "Wider-angle, exceptional/subnormal and contracted domains",
+        "Wider AppleLibm angles; wide-angle fixtures (the glibc kernel is gated by glibc-sinf); exceptional/subnormal and contracted domains",
         "Other libm/target/performance coverage",
         "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
@@ -72636,9 +72641,9 @@
       "status": "partial",
       "jonlib": "jonmath.Quaternion.from_euler_for / jonmath.Quaternion.from_euler",
       "mapping_state": "implemented",
-      "scope": "Bounded one-cycle pitch/yaw/roll radians with explicit reference trigonometry and unchanged half-angle coefficient order.",
+      "scope": "Pitch/yaw/roll radians (AppleLibm one cycle; glibc profiles any finite, docs/SINCOSF.md) with explicit reference trigonometry and unchanged half-angle coefficient order.",
       "gaps": [
-        "Wider-angle, exceptional/subnormal and contracted domains",
+        "Wider AppleLibm angles; wide-angle fixtures (the glibc kernel is gated by glibc-sinf); exceptional/subnormal and contracted domains",
         "Other libm/target/performance coverage",
         "AppleLibm sine/cosine is correctly rounded but macOS arm64 sinf/cosf are not: about 3% of non-integral arguments differ by one ulp (gates sample integral degrees only; see docs/ROTATION.md)"
       ],
@@ -102792,7 +102797,7 @@
       "scope": "Maybe<Camera3D>: Euler-Rodrigues rotation of the view vector around the normalized up, moving the position (around the target) or the target; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm sinf/cosf profile. None when the sinf/cosf argument (angle/2) is not reproduced.",
       "gaps": [
         "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
-        "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+        "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
         "Full target/performance coverage"
@@ -102857,7 +102862,7 @@
       "scope": "Maybe<Camera3D>: rotation of the view (and with rotateUp the up vector) around GetCameraRight; lockView clamps with two checked atan2f angles in raylib's order; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm profile. None outside the checked angle contract or the reproduced sinf/cosf arguments.",
       "gaps": [
         "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
-        "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+        "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
         "lockView angles outside the checked atan2f contract (subnormal intermediates or results)",
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
@@ -102923,7 +102928,7 @@
       "scope": "Maybe<Camera3D>: rotation of the up vector around GetCameraForward; explicit uncontracted and arm64 Apple-clang FMA profiles (total binary32 FMA kernel) and the M.Libm sinf/cosf profile. None when the sinf/cosf argument (angle/2) is not reproduced.",
       "gaps": [
         "AppleLibm: Jonmath's sine/cosine is not macOS arm64 sinf/cosf, so nonzero sinf/cosf arguments are None",
-        "Glibc profiles: subnormal sinf/cosf arguments and |angle| > 6.283186f are None",
+        "Glibc profiles: subnormal and nonfinite sinf/cosf arguments are None",
         "Other compilers' contraction and optimization choices",
         "NaN sign and payload are not reproduced",
         "Full target/performance coverage"

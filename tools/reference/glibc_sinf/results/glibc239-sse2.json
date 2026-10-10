@@ -1,0 +1,1 @@
+{"glibc": "2.39-0ubuntu8.9", "host": "Ubuntu 24.04 amd64", "variant": "sse2", "model": "FUSED=0", "glibc_tunables": "glibc.cpu.hwcaps=-AVX2,-FMA,-FMA4", "arguments": 4294967296, "sinf_differences": 0, "cosf_differences": 0, "sincosf_differences": 0, "domain_violations": 0}

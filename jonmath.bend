@@ -14,6 +14,7 @@
 # sections may extend an earlier type (e.g. Vector3 helpers after Matrix).
 import Base
 import ./src/trig.bend as Trig
+import ./src/sincosf.bend as Sincosf
 import ./src/inverse_trig.bend as InverseTrig
 import ./src/asin.bend as Asin
 import ./src/power.bend as Power
@@ -1268,9 +1269,23 @@ def Libm.pow(libm: Libm, +x: F32, +exponent: U32) -> Maybe<F32>:
     case Glibc239Libm{}: Power.power(x, exponent)
     case _: None{}
 
-# sinf through the bounded GNU/Apple kernels: None outside |x| <= 6.283186.
+def Libm.cos.value(values: F32 & F32) -> F32:
+  (cosine, _) = values
+  cosine
+
+# sinf under a reference profile: glibc's x86_64 sinf for every finite x under
+# both glibc profiles (docs/SINCOSF.md); the bounded Apple kernel for
+# |x| <= 6.283186 under AppleLibm. None otherwise (infinities, NaN).
 def Libm.sin(libm: Libm, +x: F32) -> Maybe<F32>:
-  Bool.pick(Maybe<F32>, (F32.abs(x) <= 6.283186 : F32), Some{Libm.sin.value(Trig.sincos_for(Libm.gnu(libm), x))}, None{})
+  match libm:
+    case AppleLibm{}: Bool.pick(Maybe<F32>, (F32.abs(x) <= 6.283186 : F32), Some{Libm.sin.value(Trig.sincos_for(False{}, x))}, None{})
+    case _: Sincosf.sinf(x)
+
+# cosf under a reference profile, with the domains of Libm.sin.
+def Libm.cos(libm: Libm, +x: F32) -> Maybe<F32>:
+  match libm:
+    case AppleLibm{}: Bool.pick(Maybe<F32>, (F32.abs(x) <= 6.283186 : F32), Some{Libm.cos.value(Trig.sincos_for(False{}, x))}, None{})
+    case _: Sincosf.cosf(x)
 
 def Quaternion.slerp.ratios(+left: Vector4, +right: Vector4, +sine: F32, first: Maybe<F32>, second: Maybe<F32>) -> Maybe<Vector4>:
   match first second:
@@ -1296,7 +1311,7 @@ def Quaternion.slerp.branch(kind: U32, +libm: Libm, +left: Vector4, +right: Vect
 # flip, the copy (|cos| >= 1) and nlerp (cos > 0.95) branches, and otherwise
 # acosf/sinf from the profile. None when that branch needs an acosf the
 # profile lacks (see Libm.acos), for a NaN cosine, or for a sinf argument
-# outside |x| <= 6.283186.
+# Libm.sin refuses.
 def Quaternion.slerp_for(+libm: Libm, +left: Vector4, +right: Vector4, +amount: F32) -> Maybe<Vector4>:
   +dot = Vector4.dot_product(left, right)
   +flip = (dot < 0.0 : F32)
