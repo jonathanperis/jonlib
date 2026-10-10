@@ -2678,7 +2678,7 @@
   {
    "name": "textures_clipboard_image",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
