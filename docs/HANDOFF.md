@@ -24,7 +24,7 @@ Bend and replaying it against the native example. Work autonomously; merge to
 Coverage (`python3 tools/api_plan.py check`): raylib.h 514/600 partial
 (20 blocked, 66 not started); raymath.h 146/146; rlgl.h 93/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **130/212 ported**, 40 ready, 42 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **131/212 ported**, 39 ready, 42 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)

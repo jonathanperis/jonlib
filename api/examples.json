@@ -1125,7 +1125,7 @@
   {
    "name": "core_undo_redo",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
