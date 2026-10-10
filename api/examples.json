@@ -112,7 +112,7 @@
   {
    "name": "core_input_gamepad",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",
