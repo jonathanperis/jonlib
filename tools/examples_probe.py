@@ -83,7 +83,7 @@ TARGET_FPS = {'shapes_kaleidoscope': 20, 'shapes_penrose_tile': 120}
 KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_A, KEY_H, KEY_R, KEY_S = 262, 263, 264, 265, 65, 72, 82, 83
 KEY_G, KEY_SPACE, KEY_C, KEY_ENTER = 71, 32, 67, 257
 KEY_ONE, KEY_TWO, KEY_THREE = 49, 50, 51
-KEY_P = 80
+KEY_P, KEY_W, KEY_D, KEY_TAB = 80, 87, 68, 258
 
 # name: (raylib source, setup expression, State is Data, needs the logo image)
 EXAMPLES = {
@@ -163,12 +163,15 @@ EXAMPLES = {
     'shaders_shapes_textures': ('shaders/shaders_shapes_textures.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_texture_tiling': ('shaders/shaders_texture_tiling.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_model_shader': ('shaders/shaders_model_shader.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_fog_rendering': ('shaders/shaders_fog_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shaders_mandelbrot_set': ('shaders/shaders_mandelbrot_set.c', 'Ex.setup(core, frame)'),
     'shaders_raymarching_rendering': ('shaders/shaders_raymarching_rendering.c', 'Ex.setup(core, frame)'),
     'core_basic_screen_manager': ('core/core_basic_screen_manager.c', 'Ex.setup(core, frame)'),
     'core_window_letterbox': ('core/core_window_letterbox.c', 'Ex.setup(seed, core, frame)'),
     'core_input_multitouch': ('core/core_input_multitouch.c', 'Ex.setup(core, frame)'),
     'core_input_gestures': ('core/core_input_gestures.c', 'Ex.setup(core, frame)'),
+    'core_input_actions': ('core/core_input_actions.c', 'Ex.setup(core, frame)'),
+    'core_text_file_loading': ('core/core_text_file_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_input_virtual_controls': ('core/core_input_virtual_controls.c', 'Ex.setup(core, frame)'),
     'shapes_math_angle_rotation': ('shapes/shapes_math_angle_rotation.c', 'Ex.setup(core, frame)'),
     'shapes_following_eyes': ('shapes/shapes_following_eyes.c', 'Ex.setup(core, frame)'),
@@ -210,7 +213,8 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'textures_image_processing', 'textures_polygon_drawing', 'textures_magnifying_glass',
             'models_heightmap_rendering', 'models_cubicmap_rendering',
             'models_first_person_maze', 'shaders_model_shader',
-            'models_yaw_pitch_roll', 'models_loading'}
+            'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering',
+            'core_text_file_loading'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -219,12 +223,13 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'shaders_basic_lighting', 'shaders_texture_tiling', 'models_billboard_rendering',
                'models_tesseract_view', 'models_directional_billboard', 'models_heightmap_rendering',
                'models_cubicmap_rendering', 'models_first_person_maze', 'shaders_model_shader',
-               'models_yaw_pitch_roll', 'models_loading'}
+               'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
-                'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32}
+                'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32,
+                'shaders_fog_rendering': 32}
 
 
 # -----------------------------------------------------------------------------
@@ -416,6 +421,8 @@ def scripts():
         # The first-person camera moves (mouse, W) without any visible change.
         script('shaders_raymarching_rendering', 'walk', [quick(), quick([mouse_at(430, 240)]), slow([key(87)]), quick([key(87, False)])]),
         # Mouse look around the cube, then Z looks back at (0, 0.5, 0).
+        # Three frames (the scene has over twenty thousand triangles): the density up, then down.
+        script('shaders_fog_rendering', 'density', [quick(), slow([key(KEY_UP)]), quick([key(KEY_UP, False), key(KEY_DOWN)])]),
         script('shaders_model_shader', 'look', [quick(), quick([mouse_at(420, 235)]), slow([key(87)]), quick([key(87, False)])]),
         script('shaders_texture_tiling', 'look', [quick(), quick([mouse_at(420, 235)]), slow([mouse_at(380, 250)]), quick([key(90)]),
                                                   quick([key(90, False)])]),
@@ -503,6 +510,16 @@ def scripts():
         # 375 tiles, which the JavaScript lane takes many seconds for).
         script('textures_fog_of_war', 'walk', [quick(), quick([key(KEY_RIGHT), key(KEY_DOWN)])] + [quick() for _ in range(5)]
                + [slow([key(KEY_RIGHT, False), key(KEY_DOWN, False), key(KEY_LEFT), key(KEY_UP)]), quick([key(KEY_LEFT, False), key(KEY_UP, False)])], seed=0xF06),
+        # The wheel scrolls down, back past the top (snapped to 0) and far past the end (snapped to the last page).
+        script('core_text_file_loading', 'scroll', [quick(), quick([(MOUSE_WHEEL, 0, -3, 0)]), slow([(MOUSE_WHEEL, 0, 5, 0)]),
+                                                    quick([(MOUSE_WHEEL, 0, -200, 0)]), quick()]),
+        # WASD moves; SPACE centers and its release shows blue for a frame; TAB switches to the arrows (W
+        # then does nothing), and back.
+        script('core_input_actions', 'sets', [quick(), quick([key(KEY_W), key(KEY_D)]), quick(), slow([key(KEY_W, False), key(KEY_S)]),
+                                              quick([key(KEY_D, False), key(KEY_S, False), key(KEY_A)]), quick([key(KEY_A, False), key(KEY_SPACE)]),
+                                              quick(), quick([key(KEY_SPACE, False)]), quick([key(KEY_TAB)]), quick([key(KEY_TAB, False), key(KEY_W), key(KEY_LEFT)]),
+                                              quick([key(KEY_UP)]), quick([key(KEY_W, False), key(KEY_LEFT, False), key(KEY_UP, False), key(KEY_TAB)]),
+                                              quick([key(KEY_TAB, False), key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)])]),
         # Gestures (INPUT_GESTURE) inside the area: a tap, the same again (not logged), hold, drag, the swipes
         # and pinches; one outside the area; then taps and holds past the twentieth entry (the log restarts).
         script('core_input_gestures', 'log', [quick(), quick([mouse_at(400, 200)]), quick([gesture(1)]), quick([gesture(1)]), slow([gesture(4)]),

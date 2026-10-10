@@ -1185,7 +1185,7 @@
   {
    "name": "core_input_actions",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1360,7 +1360,7 @@
   {
    "name": "core_text_file_loading",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode2D",
@@ -5839,7 +5839,7 @@
   {
    "name": "shaders_fog_rendering",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
