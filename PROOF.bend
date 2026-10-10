@@ -618,6 +618,18 @@ def Laws.glibc_cosf_negative_zero():
 def Laws.glibc_sinf_infinity_none():
   {==}
 
+def Laws.float64_to_int_truncates_toward_zero():
+  {==}
+
+def Laws.float64_to_int_2_31_none():
+  {==}
+
+def Laws.float64_to_int_infinity_none(low):
+  {==}
+
+def Laws.float64_to_f32_infinity_none():
+  {==}
+
 def Laws.gui_default_text_size():
   {==}
 
@@ -768,6 +780,30 @@ def Laws.font_measure_empty(face, size, spacing, line):
   {==}
 
 def Laws.font_unload_default(frame, base, padding, glyphs, width, height, format, linear, alpha, texels, atlas):
+  {==}
+
+def Laws.surface_colors_image_is_rgba8(width, height, pixels):
+  {==}
+
+def Laws.surface_colors_image_failure_kept(failure):
+  {==}
+
+def Laws.font_texture_size_is_the_textures(base, padding, glyphs, id, width, height, format, linear, alpha, texels, atlas):
+  {==}
+
+def Laws.render_depth_unstashed(wanted):
+  {==}
+
+def Laws.render_depth_starts_zeroed(count):
+  {==}
+
+def Laws.render_depth_kept_between_modes(depth):
+  {==}
+
+def Laws.render_depth_other_framebuffer_stays(depth):
+  {==}
+
+def Laws.render_depth_reused(depth, count):
   {==}
 
 def Laws.rlgl_blend_mode_unchanged(frame, mode):

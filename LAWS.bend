@@ -873,6 +873,23 @@ law glibc_cosf_negative_zero:
 law glibc_sinf_infinity_none:
   {Sincosf.sinf.word(2139095040) == None{} : Maybe<U32>}
 
+# (int) and (float) of a binary64 value (M.Float64.to_int, to_f32): the
+# truncation toward zero as a two's-complement word (-2.5 is -2), None from
+# 2^31 on, where C's conversion is undefined, and for an infinity; (float)
+# of an infinity is None too.
+law float64_to_int_truncates_toward_zero:
+  {M.Float64.to_int(M.Float64{3221487616, 0}) == Some{4294967294} : Maybe<U32>}
+
+law float64_to_int_2_31_none:
+  {M.Float64.to_int(M.Float64{1105199104, 0}) == None{} : Maybe<U32>}
+
+law float64_to_int_infinity_none:
+  for low: U32
+  {M.Float64.to_int(M.Float64{2146435072, low}) == None{} : Maybe<U32>}
+
+law float64_to_f32_infinity_none:
+  {M.Float64.to_f32(M.Float64{2146435072, 0}) == None{} : Maybe<F32>}
+
 # Jongui (raygui): the default style, GuiSetStyle's propagation of a DEFAULT
 # base property (and only those), and GuiEnable/GuiDisable.
 law gui_default_text_size:
@@ -1115,6 +1132,62 @@ law font_unload_default:
   for texels: Maybe<Array<U32>>
   for atlas: J.Surface
   {J.Font.unload(frame, J.Font{base, padding, glyphs, J.Texture{1, width, height, format, linear, alpha, texels}, atlas}) == frame : J.Frame}
+
+# LoadImageColors kept as an image (Surface.colors_image): the canonical
+# colors are an R8G8B8A8 image (format 7) of the same size, and a failure is
+# handed on with its owner.
+law surface_colors_image_is_rgba8:
+  for width: U32
+  for height: U32
+  for pixels: Array<U32>
+  {J.Surface.colors_image.rgba(Done{J.Rgba{width, height, pixels}}) == Done{J.Surface{width, height, 7, J.Words{pixels}}} : Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>}
+
+law surface_colors_image_failure_kept:
+  for failure: J.Surface & J.Surface.Error
+  {J.Surface.colors_image.rgba(Fail{failure}) == Fail{failure} : Result<&1, &1, J.Surface & J.Surface.Error, J.Surface>}
+
+# font.texture.width and font.texture.height (Font.texture_size) are the
+# texture's own, and the font comes back as it was.
+law font_texture_size_is_the_textures:
+  for base: U32
+  for padding: U32
+  for glyphs: +List<FontCore.Glyph>
+  for id: U32
+  for width: U32
+  for height: U32
+  for format: U32
+  for linear: Bool
+  for alpha: Bool
+  for texels: Maybe<Array<U32>>
+  for atlas: J.Surface
+  {J.Font.texture_size(J.Font{base, padding, glyphs, J.Texture{id, width, height, format, linear, alpha, texels}, atlas}) ==
+    (J.Font{base, padding, glyphs, J.Texture{id, width, height, format, linear, alpha, texels}, atlas}, (width, height)) : J.Font & (U32 & U32)}
+
+# Render textures (docs/RLGL.md): every framebuffer has its own depth buffer,
+# as rlsw gives each a depth renderbuffer. One that was never drawn into has
+# none set aside and starts from a zeroed buffer; BeginTextureMode takes the
+# framebuffer's own buffer back (it is kept between texture modes) and leaves
+# another framebuffer's where it is.
+law render_depth_unstashed:
+  for wanted: U32
+  {FrameCore.Stash.take(Nil{}, wanted, (Nil{}, None{})) == (Nil{}, None{}) : List<FrameCore.Stash> & Maybe<Array<U32>>}
+
+law render_depth_starts_zeroed:
+  for count: U32
+  {FrameCore.Stash.buffer(None{}, count) == Array.new(U32, FrameCore.depth(count), 0) : Array<U32>}
+
+law render_depth_kept_between_modes:
+  for depth: Array<U32>
+  {FrameCore.Stash.take(Con{FrameCore.Stash{3, depth}, Nil{}}, 3, (Nil{}, None{})) == (Nil{}, Some{depth}) : List<FrameCore.Stash> & Maybe<Array<U32>>}
+
+law render_depth_other_framebuffer_stays:
+  for depth: Array<U32>
+  {FrameCore.Stash.take(Con{FrameCore.Stash{2, depth}, Nil{}}, 3, (Nil{}, None{})) == (Con{FrameCore.Stash{2, depth}, Nil{}}, None{}) : List<FrameCore.Stash> & Maybe<Array<U32>>}
+
+law render_depth_reused:
+  for depth: Array<U32>
+  for count: U32
+  {FrameCore.Stash.buffer(Some{depth}, count) == depth : Array<U32>}
 
 # rlgl under OpenGL 1.1 (GRAPHICS_API_OPENGL_SOFTWARE): rlSetBlendMode exists
 # for OpenGL 3.3/ES2 only and leaves the frame; rlGetVersion is
