@@ -84,7 +84,10 @@ measured there use 2.7 times their Linux time). The aggregate job `CPU and
 JavaScript (ubuntu-24.04)` passes only when everything the scope asked for
 passed (every shard on every host of the run, or every scoped job);
 `CPU and JavaScript (macos-15)` exists in the runs that include macOS.
-Documentation-only changes skip this workflow. The pinned Bend checkout, its
+The workflow has no path filter (GitHub evaluates one on the commits a push
+adds to the repository, so a branch created at a commit another ref already
+holds would start no run): a documentation-only change is a `none` scope,
+answered in seconds. The pinned Bend checkout, its
 declared overlay and the pinned raylib checkout come from `toolchain.json`
 through `.github/actions/setup-pinned`.
 

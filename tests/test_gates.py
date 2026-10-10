@@ -120,6 +120,11 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(scoped.count("if: ${{ matrix.gates != '' }}") + scoped.count("if: ${{ matrix.examples != '' }}"), 2)
         self.assertIn('if-no-files-found: error', scoped)
 
+    def test_every_push_starts_a_run(self):
+        # A path filter is evaluated on the commits new to the repository: a branch at an existing commit would start nothing.
+        self.assertNotIn('paths-ignore', self.text)
+        self.assertNotIn('paths:', self.text)
+
     def test_runs_on_main_are_not_cancelled_by_pushes(self):
         self.assertIn("group: conformance-${{ github.event_name == 'schedule' && 'nightly' || github.ref == 'refs/heads/main' && github.sha || github.ref }}", self.text)
         self.assertRegex(self.text, r"schedule:\n    - cron: '")
