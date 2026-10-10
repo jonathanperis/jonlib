@@ -3929,7 +3929,7 @@
   "LoadRenderTexture": {
     "jonlib": "RenderTexture.load",
     "status": "profile-covered",
-    "scope": "Sizes 1..4096: a framebuffer id (None when the 7 are in use), a zeroed R8G8B8A8 color texture (alpha mode set, as rlsw assumes for a texture without data) and a depth renderbuffer from the texture pool.",
+    "scope": "Sizes 1..4096: a framebuffer id (None when the 7 are in use), a zeroed R8G8B8A8 color texture (alpha mode set, as rlsw assumes for a texture without data) and a depth renderbuffer from the texture pool (a zeroed D32 buffer the frame keeps by framebuffer id until UnloadRenderTexture).",
     "gaps": [
       "Other sizes, fewer than two free texture ids and calls during texture mode are refused (frame undefined)",
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"

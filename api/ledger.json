@@ -48306,7 +48306,7 @@
       "status": "partial",
       "jonlib": "RenderTexture.load",
       "mapping_state": "implemented",
-      "scope": "Sizes 1..4096: a framebuffer id (None when the 7 are in use), a zeroed R8G8B8A8 color texture (alpha mode set, as rlsw assumes for a texture without data) and a depth renderbuffer from the texture pool.",
+      "scope": "Sizes 1..4096: a framebuffer id (None when the 7 are in use), a zeroed R8G8B8A8 color texture (alpha mode set, as rlsw assumes for a texture without data) and a depth renderbuffer from the texture pool (a zeroed D32 buffer the frame keeps by framebuffer id until UnloadRenderTexture).",
       "gaps": [
         "Other sizes, fewer than two free texture ids and calls during texture mode are refused (frame undefined)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -94481,9 +94481,8 @@
       "status": "partial",
       "jonlib": "Rlgl.enable_depth_test",
       "mapping_state": "implemented",
-      "scope": "rlsw's depth test on its D32 float buffer: z above the stored depth is discarded, otherwise stored.",
+      "scope": "rlsw's depth test on the current target's D32 float buffer (the screen's, or the render texture's own, zeroed at creation and kept between texture modes): z above the stored depth is discarded, otherwise stored.",
       "gaps": [
-        "Depth-tested drawing into a render texture marks the frame undefined (its depth buffer is not modeled)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
@@ -95990,9 +95989,8 @@
       "status": "partial",
       "jonlib": "Rlgl.clear_screen_buffers",
       "mapping_state": "implemented",
-      "scope": "glClear(COLOR | DEPTH): the color buffer and the screen depth buffer (1.0), within the clamped scissor rectangle when the test is enabled.",
+      "scope": "glClear(COLOR | DEPTH): the current target's color buffer and depth buffer (1.0), within the clamped scissor rectangle when the test is enabled.",
       "gaps": [
-        "A render texture's depth buffer is not modeled",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,

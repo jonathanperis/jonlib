@@ -8029,7 +8029,7 @@ def RenderTexture.load(frame: Frame, +width: U32, +height: U32) -> Frame & Maybe
 def RenderTexture.release(offscreen: Bool, +fbo: U32, +color: U32, +depth: U32, canvas: FrameCore.Canvas) -> FrameCore.Canvas:
   match offscreen:
     case True{}: FrameCore.Canvas.refuse(canvas)
-    case False{}: FrameCore.Canvas.give(True{}, fbo, FrameCore.Canvas.give(False{}, depth, FrameCore.Canvas.give(False{}, color, canvas)))
+    case False{}: FrameCore.Canvas.give(True{}, fbo, FrameCore.Canvas.give(False{}, depth, FrameCore.Canvas.give(False{}, color, FrameCore.Canvas.forget(fbo, canvas))))
 
 def RenderTexture.unload.flagged(+fbo: U32, +color: U32, +depth: U32, flagged: FrameCore.Canvas & Bool) -> Frame:
   (canvas, offscreen) = flagged
@@ -8040,9 +8040,9 @@ def RenderTexture.unload.texture(frame: Frame, +fbo: U32, +depth: U32, texture: 
   Texture{+color, _, _, _, _, _, _} = texture
   RenderTexture.unload.flagged(fbo, color, depth, FrameCore.Canvas.offscreen(canvas))
 
-# UnloadRenderTexture: the color texture's id, then the depth renderbuffer's,
-# return to the texture pool and the framebuffer's to its pool. Refused during
-# texture mode (rlgl rebinds framebuffer 0).
+# UnloadRenderTexture: the color texture's id, then the depth renderbuffer's
+# (with its depth buffer), return to the texture pool and the framebuffer's to
+# its pool. Refused during texture mode (rlgl rebinds framebuffer 0).
 def RenderTexture.unload(frame: Frame, target: RenderTexture) -> Frame:
   RenderTexture{+fbo, texture, +depth} = target
   RenderTexture.unload.texture(frame, fbo, depth, texture)

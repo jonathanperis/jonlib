@@ -450,8 +450,8 @@ current color buffer (the render texture's in texture mode).
 `Frame.end_mode_3d` pops the projection and resets the modelview; the depth
 test stays enabled, so later 2D drawing is depth-tested as in raylib. Ending
 a mode that was never begun pops the last projection (undefined in rlsw):
-the frame is refused. Depth-tested drawing into a render texture is refused
-([RLGL.md](RLGL.md#refusals)).
+the frame is refused. A render texture has its own depth buffer
+([RLGL.md](RLGL.md)).
 
 Each shape is the `rlPushMatrix`/`rlTranslatef`/`rlRotatef`/`rlScalef`/
 `rlBegin`/`rlColor4ub`/`rlVertex3f`/`rlEnd`/`rlPopMatrix` stream of

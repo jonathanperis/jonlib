@@ -58,7 +58,11 @@ and `rlsw.h`, and checked by the probe:
   enabled a fragment is discarded when its z exceeds the stored depth,
   otherwise z is stored and the color written; `glDepthFunc` and
   `glDepthMask` are no-ops. `rlClearScreenBuffers` and `ClearBackground`
-  clear it to 1.0 (within the scissor rectangle when the test is on).
+  clear it to 1.0 (within the scissor rectangle when the test is on). A
+  render texture has its own D32 depth renderbuffer, which rlsw allocates
+  zeroed (depth 0.0, so before a clear only fragments at depth 0 pass) and
+  keeps between texture modes; the frame holds it by framebuffer id until
+  `UnloadRenderTexture`.
 - **Culling.** On by default (back faces). `rlSetCullFace(RL_CULL_FACE_FRONT)`
   culls front faces. `sw_triangle_face_culling` uses the `(x, y, w)`
   determinant of the first three clip-space vertices: back-face culling keeps
@@ -79,7 +83,7 @@ and `rlsw.h`, and checked by the probe:
   square is not bounds-checked: a pixel outside the buffer is refused.
   `rlGetPointSize` returns `2*radius`.
 - **Clears.** `rlClearColor` takes bytes; `rlClearScreenBuffers` clears color
-  and depth (depth only on the screen).
+  and depth (the current target's: the screen's or the render texture's).
 - **OpenGL 3.3-only calls.** Blend modes and factors, shaders, vertex arrays
   and buffers, stereo rendering, cubemaps, framebuffer blits, draw buffers,
   `rlLoadDrawCube`/`rlLoadDrawQuad`, render-batch control, `rlCheckErrors`,
@@ -161,9 +165,7 @@ A refused call marks the frame undefined (readbacks are `None`), as in
   widths above 4096, NaN point sizes or radii beyond 4096, `rlScissor` values
   beyond `2^22`, segment estimates under a profile other than glibc 2.39,
   `DrawSplineBezierCubic` under glibc 2.41, more than 4096 dashes, segments or
-  polygon sides;
-- depth-tested drawing into a render texture (its depth buffer is not
-  modeled).
+  polygon sides.
 
 ## Verification
 
@@ -189,7 +191,7 @@ clears and getters, and random immediate scenes.
   `rlEnableFramebuffer`/`rlDisableFramebuffer` and the rest of the low-level
   resource API (`rlLoad*`/`rlUnload*` buffers, shaders, framebuffers) are not
   exposed.
-- The depth buffer of render textures is not modeled. `BeginMode3D` and the
+- `BeginMode3D` and the
   `rmodels.c` 3D shapes, and meshes and models drawn with
   `DrawMesh`/`DrawModel` (rlgl's vertex arrays into rlsw's
   `swDrawArrays`/`swDrawElements`), are in [MODELS.md](MODELS.md);

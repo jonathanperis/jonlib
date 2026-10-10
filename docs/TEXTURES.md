@@ -82,7 +82,8 @@ Traced in the pinned sources and checked by the probe:
   at least one pixel even off-screen.
 - **Render textures.** `LoadRenderTexture` takes a framebuffer id, a zeroed
   R8G8B8A8 color texture (loaded without data, so rlsw assumes alpha) and a
-  depth renderbuffer from the texture pool. `BeginTextureMode` binds it, sets
+  depth renderbuffer from the texture pool (a zeroed D32 buffer the frame
+  keeps by framebuffer id, [RLGL.md](RLGL.md)). `BeginTextureMode` binds it, sets
   the viewport and `rlOrtho(0, w, h, 0, 0, 1)` and an identity modelview; the
   scissor keeps the clip-space bounds of the previous viewport until the next
   `BeginScissorMode`. `EndTextureMode` restores the screen's viewport and
