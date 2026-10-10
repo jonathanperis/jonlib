@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and it includes no unported companion
 library (`raygui.h`); **waiting** otherwise.
 
-Totals: 212 examples; 63 ported, 98 ready, 51 waiting.
+Totals: 212 examples; 70 ported, 91 ready, 51 waiting.
 
 ## APIs that unblock the most examples
 
@@ -64,7 +64,7 @@ Totals: 212 examples; 63 ported, 98 ready, 51 waiting.
 | `core_input_mouse` | core | ported |  |
 | `core_input_mouse_wheel` | core | ported |  |
 | `core_input_gamepad` | core | ready |  |
-| `core_input_multitouch` | core | ready |  |
+| `core_input_multitouch` | core | ported |  |
 | `core_input_gestures` | core | ready |  |
 | `core_input_gestures_testbed` | core | ready |  |
 | `core_input_virtual_controls` | core | ready |  |
@@ -80,7 +80,7 @@ Totals: 212 examples; 63 ported, 98 ready, 51 waiting.
 | `core_3d_picking` | core | ported |  |
 | `core_world_screen` | core | ported |  |
 | `core_window_flags` | core | ready |  |
-| `core_window_letterbox` | core | ready |  |
+| `core_window_letterbox` | core | ported |  |
 | `core_window_should_close` | core | ready |  |
 | `core_monitor_detector` | core | ready |  |
 | `core_custom_logging` | core | ready |  |
@@ -89,7 +89,7 @@ Totals: 212 examples; 63 ported, 98 ready, 51 waiting.
 | `core_storage_values` | core | ready |  |
 | `core_vr_simulator` | core | waiting | `BeginVrStereoMode`, `EndVrStereoMode`, `LoadVrStereoConfig`, `UnloadVrStereoConfig` |
 | `core_scissor_test` | core | ported |  |
-| `core_basic_screen_manager` | core | ready |  |
+| `core_basic_screen_manager` | core | ported |  |
 | `core_custom_frame_control` | core | ready |  |
 | `core_smooth_pixelperfect` | core | ready |  |
 | `core_random_sequence` | core | ready |  |
@@ -116,7 +116,7 @@ Totals: 212 examples; 63 ported, 98 ready, 51 waiting.
 | `shapes_rectangle_scaling` | shapes | ported |  |
 | `shapes_lines_bezier` | shapes | ported |  |
 | `shapes_collision_area` | shapes | ported |  |
-| `shapes_following_eyes` | shapes | ready |  |
+| `shapes_following_eyes` | shapes | ported |  |
 | `shapes_easings_ball` | shapes | ready |  |
 | `shapes_easings_box` | shapes | ready |  |
 | `shapes_easings_rectangles` | shapes | ported |  |
@@ -140,7 +140,7 @@ Totals: 212 examples; 63 ported, 98 ready, 51 waiting.
 | `shapes_simple_particles` | shapes | ready |  |
 | `shapes_starfield_effect` | shapes | ported |  |
 | `shapes_lines_drawing` | shapes | ported |  |
-| `shapes_math_angle_rotation` | shapes | ready |  |
+| `shapes_math_angle_rotation` | shapes | ported |  |
 | `shapes_rlgl_color_wheel` | shapes | waiting | `raygui.h` |
 | `shapes_rlgl_triangle` | shapes | ported |  |
 | `shapes_ball_physics` | shapes | ready |  |
@@ -180,7 +180,7 @@ Totals: 212 examples; 63 ported, 98 ready, 51 waiting.
 | `textures_cellular_automata` | textures | ready |  |
 | `textures_framebuffer_rendering` | textures | ready |  |
 | `text_sprite_fonts` | text | ready |  |
-| `text_font_spritefont` | text | ready |  |
+| `text_font_spritefont` | text | ported |  |
 | `text_font_filters` | text | ready |  |
 | `text_font_loading` | text | ready |  |
 | `text_font_sdf` | text | ready |  |
@@ -196,7 +196,7 @@ Totals: 212 examples; 63 ported, 98 ready, 51 waiting.
 | `text_words_alignment` | text | ready |  |
 | `text_strings_management` | text | ready |  |
 | `models_loading_iqm` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
-| `models_billboard_rendering` | models | ready |  |
+| `models_billboard_rendering` | models | ported |  |
 | `models_box_collisions` | models | ported |  |
 | `models_cubicmap_rendering` | models | ready |  |
 | `models_first_person_maze` | models | ready |  |
