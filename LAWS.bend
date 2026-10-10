@@ -1326,6 +1326,39 @@ law rlgl_blend_mode_unchanged:
   for mode: U32
   {J.Rlgl.set_blend_mode(frame, mode) == frame : J.Frame}
 
+# The uniform setters and rlSetShader have bodies under OpenGL 3.3/ES2 only:
+# the software renderer's frame is the one given.
+law rlgl_set_uniform_unchanged:
+  for frame: J.Frame
+  for location: U32
+  for value: +List<U32>
+  for kind: U32
+  {J.Rlgl.set_uniform(frame, location, value, kind) == frame : J.Frame}
+
+law rlgl_set_uniform_matrix_unchanged:
+  for frame: J.Frame
+  for location: U32
+  for matrix: M.Matrix
+  {J.Rlgl.set_uniform_matrix(frame, location, matrix) == frame : J.Frame}
+
+law rlgl_set_uniform_matrices_unchanged:
+  for frame: J.Frame
+  for location: U32
+  for matrices: +List<M.Matrix>
+  {J.Rlgl.set_uniform_matrices(frame, location, matrices) == frame : J.Frame}
+
+law rlgl_set_uniform_sampler_unchanged:
+  for frame: J.Frame
+  for location: U32
+  for texture: U32
+  {J.Rlgl.set_uniform_sampler(frame, location, texture) == frame : J.Frame}
+
+law rlgl_set_shader_unchanged:
+  for frame: J.Frame
+  for id: U32
+  for locations: +List<U32>
+  {J.Rlgl.set_shader(frame, id, locations) == frame : J.Frame}
+
 law rlgl_version_software:
   {J.Rlgl.get_version() == 0 : U32}
 

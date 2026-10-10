@@ -8632,6 +8632,25 @@ def Rlgl.enable_shader(frame: Frame, +id: U32) -> Frame:
 def Rlgl.disable_shader(frame: Frame) -> Frame:
   frame
 
+# rlSetUniform, rlSetUniformMatrix, rlSetUniformMatrices, rlSetUniformSampler
+# and rlSetShader: their bodies exist under OpenGL 3.3/ES2 only. A uniform's
+# value is its words, as in Shader.set_value; the count of rlSetUniform and
+# rlSetUniformMatrices is the list's.
+def Rlgl.set_uniform(frame: Frame, +location: U32, +value: +List<U32>, +uniform_type: U32) -> Frame:
+  frame
+
+def Rlgl.set_uniform_matrix(frame: Frame, +location: U32, +matrix: M.Matrix) -> Frame:
+  frame
+
+def Rlgl.set_uniform_matrices(frame: Frame, +location: U32, +matrices: +List<M.Matrix>) -> Frame:
+  frame
+
+def Rlgl.set_uniform_sampler(frame: Frame, +location: U32, +texture_id: U32) -> Frame:
+  frame
+
+def Rlgl.set_shader(frame: Frame, +id: U32, +locations: +List<U32>) -> Frame:
+  frame
+
 def Rlgl.enable_vertex_array(frame: Frame, +id: U32) -> Frame & Bool:
   (frame, False{})
 

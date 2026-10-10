@@ -881,6 +881,21 @@ def Laws.render_depth_reused(depth, count):
 def Laws.rlgl_blend_mode_unchanged(frame, mode):
   {==}
 
+def Laws.rlgl_set_uniform_unchanged(frame, location, value, kind):
+  {==}
+
+def Laws.rlgl_set_uniform_matrix_unchanged(frame, location, matrix):
+  {==}
+
+def Laws.rlgl_set_uniform_matrices_unchanged(frame, location, matrices):
+  {==}
+
+def Laws.rlgl_set_uniform_sampler_unchanged(frame, location, texture):
+  {==}
+
+def Laws.rlgl_set_shader_unchanged(frame, id, locations):
+  {==}
+
 def Laws.rlgl_version_software():
   {==}
 
