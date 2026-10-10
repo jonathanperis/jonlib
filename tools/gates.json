@@ -1597,7 +1597,7 @@
   },
   {
    "id": "pow2",
-   "title": "M.Libm.pow2 (powf(2, k) and exp2f(k) for integral k in [-20, 30]) against the host's powf and exp2f on glibc hosts, with the refused arguments and the Apple profile",
+   "title": "M.Libm.pow2 (powf(2, y) and exp2f(y) for |y| < 126) against the kernel's model and, on glibc hosts, the host's powf and exp2f, with the refused arguments and the Apple profile",
    "run": [
     "{python}",
     "tools/pow2_probe.py",
