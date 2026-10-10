@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 142 ported, 28 ready, 42 waiting.
+Totals: 212 examples; 143 ported, 27 ready, 42 waiting.
 
 ## APIs that unblock the most examples
 
@@ -117,7 +117,7 @@ Totals: 212 examples; 142 ported, 28 ready, 42 waiting.
 | `shapes_lines_bezier` | shapes | ported |  |
 | `shapes_collision_area` | shapes | ported |  |
 | `shapes_following_eyes` | shapes | ported |  |
-| `shapes_easings_ball` | shapes | ready |  |
+| `shapes_easings_ball` | shapes | ported |  |
 | `shapes_easings_box` | shapes | ready |  |
 | `shapes_easings_rectangles` | shapes | ported |  |
 | `shapes_recursive_tree` | shapes | ported |  |
