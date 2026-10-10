@@ -124,14 +124,14 @@ TREE = {
 }
 
 
-def scope(changes, diffs=None):
-    """The scope of {path: new text, or None when deleted} applied to TREE."""
+def scope(changes, diffs=None, on=ci_scope.ALL_HOSTS):
+    """The scope of {path: new text, or None when deleted} applied to TREE, on every host unless told otherwise."""
     new = {**TREE, **{path: text for path, text in changes.items() if text is not None}}
     for path, text in changes.items():
         if text is None:
             new.pop(path, None)
     status = {path: 'D' if text is None else 'M' if path in TREE else 'A' for path, text in changes.items()}
-    return ci_scope.scope(status, lambda path: TREE.get(path, ''), lambda path: new.get(path, ''), lambda path: (diffs or {}).get(path, ''))
+    return ci_scope.scope(status, lambda path: TREE.get(path, ''), lambda path: new.get(path, ''), lambda path: (diffs or {}).get(path, ''), on)
 
 
 class AdditiveTests(unittest.TestCase):
@@ -237,6 +237,23 @@ class ScopeTests(unittest.TestCase):
 
     def test_no_change_needs_nothing(self):
         self.assertEqual(scope({}), ci_scope.NONE)
+
+
+class HostTests(unittest.TestCase):
+    def test_pushes_and_pull_requests_run_on_linux_only(self):
+        for event in ('push', 'pull_request', ''):
+            self.assertEqual(ci_scope.hosts({'GITHUB_EVENT_NAME': event}), (('linux', 'ubuntu-24.04'),), event)
+        self.assertEqual(ci_scope.MERGE_HOSTS, (('linux', 'ubuntu-24.04'),))
+
+    def test_scheduled_and_manual_runs_use_every_host(self):
+        for event in ('schedule', 'workflow_dispatch'):
+            self.assertEqual([runner for _, runner in ci_scope.hosts({'GITHUB_EVENT_NAME': event})], ['ubuntu-24.04', 'macos-15'], event)
+
+    def test_a_scoped_run_on_the_merge_path_has_no_macos_job(self):
+        result = scope({'examples/core_undo_redo.bend': 'def setup', 'tools/png_file_probe.py': FORMAT + '#\n'}, on=ci_scope.MERGE_HOSTS)
+        self.assertEqual([(row['os'], row['part']) for row in result['matrix']['include']], [('ubuntu-24.04', 'gates 1'), ('ubuntu-24.04', 'examples')])
+        default = ci_scope.scope({'examples/core_undo_redo.bend': 'M'}, lambda path: TREE.get(path, ''), lambda path: TREE.get(path, ''), lambda path: '')
+        self.assertEqual([row['os'] for row in default['matrix']['include']], ['ubuntu-24.04'])
 
 
 class BaseTests(unittest.TestCase):

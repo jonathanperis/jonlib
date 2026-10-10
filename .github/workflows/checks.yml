@@ -1,9 +1,13 @@
 name: Checks
 
+# Pushes and pull requests run on Linux only while the port is being completed
+# (docs/CI.md); the nightly and manual runs also use macOS.
 on:
   push:
     branches: [main, 'feature/**']
   pull_request:
+  schedule:
+    - cron: '7 6 * * *'
   workflow_dispatch:
 
 permissions:
@@ -19,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15]
+        os: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '["ubuntu-24.04", "macos-15"]' || '["ubuntu-24.04"]') }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
