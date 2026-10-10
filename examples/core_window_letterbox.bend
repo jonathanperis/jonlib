@@ -6,7 +6,9 @@
 # A 640x480 game screen (ten random color bars, the real and virtual mouse
 # positions) drawn into a bilinear render texture and scaled into the 800x450
 # window with black bars; SPACE draws new colors. raylib seeds GetRandomValue
-# from time(NULL) in InitWindow; here the seed is a setup argument.
+# from time(NULL) in InitWindow; here the seed is a setup argument. A color's
+# three GetRandomValue calls are an initializer list, whose order C leaves
+# unspecified; the reference compiler (clang) draws them left to right, as here.
 # Vector2Clamp's fminf/fmaxf follow the libm profile. The window is not
 # resized here (the memory platform never is). See docs/DRIVER.md.
 import Base

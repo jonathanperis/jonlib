@@ -1455,7 +1455,7 @@
   {
    "name": "core_window_web",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -3002,7 +3002,7 @@
   {
    "name": "textures_particles_blending",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginBlendMode",
     "BeginDrawing",

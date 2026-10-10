@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 77 ported, 93 ready, 42 waiting.
+Totals: 212 examples; 79 ported, 91 ready, 42 waiting.
 
 ## APIs that unblock the most examples
 
@@ -106,7 +106,7 @@ Totals: 212 examples; 77 ported, 93 ready, 42 waiting.
 | `core_text_file_loading` | core | ready |  |
 | `core_compute_hash` | core | waiting | `GuiTextBox` |
 | `core_keyboard_testbed` | core | ready |  |
-| `core_window_web` | core | ready |  |
+| `core_window_web` | core | ported |  |
 | `shapes_basic_shapes` | shapes | ported |  |
 | `shapes_bouncing_ball` | shapes | ported |  |
 | `shapes_bullet_hell` | shapes | ported |  |
@@ -158,7 +158,7 @@ Totals: 212 examples; 77 ported, 93 ready, 42 waiting.
 | `textures_image_text` | textures | ready |  |
 | `textures_to_image` | textures | ported |  |
 | `textures_raw_data` | textures | ported |  |
-| `textures_particles_blending` | textures | ready |  |
+| `textures_particles_blending` | textures | ported |  |
 | `textures_npatch_drawing` | textures | ported |  |
 | `textures_background_scrolling` | textures | ported |  |
 | `textures_sprite_animation` | textures | ported |  |
