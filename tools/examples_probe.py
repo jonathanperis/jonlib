@@ -187,6 +187,7 @@ EXAMPLES = {
     'core_window_flags': ('core/core_window_flags.c', 'Ex.setup(core, frame)'),
     'core_highdpi_testbed': ('core/core_highdpi_testbed.c', 'Ex.setup(core, frame)'),
     'core_highdpi_demo': ('core/core_highdpi_demo.c', 'Ex.setup(core, frame)'),
+    'core_viewport_scaling': ('core/core_viewport_scaling.c', 'Ex.setup(core, frame)'),
     'core_text_file_loading': ('core/core_text_file_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_input_virtual_controls': ('core/core_input_virtual_controls.c', 'Ex.setup(core, frame)'),
     'shapes_math_angle_rotation': ('shapes/shapes_math_angle_rotation.c', 'Ex.setup(core, frame)'),
@@ -251,7 +252,7 @@ SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'co
           'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer', 'shaders_mesh_instancing'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
-                'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'shaders_postprocessing': 32, 'shaders_custom_uniform': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196,
+                'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'shaders_postprocessing': 32, 'shaders_custom_uniform': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196, 'core_viewport_scaling': 4,
                 'shaders_fog_rendering': 32}
 
 
@@ -555,6 +556,12 @@ def scripts():
         # The wheel scrolls down, back past the top (snapped to 0) and far past the end (snapped to the last page).
         script('core_text_file_loading', 'scroll', [quick(), quick([(MOUSE_WHEEL, 0, -3, 0)]), slow([(MOUSE_WHEEL, 0, 5, 0)]),
                                                     quick([(MOUSE_WHEEL, 0, -200, 0)]), quick()]),
+        # The mouse inside the game; the next viewport type five times (all six), the next resolution twice
+        # (256x240 and 320x180), then the previous type and the previous resolution.
+        script('core_viewport_scaling', 'buttons', [quick(), quick([mouse_at(400, 225)]), slow([mouse_at(220, 50)])]
+               + [f for _ in range(5) for f in (quick([button(0)]), quick([button(0, False)]))]
+               + [quick([mouse_at(220, 35), button(0)]), quick([button(0, False)]), quick([button(0)]), quick([button(0, False), mouse_at(205, 50)]),
+                  quick([button(0)]), quick([button(0, False), mouse_at(205, 35)]), quick([button(0)]), quick([button(0, False), mouse_at(500, 300)]), quick()]),
         script('core_highdpi_demo', 'frames', [quick(), slow([key(78)]), quick([key(78, False)])]),
         # The cross follows the mouse (its label flips above near the bottom edge); SPACE and F toggle modes.
         script('core_highdpi_testbed', 'mouse', [quick(), quick([mouse_at(300, 200)]), slow([mouse_at(700, 420)]), quick([key(KEY_SPACE)]),

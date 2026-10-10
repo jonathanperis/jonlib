@@ -1150,7 +1150,7 @@
   {
    "name": "core_viewport_scaling",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginTextureMode",
