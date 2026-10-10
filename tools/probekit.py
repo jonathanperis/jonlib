@@ -61,8 +61,8 @@ MEMORY_PER_BATCH = 9 << 30
 CGROUP_MEMORY = Path('/sys/fs/cgroup/memory.max')
 
 
-def available_memory():
-    """Physical memory, or the cgroup v2 limit when one is lower (containers)."""
+def memory_limits():
+    """(physical memory, cgroup v2 limit); 0 for one that is unknown or unlimited."""
     try:
         memory = os.sysconf('SC_PAGE_SIZE') * os.sysconf('SC_PHYS_PAGES')
     except (AttributeError, OSError, ValueError):
@@ -71,7 +71,31 @@ def available_memory():
         limit = int(CGROUP_MEMORY.read_text())
     except (OSError, ValueError):
         limit = 0
+    return memory, limit
+
+
+def available_memory():
+    """Physical memory, or the cgroup v2 limit when one is lower (containers)."""
+    memory, limit = memory_limits()
     return min(memory, limit) if memory and limit else memory or limit
+
+
+def compiler_env(env=None):
+    """The Bend compiler's environment.
+
+    Bun's JavaScriptCore paces its collections by physical memory and does not
+    see a cgroup limit: in a container with a lower limit the compiler's heap
+    outgrows the limit before a collection and the process is killed (measured
+    October 2026 under an 8 GiB limit on a 16 GB host: the C emission of an
+    example with the OBJ loader, about 4 GB live, passed 8 GB; with half the
+    limit as the engine's memory size it peaks near 5 GB, emits the same C and
+    takes 1.5x the time). Without a lower limit (the hosted runners) and when
+    the caller already set the size, the environment is unchanged."""
+    env = ENV if env is None else env
+    memory, limit = memory_limits()
+    if 'BUN_JSC_forceRAMSize' in env or not limit or (memory and limit >= memory):
+        return env
+    return dict(env, BUN_JSC_forceRAMSize=str(limit // 2))
 
 
 def default_jobs():
@@ -141,7 +165,7 @@ def compile_outputs(cli, source, *outputs, timeout=COMPILE_TIMEOUT):
     C compiler (about 8.5 GB against 6.5 and 4 GB for a probe that reaches the
     TrueType and frame paths), which exceeds the hosted macOS runners' memory."""
     for output in outputs:
-        run([*cli, source, '-o', output], timeout=timeout)
+        run([*cli, source, '-o', output], timeout=timeout, env=compiler_env())
 
 
 class Probe:
