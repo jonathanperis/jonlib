@@ -222,6 +222,7 @@ EXAMPLES = {
     'text_words_alignment': ('text/text_words_alignment.c', 'Ex.setup(core, frame)'),
     'text_rectangle_bounds': ('text/text_rectangle_bounds.c', 'Ex.setup(core, frame)'),
     'text_inline_styling': ('text/text_inline_styling.c', 'Ex.setup(seed, core, frame)'),
+    'textures_clipboard_image': ('textures/textures_clipboard_image.c', 'Ex.setup(core, frame)'),
     'core_smooth_pixelperfect': ('core/core_smooth_pixelperfect.c', 'Ex.setup(core, frame)'),
     'models_tesseract_view': ('models/models_tesseract_view.c', 'Ex.setup(core, frame)'),
     'textures_particles_blending': ('textures/textures_particles_blending.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
@@ -683,6 +684,9 @@ def scripts():
                                                       quick([button(0)]), quick([button(0, False)])]),
         script('text_font_loading', 'fonts', [quick(), slow(), quick([key(KEY_SPACE)]), quick(), quick([key(KEY_SPACE, False)])]),
         # The wheel grows and shrinks the text, 2 and 3 filter it (3 with 2 held: 2 wins only when pressed that
+        # CTRL+V (no clipboard image on the reference's desktop platform outside Windows: nothing is pasted), R.
+        script('textures_clipboard_image', 'paste', [quick(), quick([key(341), mouse_at(300, 200)]), quick([key(86)]), quick([key(86, False), key(341, False)]),
+                                                     quick([key(KEY_R)]), quick([key(KEY_R, False)])]),
         # The styled texts; the last one takes a new random color at frames 20 and 40.
         script('text_inline_styling', 'colors', [quick() for _ in range(42)], seed=0x57A1),
         # Word wrap in the first container; the border under the mouse; the corner dragged narrower and lower
