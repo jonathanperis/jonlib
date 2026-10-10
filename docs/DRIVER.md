@@ -273,7 +273,11 @@ profile, compared under glibc), and `shapes_basic_shapes` (every frame
 refused under the Apple profile, compared under glibc). Examples that load resources (`LoadTexture`) run natively in
 raylib's `examples/<module>` directory and take that directory as their
 setup argument; `SetConfigFlags` examples start both sides with the same
-flags. `--example NAME` runs a subset (diagnostic).
+flags. `--example NAME` runs a subset (diagnostic). `--assume-libm AppleLibm`
+(also on `tools/models_probe.py`) runs Jonlib and the refusal oracle under
+another host's profile, a diagnostic for checking where a port must refuse on
+macOS from a Linux machine: the frames before a refusal are still compared
+with this host's native run, whose libm may differ there.
 
 `LAWS.bend` states the desktop parts the gate cannot reach: polling copies all
 512 previous key states, a held mouse button is pressed for one frame, the

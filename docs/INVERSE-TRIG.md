@@ -94,7 +94,7 @@ the source on every lane.
   from the profile (glibc's own sinf, [SINCOSF.md](SINCOSF.md), for
   glibc). `None` when that branch needs an `acosf` the profile lacks, for a NaN
   cosine, or when `Libm.sin` refuses a `sinf` argument (Apple: outside
-  |x| <= 6.283186; glibc: infinite or NaN), the verified
+  its verified whole degrees; glibc: infinite or NaN), the verified
   kernel domain.
 - `Quaternion.to_axis_angle_for(libm, q) -> Maybe<(Vector3 & F32)>`
   normalizes quaternions with |w| > 1 as raymath does, then returns the axis

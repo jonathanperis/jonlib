@@ -538,6 +538,9 @@ def gnu_objects(probe, source):
 def configure(parser):
     parser.add_argument('--gnu-libm', action='store_true',
                         help='build the reference with the Arm sinf/cosf model and run Jonlib with M.Glibc239Libm{}')
+    parser.add_argument('--assume-libm', choices=('AppleLibm', 'Glibc239Libm'),
+                        help="run Jonlib and compute the refusals under another host's M.Libm profile (diagnostic: the "
+                             'compared scenes still use this host, whose libm may differ there)')
 
 
 def main():
@@ -547,8 +550,8 @@ def main():
     if args.gnu_libm:
         source, header = gnu_model()
         options = (f'CMAKE_C_FLAGS=-ffp-contract=off -include {header}',)
-    probe = probekit.Probe('models-gnu' if args.gnu_libm else 'models', args, raylib_options=options)
-    libm = 'Glibc239Libm' if args.gnu_libm else gradient_reference()
+    probe = probekit.Probe('models-gnu' if args.gnu_libm else 'models-assumed' if args.assume_libm else 'models', args, raylib_options=options)
+    libm = 'Glibc239Libm' if args.gnu_libm else args.assume_libm or gradient_reference()
     fused = fp.fused_instructions(probe.library)
     if any(fused.values()):
         raise ProbeFailure(f'models: the reference build contains fused multiply-adds: {fused}')
@@ -574,7 +577,16 @@ def main():
         expected_by_id[scene['id']] = 'null'
     expected = [expected_by_id[s['id']] for s in items]
     actions = list(enumerate(items))
-    lanes = probe.candidates(render(libm), actions, batch=8, parse=lambda text, selected: [line for line in text.splitlines() if line.strip()])
+    refused_ids = {s['id'] for s in contracts}
+
+    def parse(text, selected):
+        # A refused scene's frame must be null; the matrices it queries afterwards are unspecified.
+        lines = [line for line in text.splitlines() if line.strip()]
+        if len(lines) != len(selected):
+            return lines
+        return [line.split(' ')[0] if item['id'] in refused_ids else line for (_, item), line in zip(selected, lines)]
+
+    lanes = probe.candidates(render(libm), actions, batch=8, parse=parse)
     probe.compare(expected, lanes, describe=lambda i: f'scene {items[i]["id"]}')
     probe.finish(scenes=len(items), compared=len(native_items), contracts=len(contracts), libm=libm,
                  reference='Arm sinf/cosf model build' if args.gnu_libm else 'host libm build',

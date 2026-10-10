@@ -9,8 +9,9 @@ approximation (`|x| <= 6.283186f`).
 
 - `M.Libm.sin(libm, x) -> Maybe<F32>` / `M.Libm.cos(libm, x) -> Maybe<F32>`:
   - Under the glibc profiles, `None` only for infinities and NaN.
-  - Under `M.AppleLibm{}`, the bounded Apple kernel for `|x| <= 6.283186`
-    ([ROTATION.md](ROTATION.md)); `None` otherwise.
+  - Under `M.AppleLibm{}`, `Some` only for the arguments verified against
+    macOS arm64: `fl(DEG2RAD*d)` for integral `|d| <= 360` except 13, 19, 22,
+    103 and 188 ([FRAME.md](FRAME.md)). `None` otherwise.
 - `Trig.sincos_for(gnu, x)` (`src/trig.bend`) uses the kernel for its GNU
   branch. That branch serves Jonmath's rotation constructors (`Matrix.rotate*`,
   `Vector2.rotate_for`, `Vector3.rotate_by_axis_angle_for`,
