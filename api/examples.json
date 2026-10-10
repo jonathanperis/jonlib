@@ -5314,7 +5314,7 @@
   {
    "name": "shaders_ascii_rendering",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
@@ -5880,7 +5880,7 @@
   {
    "name": "shaders_simple_mask",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",

@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 111 ported, 59 ready, 42 waiting.
+Totals: 212 examples; 113 ported, 57 ready, 42 waiting.
 
 ## APIs that unblock the most examples
 
@@ -225,7 +225,7 @@ Totals: 212 examples; 111 ported, 59 ready, 42 waiting.
 | `models_animation_blend_custom` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `rlUpdateVertexBuffer` |
 | `models_animation_blending` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `UpdateModelAnimationEx`, `GuiDropdownBox`, `GuiProgressBar` |
 | `models_animation_timing` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `GuiDropdownBox`, `GuiProgressBar` |
-| `shaders_ascii_rendering` | shaders | ready |  |
+| `shaders_ascii_rendering` | shaders | ported |  |
 | `shaders_basic_lighting` | shaders | ported |  |
 | `shaders_model_shader` | shaders | ported |  |
 | `shaders_shapes_textures` | shaders | ported |  |
@@ -241,7 +241,7 @@ Totals: 212 examples; 111 ported, 59 ready, 42 waiting.
 | `shaders_color_correction` | shaders | ported |  |
 | `shaders_eratosthenes_sieve` | shaders | ported |  |
 | `shaders_fog_rendering` | shaders | ported |  |
-| `shaders_simple_mask` | shaders | ready |  |
+| `shaders_simple_mask` | shaders | ported |  |
 | `shaders_hot_reloading` | shaders | waiting | `GetFileModTime` |
 | `shaders_mesh_instancing` | shaders | ready |  |
 | `shaders_multi_sample2d` | shaders | ported |  |
