@@ -4107,7 +4107,7 @@
   {
    "name": "text_strings_management",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",

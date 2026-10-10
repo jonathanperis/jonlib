@@ -223,6 +223,7 @@ EXAMPLES = {
     'text_words_alignment': ('text/text_words_alignment.c', 'Ex.setup(core, frame)'),
     'text_rectangle_bounds': ('text/text_rectangle_bounds.c', 'Ex.setup(core, frame)'),
     'text_inline_styling': ('text/text_inline_styling.c', 'Ex.setup(seed, core, frame)'),
+    'text_strings_management': ('text/text_strings_management.c', 'Ex.setup(seed, core, frame)'),
     'textures_clipboard_image': ('textures/textures_clipboard_image.c', 'Ex.setup(core, frame)'),
     'core_smooth_pixelperfect': ('core/core_smooth_pixelperfect.c', 'Ex.setup(core, frame)'),
     'models_tesseract_view': ('models/models_tesseract_view.c', 'Ex.setup(core, frame)'),
@@ -260,7 +261,7 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'shaders_custom_uniform', 'shaders_mesh_instancing', 'models_mesh_picking', 'core_3d_camera_fps'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'core_3d_camera_first_person', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer', 'shaders_mesh_instancing',
-          'core_undo_redo', 'text_inline_styling'}
+          'core_undo_redo', 'text_inline_styling', 'text_strings_management'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
                 'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'shaders_postprocessing': 32, 'shaders_custom_uniform': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196, 'core_viewport_scaling': 4,
@@ -690,6 +691,15 @@ def scripts():
                                                       quick([button(0)]), quick([button(0, False)])]),
         script('text_font_loading', 'fonts', [quick(), slow(), quick([key(KEY_SPACE)]), quick(), quick([key(KEY_SPACE, False)])]),
         # The wheel grows and shrinks the text, 2 and 3 filter it (3 with 2 held: 2 wins only when pressed that
+        # The first particle grabbed and held still (its velocity falls to 0), released at rest, sliced in
+        # halves, the half under the mouse shattered into characters; one of them grabbed and glued to its
+        # neighbors with LEFT CTRL, dragged and thrown; the shake; then the six resets.
+        script('text_strings_management', 'particles', [quick(), quick([mouse_at(500, 245)]), quick([button(0)]), quick(), quick([button(0, False)]), quick([button(1)]),
+                                                        quick([button(1, False)]), quick([key(340), button(1)]), quick([button(1, False), key(340, False)]), quick([button(0)]),
+                                                        quick([key(341)]), quick([key(341, False)]), quick([mouse_at(300, 300)]), quick([button(0, False)]), quick([button(2)]),
+                                                        quick([button(2, False)]), quick(), quick([key(KEY_ONE)]), quick([key(KEY_ONE, False), key(KEY_TWO)]),
+                                                        quick([key(KEY_TWO, False), key(KEY_THREE)]), quick([key(KEY_THREE, False), key(KEY_FOUR)]),
+                                                        quick([key(KEY_FOUR, False), key(53)]), quick([key(53, False), key(54)]), quick([key(54, False)]), quick()], seed=0x7E87),
         # CTRL+V (no clipboard image on the reference's desktop platform outside Windows: nothing is pasted), R.
         script('textures_clipboard_image', 'paste', [quick(), quick([key(341), mouse_at(300, 200)]), quick([key(86)]), quick([key(86, False), key(341, False)]),
                                                      quick([key(KEY_R)]), quick([key(KEY_R, False)])]),
