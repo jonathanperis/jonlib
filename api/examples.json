@@ -3641,7 +3641,7 @@
   {
    "name": "text_sprite_fonts",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -4080,7 +4080,7 @@
   {
    "name": "text_words_alignment",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",

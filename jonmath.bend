@@ -71,6 +71,13 @@ def Float64.to_f32(value: Float64) -> Maybe<F32>:
   Float64{high, low} = value
   Float64.to_f32.word(Binary64Narrow.checked(high, low))
 
+# (int)value for |value| < 2^31: truncation toward zero, as a two's-complement
+# word. None outside that range (the C conversion is undefined there, -2^31
+# itself included here), for infinities and NaN.
+def Float64.to_int(value: Float64) -> Maybe<U32>:
+  Float64{+high, +low} = value
+  Bool.pick(Maybe<U32>, (((high >> 20n) .&. 2047) < 1054 : U32), Some{Sincosf.truncate(Sincosf.Ok{high, low})}, None{})
+
 def Float64.internal.f32(value: Float64) -> F32:
   Float64{high, low} = value
   Float64Numeric.to_f32(high, low)

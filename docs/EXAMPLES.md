@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 81 ported, 89 ready, 42 waiting.
+Totals: 212 examples; 83 ported, 87 ready, 42 waiting.
 
 ## APIs that unblock the most examples
 
@@ -179,7 +179,7 @@ Totals: 212 examples; 81 ported, 89 ready, 42 waiting.
 | `textures_sprite_stacking` | textures | ready |  |
 | `textures_cellular_automata` | textures | ready |  |
 | `textures_framebuffer_rendering` | textures | ready |  |
-| `text_sprite_fonts` | text | ready |  |
+| `text_sprite_fonts` | text | ported |  |
 | `text_font_spritefont` | text | ported |  |
 | `text_font_filters` | text | ready |  |
 | `text_font_loading` | text | ready |  |
@@ -193,7 +193,7 @@ Totals: 212 examples; 81 ported, 89 ready, 42 waiting.
 | `text_3d_drawing` | text | ready |  |
 | `text_codepoints_loading` | text | ready |  |
 | `text_inline_styling` | text | ready |  |
-| `text_words_alignment` | text | ready |  |
+| `text_words_alignment` | text | ported |  |
 | `text_strings_management` | text | ready |  |
 | `models_loading_iqm` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
 | `models_billboard_rendering` | models | ported |  |
