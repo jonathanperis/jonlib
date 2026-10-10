@@ -4,8 +4,12 @@ name: Conformance
 # tools/gates.json on both OSes, split into balanced shards by
 # tools/run_gates.py. A change that can only reach some gates or examples (new
 # library definitions, one probe, example ports) runs those on both OSes.
-# Harness-only changes need neither, and documentation-only changes do not
-# start this workflow. Scheduled and manual runs are complete.
+# Harness-only and documentation-only changes need neither. Scheduled and
+# manual runs are complete.
+#
+# No path filter: GitHub evaluates one on the commits a push adds to the
+# repository, so a branch created at a commit another ref already holds would
+# start no run at all. The Scope job answers in seconds instead.
 #
 # Pushes and pull requests run on Linux only while the port is being completed
 # (tools/ci_scope.py MERGE_HOSTS, docs/CI.md): hosted macOS runs five jobs at a
@@ -13,9 +17,7 @@ name: Conformance
 on:
   push:
     branches: [main, 'feature/**']
-    paths-ignore: ['docs/**', '**/*.md', 'LICENSES/**']
   pull_request:
-    paths-ignore: ['docs/**', '**/*.md', 'LICENSES/**']
   schedule:
     - cron: '17 6 * * *' # after the working day in UTC-3, before the next one starts
   workflow_dispatch:
