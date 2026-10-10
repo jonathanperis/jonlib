@@ -1,8 +1,9 @@
 # Session handoff (2026-10-10)
 
 Snapshot for continuing on another machine or in a new session. Everything
-described here is committed and pushed to `feature/examples-gui`; nothing lives
-only on one machine except throwaway caches (`.build/`).
+described here is committed; `feature/examples-gui` is pushed up to c3e2e6b and
+the later example commits are local until its CI run concludes (a push to a
+`feature/**` branch cancels that branch's running Conformance run).
 
 ## Goal in force
 
@@ -16,7 +17,7 @@ Bend and replaying it against the native example. Work autonomously; merge to
 | Branch | Content | State |
 |---|---|---|
 | `main` | cd7ac01: everything through the glibc `sinf`/`cosf` kernel, the shader API and 63 example ports | CI green (run 38017845114 on this commit, merged 2026-10-10) |
-| `feature/examples-gui` | on top of `main`: Jongui (raygui), `M.Libm.pow2`, 16 more example ports, per-example frame targets and reported refusals in the examples probe | **merge to `main` once its CI concludes `success`** |
+| `feature/examples-gui` | on top of `main`: Jongui (raygui), `M.Libm.pow2`, 32 more example ports, per-example frame targets and reported refusals in the examples probe | c3e2e6b in CI (run 38030650917); **merge to `main` once it concludes `success`**, then push the later commits on a new branch |
 
 `feature/audio-waves`, `wip/models-drawing-obj`, `wip/lgpl-tan-asinf` and
 `integrate/models-lgpl` are merged into `main` and deleted.
@@ -24,7 +25,7 @@ Bend and replaying it against the native example. Work autonomously; merge to
 Coverage (`python3 tools/api_plan.py check`): raylib.h 514/600 partial
 (20 blocked, 66 not started); raymath.h 146/146; rlgl.h 93/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **79/212 ported**, 91 ready, 42 waiting. No API
+[EXAMPLES.md](EXAMPLES.md)): **95/212 ported**, 75 ready, 42 waiting. No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -62,7 +63,7 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
   `jongui.bend`; the examples plan tracks raygui per function
   (`api/jongui.json`). Spinner, dropdown box and text box need raygui's
   icons first.
-- **Examples**: 79 ported; gates `examples-core`, `-shapes`, `-text`,
+- **Examples**: 95 ported; gates `examples-core`, `-shapes`, `-text`,
   `-textures`, `-models`, `-shaders`.
 - **Compile memory**: per-output compiler processes and a cgroup-aware job
   budget in probekit; `LoadImage` of a `.png` in ports is `Surface.load_png`
@@ -78,8 +79,8 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
    and Jonlib's images stop at 4096 pixels per axis (PNG also at 1 MiB of
    input), so the texture does not load.
 3. Small library pieces that each unblock examples:
-   - a public `(float)` of `Core.get_time` (`models_waving_cubes`,
-     `core_smooth_pixelperfect`, `models_tesseract_view`, `text_words_alignment`);
+   - an IO step in `J.Program`'s update (`core_storage_values`,
+     `core_text_file_loading` style file access inside the loop);
    - a loop-exit condition in `J.Program` (`core_window_should_close`);
    - glibc's `rand()` (`shapes_simple_particles`, `models_point_rendering`);
    - general `powf`, `expf`/`logf`, `hypot`, binary64 `sin`/`cos`
@@ -100,7 +101,14 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
   pattern-bound name, and no `let` may precede a destructuring of a parameter;
   no mutual recursion; a def must be above its callers; `Bool.pick` evaluates
   both branches and needs a Data type (pairs are Type: use a `match` helper);
-  constructors in lets need `{... : T}`; `+` only on Data.
+  constructors in lets need `{... : T}`; `+` only on Data. Parameters must be
+  destructured in declaration order (a field binder before the next
+  parameter; a matched scalar parameter last), and the binders of a
+  two-scrutinee `match` cannot be destructured in the case (use a helper def).
+- **Example scripts cost JavaScript-lane time**: a frame of hundreds of
+  primitives or a full-screen filtered texture takes seconds there
+  (`textures_fog_of_war`, `textures_tiled_drawing`); keep such scripts short
+  (the probe stops a lane after 600 s).
 - **Strings are C byte strings**: a Bend literal holds code points, so write
   non-ASCII text as UTF-8 bytes (`"I\u{c3}\u{b1}igo"`).
 - **Bend native miscompile:** a `Bool.pick(Bool, …)` result feeding `||` in the

@@ -1845,7 +1845,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 25
+   "minutes": 32
   },
   {
    "id": "examples-shapes",
@@ -1861,7 +1861,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 45
+   "minutes": 52
   },
   {
    "id": "examples-text",
@@ -1877,7 +1877,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 10
+   "minutes": 14
   },
   {
    "id": "examples-textures",
@@ -1893,7 +1893,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 15
+   "minutes": 30
   },
   {
    "id": "examples-models",
@@ -1909,7 +1909,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 25
+   "minutes": 28
   },
   {
    "id": "examples-shaders",

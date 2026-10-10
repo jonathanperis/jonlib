@@ -175,7 +175,7 @@
   {
    "name": "core_input_gestures",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",
@@ -240,7 +240,7 @@
   {
    "name": "core_input_virtual_controls",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -997,7 +997,7 @@
   {
    "name": "core_random_sequence",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -2601,7 +2601,7 @@
   {
    "name": "shapes_penrose_tile",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -2790,7 +2790,7 @@
   {
    "name": "textures_image_drawing",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -3272,7 +3272,7 @@
   {
    "name": "textures_tiled_drawing",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",
@@ -3337,7 +3337,7 @@
   {
    "name": "textures_fog_of_war",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginTextureMode",
@@ -3718,7 +3718,7 @@
   {
    "name": "text_font_loading",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
