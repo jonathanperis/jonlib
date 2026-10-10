@@ -96,5 +96,7 @@ covers four slider bars: normal, focused and pressed states, a press that
 sets the value, a drag that leaves the bounds, the release, and both side
 texts. `shapes_ring_drawing` and `shapes_rounded_rectangle_drawing` add
 check boxes: hover, press, a toggle over the box and over its label, and a
-release outside that toggles nothing. `LAWS.bend` states the default text size, the propagation of a DEFAULT
+release outside that toggles nothing. `shapes_kaleidoscope` covers buttons:
+normal, focused, pressed and disabled (`GuiDisable`/`GuiEnable` around a
+button), and a click that takes effect on the next frame. `LAWS.bend` states the default text size, the propagation of a DEFAULT
 property and the enable/disable rules.

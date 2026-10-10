@@ -8,6 +8,7 @@
    "scope": "STATE_DISABLED becomes STATE_NORMAL.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/shapes_kaleidoscope.bend",
     "examples/shapes_circle_sector_drawing.bend",
     "docs/GUI.md",
     "jongui.bend"
@@ -19,6 +20,7 @@
    "scope": "STATE_NORMAL becomes STATE_DISABLED.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/shapes_kaleidoscope.bend",
     "examples/shapes_circle_sector_drawing.bend",
     "docs/GUI.md",
     "jongui.bend"
@@ -214,6 +216,7 @@
    "scope": "Hover and press states, the bordered rectangle and its text; true when the pointer is released over it.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/shapes_kaleidoscope.bend",
     "examples/shapes_circle_sector_drawing.bend",
     "docs/GUI.md",
     "jongui.bend"
