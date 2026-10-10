@@ -91,8 +91,26 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('fail-fast: false', self.text)
         for job in ('conformanceUbuntu', 'conformanceMac'):
             block = self.text.split(f'  {job}:')[1].split('\n  conformance')[0]
-            self.assertIn('needs: [gates]', block)
-            self.assertIn('test "$GATES_RESULT" = success', block)
+            self.assertIn('needs: [scope, gates, examples]', block)
+            self.assertIn('if: ${{ always() }}', block)
+            # The scope must have been computed, and each scope has exactly one way to pass.
+            self.assertIn('test "$SCOPE_RESULT" = success', block)
+            self.assertIn('full) test "$GATES_RESULT" = success ;;', block)
+            self.assertIn('examples) test "$EXAMPLES_RESULT" = success ;;', block)
+            self.assertIn('none) test "$GATES_RESULT" = skipped && test "$EXAMPLES_RESULT" = skipped ;;', block)
+            self.assertIn('*) exit 1 ;;', block)
+
+    def test_the_scope_selects_exactly_one_path(self):
+        gates = self.text.split('\n  gates:')[1].split('\n  examples:')[0]
+        examples = self.text.split('\n  examples:')[1].split('\n  conformanceUbuntu:')[0]
+        self.assertIn("if: ${{ needs.scope.outputs.mode == 'full' }}", gates)
+        self.assertIn("if: ${{ needs.scope.outputs.mode == 'examples' }}", examples)
+        self.assertIn('os: [ubuntu-24.04, macos-15]', examples)
+        self.assertIn('fetch-depth: 0', self.text.split('\n  scope:')[1].split('\n  gates:')[0])
+
+    def test_the_nightly_run_is_not_cancelled_by_pushes(self):
+        self.assertIn("group: conformance-${{ github.event_name == 'schedule' && 'nightly' || github.ref }}", self.text)
+        self.assertRegex(self.text, r"schedule:\n    - cron: '")
 
     def test_actions_are_pinned_to_commits(self):
         for path in [WORKFLOW, ROOT / '.github/actions/setup-pinned/action.yml', ROOT / '.github/workflows/checks.yml']:
