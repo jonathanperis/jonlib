@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 73 ported, 95 ready, 44 waiting.
+Totals: 212 examples; 75 ported, 93 ready, 44 waiting.
 
 ## APIs that unblock the most examples
 
@@ -120,7 +120,7 @@ Totals: 212 examples; 73 ported, 95 ready, 44 waiting.
 | `shapes_easings_ball` | shapes | ready |  |
 | `shapes_easings_box` | shapes | ready |  |
 | `shapes_easings_rectangles` | shapes | ported |  |
-| `shapes_recursive_tree` | shapes | ready |  |
+| `shapes_recursive_tree` | shapes | ported |  |
 | `shapes_ring_drawing` | shapes | ported |  |
 | `shapes_circle_sector_drawing` | shapes | ported |  |
 | `shapes_rounded_rectangle_drawing` | shapes | ported |  |
@@ -130,7 +130,7 @@ Totals: 212 examples; 73 ported, 95 ready, 44 waiting.
 | `shapes_digital_clock` | shapes | ready |  |
 | `shapes_double_pendulum` | shapes | ready |  |
 | `shapes_dashed_line` | shapes | ported |  |
-| `shapes_triangle_strip` | shapes | ready |  |
+| `shapes_triangle_strip` | shapes | ported |  |
 | `shapes_vector_angle` | shapes | ready |  |
 | `shapes_pie_chart` | shapes | waiting | `GuiLine`, `GuiScrollPanel`, `GuiSpinner`, `GuiTextBox` |
 | `shapes_kaleidoscope` | shapes | ready |  |

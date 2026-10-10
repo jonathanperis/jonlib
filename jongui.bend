@@ -607,7 +607,7 @@ def Gui.slider_bar(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangl
 
 # GuiSliderBar(bounds, left, TextFormat(format, value), &value, low, high).
 type Gui.Bar is Data:
-  GuiBar{bounds: J.Rectangle, left: String, low: F32, high: F32}
+  GuiBar{bounds: J.Rectangle, left: String, format: String, low: F32, high: F32}
 
 # GuiCheckBox(bounds, text, &checked).
 type Gui.Box is Data:
@@ -635,27 +635,32 @@ def Gui.bars.text(text: Maybe<String>, +gui: Gui, +core: J.Core, frame: J.Frame,
   match text:
     case None{}: GuiRow{J.Frame.refuse(frame), gui, Con{value, acc}}
     case Some{t}:
-      GuiBar{+bounds, +left, +low, +high} = bar
+      GuiBar{+bounds, +left, _, +low, +high} = bar
       Gui.bars.take(acc, Gui.slider_bar(gui, core, frame, bounds, Some{left}, Some{t}, value, low, high))
 
-def Gui.bars.one(+bar: Gui.Bar, +value: F32, +format: String, +core: J.Core, row: Gui.Row) -> Gui.Row:
-  GuiRow{frame, +gui, acc} = row
-  Gui.bars.text(J.Text.format(format, [J.TextFloat{value}]), gui, core, frame, bar, value, acc)
+def Gui.bar.format(+bar: Gui.Bar) -> String:
+  GuiBar{_, _, format, _, _} = bar
+  format
 
-def Gui.bars.go(bars: +List<Gui.Bar>, values: +List<F32>, +format: String, +core: J.Core, row: Gui.Row) -> Gui.Row:
+def Gui.bars.one(+bar: Gui.Bar, +value: F32, +core: J.Core, row: Gui.Row) -> Gui.Row:
+  GuiRow{frame, +gui, acc} = row
+  Gui.bars.text(J.Text.format(Gui.bar.format(bar), [J.TextFloat{value}]), gui, core, frame, bar, value, acc)
+
+def Gui.bars.go(bars: +List<Gui.Bar>, values: +List<F32>, +core: J.Core, row: Gui.Row) -> Gui.Row:
   match bars values:
-    case Con{+bar, rest} Con{+value, more}: Gui.bars.go(rest, more, format, core, Gui.bars.one(bar, value, format, core, row))
+    case Con{+bar, rest} Con{+value, more}: Gui.bars.go(rest, more, core, Gui.bars.one(bar, value, core, row))
     case _ _: row
 
 def Gui.bars.done(row: Gui.Row) -> J.Frame & (Gui & +List<F32>):
   GuiRow{frame, gui, acc} = row
   (frame, (gui, List.reverse(&2, F32, acc)))
 
-# One GuiSliderBar per bar, in order, each with its value formatted by
-# `format` (one float specification) as the right text: the frame, the Gui
-# and the new values. A format Text.format refuses marks the frame undefined.
-def Gui.slider_bars(+gui: Gui, +core: J.Core, frame: J.Frame, bars: +List<Gui.Bar>, values: +List<F32>, +format: String) -> J.Frame & (Gui & +List<F32>):
-  Gui.bars.done(Gui.bars.go(bars, values, format, core, GuiRow{frame, gui, Nil{}}))
+# One GuiSliderBar per bar, in order, each with its value formatted by the
+# bar's format (one float specification) as the right text: the frame, the
+# Gui and the new values. A format Text.format refuses marks the frame
+# undefined.
+def Gui.slider_bars(+gui: Gui, +core: J.Core, frame: J.Frame, bars: +List<Gui.Bar>, values: +List<F32>) -> J.Frame & (Gui & +List<F32>):
+  Gui.bars.done(Gui.bars.go(bars, values, core, GuiRow{frame, gui, Nil{}}))
 
 def Gui.boxes.taken(acc: +List<Bool>, frame: J.Frame, pair: Bool & Bool) -> Gui.Checks:
   (checked, _) = pair

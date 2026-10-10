@@ -57,11 +57,11 @@ def circle_lines(visible: Bool, +libm: M.Libm, +v: +List<F32>, frame: J.Frame) -
     case True{}: J.Draw.circle_sector_lines_for(libm, frame, center(), at(v, 3n), at(v, 0n), at(v, 1n), F32.trunc(at(v, 4n)), J.Color.with_alpha(J.Color.BLACK(), 0.4))
 
 def bars() -> +List<G.Gui.Bar>:
-  [G.GuiBar{J.Rectangle{600.0, 40.0, 120.0, 20.0}, "StartAngle", F32.neg(450.0), 450.0},
-   G.GuiBar{J.Rectangle{600.0, 70.0, 120.0, 20.0}, "EndAngle", F32.neg(450.0), 450.0},
-   G.GuiBar{J.Rectangle{600.0, 140.0, 120.0, 20.0}, "InnerRadius", 0.0, 100.0},
-   G.GuiBar{J.Rectangle{600.0, 170.0, 120.0, 20.0}, "OuterRadius", 0.0, 200.0},
-   G.GuiBar{J.Rectangle{600.0, 240.0, 120.0, 20.0}, "Segments", 0.0, 100.0}]
+  [G.GuiBar{J.Rectangle{600.0, 40.0, 120.0, 20.0}, "StartAngle", "%.2f", F32.neg(450.0), 450.0},
+   G.GuiBar{J.Rectangle{600.0, 70.0, 120.0, 20.0}, "EndAngle", "%.2f", F32.neg(450.0), 450.0},
+   G.GuiBar{J.Rectangle{600.0, 140.0, 120.0, 20.0}, "InnerRadius", "%.2f", 0.0, 100.0},
+   G.GuiBar{J.Rectangle{600.0, 170.0, 120.0, 20.0}, "OuterRadius", "%.2f", 0.0, 200.0},
+   G.GuiBar{J.Rectangle{600.0, 240.0, 120.0, 20.0}, "Segments", "%.2f", 0.0, 100.0}]
 
 def boxes() -> +List<G.Gui.Box>:
   [G.GuiBox{J.Rectangle{600.0, 320.0, 20.0, 20.0}, "Draw Ring"},
@@ -101,7 +101,7 @@ def draw(+libm: M.Libm, +core: J.Core, +state: State, frame: J.Frame) -> J.Core 
   f1 = J.Draw.line(J.Frame.clear_background(frame, J.Color.RAYWHITE()), 500.0, 0.0, 500.0, 450.0, J.Color.with_alpha(J.Color.LIGHTGRAY(), 0.6))
   f2 = J.Draw.rectangle(f1, 500.0, 0.0, (800.0 - 500.0 : F32), 450.0, J.Color.with_alpha(J.Color.LIGHTGRAY(), 0.3))
   f3 = circle_lines(on(checks, 2n), libm, values, ring_lines(on(checks, 1n), libm, values, ring(on(checks, 0n), libm, values, f2)))
-  draw.bars(core, checks, G.Gui.slider_bars(gui, core, f3, bars(), values, "%.2f"))
+  draw.bars(core, checks, G.Gui.slider_bars(gui, core, f3, bars(), values))
 
 # The main loop's body; libm is the profile of the shapes' sinf/cosf and segment estimate.
 def program(+libm: M.Libm) -> J.Program<State>:
