@@ -2376,7 +2376,7 @@
   {
    "name": "shapes_simple_particles",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
