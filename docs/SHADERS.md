@@ -42,3 +42,14 @@ the 32 locations, `IsShaderValid` and two lookups of shaders loaded from
 missing files, from code and from NULLs, and draws the same scene natively
 with and without `BeginShaderMode` (every `SetShaderValue*` form included),
 requiring equal color buffers.
+
+The `examples-shaders` gate replays the ported shader examples frame by frame
+against the unmodified native examples ([DRIVER.md](DRIVER.md)):
+`shaders_basic_lighting`, `shaders_eratosthenes_sieve`, `shaders_julia_set`,
+`shaders_mandelbrot_set`, `shaders_multi_sample2d`, `shaders_palette_switch`,
+`shaders_raymarching_rendering`, `shaders_rounded_rectangle`,
+`shaders_shapes_textures`, `shaders_texture_outline`,
+`shaders_texture_rendering`, `shaders_texture_tiling` and
+`shaders_texture_waves`. State that only reaches a shader's uniforms (zoom,
+offsets, palettes, run time, a camera used only as a uniform) changes no
+pixel there, so the ports that do not track it say so.
