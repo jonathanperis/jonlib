@@ -88,6 +88,7 @@ EXAMPLES = {
     'core_input_keys': ('core/core_input_keys.c', 'Ex.setup(core, frame)'),
     'core_input_mouse': ('core/core_input_mouse.c', 'Ex.setup(core, frame)'),
     'core_2d_camera': ('core/core_2d_camera.c', 'Ex.setup(seed, core, frame)'),
+    'core_2d_camera_platformer': ('core/core_2d_camera_platformer.c', 'Ex.setup(core, frame)'),
     'shapes_logo_raylib': ('shapes/shapes_logo_raylib.c', 'Ex.setup(core, frame)'),
     'textures_logo_raylib': ('textures/textures_logo_raylib.c', 'Ex.setup(Ex.image(logo), core, frame)'),
     'shapes_basic_shapes': ('shapes/shapes_basic_shapes.c', 'Ex.setup(core, frame)'),
@@ -136,6 +137,7 @@ EXAMPLES = {
     'shaders_basic_lighting': ('shaders/shaders_basic_lighting.c', 'Ex.setup(core, frame)'),
     'shapes_bullet_hell': ('shapes/shapes_bullet_hell.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shapes_double_pendulum': ('shapes/shapes_double_pendulum.c', 'Ex.setup(M.LIBM{}, core, frame)'),
+    'shapes_vector_angle': ('shapes/shapes_vector_angle.c', 'Ex.setup(core, frame)'),
     'shaders_texture_waves': ('shaders/shaders_texture_waves.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_eratosthenes_sieve': ('shaders/shaders_eratosthenes_sieve.c', 'Ex.setup(core, frame)'),
     'shaders_texture_outline': ('shaders/shaders_texture_outline.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -219,6 +221,11 @@ def quick(events=()):
 def slow(events=()):
     """A frame longer than the target: no wait."""
     return (list(events), 0.003, 0.021)
+
+
+def long(events=()):
+    """A tenth of a second."""
+    return (list(events), 0.003, 0.1)
 
 
 def scripts():
@@ -404,6 +411,24 @@ def scripts():
         # Fifth-of-a-second frames: the animation steps every third one and the orbit crosses a direction row.
         # The first frame has no frame time (the pendulum rests); then quick, slow and long steps of the swing.
         script('shapes_double_pendulum', 'swing', [quick(), quick(), slow(), quick()] + [([], 0.003, 0.05) for _ in range(6)] + [quick(), slow()]),
+        # The mouse around the center in mode 0 (also on it, and on V1's row), the right button moving V1,
+        # SPACE to mode 1 (the frame of the switch keeps mode 0's start angle), back to mode 0.
+        script('shapes_vector_angle', 'modes', [quick(), quick([mouse_at(600, 100)]), quick([mouse_at(400, 225)]), slow([mouse_at(200, 300)]),
+                                                quick([button(1)]), quick([mouse_at(520, 225)]), quick([mouse_at(300, 60), button(1, False)]),
+                                                quick([mouse_at(650, 400)]), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False), mouse_at(100, 120)]),
+                                                slow([mouse_at(400, 20)]), quick([mouse_at(-30, 500)]), quick([key(KEY_SPACE)]),
+                                                quick([key(KEY_SPACE, False), mouse_at(410, 240)])]),
+        # Tenth-of-a-second frames: the fall to the ground and a running jump (camera 0); zoomed out at the map's
+        # edge (1); a smoothed run (2); a jump and its landing (3); a run past the inner box (4); reset.
+        script('core_2d_camera_platformer', 'cameras', [quick(), quick()] + [long() for _ in range(9)] + [
+            long([key(KEY_RIGHT)]), long([key(KEY_SPACE)]), long([key(KEY_SPACE, False)]), long(), long([key(KEY_RIGHT, False)]), long(), long(),
+            quick([key(KEY_C)]), quick([key(KEY_C, False), (MOUSE_WHEEL, 0, -5, 0)]), long([key(KEY_LEFT)]), long(), long(), slow([key(KEY_LEFT, False)]),
+            quick([(MOUSE_WHEEL, 0, 12, 0)]), quick([(MOUSE_WHEEL, 0, -7, 0)]),
+            quick([key(KEY_C)]), long([key(KEY_C, False), key(KEY_RIGHT)]), long(), quick(), slow(), long([key(KEY_RIGHT, False)]), long(),
+            quick([key(KEY_C)]), long([key(KEY_C, False), key(KEY_SPACE)]), long([key(KEY_SPACE, False)]), long(), long(), long(), long(), long(), long(),
+            quick([key(KEY_C)]), long([key(KEY_C, False), key(KEY_RIGHT)]), long(), long(), long(), long(), long([key(KEY_SPACE)]),
+            long([key(KEY_SPACE, False)]), long([key(KEY_RIGHT, False), key(KEY_LEFT)]), long(), long(), long(), long(), long(), long(), long(), long(),
+            quick([key(KEY_LEFT, False), key(KEY_R)]), quick([key(KEY_R, False), key(KEY_C)]), quick()]),
         script('models_directional_billboard', 'orbit', [quick(), slow()] + [([], 0.003, 0.2) for _ in range(9)] + [quick()]),
         # raygui slider bars: hover StartAngle, press it (360 degrees) and drag left, on past the bounds (the
         # drag keeps following), release; then the radius, the end angle and few segments (the estimated count).
@@ -626,7 +651,7 @@ def bullet_hell_refusal(item, libm):
 # they refuse nothing and every frame is compared. Under AppleLibm the refusal frame is the one Jonlib
 # reports (every frame before it is still compared with raylib); it is not predicted independently.
 REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
-            'shapes_double_pendulum'}
+            'shapes_double_pendulum', 'shapes_vector_angle'}
 
 
 def refusal(item, libm):
