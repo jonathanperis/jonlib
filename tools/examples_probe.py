@@ -217,6 +217,7 @@ EXAMPLES = {
     'shapes_rlgl_color_wheel': ('shapes/shapes_rlgl_color_wheel.c', 'Ex.setup(core, frame)'),
     'shapes_rectangle_advanced': ('shapes/shapes_rectangle_advanced.c', 'Ex.setup(core, frame)'),
     'shapes_easings_ball': ('shapes/shapes_easings_ball.c', 'Ex.setup(core, frame)'),
+    'shapes_easings_box': ('shapes/shapes_easings_box.c', 'Ex.setup(core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -758,6 +759,9 @@ def scripts():
         # ball larger than the screen) is left out for the JavaScript lane's sake; shapes_easings_testbed
         # plays every easing whole.
         script('shapes_easings_ball', 'play', [quick() for _ in range(40)] + [quick([key(KEY_R)]), quick([key(KEY_R, False)])] + [quick() for _ in range(332)]),
+        # The drop (120 frames), the bounce into a bar (120), the turn (240), the first frames of the growth
+        # over the screen, and SPACE back to the start (the growth and the fade fill the screen for 280 frames).
+        script('shapes_easings_box', 'play', [quick() for _ in range(492)] + [quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)])] + [quick() for _ in range(6)]),
         # The five rounded gradients (the scene has no input).
         script('shapes_rectangle_advanced', 'still', [quick(), quick()]),
         # Two more triangles (a positive wheel move); a color picked inside the wheel, dragged, then outside it
@@ -984,7 +988,7 @@ UNDEFINED_NATIVE = {
 REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
             'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass',
             'shapes_rlgl_color_wheel', 'shapes_rectangle_advanced', 'core_input_gestures_testbed', 'core_input_gamepad',
-            'shapes_easings_ball'}
+            'shapes_easings_ball', 'shapes_easings_box'}
 
 
 def refusal(item, libm):
