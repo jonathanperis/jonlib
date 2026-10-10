@@ -14,12 +14,16 @@ Bend and replaying it against the native example. Work autonomously; merge to
 **Land work in small pieces** (2026-10-10): one example port or one library
 change per commit, each on `main` as soon as its own CI run is green, instead
 of batches of many commits behind one long run.
+**macOS is off the merge path until the port is complete** (2026-10-10):
+pushes and pull requests run on Linux only; then macOS is turned back on and
+everything merged is validated against it ([CI.md](CI.md)). That validation
+is owed: the port is not done before it passes.
 
 ## Where things are
 
 | Branch | Content | State |
 |---|---|---|
-| `main` | everything through Jongui's first controls, the change-scoped Conformance workflow ([CI.md](CI.md)) and, once its run is green, `feature/examples-batch-4` (142 example ports, render-texture depth buffers, `Font.texture_size`, `Surface.colors_image`, `M.Float64.to_f32`/`to_int`) | CI green on every commit merged |
+| `main` | everything through Jongui's first controls, the change-scoped Linux-only Conformance workflow ([CI.md](CI.md)), `feature/examples-batch-4` (142 example ports, render-texture depth buffers, `Font.texture_size`, `Surface.colors_image`, `M.Float64.to_f32`/`to_int`) and the pieces of the stack as they land | green on Linux for every commit merged; batch 4 also passed nine of its ten macOS shards (the tenth was still running at the merge) |
 | `stack/final` | single-purpose commits on top of that, in landing order (below). The name starts no CI run: it is the backup of work not yet on `main` | each piece goes to `main` through a `feature/**` branch |
 
 Landing order of `stack/final` (`python3 tools/ci_scope.py --base <parent> --head <commit>` prints each commit's scope):
@@ -144,9 +148,11 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 1. Land `stack/final` piece by piece, in its order: push a piece as
    `feature/<name>` once what is under it is on `main`, merge it
    (fast-forward) when both workflows conclude `success`, delete the branch.
-   Hosted macOS runs five jobs at a time across every run: keep one complete
-   run in flight at most, and never push to a branch whose run you wait for
-   (the push cancels it).
+   Push each branch in its own `git push` (a push of many refs at once
+   started only part of the workflows) and never push to a branch whose run
+   you wait for (the push cancels it). A complete run takes fifteen Linux
+   runners for about an hour and a half; the account runs about twenty
+   jobs at a time.
 2. Keep porting the ready examples ([EXAMPLES.md](EXAMPLES.md)), one port a
    commit. `textures_sprite_stacking` is written and parked
    (`.build/pending/`, not in the repository): its `booth.png` is 112x11468
@@ -170,11 +176,11 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
    dropdown box, progress bar, group box, line, scroll panel, list view;
    about 11 more examples), the audio device and streams (12+ examples; the
    reference build has `SUPPORT_MODULE_RAUDIO=OFF`), VR.
-5. Possible further CI savings, not decided: hosted macOS is the ceiling of
-   a complete run (about 20 runner-hours through five slots). Running the
-   byte-level codec gates on macOS only nightly would cut a complete run to
-   about 1.5 hours, at the cost of "both hosts green before merge" for those
-   gates.
+5. **Owed before the port is called done:** turn macOS back on
+   (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
+   `.github/workflows/checks.yml`), run both workflows manually on `main`
+   and fix everything macOS finds. Until then the nightly runs (06:17 UTC,
+   every host) show what macOS thinks of `main`: note a red one here.
 
 ## Known pitfalls (save time)
 
