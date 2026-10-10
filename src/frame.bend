@@ -1370,9 +1370,16 @@ type RenderTarget is Data:
 
 # The color buffer drawn: the screen, or a render texture with the screen's
 # size and pixels set aside.
+# A render texture's depth renderbuffer while it is not the target, by
+# framebuffer id.
+type Stash is Type:
+  Stash{id: U32, depth: Array<U32>}
+
+# depth: the screen's depth buffer set aside (the raster holds the render
+# texture's); stash: the other render textures' depth buffers.
 type Target is Type:
-  Screen{}
-  Offscreen{width: U32, height: U32, pixels: Array<U32>, meta: RenderTarget}
+  Screen{stash: List<Stash>}
+  Offscreen{width: U32, height: U32, pixels: Array<U32>, depth: Array<U32>, stash: List<Stash>, meta: RenderTarget}
 
 # A render texture's color buffer handed back by EndTextureMode.
 type Detached is Type:
@@ -2031,8 +2038,8 @@ def clear.depth(+width: U32, +height: U32, +scissor: Scissor, raster: Raster) ->
 
 def clear.target(target: Target, +width: U32, +height: U32, +scissor: Scissor, raster: Raster) -> Target & Raster:
   match target:
-    case Screen{}: (Screen{}, clear.depth(width, height, scissor, raster))
-    case Offscreen{sw, sh, pixels, meta}: (Offscreen{sw, sh, pixels, meta}, raster)
+    case Screen{stash}: (Screen{stash}, clear.depth(width, height, scissor, raster))
+    case Offscreen{sw, sh, pixels, depth, stash, meta}: (Offscreen{sw, sh, pixels, depth, stash, meta}, clear.depth(width, height, scissor, raster))
 
 def Canvas.cleared(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, result: Target & Raster) -> Canvas:
   (target, raster) = result
@@ -2063,7 +2070,7 @@ def Canvas.clear(+color: U32, canvas: Canvas) -> Canvas:
 def Canvas.new.with(+width: U32, +height: U32, shapes: Shapes) -> Canvas:
   Canvas.clear(255, Canvas.build(width, height, Immediate.initial(),
     Raster{Array.new(U32, 0n, 0), Font.atlas(), Unbound{}, True{}, Extra{Array.new(U32, 0n, 0), Unbound{}, Unbound{}}},
-    Rig.initial(width, height), Screen{}, GlBox{Gl.initial.with(width, height, shapes), Nil{}}))
+    Rig.initial(width, height), Screen{Nil{}}, GlBox{Gl.initial.with(width, height, shapes), Nil{}}))
 
 def Canvas.new(+width: U32, +height: U32) -> Canvas:
   Canvas.new.with(width, height, Shapes.initial())
@@ -2146,8 +2153,8 @@ def Canvas.camera(+matrix: Matrix4, canvas: Canvas) -> Canvas:
 
 def Canvas.target.size(target: Target, +width: U32, +height: U32) -> Target & (U32 & U32):
   match target:
-    case Screen{}: (Screen{}, (width, height))
-    case Offscreen{+sw, +sh, pixels, meta}: (Offscreen{sw, sh, pixels, meta}, (sw, sh))
+    case Screen{stash}: (Screen{stash}, (width, height))
+    case Offscreen{+sw, +sh, pixels, depth, stash, meta}: (Offscreen{sw, sh, pixels, depth, stash, meta}, (sw, sh))
 
 def Canvas.sized(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox, result: Target & (U32 & U32)) -> Canvas & (U32 & U32):
   (target, size) = result
@@ -2166,8 +2173,8 @@ def Canvas.fbo(canvas: Canvas) -> Canvas & (U32 & U32):
 
 def Canvas.target.offscreen(target: Target) -> Target & Bool:
   match target:
-    case Screen{}: (Screen{}, False{})
-    case Offscreen{sw, sh, pixels, meta}: (Offscreen{sw, sh, pixels, meta}, True{})
+    case Screen{stash}: (Screen{stash}, False{})
+    case Offscreen{sw, sh, pixels, depth, stash, meta}: (Offscreen{sw, sh, pixels, depth, stash, meta}, True{})
 
 def Canvas.flagged(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox, result: Target & Bool) -> Canvas & Bool:
   (target, flag) = result
@@ -2184,8 +2191,8 @@ def RenderTarget.id(+meta: RenderTarget) -> U32:
 
 def Canvas.target.id(target: Target) -> Target & U32:
   match target:
-    case Screen{}: (Screen{}, 0)
-    case Offscreen{sw, sh, pixels, +meta}: (Offscreen{sw, sh, pixels, meta}, RenderTarget.id(meta))
+    case Screen{stash}: (Screen{stash}, 0)
+    case Offscreen{sw, sh, pixels, depth, stash, +meta}: (Offscreen{sw, sh, pixels, depth, stash, meta}, RenderTarget.id(meta))
 
 def Canvas.identified(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox, result: Target & U32) -> Canvas & U32:
   (target, id) = result
@@ -2216,32 +2223,81 @@ def Canvas.unscissor(canvas: Canvas) -> Canvas:
   Canvas{width, height, matrix, state, raster, rig, target, gl} = canvas
   Canvas{width, height, matrix, state, raster, Rig.scissor.enable(False{}, rig), target, gl}
 
-def Canvas.target.enter(meta: RenderTarget, +tw: U32, +th: U32, texels: Array<U32>, +width: U32, +height: U32, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas:
-  Raster{pixels, atlas, sampler, ok, extra} = raster
-  Canvas.build(tw, th, state, Raster{texels, atlas, sampler, ok, extra}, Rig.view(tw, th, rig), Offscreen{width, height, pixels, meta}, GlBox.view(tw, th, gl))
+def Stash.step.at(same: Bool, +id: U32, depth: Array<U32>, kept: List<Stash>, found: Maybe<Array<U32>>) -> List<Stash> & Maybe<Array<U32>>:
+  match same:
+    case True{}: (kept, Some{depth})
+    case False{}: (Con{Stash{id, depth}, kept}, found)
 
-def Canvas.target.begin(target: Target, meta: RenderTarget, +tw: U32, +th: U32, texels: Array<U32>, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas:
+def Stash.step(+wanted: U32, entry: Stash, acc: List<Stash> & Maybe<Array<U32>>) -> List<Stash> & Maybe<Array<U32>>:
+  Stash{+id, depth} = entry
+  (kept, found) = acc
+  Stash.step.at(U32.is_eq(id, wanted), id, depth, kept, found)
+
+# The stash without the framebuffer's entry, and that entry's depth buffer.
+def Stash.take(stash: List<Stash>, +wanted: U32, acc: List<Stash> & Maybe<Array<U32>>) -> List<Stash> & Maybe<Array<U32>>:
+  match stash:
+    case Nil{}: acc
+    case Con{entry, rest}: Stash.take(rest, wanted, Stash.step(wanted, entry, acc))
+
+# A render texture's depth renderbuffer: rlsw allocates it zeroed (depth 0.0).
+def Stash.buffer(found: Maybe<Array<U32>>, +count: U32) -> Array<U32>:
+  match found:
+    case None{}: Array.new(U32, depth(count), 0)
+    case Some{buffer}: buffer
+
+def Canvas.target.entered(+meta: RenderTarget, +tw: U32, +th: U32, texels: Array<U32>, +width: U32, +height: U32, state: Immediate, pixels: Array<U32>, atlas: Array<U32>, sampler: Sampler, ok: Bool,
+    screen: Array<U32>, shapes: Sampler, held: Sampler, rig: Rig, gl: GlBox, taken: List<Stash> & Maybe<Array<U32>>) -> Canvas:
+  (stash, found) = taken
+  Canvas.build(tw, th, state, Raster{texels, atlas, sampler, ok, Extra{Stash.buffer(found, (tw * th : U32)), shapes, held}}, Rig.view(tw, th, rig),
+    Offscreen{width, height, pixels, screen, stash, meta}, GlBox.view(tw, th, gl))
+
+# The render texture's depth buffer becomes the raster's (taken from the
+# stash, or zeroed the first time); the screen's is set aside.
+def Canvas.target.enter(+meta: RenderTarget, +tw: U32, +th: U32, texels: Array<U32>, +width: U32, +height: U32, state: Immediate, raster: Raster, rig: Rig, gl: GlBox, stash: List<Stash>) -> Canvas:
+  Raster{pixels, atlas, sampler, ok, extra} = raster
+  Extra{screen, shapes, held} = extra
+  Canvas.target.entered(meta, tw, th, texels, width, height, state, pixels, atlas, sampler, ok, screen, shapes, held, rig, gl, Stash.take(stash, RenderTarget.id(meta), (Nil{}, None{})))
+
+def Canvas.target.begin(target: Target, +meta: RenderTarget, +tw: U32, +th: U32, texels: Array<U32>, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas:
   match target:
-    case Screen{}: Canvas.target.enter(meta, tw, th, texels, width, height, state, raster, rig, gl)
-    case Offscreen{sw, sh, pixels, active}: Canvas{width, height, matrix, state, Raster.refuse(raster), rig, Offscreen{sw, sh, pixels, active}, gl}
+    case Screen{stash}: Canvas.target.enter(meta, tw, th, texels, width, height, state, raster, rig, gl, stash)
+    case Offscreen{sw, sh, pixels, depth, stash, active}: Canvas{width, height, matrix, state, Raster.refuse(raster), rig, Offscreen{sw, sh, pixels, depth, stash, active}, gl}
 
 # BeginTextureMode: the render texture's color buffer becomes the target,
 # with its viewport and orthographic projection and an identity modelview; the
 # scissor keeps the clip-space bounds computed for the previous viewport.
 # Starting a texture mode while one is active is refused (the frame becomes
 # undefined and the second target is dropped).
-def Canvas.begin_target(meta: RenderTarget, +tw: U32, +th: U32, texels: Array<U32>, canvas: Canvas) -> Canvas:
+def Canvas.begin_target(+meta: RenderTarget, +tw: U32, +th: U32, texels: Array<U32>, canvas: Canvas) -> Canvas:
   Canvas{width, height, matrix, state, raster, rig, target, gl} = canvas
   Canvas.target.begin(target, meta, tw, th, texels, width, height, matrix, state, raster, rig, gl)
 
-def Canvas.target.leave(+sw: U32, +sh: U32, screen: Array<U32>, meta: RenderTarget, +tw: U32, +th: U32, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas & Maybe<Detached>:
+# The render texture's depth buffer goes back to the stash.
+def Canvas.target.leave(+sw: U32, +sh: U32, screen: Array<U32>, depth: Array<U32>, stash: List<Stash>, +meta: RenderTarget, +tw: U32, +th: U32, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas & Maybe<Detached>:
   Raster{texels, atlas, sampler, ok, extra} = raster
-  (Canvas.build(sw, sh, state, Raster{screen, atlas, sampler, ok, extra}, Rig.view(sw, sh, rig), Screen{}, GlBox.view(sw, sh, gl)), Some{Detached{meta, tw, th, texels}})
+  Extra{buffer, shapes, held} = extra
+  (Canvas.build(sw, sh, state, Raster{screen, atlas, sampler, ok, Extra{depth, shapes, held}}, Rig.view(sw, sh, rig), Screen{Con{Stash{RenderTarget.id(meta), buffer}, stash}}, GlBox.view(sw, sh, gl)),
+    Some{Detached{meta, tw, th, texels}})
 
 def Canvas.target.end(target: Target, +width: U32, +height: U32, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas & Maybe<Detached>:
   match target:
-    case Screen{}: (Canvas.build(width, height, state, raster, Rig.view(width, height, rig), Screen{}, GlBox.view(width, height, gl)), None{})
-    case Offscreen{sw, sh, screen, meta}: Canvas.target.leave(sw, sh, screen, meta, width, height, state, raster, rig, gl)
+    case Screen{stash}: (Canvas.build(width, height, state, raster, Rig.view(width, height, rig), Screen{stash}, GlBox.view(width, height, gl)), None{})
+    case Offscreen{sw, sh, screen, depth, stash, meta}: Canvas.target.leave(sw, sh, screen, depth, stash, meta, width, height, state, raster, rig, gl)
+
+def Canvas.forgot(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox, taken: List<Stash> & Maybe<Array<U32>>) -> Canvas:
+  (stash, _) = taken
+  Canvas{width, height, matrix, state, raster, rig, Screen{stash}, gl}
+
+def Canvas.forget.target(target: Target, +id: U32, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas:
+  match target:
+    case Screen{stash}: Canvas.forgot(width, height, matrix, state, raster, rig, gl, Stash.take(stash, id, (Nil{}, None{})))
+    case Offscreen{sw, sh, pixels, depth, stash, meta}: Canvas{width, height, matrix, state, raster, rig, Offscreen{sw, sh, pixels, depth, stash, meta}, gl}
+
+# rlUnloadFramebuffer's depth renderbuffer: the framebuffer's stashed depth
+# buffer is dropped (its id may be handed out again).
+def Canvas.forget(+id: U32, canvas: Canvas) -> Canvas:
+  Canvas{+width, +height, matrix, state, raster, rig, target, gl} = canvas
+  Canvas.forget.target(target, id, width, height, matrix, state, raster, rig, gl)
 
 # EndTextureMode: back to the screen's color buffer, viewport and projection
 # (SetupViewport) with an identity modelview; the render texture's color
@@ -2335,10 +2391,8 @@ def Pipe.with_depth(+pipe: Pipe, +depth: Bool) -> Pipe:
   Pipe{cull, poly, thick, radius, port, depth}
 
 def Canvas.render.target(+mode: U32, +textured: U32, +blend: Bool, +depth: Bool, +width: U32, +height: U32, +rig: Rig, +pipe: Pipe, pending: +List<Vertex>, raster: Raster, result: Target & Bool) -> Target & Raster:
-  (target, +offscreen) = result
-  +tested = depth && Bool.not(offscreen)
-  (target, render(mode, textured, blend, Pipe.with_depth(pipe, tested), width, height, Rig.scissor(rig), List.reverse(&2, Vertex, pending),
-    Raster.require(Bool.not(depth && offscreen), raster)))
+  (target, _) = result
+  (target, render(mode, textured, blend, Pipe.with_depth(pipe, depth), width, height, Rig.scissor(rig), List.reverse(&2, Vertex, pending), raster))
 
 def Canvas.rendered(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, result: Target & Raster) -> Canvas:
   (target, raster) = result
@@ -2352,8 +2406,7 @@ def Canvas.render.with(+mode: U32, +textured: U32, +alpha: Bool, +bound: U32, +p
     Canvas.render.target(mode, textured, blend, caps.depth(caps), width, height, rig, pipe, pending, raster, Canvas.target.offscreen(target)))
 
 # A complete primitive: rendered, then the alpha flag and vertices reset. A
-# depth-tested primitive into a render texture is refused (its depth buffer
-# is not modeled).
+# depth-tested primitive tests the current target's depth buffer.
 def Canvas.render(+mode: U32, +textured: U32, +alpha: Bool, +bound: U32, +paint: Attr, +caps: U32, pending: +List<Vertex>, canvas: Canvas) -> Canvas:
   Canvas.render.with(mode, textured, alpha, bound, paint, caps, pending, Canvas.read.pipe(canvas))
 
@@ -2695,25 +2748,25 @@ def read.loop(n: Nat, +index: U32, +width: U32, +height: U32, +mask: U32, buffer
       read.loop(rest, (index + 1 : U32), width, height, mask,
         read.copy(index, mask, out, Array.get(U32, pixels, ((height - 1 - index / width) * width + index % width : U32))))
 
-def read.result(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, atlas: Array<U32>, sampler: Sampler, extra: Extra, rig: Rig, gl: GlBox, buffers: Array<U32> & Array<U32>) -> Canvas & Maybe<Array<U32>>:
+def read.result(stash: List<Stash>, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, atlas: Array<U32>, sampler: Sampler, extra: Extra, rig: Rig, gl: GlBox, buffers: Array<U32> & Array<U32>) -> Canvas & Maybe<Array<U32>>:
   (pixels, out) = buffers
-  (Canvas{width, height, matrix, state, Raster{pixels, atlas, sampler, True{}, extra}, rig, Screen{}, gl}, Some{out})
+  (Canvas{width, height, matrix, state, Raster{pixels, atlas, sampler, True{}, extra}, rig, Screen{stash}, gl}, Some{out})
 
-def read.checked(ok: Bool, +width: U32, +height: U32, +mask: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, pixels: Array<U32>, atlas: Array<U32>, sampler: Sampler, extra: Extra) -> Canvas & Maybe<Array<U32>>:
+def read.checked(stash: List<Stash>, ok: Bool, +width: U32, +height: U32, +mask: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, pixels: Array<U32>, atlas: Array<U32>, sampler: Sampler, extra: Extra) -> Canvas & Maybe<Array<U32>>:
   match ok:
-    case False{}: (Canvas{width, height, matrix, state, Raster{pixels, atlas, sampler, False{}, extra}, rig, Screen{}, gl}, None{})
+    case False{}: (Canvas{width, height, matrix, state, Raster{pixels, atlas, sampler, False{}, extra}, rig, Screen{stash}, gl}, None{})
     case True{}:
       +count = (width * height : U32)
-      read.result(width, height, matrix, state, atlas, sampler, extra, rig, gl, read.loop(U32.to_nat(count), 0, width, height, mask, (pixels, Array.new(U32, depth(count), 0))))
+      read.result(stash, width, height, matrix, state, atlas, sampler, extra, rig, gl, read.loop(U32.to_nat(count), 0, width, height, mask, (pixels, Array.new(U32, depth(count), 0))))
 
-def read.screen(+mask: U32, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, raster: Raster) -> Canvas & Maybe<Array<U32>>:
+def read.screen(stash: List<Stash>, +mask: U32, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, raster: Raster) -> Canvas & Maybe<Array<U32>>:
   Raster{pixels, atlas, sampler, ok, extra} = raster
-  read.checked(ok, width, height, mask, matrix, state, rig, gl, pixels, atlas, sampler, extra)
+  read.checked(stash, ok, width, height, mask, matrix, state, rig, gl, pixels, atlas, sampler, extra)
 
 def read.target(target: Target, +mask: U32, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas & Maybe<Array<U32>>:
   match target:
-    case Screen{}: read.screen(mask, width, height, matrix, state, rig, gl, raster)
-    case Offscreen{sw, sh, screen, meta}: (Canvas{width, height, matrix, state, raster, rig, Offscreen{sw, sh, screen, meta}, gl}, None{})
+    case Screen{stash}: read.screen(stash, mask, width, height, matrix, state, rig, gl, raster)
+    case Offscreen{sw, sh, screen, depth, stash, meta}: (Canvas{width, height, matrix, state, raster, rig, Offscreen{sw, sh, screen, depth, stash, meta}, gl}, None{})
 
 def Canvas.read(+opaque: Bool, canvas: Canvas) -> Canvas & Maybe<Array<U32>>:
   Canvas{width, height, matrix, state, raster, rig, target, gl} = canvas
@@ -2734,23 +2787,23 @@ def scan.read(n: Nat, +i: U32, read: Array<U32> & U32, acc: +List<U32>) -> Array
 def scan.copied(+count: U32, pixels: Array<U32>) -> Array<U32> & +List<U32>:
   scan.read(U32.to_nat((count - 1 : U32)), (count - 1 : U32), Array.get(U32, pixels, (count - 1 : U32)), Nil{})
 
-def scan.result(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, atlas: Array<U32>, sampler: Sampler, extra: Extra, rig: Rig, gl: GlBox, scanned: Array<U32> & +List<U32>) -> Canvas & Maybe<+List<U32>>:
+def scan.result(stash: List<Stash>, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, atlas: Array<U32>, sampler: Sampler, extra: Extra, rig: Rig, gl: GlBox, scanned: Array<U32> & +List<U32>) -> Canvas & Maybe<+List<U32>>:
   (pixels, words) = scanned
-  (Canvas{width, height, matrix, state, Raster{pixels, atlas, sampler, True{}, extra}, rig, Screen{}, gl}, Some{words})
+  (Canvas{width, height, matrix, state, Raster{pixels, atlas, sampler, True{}, extra}, rig, Screen{stash}, gl}, Some{words})
 
-def scan.checked(ok: Bool, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, pixels: Array<U32>, atlas: Array<U32>, sampler: Sampler, extra: Extra) -> Canvas & Maybe<+List<U32>>:
+def scan.checked(stash: List<Stash>, ok: Bool, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, pixels: Array<U32>, atlas: Array<U32>, sampler: Sampler, extra: Extra) -> Canvas & Maybe<+List<U32>>:
   match ok:
-    case False{}: (Canvas{width, height, matrix, state, Raster{pixels, atlas, sampler, False{}, extra}, rig, Screen{}, gl}, None{})
-    case True{}: scan.result(width, height, matrix, state, atlas, sampler, extra, rig, gl, scan.copied((width * height : U32), pixels))
+    case False{}: (Canvas{width, height, matrix, state, Raster{pixels, atlas, sampler, False{}, extra}, rig, Screen{stash}, gl}, None{})
+    case True{}: scan.result(stash, width, height, matrix, state, atlas, sampler, extra, rig, gl, scan.copied((width * height : U32), pixels))
 
-def scan.screen(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, raster: Raster) -> Canvas & Maybe<+List<U32>>:
+def scan.screen(stash: List<Stash>, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, raster: Raster) -> Canvas & Maybe<+List<U32>>:
   Raster{pixels, atlas, sampler, ok, extra} = raster
-  scan.checked(ok, width, height, matrix, state, rig, gl, pixels, atlas, sampler, extra)
+  scan.checked(stash, ok, width, height, matrix, state, rig, gl, pixels, atlas, sampler, extra)
 
 def scan.target(target: Target, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas & Maybe<+List<U32>>:
   match target:
-    case Screen{}: scan.screen(width, height, matrix, state, rig, gl, raster)
-    case Offscreen{sw, sh, screen, meta}: (Canvas{width, height, matrix, state, raster, rig, Offscreen{sw, sh, screen, meta}, gl}, None{})
+    case Screen{stash}: scan.screen(stash, width, height, matrix, state, rig, gl, raster)
+    case Offscreen{sw, sh, screen, depth, stash, meta}: (Canvas{width, height, matrix, state, raster, rig, Offscreen{sw, sh, screen, depth, stash, meta}, gl}, None{})
 
 def Canvas.scan(canvas: Canvas) -> Canvas & Maybe<+List<U32>>:
   Canvas{width, height, matrix, state, raster, rig, target, gl} = canvas
@@ -2774,23 +2827,23 @@ def Canvas.defined(canvas: Canvas) -> Canvas & Bool:
 # Presentation (the desktop driver): the screen's color buffer as Base's
 # quadtree Image (src/present.bend). Same None cases as the readback.
 
-def present.result(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, atlas: Array<U32>, sampler: Sampler, extra: Extra, rig: Rig, gl: GlBox, shown: Array<U32> & Image) -> Canvas & Maybe<Image>:
+def present.result(stash: List<Stash>, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, atlas: Array<U32>, sampler: Sampler, extra: Extra, rig: Rig, gl: GlBox, shown: Array<U32> & Image) -> Canvas & Maybe<Image>:
   (pixels, image) = shown
-  (Canvas{width, height, matrix, state, Raster{pixels, atlas, sampler, True{}, extra}, rig, Screen{}, gl}, Some{image})
+  (Canvas{width, height, matrix, state, Raster{pixels, atlas, sampler, True{}, extra}, rig, Screen{stash}, gl}, Some{image})
 
-def present.checked(ok: Bool, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, pixels: Array<U32>, atlas: Array<U32>, sampler: Sampler, extra: Extra) -> Canvas & Maybe<Image>:
+def present.checked(stash: List<Stash>, ok: Bool, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, pixels: Array<U32>, atlas: Array<U32>, sampler: Sampler, extra: Extra) -> Canvas & Maybe<Image>:
   match ok:
-    case False{}: (Canvas{width, height, matrix, state, Raster{pixels, atlas, sampler, False{}, extra}, rig, Screen{}, gl}, None{})
-    case True{}: present.result(width, height, matrix, state, atlas, sampler, extra, rig, gl, Present.from(pixels, width, height))
+    case False{}: (Canvas{width, height, matrix, state, Raster{pixels, atlas, sampler, False{}, extra}, rig, Screen{stash}, gl}, None{})
+    case True{}: present.result(stash, width, height, matrix, state, atlas, sampler, extra, rig, gl, Present.from(pixels, width, height))
 
-def present.screen(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, raster: Raster) -> Canvas & Maybe<Image>:
+def present.screen(stash: List<Stash>, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, raster: Raster) -> Canvas & Maybe<Image>:
   Raster{pixels, atlas, sampler, ok, extra} = raster
-  present.checked(ok, width, height, matrix, state, rig, gl, pixels, atlas, sampler, extra)
+  present.checked(stash, ok, width, height, matrix, state, rig, gl, pixels, atlas, sampler, extra)
 
 def present.target(target: Target, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas & Maybe<Image>:
   match target:
-    case Screen{}: present.screen(width, height, matrix, state, rig, gl, raster)
-    case Offscreen{sw, sh, screen, meta}: (Canvas{width, height, matrix, state, raster, rig, Offscreen{sw, sh, screen, meta}, gl}, None{})
+    case Screen{stash}: present.screen(stash, width, height, matrix, state, rig, gl, raster)
+    case Offscreen{sw, sh, screen, depth, stash, meta}: (Canvas{width, height, matrix, state, raster, rig, Offscreen{sw, sh, screen, depth, stash, meta}, gl}, None{})
 
 def Canvas.present(canvas: Canvas) -> Canvas & Maybe<Image>:
   Canvas{width, height, matrix, state, raster, rig, target, gl} = canvas

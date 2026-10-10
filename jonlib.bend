@@ -4106,6 +4106,17 @@ def Surface.unload_colors(colors: List<U32>) -> Unit:
 def Surface.colors(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, List<U32>>:
   Surface.colors.rgba(Surface.rgba.load(surface))
 
+def Surface.colors_image.rgba(result: Result<&1, &1, Surface & Surface.Error, Rgba>) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  match result:
+    case Fail{failure}: Fail{failure}
+    case Done{Rgba{width, height, pixels}}: Done{Surface{width, height, 7, Words{pixels}}}
+
+# LoadImageColors kept as an image: the canonical Colors as an R8G8B8A8
+# Surface of the same size, which is what UpdateTexture(texture,
+# LoadImageColors(image)) uploads. Consumes the owner; Fail as Surface.colors.
+def Surface.colors_image(surface: Surface) -> Result<&1, &1, Surface & Surface.Error, Surface>:
+  Surface.colors_image.rgba(Surface.rgba.load(surface))
+
 def Surface.get.words(+width: U32, height: U32, +format: U32, result: Array<U32> & U32) -> Surface & Maybe<&2, U32>:
   (values, +word) = result
   (Surface{width, height, format, Words{values}}, Some{Bool.pick(U32, U32.is_eq(format, 7), word, Formats.image_color(format, word))})
@@ -8018,7 +8029,7 @@ def RenderTexture.load(frame: Frame, +width: U32, +height: U32) -> Frame & Maybe
 def RenderTexture.release(offscreen: Bool, +fbo: U32, +color: U32, +depth: U32, canvas: FrameCore.Canvas) -> FrameCore.Canvas:
   match offscreen:
     case True{}: FrameCore.Canvas.refuse(canvas)
-    case False{}: FrameCore.Canvas.give(True{}, fbo, FrameCore.Canvas.give(False{}, depth, FrameCore.Canvas.give(False{}, color, canvas)))
+    case False{}: FrameCore.Canvas.give(True{}, fbo, FrameCore.Canvas.give(False{}, depth, FrameCore.Canvas.give(False{}, color, FrameCore.Canvas.forget(fbo, canvas))))
 
 def RenderTexture.unload.flagged(+fbo: U32, +color: U32, +depth: U32, flagged: FrameCore.Canvas & Bool) -> Frame:
   (canvas, offscreen) = flagged
@@ -8029,9 +8040,9 @@ def RenderTexture.unload.texture(frame: Frame, +fbo: U32, +depth: U32, texture: 
   Texture{+color, _, _, _, _, _, _} = texture
   RenderTexture.unload.flagged(fbo, color, depth, FrameCore.Canvas.offscreen(canvas))
 
-# UnloadRenderTexture: the color texture's id, then the depth renderbuffer's,
-# return to the texture pool and the framebuffer's to its pool. Refused during
-# texture mode (rlgl rebinds framebuffer 0).
+# UnloadRenderTexture: the color texture's id, then the depth renderbuffer's
+# (with its depth buffer), return to the texture pool and the framebuffer's to
+# its pool. Refused during texture mode (rlgl rebinds framebuffer 0).
 def RenderTexture.unload(frame: Frame, target: RenderTexture) -> Frame:
   RenderTexture{+fbo, texture, +depth} = target
   RenderTexture.unload.texture(frame, fbo, depth, texture)
@@ -8753,6 +8764,22 @@ def Font.unload(frame: Frame, font: Font) -> Frame:
 def Font.set_filter(font: Font, +filter: U32) -> Font:
   Font{base, padding, glyphs, texture, atlas} = font
   Font{base, padding, glyphs, Texture.set_filter(texture, filter), atlas}
+
+# font.texture.width and font.texture.height.
+def Font.texture_size(font: Font) -> Font & (U32 & U32):
+  Font{base, padding, glyphs, texture, atlas} = font
+  Texture{id, +width, +height, format, linear, alpha, texels} = texture
+  (Font{base, padding, glyphs, Texture{id, width, height, format, linear, alpha, texels}, atlas}, (width, height))
+
+def Draw.font_texture.kept(+base: U32, +padding: U32, +glyphs: +List<FontCore.Glyph>, atlas: Surface, result: Frame & Texture) -> Frame & Font:
+  (frame, texture) = result
+  (frame, Font{base, padding, glyphs, texture, atlas})
+
+# DrawTexture(font.texture, x, y, tint): the font's atlas texture drawn
+# through the Font value that owns it.
+def Draw.font_texture(frame: Frame, font: Font, +x: F32, +y: F32, +tint: U32) -> Frame & Font:
+  Font{+base, +padding, +glyphs, texture, atlas} = font
+  Draw.font_texture.kept(base, padding, glyphs, atlas, Draw.texture(frame, texture, x, y, tint))
 
 # GetGlyphIndex: the first glyph with the codepoint, else the last '?' glyph
 # (or 0); 0 for an invalid font.

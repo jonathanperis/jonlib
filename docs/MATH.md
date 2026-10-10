@@ -298,6 +298,11 @@ basis used by `Matrix.compose`. Both results follow their respective reference
 implementations; no implicit normalization makes them interchangeable.
 The remaining quaternion operations and full integration/ABI/target/performance
 coverage remain ledger gaps.
+`M.Float64.to_f32(value)` is C's `(float)` of a binary64 value (round to
+nearest even, gradual underflow, overflow to infinity; `None` for infinities
+and NaN), for example `(float)GetTime()`. `M.Float64.to_int(value)` is `(int)`
+(truncation toward zero as a two's-complement word; `None` at or beyond 2^31
+in magnitude, where C's conversion is undefined, and for infinities and NaN).
 `M.Libm.pow2(libm, k)` is `powf(2, k)` (and the `exp2f(k)` compilers
 substitute for it) for an integral `k` in [-20, 30]: exactly `2^k` under both
 glibc profiles (gate `pow2`), `None` for `AppleLibm` and every other `k`.

@@ -203,7 +203,7 @@ class Probe:
             commands['gpu'] = [gpu_binary, '--gpu', 'on']
         return commands
 
-    def candidates(self, render, actions, *, batch=64, source_limit=None, fd_limit=None, parse=None, parse_lane=None):
+    def candidates(self, render, actions, *, batch=64, source_limit=None, fd_limit=None, parse=None, parse_lane=None, timeout=600):
         """Run every batch of actions on every lane; return {lane: [row, ...]} in plan order.
 
         render(selected_actions, gpu) returns Bend source text; parse(stdout, selected)
@@ -211,7 +211,8 @@ class Probe:
         Batches hold at most `batch` actions and, if given, `source_limit` bytes of
         generated source (large programs exceed compiler budgets). parse_lane(stdout,
         selected, lane) replaces parse when rows depend on the lane (for example files
-        each lane writes that the parser reads and removes).
+        each lane writes that the parser reads and removes). `timeout` bounds one
+        lane's run of one batch, in seconds.
         """
         if not actions:
             raise ProbeFailure(f'{self.name}: empty action list')
@@ -224,7 +225,7 @@ class Probe:
             commands = self._compile(index, lambda gpu: render(selected, gpu))
             rows = {}
             for lane, command in commands.items():
-                text = run(command, fd_limit=fd_limit)
+                text = run(command, fd_limit=fd_limit, timeout=timeout)
                 rows[lane] = parse_lane(text, selected, lane) if parse_lane else parse(text, selected)
                 if len(rows[lane]) != len(selected):
                     raise ProbeFailure(f'{self.name}: {lane} batch {index} produced {len(rows[lane])} rows '

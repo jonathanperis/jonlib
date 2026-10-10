@@ -32,9 +32,8 @@ rounded-rectangle corners.
 Contracts (Jonlib must answer null): segment estimates outside the glibc 2.39
 profile, an infinite DrawLineDashed loop, rlOrtho/rlFrustum arguments
 outside the exact binary32 domain, popping the last projection or texture
-matrix, line widths above 4096 and NaN point sizes, depth-tested drawing into
-a render texture, and thick lines or points reaching outside the color
-buffer. CPU-1, CPU-2 and JavaScript lanes.
+matrix, line widths above 4096 and NaN point sizes, and thick lines or points
+reaching outside the color buffer. CPU-1, CPU-2 and JavaScript lanes.
 """
 import hashlib
 import json
@@ -379,6 +378,30 @@ def scenes():
                ('clear_color', 0, 0, 40, 255), ('scissor', 4.0, 4.0, 6.0, 6.0), ('toggle', 'scissor', True), ('clear_buffers',),
                ('toggle', 'scissor', False), ('rl_begin', 7), ('c4ub', 255, 255, 0, 255), ('v3f', 0.0, 0.0, 0.9), ('v3f', 0.0, 24.0, 0.9),
                ('v3f', 32.0, 24.0, 0.9), ('v3f', 32.0, 0.0, 0.9), ('rl_end',), ('toggle', 'depth', False), ('end',)])
+    # A render texture's depth renderbuffer starts zeroed (depth 0.0): before any clear only fragments at
+    # depth 0 pass (the rectangle at z = 0 does, the quad behind it does not).
+    add('rl-depth-render-texture', 24, 18, [('begin',), ('clear', C(5, 5, 5)), ('load_rt', 0, 16, 12), ('begin_rt', 0), ('toggle', 'depth', True),
+                                            ('rect', 0.0, 0.0, 6.0, 6.0, RED), ('rl_begin', 7), ('c4ub', 0, 255, 0, 255), ('v3f', 4.0, 2.0, -0.5), ('v3f', 4.0, 10.0, -0.5),
+                                            ('v3f', 14.0, 10.0, -0.5), ('v3f', 14.0, 2.0, -0.5), ('rl_end',), ('toggle', 'depth', False), ('end_rt', 0),
+                                            ('draw_rt', 0, 4.0, 3.0, WHITE), ('end',)], screen=True)
+    # The depth buffer is kept between texture modes: a second mode without a clear still tests against
+    # what the first one stored.
+    add('rl-depth-render-texture-kept', 40, 30, [('begin',), ('clear', C(5, 5, 5)), ('load_rt', 0, 32, 24), ('begin_rt', 0), ('clear_color', 0, 0, 40, 255),
+                                                 ('clear_buffers',), ('matrix_mode', 0x1701), ('identity',), ('ortho', 0.0, 32.0, 24.0, 0.0, -1.0, 1.0),
+                                                 ('matrix_mode', 0x1700), ('toggle', 'depth', True)] + cube[:7]
+        + [('toggle', 'depth', False), ('end_rt', 0), ('begin_rt', 0), ('matrix_mode', 0x1701), ('identity',), ('ortho', 0.0, 32.0, 24.0, 0.0, -1.0, 1.0),
+           ('matrix_mode', 0x1700), ('toggle', 'depth', True)] + cube[7:]
+        + [('rl_begin', 7), ('c4ub', 255, 255, 0, 255), ('v3f', 0.0, 0.0, 0.9), ('v3f', 0.0, 24.0, 0.9), ('v3f', 32.0, 24.0, 0.9), ('v3f', 32.0, 0.0, 0.9), ('rl_end',),
+           ('toggle', 'depth', False), ('end_rt', 0), ('draw_rt', 0, 4.0, 3.0, WHITE), ('end',)], screen=True)
+    # The same depth-tested quads into a render texture after a clear, with a scissored clear and a far quad,
+    # then the texture on the screen.
+    add('rl-depth-render-texture-cleared', 40, 30, [('begin',), ('clear', C(5, 5, 5)), ('load_rt', 0, 32, 24), ('begin_rt', 0), ('clear_color', 0, 0, 40, 255),
+                                                    ('clear_buffers',), ('matrix_mode', 0x1701), ('identity',), ('ortho', 0.0, 32.0, 24.0, 0.0, -1.0, 1.0),
+                                                    ('matrix_mode', 0x1700), ('toggle', 'depth', True)] + cube
+        + [('rl_begin', 4), ('c4ub', 255, 255, 255, 255), ('v3f', 4.0, 20.0, -0.75), ('v3f', 28.0, 22.0, 0.75), ('v3f', 28.0, 14.0, 0.0), ('rl_end',),
+           ('clear_color', 40, 0, 0, 255), ('scissor', 4.0, 4.0, 6.0, 6.0), ('toggle', 'scissor', True), ('clear_buffers',), ('toggle', 'scissor', False),
+           ('rl_begin', 7), ('c4ub', 255, 255, 0, 255), ('v3f', 0.0, 0.0, 0.9), ('v3f', 0.0, 24.0, 0.9), ('v3f', 32.0, 24.0, 0.9), ('v3f', 32.0, 0.0, 0.9), ('rl_end',),
+           ('toggle', 'depth', False), ('end_rt', 0), ('draw_rt', 0, 4.0, 3.0, WHITE), ('end',)], screen=True)
     add('rl-frustum', 32, 24, [('begin',), ('clear', BLACK), ('matrix_mode', 0x1701), ('push',), ('identity',),
                                ('frustum', -0.5, 0.5, -0.375, 0.375, 1.0, 16.0), ('matrix_mode', 0x1700), ('push',), ('identity',),
                                ('toggle', 'depth', True), ('toggle', 'cull', False),
@@ -415,8 +438,6 @@ def scenes():
     add('rl-frustum-inexact', 16, 12, [('frustum', -1.0, 1.0, -1.0, 1.0, f32(0.1), 100.0)])
     add('rl-line-width-huge', 16, 12, [('line_width', 5000.0)])
     add('rl-point-size-nan', 16, 12, [('point_size', float('nan'))])
-    add('rl-depth-render-texture', 16, 12, [('load_rt', 0, 4, 4), ('begin_rt', 0), ('toggle', 'depth', True), ('rect', 0.0, 0.0, 2.0, 2.0, RED),
-                                            ('end_rt', 0)], contract=True)
     add('rl-thick-line-edge', 16, 12, [('line_width', 6.0), ('line', 0.0, 1.0, 15.0, 1.0, RED)], contract=True)
     add('rl-point-edge', 16, 12, [('toggle', 'point', True), ('point_size', 6.0), ('rect', 0.0, 0.0, 2.0, 2.0, RED)], contract=True)
 

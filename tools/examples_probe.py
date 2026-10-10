@@ -76,11 +76,14 @@ def size_of(name):
     return SIZES.get(name, (WIDTH, HEIGHT))
 TARGET = 1.0 / 60
 # Examples whose SetTargetFPS is not 60 (the scripted wait ends where raylib's does).
-TARGET_FPS = {'shapes_kaleidoscope': 20}
+LANE_TIMEOUT = 1800
+TARGET_FPS = {'shapes_kaleidoscope': 20, 'shapes_penrose_tile': 120, 'textures_mouse_painting': 120}
 
 (KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, INPUT_GESTURE, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 17, 18)
 KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_A, KEY_H, KEY_R, KEY_S = 262, 263, 264, 265, 65, 72, 82, 83
 KEY_G, KEY_SPACE, KEY_C, KEY_ENTER = 71, 32, 67, 257
+KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR = 49, 50, 51, 52
+KEY_P, KEY_W, KEY_D, KEY_TAB = 80, 87, 68, 258
 
 # name: (raylib source, setup expression, State is Data, needs the logo image)
 EXAMPLES = {
@@ -88,10 +91,25 @@ EXAMPLES = {
     'core_input_keys': ('core/core_input_keys.c', 'Ex.setup(core, frame)'),
     'core_input_mouse': ('core/core_input_mouse.c', 'Ex.setup(core, frame)'),
     'core_2d_camera': ('core/core_2d_camera.c', 'Ex.setup(seed, core, frame)'),
+    'core_2d_camera_platformer': ('core/core_2d_camera_platformer.c', 'Ex.setup(core, frame)'),
     'shapes_logo_raylib': ('shapes/shapes_logo_raylib.c', 'Ex.setup(core, frame)'),
     'textures_logo_raylib': ('textures/textures_logo_raylib.c', 'Ex.setup(Ex.image(logo), core, frame)'),
     'shapes_basic_shapes': ('shapes/shapes_basic_shapes.c', 'Ex.setup(core, frame)'),
     'textures_srcrec_dstrec': ('textures/textures_srcrec_dstrec.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_tiled_drawing': ('textures/textures_tiled_drawing.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_image_drawing': ('textures/textures_image_drawing.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_image_channel': ('textures/textures_image_channel.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_image_kernel': ('textures/textures_image_kernel.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_image_processing': ('textures/textures_image_processing.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_polygon_drawing': ('textures/textures_polygon_drawing.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_magnifying_glass': ('textures/textures_magnifying_glass.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_gif_player': ('textures/textures_gif_player.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_cellular_automata': ('textures/textures_cellular_automata.c', 'Ex.setup(core, frame)'),
+    'textures_mouse_painting': ('textures/textures_mouse_painting.c', 'Ex.setup(core, frame)'),
+    'textures_screen_buffer': ('textures/textures_screen_buffer.c', 'Ex.setup(seed, core, frame)'),
+    'textures_framebuffer_rendering': ('textures/textures_framebuffer_rendering.c', 'Ex.setup(core, frame)'),
+    'textures_image_text': ('textures/textures_image_text.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_fog_of_war': ('textures/textures_fog_of_war.c', 'Ex.setup(seed, core, frame)'),
     'textures_sprite_animation': ('textures/textures_sprite_animation.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_background_scrolling': ('textures/textures_background_scrolling.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_drop_files': ('core/core_drop_files.c', 'Ex.setup(core, frame)'),
@@ -112,10 +130,12 @@ EXAMPLES = {
     'core_input_mouse_wheel': ('core/core_input_mouse_wheel.c', 'Ex.setup(core, frame)'),
     'core_scissor_test': ('core/core_scissor_test.c', 'Ex.setup(core, frame)'),
     'core_random_values': ('core/core_random_values.c', 'Ex.setup(seed, core, frame)'),
+    'core_random_sequence': ('core/core_random_sequence.c', 'Ex.setup(seed, core, frame)'),
     'core_render_texture': ('core/core_render_texture.c', 'Ex.setup(core, frame)'),
     'core_delta_time': ('core/core_delta_time.c', 'Ex.setup(core, frame)'),
     'core_3d_camera_mode': ('core/core_3d_camera_mode.c', 'Ex.setup(core, frame)'),
     'core_3d_camera_free': ('core/core_3d_camera_free.c', 'Ex.setup(core, frame)'),
+    'core_3d_camera_first_person': ('core/core_3d_camera_first_person.c', 'Ex.setup(seed, core, frame)'),
     'core_world_screen': ('core/core_world_screen.c', 'Ex.setup(core, frame)'),
     'core_3d_picking': ('core/core_3d_picking.c', 'Ex.setup(core, frame)'),
     'models_basic_voxel': ('models/models_basic_voxel.c', 'Ex.setup(core, frame)'),
@@ -130,11 +150,15 @@ EXAMPLES = {
     'textures_image_generation': ('textures/textures_image_generation.c', 'Ex.setup(seed, M.LIBM{}, core, frame)'),
     'shapes_easings_rectangles': ('shapes/shapes_easings_rectangles.c', 'Ex.setup(core, frame)'),
     'core_2d_camera_split_screen': ('core/core_2d_camera_split_screen.c', 'Ex.setup(core, frame)'),
+    'core_3d_camera_split_screen': ('core/core_3d_camera_split_screen.c', 'Ex.setup(core, frame)'),
     'models_geometric_shapes': ('models/models_geometric_shapes.c', 'Ex.setup(core, frame)'),
     'models_box_collisions': ('models/models_box_collisions.c', 'Ex.setup(core, frame)'),
     'models_orthographic_projection': ('models/models_orthographic_projection.c', 'Ex.setup(core, frame)'),
     'shaders_basic_lighting': ('shaders/shaders_basic_lighting.c', 'Ex.setup(core, frame)'),
     'shapes_bullet_hell': ('shapes/shapes_bullet_hell.c', 'Ex.setup(M.LIBM{}, core, frame)'),
+    'shapes_double_pendulum': ('shapes/shapes_double_pendulum.c', 'Ex.setup(M.LIBM{}, core, frame)'),
+    'shapes_vector_angle': ('shapes/shapes_vector_angle.c', 'Ex.setup(core, frame)'),
+    'shapes_penrose_tile': ('shapes/shapes_penrose_tile.c', 'Ex.setup(core, frame)'),
     'shaders_texture_waves': ('shaders/shaders_texture_waves.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_eratosthenes_sieve': ('shaders/shaders_eratosthenes_sieve.c', 'Ex.setup(core, frame)'),
     'shaders_texture_outline': ('shaders/shaders_texture_outline.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -145,15 +169,40 @@ EXAMPLES = {
     'shaders_multi_sample2d': ('shaders/shaders_multi_sample2d.c', 'Ex.setup(core, frame)'),
     'shaders_shapes_textures': ('shaders/shaders_shapes_textures.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_texture_tiling': ('shaders/shaders_texture_tiling.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_model_shader': ('shaders/shaders_model_shader.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_fog_rendering': ('shaders/shaders_fog_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'shaders_ascii_rendering': ('shaders/shaders_ascii_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_simple_mask': ('shaders/shaders_simple_mask.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'shaders_postprocessing': ('shaders/shaders_postprocessing.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_custom_uniform': ('shaders/shaders_custom_uniform.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_mesh_instancing': ('shaders/shaders_mesh_instancing.c', 'Ex.setup(seed, M.LIBM{}, core, frame)'),
     'shaders_mandelbrot_set': ('shaders/shaders_mandelbrot_set.c', 'Ex.setup(core, frame)'),
     'shaders_raymarching_rendering': ('shaders/shaders_raymarching_rendering.c', 'Ex.setup(core, frame)'),
     'core_basic_screen_manager': ('core/core_basic_screen_manager.c', 'Ex.setup(core, frame)'),
     'core_window_letterbox': ('core/core_window_letterbox.c', 'Ex.setup(seed, core, frame)'),
     'core_input_multitouch': ('core/core_input_multitouch.c', 'Ex.setup(core, frame)'),
+    'core_input_gestures': ('core/core_input_gestures.c', 'Ex.setup(core, frame)'),
+    'core_input_actions': ('core/core_input_actions.c', 'Ex.setup(core, frame)'),
+    'core_monitor_detector': ('core/core_monitor_detector.c', 'Ex.setup(core, frame)'),
+    'core_window_flags': ('core/core_window_flags.c', 'Ex.setup(core, frame)'),
+    'core_highdpi_testbed': ('core/core_highdpi_testbed.c', 'Ex.setup(core, frame)'),
+    'core_highdpi_demo': ('core/core_highdpi_demo.c', 'Ex.setup(core, frame)'),
+    'core_viewport_scaling': ('core/core_viewport_scaling.c', 'Ex.setup(core, frame)'),
+    'core_undo_redo': ('core/core_undo_redo.c', 'Ex.setup(seed, core, frame)'),
+    'core_text_file_loading': ('core/core_text_file_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'core_input_virtual_controls': ('core/core_input_virtual_controls.c', 'Ex.setup(core, frame)'),
     'shapes_math_angle_rotation': ('shapes/shapes_math_angle_rotation.c', 'Ex.setup(core, frame)'),
     'shapes_following_eyes': ('shapes/shapes_following_eyes.c', 'Ex.setup(core, frame)'),
     'text_font_spritefont': ('text/text_font_spritefont.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_billboard_rendering': ('models/models_billboard_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'models_directional_billboard': ('models/models_directional_billboard.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'models_heightmap_rendering': ('models/models_heightmap_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'models_cubicmap_rendering': ('models/models_cubicmap_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'models_first_person_maze': ('models/models_first_person_maze.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'models_yaw_pitch_roll': ('models/models_yaw_pitch_roll.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'models_loading': ('models/models_loading.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'models_rlgl_solar_system': ('models/models_rlgl_solar_system.c', 'Ex.setup(M.LIBM{}, core, frame)'),
+    'models_textured_cube': ('models/models_textured_cube.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shapes_circle_sector_drawing': ('shapes/shapes_circle_sector_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_ring_drawing': ('shapes/shapes_ring_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_rounded_rectangle_drawing': ('shapes/shapes_rounded_rectangle_drawing.c', 'Ex.setup(core, frame)'),
@@ -162,6 +211,12 @@ EXAMPLES = {
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_window_web': ('core/core_window_web.c', 'Ex.setup(core, frame)'),
+    'text_sprite_fonts': ('text/text_sprite_fonts.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'text_font_loading': ('text/text_font_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'text_font_filters': ('text/text_font_filters.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'text_words_alignment': ('text/text_words_alignment.c', 'Ex.setup(core, frame)'),
+    'core_smooth_pixelperfect': ('core/core_smooth_pixelperfect.c', 'Ex.setup(core, frame)'),
+    'models_tesseract_view': ('models/models_tesseract_view.c', 'Ex.setup(core, frame)'),
     'textures_particles_blending': ('textures/textures_particles_blending.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
 }
 
@@ -171,17 +226,36 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'textures_image_loading', 'textures_image_rotate', 'textures_to_image', 'textures_blend_modes',
             'textures_npatch_drawing', 'textures_raw_data', 'textures_bunnymark', 'shaders_texture_waves',
             'shaders_texture_outline', 'shaders_shapes_textures', 'shaders_texture_tiling', 'text_font_spritefont',
-            'models_billboard_rendering', 'shaders_color_correction', 'textures_particles_blending'}
+            'models_billboard_rendering', 'shaders_color_correction', 'textures_particles_blending',
+            'text_sprite_fonts', 'models_directional_billboard', 'textures_tiled_drawing',
+            'textures_image_drawing', 'text_font_loading', 'textures_image_text',
+            'text_font_filters', 'textures_image_channel', 'textures_image_kernel',
+            'textures_image_processing', 'textures_polygon_drawing', 'textures_magnifying_glass',
+            'models_heightmap_rendering', 'models_cubicmap_rendering',
+            'models_first_person_maze', 'shaders_model_shader',
+            'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering',
+            'core_text_file_loading', 'shaders_ascii_rendering', 'shaders_simple_mask',
+            'textures_gif_player', 'models_textured_cube', 'shaders_postprocessing',
+            'shaders_custom_uniform'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
 PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen', 'core_3d_picking', 'models_basic_voxel', 'models_rotating_cube',
                'models_geometric_shapes', 'models_box_collisions', 'models_orthographic_projection',
-               'shaders_basic_lighting', 'shaders_texture_tiling', 'models_billboard_rendering'}
-SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'textures_bunnymark', 'textures_image_generation',
-          'core_window_letterbox', 'textures_particles_blending'}
+               'shaders_basic_lighting', 'shaders_texture_tiling', 'models_billboard_rendering',
+               'models_tesseract_view', 'models_directional_billboard', 'models_heightmap_rendering',
+               'models_cubicmap_rendering', 'models_first_person_maze', 'shaders_model_shader',
+               'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering', 'shaders_simple_mask',
+               'core_3d_camera_first_person', 'models_rlgl_solar_system', 'models_textured_cube',
+               'core_3d_camera_split_screen', 'shaders_postprocessing', 'textures_framebuffer_rendering',
+               'shaders_custom_uniform', 'shaders_mesh_instancing'}
+SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'core_3d_camera_first_person', 'textures_bunnymark', 'textures_image_generation',
+          'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer', 'shaders_mesh_instancing',
+          'core_undo_redo'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
-                'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68}
+                'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
+                'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'shaders_postprocessing': 32, 'shaders_custom_uniform': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196, 'core_viewport_scaling': 4,
+                'shaders_fog_rendering': 32}
 
 
 # -----------------------------------------------------------------------------
@@ -199,6 +273,10 @@ def button(index, down=True):
     return (MOUSE_DOWN if down else MOUSE_UP, index, 0, 0)
 
 
+def gesture(value):
+    return (INPUT_GESTURE, value, 0, 0)
+
+
 def script(example, name, frames, seed=0, start=0.25):
     return dict(example=example, name=f'{example}-{name}', frames=frames, seed=seed, start=start)
 
@@ -211,6 +289,11 @@ def quick(events=()):
 def slow(events=()):
     """A frame longer than the target: no wait."""
     return (list(events), 0.003, 0.021)
+
+
+def long(events=()):
+    """A tenth of a second."""
+    return (list(events), 0.003, 0.1)
 
 
 def scripts():
@@ -325,6 +408,13 @@ def scripts():
                                               quick(), slow(), quick([(MOUSE_WHEEL, 0, 90, 0)]), quick(), slow([key(KEY_R)]), quick([key(KEY_R, False)])]),
         script('core_3d_camera_mode', 'frames', [quick(), slow(), quick()]),
         # Mouse look, wheel zoom, a middle-button pan and Z back to the origin.
+        # First person: W forward and a mouse turn; third person (the target cube), orbital, free; P to the
+        # orthographic view and back to perspective.
+        script('core_3d_camera_first_person', 'modes', [quick(), quick([mouse_at(420, 235)]), slow([key(KEY_W)]), quick([key(KEY_W, False), key(KEY_THREE)]),
+                                                        quick([key(KEY_THREE, False), mouse_at(380, 250)]), quick([key(KEY_FOUR)]), quick([key(KEY_FOUR, False)]),
+                                                        quick([key(KEY_ONE)]), quick([key(KEY_ONE, False), key(KEY_P)]), slow([key(KEY_P, False)]),
+                                                        quick([mouse_at(400, 240)]), quick([key(KEY_P)]), quick([key(KEY_P, False), key(KEY_TWO)]), quick()],
+               seed=0xCA3),
         script('core_3d_camera_free', 'controls', [quick(), quick([mouse_at(410, 230)]), quick([mouse_at(450, 210)]), slow([mouse_at(380, 260)]),
                                                    quick([(MOUSE_WHEEL, 0, 2, 0)]), quick([(MOUSE_WHEEL, 0, -1, 0)]), quick([button(2)]),
                                                    quick([mouse_at(420, 250)]), quick([mouse_at(470, 280), button(2, False)]), quick([key(90)]),
@@ -364,6 +454,19 @@ def scripts():
         # The first-person camera moves (mouse, W) without any visible change.
         script('shaders_raymarching_rendering', 'walk', [quick(), quick([mouse_at(430, 240)]), slow([key(87)]), quick([key(87, False)])]),
         # Mouse look around the cube, then Z looks back at (0, 0.5, 0).
+        script('shaders_mesh_instancing', 'orbit', [quick(), slow(), quick()], seed=0x1257),
+        # Three frames of the orbit (the model has 11084 faces), the mouse moving the swirl's center.
+        script('shaders_custom_uniform', 'orbit', [quick(), slow([mouse_at(300, 200)]), quick()]),
+        # The orbit; RIGHT to the next shader's name, LEFT twice around to the last.
+        script('shaders_postprocessing', 'shaders', [quick(), quick([key(KEY_RIGHT)]), slow([key(KEY_RIGHT, False), key(KEY_LEFT)]),
+                                                     quick([key(KEY_LEFT, False)]), quick([key(KEY_LEFT)])]),
+        script('shaders_simple_mask', 'look', [quick(), quick([mouse_at(420, 235)]), slow([key(KEY_W)]), quick([key(KEY_W, False)])]),
+        # The moving texture; RIGHT grows the font size, LEFT at 9 does nothing after one step back.
+        script('shaders_ascii_rendering', 'sizes', [quick(), slow([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_LEFT)]),
+                                                    quick([key(KEY_LEFT, False)]), quick([key(KEY_LEFT)])]),
+        # Three frames (the scene has over twenty thousand triangles): the density up, then down.
+        script('shaders_fog_rendering', 'density', [quick(), slow([key(KEY_UP)]), quick([key(KEY_UP, False), key(KEY_DOWN)])]),
+        script('shaders_model_shader', 'look', [quick(), quick([mouse_at(420, 235)]), slow([key(87)]), quick([key(87, False)])]),
         script('shaders_texture_tiling', 'look', [quick(), quick([mouse_at(420, 235)]), slow([mouse_at(380, 250)]), quick([key(90)]),
                                                   quick([key(90, False)])]),
         script('shaders_shapes_textures', 'frames', [quick(), slow()]),
@@ -393,6 +496,168 @@ def scripts():
                                                  quick([mouse_at(-40, 500)]), quick([mouse_at(300, 400)])]),
         script('text_font_spritefont', 'frames', [quick(), slow()]),
         script('models_billboard_rendering', 'orbit', [quick(), quick(), slow(), quick()]),
+        # Three frames: the mesh has 32258 triangles.
+        script('models_heightmap_rendering', 'orbit', [quick(), slow(), quick()]),
+        # The orbit, paused by P (the camera stays), resumed.
+        script('models_cubicmap_rendering', 'pause', [quick(), slow(), quick([key(KEY_P)]), quick([key(KEY_P, False)]), quick([key(KEY_P)]), quick()]),
+        script('models_textured_cube', 'frames', [quick(), slow()]),
+        script('models_rlgl_solar_system', 'orbit', [quick(), quick(), slow(), quick()]),
+        # The orbit; a click on the castle selects it (its box is drawn), a second one deselects, one on
+        # the sky misses.
+        script('models_loading', 'pick', [quick(), quick([mouse_at(400, 230)]), quick([button(0)]), slow([button(0, False)]), quick([button(0)]),
+                                          quick([button(0, False), mouse_at(30, 30)]), quick([button(0)]), quick([button(0, False)])]),
+        # Pitch down and its ease back, yaw with A against S (S wins), roll right, all easing to rest.
+        script('models_yaw_pitch_roll', 'steer', [quick(), quick([key(KEY_DOWN)]), quick(), slow([key(KEY_DOWN, False), key(KEY_A)]),
+                                                  quick([key(KEY_S), key(KEY_RIGHT)]), quick([key(KEY_A, False), key(KEY_S, False), key(KEY_UP)]),
+                                                  quick([key(KEY_RIGHT, False), key(KEY_UP, False), key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]), quick()]),
+        # W walks forward in tenth-of-a-second steps until a wall stops the player (the position is restored),
+        # the mouse turns, D strafes, S backs away.
+        script('models_first_person_maze', 'walk', [quick(), quick([key(87)])] + [long() for _ in range(8)]
+               + [quick([mouse_at(460, 230)]), long(), long([key(87, False), key(68)]), long(), long([key(68, False), key(83)]), long(), quick([key(83, False)])]),
+        # Fifth-of-a-second frames: the animation steps every third one and the orbit crosses a direction row.
+        # The first frame has no frame time (the pendulum rests); then quick, slow and long steps of the swing.
+        script('shapes_double_pendulum', 'swing', [quick(), quick(), slow(), quick()] + [([], 0.003, 0.05) for _ in range(6)] + [quick(), slow()]),
+        # The mouse around the center in mode 0 (also on it, and on V1's row), the right button moving V1,
+        # SPACE to mode 1 (the frame of the switch keeps mode 0's start angle), back to mode 0.
+        script('shapes_vector_angle', 'modes', [quick(), quick([mouse_at(600, 100)]), quick([mouse_at(400, 225)]), slow([mouse_at(200, 300)]),
+                                                quick([button(1)]), quick([mouse_at(520, 225)]), quick([mouse_at(300, 60), button(1, False)]),
+                                                quick([mouse_at(650, 400)]), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False), mouse_at(100, 120)]),
+                                                slow([mouse_at(400, 20)]), quick([mouse_at(-30, 500)]), quick([key(KEY_SPACE)]),
+                                                quick([key(KEY_SPACE, False), mouse_at(410, 240)])]),
+        # Tenth-of-a-second frames: the fall to the ground and a running jump (camera 0); zoomed out at the map's
+        # edge (1); a smoothed run (2); a jump and its landing (3); a run past the inner box (4); reset.
+        script('core_2d_camera_platformer', 'cameras', [quick(), quick()] + [long() for _ in range(9)] + [
+            long([key(KEY_RIGHT)]), long([key(KEY_SPACE)]), long([key(KEY_SPACE, False)]), long(), long([key(KEY_RIGHT, False)]), long(), long(),
+            quick([key(KEY_C)]), quick([key(KEY_C, False), (MOUSE_WHEEL, 0, -5, 0)]), long([key(KEY_LEFT)]), long(), long(), slow([key(KEY_LEFT, False)]),
+            quick([(MOUSE_WHEEL, 0, 12, 0)]), quick([(MOUSE_WHEEL, 0, -7, 0)]),
+            quick([key(KEY_C)]), long([key(KEY_C, False), key(KEY_RIGHT)]), long(), quick(), slow(), long([key(KEY_RIGHT, False)]), long(),
+            quick([key(KEY_C)]), long([key(KEY_C, False), key(KEY_SPACE)]), long([key(KEY_SPACE, False)]), long(), long(), long(), long(), long(), long(),
+            quick([key(KEY_C)]), long([key(KEY_C, False), key(KEY_RIGHT)]), long(), long(), long(), long(), long([key(KEY_SPACE)]),
+            long([key(KEY_SPACE, False)]), long([key(KEY_RIGHT, False), key(KEY_LEFT)]), long(), long(), long(), long(), long(), long(), long(), long(),
+            quick([key(KEY_LEFT, False), key(KEY_R)]), quick([key(KEY_R, False), key(KEY_C)]), quick()]),
+        # The second pattern and a color by clicks, a turn, a larger scale, reset, 0.75 turned back, the flat
+        # pattern, then down to the smallest scale (DOWN at 0.25 stays there). A short script: every frame
+        # filters the whole tiled area, which the JavaScript lane takes many seconds for.
+        script('textures_tiled_drawing', 'tiles', [quick(), quick([mouse_at(120, 90), button(0)]), quick([button(0, False), mouse_at(100, 295)]),
+                                                   slow([button(0)]), quick([button(0, False), key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_UP)]),
+                                                   quick([key(KEY_UP, False), key(KEY_SPACE)]), quick([key(KEY_SPACE, False), key(KEY_DOWN), key(KEY_LEFT)]),
+                                                   quick([key(KEY_DOWN, False), key(KEY_LEFT, False), mouse_at(140, 180), button(0)]),
+                                                   quick([button(0, False), key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]), quick([key(KEY_DOWN)]),
+                                                   quick([key(KEY_DOWN, False)]), quick([key(KEY_DOWN)])]),
+        # Shuffles, more bars, fewer bars down to three (DOWN then does nothing), a shuffle and a new count in one frame.
+        script('core_random_sequence', 'bars', [quick(), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), slow([key(KEY_SPACE)]),
+                                                quick([key(KEY_SPACE, False), key(KEY_UP)]), quick([key(KEY_UP, False)]), quick([key(KEY_UP)]),
+                                                quick([key(KEY_UP, False), key(KEY_SPACE)]), quick([key(KEY_SPACE, False)])]
+               + [f for _ in range(20) for f in (quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]))]
+               + [quick([key(KEY_SPACE), key(KEY_UP)]), quick([key(KEY_SPACE, False), key(KEY_UP, False)]), quick([key(KEY_UP), key(KEY_DOWN)]), quick()],
+               seed=0x5EC0),
+        # Right and down into the next tiles, then back left and up (a short walk: every frame redraws the
+        # 375 tiles, which the JavaScript lane takes many seconds for).
+        script('textures_fog_of_war', 'walk', [quick(), quick([key(KEY_RIGHT), key(KEY_DOWN)])] + [quick() for _ in range(5)]
+               + [slow([key(KEY_RIGHT, False), key(KEY_DOWN, False), key(KEY_LEFT), key(KEY_UP)]), quick([key(KEY_LEFT, False), key(KEY_UP, False)])], seed=0xF06),
+        # The wheel scrolls down, back past the top (snapped to 0) and far past the end (snapped to the last page).
+        script('core_text_file_loading', 'scroll', [quick(), quick([(MOUSE_WHEEL, 0, -3, 0)]), slow([(MOUSE_WHEEL, 0, 5, 0)]),
+                                                    quick([(MOUSE_WHEEL, 0, -200, 0)]), quick()]),
+        # Moves and a recolor recorded every second frame; CTRL+Z back three states, CTRL+Y forward one, a new
+        # move from there, then enough moves (a press every second frame) to wrap the ring of 26 slots.
+        script('core_undo_redo', 'ring', [quick(), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]),
+                                          quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), quick([key(341)]), quick([key(90)]), quick([key(90, False)]),
+                                          quick([key(90)]), quick([key(90, False)]), quick([key(90)]), quick([key(90, False)]), quick([key(90)]), quick([key(90, False)]),
+                                          quick([key(89)]), quick([key(89, False), key(341, False)]), quick([key(KEY_UP)]), quick([key(KEY_UP, False)])]
+               + [f for i in range(30) for f in (quick([key(KEY_RIGHT if i % 2 == 0 else KEY_LEFT)]), quick([key(KEY_RIGHT if i % 2 == 0 else KEY_LEFT, False)]))]
+               + [quick([key(341), key(90)]), quick([key(90, False), key(89)]), quick([key(89, False), key(341, False)]), quick()], seed=0x0D0),
+        # The mouse inside the game; the next viewport type five times (all six), the next resolution twice
+        # (256x240 and 320x180), then the previous type and the previous resolution.
+        script('core_viewport_scaling', 'buttons', [quick(), quick([mouse_at(400, 225)]), slow([mouse_at(220, 50)])]
+               + [f for _ in range(5) for f in (quick([button(0)]), quick([button(0, False)]))]
+               + [quick([mouse_at(220, 35), button(0)]), quick([button(0, False)]), quick([button(0)]), quick([button(0, False), mouse_at(205, 50)]),
+                  quick([button(0)]), quick([button(0, False), mouse_at(205, 35)]), quick([button(0)]), quick([button(0, False), mouse_at(500, 300)]), quick()]),
+        script('core_highdpi_demo', 'frames', [quick(), slow([key(78)]), quick([key(78, False)])]),
+        # The cross follows the mouse (its label flips above near the bottom edge); SPACE and F toggle modes.
+        script('core_highdpi_testbed', 'mouse', [quick(), quick([mouse_at(300, 200)]), slow([mouse_at(700, 420)]), quick([key(KEY_SPACE)]),
+                                                 quick([key(KEY_SPACE, False), key(70)]), quick([key(70, False), mouse_at(20, 391)])]),
+        # Every flag key in turn (each pressed, then released with the next pressed), twice for R, then a
+        # few frames of the ball with the mouse inside.
+        script('core_window_flags', 'keys', [quick(), quick([key(70)]), quick([key(70, False), key(82)]), quick([key(82, False), key(68)]),
+                                             quick([key(68, False), key(82)]), quick([key(82, False), key(72)]), quick([key(72, False)]), slow([key(78)]),
+                                             quick([key(78, False), key(77)]), quick([key(77, False), key(85)]), quick([key(85, False), key(84)]),
+                                             quick([key(84, False), key(65)]), quick([key(65, False), key(86)]), quick([key(86, False), key(66)]),
+                                             quick([key(66, False), key(77), mouse_at(300, 200)]), quick([key(77, False), key(70)]), quick([key(70, False)]), quick()]),
+        # One monitor: ENTER changes nothing.
+        script('core_monitor_detector', 'frames', [quick(), slow([key(KEY_ENTER)]), quick([key(KEY_ENTER, False)])]),
+        # WASD moves; SPACE centers and its release shows blue for a frame; TAB switches to the arrows (W
+        # then does nothing), and back.
+        script('core_input_actions', 'sets', [quick(), quick([key(KEY_W), key(KEY_D)]), quick(), slow([key(KEY_W, False), key(KEY_S)]),
+                                              quick([key(KEY_D, False), key(KEY_S, False), key(KEY_A)]), quick([key(KEY_A, False), key(KEY_SPACE)]),
+                                              quick(), quick([key(KEY_SPACE, False)]), quick([key(KEY_TAB)]), quick([key(KEY_TAB, False), key(KEY_W), key(KEY_LEFT)]),
+                                              quick([key(KEY_UP)]), quick([key(KEY_W, False), key(KEY_LEFT, False), key(KEY_UP, False), key(KEY_TAB)]),
+                                              quick([key(KEY_TAB, False), key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)])]),
+        # Gestures (INPUT_GESTURE) inside the area: a tap, the same again (not logged), hold, drag, the swipes
+        # and pinches; one outside the area; then taps and holds past the twentieth entry (the log restarts).
+        script('core_input_gestures', 'log', [quick(), quick([mouse_at(400, 200)]), quick([gesture(1)]), quick([gesture(1)]), slow([gesture(4)]),
+                                              quick([gesture(8), mouse_at(450, 260)]), quick([gesture(16)]), quick([gesture(32)]), quick([gesture(64)]),
+                                              quick([gesture(128)]), quick([gesture(256)]), quick([gesture(512), mouse_at(700, 400)]),
+                                              quick([gesture(0)]), quick([mouse_at(100, 100), gesture(2)]), quick([mouse_at(300, 50)]), quick([gesture(0)])]
+               + [quick([gesture(g)]) for _ in range(6) for g in (1, 4)] + [quick(), quick([gesture(0)]), quick([gesture(2)])]),
+        # One generation drawn out (12 symbols a frame), a second partly, back to one (rebuilt), to none (the
+        # tiling stays undrawn), UP with DOWN (UP wins), then up to the fourth and UP again (no rebuild).
+        script('shapes_penrose_tile', 'generations', [quick(), quick([key(KEY_UP)]), quick([key(KEY_UP, False)])] + [quick() for _ in range(9)]
+               + [slow([key(KEY_UP)]), quick([key(KEY_UP, False)])] + [quick() for _ in range(14)]
+               + [quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]), quick(), quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]),
+                  quick([key(KEY_UP), key(KEY_DOWN)]), quick([key(KEY_UP, False), key(KEY_DOWN, False)]), quick([key(KEY_UP)]), quick([key(KEY_UP, False)]),
+                  quick([key(KEY_UP)]), quick([key(KEY_UP, False)]), quick([key(KEY_UP)]), quick([key(KEY_UP, False)]), slow(), quick([key(KEY_UP)]), quick()]),
+        script('textures_image_drawing', 'frames', [quick(), slow()]),
+        script('textures_image_channel', 'frames', [quick(), slow()]),
+        script('textures_image_kernel', 'frames', [quick(), slow()]),
+        script('textures_polygon_drawing', 'turn', [quick() for _ in range(14)] + [slow()]),
+        # The subject orbits; the observer looks around, moves forward and R recenters its target.
+        script('textures_framebuffer_rendering', 'views', [quick(), quick([mouse_at(420, 235)]), slow([key(KEY_W)]), quick([key(KEY_W, False), key(KEY_R)]),
+                                                           quick([key(KEY_R, False)])]),
+        # The fire's first sixteen frames (the flames climb a row a frame, drifting and decaying).
+        script('textures_screen_buffer', 'fire', [quick(), quick(), slow()] + [quick() for _ in range(13)], seed=0xF12E),
+        # Paint a stroke, pick red by click and paint, a bigger brush, erase with the right button (the
+        # color comes back on release), RIGHT/LEFT keys, C clears.
+        script('textures_mouse_painting', 'paint', [quick(), quick([mouse_at(200, 200)]), quick([button(0)]), quick([mouse_at(240, 220)]),
+                                                    quick([button(0, False), mouse_at(180, 25)]), quick([button(0)]), quick([button(0, False), mouse_at(400, 300)]),
+                                                    quick([button(0), (MOUSE_WHEEL, 0, 3, 0)]), slow([mouse_at(430, 320)]), quick([button(0, False)]),
+                                                    quick([button(1), mouse_at(420, 310)]), quick([mouse_at(300, 30)]), quick([button(1, False)]),
+                                                    quick([key(KEY_RIGHT), mouse_at(600, 200)]), quick([key(KEY_RIGHT, False), key(KEY_LEFT)]),
+                                                    quick([key(KEY_LEFT, False), key(KEY_C)]), quick([key(KEY_C, False), (MOUSE_WHEEL, 0, -20, 0)]), quick()]),
+        # Rule 30 grows four lines a frame; a preset (60) and a flipped rule bit restart it; hovering frames a cell.
+        script('textures_cellular_automata', 'rules', [quick(), quick(), slow(), quick([mouse_at(60, 14)]), quick([button(0)]), quick([button(0, False)]),
+                                                       quick([mouse_at(555, 30)]), quick([button(0)]), quick([button(0, False), mouse_at(400, 300)]), quick()]),
+        # The first switch after eight frames; LEFT shortens the delay to one (a switch every frame, around
+        # the last frame to the first), RIGHT lengthens it again.
+        script('textures_gif_player', 'speed', [quick() for _ in range(9)] + [f for _ in range(8) for f in (quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]))]
+               + [quick() for _ in range(6)] + [quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), slow(), quick()]),
+        # The glass at the corner, over a hidden bunny, over the title and partly off screen.
+        script('textures_magnifying_glass', 'look', [quick(), quick([mouse_at(266, 366)]), slow([mouse_at(520, 110)]), quick([mouse_at(300, 20)]),
+                                                     quick([mouse_at(780, 440)])]),
+        # Hover and click toggles (tint, then grayscale: its one-channel colors go back as RGBA), DOWN through
+        # invert, contrast, brightness and the Gaussian blur, UP from the first process (to the eighth, as the example does), the
+        # last one by DOWN and around to none.
+        script('textures_image_processing', 'processes', [quick(), quick([mouse_at(100, 125)]), quick([button(0)]), quick([button(0, False)]),
+                                                          quick([mouse_at(100, 95), button(0)]), slow([button(0, False)]), quick([mouse_at(500, 300), key(KEY_DOWN)]),
+                                                          quick([key(KEY_DOWN, False)]), quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]),
+                                                          quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]), quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]),
+                                                          quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False), mouse_at(100, 60), button(0)]),
+                                                          quick([button(0, False)]), quick([key(KEY_UP), mouse_at(500, 300)]), quick([key(KEY_UP, False), key(KEY_DOWN)]),
+                                                          quick([key(KEY_DOWN, False)]), quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)])]),
+        script('textures_image_text', 'atlas', [quick(), slow([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)])]),
+        # The mouse over each pad button, moving the player only while the left button is down; the taxicab
+        # edge of a button (29 inside, 30 outside); between two buttons the first in order wins.
+        script('core_input_virtual_controls', 'pad', [quick(), quick([mouse_at(100, 305)]), quick(), quick([button(0)]), long(), slow(),
+                                                      quick([mouse_at(55, 350)]), long(), quick([mouse_at(145, 350)]), long(), long(),
+                                                      quick([mouse_at(100, 395)]), long(), quick([mouse_at(100, 424)]), quick([mouse_at(100, 425)]),
+                                                      quick([mouse_at(120, 330)]), long(), quick([button(0, False)]), quick([mouse_at(400, 200)]),
+                                                      quick([button(0)]), quick([button(0, False)])]),
+        script('text_font_loading', 'fonts', [quick(), slow(), quick([key(KEY_SPACE)]), quick(), quick([key(KEY_SPACE, False)])]),
+        # The wheel grows and shrinks the text, 2 and 3 filter it (3 with 2 held: 2 wins only when pressed that
+        # frame), RIGHT then LEFT move it, 1 returns to POINT.
+        script('text_font_filters', 'filters', [quick(), quick([(MOUSE_WHEEL, 0, -6, 0)]), quick([key(KEY_TWO)]), slow([key(KEY_RIGHT)]),
+                                                quick([key(KEY_THREE), (MOUSE_WHEEL, 0, 9, 0)]), quick([key(KEY_TWO, False), key(KEY_THREE, False), key(KEY_LEFT)]),
+                                                quick([key(KEY_RIGHT, False)]), quick([key(KEY_ONE), key(KEY_LEFT, False)]), quick([key(KEY_ONE, False)])]),
+        script('models_directional_billboard', 'orbit', [quick(), slow()] + [([], 0.003, 0.2) for _ in range(9)] + [quick()]),
         # raygui slider bars: hover StartAngle, press it (360 degrees) and drag left, on past the bounds (the
         # drag keeps following), release; then the radius, the end angle and few segments (the estimated count).
         script('shapes_circle_sector_drawing', 'sliders', [quick(), quick([mouse_at(660, 50)]), quick([button(0)]), quick([mouse_at(630, 52)]),
@@ -439,6 +704,19 @@ def scripts():
                                                         slow([button(0, False), mouse_at(665, 200)]), quick([button(0)]), quick([button(0, False)]),
                                                         quick([mouse_at(675, 80), button(0)]), quick([button(0, False)]), quick()]),
         script('core_window_web', 'frames', [quick(), slow()]),
+        script('text_sprite_fonts', 'frames', [quick(), slow()]),
+        # The clock crosses one second (the second word) while the arrow keys walk every alignment and its limits.
+        script('text_words_alignment', 'align', [quick(), quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False), key(KEY_UP)]),
+                                                 quick([key(KEY_UP, False), key(KEY_LEFT)]), quick([key(KEY_LEFT, False), key(KEY_RIGHT)]),
+                                                 slow([key(KEY_RIGHT, False), key(KEY_DOWN)]), quick([key(KEY_DOWN, False), key(KEY_RIGHT)]),
+                                                 quick([key(KEY_RIGHT, False), key(KEY_DOWN)]), quick([key(KEY_DOWN, False), key(KEY_RIGHT)]),
+                                                 quick([key(KEY_RIGHT, False), key(KEY_DOWN)]), quick([key(KEY_DOWN, False)])], start=0.93),
+        # The last word (10 seconds) wraps to the first at 11.
+        script('text_words_alignment', 'wrap', [quick(), quick(), slow(), quick()], start=10.975),
+        # The cameras follow GetTime and the rectangles the frame time: frames of both lengths.
+        script('core_smooth_pixelperfect', 'drift', [quick(), quick(), slow(), quick(), slow(), quick()]),
+        # The rotation follows GetTime: frames of both lengths.
+        script('models_tesseract_view', 'turn', [quick(), quick(), slow(), quick(), slow()]),
         # A particle starts each frame at the mouse; SPACE switches to additive blending and back.
         script('textures_particles_blending', 'tail', [quick(), quick([mouse_at(300, 150)]), quick([mouse_at(360, 180)]), quick([mouse_at(420, 160)]),
                                                        quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), mouse_at(500, 220)]),
@@ -471,10 +749,16 @@ def scripts():
         # The 240-frame animation to its end, then SPACE plays it again.
         script('shapes_easings_rectangles', 'play', [quick() for _ in range(242)] + [quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), quick()]),
         # Both players move (S and W together: the first test wins, as raylib's else-if).
+        # Each player's camera forward and back (W/S and UP/DOWN) in long frames.
+        script('core_3d_camera_split_screen', 'move', [quick(), long([key(KEY_W)]), slow([key(KEY_UP)]), long([key(KEY_W, False), key(KEY_S)]),
+                                                       quick([key(KEY_UP, False), key(KEY_DOWN)]), quick([key(KEY_S, False), key(KEY_DOWN, False)])]),
         script('core_2d_camera_split_screen', 'move', [quick(), quick([key(68), key(83)]), quick(), slow([key(68, False), key(83, False), key(KEY_UP)]),
                                                        quick([key(KEY_LEFT)]), quick([key(KEY_UP, False), key(KEY_LEFT, False), key(83), key(87)]),
                                                        quick([key(83, False), key(87, False), key(65)]), quick([key(65, False)])]),
     ]
+    repeated = sorted({item['name'] for item in out if sum(other['name'] == item['name'] for other in out) > 1})
+    if repeated:
+        raise ProbeFailure(f'examples: script names used more than once: {repeated}')
     return [timed(item) for item in out]
 
 
@@ -596,14 +880,27 @@ def bullet_hell_refusal(item, libm):
 
 
 # Examples whose own geometry takes sinf/cosf of values their controls change, or whose rotations come from
-# the seeded random stream (textures_particles_blending). Under the glibc profiles
+# the seeded random stream (textures_particles_blending) or from the clock (core_smooth_pixelperfect). Under
+# the glibc profiles
 # they refuse nothing and every frame is compared. Under AppleLibm the refusal frame is the one Jonlib
 # reports (every frame before it is still compared with raylib); it is not predicted independently.
-REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending'}
+# Examples whose native run is undefined behavior in C, with the reason. Jonlib refuses the operation, so
+# every frame of the port is a contract (refused from the first one) on every profile and no frame of the
+# native example is evidence.
+UNDEFINED_NATIVE = {
+    # ImageKernelConvolution converts alphaSum*255.0f with an (unsigned char) cast. The sharpen kernel sums to
+    # 2 on the image's first and last rows (510.0f) and the Sobel kernel to -2 on its first pixel (-510.0f):
+    # out-of-range conversions (C11 6.3.1.4). docs/CONVOLUTION.md.
+    'textures_image_kernel': 'ImageKernelConvolution casts out-of-range alpha sums to unsigned char',
+}
+REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
+            'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass'}
 
 
 def refusal(item, libm):
     """The index of the first frame Jonlib refuses (None when none is; 'reported' to take Jonlib's own)."""
+    if item['example'] in UNDEFINED_NATIVE:
+        return 0
     if item['example'] in REPORTED:
         return 'reported' if libm == 'AppleLibm' else None
     if item['example'] in PERSPECTIVE and libm == 'AppleLibm':
@@ -620,8 +917,9 @@ def refusal(item, libm):
             if not all(fp.accepted(libm, a) for a in angles):
                 return index
         return None
-    if item['example'] == 'textures_srcrec_dstrec':
-        # DrawTexturePro's sinf/cosf of (float)rotation*DEG2RAD, rotation = frame + 1.
+    if item['example'] in ('textures_srcrec_dstrec', 'textures_polygon_drawing'):
+        # DrawTexturePro's sinf/cosf of (float)rotation*DEG2RAD, rotation = frame + 1; the polygon's
+        # Vector2Rotate takes the same angle*DEG2RAD, angle = frame + 1.
         for index in range(len(item['frames'])):
             if not fp.accepted(libm, fp.f32(float(index + 1) * fp.DEG2RAD)):
                 return index
@@ -818,7 +1116,8 @@ def build_reference(probe, name):
     driver.write_text(C_DRIVER)
     binary = probe.work / f'reference-{name}'
     include = '-I' + str(probe.args.raylib_source / 'src')
-    probekit.run(['clang', '-std=c11', '-O2', '-ffp-contract=off', '-include', SHIM, include, '-c',
+    # -D_DEFAULT_SOURCE as raylib's examples/Makefile passes it (strnlen in shapes_penrose_tile).
+    probekit.run(['clang', '-std=c11', '-D_DEFAULT_SOURCE', '-O2', '-ffp-contract=off', '-include', SHIM, include, '-c',
                   probe.args.raylib_source / 'examples' / source, '-o', probe.work / f'{name}.o'])
     probekit.run(['clang', '-std=c11', '-O2', '-ffp-contract=off', include, '-c', driver, '-o', probe.work / 'driver.o'])
     probekit.run(['clang', probe.work / f'{name}.o', probe.work / 'driver.o', probe.library, '-lm', '-o', binary])
@@ -1121,7 +1420,8 @@ def main():
     items = [item for item in scripts() if (not args.example or item['example'] in args.example)
              and (not args.category or item['example'].split('_')[0] == args.category)]
     names = [name for name in EXAMPLES if any(item['example'] == name for item in items)]
-    lanes = probe.candidates(render(items, libm, logo, probe.args.raylib_source), names, batch=1,
+    # A lane may take long: the JavaScript lane rasterizes a TTF font at size 96 in about 8 minutes.
+    lanes = probe.candidates(render(items, libm, logo, probe.args.raylib_source), names, batch=1, timeout=LANE_TIMEOUT,
                              parse=lambda text, chosen: ['\n'.join(line for line in text.splitlines() if line.strip())])
 
     def reported(item):
