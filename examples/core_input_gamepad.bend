@@ -9,7 +9,7 @@
 # MAX_GAMEPADS (4): from that index on every frame is refused. Gamepad
 # names are empty on the platform Jonlib models (docs/DRIVER.md), so a
 # connected gamepad takes the generic layout; the three layouts are
-# generated from the example's draw calls. The circles' and rounded
+# generated from the example's draw calls (tools/example_tables.py). The circles' and rounded
 # rectangles' sinf/cosf follow the libm profile (docs/SINCOSF.md). MSAA
 # does not change the software renderer. LoadTexture of a .png is the PNG
 # loader (Surface.load_png). See docs/INPUT.md.
