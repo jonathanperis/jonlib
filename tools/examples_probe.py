@@ -103,6 +103,7 @@ EXAMPLES = {
     'textures_image_processing': ('textures/textures_image_processing.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_polygon_drawing': ('textures/textures_polygon_drawing.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_magnifying_glass': ('textures/textures_magnifying_glass.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_gif_player': ('textures/textures_gif_player.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_image_text': ('textures/textures_image_text.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_fog_of_war': ('textures/textures_fog_of_war.c', 'Ex.setup(seed, core, frame)'),
     'textures_sprite_animation': ('textures/textures_sprite_animation.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -216,7 +217,8 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'models_heightmap_rendering', 'models_cubicmap_rendering',
             'models_first_person_maze', 'shaders_model_shader',
             'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering',
-            'core_text_file_loading', 'shaders_ascii_rendering', 'shaders_simple_mask'}
+            'core_text_file_loading', 'shaders_ascii_rendering', 'shaders_simple_mask',
+            'textures_gif_player'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -544,6 +546,10 @@ def scripts():
         script('textures_image_channel', 'frames', [quick(), slow()]),
         script('textures_image_kernel', 'frames', [quick(), slow()]),
         script('textures_polygon_drawing', 'turn', [quick() for _ in range(14)] + [slow()]),
+        # The first switch after eight frames; LEFT shortens the delay to one (a switch every frame, around
+        # the last frame to the first), RIGHT lengthens it again.
+        script('textures_gif_player', 'speed', [quick() for _ in range(9)] + [f for _ in range(8) for f in (quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]))]
+               + [quick() for _ in range(6)] + [quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), slow(), quick()]),
         # The glass at the corner, over a hidden bunny, over the title and partly off screen.
         script('textures_magnifying_glass', 'look', [quick(), quick([mouse_at(266, 366)]), slow([mouse_at(520, 110)]), quick([mouse_at(300, 20)]),
                                                      quick([mouse_at(780, 440)])]),
