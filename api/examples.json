@@ -3685,7 +3685,7 @@
   {
    "name": "text_font_filters",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",

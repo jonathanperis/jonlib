@@ -1877,7 +1877,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 14
+   "minutes": 30
   },
   {
    "id": "examples-textures",
@@ -1893,7 +1893,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 30
+   "minutes": 38
   },
   {
    "id": "examples-models",
