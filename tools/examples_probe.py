@@ -195,6 +195,7 @@ EXAMPLES = {
     'core_input_gestures_testbed': ('core/core_input_gestures_testbed.c', 'Ex.setup(core, frame)'),
     'core_3d_camera_fps': ('core/core_3d_camera_fps.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'core_input_gamepad': ('core/core_input_gamepad.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'core_2d_camera_mouse_zoom': ('core/core_2d_camera_mouse_zoom.c', 'Ex.setup(core, frame)'),
     'core_text_file_loading': ('core/core_text_file_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_input_virtual_controls': ('core/core_input_virtual_controls.c', 'Ex.setup(core, frame)'),
     'shapes_math_angle_rotation': ('shapes/shapes_math_angle_rotation.c', 'Ex.setup(core, frame)'),
@@ -582,6 +583,13 @@ def scripts():
         # The wheel scrolls down, back past the top (snapped to 0) and far past the end (snapped to the last page).
         script('core_text_file_loading', 'scroll', [quick(), quick([(MOUSE_WHEEL, 0, -3, 0)]), slow([(MOUSE_WHEEL, 0, 5, 0)]),
                                                     quick([(MOUSE_WHEEL, 0, -200, 0)]), quick()]),
+        # The wheel zooms in around the mouse (three steps, then two at another point) and out past the lower
+        # clamp; a left drag pans; mode 2: a right press anchors the camera and the horizontal move zooms.
+        script('core_2d_camera_mouse_zoom', 'zoom', [quick(), quick([mouse_at(400, 225)]), quick([(MOUSE_WHEEL, 0, 1, 0)]), quick([(MOUSE_WHEEL, 0, 2, 0)]), quick(),
+                                                     quick([mouse_at(250, 120), (MOUSE_WHEEL, 0, 1, 0)]), quick([(MOUSE_WHEEL, 0, -30, 0)]), quick([(MOUSE_WHEEL, 0, 6, 0)]),
+                                                     quick([button(0)]), quick([mouse_at(300, 160)]), quick([button(0, False), key(KEY_TWO)]),
+                                                     quick([key(KEY_TWO, False), button(1)]), quick([mouse_at(360, 170)]), quick([mouse_at(330, 170)]), quick(),
+                                                     quick([button(1, False), key(KEY_ONE)]), quick([key(KEY_ONE, False)])]),
         # No gamepad (the Xbox picture); RIGHT and LEFT through gamepads 1 and 0; gamepad 0 connected by an
         # automation event each frame (the platform poll disconnects it again): the generic layout with a button,
         # the left stick, a trigger, a back button and a thumb button held; disconnected; the vibrate button.
@@ -1000,7 +1008,8 @@ UNDEFINED_NATIVE = {
 REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
             'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass',
             'shapes_rlgl_color_wheel', 'shapes_rectangle_advanced', 'core_input_gestures_testbed', 'core_input_gamepad',
-            'shapes_easings_ball', 'shapes_easings_box', 'shapes_easings_testbed'}
+            'shapes_easings_ball', 'shapes_easings_box', 'shapes_easings_testbed',
+            'core_2d_camera_mouse_zoom'}
 
 
 def refusal(item, libm):
