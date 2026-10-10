@@ -1273,18 +1273,29 @@ def Libm.cos.value(values: F32 & F32) -> F32:
   (cosine, _) = values
   cosine
 
+# The sinf/cosf arguments verified against macOS arm64: fl(DEG2RAD*d) for
+# integral |d| <= 360 except 13, 19, 22, 103 and 188, where Apple's functions
+# are not the correctly rounded values Jonmath's Apple kernel computes
+# (docs/FRAME.md; the frame probe re-verifies each against the host).
+def Libm.apple.verified(+x: F32) -> Bool:
+  +deg2rad = (3.14159265358979323846 / 180.0 : F32)
+  +d = F32.round((x / deg2rad : F32))
+  +m = F32.abs(d)
+  (m <= 360.0 : F32) && F32.is_eq((deg2rad * d : F32), x)
+    && Bool.not(F32.is_eq(m, 13.0) || F32.is_eq(m, 19.0) || F32.is_eq(m, 22.0) || F32.is_eq(m, 103.0) || F32.is_eq(m, 188.0))
+
 # sinf under a reference profile: glibc's x86_64 sinf for every finite x under
-# both glibc profiles (docs/SINCOSF.md); the bounded Apple kernel for
-# |x| <= 6.283186 under AppleLibm. None otherwise (infinities, NaN).
+# both glibc profiles (docs/SINCOSF.md); under AppleLibm the verified
+# whole-degree arguments (Libm.apple.verified). None otherwise.
 def Libm.sin(libm: Libm, +x: F32) -> Maybe<F32>:
   match libm:
-    case AppleLibm{}: Bool.pick(Maybe<F32>, (F32.abs(x) <= 6.283186 : F32), Some{Libm.sin.value(Trig.sincos_for(False{}, x))}, None{})
+    case AppleLibm{}: Bool.pick(Maybe<F32>, Libm.apple.verified(x), Some{Libm.sin.value(Trig.sincos_for(False{}, x))}, None{})
     case _: Sincosf.sinf(x)
 
 # cosf under a reference profile, with the domains of Libm.sin.
 def Libm.cos(libm: Libm, +x: F32) -> Maybe<F32>:
   match libm:
-    case AppleLibm{}: Bool.pick(Maybe<F32>, (F32.abs(x) <= 6.283186 : F32), Some{Libm.cos.value(Trig.sincos_for(False{}, x))}, None{})
+    case AppleLibm{}: Bool.pick(Maybe<F32>, Libm.apple.verified(x), Some{Libm.cos.value(Trig.sincos_for(False{}, x))}, None{})
     case _: Sincosf.cosf(x)
 
 def Quaternion.slerp.ratios(+left: Vector4, +right: Vector4, +sine: F32, first: Maybe<F32>, second: Maybe<F32>) -> Maybe<Vector4>:

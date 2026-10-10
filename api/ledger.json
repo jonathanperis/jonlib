@@ -72213,7 +72213,7 @@
       "scope": "The reference hemisphere flip, copy (|cos| >= 1) and nlerp (cos > 0.95) branches, and acosf/sinf weighting under Glibc239Libm: glibc 2.39's Sun acosf and the GNU sinf kernel, uncontracted F32; compared with raymath built on the pinned acosf source and, on Linux x86_64 glibc 2.39, the host libm.",
       "gaps": [
         "AppleLibm and Glibc241Libm acosf (None where the result needs acosf)",
-        "sinf arguments Libm.sin refuses (Apple outside |x| <= 6.283186, glibc nonfinite) and NaN cosines are None",
+        "sinf arguments Libm.sin refuses (Apple outside its verified whole degrees, glibc nonfinite) and NaN cosines are None",
         "Contracted (FMA) builds such as aarch64 glibc",
         "Other target/performance coverage"
       ],

@@ -930,12 +930,15 @@ def configure(parser):
                         help='only these examples (diagnostic subset)')
     parser.add_argument('--category', choices=sorted({name.split('_')[0] for name in EXAMPLES}),
                         help="only one category's examples (the examples-<category> gates)")
+    parser.add_argument('--assume-libm', choices=('AppleLibm', 'Glibc239Libm'),
+                        help="run Jonlib and compute the refusals under another host's M.Libm profile (diagnostic: the "
+                             'frames before a refusal are still compared with this host, whose libm may differ there)')
 
 
 def main():
     args = probekit.arguments(__doc__, configure)
-    name = ('examples-interactive' if args.interactive else f'examples-{args.category}' if args.category
-            else 'examples' + ('-subset' if args.example else ''))
+    name = ('examples-interactive' if args.interactive else 'examples-assumed' if args.assume_libm
+            else f'examples-{args.category}' if args.category else 'examples' + ('-subset' if args.example else ''))
     probe = probekit.Probe(name, args, raylib_options=ip.OPTIONS)
     if args.interactive:
         interactive(probe, args.interactive)
@@ -945,7 +948,7 @@ def main():
                   SUPPORT_AUTOMATION_EVENTS=True, SUPPORT_GESTURES_SYSTEM=True, SUPPORT_SCREEN_CAPTURE=True)
     if definitions != wanted:
         raise ProbeFailure(f'examples: reference build definitions {definitions}, expected {wanted}')
-    libm = gradient_reference()
+    libm = args.assume_libm or gradient_reference()
     logo = probe.args.raylib_source / 'examples/textures/resources/raylib_logo.png'
     if not logo.is_file():
         raise ProbeFailure(f'examples: {logo} is missing from the pinned raylib checkout')
