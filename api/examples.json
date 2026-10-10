@@ -3568,7 +3568,7 @@
   {
    "name": "textures_cellular_automata",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",

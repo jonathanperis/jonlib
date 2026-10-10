@@ -104,6 +104,7 @@ EXAMPLES = {
     'textures_polygon_drawing': ('textures/textures_polygon_drawing.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_magnifying_glass': ('textures/textures_magnifying_glass.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_gif_player': ('textures/textures_gif_player.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_cellular_automata': ('textures/textures_cellular_automata.c', 'Ex.setup(core, frame)'),
     'textures_image_text': ('textures/textures_image_text.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_fog_of_war': ('textures/textures_fog_of_war.c', 'Ex.setup(seed, core, frame)'),
     'textures_sprite_animation': ('textures/textures_sprite_animation.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -576,6 +577,9 @@ def scripts():
         script('textures_image_channel', 'frames', [quick(), slow()]),
         script('textures_image_kernel', 'frames', [quick(), slow()]),
         script('textures_polygon_drawing', 'turn', [quick() for _ in range(14)] + [slow()]),
+        # Rule 30 grows four lines a frame; a preset (60) and a flipped rule bit restart it; hovering frames a cell.
+        script('textures_cellular_automata', 'rules', [quick(), quick(), slow(), quick([mouse_at(60, 14)]), quick([button(0)]), quick([button(0, False)]),
+                                                       quick([mouse_at(555, 30)]), quick([button(0)]), quick([button(0, False), mouse_at(400, 300)]), quick()]),
         # The first switch after eight frames; LEFT shortens the delay to one (a switch every frame, around
         # the last frame to the first), RIGHT lengthens it again.
         script('textures_gif_player', 'speed', [quick() for _ in range(9)] + [f for _ in range(8) for f in (quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]))]
