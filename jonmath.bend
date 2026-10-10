@@ -19,6 +19,7 @@ import ./src/inverse_trig.bend as InverseTrig
 import ./src/asin.bend as Asin
 import ./src/power.bend as Power
 import ./src/libc_rand.bend as CRand
+import ./src/hypot.bend as Hypot
 import ./src/float64.bend as Float64Numeric
 import ./src/angle.bend as LegacyAngle
 import ./src/checked_angle.bend as CheckedAngle
@@ -1318,6 +1319,16 @@ def Libm.log(libm: Libm, +x: F32) -> Maybe<F32>:
   match libm:
     case AppleLibm{}: None{}
     case _: Power.log(x)
+
+# Whether the C library's hypot(x, y) <= radius, the three promoted to
+# binary64: the answer of every hypot whose result is one of the two doubles
+# around the exact value (glibc 2.39 states about 0.79 ULP, 0.95 with FMA),
+# on any profile. None where such results could disagree (the exact
+# x*x + y*y above radius*radius by less than the next double's square, about
+# 2^-50 of it), for a magnitude from 2^64 on, and for a NaN or an infinity
+# (Hypot.within, docs/MATH.md).
+def Libm.hypot_within(+x: F32, +y: F32, +radius: F32) -> Maybe<Bool>:
+  Hypot.within(x, y, radius)
 
 # The state of the reference C library's rand().
 type Libc.Rand is Data:

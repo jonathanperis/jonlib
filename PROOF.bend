@@ -669,6 +669,33 @@ def Laws.glibc_rand_large_seed_none():
 def Laws.libc_rand_apple_none(seed):
   {==}
 
+def Laws.hypot_within_below_inside(error, limit):
+  {==}
+
+def Laws.hypot_within_exact_inside(limit):
+  {==}
+
+def Laws.hypot_within_rounded_down_onto_none(limit):
+  {==}
+
+def Laws.hypot_within_band_none(error):
+  {==}
+
+def Laws.hypot_within_past_band_outside(error):
+  {==}
+
+def Laws.hypot_within_unknown_order_none(error, limit):
+  {==}
+
+def Laws.hypot_within_negative_radius_outside(xh, xl, yh, yl, rh, rl):
+  {==}
+
+def Laws.hypot_within_nan_none():
+  {==}
+
+def Laws.hypot_within_infinities_none():
+  {==}
+
 def Laws.replay_closing_stops(update, draw, show, spec, core, frame, out):
   {==}
 

@@ -24,6 +24,7 @@ import ./src/lgpl/asin.bend as GlibcAsin
 import ./src/sincosf.bend as Sincosf
 import ./src/power.bend as Power
 import ./src/libc_rand.bend as CRand
+import ./src/hypot.bend as Hypot
 import ./jongui.bend as JG
 import ./src/binary64_sqrt.bend as Sqrt
 import ./src/wav.bend as Wav
@@ -944,6 +945,54 @@ law glibc_rand_large_seed_none:
 law libc_rand_apple_none:
   for seed: U32
   {M.Libc.srand(M.AppleLibm{}, seed) == None{} : Maybe<M.Libc.Rand>}
+
+# hypot(x, y) <= r for every faithful hypot (src/hypot.bend), from the order
+# of the rounded x*x + y*y and r*r (0 equal, 1 less, 2 greater, 3 unknown):
+# a sum below r*r is inside; a sum rounded onto r*r is inside unless its
+# rounding error shows it above; a sum above r*r is outside only from
+# r*r*(1 + 2^-50) on and refused below it (two faithful results could
+# disagree there). A negative r is below every finite distance; a NaN, an
+# infinity or any operand outside the checked range is refused.
+law hypot_within_below_inside:
+  for error: U32
+  for limit: U32
+  {Hypot.within.ordered(1, error, limit) == Some{True{}} : Maybe<Bool>}
+
+law hypot_within_exact_inside:
+  for limit: U32
+  {Hypot.within.ordered(0, 0, limit) == Some{True{}} : Maybe<Bool>}
+
+law hypot_within_rounded_down_onto_none:
+  for limit: U32
+  {Hypot.within.ordered(0, 1, limit) == None{} : Maybe<Bool>}
+
+law hypot_within_band_none:
+  for error: U32
+  {Hypot.within.ordered(2, error, 1) == None{} : Maybe<Bool>}
+
+law hypot_within_past_band_outside:
+  for error: U32
+  {Hypot.within.ordered(2, error, 2) == Some{False{}} : Maybe<Bool>}
+
+law hypot_within_unknown_order_none:
+  for error: U32
+  for limit: U32
+  {Hypot.within.ordered(3, error, limit) == None{} : Maybe<Bool>}
+
+law hypot_within_negative_radius_outside:
+  for xh: U32
+  for xl: U32
+  for yh: U32
+  for yl: U32
+  for rh: U32
+  for rl: U32
+  {Hypot.within.finite(True{}, Hypot.Ok{xh, xl}, Hypot.Ok{yh, yl}, Hypot.Ok{rh, rl}) == Some{False{}} : Maybe<Bool>}
+
+law hypot_within_nan_none:
+  {Hypot.within.word(2143289344, 0, 1065353216) == None{} : Maybe<Bool>}
+
+law hypot_within_infinities_none:
+  {Hypot.within.word(2139095040, 4286578688, 2139095040) == None{} : Maybe<Bool>}
 
 # Programs (docs/DRIVER.md): before a frame, a closing loop draws nothing more
 # and keeps what it has drawn; a Program's loop closes on the window's close
