@@ -23,6 +23,7 @@ import ./src/angle.bend as LegacyAngle
 import ./src/checked_angle.bend as CheckedAngle
 import ./src/binary64_fma.bend as Binary64Fma
 import ./src/binary64_scaled.bend as Binary64Scaled
+import ./src/binary64_narrow.bend as Binary64Narrow
 import ./src/lgpl/tan.bend as GlibcTan
 import ./src/lgpl/asin.bend as GlibcAsin
 
@@ -56,6 +57,19 @@ def Float64.promoted(words: U32 & U32) -> Float64:
 
 def Float64.from_f32(value: F32) -> Float64:
   Float64.promoted(Float64Numeric.promote(value))
+
+def Float64.to_f32.word(word: Maybe<U32>) -> Maybe<F32>:
+  match word:
+    case None{}: None{}
+    case Some{+bits}:
+      U32{b} = bits
+      Some{F32{b}}
+
+# (float)value: rounded to nearest even, with gradual underflow and overflow
+# to infinity. None for infinities and NaN.
+def Float64.to_f32(value: Float64) -> Maybe<F32>:
+  Float64{high, low} = value
+  Float64.to_f32.word(Binary64Narrow.checked(high, low))
 
 def Float64.internal.f32(value: Float64) -> F32:
   Float64{high, low} = value
