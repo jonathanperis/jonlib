@@ -82,7 +82,16 @@ class WorkflowTests(unittest.TestCase):
         count = int(re.search(r'run_gates\.py --shard \$\{\{ matrix\.shard \}\}/(\d+)', self.text).group(1))
         shards = re.search(r'shard: \[([^\]]*)\]', self.text).group(1)
         self.assertEqual([int(s) for s in shards.split(',')], list(range(1, count + 1)))
-        self.assertIn('os: [ubuntu-24.04, macos-15]', self.text)
+        # The hosts come from the scope: Linux on the merge path, every host for scheduled and manual runs.
+        self.assertIn('os: ${{ fromJSON(needs.scope.outputs.hosts) }}', self.text)
+        self.assertIn('hosts: ${{ steps.scope.outputs.hosts }}', self.text)
+
+    def test_macos_is_required_whenever_the_run_includes_it(self):
+        block = self.text.split('  conformanceMac:')[1]
+        self.assertIn("if: ${{ always() && contains(needs.scope.outputs.hosts, 'macos-15') }}", block)
+        checks = (ROOT / '.github/workflows/checks.yml').read_text()
+        self.assertIn("(github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '[\"ubuntu-24.04\", \"macos-15\"]' || '[\"ubuntu-24.04\"]'", checks)
+        self.assertRegex(checks, r"schedule:\n    - cron: '")
 
     def test_nothing_can_pass_vacuously(self):
         self.assertNotIn('continue-on-error', self.text)
@@ -92,7 +101,7 @@ class WorkflowTests(unittest.TestCase):
         for job in ('conformanceUbuntu', 'conformanceMac'):
             block = self.text.split(f'  {job}:')[1].split('\n  conformance')[0]
             self.assertIn('needs: [scope, gates, scoped]', block)
-            self.assertIn('if: ${{ always() }}', block)
+            self.assertIn('if: ${{ always() }}' if job == 'conformanceUbuntu' else "if: ${{ always() && contains(needs.scope.outputs.hosts, 'macos-15') }}", block)
             # The scope must have been computed, and each scope has exactly one way to pass.
             self.assertIn('test "$SCOPE_RESULT" = success', block)
             self.assertIn('full) test "$GATES_RESULT" = success && test "$SCOPED_RESULT" = skipped ;;', block)

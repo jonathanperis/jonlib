@@ -6,6 +6,10 @@ name: Conformance
 # library definitions, one probe, example ports) runs those on both OSes.
 # Harness-only changes need neither, and documentation-only changes do not
 # start this workflow. Scheduled and manual runs are complete.
+#
+# Pushes and pull requests run on Linux only while the port is being completed
+# (tools/ci_scope.py MERGE_HOSTS, docs/CI.md): hosted macOS runs five jobs at a
+# time and held every merge for hours. Scheduled and manual runs use every host.
 on:
   push:
     branches: [main, 'feature/**']
@@ -36,6 +40,7 @@ jobs:
     outputs:
       mode: ${{ steps.scope.outputs.mode }}
       matrix: ${{ steps.scope.outputs.matrix }}
+      hosts: ${{ steps.scope.outputs.hosts }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -48,14 +53,14 @@ jobs:
         run: python3 tools/ci_scope.py
 
   gates:
-    name: Gates ${{ matrix.os }} ${{ matrix.shard }}/10
+    name: Gates ${{ matrix.os }} ${{ matrix.shard }}/15
     needs: [scope]
     if: ${{ needs.scope.outputs.mode == 'full' }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15]
-        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        os: ${{ fromJSON(needs.scope.outputs.hosts) }}
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 210
     env:
@@ -69,7 +74,7 @@ jobs:
       - uses: ./.github/actions/setup-pinned
       - name: Run gate shard
         run: >-
-          python3 tools/run_gates.py --shard ${{ matrix.shard }}/10
+          python3 tools/run_gates.py --shard ${{ matrix.shard }}/15
           --bend-source "${{ github.workspace }}/.build/dependencies/bend"
           --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
       - name: Upload gate results
@@ -154,9 +159,10 @@ jobs:
             *) exit 1 ;;
           esac
 
+  # Only when the run includes macOS (scheduled and manual runs for now).
   conformanceMac:
     name: CPU and JavaScript (macos-15)
-    if: ${{ always() }}
+    if: ${{ always() && contains(needs.scope.outputs.hosts, 'macos-15') }}
     needs: [scope, gates, scoped]
     runs-on: ubuntu-24.04
     timeout-minutes: 5

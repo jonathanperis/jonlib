@@ -31,6 +31,13 @@ a push or pull request changed and picks one of three scopes:
 - `none`: only files no gate reads (workflows, unit tests, this tool,
   documentation). The Checks workflow covers them.
 
+Hosts: while the port is being completed, pushes and pull requests run on
+Linux only (`MERGE_HOSTS`). Hosted macOS runs five jobs at a time and a
+complete run needs about twenty runner-hours there, which held every merge
+for hours. Scheduled (nightly) and manual runs still use every host
+(`ALL_HOSTS`), so macOS keeps being checked off the merge path; add macOS
+back to `MERGE_HOSTS` to restore it (docs/CI.md).
+
 The base of the comparison is the previous head for a push to `main`, and the
 merge base with `main` for any other branch or a pull request. When the base
 cannot be found the scope is `full`. A push to `main` is compared with the
@@ -40,7 +47,7 @@ to run, and a merge commit only what `main` had gained since the branch
 started. A scheduled run is `none` when a scheduled or manual run (always
 full) of the same commit already succeeded.
 
-    python3 tools/ci_scope.py                 # reads the GitHub event, writes mode/matrix to $GITHUB_OUTPUT
+    python3 tools/ci_scope.py                 # reads the GitHub event, writes mode/matrix/hosts to $GITHUB_OUTPUT
     python3 tools/ci_scope.py --base REF      # prints the scope of REF..HEAD
 """
 import argparse
@@ -61,7 +68,9 @@ HARNESS = ('tools/ci_scope.py', 'tools/example_tables.py', 'tools/examples_plan.
 EXAMPLE_FILES = (PROBE, 'api/examples.json')
 # What a library file that only gained definitions runs: the corpus with PROOF.bend, and the core examples.
 LIBRARY_GATES = ('conformance', 'examples-core')
-HOSTS = (('linux', 'ubuntu-24.04'), ('macos', 'macos-15'))
+ALL_HOSTS = (('linux', 'ubuntu-24.04'), ('macos', 'macos-15'))
+# The hosts of pushes and pull requests. macOS is deferred until the port is complete (see the module text).
+MERGE_HOSTS = (('linux', 'ubuntu-24.04'),)
 # Estimated minutes (the manifest's, measured on macOS) per scoped job, and the jobs per host before a run is full.
 PART_MINUTES, MAX_PARTS = 100, 3
 REGISTERED = re.compile(r"^    '([a-z0-9_]+)': \('", re.M)
@@ -227,10 +236,15 @@ def parts(gates):
     return bins if len(bins) <= MAX_PARTS else None
 
 
-def matrix(gates, examples):
-    """The scoped jobs: each part of the gates on each host that runs them, and the examples on both."""
+def hosts(env=os.environ):
+    """Every host for a scheduled or manual run, the merge-path hosts otherwise."""
+    return ALL_HOSTS if env.get('GITHUB_EVENT_NAME') in ('schedule', 'workflow_dispatch') else MERGE_HOSTS
+
+
+def matrix(gates, examples, on=MERGE_HOSTS):
+    """The scoped jobs: each part of the gates on each host that runs them, and the examples on every host."""
     include = []
-    for system, runner in HOSTS:
+    for system, runner in on:
         for number, part in enumerate(parts([gate for gate in gates if system in gate['os']]), 1):
             include.append(dict(os=runner, part=f'gates {number}', gates=' '.join(f"--only={gate['id']}" for gate in part), examples=''))
         if examples:
@@ -238,7 +252,7 @@ def matrix(gates, examples):
     return dict(include=include)
 
 
-def scope(status, old, new, diff):
+def scope(status, old, new, diff, on=MERGE_HOSTS):
     """The mode, gates and examples for a change.
 
     `status` maps each changed path to 'A', 'M' or 'D'; `old` and `new` read a
@@ -299,7 +313,7 @@ def scope(status, old, new, diff):
         return full(f'{len(selected)} gates are affected, more than {MAX_PARTS} jobs per host')
     if not selected and not examples:
         return NONE
-    return dict(mode='scoped', gates=[gate['id'] for gate in selected], examples=sorted(examples), matrix=matrix(selected, sorted(examples)))
+    return dict(mode='scoped', gates=[gate['id'] for gate in selected], examples=sorted(examples), matrix=matrix(selected, sorted(examples), on))
 
 
 def git(*args):
@@ -332,7 +346,7 @@ def changed(base, head='HEAD'):
     status = {path: letter[0] for letter, path in rows}
     cache = {}
     read = lambda commit: lambda path: cache[commit, path] if (commit, path) in cache else cache.setdefault((commit, path), show(commit, path))
-    return scope(status, read(base), read(head), lambda path: git('diff', '-U0', f'{base}..{head}', '--', path))
+    return scope(status, read(base), read(head), lambda path: git('diff', '-U0', f'{base}..{head}', '--', path), hosts())
 
 
 FULL_EVENTS = ('schedule', 'workflow_dispatch')
@@ -396,8 +410,9 @@ def main(argv=None):
         with open(output, 'a') as handle:
             print(f"mode={result['mode']}", file=handle)
             # A skipped job's matrix must still expand: one inert row when nothing is scoped.
-            idle = dict(include=[dict(os=HOSTS[0][1], part='none', gates='', examples='')])
+            idle = dict(include=[dict(os=ALL_HOSTS[0][1], part='none', gates='', examples='')])
             print('matrix=' + json.dumps(result.get('matrix', idle)), file=handle)
+            print('hosts=' + json.dumps([runner for _, runner in hosts()]), file=handle)
     step = os.environ.get('GITHUB_STEP_SUMMARY')
     if step:
         with open(step, 'a') as handle:

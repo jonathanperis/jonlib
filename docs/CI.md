@@ -2,7 +2,31 @@
 
 Two workflows run on pushes to `main` and `feature/**` and on pull requests.
 
-**Checks** (Ubuntu and macOS) runs the Python unit tests, byte-compiles the
+## macOS is off the merge path for now
+
+Since 2026-10-10, **pushes and pull requests run on Linux only**; the nightly
+and the manual (`workflow_dispatch`) runs of both workflows still use every
+host. Hosted macOS runs five jobs at a time across the whole account, and a
+complete Conformance run needs about twenty runner-hours there: every merge
+waited hours for it while the Linux half had long finished. Jonathan's
+decision: finish the port first, then turn macOS back on and validate
+everything that was merged against it.
+
+What this means until then:
+
+- A green run on a branch says the change is right on Linux (glibc profiles,
+  uncontracted x86-64). It says nothing about the Apple profile or fused
+  arm64. Before pushing, `--assume-libm AppleLibm` on the examples and models
+  probes still runs Jonlib and the refusal oracle under the Apple profile on
+  Linux.
+- The nightly complete run on `main` (06:17 UTC) is where macOS is checked.
+  A red macOS job there is a debt to record and fix, not a blocked merge.
+- To turn macOS back on: add `('macos', 'macos-15')` to `MERGE_HOSTS` in
+  [`tools/ci_scope.py`](../tools/ci_scope.py) and drop the event test from the
+  `os:` line of `.github/workflows/checks.yml`. Then run both workflows
+  manually on `main` and fix what they find before calling the port done.
+
+**Checks** (Ubuntu; macOS in nightly and manual runs) runs the Python unit tests, byte-compiles the
 tools and runs `tools/check_project.py` (library source boundary, fixtures,
 API ledger and documentation links).
 
@@ -12,8 +36,8 @@ base with `main` for a branch or a pull request) and picks one of three scopes.
 
 | Scope | Changed files | What runs |
 | --- | --- | --- |
-| `full` | a library definition that changed or was removed, `toolchain.json`, `tools/run_gates.py`, the pinned setup action, fixtures, a tool no gate reaches, any path the tool cannot place, or more gates than three jobs per host hold | every gate, both hosts, in ten shards |
-| `scoped` | see below | `Scoped <host> gates N` / `examples`: only the affected gates and examples, both hosts |
+| `full` | a library definition that changed or was removed, `toolchain.json`, `tools/run_gates.py`, the pinned setup action, fixtures, a tool no gate reaches, any path the tool cannot place, or more gates than three jobs per host hold | every gate, in fifteen shards per host |
+| `scoped` | see below | `Scoped <host> gates N` / `examples`: only the affected gates and examples |
 | `none` | only workflows, unit tests, `tools/ci_scope.py`, `tools/check_project.py`, `tools/examples_plan.py`, `tools/example_tables.py` and documentation | nothing here (Checks covers them) |
 
 What a `scoped` run selects, per changed file:
@@ -49,16 +73,17 @@ check of what reached `main` that way. A push to a branch cancels that
 branch's run; each push to `main` and the nightly run keep their own.
 
 A `full` run executes every gate in [`tools/gates.json`](../tools/gates.json) on
-`ubuntu-24.04` and `macos-15`. `tools/run_gates.py` splits the manifest into
-ten duration-balanced shards per host. Hosted macOS allows five concurrent
-jobs, so five macOS shards wait for a free runner; eight shards approached
-the 210-minute limit per shard once the examples gates (`examples-core`,
-`-models`, `-shaders`, `-shapes`, `-text`, `-textures`) and one compile batch at a time landed. The
-`minutes` estimates in `gates.json` are the observed macOS durations (the
-slower host; gates not yet measured there use 2.7 times their Linux time),
-which keeps shards near 135 minutes. The two aggregate jobs (`CPU and
-JavaScript (ubuntu-24.04)` / `(macos-15)`) pass only when everything the scope
-asked for passed (every shard, or every scoped job on both hosts).
+each host of the run (`ubuntu-24.04`; also `macos-15` in nightly and manual
+runs). `tools/run_gates.py` splits the manifest into fifteen
+duration-balanced shards per host: on Linux they all start at once and a
+complete run takes about an hour and a half, leaving runners for the scoped
+runs of other branches. On macOS, five at a time, the fifteen take several
+hours, which is why macOS is nightly for now. The `minutes` estimates in
+`gates.json` are the observed macOS durations (the slower host; gates not yet
+measured there use 2.7 times their Linux time). The aggregate job `CPU and
+JavaScript (ubuntu-24.04)` passes only when everything the scope asked for
+passed (every shard on every host of the run, or every scoped job);
+`CPU and JavaScript (macos-15)` exists in the runs that include macOS.
 Documentation-only changes skip this workflow. The pinned Bend checkout, its
 declared overlay and the pinned raylib checkout come from `toolchain.json`
 through `.github/actions/setup-pinned`.
