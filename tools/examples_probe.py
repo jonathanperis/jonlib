@@ -162,6 +162,8 @@ EXAMPLES = {
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_window_web': ('core/core_window_web.c', 'Ex.setup(core, frame)'),
+    'text_sprite_fonts': ('text/text_sprite_fonts.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'text_words_alignment': ('text/text_words_alignment.c', 'Ex.setup(core, frame)'),
     'core_smooth_pixelperfect': ('core/core_smooth_pixelperfect.c', 'Ex.setup(core, frame)'),
     'models_tesseract_view': ('models/models_tesseract_view.c', 'Ex.setup(core, frame)'),
     'textures_particles_blending': ('textures/textures_particles_blending.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
@@ -173,7 +175,8 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'textures_image_loading', 'textures_image_rotate', 'textures_to_image', 'textures_blend_modes',
             'textures_npatch_drawing', 'textures_raw_data', 'textures_bunnymark', 'shaders_texture_waves',
             'shaders_texture_outline', 'shaders_shapes_textures', 'shaders_texture_tiling', 'text_font_spritefont',
-            'models_billboard_rendering', 'shaders_color_correction', 'textures_particles_blending'}
+            'models_billboard_rendering', 'shaders_color_correction', 'textures_particles_blending',
+            'text_sprite_fonts'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -442,6 +445,15 @@ def scripts():
                                                         slow([button(0, False), mouse_at(665, 200)]), quick([button(0)]), quick([button(0, False)]),
                                                         quick([mouse_at(675, 80), button(0)]), quick([button(0, False)]), quick()]),
         script('core_window_web', 'frames', [quick(), slow()]),
+        script('text_sprite_fonts', 'frames', [quick(), slow()]),
+        # The clock crosses one second (the second word) while the arrow keys walk every alignment and its limits.
+        script('text_words_alignment', 'align', [quick(), quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False), key(KEY_UP)]),
+                                                 quick([key(KEY_UP, False), key(KEY_LEFT)]), quick([key(KEY_LEFT, False), key(KEY_RIGHT)]),
+                                                 slow([key(KEY_RIGHT, False), key(KEY_DOWN)]), quick([key(KEY_DOWN, False), key(KEY_RIGHT)]),
+                                                 quick([key(KEY_RIGHT, False), key(KEY_DOWN)]), quick([key(KEY_DOWN, False), key(KEY_RIGHT)]),
+                                                 quick([key(KEY_RIGHT, False), key(KEY_DOWN)]), quick([key(KEY_DOWN, False)])], start=0.93),
+        # The last word (10 seconds) wraps to the first at 11.
+        script('text_words_alignment', 'wrap', [quick(), quick(), slow(), quick()], start=10.975),
         # The cameras follow GetTime and the rectangles the frame time: frames of both lengths.
         script('core_smooth_pixelperfect', 'drift', [quick(), quick(), slow(), quick(), slow(), quick()]),
         # The rotation follows GetTime: frames of both lengths.
