@@ -196,6 +196,7 @@ EXAMPLES = {
     'core_3d_camera_fps': ('core/core_3d_camera_fps.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'core_input_gamepad': ('core/core_input_gamepad.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_2d_camera_mouse_zoom': ('core/core_2d_camera_mouse_zoom.c', 'Ex.setup(core, frame)'),
+    'core_window_should_close': ('core/core_window_should_close.c', 'Ex.setup(core, frame)'),
     'core_text_file_loading': ('core/core_text_file_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_input_virtual_controls': ('core/core_input_virtual_controls.c', 'Ex.setup(core, frame)'),
     'shapes_math_angle_rotation': ('shapes/shapes_math_angle_rotation.c', 'Ex.setup(core, frame)'),
@@ -594,6 +595,10 @@ def scripts():
                                                      quick([button(0)]), quick([mouse_at(300, 160)]), quick([button(0, False), key(KEY_TWO)]),
                                                      quick([key(KEY_TWO, False), button(1)]), quick([mouse_at(360, 170)]), quick([mouse_at(330, 170)]), quick(),
                                                      quick([button(1, False), key(KEY_ONE)]), quick([key(KEY_ONE, False)])]),
+        # ESC asks for confirmation (the exit key is disabled), N goes back; the window's close button asks
+        # again and Y ends the loop: the example's `while (!exitWindow)` ends with the script's last frame.
+        script('core_window_should_close', 'confirm', [quick(), quick([key(256)]), quick([key(256, False)]), quick([key(78)]), quick([key(78, False)]),
+                                                       quick([(WINDOW_CLOSE, 0, 0, 0)]), quick(), quick([key(89)])]),
         # No gamepad (the Xbox picture); RIGHT and LEFT through gamepads 1 and 0; gamepad 0 connected by an
         # automation event each frame (the platform poll disconnects it again): the generic layout with a button,
         # the left stick, a trigger, a back button and a thumb button held; disconnected; the vibrate button.
