@@ -17,7 +17,7 @@ Bend and replaying it against the native example. Work autonomously; merge to
 |---|---|---|
 | `main` | c3e2e6b: everything through Jongui (raygui's first controls), `M.Libm.pow2` and 79 example ports | CI green (run 38030650917 on this commit, merged 2026-10-10) |
 | `feature/examples-batch-3` | a1e88b6, on top of `main`: 29 more example ports, `Font.texture_size`/`Draw.font_texture`, `Surface.colors_image`, `M.Float64.to_f32`/`to_int`, the examples probe's 30-minute lane limit and `UNDEFINED_NATIVE` | CI run 38054490652; **merge to `main` once it concludes `success`** |
-| `feature/examples-batch-4` | on top of `feature/examples-batch-3`: 27 more example ports, render-texture depth buffers and the compiler's memory hint in containers | its own CI run; **merge to `main` after batch 3, once it concludes `success`** |
+| `feature/examples-batch-4` | on top of `feature/examples-batch-3`: 28 more example ports, render-texture depth buffers and the compiler's memory hint in containers | its own CI run; **merge to `main` after batch 3, once it concludes `success`** |
 
 `feature/examples-gui`, `feature/audio-waves`, `wip/models-drawing-obj`, `wip/lgpl-tan-asinf` and
 `integrate/models-lgpl` are merged into `main` and deleted.
@@ -25,7 +25,7 @@ Bend and replaying it against the native example. Work autonomously; merge to
 Coverage (`python3 tools/api_plan.py check`): raylib.h 514/600 partial
 (20 blocked, 66 not started); raymath.h 146/146; rlgl.h 93/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **135/212 ported**, 35 ready, 42 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **136/212 ported**, 34 ready, 42 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -68,7 +68,7 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
   rlsw), which unblocked `core_3d_camera_split_screen`,
   `textures_framebuffer_rendering`, `shaders_postprocessing` and
   `shaders_custom_uniform`.
-- **Examples**: 135 ported; gates `examples-core`, `-shapes`, `-text`,
+- **Examples**: 136 ported; gates `examples-core`, `-shapes`, `-text`,
   `-textures`, `-models`, `-shaders`.
 - **Compile memory**: per-output compiler processes and a cgroup-aware job
   budget in probekit; `LoadImage` of a `.png` in ports is `Surface.load_png`
