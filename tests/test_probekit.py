@@ -110,6 +110,37 @@ class CompileTests(unittest.TestCase):
         self.assertTrue(all(kw['timeout'] == probekit.COMPILE_TIMEOUT for _, kw in calls))
 
 
+class CompilerEnvTests(unittest.TestCase):
+    def env(self, gib, cgroup=None, env=None):
+        pages = {'SC_PAGE_SIZE': 4096, 'SC_PHYS_PAGES': gib * (1 << 30) // 4096}
+        with tempfile.TemporaryDirectory() as tmp:
+            limit = Path(tmp) / 'memory.max'
+            if cgroup is not None:
+                limit.write_text(cgroup)
+            with mock.patch.object(probekit.os, 'sysconf', side_effect=pages.__getitem__), \
+                 mock.patch.object(probekit, 'CGROUP_MEMORY', limit):
+                return probekit.compiler_env({'PATH': '/bin'} if env is None else env)
+
+    def test_a_lower_cgroup_limit_sizes_the_engine_memory(self):
+        self.assertEqual(self.env(16, str(8 << 30)), {'PATH': '/bin', 'BUN_JSC_forceRAMSize': str(4 << 30)})
+
+    def test_hosts_without_a_lower_limit_are_unchanged(self):
+        self.assertEqual(self.env(16), {'PATH': '/bin'})                  # no cgroup file (macOS)
+        self.assertEqual(self.env(16, 'max\n'), {'PATH': '/bin'})         # unlimited cgroup (hosted Linux)
+        self.assertEqual(self.env(7, str(16 << 30)), {'PATH': '/bin'})    # the limit above physical memory
+
+    def test_a_size_set_by_the_caller_is_kept(self):
+        env = {'BUN_JSC_forceRAMSize': '123'}
+        self.assertIs(self.env(16, str(8 << 30), env), env)
+
+    def test_compiles_use_it(self):
+        calls = []
+        with mock.patch.object(probekit, 'run', side_effect=lambda command, **kw: calls.append(kw)), \
+             mock.patch.object(probekit, 'compiler_env', return_value={'X': '1'}):
+            probekit.compile_outputs(['bun', 'main.ts'], 'p.bend', 'p')
+        self.assertEqual([kw['env'] for kw in calls], [{'X': '1'}])
+
+
 class JobTests(unittest.TestCase):
     def jobs(self, cpus, gib, cgroup=None):
         pages = {'SC_PAGE_SIZE': 4096, 'SC_PHYS_PAGES': gib * (1 << 30) // 4096}
