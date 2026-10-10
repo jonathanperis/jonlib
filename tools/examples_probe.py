@@ -106,6 +106,7 @@ EXAMPLES = {
     'textures_gif_player': ('textures/textures_gif_player.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_cellular_automata': ('textures/textures_cellular_automata.c', 'Ex.setup(core, frame)'),
     'textures_mouse_painting': ('textures/textures_mouse_painting.c', 'Ex.setup(core, frame)'),
+    'textures_screen_buffer': ('textures/textures_screen_buffer.c', 'Ex.setup(seed, core, frame)'),
     'textures_image_text': ('textures/textures_image_text.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_fog_of_war': ('textures/textures_fog_of_war.c', 'Ex.setup(seed, core, frame)'),
     'textures_sprite_animation': ('textures/textures_sprite_animation.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -239,7 +240,7 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering', 'shaders_simple_mask',
                'core_3d_camera_first_person', 'models_rlgl_solar_system', 'models_textured_cube'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'core_3d_camera_first_person', 'textures_bunnymark', 'textures_image_generation',
-          'core_window_letterbox', 'textures_particles_blending'}
+          'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
                 'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196,
@@ -578,6 +579,8 @@ def scripts():
         script('textures_image_channel', 'frames', [quick(), slow()]),
         script('textures_image_kernel', 'frames', [quick(), slow()]),
         script('textures_polygon_drawing', 'turn', [quick() for _ in range(14)] + [slow()]),
+        # The fire's first sixteen frames (the flames climb a row a frame, drifting and decaying).
+        script('textures_screen_buffer', 'fire', [quick(), quick(), slow()] + [quick() for _ in range(13)], seed=0xF12E),
         # Paint a stroke, pick red by click and paint, a bigger brush, erase with the right button (the
         # color comes back on release), RIGHT/LEFT keys, C clears.
         script('textures_mouse_painting', 'paint', [quick(), quick([mouse_at(200, 200)]), quick([button(0)]), quick([mouse_at(240, 220)]),
