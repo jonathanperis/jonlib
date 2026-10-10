@@ -1,0 +1,1 @@
+{"glibc": "2.41-12+deb13u4", "host": "Debian trixie amd64 container", "variant": "sse2", "model": "FUSED=0", "glibc_tunables": "glibc.cpu.hwcaps=-AVX2,-FMA,-FMA4", "expf_arguments": 2237399040, "expf_domain": "finite x with |x| < 87", "expf_differences": 0, "logf_arguments": 2130706432, "logf_domain": "positive normal x", "logf_differences": 0, "domain_violations": 0}

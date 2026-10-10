@@ -308,6 +308,10 @@ substitute for it) under both glibc profiles for every finite `y` below 126
 in magnitude, where the result is normal (exactly `2^y` for an integral
 `y`); `None` for `AppleLibm` and every other `y` (gate `pow2`,
 [Powers of two](#powers-of-two)).
+`M.Libm.exp(libm, x)` and `M.Libm.log(libm, x)` are `expf` and `logf` under
+both glibc profiles: `expf` for a finite `x` below 87 in magnitude except two
+arguments, `logf` for a positive normal `x`; `None` for `AppleLibm` and
+everything else (gate `explog`, [Exponential and logarithm](#exponential-and-logarithm)).
 `M.Libm.acos(libm, x)` and `M.Libm.pow(libm, x, exponent)` expose the glibc
 2.39 `acosf` and `powf` (exponents 2 and 3 on [-0, 1]) kernels as `Maybe`
 results; other profiles give `None` ([INVERSE-TRIG.md](INVERSE-TRIG.md),
@@ -446,3 +450,37 @@ helper's exponent window for subnormal `y`). The JSON results are in
 evaluates the same arithmetic in Python's binary64 for 280 arguments, checks
 the host's two functions against it on glibc hosts and Jonmath's result on
 every lane. macOS's `powf` and `exp2f` are not modeled: `AppleLibm` is `None`.
+
+## Exponential and logarithm
+
+`src/power.bend`'s `exp` and `log` are glibc's `expf` and `logf` (Arm
+optimized-routines `math/expf.c`, `math/logf.c`, MIT alternative,
+[LICENSES/arm-math.txt](../LICENSES/arm-math.txt)). The domains leave every
+special case out: a finite `x` with `|x| < 87` for `expf` (a normal result),
+a positive normal `x` for `logf`.
+
+`tools/reference/glibc_explog/model.c` is the explicit-operation C model of
+both (`FUSED=1` for the `-mfma -mavx2` ifunc variants, `FUSED=0` for the
+SSE2 default) and `exhaustive.c` evaluates it on every binary32 argument of
+the two domains against the host's functions:
+
+| Host | Variant | expf arguments | expf | logf arguments | logf |
+|---|---|---:|---:|---:|---:|
+| Ubuntu 24.04, glibc 2.39-0ubuntu8.9 | FMA | 2,237,399,040 | 0 | 2,130,706,432 | 0 |
+| Ubuntu 24.04, glibc 2.39-0ubuntu8.9 | SSE2 | 2,237,399,040 | 0 | 2,130,706,432 | 0 |
+| Debian trixie container, glibc 2.41-12+deb13u4 | FMA | 2,237,399,040 | 0 | 2,130,706,432 | 0 |
+| Debian trixie container, glibc 2.41-12+deb13u4 | SSE2 | 2,237,399,040 | 0 | 2,130,706,432 | 0 |
+
+In the FMA variant of `expf` the compiler contracts `r = z - kd` over
+`z = InvLn2N*x` into `fma(InvLn2N, x, -kd)`; without that the model differs
+from an FMA host at two arguments. `variants.c` compares the two models with
+each other: `logf` never differs, `expf` differs at exactly those two,
+32.564632 (`0x4202422f`) and -63.099461 (`0xc27c65d9`), by one unit in the
+last place. The kernel therefore uses the unfused arithmetic (through the
+checked binary64 helpers, whose domain no intermediate of the SSE2 model
+leaves) and refuses those two arguments, whose answer depends on the CPU.
+The JSON results are in `tools/reference/glibc_explog/results`. Gate `explog`
+(`tools/explog_probe.py`) evaluates the same arithmetic in Python's binary64
+for 242 arguments, checks the host's functions against it on glibc hosts and
+Jonmath's results on every lane. macOS's functions are not modeled:
+`AppleLibm` is `None`.
