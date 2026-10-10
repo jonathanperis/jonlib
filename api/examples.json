@@ -4669,7 +4669,7 @@
   {
    "name": "models_rlgl_solar_system",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
