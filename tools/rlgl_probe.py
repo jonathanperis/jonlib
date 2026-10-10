@@ -490,6 +490,10 @@ static void noops(void)
     rlSetFramebufferWidth(77); rlSetFramebufferHeight(66); rlDrawRenderBatchActive(); rlSetMatrixModelview(MatrixTranslate(3, 4, 5));
     rlSetMatrixProjection(MatrixScale(2, 2, 2)); rlSetMatrixProjectionStereo(MatrixIdentity(), MatrixIdentity()); rlSetMatrixViewOffsetStereo(MatrixIdentity(), MatrixIdentity());
     rlEnableStereoRender(); rlDisableStereoRender(); rlEnableDepthMask(); rlDisableDepthMask(); rlNormal3f(1, 2, 3);
+    float uniform[4] = { 1.0f, 2.0f, 3.0f, 4.0f };
+    Matrix matrices[2] = { MatrixIdentity(), MatrixTranslate(1, 2, 3) };
+    rlSetUniform(0, uniform, RL_SHADER_UNIFORM_VEC4, 1); rlSetUniformMatrix(1, MatrixScale(2, 3, 4)); rlSetUniformMatrices(2, matrices, 2);
+    rlSetUniformSampler(3, rlGetTextureIdDefault()); rlSetShader(rlGetShaderIdDefault(), rlGetShaderLocsDefault());
 }
 static void misc(void)
 {
@@ -764,6 +768,14 @@ def call.toggle(what: U32, +on: Bool, frame: J.Frame) -> J.Frame:
     case 7: toggle.mask(on, frame)
     case _: toggle.stereo(on, frame)
 
+# The uniform setters and rlSetShader (SHADER_UNIFORM_VEC4 is 3; the default texture is 1; the default shader has no locations).
+def call.noops.uniforms(frame: J.Frame) -> J.Frame:
+  f1 = J.Rlgl.set_uniform(frame, 0, [1065353216, 1073741824, 1077936128, 1082130432], 3)
+  f2 = J.Rlgl.set_uniform_matrix(f1, 1, M.Matrix.scale(2.0, 3.0, 4.0))
+  f3 = J.Rlgl.set_uniform_matrices(f2, 2, [M.Matrix.identity(), M.Matrix.translate(1.0, 2.0, 3.0)])
+  f4 = J.Rlgl.set_uniform_sampler(f3, 3, 1)
+  J.Rlgl.set_shader(f4, 0, [])
+
 def call.noops.second(frame: J.Frame) -> J.Frame:
   f1 = J.Rlgl.set_framebuffer_width(frame, 77.0)
   f2 = J.Rlgl.set_framebuffer_height(f1, 66.0)
@@ -776,7 +788,7 @@ def call.noops.second(frame: J.Frame) -> J.Frame:
   f9 = J.Rlgl.disable_stereo_render(f8)
   f10 = J.Rlgl.enable_depth_mask(f9)
   f11 = J.Rlgl.disable_depth_mask(f10)
-  J.Rlgl.normal3f(f11, 1.0, 2.0, 3.0)
+  call.noops.uniforms(J.Rlgl.normal3f(f11, 1.0, 2.0, 3.0))
 
 # The OpenGL 3.3-only calls noops() makes in the C reference.
 def call.noops(frame: J.Frame) -> J.Frame:
