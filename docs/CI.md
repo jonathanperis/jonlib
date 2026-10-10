@@ -12,8 +12,8 @@ base with `main` for a branch or a pull request) and picks one of three scopes.
 
 | Scope | Changed files | What runs |
 | --- | --- | --- |
-| `full` | the library, `src/`, `LAWS.bend`/`PROOF.bend`, `toolchain.json`, a probe or another tool a gate runs, fixtures, API ledgers, the pinned setup action, the examples probe from its native driver (`C_DRIVER`) down, an example without a replay, any path the tool does not know | every gate, both hosts |
-| `examples` | only `examples/<name>.bend` ports, the tables and scripts of `tools/examples_probe.py`, `api/examples.json` and documentation | `Changed examples`: the changed ports, the examples the probe's changed lines name and three canaries (`core_basic_window`, `core_2d_camera`, `textures_logo_raylib`), replayed against the native examples on both hosts |
+| `full` | the library, `src/`, `LAWS.bend`/`PROOF.bend`, `toolchain.json`, a probe or another tool a gate runs, fixtures, API ledgers, the pinned setup action, code the examples share in their probe (its native driver `C_DRIVER` and everything below, or a line above it that names no example and is not a new constant or a comment), an example without a replay, any path the tool does not know | every gate, both hosts |
+| `examples` | only `examples/<name>.bend` ports, the tables and scripts of `tools/examples_probe.py`, `api/examples.json` and documentation | `Changed examples`: the changed ports, the examples whose registration, table entry, prediction or script changed in the probe (a script line belongs to the script it continues) and three canaries (`core_basic_window`, `core_2d_camera`, `textures_logo_raylib`), replayed against the native examples on both hosts |
 | `none` | only workflows, unit tests, `tools/ci_scope.py`, `tools/check_project.py`, `tools/examples_plan.py`, `tools/example_tables.py` and documentation | nothing here (Checks covers them) |
 
 Scheduled (nightly, on `main`) and manual runs are always `full`, and so is a
