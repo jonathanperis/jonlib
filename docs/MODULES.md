@@ -6,8 +6,9 @@ Port names follow **`ray<suffix>` → `jon<suffix>`**. The implemented entry poi
 |---|---|---|
 | raylib | `jonlib.bend` | Geometry, collision, images, codecs, random streams and IO. |
 | raymath | `jonmath.bend` | Scalar/vector/matrix/quaternion operations and shared mathematical types. |
+| raygui | `jongui.bend` | Immediate-mode controls over Jonlib's frame and input ([GUI.md](GUI.md)). |
 
-The same convention names a future raygui port **Jongui**. Implemented modules
+Implemented modules
 and coverage are recorded in [PROGRESS.md](PROGRESS.md). Upstream headers,
 catalog IDs, source URLs and license notices identify the actual reference
 implementation; the target mapping column names the Jon* counterpart.
@@ -20,6 +21,7 @@ Project-side branded configuration names follow the same rule, such as
 import Base
 import ./jonlib.bend as J
 import ./jonmath.bend as M
+import ./jongui.bend as G    # only for raygui controls
 ```
 
 Math-only programs import Jonmath directly. See [examples/math.bend](../examples/math.bend).

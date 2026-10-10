@@ -10,8 +10,8 @@ rcamera.h and rgestures.h), and a status:
   against the native example (the `examples-<category>` gates);
 - ready: every API the example calls is at least partial in the ledger, so it
   can be ported now;
-- waiting: some API it calls is not-started or blocked, or it includes a
-  companion library Jonlib has not ported (raygui.h), listed in `missing`.
+- waiting: some API it calls is not-started or blocked, or it calls a raygui
+  function Jongui has not delivered (api/jongui.json), listed in `missing`.
 
 `build --raylib-source <pinned raylib>` re-reads the example sources;
 `refresh` recomputes the statuses from the stored API lists and the current
@@ -69,19 +69,34 @@ def calls(source, functions):
     return sorted(used & set(functions))
 
 
-# Companion headers some examples include besides raylib's own (raygui.h ships
-# in the examples directories); none is ported yet, so they keep an example waiting.
+# Companion headers some examples include besides raylib's own. raygui.h ships
+# in the examples directories and is ported as Jongui (jongui.bend): an example
+# waits on each Gui* function it calls that api/jongui.json does not deliver.
 COMPANIONS = ('raygui',)
-PORTED_COMPANIONS = set()
+JONGUI = ROOT / 'api/jongui.json'
 
 
 def libraries(source):
     return [lib for lib in COMPANIONS if re.search(rf'#\s*include\s+"{lib}\.h"', source)]
 
 
+def gui_calls(source):
+    """The raygui functions an example calls (none unless it includes raygui.h)."""
+    if 'raygui' not in libraries(source):
+        return []
+    source = re.sub(r'/\*.*?\*/', '', source, flags=re.S)
+    source = re.sub(r'//[^\n]*', '', source)
+    return sorted(set(re.findall(r'\b(Gui[A-Z][A-Za-z0-9_]*)\s*\(', source)))
+
+
+def jongui_functions():
+    return {name: row['status'] for name, row in json.loads(JONGUI.read_text())['functions'].items()}
+
+
 def status_rows(rows):
     """Statuses from each row's API list, the current ledger and the ported examples."""
     functions = ledger_functions()
+    delivered = jongui_functions()
     ported = ported_examples()
     out = []
     for r in rows:
@@ -89,7 +104,7 @@ def status_rows(rows):
             out.append(r)
             continue
         missing = ([a for a in r['apis'] if functions.get(a) not in ('partial', 'complete')]
-                   + [f'{lib}.h' for lib in r.get('libraries', []) if lib not in PORTED_COMPANIONS])
+                   + [g for g in r.get('gui', []) if delivered.get(g) not in ('partial', 'complete')])
         status = 'ported' if r['name'] in ported else ('ready' if not missing else 'waiting')
         out.append(dict(r, status=status, missing=missing))
     return out
@@ -104,7 +119,8 @@ def plan(raylib):
             rows.append(dict(name=name, category=category, status='missing-source', apis=[], missing=[]))
             continue
         text = path.read_text(errors='replace')
-        rows.append(dict(name=name, category=category, status='', apis=calls(text, functions), libraries=libraries(text), missing=[]))
+        rows.append(dict(name=name, category=category, status='', apis=calls(text, functions), libraries=libraries(text),
+                         gui=gui_calls(text), missing=[]))
     return status_rows(rows)
 
 
@@ -119,8 +135,8 @@ def document(rows):
              '`examples/examples_list.txt`; do not edit by hand. An example is **ported**',
              'when `examples/<name>.bend` exists and the `examples-<category>` gates replay it against',
              'the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it',
-             'calls is at least partial in the ledger and it includes no unported companion',
-             'library (`raygui.h`); **waiting** otherwise.', '',
+             'calls is at least partial in the ledger and every raygui function it calls is',
+             'delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.', '',
              f'Totals: {len(rows)} examples; {counts["ported"]} ported, {counts["ready"]} ready, '
              f'{counts["waiting"]} waiting' + (f', {counts["missing-source"]} without source' if counts['missing-source'] else '') + '.', '',
              '## APIs that unblock the most examples', '', '| API | Examples waiting on it |', '|---|---|']

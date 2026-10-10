@@ -16,6 +16,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -39,6 +40,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -58,6 +60,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -82,6 +85,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -102,6 +106,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -142,6 +147,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -163,6 +169,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -189,6 +196,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -226,6 +234,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -250,6 +259,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -278,6 +288,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -321,6 +332,7 @@
     "rlTranslatef"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -352,6 +364,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -384,6 +397,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -407,6 +421,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -435,6 +450,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -467,6 +483,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -499,6 +516,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -545,6 +563,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -578,6 +597,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -605,6 +625,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -638,6 +659,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -671,6 +693,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -691,6 +714,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -725,6 +749,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -743,6 +768,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -766,6 +792,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -785,6 +812,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -809,6 +837,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -851,6 +880,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "BeginVrStereoMode",
     "EndVrStereoMode",
@@ -882,6 +912,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -902,6 +933,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -928,6 +960,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -958,6 +991,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -983,6 +1017,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1026,6 +1061,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1058,6 +1094,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1082,6 +1119,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1106,6 +1144,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1140,6 +1179,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1164,6 +1204,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1190,12 +1231,20 @@
    "libraries": [
     "raygui"
    ],
+   "gui": [
+    "GuiButton",
+    "GuiGetFont",
+    "GuiLabel",
+    "GuiListViewEx",
+    "GuiSetStyle"
+   ],
    "missing": [
     "GetWorkingDirectory",
     "LoadDirectoryFiles",
     "LoadDirectoryFilesEx",
     "UnloadDirectoryFiles",
-    "raygui.h"
+    "GuiGetFont",
+    "GuiListViewEx"
    ]
   },
   {
@@ -1235,6 +1284,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1266,6 +1316,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "GetApplicationDirectory"
    ]
@@ -1293,8 +1344,17 @@
    "libraries": [
     "raygui"
    ],
+   "gui": [
+    "GuiButton",
+    "GuiLabel",
+    "GuiSetIconScale",
+    "GuiSetState",
+    "GuiSetStyle",
+    "GuiTextBox"
+   ],
    "missing": [
-    "raygui.h"
+    "GuiSetIconScale",
+    "GuiTextBox"
    ]
   },
   {
@@ -1326,6 +1386,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1352,8 +1413,15 @@
    "libraries": [
     "raygui"
    ],
+   "gui": [
+    "GuiButton",
+    "GuiLabel",
+    "GuiSetState",
+    "GuiSetStyle",
+    "GuiTextBox"
+   ],
    "missing": [
-    "raygui.h"
+    "GuiTextBox"
    ]
   },
   {
@@ -1381,6 +1449,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1398,6 +1467,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1429,6 +1499,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1452,6 +1523,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1484,6 +1556,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1511,6 +1584,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1529,6 +1603,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1552,6 +1627,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1579,6 +1655,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1603,6 +1680,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1632,6 +1710,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1654,6 +1733,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1675,6 +1755,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1697,6 +1778,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1716,12 +1798,13 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
    "name": "shapes_recursive_tree",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1742,14 +1825,16 @@
    "libraries": [
     "raygui"
    ],
-   "missing": [
-    "raygui.h"
-   ]
+   "gui": [
+    "GuiCheckBox",
+    "GuiSliderBar"
+   ],
+   "missing": []
   },
   {
    "name": "shapes_ring_drawing",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1773,14 +1858,16 @@
    "libraries": [
     "raygui"
    ],
-   "missing": [
-    "raygui.h"
-   ]
+   "gui": [
+    "GuiCheckBox",
+    "GuiSliderBar"
+   ],
+   "missing": []
   },
   {
    "name": "shapes_circle_sector_drawing",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1803,14 +1890,15 @@
    "libraries": [
     "raygui"
    ],
-   "missing": [
-    "raygui.h"
-   ]
+   "gui": [
+    "GuiSliderBar"
+   ],
+   "missing": []
   },
   {
    "name": "shapes_rounded_rectangle_drawing",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1834,9 +1922,11 @@
    "libraries": [
     "raygui"
    ],
-   "missing": [
-    "raygui.h"
-   ]
+   "gui": [
+    "GuiCheckBox",
+    "GuiSliderBar"
+   ],
+   "missing": []
   },
   {
    "name": "shapes_top_down_lights",
@@ -1886,6 +1976,7 @@
     "rlSetBlendMode"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1913,6 +2004,7 @@
     "rlVertex2f"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -1947,8 +2039,16 @@
    "libraries": [
     "raygui"
    ],
+   "gui": [
+    "GuiCheckBox",
+    "GuiDropdownBox",
+    "GuiLabel",
+    "GuiLock",
+    "GuiSliderBar",
+    "GuiUnlock"
+   ],
    "missing": [
-    "raygui.h"
+    "GuiDropdownBox"
    ]
   },
   {
@@ -1977,6 +2077,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2006,6 +2107,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2032,12 +2134,13 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
    "name": "shapes_triangle_strip",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -2059,9 +2162,11 @@
    "libraries": [
     "raygui"
    ],
-   "missing": [
-    "raygui.h"
-   ]
+   "gui": [
+    "GuiCheckBox",
+    "GuiSliderBar"
+   ],
+   "missing": []
   },
   {
    "name": "shapes_vector_angle",
@@ -2091,6 +2196,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2123,14 +2229,27 @@
    "libraries": [
     "raygui"
    ],
+   "gui": [
+    "GuiCheckBox",
+    "GuiDisable",
+    "GuiEnable",
+    "GuiLine",
+    "GuiScrollPanel",
+    "GuiSliderBar",
+    "GuiSpinner",
+    "GuiTextBox"
+   ],
    "missing": [
-    "raygui.h"
+    "GuiLine",
+    "GuiScrollPanel",
+    "GuiSpinner",
+    "GuiTextBox"
    ]
   },
   {
    "name": "shapes_kaleidoscope",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode2D",
@@ -2155,9 +2274,12 @@
    "libraries": [
     "raygui"
    ],
-   "missing": [
-    "raygui.h"
-   ]
+   "gui": [
+    "GuiButton",
+    "GuiDisable",
+    "GuiEnable"
+   ],
+   "missing": []
   },
   {
    "name": "shapes_clock_of_clocks",
@@ -2184,6 +2306,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2219,8 +2342,15 @@
    "libraries": [
     "raygui"
    ],
+   "gui": [
+    "GuiGroupBox",
+    "GuiSetStyle",
+    "GuiSliderBar",
+    "GuiToggle"
+   ],
    "missing": [
-    "raygui.h"
+    "GuiGroupBox",
+    "GuiToggle"
    ]
   },
   {
@@ -2241,6 +2371,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2267,6 +2398,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2295,6 +2427,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2328,6 +2461,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2348,12 +2482,13 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
    "name": "shapes_rlgl_color_wheel",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "Clamp",
@@ -2394,9 +2529,10 @@
    "libraries": [
     "raygui"
    ],
-   "missing": [
-    "raygui.h"
-   ]
+   "gui": [
+    "GuiSliderBar"
+   ],
+   "missing": []
   },
   {
    "name": "shapes_rlgl_triangle",
@@ -2429,6 +2565,7 @@
     "rlVertex2f"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2459,6 +2596,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2484,6 +2622,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2505,8 +2644,13 @@
    "libraries": [
     "raygui"
    ],
+   "gui": [
+    "GuiCheckBox",
+    "GuiSlider",
+    "GuiSpinner"
+   ],
    "missing": [
-    "raygui.h"
+    "GuiSpinner"
    ]
   },
   {
@@ -2529,6 +2673,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2558,6 +2703,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2596,6 +2742,7 @@
     "rlSetBlendFactorsSeparate"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2616,6 +2763,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2637,6 +2785,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2670,6 +2819,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2703,6 +2853,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2725,6 +2876,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2767,6 +2919,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2795,6 +2948,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2818,6 +2972,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2842,6 +2997,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2868,6 +3024,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2891,6 +3048,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2912,6 +3070,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2937,6 +3096,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -2965,6 +3125,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "CloseAudioDevice",
     "InitAudioDevice",
@@ -2997,6 +3158,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "CloseAudioDevice",
     "InitAudioDevice",
@@ -3032,6 +3194,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3078,6 +3241,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3103,6 +3267,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3138,6 +3303,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3166,6 +3332,7 @@
     "rlVertex2f"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3197,6 +3364,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3225,6 +3393,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3249,6 +3418,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3273,6 +3443,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3297,6 +3468,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3322,6 +3494,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3364,6 +3537,7 @@
     "rlVertex2f"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3389,6 +3563,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3421,6 +3596,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3460,6 +3636,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3482,6 +3659,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3502,6 +3680,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3534,6 +3713,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3558,6 +3738,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3595,6 +3776,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3614,6 +3796,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3641,6 +3824,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3661,6 +3845,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3692,6 +3877,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3731,6 +3917,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3760,6 +3947,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3826,6 +4014,7 @@
     "rlVertex3f"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3859,6 +4048,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3885,6 +4075,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3911,6 +4102,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3952,6 +4144,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -3983,6 +4176,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
@@ -4014,6 +4208,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4043,6 +4238,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4076,6 +4272,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4113,6 +4310,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4141,6 +4339,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4184,6 +4383,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "GenMeshCylinder",
     "GenMeshKnot",
@@ -4236,6 +4436,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4275,6 +4476,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4304,6 +4506,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
@@ -4353,6 +4556,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4387,6 +4591,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
@@ -4420,6 +4625,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4456,6 +4662,7 @@
     "rlEnablePointMode"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "UploadMesh"
    ]
@@ -4491,6 +4698,7 @@
     "rlVertex3f"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4522,6 +4730,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4545,6 +4754,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4576,6 +4786,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4648,6 +4859,7 @@
     "rlViewport"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
@@ -4689,6 +4901,7 @@
     "rlVertex3f"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4720,6 +4933,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
@@ -4761,6 +4975,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
@@ -4787,6 +5002,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4819,6 +5035,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4848,6 +5065,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4911,6 +5129,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "UploadMesh"
    ]
@@ -4942,6 +5161,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -4984,6 +5204,7 @@
     "rlUpdateVertexBuffer"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
@@ -5027,12 +5248,21 @@
    "libraries": [
     "raygui"
    ],
+   "gui": [
+    "GuiDisable",
+    "GuiDropdownBox",
+    "GuiEnable",
+    "GuiProgressBar",
+    "GuiSetStyle",
+    "GuiSlider"
+   ],
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
     "UpdateModelAnimation",
     "UpdateModelAnimationEx",
-    "raygui.h"
+    "GuiDropdownBox",
+    "GuiProgressBar"
    ]
   },
   {
@@ -5067,11 +5297,19 @@
    "libraries": [
     "raygui"
    ],
+   "gui": [
+    "GuiDropdownBox",
+    "GuiLabel",
+    "GuiProgressBar",
+    "GuiSetStyle",
+    "GuiSlider"
+   ],
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
     "UpdateModelAnimation",
-    "raygui.h"
+    "GuiDropdownBox",
+    "GuiProgressBar"
    ]
   },
   {
@@ -5108,6 +5346,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5145,6 +5384,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5177,6 +5417,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5211,6 +5452,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5252,6 +5494,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5293,6 +5536,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5321,6 +5565,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5353,6 +5598,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5383,6 +5629,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5413,6 +5660,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5442,6 +5690,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5478,6 +5727,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5514,6 +5764,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5549,8 +5800,13 @@
    "libraries": [
     "raygui"
    ],
+   "gui": [
+    "GuiButton",
+    "GuiSliderBar",
+    "GuiToggleGroup"
+   ],
    "missing": [
-    "raygui.h"
+    "GuiToggleGroup"
    ]
   },
   {
@@ -5580,6 +5836,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5620,6 +5877,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5660,6 +5918,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5691,6 +5950,7 @@
     "rlGetShaderIdDefault"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "GetFileModTime"
    ]
@@ -5727,6 +5987,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5759,6 +6020,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5804,6 +6066,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5840,6 +6103,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -5903,6 +6167,7 @@
     "rlUnloadTexture"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "rlBindFramebuffer",
     "rlDisableFramebuffer",
@@ -5962,6 +6227,7 @@
     "rlUnloadTexture"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
@@ -6009,6 +6275,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -6069,6 +6336,7 @@
     "rlUnloadFramebuffer"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "LoadModelAnimations",
     "UnloadModelAnimations",
@@ -6122,6 +6390,7 @@
     "rlSetUniformSampler"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "rlSetUniformSampler"
    ]
@@ -6164,6 +6433,7 @@
     "rlUnloadTexture"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
@@ -6211,6 +6481,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -6256,6 +6527,7 @@
     "rlSetVertexAttribute"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "rlLoadVertexBuffer",
     "rlSetVertexAttribute"
@@ -6285,6 +6557,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -6334,6 +6607,7 @@
     "rlUnloadTexture"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
@@ -6390,8 +6664,12 @@
    "libraries": [
     "raygui"
    ],
+   "gui": [
+    "GuiButton",
+    "GuiToggleGroup"
+   ],
    "missing": [
-    "raygui.h"
+    "GuiToggleGroup"
    ]
   },
   {
@@ -6439,6 +6717,7 @@
     "rlUpdateShaderBuffer"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "rlBindShaderBuffer",
     "rlComputeShaderDispatch",
@@ -6487,6 +6766,7 @@
     "rlSetCullFace"
    ],
    "libraries": [],
+   "gui": [],
    "missing": []
   },
   {
@@ -6525,6 +6805,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "CloseAudioDevice",
     "GetMusicTimeLength",
@@ -6572,6 +6853,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "CloseAudioDevice",
     "GetMusicTimeLength",
@@ -6616,6 +6898,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "CloseAudioDevice",
     "InitAudioDevice",
@@ -6649,6 +6932,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "CloseAudioDevice",
     "InitAudioDevice",
@@ -6687,6 +6971,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "AttachAudioMixedProcessor",
     "CloseAudioDevice",
@@ -6732,6 +7017,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "AttachAudioStreamProcessor",
     "CloseAudioDevice",
@@ -6771,6 +7057,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "CloseAudioDevice",
     "InitAudioDevice",
@@ -6816,6 +7103,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "CloseAudioDevice",
     "InitAudioDevice",
@@ -6872,6 +7160,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "CloseAudioDevice",
     "InitAudioDevice",
@@ -6909,6 +7198,7 @@
     "WindowShouldClose"
    ],
    "libraries": [],
+   "gui": [],
    "missing": [
     "CloseAudioDevice",
     "InitAudioDevice",

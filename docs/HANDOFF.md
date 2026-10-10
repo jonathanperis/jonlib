@@ -16,7 +16,7 @@ Bend and replaying it against the native example. Work autonomously; merge to
 | Branch | Content | State |
 |---|---|---|
 | `main` | e3afa23: Phase 1 work, CI timeout fix | CI green |
-| `feature/audio-waves` | everything since: audio, math profiles, text, fonts, camera, Phase 2 (frame, shapes, textures, rlgl, input, gestures, timing, desktop driver), meshes/3D shapes, materials/models/OBJ, perspective cameras (LGPL `tan`/`asinf`), the shader API, glibc's own `sinf`/`cosf`, 70 example ports | **merge to `main` once its CI concludes `success`** |
+| `feature/audio-waves` | everything since: audio, math profiles, text, fonts, camera, Phase 2 (frame, shapes, textures, rlgl, input, gestures, timing, desktop driver), meshes/3D shapes, materials/models/OBJ, perspective cameras (LGPL `tan`/`asinf`), the shader API, glibc's own `sinf`/`cosf`, Jongui (raygui), 71 example ports | **merge to `main` once its CI concludes `success`** |
 | `wip/models-drawing-obj`, `wip/lgpl-tan-asinf`, `integrate/models-lgpl` | merged into `feature/audio-waves` | delete locally and remotely after the merge to `main` |
 
 The last complete CI run on this branch (3b965ad) failed only in the macOS
@@ -27,7 +27,7 @@ watch.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 514/600 partial
 (20 blocked, 66 not started); raymath.h 146/146; rlgl.h 93/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **70/212 ported**, 91 ready, 51 waiting. No API
+[EXAMPLES.md](EXAMPLES.md)): **71/212 ported**, 97 ready, 44 waiting. No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -60,7 +60,10 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
   on the verified whole degrees.
 - **Shaders** ([SHADERS.md](SHADERS.md)): the API as the software renderer
   runs it (no-ops), which makes most `shaders_*` examples portable.
-- **Examples**: 70 ported; gates `examples-core`, `-shapes`, `-text`,
+- **Jongui** ([GUI.md](GUI.md)): raygui's style table, global state, label,
+  button, check box, slider and slider bar as `jongui.bend`; the examples
+  plan tracks raygui per function (`api/jongui.json`).
+- **Examples**: 71 ported; gates `examples-core`, `-shapes`, `-text`,
   `-textures`, `-models`, `-shaders`.
 - **Compile memory**: per-output compiler processes and a cgroup-aware job
   budget in probekit; `LoadImage` of a `.png` in ports is `Surface.load_png`
@@ -87,7 +90,9 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      framebuffer functions (6 examples);
    - images beyond 4096 pixels on an axis (`textures_sprite_stacking`);
    - glTF/IQM/M3D/VOX model loading and model animations (about 15 examples).
-4. Large milestones: raygui (18 examples), the audio device and streams
+4. Large milestones: the remaining raygui controls (toggle, toggle group,
+   spinner, text box, dropdown box, progress bar, group box, line, scroll
+   panel, list view; about 11 more examples), the audio device and streams
    (12+ examples; the reference build has `SUPPORT_MODULE_RAUDIO=OFF`), VR.
 
 ## Known pitfalls (save time)

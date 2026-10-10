@@ -150,6 +150,7 @@ EXAMPLES = {
     'shapes_following_eyes': ('shapes/shapes_following_eyes.c', 'Ex.setup(core, frame)'),
     'text_font_spritefont': ('text/text_font_spritefont.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_billboard_rendering': ('models/models_billboard_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shapes_circle_sector_drawing': ('shapes/shapes_circle_sector_drawing.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -380,6 +381,13 @@ def scripts():
                                                  quick([mouse_at(-40, 500)]), quick([mouse_at(300, 400)])]),
         script('text_font_spritefont', 'frames', [quick(), slow()]),
         script('models_billboard_rendering', 'orbit', [quick(), quick(), slow(), quick()]),
+        # raygui slider bars: hover StartAngle, press it (360 degrees) and drag left, on past the bounds (the
+        # drag keeps following), release; then the radius, the end angle and few segments (the estimated count).
+        script('shapes_circle_sector_drawing', 'sliders', [quick(), quick([mouse_at(660, 50)]), quick([button(0)]), quick([mouse_at(630, 52)]),
+                                                           quick([mouse_at(615, 300)]), slow([button(0, False)]), quick([mouse_at(690, 150), button(0)]),
+                                                           quick([button(0, False), mouse_at(640, 80)]), quick([button(0)]),
+                                                           quick([button(0, False), mouse_at(602, 180)]), quick([button(0)]), quick([button(0, False)]),
+                                                           quick([mouse_at(10, 10)])]),
         script('models_orthographic_projection', 'switch', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False)]), quick([key(KEY_SPACE)]),
                                                             quick([key(KEY_SPACE, False)])]),
         # RIGHT walks the player into the sphere (touching at exactly the radius: z 2 - 0.5 = 1.5), UP goes deeper,
@@ -451,6 +459,44 @@ def frame_times(item):
             total += frame['after'] - frame['end']
         last, previous = total, frame['after']
     return times
+
+
+def slider_bar(drag, bounds, value, low, high, mouse, down):
+    """raygui's GuiSliderBar update (SLIDER_WIDTH 0) in F32: drag is guiControlExclusiveRec or None."""
+    x, y, w, h = bounds
+    inside = x <= mouse[0] < x + w and y <= mouse[1] < y + h
+    pointed = fp.f32(fp.f32(fp.f32(high - low) * fp.f32(fp.f32(fp.f32(mouse[0] - x) - 0.0) / fp.f32(w - 0.0))) + low)
+    if drag is not None:
+        if not down:
+            drag = None
+        elif [int(v) for v in drag] == [int(v) for v in bounds]:
+            value = pointed
+    elif inside and down:
+        drag, value = bounds, pointed
+    return drag, min(max(value, low), high)
+
+
+def circle_sector_refusal(item, libm):
+    """shapes_circle_sector_drawing: DrawCircleSector(Lines) with the values the four slider bars left on the
+    previous frames; a segment count below rshapes.c's minimum is estimated (glibc 2.39 only)."""
+    start, end, radius, segments, drag = 0.0, 180.0, 180.0, 10.0, None
+    down, mouse = False, (0.0, 0.0)
+    for index, frame in enumerate(item['frames']):
+        for kind, p0, p1, _ in frame['events']:
+            if kind == MOUSE_DOWN and p0 == 0:
+                down = True
+            elif kind == MOUSE_UP and p0 == 0:
+                down = False
+            elif kind == MOUSE_POSITION:
+                mouse = (float(p0), float(p1))
+        for args in (fp.sector_args(start, end, float(int(segments)), libm), fp.stepped_args(start, end, float(int(segments)), libm)):
+            if args is None or not all(fp.accepted(libm, a) for a in args):
+                return index
+        drag, start = slider_bar(drag, (600.0, 40.0, 120.0, 20.0), start, 0.0, 720.0, mouse, down)
+        drag, end = slider_bar(drag, (600.0, 70.0, 120.0, 20.0), end, 0.0, 720.0, mouse, down)
+        drag, radius = slider_bar(drag, (600.0, 140.0, 120.0, 20.0), radius, 0.0, 200.0, mouse, down)
+        drag, segments = slider_bar(drag, (600.0, 170.0, 120.0, 20.0), segments, 0.0, 100.0, mouse, down)
+    return None
 
 
 def bullet_hell_refusal(item, libm):
@@ -545,6 +591,8 @@ def refusal(item, libm):
         return None if all(fp.accepted(libm, a) for a in angles) else 0
     if item['example'] == 'shapes_bullet_hell':
         return bullet_hell_refusal(item, libm)
+    if item['example'] == 'shapes_circle_sector_drawing':
+        return circle_sector_refusal(item, libm)
     if item['example'] == 'shapes_math_angle_rotation':
         # The example's sinf/cosf of 0, 30, 60 and 90 degrees and of totalAngle = frame + 1 (below 360 here).
         for index in range(len(item['frames'])):

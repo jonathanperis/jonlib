@@ -22,8 +22,8 @@ differential test reference.
 - **Jonlib** (`jonlib.bend`) ports raylib's core geometry/image/runtime surface.
 - **Jonmath** (`jonmath.bend`) ports raymath and owns shared vector/matrix types.
 
-Port names follow `ray<suffix>` → `jon<suffix>` (for example, a future raygui port
-is Jongui). See [module names and import migration](docs/MODULES.md).
+Port names follow `ray<suffix>` → `jon<suffix>` (raygui's port is Jongui,
+`jongui.bend`). See [module names and import migration](docs/MODULES.md).
 
 ```bend
 import Base
