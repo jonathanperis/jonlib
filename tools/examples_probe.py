@@ -95,6 +95,7 @@ EXAMPLES = {
     'textures_srcrec_dstrec': ('textures/textures_srcrec_dstrec.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_tiled_drawing': ('textures/textures_tiled_drawing.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_image_drawing': ('textures/textures_image_drawing.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_image_text': ('textures/textures_image_text.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_fog_of_war': ('textures/textures_fog_of_war.c', 'Ex.setup(seed, core, frame)'),
     'textures_sprite_animation': ('textures/textures_sprite_animation.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_background_scrolling': ('textures/textures_background_scrolling.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -189,7 +190,7 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'shaders_texture_outline', 'shaders_shapes_textures', 'shaders_texture_tiling', 'text_font_spritefont',
             'models_billboard_rendering', 'shaders_color_correction', 'textures_particles_blending',
             'text_sprite_fonts', 'models_directional_billboard', 'textures_tiled_drawing',
-            'textures_image_drawing', 'text_font_loading'}
+            'textures_image_drawing', 'text_font_loading', 'textures_image_text'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -478,6 +479,7 @@ def scripts():
                   quick([key(KEY_UP), key(KEY_DOWN)]), quick([key(KEY_UP, False), key(KEY_DOWN, False)]), quick([key(KEY_UP)]), quick([key(KEY_UP, False)]),
                   quick([key(KEY_UP)]), quick([key(KEY_UP, False)]), quick([key(KEY_UP)]), quick([key(KEY_UP, False)]), slow(), quick([key(KEY_UP)]), quick()]),
         script('textures_image_drawing', 'frames', [quick(), slow()]),
+        script('textures_image_text', 'atlas', [quick(), slow([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)])]),
         # The mouse over each pad button, moving the player only while the left button is down; the taxicab
         # edge of a button (29 inside, 30 outside); between two buttons the first in order wins.
         script('core_input_virtual_controls', 'pad', [quick(), quick([mouse_at(100, 305)]), quick(), quick([button(0)]), long(), slow(),

@@ -2924,7 +2924,7 @@
   {
    "name": "textures_image_text",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
