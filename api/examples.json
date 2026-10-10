@@ -4053,7 +4053,7 @@
   {
    "name": "text_inline_styling",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
