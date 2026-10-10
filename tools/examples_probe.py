@@ -77,7 +77,7 @@ def size_of(name):
 TARGET = 1.0 / 60
 # Examples whose SetTargetFPS is not 60 (the scripted wait ends where raylib's does).
 LANE_TIMEOUT = 1800
-TARGET_FPS = {'shapes_kaleidoscope': 20, 'shapes_penrose_tile': 120}
+TARGET_FPS = {'shapes_kaleidoscope': 20, 'shapes_penrose_tile': 120, 'textures_mouse_painting': 120}
 
 (KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, INPUT_GESTURE, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 17, 18)
 KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_A, KEY_H, KEY_R, KEY_S = 262, 263, 264, 265, 65, 72, 82, 83
@@ -105,6 +105,7 @@ EXAMPLES = {
     'textures_magnifying_glass': ('textures/textures_magnifying_glass.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_gif_player': ('textures/textures_gif_player.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_cellular_automata': ('textures/textures_cellular_automata.c', 'Ex.setup(core, frame)'),
+    'textures_mouse_painting': ('textures/textures_mouse_painting.c', 'Ex.setup(core, frame)'),
     'textures_image_text': ('textures/textures_image_text.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_fog_of_war': ('textures/textures_fog_of_war.c', 'Ex.setup(seed, core, frame)'),
     'textures_sprite_animation': ('textures/textures_sprite_animation.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -577,6 +578,14 @@ def scripts():
         script('textures_image_channel', 'frames', [quick(), slow()]),
         script('textures_image_kernel', 'frames', [quick(), slow()]),
         script('textures_polygon_drawing', 'turn', [quick() for _ in range(14)] + [slow()]),
+        # Paint a stroke, pick red by click and paint, a bigger brush, erase with the right button (the
+        # color comes back on release), RIGHT/LEFT keys, C clears.
+        script('textures_mouse_painting', 'paint', [quick(), quick([mouse_at(200, 200)]), quick([button(0)]), quick([mouse_at(240, 220)]),
+                                                    quick([button(0, False), mouse_at(180, 25)]), quick([button(0)]), quick([button(0, False), mouse_at(400, 300)]),
+                                                    quick([button(0), (MOUSE_WHEEL, 0, 3, 0)]), slow([mouse_at(430, 320)]), quick([button(0, False)]),
+                                                    quick([button(1), mouse_at(420, 310)]), quick([mouse_at(300, 30)]), quick([button(1, False)]),
+                                                    quick([key(KEY_RIGHT), mouse_at(600, 200)]), quick([key(KEY_RIGHT, False), key(KEY_LEFT)]),
+                                                    quick([key(KEY_LEFT, False), key(KEY_C)]), quick([key(KEY_C, False), (MOUSE_WHEEL, 0, -20, 0)]), quick()]),
         # Rule 30 grows four lines a frame; a preset (60) and a flipped rule bit restart it; hovering frames a cell.
         script('textures_cellular_automata', 'rules', [quick(), quick(), slow(), quick([mouse_at(60, 14)]), quick([button(0)]), quick([button(0, False)]),
                                                        quick([mouse_at(555, 30)]), quick([button(0)]), quick([button(0, False), mouse_at(400, 300)]), quick()]),
