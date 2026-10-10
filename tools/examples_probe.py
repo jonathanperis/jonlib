@@ -191,6 +191,7 @@ EXAMPLES = {
     'core_undo_redo': ('core/core_undo_redo.c', 'Ex.setup(seed, core, frame)'),
     'core_keyboard_testbed': ('core/core_keyboard_testbed.c', 'Ex.setup(core, frame)'),
     'core_input_gestures_testbed': ('core/core_input_gestures_testbed.c', 'Ex.setup(core, frame)'),
+    'core_3d_camera_fps': ('core/core_3d_camera_fps.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'core_text_file_loading': ('core/core_text_file_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_input_virtual_controls': ('core/core_input_virtual_controls.c', 'Ex.setup(core, frame)'),
     'shapes_math_angle_rotation': ('shapes/shapes_math_angle_rotation.c', 'Ex.setup(core, frame)'),
@@ -256,7 +257,7 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering', 'shaders_simple_mask',
                'core_3d_camera_first_person', 'models_rlgl_solar_system', 'models_textured_cube',
                'core_3d_camera_split_screen', 'shaders_postprocessing', 'textures_framebuffer_rendering',
-               'shaders_custom_uniform', 'shaders_mesh_instancing', 'models_mesh_picking'}
+               'shaders_custom_uniform', 'shaders_mesh_instancing', 'models_mesh_picking', 'core_3d_camera_fps'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'core_3d_camera_first_person', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer', 'shaders_mesh_instancing',
           'core_undo_redo', 'text_inline_styling'}
@@ -574,6 +575,11 @@ def scripts():
         # The wheel scrolls down, back past the top (snapped to 0) and far past the end (snapped to the last page).
         script('core_text_file_loading', 'scroll', [quick(), quick([(MOUSE_WHEEL, 0, -3, 0)]), slow([(MOUSE_WHEEL, 0, 5, 0)]),
                                                     quick([(MOUSE_WHEEL, 0, -200, 0)]), quick()]),
+        # The fall to the floor; a mouse look; W forward (the head bob, the narrowing view), W with D (the
+        # diagonal input normalized, the lean), a jump, the flight, a crouch, and the keys released.
+        script('core_3d_camera_fps', 'walk', [quick(), quick([mouse_at(430, 240)]), quick([key(KEY_W)]), quick(), slow(), quick([key(KEY_D)]), quick([key(KEY_SPACE)]),
+                                              quick([key(KEY_SPACE, False)]), slow(), quick([key(KEY_W, False), key(341)]), quick([key(KEY_D, False)]), quick([key(341, False)]),
+                                              quick()]),
         # A gesture from the first frame (before one is logged the example reads past its log array); every
         # gesture with repeats hidden; "Hide Repeat" off (repeats logged), "Hide Hold" on, both on, an unknown
         # gesture, then enough gestures to wrap the log of 20.
