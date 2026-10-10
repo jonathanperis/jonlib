@@ -82,7 +82,7 @@ TARGET_FPS = {'shapes_kaleidoscope': 20, 'shapes_penrose_tile': 120}
 (KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, INPUT_GESTURE, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 17, 18)
 KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_A, KEY_H, KEY_R, KEY_S = 262, 263, 264, 265, 65, 72, 82, 83
 KEY_G, KEY_SPACE, KEY_C, KEY_ENTER = 71, 32, 67, 257
-KEY_ONE, KEY_TWO, KEY_THREE = 49, 50, 51
+KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR = 49, 50, 51, 52
 KEY_P, KEY_W, KEY_D, KEY_TAB = 80, 87, 68, 258
 
 # name: (raylib source, setup expression, State is Data, needs the logo image)
@@ -131,6 +131,7 @@ EXAMPLES = {
     'core_delta_time': ('core/core_delta_time.c', 'Ex.setup(core, frame)'),
     'core_3d_camera_mode': ('core/core_3d_camera_mode.c', 'Ex.setup(core, frame)'),
     'core_3d_camera_free': ('core/core_3d_camera_free.c', 'Ex.setup(core, frame)'),
+    'core_3d_camera_first_person': ('core/core_3d_camera_first_person.c', 'Ex.setup(seed, core, frame)'),
     'core_world_screen': ('core/core_world_screen.c', 'Ex.setup(core, frame)'),
     'core_3d_picking': ('core/core_3d_picking.c', 'Ex.setup(core, frame)'),
     'models_basic_voxel': ('models/models_basic_voxel.c', 'Ex.setup(core, frame)'),
@@ -227,8 +228,9 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'shaders_basic_lighting', 'shaders_texture_tiling', 'models_billboard_rendering',
                'models_tesseract_view', 'models_directional_billboard', 'models_heightmap_rendering',
                'models_cubicmap_rendering', 'models_first_person_maze', 'shaders_model_shader',
-               'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering', 'shaders_simple_mask'}
-SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'textures_bunnymark', 'textures_image_generation',
+               'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering', 'shaders_simple_mask',
+               'core_3d_camera_first_person'}
+SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'core_3d_camera_first_person', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
@@ -386,6 +388,13 @@ def scripts():
                                               quick(), slow(), quick([(MOUSE_WHEEL, 0, 90, 0)]), quick(), slow([key(KEY_R)]), quick([key(KEY_R, False)])]),
         script('core_3d_camera_mode', 'frames', [quick(), slow(), quick()]),
         # Mouse look, wheel zoom, a middle-button pan and Z back to the origin.
+        # First person: W forward and a mouse turn; third person (the target cube), orbital, free; P to the
+        # orthographic view and back to perspective.
+        script('core_3d_camera_first_person', 'modes', [quick(), quick([mouse_at(420, 235)]), slow([key(KEY_W)]), quick([key(KEY_W, False), key(KEY_THREE)]),
+                                                        quick([key(KEY_THREE, False), mouse_at(380, 250)]), quick([key(KEY_FOUR)]), quick([key(KEY_FOUR, False)]),
+                                                        quick([key(KEY_ONE)]), quick([key(KEY_ONE, False), key(KEY_P)]), slow([key(KEY_P, False)]),
+                                                        quick([mouse_at(400, 240)]), quick([key(KEY_P)]), quick([key(KEY_P, False), key(KEY_TWO)]), quick()],
+               seed=0xCA3),
         script('core_3d_camera_free', 'controls', [quick(), quick([mouse_at(410, 230)]), quick([mouse_at(450, 210)]), slow([mouse_at(380, 260)]),
                                                    quick([(MOUSE_WHEEL, 0, 2, 0)]), quick([(MOUSE_WHEEL, 0, -1, 0)]), quick([button(2)]),
                                                    quick([mouse_at(420, 250)]), quick([mouse_at(470, 280), button(2, False)]), quick([key(90)]),
