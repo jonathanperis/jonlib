@@ -1,24 +1,33 @@
 #!/usr/bin/env python3
 """Decide how much of the conformance suite a change needs.
 
-The Conformance workflow runs every gate on both hosts (about ten shards of
-one to two hours each). A change that only adds or edits example ports cannot
-alter any other gate: its evidence is the replay of those examples. This tool
-classifies the files a push or pull request changed:
+A complete Conformance run is every gate of tools/gates.json on both hosts
+(about ten shards of one to two hours each, and hosted macOS runs five jobs at
+a time). Most changes cannot reach most gates. This tool classifies the files
+a push or pull request changed and picks one of three scopes:
 
-- `full`: anything that can reach a gate (the library, `src/`, the toolchain
-  pins, a probe or another tool, fixtures, API ledgers, the pinned setup
-  action) or a path this tool does not know. Scheduled and manual runs are
-  always full.
-- `examples`: only example ports (`examples/*.bend`), the tables and scripts
-  of their probe (`tools/examples_probe.py` above its native driver), the
-  examples plan and documentation. The examples to replay are the changed
-  ports, the examples whose registration, table entry or script changed in the
-  probe, and, whenever the probe changed, three canaries (a plain window, a
-  seeded example with a refusal and one that loads a file). A change to code
-  the examples share (the native driver `C_DRIVER` and everything below it,
-  or a line above it that names no example and is not a new constant or a
-  comment) is `full`.
+- `full`: every gate. A library definition changed or was removed, the
+  toolchain pins, the gate runner, the pinned setup action, a fixture, or any
+  path this tool cannot place. Scheduled and manual runs are always full.
+- `scoped`: only the gates and examples the change can reach, on both hosts:
+  - a library file that only gained whole top-level definitions (every
+    existing definition is byte for byte where it was) runs the main corpus
+    with `PROOF.bend` and the core examples, besides the gates below;
+  - `LAWS.bend` and `PROOF.bend` run the gates whose tool names them, an API
+    ledger the gates that run the API plan, and a file under
+    `tools/reference/` every gate that can reach a tool naming it;
+  - a tool runs the gates that reach it (the tool a gate runs, the tools its
+    source names, and what those import, transitively);
+  - `tools/gates.json` runs the gates whose command or hosts changed;
+  - an example port (`examples/<name>.bend`), and the tables and scripts of
+    `tools/examples_probe.py` above its native driver, replay the changed
+    ports, the examples whose registration, table entry, prediction or script
+    changed, and three canaries (a plain window, a seeded example with a
+    refusal, one that loads a file). A change to code the examples share (the
+    native driver `C_DRIVER` and everything below it, or a line above it that
+    names no example and is not a new constant or a comment) runs every
+    examples gate.
+  More than three jobs of gates per host is `full`.
 - `none`: only files no gate reads (workflows, unit tests, this tool,
   documentation). The Checks workflow covers them.
 
@@ -31,7 +40,7 @@ to run, and a merge commit only what `main` had gained since the branch
 started. A scheduled run is `none` when a scheduled or manual run (always
 full) of the same commit already succeeded.
 
-    python3 tools/ci_scope.py                 # reads the GitHub event, writes mode/examples to $GITHUB_OUTPUT
+    python3 tools/ci_scope.py                 # reads the GitHub event, writes mode/matrix to $GITHUB_OUTPUT
     python3 tools/ci_scope.py --base REF      # prints the scope of REF..HEAD
 """
 import argparse
@@ -44,21 +53,35 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 PROBE = 'tools/examples_probe.py'
+MANIFEST = 'tools/gates.json'
 CANARIES = ('core_basic_window', 'core_2d_camera', 'textures_logo_raylib')
 HARNESS_MARKER = 'C_DRIVER = '
 # Files no conformance gate reads.
 HARNESS = ('tools/ci_scope.py', 'tools/example_tables.py', 'tools/examples_plan.py', 'tools/check_project.py')
 EXAMPLE_FILES = (PROBE, 'api/examples.json')
+# What a library file that only gained definitions runs: the corpus with PROOF.bend, and the core examples.
+LIBRARY_GATES = ('conformance', 'examples-core')
+HOSTS = (('linux', 'ubuntu-24.04'), ('macos', 'macos-15'))
+# Estimated minutes (the manifest's, measured on macOS) per scoped job, and the jobs per host before a run is full.
+PART_MINUTES, MAX_PARTS = 100, 3
 REGISTERED = re.compile(r"^    '([a-z0-9_]+)': \('", re.M)
 QUOTED = re.compile(r"'([a-z0-9_]+)'")
 HUNK = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@')
 SCRIPT = re.compile(r"^        script\('([a-z0-9_]+)'")
 # A line no existing script can depend on: blank, a comment, or new constants.
 INERT = re.compile(r'^\s*(#.*)?$|^\(?[A-Z][A-Z0-9_]*(, [A-Z][A-Z0-9_]*)*\)? = \(?-?[0-9][0-9a-fx.]*(, -?[0-9][0-9a-fx.]*)*\)?$')
+IMPORT = re.compile(r'^\s*(?:from\s+([a-z_0-9]+)\s+import\b|import\s+([a-z_0-9, ]+?)(?:\s+as\s+\w+)?\s*$)', re.M)
+TOOL = re.compile(r'tools/([a-z_0-9]+)\.py')
+FULL = dict(mode='full', gates=[], examples=[])
+
+
+def full(reason):
+    return dict(FULL, reason=reason)
+NONE = dict(mode='none', gates=[], examples=[])
 
 
 def kind(path):
-    """'none', 'example' or 'full' for one changed path."""
+    """'none', 'example', 'library', 'named', 'manifest', 'tool' or 'full' for one changed path."""
     if path.endswith('.md') or path.startswith(('docs/', 'LICENSES/')) or path in ('LICENSE', '.gitignore'):
         return 'none'
     if path.startswith('.github/workflows/') or (path.startswith('tests/') and path.endswith('.py') and '/' not in path[len('tests/'):]):
@@ -67,6 +90,14 @@ def kind(path):
         return 'none'
     if path in EXAMPLE_FILES or re.fullmatch(r'examples/[a-z0-9_]+\.bend', path):
         return 'example'
+    if path in ('jonlib.bend', 'jonmath.bend', 'jongui.bend') or re.fullmatch(r'src/(lgpl/)?[a-z0-9_]+\.bend', path):
+        return 'library'
+    if path in ('LAWS.bend', 'PROOF.bend') or re.fullmatch(r'api/[a-z0-9_]+\.json', path) or path.startswith('tools/reference/'):
+        return 'named'
+    if path == MANIFEST:
+        return 'manifest'
+    if re.fullmatch(r'tools/[a-z_0-9]+\.py', path) and path != 'tools/run_gates.py':
+        return 'tool'
     return 'full'
 
 
@@ -134,27 +165,141 @@ def probe_examples(probe_source, diff, names):
     return examples
 
 
-def scope(paths, probe_source='', probe_diff=''):
-    """The mode and the examples to replay for the changed paths."""
-    kinds = {path: kind(path) for path in paths}
-    if not paths or 'full' in kinds.values():
-        return dict(mode='full' if paths else 'none', examples=[])
-    if 'example' not in kinds.values():
-        return dict(mode='none', examples=[])
+def blocks(text):
+    """The top-level blocks of a Bend source: a line at column 0 with the indented lines under it."""
+    found = []
+    for line in text.splitlines():
+        if line[:1].strip() or not found:
+            found.append([line])
+        else:
+            found[-1].append(line)
+    return ['\n'.join(block).rstrip() for block in found]
+
+
+def additive(old, new):
+    """Whether `new` is `old` with whole top-level blocks inserted: every existing block unchanged and in order."""
+    remaining = iter(blocks(new))
+    return all(any(block == candidate for candidate in remaining) for block in blocks(old))
+
+
+def reach(tool, read, known):
+    """A tool and the tools it imports, transitively."""
+    if tool not in known:
+        known[tool] = None  # a cycle ends here; the first caller completes the set
+        found = {tool}
+        for module, modules in IMPORT.findall(read(tool)):
+            for name in ([module] if module else [name.strip() for name in modules.split(',')]):
+                other = f'tools/{name}.py'
+                if other != tool and read(other):
+                    found |= reach(other, read, known) or {other}
+        known[tool] = found
+    return known[tool]
+
+
+def entries_of(gate):
+    """The tools a gate's command runs."""
+    return [word for word in gate['run'] if TOOL.fullmatch(word)]
+
+
+def gate_tools(gate, read, known):
+    """Every tool a gate can run: its own, the tools their sources name, and what all of those import."""
+    found = set()
+    for entry in entries_of(gate):
+        for tool in [entry, *sorted(f'tools/{name}.py' for name in TOOL.findall(read(entry)))]:
+            if read(tool):
+                found |= reach(tool, read, known) or {tool}
+    return found
+
+
+def command(gate):
+    return (gate.get('run'), sorted(gate.get('os', [])), bool(gate.get('diagnostic')))
+
+
+def parts(gates):
+    """The gates packed into jobs of about PART_MINUTES, longest first; None past MAX_PARTS."""
+    bins = []
+    for gate in sorted(gates, key=lambda gate: (-gate.get('minutes', 1), gate['id'])):
+        fit = next((part for part in bins if sum(g.get('minutes', 1) for g in part) + gate.get('minutes', 1) <= PART_MINUTES), None)
+        if fit is None:
+            bins.append([gate])
+        else:
+            fit.append(gate)
+    return bins if len(bins) <= MAX_PARTS else None
+
+
+def matrix(gates, examples):
+    """The scoped jobs: each part of the gates on each host that runs them, and the examples on both."""
+    include = []
+    for system, runner in HOSTS:
+        for number, part in enumerate(parts([gate for gate in gates if system in gate['os']]), 1):
+            include.append(dict(os=runner, part=f'gates {number}', gates=' '.join(f"--only={gate['id']}" for gate in part), examples=''))
+        if examples:
+            include.append(dict(os=runner, part='examples', gates='', examples=' '.join(f'--example={name}' for name in examples)))
+    return dict(include=include)
+
+
+def scope(status, old, new, diff):
+    """The mode, gates and examples for a change.
+
+    `status` maps each changed path to 'A', 'M' or 'D'; `old` and `new` read a
+    path before and after the change ('' when absent) and `diff` gives its -U0
+    diff.
+    """
+    kinds = {path: kind(path) for path in status}
+    unplaced = sorted(path for path, what in kinds.items() if what == 'full')
+    if unplaced:
+        return full('no rule places ' + ', '.join(unplaced[:4]))
+    try:
+        manifest = {gate['id']: gate for gate in json.loads(new(MANIFEST))['gates']}
+    except (ValueError, KeyError, TypeError):
+        return full('the gate manifest is unreadable')
+    known, probe_source = {}, new(PROBE)
     names = registered(probe_source)
-    examples = {Path(path).stem for path in paths if path.startswith('examples/')}
-    if PROBE in paths:
-        affected = probe_examples(probe_source, probe_diff, names)
-        if affected is None:
-            return dict(mode='full', examples=[])
-        examples |= affected | set(CANARIES)
-    unknown = sorted(examples - names)
-    if unknown:
+    reaching = lambda path: {name for name, gate in manifest.items() if path in gate_tools(gate, new, known)}
+    naming = lambda text: {name for name, gate in manifest.items() if any(text in new(tool) for tool in gate_tools(gate, new, known))}
+    running = lambda text: {name for name, gate in manifest.items() if any(text in new(entry) for entry in entries_of(gate))}
+    gates, examples = set(), set()
+    for path, what in kinds.items():
+        if what == 'library':
+            if status[path] == 'D' or not additive(old(path), new(path)) or not set(LIBRARY_GATES) <= set(manifest):
+                return full(f'{path} changed or lost a definition')
+            gates |= set(LIBRARY_GATES)
+        elif what == 'named':
+            # A proof file is read by the gate whose tool names it; a ledger by the gates that run the API plan;
+            # reference material by any gate that can reach a tool naming it.
+            found = (naming('reference/' + path.split('/')[2]) if path.startswith('tools/reference/')
+                     else reaching('tools/api_plan.py') if path.startswith('api/') else running(path))
+            if not found:
+                return full(f'no gate names {path}')
+            gates |= found
+        elif what == 'manifest':
+            try:
+                before = {gate['id']: gate for gate in json.loads(old(path))['gates']}
+            except (ValueError, KeyError, TypeError):
+                return full('the previous gate manifest is unreadable')
+            gates |= {name for name, gate in manifest.items() if name not in before or command(before[name]) != command(gate)}
+        elif what == 'tool':
+            found = reaching(path)
+            if status[path] == 'D' or (not found and status[path] != 'A'):
+                return full(f'no gate reaches {path}')
+            gates |= found
+        elif path == PROBE:
+            affected = probe_examples(probe_source, diff(path), names)
+            if affected is None:
+                gates |= reaching(path)
+            else:
+                examples |= affected | set(CANARIES)
+        elif path.startswith('examples/'):
+            examples.add(Path(path).stem)
+    if examples - names:
         # A port without a registration (or a deleted one) has no replay: run everything.
-        return dict(mode='full', examples=[])
-    if not examples:
-        return dict(mode='none', examples=[])
-    return dict(mode='examples', examples=sorted(examples))
+        return full('no replay is registered for ' + ', '.join(sorted(examples - names)))
+    selected = [manifest[name] for name in sorted(gates)]
+    if parts(selected) is None:
+        return full(f'{len(selected)} gates are affected, more than {MAX_PARTS} jobs per host')
+    if not selected and not examples:
+        return NONE
+    return dict(mode='scoped', gates=[gate['id'] for gate in selected], examples=sorted(examples), matrix=matrix(selected, sorted(examples)))
 
 
 def git(*args):
@@ -176,11 +321,18 @@ def base_ref(env=os.environ):
     return git('merge-base', f'origin/{target}', 'HEAD').strip()
 
 
-def changed(base):
-    paths = [line for line in git('diff', '--name-only', f'{base}..HEAD').splitlines() if line]
-    probe_diff = git('diff', '-U0', f'{base}..HEAD', '--', PROBE) if PROBE in paths else ''
-    probe = (ROOT / PROBE).read_text() if (ROOT / PROBE).is_file() else ''
-    return scope(paths, probe, probe_diff)
+def show(commit, path):
+    result = subprocess.run(['git', 'show', f'{commit}:{path}'], cwd=ROOT, capture_output=True, text=True, errors='replace')
+    return result.stdout if result.returncode == 0 else ''
+
+
+def changed(base, head='HEAD'):
+    """The scope of base..head."""
+    rows = [line.split('\t') for line in git('diff', '--name-status', '--no-renames', f'{base}..{head}').splitlines() if line]
+    status = {path: letter[0] for letter, path in rows}
+    cache = {}
+    read = lambda commit: lambda path: cache[commit, path] if (commit, path) in cache else cache.setdefault((commit, path), show(commit, path))
+    return scope(status, read(base), read(head), lambda path: git('diff', '-U0', f'{base}..{head}', '--', path))
 
 
 FULL_EVENTS = ('schedule', 'workflow_dispatch')
@@ -219,6 +371,7 @@ def nightly_done(env=os.environ, passed=passed):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--base', help='compare with this commit instead of reading the GitHub event')
+    parser.add_argument('--head', default='HEAD', help='the changed commit (with --base)')
     args = parser.parse_args(argv)
     base, note = args.base, ''
     if not base:
@@ -229,24 +382,26 @@ def main(argv=None):
                 base = verified_base(git('rev-list', '--parents', '-n', '1', 'HEAD').split())
                 note = f' (compared with {base[:7]}, whose run passed)' if base else ''
         except (subprocess.CalledProcessError, OSError, ValueError, KeyError) as error:
-            print(f'ci_scope: {error}; comparing with the event\'s base', file=sys.stderr)
+            print(f"ci_scope: {error}; comparing with the event's base", file=sys.stderr)
             base = None
     try:
         base = base or base_ref()
-        result = changed(base) if base else dict(mode='full', examples=[])
+        result = changed(base, args.head) if base else full('a scheduled or manual run, or no base to compare with')
     except (subprocess.CalledProcessError, OSError, ValueError) as error:
-        print(f'ci_scope: {error}; running everything', file=sys.stderr)
-        result = dict(mode='full', examples=[])
-    print(json.dumps(result) + note)
+        result = full(f'the change could not be read ({error})')
+    summary = f"{result['mode']}{note}" + (f": {result['reason']}" if result.get('reason') else '') + ''.join(f'\n  {key}: ' + ' '.join(result[key]) for key in ('gates', 'examples') if result[key])
+    print(summary)
     output = os.environ.get('GITHUB_OUTPUT')
     if output:
         with open(output, 'a') as handle:
             print(f"mode={result['mode']}", file=handle)
-            print('examples=' + ' '.join(f'--example={name}' for name in result['examples']), file=handle)
-    summary = os.environ.get('GITHUB_STEP_SUMMARY')
-    if summary:
-        with open(summary, 'a') as handle:
-            print(f"Conformance scope: **{result['mode']}**{note} {' '.join(result['examples'])}", file=handle)
+            # A skipped job's matrix must still expand: one inert row when nothing is scoped.
+            idle = dict(include=[dict(os=HOSTS[0][1], part='none', gates='', examples='')])
+            print('matrix=' + json.dumps(result.get('matrix', idle)), file=handle)
+    step = os.environ.get('GITHUB_STEP_SUMMARY')
+    if step:
+        with open(step, 'a') as handle:
+            print('Conformance scope: ' + summary.replace('\n', '\n\n'), file=handle)
 
 
 if __name__ == '__main__':
