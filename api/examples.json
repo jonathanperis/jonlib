@@ -720,7 +720,7 @@
   {
    "name": "core_monitor_detector",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
