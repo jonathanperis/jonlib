@@ -188,6 +188,7 @@ EXAMPLES = {
     'core_highdpi_testbed': ('core/core_highdpi_testbed.c', 'Ex.setup(core, frame)'),
     'core_highdpi_demo': ('core/core_highdpi_demo.c', 'Ex.setup(core, frame)'),
     'core_viewport_scaling': ('core/core_viewport_scaling.c', 'Ex.setup(core, frame)'),
+    'core_undo_redo': ('core/core_undo_redo.c', 'Ex.setup(seed, core, frame)'),
     'core_text_file_loading': ('core/core_text_file_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_input_virtual_controls': ('core/core_input_virtual_controls.c', 'Ex.setup(core, frame)'),
     'shapes_math_angle_rotation': ('shapes/shapes_math_angle_rotation.c', 'Ex.setup(core, frame)'),
@@ -249,7 +250,8 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'core_3d_camera_split_screen', 'shaders_postprocessing', 'textures_framebuffer_rendering',
                'shaders_custom_uniform', 'shaders_mesh_instancing'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'core_3d_camera_first_person', 'textures_bunnymark', 'textures_image_generation',
-          'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer', 'shaders_mesh_instancing'}
+          'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer', 'shaders_mesh_instancing',
+          'core_undo_redo'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
                 'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'shaders_postprocessing': 32, 'shaders_custom_uniform': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196, 'core_viewport_scaling': 4,
@@ -556,6 +558,14 @@ def scripts():
         # The wheel scrolls down, back past the top (snapped to 0) and far past the end (snapped to the last page).
         script('core_text_file_loading', 'scroll', [quick(), quick([(MOUSE_WHEEL, 0, -3, 0)]), slow([(MOUSE_WHEEL, 0, 5, 0)]),
                                                     quick([(MOUSE_WHEEL, 0, -200, 0)]), quick()]),
+        # Moves and a recolor recorded every second frame; CTRL+Z back three states, CTRL+Y forward one, a new
+        # move from there, then enough moves (a press every second frame) to wrap the ring of 26 slots.
+        script('core_undo_redo', 'ring', [quick(), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]),
+                                          quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), quick([key(341)]), quick([key(90)]), quick([key(90, False)]),
+                                          quick([key(90)]), quick([key(90, False)]), quick([key(90)]), quick([key(90, False)]), quick([key(90)]), quick([key(90, False)]),
+                                          quick([key(89)]), quick([key(89, False), key(341, False)]), quick([key(KEY_UP)]), quick([key(KEY_UP, False)])]
+               + [f for i in range(30) for f in (quick([key(KEY_RIGHT if i % 2 == 0 else KEY_LEFT)]), quick([key(KEY_RIGHT if i % 2 == 0 else KEY_LEFT, False)]))]
+               + [quick([key(341), key(90)]), quick([key(90, False), key(89)]), quick([key(89, False), key(341, False)]), quick()], seed=0x0D0),
         # The mouse inside the game; the next viewport type five times (all six), the next resolution twice
         # (256x240 and 320x180), then the previous type and the previous resolution.
         script('core_viewport_scaling', 'buttons', [quick(), quick([mouse_at(400, 225)]), slow([mouse_at(220, 50)])]
