@@ -4876,7 +4876,7 @@
   {
    "name": "models_textured_cube",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",

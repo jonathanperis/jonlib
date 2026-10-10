@@ -192,6 +192,7 @@ EXAMPLES = {
     'models_yaw_pitch_roll': ('models/models_yaw_pitch_roll.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_loading': ('models/models_loading.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_rlgl_solar_system': ('models/models_rlgl_solar_system.c', 'Ex.setup(M.LIBM{}, core, frame)'),
+    'models_textured_cube': ('models/models_textured_cube.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shapes_circle_sector_drawing': ('shapes/shapes_circle_sector_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_ring_drawing': ('shapes/shapes_ring_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_rounded_rectangle_drawing': ('shapes/shapes_rounded_rectangle_drawing.c', 'Ex.setup(core, frame)'),
@@ -224,7 +225,7 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'models_first_person_maze', 'shaders_model_shader',
             'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering',
             'core_text_file_loading', 'shaders_ascii_rendering', 'shaders_simple_mask',
-            'textures_gif_player'}
+            'textures_gif_player', 'models_textured_cube'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -234,7 +235,7 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'models_tesseract_view', 'models_directional_billboard', 'models_heightmap_rendering',
                'models_cubicmap_rendering', 'models_first_person_maze', 'shaders_model_shader',
                'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering', 'shaders_simple_mask',
-               'core_3d_camera_first_person', 'models_rlgl_solar_system'}
+               'core_3d_camera_first_person', 'models_rlgl_solar_system', 'models_textured_cube'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'core_3d_camera_first_person', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
@@ -479,6 +480,7 @@ def scripts():
         script('models_heightmap_rendering', 'orbit', [quick(), slow(), quick()]),
         # The orbit, paused by P (the camera stays), resumed.
         script('models_cubicmap_rendering', 'pause', [quick(), slow(), quick([key(KEY_P)]), quick([key(KEY_P, False)]), quick([key(KEY_P)]), quick()]),
+        script('models_textured_cube', 'frames', [quick(), slow()]),
         script('models_rlgl_solar_system', 'orbit', [quick(), quick(), slow(), quick()]),
         # The orbit; a click on the castle selects it (its box is drawn), a second one deselects, one on
         # the sky misses.
