@@ -179,6 +179,7 @@ EXAMPLES = {
     'models_cubicmap_rendering': ('models/models_cubicmap_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_first_person_maze': ('models/models_first_person_maze.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_yaw_pitch_roll': ('models/models_yaw_pitch_roll.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'models_loading': ('models/models_loading.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shapes_circle_sector_drawing': ('shapes/shapes_circle_sector_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_ring_drawing': ('shapes/shapes_ring_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_rounded_rectangle_drawing': ('shapes/shapes_rounded_rectangle_drawing.c', 'Ex.setup(core, frame)'),
@@ -209,7 +210,7 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'textures_image_processing', 'textures_polygon_drawing', 'textures_magnifying_glass',
             'models_heightmap_rendering', 'models_cubicmap_rendering',
             'models_first_person_maze', 'shaders_model_shader',
-            'models_yaw_pitch_roll'}
+            'models_yaw_pitch_roll', 'models_loading'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -218,7 +219,7 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'shaders_basic_lighting', 'shaders_texture_tiling', 'models_billboard_rendering',
                'models_tesseract_view', 'models_directional_billboard', 'models_heightmap_rendering',
                'models_cubicmap_rendering', 'models_first_person_maze', 'shaders_model_shader',
-               'models_yaw_pitch_roll'}
+               'models_yaw_pitch_roll', 'models_loading'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
@@ -449,6 +450,10 @@ def scripts():
         script('models_heightmap_rendering', 'orbit', [quick(), slow(), quick()]),
         # The orbit, paused by P (the camera stays), resumed.
         script('models_cubicmap_rendering', 'pause', [quick(), slow(), quick([key(KEY_P)]), quick([key(KEY_P, False)]), quick([key(KEY_P)]), quick()]),
+        # The orbit; a click on the castle selects it (its box is drawn), a second one deselects, one on
+        # the sky misses.
+        script('models_loading', 'pick', [quick(), quick([mouse_at(400, 230)]), quick([button(0)]), slow([button(0, False)]), quick([button(0)]),
+                                          quick([button(0, False), mouse_at(30, 30)]), quick([button(0)]), quick([button(0, False)])]),
         # Pitch down and its ease back, yaw with A against S (S wins), roll right, all easing to rest.
         script('models_yaw_pitch_roll', 'steer', [quick(), quick([key(KEY_DOWN)]), quick(), slow([key(KEY_DOWN, False), key(KEY_A)]),
                                                   quick([key(KEY_S), key(KEY_RIGHT)]), quick([key(KEY_A, False), key(KEY_S, False), key(KEY_UP)]),
