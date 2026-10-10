@@ -966,7 +966,7 @@
   {
    "name": "core_smooth_pixelperfect",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode2D",
@@ -4984,7 +4984,7 @@
   {
    "name": "models_tesseract_view",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",

@@ -162,6 +162,8 @@ EXAMPLES = {
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_window_web': ('core/core_window_web.c', 'Ex.setup(core, frame)'),
+    'core_smooth_pixelperfect': ('core/core_smooth_pixelperfect.c', 'Ex.setup(core, frame)'),
+    'models_tesseract_view': ('models/models_tesseract_view.c', 'Ex.setup(core, frame)'),
     'textures_particles_blending': ('textures/textures_particles_blending.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
 }
 
@@ -177,7 +179,8 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
 PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen', 'core_3d_picking', 'models_basic_voxel', 'models_rotating_cube',
                'models_geometric_shapes', 'models_box_collisions', 'models_orthographic_projection',
-               'shaders_basic_lighting', 'shaders_texture_tiling', 'models_billboard_rendering'}
+               'shaders_basic_lighting', 'shaders_texture_tiling', 'models_billboard_rendering',
+               'models_tesseract_view'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
@@ -439,6 +442,10 @@ def scripts():
                                                         slow([button(0, False), mouse_at(665, 200)]), quick([button(0)]), quick([button(0, False)]),
                                                         quick([mouse_at(675, 80), button(0)]), quick([button(0, False)]), quick()]),
         script('core_window_web', 'frames', [quick(), slow()]),
+        # The cameras follow GetTime and the rectangles the frame time: frames of both lengths.
+        script('core_smooth_pixelperfect', 'drift', [quick(), quick(), slow(), quick(), slow(), quick()]),
+        # The rotation follows GetTime: frames of both lengths.
+        script('models_tesseract_view', 'turn', [quick(), quick(), slow(), quick(), slow()]),
         # A particle starts each frame at the mouse; SPACE switches to additive blending and back.
         script('textures_particles_blending', 'tail', [quick(), quick([mouse_at(300, 150)]), quick([mouse_at(360, 180)]), quick([mouse_at(420, 160)]),
                                                        quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), mouse_at(500, 220)]),
@@ -596,10 +603,11 @@ def bullet_hell_refusal(item, libm):
 
 
 # Examples whose own geometry takes sinf/cosf of values their controls change, or whose rotations come from
-# the seeded random stream (textures_particles_blending). Under the glibc profiles
+# the seeded random stream (textures_particles_blending) or from the clock (core_smooth_pixelperfect). Under
+# the glibc profiles
 # they refuse nothing and every frame is compared. Under AppleLibm the refusal frame is the one Jonlib
 # reports (every frame before it is still compared with raylib); it is not predicted independently.
-REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending'}
+REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect'}
 
 
 def refusal(item, libm):

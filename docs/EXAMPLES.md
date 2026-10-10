@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 79 ported, 91 ready, 42 waiting.
+Totals: 212 examples; 81 ported, 89 ready, 42 waiting.
 
 ## APIs that unblock the most examples
 
@@ -91,7 +91,7 @@ Totals: 212 examples; 79 ported, 91 ready, 42 waiting.
 | `core_scissor_test` | core | ported |  |
 | `core_basic_screen_manager` | core | ported |  |
 | `core_custom_frame_control` | core | ready |  |
-| `core_smooth_pixelperfect` | core | ready |  |
+| `core_smooth_pixelperfect` | core | ported |  |
 | `core_random_sequence` | core | ready |  |
 | `core_automation_events` | core | ready |  |
 | `core_highdpi_demo` | core | ready |  |
@@ -217,7 +217,7 @@ Totals: 212 examples; 79 ported, 91 ready, 42 waiting.
 | `models_textured_cube` | models | ready |  |
 | `models_animation_gpu_skinning` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
 | `models_bone_socket` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
-| `models_tesseract_view` | models | ready |  |
+| `models_tesseract_view` | models | ported |  |
 | `models_basic_voxel` | models | ported |  |
 | `models_rotating_cube` | models | ported |  |
 | `models_decals` | models | waiting | `UploadMesh` |
