@@ -220,6 +220,7 @@ EXAMPLES = {
     'shapes_easings_ball': ('shapes/shapes_easings_ball.c', 'Ex.setup(core, frame)'),
     'shapes_easings_box': ('shapes/shapes_easings_box.c', 'Ex.setup(core, frame)'),
     'shapes_easings_testbed': ('shapes/shapes_easings_testbed.c', 'Ex.setup(core, frame)'),
+    'shapes_simple_particles': ('shapes/shapes_simple_particles.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -782,6 +783,13 @@ def scripts():
                + [quick([key(KEY_UP)]), quick([key(KEY_UP, False), key(KEY_LEFT)]), quick([key(KEY_LEFT, False), key(KEY_W)]), quick([key(KEY_W, False), key(KEY_S)]),
                   quick([key(KEY_S, False), key(84)]), quick([key(84, False), key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_ENTER)]), quick([key(KEY_ENTER, False)])]
                + [quick() for _ in range(30)] + [quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)])]),
+        # Water at one particle every two frames on average (rand() from the seed 1); more of them (UP four
+        # times: three a frame), smoke (RIGHT), fire (RIGHT) from a dragged emitter, back through LEFT, and a
+        # slower rate (DOWN).
+        script('shapes_simple_particles', 'types', [quick() for _ in range(12)] + [f for _ in range(4) for f in (quick([key(KEY_UP)]), quick([key(KEY_UP, False)]))]
+               + [quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)])] + [quick() for _ in range(10)] + [quick([key(KEY_RIGHT), mouse_at(300, 300)]), quick([key(KEY_RIGHT, False), button(0)]),
+                                                                                                       quick([mouse_at(360, 320)]), quick([button(0, False)])]
+               + [quick() for _ in range(14)] + [quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False), key(KEY_DOWN)]), quick([key(KEY_DOWN, False)])] + [quick() for _ in range(6)]),
         # The five rounded gradients (the scene has no input).
         script('shapes_rectangle_advanced', 'still', [quick(), quick()]),
         # Two more triangles (a positive wheel move); a color picked inside the wheel, dragged, then outside it
@@ -1009,7 +1017,7 @@ REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particle
             'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass',
             'shapes_rlgl_color_wheel', 'shapes_rectangle_advanced', 'core_input_gestures_testbed', 'core_input_gamepad',
             'shapes_easings_ball', 'shapes_easings_box', 'shapes_easings_testbed',
-            'core_2d_camera_mouse_zoom'}
+            'core_2d_camera_mouse_zoom', 'shapes_simple_particles'}
 
 
 def refusal(item, libm):
