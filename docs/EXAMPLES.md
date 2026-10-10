@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 152 ported, 19 ready, 41 waiting.
+Totals: 212 examples; 152 ported, 21 ready, 39 waiting.
 
 ## APIs that unblock the most examples
 
@@ -45,7 +45,6 @@ Totals: 212 examples; 152 ported, 19 ready, 41 waiting.
 | `SetAudioStreamBufferSizeDefault` | 3 |
 | `StopMusicStream` | 3 |
 | `UnloadAudioStream` | 3 |
-| `UploadMesh` | 3 |
 | `GuiProgressBar` | 2 |
 | `GuiSpinner` | 2 |
 | `IsAudioStreamProcessed` | 2 |
@@ -53,6 +52,7 @@ Totals: 212 examples; 152 ported, 19 ready, 41 waiting.
 | `AttachAudioMixedProcessor` | 1 |
 | `AttachAudioStreamProcessor` | 1 |
 | `BeginVrStereoMode` | 1 |
+| `DetachAudioMixedProcessor` | 1 |
 
 ## Examples
 
@@ -201,14 +201,14 @@ Totals: 212 examples; 152 ported, 19 ready, 41 waiting.
 | `models_cubicmap_rendering` | models | ported |  |
 | `models_first_person_maze` | models | ported |  |
 | `models_geometric_shapes` | models | ported |  |
-| `models_mesh_generation` | models | waiting | `GenMeshCylinder`, `GenMeshKnot`, `UploadMesh` |
+| `models_mesh_generation` | models | waiting | `GenMeshCylinder`, `GenMeshKnot` |
 | `models_mesh_picking` | models | ported |  |
 | `models_loading` | models | ported |  |
 | `models_loading_gltf` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
 | `models_loading_vox` | models | ready |  |
 | `models_loading_m3d` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
 | `models_orthographic_projection` | models | ported |  |
-| `models_point_rendering` | models | waiting | `UploadMesh` |
+| `models_point_rendering` | models | ready |  |
 | `models_rlgl_solar_system` | models | ported |  |
 | `models_yaw_pitch_roll` | models | ported |  |
 | `models_waving_cubes` | models | ready |  |
@@ -220,7 +220,7 @@ Totals: 212 examples; 152 ported, 19 ready, 41 waiting.
 | `models_tesseract_view` | models | ported |  |
 | `models_basic_voxel` | models | ported |  |
 | `models_rotating_cube` | models | ported |  |
-| `models_decals` | models | waiting | `UploadMesh` |
+| `models_decals` | models | ready |  |
 | `models_directional_billboard` | models | ported |  |
 | `models_animation_blend_custom` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `rlUpdateVertexBuffer` |
 | `models_animation_blending` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `UpdateModelAnimationEx`, `GuiDropdownBox`, `GuiProgressBar` |

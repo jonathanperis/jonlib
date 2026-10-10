@@ -56199,23 +56199,28 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "not-started",
-      "jonlib": "Model.upload_mesh",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Mesh.upload",
+      "mapping_state": "implemented",
+      "scope": "The OpenGL 1.1 branch: no vertex buffer exists, the ids stay 0 and the mesh's arrays are untouched (DrawMesh reads them directly).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "GPU buffers are not modeled",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/mesh_probe.py",
+        "docs/MODELS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -56232,7 +56237,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Derive UploadMesh semantics from the linked source, add a reference fixture, then implement Model.upload_mesh.",
+      "next_step": "Close documented gaps and unverified gates for UploadMesh.",
       "priority": 622
     },
     {

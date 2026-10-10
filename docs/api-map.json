@@ -5320,6 +5320,17 @@
     "api_id": "raylib:function:DrawBillboardPro",
     "milestone": "models"
   },
+  "UploadMesh": {
+    "jonlib": "Mesh.upload",
+    "status": "profile-covered",
+    "scope": "The OpenGL 1.1 branch: no vertex buffer exists, the ids stay 0 and the mesh's arrays are untouched (DrawMesh reads them directly).",
+    "gaps": [
+      "GPU buffers are not modeled",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:UploadMesh",
+    "milestone": "models"
+  },
   "UnloadMesh": {
     "jonlib": "Mesh.unload",
     "status": "profile-covered",

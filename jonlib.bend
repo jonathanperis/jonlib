@@ -10101,6 +10101,12 @@ def Mesh.gen_torus(+radius: F32, +size: F32, +rad_seg: U32, +sides: U32) -> Mayb
 def Mesh.unload(mesh: Mesh) -> Unit:
   Unit{}
 
+# UploadMesh(mesh, dynamic): vertex buffers exist under OpenGL 3.3/ES2 only.
+# On the software renderer the mesh's buffer ids stay 0 and its arrays are
+# the ones given, which DrawMesh reads directly.
+def Mesh.upload(+mesh: Mesh, +dynamic: Bool) -> Mesh:
+  mesh
+
 # An attribute list holds exactly count*size values.
 def Mesh.sized(values: Maybe<&2, +List<F32>>, +count: U32, +size: U32) -> Bool:
   match values:
