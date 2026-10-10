@@ -2487,7 +2487,7 @@
   {
    "name": "shapes_rlgl_color_wheel",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "Clamp",
