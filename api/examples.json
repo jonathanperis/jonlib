@@ -6349,7 +6349,7 @@
   {
    "name": "shaders_vertex_displacement",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
