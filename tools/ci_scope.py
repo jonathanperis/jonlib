@@ -22,11 +22,12 @@ classifies the files a push or pull request changed:
 
 The base of the comparison is the previous head for a push to `main`, and the
 merge base with `main` for any other branch or a pull request. When the base
-cannot be found the scope is `full`. A push to `main` of a commit whose
-Conformance run already succeeded on a branch (a fast-forward merge) is
-`none`: the branch compared the same tree against an ancestor of that base.
-A scheduled run is `none` when a scheduled or manual run (always full) of the
-same commit already succeeded.
+cannot be found the scope is `full`. A push to `main` is compared with the
+pushed head itself or one of its parents when that commit's Conformance run
+already succeeded: a fast-forward merge of a passing branch has nothing left
+to run, and a merge commit only what `main` had gained since the branch
+started. A scheduled run is `none` when a scheduled or manual run (always
+full) of the same commit already succeeded.
 
     python3 tools/ci_scope.py                 # reads the GitHub event, writes mode/examples to $GITHUB_OUTPUT
     python3 tools/ci_scope.py --base REF      # prints the scope of REF..HEAD
@@ -137,49 +138,60 @@ def changed(base):
 
 
 FULL_EVENTS = ('schedule', 'workflow_dispatch')
+RUN_EVENTS = ('push', *FULL_EVENTS)
 
 
 def verified(runs, run_id, events):
-    """Whether another Conformance run of this commit, started by one of the events, succeeded."""
+    """Whether another Conformance run of a commit, started by one of the events, succeeded."""
     return any(run.get('conclusion') == 'success' and str(run.get('id')) != str(run_id) and run.get('event') in events for run in runs)
 
 
-def accepted_events(env):
-    """The events whose successful run of this commit makes this run redundant."""
-    event = env.get('GITHUB_EVENT_NAME')
-    if event == 'schedule':
-        return FULL_EVENTS
-    if event == 'push' and env.get('GITHUB_REF_NAME') == 'main':
-        return ('push', *FULL_EVENTS)
-    return ()
-
-
-def already_verified(env=os.environ):
-    """A push to main that a branch run already passed, or a nightly run of a commit already run in full."""
-    events = accepted_events(env)
-    if not events or not env.get('GH_TOKEN'):
-        return False
-    query = f"repos/{env['GITHUB_REPOSITORY']}/actions/workflows/conformance.yml/runs?head_sha={env['GITHUB_SHA']}&status=success&per_page=50"
+def passed(sha, events, env=os.environ):
+    """Ask GitHub whether a Conformance run of the commit succeeded."""
+    query = f"repos/{env['GITHUB_REPOSITORY']}/actions/workflows/conformance.yml/runs?head_sha={sha}&status=success&per_page=50"
     runs = json.loads(subprocess.run(['gh', 'api', query], check=True, capture_output=True, text=True).stdout)
     return verified(runs.get('workflow_runs', []), env.get('GITHUB_RUN_ID', ''), events)
+
+
+def verified_base(commits, env=os.environ, passed=passed):
+    """For a push to main, the pushed head or one of its parents that already passed.
+
+    `commits` is the head followed by its parents. A fast-forward merge pushes a
+    head that passed on its branch (nothing left to run); a merge commit differs
+    from the merged branch's passing head by what main had gained since.
+    """
+    if env.get('GITHUB_EVENT_NAME') != 'push' or env.get('GITHUB_REF_NAME') != 'main' or not env.get('GH_TOKEN'):
+        return None
+    return next((sha for sha in [*commits[:1], *reversed(commits[1:])] if passed(sha, RUN_EVENTS, env)), None)
+
+
+def nightly_done(env=os.environ, passed=passed):
+    """A scheduled run of a commit that a scheduled or manual (complete) run already passed."""
+    return env.get('GITHUB_EVENT_NAME') == 'schedule' and bool(env.get('GH_TOKEN')) and passed(env['GITHUB_SHA'], FULL_EVENTS, env)
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--base', help='compare with this commit instead of reading the GitHub event')
     args = parser.parse_args(argv)
+    base, note = args.base, ''
+    if not base:
+        try:
+            if nightly_done():
+                base, note = 'HEAD', ' (a complete run of this commit already passed)'
+            else:
+                base = verified_base(git('rev-list', '--parents', '-n', '1', 'HEAD').split())
+                note = f' (compared with {base[:7]}, whose run passed)' if base else ''
+        except (subprocess.CalledProcessError, OSError, ValueError, KeyError) as error:
+            print(f'ci_scope: {error}; comparing with the event\'s base', file=sys.stderr)
+            base = None
     try:
-        base = args.base or base_ref()
+        base = base or base_ref()
         result = changed(base) if base else dict(mode='full', examples=[])
     except (subprocess.CalledProcessError, OSError, ValueError) as error:
         print(f'ci_scope: {error}; running everything', file=sys.stderr)
         result = dict(mode='full', examples=[])
-    try:
-        if not args.base and result['mode'] != 'none' and already_verified():
-            result = dict(mode='none', examples=[], verified=True)
-    except (subprocess.CalledProcessError, OSError, ValueError, KeyError) as error:
-        print(f'ci_scope: {error}; keeping the scope', file=sys.stderr)
-    print(json.dumps(result))
+    print(json.dumps(result) + note)
     output = os.environ.get('GITHUB_OUTPUT')
     if output:
         with open(output, 'a') as handle:
@@ -188,8 +200,7 @@ def main(argv=None):
     summary = os.environ.get('GITHUB_STEP_SUMMARY')
     if summary:
         with open(summary, 'a') as handle:
-            reason = ' (this commit already passed)' if result.get('verified') else ''
-            print(f"Conformance scope: **{result['mode']}**{reason} {' '.join(result['examples'])}", file=handle)
+            print(f"Conformance scope: **{result['mode']}**{note} {' '.join(result['examples'])}", file=handle)
 
 
 if __name__ == '__main__':

@@ -18,9 +18,10 @@ on:
 permissions:
   contents: read
 
-# The nightly run has its own group: a push to main must not cancel it.
+# A push to a branch cancels that branch's run. Every push to main keeps its
+# own run (a later push only checks what it added), and so does the nightly run.
 concurrency:
-  group: conformance-${{ github.event_name == 'schedule' && 'nightly' || github.ref }}
+  group: conformance-${{ github.event_name == 'schedule' && 'nightly' || github.ref == 'refs/heads/main' && github.sha || github.ref }}
   cancel-in-progress: true
 
 jobs:

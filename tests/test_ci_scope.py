@@ -86,28 +86,40 @@ class BaseTests(unittest.TestCase):
 
 
 class VerifiedTests(unittest.TestCase):
+    MAIN = {'GITHUB_EVENT_NAME': 'push', 'GITHUB_REF_NAME': 'main', 'GH_TOKEN': 't'}
+
     def test_another_successful_run_of_the_commit_counts(self):
-        main = ci_scope.accepted_events({'GITHUB_EVENT_NAME': 'push', 'GITHUB_REF_NAME': 'main'})
-        self.assertTrue(ci_scope.verified([dict(id=7, conclusion='success', event='push')], '9', main))
+        self.assertTrue(ci_scope.verified([dict(id=7, conclusion='success', event='push')], '9', ci_scope.RUN_EVENTS))
 
     def test_this_run_a_failure_or_a_pull_request_merge_does_not(self):
-        main = ci_scope.accepted_events({'GITHUB_EVENT_NAME': 'push', 'GITHUB_REF_NAME': 'main'})
-        self.assertFalse(ci_scope.verified([dict(id=9, conclusion='success', event='push')], '9', main))
-        self.assertFalse(ci_scope.verified([dict(id=7, conclusion='failure', event='push')], '9', main))
-        self.assertFalse(ci_scope.verified([dict(id=7, conclusion='success', event='pull_request')], '9', main))
+        self.assertFalse(ci_scope.verified([dict(id=9, conclusion='success', event='push')], '9', ci_scope.RUN_EVENTS))
+        self.assertFalse(ci_scope.verified([dict(id=7, conclusion='failure', event='push')], '9', ci_scope.RUN_EVENTS))
+        self.assertFalse(ci_scope.verified([dict(id=7, conclusion='success', event='pull_request')], '9', ci_scope.RUN_EVENTS))
 
-    def test_a_nightly_run_accepts_only_full_runs(self):
-        nightly = ci_scope.accepted_events({'GITHUB_EVENT_NAME': 'schedule', 'GITHUB_REF_NAME': 'main'})
-        self.assertFalse(ci_scope.verified([dict(id=7, conclusion='success', event='push')], '9', nightly))
-        self.assertTrue(ci_scope.verified([dict(id=7, conclusion='success', event='schedule')], '9', nightly))
-        self.assertTrue(ci_scope.verified([dict(id=7, conclusion='success', event='workflow_dispatch')], '9', nightly))
+    def test_a_fast_forward_merge_compares_the_head_with_itself(self):
+        self.assertEqual(ci_scope.verified_base(['head', 'parent'], self.MAIN, lambda sha, events, env: sha == 'head'), 'head')
 
-    def test_branches_pull_requests_and_runs_without_a_token_never_ask(self):
-        self.assertEqual(ci_scope.accepted_events({'GITHUB_EVENT_NAME': 'push', 'GITHUB_REF_NAME': 'feature/x'}), ())
-        self.assertEqual(ci_scope.accepted_events({'GITHUB_EVENT_NAME': 'pull_request', 'GITHUB_REF_NAME': 'main'}), ())
-        self.assertEqual(ci_scope.accepted_events({'GITHUB_EVENT_NAME': 'workflow_dispatch', 'GITHUB_REF_NAME': 'main'}), ())
-        self.assertFalse(ci_scope.already_verified({'GITHUB_EVENT_NAME': 'push', 'GITHUB_REF_NAME': 'feature/x', 'GH_TOKEN': 't'}))
-        self.assertFalse(ci_scope.already_verified({'GITHUB_EVENT_NAME': 'push', 'GITHUB_REF_NAME': 'main'}))
+    def test_a_merge_commit_compares_with_the_merged_branch(self):
+        asked = []
+        passed = lambda sha, events, env: asked.append(sha) or sha in ('main', 'branch')
+        self.assertEqual(ci_scope.verified_base(['merge', 'main', 'branch'], self.MAIN, passed), 'branch')
+        self.assertEqual(asked, ['merge', 'branch'])
+
+    def test_without_a_passing_commit_the_event_decides(self):
+        self.assertIsNone(ci_scope.verified_base(['head', 'parent'], self.MAIN, lambda sha, events, env: False))
+
+    def test_only_a_push_to_main_with_a_token_asks(self):
+        never = lambda sha, events, env: self.fail('asked')
+        for env in ({'GITHUB_EVENT_NAME': 'push', 'GITHUB_REF_NAME': 'feature/x', 'GH_TOKEN': 't'}, {'GITHUB_EVENT_NAME': 'push', 'GITHUB_REF_NAME': 'main'},
+                    {'GITHUB_EVENT_NAME': 'pull_request', 'GITHUB_REF_NAME': 'main', 'GH_TOKEN': 't'}, {'GITHUB_EVENT_NAME': 'schedule', 'GITHUB_REF_NAME': 'main', 'GH_TOKEN': 't'}):
+            self.assertIsNone(ci_scope.verified_base(['head', 'parent'], env, never))
+
+    def test_a_nightly_run_accepts_only_complete_runs(self):
+        env = {'GITHUB_EVENT_NAME': 'schedule', 'GITHUB_REF_NAME': 'main', 'GH_TOKEN': 't', 'GITHUB_SHA': 'head'}
+        self.assertTrue(ci_scope.nightly_done(env, lambda sha, events, env: sha == 'head' and events == ci_scope.FULL_EVENTS))
+        self.assertFalse(ci_scope.nightly_done(env, lambda sha, events, env: 'push' in events))
+        self.assertFalse(ci_scope.nightly_done(dict(self.MAIN, GITHUB_SHA='head'), lambda sha, events, env: True))
+        self.assertFalse(ci_scope.verified([dict(id=7, conclusion='success', event='push')], '9', ci_scope.FULL_EVENTS))
 
 
 if __name__ == '__main__':
