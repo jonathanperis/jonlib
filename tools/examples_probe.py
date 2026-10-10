@@ -75,6 +75,8 @@ SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation'
 def size_of(name):
     return SIZES.get(name, (WIDTH, HEIGHT))
 TARGET = 1.0 / 60
+# Examples whose SetTargetFPS is not 60 (the scripted wait ends where raylib's does).
+TARGET_FPS = {'shapes_kaleidoscope': 20}
 
 (KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, INPUT_GESTURE, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 17, 18)
 KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_A, KEY_H, KEY_R, KEY_S = 262, 263, 264, 265, 65, 72, 82, 83
@@ -157,6 +159,7 @@ EXAMPLES = {
     'shapes_rounded_rectangle_drawing': ('shapes/shapes_rounded_rectangle_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_triangle_strip': ('shapes/shapes_triangle_strip.c', 'Ex.setup(core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
+    'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -418,6 +421,13 @@ def scripts():
         script('shapes_recursive_tree', 'grow', [quick(), quick([mouse_at(690, 140), button(0)]), quick([button(0, False), mouse_at(700, 50)]),
                                                  quick([button(0)]), quick([button(0, False), mouse_at(680, 170)]), quick([button(0)]),
                                                  slow([button(0, False), mouse_at(650, 200)]), quick([button(0)]), quick([button(0, False)]), quick()]),
+        # A stroke of three moves (six rotations and their mirrors each), two steps back, one forward, a frame
+        # longer than the 20 FPS target, a press over the back button (no drawing there) and a reset.
+        script('shapes_kaleidoscope', 'draw', [quick(), quick([mouse_at(430, 200)]), quick([button(0)]), quick([mouse_at(470, 180)]),
+                                               quick([mouse_at(500, 230)]), quick([button(0, False), mouse_at(757, 432)]), quick([button(0)]),
+                                               quick([button(0, False)]), quick([button(0)]), quick([button(0, False)]), ([], 0.003, 0.06),
+                                               quick([mouse_at(782, 432), button(0)]), quick([button(0, False)]), quick(),
+                                               quick([mouse_at(770, 17), button(0)]), quick([button(0, False)]), quick(), quick()]),
         script('models_orthographic_projection', 'switch', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False)]), quick([key(KEY_SPACE)]),
                                                             quick([key(KEY_SPACE, False)])]),
         # RIGHT walks the player into the sphere (touching at exactly the radius: z 2 - 0.5 = 1.5), UP goes deeper,
@@ -463,13 +473,14 @@ def timed(item):
     if len(item['frames']) >= MAX_FRAMES or any(len(events) > MAX_EVENTS for events, _, _ in item['frames']):
         raise ProbeFailure(f'examples: {item["name"]} exceeds the driver\'s {MAX_FRAMES - 1} frames or {MAX_EVENTS} events per frame')
     previous = item['start']
+    target = 1.0 / TARGET_FPS[item['example']] if item['example'] in TARGET_FPS else TARGET
     frames = []
     for events, gap, draw in item['frames']:
         begin = previous + gap
         update = begin - previous
         end = begin + draw
         frame = update + (end - begin)
-        after = end + (TARGET - frame) if frame < TARGET else end
+        after = end + (target - frame) if frame < target else end
         frames.append(dict(events=events, begin=begin, end=end, after=after))
         previous = after
     return dict(item, frames=frames)

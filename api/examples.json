@@ -2249,7 +2249,7 @@
   {
    "name": "shapes_kaleidoscope",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode2D",
