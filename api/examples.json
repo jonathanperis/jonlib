@@ -522,7 +522,7 @@
   {
    "name": "core_3d_camera_fps",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",

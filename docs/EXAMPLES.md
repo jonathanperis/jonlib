@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 139 ported, 31 ready, 42 waiting.
+Totals: 212 examples; 140 ported, 30 ready, 42 waiting.
 
 ## APIs that unblock the most examples
 
@@ -76,7 +76,7 @@ Totals: 212 examples; 139 ported, 31 ready, 42 waiting.
 | `core_3d_camera_free` | core | ported |  |
 | `core_3d_camera_first_person` | core | ported |  |
 | `core_3d_camera_split_screen` | core | ported |  |
-| `core_3d_camera_fps` | core | ready |  |
+| `core_3d_camera_fps` | core | ported |  |
 | `core_3d_picking` | core | ported |  |
 | `core_world_screen` | core | ported |  |
 | `core_window_flags` | core | ported |  |
