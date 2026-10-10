@@ -201,6 +201,7 @@ EXAMPLES = {
     'models_first_person_maze': ('models/models_first_person_maze.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_yaw_pitch_roll': ('models/models_yaw_pitch_roll.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_loading': ('models/models_loading.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'models_mesh_picking': ('models/models_mesh_picking.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_rlgl_solar_system': ('models/models_rlgl_solar_system.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'models_textured_cube': ('models/models_textured_cube.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shapes_circle_sector_drawing': ('shapes/shapes_circle_sector_drawing.c', 'Ex.setup(core, frame)'),
@@ -236,7 +237,7 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering',
             'core_text_file_loading', 'shaders_ascii_rendering', 'shaders_simple_mask',
             'textures_gif_player', 'models_textured_cube', 'shaders_postprocessing',
-            'shaders_custom_uniform'}
+            'shaders_custom_uniform', 'models_mesh_picking'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -248,7 +249,7 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering', 'shaders_simple_mask',
                'core_3d_camera_first_person', 'models_rlgl_solar_system', 'models_textured_cube',
                'core_3d_camera_split_screen', 'shaders_postprocessing', 'textures_framebuffer_rendering',
-               'shaders_custom_uniform', 'shaders_mesh_instancing'}
+               'shaders_custom_uniform', 'shaders_mesh_instancing', 'models_mesh_picking'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'core_3d_camera_first_person', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer', 'shaders_mesh_instancing',
           'core_undo_redo'}
@@ -506,6 +507,14 @@ def scripts():
         # the sky misses.
         script('models_loading', 'pick', [quick(), quick([mouse_at(400, 230)]), quick([button(0)]), slow([button(0, False)]), quick([button(0)]),
                                           quick([button(0, False), mouse_at(30, 30)]), quick([button(0)]), quick([button(0, False)])]),
+        # The ray over the sky, the ground, the triangle (its barycenter), the sphere, the tower's box beside the
+        # mesh and the mesh itself (positions projected from the example's camera); then the camera controls on
+        # (the cursor centered), a look and a step, and off.
+        script('models_mesh_picking', 'pick', [quick(), quick([mouse_at(700, 30)]), quick([mouse_at(600, 400)]), quick([mouse_at(280, 240)]), quick([mouse_at(300, 235)]),
+                                               quick([mouse_at(121, 178)]), quick([mouse_at(135, 160)]), quick([mouse_at(330, 120)]), quick([mouse_at(480, 60)]),
+                                               quick([mouse_at(400, 200)]), quick([mouse_at(410, 300)]), quick([button(1)]),
+                                               quick([button(1, False), mouse_at(420, 215)]), quick([key(KEY_W)]), quick([key(KEY_W, False)]), quick([button(1)]),
+                                               quick([button(1, False), mouse_at(280, 240)]), quick()]),
         # Pitch down and its ease back, yaw with A against S (S wins), roll right, all easing to rest.
         script('models_yaw_pitch_roll', 'steer', [quick(), quick([key(KEY_DOWN)]), quick(), slow([key(KEY_DOWN, False), key(KEY_A)]),
                                                   quick([key(KEY_S), key(KEY_RIGHT)]), quick([key(KEY_A, False), key(KEY_S, False), key(KEY_UP)]),
