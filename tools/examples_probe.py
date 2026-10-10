@@ -107,6 +107,7 @@ EXAMPLES = {
     'textures_cellular_automata': ('textures/textures_cellular_automata.c', 'Ex.setup(core, frame)'),
     'textures_mouse_painting': ('textures/textures_mouse_painting.c', 'Ex.setup(core, frame)'),
     'textures_screen_buffer': ('textures/textures_screen_buffer.c', 'Ex.setup(seed, core, frame)'),
+    'textures_framebuffer_rendering': ('textures/textures_framebuffer_rendering.c', 'Ex.setup(core, frame)'),
     'textures_image_text': ('textures/textures_image_text.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_fog_of_war': ('textures/textures_fog_of_war.c', 'Ex.setup(seed, core, frame)'),
     'textures_sprite_animation': ('textures/textures_sprite_animation.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -149,6 +150,7 @@ EXAMPLES = {
     'textures_image_generation': ('textures/textures_image_generation.c', 'Ex.setup(seed, M.LIBM{}, core, frame)'),
     'shapes_easings_rectangles': ('shapes/shapes_easings_rectangles.c', 'Ex.setup(core, frame)'),
     'core_2d_camera_split_screen': ('core/core_2d_camera_split_screen.c', 'Ex.setup(core, frame)'),
+    'core_3d_camera_split_screen': ('core/core_3d_camera_split_screen.c', 'Ex.setup(core, frame)'),
     'models_geometric_shapes': ('models/models_geometric_shapes.c', 'Ex.setup(core, frame)'),
     'models_box_collisions': ('models/models_box_collisions.c', 'Ex.setup(core, frame)'),
     'models_orthographic_projection': ('models/models_orthographic_projection.c', 'Ex.setup(core, frame)'),
@@ -171,6 +173,9 @@ EXAMPLES = {
     'shaders_fog_rendering': ('shaders/shaders_fog_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shaders_ascii_rendering': ('shaders/shaders_ascii_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_simple_mask': ('shaders/shaders_simple_mask.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'shaders_postprocessing': ('shaders/shaders_postprocessing.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_custom_uniform': ('shaders/shaders_custom_uniform.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_mesh_instancing': ('shaders/shaders_mesh_instancing.c', 'Ex.setup(seed, M.LIBM{}, core, frame)'),
     'shaders_mandelbrot_set': ('shaders/shaders_mandelbrot_set.c', 'Ex.setup(core, frame)'),
     'shaders_raymarching_rendering': ('shaders/shaders_raymarching_rendering.c', 'Ex.setup(core, frame)'),
     'core_basic_screen_manager': ('core/core_basic_screen_manager.c', 'Ex.setup(core, frame)'),
@@ -228,7 +233,8 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'models_first_person_maze', 'shaders_model_shader',
             'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering',
             'core_text_file_loading', 'shaders_ascii_rendering', 'shaders_simple_mask',
-            'textures_gif_player', 'models_textured_cube'}
+            'textures_gif_player', 'models_textured_cube', 'shaders_postprocessing',
+            'shaders_custom_uniform'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -238,12 +244,14 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'models_tesseract_view', 'models_directional_billboard', 'models_heightmap_rendering',
                'models_cubicmap_rendering', 'models_first_person_maze', 'shaders_model_shader',
                'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering', 'shaders_simple_mask',
-               'core_3d_camera_first_person', 'models_rlgl_solar_system', 'models_textured_cube'}
+               'core_3d_camera_first_person', 'models_rlgl_solar_system', 'models_textured_cube',
+               'core_3d_camera_split_screen', 'shaders_postprocessing', 'textures_framebuffer_rendering',
+               'shaders_custom_uniform', 'shaders_mesh_instancing'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'core_3d_camera_first_person', 'textures_bunnymark', 'textures_image_generation',
-          'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer'}
+          'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer', 'shaders_mesh_instancing'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
-                'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196,
+                'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'shaders_postprocessing': 32, 'shaders_custom_uniform': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196,
                 'shaders_fog_rendering': 32}
 
 
@@ -443,6 +451,12 @@ def scripts():
         # The first-person camera moves (mouse, W) without any visible change.
         script('shaders_raymarching_rendering', 'walk', [quick(), quick([mouse_at(430, 240)]), slow([key(87)]), quick([key(87, False)])]),
         # Mouse look around the cube, then Z looks back at (0, 0.5, 0).
+        script('shaders_mesh_instancing', 'orbit', [quick(), slow(), quick()], seed=0x1257),
+        # Three frames of the orbit (the model has 11084 faces), the mouse moving the swirl's center.
+        script('shaders_custom_uniform', 'orbit', [quick(), slow([mouse_at(300, 200)]), quick()]),
+        # The orbit; RIGHT to the next shader's name, LEFT twice around to the last.
+        script('shaders_postprocessing', 'shaders', [quick(), quick([key(KEY_RIGHT)]), slow([key(KEY_RIGHT, False), key(KEY_LEFT)]),
+                                                     quick([key(KEY_LEFT, False)]), quick([key(KEY_LEFT)])]),
         script('shaders_simple_mask', 'look', [quick(), quick([mouse_at(420, 235)]), slow([key(KEY_W)]), quick([key(KEY_W, False)])]),
         # The moving texture; RIGHT grows the font size, LEFT at 9 does nothing after one step back.
         script('shaders_ascii_rendering', 'sizes', [quick(), slow([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_LEFT)]),
@@ -579,6 +593,9 @@ def scripts():
         script('textures_image_channel', 'frames', [quick(), slow()]),
         script('textures_image_kernel', 'frames', [quick(), slow()]),
         script('textures_polygon_drawing', 'turn', [quick() for _ in range(14)] + [slow()]),
+        # The subject orbits; the observer looks around, moves forward and R recenters its target.
+        script('textures_framebuffer_rendering', 'views', [quick(), quick([mouse_at(420, 235)]), slow([key(KEY_W)]), quick([key(KEY_W, False), key(KEY_R)]),
+                                                           quick([key(KEY_R, False)])]),
         # The fire's first sixteen frames (the flames climb a row a frame, drifting and decaying).
         script('textures_screen_buffer', 'fire', [quick(), quick(), slow()] + [quick() for _ in range(13)], seed=0xF12E),
         # Paint a stroke, pick red by click and paint, a bigger brush, erase with the right button (the
@@ -715,6 +732,9 @@ def scripts():
         # The 240-frame animation to its end, then SPACE plays it again.
         script('shapes_easings_rectangles', 'play', [quick() for _ in range(242)] + [quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), quick()]),
         # Both players move (S and W together: the first test wins, as raylib's else-if).
+        # Each player's camera forward and back (W/S and UP/DOWN) in long frames.
+        script('core_3d_camera_split_screen', 'move', [quick(), long([key(KEY_W)]), slow([key(KEY_UP)]), long([key(KEY_W, False), key(KEY_S)]),
+                                                       quick([key(KEY_UP, False), key(KEY_DOWN)]), quick([key(KEY_S, False), key(KEY_DOWN, False)])]),
         script('core_2d_camera_split_screen', 'move', [quick(), quick([key(68), key(83)]), quick(), slow([key(68, False), key(83, False), key(KEY_UP)]),
                                                        quick([key(KEY_LEFT)]), quick([key(KEY_UP, False), key(KEY_LEFT, False), key(83), key(87)]),
                                                        quick([key(83, False), key(87, False), key(65)]), quick([key(65, False)])]),

@@ -489,7 +489,7 @@
   {
    "name": "core_3d_camera_split_screen",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -3601,7 +3601,7 @@
   {
    "name": "textures_framebuffer_rendering",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -5457,7 +5457,7 @@
   {
    "name": "shaders_custom_uniform",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -5499,7 +5499,7 @@
   {
    "name": "shaders_postprocessing",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -5955,7 +5955,7 @@
   {
    "name": "shaders_mesh_instancing",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",

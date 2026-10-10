@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 124 ported, 46 ready, 42 waiting.
+Totals: 212 examples; 129 ported, 41 ready, 42 waiting.
 
 ## APIs that unblock the most examples
 
@@ -75,7 +75,7 @@ Totals: 212 examples; 124 ported, 46 ready, 42 waiting.
 | `core_3d_camera_mode` | core | ported |  |
 | `core_3d_camera_free` | core | ported |  |
 | `core_3d_camera_first_person` | core | ported |  |
-| `core_3d_camera_split_screen` | core | ready |  |
+| `core_3d_camera_split_screen` | core | ported |  |
 | `core_3d_camera_fps` | core | ready |  |
 | `core_3d_picking` | core | ported |  |
 | `core_world_screen` | core | ported |  |
@@ -178,7 +178,7 @@ Totals: 212 examples; 124 ported, 46 ready, 42 waiting.
 | `textures_textured_curve` | textures | ready |  |
 | `textures_sprite_stacking` | textures | ready |  |
 | `textures_cellular_automata` | textures | ported |  |
-| `textures_framebuffer_rendering` | textures | ready |  |
+| `textures_framebuffer_rendering` | textures | ported |  |
 | `text_sprite_fonts` | text | ported |  |
 | `text_font_spritefont` | text | ported |  |
 | `text_font_filters` | text | ported |  |
@@ -229,8 +229,8 @@ Totals: 212 examples; 124 ported, 46 ready, 42 waiting.
 | `shaders_basic_lighting` | shaders | ported |  |
 | `shaders_model_shader` | shaders | ported |  |
 | `shaders_shapes_textures` | shaders | ported |  |
-| `shaders_custom_uniform` | shaders | ready |  |
-| `shaders_postprocessing` | shaders | ready |  |
+| `shaders_custom_uniform` | shaders | ported |  |
+| `shaders_postprocessing` | shaders | ported |  |
 | `shaders_palette_switch` | shaders | ported |  |
 | `shaders_raymarching_rendering` | shaders | ported |  |
 | `shaders_texture_rendering` | shaders | ported |  |
@@ -243,7 +243,7 @@ Totals: 212 examples; 124 ported, 46 ready, 42 waiting.
 | `shaders_fog_rendering` | shaders | ported |  |
 | `shaders_simple_mask` | shaders | ported |  |
 | `shaders_hot_reloading` | shaders | waiting | `GetFileModTime` |
-| `shaders_mesh_instancing` | shaders | ready |  |
+| `shaders_mesh_instancing` | shaders | ported |  |
 | `shaders_multi_sample2d` | shaders | ported |  |
 | `shaders_normalmap_rendering` | shaders | ready |  |
 | `shaders_spotlight_rendering` | shaders | ready |  |
