@@ -654,6 +654,21 @@ def Laws.glibc_logf_negative_none():
 def Laws.glibc_logf_infinity_none():
   {==}
 
+def Laws.glibc_rand_minimal_standard_step():
+  {==}
+
+def Laws.glibc_rand_first_value():
+  {==}
+
+def Laws.glibc_rand_seed_zero_is_one():
+  {==}
+
+def Laws.glibc_rand_large_seed_none():
+  {==}
+
+def Laws.libc_rand_apple_none(seed):
+  {==}
+
 def Laws.gui_default_text_size():
   {==}
 

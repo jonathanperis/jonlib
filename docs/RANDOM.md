@@ -73,3 +73,26 @@ python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB
 With `--gpu`, the forced-GPU lane also runs seeding and subsequent draws on the
 device. No distribution improvement, sequence substitution or
 platform-dependent default seed is introduced.
+
+## The C library's rand()
+
+Some examples call `rand()` instead of `GetRandomValue`. `M.Libc.srand(libm,
+seed)` gives the C library's generator as `Maybe<M.Libc.Rand>` and
+`M.Libc.rand(rand)` the generator after a call with its value (0 to
+`RAND_MAX`, 2^31 - 1). A program that never calls `srand` starts from
+`M.Libc.srand(libm, 1)`.
+
+Under both glibc profiles this is glibc's generator (`src/libc_rand.bend`,
+written from the algorithm's description): `x[i] = x[i-31] + x[i-3]` modulo
+2^32 with the output `x[i] >> 1`; `srand` fills 31 words with the minimal
+standard generator (`16807*x mod 2^31 - 1`, a seed of 0 taken as 1) and
+discards the first 310 values. Seeds from 2^31 on are `None` (glibc reads
+them as negative ints). Apple's `rand()` is another generator and is not
+modeled: `AppleLibm` is `None`.
+
+Gate `rand` (`tools/rand_probe.py`) compares 40 values for each of nine seeds
+with the recurrence written in Python on every lane and, on glibc hosts, with
+the host's `rand()`, both after `srand(seed)` and without any `srand`. The
+same values come out of glibc 2.39 (Ubuntu 24.04) and 2.41 (Debian trixie).
+`LAWS.bend` states the first value of the default seed, that the seed 0 is
+the seed 1, and the refused cases.
