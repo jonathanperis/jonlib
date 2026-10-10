@@ -13,10 +13,12 @@ classifies the files a push or pull request changed:
 - `examples`: only example ports (`examples/*.bend`), the tables and scripts
   of their probe (`tools/examples_probe.py` above its native driver), the
   examples plan and documentation. The examples to replay are the changed
-  ports, the examples the probe's changed lines name, and, whenever the probe
-  changed, three canaries (a plain window, a seeded example with a refusal and
-  one that loads a file). A change at or below the probe's native driver
-  (`C_DRIVER`), where the comparison itself lives, is `full`.
+  ports, the examples whose registration, table entry or script changed in the
+  probe, and, whenever the probe changed, three canaries (a plain window, a
+  seeded example with a refusal and one that loads a file). A change to code
+  the examples share (the native driver `C_DRIVER` and everything below it,
+  or a line above it that names no example and is not a new constant or a
+  comment) is `full`.
 - `none`: only files no gate reads (workflows, unit tests, this tool,
   documentation). The Checks workflow covers them.
 
@@ -49,7 +51,10 @@ HARNESS = ('tools/ci_scope.py', 'tools/example_tables.py', 'tools/examples_plan.
 EXAMPLE_FILES = (PROBE, 'api/examples.json')
 REGISTERED = re.compile(r"^    '([a-z0-9_]+)': \('", re.M)
 QUOTED = re.compile(r"'([a-z0-9_]+)'")
-HUNK = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@', re.M)
+HUNK = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@')
+SCRIPT = re.compile(r"^        script\('([a-z0-9_]+)'")
+# A line no existing script can depend on: blank, a comment, or new constants.
+INERT = re.compile(r'^\s*(#.*)?$|^\(?[A-Z][A-Z0-9_]*(, [A-Z][A-Z0-9_]*)*\)? = \(?-?[0-9][0-9a-fx.]*(, -?[0-9][0-9a-fx.]*)*\)?$')
 
 
 def kind(path):
@@ -70,23 +75,63 @@ def registered(probe_source):
     return set(REGISTERED.findall(probe_source))
 
 
-def named(diff, names):
-    """The registered examples that the changed lines of a probe diff name."""
-    found = set()
+def hunks(diff):
+    """(first new line, last new line, removed lines, added lines) of each hunk of a -U0 diff."""
+    found = []
     for line in diff.splitlines():
-        if line.startswith(('+', '-')) and not line.startswith(('+++', '---')):
-            found.update(token for token in QUOTED.findall(line) if token in names)
+        match = HUNK.match(line)
+        if match:
+            first, count = int(match[1]), int(match[2]) if match[2] is not None else 1
+            found.append((max(first, 1), max(first, 1) + max(count, 1) - 1, [], []))
+        elif found and line[:1] in ('-', '+'):
+            found[-1][2 if line[0] == '-' else 3].append(line[1:])
     return found
 
 
-def harness_changed(probe_source, diff):
-    """Whether a probe diff reaches the native driver or the code below it."""
+def entries(lines, names):
+    """Each registered name quoted in the lines with the text up to the next one (and, for the first, the text before it)."""
+    text = ' '.join(' '.join(lines).split())
+    marks = [match for match in QUOTED.finditer(text) if match[1] in names]
+    return {(match[1], text[:match.start()] * (index == 0), text[match.end():following.start() if following else len(text)])
+            for index, (match, following) in enumerate(zip(marks, [*marks[1:], None]))}
+
+
+def probe_examples(probe_source, diff, names):
+    """The examples a probe diff affects, or None when it reaches code every example shares.
+
+    Shared code is the native driver (`C_DRIVER`) and everything below it, and
+    above it any changed line that names no example, unless it only adds
+    comments or constants. Inside `scripts()` a line belongs to the script it
+    continues. Elsewhere a name counts when the text that follows it changed
+    (its registration, a table value, set membership).
+    """
     lines = probe_source.splitlines()
     marker = next((index + 1 for index, line in enumerate(lines) if line.startswith(HARNESS_MARKER)), None)
-    if marker is None:
-        return True
-    hunks = HUNK.findall(diff)
-    return not hunks or any(int(start) + max(int(count or 1), 1) - 1 >= marker for start, count in hunks)
+    opening = next((index + 1 for index, line in enumerate(lines) if line.startswith('def scripts():')), None)
+    found = hunks(diff)
+    if marker is None or opening is None or not found:
+        return None
+    closing = next(index + 1 for index in range(opening, len(lines)) if lines[index][:1].strip())
+    examples = set()
+    for first, last, removed, added in found:
+        if last >= marker or (first < closing and last >= opening and not (opening < first and last < closing)):
+            return None
+        if opening < first and last < closing:
+            if not all(line.startswith('        ') or not line.strip() for line in removed + added):
+                return None
+            code = lambda line: line.strip() and not line.lstrip().startswith('#')
+            numbers = [number for number, line in zip(range(first, last + 1), added) if code(line)] + [first] * any(map(code, removed))
+            for number in numbers:
+                owner = next((SCRIPT.match(lines[index])[1] for index in range(number - 1, opening, -1) if SCRIPT.match(lines[index])), None)
+                examples |= {owner} & names
+            examples |= {name for line in removed + added for name in QUOTED.findall(line) if name in names}
+            continue
+        changed = entries(removed, names) ^ entries(added, names)
+        if not changed and not (all(INERT.match(line) for line in added) and all(not line.strip() or line.lstrip().startswith('#') for line in removed)):
+            if not (entries(removed, names) or entries(added, names)):
+                return None
+        examples |= {entry[0] for entry in changed}
+    return examples
 
 
 def scope(paths, probe_source='', probe_diff=''):
@@ -99,9 +144,10 @@ def scope(paths, probe_source='', probe_diff=''):
     names = registered(probe_source)
     examples = {Path(path).stem for path in paths if path.startswith('examples/')}
     if PROBE in paths:
-        if harness_changed(probe_source, probe_diff):
+        affected = probe_examples(probe_source, probe_diff, names)
+        if affected is None:
             return dict(mode='full', examples=[])
-        examples |= named(probe_diff, names) | set(CANARIES)
+        examples |= affected | set(CANARIES)
     unknown = sorted(examples - names)
     if unknown:
         # A port without a registration (or a deleted one) has no replay: run everything.
