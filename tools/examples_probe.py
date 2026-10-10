@@ -223,6 +223,7 @@ EXAMPLES = {
     'shapes_easings_testbed': ('shapes/shapes_easings_testbed.c', 'Ex.setup(core, frame)'),
     'shapes_top_down_lights': ('shapes/shapes_top_down_lights.c', 'Ex.setup(seed, core, frame)'),
     'shapes_simple_particles': ('shapes/shapes_simple_particles.c', 'Ex.setup(M.LIBM{}, core, frame)'),
+    'shapes_ball_physics': ('shapes/shapes_ball_physics.c', 'Ex.setup(seed, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -273,7 +274,8 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'shaders_custom_uniform', 'shaders_mesh_instancing', 'models_mesh_picking', 'core_3d_camera_fps'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'core_3d_camera_first_person', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer', 'shaders_mesh_instancing',
-          'core_undo_redo', 'text_inline_styling', 'text_strings_management', 'shapes_top_down_lights'}
+          'core_undo_redo', 'text_inline_styling', 'text_strings_management', 'shapes_top_down_lights',
+          'shapes_ball_physics'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
                 'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'shaders_postprocessing': 32, 'shaders_custom_uniform': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196, 'core_viewport_scaling': 4,
@@ -811,6 +813,14 @@ def scripts():
                + [quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)])] + [quick() for _ in range(10)] + [quick([key(KEY_RIGHT), mouse_at(300, 300)]), quick([key(KEY_RIGHT, False), button(0)]),
                                                                                                        quick([mouse_at(360, 320)]), quick([button(0, False)])]
                + [quick() for _ in range(14)] + [quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False), key(KEY_DOWN)]), quick([key(KEY_DOWN, False)])] + [quick() for _ in range(6)]),
+        # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
+        # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
+        # middle press shakes them; a left press on the empty corner grabs nothing.
+        script('shapes_ball_physics', 'throw', [quick(), quick([mouse_at(410, 240)]), quick([button(0)]), quick([mouse_at(300, 150)]), quick([mouse_at(200, 120)]),
+                                                quick([button(0, False)]), quick(), quick([button(1)]), quick([button(1, False), key(341)]), quick([button(1)]), quick(),
+                                                quick([mouse_at(500, 300)]), quick([button(1, False), key(341, False)]), quick([(MOUSE_WHEEL, 0, -4, 0)]), quick([button(2)]),
+                                                quick([button(2, False)]), quick(), quick(), slow(), quick([mouse_at(795, 5), button(0)]), quick([button(0, False)]),
+                                                quick(), quick()], seed=0xBA11),
         # The five rounded gradients (the scene has no input).
         script('shapes_rectangle_advanced', 'still', [quick(), quick()]),
         # Two more triangles (a positive wheel move); a color picked inside the wheel, dragged, then outside it

@@ -2570,7 +2570,7 @@
   {
    "name": "shapes_ball_physics",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
