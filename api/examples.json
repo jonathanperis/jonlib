@@ -1250,7 +1250,7 @@
   {
    "name": "core_highdpi_testbed",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
