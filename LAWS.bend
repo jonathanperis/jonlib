@@ -22,6 +22,7 @@ import ./src/fma.bend as Fma
 import ./src/asin.bend as Asin
 import ./src/lgpl/asin.bend as GlibcAsin
 import ./src/sincosf.bend as Sincosf
+import ./jongui.bend as JG
 import ./src/binary64_sqrt.bend as Sqrt
 import ./src/wav.bend as Wav
 import ./src/wav_adpcm.bend as Adpcm
@@ -871,6 +872,28 @@ law glibc_cosf_negative_zero:
 
 law glibc_sinf_infinity_none:
   {Sincosf.sinf.word(2139095040) == None{} : Maybe<U32>}
+
+# Jongui (raygui): the default style, GuiSetStyle's propagation of a DEFAULT
+# base property (and only those), and GuiEnable/GuiDisable.
+law gui_default_text_size:
+  {JG.Gui.get_style(JG.Gui.new(), 0, 16) == 10 : U32}
+
+law gui_default_button_border:
+  {JG.Gui.get_style(JG.Gui.new(), 2, 12) == 2 : U32}
+
+law gui_default_property_propagates:
+  {JG.Gui.get_style(JG.Gui.set_style(JG.Gui.new(), 0, 12, 7), 4, 12) == 7 : U32}
+
+law gui_extended_property_stays:
+  {JG.Gui.get_style(JG.Gui.set_style(JG.Gui.new(), 0, 16, 20), 4, 16) == 16 : U32}
+
+law gui_disable_then_enable:
+  for gui: JG.Gui
+  {JG.Gui.get_state(JG.Gui.enable(JG.Gui.disable(JG.Gui.set_state(gui, 0)))) == 0 : U32}
+
+law gui_disable_keeps_focus:
+  for gui: JG.Gui
+  {JG.Gui.get_state(JG.Gui.disable(JG.Gui.set_state(gui, 1))) == 1 : U32}
 
 law shader_load_never_valid:
   for vs: Maybe<String>

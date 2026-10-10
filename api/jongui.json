@@ -1,0 +1,352 @@
+{
+ "schema": 1,
+ "source": "raygui.h v5.0-dev (RAYGUI_VERSION 4.5.0) as shipped in raylib 6.0 examples/*/raygui.h",
+ "functions": {
+  "GuiEnable": {
+   "status": "partial",
+   "jongui": "Gui.enable",
+   "scope": "STATE_DISABLED becomes STATE_NORMAL.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_circle_sector_drawing.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ]
+  },
+  "GuiDisable": {
+   "status": "partial",
+   "jongui": "Gui.disable",
+   "scope": "STATE_NORMAL becomes STATE_DISABLED.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_circle_sector_drawing.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ]
+  },
+  "GuiLock": {
+   "status": "partial",
+   "jongui": "Gui.lock",
+   "scope": "Sets guiLocked.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_circle_sector_drawing.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ]
+  },
+  "GuiUnlock": {
+   "status": "partial",
+   "jongui": "Gui.unlock",
+   "scope": "Clears guiLocked.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_circle_sector_drawing.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ]
+  },
+  "GuiIsLocked": {
+   "status": "partial",
+   "jongui": "Gui.is_locked",
+   "scope": "guiLocked.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_circle_sector_drawing.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ]
+  },
+  "GuiSetAlpha": {
+   "status": "partial",
+   "jongui": "Gui.set_alpha",
+   "scope": "guiAlpha clamped to [0, 1]; every control color is faded by it.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_circle_sector_drawing.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ]
+  },
+  "GuiSetState": {
+   "status": "partial",
+   "jongui": "Gui.set_state",
+   "scope": "guiState.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_circle_sector_drawing.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ]
+  },
+  "GuiGetState": {
+   "status": "partial",
+   "jongui": "Gui.get_state",
+   "scope": "guiState.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_circle_sector_drawing.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ]
+  },
+  "GuiSetFont": {
+   "status": "not-started"
+  },
+  "GuiGetFont": {
+   "status": "not-started"
+  },
+  "GuiSetStyle": {
+   "status": "partial",
+   "jongui": "Gui.set_style",
+   "scope": "The 16x24 style table; a DEFAULT base property reaches every control.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_circle_sector_drawing.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ]
+  },
+  "GuiGetStyle": {
+   "status": "partial",
+   "jongui": "Gui.get_style",
+   "scope": "The 16x24 style table after GuiLoadStyleDefault.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_circle_sector_drawing.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ]
+  },
+  "GuiLoadStyle": {
+   "status": "not-started"
+  },
+  "GuiLoadStyleDefault": {
+   "status": "partial",
+   "jongui": "Gui.new / Gui.style.default",
+   "scope": "The default style table as raygui fills it (a new Gui holds it).",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_circle_sector_drawing.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ]
+  },
+  "GuiEnableTooltip": {
+   "status": "not-started"
+  },
+  "GuiDisableTooltip": {
+   "status": "not-started"
+  },
+  "GuiSetTooltip": {
+   "status": "not-started"
+  },
+  "GuiIconText": {
+   "status": "not-started"
+  },
+  "GuiSetIconScale": {
+   "status": "not-started"
+  },
+  "GuiGetIcons": {
+   "status": "not-started"
+  },
+  "GuiLoadIcons": {
+   "status": "not-started"
+  },
+  "GuiDrawIcon": {
+   "status": "not-started"
+  },
+  "GuiGetTextWidth": {
+   "status": "partial",
+   "jongui": "Gui.get_text_width",
+   "scope": "The first line with the default font, TEXT_SIZE and TEXT_SPACING, as a C int.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_circle_sector_drawing.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Tooltips are not delivered (off by default)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
+  },
+  "GuiWindowBox": {
+   "status": "not-started"
+  },
+  "GuiGroupBox": {
+   "status": "not-started"
+  },
+  "GuiLine": {
+   "status": "not-started"
+  },
+  "GuiPanel": {
+   "status": "not-started"
+  },
+  "GuiTabBar": {
+   "status": "not-started"
+  },
+  "GuiScrollPanel": {
+   "status": "not-started"
+  },
+  "GuiLabel": {
+   "status": "partial",
+   "jongui": "Gui.label",
+   "scope": "GetTextBounds(LABEL) and GuiDrawText in the state's text color.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_circle_sector_drawing.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Tooltips are not delivered (off by default)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
+  },
+  "GuiButton": {
+   "status": "partial",
+   "jongui": "Gui.button",
+   "scope": "Hover and press states, the bordered rectangle and its text; true when the pointer is released over it.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_circle_sector_drawing.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Tooltips are not delivered (off by default)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
+  },
+  "GuiLabelButton": {
+   "status": "not-started"
+  },
+  "GuiToggle": {
+   "status": "not-started"
+  },
+  "GuiToggleGroup": {
+   "status": "not-started"
+  },
+  "GuiToggleSlider": {
+   "status": "not-started"
+  },
+  "GuiCheckBox": {
+   "status": "partial",
+   "jongui": "Gui.check_box",
+   "scope": "The box, its check mark and the label on the TEXT_ALIGNMENT side; toggles when the pointer is released over the box or label.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_circle_sector_drawing.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Tooltips are not delivered (off by default)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
+  },
+  "GuiComboBox": {
+   "status": "not-started"
+  },
+  "GuiDropdownBox": {
+   "status": "not-started"
+  },
+  "GuiSpinner": {
+   "status": "not-started"
+  },
+  "GuiValueBox": {
+   "status": "not-started"
+  },
+  "GuiValueBoxFloat": {
+   "status": "not-started"
+  },
+  "GuiTextBox": {
+   "status": "not-started"
+  },
+  "GuiSlider": {
+   "status": "partial",
+   "jongui": "Gui.slider",
+   "scope": "The knob slider: press inside starts a drag that follows the pointer outside the bounds, the value clamped; left and right texts.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_circle_sector_drawing.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Tooltips are not delivered (off by default)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
+  },
+  "GuiSliderBar": {
+   "status": "partial",
+   "jongui": "Gui.slider_bar",
+   "scope": "GuiSlider with SLIDER_WIDTH 0 (a bar from the left border).",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_circle_sector_drawing.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Tooltips are not delivered (off by default)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
+  },
+  "GuiProgressBar": {
+   "status": "not-started"
+  },
+  "GuiStatusBar": {
+   "status": "not-started"
+  },
+  "GuiDummyRec": {
+   "status": "not-started"
+  },
+  "GuiGrid": {
+   "status": "not-started"
+  },
+  "GuiListView": {
+   "status": "not-started"
+  },
+  "GuiListViewEx": {
+   "status": "not-started"
+  },
+  "GuiMessageBox": {
+   "status": "not-started"
+  },
+  "GuiTextInputBox": {
+   "status": "not-started"
+  },
+  "GuiColorPicker": {
+   "status": "not-started"
+  },
+  "GuiColorPanel": {
+   "status": "not-started"
+  },
+  "GuiColorBarAlpha": {
+   "status": "not-started"
+  },
+  "GuiColorBarHue": {
+   "status": "not-started"
+  },
+  "GuiColorPickerHSV": {
+   "status": "not-started"
+  },
+  "GuiColorPanelHSV": {
+   "status": "not-started"
+  }
+ }
+}

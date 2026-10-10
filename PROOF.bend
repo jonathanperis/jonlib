@@ -3,6 +3,7 @@ import ./src/modern_angle.bend as MA
 import ./LAWS.bend as Laws
 import ./jonlib.bend as J
 import ./jonmath.bend as M
+import ./jongui.bend as JG
 
 def Laws.clear_dimensions(width, height, format, pixels, color):
   {==}
@@ -615,6 +616,26 @@ def Laws.glibc_cosf_negative_zero():
   {==}
 
 def Laws.glibc_sinf_infinity_none():
+  {==}
+
+def Laws.gui_default_text_size():
+  {==}
+
+def Laws.gui_default_button_border():
+  {==}
+
+def Laws.gui_default_property_propagates():
+  {==}
+
+def Laws.gui_extended_property_stays():
+  {==}
+
+def Laws.gui_disable_then_enable(gui):
+  JG.Gui{state, locked, alpha, exclusive, rec, style} = gui
+  {==}
+
+def Laws.gui_disable_keeps_focus(gui):
+  JG.Gui{state, locked, alpha, exclusive, rec, style} = gui
   {==}
 
 def Laws.shader_load_never_valid(vs, fs):

@@ -174,6 +174,16 @@ SIL Open Font License, in place from the pinned raylib checkout's
 `examples/text/resources/` (see its `LICENSE.md`). No font file is
 redistributed by Jonlib.
 
+## raygui
+
+`jongui.bend` is an altered Bend adaptation of raygui v5.0-dev
+(`RAYGUI_VERSION` 4.5.0) by Ramon Santamaria (@raysan5), as raylib 6.0 ships
+it beside its examples (`examples/*/raygui.h`; the three variants there differ
+only in an MSVC warning define). zlib/libpng; the notice is retained in
+[LICENSES/raygui.txt](LICENSES/raygui.txt). The delivered controls and their
+gaps are in [docs/GUI.md](docs/GUI.md) and `api/jongui.json`. No raygui file is
+redistributed: the probes compile the pinned checkout's copy with each example.
+
 ## Example assets
 
 `examples/textures_logo_raylib.bend` and the `examples` gate read
