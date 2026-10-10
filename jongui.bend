@@ -8,7 +8,8 @@
 # Delivered: the style table (GuiLoadStyleDefault, GuiSetStyle, GuiGetStyle),
 # the global state (GuiEnable, GuiDisable, GuiLock, GuiUnlock, GuiIsLocked,
 # GuiSetState, GuiGetState, GuiSetAlpha), GuiGetTextWidth, GuiLabel,
-# GuiButton, GuiCheckBox, GuiSlider and GuiSliderBar, with the default font,
+# GuiButton, GuiCheckBox, GuiToggle, GuiToggleGroup, GuiSlider and
+# GuiSliderBar, with the default font,
 # TEXT_WRAP_NONE and no icons. Texts with an icon prefix ("#id#") and the
 # other wrap modes mark the frame undefined. See docs/GUI.md.
 import Base
@@ -484,6 +485,100 @@ def Gui.check.text(width: Maybe<F32>, +gui: Gui, +core: J.Core, frame: J.Frame, 
 # whether it changed.
 def Gui.check_box(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +text: String, +checked: Bool) -> J.Frame & (Bool & Bool):
   Gui.check.text(Gui.get_text_width(gui, text), gui, core, frame, bounds, text, checked)
+
+# -----------------------------------------------------------------------------
+# GuiToggle and GuiToggleGroup
+
+# The toggle's update: 0 untouched, 1 pressed, 2 released over it (it flips
+# and draws as STATE_NORMAL), 3 hovered.
+def Gui.toggle.kind(+gui: Gui, +core: J.Core, +bounds: J.Rectangle) -> U32:
+  +over = Gui.active(gui) && Bool.not(Gui.exclusive(gui)) && J.Collision.point_rec(J.Input.get_mouse_position(core), bounds)
+  Bool.pick(U32, over, Bool.pick(U32, Gui.down(core), 1, Bool.pick(U32, Gui.released(core), 2, 3)), 0)
+
+def Gui.toggle.state(kind: U32, +state: U32) -> U32:
+  match kind:
+    case 0: state
+    case 1: 2
+    case 2: 0
+    case _: 1
+
+# The style property of a toggle part (0 border, 1 base, 2 text): the pressed
+# colors for an active toggle in STATE_NORMAL, else the state's.
+def Gui.toggle.property(+part: U32, +state: U32, +active: Bool) -> U32:
+  Bool.pick(U32, U32.is_eq(state, 0) && active, (6 + part : U32), (part + state * 3 : U32))
+
+def Gui.toggle.bytes(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +bytes: +List<U32>, +active: Bool) -> J.Frame & Bool:
+  +kind = Gui.toggle.kind(gui, core, bounds)
+  +state = Gui.toggle.state(kind, Gui.get_state(gui))
+  +now = Bool.pick(Bool, U32.is_eq(kind, 2), Bool.not(active), active)
+  f1 = Gui.draw_rectangle(frame, bounds, Gui.get_style(gui, 3, 12), Gui.color(gui, 3, Gui.toggle.property(0, state, now)), Gui.color(gui, 3, Gui.toggle.property(1, state, now)))
+  (Gui.draw_text.bytes(bytes, gui, f1, Gui.text_bounds(gui, 3, bounds), Gui.get_style(gui, 3, 14), Gui.color(gui, 3, Gui.toggle.property(2, state, now))), now)
+
+# GuiToggle(bounds, text, &active): the frame and the active flag (flipped
+# when the pointer is released over the toggle).
+def Gui.toggle(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: String, +active: Bool) -> J.Frame & Bool:
+  Gui.toggle.bytes(gui, core, frame, bounds, TextCore.bytes(text), active)
+
+# GuiTextSplit: one item per ';' (the delimiter) or '\n', which also starts a new row.
+type Gui.Item is Data:
+  GuiItem{row: U32, bytes: +List<U32>}
+
+def Gui.split(bytes: +List<U32>, +delimiter: U32, +row: U32, +current: +List<U32>) -> +List<Gui.Item>:
+  match bytes:
+    case Nil{}: [GuiItem{row, List.reverse(&2, U32, current)}]
+    case Con{+b, +rest}:
+      +newline = U32.is_eq(b, 10)
+      +cut = newline || U32.is_eq(b, delimiter)
+      +tail = Gui.split(rest, delimiter, Bool.pick(U32, newline, (row + 1 : U32), row), Bool.pick(+List<U32>, cut, Nil{}, Con{b, current}))
+      Bool.pick(+List<Gui.Item>, cut, Con{GuiItem{row, List.reverse(&2, U32, current)}, tail}, tail)
+
+type Gui.Group is Type:
+  GuiGroup{frame: J.Frame, active: U32}
+
+def Gui.group.toggled(+i: U32, +active: U32, +selected: Bool, r: J.Frame & Bool) -> Gui.Group:
+  (frame, +on) = r
+  GuiGroup{frame, Bool.pick(U32, Bool.not(selected) && on, i, active)}
+
+def Gui.group.next(+place: J.Rectangle, +padding: F32) -> J.Rectangle:
+  J.Rectangle{+x, +y, +w, +h} = place
+  J.Rectangle{(x + (w + padding) : F32), y, w, h}
+
+def Gui.item.row(item: Gui.Item) -> U32:
+  GuiItem{row, _} = item
+  row
+
+def Gui.item.bytes(item: Gui.Item) -> +List<U32>:
+  GuiItem{_, bytes} = item
+  bytes
+
+# A new row returns to the first column, one height and GROUP_PADDING lower.
+def Gui.group.place(+bounds: J.Rectangle, +first_x: F32, +padding: F32, +moved: Bool) -> J.Rectangle:
+  J.Rectangle{+x, +y, +w, +h} = bounds
+  J.Rectangle{Bool.pick(F32, moved, first_x, x), Bool.pick(F32, moved, (y + (h + padding) : F32), y), w, h}
+
+# One item as a toggle, active when its index is; a toggle switched on takes the index.
+def Gui.group.one(+bytes: +List<U32>, +gui: Gui, +core: J.Core, +place: J.Rectangle, +i: U32, group: Gui.Group) -> Gui.Group:
+  GuiGroup{frame, +active} = group
+  Gui.group.toggled(i, active, U32.is_eq(i, active), Gui.toggle.bytes(gui, core, frame, place, bytes, U32.is_eq(i, active)))
+
+def Gui.group.items(items: +List<Gui.Item>, +gui: Gui, +core: J.Core, +first_x: F32, +bounds: J.Rectangle, +previous: U32, +i: U32, group: Gui.Group) -> Gui.Group:
+  match items:
+    case Nil{}: group
+    case Con{+item, rest}:
+      +row = Gui.item.row(item)
+      +padding = Gui.style.f32(gui, 3, 16)
+      +place = Gui.group.place(bounds, first_x, padding, U32.is_ne(previous, row))
+      Gui.group.items(rest, gui, core, first_x, Gui.group.next(place, padding), row, (i + 1 : U32), Gui.group.one(Gui.item.bytes(item), gui, core, place, i, group))
+
+def Gui.group.done(group: Gui.Group) -> J.Frame & U32:
+  GuiGroup{frame, active} = group
+  (frame, active)
+
+# GuiToggleGroup(bounds, text, &active): the items of text (split at ';',
+# a '\n' starting a new row) as toggles; the frame and the active index.
+def Gui.toggle_group(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: String, +active: U32) -> J.Frame & U32:
+  J.Rectangle{+x, _, _, _} = bounds
+  Gui.group.done(Gui.group.items(Gui.split(TextCore.bytes(text), 59, 0, Nil{}), gui, core, x, bounds, 0, 0, GuiGroup{frame, active}))
 
 # -----------------------------------------------------------------------------
 # GuiSlider and GuiSliderBar

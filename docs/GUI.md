@@ -31,6 +31,8 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiLabel` | `Gui.label(gui, frame, bounds, text)` | `Frame` |
 | `GuiButton` | `Gui.button(gui, core, frame, bounds, text)` | `Frame & Bool` (clicked) |
 | `GuiCheckBox` | `Gui.check_box(gui, core, frame, bounds, text, checked)` | `Frame & (Bool & Bool)` (checked, changed) |
+| `GuiToggle` | `Gui.toggle(gui, core, frame, bounds, text, active)` | `Frame & Bool` (active) |
+| `GuiToggleGroup` | `Gui.toggle_group(gui, core, frame, bounds, text, active)` | `Frame & U32` (the active index) |
 | `GuiSlider` | `Gui.slider(gui, core, frame, bounds, left, right, value, min, max)` | `Frame & (Gui & (F32 & Bool))` (value, changed) |
 | `GuiSliderBar` | `Gui.slider_bar(...)` | the same |
 
@@ -67,13 +69,16 @@ example waiting on each raygui function it calls that is not delivered.
   released. While a drag is on, buttons and check boxes do not react. The
   value is `(max - min)*((mouse.x - x - sliderWidth/2)/(width - sliderWidth)) +
   min`, then clamped.
+- **Toggle groups.** The text splits at `';'` and `'\n'` (`GuiTextSplit`); a
+  `'\n'` starts a new row. Each item is a `GuiToggle`; switching one on makes
+  it the active index, and the active item cannot be switched off.
 - **Shapes texture.** raygui's first style load calls `SetShapesTexture` with
   the default font's white rectangle, the value `InitWindow` already set, so
   nothing changes.
 
 ## Gaps
 
-- Not delivered yet: `GuiToggle`, `GuiToggleGroup`, `GuiToggleSlider`,
+- Not delivered yet: `GuiToggleSlider`,
   `GuiComboBox`, `GuiDropdownBox`, `GuiTextBox`, `GuiValueBox`, `GuiSpinner`,
   `GuiProgressBar`, `GuiStatusBar`, `GuiDummyRec`, `GuiGrid`, `GuiLine`,
   `GuiGroupBox`, `GuiPanel`, `GuiTabBar`, `GuiScrollPanel`, `GuiListView(Ex)`,
@@ -98,5 +103,7 @@ texts. `shapes_ring_drawing` and `shapes_rounded_rectangle_drawing` add
 check boxes: hover, press, a toggle over the box and over its label, and a
 release outside that toggles nothing. `shapes_kaleidoscope` covers buttons:
 normal, focused, pressed and disabled (`GuiDisable`/`GuiEnable` around a
-button), and a click that takes effect on the next frame. `LAWS.bend` states the default text size, the propagation of a DEFAULT
+button), and a click that takes effect on the next frame.
+`shaders_color_correction` covers the toggle group: an item hovered, pressed
+and switched on, and a click on the active item that changes nothing. `LAWS.bend` states the default text size, the propagation of a DEFAULT
 property and the enable/disable rules.

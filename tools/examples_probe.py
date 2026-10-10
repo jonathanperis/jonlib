@@ -160,6 +160,7 @@ EXAMPLES = {
     'shapes_triangle_strip': ('shapes/shapes_triangle_strip.c', 'Ex.setup(core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
+    'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -168,7 +169,7 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'textures_image_loading', 'textures_image_rotate', 'textures_to_image', 'textures_blend_modes',
             'textures_npatch_drawing', 'textures_raw_data', 'textures_bunnymark', 'shaders_texture_waves',
             'shaders_texture_outline', 'shaders_shapes_textures', 'shaders_texture_tiling', 'text_font_spritefont',
-            'models_billboard_rendering'}
+            'models_billboard_rendering', 'shaders_color_correction'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -428,6 +429,13 @@ def scripts():
                                                quick([button(0, False)]), quick([button(0)]), quick([button(0, False)]), ([], 0.003, 0.06),
                                                quick([mouse_at(782, 432), button(0)]), quick([button(0, False)]), quick(),
                                                quick([mouse_at(770, 17), button(0)]), quick([button(0, False)]), quick(), quick()]),
+        # The toggle group picks the third picture (hover, press, release), key 2 the second; sliders move,
+        # the reset button zeroes them on the next frame; a click on the active toggle changes nothing.
+        script('shaders_color_correction', 'pictures', [quick(), quick([mouse_at(700, 80)]), quick([button(0)]), quick([button(0, False)]),
+                                                        quick([key(50)]), quick([key(50, False), mouse_at(740, 110), button(0)]),
+                                                        quick([button(0, False), mouse_at(660, 170)]), quick([button(0)]),
+                                                        slow([button(0, False), mouse_at(665, 200)]), quick([button(0)]), quick([button(0, False)]),
+                                                        quick([mouse_at(675, 80), button(0)]), quick([button(0, False)]), quick()]),
         script('models_orthographic_projection', 'switch', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False)]), quick([key(KEY_SPACE)]),
                                                             quick([key(KEY_SPACE, False)])]),
         # RIGHT walks the player into the sphere (touching at exactly the radius: z 2 - 0.5 = 1.5), UP goes deeper,

@@ -232,10 +232,39 @@
    "status": "not-started"
   },
   "GuiToggle": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.toggle",
+   "scope": "Hover and press states; flips when the pointer is released over it; an active toggle draws in the pressed colors.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shaders_color_correction.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Tooltips are not delivered (off by default)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiToggleGroup": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.toggle_group",
+   "scope": "The items of the text (split at ';', a newline starting a new row) as toggles spaced by GROUP_PADDING; the active index.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "examples/shaders_color_correction.bend",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Tooltips are not delivered (off by default)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
+    "Texts of more than 128 items or 1024 bytes (raygui truncates them)"
+   ]
   },
   "GuiToggleSlider": {
    "status": "not-started"
