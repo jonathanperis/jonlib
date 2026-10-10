@@ -190,6 +190,7 @@ EXAMPLES = {
     'core_viewport_scaling': ('core/core_viewport_scaling.c', 'Ex.setup(core, frame)'),
     'core_undo_redo': ('core/core_undo_redo.c', 'Ex.setup(seed, core, frame)'),
     'core_keyboard_testbed': ('core/core_keyboard_testbed.c', 'Ex.setup(core, frame)'),
+    'core_input_gestures_testbed': ('core/core_input_gestures_testbed.c', 'Ex.setup(core, frame)'),
     'core_text_file_loading': ('core/core_text_file_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_input_virtual_controls': ('core/core_input_virtual_controls.c', 'Ex.setup(core, frame)'),
     'shapes_math_angle_rotation': ('shapes/shapes_math_angle_rotation.c', 'Ex.setup(core, frame)'),
@@ -572,6 +573,16 @@ def scripts():
         # The wheel scrolls down, back past the top (snapped to 0) and far past the end (snapped to the last page).
         script('core_text_file_loading', 'scroll', [quick(), quick([(MOUSE_WHEEL, 0, -3, 0)]), slow([(MOUSE_WHEEL, 0, 5, 0)]),
                                                     quick([(MOUSE_WHEEL, 0, -200, 0)]), quick()]),
+        # A gesture from the first frame (before one is logged the example reads past its log array); every
+        # gesture with repeats hidden; "Hide Repeat" off (repeats logged), "Hide Hold" on, both on, an unknown
+        # gesture, then enough gestures to wrap the log of 20.
+        script('core_input_gestures_testbed', 'log', [quick([mouse_at(500, 250), gesture(1)]), quick([gesture(1)]), slow([gesture(4)]), quick([gesture(8), mouse_at(520, 280)]),
+                                                      quick([gesture(16)]), quick([gesture(32)]), quick([gesture(64)]), quick([gesture(128)]), quick([gesture(256)]),
+                                                      quick([gesture(512)]), quick([gesture(0), mouse_at(70, 20)]), quick([button(0)]), quick([button(0, False)]),
+                                                      quick([gesture(1)]), quick([gesture(1)]), quick([gesture(2)]), quick([mouse_at(120, 20), gesture(0)]), quick([button(0)]),
+                                                      quick([button(0, False)]), quick([gesture(4)]), quick([gesture(8)]), quick([gesture(8)]), quick([mouse_at(70, 20)]),
+                                                      quick([button(0)]), quick([button(0, False)]), quick([gesture(1)]), quick([gesture(4)]), quick([gesture(77)])]
+               + [quick([gesture(g)]) for _ in range(5) for g in (8, 16, 256)] + [quick([gesture(0)]), quick()]),
         # Keys held together (A, left shift, then ESC, which does not close: SetExitKey(KEY_NULL)), the mouse
         # over ESC, SPACE and the KEY_NULL cell, the unnamed key 162, F1, and everything released.
         script('core_keyboard_testbed', 'keys', [quick(), quick([key(65)]), quick([key(340)]), quick([mouse_at(50, 95)]), quick([key(256)]), quick([key(65, False)]),
@@ -934,7 +945,7 @@ UNDEFINED_NATIVE = {
 }
 REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
             'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass',
-            'shapes_rlgl_color_wheel', 'shapes_rectangle_advanced'}
+            'shapes_rlgl_color_wheel', 'shapes_rectangle_advanced', 'core_input_gestures_testbed'}
 
 
 def refusal(item, libm):
