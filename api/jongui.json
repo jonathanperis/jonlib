@@ -244,6 +244,8 @@
    "evidence": [
     "tools/examples_probe.py",
     "examples/shapes_circle_sector_drawing.bend",
+    "examples/shapes_rounded_rectangle_drawing.bend",
+    "examples/shapes_ring_drawing.bend",
     "docs/GUI.md",
     "jongui.bend"
    ],
@@ -296,6 +298,8 @@
    "evidence": [
     "tools/examples_probe.py",
     "examples/shapes_circle_sector_drawing.bend",
+    "examples/shapes_rounded_rectangle_drawing.bend",
+    "examples/shapes_ring_drawing.bend",
     "docs/GUI.md",
     "jongui.bend"
    ],

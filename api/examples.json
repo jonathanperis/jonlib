@@ -1834,7 +1834,7 @@
   {
    "name": "shapes_ring_drawing",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1898,7 +1898,7 @@
   {
    "name": "shapes_rounded_rectangle_drawing",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
