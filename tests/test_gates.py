@@ -108,8 +108,8 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('os: [ubuntu-24.04, macos-15]', examples)
         self.assertIn('fetch-depth: 0', self.text.split('\n  scope:')[1].split('\n  gates:')[0])
 
-    def test_the_nightly_run_is_not_cancelled_by_pushes(self):
-        self.assertIn("group: conformance-${{ github.event_name == 'schedule' && 'nightly' || github.ref }}", self.text)
+    def test_runs_on_main_are_not_cancelled_by_pushes(self):
+        self.assertIn("group: conformance-${{ github.event_name == 'schedule' && 'nightly' || github.ref == 'refs/heads/main' && github.sha || github.ref }}", self.text)
         self.assertRegex(self.text, r"schedule:\n    - cron: '")
 
     def test_actions_are_pinned_to_commits(self):

@@ -17,14 +17,17 @@ base with `main` for a branch or a pull request) and picks one of three scopes.
 | `none` | only workflows, unit tests, `tools/ci_scope.py`, `tools/check_project.py`, `tools/examples_plan.py`, `tools/example_tables.py` and documentation | nothing here (Checks covers them) |
 
 Scheduled (nightly, on `main`) and manual runs are always `full`, and so is a
-run whose base cannot be found. Two runs are skipped as redundant: a push to
-`main` of a commit whose run already succeeded on its branch (a fast-forward
-merge, the same tree against an ancestor of the same base), and a nightly run
-of a commit that a scheduled or manual run already passed. An `examples` run
-is weaker evidence than the full matrix: it shows the changed examples still
-equal raylib, and relies on the classification above for everything else. The
-nightly run is the complete check of what reached `main` that way, and has its
-own concurrency group so that pushes do not cancel it.
+run whose base cannot be found. A push to `main` is compared with the nearest
+commit whose run already passed: a fast-forward merge of a passing branch
+pushes that same commit, so nothing is left to run, and a merge commit is
+compared with the merged branch's head, so only what `main` had gained since
+the branch started is checked against the merged tree. A nightly run of a
+commit that a scheduled or manual run already passed is skipped. An `examples`
+run is weaker evidence than the full matrix: it shows the changed examples
+still equal raylib, and relies on the classification above for everything
+else. The nightly run is the complete check of what reached `main` that way.
+A push to a branch cancels that branch's run; each push to `main` and the
+nightly run keep their own.
 
 A `full` run executes every gate in [`tools/gates.json`](../tools/gates.json) on
 `ubuntu-24.04` and `macos-15`. `tools/run_gates.py` splits the manifest into
