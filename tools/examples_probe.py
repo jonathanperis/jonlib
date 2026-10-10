@@ -210,6 +210,7 @@ EXAMPLES = {
     'shapes_rounded_rectangle_drawing': ('shapes/shapes_rounded_rectangle_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_triangle_strip': ('shapes/shapes_triangle_strip.c', 'Ex.setup(core, frame)'),
     'shapes_rlgl_color_wheel': ('shapes/shapes_rlgl_color_wheel.c', 'Ex.setup(core, frame)'),
+    'shapes_rectangle_advanced': ('shapes/shapes_rectangle_advanced.c', 'Ex.setup(core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -708,6 +709,8 @@ def scripts():
                                                                 slow([button(0, False), mouse_at(651, 250)]), quick([button(0)]),
                                                                 quick([button(0, False), mouse_at(700, 330)]), quick([button(0)]),
                                                                 quick([button(0, False)]), quick()]),
+        # The five rounded gradients (the scene has no input).
+        script('shapes_rectangle_advanced', 'still', [quick(), quick()]),
         # Two more triangles (a positive wheel move); a color picked inside the wheel, dragged, then outside it
         # (the handle snaps to the rim); the wheel scaled up and down with the handle; the lines while SPACE is
         # held; the value slider dragged down (the color follows); a pick at the center (the gray handle); CTRL+C.
@@ -931,7 +934,7 @@ UNDEFINED_NATIVE = {
 }
 REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
             'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass',
-            'shapes_rlgl_color_wheel'}
+            'shapes_rlgl_color_wheel', 'shapes_rectangle_advanced'}
 
 
 def refusal(item, libm):

@@ -1982,7 +1982,7 @@
   {
    "name": "shapes_rectangle_advanced",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
