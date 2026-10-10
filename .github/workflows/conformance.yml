@@ -13,7 +13,8 @@ on:
   pull_request:
     paths-ignore: ['docs/**', '**/*.md', 'LICENSES/**']
   schedule:
-    - cron: '17 3 * * *'
+    # 06:17 UTC: after the working day in UTC-3, before the next one starts.
+    - cron: '17 6 * * *'
   workflow_dispatch:
 
 permissions:
