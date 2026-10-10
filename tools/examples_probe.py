@@ -220,6 +220,7 @@ EXAMPLES = {
     'shapes_easings_ball': ('shapes/shapes_easings_ball.c', 'Ex.setup(core, frame)'),
     'shapes_easings_box': ('shapes/shapes_easings_box.c', 'Ex.setup(core, frame)'),
     'shapes_easings_testbed': ('shapes/shapes_easings_testbed.c', 'Ex.setup(core, frame)'),
+    'shapes_top_down_lights': ('shapes/shapes_top_down_lights.c', 'Ex.setup(seed, core, frame)'),
     'shapes_simple_particles': ('shapes/shapes_simple_particles.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
@@ -271,7 +272,7 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'shaders_custom_uniform', 'shaders_mesh_instancing', 'models_mesh_picking', 'core_3d_camera_fps'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'core_3d_camera_first_person', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer', 'shaders_mesh_instancing',
-          'core_undo_redo', 'text_inline_styling', 'text_strings_management'}
+          'core_undo_redo', 'text_inline_styling', 'text_strings_management', 'shapes_top_down_lights'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
                 'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'shaders_postprocessing': 32, 'shaders_custom_uniform': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196, 'core_viewport_scaling': 4,
@@ -793,6 +794,11 @@ def scripts():
                + [quick([key(KEY_UP)]), quick([key(KEY_UP, False), key(KEY_LEFT)]), quick([key(KEY_LEFT, False), key(KEY_W)]), quick([key(KEY_W, False), key(KEY_S)]),
                   quick([key(KEY_S, False), key(84)]), quick([key(84, False), key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_ENTER)]), quick([key(KEY_ENTER, False)])]
                + [quick() for _ in range(30)] + [quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)])]),
+        # The first light and its shadows; a second and a third light (right clicks); the first dragged across
+        # the boxes; the shadow volumes shown (F1) and hidden.
+        script('shapes_top_down_lights', 'lights', [quick(), quick([mouse_at(300, 200)]), quick([button(1)]), quick([button(1, False), mouse_at(520, 120)]), quick([button(1)]),
+                                                    quick([button(1, False), mouse_at(600, 400)]), quick([button(0)]), quick([mouse_at(480, 330)]), quick([mouse_at(360, 260)]),
+                                                    quick([button(0, False), key(290)]), quick([key(290, False)]), quick([key(290)]), quick([key(290, False)])], seed=0x11687),
         # Water at one particle every two frames on average (rand() from the seed 1); more of them (UP four
         # times: three a frame), smoke (RIGHT), fire (RIGHT) from a dragged emitter, back through LEFT, and a
         # slower rate (DOWN).
