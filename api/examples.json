@@ -1427,7 +1427,7 @@
   {
    "name": "core_keyboard_testbed",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",
