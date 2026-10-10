@@ -1300,6 +1300,24 @@ def Libm.pow2(libm: Libm, +k: F32) -> Maybe<F32>:
     case AppleLibm{}: None{}
     case _: Power.exp2(k)
 
+# expf(x) under a reference profile: glibc's (2.39 and 2.41 on x86_64) for a
+# finite x with |x| < 87, where the result is normal, except 32.564632 and
+# -63.099461, the two arguments at which its SSE2 and FMA variants differ
+# (Power.exp, docs/MATH.md). None for AppleLibm (not verified) and for every
+# other x.
+def Libm.exp(libm: Libm, +x: F32) -> Maybe<F32>:
+  match libm:
+    case AppleLibm{}: None{}
+    case _: Power.exp(x)
+
+# logf(x) under a reference profile: glibc's (2.39 and 2.41 on x86_64, both
+# variants alike) for a positive normal x (Power.log). None for AppleLibm
+# (not verified), zero, subnormals, negative values, infinities and NaN.
+def Libm.log(libm: Libm, +x: F32) -> Maybe<F32>:
+  match libm:
+    case AppleLibm{}: None{}
+    case _: Power.log(x)
+
 def Libm.cos.value(values: F32 & F32) -> F32:
   (cosine, _) = values
   cosine
