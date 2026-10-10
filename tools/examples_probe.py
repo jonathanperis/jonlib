@@ -208,6 +208,7 @@ EXAMPLES = {
     'shapes_ring_drawing': ('shapes/shapes_ring_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_rounded_rectangle_drawing': ('shapes/shapes_rounded_rectangle_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_triangle_strip': ('shapes/shapes_triangle_strip.c', 'Ex.setup(core, frame)'),
+    'shapes_rlgl_color_wheel': ('shapes/shapes_rlgl_color_wheel.c', 'Ex.setup(core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -257,7 +258,7 @@ SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'co
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
                 'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'shaders_postprocessing': 32, 'shaders_custom_uniform': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196, 'core_viewport_scaling': 4,
-                'shaders_fog_rendering': 32}
+                'shaders_fog_rendering': 32, 'shapes_rlgl_color_wheel': 32}
 
 
 # -----------------------------------------------------------------------------
@@ -698,6 +699,15 @@ def scripts():
                                                                 slow([button(0, False), mouse_at(651, 250)]), quick([button(0)]),
                                                                 quick([button(0, False), mouse_at(700, 330)]), quick([button(0)]),
                                                                 quick([button(0, False)]), quick()]),
+        # Two more triangles (a positive wheel move); a color picked inside the wheel, dragged, then outside it
+        # (the handle snaps to the rim); the wheel scaled up and down with the handle; the lines while SPACE is
+        # held; the value slider dragged down (the color follows); a pick at the center (the gray handle); CTRL+C.
+        script('shapes_rlgl_color_wheel', 'pick', [quick(), quick([(MOUSE_WHEEL, 0, 2, 0)]), quick([mouse_at(450, 200)]), quick([button(0)]), quick([mouse_at(480, 150)]),
+                                                   quick([mouse_at(700, 80)]), quick([button(0, False)]), quick([key(KEY_UP)]), quick(), quick([key(KEY_UP, False), key(KEY_DOWN)]),
+                                                   quick(), quick(), quick([key(KEY_DOWN, False), key(KEY_SPACE)]), quick(), quick([key(KEY_SPACE, False)]),
+                                                   quick([mouse_at(80, 133)]), quick([button(0)]), quick([mouse_at(60, 133)]), quick([button(0, False)]),
+                                                   quick([mouse_at(402, 223)]), quick([button(0)]), quick([button(0, False)]), quick([key(341)]), quick([key(67)]),
+                                                   quick([key(67, False), key(341, False)]), quick()]),
         # More segments by a slider drag (the count is the truncated value), the outlines off and on again.
         script('shapes_triangle_strip', 'segments', [quick(), quick([mouse_at(660, 50), button(0)]), quick([mouse_at(700, 52)]),
                                                      quick([button(0, False), mouse_at(650, 80)]), quick([button(0)]), slow([button(0, False)]),
@@ -911,7 +921,8 @@ UNDEFINED_NATIVE = {
     'textures_image_kernel': 'ImageKernelConvolution casts out-of-range alpha sums to unsigned char',
 }
 REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
-            'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass'}
+            'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass',
+            'shapes_rlgl_color_wheel'}
 
 
 def refusal(item, libm):
