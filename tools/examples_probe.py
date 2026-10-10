@@ -80,6 +80,8 @@ LANE_TIMEOUT = 1800
 TARGET_FPS = {'shapes_kaleidoscope': 20, 'shapes_penrose_tile': 120, 'textures_mouse_painting': 120}
 
 (KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, INPUT_GESTURE, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 17, 18)
+# Gamepad events: (gamepad), (gamepad, button), (gamepad, axis, value/32768).
+(GAMEPAD_CONNECT, GAMEPAD_BUTTON_UP, GAMEPAD_BUTTON_DOWN, GAMEPAD_AXIS_MOTION) = (9, 11, 12, 13)
 KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_A, KEY_H, KEY_R, KEY_S = 262, 263, 264, 265, 65, 72, 82, 83
 KEY_G, KEY_SPACE, KEY_C, KEY_ENTER = 71, 32, 67, 257
 KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR = 49, 50, 51, 52
@@ -192,6 +194,7 @@ EXAMPLES = {
     'core_keyboard_testbed': ('core/core_keyboard_testbed.c', 'Ex.setup(core, frame)'),
     'core_input_gestures_testbed': ('core/core_input_gestures_testbed.c', 'Ex.setup(core, frame)'),
     'core_3d_camera_fps': ('core/core_3d_camera_fps.c', 'Ex.setup(M.LIBM{}, core, frame)'),
+    'core_input_gamepad': ('core/core_input_gamepad.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_text_file_loading': ('core/core_text_file_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_input_virtual_controls': ('core/core_input_virtual_controls.c', 'Ex.setup(core, frame)'),
     'shapes_math_angle_rotation': ('shapes/shapes_math_angle_rotation.c', 'Ex.setup(core, frame)'),
@@ -246,7 +249,7 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering',
             'core_text_file_loading', 'shaders_ascii_rendering', 'shaders_simple_mask',
             'textures_gif_player', 'models_textured_cube', 'shaders_postprocessing',
-            'shaders_custom_uniform', 'models_mesh_picking'}
+            'shaders_custom_uniform', 'models_mesh_picking', 'core_input_gamepad'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -265,7 +268,7 @@ SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'co
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
                 'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'shaders_postprocessing': 32, 'shaders_custom_uniform': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196, 'core_viewport_scaling': 4,
-                'shaders_fog_rendering': 32, 'shapes_rlgl_color_wheel': 32}
+                'shaders_fog_rendering': 32, 'shapes_rlgl_color_wheel': 32, 'core_input_gamepad': 32}
 
 
 # -----------------------------------------------------------------------------
@@ -576,6 +579,15 @@ def scripts():
         # The wheel scrolls down, back past the top (snapped to 0) and far past the end (snapped to the last page).
         script('core_text_file_loading', 'scroll', [quick(), quick([(MOUSE_WHEEL, 0, -3, 0)]), slow([(MOUSE_WHEEL, 0, 5, 0)]),
                                                     quick([(MOUSE_WHEEL, 0, -200, 0)]), quick()]),
+        # No gamepad (the Xbox picture); RIGHT and LEFT through gamepads 1 and 0; gamepad 0 connected by an
+        # automation event each frame (the platform poll disconnects it again): the generic layout with a button,
+        # the left stick, a trigger, a back button and a thumb button held; disconnected; the vibrate button.
+        script('core_input_gamepad', 'pads', [quick(), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_LEFT)]), quick([key(KEY_LEFT, False), (GAMEPAD_CONNECT, 0, 0, 0)]),
+                                              quick([(GAMEPAD_CONNECT, 0, 0, 0), (GAMEPAD_BUTTON_DOWN, 0, 7, 0)]),
+                                              quick([(GAMEPAD_CONNECT, 0, 0, 0), (GAMEPAD_AXIS_MOTION, 0, 0, 16384), (GAMEPAD_AXIS_MOTION, 0, 1, -8192)]),
+                                              quick([(GAMEPAD_CONNECT, 0, 0, 0), (GAMEPAD_AXIS_MOTION, 0, 4, 32768), (GAMEPAD_AXIS_MOTION, 0, 3, 2000)]),
+                                              quick([(GAMEPAD_CONNECT, 0, 0, 0), (GAMEPAD_BUTTON_DOWN, 0, 9, 0), (GAMEPAD_BUTTON_DOWN, 0, 16, 0), (GAMEPAD_BUTTON_UP, 0, 7, 0)]),
+                                              quick([(GAMEPAD_BUTTON_UP, 0, 9, 0)]), quick([mouse_at(40, 100)]), quick([button(0)]), quick([button(0, False)])]),
         # The fall to the floor; a mouse look; W forward (the head bob, the narrowing view), W with D (the
         # diagonal input normalized, the lean), a jump, the flight, a crouch, and the keys released.
         script('core_3d_camera_fps', 'walk', [quick(), quick([mouse_at(430, 240)]), quick([key(KEY_W)]), quick(), slow(), quick([key(KEY_D)]), quick([key(KEY_SPACE)]),
@@ -965,7 +977,7 @@ UNDEFINED_NATIVE = {
 }
 REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
             'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass',
-            'shapes_rlgl_color_wheel', 'shapes_rectangle_advanced', 'core_input_gestures_testbed'}
+            'shapes_rlgl_color_wheel', 'shapes_rectangle_advanced', 'core_input_gestures_testbed', 'core_input_gamepad'}
 
 
 def refusal(item, libm):
