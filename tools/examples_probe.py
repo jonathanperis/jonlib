@@ -218,6 +218,7 @@ EXAMPLES = {
     'text_font_filters': ('text/text_font_filters.c', 'Ex.setup(RESOURCES, core, frame)'),
     'text_words_alignment': ('text/text_words_alignment.c', 'Ex.setup(core, frame)'),
     'text_rectangle_bounds': ('text/text_rectangle_bounds.c', 'Ex.setup(core, frame)'),
+    'text_inline_styling': ('text/text_inline_styling.c', 'Ex.setup(seed, core, frame)'),
     'core_smooth_pixelperfect': ('core/core_smooth_pixelperfect.c', 'Ex.setup(core, frame)'),
     'models_tesseract_view': ('models/models_tesseract_view.c', 'Ex.setup(core, frame)'),
     'textures_particles_blending': ('textures/textures_particles_blending.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
@@ -254,7 +255,7 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'shaders_custom_uniform', 'shaders_mesh_instancing', 'models_mesh_picking'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'core_3d_camera_first_person', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer', 'shaders_mesh_instancing',
-          'core_undo_redo'}
+          'core_undo_redo', 'text_inline_styling'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
                 'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'shaders_postprocessing': 32, 'shaders_custom_uniform': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196, 'core_viewport_scaling': 4,
@@ -664,6 +665,8 @@ def scripts():
                                                       quick([button(0)]), quick([button(0, False)])]),
         script('text_font_loading', 'fonts', [quick(), slow(), quick([key(KEY_SPACE)]), quick(), quick([key(KEY_SPACE, False)])]),
         # The wheel grows and shrinks the text, 2 and 3 filter it (3 with 2 held: 2 wins only when pressed that
+        # The styled texts; the last one takes a new random color at frames 20 and 40.
+        script('text_inline_styling', 'colors', [quick() for _ in range(42)], seed=0x57A1),
         # Word wrap in the first container; the border under the mouse; the corner dragged narrower and lower
         # (longer lines break at the last space), to the minimum (words cut by characters) and back out past the
         # maximum, released at 380x150; then without word wrap, dragged to 585x285 and 135x135.
