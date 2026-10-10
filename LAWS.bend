@@ -901,6 +901,29 @@ law glibc_pow2_126_none:
 law glibc_pow2_infinity_none:
   {Power.exp2.word(2139095040) == None{} : Maybe<F32>}
 
+# glibc expf and logf (src/power.bend): expf answers below 87 in magnitude
+# and refuses the two arguments at which glibc's SSE2 and FMA variants
+# differ; logf answers positive normal arguments only (zero, a negative
+# value and an infinity are refused). The answered words go through binary64
+# helpers the checker does not evaluate; the explog gate covers them.
+law glibc_expf_87_none:
+  {Power.exp.word(1118699520) == None{} : Maybe<F32>}
+
+law glibc_expf_variant_argument_none:
+  {Power.exp.word(1107444271) == None{} : Maybe<F32>}
+
+law glibc_expf_other_variant_argument_none:
+  {Power.exp.word(3262932441) == None{} : Maybe<F32>}
+
+law glibc_logf_zero_none:
+  {Power.log.word(0) == None{} : Maybe<F32>}
+
+law glibc_logf_negative_none:
+  {Power.log.word(3212836864) == None{} : Maybe<F32>}
+
+law glibc_logf_infinity_none:
+  {Power.log.word(2139095040) == None{} : Maybe<F32>}
+
 # Jongui (raygui): the default style, GuiSetStyle's propagation of a DEFAULT
 # base property (and only those), and GuiEnable/GuiDisable.
 law gui_default_text_size:

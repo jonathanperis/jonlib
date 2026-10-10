@@ -1,0 +1,1 @@
+{"glibc": "2.39-0ubuntu8.9", "host": "Ubuntu 24.04 amd64", "variant": "fma", "model": "FUSED=1", "glibc_tunables": "", "expf_arguments": 2237399040, "expf_domain": "finite x with |x| < 87", "expf_differences": 0, "logf_arguments": 2130706432, "logf_domain": "positive normal x", "logf_differences": 0, "domain_violations": 11629078}

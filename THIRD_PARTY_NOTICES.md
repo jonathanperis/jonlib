@@ -373,7 +373,10 @@ and `math/sincosf_data.c` (as glibc 2.39/2.41 ship them on x86_64) from
 `math/powf.c`, `math/powf_log2_data.c` and `math/exp2f_data.c` (as glibc 2.39
 ships them on x86_64) at the same revision, for `powf(x, 2)` and `powf(x, 3)`
 on [-0, 1] and for `powf(2, y)`, which is `exp2f(y)`, with `|y| < 126` (glibc
-2.39 and 2.41).
+2.39 and 2.41). `src/power.bend` also adapts `math/expf.c`, `math/logf.c`
+and `math/logf_data.c` at that revision (`expf` for `|x| < 87`, `logf` for
+positive normal `x`), as do the C model in `tools/reference/glibc_explog`
+and the arithmetic in `tools/explog_probe.py`.
 These are altered Bend/tooling implementations, limited to the documented
 sinf/cosf and power profiles. Jonlib selects the upstream MIT alternative; source copyright
 notices and the selected license are retained in [LICENSES/arm-math.txt](LICENSES/arm-math.txt).
