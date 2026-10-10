@@ -1739,7 +1739,7 @@
   {
    "name": "shapes_easings_ball",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
