@@ -76,11 +76,13 @@ def size_of(name):
     return SIZES.get(name, (WIDTH, HEIGHT))
 TARGET = 1.0 / 60
 # Examples whose SetTargetFPS is not 60 (the scripted wait ends where raylib's does).
+LANE_TIMEOUT = 1800
 TARGET_FPS = {'shapes_kaleidoscope': 20, 'shapes_penrose_tile': 120}
 
 (KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, INPUT_GESTURE, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 17, 18)
 KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_A, KEY_H, KEY_R, KEY_S = 262, 263, 264, 265, 65, 72, 82, 83
 KEY_G, KEY_SPACE, KEY_C, KEY_ENTER = 71, 32, 67, 257
+KEY_ONE, KEY_TWO, KEY_THREE = 49, 50, 51
 
 # name: (raylib source, setup expression, State is Data, needs the logo image)
 EXAMPLES = {
@@ -176,6 +178,7 @@ EXAMPLES = {
     'core_window_web': ('core/core_window_web.c', 'Ex.setup(core, frame)'),
     'text_sprite_fonts': ('text/text_sprite_fonts.c', 'Ex.setup(RESOURCES, core, frame)'),
     'text_font_loading': ('text/text_font_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'text_font_filters': ('text/text_font_filters.c', 'Ex.setup(RESOURCES, core, frame)'),
     'text_words_alignment': ('text/text_words_alignment.c', 'Ex.setup(core, frame)'),
     'core_smooth_pixelperfect': ('core/core_smooth_pixelperfect.c', 'Ex.setup(core, frame)'),
     'models_tesseract_view': ('models/models_tesseract_view.c', 'Ex.setup(core, frame)'),
@@ -190,7 +193,8 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'shaders_texture_outline', 'shaders_shapes_textures', 'shaders_texture_tiling', 'text_font_spritefont',
             'models_billboard_rendering', 'shaders_color_correction', 'textures_particles_blending',
             'text_sprite_fonts', 'models_directional_billboard', 'textures_tiled_drawing',
-            'textures_image_drawing', 'text_font_loading', 'textures_image_text'}
+            'textures_image_drawing', 'text_font_loading', 'textures_image_text',
+            'text_font_filters'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -488,6 +492,11 @@ def scripts():
                                                       quick([mouse_at(120, 330)]), long(), quick([button(0, False)]), quick([mouse_at(400, 200)]),
                                                       quick([button(0)]), quick([button(0, False)])]),
         script('text_font_loading', 'fonts', [quick(), slow(), quick([key(KEY_SPACE)]), quick(), quick([key(KEY_SPACE, False)])]),
+        # The wheel grows and shrinks the text, 2 and 3 filter it (3 with 2 held: 2 wins only when pressed that
+        # frame), RIGHT then LEFT move it, 1 returns to POINT.
+        script('text_font_filters', 'filters', [quick(), quick([(MOUSE_WHEEL, 0, -6, 0)]), quick([key(KEY_TWO)]), slow([key(KEY_RIGHT)]),
+                                                quick([key(KEY_THREE), (MOUSE_WHEEL, 0, 9, 0)]), quick([key(KEY_TWO, False), key(KEY_THREE, False), key(KEY_LEFT)]),
+                                                quick([key(KEY_RIGHT, False)]), quick([key(KEY_ONE), key(KEY_LEFT, False)]), quick([key(KEY_ONE, False)])]),
         script('models_directional_billboard', 'orbit', [quick(), slow()] + [([], 0.003, 0.2) for _ in range(9)] + [quick()]),
         # raygui slider bars: hover StartAngle, press it (360 degrees) and drag left, on past the bounds (the
         # drag keeps following), release; then the radius, the end angle and few segments (the estimated count).
@@ -1236,7 +1245,8 @@ def main():
     items = [item for item in scripts() if (not args.example or item['example'] in args.example)
              and (not args.category or item['example'].split('_')[0] == args.category)]
     names = [name for name in EXAMPLES if any(item['example'] == name for item in items)]
-    lanes = probe.candidates(render(items, libm, logo, probe.args.raylib_source), names, batch=1,
+    # A lane may take long: the JavaScript lane rasterizes a TTF font at size 96 in about 8 minutes.
+    lanes = probe.candidates(render(items, libm, logo, probe.args.raylib_source), names, batch=1, timeout=LANE_TIMEOUT,
                              parse=lambda text, chosen: ['\n'.join(line for line in text.splitlines() if line.strip())])
 
     def reported(item):
