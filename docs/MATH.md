@@ -484,3 +484,45 @@ The JSON results are in `tools/reference/glibc_explog/results`. Gate `explog`
 for 242 arguments, checks the host's functions against it on glibc hosts and
 Jonmath's results on every lane. macOS's functions are not modeled:
 `AppleLibm` is `None`.
+
+## Distance comparisons through hypot
+
+`M.Libm.hypot_within(x, y, radius)` answers the C comparison
+`hypot(x, y) <= radius` for three binary32 values promoted to binary64 (the
+press test of `shapes_ball_physics`). It reproduces no particular `hypot`:
+the C library's `hypot` differs between versions and CPU variants, and its
+two binary64 arguments cannot be enumerated. The answer is the one every
+*faithful* `hypot` gives, a result that is one of the two doubles around the
+exact value (an error below one unit in the last place), on any profile.
+glibc 2.39's `sysdeps/ieee754/dbl-64/e_hypot.c` states an expected error of
+about 0.792 ULP, or 0.948 ULP in its FMA variant, so it is faithful and its
+variants need not agree; its test tolerance (`libm-test-ulps`) is 1 ULP.
+
+| Exact `x*x + y*y` | Answer |
+|---|---|
+| at most `radius*radius` | `Some{True}`: the root is at most `radius`, so both doubles around it are |
+| at least `R*R`, `R` the double after `radius` | `Some{False}`: both are above `radius` |
+| between them | `None`: two faithful results could disagree |
+
+The squares of binary32 values are exact in binary64. `src/hypot.bend` rounds
+their sum once: a rounded sum below or above `radius*radius` has the exact
+sum on the same side (rounding is monotonic and `radius*radius` is a double),
+and for an equal one the sum's rounding error (Dekker's exact
+`b - (s - a)`) gives the side. `Some{False}` needs the rounded sum to reach
+`radius*radius*(1 + 2^-50)`, which puts the exact sum past `R*R`; the refused
+band is therefore a little wider than the contract's (about `2^-50` of
+`radius*radius` instead of `2^-51`). A negative `radius` is below every
+finite distance. `None` also for a NaN, an infinity and a magnitude from
+`2^64` on (the checked binary64 helpers' range).
+
+Gate `hypot` (`tools/hypot_probe.py`) holds the contract in rational
+arithmetic (`exact`) and the kernel's one-rounding arithmetic (`kernel`). On
+207 cases (Pythagorean triples and their binary32 neighbours, sums that round
+onto `radius*radius` from either side, the band, zeros and signs, refused
+magnitudes and non-finite values, points around circles of the examples'
+radii) the candidate equals `kernel` on CPU-1, CPU-2 and JavaScript, `kernel`
+never contradicts `exact`, and the host's `hypot(x, y) <= radius` agrees
+wherever the kernel answers. The same native program agrees under glibc
+2.39-0ubuntu8.9 and glibc 2.41 (Debian trixie container), in both the FMA
+and the SSE2 (`GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX2,-FMA,-FMA4`) variants;
+inside the refused band those hosts answer both ways.

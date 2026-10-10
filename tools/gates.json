@@ -1638,6 +1638,20 @@
    "minutes": 1
   },
   {
+   "id": "hypot",
+   "title": "M.Libm.hypot_within (whether hypot(x, y) <= r for every faithful hypot) against its one-rounding model, the exact contract and the host's hypot, with the refused band, magnitudes and non-finite values",
+   "run": [
+    "{python}",
+    "tools/hypot_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1
+  },
+  {
    "id": "glibc-sinf",
    "title": "The glibc sinf/cosf kernel (src/sincosf.bend) against the glibc x86_64 FMA-variant model (exhaustively equal to native glibc 2.39 and 2.41) on random words of every exponent, region boundaries, quadrant changes, the FMA/SSE2 variant differences and specials, and against the host sinf/cosf where it qualifies",
    "run": [
