@@ -83,6 +83,7 @@ reset.
 | `LoadFontFromImage` | `Font.load_from_image(frame, image, key, first_char) -> Frame & (Surface & Maybe<Font>)` (the image is handed back) |
 | `IsFontValid` / `UnloadFont` | `Font.is_valid(font) -> Font & Bool`, `Font.unload(frame, font) -> Frame` |
 | font fields, `SetTextureFilter(font.texture, f)` | `Font.info(font) -> Font & FontInfo`, `Font.set_filter(font, filter)` |
+| `font.texture.width`/`.height`, `DrawTexture(font.texture, x, y, tint)` | `Font.texture_size(font) -> Font & (U32 & U32)`, `Draw.font_texture(frame, font, x, y, tint) -> Frame & Font` |
 | `GetGlyphIndex` / `GetGlyphInfo` / `GetGlyphAtlasRec` | `Font.glyph_index`, `Font.glyph_info -> Font & Maybe<GlyphInfo>` (a rectangle 0 wide or high gives `GlyphEmpty`), `Font.glyph_atlas_rec` |
 | `MeasureText` | `Font.measure_text(text, size) -> Maybe<U32>` |
 | `MeasureTextEx` / `MeasureTextCodepoints` | `Font.measure_text_ex(_spaced)`, `Font.measure_text_codepoints(_spaced)` `-> Font & M.Vector2` |

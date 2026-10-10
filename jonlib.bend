@@ -8754,6 +8754,22 @@ def Font.set_filter(font: Font, +filter: U32) -> Font:
   Font{base, padding, glyphs, texture, atlas} = font
   Font{base, padding, glyphs, Texture.set_filter(texture, filter), atlas}
 
+# font.texture.width and font.texture.height.
+def Font.texture_size(font: Font) -> Font & (U32 & U32):
+  Font{base, padding, glyphs, texture, atlas} = font
+  Texture{id, +width, +height, format, linear, alpha, texels} = texture
+  (Font{base, padding, glyphs, Texture{id, width, height, format, linear, alpha, texels}, atlas}, (width, height))
+
+def Draw.font_texture.kept(+base: U32, +padding: U32, +glyphs: +List<FontCore.Glyph>, atlas: Surface, result: Frame & Texture) -> Frame & Font:
+  (frame, texture) = result
+  (frame, Font{base, padding, glyphs, texture, atlas})
+
+# DrawTexture(font.texture, x, y, tint): the font's atlas texture drawn
+# through the Font value that owns it.
+def Draw.font_texture(frame: Frame, font: Font, +x: F32, +y: F32, +tint: U32) -> Frame & Font:
+  Font{+base, +padding, +glyphs, texture, atlas} = font
+  Draw.font_texture.kept(base, padding, glyphs, atlas, Draw.texture(frame, texture, x, y, tint))
+
 # GetGlyphIndex: the first glyph with the codepoint, else the last '?' glyph
 # (or 0); 0 for an invalid font.
 def Font.glyph_index(font: Font, +codepoint: U32) -> Font & U32:
