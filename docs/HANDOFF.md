@@ -1,7 +1,7 @@
 # Session handoff (2026-10-10)
 
 Snapshot for continuing on another machine or in a new session. Everything
-described here is committed and pushed to `feature/examples-batch-3`; nothing
+described here is committed and pushed to `feature/examples-batch-4`; nothing
 lives only on one machine except throwaway caches (`.build/`).
 
 ## Goal in force
@@ -16,7 +16,8 @@ Bend and replaying it against the native example. Work autonomously; merge to
 | Branch | Content | State |
 |---|---|---|
 | `main` | c3e2e6b: everything through Jongui (raygui's first controls), `M.Libm.pow2` and 79 example ports | CI green (run 38030650917 on this commit, merged 2026-10-10) |
-| `feature/examples-batch-3` | on top of `main`: 51 more example ports, render-texture depth buffers, `Font.texture_size`/`Draw.font_texture`, `Surface.colors_image`, `M.Float64.to_f32`/`to_int`, the examples probe's 30-minute lane limit and `UNDEFINED_NATIVE` | **merge to `main` once its CI concludes `success`** |
+| `feature/examples-batch-3` | a1e88b6, on top of `main`: 29 more example ports, `Font.texture_size`/`Draw.font_texture`, `Surface.colors_image`, `M.Float64.to_f32`/`to_int`, the examples probe's 30-minute lane limit and `UNDEFINED_NATIVE` | CI run 38054490652; **merge to `main` once it concludes `success`** |
+| `feature/examples-batch-4` | on top of `feature/examples-batch-3`: 23 more example ports and render-texture depth buffers | its own CI run; **merge to `main` after batch 3, once it concludes `success`** |
 
 `feature/examples-gui`, `feature/audio-waves`, `wip/models-drawing-obj`, `wip/lgpl-tan-asinf` and
 `integrate/models-lgpl` are merged into `main` and deleted.
@@ -75,8 +76,11 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Next steps, in order
 
-1. When `feature/examples-batch-3` CI is green: merge to `main`, push, delete
-   the branch.
+1. Land work on `main` in steps: when the CI run of `feature/examples-batch-3`
+   is green, merge it, push and delete the branch; the same for
+   `feature/examples-batch-4`. New work goes to a new branch (a push to a
+   branch cancels that branch's running CI), so a verified batch is never
+   held back by later commits.
 2. Keep porting the ready examples ([EXAMPLES.md](EXAMPLES.md)), smallest
    first. `textures_sprite_stacking` is written and parked
    (`.build/pending/`, not in the repository): its `booth.png` is 112x11468
