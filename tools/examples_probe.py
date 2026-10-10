@@ -218,6 +218,7 @@ EXAMPLES = {
     'shapes_rectangle_advanced': ('shapes/shapes_rectangle_advanced.c', 'Ex.setup(core, frame)'),
     'shapes_easings_ball': ('shapes/shapes_easings_ball.c', 'Ex.setup(core, frame)'),
     'shapes_easings_box': ('shapes/shapes_easings_box.c', 'Ex.setup(core, frame)'),
+    'shapes_easings_testbed': ('shapes/shapes_easings_testbed.c', 'Ex.setup(core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -762,6 +763,17 @@ def scripts():
         # The drop (120 frames), the bounce into a bar (120), the turn (240), the first frames of the growth
         # over the screen, and SPACE back to the start (the growth and the fade fill the screen for 280 frames).
         script('shapes_easings_box', 'play', [quick() for _ in range(492)] + [quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)])] + [quick() for _ in range(6)]),
+        # A duration of 4 (Q fourteen times, then A held for eight frames); each of the 28 easings in turn on both
+        # axes (RIGHT and DOWN, which restart): ENTER and the whole movement; then UP, LEFT, W, S held, T (the
+        # time unbounded), RIGHT, and a run of the elastic easings past the duration of 26; SPACE restarts.
+        # (Every frame's text is kept until the run ends: the script stays short for the JavaScript lane.)
+        script('shapes_easings_testbed', 'all', [quick()] + [f for _ in range(14) for f in (quick([key(81)]), quick([key(81, False)]))]
+               + [quick([key(KEY_A)])] + [quick() for _ in range(7)] + [quick([key(KEY_A, False)])]
+               + [f for _ in range(28) for f in ([quick([key(KEY_RIGHT), key(KEY_DOWN)]), quick([key(KEY_RIGHT, False), key(KEY_DOWN, False), key(KEY_ENTER)]),
+                                                 quick([key(KEY_ENTER, False)])] + [quick() for _ in range(3)])]
+               + [quick([key(KEY_UP)]), quick([key(KEY_UP, False), key(KEY_LEFT)]), quick([key(KEY_LEFT, False), key(KEY_W)]), quick([key(KEY_W, False), key(KEY_S)]),
+                  quick([key(KEY_S, False), key(84)]), quick([key(84, False), key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_ENTER)]), quick([key(KEY_ENTER, False)])]
+               + [quick() for _ in range(30)] + [quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)])]),
         # The five rounded gradients (the scene has no input).
         script('shapes_rectangle_advanced', 'still', [quick(), quick()]),
         # Two more triangles (a positive wheel move); a color picked inside the wheel, dragged, then outside it
@@ -988,7 +1000,7 @@ UNDEFINED_NATIVE = {
 REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
             'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass',
             'shapes_rlgl_color_wheel', 'shapes_rectangle_advanced', 'core_input_gestures_testbed', 'core_input_gamepad',
-            'shapes_easings_ball', 'shapes_easings_box'}
+            'shapes_easings_ball', 'shapes_easings_box', 'shapes_easings_testbed'}
 
 
 def refusal(item, libm):
