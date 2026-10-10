@@ -83,6 +83,7 @@ TARGET_FPS = {'shapes_kaleidoscope': 20, 'shapes_penrose_tile': 120}
 KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_A, KEY_H, KEY_R, KEY_S = 262, 263, 264, 265, 65, 72, 82, 83
 KEY_G, KEY_SPACE, KEY_C, KEY_ENTER = 71, 32, 67, 257
 KEY_ONE, KEY_TWO, KEY_THREE = 49, 50, 51
+KEY_P = 80
 
 # name: (raylib source, setup expression, State is Data, needs the logo image)
 EXAMPLES = {
@@ -173,6 +174,9 @@ EXAMPLES = {
     'text_font_spritefont': ('text/text_font_spritefont.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_billboard_rendering': ('models/models_billboard_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_directional_billboard': ('models/models_directional_billboard.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'models_heightmap_rendering': ('models/models_heightmap_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'models_cubicmap_rendering': ('models/models_cubicmap_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'models_first_person_maze': ('models/models_first_person_maze.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shapes_circle_sector_drawing': ('shapes/shapes_circle_sector_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_ring_drawing': ('shapes/shapes_ring_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_rounded_rectangle_drawing': ('shapes/shapes_rounded_rectangle_drawing.c', 'Ex.setup(core, frame)'),
@@ -200,14 +204,17 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'text_sprite_fonts', 'models_directional_billboard', 'textures_tiled_drawing',
             'textures_image_drawing', 'text_font_loading', 'textures_image_text',
             'text_font_filters', 'textures_image_channel', 'textures_image_kernel',
-            'textures_image_processing', 'textures_polygon_drawing', 'textures_magnifying_glass'}
+            'textures_image_processing', 'textures_polygon_drawing', 'textures_magnifying_glass',
+            'models_heightmap_rendering', 'models_cubicmap_rendering',
+            'models_first_person_maze'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
 PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen', 'core_3d_picking', 'models_basic_voxel', 'models_rotating_cube',
                'models_geometric_shapes', 'models_box_collisions', 'models_orthographic_projection',
                'shaders_basic_lighting', 'shaders_texture_tiling', 'models_billboard_rendering',
-               'models_tesseract_view', 'models_directional_billboard'}
+               'models_tesseract_view', 'models_directional_billboard', 'models_heightmap_rendering',
+               'models_cubicmap_rendering', 'models_first_person_maze'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
@@ -433,6 +440,14 @@ def scripts():
                                                  quick([mouse_at(-40, 500)]), quick([mouse_at(300, 400)])]),
         script('text_font_spritefont', 'frames', [quick(), slow()]),
         script('models_billboard_rendering', 'orbit', [quick(), quick(), slow(), quick()]),
+        # Three frames: the mesh has 32258 triangles.
+        script('models_heightmap_rendering', 'orbit', [quick(), slow(), quick()]),
+        # The orbit, paused by P (the camera stays), resumed.
+        script('models_cubicmap_rendering', 'pause', [quick(), slow(), quick([key(KEY_P)]), quick([key(KEY_P, False)]), quick([key(KEY_P)]), quick()]),
+        # W walks forward in tenth-of-a-second steps until a wall stops the player (the position is restored),
+        # the mouse turns, D strafes, S backs away.
+        script('models_first_person_maze', 'walk', [quick(), quick([key(87)])] + [long() for _ in range(8)]
+               + [quick([mouse_at(460, 230)]), long(), long([key(87, False), key(68)]), long(), long([key(68, False), key(83)]), long(), quick([key(83, False)])]),
         # Fifth-of-a-second frames: the animation steps every third one and the orbit crosses a direction row.
         # The first frame has no frame time (the pendulum rests); then quick, slow and long steps of the swing.
         script('shapes_double_pendulum', 'swing', [quick(), quick(), slow(), quick()] + [([], 0.003, 0.05) for _ in range(6)] + [quick(), slow()]),

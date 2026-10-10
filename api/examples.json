@@ -4243,7 +4243,7 @@
   {
    "name": "models_cubicmap_rendering",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4277,7 +4277,7 @@
   {
    "name": "models_first_person_maze",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4759,7 +4759,7 @@
   {
    "name": "models_heightmap_rendering",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
