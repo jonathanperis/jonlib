@@ -2655,7 +2655,7 @@
   {
    "name": "shapes_easings_testbed",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
