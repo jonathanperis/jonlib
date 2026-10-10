@@ -16,7 +16,7 @@ Bend and replaying it against the native example. Work autonomously; merge to
 | Branch | Content | State |
 |---|---|---|
 | `main` | c3e2e6b: everything through Jongui (raygui's first controls), `M.Libm.pow2` and 79 example ports | CI green (run 38030650917 on this commit, merged 2026-10-10) |
-| `feature/examples-batch-3` | on top of `main`: 37 more example ports, `Font.texture_size`/`Draw.font_texture`, `Surface.colors_image`, `M.Float64.to_f32`/`to_int`, the examples probe's 30-minute lane limit and `UNDEFINED_NATIVE` | **merge to `main` once its CI concludes `success`** |
+| `feature/examples-batch-3` | on top of `main`: 38 more example ports, `Font.texture_size`/`Draw.font_texture`, `Surface.colors_image`, `M.Float64.to_f32`/`to_int`, the examples probe's 30-minute lane limit and `UNDEFINED_NATIVE` | **merge to `main` once its CI concludes `success`** |
 
 `feature/examples-gui`, `feature/audio-waves`, `wip/models-drawing-obj`, `wip/lgpl-tan-asinf` and
 `integrate/models-lgpl` are merged into `main` and deleted.
@@ -24,7 +24,7 @@ Bend and replaying it against the native example. Work autonomously; merge to
 Coverage (`python3 tools/api_plan.py check`): raylib.h 514/600 partial
 (20 blocked, 66 not started); raymath.h 146/146; rlgl.h 93/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **116/212 ported**, 54 ready, 42 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **117/212 ported**, 53 ready, 42 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -62,7 +62,7 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
   `jongui.bend`; the examples plan tracks raygui per function
   (`api/jongui.json`). Spinner, dropdown box and text box need raygui's
   icons first.
-- **Examples**: 116 ported; gates `examples-core`, `-shapes`, `-text`,
+- **Examples**: 117 ported; gates `examples-core`, `-shapes`, `-text`,
   `-textures`, `-models`, `-shaders`.
 - **Compile memory**: per-output compiler processes and a cgroup-aware job
   budget in probekit; `LoadImage` of a `.png` in ports is `Surface.load_png`

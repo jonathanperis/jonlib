@@ -176,6 +176,7 @@ EXAMPLES = {
     'core_input_gestures': ('core/core_input_gestures.c', 'Ex.setup(core, frame)'),
     'core_input_actions': ('core/core_input_actions.c', 'Ex.setup(core, frame)'),
     'core_monitor_detector': ('core/core_monitor_detector.c', 'Ex.setup(core, frame)'),
+    'core_window_flags': ('core/core_window_flags.c', 'Ex.setup(core, frame)'),
     'core_text_file_loading': ('core/core_text_file_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_input_virtual_controls': ('core/core_input_virtual_controls.c', 'Ex.setup(core, frame)'),
     'shapes_math_angle_rotation': ('shapes/shapes_math_angle_rotation.c', 'Ex.setup(core, frame)'),
@@ -531,6 +532,13 @@ def scripts():
         # The wheel scrolls down, back past the top (snapped to 0) and far past the end (snapped to the last page).
         script('core_text_file_loading', 'scroll', [quick(), quick([(MOUSE_WHEEL, 0, -3, 0)]), slow([(MOUSE_WHEEL, 0, 5, 0)]),
                                                     quick([(MOUSE_WHEEL, 0, -200, 0)]), quick()]),
+        # Every flag key in turn (each pressed, then released with the next pressed), twice for R, then a
+        # few frames of the ball with the mouse inside.
+        script('core_window_flags', 'keys', [quick(), quick([key(70)]), quick([key(70, False), key(82)]), quick([key(82, False), key(68)]),
+                                             quick([key(68, False), key(82)]), quick([key(82, False), key(72)]), quick([key(72, False)]), slow([key(78)]),
+                                             quick([key(78, False), key(77)]), quick([key(77, False), key(85)]), quick([key(85, False), key(84)]),
+                                             quick([key(84, False), key(65)]), quick([key(65, False), key(86)]), quick([key(86, False), key(66)]),
+                                             quick([key(66, False), key(77), mouse_at(300, 200)]), quick([key(77, False), key(70)]), quick([key(70, False)]), quick()]),
         # One monitor: ENTER changes nothing.
         script('core_monitor_detector', 'frames', [quick(), slow([key(KEY_ENTER)]), quick([key(KEY_ENTER, False)])]),
         # WASD moves; SPACE centers and its release shows blue for a frame; TAB switches to the arrows (W

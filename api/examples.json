@@ -631,7 +631,7 @@
   {
    "name": "core_window_flags",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
