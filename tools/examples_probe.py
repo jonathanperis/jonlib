@@ -233,6 +233,7 @@ EXAMPLES = {
     'text_inline_styling': ('text/text_inline_styling.c', 'Ex.setup(seed, core, frame)'),
     'text_strings_management': ('text/text_strings_management.c', 'Ex.setup(seed, core, frame)'),
     'textures_clipboard_image': ('textures/textures_clipboard_image.c', 'Ex.setup(core, frame)'),
+    'textures_textured_curve': ('textures/textures_textured_curve.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_smooth_pixelperfect': ('core/core_smooth_pixelperfect.c', 'Ex.setup(core, frame)'),
     'models_tesseract_view': ('models/models_tesseract_view.c', 'Ex.setup(core, frame)'),
     'textures_particles_blending': ('textures/textures_particles_blending.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
@@ -254,7 +255,8 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering',
             'core_text_file_loading', 'shaders_ascii_rendering', 'shaders_simple_mask',
             'textures_gif_player', 'models_textured_cube', 'shaders_postprocessing',
-            'shaders_custom_uniform', 'models_mesh_picking', 'core_input_gamepad'}
+            'shaders_custom_uniform', 'models_mesh_picking', 'core_input_gamepad',
+            'textures_textured_curve'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -273,7 +275,7 @@ SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'co
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
                 'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'shaders_postprocessing': 32, 'shaders_custom_uniform': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196, 'core_viewport_scaling': 4,
-                'shaders_fog_rendering': 32, 'shapes_rlgl_color_wheel': 32, 'core_input_gamepad': 32}
+                'shaders_fog_rendering': 32, 'shapes_rlgl_color_wheel': 32, 'core_input_gamepad': 32, 'textures_textured_curve': 96}
 
 
 # -----------------------------------------------------------------------------
@@ -724,6 +726,14 @@ def scripts():
                                                         quick([button(2, False)]), quick(), quick([key(KEY_ONE)]), quick([key(KEY_ONE, False), key(KEY_TWO)]),
                                                         quick([key(KEY_TWO, False), key(KEY_THREE)]), quick([key(KEY_THREE, False), key(KEY_FOUR)]),
                                                         quick([key(KEY_FOUR, False), key(53)]), quick([key(53, False), key(54)]), quick([key(54, False)]), quick()], seed=0x7E87),
+        # The road along the curve; the base curve shown (SPACE); the start point hovered, then dragged with the
+        # left button; its tangent dragged; a wider road (+ twice), a narrower one (-), fewer and more segments.
+        script('textures_textured_curve', 'drag', [quick(), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False), mouse_at(82, 101)]), quick([button(0)]),
+                                                   quick([mouse_at(140, 160)]), quick([mouse_at(200, 120)]), quick([button(0, False)]), quick([mouse_at(101, 299)]),
+                                                   quick([button(0)]), quick([mouse_at(300, 380)]), quick([button(0, False), key(61)]), quick([key(61, False)]),
+                                                   quick([key(61)]), quick([key(61, False), key(45)]), quick([key(45, False), key(KEY_LEFT)]),
+                                                   quick([key(KEY_LEFT, False), key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), quick([key(KEY_RIGHT)]),
+                                                   quick([key(KEY_RIGHT, False)])]),
         # CTRL+V (no clipboard image on the reference's desktop platform outside Windows: nothing is pasted), R.
         script('textures_clipboard_image', 'paste', [quick(), quick([key(341), mouse_at(300, 200)]), quick([key(86)]), quick([key(86, False), key(341, False)]),
                                                      quick([key(KEY_R)]), quick([key(KEY_R, False)])]),
@@ -1016,7 +1026,7 @@ UNDEFINED_NATIVE = {
 REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
             'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass',
             'shapes_rlgl_color_wheel', 'shapes_rectangle_advanced', 'core_input_gestures_testbed', 'core_input_gamepad',
-            'shapes_easings_ball', 'shapes_easings_box', 'shapes_easings_testbed',
+            'shapes_easings_ball', 'shapes_easings_box', 'shapes_easings_testbed', 'textures_textured_curve',
             'core_2d_camera_mouse_zoom', 'shapes_simple_particles'}
 
 
