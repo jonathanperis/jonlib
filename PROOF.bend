@@ -669,6 +669,12 @@ def Laws.glibc_rand_large_seed_none():
 def Laws.libc_rand_apple_none(seed):
   {==}
 
+def Laws.replay_closing_stops(update, draw, show, spec, core, frame, out):
+  {==}
+
+def Laws.replay_until_uses_its_condition(update, draw, show, spec, core, frame, out):
+  {==}
+
 def Laws.gui_default_text_size():
   {==}
 

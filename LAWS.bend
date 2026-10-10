@@ -945,6 +945,29 @@ law libc_rand_apple_none:
   for seed: U32
   {M.Libc.srand(M.AppleLibm{}, seed) == None{} : Maybe<M.Libc.Rand>}
 
+# Programs (docs/DRIVER.md): before a frame, a closing loop draws nothing more
+# and keeps what it has drawn; a Program's loop closes on the window's close
+# request, an Until program's on its own condition only.
+law replay_closing_stops:
+  for update: J.Core -> Unit -> J.Core & Unit
+  for draw: J.Core -> Unit -> J.Frame -> J.Core & (Unit & J.Frame)
+  for show: J.Frame -> J.Frame & String
+  for spec: J.ReplayFrame
+  for core: J.Core
+  for frame: J.Frame
+  for out: List<String>
+  {J.Replay.open(Unit, True{}, update, draw, show, spec, core, frame, Unit{}, out) == J.Stopped{out} : J.Replay<Unit>}
+
+law replay_until_uses_its_condition:
+  for update: J.Core -> Unit -> J.Core & Unit
+  for draw: J.Core -> Unit -> J.Frame -> J.Core & (Unit & J.Frame)
+  for show: J.Frame -> J.Frame & String
+  for spec: J.ReplayFrame
+  for core: J.Core
+  for frame: J.Frame
+  for out: List<String>
+  {J.Replay.entered(Unit, J.Until{update, draw, state => (state, True{})}, show, spec, core, frame, Unit{}, out) == J.Stopped{out} : J.Replay<Unit>}
+
 # Jongui (raygui): the default style, GuiSetStyle's propagation of a DEFAULT
 # base property (and only those), and GuiEnable/GuiDisable.
 law gui_default_text_size:

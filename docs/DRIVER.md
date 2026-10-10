@@ -21,7 +21,13 @@ A program is raylib's `while (!WindowShouldClose())` body over a user state
 ```bend
 type Program<-S: Type> is Type:
   Program{update: Core -> S -> Core & S, draw: Core -> S -> Frame -> Core & (S & Frame)}
+  Until{update: Core -> S -> Core & S, draw: Core -> S -> Frame -> Core & (S & Frame), done: S -> S & Bool}
 ```
+
+`Until` is a loop with its own condition, `while (!done)`, tested on the
+state before each frame (`core_window_should_close`'s `while (!exitWindow)`):
+the window's close request does not end it, and the update reads the request
+as a value with `Core.window_should_close`.
 
 `update` is the code before `BeginDrawing` (input queries, `GetKeyPressed`,
 `HideCursor`, ... return the new `Core`); `draw` runs between `BeginDrawing`
