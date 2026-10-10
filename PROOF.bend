@@ -608,6 +608,15 @@ def Laws.libm_tan_apple_none(x):
 def Laws.camera_projection_matrix_apple(camera, aspect):
   {==}
 
+def Laws.glibc_sinf_negative_zero():
+  {==}
+
+def Laws.glibc_cosf_negative_zero():
+  {==}
+
+def Laws.glibc_sinf_infinity_none():
+  {==}
+
 def Laws.shader_load_never_valid(vs, fs):
   {==}
 

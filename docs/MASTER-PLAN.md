@@ -98,7 +98,10 @@ order (`docs/PROGRESS.md` lists every ID):
    `MatrixPerspective`, perspective `BeginMode3D` and the perspective camera
    queries are delivered under the glibc profiles with IBM's binary64 `tan`
    as an isolated LGPL-2.1+ module ([PERSPECTIVE.md](PERSPECTIVE.md));
-   Apple's `tan` is unpublished, so AppleLibm refuses them. The diagnostic
+   Apple's `tan` is unpublished, so AppleLibm refuses them. `sinf`/`cosf`
+   under the glibc profiles are glibc's own x86_64 functions on every finite
+   argument ([SINCOSF.md](SINCOSF.md)), which delivers `DrawSphereWires` and
+   every rotation, camera and drawing call beyond one turn. The diagnostic
    `perspective` and `inverse-trig` gates already record native behavior; the
    work is accurate per-libm kernels, as for `sinf`/`cosf`. Apple's current
    `asinf`/`acosf`/`tanf` match neither its published Libm sources nor

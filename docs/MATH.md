@@ -65,8 +65,9 @@ host or the gradient/angle profile; see
 [NATIVE-MATH-PROFILES.md](NATIVE-MATH-PROFILES.md).
 
 `rotate_for(reference, vector, radians)` uses the explicit trigonometric reference
-profile; `rotate` selects the accurate profile. The current profile covers finite
-radians within one cycle and preserves reference operation order. See
+profile; `rotate` selects the accurate profile. The Apple profile covers finite
+radians within one cycle, the glibc profiles every finite angle
+([SINCOSF.md](SINCOSF.md)); both preserve reference operation order. See
 [ROTATION.md](ROTATION.md) for the corresponding image operation and numerical gates.
 
 ## Vector3 API
@@ -203,8 +204,9 @@ the original Matrix; conformance separately checks the actual reference layout.
 `Matrix.rotate_x/y/z(angle)`, `rotate_xyz/zyx(angles)` and `rotate(axis, angle)`
 use radians. Each has a corresponding `_for(reference, ...)` entry point taking
 the existing `Libm`; convenience calls select `AppleLibm{}`.
-The initial profile bounds every angle component to absolute value ≤ 6.283186,
-matching the existing one-cycle F32 rotation profile. Wider angles remain gaps.
+Under `AppleLibm` every angle component is bounded to absolute value ≤ 6.283186,
+the one-cycle F32 rotation profile; under the glibc profiles every finite
+angle uses glibc's own `sinf`/`cosf` ([SINCOSF.md](SINCOSF.md)).
 
 XYZ and ZYX retain their distinct pinned formulas, signs and F32 accumulation
 orders; they are not replaced by products of simpler rotation matrices. The

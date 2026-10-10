@@ -91,9 +91,10 @@ the source on every lane.
   raymath's hemisphere flip, the copy branch (|cos| >= 1) and the nlerp branch
   (cos > 0.95), which need no libm and return `Some` for every profile.
   Otherwise it uses `acosf(cos)`, `sqrtf(1 - cos*cos)` and two `sinf` weights
-  from the profile (the GNU sinf kernel of [ROTATION.md](ROTATION.md) for
+  from the profile (glibc's own sinf, [SINCOSF.md](SINCOSF.md), for
   glibc). `None` when that branch needs an `acosf` the profile lacks, for a NaN
-  cosine, or when a `sinf` argument is outside |x| <= 6.283186, the verified
+  cosine, or when `Libm.sin` refuses a `sinf` argument (Apple: outside
+  |x| <= 6.283186; glibc: infinite or NaN), the verified
   kernel domain.
 - `Quaternion.to_axis_angle_for(libm, q) -> Maybe<(Vector3 & F32)>`
   normalizes quaternions with |w| > 1 as raymath does, then returns the axis
@@ -116,8 +117,8 @@ the source on every lane.
 
 `tools/quaternion_angle_probe.py` (gate `quaternion-angle`) compiles the
 pinned `raymath.h` with contraction off, with `acosf` from the unmodified
-glibc 2.39 source and `sinf` from the Arm sincosf model of
-`tools/trig_probe.py`, and compares on CPU-1, CPU-2 and JavaScript:
+glibc 2.39 source and `sinf` from the glibc sinf model of
+`tools/trig_probe.py` ([SINCOSF.md](SINCOSF.md)), and compares on CPU-1, CPU-2 and JavaScript:
 
 - `M.Libm.acos` on 24,059 inputs: region boundaries, signed zeros, +-1,
   subnormals, values past 1, infinities, NaN and random words and values;

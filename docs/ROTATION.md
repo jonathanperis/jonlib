@@ -56,8 +56,8 @@ in Bend. Full pixel fixtures then cover the new dimensions, fill and hidden RGB.
 Data-dependent rotation size hints are asserted against actual raylib
 immediately after the operation; they never drive the candidate's allocation or
 sampling. `python3 tools/trig_probe.py --bend-source "$BEND_SOURCE" --rotation
---gnu-control` checks the GNU profile against an independent C model of the Arm
-polynomial on any host.
+--gnu-control` checks the GNU profile against the glibc `sinf`/`cosf` model
+([SINCOSF.md](SINCOSF.md)) on any host.
 
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only trig-rotation
@@ -68,6 +68,7 @@ coverage remain open. The Apple sine/cosine rounds the exact value; macOS arm64
 `sinf`/`cosf` are not correctly rounded, and about 2.6% of random one-cycle
 arguments differ by one ulp (the gated integral-degree arguments all agree).
 The camera queries therefore accept only zero arguments under `M.AppleLibm{}`
-([CAMERA.md](CAMERA.md)); the glibc sine/cosine matched the Arm model on all
-40001 random arguments tried. No tolerance or expected pixels are adjusted to hide a
+([CAMERA.md](CAMERA.md)). The glibc profiles' sine/cosine are glibc's own
+x86_64 `sinf`/`cosf` on every finite argument, verified exhaustively
+([SINCOSF.md](SINCOSF.md)). No tolerance or expected pixels are adjusted to hide a
 mismatch.

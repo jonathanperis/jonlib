@@ -3,7 +3,7 @@
 
 The reference is the pinned raymath.h compiled with contraction off, with
 acosf from the unmodified glibc 2.39 e_acosf.c (tools/reference/acos_sources,
-Sun notice) and sinf from the Arm sincosf model of tools/trig_probe.py. On a
+Sun notice) and sinf from the glibc sinf model of tools/trig_probe.py. On a
 Linux x86_64 glibc 2.39 host (the CI runner) the same program is also built
 against the host libm and must print exactly the same rows; elsewhere that
 check is reported as skipped. (Exhaustively, glibc 2.39's x86_64 acosf equals
@@ -15,8 +15,8 @@ past 1, infinities and NaN, and random words and values in [-1, 1]; slerp on
 random, nearby, opposite, non-unit, zero and nonfinite quaternion pairs with
 amounts inside and outside [0, 1]; to-axis-angle on unit, non-unit (|w| > 1
 normalized), w = +-1, near-identity, zero, huge and nonfinite quaternions.
-Jonlib contracts: inputs acosf refuses (|x| > 1, NaN) and slerp sinf arguments
-outside |x| <= 6.283186 are None; AppleLibm and Glibc241Libm are None exactly
+Jonlib contracts: inputs acosf refuses (|x| > 1, NaN) and infinite or NaN
+slerp sinf arguments are None; AppleLibm and Glibc241Libm are None exactly
 where the result needs acosf. CPU/JS.
 """
 import hashlib
@@ -143,7 +143,7 @@ static void slerp(const char *path) {
       if (!(fabsf(c) <= 1.0f)) branch = 3;
       else {
         float half = acosf(c), s = sqrtf(1.0f - c*c);
-        if (!(fabsf(s) < 0.000001f) && !(fabsf((1 - t)*half) <= 6.283186f && fabsf(t*half) <= 6.283186f)) branch = 3;
+        if (!(fabsf(s) < 0.000001f) && !(isfinite((1 - t)*half) && isfinite(t*half))) branch = 3;
       }
     }
     Quaternion r = QuaternionSlerp(q1, q2, t);

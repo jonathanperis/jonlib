@@ -131,6 +131,10 @@ crop/extraction/region-drawing profile requires integral rectangle values;
 `M.Libm` has `M.AppleLibm{}`, `M.Glibc239Libm{}` and
 `M.Glibc241Libm{}` constructors. They name numerical contracts, not host
 detection; see [ANGLES.md](ANGLES.md). Existing `Libm` APIs retain their meanings.
+`M.Libm.sin(libm, x)` / `M.Libm.cos(libm, x) -> Maybe<F32>` are glibc's
+x86_64 `sinf`/`cosf` on every finite argument under both glibc profiles (and
+behind every glibc-profile rotation, camera and drawing call), and the
+one-turn Apple kernel under `M.AppleLibm{}`; see [SINCOSF.md](SINCOSF.md).
 
 `M.Vector3{x, y, z}` is immutable `Data` with three F32 fields.
 `M.Vector4{x, y, z, w}` provides four immutable F32 fields.

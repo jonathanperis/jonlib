@@ -29,8 +29,9 @@ Contracts (Jonlib must answer null): CAMERA_PERSPECTIVE under AppleLibm or
 with a zero or nonfinite frustum scale, orthographic cameras with a zero or
 nonfinite fovy or span, popping the last projection (nested modes ended twice),
 depth-tested drawing into a render texture, sinf/cosf arguments outside the
-profile's verified set (DrawSphereWires always: its ring angles reach 450
-degrees) and loop counts beyond 4096. CPU-1, CPU-2 and JavaScript lanes.
+profile's verified set (DrawSphereWires always under AppleLibm: its ring
+angles reach 450 degrees; the glibc profiles verify every finite argument)
+and loop counts beyond 4096. CPU-1, CPU-2 and JavaScript lanes.
 """
 import hashlib
 import json
@@ -266,6 +267,11 @@ def scenes():
     add('m3-fovy-nan', 16, 12, [camera((0.0, 0.0, 5.0), (0.0, 0.0, 0.0), fovy=math.nan)])
     add('m3-end-twice', 16, 12, [front, ('end3d',), ('end3d',)], contract=True)
     add('m3-sphere-wires', 16, 12, [front, ('sphere_wires',) + v3(0.0, 0.0, 0.0) + (f32(1.0), 4.0, 6.0, WHITE)])
+    add('m3-sphere-wires-rings', 16, 12, [front, ('sphere_wires',) + v3(0.0, 0.0, 0.0) + (f32(1.0), 5000.0, 6.0, WHITE)])
+    add('m3-circle-turn-infinite', 16, 12, [front, ('circle3d',) + v3(0.0, 0.0, 0.0) + (f32(1.0),) + v3(0.0, 1.0, 0.0) + (math.inf, WHITE)])
+    add('m3-sphere-wires-16', 32, 24, [front, ('sphere_wires',) + v3(0.0, 0.0, 0.0) + (f32(1.5), 16.0, 16.0, RED)])
+    add('m3-sphere-wires-thin', 32, 24, [classic, ('sphere_wires',) + v3(0.5, 0.0, -0.5) + (f32(2.0), 7.0, 11.0, GREEN),
+                                         ('sphere_wires',) + v3(-1.0, 0.5, 0.0) + (f32(0.75), 0.0, 3.0, WHITE)])
     add('m3-render-texture', 16, 12, [('load_rt', 0, 8, 8), ('begin_rt', 0), front, ('cube',) + v3(0.0, 0.0, 0.0) + (1.0, 1.0, 1.0, RED),
                                       ('end3d',), ('end_rt', 0)], contract=True)
     add('m3-cylinder-sides', 16, 12, [front, ('cylinder',) + v3(0.0, 0.0, 0.0) + (f32(1.0), f32(1.0), f32(1.0), 5000.0, RED)])

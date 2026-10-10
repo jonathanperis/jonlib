@@ -1,0 +1,1 @@
+{"glibc": "2.41-12+deb13u4", "host": "Debian trixie amd64 container", "variant": "fma", "model": "FUSED=1", "glibc_tunables": "", "arguments": 4294967296, "sinf_differences": 0, "cosf_differences": 0, "sincosf_differences": 0, "domain_violations": 0}

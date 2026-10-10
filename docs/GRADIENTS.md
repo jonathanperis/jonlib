@@ -54,8 +54,8 @@ python3 tools/trig_probe.py --bend-source "$BEND_SOURCE" --gnu-control
 python3 tools/gradient_bench.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE"
 ```
 
-`trig_probe.py --gnu-control` checks the GNU profile against an independent C
-implementation of the same Arm polynomial on any host. `tools/gradient_bench.py`
+`trig_probe.py --gnu-control` checks the GNU profile against the glibc
+`sinf`/`cosf` model ([SINCOSF.md](SINCOSF.md)) on any host. `tools/gradient_bench.py`
 checks a 512×512 radial gradient checksum against raylib for the serial tree,
 the balanced tree on one and two threads (and forced GPU with `--gpu`) and
 records warm full-process timings in `.build/gradient-bench/results.json`; the

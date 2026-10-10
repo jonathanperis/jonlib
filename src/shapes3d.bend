@@ -323,8 +323,8 @@ def sphere_wires.counted(valid: Bool, +gnu: Bool, +r: F32, +l: F32, center: M.Ve
 # DrawSphereWires(center, radius, int rings, int slices): for i < rings + 2
 # and j < slices, three lines between the points at DEG2RAD*(270 +
 # 180/(rings + 1)*i) and DEG2RAD*(360*j/slices). The ring angles reach 450
-# degrees, outside every verified profile set, so every drawn sphere is
-# refused today.
+# degrees: the glibc profiles draw them (glibc's own sinf/cosf), the Apple
+# profile (one turn) refuses every drawn sphere.
 def sphere_wires(+gnu: Bool, center: M.Vector3, +radius: F32, +rings: F32, +slices: F32, +color: U32) -> S.Plan:
   sphere_wires.counted(count.valid(rings, 4094.0) && count.valid(slices, 4096.0), gnu, S.int.of(rings), S.int.of(slices), center, radius, color)
 

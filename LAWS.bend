@@ -21,6 +21,7 @@ import ./src/qoa.bend as Qoa
 import ./src/fma.bend as Fma
 import ./src/asin.bend as Asin
 import ./src/lgpl/asin.bend as GlibcAsin
+import ./src/sincosf.bend as Sincosf
 import ./src/binary64_sqrt.bend as Sqrt
 import ./src/wav.bend as Wav
 import ./src/wav_adpcm.bend as Adpcm
@@ -859,6 +860,18 @@ law camera_projection_matrix_apple:
 
 # Shaders on the software renderer (docs/SHADERS.md): every load fails
 # (id 0, 32 locations of -1) and no shader is valid.
+# glibc 2.39/2.41 x86_64 sinf/cosf words (src/sincosf.bend): the tiny path's
+# signed zero and an infinity (the reduced paths' binary64 helpers carry F32
+# exponents the checker does not evaluate; the glibc-sinf gate covers them).
+law glibc_sinf_negative_zero:
+  {Sincosf.sinf.word(2147483648) == Some{2147483648} : Maybe<U32>}
+
+law glibc_cosf_negative_zero:
+  {Sincosf.cosf.word(2147483648) == Some{1065353216} : Maybe<U32>}
+
+law glibc_sinf_infinity_none:
+  {Sincosf.sinf.word(2139095040) == None{} : Maybe<U32>}
+
 law shader_load_never_valid:
   for vs: Maybe<String>
   for fs: Maybe<String>

@@ -37,10 +37,10 @@ copies its color buffer. GPU OpenGL output is not a reference.
     `DEG2RAD` is `PI/180.0f` in F32. Circles, ellipses and the circle outline
     use multiples of 10 degrees, so they always qualify; rotations, sectors,
     rings and polygons qualify when their F32 angle sums land on these values.
-  - `M.Glibc239Libm{}`/`M.Glibc241Libm{}`: normal or zero arguments with
-    `|x| <= 6.283186f` ([ROTATION.md](ROTATION.md)). On macOS the frame probe
-    exercises the Apple profile only; the glibc sine/cosine rests on the
-    Arm-model checks of the `trig-rotation` gate.
+  - `M.Glibc239Libm{}`/`M.Glibc241Libm{}`: every finite normal or zero
+    argument (glibc's own `sinf`/`cosf`, [SINCOSF.md](SINCOSF.md)). On macOS
+    the frame probe exercises the Apple profile only; the glibc sine/cosine
+    rests on the model checks of the `glibc-sinf` and `trig` gates.
 
 ## State and API
 

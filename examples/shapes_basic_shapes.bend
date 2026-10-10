@@ -2,12 +2,12 @@
 # Adapted from raylib 6.0 examples/shapes/shapes_basic_shapes.c (zlib/libpng,
 # Copyright (c) 2014-2025 Ramon Santamaria (@raysan5)); see LICENSES/raylib.txt.
 #
-# Not reproduced yet: the hexagons turn by 0.2 degrees a frame, so DrawPoly,
-# DrawPolyLines and DrawPolyLinesEx evaluate sinf/cosf at angles outside
-# every verified M.Libm set (the Apple profile accepts whole degrees only, the
-# glibc profiles |x| <= 6.283186, which the closing vertex exceeds). Every
-# frame is refused, and the interactive run stops at the first one
-# (docs/DRIVER.md). Build and run as examples/core_basic_window.bend.
+# The hexagons turn by 0.2 degrees a frame, so DrawPoly, DrawPolyLines and
+# DrawPolyLinesEx evaluate sinf/cosf at angles the glibc profiles reproduce
+# (glibc's own sinf/cosf, docs/SINCOSF.md) but the Apple profile does not
+# (whole degrees only): under M.AppleLibm{} every frame is refused, and the
+# interactive run stops at the first one (docs/DRIVER.md). Build and run as
+# examples/core_basic_window.bend.
 import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M

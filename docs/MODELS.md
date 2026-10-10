@@ -128,8 +128,8 @@ converted as C converts them; the generators take `U32` counts. Points of
 - **libm (`M.Libm`).** `sinf`/`cosf` arguments must lie in the profile's
   verified set ([FRAME.md](FRAME.md#reference-and-profile)): under
   `M.AppleLibm{}` the integral degrees `fl(DEG2RAD*d)`, `|d| <= 360`
-  (except 13, 19, 22, 103, 188); under the glibc profiles normal or zero
-  arguments with `|x| <= 6.283186f`. Other arguments refuse the call
+  (except 13, 19, 22, 103, 188); under the glibc profiles every normal or
+  zero argument ([SINCOSF.md](SINCOSF.md)). Other arguments refuse the call
   (`None`, or an undefined frame). `GetMeshBoundingBox` uses `fminf`/`fmaxf`
   and so the profile's signed-zero ties ([NATIVE-MATH-PROFILES.md](NATIVE-MATH-PROFILES.md)).
 
@@ -468,8 +468,8 @@ rlsw's per-primitive alpha flag ([FRAME.md](FRAME.md#the-rendering-path)).
   the `Ex` cylinders and capsules `((2*PI)/sides)*i` and
   `(PI*0.5/rings)*i`. Every argument must be verified for the profile.
   `DrawSphereWires`' ring angles `DEG2RAD*(270 + 180/(rings + 1)*i)` reach 450
-  degrees, outside both profiles' sets, so every drawn wire sphere is refused
-  today (its port is complete and waits for a wider verified domain).
+  degrees: the glibc profiles draw them (glibc's own `sinf`/`cosf`,
+  [SINCOSF.md](SINCOSF.md)); the Apple profile refuses every drawn wire sphere.
 - **Loops.** rings, slices and sides above 4096 (`DrawSphereWires` rings above
   4094) and grids above 4097 lines are refused, as are NaN or out-of-range C
   ints.
@@ -503,7 +503,7 @@ attribute builders are tail-recursive.
   `par_shapes` sphere, hemisphere and torus under Apple's `qsort` and
   `sinf`/`cosf`; their fused contraction is implemented but only the
   uncontracted glibc reference is compared.
-- Perspective cameras; `DrawSphereWires` (no verified argument domain);
+- Perspective cameras and `DrawSphereWires` under the Apple profile;
   the Apple profile's `sinf`/`cosf` beyond the integral degrees (most curved
   shapes are verified only under the glibc profile).
 - Shaders (no shader is compiled under OpenGL 1.1), `UploadMesh`/GPU

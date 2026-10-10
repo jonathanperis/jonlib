@@ -173,7 +173,7 @@ result:
   `UpdateCameraPro` step and `rotation*DEG2RAD` of a 2D camera; its `sinf`/`cosf`
   argument is half of it for `Vector3RotateByAxisAngle` and the angle itself for
   `MatrixRotate`. A zero argument is always reproduced. Under the glibc
-  profiles a normal argument with `|angle| <= 6.283186f` (Jonmath's one-cycle
+  profiles any normal argument (glibc's own `sinf`/`cosf`, [SINCOSF.md](SINCOSF.md); formerly Jonmath's one-cycle
   rotation profile) also is; subnormal arguments are outside the kernel, and
   NaN and infinite angles outside the profile. Under `M.AppleLibm{}` every
   nonzero argument is `None` (see above), so a 2D camera with rotation 0 and
