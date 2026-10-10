@@ -8,6 +8,9 @@
 # checked helpers (each rounds once, to nearest even). For powf(2, y) the
 # unfused arithmetic here gives the result of both the SSE2 and the FMA
 # variants glibc 2.39 and 2.41 select (tools/reference/glibc_pow2).
+# Also math/expf.c and math/logf.c (logf_data.c) at the same revision: expf
+# for |x| < 87 and logf for positive normal x, as glibc 2.39 and 2.41 answer
+# in both variants (tools/reference/glibc_explog).
 import Base
 import ./binary64_fma.bend as F
 import ./binary64_add_sub.bend as A
@@ -146,6 +149,69 @@ def exp2.word(+bits: U32) -> Maybe<F32>:
 # |y| < 126; None otherwise.
 def exp2(+y: F32) -> Maybe<F32>:
   exp2.word(F32.bits(y))
+
+# expf (math/expf.c): z = x*32/ln2 = k + r with an integral k; exp(x) is
+# 2^(k/32) from the table times a cubic in r (the coefficients scaled by 32).
+def exp.at(+z: V, +kd: V) -> Maybe<F32>:
+  match kd:
+    case Bad{}: None{}
+    case Ok{+kh, +kl}:
+      +r = sub(z, sub(kd, Ok{1127743488, 0}))
+      +s = scale(kl)
+      +zz = add(mul(Ok{1052535544, 1267803028}, r), Ok{1060028366, 1358611699})
+      +y = add(mul(zz, mul(r, r)), add(mul(Ok{1066806850, 4278997718}, r), one()))
+      narrow(mul(y, s))
+
+def exp.scaled(+z: V) -> Maybe<F32>:
+  exp.at(z, add(z, Ok{1127743488, 0}))
+
+def exp.inside(inside: Bool, +bits: U32) -> Maybe<F32>:
+  match inside:
+    case False{}: None{}
+    case True{}: exp.scaled(mul(Ok{1078400327, 1697350398}, promote(bits)))
+
+# glibc 2.39 and 2.41 (x86_64) expf(x) for the binary32 word of x: a finite x
+# with |x| < 87, where the result is normal and no special case is reached.
+# The FMA variant contracts r = z - kd into one fma and differs from the SSE2
+# one at 32.564632 (0x4202422f) and -63.099461 (0xc27c65d9) only: those two
+# are refused, every other argument has one answer (this unfused
+# arithmetic). None otherwise.
+def exp.word(+bits: U32) -> Maybe<F32>:
+  exp.inside(((bits .&. 2147483647) < 1118699520 : U32) && Bool.not(U32.is_eq(bits, 1107444271)) && Bool.not(U32.is_eq(bits, 3262932441)), bits)
+
+def exp(+x: F32) -> Maybe<F32>:
+  exp.word(F32.bits(x))
+
+# log(c) for the centers of logf's 16 subintervals (logf_data.c; their 1/c is
+# powf's invc table).
+def log_logc() -> +List<U32>:
+  [3218439159, 2156702430, 3218259696, 2814406107, 3218087598, 2136029799, 3217764824, 2793546985, 3217446735, 180385624, 3217140267, 3348922624, 3216658038, 3465285214, 3216086844, 1516313804, 3215086324, 954272798, 0, 0, 1068148138, 1576163716, 1069309523, 2855677620, 1069885157, 1998641928, 1070318214, 220350320, 1070663051, 3365961441, 1070859312, 1471606281]
+
+# logf (math/logf.c): x = 2^k z with z in [0x1.66p-1, 0x1.66p0); log(x) =
+# log1p(z/c - 1) + log(c) + k*ln2, log1p as a cubic.
+def log.at(+ix: U32) -> Maybe<F32>:
+  +tmp = (ix - 1060306944 : U32)
+  +i = ((tmp >> 19n) % 16 : U32)
+  +top = (tmp .&. 4286578688 : U32)
+  +r = sub(mul(promote((ix - top : U32)), pair(invc(), i)), one())
+  +y0 = add(pair(log_logc(), i), mul(exponent(top), Ok{1072049730, 4277811695}))
+  +r2 = mul(r, r)
+  +y = add(mul(Ok{3218083491, 1220051764}, r2), add(mul(Ok{1070946139, 199232362}, r), Ok{3219128318, 4060758307}))
+  narrow(add(mul(y, r2), add(y0, r)))
+
+def log.inside(inside: Bool, +bits: U32) -> Maybe<F32>:
+  match inside:
+    case False{}: None{}
+    case True{}: log.at(bits)
+
+# glibc 2.39 and 2.41 (x86_64) logf(x) for the binary32 word of x: a positive
+# normal x (the SSE2 and the FMA variants agree on every one). None for zero,
+# subnormals, negative values, infinities and NaN.
+def log.word(+bits: U32) -> Maybe<F32>:
+  log.inside((bits >= 8388608 : U32) && (bits < 2139095040 : U32), bits)
+
+def log(+x: F32) -> Maybe<F32>:
+  log.word(F32.bits(x))
 
 # The word of x normalized as powf does for subnormals (x * 2^23, minus 23 in
 # the exponent), in integer arithmetic.

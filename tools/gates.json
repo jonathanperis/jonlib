@@ -1610,6 +1610,20 @@
    "minutes": 1
   },
   {
+   "id": "explog",
+   "title": "M.Libm.exp and M.Libm.log (expf for |x| < 87, logf for positive normal x) against the kernels' model and, on glibc hosts, the host's expf and logf, with the refused arguments and the Apple profile",
+   "run": [
+    "{python}",
+    "tools/explog_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1
+  },
+  {
    "id": "glibc-sinf",
    "title": "The glibc sinf/cosf kernel (src/sincosf.bend) against the glibc x86_64 FMA-variant model (exhaustively equal to native glibc 2.39 and 2.41) on random words of every exponent, region boundaries, quadrant changes, the FMA/SSE2 variant differences and specials, and against the host sinf/cosf where it qualifies",
    "run": [

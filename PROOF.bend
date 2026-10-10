@@ -636,6 +636,24 @@ def Laws.glibc_pow2_126_none():
 def Laws.glibc_pow2_infinity_none():
   {==}
 
+def Laws.glibc_expf_87_none():
+  {==}
+
+def Laws.glibc_expf_variant_argument_none():
+  {==}
+
+def Laws.glibc_expf_other_variant_argument_none():
+  {==}
+
+def Laws.glibc_logf_zero_none():
+  {==}
+
+def Laws.glibc_logf_negative_none():
+  {==}
+
+def Laws.glibc_logf_infinity_none():
+  {==}
+
 def Laws.gui_default_text_size():
   {==}
 
