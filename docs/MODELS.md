@@ -81,6 +81,7 @@ answers `None`.
 | `ExportMesh` | `Mesh.obj_text(mesh) -> Maybe<String>`, `Mesh.export(mesh, path)` | text / `IO(Result<&1, &1, Surface.IOError, Unit>)` |
 | `ExportMeshAsCode` | `Mesh.code_text(mesh, path) -> Maybe<String>`, `Mesh.export_as_code(mesh, path)` | text / `IO(Result<...>)` |
 | `UnloadMesh` | `Mesh.unload(mesh) -> Unit` | |
+| `UploadMesh` | `Mesh.upload(mesh, dynamic) -> Mesh` | the mesh given: vertex buffers are OpenGL 3.3/ES2's |
 | `LoadModelFromMesh` / `UnloadModel` | `Model.from_mesh(mesh)`, `Model.unload(model)` | |
 | `IsModelValid` | `Model.is_valid(model)` | `Bool` |
 | `SetModelMeshMaterial` | `Model.set_mesh_material(model, mesh_id, material_id)` | `Maybe<Model>` |

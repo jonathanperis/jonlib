@@ -2,7 +2,7 @@
 """Compare Jonlib's rmodels.c meshes with the pinned raylib.
 
 GenMeshPoly, GenMeshPlane, GenMeshCube, GenMeshHeightmap, GenMeshCubicmap,
-GenMeshTangents, GetMeshBoundingBox, the ExportMesh (OBJ) and
+GenMeshTangents, UploadMesh, GetMeshBoundingBox, the ExportMesh (OBJ) and
 ExportMeshAsCode file bytes, GetRayCollisionMesh and GetModelBoundingBox:
 every vertex, texcoord, normal, tangent, color and index word, each
 bounding-box and collision result bit, and every exported byte (meshes above
@@ -38,7 +38,7 @@ DEG2RAD = fp.DEG2RAD
 LIMIT = 3000
 
 MESHES = {'poly': 1, 'plane': 2, 'cube': 3, 'heightmap': 4, 'cubicmap': 5, 'custom': 6, 'sphere': 7, 'hemisphere': 8, 'torus': 9}
-ACTIONS = {'show': 0, 'tangents': 1, 'bbox': 2, 'obj': 3, 'code': 4, 'ray': 5, 'model': 6}
+ACTIONS = {'show': 0, 'tangents': 1, 'bbox': 2, 'obj': 3, 'code': 4, 'ray': 5, 'model': 6, 'upload': 7}
 
 
 # -----------------------------------------------------------------------------
@@ -157,6 +157,11 @@ def cases(libm, gnu):
     custom = ('custom', 4, 2, [f32(v) for v in (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)], [f32(v) for v in (0, 0, 1, 0, 1, 1, 0, 1)],
               [f32(v) for v in (0, 0, 1) * 4], [10, 20, 30, 255, 1, 2, 3, 4, 200, 150, 100, 50, 0, 0, 0, 0], [0, 1, 2, 0, 2, 3])
     bad = ('custom', 4, 2, custom[3], custom[4], custom[5], custom[6], [0, 1, 2, 0, 2, 7])
+    # UploadMesh: the vertex buffers are OpenGL 3.3/ES2's, the mesh is unchanged (a generated mesh was uploaded once already).
+    add('upload-custom', custom, 'upload', [0])
+    add('upload-custom-dynamic', custom, 'upload', [1])
+    add('upload-cube', ('cube', 1.0, 2.0, 3.0), 'upload', [0])
+    add('upload-plane', ('plane', 2.0, 3.0, 2, 3), 'upload', [1])
     # Tangents.
     for name, mesh in (('plane', ('plane', 2.0, 3.0, 2, 3)), ('cube', ('cube', 1.0, 2.0, 3.0)), ('poly', ('poly', 6, 1.0)),
                        ('heightmap', ('heightmap', 5, 4, 4.0, 2.0, 3.0, rgba(5, 4, 31))), ('cubicmap', ('cubicmap', 4, 3, 1.0, 1.0, 1.0, rgba(4, 3, 32, palette))),
@@ -332,6 +337,8 @@ def c_case(case, work):
         lines.append('    show(m);')
     elif action == 'tangents':
         lines.append('    GenMeshTangents(&m); show(m);')
+    elif action == 'upload':
+        lines.append(f'    UploadMesh(&m, {"true" if words[0] else "false"}); show(m);')
     elif action == 'bbox':
         lines.append('    box(GetMeshBoundingBox(m));')
     elif action == 'obj':
@@ -560,6 +567,7 @@ def act(action: U32, +aw: +List<U32>, +path: String, +mesh: J.Mesh) -> String:
     case 3: file.text(J.Mesh.obj_text(mesh))
     case 4: file.text(code.of(U32.is_eq(wu(0n, aw), 1), mesh, path))
     case 5: ray.text(J.Collision.ray_mesh_for(arith(), J.Ray{wv3(0n, aw), wv3(3n, aw)}, mesh, wmatrix(word.drop(6n, aw))))
+    case 7: show(J.Mesh.upload(mesh, U32.is_eq(wu(0n, aw), 1)))
     case _: box.text(J.Model.bounding_box_for(arith(), libm(), J.Model{wmatrix(aw), [mesh, model.plane()], [J.Material.load_default()], [0, 0]}))
 
 def run.with(+action: U32, +aw: +List<U32>, +path: String, m: Maybe<J.Mesh>) -> String:
