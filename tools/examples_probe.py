@@ -80,6 +80,8 @@ LANE_TIMEOUT = 1800
 TARGET_FPS = {'shapes_kaleidoscope': 20, 'shapes_penrose_tile': 120, 'textures_mouse_painting': 120}
 
 (KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, INPUT_GESTURE, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 17, 18)
+# Gamepad events: (gamepad), (gamepad, button), (gamepad, axis, value/32768).
+(GAMEPAD_CONNECT, GAMEPAD_BUTTON_UP, GAMEPAD_BUTTON_DOWN, GAMEPAD_AXIS_MOTION) = (9, 11, 12, 13)
 KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_A, KEY_H, KEY_R, KEY_S = 262, 263, 264, 265, 65, 72, 82, 83
 KEY_G, KEY_SPACE, KEY_C, KEY_ENTER = 71, 32, 67, 257
 KEY_ONE, KEY_TWO, KEY_THREE, KEY_FOUR = 49, 50, 51, 52
@@ -191,6 +193,8 @@ EXAMPLES = {
     'core_undo_redo': ('core/core_undo_redo.c', 'Ex.setup(seed, core, frame)'),
     'core_keyboard_testbed': ('core/core_keyboard_testbed.c', 'Ex.setup(core, frame)'),
     'core_input_gestures_testbed': ('core/core_input_gestures_testbed.c', 'Ex.setup(core, frame)'),
+    'core_3d_camera_fps': ('core/core_3d_camera_fps.c', 'Ex.setup(M.LIBM{}, core, frame)'),
+    'core_input_gamepad': ('core/core_input_gamepad.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_text_file_loading': ('core/core_text_file_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_input_virtual_controls': ('core/core_input_virtual_controls.c', 'Ex.setup(core, frame)'),
     'shapes_math_angle_rotation': ('shapes/shapes_math_angle_rotation.c', 'Ex.setup(core, frame)'),
@@ -222,6 +226,8 @@ EXAMPLES = {
     'text_words_alignment': ('text/text_words_alignment.c', 'Ex.setup(core, frame)'),
     'text_rectangle_bounds': ('text/text_rectangle_bounds.c', 'Ex.setup(core, frame)'),
     'text_inline_styling': ('text/text_inline_styling.c', 'Ex.setup(seed, core, frame)'),
+    'text_strings_management': ('text/text_strings_management.c', 'Ex.setup(seed, core, frame)'),
+    'textures_clipboard_image': ('textures/textures_clipboard_image.c', 'Ex.setup(core, frame)'),
     'core_smooth_pixelperfect': ('core/core_smooth_pixelperfect.c', 'Ex.setup(core, frame)'),
     'models_tesseract_view': ('models/models_tesseract_view.c', 'Ex.setup(core, frame)'),
     'textures_particles_blending': ('textures/textures_particles_blending.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
@@ -243,7 +249,7 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering',
             'core_text_file_loading', 'shaders_ascii_rendering', 'shaders_simple_mask',
             'textures_gif_player', 'models_textured_cube', 'shaders_postprocessing',
-            'shaders_custom_uniform', 'models_mesh_picking'}
+            'shaders_custom_uniform', 'models_mesh_picking', 'core_input_gamepad'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -255,14 +261,14 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'models_yaw_pitch_roll', 'models_loading', 'shaders_fog_rendering', 'shaders_simple_mask',
                'core_3d_camera_first_person', 'models_rlgl_solar_system', 'models_textured_cube',
                'core_3d_camera_split_screen', 'shaders_postprocessing', 'textures_framebuffer_rendering',
-               'shaders_custom_uniform', 'shaders_mesh_instancing', 'models_mesh_picking'}
+               'shaders_custom_uniform', 'shaders_mesh_instancing', 'models_mesh_picking', 'core_3d_camera_fps'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'core_3d_camera_first_person', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer', 'shaders_mesh_instancing',
-          'core_undo_redo', 'text_inline_styling'}
+          'core_undo_redo', 'text_inline_styling', 'text_strings_management'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
                 'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'shaders_postprocessing': 32, 'shaders_custom_uniform': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196, 'core_viewport_scaling': 4,
-                'shaders_fog_rendering': 32, 'shapes_rlgl_color_wheel': 32}
+                'shaders_fog_rendering': 32, 'shapes_rlgl_color_wheel': 32, 'core_input_gamepad': 32}
 
 
 # -----------------------------------------------------------------------------
@@ -573,6 +579,20 @@ def scripts():
         # The wheel scrolls down, back past the top (snapped to 0) and far past the end (snapped to the last page).
         script('core_text_file_loading', 'scroll', [quick(), quick([(MOUSE_WHEEL, 0, -3, 0)]), slow([(MOUSE_WHEEL, 0, 5, 0)]),
                                                     quick([(MOUSE_WHEEL, 0, -200, 0)]), quick()]),
+        # No gamepad (the Xbox picture); RIGHT and LEFT through gamepads 1 and 0; gamepad 0 connected by an
+        # automation event each frame (the platform poll disconnects it again): the generic layout with a button,
+        # the left stick, a trigger, a back button and a thumb button held; disconnected; the vibrate button.
+        script('core_input_gamepad', 'pads', [quick(), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_LEFT)]), quick([key(KEY_LEFT, False), (GAMEPAD_CONNECT, 0, 0, 0)]),
+                                              quick([(GAMEPAD_CONNECT, 0, 0, 0), (GAMEPAD_BUTTON_DOWN, 0, 7, 0)]),
+                                              quick([(GAMEPAD_CONNECT, 0, 0, 0), (GAMEPAD_AXIS_MOTION, 0, 0, 16384), (GAMEPAD_AXIS_MOTION, 0, 1, -8192)]),
+                                              quick([(GAMEPAD_CONNECT, 0, 0, 0), (GAMEPAD_AXIS_MOTION, 0, 4, 32768), (GAMEPAD_AXIS_MOTION, 0, 3, 2000)]),
+                                              quick([(GAMEPAD_CONNECT, 0, 0, 0), (GAMEPAD_BUTTON_DOWN, 0, 9, 0), (GAMEPAD_BUTTON_DOWN, 0, 16, 0), (GAMEPAD_BUTTON_UP, 0, 7, 0)]),
+                                              quick([(GAMEPAD_BUTTON_UP, 0, 9, 0)]), quick([mouse_at(40, 100)]), quick([button(0)]), quick([button(0, False)])]),
+        # The fall to the floor; a mouse look; W forward (the head bob, the narrowing view), W with D (the
+        # diagonal input normalized, the lean), a jump, the flight, a crouch, and the keys released.
+        script('core_3d_camera_fps', 'walk', [quick(), quick([mouse_at(430, 240)]), quick([key(KEY_W)]), quick(), slow(), quick([key(KEY_D)]), quick([key(KEY_SPACE)]),
+                                              quick([key(KEY_SPACE, False)]), slow(), quick([key(KEY_W, False), key(341)]), quick([key(KEY_D, False)]), quick([key(341, False)]),
+                                              quick()]),
         # A gesture from the first frame (before one is logged the example reads past its log array); every
         # gesture with repeats hidden; "Hide Repeat" off (repeats logged), "Hide Hold" on, both on, an unknown
         # gesture, then enough gestures to wrap the log of 20.
@@ -683,6 +703,18 @@ def scripts():
                                                       quick([button(0)]), quick([button(0, False)])]),
         script('text_font_loading', 'fonts', [quick(), slow(), quick([key(KEY_SPACE)]), quick(), quick([key(KEY_SPACE, False)])]),
         # The wheel grows and shrinks the text, 2 and 3 filter it (3 with 2 held: 2 wins only when pressed that
+        # The first particle grabbed and held still (its velocity falls to 0), released at rest, sliced in
+        # halves, the half under the mouse shattered into characters; one of them grabbed and glued to its
+        # neighbors with LEFT CTRL, dragged and thrown; the shake; then the six resets.
+        script('text_strings_management', 'particles', [quick(), quick([mouse_at(500, 245)]), quick([button(0)]), quick(), quick([button(0, False)]), quick([button(1)]),
+                                                        quick([button(1, False)]), quick([key(340), button(1)]), quick([button(1, False), key(340, False)]), quick([button(0)]),
+                                                        quick([key(341)]), quick([key(341, False)]), quick([mouse_at(300, 300)]), quick([button(0, False)]), quick([button(2)]),
+                                                        quick([button(2, False)]), quick(), quick([key(KEY_ONE)]), quick([key(KEY_ONE, False), key(KEY_TWO)]),
+                                                        quick([key(KEY_TWO, False), key(KEY_THREE)]), quick([key(KEY_THREE, False), key(KEY_FOUR)]),
+                                                        quick([key(KEY_FOUR, False), key(53)]), quick([key(53, False), key(54)]), quick([key(54, False)]), quick()], seed=0x7E87),
+        # CTRL+V (no clipboard image on the reference's desktop platform outside Windows: nothing is pasted), R.
+        script('textures_clipboard_image', 'paste', [quick(), quick([key(341), mouse_at(300, 200)]), quick([key(86)]), quick([key(86, False), key(341, False)]),
+                                                     quick([key(KEY_R)]), quick([key(KEY_R, False)])]),
         # The styled texts; the last one takes a new random color at frames 20 and 40.
         script('text_inline_styling', 'colors', [quick() for _ in range(42)], seed=0x57A1),
         # Word wrap in the first container; the border under the mouse; the corner dragged narrower and lower
@@ -945,7 +977,7 @@ UNDEFINED_NATIVE = {
 }
 REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
             'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass',
-            'shapes_rlgl_color_wheel', 'shapes_rectangle_advanced', 'core_input_gestures_testbed'}
+            'shapes_rlgl_color_wheel', 'shapes_rectangle_advanced', 'core_input_gestures_testbed', 'core_input_gamepad'}
 
 
 def refusal(item, libm):

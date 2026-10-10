@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 138 ported, 32 ready, 42 waiting.
+Totals: 212 examples; 142 ported, 28 ready, 42 waiting.
 
 ## APIs that unblock the most examples
 
@@ -63,7 +63,7 @@ Totals: 212 examples; 138 ported, 32 ready, 42 waiting.
 | `core_input_keys` | core | ported |  |
 | `core_input_mouse` | core | ported |  |
 | `core_input_mouse_wheel` | core | ported |  |
-| `core_input_gamepad` | core | ready |  |
+| `core_input_gamepad` | core | ported |  |
 | `core_input_multitouch` | core | ported |  |
 | `core_input_gestures` | core | ported |  |
 | `core_input_gestures_testbed` | core | ported |  |
@@ -76,7 +76,7 @@ Totals: 212 examples; 138 ported, 32 ready, 42 waiting.
 | `core_3d_camera_free` | core | ported |  |
 | `core_3d_camera_first_person` | core | ported |  |
 | `core_3d_camera_split_screen` | core | ported |  |
-| `core_3d_camera_fps` | core | ready |  |
+| `core_3d_camera_fps` | core | ported |  |
 | `core_3d_picking` | core | ported |  |
 | `core_world_screen` | core | ported |  |
 | `core_window_flags` | core | ported |  |
@@ -147,7 +147,7 @@ Totals: 212 examples; 138 ported, 32 ready, 42 waiting.
 | `shapes_penrose_tile` | shapes | ported |  |
 | `shapes_hilbert_curve` | shapes | waiting | `GuiSpinner` |
 | `shapes_easings_testbed` | shapes | ready |  |
-| `textures_clipboard_image` | textures | ready |  |
+| `textures_clipboard_image` | textures | ported |  |
 | `textures_magnifying_glass` | textures | ported |  |
 | `textures_logo_raylib` | textures | ported |  |
 | `textures_srcrec_dstrec` | textures | ported |  |
@@ -194,7 +194,7 @@ Totals: 212 examples; 138 ported, 32 ready, 42 waiting.
 | `text_codepoints_loading` | text | ready |  |
 | `text_inline_styling` | text | ported |  |
 | `text_words_alignment` | text | ported |  |
-| `text_strings_management` | text | ready |  |
+| `text_strings_management` | text | ported |  |
 | `models_loading_iqm` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
 | `models_billboard_rendering` | models | ported |  |
 | `models_box_collisions` | models | ported |  |

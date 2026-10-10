@@ -112,7 +112,7 @@
   {
    "name": "core_input_gamepad",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",
@@ -522,7 +522,7 @@
   {
    "name": "core_3d_camera_fps",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -2678,7 +2678,7 @@
   {
    "name": "textures_clipboard_image",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -4107,7 +4107,7 @@
   {
    "name": "text_strings_management",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",

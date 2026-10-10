@@ -16,8 +16,7 @@ Bend and replaying it against the native example. Work autonomously; merge to
 | Branch | Content | State |
 |---|---|---|
 | `main` | c3e2e6b: everything through Jongui (raygui's first controls), `M.Libm.pow2` and 79 example ports | CI green (run 38030650917 on this commit, merged 2026-10-10) |
-| `feature/examples-batch-3` | a1e88b6, on top of `main`: 29 more example ports, `Font.texture_size`/`Draw.font_texture`, `Surface.colors_image`, `M.Float64.to_f32`/`to_int`, the examples probe's 30-minute lane limit and `UNDEFINED_NATIVE` | CI run 38054490652; **merge to `main` once it concludes `success`** |
-| `feature/examples-batch-4` | on top of `feature/examples-batch-3`: 30 more example ports, render-texture depth buffers and the compiler's memory hint in containers | its own CI run; **merge to `main` after batch 3, once it concludes `success`** |
+| `feature/examples-batch-4` | on top of `main`: 63 more example ports, render-texture depth buffers, `Font.texture_size`/`Draw.font_texture`, `Surface.colors_image`, `M.Float64.to_f32`/`to_int`, the examples probe's 30-minute lane limit and `UNDEFINED_NATIVE`, the compiler's memory hint in containers | its CI run; **merge to `main` once it concludes `success`** (it contains the former `feature/examples-batch-3`, whose separate run was cancelled as redundant) |
 
 `feature/examples-gui`, `feature/audio-waves`, `wip/models-drawing-obj`, `wip/lgpl-tan-asinf` and
 `integrate/models-lgpl` are merged into `main` and deleted.
@@ -25,7 +24,7 @@ Bend and replaying it against the native example. Work autonomously; merge to
 Coverage (`python3 tools/api_plan.py check`): raylib.h 514/600 partial
 (20 blocked, 66 not started); raymath.h 146/146; rlgl.h 93/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **138/212 ported**, 32 ready, 42 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **142/212 ported**, 28 ready, 42 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -68,7 +67,7 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
   rlsw), which unblocked `core_3d_camera_split_screen`,
   `textures_framebuffer_rendering`, `shaders_postprocessing` and
   `shaders_custom_uniform`.
-- **Examples**: 138 ported; gates `examples-core`, `-shapes`, `-text`,
+- **Examples**: 142 ported; gates `examples-core`, `-shapes`, `-text`,
   `-textures`, `-models`, `-shaders`.
 - **Compile memory**: per-output compiler processes and a cgroup-aware job
   budget in probekit; `LoadImage` of a `.png` in ports is `Surface.load_png`
@@ -80,11 +79,11 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Next steps, in order
 
-1. Land work on `main` in steps: when the CI run of `feature/examples-batch-3`
-   is green, merge it, push and delete the branch; the same for
-   `feature/examples-batch-4`. New work goes to a new branch (a push to a
-   branch cancels that branch's running CI), so a verified batch is never
-   held back by later commits.
+1. Land work on `main` as soon as a branch's CI run is green: merge, push,
+   delete the branch. The hosted macOS runners are the bottleneck (5 at a
+   time, 1 to 2 hours a shard, 10 shards a run, and every merge to `main`
+   runs again): do not stack runs that verify the same commits; a push to
+   a branch cancels that branch's running CI.
 2. Keep porting the ready examples ([EXAMPLES.md](EXAMPLES.md)), smallest
    first. `textures_sprite_stacking` is written and parked
    (`.build/pending/`, not in the repository): its `booth.png` is 112x11468
