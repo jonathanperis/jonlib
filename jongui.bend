@@ -599,3 +599,86 @@ def Gui.slider(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, l
 # GuiSliderBar: GuiSlider with SLIDER_WIDTH 0 for the call.
 def Gui.slider_bar(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, left: Maybe<String>, right: Maybe<String>, +value: F32, +min: F32, +max: F32) -> J.Frame & (Gui & (F32 & Bool)):
   Gui.slide(gui, core, frame, bounds, left, right, value, min, max, 0)
+
+# -----------------------------------------------------------------------------
+# Jongui additions (no raygui counterpart): rows of controls run in order,
+# for programs that keep their values in lists (Bend has no pointers to write
+# through).
+
+# GuiSliderBar(bounds, left, TextFormat(format, value), &value, low, high).
+type Gui.Bar is Data:
+  GuiBar{bounds: J.Rectangle, left: String, low: F32, high: F32}
+
+# GuiCheckBox(bounds, text, &checked).
+type Gui.Box is Data:
+  GuiBox{bounds: J.Rectangle, text: String}
+
+type Gui.Row is Type:
+  GuiRow{frame: J.Frame, gui: Gui, values: +List<F32>}
+
+type Gui.Checks is Type:
+  GuiChecks{frame: J.Frame, values: +List<Bool>}
+
+def Gui.bars.valued(acc: +List<F32>, frame: J.Frame, gui: Gui, pair: F32 & Bool) -> Gui.Row:
+  (value, _) = pair
+  GuiRow{frame, gui, Con{value, acc}}
+
+def Gui.bars.pushed(acc: +List<F32>, frame: J.Frame, rest: Gui & (F32 & Bool)) -> Gui.Row:
+  (gui, pair) = rest
+  Gui.bars.valued(acc, frame, gui, pair)
+
+def Gui.bars.take(acc: +List<F32>, r: J.Frame & (Gui & (F32 & Bool))) -> Gui.Row:
+  (frame, rest) = r
+  Gui.bars.pushed(acc, frame, rest)
+
+def Gui.bars.text(text: Maybe<String>, +gui: Gui, +core: J.Core, frame: J.Frame, +bar: Gui.Bar, +value: F32, acc: +List<F32>) -> Gui.Row:
+  match text:
+    case None{}: GuiRow{J.Frame.refuse(frame), gui, Con{value, acc}}
+    case Some{t}:
+      GuiBar{+bounds, +left, +low, +high} = bar
+      Gui.bars.take(acc, Gui.slider_bar(gui, core, frame, bounds, Some{left}, Some{t}, value, low, high))
+
+def Gui.bars.one(+bar: Gui.Bar, +value: F32, +format: String, +core: J.Core, row: Gui.Row) -> Gui.Row:
+  GuiRow{frame, +gui, acc} = row
+  Gui.bars.text(J.Text.format(format, [J.TextFloat{value}]), gui, core, frame, bar, value, acc)
+
+def Gui.bars.go(bars: +List<Gui.Bar>, values: +List<F32>, +format: String, +core: J.Core, row: Gui.Row) -> Gui.Row:
+  match bars values:
+    case Con{+bar, rest} Con{+value, more}: Gui.bars.go(rest, more, format, core, Gui.bars.one(bar, value, format, core, row))
+    case _ _: row
+
+def Gui.bars.done(row: Gui.Row) -> J.Frame & (Gui & +List<F32>):
+  GuiRow{frame, gui, acc} = row
+  (frame, (gui, List.reverse(&2, F32, acc)))
+
+# One GuiSliderBar per bar, in order, each with its value formatted by
+# `format` (one float specification) as the right text: the frame, the Gui
+# and the new values. A format Text.format refuses marks the frame undefined.
+def Gui.slider_bars(+gui: Gui, +core: J.Core, frame: J.Frame, bars: +List<Gui.Bar>, values: +List<F32>, +format: String) -> J.Frame & (Gui & +List<F32>):
+  Gui.bars.done(Gui.bars.go(bars, values, format, core, GuiRow{frame, gui, Nil{}}))
+
+def Gui.boxes.taken(acc: +List<Bool>, frame: J.Frame, pair: Bool & Bool) -> Gui.Checks:
+  (checked, _) = pair
+  GuiChecks{frame, Con{checked, acc}}
+
+def Gui.boxes.take(acc: +List<Bool>, r: J.Frame & (Bool & Bool)) -> Gui.Checks:
+  (frame, pair) = r
+  Gui.boxes.taken(acc, frame, pair)
+
+def Gui.boxes.one(+box: Gui.Box, +on: Bool, +gui: Gui, +core: J.Core, state: Gui.Checks) -> Gui.Checks:
+  GuiBox{+bounds, +text} = box
+  GuiChecks{frame, acc} = state
+  Gui.boxes.take(acc, Gui.check_box(gui, core, frame, bounds, text, on))
+
+def Gui.boxes.go(boxes: +List<Gui.Box>, checked: +List<Bool>, +gui: Gui, +core: J.Core, state: Gui.Checks) -> Gui.Checks:
+  match boxes checked:
+    case Con{+box, rest} Con{+on, more}: Gui.boxes.go(rest, more, gui, core, Gui.boxes.one(box, on, gui, core, state))
+    case _ _: state
+
+def Gui.boxes.done(state: Gui.Checks) -> J.Frame & +List<Bool>:
+  GuiChecks{frame, acc} = state
+  (frame, List.reverse(&2, Bool, acc))
+
+# One GuiCheckBox per box, in order: the frame and the new checked flags.
+def Gui.check_boxes(+gui: Gui, +core: J.Core, frame: J.Frame, boxes: +List<Gui.Box>, checked: +List<Bool>) -> J.Frame & +List<Bool>:
+  Gui.boxes.done(Gui.boxes.go(boxes, checked, gui, core, GuiChecks{frame, Nil{}}))

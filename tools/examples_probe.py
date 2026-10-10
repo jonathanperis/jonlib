@@ -151,6 +151,8 @@ EXAMPLES = {
     'text_font_spritefont': ('text/text_font_spritefont.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_billboard_rendering': ('models/models_billboard_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shapes_circle_sector_drawing': ('shapes/shapes_circle_sector_drawing.c', 'Ex.setup(core, frame)'),
+    'shapes_ring_drawing': ('shapes/shapes_ring_drawing.c', 'Ex.setup(core, frame)'),
+    'shapes_rounded_rectangle_drawing': ('shapes/shapes_rounded_rectangle_drawing.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -388,6 +390,22 @@ def scripts():
                                                            quick([button(0, False), mouse_at(640, 80)]), quick([button(0)]),
                                                            quick([button(0, False), mouse_at(602, 180)]), quick([button(0)]), quick([button(0, False)]),
                                                            quick([mouse_at(10, 10)])]),
+        # Sliders and check boxes: a shorter arc, more segments (manual mode), the outlines switched on over
+        # box and label, the ring switched off, a hover and a press that leaves the box before the release.
+        script('shapes_ring_drawing', 'controls', [quick(), quick([mouse_at(690, 50), button(0)]), quick([button(0, False), mouse_at(630, 250)]),
+                                                   quick([button(0)]), quick([button(0, False), mouse_at(610, 360)]), quick([button(0)]),
+                                                   quick([button(0, False), mouse_at(680, 392)]), quick([button(0)]), slow([button(0, False)]),
+                                                   quick([mouse_at(605, 325), button(0)]), quick([button(0, False)]), quick([button(0)]),
+                                                   quick([mouse_at(400, 100)]), quick([button(0, False)])]),
+        # Width and roundness dragged, the outline thickened, every box toggled, six segments (manual mode).
+        script('shapes_rounded_rectangle_drawing', 'controls', [quick(), quick([mouse_at(700, 50), button(0)]), quick([mouse_at(660, 50)]),
+                                                                quick([button(0, False), mouse_at(720, 150)]), quick([button(0)]),
+                                                                quick([button(0, False), mouse_at(650, 360)]), quick([button(0)]),
+                                                                quick([button(0, False), mouse_at(690, 180)]), quick([button(0)]),
+                                                                quick([button(0, False), mouse_at(650, 390)]), quick([button(0)]),
+                                                                slow([button(0, False), mouse_at(651, 250)]), quick([button(0)]),
+                                                                quick([button(0, False), mouse_at(700, 330)]), quick([button(0)]),
+                                                                quick([button(0, False)]), quick()]),
         script('models_orthographic_projection', 'switch', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False)]), quick([key(KEY_SPACE)]),
                                                             quick([key(KEY_SPACE, False)])]),
         # RIGHT walks the player into the sphere (touching at exactly the radius: z 2 - 0.5 = 1.5), UP goes deeper,
@@ -593,6 +611,10 @@ def refusal(item, libm):
         return bullet_hell_refusal(item, libm)
     if item['example'] == 'shapes_circle_sector_drawing':
         return circle_sector_refusal(item, libm)
+    if item['example'] in ('shapes_ring_drawing', 'shapes_rounded_rectangle_drawing'):
+        # Both start with 0 segments: rshapes.c estimates the count with acosf, which only the glibc 2.39
+        # profile reproduces.
+        return 0 if libm == 'AppleLibm' else None
     if item['example'] == 'shapes_math_angle_rotation':
         # The example's sinf/cosf of 0, 30, 60 and 90 degrees and of totalAngle = frame + 1 (below 360 here).
         for index in range(len(item['frames'])):

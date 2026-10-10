@@ -34,6 +34,13 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiSlider` | `Gui.slider(gui, core, frame, bounds, left, right, value, min, max)` | `Frame & (Gui & (F32 & Bool))` (value, changed) |
 | `GuiSliderBar` | `Gui.slider_bar(...)` | the same |
 
+Two additions have no raygui counterpart. They run a row of controls in order
+for programs that keep their values in lists (Bend has no pointers to write
+through): `Gui.slider_bars(gui, core, frame, bars, values, format)` (one
+`GuiSliderBar` per `G.GuiBar{bounds, left, low, high}`, the right text being
+the value formatted by `format`) and `Gui.check_boxes(gui, core, frame, boxes,
+checked)` (one `GuiCheckBox` per `G.GuiBox{bounds, text}`).
+
 The enums are functions (`G.Gui.SLIDER()`, `G.Gui.TEXT_SIZE()`,
 `G.Gui.STATE_DISABLED()`, `G.Gui.TEXT_ALIGN_RIGHT()` and so on). `api/jongui.json`
 lists every raygui function with its status; `tools/examples_plan.py` keeps an
@@ -87,5 +94,7 @@ gates compare every frame with the unmodified native example, which compiles
 the pinned raygui.h ([DRIVER.md](DRIVER.md)). `shapes_circle_sector_drawing`
 covers four slider bars: normal, focused and pressed states, a press that
 sets the value, a drag that leaves the bounds, the release, and both side
-texts. `LAWS.bend` states the default text size, the propagation of a DEFAULT
+texts. `shapes_ring_drawing` and `shapes_rounded_rectangle_drawing` add
+check boxes: hover, press, a toggle over the box and over its label, and a
+release outside that toggles nothing. `LAWS.bend` states the default text size, the propagation of a DEFAULT
 property and the enable/disable rules.
