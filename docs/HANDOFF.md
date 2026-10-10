@@ -1,126 +1,134 @@
-# Session handoff (2026-10-09)
+# Session handoff (2026-10-10)
 
-Snapshot for continuing on another machine. Everything is committed and pushed;
-nothing lives only on the old machine except throwaway caches (`.build/`).
+Snapshot for continuing on another machine or in a new session. Everything
+described here is committed and pushed to `feature/audio-waves`; nothing lives
+only on one machine except throwaway caches (`.build/`).
 
 ## Goal in force
 
 Jonathan's directive: **100% of raylib ported** (raylib.h, raymath.h, rlgl.h,
 rcamera.h, rgestures.h), **validated by porting every upstream example** to
 Bend and replaying it against the native example. Work autonomously; merge to
-`main` only after a CI run concludes `success`.
+`main` only after a CI run concludes `success`; delete merged branches.
 
 ## Where things are
 
 | Branch | Content | State |
 |---|---|---|
 | `main` | e3afa23: Phase 1 work, CI timeout fix | CI green |
-| `feature/audio-waves` | everything verified since: audio, math profiles, text, fonts (TTF/BDF/BMFont), camera, Phase 2 (frame, shapes, textures, rlgl, input, gestures, timing, desktop driver), meshes/3D shapes, window/core functions, QuaternionToEuler, the examples tracker | **merge to `main` once its CI concludes `success`** (the run for 9cf1748 had all 8 Linux shards green before this push restarted CI) |
-| `wip/lgpl-tan-asinf` | 79aae7a, unfinished agent work: glibc 2.39 `tan` (LGPL, isolated) | see below |
-| `wip/models-drawing-obj` | 10b25ad, unfinished agent work: materials, DrawMesh/DrawModel, OBJ loading | see below |
+| `feature/audio-waves` | everything since: audio, math profiles, text, fonts, camera, Phase 2 (frame, shapes, textures, rlgl, input, gestures, timing, desktop driver), meshes/3D shapes, materials/models/OBJ, perspective cameras (LGPL `tan`/`asinf`), the shader API, glibc's own `sinf`/`cosf`, 70 example ports | **merge to `main` once its CI concludes `success`** |
+| `wip/models-drawing-obj`, `wip/lgpl-tan-asinf`, `integrate/models-lgpl` | merged into `feature/audio-waves` | delete locally and remotely after the merge to `main` |
 
-Coverage (`python3 tools/api_plan.py check`): raylib.h 484/600 partial
-(95 not-started, 21 blocked); raymath.h 145/146; rlgl.h 93/163; rcamera.h
+The last complete CI run on this branch (3b965ad) failed only in the macOS
+`models` gate. The probe expected a bare `null` for refused scenes that also
+query matrices; that is fixed in cd7ac01. The run for cd7ac01 is the one to
+watch.
+
+Coverage (`python3 tools/api_plan.py check`): raylib.h 514/600 partial
+(20 blocked, 66 not started); raymath.h 146/146; rlgl.h 93/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): 13/212 ported, 120 ready, 79 waiting. No API is
-`complete` by design until Phase 7 targets (see MASTER-PLAN).
+[EXAMPLES.md](EXAMPLES.md)): **70/212 ported**, 91 ready, 51 waiting. No API
+is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
 
 - AGENTS.md rules: pinned toolchains, never install/update them or modify
   the Bend compiler; never loosen expected results; refuse undefined native
   behavior; preserve notices.
-- **LGPL (2026-10-09): allowed, isolated.** glibc's `tan` and `asinf` (LGPL-2.1+)
-  may be ported into separate `src/lgpl/` modules with full notices
-  (`LICENSES/lgpl-2.1.txt`, a THIRD_PARTY_NOTICES section, a MASTER-PLAN
-  decision entry); the rest of Jonlib stays zlib. Apple's libm is unpublished:
-  Apple profiles stay refused where they can't be reproduced.
+- **LGPL (2026-10-09): allowed, isolated.** glibc's `tan` and `asinf`
+  (LGPL-2.1+) live in `src/lgpl/` with full notices; the rest of Jonlib stays
+  zlib. Arm optimized-routines code (MIT alternative: `powf`, `sinf`/`cosf`)
+  stays on the zlib side with its notice. Apple's libm is unpublished: Apple
+  profiles stay refused where they can't be reproduced.
 - Merge discipline: merge to `main` only when CI `conclusion == success`;
   delete merged branches locally and remotely; never force-push or amend pushed
   commits without asking.
 - Work before 2026-10-06 was GPT-generated: re-verify rather than trust.
 - Commits end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 
-## Unfinished work
+## What changed last (2026-10-09/10)
 
-### `wip/lgpl-tan-asinf` (perspective cameras)
-Done: unmodified glibc 2.39 sources in `tools/reference/glibc239/`; C models
-in `tools/reference/glibc_tan/` (`model.c` with `FUSED=1` = the FMA variant
-CI runners use, `FUSED=0` = SSE2/AVX); exhaustive check on all 4,278,190,080
-MatrixPerspective arguments: native glibc 2.39 `tan` = FMA model (0
-differences; results in `results/perspective-fma.json`); FMA vs SSE2 variants
-differ on 27,258; glibc 2.41's tan sources are identical (map Glibc241Libm to
-the same kernel). `src/binary64_scaled.bend` (zlib) and a **draft, never
-compiled** `src/lgpl/tan.bend` + `tan_table.bend`.
-Next: rerun the BeginMode3D exhaustive set (`tools/reference/glibc_tan/run_all.sh`
-in an Ubuntu 24.04 amd64 container; it was interrupted), compile and test the
-Bend kernel against the C model, add the LGPL license/notice/decision entries,
-wire `M.Libm.tan` → `MatrixPerspective`, perspective `BeginMode3D`, the camera
-projection/screen functions; port glibc 2.39 `e_asinf.c` (LGPL) to extend
-`M.Libm.asin` for Glibc239Libm; probes + gates on both hosts; then the 3D
-examples.
-
-### `wip/models-drawing-obj`
-76ac541, rebased on `feature/audio-waves` at 9cf1748. Adds Material/MaterialMap
-and their functions, DrawMesh/DrawModel(Ex)/DrawModelWires(Ex)/DrawBillboard*
-(rlsw vertex-array paths; DrawMeshInstanced is a GL3-only no-op), OBJ+MTL
-loading via a tinyobj_loader_c port (`src/obj.bend`, binary64 number parsing
-with a contraction profile), `tools/model_draw_probe.py` (27 scenes) and
-`tools/obj_probe.py` (40 cases), gates `model-draw`, `obj`, `obj-uncontracted`.
-Verified: type checks, PROOF, unit tests, check_project, and the JavaScript
-lane of both probes (all match). **Not yet verified:** the full CPU-1/CPU-2
-runs (compiles timed out under load; about 2.5 min on a quiet machine), the
-`obj-uncontracted` gate, and the `mesh`/`models`/`frame`/`texture` probes
-after `tools/mesh_probe.py` changed for the new `Model` constructor. Then merge
-`feature/audio-waves` in, rebuild the plans and merge. Gaps: IQM/glTF/VOX/M3D
-unsupported, OBJ faces of 6+ vertices refused (tinyobj asserts).
+- **Perspective** ([PERSPECTIVE.md](PERSPECTIVE.md)): glibc's x86_64 `tan`
+  (FMA ifunc variant) as an LGPL module, exhaustively equal to native glibc
+  2.39/2.41 on every argument raylib can pass; `MatrixPerspective`,
+  perspective `BeginMode3D` and the camera queries under the glibc profiles.
+- **sinf/cosf** ([SINCOSF.md](SINCOSF.md)): glibc's own functions on every
+  finite binary32 argument (model equal to native on all 2^32 inputs, both
+  variants, glibc 2.39 and 2.41). `M.Libm.sin/cos`; the one-turn bound is
+  gone under the glibc profiles, so `DrawSphereWires` and every rotation
+  beyond one turn work there. Under `AppleLibm`, `Libm.sin/cos` answer only
+  on the verified whole degrees.
+- **Shaders** ([SHADERS.md](SHADERS.md)): the API as the software renderer
+  runs it (no-ops), which makes most `shaders_*` examples portable.
+- **Examples**: 70 ported; gates `examples-core`, `-shapes`, `-text`,
+  `-textures`, `-models`, `-shaders`.
+- **Compile memory**: per-output compiler processes and a cgroup-aware job
+  budget in probekit; `LoadImage` of a `.png` in ports is `Surface.load_png`
+  (the generic loader compiles every decoder, about 1.5 GB more).
 
 ## Next steps, in order
 
-1. When `feature/audio-waves` CI is green: merge to `main`, push.
-2. Finish the two `wip/` branches above.
-3. Port the 120 ready examples (docs/EXAMPLES.md), category by category
-   (shapes 36, text 14, textures 25, core 41, models 4), each added to
-   `tools/examples_probe.py`; split the `examples` gate per category.
-4. Remaining milestones: rlgl-advanced (52) and shaders (12): implement what
-   the GL1.1/rlsw software path does (mostly documented no-ops; framebuffers
-   exist in rlsw); audio-device (20) and audio-stream (35) (Phase 4: miniaudio
-   mixing; Base has `Audio.open/write/close`); animation (5), vr (4), the
-   remaining models/materials; `files` (16 blocked: directories, timestamps,
-   rename/remove need OS primitives Base lacks; that is Bend overlay runtime
-   work).
-5. Keep `docs/EXAMPLES.md` ranking ("APIs that unblock the most examples") as
-   the work queue.
+1. When `feature/audio-waves` CI is green: merge to `main`, push, delete the
+   merged branches.
+2. Keep porting the ready examples ([EXAMPLES.md](EXAMPLES.md)), smallest
+   first. `textures_sprite_stacking` is written and parked
+   (`.build/pending/`, not in the repository): its `booth.png` is 112x11468
+   and Jonlib's images stop at 4096 pixels per axis (PNG also at 1 MiB of
+   input), so the texture does not load.
+3. Small library pieces that each unblock examples:
+   - a public `(float)` of `Core.get_time` (`models_waving_cubes`,
+     `core_smooth_pixelperfect`, `models_tesseract_view`, `text_words_alignment`);
+   - a loop-exit condition in `J.Program` (`core_window_should_close`);
+   - glibc's `rand()` (`shapes_simple_particles`, `models_point_rendering`);
+   - general `powf`, `expf`/`logf`, `hypot`, binary64 `sin`/`cos`
+     (`shapes_easings_*`, `core_2d_camera_mouse_zoom`, `shapes_ball_physics`,
+     `GenMeshCylinder`);
+   - render-texture depth buffers (`core_3d_camera_split_screen`) and the rlgl
+     framebuffer functions (6 examples);
+   - images beyond 4096 pixels on an axis (`textures_sprite_stacking`);
+   - glTF/IQM/M3D/VOX model loading and model animations (about 15 examples).
+4. Large milestones: raygui (18 examples), the audio device and streams
+   (12+ examples; the reference build has `SUPPORT_MODULE_RAUDIO=OFF`), VR.
 
 ## Known pitfalls (save time)
 
+- **Bend rules that bite**: a `match` must scrutinize a parameter or a
+  pattern-bound name, and no `let` may precede a destructuring of a parameter;
+  no mutual recursion; a def must be above its callers; `Bool.pick` evaluates
+  both branches and needs a Data type (pairs are Type: use a `match` helper);
+  constructors in lets need `{... : T}`; `+` only on Data.
+- **Strings are C byte strings**: a Bend literal holds code points, so write
+  non-ASCII text as UTF-8 bytes (`"I\u{c3}\u{b1}igo"`).
 - **Bend native miscompile:** a `Bool.pick(Bool, …)` result feeding `||` in the
   same def is wrong on native lanes (repro `tests/compiler/bool_pick_or.bend`,
   diagnostic gate `bend-defects`). Never write it.
 - **Apple clang 21 crashes** compiling very large Bend defs: keep defs small and
   probes data-driven ("scenes as data through one interpreter def").
-- **Memory:** probes' JavaScript lanes peak near 4.5 GB; run probes with
-  `--jobs 1` or `2` when other work shares the machine; re-run on compile
-  timeouts rather than raising budgets.
+- **Memory:** one Bend compile at a time on an 8 GiB machine (exit -9 is the
+  OOM killer); probes' JavaScript lanes peak near 4.5 GB.
 - **Host-dependent expectations:** Linux CI uses the glibc profiles and
   uncontracted x86-64; macOS uses Apple libm and fused arm64. Compute every
   probe expectation per host profile; never run natively anything undefined in
-  C (x86 traps integer division by zero, arm64 returns 0). Verify Linux
-  behavior locally in `docker run --platform linux/amd64 ubuntu:24.04`.
+  C. `--assume-libm AppleLibm` on the examples and models probes runs Jonlib
+  and the refusal oracle under the Apple profile on Linux: use it before
+  pushing, a CI round takes about 3.5 hours.
+- **A port that calls sinf/cosf itself** must refuse where `M.Libm.sin/cos`
+  return `None` (keep a `valid` flag in its state), and its refusal predictor
+  in `tools/examples_probe.py` must name the same frame.
+- **Target FPS below 60** hangs the native busy-wait under the scripted clock.
 - **Reference build:** probekit's `CUSTOMIZE_BUILD=ON` raylib enables every
   `SUPPORT_*` flag `config.h` defines, including default-off ones
   (docs/VERIFICATION.md).
 - **Compilers fold `powf(x, 2)` into `x*x`**; check compiled references before
   assuming a libm call.
-- **Apple sinf/cosf** are not correctly rounded; the AppleLibm profile is
-  verified only on whole degrees (and a few known exceptions).
-- CI: 8 shards per OS, gate `minutes` = measured macOS durations (docs/CI.md).
+- CI: 10 shards per OS, gate `minutes` = measured macOS durations (docs/CI.md).
 
-## Toolchain on the new machine
+## Toolchain
 
 Pinned in `toolchain.json`: Bend at `b7ebee9…` with the declared overlay
-(`patches/`), raylib 6.0 at `dbc56a87…`, Bun 1.3.12. Local layout used so far:
-Bend at `~/Projetos/bendlang/bend` (CLI `bun ~/Projetos/bendlang/bend/bend2/main.ts`),
+(`patches/`), raylib 6.0 at `dbc56a87…`, Bun 1.3.12 (probes refuse another
+version: put the pinned one first in `PATH`). Local layout used so far: Bend
+at `~/Projetos/bendlang/bend` (CLI `bun ~/Projetos/bendlang/bend/bend2/main.ts`),
 raylib at `~/Projetos/raysan5/raylib`. Checks:
 
 ```sh
@@ -128,4 +136,5 @@ python3 -m unittest discover -s tests
 python3 tools/check_project.py
 bun ~/Projetos/bendlang/bend/bend2/main.ts PROOF.bend
 python3 tools/run_gates.py --bend-source ~/Projetos/bendlang/bend --raylib-source ~/Projetos/raysan5/raylib --only <gate>
+python3 tools/examples_probe.py --bend-source ~/Projetos/bendlang/bend --raylib-source ~/Projetos/raysan5/raylib --example <name> [--assume-libm AppleLibm]
 ```

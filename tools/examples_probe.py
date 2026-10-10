@@ -67,14 +67,14 @@ from probekit import ROOT, ProbeFailure
 SHIM = ROOT / 'tools/reference/example_driver.h'
 WIDTH, HEIGHT = 800, 450
 # Examples whose InitWindow is not 800x450.
-SIZES = {'core_2d_camera_split_screen': (800, 440)}
+SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation': (720, 400)}
 
 
 def size_of(name):
     return SIZES.get(name, (WIDTH, HEIGHT))
 TARGET = 1.0 / 60
 
-(KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 18)
+(KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, INPUT_GESTURE, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 17, 18)
 KEY_RIGHT, KEY_LEFT, KEY_DOWN, KEY_UP, KEY_A, KEY_H, KEY_R, KEY_S = 262, 263, 264, 265, 65, 72, 82, 83
 KEY_G, KEY_SPACE, KEY_C, KEY_ENTER = 71, 32, 67, 257
 
@@ -143,6 +143,13 @@ EXAMPLES = {
     'shaders_texture_tiling': ('shaders/shaders_texture_tiling.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_mandelbrot_set': ('shaders/shaders_mandelbrot_set.c', 'Ex.setup(core, frame)'),
     'shaders_raymarching_rendering': ('shaders/shaders_raymarching_rendering.c', 'Ex.setup(core, frame)'),
+    'core_basic_screen_manager': ('core/core_basic_screen_manager.c', 'Ex.setup(core, frame)'),
+    'core_window_letterbox': ('core/core_window_letterbox.c', 'Ex.setup(seed, core, frame)'),
+    'core_input_multitouch': ('core/core_input_multitouch.c', 'Ex.setup(core, frame)'),
+    'shapes_math_angle_rotation': ('shapes/shapes_math_angle_rotation.c', 'Ex.setup(core, frame)'),
+    'shapes_following_eyes': ('shapes/shapes_following_eyes.c', 'Ex.setup(core, frame)'),
+    'text_font_spritefont': ('text/text_font_spritefont.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'models_billboard_rendering': ('models/models_billboard_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
@@ -150,16 +157,18 @@ EXAMPLES = {
 IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_background_scrolling', 'models_rotating_cube',
             'textures_image_loading', 'textures_image_rotate', 'textures_to_image', 'textures_blend_modes',
             'textures_npatch_drawing', 'textures_raw_data', 'textures_bunnymark', 'shaders_texture_waves',
-            'shaders_texture_outline', 'shaders_shapes_textures', 'shaders_texture_tiling'}
+            'shaders_texture_outline', 'shaders_shapes_textures', 'shaders_texture_tiling', 'text_font_spritefont',
+            'models_billboard_rendering'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
 PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen', 'core_3d_picking', 'models_basic_voxel', 'models_rotating_cube',
                'models_geometric_shapes', 'models_box_collisions', 'models_orthographic_projection',
-               'shaders_basic_lighting', 'shaders_texture_tiling'}
-SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'textures_bunnymark', 'textures_image_generation'}
+               'shaders_basic_lighting', 'shaders_texture_tiling', 'models_billboard_rendering'}
+SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'textures_bunnymark', 'textures_image_generation',
+          'core_window_letterbox'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
-                'shaders_raymarching_rendering': 4}
+                'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68}
 
 
 # -----------------------------------------------------------------------------
@@ -356,6 +365,21 @@ def scripts():
                                                    quick([key(KEY_RIGHT, False)]), slow([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)])]),
         # The wheel grows the outline, then shrinks it below the minimum of 1.
         script('shaders_texture_outline', 'wheel', [quick(), quick([(MOUSE_WHEEL, 0, 3, 0)]), slow(), quick([(MOUSE_WHEEL, 0, -9, 0)]), quick()]),
+        # LOGO for 120 frames, then ENTER, a tap gesture (INPUT_GESTURE) and ENTER walk TITLE, GAMEPLAY, ENDING, TITLE.
+        script('core_basic_screen_manager', 'screens', [quick() for _ in range(121)]
+               + [quick([key(KEY_ENTER)]), quick([key(KEY_ENTER, False), (INPUT_GESTURE, 1, 0, 0)]), quick([(INPUT_GESTURE, 0, 0, 0)]),
+                  slow([key(KEY_ENTER)]), quick([key(KEY_ENTER, False)])]),
+        # The mouse inside the game screen, on its left bar and right of it; SPACE draws new colors.
+        script('core_window_letterbox', 'mouse', [quick(), quick([mouse_at(400, 225)]), quick([mouse_at(50, 10)]), slow([mouse_at(790, 440), key(KEY_SPACE)]),
+                                                  quick([key(KEY_SPACE, False)])], seed=0x1E7),
+        script('core_input_multitouch', 'frames', [quick(), slow()]),
+        # One degree a frame: 13 degrees (the 13th frame) is outside the Apple profile.
+        script('shapes_math_angle_rotation', 'turn', [quick() for _ in range(14)] + [slow(), quick()]),
+        # The mouse at the origin, inside the left eye, between the eyes, inside the right eye and off screen.
+        script('shapes_following_eyes', 'look', [quick(), quick([mouse_at(300, 225)]), quick([mouse_at(400, 100)]), slow([mouse_at(520, 240)]),
+                                                 quick([mouse_at(-40, 500)]), quick([mouse_at(300, 400)])]),
+        script('text_font_spritefont', 'frames', [quick(), slow()]),
+        script('models_billboard_rendering', 'orbit', [quick(), quick(), slow(), quick()]),
         script('models_orthographic_projection', 'switch', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False)]), quick([key(KEY_SPACE)]),
                                                             quick([key(KEY_SPACE, False)])]),
         # RIGHT walks the player into the sphere (touching at exactly the radius: z 2 - 0.5 = 1.5), UP goes deeper,
@@ -415,6 +439,19 @@ def timed(item):
 
 # -----------------------------------------------------------------------------
 # Contract predictions
+
+def frame_times(item):
+    """GetFrameTime() during each frame's update: 0, then the previous frame's update + draw + wait
+    (binary64 sums as rcore.c's EndDrawing computes them, read as a float)."""
+    times, previous, last = [], item['start'], 0.0
+    for frame in item['frames']:
+        times.append(fp.f32(last))
+        total = (frame['begin'] - previous) + (frame['end'] - frame['begin'])
+        if frame['after'] != frame['end']:
+            total += frame['after'] - frame['end']
+        last, previous = total, frame['after']
+    return times
+
 
 def bullet_hell_refusal(item, libm):
     """shapes_bullet_hell: the frame whose spawned directions (sinf/cosf of dir*DEG2RAD, refusing that frame
@@ -508,6 +545,16 @@ def refusal(item, libm):
         return None if all(fp.accepted(libm, a) for a in angles) else 0
     if item['example'] == 'shapes_bullet_hell':
         return bullet_hell_refusal(item, libm)
+    if item['example'] == 'shapes_math_angle_rotation':
+        # The example's sinf/cosf of 0, 30, 60 and 90 degrees and of totalAngle = frame + 1 (below 360 here).
+        for index in range(len(item['frames'])):
+            if not all(fp.accepted(libm, fp.f32(fp.f32(float(d)) * fp.DEG2RAD)) for d in (0, 30, 60, 90, index + 1)):
+                return index
+        return None
+    if item['example'] == 'shapes_following_eyes':
+        # Outside a sclera's reach the iris needs atan2f and sinf/cosf of its angle, which the Apple profile
+        # does not verify; the script starts with the mouse at the origin, outside both.
+        return 0 if libm == 'AppleLibm' else None
     if item['example'] != 'core_2d_camera':
         return None
     down, previous, rotation, wheel = set(), set(), 0.0, False

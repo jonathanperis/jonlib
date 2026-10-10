@@ -147,7 +147,7 @@
   {
    "name": "core_input_multitouch",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -643,7 +643,7 @@
   {
    "name": "core_window_letterbox",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginTextureMode",
@@ -887,7 +887,7 @@
   {
    "name": "core_basic_screen_manager",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1637,7 +1637,7 @@
   {
    "name": "shapes_following_eyes",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointCircle",
@@ -2333,7 +2333,7 @@
   {
    "name": "shapes_math_angle_rotation",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -3487,7 +3487,7 @@
   {
    "name": "text_font_spritefont",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -3992,7 +3992,7 @@
   {
    "name": "models_billboard_rendering",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
