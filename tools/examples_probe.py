@@ -216,6 +216,7 @@ EXAMPLES = {
     'text_font_loading': ('text/text_font_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
     'text_font_filters': ('text/text_font_filters.c', 'Ex.setup(RESOURCES, core, frame)'),
     'text_words_alignment': ('text/text_words_alignment.c', 'Ex.setup(core, frame)'),
+    'text_rectangle_bounds': ('text/text_rectangle_bounds.c', 'Ex.setup(core, frame)'),
     'core_smooth_pixelperfect': ('core/core_smooth_pixelperfect.c', 'Ex.setup(core, frame)'),
     'models_tesseract_view': ('models/models_tesseract_view.c', 'Ex.setup(core, frame)'),
     'textures_particles_blending': ('textures/textures_particles_blending.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
@@ -662,6 +663,13 @@ def scripts():
                                                       quick([button(0)]), quick([button(0, False)])]),
         script('text_font_loading', 'fonts', [quick(), slow(), quick([key(KEY_SPACE)]), quick(), quick([key(KEY_SPACE, False)])]),
         # The wheel grows and shrinks the text, 2 and 3 filter it (3 with 2 held: 2 wins only when pressed that
+        # Word wrap in the first container; the border under the mouse; the corner dragged narrower and lower
+        # (longer lines break at the last space), to the minimum (words cut by characters) and back out past the
+        # maximum, released at 380x150; then without word wrap, dragged to 585x285 and 135x135.
+        script('text_rectangle_bounds', 'resize', [quick(), quick([mouse_at(300, 100)]), quick([mouse_at(766, 216)]), quick([button(0)]), quick([mouse_at(500, 260)]),
+                                                   quick([mouse_at(300, 300)]), quick([mouse_at(40, 40)]), quick([mouse_at(140, 320)]), quick([mouse_at(790, 440)]),
+                                                   quick([button(0, False), mouse_at(420, 300)]), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False), mouse_at(395, 165)]),
+                                                   quick([button(0)]), quick([mouse_at(600, 300)]), quick([mouse_at(150, 150)]), quick([button(0, False)]), quick()]),
         # frame), RIGHT then LEFT move it, 1 returns to POINT.
         script('text_font_filters', 'filters', [quick(), quick([(MOUSE_WHEEL, 0, -6, 0)]), quick([key(KEY_TWO)]), slow([key(KEY_RIGHT)]),
                                                 quick([key(KEY_THREE), (MOUSE_WHEEL, 0, 9, 0)]), quick([key(KEY_TWO, False), key(KEY_THREE, False), key(KEY_LEFT)]),
