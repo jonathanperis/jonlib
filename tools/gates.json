@@ -1652,6 +1652,20 @@
    "minutes": 1
   },
   {
+   "id": "strtod",
+   "title": "M.Float64.from_decimal (strtod and atof of a JSON number, correctly rounded, and its narrowing to binary32) against Python's float and the host's strtod, with halfway cases and the refused forms",
+   "run": [
+    "{python}",
+    "tools/strtod_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 1
+  },
+  {
    "id": "glibc-sinf",
    "title": "The glibc sinf/cosf kernel (src/sincosf.bend) against the glibc x86_64 FMA-variant model (exhaustively equal to native glibc 2.39 and 2.41) on random words of every exponent, region boundaries, quadrant changes, the FMA/SSE2 variant differences and specials, and against the host sinf/cosf where it qualifies",
    "run": [

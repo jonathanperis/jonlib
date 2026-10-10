@@ -526,3 +526,34 @@ wherever the kernel answers. The same native program agrees under glibc
 2.39-0ubuntu8.9 and glibc 2.41 (Debian trixie container), in both the FMA
 and the SSE2 (`GLIBC_TUNABLES=glibc.cpu.hwcaps=-AVX2,-FMA,-FMA4`) variants;
 inside the refused band those hosts answer both ways.
+
+## Decimal numbers (strtod)
+
+`M.Float64.from_decimal(bytes)` is the binary64 value the C library's `strtod`
+and `atof` give a decimal number in JSON's grammar
+(`-? (0 | [1-9][0-9]*) (. [0-9]+)? ([eE] [+-]? [0-9]+)?`), and
+`M.Float64.to_f32` of it is `(float)strtod(...)`. That is how cgltf reads the
+numbers of a glTF file (node transforms, material factors), which the glTF
+loader needs bit for bit.
+
+`strtod` is correctly rounded (to nearest, ties to even), so no libm profile
+is involved: `src/strtod.bend` decides the value by exact integer arithmetic.
+The digits `D` and the decimal exponent `e` give `N/M = D*10^e`; `N` or `M`
+is scaled by a power of two so that `Q = floor(N/M)` has 54 or 55 bits; `Q`
+comes from 55 steps of binary long division on lists of 16-bit limbs; its low
+one or two bits and the remainder round the top 53.
+
+`None` outside the domain: a text that is not of that grammar (a leading
+plus or zero, a bare point, spaces, hexadecimal, `inf`, `nan`), more than 19
+significant digits (`D` below 2^64), a decimal exponent beyond 60 in
+magnitude once the fraction digits are counted, or an exponent field of more
+than three digits. Inside it every result is a normal double or a signed
+zero.
+
+Gate `strtod` (`tools/strtod_probe.py`) takes the expected words from
+Python's `float()`, which is correctly rounded as well, and requires the
+host's `strtod` and `atof` to give the same words: 322 answered cases
+(integers, the numbers of the glTF models the examples load, powers of ten,
+decimals exactly halfway between two doubles and their neighbours, 17-digit
+round-trip forms, 19-digit numbers, values whose narrowing overflows or is
+subnormal) and 33 refused ones, on CPU-1, CPU-2 and JavaScript.

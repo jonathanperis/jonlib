@@ -669,6 +669,33 @@ def Laws.glibc_rand_large_seed_none():
 def Laws.libc_rand_apple_none(seed):
   {==}
 
+def Laws.strtod_one():
+  {==}
+
+def Laws.strtod_tenth():
+  {==}
+
+def Laws.strtod_tie_to_even():
+  {==}
+
+def Laws.strtod_tie_to_even_up():
+  {==}
+
+def Laws.strtod_exponent():
+  {==}
+
+def Laws.strtod_negative_zero():
+  {==}
+
+def Laws.strtod_twenty_digits_none():
+  {==}
+
+def Laws.strtod_plus_none():
+  {==}
+
+def Laws.strtod_empty_exponent_none():
+  {==}
+
 def Laws.hypot_within_below_inside(error, limit):
   {==}
 
