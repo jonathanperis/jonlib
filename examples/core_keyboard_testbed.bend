@@ -8,7 +8,7 @@
 # prints an INFO line for each; the queues are read here too, but the
 # lines are not printed (J.Program's update is pure, docs/DRIVER.md). The
 # key texts and the lines' keycodes and widths are generated from the
-# example's tables with raylib.h's keycodes.
+# example's tables with raylib.h's keycodes (tools/example_tables.py).
 import Base
 import ../jonlib.bend as J
 import ../jonmath.bend as M
