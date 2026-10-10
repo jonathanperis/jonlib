@@ -17,7 +17,7 @@ Bend and replaying it against the native example. Work autonomously; merge to
 | Branch | Content | State |
 |---|---|---|
 | `main` | cd7ac01: everything through the glibc `sinf`/`cosf` kernel, the shader API and 63 example ports | CI green (run 38017845114 on this commit, merged 2026-10-10) |
-| `feature/examples-gui` | on top of `main`: Jongui (raygui), `M.Libm.pow2`, 34 more example ports, per-example frame targets and reported refusals in the examples probe | c3e2e6b in CI (run 38030650917); **merge to `main` once it concludes `success`**, then push the later commits on a new branch |
+| `feature/examples-gui` | on top of `main`: Jongui (raygui), `M.Libm.pow2`, 39 more example ports, per-example frame targets and reported refusals in the examples probe | c3e2e6b in CI (run 38030650917); **merge to `main` once it concludes `success`**, then push the later commits on a new branch |
 
 `feature/audio-waves`, `wip/models-drawing-obj`, `wip/lgpl-tan-asinf` and
 `integrate/models-lgpl` are merged into `main` and deleted.
@@ -25,7 +25,7 @@ Bend and replaying it against the native example. Work autonomously; merge to
 Coverage (`python3 tools/api_plan.py check`): raylib.h 514/600 partial
 (20 blocked, 66 not started); raymath.h 146/146; rlgl.h 93/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **97/212 ported**, 73 ready, 42 waiting. No API
+[EXAMPLES.md](EXAMPLES.md)): **102/212 ported**, 68 ready, 42 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -63,7 +63,7 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
   `jongui.bend`; the examples plan tracks raygui per function
   (`api/jongui.json`). Spinner, dropdown box and text box need raygui's
   icons first.
-- **Examples**: 97 ported; gates `examples-core`, `-shapes`, `-text`,
+- **Examples**: 102 ported; gates `examples-core`, `-shapes`, `-text`,
   `-textures`, `-models`, `-shaders`.
 - **Compile memory**: per-output compiler processes and a cgroup-aware job
   budget in probekit; `LoadImage` of a `.png` in ports is `Surface.load_png`

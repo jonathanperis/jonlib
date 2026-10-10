@@ -2708,7 +2708,7 @@
   {
    "name": "textures_magnifying_glass",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginBlendMode",
     "BeginDrawing",
@@ -2881,7 +2881,7 @@
   {
    "name": "textures_image_processing",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",
@@ -3308,7 +3308,7 @@
   {
    "name": "textures_polygon_drawing",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -3398,7 +3398,7 @@
   {
    "name": "textures_image_kernel",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -3423,7 +3423,7 @@
   {
    "name": "textures_image_channel",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CloseWindow",

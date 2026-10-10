@@ -97,6 +97,11 @@ EXAMPLES = {
     'textures_srcrec_dstrec': ('textures/textures_srcrec_dstrec.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_tiled_drawing': ('textures/textures_tiled_drawing.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_image_drawing': ('textures/textures_image_drawing.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_image_channel': ('textures/textures_image_channel.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_image_kernel': ('textures/textures_image_kernel.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_image_processing': ('textures/textures_image_processing.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_polygon_drawing': ('textures/textures_polygon_drawing.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'textures_magnifying_glass': ('textures/textures_magnifying_glass.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_image_text': ('textures/textures_image_text.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_fog_of_war': ('textures/textures_fog_of_war.c', 'Ex.setup(seed, core, frame)'),
     'textures_sprite_animation': ('textures/textures_sprite_animation.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -194,7 +199,8 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'models_billboard_rendering', 'shaders_color_correction', 'textures_particles_blending',
             'text_sprite_fonts', 'models_directional_billboard', 'textures_tiled_drawing',
             'textures_image_drawing', 'text_font_loading', 'textures_image_text',
-            'text_font_filters'}
+            'text_font_filters', 'textures_image_channel', 'textures_image_kernel',
+            'textures_image_processing', 'textures_polygon_drawing', 'textures_magnifying_glass'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -483,6 +489,22 @@ def scripts():
                   quick([key(KEY_UP), key(KEY_DOWN)]), quick([key(KEY_UP, False), key(KEY_DOWN, False)]), quick([key(KEY_UP)]), quick([key(KEY_UP, False)]),
                   quick([key(KEY_UP)]), quick([key(KEY_UP, False)]), quick([key(KEY_UP)]), quick([key(KEY_UP, False)]), slow(), quick([key(KEY_UP)]), quick()]),
         script('textures_image_drawing', 'frames', [quick(), slow()]),
+        script('textures_image_channel', 'frames', [quick(), slow()]),
+        script('textures_image_kernel', 'frames', [quick(), slow()]),
+        script('textures_polygon_drawing', 'turn', [quick() for _ in range(14)] + [slow()]),
+        # The glass at the corner, over a hidden bunny, over the title and partly off screen.
+        script('textures_magnifying_glass', 'look', [quick(), quick([mouse_at(266, 366)]), slow([mouse_at(520, 110)]), quick([mouse_at(300, 20)]),
+                                                     quick([mouse_at(780, 440)])]),
+        # Hover and click toggles (tint, then grayscale: its one-channel colors go back as RGBA), DOWN through
+        # invert, contrast, brightness and the Gaussian blur, UP from the first process (to the eighth, as the example does), the
+        # last one by DOWN and around to none.
+        script('textures_image_processing', 'processes', [quick(), quick([mouse_at(100, 125)]), quick([button(0)]), quick([button(0, False)]),
+                                                          quick([mouse_at(100, 95), button(0)]), slow([button(0, False)]), quick([mouse_at(500, 300), key(KEY_DOWN)]),
+                                                          quick([key(KEY_DOWN, False)]), quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]),
+                                                          quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]), quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]),
+                                                          quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False), mouse_at(100, 60), button(0)]),
+                                                          quick([button(0, False)]), quick([key(KEY_UP), mouse_at(500, 300)]), quick([key(KEY_UP, False), key(KEY_DOWN)]),
+                                                          quick([key(KEY_DOWN, False)]), quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)])]),
         script('textures_image_text', 'atlas', [quick(), slow([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)])]),
         # The mouse over each pad button, moving the player only while the left button is down; the taxicab
         # edge of a button (29 inside, 30 outside); between two buttons the first in order wins.
@@ -721,12 +743,23 @@ def bullet_hell_refusal(item, libm):
 # the glibc profiles
 # they refuse nothing and every frame is compared. Under AppleLibm the refusal frame is the one Jonlib
 # reports (every frame before it is still compared with raylib); it is not predicted independently.
+# Examples whose native run is undefined behavior in C, with the reason. Jonlib refuses the operation, so
+# every frame of the port is a contract (refused from the first one) on every profile and no frame of the
+# native example is evidence.
+UNDEFINED_NATIVE = {
+    # ImageKernelConvolution converts alphaSum*255.0f with an (unsigned char) cast. The sharpen kernel sums to
+    # 2 on the image's first and last rows (510.0f) and the Sobel kernel to -2 on its first pixel (-510.0f):
+    # out-of-range conversions (C11 6.3.1.4). docs/CONVOLUTION.md.
+    'textures_image_kernel': 'ImageKernelConvolution casts out-of-range alpha sums to unsigned char',
+}
 REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
-            'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile'}
+            'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass'}
 
 
 def refusal(item, libm):
     """The index of the first frame Jonlib refuses (None when none is; 'reported' to take Jonlib's own)."""
+    if item['example'] in UNDEFINED_NATIVE:
+        return 0
     if item['example'] in REPORTED:
         return 'reported' if libm == 'AppleLibm' else None
     if item['example'] in PERSPECTIVE and libm == 'AppleLibm':
@@ -743,8 +776,9 @@ def refusal(item, libm):
             if not all(fp.accepted(libm, a) for a in angles):
                 return index
         return None
-    if item['example'] == 'textures_srcrec_dstrec':
-        # DrawTexturePro's sinf/cosf of (float)rotation*DEG2RAD, rotation = frame + 1.
+    if item['example'] in ('textures_srcrec_dstrec', 'textures_polygon_drawing'):
+        # DrawTexturePro's sinf/cosf of (float)rotation*DEG2RAD, rotation = frame + 1; the polygon's
+        # Vector2Rotate takes the same angle*DEG2RAD, angle = frame + 1.
         for index in range(len(item['frames'])):
             if not fp.accepted(libm, fp.f32(float(index + 1) * fp.DEG2RAD)):
                 return index
