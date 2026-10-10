@@ -1,25 +1,54 @@
 name: Conformance
 
-# Every gate in tools/gates.json runs on both OSes, split into balanced shards by
-# tools/run_gates.py. Documentation-only changes do not need the native toolchain.
+# tools/ci_scope.py decides what a change needs. A change that can reach a gate
+# runs every gate in tools/gates.json on both OSes, split into balanced shards
+# by tools/run_gates.py. A change to example ports only replays those examples
+# on both OSes. Harness-only changes need neither, and documentation-only
+# changes do not start this workflow. Scheduled and manual runs are complete.
 on:
   push:
     branches: [main, 'feature/**']
     paths-ignore: ['docs/**', '**/*.md', 'LICENSES/**']
   pull_request:
     paths-ignore: ['docs/**', '**/*.md', 'LICENSES/**']
+  schedule:
+    - cron: '17 3 * * *'
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# The nightly run has its own group: a push to main must not cancel it.
 concurrency:
-  group: conformance-${{ github.ref }}
+  group: conformance-${{ github.event_name == 'schedule' && 'nightly' || github.ref }}
   cancel-in-progress: true
 
 jobs:
+  scope:
+    name: Scope
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      mode: ${{ steps.scope.outputs.mode }}
+      examples: ${{ steps.scope.outputs.examples }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Classify the change
+        id: scope
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/ci_scope.py
+
   gates:
     name: Gates ${{ matrix.os }} ${{ matrix.shard }}/10
+    needs: [scope]
+    if: ${{ needs.scope.outputs.mode == 'full' }}
     strategy:
       fail-fast: false
       matrix:
@@ -54,26 +83,83 @@ jobs:
             .build/*-probe/results.json
             .build/conformance.json
 
+  examples:
+    name: Changed examples (${{ matrix.os }})
+    needs: [scope]
+    if: ${{ needs.scope.outputs.mode == 'examples' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 210
+    env:
+      BEND_NO_TELEMETRY: '1'
+      CC: clang
+      CXX: clang++
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-pinned
+      - name: Replay the changed examples against the native examples
+        env:
+          EXAMPLES: ${{ needs.scope.outputs.examples }}
+        run: >-
+          python3 tools/examples_probe.py
+          --bend-source="${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source="${{ github.workspace }}/.build/dependencies/raylib"
+          $EXAMPLES
+      - name: Upload replay results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: examples-${{ matrix.os }}
+          retention-days: 30
+          include-hidden-files: true
+          if-no-files-found: error
+          path: .build/*-probe/results.json
+
   conformanceUbuntu:
     name: CPU and JavaScript (ubuntu-24.04)
     if: ${{ always() }}
-    needs: [gates]
+    needs: [scope, gates, examples]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Require every gate shard on both OSes
+      - name: Require what the scope asked for on both OSes
         env:
+          SCOPE_RESULT: ${{ needs.scope.result }}
+          MODE: ${{ needs.scope.outputs.mode }}
           GATES_RESULT: ${{ needs.gates.result }}
-        run: test "$GATES_RESULT" = success
+          EXAMPLES_RESULT: ${{ needs.examples.result }}
+        run: |
+          test "$SCOPE_RESULT" = success
+          case "$MODE" in
+            full) test "$GATES_RESULT" = success ;;
+            examples) test "$EXAMPLES_RESULT" = success ;;
+            none) test "$GATES_RESULT" = skipped && test "$EXAMPLES_RESULT" = skipped ;;
+            *) exit 1 ;;
+          esac
 
   conformanceMac:
     name: CPU and JavaScript (macos-15)
     if: ${{ always() }}
-    needs: [gates]
+    needs: [scope, gates, examples]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Require every gate shard on both OSes
+      - name: Require what the scope asked for on both OSes
         env:
+          SCOPE_RESULT: ${{ needs.scope.result }}
+          MODE: ${{ needs.scope.outputs.mode }}
           GATES_RESULT: ${{ needs.gates.result }}
-        run: test "$GATES_RESULT" = success
+          EXAMPLES_RESULT: ${{ needs.examples.result }}
+        run: |
+          test "$SCOPE_RESULT" = success
+          case "$MODE" in
+            full) test "$GATES_RESULT" = success ;;
+            examples) test "$EXAMPLES_RESULT" = success ;;
+            none) test "$GATES_RESULT" = skipped && test "$EXAMPLES_RESULT" = skipped ;;
+            *) exit 1 ;;
+          esac
