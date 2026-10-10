@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 79 ported, 91 ready, 42 waiting.
+Totals: 212 examples; 131 ported, 39 ready, 42 waiting.
 
 ## APIs that unblock the most examples
 
@@ -65,24 +65,24 @@ Totals: 212 examples; 79 ported, 91 ready, 42 waiting.
 | `core_input_mouse_wheel` | core | ported |  |
 | `core_input_gamepad` | core | ready |  |
 | `core_input_multitouch` | core | ported |  |
-| `core_input_gestures` | core | ready |  |
+| `core_input_gestures` | core | ported |  |
 | `core_input_gestures_testbed` | core | ready |  |
-| `core_input_virtual_controls` | core | ready |  |
+| `core_input_virtual_controls` | core | ported |  |
 | `core_2d_camera` | core | ported |  |
 | `core_2d_camera_mouse_zoom` | core | ready |  |
-| `core_2d_camera_platformer` | core | ready |  |
+| `core_2d_camera_platformer` | core | ported |  |
 | `core_2d_camera_split_screen` | core | ported |  |
 | `core_3d_camera_mode` | core | ported |  |
 | `core_3d_camera_free` | core | ported |  |
-| `core_3d_camera_first_person` | core | ready |  |
-| `core_3d_camera_split_screen` | core | ready |  |
+| `core_3d_camera_first_person` | core | ported |  |
+| `core_3d_camera_split_screen` | core | ported |  |
 | `core_3d_camera_fps` | core | ready |  |
 | `core_3d_picking` | core | ported |  |
 | `core_world_screen` | core | ported |  |
-| `core_window_flags` | core | ready |  |
+| `core_window_flags` | core | ported |  |
 | `core_window_letterbox` | core | ported |  |
 | `core_window_should_close` | core | ready |  |
-| `core_monitor_detector` | core | ready |  |
+| `core_monitor_detector` | core | ported |  |
 | `core_custom_logging` | core | ready |  |
 | `core_drop_files` | core | ported |  |
 | `core_random_values` | core | ported |  |
@@ -91,19 +91,19 @@ Totals: 212 examples; 79 ported, 91 ready, 42 waiting.
 | `core_scissor_test` | core | ported |  |
 | `core_basic_screen_manager` | core | ported |  |
 | `core_custom_frame_control` | core | ready |  |
-| `core_smooth_pixelperfect` | core | ready |  |
-| `core_random_sequence` | core | ready |  |
+| `core_smooth_pixelperfect` | core | ported |  |
+| `core_random_sequence` | core | ported |  |
 | `core_automation_events` | core | ready |  |
-| `core_highdpi_demo` | core | ready |  |
+| `core_highdpi_demo` | core | ported |  |
 | `core_render_texture` | core | ported |  |
-| `core_undo_redo` | core | ready |  |
-| `core_viewport_scaling` | core | ready |  |
-| `core_input_actions` | core | ready |  |
+| `core_undo_redo` | core | ported |  |
+| `core_viewport_scaling` | core | ported |  |
+| `core_input_actions` | core | ported |  |
 | `core_directory_files` | core | waiting | `GetWorkingDirectory`, `LoadDirectoryFiles`, `LoadDirectoryFilesEx`, `UnloadDirectoryFiles`, `GuiGetFont`, `GuiListViewEx` |
-| `core_highdpi_testbed` | core | ready |  |
+| `core_highdpi_testbed` | core | ported |  |
 | `core_screen_recording` | core | waiting | `GetApplicationDirectory` |
 | `core_clipboard_text` | core | waiting | `GuiSetIconScale`, `GuiTextBox` |
-| `core_text_file_loading` | core | ready |  |
+| `core_text_file_loading` | core | ported |  |
 | `core_compute_hash` | core | waiting | `GuiTextBox` |
 | `core_keyboard_testbed` | core | ready |  |
 | `core_window_web` | core | ported |  |
@@ -128,10 +128,10 @@ Totals: 212 examples; 79 ported, 91 ready, 42 waiting.
 | `shapes_rectangle_advanced` | shapes | ready |  |
 | `shapes_splines_drawing` | shapes | waiting | `GuiDropdownBox` |
 | `shapes_digital_clock` | shapes | ready |  |
-| `shapes_double_pendulum` | shapes | ready |  |
+| `shapes_double_pendulum` | shapes | ported |  |
 | `shapes_dashed_line` | shapes | ported |  |
 | `shapes_triangle_strip` | shapes | ported |  |
-| `shapes_vector_angle` | shapes | ready |  |
+| `shapes_vector_angle` | shapes | ported |  |
 | `shapes_pie_chart` | shapes | waiting | `GuiLine`, `GuiScrollPanel`, `GuiSpinner`, `GuiTextBox` |
 | `shapes_kaleidoscope` | shapes | ported |  |
 | `shapes_clock_of_clocks` | shapes | ready |  |
@@ -144,18 +144,18 @@ Totals: 212 examples; 79 ported, 91 ready, 42 waiting.
 | `shapes_rlgl_color_wheel` | shapes | ready |  |
 | `shapes_rlgl_triangle` | shapes | ported |  |
 | `shapes_ball_physics` | shapes | ready |  |
-| `shapes_penrose_tile` | shapes | ready |  |
+| `shapes_penrose_tile` | shapes | ported |  |
 | `shapes_hilbert_curve` | shapes | waiting | `GuiSpinner` |
 | `shapes_easings_testbed` | shapes | ready |  |
 | `textures_clipboard_image` | textures | ready |  |
-| `textures_magnifying_glass` | textures | ready |  |
+| `textures_magnifying_glass` | textures | ported |  |
 | `textures_logo_raylib` | textures | ported |  |
 | `textures_srcrec_dstrec` | textures | ported |  |
-| `textures_image_drawing` | textures | ready |  |
+| `textures_image_drawing` | textures | ported |  |
 | `textures_image_generation` | textures | ported |  |
 | `textures_image_loading` | textures | ported |  |
-| `textures_image_processing` | textures | ready |  |
-| `textures_image_text` | textures | ready |  |
+| `textures_image_processing` | textures | ported |  |
+| `textures_image_text` | textures | ported |  |
 | `textures_to_image` | textures | ported |  |
 | `textures_raw_data` | textures | ported |  |
 | `textures_particles_blending` | textures | ported |  |
@@ -165,24 +165,24 @@ Totals: 212 examples; 79 ported, 91 ready, 42 waiting.
 | `textures_sprite_button` | textures | waiting | `CloseAudioDevice`, `InitAudioDevice`, `LoadSound`, `PlaySound`, `UnloadSound` |
 | `textures_sprite_explosion` | textures | waiting | `CloseAudioDevice`, `InitAudioDevice`, `LoadSound`, `PlaySound`, `UnloadSound` |
 | `textures_bunnymark` | textures | ported |  |
-| `textures_mouse_painting` | textures | ready |  |
+| `textures_mouse_painting` | textures | ported |  |
 | `textures_blend_modes` | textures | ported |  |
-| `textures_tiled_drawing` | textures | ready |  |
-| `textures_polygon_drawing` | textures | ready |  |
-| `textures_fog_of_war` | textures | ready |  |
-| `textures_gif_player` | textures | ready |  |
-| `textures_image_kernel` | textures | ready |  |
-| `textures_image_channel` | textures | ready |  |
+| `textures_tiled_drawing` | textures | ported |  |
+| `textures_polygon_drawing` | textures | ported |  |
+| `textures_fog_of_war` | textures | ported |  |
+| `textures_gif_player` | textures | ported |  |
+| `textures_image_kernel` | textures | ported |  |
+| `textures_image_channel` | textures | ported |  |
 | `textures_image_rotate` | textures | ported |  |
-| `textures_screen_buffer` | textures | ready |  |
+| `textures_screen_buffer` | textures | ported |  |
 | `textures_textured_curve` | textures | ready |  |
 | `textures_sprite_stacking` | textures | ready |  |
-| `textures_cellular_automata` | textures | ready |  |
-| `textures_framebuffer_rendering` | textures | ready |  |
-| `text_sprite_fonts` | text | ready |  |
+| `textures_cellular_automata` | textures | ported |  |
+| `textures_framebuffer_rendering` | textures | ported |  |
+| `text_sprite_fonts` | text | ported |  |
 | `text_font_spritefont` | text | ported |  |
-| `text_font_filters` | text | ready |  |
-| `text_font_loading` | text | ready |  |
+| `text_font_filters` | text | ported |  |
+| `text_font_loading` | text | ported |  |
 | `text_font_sdf` | text | ready |  |
 | `text_format_text` | text | ported |  |
 | `text_input_box` | text | ported |  |
@@ -193,44 +193,44 @@ Totals: 212 examples; 79 ported, 91 ready, 42 waiting.
 | `text_3d_drawing` | text | ready |  |
 | `text_codepoints_loading` | text | ready |  |
 | `text_inline_styling` | text | ready |  |
-| `text_words_alignment` | text | ready |  |
+| `text_words_alignment` | text | ported |  |
 | `text_strings_management` | text | ready |  |
 | `models_loading_iqm` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
 | `models_billboard_rendering` | models | ported |  |
 | `models_box_collisions` | models | ported |  |
-| `models_cubicmap_rendering` | models | ready |  |
-| `models_first_person_maze` | models | ready |  |
+| `models_cubicmap_rendering` | models | ported |  |
+| `models_first_person_maze` | models | ported |  |
 | `models_geometric_shapes` | models | ported |  |
 | `models_mesh_generation` | models | waiting | `GenMeshCylinder`, `GenMeshKnot`, `UploadMesh` |
 | `models_mesh_picking` | models | ready |  |
-| `models_loading` | models | ready |  |
+| `models_loading` | models | ported |  |
 | `models_loading_gltf` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
 | `models_loading_vox` | models | ready |  |
 | `models_loading_m3d` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
 | `models_orthographic_projection` | models | ported |  |
 | `models_point_rendering` | models | waiting | `UploadMesh` |
-| `models_rlgl_solar_system` | models | ready |  |
-| `models_yaw_pitch_roll` | models | ready |  |
+| `models_rlgl_solar_system` | models | ported |  |
+| `models_yaw_pitch_roll` | models | ported |  |
 | `models_waving_cubes` | models | ready |  |
-| `models_heightmap_rendering` | models | ready |  |
+| `models_heightmap_rendering` | models | ported |  |
 | `models_skybox_rendering` | models | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlGetCullDistanceFar`, `rlGetCullDistanceNear`, `rlLoadFramebuffer`, `rlLoadTextureCubemap`, `rlLoadTextureDepth`, `rlSetUniformMatrix`, `rlUnloadFramebuffer` |
-| `models_textured_cube` | models | ready |  |
+| `models_textured_cube` | models | ported |  |
 | `models_animation_gpu_skinning` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
 | `models_bone_socket` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
-| `models_tesseract_view` | models | ready |  |
+| `models_tesseract_view` | models | ported |  |
 | `models_basic_voxel` | models | ported |  |
 | `models_rotating_cube` | models | ported |  |
 | `models_decals` | models | waiting | `UploadMesh` |
-| `models_directional_billboard` | models | ready |  |
+| `models_directional_billboard` | models | ported |  |
 | `models_animation_blend_custom` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `rlUpdateVertexBuffer` |
 | `models_animation_blending` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `UpdateModelAnimationEx`, `GuiDropdownBox`, `GuiProgressBar` |
 | `models_animation_timing` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `GuiDropdownBox`, `GuiProgressBar` |
-| `shaders_ascii_rendering` | shaders | ready |  |
+| `shaders_ascii_rendering` | shaders | ported |  |
 | `shaders_basic_lighting` | shaders | ported |  |
-| `shaders_model_shader` | shaders | ready |  |
+| `shaders_model_shader` | shaders | ported |  |
 | `shaders_shapes_textures` | shaders | ported |  |
-| `shaders_custom_uniform` | shaders | ready |  |
-| `shaders_postprocessing` | shaders | ready |  |
+| `shaders_custom_uniform` | shaders | ported |  |
+| `shaders_postprocessing` | shaders | ported |  |
 | `shaders_palette_switch` | shaders | ported |  |
 | `shaders_raymarching_rendering` | shaders | ported |  |
 | `shaders_texture_rendering` | shaders | ported |  |
@@ -240,10 +240,10 @@ Totals: 212 examples; 79 ported, 91 ready, 42 waiting.
 | `shaders_mandelbrot_set` | shaders | ported |  |
 | `shaders_color_correction` | shaders | ported |  |
 | `shaders_eratosthenes_sieve` | shaders | ported |  |
-| `shaders_fog_rendering` | shaders | ready |  |
-| `shaders_simple_mask` | shaders | ready |  |
+| `shaders_fog_rendering` | shaders | ported |  |
+| `shaders_simple_mask` | shaders | ported |  |
 | `shaders_hot_reloading` | shaders | waiting | `GetFileModTime` |
-| `shaders_mesh_instancing` | shaders | ready |  |
+| `shaders_mesh_instancing` | shaders | ported |  |
 | `shaders_multi_sample2d` | shaders | ported |  |
 | `shaders_normalmap_rendering` | shaders | ready |  |
 | `shaders_spotlight_rendering` | shaders | ready |  |
