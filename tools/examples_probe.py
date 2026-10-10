@@ -211,6 +211,7 @@ EXAMPLES = {
     'models_yaw_pitch_roll': ('models/models_yaw_pitch_roll.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_loading': ('models/models_loading.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_mesh_picking': ('models/models_mesh_picking.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'models_point_rendering': ('models/models_point_rendering.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'models_rlgl_solar_system': ('models/models_rlgl_solar_system.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'models_textured_cube': ('models/models_textured_cube.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shapes_circle_sector_drawing': ('shapes/shapes_circle_sector_drawing.c', 'Ex.setup(core, frame)'),
@@ -273,7 +274,7 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'core_3d_camera_first_person', 'models_rlgl_solar_system', 'models_textured_cube',
                'core_3d_camera_split_screen', 'shaders_postprocessing', 'textures_framebuffer_rendering',
                'shaders_custom_uniform', 'shaders_mesh_instancing', 'models_mesh_picking', 'core_3d_camera_fps',
-               'shaders_vertex_displacement'}
+               'shaders_vertex_displacement', 'models_point_rendering'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'core_3d_camera_first_person', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer', 'shaders_mesh_instancing',
           'core_undo_redo', 'text_inline_styling', 'text_strings_management', 'shapes_top_down_lights',
@@ -537,6 +538,10 @@ def scripts():
         # The ray over the sky, the ground, the triangle (its barycenter), the sphere, the tower's box beside the
         # mesh and the mesh itself (positions projected from the example's camera); then the camera controls on
         # (the cursor centered), a look and a step, and off.
+        # A thousand points from rand() as a model in point mode; SPACE: one DrawPoint3D each; DOWN generates
+        # another thousand (the count stays at its minimum, rand() goes on); SPACE back to the model.
+        script('models_point_rendering', 'points', [quick(), quick(), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), quick([key(KEY_DOWN)]),
+                                                    quick([key(KEY_DOWN, False), key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]), slow()]),
         script('models_mesh_picking', 'pick', [quick(), quick([mouse_at(700, 30)]), quick([mouse_at(600, 400)]), quick([mouse_at(280, 240)]), quick([mouse_at(300, 235)]),
                                                quick([mouse_at(121, 178)]), quick([mouse_at(135, 160)]), quick([mouse_at(330, 120)]), quick([mouse_at(480, 60)]),
                                                quick([mouse_at(400, 200)]), quick([mouse_at(410, 300)]), quick([button(1)]),
