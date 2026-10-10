@@ -6,16 +6,16 @@
     "blocked": 20,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 432,
-    "partial": 1432
+    "not-started": 431,
+    "partial": 1433
   },
   "core_functions": {
     "total": 600,
     "blocked": 20,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 66,
-    "partial": 514
+    "not-started": 65,
+    "partial": 515
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 20,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 131,
-    "partial": 780
+    "not-started": 130,
+    "partial": 781
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 20,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 110,
-      "partial": 907
+      "not-started": 109,
+      "partial": 908
     },
     "raymath.h": {
       "total": 254,
@@ -456,8 +456,8 @@
       "blocked": 3,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 2,
-      "partial": 49
+      "not-started": 1,
+      "partial": 50
     },
     {
       "id": "materials",

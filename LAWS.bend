@@ -1374,6 +1374,13 @@ law rlgl_begin_lines:
 law rlgl_begin_points_ignored:
   {J.Rlgl.begin.count(0) == 0 : U32}
 
+# UploadMesh has vertex buffers under OpenGL 3.3/ES2 only: the software
+# renderer's mesh is the one given.
+law mesh_upload_unchanged:
+  for mesh: J.Mesh
+  for dynamic: Bool
+  {J.Mesh.upload(mesh, dynamic) == mesh : J.Mesh}
+
 # Meshes (rmodels.c): GenMeshCube always has 24 vertices and 12 triangles;
 # GenMeshPoly with fewer than 3 sides is the empty mesh (all arrays NULL).
 law mesh_cube_vertex_count:

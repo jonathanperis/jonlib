@@ -4385,8 +4385,7 @@
    "gui": [],
    "missing": [
     "GenMeshCylinder",
-    "GenMeshKnot",
-    "UploadMesh"
+    "GenMeshKnot"
    ]
   },
   {
@@ -4630,7 +4629,7 @@
   {
    "name": "models_point_rendering",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4662,9 +4661,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "UploadMesh"
-   ]
+   "missing": []
   },
   {
    "name": "models_rlgl_solar_system",
@@ -5069,7 +5066,7 @@
   {
    "name": "models_decals",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -5128,9 +5125,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "UploadMesh"
-   ]
+   "missing": []
   },
   {
    "name": "models_directional_billboard",
