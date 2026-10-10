@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 145 ported, 25 ready, 42 waiting.
+Totals: 212 examples; 146 ported, 24 ready, 42 waiting.
 
 ## APIs that unblock the most examples
 
@@ -69,7 +69,7 @@ Totals: 212 examples; 145 ported, 25 ready, 42 waiting.
 | `core_input_gestures_testbed` | core | ported |  |
 | `core_input_virtual_controls` | core | ported |  |
 | `core_2d_camera` | core | ported |  |
-| `core_2d_camera_mouse_zoom` | core | ready |  |
+| `core_2d_camera_mouse_zoom` | core | ported |  |
 | `core_2d_camera_platformer` | core | ported |  |
 | `core_2d_camera_split_screen` | core | ported |  |
 | `core_3d_camera_mode` | core | ported |  |

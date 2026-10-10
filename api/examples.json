@@ -294,7 +294,7 @@
   {
    "name": "core_2d_camera_mouse_zoom",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode2D",
