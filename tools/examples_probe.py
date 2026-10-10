@@ -189,6 +189,7 @@ EXAMPLES = {
     'core_highdpi_demo': ('core/core_highdpi_demo.c', 'Ex.setup(core, frame)'),
     'core_viewport_scaling': ('core/core_viewport_scaling.c', 'Ex.setup(core, frame)'),
     'core_undo_redo': ('core/core_undo_redo.c', 'Ex.setup(seed, core, frame)'),
+    'core_keyboard_testbed': ('core/core_keyboard_testbed.c', 'Ex.setup(core, frame)'),
     'core_text_file_loading': ('core/core_text_file_loading.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_input_virtual_controls': ('core/core_input_virtual_controls.c', 'Ex.setup(core, frame)'),
     'shapes_math_angle_rotation': ('shapes/shapes_math_angle_rotation.c', 'Ex.setup(core, frame)'),
@@ -570,6 +571,11 @@ def scripts():
         # The wheel scrolls down, back past the top (snapped to 0) and far past the end (snapped to the last page).
         script('core_text_file_loading', 'scroll', [quick(), quick([(MOUSE_WHEEL, 0, -3, 0)]), slow([(MOUSE_WHEEL, 0, 5, 0)]),
                                                     quick([(MOUSE_WHEEL, 0, -200, 0)]), quick()]),
+        # Keys held together (A, left shift, then ESC, which does not close: SetExitKey(KEY_NULL)), the mouse
+        # over ESC, SPACE and the KEY_NULL cell, the unnamed key 162, F1, and everything released.
+        script('core_keyboard_testbed', 'keys', [quick(), quick([key(65)]), quick([key(340)]), quick([mouse_at(50, 95)]), quick([key(256)]), quick([key(65, False)]),
+                                                 quick([mouse_at(300, 300), key(KEY_SPACE)]), quick([key(162)]), quick([key(290), mouse_at(540, 300)]),
+                                                 quick([key(256, False), key(340, False), key(KEY_SPACE, False)]), quick([key(162, False), key(290, False)]), quick()]),
         # Moves and a recolor recorded every second frame; CTRL+Z back three states, CTRL+Y forward one, a new
         # move from there, then enough moves (a press every second frame) to wrap the ring of 26 slots.
         script('core_undo_redo', 'ring', [quick(), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), quick([key(KEY_DOWN)]), quick([key(KEY_DOWN, False)]),
