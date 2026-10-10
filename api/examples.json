@@ -338,7 +338,7 @@
   {
    "name": "core_2d_camera_platformer",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode2D",
@@ -2171,7 +2171,7 @@
   {
    "name": "shapes_vector_angle",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",

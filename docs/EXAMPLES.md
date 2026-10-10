@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 85 ported, 85 ready, 42 waiting.
+Totals: 212 examples; 87 ported, 83 ready, 42 waiting.
 
 ## APIs that unblock the most examples
 
@@ -70,7 +70,7 @@ Totals: 212 examples; 85 ported, 85 ready, 42 waiting.
 | `core_input_virtual_controls` | core | ready |  |
 | `core_2d_camera` | core | ported |  |
 | `core_2d_camera_mouse_zoom` | core | ready |  |
-| `core_2d_camera_platformer` | core | ready |  |
+| `core_2d_camera_platformer` | core | ported |  |
 | `core_2d_camera_split_screen` | core | ported |  |
 | `core_3d_camera_mode` | core | ported |  |
 | `core_3d_camera_free` | core | ported |  |
@@ -131,7 +131,7 @@ Totals: 212 examples; 85 ported, 85 ready, 42 waiting.
 | `shapes_double_pendulum` | shapes | ported |  |
 | `shapes_dashed_line` | shapes | ported |  |
 | `shapes_triangle_strip` | shapes | ported |  |
-| `shapes_vector_angle` | shapes | ready |  |
+| `shapes_vector_angle` | shapes | ported |  |
 | `shapes_pie_chart` | shapes | waiting | `GuiLine`, `GuiScrollPanel`, `GuiSpinner`, `GuiTextBox` |
 | `shapes_kaleidoscope` | shapes | ported |  |
 | `shapes_clock_of_clocks` | shapes | ready |  |
