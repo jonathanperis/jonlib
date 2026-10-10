@@ -1374,6 +1374,28 @@ law rlgl_begin_lines:
 law rlgl_begin_points_ignored:
   {J.Rlgl.begin.count(0) == 0 : U32}
 
+# ColorFromHSV's fmodf(phase, 6) (docs/API.md): the terms subtracted are
+# 6*2^j (6.0 is 0x40c00000, each doubling adds one to the exponent), starting
+# from as many doublings as the magnitude's exponent is above 6.0's: none
+# below 8, one from 8 on, 125 for the largest binary32 value.
+law color_hsv_term_six:
+  {J.Color.hsv.term(0) == 1086324736 : U32}
+
+law color_hsv_term_doubles:
+  {J.Color.hsv.term(5) == 1128267776 : U32}
+
+law color_hsv_steps_below_six:
+  {J.Color.hsv.steps(1086324735) == 0 : U32}
+
+law color_hsv_steps_below_eight:
+  {J.Color.hsv.steps(1090519039) == 0 : U32}
+
+law color_hsv_steps_eight:
+  {J.Color.hsv.steps(1090519040) == 1 : U32}
+
+law color_hsv_steps_largest:
+  {J.Color.hsv.steps(2139095039) == 125 : U32}
+
 # UploadMesh has vertex buffers under OpenGL 3.3/ES2 only: the software
 # renderer's mesh is the one given.
 law mesh_upload_unchanged:

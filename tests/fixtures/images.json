@@ -242,7 +242,7 @@
       {"op":"color_vector3_value","function":"to_hsv","x":21,"y":0,"args":[255,0,128,0]},
       {"op":"color_vector3_value","function":"to_hsv","x":24,"y":0,"args":[128,127,128,17]}
     ]},
-    {"id":"color-from-hsv","width":13,"height":1,"background":[255,255,255,255],"operations":[
+    {"id":"color-from-hsv","width":34,"height":1,"background":[255,255,255,255],"operations":[
       {"op":"color_numeric_value","function":"from_hsv","x":0,"y":0,"args":[0,1,1]},
       {"op":"color_numeric_value","function":"from_hsv","x":1,"y":0,"args":[60,1,1]},
       {"op":"color_numeric_value","function":"from_hsv","x":2,"y":0,"args":[120,1,1]},
@@ -255,7 +255,28 @@
       {"op":"color_numeric_value","function":"from_hsv","x":9,"y":0,"args":[37.5,0.6,0.7]},
       {"op":"color_numeric_value","function":"from_hsv","x":10,"y":0,"args":[123.456,0.789,0.321]},
       {"op":"color_numeric_value","function":"from_hsv","x":11,"y":0,"args":[359.9999694824219,1,1]},
-      {"op":"color_numeric_value","function":"from_hsv","x":12,"y":0,"args":[60.000003814697266,1,1]}
+      {"op":"color_numeric_value","function":"from_hsv","x":12,"y":0,"args":[60.000003814697266,1,1]},
+      {"op":"color_numeric_value","function":"from_hsv","x":13,"y":0,"args":[360.0000305175781,1,1]},
+      {"op":"color_numeric_value","function":"from_hsv","x":14,"y":0,"args":[361,1,1]},
+      {"op":"color_numeric_value","function":"from_hsv","x":15,"y":0,"args":[420,1,1]},
+      {"op":"color_numeric_value","function":"from_hsv","x":16,"y":0,"args":[719.9999389648438,1,1]},
+      {"op":"color_numeric_value","function":"from_hsv","x":17,"y":0,"args":[720,0.75,1]},
+      {"op":"color_numeric_value","function":"from_hsv","x":18,"y":0,"args":[1080.5,1,0.5]},
+      {"op":"color_numeric_value","function":"from_hsv","x":19,"y":0,"args":[3599.999755859375,1,1]},
+      {"op":"color_numeric_value","function":"from_hsv","x":20,"y":0,"args":[3600,1,1]},
+      {"op":"color_numeric_value","function":"from_hsv","x":21,"y":0,"args":[-0.5,1,1]},
+      {"op":"color_numeric_value","function":"from_hsv","x":22,"y":0,"args":[-60,1,1]},
+      {"op":"color_numeric_value","function":"from_hsv","x":23,"y":0,"args":[-299.9999694824219,1,1]},
+      {"op":"color_numeric_value","function":"from_hsv","x":24,"y":0,"args":[-300,1,1]},
+      {"op":"color_numeric_value","function":"from_hsv","x":25,"y":0,"args":[-300.0000305175781,1,1]},
+      {"op":"color_numeric_value","function":"from_hsv","x":26,"y":0,"args":[-359.5,0.5,0.5]},
+      {"op":"color_numeric_value","function":"from_hsv","x":27,"y":0,"args":[-3600,1,1]},
+      {"op":"color_numeric_value","function":"from_hsv","x":28,"y":0,"args":[2473.7,1,1]},
+      {"op":"color_numeric_value","function":"from_hsv","x":29,"y":0,"args":[917.25,0.9,0.4]},
+      {"op":"color_numeric_value","function":"from_hsv","x":30,"y":0,"args":[32767,1,1]},
+      {"op":"color_numeric_value","function":"from_hsv","x":31,"y":0,"args":[-32767,1,1]},
+      {"op":"color_numeric_value","function":"from_hsv","x":32,"y":0,"args":[30000.5,0.25,0.75]},
+      {"op":"color_numeric_value","function":"from_hsv","x":33,"y":0,"args":[-12345.6787109375,1,1]}
     ]},
     {"id":"quaternion-foundation","width":28,"height":1,"background":[255,255,255,255],"operations":[
       {"op":"quaternion_value","function":"identity","x":0,"y":0,"args":[]},

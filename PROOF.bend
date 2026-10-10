@@ -911,6 +911,24 @@ def Laws.rlgl_begin_lines():
 def Laws.rlgl_begin_points_ignored():
   {==}
 
+def Laws.color_hsv_term_six():
+  {==}
+
+def Laws.color_hsv_term_doubles():
+  {==}
+
+def Laws.color_hsv_steps_below_six():
+  {==}
+
+def Laws.color_hsv_steps_below_eight():
+  {==}
+
+def Laws.color_hsv_steps_eight():
+  {==}
+
+def Laws.color_hsv_steps_largest():
+  {==}
+
 def Laws.mesh_upload_unchanged(mesh, dynamic):
   {==}
 
