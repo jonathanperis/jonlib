@@ -1067,7 +1067,7 @@
   {
    "name": "core_highdpi_demo",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
