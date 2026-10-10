@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 123 ported, 47 ready, 42 waiting.
+Totals: 212 examples; 124 ported, 46 ready, 42 waiting.
 
 ## APIs that unblock the most examples
 
@@ -174,7 +174,7 @@ Totals: 212 examples; 123 ported, 47 ready, 42 waiting.
 | `textures_image_kernel` | textures | ported |  |
 | `textures_image_channel` | textures | ported |  |
 | `textures_image_rotate` | textures | ported |  |
-| `textures_screen_buffer` | textures | ready |  |
+| `textures_screen_buffer` | textures | ported |  |
 | `textures_textured_curve` | textures | ready |  |
 | `textures_sprite_stacking` | textures | ready |  |
 | `textures_cellular_automata` | textures | ported |  |

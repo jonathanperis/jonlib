@@ -3473,7 +3473,7 @@
   {
    "name": "textures_screen_buffer",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
