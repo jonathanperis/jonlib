@@ -3199,7 +3199,7 @@
   {
    "name": "textures_mouse_painting",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginTextureMode",
