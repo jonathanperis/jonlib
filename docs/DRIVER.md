@@ -257,7 +257,8 @@ python3 tools/examples_probe.py --bend-source "$BEND_SOURCE" --raylib-source "$R
 The reference compiles each pinned example `.c` file with
 `-include tools/reference/example_driver.h`, which renames `InitWindow`,
 `WindowShouldClose`, `BeginDrawing` and `EndDrawing` in that translation unit
-to the probe's hooks; the hooks play the script's automation events before
+to the probe's hooks (and an example's own `GetTime()` calls to the scripted
+clock, as raylib's are in that build); the hooks play the script's automation events before
 each `WindowShouldClose`, set the scripted clocks (as
 `tools/reference/input_clock.h` does for the input probe, whose raylib build
 it shares), fix the random seed after InitWindow and print the color buffer

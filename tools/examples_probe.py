@@ -126,19 +126,40 @@ EXAMPLES = {
     'textures_image_generation': ('textures/textures_image_generation.c', 'Ex.setup(seed, M.LIBM{}, core, frame)'),
     'shapes_easings_rectangles': ('shapes/shapes_easings_rectangles.c', 'Ex.setup(core, frame)'),
     'core_2d_camera_split_screen': ('core/core_2d_camera_split_screen.c', 'Ex.setup(core, frame)'),
+    'models_geometric_shapes': ('models/models_geometric_shapes.c', 'Ex.setup(core, frame)'),
+    'models_box_collisions': ('models/models_box_collisions.c', 'Ex.setup(core, frame)'),
+    'models_orthographic_projection': ('models/models_orthographic_projection.c', 'Ex.setup(core, frame)'),
+    'shaders_basic_lighting': ('shaders/shaders_basic_lighting.c', 'Ex.setup(core, frame)'),
+    'shapes_bullet_hell': ('shapes/shapes_bullet_hell.c', 'Ex.setup(M.LIBM{}, core, frame)'),
+    'shaders_texture_waves': ('shaders/shaders_texture_waves.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_eratosthenes_sieve': ('shaders/shaders_eratosthenes_sieve.c', 'Ex.setup(core, frame)'),
+    'shaders_texture_outline': ('shaders/shaders_texture_outline.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_palette_switch': ('shaders/shaders_palette_switch.c', 'Ex.setup(core, frame)'),
+    'shaders_rounded_rectangle': ('shaders/shaders_rounded_rectangle.c', 'Ex.setup(core, frame)'),
+    'shaders_julia_set': ('shaders/shaders_julia_set.c', 'Ex.setup(core, frame)'),
+    'shaders_texture_rendering': ('shaders/shaders_texture_rendering.c', 'Ex.setup(core, frame)'),
+    'shaders_multi_sample2d': ('shaders/shaders_multi_sample2d.c', 'Ex.setup(core, frame)'),
+    'shaders_shapes_textures': ('shaders/shaders_shapes_textures.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_texture_tiling': ('shaders/shaders_texture_tiling.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_mandelbrot_set': ('shaders/shaders_mandelbrot_set.c', 'Ex.setup(core, frame)'),
+    'shaders_raymarching_rendering': ('shaders/shaders_raymarching_rendering.c', 'Ex.setup(core, frame)'),
 }
 
 # Examples whose setup is IO (LoadTexture: Ex.setup(dir, core, frame) with raylib's
 # examples/<module>/ directory) and the flags SetConfigFlags sets before InitWindow.
 IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_background_scrolling', 'models_rotating_cube',
             'textures_image_loading', 'textures_image_rotate', 'textures_to_image', 'textures_blend_modes',
-            'textures_npatch_drawing', 'textures_raw_data', 'textures_bunnymark'}
+            'textures_npatch_drawing', 'textures_raw_data', 'textures_bunnymark', 'shaders_texture_waves',
+            'shaders_texture_outline', 'shaders_shapes_textures', 'shaders_texture_tiling'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
-PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen', 'core_3d_picking', 'models_basic_voxel', 'models_rotating_cube'}
+PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen', 'core_3d_picking', 'models_basic_voxel', 'models_rotating_cube',
+               'models_geometric_shapes', 'models_box_collisions', 'models_orthographic_projection',
+               'shaders_basic_lighting', 'shaders_texture_tiling'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'textures_bunnymark', 'textures_image_generation'}
-CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32}
+CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
+                'shaders_raymarching_rendering': 4}
 
 
 # -----------------------------------------------------------------------------
@@ -302,6 +323,46 @@ def scripts():
         script('models_basic_voxel', 'dig', [quick(), quick([mouse_at(400, 240)]), quick([button(0)]), quick([button(0, False), mouse_at(420, 236)]),
                                              slow([key(87)]), quick([key(87, False)])]),
         script('models_rotating_cube', 'turn', [quick() for _ in range(6)] + [slow(), quick()]),
+        script('models_geometric_shapes', 'frames', [quick(), slow(), quick()]),
+        # The orbit turns with the frame time; Y and B turn two lights off (wire spheres), Y turns its light back on.
+        script('shaders_basic_lighting', 'lights', [quick(), quick([key(89)]), slow([key(89, False), key(66)]), quick([key(66, False)]),
+                                                    quick([key(89)]), quick([key(89, False)])]),
+        # Bullets from the texture, more rows (RIGHT), a held SPACE turning the increment, the circle draw method
+        # (ENTER), faster bullets (UP), a shorter then longer cooldown (Z, X) and a clear (C).
+        script('shapes_bullet_hell', 'spawn', [quick(), quick(), quick(), slow(), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_SPACE)]),
+                                               quick(), quick([key(KEY_SPACE, False), key(KEY_ENTER)]), quick([key(KEY_ENTER, False), key(KEY_UP)]),
+                                               quick([key(KEY_UP, False), key(90)]), quick([key(90, False)]), quick([key(88)]), quick([key(88, False)]),
+                                               quick(), quick([key(KEY_C)]), quick([key(KEY_C, False)]), quick(), quick()]),
+        script('shaders_texture_waves', 'frames', [quick(), slow(), quick()]),
+        script('shaders_eratosthenes_sieve', 'frames', [quick(), slow()]),
+        script('shaders_rounded_rectangle', 'frames', [quick(), slow()]),
+        script('shaders_texture_rendering', 'frames', [quick(), slow()]),
+        script('shaders_mandelbrot_set', 'controls', [quick(), quick([key(290), button(1), mouse_at(200, 300)]), quick([key(290, False), key(KEY_UP)]),
+                                                      slow([button(1, False), key(KEY_UP, False)]), quick([key(290)]), quick([key(290, False)])]),
+        # The first-person camera moves (mouse, W) without any visible change.
+        script('shaders_raymarching_rendering', 'walk', [quick(), quick([mouse_at(430, 240)]), slow([key(87)]), quick([key(87, False)])]),
+        # Mouse look around the cube, then Z looks back at (0, 0.5, 0).
+        script('shaders_texture_tiling', 'look', [quick(), quick([mouse_at(420, 235)]), slow([mouse_at(380, 250)]), quick([key(90)]),
+                                                  quick([key(90, False)])]),
+        script('shaders_shapes_textures', 'frames', [quick(), slow()]),
+        # RIGHT held, then LEFT past zero (the clamp); only the ignored divider uniform changes.
+        script('shaders_multi_sample2d', 'divider', [quick(), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_LEFT)])]
+               + [quick() for _ in range(3)] + [slow([key(KEY_LEFT, False)])]),
+        # F1 hides the controls (zooming with both buttons and the speed keys only reach the shader), F1 shows them.
+        script('shaders_julia_set', 'controls', [quick(), quick([key(290), button(0), mouse_at(600, 100)]), quick([key(290, False), key(KEY_RIGHT)]),
+                                                 slow([button(0, False), key(KEY_RIGHT, False)]), quick([key(290)]), quick([key(290, False)])]),
+        # LEFT wraps to the last palette, RIGHT twice wraps back to the first.
+        script('shaders_palette_switch', 'cycle', [quick(), quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]), quick([key(KEY_RIGHT)]),
+                                                   quick([key(KEY_RIGHT, False)]), slow([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)])]),
+        # The wheel grows the outline, then shrinks it below the minimum of 1.
+        script('shaders_texture_outline', 'wheel', [quick(), quick([(MOUSE_WHEEL, 0, 3, 0)]), slow(), quick([(MOUSE_WHEEL, 0, -9, 0)]), quick()]),
+        script('models_orthographic_projection', 'switch', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False)]), quick([key(KEY_SPACE)]),
+                                                            quick([key(KEY_SPACE, False)])]),
+        # RIGHT walks the player into the sphere (touching at exactly the radius: z 2 - 0.5 = 1.5), UP goes deeper,
+        # RIGHT and DOWN together move right only (raylib's else-if).
+        script('models_box_collisions', 'walk', [quick(), quick([key(KEY_RIGHT)])] + [quick() for _ in range(9)]
+               + [quick([key(KEY_RIGHT, False), key(KEY_UP)]), quick([key(KEY_UP, False), key(KEY_RIGHT), key(KEY_DOWN)]),
+                  slow([key(KEY_RIGHT, False), key(KEY_DOWN, False)]), quick()]),
         script('textures_image_loading', 'frames', [quick(), slow()]),
         script('textures_image_rotate', 'cycle', [quick(), quick([button(0)]), quick([button(0, False)]), quick([key(KEY_RIGHT)]),
                                                   quick([key(KEY_RIGHT, False), button(0)]), quick([button(0, False)])]),
@@ -355,6 +416,45 @@ def timed(item):
 # -----------------------------------------------------------------------------
 # Contract predictions
 
+def bullet_hell_refusal(item, libm):
+    """shapes_bullet_hell: the frame whose spawned directions (sinf/cosf of dir*DEG2RAD, refusing that frame
+    and every later one) or DrawRectanglePro rotations (frame + 1 and frame + 46 degrees) leave the profile."""
+    rows, base, increment, cooldown, timer = 6, 0.0, 5, 2.0, 2.0
+    down = set()
+    for index, frame in enumerate(item['frames']):
+        previous = set(down)
+        for kind, code, _, _ in frame['events']:
+            if kind == KEY_DOWN_EVENT:
+                down.add(code)
+            elif kind == KEY_UP_EVENT:
+                down.discard(code)
+        pressed = down - previous
+        timer = fp.f32(timer - 1.0)
+        if timer < 0:
+            timer = cooldown
+            per = fp.f32(360.0 / rows)
+            for row in range(rows):
+                direction = fp.f32(base + fp.f32(per * row))
+                if not fp.accepted(libm, fp.f32(direction * fp.DEG2RAD)):
+                    return index
+            base = fp.f32(base + increment)
+        if pressed & {KEY_RIGHT, 68} and rows < 359:
+            rows += 1
+        if pressed & {KEY_LEFT, KEY_A} and rows > 1:
+            rows -= 1
+        if 90 in pressed and cooldown > 1:
+            cooldown -= 1.0
+        if 88 in pressed:
+            cooldown += 1.0
+        if KEY_SPACE in down:
+            increment = (increment + 1) % 360
+        rotation = float(index + 1)
+        for angle in (rotation, rotation + 45.0):
+            if not fp.accepted(libm, fp.f32(fp.f32(angle) * fp.DEG2RAD)):
+                return index
+    return None
+
+
 def refusal(item, libm):
     """The index of the first frame Jonlib refuses (None when none is)."""
     if item['example'] in PERSPECTIVE and libm == 'AppleLibm':
@@ -398,6 +498,16 @@ def refusal(item, libm):
             elif space:
                 frames, playing = 0, True
         return None
+    if item['example'] == 'shaders_shapes_textures':
+        # DrawPoly(center, 6, 80, 0): the F32-accumulated angles k*60 degrees.
+        central, step = 0.0, fp.f32(fp.f32(360.0 / 6.0) * fp.DEG2RAD)
+        angles = [central]
+        for _ in range(6):
+            central = fp.f32(central + step)
+            angles.append(central)
+        return None if all(fp.accepted(libm, a) for a in angles) else 0
+    if item['example'] == 'shapes_bullet_hell':
+        return bullet_hell_refusal(item, libm)
     if item['example'] != 'core_2d_camera':
         return None
     down, previous, rotation, wheel = set(), set(), 0.0, False

@@ -11,7 +11,7 @@ API ledger and documentation links).
 ten duration-balanced shards per host. Hosted macOS allows five concurrent
 jobs, so five macOS shards wait for a free runner; eight shards approached
 the 210-minute limit per shard once the examples gates (`examples-core`,
-`-models`, `-shapes`, `-text`, `-textures`) and one compile batch at a time landed. The
+`-models`, `-shaders`, `-shapes`, `-text`, `-textures`) and one compile batch at a time landed. The
 `minutes` estimates in `gates.json` are the observed macOS durations (the
 slower host; gates not yet measured there use 2.7 times their Linux time),
 which keeps shards near 135 minutes. The two aggregate jobs (`CPU and

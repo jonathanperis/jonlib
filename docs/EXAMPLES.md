@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and it includes no unported companion
 library (`raygui.h`); **waiting** otherwise.
 
-Totals: 212 examples; 46 ported, 115 ready, 51 waiting.
+Totals: 212 examples; 63 ported, 98 ready, 51 waiting.
 
 ## APIs that unblock the most examples
 
@@ -109,7 +109,7 @@ Totals: 212 examples; 46 ported, 115 ready, 51 waiting.
 | `core_window_web` | core | ready |  |
 | `shapes_basic_shapes` | shapes | ported |  |
 | `shapes_bouncing_ball` | shapes | ported |  |
-| `shapes_bullet_hell` | shapes | ready |  |
+| `shapes_bullet_hell` | shapes | ported |  |
 | `shapes_colors_palette` | shapes | ported |  |
 | `shapes_logo_raylib` | shapes | ported |  |
 | `shapes_logo_raylib_anim` | shapes | ported |  |
@@ -197,17 +197,17 @@ Totals: 212 examples; 46 ported, 115 ready, 51 waiting.
 | `text_strings_management` | text | ready |  |
 | `models_loading_iqm` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
 | `models_billboard_rendering` | models | ready |  |
-| `models_box_collisions` | models | ready |  |
+| `models_box_collisions` | models | ported |  |
 | `models_cubicmap_rendering` | models | ready |  |
 | `models_first_person_maze` | models | ready |  |
-| `models_geometric_shapes` | models | ready |  |
+| `models_geometric_shapes` | models | ported |  |
 | `models_mesh_generation` | models | waiting | `GenMeshCylinder`, `GenMeshKnot`, `UploadMesh` |
 | `models_mesh_picking` | models | ready |  |
 | `models_loading` | models | ready |  |
 | `models_loading_gltf` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
 | `models_loading_vox` | models | ready |  |
 | `models_loading_m3d` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
-| `models_orthographic_projection` | models | ready |  |
+| `models_orthographic_projection` | models | ported |  |
 | `models_point_rendering` | models | waiting | `UploadMesh` |
 | `models_rlgl_solar_system` | models | ready |  |
 | `models_yaw_pitch_roll` | models | ready |  |
@@ -226,36 +226,36 @@ Totals: 212 examples; 46 ported, 115 ready, 51 waiting.
 | `models_animation_blending` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `UpdateModelAnimationEx`, `raygui.h` |
 | `models_animation_timing` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `raygui.h` |
 | `shaders_ascii_rendering` | shaders | ready |  |
-| `shaders_basic_lighting` | shaders | ready |  |
+| `shaders_basic_lighting` | shaders | ported |  |
 | `shaders_model_shader` | shaders | ready |  |
-| `shaders_shapes_textures` | shaders | ready |  |
+| `shaders_shapes_textures` | shaders | ported |  |
 | `shaders_custom_uniform` | shaders | ready |  |
 | `shaders_postprocessing` | shaders | ready |  |
-| `shaders_palette_switch` | shaders | ready |  |
-| `shaders_raymarching_rendering` | shaders | ready |  |
-| `shaders_texture_rendering` | shaders | ready |  |
-| `shaders_texture_outline` | shaders | ready |  |
-| `shaders_texture_waves` | shaders | ready |  |
-| `shaders_julia_set` | shaders | ready |  |
-| `shaders_mandelbrot_set` | shaders | ready |  |
+| `shaders_palette_switch` | shaders | ported |  |
+| `shaders_raymarching_rendering` | shaders | ported |  |
+| `shaders_texture_rendering` | shaders | ported |  |
+| `shaders_texture_outline` | shaders | ported |  |
+| `shaders_texture_waves` | shaders | ported |  |
+| `shaders_julia_set` | shaders | ported |  |
+| `shaders_mandelbrot_set` | shaders | ported |  |
 | `shaders_color_correction` | shaders | waiting | `raygui.h` |
-| `shaders_eratosthenes_sieve` | shaders | ready |  |
+| `shaders_eratosthenes_sieve` | shaders | ported |  |
 | `shaders_fog_rendering` | shaders | ready |  |
 | `shaders_simple_mask` | shaders | ready |  |
 | `shaders_hot_reloading` | shaders | waiting | `GetFileModTime` |
 | `shaders_mesh_instancing` | shaders | ready |  |
-| `shaders_multi_sample2d` | shaders | ready |  |
+| `shaders_multi_sample2d` | shaders | ported |  |
 | `shaders_normalmap_rendering` | shaders | ready |  |
 | `shaders_spotlight_rendering` | shaders | ready |  |
 | `shaders_deferred_rendering` | shaders | waiting | `rlBindFramebuffer`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlGetLocationUniform`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
 | `shaders_hybrid_rendering` | shaders | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
-| `shaders_texture_tiling` | shaders | ready |  |
+| `shaders_texture_tiling` | shaders | ported |  |
 | `shaders_shadowmap_rendering` | shaders | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTextureDepth`, `rlSetUniform`, `rlUnloadFramebuffer` |
 | `shaders_vertex_displacement` | shaders | waiting | `rlSetUniformSampler` |
 | `shaders_depth_writing` | shaders | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
 | `shaders_basic_pbr` | shaders | ready |  |
 | `shaders_lightmap_rendering` | shaders | waiting | `rlLoadVertexBuffer`, `rlSetVertexAttribute` |
-| `shaders_rounded_rectangle` | shaders | ready |  |
+| `shaders_rounded_rectangle` | shaders | ported |  |
 | `shaders_depth_rendering` | shaders | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
 | `shaders_game_of_life` | shaders | waiting | `raygui.h` |
 | `shaders_rlgl_compute` | shaders | waiting | `rlBindShaderBuffer`, `rlComputeShaderDispatch`, `rlLoadShader`, `rlLoadShaderBuffer`, `rlLoadShaderProgramCompute`, `rlUnloadShader`, `rlUnloadShaderBuffer`, `rlUnloadShaderProgram`, `rlUpdateShaderBuffer` |

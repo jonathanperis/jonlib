@@ -1847,7 +1847,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 40
+   "minutes": 45
   },
   {
    "id": "examples-text",
@@ -1895,7 +1895,23 @@
     "linux",
     "macos"
    ],
-   "minutes": 15
+   "minutes": 25
+  },
+  {
+   "id": "examples-shaders",
+   "title": "The ported raylib shaders examples replayed frame by frame against the unmodified native examples (clock-injected memory-platform raylib), framebuffers byte for byte and the presented Image",
+   "run": [
+    "{python}",
+    "tools/examples_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}",
+    "--category=shaders"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 45
   },
   {
    "id": "quaternion-angle",
