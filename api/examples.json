@@ -3369,7 +3369,7 @@
   {
    "name": "textures_gif_player",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
