@@ -3850,7 +3850,7 @@
   {
    "name": "text_rectangle_bounds",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",
