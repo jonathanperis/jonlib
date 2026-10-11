@@ -55341,12 +55341,12 @@
       "status": "partial",
       "jonlib": "Model.load_for / Model.load",
       "mapping_state": "implemented",
-      "scope": "OBJ (case-insensitive extension) through raylib's tinyobj_loader_c: lines, commands, tryParseDouble in binary64 (contraction profiled), relative indices, fan triangulation, the djb2 material table, shapes, LoadOBJ's mesh split, MTL materials and their textures (returned with the model); binary glTF (.glb) through LoadGLTF: float POSITION/NORMAL/TANGENT/TEXCOORD, 8/16/32-bit indices, node transforms, base color factors and embedded PNG textures, skinned files as their meshes (uncontracted); other extensions and files that do not open give the empty model with the default material.",
+      "scope": "OBJ (case-insensitive extension) through tinyobj_loader_c: tryParseDouble in binary64 (contraction profiled), fan triangulation, the djb2 material table, LoadOBJ's mesh split, MTL materials and their textures (returned with the model); binary glTF (.glb) through LoadGLTF: float attributes, 8/16/32-bit indices, node transforms, base color factors and embedded PNG textures (uncontracted); MagicaVoxel (.vox) through LoadVOX over vox_loader.h: its chunks and quirks, visible faces with normals, colors and indices in meshes of 65532 vertices; other extensions and unopened files give the empty model.",
       "gaps": [
-        "IQM, glTF as text, VOX and M3D are UnsupportedFileType; binary glTF keeps no bone data; other texture kinds, non-PNG or uri images, sparse accessors, COLOR and required extensions are refused",
+        "IQM, glTF as text and M3D are UnsupportedFileType; binary glTF keeps no bone data; other texture kinds, non-PNG or uri images, sparse accessors, COLOR and required extensions are refused",
         "Undefined reference behavior (asserts, int overflow, reads outside tinyobj's arrays, byte casts, table insertions that loop) and binary64 steps outside the checked helpers' domains are refused",
-        "Texture files Jonlib's LoadImage does not decode are refused",
-        "Paths and names must be printable ASCII (OBJ paths without backslashes); animations are not modeled",
+        "Texture files Jonlib's LoadImage does not decode are refused; paths and names must be printable ASCII (OBJ paths without backslashes); animations are not modeled",
+        "VOX: reads past the file, voxels outside the padded sizes and files without a visible voxel are refused; files over 2 MiB, sizes over 1024 and arrays over 2^21 cells are outside the profile",
         "Performance: not measured",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
@@ -55367,7 +55367,9 @@
         "tools/gltf_probe.py",
         "src/gltf.bend",
         "src/json.bend",
-        "src/strtod.bend"
+        "src/strtod.bend",
+        "tools/vox_probe.py",
+        "src/vox.bend"
       ],
       "gate_evidence": {},
       "target_results": {},

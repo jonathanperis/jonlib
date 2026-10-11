@@ -104,6 +104,7 @@ import ./src/par_shapes.bend as ParShapes
 import ./src/mesh_draw.bend as MeshDraw
 import ./src/obj.bend as Obj
 import ./src/gltf.bend as Gltf
+import ./src/vox.bend as Vox
 import ./src/gltf_anim.bend as GltfAnim
 import ./src/clock.bend as Clock
 
@@ -12014,14 +12015,47 @@ def Model.gltf.load(arithmetic: M.Contraction, frame: Frame, +path: String) -> I
       IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Frame & Result<&1, &1, Surface.IOError, LoadedModel>, Files.load_data(path), loaded => Model.gltf.bytes(loaded, frame))
     case _: Model.obj.fail(frame, DataError{OutOfDomain{}})
 
-# 0 an unknown extension, 1 .obj, 2 a format raylib loads and Jonlib does not, 4 .glb, 3 no decision.
-def Model.load.kind.of(obj: Maybe<Bool>, glb: Maybe<Bool>, other: Maybe<Bool>) -> U32:
-  match obj glb other:
-    case Some{True{}} _ _: 1
-    case Some{False{}} Some{True{}} _: 4
-    case Some{False{}} Some{False{}} Some{True{}}: 2
-    case Some{False{}} Some{False{}} Some{False{}}: 0
-    case _ _ _: 3
+def Model.vox.mesh(+part: Vox.Part) -> Mesh:
+  Vox.Part{+vertex_count, +triangle_count, +vertices, +normals, +colors, +indices} = part
+  Mesh{vertex_count, triangle_count, Some{vertices}, None{}, None{}, Some{normals}, None{}, Some{colors}, Some{indices}}
+
+def Model.vox.meshes(parts: +List<Vox.Part>) -> +List<Mesh>:
+  match parts:
+    case Nil{}: Nil{}
+    case Con{+part, rest}: Con{Model.vox.mesh(part), Model.vox.meshes(rest)}
+
+# model.meshMaterial[i] = 0.
+def Model.vox.mesh_material(parts: +List<Vox.Part>) -> +List<U32>:
+  match parts:
+    case Nil{}: Nil{}
+    case Con{_, rest}: Con{0, Model.vox.mesh_material(rest)}
+
+# The meshes with LoadMaterialDefault() for all of them; a file Vox_LoadFromMemory does not take is the empty model.
+def Model.vox.made(loaded: Vox.Loaded, frame: Frame) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
+  match loaded:
+    case Vox.Unread{}: Model.obj.fail(frame, DataError{OutOfDomain{}})
+    case Vox.Foreign{}: Model.obj.done(frame, Model.empty(), Nil{})
+    case Vox.Meshes{+parts}: Model.obj.done(frame, Model{M.Matrix.identity(), Model.vox.meshes(parts), [Material.load_default()], Model.vox.mesh_material(parts)}, Nil{})
+
+def Model.vox.bytes(loaded: Result<&1, &1, Surface.IOError, +List<U32>>, frame: Frame) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
+  match loaded:
+    case Fail{FileError{_, _}}: Model.obj.done(frame, Model.empty(), Nil{})
+    case Fail{error}: Model.obj.fail(frame, error)
+    case Done{+bytes}: Model.vox.made(Vox.load(bytes), frame)
+
+# LoadVOX of a MagicaVoxel file (src/vox.bend): no arithmetic a contraction changes.
+def Model.vox.load(frame: Frame, +path: String) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
+  IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Frame & Result<&1, &1, Surface.IOError, LoadedModel>, Files.load_data(path), loaded => Model.vox.bytes(loaded, frame))
+
+# 0 an unknown extension, 1 .obj, 2 a format raylib loads and Jonlib does not, 4 .glb, 5 .vox, 3 no decision.
+def Model.load.kind.of(obj: Maybe<Bool>, glb: Maybe<Bool>, vox: Maybe<Bool>, other: Maybe<Bool>) -> U32:
+  match obj glb vox other:
+    case Some{True{}} _ _ _: 1
+    case Some{False{}} Some{True{}} _ _: 4
+    case Some{False{}} Some{False{}} Some{True{}} _: 5
+    case Some{False{}} Some{False{}} Some{False{}} Some{True{}}: 2
+    case Some{False{}} Some{False{}} Some{False{}} Some{False{}}: 0
+    case _ _ _ _: 3
 
 def Model.load.route(route: U32, +arithmetic: M.Contraction, frame: Frame, +path: String) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
   match route:
@@ -12029,6 +12063,7 @@ def Model.load.route(route: U32, +arithmetic: M.Contraction, frame: Frame, +path
     case 1: Model.obj.load(arithmetic, frame, path, Model.obj.dir.of(Files.directory(path)))
     case 2: Model.obj.fail(frame, DataError{UnsupportedFileType{}})
     case 4: Model.gltf.load(arithmetic, frame, path)
+    case 5: Model.vox.load(frame, path)
     case _: Model.obj.fail(frame, DataError{OutOfDomain{}})
 
 # LoadModel(fileName) on the software renderer: ".obj" (case-insensitive)
@@ -12036,14 +12071,16 @@ def Model.load.route(route: U32, +arithmetic: M.Contraction, frame: Frame, +path
 # file and textures), an identity transform and UploadMesh (no GPU buffers
 # under OpenGL 1.1); ".glb" through LoadGLTF (the slice of src/gltf.bend:
 # float attributes, base color factors and PNG base color textures, node
-# transforms, files with skins as their meshes; uncontracted arithmetic). Other extensions give the empty model with the default
-# material, as raylib does; IQM, glTF as text, VOX and M3D (which raylib
-# loads) are UnsupportedFileType. The textures the materials reference come back
+# transforms, files with skins as their meshes; uncontracted arithmetic);
+# ".vox" through LoadVOX (src/vox.bend: the voxels' visible faces in meshes
+# of 65532 vertices with normals, colors and indices). Other extensions give
+# the empty model with the default material, as raylib does; IQM, glTF as
+# text and M3D (which raylib loads) are UnsupportedFileType. The textures the materials reference come back
 # with the model. Fail (OutOfDomain) for what the reference leaves undefined
 # or Jonlib does not reproduce (docs/MODELS.md); the frame is handed back
 # in every case.
 def Model.load_for(+arithmetic: M.Contraction, frame: Frame, +path: String) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
-  Model.load.route(Model.load.kind.of(Files.has_extension(path, ".obj"), Files.has_extension(path, ".glb"), Files.has_extension(path, ".iqm;.gltf;.vox;.m3d")), arithmetic, frame, path)
+  Model.load.route(Model.load.kind.of(Files.has_extension(path, ".obj"), Files.has_extension(path, ".glb"), Files.has_extension(path, ".vox"), Files.has_extension(path, ".iqm;.gltf;.m3d")), arithmetic, frame, path)
 
 def Model.load(frame: Frame, +path: String) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
   Model.load_for(M.Uncontracted{}, frame, path)

@@ -2358,6 +2358,21 @@
     "macos"
    ],
    "minutes": 30
+  },
+  {
+   "id": "vox",
+   "title": "LoadModel of MagicaVoxel files (LoadVOX over vox_loader.h: the SIZE, XYZI and RGBA chunks, the visible faces in the loader's order, the split into meshes of 65532 vertices) against the pinned raylib, with the four models of models_loading_vox and refusal contracts",
+   "run": [
+    "{python}",
+    "tools/vox_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 30
   }
  ]
 }
