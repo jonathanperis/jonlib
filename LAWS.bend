@@ -21,6 +21,7 @@ import ./src/qoa.bend as Qoa
 import ./src/fma.bend as Fma
 import ./src/asin.bend as Asin
 import ./src/lgpl/asin.bend as GlibcAsin
+import ./src/lgpl/tanf.bend as GlibcTanf
 import ./src/sincosf.bend as Sincosf
 import ./src/power.bend as Power
 import ./src/libc_rand.bend as CRand
@@ -949,6 +950,23 @@ law libc_rand_apple_none:
   for seed: U32
   {M.Libc.srand(M.AppleLibm{}, seed) == None{} : Maybe<M.Libc.Rand>}
 
+# glibc 2.39's tanf (src/lgpl/tanf.bend, docs/MATH.md): infinities and NaN are
+# refused; glibc 2.41's tanf is another algorithm and Apple's is not modeled,
+# so those profiles answer nothing.
+law glibc_tanf_infinity_none:
+  {GlibcTanf.tanf.word(2139095040) == None{} : Maybe<U32>}
+
+law glibc_tanf_nan_none:
+  {GlibcTanf.tanf.word(2143289344) == None{} : Maybe<U32>}
+
+law glibc241_tanf_none:
+  for x: F32
+  {M.Libm.tanf(M.Glibc241Libm{}, x) == None{} : Maybe<F32>}
+
+law apple_tanf_none:
+  for x: F32
+  {M.Libm.tanf(M.AppleLibm{}, x) == None{} : Maybe<F32>}
+
 # strtod (src/strtod.bend, docs/MATH.md): 1 is 0x3ff0000000000000; 0.1 rounds
 # to 0x3fb999999999999a; 2^53 + 1 and 2^53 + 3, halfway between two doubles,
 # go to the even one (2^53 and 2^53 + 4); a sign, a fraction and an exponent
@@ -1112,6 +1130,17 @@ law gui_disable_then_enable:
 law gui_disable_keeps_focus:
   for gui: JG.Gui
   {JG.Gui.get_state(JG.Gui.disable(JG.Gui.set_state(gui, 1))) == 1 : U32}
+
+# GuiLine and GuiGroupBox draw in DEFAULT's LINE_COLOR (property 18), and in
+# its BORDER_COLOR_DISABLED (9) when the gui is disabled.
+law gui_line_color_property:
+  {JG.Gui.line.property(0) == 18 : U32}
+
+law gui_line_color_focused_property:
+  {JG.Gui.line.property(1) == 18 : U32}
+
+law gui_line_color_disabled_property:
+  {JG.Gui.line.property(3) == 9 : U32}
 
 law shader_load_never_valid:
   for vs: Maybe<String>

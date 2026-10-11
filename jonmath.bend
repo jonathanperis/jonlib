@@ -29,6 +29,7 @@ import ./src/binary64_scaled.bend as Binary64Scaled
 import ./src/binary64_narrow.bend as Binary64Narrow
 import ./src/lgpl/tan.bend as GlibcTan
 import ./src/lgpl/asin.bend as GlibcAsin
+import ./src/lgpl/tanf.bend as GlibcTanf
 
 # -----------------------------------------------------------------------------
 # Shared types: vectors, matrix, binary64 words
@@ -1330,6 +1331,16 @@ def Libm.log(libm: Libm, +x: F32) -> Maybe<F32>:
   match libm:
     case AppleLibm{}: None{}
     case _: Power.log(x)
+
+# tanf(x) under a reference profile: glibc 2.39's (x86_64, its one scalar
+# variant) for every finite x (GlibcTanf.tanf, docs/MATH.md). None for
+# Glibc241Libm, whose tanf is another algorithm (correctly rounded) and
+# differs at 83,411,250 arguments, for AppleLibm (not modeled), and for
+# infinities and NaN.
+def Libm.tanf(libm: Libm, +x: F32) -> Maybe<F32>:
+  match libm:
+    case Glibc239Libm{}: GlibcTanf.tanf(x)
+    case _: None{}
 
 # Whether the C library's hypot(x, y) <= radius, the three promoted to
 # binary64: the answer of every hypot whose result is one of the two doubles

@@ -228,6 +228,7 @@ EXAMPLES = {
     'shapes_top_down_lights': ('shapes/shapes_top_down_lights.c', 'Ex.setup(seed, core, frame)'),
     'shapes_simple_particles': ('shapes/shapes_simple_particles.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shapes_ball_physics': ('shapes/shapes_ball_physics.c', 'Ex.setup(seed, core, frame)'),
+    'shapes_math_sine_cosine': ('shapes/shapes_math_sine_cosine.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -286,7 +287,7 @@ CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_r
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
                 'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'shaders_postprocessing': 32, 'shaders_custom_uniform': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196, 'core_viewport_scaling': 4,
                 'shaders_fog_rendering': 32, 'shapes_rlgl_color_wheel': 32, 'core_input_gamepad': 32, 'textures_textured_curve': 96,
-                'shaders_normalmap_rendering': 32, 'shaders_cel_shading': 32}
+                'shaders_normalmap_rendering': 32, 'shaders_cel_shading': 32, 'shapes_math_sine_cosine': 32}
 
 
 # -----------------------------------------------------------------------------
@@ -833,6 +834,11 @@ def scripts():
                + [quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)])] + [quick() for _ in range(10)] + [quick([key(KEY_RIGHT), mouse_at(300, 300)]), quick([key(KEY_RIGHT, False), button(0)]),
                                                                                                        quick([mouse_at(360, 320)]), quick([button(0, False)])]
                + [quick() for _ in range(14)] + [quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False), key(KEY_DOWN)]), quick([key(KEY_DOWN, False)])] + [quick() for _ in range(6)]),
+        # The angle advances a degree a frame; the Pause toggle is clicked (the angle holds), the slider is
+        # dragged to two other angles and released, and the toggle is clicked again.
+        script('shapes_math_sine_cosine', 'angles', [quick() for _ in range(6)] + [quick([mouse_at(700, 80)]), quick([button(0)]), quick([button(0, False)]), quick(),
+                                                    quick([mouse_at(690, 50)]), quick([button(0)]), quick([mouse_at(720, 50)]), quick([mouse_at(655, 52)]),
+                                                    quick([button(0, False)]), quick([mouse_at(700, 80)]), quick([button(0)]), quick([button(0, False)]), quick(), slow()]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.
@@ -1068,7 +1074,8 @@ REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particle
             'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass',
             'shapes_rlgl_color_wheel', 'shapes_rectangle_advanced', 'core_input_gestures_testbed', 'core_input_gamepad',
             'shapes_easings_ball', 'shapes_easings_box', 'shapes_easings_testbed', 'textures_textured_curve',
-            'core_2d_camera_mouse_zoom', 'shapes_simple_particles'}
+            'core_2d_camera_mouse_zoom', 'shapes_simple_particles',
+            'shapes_math_sine_cosine'}
 
 
 def refusal(item, libm):
