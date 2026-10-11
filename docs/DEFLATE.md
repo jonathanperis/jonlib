@@ -8,7 +8,9 @@ native compressor (`Compression.compress`) is documented in
 
 ## Contract
 
-- Compressed inputs contain at most **1 MiB**, with every value in 0..255.
+- Compressed inputs contain at most **1 MiB**, with every value in 0..255 (the
+  PNG decoder asks the same kernel for its own cap of 2 MiB:
+  `Inflate.decompress.within`).
 - The caller's output capacity is **0..64 MiB**. Capacity zero accepts a valid
   empty result. Output allocation is bounded by this capacity.
 - Stored, fixed-Huffman and dynamic-Huffman blocks are supported, including

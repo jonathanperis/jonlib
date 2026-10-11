@@ -18,7 +18,7 @@ Exact PNG export is documented in [IMAGE-EXPORT.md](IMAGE-EXPORT.md).
   Samples are reconstructed big-endian and normalized through high-byte
   truncation, matching the native `stbi_load` path used by `LoadImageFromMemory`.
 - Both non-interlaced and **Adam7-interlaced** input for these combinations.
-- Dimensions 1..4096, complete encoded input at most 1 MiB, and filtered scanline
+- Dimensions 1..4096, complete encoded input at most 2 MiB, and filtered scanline
   output at most 64 MiB. For non-interlaced images the size is
   `(ceil(width*channels*depth/8) + 1)*height`; for Adam7 it is the sum of that
   expression over nonempty pass dimensions. The filtered byte count must match
@@ -135,7 +135,9 @@ contract, not a stored field.
 ### Limits and error ordering
 
 Dimensions are 1..4096 on each axis. The complete encoded list, including bytes
-after IEND, has an **inclusive 1,048,576-byte cap**; the filtered scanline/pass
+after IEND, has an **inclusive 2,097,152-byte cap** (1 MiB until 2026-10-11;
+raised for the 1024x1024 textures of `shaders_basic_pbr`, the largest 1.68 MiB;
+a chunk's length has the same cap); the filtered scanline/pass
 stream has an **inclusive 67,108,864-byte cap**. These are admission bounds, not
 a maximum-area allocation or runtime-memory guarantee.
 
@@ -169,9 +171,9 @@ exercised profile.
 
 ## Format-preserving PNG file loading
 
-`Surface.load_png(path: String)` wraps the shared `RasterFile` reader
-and the unchanged decoder. PNG is selected explicitly, independently
-of the path suffix. The shared inclusive 1 MiB file cap, one exact-length read
+`Surface.load_png(path: String)` wraps the bounded file reader with the
+`PngFile` cap and the unchanged decoder. PNG is selected explicitly, independently
+of the path suffix. The inclusive 2 MiB file cap (the decoder's), one exact-length read
 and close-before-decode call ordering neither enlarge nor replace the encoded and
 filtered-stream memory limits above. Native formats 1/2/4/7, exact 8-bit bytes
 and the implicit single mip are preserved. The full ordered file/error contract

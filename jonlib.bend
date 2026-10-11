@@ -2716,6 +2716,7 @@ type Image.FileKind is Data:
   QoiFile{}
   DdsFile{}
   RasterFile{}
+  PngFile{}
   UnsupportedImageFile{}
 
 def Image.memory.selected(qoi: Bool, dds: Bool, raster: Bool) -> Image.FileKind:
@@ -2755,8 +2756,13 @@ def Image.file.token(+path: String) -> String:
   +position = Image.file.last_dot(path, 0n, 0n)
   Image.file.suffix(Nat.is_lt(0n, position), path, position)
 
+# A file named .png (or .PNG) has the PNG file cap; the token selects the
+# decoder as it does in memory.
+def Image.file.kind.of(+token: String) -> Image.FileKind:
+  Bool.pick(Image.FileKind, String.eq(token, ".png") || String.eq(token, ".PNG"), PngFile{}, Image.memory.kind(token))
+
 def Image.file.kind(path: String) -> Image.FileKind:
-  Image.memory.kind(Image.file.token(path))
+  Image.file.kind.of(Image.file.token(path))
 
 # ExportImage uses ASCII-insensitive suffixes, unlike LoadImageFromMemory.
 # Adapted from raylib 6.0 rtextures.c / rcore.c; retain the native last-dot rule.
@@ -2773,11 +2779,13 @@ def Image.export.kind(path: String) -> U32:
   +token = String.to_lower(Image.file.token(path))
   Image.export.selected(String.eq(token, ".png"), String.eq(token, ".bmp"), String.eq(token, ".tga"), String.eq(token, ".qoi"), String.eq(token, ".raw"))
 
-# DDS admits its 128-byte header plus the largest uncompressed payload.
+# DDS admits its 128-byte header plus the largest uncompressed payload; a
+# file named .png the PNG decoder's 2 MiB.
 def Image.file.limit(kind: Image.FileKind) -> U32:
   match kind:
     case QoiFile{}: 83886102
     case DdsFile{}: 67109000
+    case PngFile{}: 2097152
     case _: 1048576
 
 def Image.file.psd(bytes: +List<U32>) -> Bool:
@@ -4609,11 +4617,37 @@ def Image.file.raster(reference: M.Contraction, +bytes: +List<U32>) -> Result<&1
         U32.is_eq(a, 80) && (U32.is_eq(b, 53) || U32.is_eq(b, 54)), Image.file.psd(bytes), Pic.signature(bytes), Gif.signature(bytes), bytes)
     case _: Surface.decode_tga(bytes)
 
-def Image.file.decode(reference: M.Contraction, kind: Image.FileKind, bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
+# Whether the bytes are more than n.
+def Image.file.beyond(n: Nat, bytes: +List<U32>) -> Bool:
+  match n bytes:
+    case _ Nil{}: False{}
+    case 0n Con{_, _}: True{}
+    case 1n+k Con{_, rest}: Image.file.beyond(k, rest)
+
+def Image.file.named_png.other(large: Bool, reference: M.Contraction, +bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
+  match large:
+    case True{}: Fail{UnsupportedImageSize{}}
+    case False{}: Image.file.raster(reference, bytes)
+
+# A file named .png, read up to the PNG cap: a PNG signature goes to the PNG
+# decoder; other contents keep the raster cap of 1 MiB (the size error a
+# larger file had before it was read) and the raster signatures.
+def Image.file.named_png(png: Bool, reference: M.Contraction, +bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
+  match png:
+    case True{}: Surface.decode_png(bytes)
+    case False{}: Image.file.named_png.other(Image.file.beyond(U32.to_nat(1048576), bytes), reference, bytes)
+
+def Image.file.png_signed(bytes: +List<U32>) -> Bool:
+  match bytes:
+    case Con{+a, Con{+b, _}}: U32.is_eq(a, 137) && U32.is_eq(b, 80)
+    case _: False{}
+
+def Image.file.decode(reference: M.Contraction, kind: Image.FileKind, +bytes: +List<U32>) -> Result<&1, &1, Surface.Error, Surface>:
   match kind:
     case QoiFile{}: Surface.decode_qoi(bytes)
     case DdsFile{}: Surface.decode_dds(bytes)
     case RasterFile{}: Image.file.raster(reference, bytes)
+    case PngFile{}: Image.file.named_png(Image.file.png_signed(bytes), reference, bytes)
     case UnsupportedImageFile{}: Fail{InvalidImageHeader{}}
 
 # LoadImageFromMemory: the file type token selects QOI or the raster signatures.
@@ -4921,7 +4955,7 @@ def Surface.load_jpeg(path: String) -> IO(Result<&1, &1, Surface.IOError, Surfac
   Surface.load_with(~Surface.decode_jpeg, Image.file.limit(RasterFile{}), path)
 
 def Surface.load_png(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
-  Surface.load_with(~Surface.decode_png, Image.file.limit(RasterFile{}), path)
+  Surface.load_with(~Surface.decode_png, Image.file.limit(PngFile{}), path)
 
 def Surface.load_bmp(path: String) -> IO(Result<&1, &1, Surface.IOError, Surface>):
   Surface.load_with(~Surface.decode_bmp, Image.file.limit(RasterFile{}), path)

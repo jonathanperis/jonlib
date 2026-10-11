@@ -339,6 +339,24 @@ def Laws.raster_file_limit():
 def Laws.qoi_file_limit():
   {==}
 
+def Laws.png_file_limit():
+  {==}
+
+def Laws.png_file_kind_by_name():
+  {==}
+
+def Laws.png_file_kind_other_case_unsupported():
+  {==}
+
+def Laws.png_signature_selects_the_decoder():
+  {==}
+
+def Laws.file_bytes_beyond_a_count():
+  {==}
+
+def Laws.png_named_other_contents_over_the_raster_cap_refused(reference, bytes):
+  {==}
+
 def Laws.image_file_complete_empty():
   {==}
 
