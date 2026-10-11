@@ -247,9 +247,12 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      the probe (the count it draws is compared) but not stop, export or
      play one. Those branches are ported and unverified; a driver that sets
      the input another way would be needed to compare them;
-   - `core_custom_frame_control` drives its own loop (`PollInputEvents`,
-     `SwapScreenBuffer`, `WaitTime`, two `GetTime` calls a frame): needs a
-     program form the driver does not have;
+   - `core_custom_frame_control` is ported: its second `PollInputEvents`
+     is `Core.poll_input_events` in the update (on the default build it
+     makes every press an old one) and its timing after EndDrawing is the
+     program's `after`, with `Core.wait_time`. The probe's scripted clocks
+     follow the example's own wait (`OWN_WAIT`, `own_wait`) and the header
+     wraps its `WaitTime` so that the sleep ends at raylib's destination;
    - the wall clock is done for the examples that read it
      (`shapes_digital_clock`, `shapes_clock_of_clocks`): Base has none, and
      they call the C library's `time()` and `localtime()`, so a port's setup

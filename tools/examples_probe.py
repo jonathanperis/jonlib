@@ -52,6 +52,11 @@ script's seed (the seconds of the day at InitWindow) plus the scripted
 clock's whole seconds, and localtime is gmtime. Their ports take the seed
 as that time and add GetTime's whole seconds.
 
+core_custom_frame_control waits itself after EndDrawing (WaitTime to its own
+1/60 s): the header wraps its WaitTime so that the sleep ends at raylib's
+destination, and each scripted frame starts from the end of that wait
+(own_wait), computed in binary64 as the example computes it.
+
 An example that writes files (SCRATCH: core_storage_values) runs each script
 in an empty directory of its own, the reference as its working directory and
 Jonlib as the directory its setup takes; the files left must have the same
@@ -97,6 +102,9 @@ LANE_TIMEOUT = 1800
 TARGET_FPS = {'shapes_kaleidoscope': 20, 'shapes_penrose_tile': 120, 'textures_mouse_painting': 120}
 # shaders_rlgl_compute never calls SetTargetFPS: with a target of a nanosecond no scripted frame is short enough to wait.
 TARGET_FPS['shaders_rlgl_compute'] = 10**9
+# core_custom_frame_control never calls SetTargetFPS either; after EndDrawing it waits itself (OWN_WAIT: its target).
+TARGET_FPS['core_custom_frame_control'] = 10**9
+OWN_WAIT = {'core_custom_frame_control': 60}
 
 (KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, INPUT_GESTURE, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 17, 18)
 # Gamepad events: (gamepad), (gamepad, button), (gamepad, axis, value/32768).
@@ -272,6 +280,7 @@ EXAMPLES = {
     'models_skybox_rendering': ('models/models_skybox_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'text_codepoints_loading': ('text/text_codepoints_loading.c', 'Ex.setup(core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
+    'core_custom_frame_control': ('core/core_custom_frame_control.c', 'Ex.setup(core, frame)'),
     'shapes_digital_clock': ('shapes/shapes_digital_clock.c', 'Ex.setup(seed, core, frame)'),
     'shapes_clock_of_clocks': ('shapes/shapes_clock_of_clocks.c', 'Ex.setup(seed, core, frame)'),
     'core_storage_values': ('core/core_storage_values.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
@@ -379,6 +388,7 @@ UNDEFINED_FROM['core_storage_values-odd'] = 2
 # core_automation_events: S again would export automation.rae, which the script cannot reach (see its scripts).
 IO_SETUP.add('core_automation_events'); EFFECTS.add('core_automation_events'); SCRATCH.add('core_automation_events')
 IO_SETUP.add('models_skybox_rendering'); EFFECTS.add('models_skybox_rendering'); PERSPECTIVE.add('models_skybox_rendering')
+IO_SETUP.add('core_custom_frame_control'); EFFECTS.add('core_custom_frame_control')
 
 
 def scratch(probe, index, native=False):
@@ -1080,6 +1090,11 @@ def scripts():
         # SPACE shows the analog face (the hands at 14:00:00 and 14:00:01), SPACE again the display.
         script('shapes_digital_clock', 'ticks', [long() for _ in range(19)] + [long([key(KEY_SPACE)])] + [long([key(KEY_SPACE, False)])] + [long() for _ in range(9)]
                + [quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)])], seed=13 * 3600 + 59 * 60 + 58),
+        # Short frames end with the example's own WaitTime to 1/60 s (deltaTime is then measured), long ones do not
+        # wait (deltaTime keeps its value). The example's PollInputEvents makes every press an old one: SPACE and
+        # UP change nothing.
+        script('core_custom_frame_control', 'paced', [quick(), quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), key(KEY_UP)]), quick([key(KEY_UP, False)]), long(),
+                                                      quick(), quick()]),
         # The driver silences raylib's log (SetTraceLogLevel(LOG_NONE)), so the example's callback prints nothing.
         script('core_custom_logging', 'frames', [quick(), slow()]),
         script('text_codepoints_loading', 'frames', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), key(KEY_RIGHT)])]),
@@ -1228,6 +1243,7 @@ def timed(item):
         raise ProbeFailure(f'examples: {item["name"]} exceeds the driver\'s {MAX_FRAMES - 1} frames or {MAX_EVENTS} events per frame')
     previous = item['start']
     target = 1.0 / TARGET_FPS[item['example']] if item['example'] in TARGET_FPS else TARGET
+    measured = item['start']
     frames = []
     for events, gap, draw in item['frames']:
         begin = previous + gap
@@ -1236,8 +1252,20 @@ def timed(item):
         frame = update + (end - begin)
         after = end + (target - frame) if frame < target else end
         frames.append(dict(events=events, begin=begin, end=end, after=after))
-        previous = after
+        previous = own_wait(item['example'], measured, after)
+        measured = previous
     return dict(item, frames=frames)
+
+
+def own_wait(example, measured, after):
+    """The clock when the next frame's gap starts: `after`, or for an example that waits itself after
+    EndDrawing (core_custom_frame_control, from its previousTime `measured`) the end of its WaitTime:
+    waitTime = (1.0f/(float)targetFPS) - (currentTime - previousTime), then WaitTime((float)waitTime) when it is
+    positive, whose destination is GetTime() + seconds in binary64."""
+    if example not in OWN_WAIT:
+        return after
+    wait = fp.f32(1.0 / fp.f32(float(OWN_WAIT[example]))) - (after - measured)
+    return after + fp.f32(wait) if wait > 0.0 else after
 
 
 # -----------------------------------------------------------------------------
@@ -1478,6 +1506,8 @@ int JonlibProbeNanosleep(const struct timespec *req, struct timespec *rem) { (vo
 static unsigned seed = 0;
 // An example's time(): the script's seed (the seconds at InitWindow) plus the scripted clock's whole seconds.
 time_t JonlibExampleTime(time_t *out) { time_t now = (time_t)seed + (time_t)probe_clock; if (out) *out = now; return now; }
+// An example's own WaitTime: its sleep ends at raylib's destination, GetTime() + seconds.
+void JonlibExampleWaitTime(double seconds) { if (!(seconds < 0)) probe_after = probe_clock + seconds; WaitTime(seconds); }
 
 #define MAX_FRAMES 1024
 #define MAX_EVENTS 64

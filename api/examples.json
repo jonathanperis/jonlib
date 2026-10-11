@@ -939,7 +939,7 @@
   {
    "name": "core_custom_frame_control",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
