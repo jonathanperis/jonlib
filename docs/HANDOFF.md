@@ -278,8 +278,8 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      parked in `.build/pending/`, not in the repository);
    - `GetFileModTime` (`shaders_hot_reloading`), `GetApplicationDirectory`
      (`core_screen_recording`); `models_decals` is ready since `UploadMesh`;
-     `text_codepoints_loading` reads out of bounds natively (an
-     `UNDEFINED_NATIVE` port);
+     `text_codepoints_loading` reads out of bounds natively and is ported
+     as a refusal (`UNDEFINED_NATIVE`, docs/TEXT.md);
    - IQM, M3D and VOX model loading;
    - the audio device and streams (12+ examples; the reference build has
      `SUPPORT_MODULE_RAUDIO=OFF`), VR.

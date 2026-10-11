@@ -264,6 +264,7 @@ EXAMPLES = {
     'shaders_shadowmap_rendering': ('shaders/shaders_shadowmap_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shaders_deferred_rendering': ('shaders/shaders_deferred_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_skybox_rendering': ('models/models_skybox_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'text_codepoints_loading': ('text/text_codepoints_loading.c', 'Ex.setup(core, frame)'),
     'core_storage_values': ('core/core_storage_values.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_automation_events': ('core/core_automation_events.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
@@ -1056,6 +1057,7 @@ def scripts():
         # The depth attachment drawn as a texture is a white rectangle on rlsw, whatever the free camera does (W
         # moves it, the pointer turns it): the help box over white.
         script('shaders_depth_rendering', 'white', [quick(), quick([key(KEY_W)]), quick([mouse_at(430, 240)]), slow([key(KEY_W, False)])]),
+        script('text_codepoints_loading', 'frames', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), key(KEY_RIGHT)])]),
         # The camera starts with the cube behind it: the mouse turns it half a turn and down (the white cube, drawn
         # without culling or depth writes, under the grid), then W walks toward it.
         script('models_skybox_rendering', 'turn', [quick(), quick([mouse_at(300, 60)]), quick([mouse_at(600, 120)]), quick([mouse_at(900, 180)]), slow([mouse_at(1050, 200)]),
@@ -1319,6 +1321,10 @@ UNDEFINED_NATIVE = {
     # 2 on the image's first and last rows (510.0f) and the Sobel kernel to -2 on its first pixel (-510.0f):
     # out-of-range conversions (C11 6.3.1.4). docs/CONVOLUTION.md.
     'textures_image_kernel': 'ImageKernelConvolution casts out-of-range alpha sums to unsigned char',
+    # Its CodepointRemoveDuplicates shifts the list with codepointsNoDups[k] = codepointsNoDups[k + 1] up to
+    # k = count - 1 at the first repeated codepoint: one int read past the codepointCount ints allocated. The
+    # text repeats U+3000 and its line break, so the read happens before the first frame. docs/TEXT.md.
+    'text_codepoints_loading': 'CodepointRemoveDuplicates reads one int past its array',
 }
 REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particles_blending', 'core_smooth_pixelperfect',
             'shapes_double_pendulum', 'shapes_vector_angle', 'shapes_penrose_tile', 'textures_magnifying_glass',

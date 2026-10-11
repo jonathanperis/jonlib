@@ -4003,7 +4003,7 @@
   {
    "name": "text_codepoints_loading",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",

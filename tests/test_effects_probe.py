@@ -123,5 +123,20 @@ class ScratchScriptTests(unittest.TestCase):
             self.assertNotEqual(ep.scratch(probe, 0), ep.scratch(probe, 0, native=True))
 
 
+class UndefinedNativeExampleTests(unittest.TestCase):
+    def test_the_codepoints_example_repeats_a_codepoint_and_is_not_run(self):
+        import re
+        text = (ROOT / 'examples/text_codepoints_loading.bend').read_text()
+        literal = re.search(r'def text\(\) -> String:\n  "(.*)"', text).group(1)
+        data = bytes(int(code, 16) for code in re.findall(r'\\u\{([0-9a-f]+)\}', literal.replace('\\n', '\\u{a}')))
+        points = [ord(c) for c in data.decode('utf-8')]
+        self.assertEqual((len(points), len(set(points))), (54, 49))
+        self.assertEqual(sorted(c for c in set(points) if points.count(c) > 1), [0x0A, 0x3000])
+        self.assertIn('text_codepoints_loading', ep.UNDEFINED_NATIVE)
+        item = next(item for item in ep.scripts() if item['example'] == 'text_codepoints_loading')
+        self.assertEqual(ep.refusal(item, 'Glibc239Libm'), 0)
+        self.assertEqual(ep.refusal(item, 'AppleLibm'), 0)
+
+
 if __name__ == '__main__':
     unittest.main()
