@@ -229,6 +229,7 @@ EXAMPLES = {
     'shapes_simple_particles': ('shapes/shapes_simple_particles.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shapes_ball_physics': ('shapes/shapes_ball_physics.c', 'Ex.setup(seed, core, frame)'),
     'shapes_math_sine_cosine': ('shapes/shapes_math_sine_cosine.c', 'Ex.setup(M.LIBM{}, core, frame)'),
+    'shapes_hilbert_curve': ('shapes/shapes_hilbert_curve.c', 'Ex.setup(core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -839,6 +840,15 @@ def scripts():
         script('shapes_math_sine_cosine', 'angles', [quick() for _ in range(6)] + [quick([mouse_at(700, 80)]), quick([button(0)]), quick([button(0, False)]), quick(),
                                                     quick([mouse_at(690, 50)]), quick([button(0)]), quick([mouse_at(720, 50)]), quick([mouse_at(655, 52)]),
                                                     quick([button(0, False)]), quick([mouse_at(700, 80)]), quick([button(0)]), quick([button(0, False)]), quick(), slow()]),
+        # Order 2 animates; the spinner's right arrow is hovered, pressed and released (order 3 starts over), its
+        # value box is hovered and pressed, the animation is switched off, order 4 appears whole, the thickness
+        # and the size are dragged (every new integer size regenerates) and the left arrow returns to order 3.
+        script('shapes_hilbert_curve', 'orders', [quick(), quick(), quick([mouse_at(750, 115)]), quick([button(0)]), quick([button(0, False)]), quick(), quick(),
+                                                  quick([mouse_at(660, 115)]), quick([button(0)]), quick([button(0, False), mouse_at(459, 60)]), quick([button(0)]),
+                                                  quick([button(0, False)]), quick([mouse_at(750, 115)]), quick([button(0)]), quick([button(0, False)]), quick(),
+                                                  quick([mouse_at(600, 162), button(0)]), quick([mouse_at(700, 164)]), quick([button(0, False)]),
+                                                  quick([mouse_at(600, 202), button(0)]), quick([mouse_at(560, 200)]), quick([button(0, False)]),
+                                                  quick([mouse_at(597, 115), button(0)]), quick([button(0, False)]), slow()]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.

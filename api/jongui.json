@@ -164,6 +164,7 @@
    "scope": "The first line with the default font, TEXT_SIZE and TEXT_SPACING, as a C int; a text starting with '#' with another '#' in its next four bytes is measured from the second one plus 20, as raygui does.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/shapes_hilbert_curve.bend",
     "examples/shapes_circle_sector_drawing.bend",
     "docs/GUI.md",
     "jongui.bend",
@@ -242,6 +243,7 @@
    "scope": "Hover and press states, the bordered rectangle and its text; true when the pointer is released over it.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/shapes_hilbert_curve.bend",
     "examples/shapes_kaleidoscope.bend",
     "examples/shapes_circle_sector_drawing.bend",
     "docs/GUI.md",
@@ -325,6 +327,8 @@
    "jongui": "Gui.spinner",
    "scope": "Not in edit mode: the two arrow buttons, the value box between them and the label; the value steps by one on a button's release and is clamped.",
    "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_hilbert_curve.bend",
     "docs/GUI.md",
     "jongui.bend",
     "LAWS.bend"
@@ -343,6 +347,8 @@
    "jongui": "Gui.value_box",
    "scope": "Not in edit mode: the value drawn centered as it came, returned clamped when the control reacts; true when pressed over it.",
    "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_hilbert_curve.bend",
     "docs/GUI.md",
     "jongui.bend",
     "LAWS.bend"
@@ -367,6 +373,7 @@
    "scope": "The knob slider: press inside starts a drag that follows the pointer outside the bounds, the value clamped; left and right texts.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/shapes_hilbert_curve.bend",
     "examples/shapes_circle_sector_drawing.bend",
     "docs/GUI.md",
     "jongui.bend"

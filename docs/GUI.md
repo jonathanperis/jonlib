@@ -138,7 +138,10 @@ check boxes: hover, press, a toggle over the box and over its label, and a
 release outside that toggles nothing. `shapes_kaleidoscope` covers buttons:
 normal, focused, pressed and disabled (`GuiDisable`/`GuiEnable` around a
 button), and a click that takes effect on the next frame.
-`shaders_color_correction` covers the toggle group: an item hovered, pressed
+`shapes_hilbert_curve` covers the spinner and the icons: the arrow buttons
+hovered, pressed and released (the order steps up and down), the value box
+hovered and pressed, a plain `GuiSlider` with a left text only, and the
+label in each state. `shaders_color_correction` covers the toggle group: an item hovered, pressed
 and switched on, and a click on the active item that changes nothing. `LAWS.bend` states the default text size, the propagation of a DEFAULT
 property, the enable/disable rules, how an icon prefix is read and which
 lines are refused. The `gui-icons` gate compares the icon set with every
