@@ -4874,7 +4874,7 @@
   {
    "name": "models_animation_gpu_skinning",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
