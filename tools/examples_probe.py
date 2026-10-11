@@ -278,6 +278,7 @@ EXAMPLES = {
     'shaders_shadowmap_rendering': ('shaders/shaders_shadowmap_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shaders_deferred_rendering': ('shaders/shaders_deferred_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_skybox_rendering': ('models/models_skybox_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'models_decals': ('models/models_decals.c', 'Ex.setup(M.LIBM{}, seed, RESOURCES, core, frame)'),
     'text_codepoints_loading': ('text/text_codepoints_loading.c', 'Ex.setup(core, frame)'),
     'text_unicode_emojis': ('text/text_unicode_emojis.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
@@ -390,6 +391,7 @@ UNDEFINED_FROM['core_storage_values-odd'] = 2
 IO_SETUP.add('core_automation_events'); EFFECTS.add('core_automation_events'); SCRATCH.add('core_automation_events')
 IO_SETUP.add('models_skybox_rendering'); EFFECTS.add('models_skybox_rendering'); PERSPECTIVE.add('models_skybox_rendering')
 IO_SETUP.add('core_custom_frame_control'); EFFECTS.add('core_custom_frame_control')
+IO_SETUP.add('models_decals'); SEEDED.add('models_decals'); PERSPECTIVE.add('models_decals'); CONFIG_FLAGS['models_decals'] = 32
 IO_SETUP.add('text_unicode_emojis'); SEEDED.add('text_unicode_emojis'); CONFIG_FLAGS['text_unicode_emojis'] = 96
 
 
@@ -1108,6 +1110,11 @@ def scripts():
                                                quick([button(0, False), mouse_at(500, 150)]), quick([button(0)]), slow([button(0, False)]), quick([key(KEY_SPACE)]),
                                                quick([key(KEY_SPACE, False)])], seed=0xE301),
         script('text_codepoints_loading', 'frames', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), key(KEY_RIGHT)])]),
+        # The mouse on the character shows the placement cube; two clicks splat two decals (the table lists them);
+        # RMB with a move turns the camera; a click on "Clear Decals" removes them.
+        script('models_decals', 'splat', [quick(), quick([mouse_at(400, 230)]), quick([button(0)]), quick([button(0, False), mouse_at(400, 150)]), quick([button(0)]),
+                                          quick([button(0, False), button(1), mouse_at(430, 160)]), slow([mouse_at(460, 170)]), quick([button(1, False), mouse_at(150, 380)]), quick([button(0)]),
+                                          quick([button(0, False)])], seed=0xDECA),
         # The camera starts with the cube behind it: the mouse turns it half a turn and down (the white cube, drawn
         # without culling or depth writes, under the grid), then W walks toward it.
         script('models_skybox_rendering', 'turn', [quick(), quick([mouse_at(300, 60)]), quick([mouse_at(600, 120)]), quick([mouse_at(900, 180)]), slow([mouse_at(1050, 200)]),
