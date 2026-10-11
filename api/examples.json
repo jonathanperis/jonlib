@@ -2311,7 +2311,7 @@
   {
    "name": "shapes_math_sine_cosine",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "Clamp",
