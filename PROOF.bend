@@ -741,6 +741,18 @@ def Laws.gltf_attribute_index():
 def Laws.gltf_empty_file_none():
   {==}
 
+def Laws.gltf_joints_attribute_kind():
+  {==}
+
+def Laws.gltf_index_past_array_refused():
+  {==}
+
+def Laws.gltf_other_texture_kind_refused():
+  {==}
+
+def Laws.gltf_base_color_image_kept():
+  {==}
+
 def Laws.hypot_within_below_inside(error, limit):
   {==}
 

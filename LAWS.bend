@@ -1039,6 +1039,22 @@ law gltf_attribute_index:
 law gltf_empty_file_none:
   {Gltf.glb(Nil{}) == None{} : Maybe<Gltf.Parts>}
 
+# A skinned file's JOINTS_n attribute is recognized (and then checked, not
+# kept); an index at or past its array's size fails the file as cgltf's
+# fixup does; a material with another texture kind is refused, and its base
+# color image's bytes are kept otherwise.
+law gltf_joints_attribute_kind:
+  {Gltf.attribute.kind([74, 79, 73, 78, 84, 83, 95, 48]) == 6 : U32}
+
+law gltf_index_past_array_refused:
+  {Gltf.each.below([Json.JNumber{[52]}], 4) == False{} : Bool}
+
+law gltf_other_texture_kind_refused:
+  {Gltf.look.with(4294967295, True{}, Gltf.Words{True{}, Nil{}}) == Gltf.Look{False{}, 4294967295, Nil{}} : Gltf.Look}
+
+law gltf_base_color_image_kept:
+  {Gltf.look.with(255, False{}, Gltf.Words{True{}, [137, 80]}) == Gltf.Look{True{}, 255, [137, 80]} : Gltf.Look}
+
 # hypot(x, y) <= r for every faithful hypot (src/hypot.bend), from the order
 # of the rounded x*x + y*y and r*r (0 equal, 1 less, 2 greater, 3 unknown):
 # a sum below r*r is inside; a sum rounded onto r*r is inside unless its

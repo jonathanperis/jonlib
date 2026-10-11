@@ -2257,7 +2257,7 @@
   },
   {
    "id": "gltf",
-   "title": "LoadModel of binary glTF (LoadGLTF: container, JSON, accessors, node transforms, base color factors) word for word against the uncontracted raylib build, with the examples' models and refusal contracts",
+   "title": "LoadModel of binary glTF (LoadGLTF: container, JSON, accessors, node transforms, base color factors and embedded PNG textures, files with skins) word for word against the uncontracted raylib build, with the examples' models and refusal contracts",
    "run": [
     "{python}",
     "tools/gltf_probe.py",
@@ -2268,7 +2268,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 12
+   "minutes": 30
   }
  ]
 }

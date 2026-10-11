@@ -8,12 +8,17 @@
 # buffer in the BIN chunk, every node's triangle primitives as meshes with
 # float POSITION, NORMAL, TANGENT and TEXCOORD_0/1 attributes, indices of 8,
 # 16 or 32 bits (kept as 16, as raylib does), node transforms applied to the
-# vertices as LoadGLTF applies them, and each material's base color factor.
+# vertices as LoadGLTF applies them, and each material's base color factor
+# and base color texture (a PNG image in a buffer view; the caller decodes
+# and uploads it). A file with skins loads too: its meshes are what LoadGLTF
+# makes of them, and the bone data it would add (JOINTS_n, WEIGHTS_n, the
+# skeleton) is checked and not kept, as Jonlib's Mesh and Model have none.
 # None (the loader refuses) for everything else the reference would read:
-# textures, images, skins, sparse or missing buffer views, COLOR, JOINTS and
-# WEIGHTS attributes, other component types, required extensions, a number
-# src/strtod.bend does not answer, a read past the buffer, or JSON that is
-# not well formed. The arithmetic is uncontracted. See docs/MODELS.md.
+# the other texture kinds, images given by a uri or in another format,
+# sparse or missing buffer views, COLOR attributes, other component types,
+# required extensions, a number src/strtod.bend does not answer, a read past
+# the buffer, or JSON that is not well formed. The arithmetic is
+# uncontracted. See docs/MODELS.md.
 import Base
 import ./../jonmath.bend as M
 import ./json.bend as JS
@@ -366,7 +371,7 @@ def fresh(+ok: Bool) -> Prim:
 def refused() -> Prim:
   Prim{False{}, 0, 0, None{}, None{}, None{}, None{}, None{}, None{}, 0}
 
-# cgltf_parse_attribute_type: the name before its first underscore (0 other, 1 POSITION, 2 NORMAL, 3 TANGENT, 4 TEXCOORD, 5 COLOR, JOINTS or WEIGHTS).
+# cgltf_parse_attribute_type: the name before its first underscore (0 other, 1 POSITION, 2 NORMAL, 3 TANGENT, 4 TEXCOORD, 5 COLOR, 6 JOINTS, 7 WEIGHTS).
 def before(name: +List<U32>) -> +List<U32>:
   match name:
     case Nil{}: Nil{}
@@ -381,7 +386,7 @@ def attribute.kind(+name: +List<U32>) -> U32:
   +base = before(name)
   Bool.pick(U32, U32.is_eq(first(name), 95), 0, Bool.pick(U32, JS.same(base, T.bytes("POSITION")), 1, Bool.pick(U32, JS.same(base, T.bytes("NORMAL")), 2,
     Bool.pick(U32, JS.same(base, T.bytes("TANGENT")), 3, Bool.pick(U32, JS.same(base, T.bytes("TEXCOORD")), 4,
-      Bool.pick(U32, JS.same(base, T.bytes("COLOR")) || JS.same(base, T.bytes("JOINTS")) || JS.same(base, T.bytes("WEIGHTS")), 5, 0))))))
+      Bool.pick(U32, JS.same(base, T.bytes("COLOR")), 5, Bool.pick(U32, JS.same(base, T.bytes("JOINTS")), 6, Bool.pick(U32, JS.same(base, T.bytes("WEIGHTS")), 7, 0))))))))
 
 # The index after the underscore, as atoi reads it: 0 without one or without digits.
 def attribute.index(text: +List<U32>, +acc: U32) -> U32:
@@ -412,6 +417,18 @@ def with_texcoords(+prim: Prim, +s: Span, +bin: +List<U32>, +slot: U32) -> Prim:
   Prim{ok && valid, vc, tc, vertices, Bool.pick(Maybe<&2, +List<F32>>, U32.is_eq(slot, 0), Some{values}, texcoords),
     Bool.pick(Maybe<&2, +List<F32>>, U32.is_eq(slot, 1), Some{values}, texcoords2), normals, tangents, indices, material}
 
+def span.ok(s: Span) -> Bool:
+  Span{ok, _, _, _} = s
+  ok
+
+# JOINTS_n (a VEC4 of u8 or u16) and WEIGHTS_n (also of float): LoadGLTF
+# reads them into the mesh's bone data, which Jonlib's Mesh does not have,
+# so the accessor is checked and its values are not kept. Another layout
+# only warns there; here it refuses.
+def with_bones(+prim: Prim, +root: JS.Json, +accessor: U32, +limit: U32, +weights: Bool) -> Prim:
+  +valid = span.ok(span(root, accessor, 5121, "VEC4", 1, 4, limit)) || span.ok(span(root, accessor, 5123, "VEC4", 2, 4, limit)) || (weights && span.ok(span(root, accessor, 5126, "VEC4", 4, 4, limit)))
+  Bool.pick(Prim, valid, prim, refused())
+
 def attribute(kind: U32, +slot: U32, +prim: Prim, +root: JS.Json, +accessor: U32, +bin: +List<U32>, +limit: U32, +world: M.Matrix, +normal: M.Matrix) -> Prim:
   match kind:
     case 0: prim
@@ -419,6 +436,8 @@ def attribute(kind: U32, +slot: U32, +prim: Prim, +root: JS.Json, +accessor: U32
     case 2: with_normals(prim, span(root, accessor, 5126, "VEC3", 4, 3, limit), bin, normal)
     case 3: with_tangents(prim, span(root, accessor, 5126, "VEC4", 4, 4, limit), bin, world)
     case 4: with_texcoords(prim, span(root, accessor, 5126, "VEC2", 4, 2, limit), bin, slot)
+    case 6: with_bones(prim, root, accessor, limit, False{})
+    case 7: with_bones(prim, root, accessor, limit, True{})
     case _: refused()
 
 def attributes(members: +List<JS.Json.Member>, +prim: Prim, +root: JS.Json, +bin: +List<U32>, +limit: U32, +world: M.Matrix, +normal: M.Matrix) -> Prim:
@@ -460,9 +479,22 @@ def with_material(+prim: Prim, +primitive: JS.Json, +materials: U32) -> Prim:
   +index = int(primitive, "material", materials)
   Prim{ok && (index <= materials : U32), vc, tc, vertices, texcoords, texcoords2, normals, tangents, indices, Bool.pick(U32, (index < materials : U32), (index + 1 : U32), 0)}
 
+# LoadGLTF copies every element of a JOINTS_n or WEIGHTS_n accessor into
+# buffers of vertexCount elements: an accessor with more would write past them.
+def bones.fit(members: +List<JS.Json.Member>, +root: JS.Json, +vertices: U32) -> Bool:
+  match members:
+    case Nil{}: True{}
+    case Con{JS.JMember{+name, +value}, rest}:
+      (Bool.not(U32.is_eq(attribute.kind(name), 6) || U32.is_eq(attribute.kind(name), 7)) || (int(nth(list(root, "accessors"), int.of(Some{value}, bad())), "count", bad()) <= vertices : U32)) && bones.fit(rest, root, vertices)
+
+def fitted(+prim: Prim, +members: +List<JS.Json.Member>, +root: JS.Json) -> Prim:
+  Prim{+ok, +vc, +tc, +vertices, +texcoords, +texcoords2, +normals, +tangents, +indices, +material} = prim
+  Prim{ok && bones.fit(members, root, vc), vc, tc, vertices, texcoords, texcoords2, normals, tangents, indices, material}
+
 def primitive(+primitive: JS.Json, +root: JS.Json, +bin: +List<U32>, +limit: U32, +world: M.Matrix, +normal: M.Matrix, +materials: U32) -> Prim:
   +start = fresh(Bool.not(has(primitive, "extensions")) && Bool.not(has(primitive, "targets")))
-  with_material(indexed(has(primitive, "indices"), attributes(members.of(child(primitive, "attributes")), start, root, bin, limit, world, normal), root, primitive, bin, limit), primitive, materials)
+  +members = members.of(child(primitive, "attributes"))
+  with_material(indexed(has(primitive, "indices"), fitted(attributes(members, start, root, bin, limit, world, normal), members, root), root, primitive, bin, limit), primitive, materials)
 
 # Triangle primitives only (mode 4, the default): the others are skipped.
 def primitives(items: +List<JS.Json>, +root: JS.Json, +bin: +List<U32>, +limit: U32, +world: M.Matrix, +normal: M.Matrix, +materials: U32, +tail: +List<Prim>) -> +List<Prim>:
@@ -505,21 +537,85 @@ def color.of(+factor: Words) -> Maybe<U32>:
   +a = channel(first(List.drop(&2, U32, v, 3n)))
   Bool.pick(Maybe<U32>, ok && good(r) && good(g) && good(b) && good(a), Some{((r << 24n) .|. (g << 16n) .|. (b << 8n) .|. a : U32)}, None{})
 
-# White (the default material's color) without pbrMetallicRoughness.
-def material(+item: JS.Json) -> Maybe<U32>:
+# A buffer view's bytes for an image: in the BIN chunk, without a stride
+# (LoadImageFromCgltfImage would then skip bytes) and inside the buffer.
+def view.bytes(+view: JS.Json, +bin: +List<U32>, +limit: U32) -> Words:
+  +offset = int(view, "byteOffset", 0)
+  +size = int(view, "byteLength", bad())
+  +valid = good(offset) && good(size) && U32.is_eq(int(view, "buffer", bad()), 0) && Bool.not(has(view, "byteStride")) && Bool.not(has(view, "extensions")) && ((offset + size : U32) <= limit : U32)
+  Words{valid, Bool.pick(+List<U32>, valid, take(U32.to_nat(size), List.drop(&2, U32, bin, U32.to_nat(offset))), Nil{})}
+
+# cgltfImage->mime_type is "image/png" (or, as some files write it, "image\/png" with the backslash).
+def png(+mime: +List<U32>) -> Bool:
+  JS.same(mime, T.bytes("image/png")) || JS.same(mime, [105, 109, 97, 103, 101, 92, 47, 112, 110, 103])
+
+# An image's PNG bytes: from a buffer view with a PNG mime type. An image
+# with neither a uri nor a buffer view gives no texture; a uri, another mime
+# type (JPEG included) or none refuses.
+def image.bytes(+image: JS.Json, +root: JS.Json, +bin: +List<U32>, +limit: U32) -> Words:
+  +view = int(image, "bufferView", bad())
+  Bool.pick(Words, has(image, "uri") || has(image, "extensions"), Words{False{}, Nil{}},
+    Bool.pick(Words, has(image, "bufferView"), Bool.pick(Words, good(view) && png(text.of(JS.get(image, T.bytes("mimeType")))), view.bytes(nth(list(root, "bufferViews"), view), bin, limit), Words{False{}, Nil{}}),
+      Words{True{}, Nil{}}))
+
+# texture->image: the texture's source (no image without one).
+def texture.image(+texture: JS.Json, +root: JS.Json, +bin: +List<U32>, +limit: U32) -> Words:
+  +source = int(texture, "source", bad())
+  Bool.pick(Words, has(texture, "extensions"), Words{False{}, Nil{}},
+    Bool.pick(Words, has(texture, "source"), Bool.pick(Words, good(source) && (source < count(list(root, "images"), 0) : U32), image.bytes(nth(list(root, "images"), source), root, bin, limit), Words{False{}, Nil{}}),
+      Words{True{}, Nil{}}))
+
+# baseColorTexture: the PNG bytes of its texture's image (ok and empty for none).
+def albedo(+info: JS.Json, +root: JS.Json, +bin: +List<U32>, +limit: U32) -> Words:
+  +index = int(info, "index", bad())
+  Bool.pick(Words, good(index) && (index < count(list(root, "textures"), 0) : U32) && Bool.not(has(info, "extensions")), texture.image(nth(list(root, "textures"), index), root, bin, limit), Words{False{}, Nil{}})
+
+# A material's albedo: its color (0xRRGGBBAA) and its base color texture's
+# PNG bytes (empty for none).
+type Look is Data:
+  Look{ok: Bool, color: U32, image: +List<U32>}
+
+def look.with(color: U32, +other: Bool, image: Words) -> Look:
+  Words{ok, values} = image
+  Look{Bool.not(other) && ok, color, values}
+
+def look(color: Maybe<U32>, +other: Bool, +image: Words) -> Look:
+  match color:
+    case None{}: Look{False{}, 0, Nil{}}
+    case Some{c}: look.with(c, other, image)
+
+# White (the default material's color) and no texture without
+# pbrMetallicRoughness; the other texture kinds and extensions refuse.
+def material(+item: JS.Json, +root: JS.Json, +bin: +List<U32>, +limit: U32) -> Look:
   +pbr = child(item, "pbrMetallicRoughness")
-  +textured = has(pbr, "baseColorTexture") || has(pbr, "metallicRoughnessTexture") || has(item, "normalTexture") || has(item, "occlusionTexture") || has(item, "emissiveTexture")
-  Bool.pick(Maybe<U32>, textured || has(item, "extensions"), None{}, Bool.pick(Maybe<U32>, has(item, "pbrMetallicRoughness"),
-    color.of(floats.of(JS.get(pbr, T.bytes("baseColorFactor")), 4, [one(), one(), one(), one()])), Some{4294967295}))
+  +other = has(pbr, "metallicRoughnessTexture") || has(item, "normalTexture") || has(item, "occlusionTexture") || has(item, "emissiveTexture") || has(item, "extensions")
+  look(Bool.pick(Maybe<U32>, has(item, "pbrMetallicRoughness"), color.of(floats.of(JS.get(pbr, T.bytes("baseColorFactor")), 4, [one(), one(), one(), one()])), Some{4294967295}), other,
+    Bool.pick(Words, has(item, "pbrMetallicRoughness") && has(pbr, "baseColorTexture"), albedo(child(pbr, "baseColorTexture"), root, bin, limit), Words{True{}, Nil{}}))
 
-# The albedo colors, 0xRRGGBBAA; ok is False when a material is refused.
-def materials(items: +List<JS.Json>) -> Words:
+def materials(items: +List<JS.Json>, +root: JS.Json, +bin: +List<U32>, +limit: U32) -> +List<Look>:
   match items:
-    case Nil{}: Words{True{}, Nil{}}
-    case Con{+item, rest}: numbers.joined(material(item), materials(rest))
+    case Nil{}: Nil{}
+    case Con{+item, rest}: Con{material(item, root, bin, limit), materials(rest, root, bin, limit)}
 
+def looks.ok(looks: +List<Look>) -> Bool:
+  match looks:
+    case Nil{}: True{}
+    case Con{Look{+ok, _, _}, rest}: ok && looks.ok(rest)
+
+def looks.colors(looks: +List<Look>) -> +List<U32>:
+  match looks:
+    case Nil{}: Nil{}
+    case Con{Look{_, +color, _}, rest}: Con{color, looks.colors(rest)}
+
+def looks.images(looks: +List<Look>) -> +List<+List<U32>>:
+  match looks:
+    case Nil{}: Nil{}
+    case Con{Look{_, _, +image}, rest}: Con{image, looks.images(rest)}
+
+# The meshes, and for each material its albedo color (0xRRGGBBAA) and its
+# base color texture's PNG bytes (empty for none).
 type Parts is Data:
-  Parts{prims: +List<Prim>, colors: +List<U32>}
+  Parts{prims: +List<Prim>, colors: +List<U32>, images: +List<+List<U32>>}
 
 def prims.ok(prims: +List<Prim>) -> Bool:
   match prims:
@@ -532,17 +628,90 @@ def buffers.ok(items: +List<JS.Json>, +limit: U32) -> Bool:
     case Con{+buffer, Nil{}}: Bool.not(has(buffer, "uri")) && (int(buffer, "byteLength", bad()) <= limit : U32)
     case _: False{}
 
-def built.colored(+colors: Words, +valid: Bool, +prims: +List<Prim>) -> Maybe<Parts>:
-  Words{+ok, +values} = colors
-  Bool.pick(Maybe<Parts>, ok && valid, Some{Parts{prims, values}}, None{})
+# cgltf_fixup_pointers fails the parse for an index past its array (and for
+# a required one that is missing): the indices of the sections this loader
+# does not otherwise read.
+def index.ok(+object: JS.Json, +name: String, +size: U32) -> Bool:
+  Bool.not(has(object, name)) || (int(object, name, bad()) < size : U32)
+
+def index.req(+object: JS.Json, name: String, +size: U32) -> Bool:
+  (int(object, name, bad()) < size : U32)
+
+def each.below(items: +List<JS.Json>, +size: U32) -> Bool:
+  match items:
+    case Nil{}: True{}
+    case Con{+item, rest}: (int.of(Some{item}, bad()) < size : U32) && each.below(rest, size)
+
+# A texture with extensions (a Basis or WebP source) refuses.
+def textures.fixed(items: +List<JS.Json>, +images: U32, +samplers: U32) -> Bool:
+  match items:
+    case Nil{}: True{}
+    case Con{+item, rest}: index.ok(item, "source", images) && index.ok(item, "sampler", samplers) && Bool.not(has(item, "extensions")) && textures.fixed(rest, images, samplers)
+
+def images.fixed(items: +List<JS.Json>, +views: U32) -> Bool:
+  match items:
+    case Nil{}: True{}
+    case Con{+item, rest}: index.ok(item, "bufferView", views) && images.fixed(rest, views)
+
+def info.fixed(+object: JS.Json, name: String, +textures: U32) -> Bool:
+  index.ok(child(object, name), "index", textures)
+
+def materials.fixed(items: +List<JS.Json>, +textures: U32) -> Bool:
+  match items:
+    case Nil{}: True{}
+    case Con{+item, rest}:
+      info.fixed(child(item, "pbrMetallicRoughness"), "baseColorTexture", textures) && info.fixed(child(item, "pbrMetallicRoughness"), "metallicRoughnessTexture", textures) &&
+        info.fixed(item, "normalTexture", textures) && info.fixed(item, "occlusionTexture", textures) && info.fixed(item, "emissiveTexture", textures) && materials.fixed(rest, textures)
+
+def skins.fixed(items: +List<JS.Json>, +nodes: U32, +accessors: U32) -> Bool:
+  match items:
+    case Nil{}: True{}
+    case Con{+item, rest}: each.below(list(item, "joints"), nodes) && index.ok(item, "skeleton", nodes) && index.ok(item, "inverseBindMatrices", accessors) && skins.fixed(rest, nodes, accessors)
+
+def nodes.fixed(items: +List<JS.Json>, +nodes: U32, +meshes: U32, +skins: U32, +cameras: U32) -> Bool:
+  match items:
+    case Nil{}: True{}
+    case Con{+item, rest}:
+      each.below(list(item, "children"), nodes) && index.ok(item, "mesh", meshes) && index.ok(item, "skin", skins) && index.ok(item, "camera", cameras) && nodes.fixed(rest, nodes, meshes, skins, cameras)
+
+def scenes.fixed(items: +List<JS.Json>, +nodes: U32) -> Bool:
+  match items:
+    case Nil{}: True{}
+    case Con{+item, rest}: each.below(list(item, "nodes"), nodes) && scenes.fixed(rest, nodes)
+
+def samplers.fixed(items: +List<JS.Json>, +accessors: U32) -> Bool:
+  match items:
+    case Nil{}: True{}
+    case Con{+item, rest}: index.req(item, "input", accessors) && index.req(item, "output", accessors) && samplers.fixed(rest, accessors)
+
+def channels.fixed(items: +List<JS.Json>, +samplers: U32, +nodes: U32) -> Bool:
+  match items:
+    case Nil{}: True{}
+    case Con{+item, rest}: index.req(item, "sampler", samplers) && index.ok(child(item, "target"), "node", nodes) && channels.fixed(rest, samplers, nodes)
+
+def animations.fixed(items: +List<JS.Json>, +nodes: U32, +accessors: U32) -> Bool:
+  match items:
+    case Nil{}: True{}
+    case Con{+item, rest}:
+      samplers.fixed(list(item, "samplers"), accessors) && channels.fixed(list(item, "channels"), count(list(item, "samplers"), 0), nodes) && animations.fixed(rest, nodes, accessors)
+
+def fixup(+root: JS.Json) -> Bool:
+  +nodes = count(list(root, "nodes"), 0)
+  +accessors = count(list(root, "accessors"), 0)
+  +textures = count(list(root, "textures"), 0)
+  textures.fixed(list(root, "textures"), count(list(root, "images"), 0), count(list(root, "samplers"), 0)) && images.fixed(list(root, "images"), count(list(root, "bufferViews"), 0)) &&
+    materials.fixed(list(root, "materials"), textures) && skins.fixed(list(root, "skins"), nodes, accessors) &&
+    nodes.fixed(list(root, "nodes"), nodes, count(list(root, "meshes"), 0), count(list(root, "skins"), 0), count(list(root, "cameras"), 0)) &&
+    scenes.fixed(list(root, "scenes"), nodes) && index.ok(root, "scene", count(list(root, "scenes"), 0)) && animations.fixed(list(root, "animations"), nodes, accessors)
 
 def built(+root: JS.Json, +bin: +List<U32>, +limit: U32) -> Maybe<Parts>:
   +nodes = list(root, "nodes")
   +total = count(nodes, 0)
   +prims = scene(nodes, 0, root, nodes, total, bin, limit, count(list(root, "materials"), 0))
+  +looks = materials(list(root, "materials"), root, bin, limit)
   +plain = listed(root, "nodes") && listed(root, "meshes") && listed(root, "accessors") && listed(root, "bufferViews") && listed(root, "materials")
-  +static = U32.is_eq(count(list(root, "skins"), 0), 0) && U32.is_eq(count(list(root, "textures"), 0), 0) && U32.is_eq(count(list(root, "images"), 0), 0) && Bool.not(has(root, "extensionsRequired"))
-  built.colored(materials(list(root, "materials")), plain && static && buffers.ok(list(root, "buffers"), limit) && good(total) && prims.ok(prims), prims)
+  Bool.pick(Maybe<Parts>, plain && Bool.not(has(root, "extensionsRequired")) && fixup(root) && buffers.ok(list(root, "buffers"), limit) && good(total) && prims.ok(prims) && looks.ok(looks),
+    Some{Parts{prims, looks.colors(looks), looks.images(looks)}}, None{})
 
 def json(root: +Maybe<JS.Json>, +bin: +List<U32>, +limit: U32) -> Maybe<Parts>:
   match root:
@@ -559,6 +728,6 @@ def chunks(+bytes: +List<U32>, +size: U32) -> Maybe<Parts>:
     U32.is_eq(u32(List.drop(&2, U32, after, 4n)), 5130562) && good(bin_length) && U32.is_eq((28 + json_length + bin_length : U32), size)
   Bool.pick(Maybe<Parts>, valid, json(JS.parse(take(U32.to_nat(json_length), List.drop(&2, U32, bytes, 20n))), List.drop(&2, U32, after, 8n), bin_length), None{})
 
-# The meshes and material colors of a .glb file's bytes.
+# The meshes and material looks of a .glb file's bytes.
 def glb(+bytes: +List<U32>) -> Maybe<Parts>:
   chunks(bytes, length(bytes, 0))
