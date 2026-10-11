@@ -27,7 +27,7 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiLock` / `GuiUnlock` / `GuiIsLocked` | `Gui.lock`, `Gui.unlock`, `Gui.is_locked` | `Gui` / `Bool` |
 | `GuiSetState` / `GuiGetState` | `Gui.set_state(gui, state)` / `Gui.get_state(gui)` | `Gui` / `U32` |
 | `GuiSetAlpha` | `Gui.set_alpha(gui, alpha)` | `Gui` (alpha clamped to [0, 1]) |
-| `GuiGetTextWidth` | `Gui.get_text_width(gui, text)` | `Maybe<F32>` (the C int; `None` for an icon prefix) |
+| `GuiGetTextWidth` | `Gui.get_text_width(gui, text)` | `Maybe<F32>` (the C int, always `Some`; an icon prefix counts as raygui counts it) |
 | `GuiLabel` | `Gui.label(gui, frame, bounds, text)` | `Frame` |
 | `GuiButton` | `Gui.button(gui, core, frame, bounds, text)` | `Frame & Bool` (clicked) |
 | `GuiCheckBox` | `Gui.check_box(gui, core, frame, bounds, text, checked)` | `Frame & (Bool & Bool)` (checked, changed) |
@@ -63,6 +63,17 @@ example waiting on each raygui function it calls that is not delivered.
   `DrawTextCodepoint` in the default font, advancing by the glyph's width
   times `TEXT_SIZE/baseSize` plus `TEXT_SPACING`. A line wider than its
   bounds stops at an ellipsis. Every color is faded by `guiAlpha`.
+- **Icons.** A line that starts with `#`, up to three digits and `#`
+  (`GetTextIcon`; `"##"` is icon 0) draws that icon of raygui's set before
+  its text: 16x16 pixels at scale 1, one `GuiDrawRectangle` a set bit, at
+  the line's x and centered on the bounds' height, with the text 20 pixels
+  further and 20 pixels less room before the ellipsis. The line's width for
+  the alignment is the text's plus 16, plus 4 more unless the whole text
+  ends there. `GuiGetTextWidth` has its own rule, kept as it is: a text
+  starting with `#` that has another `#` within its next four bytes is
+  measured from that second `#` (the `#` included) plus 20. The set is
+  `src/gui_icons.bend`, generated from the pinned raygui.h
+  (`tools/gui_icons.py`).
 - **Pointer.** `GetMousePosition`, and for the button the left mouse button or
   gamepad 0's `GAMEPAD_BUTTON_RIGHT_FACE_DOWN`, as raygui's defaults.
 - **Sliders.** A press inside the bounds starts a drag: the Gui remembers
@@ -82,13 +93,18 @@ example waiting on each raygui function it calls that is not delivered.
 
 - Not delivered yet: `GuiToggleSlider`,
   `GuiComboBox`, `GuiDropdownBox`, `GuiTextBox`, `GuiValueBox`, `GuiSpinner`,
-  `GuiProgressBar`, `GuiStatusBar`, `GuiDummyRec`, `GuiGrid`, `GuiLine`,
-  `GuiGroupBox`, `GuiPanel`, `GuiTabBar`, `GuiScrollPanel`, `GuiListView(Ex)`,
+  `GuiProgressBar`, `GuiStatusBar`, `GuiDummyRec`, `GuiGrid`, `GuiPanel`,
+  `GuiTabBar`, `GuiScrollPanel`, `GuiListView(Ex)`,
   `GuiColor*`, `GuiMessageBox`, `GuiTextInputBox`, `GuiWindowBox`,
-  `GuiLabelButton`, the style file loaders, `GuiSetFont`/`GuiGetFont`, icons
-  and tooltips.
-- A text with an icon prefix (`"#id#"`), and the `TEXT_WRAP_CHAR` and
-  `TEXT_WRAP_WORD` modes, mark the frame undefined.
+  `GuiLabelButton`, the style file loaders, `GuiSetFont`/`GuiGetFont`,
+  `GuiDrawIcon`/`GuiIconText` as functions, `GuiSetIconScale` (icons draw at
+  scale 1), `GuiLoadIcons` and tooltips.
+- An icon id above 255 reads past raygui's table and marks the frame
+  undefined. So does a line that is not the text's last, starts with `#`
+  (after its icon, if it has one), and has fewer than four bytes after that
+  `#` with no second `#`: raygui's `GuiGetTextWidth` would look for it in the
+  lines that follow.
+- The `TEXT_WRAP_CHAR` and `TEXT_WRAP_WORD` modes mark the frame undefined.
 - An ellipsis narrower than 3 pixels makes raygui's dot loop endless; Jongui
   marks the frame undefined.
 - The default font only.
@@ -108,4 +124,6 @@ normal, focused, pressed and disabled (`GuiDisable`/`GuiEnable` around a
 button), and a click that takes effect on the next frame.
 `shaders_color_correction` covers the toggle group: an item hovered, pressed
 and switched on, and a click on the active item that changes nothing. `LAWS.bend` states the default text size, the propagation of a DEFAULT
-property and the enable/disable rules.
+property, the enable/disable rules, how an icon prefix is read and which
+lines are refused. The `gui-icons` gate compares the icon set with every
+raygui.h of the pinned checkout.

@@ -161,15 +161,15 @@
   "GuiGetTextWidth": {
    "status": "partial",
    "jongui": "Gui.get_text_width",
-   "scope": "The first line with the default font, TEXT_SIZE and TEXT_SPACING, as a C int.",
+   "scope": "The first line with the default font, TEXT_SIZE and TEXT_SPACING, as a C int; a text starting with '#' with another '#' in its next four bytes is measured from the second one plus 20, as raygui does.",
    "evidence": [
     "tools/examples_probe.py",
     "examples/shapes_circle_sector_drawing.bend",
     "docs/GUI.md",
-    "jongui.bend"
+    "jongui.bend",
+    "LAWS.bend"
    ],
    "gaps": [
-    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -189,7 +189,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icon ids above 255, a short '#' line read across lines and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined; icons draw at scale 1",
     "The default font only (GuiSetFont is not delivered)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -205,7 +205,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icon ids above 255, a short '#' line read across lines and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined; icons draw at scale 1",
     "The default font only (GuiSetFont is not delivered)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
    ]
@@ -230,7 +230,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icon ids above 255, a short '#' line read across lines and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined; icons draw at scale 1",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -248,7 +248,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icon ids above 255, a short '#' line read across lines and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined; icons draw at scale 1",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -268,7 +268,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icon ids above 255, a short '#' line read across lines and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined; icons draw at scale 1",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -285,7 +285,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icon ids above 255, a short '#' line read across lines and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined; icons draw at scale 1",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified",
@@ -308,7 +308,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icon ids above 255, a short '#' line read across lines and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined; icons draw at scale 1",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -343,7 +343,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icon ids above 255, a short '#' line read across lines and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined; icons draw at scale 1",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -362,7 +362,7 @@
     "jongui.bend"
    ],
    "gaps": [
-    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "Icon ids above 255, a short '#' line read across lines and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined; icons draw at scale 1",
     "The default font only (GuiSetFont is not delivered)",
     "Tooltips are not delivered (off by default)",
     "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"

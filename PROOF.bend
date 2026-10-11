@@ -803,6 +803,42 @@ def Laws.gui_line_color_focused_property():
 def Laws.gui_line_color_disabled_property():
   {==}
 
+def Laws.gui_icon_prefix():
+  {==}
+
+def Laws.gui_icon_empty_id():
+  {==}
+
+def Laws.gui_icon_unclosed_is_text():
+  {==}
+
+def Laws.gui_icon_four_digits_is_text():
+  {==}
+
+def Laws.gui_icon_last_of_table_drawn():
+  {==}
+
+def Laws.gui_icon_beyond_table_refused():
+  {==}
+
+def Laws.gui_hash_before_another_line_refused():
+  {==}
+
+def Laws.gui_hash_on_last_line_drawn():
+  {==}
+
+def Laws.gui_width_second_hash_at_four():
+  {==}
+
+def Laws.gui_width_second_hash_beyond():
+  {==}
+
+def Laws.gui_icon_past_table_is_empty():
+  {==}
+
+def Laws.gui_icon_arrow_left_word():
+  {==}
+
 def Laws.shader_load_never_valid(vs, fs):
   {==}
 
