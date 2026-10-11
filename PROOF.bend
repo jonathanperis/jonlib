@@ -669,6 +669,18 @@ def Laws.glibc_rand_large_seed_none():
 def Laws.libc_rand_apple_none(seed):
   {==}
 
+def Laws.glibc_tanf_infinity_none():
+  {==}
+
+def Laws.glibc_tanf_nan_none():
+  {==}
+
+def Laws.glibc241_tanf_none(x):
+  {==}
+
+def Laws.apple_tanf_none(x):
+  {==}
+
 def Laws.strtod_one():
   {==}
 
@@ -780,6 +792,15 @@ def Laws.gui_disable_then_enable(gui):
 
 def Laws.gui_disable_keeps_focus(gui):
   JG.Gui{state, locked, alpha, exclusive, rec, style} = gui
+  {==}
+
+def Laws.gui_line_color_property():
+  {==}
+
+def Laws.gui_line_color_focused_property():
+  {==}
+
+def Laws.gui_line_color_disabled_property():
   {==}
 
 def Laws.shader_load_never_valid(vs, fs):

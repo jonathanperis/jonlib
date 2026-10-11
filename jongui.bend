@@ -445,6 +445,51 @@ def Gui.hover(+core: J.Core) -> U32:
 def Gui.label(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle, text: String) -> J.Frame:
   Gui.draw_text(gui, frame, text, Gui.text_bounds(gui, 1, bounds), Gui.get_style(gui, 1, 14), Gui.color(gui, 1, (2 + Gui.get_state(gui) * 3 : U32)))
 
+# The color of GuiLine and GuiGroupBox: DEFAULT's LINE_COLOR (18), or its
+# BORDER_COLOR_DISABLED (9) in STATE_DISABLED.
+def Gui.line.property(+state: U32) -> U32:
+  Bool.pick(U32, U32.is_eq(state, 3), 9, 18)
+
+# GuiLine with a text, "--- text ------": a rule of 8 pixels, the text from
+# x + 12 in a box of its width + 2, and the rule again from 4 pixels after
+# it to the right edge. A text with an icon prefix marks the frame undefined.
+def Gui.line.text(width: Maybe<F32>, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle, text: String, +color: U32) -> J.Frame:
+  match width:
+    case None{}: J.Frame.refuse(frame)
+    case Some{+w}:
+      J.Rectangle{+x, +y, +bw, +bh} = bounds
+      +tw = (w + 2.0 : F32)
+      +middle = (y + bh / 2.0 : F32)
+      f1 = Gui.draw_rectangle(frame, J.Rectangle{x, middle, 8.0, 1.0}, 0, 0, color)
+      f2 = Gui.draw_text(gui, f1, text, J.Rectangle{(x + 12.0 : F32), y, tw, bh}, 0, color)
+      Gui.draw_rectangle(f2, J.Rectangle{(((x + 12.0 : F32) + tw : F32) + 4.0 : F32), middle, (((bw - tw : F32) - 12.0 : F32) - 4.0 : F32), 1.0}, 0, 0, color)
+
+def Gui.line.rule(frame: J.Frame, +bounds: J.Rectangle, +color: U32) -> J.Frame:
+  J.Rectangle{+x, +y, +w, +h} = bounds
+  Gui.draw_rectangle(frame, J.Rectangle{x, (y + h / 2.0 : F32), w, 1.0}, 0, 0, color)
+
+def Gui.line.colored(text: Maybe<String>, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +color: U32) -> J.Frame:
+  match text:
+    case None{}: Gui.line.rule(frame, bounds, color)
+    case Some{+t}: Gui.line.text(Gui.get_text_width(gui, t), gui, frame, bounds, t, color)
+
+# GuiLine(bounds, text): a one-pixel rule at the middle of the bounds, with
+# the text set into it when one is given (NULL is None).
+def Gui.line(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>) -> J.Frame:
+  Gui.line.colored(text, gui, frame, bounds, Gui.color(gui, 0, Gui.line.property(Gui.get_state(gui))))
+
+# GuiGroupBox(bounds, text): the left, bottom and right edges, one pixel
+# thick, and GuiLine across the top, TEXT_SIZE high and half of it (an
+# integer division) above the bounds.
+def Gui.group_box(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>) -> J.Frame:
+  J.Rectangle{+x, +y, +w, +h} = bounds
+  +color = Gui.color(gui, 0, Gui.line.property(Gui.get_state(gui)))
+  +size = Gui.get_style(gui, 0, 16)
+  f1 = Gui.draw_rectangle(frame, J.Rectangle{x, y, 1.0, h}, 0, 0, color)
+  f2 = Gui.draw_rectangle(f1, J.Rectangle{x, ((y + h : F32) - 1.0 : F32), w, 1.0}, 0, 0, color)
+  f3 = Gui.draw_rectangle(f2, J.Rectangle{((x + w : F32) - 1.0 : F32), y, 1.0, h}, 0, 0, color)
+  Gui.line(gui, f3, J.Rectangle{x, (y - U32.to_f32((size / 2 : U32)) : F32), w, U32.to_f32(size)}, text)
+
 # GuiButton(bounds, text): the frame and whether the button was clicked (the
 # pointer released over it).
 def Gui.button(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: String) -> J.Frame & Bool:

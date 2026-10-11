@@ -2240,7 +2240,6 @@
     "GuiTextBox"
    ],
    "missing": [
-    "GuiLine",
     "GuiScrollPanel",
     "GuiSpinner",
     "GuiTextBox"
@@ -2312,7 +2311,7 @@
   {
    "name": "shapes_math_sine_cosine",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "Clamp",
@@ -2348,9 +2347,7 @@
     "GuiSliderBar",
     "GuiToggle"
    ],
-   "missing": [
-    "GuiGroupBox"
-   ]
+   "missing": []
   },
   {
    "name": "shapes_mouse_trail",
