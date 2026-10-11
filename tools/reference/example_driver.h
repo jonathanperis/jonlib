@@ -26,11 +26,14 @@
  *   wall clock, its seed as the seconds at InitWindow plus the whole seconds
  *   of the scripted clock; localtime is gmtime (no time zone). raylib itself
  *   is not compiled with this header.
+ * - WaitTime: an example's own call (core_custom_frame_control) sleeps until
+ *   raylib's destination, GetTime() + seconds, where its busy loop ends.
  */
 #ifndef JONLIB_EXAMPLE_DRIVER_H
 #define JONLIB_EXAMPLE_DRIVER_H
 
 #define InitWindow JonlibExampleInitWindow
+#define WaitTime JonlibExampleWaitTime
 #define WindowShouldClose JonlibExampleWindowShouldClose
 #define BeginDrawing JonlibExampleBeginDrawing
 #define EndDrawing JonlibExampleEndDrawing

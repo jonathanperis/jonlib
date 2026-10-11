@@ -169,6 +169,33 @@ class ClockExampleTests(unittest.TestCase):
         self.assertEqual(ep.refusal(item, 'AppleLibm'), 'reported')
 
 
+class OwnWaitExampleTests(unittest.TestCase):
+    """core_custom_frame_control waits itself after EndDrawing."""
+
+    def test_the_next_frame_starts_after_the_examples_wait(self):
+        item = next(item for item in ep.scripts() if item['example'] == 'core_custom_frame_control')
+        frames = item['frames']
+        self.assertTrue(all(frame['after'] == frame['end'] for frame in frames))
+        target = ep.fp.f32(1.0 / ep.fp.f32(60.0))
+        measured, waits = item['start'], []
+        for frame, following in zip(frames, frames[1:]):
+            wait = target - (frame['after'] - measured)
+            clock = frame['after'] + ep.fp.f32(wait) if wait > 0.0 else frame['after']
+            waits.append(wait > 0.0)
+            self.assertGreater(following['begin'], clock)
+            self.assertLess(following['begin'] - clock, 0.0031)
+            measured = clock
+        self.assertIn(True, waits)
+        self.assertIn(False, waits)
+
+    def test_other_examples_keep_their_clocks(self):
+        self.assertEqual(ep.own_wait('core_basic_window', 0.25, 0.5), 0.5)
+        self.assertEqual(ep.own_wait('core_custom_frame_control', 0.25, 0.5), 0.5)
+        self.assertGreater(ep.own_wait('core_custom_frame_control', 0.25, 0.255), 0.255)
+        self.assertIn('#define WaitTime JonlibExampleWaitTime', ep.SHIM.read_text())
+        self.assertIn('void JonlibExampleWaitTime(double seconds) { if (!(seconds < 0)) probe_after = probe_clock + seconds; WaitTime(seconds); }', ep.C_DRIVER)
+
+
 class UndefinedNativeExampleTests(unittest.TestCase):
     def test_the_codepoints_example_repeats_a_codepoint_and_is_not_run(self):
         import re
