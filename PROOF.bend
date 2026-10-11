@@ -795,6 +795,60 @@ def Laws.gltf_other_texture_kind_refused():
 def Laws.gltf_base_color_image_kept():
   {==}
 
+def Laws.vox_extension_routed(other):
+  {==}
+
+def Laws.vox_size_padded():
+  {==}
+
+def Laws.vox_size_of_chunks_kept():
+  {==}
+
+def Laws.vox_chunk_names():
+  {==}
+
+def Laws.vox_voxel_cell():
+  {==}
+
+def Laws.vox_voxel_outside_fails():
+  {==}
+
+def Laws.vox_voxel_cut_short_fails():
+  {==}
+
+def Laws.vox_quad_indices():
+  {==}
+
+def Laws.vox_mesh_vertex_counts():
+  {==}
+
+def Laws.vox_empty_file_foreign():
+  {==}
+
+def Laws.vox_other_magic_foreign():
+  {==}
+
+def Laws.vox_other_version_foreign():
+  {==}
+
+def Laws.vox_magic_cut_short_unread():
+  {==}
+
+def Laws.vox_version_cut_short_unread():
+  {==}
+
+def Laws.vox_chunk_header_cut_short_unread():
+  {==}
+
+def Laws.vox_without_voxels_unread():
+  {==}
+
+def Laws.vox_four_bytes_left_halt(read):
+  {==}
+
+def Laws.vox_chunk_past_the_end_ends():
+  {==}
+
 def Laws.gltf_anim_joint_place():
   {==}
 

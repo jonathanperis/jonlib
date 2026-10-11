@@ -31,6 +31,7 @@ import ./src/strtod.bend as Strtod
 import ./src/json.bend as Json
 import ./src/gltf.bend as Gltf
 import ./src/gltf_anim.bend as GltfAnim
+import ./src/vox.bend as Vox
 import ./src/par_shapes.bend as ParShapes
 import ./jongui.bend as JG
 import ./src/gui_icons.bend as GuiIcons
@@ -1109,6 +1110,73 @@ law gltf_other_texture_kind_refused:
 
 law gltf_base_color_image_kept:
   {Gltf.look.with(255, False{}, Gltf.Words{True{}, [137, 80]}) == Gltf.Look{True{}, 255, [137, 80]} : Gltf.Look}
+
+# MagicaVoxel files (src/vox.bend, docs/MODELS.md): LoadModel routes ".vox"
+# to LoadVOX whatever the last test says; the array's sizes are padded to
+# chunks of 16; a voxel's cell is (x*sizeZ + (sizeZ - y - 1))*sizeY + z with
+# its id in the low byte, and a voxel outside the sizes fails the file; a
+# quad's indices are 0 2 1 and 0 3 2; 189232 vertices make meshes of 65532,
+# 65532 and 58168. An empty file and another magic or version are the empty
+# model (Foreign); a magic or a header cut short, and a file without a
+# voxel, are refused (Unread).
+law vox_extension_routed:
+  for other: Maybe<Bool>
+  {J.Model.load.kind.of(Some{False{}}, Some{False{}}, Some{True{}}, other) == 5 : U32}
+
+law vox_size_padded:
+  {Vox.padded(20) == 32 : U32}
+
+law vox_size_of_chunks_kept:
+  {Vox.padded(16) == 16 : U32}
+
+law vox_chunk_names:
+  {(Vox.kind(1163544915), (Vox.kind(1230657880), (Vox.kind(1094862674), Vox.kind(1313423693)))) == (1, (2, (3, 0))) : U32 & (U32 & (U32 & U32))}
+
+law vox_voxel_cell:
+  {Vox.voxels(1n, [1, 2, 3, 7], 16, 16, 16, True{}, Nil{}) == Vox.Sets{True{}, [119559], Nil{}} : Vox.Sets}
+
+law vox_voxel_outside_fails:
+  {Vox.voxels(1n, [16, 2, 3, 7], 16, 16, 16, True{}, Nil{}) == Vox.Sets{False{}, [1102599], Nil{}} : Vox.Sets}
+
+law vox_voxel_cut_short_fails:
+  {Vox.voxels(1n, [1, 2, 3], 16, 16, 16, True{}, Nil{}) == Vox.Sets{False{}, Nil{}, Nil{}} : Vox.Sets}
+
+law vox_quad_indices:
+  {Vox.indices(2n, 2, Nil{}) == [0, 2, 1, 0, 3, 2, 4, 6, 5, 4, 7, 6] : List<&2, U32>}
+
+law vox_mesh_vertex_counts:
+  {(Vox.count.of(0, 189232), (Vox.count.of(1, 189232), Vox.count.of(2, 189232))) == (65532, (65532, 58168)) : U32 & (U32 & U32)}
+
+law vox_empty_file_foreign:
+  {Vox.load(Nil{}) == Vox.Foreign{} : Vox.Loaded}
+
+law vox_other_magic_foreign:
+  {Vox.load([86, 79, 88, 33, 150, 0, 0, 0]) == Vox.Foreign{} : Vox.Loaded}
+
+law vox_other_version_foreign:
+  {Vox.load([86, 79, 88, 32, 151, 0, 0, 0]) == Vox.Foreign{} : Vox.Loaded}
+
+law vox_magic_cut_short_unread:
+  {Vox.load([86, 79, 88]) == Vox.Unread{} : Vox.Loaded}
+
+law vox_version_cut_short_unread:
+  {Vox.load([86, 79, 88, 32, 150, 0]) == Vox.Unread{} : Vox.Loaded}
+
+law vox_chunk_header_cut_short_unread:
+  {Vox.load([86, 79, 88, 32, 150, 0, 0, 0, 77, 65, 73, 78, 0]) == Vox.Unread{} : Vox.Loaded}
+
+law vox_without_voxels_unread:
+  {Vox.load([86, 79, 88, 32, 200, 0, 0, 0]) == Vox.Unread{} : Vox.Loaded}
+
+# The four bytes a palette leaves before the end of a file that ends with it
+# are a chunk header cut short; a chunk whose size passes the end of the
+# file ends the reading with what was read.
+law vox_four_bytes_left_halt:
+  for read: Vox.Read
+  {Vox.chunk([1, 2, 3, 4], read) == Vox.Halt{} : Vox.Step}
+
+law vox_chunk_past_the_end_ends:
+  {Vox.chunk([77, 65, 84, 76, 160, 15, 0, 0, 0, 0, 0, 0, 1, 2], Vox.Read{16, 16, 16, [7], [0]}) == Vox.Next{Nil{}, Vox.Read{16, 16, 16, [7], [0]}} : Vox.Step}
 
 # Skeletons and animations (src/gltf_anim.bend): a joint's place among the
 # joints is its bone index and a node outside them has none (-1); a time

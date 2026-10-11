@@ -361,7 +361,8 @@ the textures, a mesh material index beyond the materials, unverified `sinf`/
 
 `Model.load_for(arithmetic, frame, path)` is `LoadModel`: `.obj`
 (case-insensitive, as `IsFileExtension`) through `LoadOBJ`; `.glb` files
-through `LoadGLTF` (the next section); IQM, glTF as text, VOX and M3D files
+through `LoadGLTF` (the next section); `.vox` files through `LoadVOX`
+([MagicaVoxel](#loading-models-magicavoxel)); IQM, glTF as text and M3D files
 (which raylib loads) are `UnsupportedFileType`; other
 extensions, and OBJ files that do not open or are empty, give raylib's model
 without meshes and with the default material. The result is a
@@ -609,6 +610,57 @@ those rules, and the models the examples use (`plane.glb`,
 Jonlib, and compares every mesh and material word, the albedo texture's id,
 size and format included.
 
+## Loading models (MagicaVoxel)
+
+`Model.load_for` of a `.vox` file is `LoadVOX` over `vox_loader.h`
+(`src/vox.bend`). The file is `VOX `, a version (150 or 200) and chunks: a
+name, the size of its contents, the size of its children, its contents.
+
+- **SIZE** allocates the voxel array: the file's sizes rounded up to
+  multiples of 16, its Y and Z changed over (`Vox_AllocArray(x, z, y)`). A
+  second SIZE starts an empty array again.
+- **XYZI** sets `numVoxels` voxels, `Vox_SetVoxel(x, z, sizeZ - y - 1, id)`:
+  a voxel set twice keeps its last id, and id 0 empties it.
+- **RGBA** gives `palette[1..255]` from its first 255 colors
+  (`palette[0]` and a file without the chunk are all zeros, alpha included).
+  The loader then stands four bytes before the chunk's end: what follows is
+  read as a chunk named by the palette's last color and sized by the next
+  chunk's name, which skips the rest of the file in every MagicaVoxel file
+  (chunks after a palette are not seen). That quirk is kept.
+- Any other chunk is skipped by its size; a size that passes the end of the
+  file ends the reading (the pointer comparison of the 64-bit reference
+  hosts).
+
+The mesh has a quad for every face of a voxel whose neighbor is empty or
+outside the array, in the loader's order: `x`, then `z`, then `y`, and for a
+voxel the faces -X, +X, -Y, +Y, -Z, +Z. Corners are `(corner + position) *
+0.25`, normals the face's axis, colors the voxel's palette color four times,
+indices `0 2 1` and `0 3 2` from the quad's first vertex. `LoadVOX` makes
+`1 + vertices/65536` meshes of 65532 vertices each and what remains in the
+last (when that is more than 65532 the vertices past it are left out, as
+upstream), all with the default material and an identity transform. A mesh
+keeps the `3*triangleCount` indices its triangles use (the reference copies
+the whole index array into each mesh; the rest is never read).
+
+`UnsupportedFileType` is not an answer here: a file that is not `VOX ` or
+has another version, an empty file and one that does not open are the empty
+model, as in raylib. `OutOfDomain` for what the reference leaves undefined
+or the profile leaves out: a magic, a version, a chunk header, a SIZE, a
+voxel count, voxels or a palette cut short, and a file that ends with its
+palette (the loader reads a chunk header in its last four bytes: reads past
+the file; MagicaVoxel writes chunks after the palette); a voxel
+before any SIZE or outside the padded sizes (writes outside the loader's
+chunks); a file without a visible voxel (`LoadVOX` allocates zero bytes for
+its mesh and `GetModelBoundingBox` would read them); a file over 2 MiB, a
+size over 1024 and an array over 2^21 cells (a 256x256x256 file among
+them: the profile's limit, not the format's).
+
+Gate `vox` (`tools/vox_probe.py`) loads generated files covering each of
+those rules and the four models of `models_loading_vox` (`chr_knight`,
+`chr_sword`, `monu9`: 138304 vertices in three meshes, `fez`: 189232),
+natively and with Jonlib, and compares the counts, an FNV-1a hash of every
+mesh's vertex, normal, color and index words, and every material map.
+
 ## Collision
 
 - **GetRayCollisionMesh** transforms each triangle's vertices with
@@ -692,6 +744,7 @@ rlsw's per-primitive alpha flag ([FRAME.md](FRAME.md#the-rendering-path)).
 | `model-draw` | `tools/model_draw_probe.py` | 27 scenes (216 operations, 6 random orthographic scenes of custom meshes) byte for byte against the uncontracted memory-platform raylib with the host libm: `DrawMesh` of generated, empty and custom meshes (indexed or not, texcoords, colors, no vertices, leftover vertices, translucent materials, textures from the scene's slots), `DrawModel(Ex)`, `DrawModelWires(Ex)` (also after point mode), two-mesh models with `SetModelMeshMaterial` and a model transform, `DrawMeshInstanced`, `DrawBillboard(Rec, Pro)` (negative sizes, origins, rotations), and logged `IsMaterialValid`, `IsModelValid`, `LoadMaterialDefault`/`SetMaterialTexture` maps and `UnloadMaterial` (its ids reused by the next texture); contracts must be refused (on macOS 20 compared, 7 refused; on glibc 22 and 5) |
 | `obj` | `tools/obj_probe.py` | 40 OBJ/MTL loads (written by the probe with PNG textures) word for word against the linked raylib with the host contraction (on macOS arm64 the fused `tryParseDouble`, `M.Fused{}`): mesh and material counts, `IsModelValid`, every mesh's counts, material index and vertex, normal and texcoord word, every material map; 27 compared, 13 refused |
 | `obj-uncontracted` | `tools/obj_probe.py --uncontracted-control` | the same files against the raylib built with `-ffp-contract=off` (`M.Uncontracted{}`); the corpus includes literals whose fused and unfused parses round to different floats |
+| `vox` | `tools/vox_probe.py` | 53 MagicaVoxel loads (the four models of `models_loading_vox` and files written by the probe): mesh and material counts, `IsModelValid`, every mesh's counts, material index and FNV-1a hashes of its vertex, normal, color and index words, every material map; 33 compared, 20 refused |
 
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only models
@@ -717,7 +770,7 @@ attribute builders are tail-recursive.
   buffers, `UpdateMeshBuffer` and
   `UpdateModelAnimation*` (the reference only fills a pose and bone
   matrices Jonlib's `Model` does not have).
-- IQM, glTF as text, VOX and M3D files: `LoadModel` answers
+- IQM, glTF as text and M3D files: `LoadModel` answers
   `UnsupportedFileType` (raylib loads them; their parsers and binary formats
   are not ported). Binary glTF is loaded for the slice above: a skinned
   file's bone data and skeleton are not kept, model animations are not

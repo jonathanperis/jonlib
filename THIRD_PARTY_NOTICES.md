@@ -381,6 +381,16 @@ license are retained in [LICENSES/rlsw.txt](LICENSES/rlsw.txt).
   (`src/json.bend`) and the decimal conversion (`src/strtod.bend`) are
   original and replace cgltf's jsmn tokenizer and its call to `atof`.
 
+## vox_loader
+
+- Author: Johann Nadalutti. Source: vox_loader v1.04, as vendored by the
+  pinned raylib commit in `src/external/vox_loader.h`.
+- License: MIT; the notice is retained in [LICENSES/vox_loader.txt](LICENSES/vox_loader.txt).
+- `src/vox.bend` is an altered Bend adaptation of `Vox_LoadFromMemory` (the
+  MagicaVoxel chunks it reads, the voxel array as one array instead of
+  16x16x16 chunks, and `Vox_Build_Voxel`'s faces in its order), used with
+  `rmodels.c`'s `LoadVOX` by `LoadModel` for `.vox` files.
+
 ## Arm numerical routines
 
 The glibc `sinf`/`cosf` kernel in `src/sincosf.bend` and its C model
