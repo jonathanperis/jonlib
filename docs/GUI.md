@@ -44,6 +44,7 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiPanel` | `Gui.panel(gui, frame, bounds, text)` | `Frame` (a status bar heads it when a text is given) |
 | `GuiDropdownBox` | `Gui.dropdown_box(gui, core, frame, bounds, text, active, edit)` | `Frame & (U32 & Bool)` (the active item, raygui's result) |
 | `GuiScrollPanel` | `Gui.scroll_panel(gui, core, frame, bounds, text, content, scroll)` | `Frame & (Gui & (Vector2 & Rectangle))` (the scroll offset and the view) |
+| `GuiProgressBar` | `Gui.progress_bar(gui, frame, bounds, left, right, value, min, max)` | `Frame & F32` (the value, which one above `max` becomes; a value is always given) |
 | `GuiScrollBar` (static in raygui) | `Gui.scroll_bar(gui, core, frame, bounds, value, min, max)` | `Frame & (Gui & U32)` (the int value as a word) |
 | `GuiTextBox` | `Gui.text_box(gui, core, frame, bounds, text, size, edit, editing)` | `Frame & (Core & (String & (Gui.Editing & Bool)))` (the text, raygui's two text box globals, its result) |
 
@@ -155,7 +156,7 @@ example waiting on each raygui function it calls that is not delivered.
 
 - Not delivered yet: `GuiToggleSlider`,
   `GuiComboBox`, `GuiTextBoxMulti`, `GuiValueBoxFloat`,
-  `GuiProgressBar`, `GuiDummyRec`, `GuiGrid`,
+  `GuiDummyRec`, `GuiGrid`,
   `GuiTabBar`, `GuiListView(Ex)`,
   `GuiColor*`, `GuiMessageBox`, `GuiTextInputBox`, `GuiWindowBox`,
   `GuiLabelButton`, the style file loaders, `GuiSetFont`/`GuiGetFont`,
@@ -217,7 +218,11 @@ refilled, and disabled labels. `shapes_pie_chart` covers the scroll panel withou
 fits), with text boxes and slider bars drawn inside its view under a
 scissor, a spinner that changes the rows, and a slider bar disabled and
 enabled again. `shaders_color_correction` covers the toggle group: an item hovered, pressed
-and switched on, and a click on the active item that changes nothing. `LAWS.bend` states the default text size, the propagation of a DEFAULT
+and switched on, and a click on the active item that changes nothing. `models_animation_timing` covers the progress bar: a bar partly filled over
+a range of keyframes, its border in two colors split at the bar's end, with
+a dropdown box of fourteen items opened over the scene, an item chosen and
+a slider dragged beside it. Its disabled state, its side texts and
+`PROGRESS_SIDE` 1 are not compared with raygui yet. `LAWS.bend` states the default text size, the propagation of a DEFAULT
 property, the enable/disable rules, how an icon prefix is read and which
 lines are refused. The `gui-icons` gate compares the icon set with every
 raygui.h of the pinned checkout.

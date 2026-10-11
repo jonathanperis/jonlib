@@ -1467,6 +1467,30 @@ law gui_scroll_step_truncates:
 law gui_scroll_step_negative_speed:
   {JG.Gui.int.div(30, 4294967284) == 4294967294 : U32}
 
+# GuiProgressBar draws no text it is not given, no reached border before
+# the value passes the minimum and no unreached one once it is at the maximum.
+law gui_progress_no_text_draws_nothing:
+  for gui: JG.Gui
+  for frame: J.Frame
+  for right: Bool
+  for bounds: J.Rectangle
+  for state: U32
+  {JG.Gui.progress.label(gui, frame, None{}, right, bounds, state) == frame : J.Frame}
+
+law gui_progress_not_started_has_no_reached_border:
+  for frame: J.Frame
+  for left: J.Rectangle
+  for bottom: J.Rectangle
+  for color: U32
+  {JG.Gui.progress.behind(False{}, frame, left, bottom, color) == frame : J.Frame}
+
+law gui_progress_full_has_no_unreached_border:
+  for frame: J.Frame
+  for bottom: J.Rectangle
+  for right: J.Rectangle
+  for color: U32
+  {JG.Gui.progress.ahead(True{}, frame, bottom, right, color) == frame : J.Frame}
+
 law shader_load_never_valid:
   for vs: Maybe<String>
   for fs: Maybe<String>

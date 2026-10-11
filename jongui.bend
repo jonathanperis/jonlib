@@ -1654,3 +1654,70 @@ def Gui.pane.headed(text: Maybe<String>, +gui: Gui, +core: J.Core, frame: J.Fram
 # pixels a notch. Each offset is the negative of its bar's int value.
 def Gui.scroll_panel(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, +content: J.Rectangle, +scroll: M.Vector2) -> J.Frame & (Gui & (M.Vector2 & J.Rectangle)):
   Gui.pane.headed(text, gui, core, frame, bounds, content, scroll)
+
+# -----------------------------------------------------------------------------
+# GuiProgressBar
+
+def Gui.progress.text(width: Maybe<F32>, +gui: Gui, frame: J.Frame, text: String, +right: Bool, +bounds: J.Rectangle, +state: U32) -> J.Frame:
+  match width:
+    case None{}: J.Frame.refuse(frame)
+    case Some{+tw}:
+      J.Rectangle{+x, +y, +w, +h} = bounds
+      +padding = Gui.style.f32(gui, 5, 13)
+      +ty = (y + h / 2.0 - F32.trunc((Gui.style.f32(gui, 0, 16) / 2.0 : F32)) : F32)
+      Gui.draw_text(gui, frame, text, J.Rectangle{Bool.pick(F32, right, (x + w + padding : F32), (x - tw - padding : F32)), ty, tw, Gui.style.f32(gui, 0, 16)},
+        Bool.pick(U32, right, 0, 2), Gui.color(gui, 1, (2 + state * 3 : U32)))
+
+# The text beside the bar, TEXT_PADDING away, in the label's color.
+def Gui.progress.label(+gui: Gui, frame: J.Frame, text: Maybe<String>, +right: Bool, +bounds: J.Rectangle, +state: U32) -> J.Frame:
+  match text:
+    case None{}: frame
+    case Some{+t}: Gui.progress.text(Gui.get_text_width(gui, t), gui, frame, t, right, bounds, state)
+
+# The left and bottom borders the value has reached.
+def Gui.progress.behind(started: Bool, frame: J.Frame, +left: J.Rectangle, +bottom: J.Rectangle, +color: U32) -> J.Frame:
+  match started:
+    case False{}: frame
+    case True{}: Gui.draw_rectangle(Gui.draw_rectangle(frame, left, 0, 0, color), bottom, 0, 0, color)
+
+# The bottom and right borders it has not.
+def Gui.progress.ahead(full: Bool, frame: J.Frame, +bottom: J.Rectangle, +right: J.Rectangle, +color: U32) -> J.Frame:
+  match full:
+    case True{}: frame
+    case False{}: Gui.draw_rectangle(Gui.draw_rectangle(frame, bottom, 0, 0, color), right, 0, 0, color)
+
+# Disabled: the border alone. Else the border in two colors, split at
+# (int) of the bar's width, and the bar inside it; refused where that int
+# conversion is undefined.
+def Gui.progress.drawn(disabled: Bool, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +value: F32, +min: F32, +max: F32, +state: U32) -> J.Frame:
+  match disabled:
+    case True{}: Gui.draw_rectangle(frame, bounds, Gui.get_style(gui, 5, 12), Gui.color(gui, 5, (state * 3 : U32)), 0)
+    case False{}:
+      J.Rectangle{+x, +y, +w, +h} = bounds
+      +bw = Gui.style.f32(gui, 5, 12)
+      +pp = Gui.style.f32(gui, 5, 16)
+      +pw = ((value / (max - min)) * (w - 2.0 * bw) : F32)
+      +ipw = (F32.trunc(pw) + 0.0 : F32)
+      +focused = Gui.color(gui, 5, 3)
+      +normal = Gui.color(gui, 5, 0)
+      +started = (value > min : F32)
+      +full = (value >= max : F32)
+      +tall = ((h + bw : F32) - 1.0 : F32)
+      +rest = (((w - bw : F32) - ipw : F32) - 1.0 : F32)
+      f1 = Gui.draw_rectangle(frame, Bool.pick(J.Rectangle, started, J.Rectangle{x, y, (ipw + bw : F32), bw}, J.Rectangle{x, y, bw, tall}), 0, 0, Bool.pick(U32, started, focused, normal))
+      f2 = Gui.progress.behind(started, f1, J.Rectangle{x, (y + 1.0 : F32), bw, (h - 2.0 : F32)}, J.Rectangle{x, ((y + h : F32) - 1.0 : F32), (ipw + bw : F32), bw}, focused)
+      f3 = Gui.draw_rectangle(f2, Bool.pick(J.Rectangle, full, J.Rectangle{((x + pw : F32) + bw : F32), y, bw, tall}, J.Rectangle{((x + ipw : F32) + bw : F32), y, rest, bw}), 0, 0, Bool.pick(U32, full, focused, normal))
+      f4 = Gui.progress.ahead(full, f3, J.Rectangle{((x + ipw : F32) + bw : F32), ((y + h : F32) - 1.0 : F32), rest, bw}, J.Rectangle{((x + w : F32) - bw : F32), y, bw, tall}, normal)
+      Gui.refused(Bool.not(FontCore.int.valid(pw)), Gui.draw_rectangle(f4, J.Rectangle{Bool.pick(F32, U32.is_eq(Gui.get_style(gui, 5, 17), 0), (x + bw : F32), (((x + w : F32) - pw : F32) - bw : F32)),
+        ((y + bw : F32) + pp : F32), pw, (((h - bw : F32) - 2.0 * pp : F32) - 1.0 : F32)}, 0, 0, Gui.color(gui, 5, 7)))
+
+# GuiProgressBar(bounds, textLeft, textRight, &value, minValue, maxValue):
+# the frame and the value, which a larger one than maxValue becomes. The
+# bar is value/(maxValue - minValue) of the inside wide (from the right
+# with PROGRESS_SIDE 1); the border is BORDER_COLOR_FOCUSED along it and
+# BORDER_COLOR_NORMAL past it. The control takes no input. A value is
+# always given (the native NULL shows half the range).
+def Gui.progress_bar(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle, left: Maybe<String>, right: Maybe<String>, +value: F32, +min: F32, +max: F32) -> J.Frame & F32:
+  +capped = Bool.pick(F32, (value > max : F32), max, value)
+  +state = Gui.get_state(gui)
+  (Gui.progress.label(gui, Gui.progress.label(gui, Gui.progress.drawn(U32.is_eq(state, 3), gui, frame, bounds, capped, min, max, state), left, False{}, bounds, state), right, True{}, bounds, state), capped)

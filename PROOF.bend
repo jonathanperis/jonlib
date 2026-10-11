@@ -998,6 +998,15 @@ def Laws.gui_scroll_step_truncates():
 def Laws.gui_scroll_step_negative_speed():
   {==}
 
+def Laws.gui_progress_no_text_draws_nothing(gui, frame, right, bounds, state):
+  {==}
+
+def Laws.gui_progress_not_started_has_no_reached_border(frame, left, bottom, color):
+  {==}
+
+def Laws.gui_progress_full_has_no_unreached_border(frame, bottom, right, color):
+  {==}
+
 def Laws.shader_load_never_valid(vs, fs):
   {==}
 
