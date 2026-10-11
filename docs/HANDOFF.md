@@ -236,10 +236,17 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
    (typing into a text box cannot be compared natively) and no example's
    content overflows its scroll panel (the scroll bars are unverified).
 4. Other pieces that each unblock examples:
-   - an IO step in `J.Program`'s update (`core_storage_values`,
-     `core_automation_events`: both write or read a file inside the loop;
-     the replay driver `Program.replay` is pure, so this needs an IO variant
-     of it and of the probe's wrapper);
+   - IO in the loop is done (`J.Effects`, `Program.replay_io`, gate
+     `driver-effects`; `core_storage_values` and
+     `shaders_shadowmap_rendering` use it). `core_automation_events` is the
+     next user: it loads a dropped `.rae` file and exports one on a key
+     (`LoadAutomationEventList`, `ExportAutomationEventList`) and records
+     and plays events (`SetAutomationEventList`, `StartAutomationEventRecording`):
+     check what the Core records before porting. An example that writes
+     files goes in the probe's `SCRATCH` (a directory a script, compared
+     with the reference's afterwards); a script that would run undefined C
+     from some frame goes in `UNDEFINED_FROM` and the reference stops
+     before it;
    - `core_custom_frame_control` drives its own loop (`PollInputEvents`,
      `SwapScreenBuffer`, `WaitTime`, two `GetTime` calls a frame): needs a
      program form the driver does not have;
@@ -247,35 +254,20 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `core_custom_logging`): Base's `IO.now` is a monotonic clock, so the
      desktop driver has no source for `time()` without a new effect in the
      Bend overlay (the replay can inject one);
-   - the rlgl framebuffer functions (6 examples). On the reference they
-     run on rlsw: `rlLoadTextureDepth` makes a D32 renderbuffer whatever
-     `useRenderBuffer` says, so the examples' `LoadRenderTextureDepthTex` is
-     `LoadRenderTexture` with other calls, and their shaders are no-ops
-     (`shaders_depth_rendering` draws its depth texture as a white quad).
-     Jonlib's canvas has no framebuffer objects apart from
-     `RenderTexture.load`: the functions need an attachment table by
-     framebuffer id in `src/frame.bend`;
-     Measured on the reference (2026-10-11, a C program against
-     `.build/raylib-*/raylib/libraylib.a`): after `InitWindow` the first
-     `rlLoadFramebuffer` is 1, its `rlLoadTexture(0, w, h, RGBA8, 1)` is
-     texture 2 and its `rlLoadTextureDepth` 3 (a following
-     `LoadRenderTexture` gets 2, 4 and 5); `rlFramebufferComplete` is false
-     before any attachment (rlsw: missing attachment), true with the color
-     texture alone and with both. rlsw keeps one color and one depth
-     attachment a framebuffer (`sw_framebuffer_t`), and `rlFramebufferAttach`
-     and `rlFramebufferComplete` end by binding framebuffer 0, so the
-     examples' `rlEnableFramebuffer` in their loader lasts until its first
-     attach. `shaders_depth_writing` and `shaders_hybrid_rendering` draw
-     `target.texture`: with the loader functions they are ordinary render
-     texture ports (`hybrid` also draws a full-screen rectangle with the
-     depth test on before its 3D scene). `shaders_depth_rendering` draws
-     `target.depth` instead and the frame is plain white under its texts
-     (360000 `ffffffff` pixels): find in rlsw why a depth-format texture
-     draws white (probably it is not bound and the quad is untextured)
-     before modelling it. `shaders_shadowmap_rendering` has a framebuffer
-     with only a depth attachment (rlsw would draw through a null color
-     buffer), `shaders_deferred_rendering` three color attachments and
-     `models_skybox_rendering` cubemap faces: each needs its own study;
+   - the rlgl framebuffer functions are done for one color and one depth
+     attachment (`Rlgl.Framebuffer`, docs/RLGL.md): `shaders_depth_writing`,
+     `shaders_hybrid_rendering`, `shaders_depth_rendering` and
+     `shaders_shadowmap_rendering` are ported. What rlsw does decides the
+     model: a renderbuffer is a texture, a texture of a depth format is
+     bound with texturing off (drawn in its tint), and a framebuffer
+     without a color attachment is incomplete, so `swBegin`, `swClear` and
+     `swDrawArrays` are refused while it is bound (`Canvas.blind`: the
+     shadow pass draws nothing). Left: `shaders_deferred_rendering` (three
+     color attachments in R16G16B16 formats: rlsw has one color attachment
+     and `RL_ATTACHMENT_COLOR_CHANNEL1`/`2` are an invalid enum there, so
+     the G-buffer is probably incomplete or holds the first texture only:
+     measure it natively first, as for the shadow map) and
+     `models_skybox_rendering` (cubemap faces);
    - `shaders_game_of_life` is ready but steps a 2048x2048 world through a
      shader each frame: too heavy for the JavaScript lane as written;
    - images beyond 4096 pixels on an axis (`textures_sprite_stacking`,
