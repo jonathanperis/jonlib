@@ -368,6 +368,11 @@ a ready device and for a tracked buffer, and no script opens the device over
 a playing buffer (raylib would mix it before the reference can stop it). CPU-1,
 CPU-2 and JavaScript.
 
+The examples that play sounds without showing audio state
+(`textures_sprite_button` so far) replay against the native example with
+`raudio.c` compiled beside it the same way (`tools/examples_probe.py`): its
+device mixes on its own thread there, and no frame depends on it.
+
 Not yet available: the mixer and its clock (`Sound.is_playing` never becomes
 false by itself; pitch and pan have no audible effect yet), audio streams and
 music, and a host device. No GPU evidence.

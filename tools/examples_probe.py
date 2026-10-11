@@ -287,6 +287,7 @@ EXAMPLES = {
     'models_loading_iqm': ('models/models_loading_iqm.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shaders_basic_pbr': ('shaders/shaders_basic_pbr.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_loading_m3d': ('models/models_loading_m3d.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'textures_sprite_button': ('textures/textures_sprite_button.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
     'core_custom_frame_control': ('core/core_custom_frame_control.c', 'Ex.setup(core, frame)'),
     'shapes_digital_clock': ('shapes/shapes_digital_clock.c', 'Ex.setup(seed, core, frame)'),
@@ -406,6 +407,10 @@ IO_SETUP.add('models_loading_vox'); PERSPECTIVE.add('models_loading_vox')
 IO_SETUP.add('models_loading_iqm'); PERSPECTIVE.add('models_loading_iqm')
 IO_SETUP.add('shaders_basic_pbr'); PERSPECTIVE.add('shaders_basic_pbr'); CONFIG_FLAGS['shaders_basic_pbr'] = 32
 IO_SETUP.add('models_loading_m3d'); PERSPECTIVE.add('models_loading_m3d')
+# Examples that call raudio.c: it is compiled beside them with miniaudio's null backend only (the reference library
+# has no audio module). The device opens on every host and mixes on its own thread; no frame depends on it.
+AUDIO = {'textures_sprite_button'}
+IO_SETUP.update(AUDIO)
 
 
 def scratch(probe, index, native=False):
@@ -1159,6 +1164,11 @@ def scripts():
         script('models_loading_m3d', 'skeleton', [quick(), quick(), quick([key(KEY_SPACE)]), quick(), slow(), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]),
                                                   quick(), quick([key(KEY_SPACE, False)]), quick()]),
         script('text_codepoints_loading', 'frames', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), key(KEY_RIGHT)])]),
+        # The button's frame is (288, 172) to (512, 278): hovered, pressed and released on it (the sound plays), pressed
+        # outside and released inside (the action too), then its top edge and the row above it.
+        script('textures_sprite_button', 'click', [quick(), quick([mouse_at(400, 225)]), quick([button(0)]), slow(), quick([button(0, False)]), quick(),
+                                                   quick([mouse_at(10, 10)]), quick([button(0)]), quick([mouse_at(511, 277), button(0, False)]),
+                                                   quick([mouse_at(400, 172)]), quick([mouse_at(400, 171)]), quick([mouse_at(512, 225)])]),
         # The mouse on the character shows the placement cube; two clicks splat two decals (the table lists them);
         # RMB with a move turns the camera; a click on "Clear Decals" removes them.
         script('models_decals', 'splat', [quick(), quick([mouse_at(400, 230)]), quick([button(0)]), quick([button(0, False), mouse_at(400, 150)]), quick([button(0)]),
@@ -1686,7 +1696,12 @@ def build_reference(probe, name):
     probekit.run(['clang', '-std=c11', '-D_DEFAULT_SOURCE', '-O2', '-ffp-contract=off', '-include', SHIM, include, '-c',
                   probe.args.raylib_source / 'examples' / source, '-o', probe.work / f'{name}.o'])
     probekit.run(['clang', '-std=c11', '-O2', '-ffp-contract=off', include, '-c', driver, '-o', probe.work / 'driver.o'])
-    probekit.run(['clang', probe.work / f'{name}.o', probe.work / 'driver.o', probe.library, '-lm', '-o', binary])
+    objects = [probe.work / f'{name}.o', probe.work / 'driver.o']
+    if name in AUDIO:
+        objects.append(probe.work / 'raudio.o')
+        probekit.run(['clang', '-std=c11', '-D_DEFAULT_SOURCE', '-O2', '-ffp-contract=off', '-w', '-DMA_ENABLE_ONLY_SPECIFIC_BACKENDS', '-DMA_ENABLE_NULL', include,
+                      '-c', probe.args.raylib_source / 'src/raudio.c', '-o', objects[-1]])
+    probekit.run(['clang', *objects, probe.library, '-lm', '-o', binary])
     return binary
 
 

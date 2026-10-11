@@ -3085,7 +3085,7 @@
   {
    "name": "textures_sprite_button",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",
