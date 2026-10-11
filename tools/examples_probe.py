@@ -250,6 +250,7 @@ EXAMPLES = {
     'models_mesh_generation': ('models/models_mesh_generation.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shaders_depth_writing': ('shaders/shaders_depth_writing.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_hybrid_rendering': ('shaders/shaders_hybrid_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'shaders_depth_rendering': ('shaders/shaders_depth_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -325,6 +326,7 @@ PERSPECTIVE.add('shaders_spotlight_rendering')
 PERSPECTIVE.add('models_mesh_generation')
 PERSPECTIVE.add('shaders_depth_writing')
 PERSPECTIVE.add('shaders_hybrid_rendering')
+PERSPECTIVE.add('shaders_depth_rendering')
 
 
 # -----------------------------------------------------------------------------
@@ -992,6 +994,9 @@ def scripts():
         # The raymarching pass is a white rectangle drawn with the depth test on; the cubes and the grid follow
         # in the same hand-built render texture while the orbital camera turns.
         script('shaders_hybrid_rendering', 'orbit', [quick(), quick(), slow(), quick()]),
+        # The depth attachment drawn as a texture is a white rectangle on rlsw, whatever the free camera does (W
+        # moves it, the pointer turns it): the help box over white.
+        script('shaders_depth_rendering', 'white', [quick(), quick([key(KEY_W)]), quick([mouse_at(430, 240)]), slow([key(KEY_W, False)])]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.
