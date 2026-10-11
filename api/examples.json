@@ -2010,7 +2010,7 @@
   {
    "name": "shapes_splines_drawing",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointCircle",

@@ -157,7 +157,10 @@ button), and a click that takes effect on the next frame.
 `shapes_hilbert_curve` covers the spinner and the icons: the arrow buttons
 hovered, pressed and released (the order steps up and down), the value box
 hovered and pressed, a plain `GuiSlider` with a left text only, and the
-label in each state. `shaders_color_correction` covers the toggle group: an item hovered, pressed
+label in each state. `shapes_splines_drawing` covers the dropdown box: hovered, opened by a
+press, an item hovered and chosen by a release, opened again and closed by
+a press outside, with the rest of the gui locked while it is open (and
+while a point is dragged). `shaders_color_correction` covers the toggle group: an item hovered, pressed
 and switched on, and a click on the active item that changes nothing. `LAWS.bend` states the default text size, the propagation of a DEFAULT
 property, the enable/disable rules, how an icon prefix is read and which
 lines are refused. The `gui-icons` gate compares the icon set with every
