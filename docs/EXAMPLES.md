@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 157 ported, 18 ready, 37 waiting.
+Totals: 212 examples; 157 ported, 19 ready, 36 waiting.
 
 ## APIs that unblock the most examples
 
@@ -36,7 +36,6 @@ Totals: 212 examples; 157 ported, 18 ready, 37 waiting.
 | `rlUnloadTexture` | 4 |
 | `GetMusicTimeLength` | 3 |
 | `GetMusicTimePlayed` | 3 |
-| `GuiDropdownBox` | 3 |
 | `GuiTextBox` | 3 |
 | `LoadAudioStream` | 3 |
 | `PauseMusicStream` | 3 |
@@ -53,6 +52,7 @@ Totals: 212 examples; 157 ported, 18 ready, 37 waiting.
 | `BeginVrStereoMode` | 1 |
 | `DetachAudioMixedProcessor` | 1 |
 | `DetachAudioStreamProcessor` | 1 |
+| `EndVrStereoMode` | 1 |
 
 ## Examples
 
@@ -126,7 +126,7 @@ Totals: 212 examples; 157 ported, 18 ready, 37 waiting.
 | `shapes_rounded_rectangle_drawing` | shapes | ported |  |
 | `shapes_top_down_lights` | shapes | ported |  |
 | `shapes_rectangle_advanced` | shapes | ported |  |
-| `shapes_splines_drawing` | shapes | waiting | `GuiDropdownBox` |
+| `shapes_splines_drawing` | shapes | ready |  |
 | `shapes_digital_clock` | shapes | ready |  |
 | `shapes_double_pendulum` | shapes | ported |  |
 | `shapes_dashed_line` | shapes | ported |  |
@@ -223,8 +223,8 @@ Totals: 212 examples; 157 ported, 18 ready, 37 waiting.
 | `models_decals` | models | ready |  |
 | `models_directional_billboard` | models | ported |  |
 | `models_animation_blend_custom` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `rlUpdateVertexBuffer` |
-| `models_animation_blending` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `UpdateModelAnimationEx`, `GuiDropdownBox`, `GuiProgressBar` |
-| `models_animation_timing` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `GuiDropdownBox`, `GuiProgressBar` |
+| `models_animation_blending` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `UpdateModelAnimationEx`, `GuiProgressBar` |
+| `models_animation_timing` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `GuiProgressBar` |
 | `shaders_ascii_rendering` | shaders | ported |  |
 | `shaders_basic_lighting` | shaders | ported |  |
 | `shaders_model_shader` | shaders | ported |  |

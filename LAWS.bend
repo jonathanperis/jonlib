@@ -1215,6 +1215,27 @@ law gui_value_box_blank_when_focused:
   for gui: JG.Gui
   {JG.Gui.value.fill(1, gui) == 0 : U32}
 
+# GuiDropdownBox splits its text as GuiTextSplit does: "L;B" is two items,
+# an empty text is one empty item, and no item under the pointer is 4294967295.
+law gui_dropdown_two_items:
+  {JG.Gui.drop.count(JG.Gui.split([76, 59, 66], 59, 0, Nil{}), 0) == 2 : U32}
+
+law gui_dropdown_empty_text_is_one_item:
+  {JG.Gui.drop.count(JG.Gui.split(Nil{}, 59, 0, Nil{}), 0) == 1 : U32}
+
+law gui_dropdown_second_item:
+  {JG.Gui.drop.bytes(List.drop(&2, JG.Gui.Item, JG.Gui.split([76, 59, 66], 59, 0, Nil{}), 1n)) == [66] : +List<U32>}
+
+law gui_dropdown_focus_without_items:
+  for mouse: M.Vector2
+  for x: F32
+  for y: F32
+  for w: F32
+  for h: F32
+  for pitch: F32
+  for up: Bool
+  {JG.Gui.drop.focus(0n, 0, mouse, x, y, w, h, pitch, up) == 4294967295 : U32}
+
 law shader_load_never_valid:
   for vs: Maybe<String>
   for fs: Maybe<String>

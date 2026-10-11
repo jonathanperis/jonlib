@@ -10,7 +10,7 @@
 # GuiSetState, GuiGetState, GuiSetAlpha), GuiGetTextWidth, GuiLabel,
 # GuiButton, GuiCheckBox, GuiToggle, GuiToggleGroup, GuiSlider and
 # GuiSliderBar, GuiLine and GuiGroupBox, GuiValueBox and GuiSpinner (not in
-# edit mode), with the default font,
+# edit mode), GuiStatusBar, GuiPanel and GuiDropdownBox, with the default font,
 # TEXT_WRAP_NONE and raygui's icon set at scale 1 (src/gui_icons.bend). An
 # icon id above 255 (raygui reads past its table) and the other wrap modes
 # mark the frame undefined. See docs/GUI.md.
@@ -1030,3 +1030,131 @@ def Gui.spinner(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, 
   +over = Gui.active(gui) && Bool.not(Gui.exclusive(gui)) && J.Collision.point_rec(J.Input.get_mouse_position(core), bounds)
   Gui.spin.right(Gui.button(gui, core, frame, J.Rectangle{x, y, Gui.style.f32(gui, 10, 16), h}, "#118#"), gui, core, bounds, text, value, min, max, edit,
     Bool.pick(U32, over, Gui.hover(core), Gui.get_state(gui)))
+
+# -----------------------------------------------------------------------------
+# GuiStatusBar, GuiPanel and GuiDropdownBox
+
+# GuiStatusBar(bounds, text).
+def Gui.status_bar(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>) -> J.Frame:
+  +state = Gui.get_state(gui)
+  f1 = Gui.draw_rectangle(frame, bounds, Gui.get_style(gui, 15, 12), Gui.color(gui, 15, (state * 3 : U32)), Gui.color(gui, 15, (1 + state * 3 : U32)))
+  Gui.draw_text.maybe(gui, f1, text, Gui.text_bounds(gui, 15, bounds), Gui.get_style(gui, 15, 14), Gui.color(gui, 15, (2 + state * 3 : U32)))
+
+# The panel's rectangle: a border of 1 in LINE_COLOR over BACKGROUND_COLOR
+# (BORDER_COLOR_DISABLED over BASE_COLOR_DISABLED when disabled).
+def Gui.panel.body(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle) -> J.Frame:
+  +disabled = U32.is_eq(Gui.get_state(gui), 3)
+  Gui.draw_rectangle(frame, bounds, 1, Gui.color(gui, 0, Bool.pick(U32, disabled, 9, 18)), Gui.color(gui, 0, Bool.pick(U32, disabled, 10, 19)))
+
+def Gui.panel.headed(text: Maybe<String>, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle) -> J.Frame:
+  match text:
+    case None{}: Gui.panel.body(gui, frame, bounds)
+    case Some{t}:
+      J.Rectangle{+x, +y, +w, +h} = bounds
+      Gui.panel.body(gui, Gui.status_bar(gui, frame, J.Rectangle{x, y, w, 24.0}, Some{t}), J.Rectangle{x, (y + 23.0 : F32), w, (Bool.pick(F32, (h < 48.0 : F32), 48.0, h) - 23.0 : F32)})
+
+# GuiPanel(bounds, text): with a text, a status bar of 24 pixels heads the
+# panel, which starts 23 pixels lower and is at least 48 high.
+def Gui.panel(+gui: Gui, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>) -> J.Frame:
+  Gui.panel.headed(text, gui, frame, bounds)
+
+def Gui.refused(refused: Bool, frame: J.Frame) -> J.Frame:
+  match refused:
+    case True{}: J.Frame.refuse(frame)
+    case False{}: frame
+
+def Gui.drop.count(items: +List<Gui.Item>, +n: U32) -> U32:
+  match items:
+    case Nil{}: n
+    case Con{_, rest}: Gui.drop.count(rest, (n + 1 : U32))
+
+def Gui.drop.bytes(items: +List<Gui.Item>) -> +List<U32>:
+  match items:
+    case Con{item, _}: Gui.item.bytes(item)
+    case Nil{}: Nil{}
+
+# An item's y from the one before it: a row further down, or up when rolled up.
+def Gui.drop.next(+up: Bool, +y: F32, +pitch: F32) -> F32:
+  Bool.pick(F32, up, (y - pitch : F32), (y + pitch : F32))
+
+# The first item under the pointer, or 4294967295.
+def Gui.drop.focus(n: Nat, +i: U32, +mouse: M.Vector2, +x: F32, +y: F32, +w: F32, +h: F32, +pitch: F32, +up: Bool) -> U32:
+  match n:
+    case 0n: 4294967295
+    case 1n+p:
+      Bool.pick(U32, J.Collision.point_rec(mouse, J.Rectangle{x, Gui.drop.next(up, y, pitch), w, h}), i,
+        Gui.drop.focus(p, (i + 1 : U32), mouse, x, Gui.drop.next(up, y, pitch), w, h, pitch, up))
+
+def Gui.drop.boxed(boxed: Bool, +gui: Gui, +place: J.Rectangle, +kind: U32, frame: J.Frame) -> J.Frame:
+  match boxed:
+    case False{}: frame
+    case True{}: Gui.draw_rectangle(frame, place, Gui.get_style(gui, 8, 12), Gui.color(gui, 8, (kind * 3 : U32)), Gui.color(gui, 8, (1 + kind * 3 : U32)))
+
+# The open list: the selected item boxed in the pressed colors, the focused
+# one in the focused colors, the others as plain text.
+def Gui.drop.items(items: +List<Gui.Item>, +i: U32, +gui: Gui, +selected: U32, +focused: U32, +x: F32, +y: F32, +w: F32, +h: F32, +pitch: F32, +up: Bool, frame: J.Frame) -> J.Frame:
+  match items:
+    case Nil{}: frame
+    case Con{+item, rest}:
+      +kind = Bool.pick(U32, U32.is_eq(i, selected), 2, Bool.pick(U32, U32.is_eq(i, focused), 1, 0))
+      +place = {J.Rectangle{x, Gui.drop.next(up, y, pitch), w, h} : J.Rectangle}
+      Gui.drop.items(rest, (i + 1 : U32), gui, selected, focused, x, Gui.drop.next(up, y, pitch), w, h, pitch, up,
+        Gui.draw_text.bytes(Gui.item.bytes(item), gui, Gui.drop.boxed((kind > 0 : U32), gui, place, kind, frame), Gui.text_bounds(gui, 8, place), Gui.get_style(gui, 8, 14), Gui.color(gui, 8, (2 + kind * 3 : U32))))
+
+def Gui.drop.listed(edit: Bool, +items: +List<Gui.Item>, +gui: Gui, +selected: U32, +focused: U32, +bounds: J.Rectangle, +pitch: F32, +up: Bool, frame: J.Frame) -> J.Frame:
+  match edit:
+    case False{}: frame
+    case True{}:
+      J.Rectangle{+x, +y, +w, +h} = bounds
+      Gui.drop.items(items, 0, gui, selected, focused, x, y, w, h, pitch, up, frame)
+
+def Gui.drop.panel(edit: Bool, +gui: Gui, +open: J.Rectangle, frame: J.Frame) -> J.Frame:
+  match edit:
+    case False{}: frame
+    case True{}: Gui.panel(gui, frame, open, None{})
+
+# The arrow: ICON_ARROW_DOWN_FILL (120), or ICON_ARROW_UP_FILL (121) when rolled up.
+def Gui.drop.arrow(visible: Bool, +gui: Gui, +bounds: J.Rectangle, +up: Bool, +state: U32, frame: J.Frame) -> J.Frame:
+  match visible:
+    case False{}: frame
+    case True{}:
+      J.Rectangle{+x, +y, +w, +h} = bounds
+      Gui.draw_text(gui, frame, Bool.pick(String, up, "#121#", "#120#"), J.Rectangle{(x + w - Gui.style.f32(gui, 8, 16) : F32), (y + h / 2.0 - 6.0 : F32), 10.0, 10.0}, 1, Gui.color(gui, 8, (2 + state * 3 : U32)))
+
+def Gui.drop.drawn(+items: +List<Gui.Item>, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +open: J.Rectangle, +state: U32, +selected: U32, +focused: U32, +edit: Bool, +pitch: F32, +up: Bool) -> J.Frame:
+  f1 = Gui.draw_rectangle(Gui.drop.panel(edit, gui, open, frame), bounds, Gui.get_style(gui, 8, 12), Gui.color(gui, 8, (state * 3 : U32)), Gui.color(gui, 8, (1 + state * 3 : U32)))
+  f2 = Gui.draw_text.bytes(Gui.drop.bytes(List.drop(&2, Gui.Item, items, U32.to_nat(selected))), gui, f1, Gui.text_bounds(gui, 8, bounds), Gui.get_style(gui, 8, 14), Gui.color(gui, 8, (2 + state * 3 : U32)))
+  Gui.drop.arrow(U32.is_eq(Gui.get_style(gui, 8, 18), 0), gui, bounds, up, state, Gui.drop.listed(edit, items, gui, selected, focused, bounds, pitch, up, f2))
+
+# The update and the drawing over the split items. long: the text does not
+# fit GuiTextSplit's buffer of 1024 bytes.
+def Gui.drop.run(+items: +List<Gui.Item>, +long: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +active: U32, +edit: Bool) -> J.Frame & (U32 & Bool):
+  J.Rectangle{+x, +y, +w, +h} = bounds
+  +count = Gui.drop.count(items, 0)
+  +spacing = Gui.style.f32(gui, 8, 17)
+  +up = U32.is_eq(Gui.get_style(gui, 8, 19), 1)
+  +pitch = (h + spacing : F32)
+  +open = {J.Rectangle{x, Bool.pick(F32, up, (y - (U32.to_f32(count) * pitch + spacing) : F32), y), w, (U32.to_f32((count + 1 : U32)) * pitch : F32)} : J.Rectangle}
+  +mouse = J.Input.get_mouse_position(core)
+  +live = U32.is_ne(Gui.get_state(gui), 3) && (edit || Bool.not(Gui.is_locked(gui))) && (count > 1 : U32) && Bool.not(Gui.exclusive(gui))
+  +over = J.Collision.point_rec(mouse, bounds)
+  +pressed = Gui.pressed(core)
+  +released = Gui.released(core)
+  +focused = Bool.pick(U32, live && edit, Gui.drop.focus(U32.to_nat(count), 0, mouse, x, y, w, h, pitch, up), 4294967295)
+  +picked = U32.is_ne(focused, 4294967295) && released
+  +selected = Bool.pick(U32, picked, focused, active)
+  +result = live && Bool.pick(Bool, edit, (Bool.not(J.Collision.point_rec(mouse, open)) && (pressed || released)) || (over && pressed) || picked, over && pressed)
+  +state = Bool.pick(U32, live, Bool.pick(U32, edit, 2, Bool.pick(U32, over, Bool.pick(U32, pressed, 2, 1), Gui.get_state(gui))), Gui.get_state(gui))
+  +refused = long || (count >= 128 : U32) || (selected >= count : U32)
+  (Gui.refused(refused, Gui.drop.drawn(items, gui, frame, bounds, open, state, selected, focused, edit, pitch, up)), (selected, result))
+
+# GuiDropdownBox(bounds, text, &active, editMode): the box with the active
+# item and an arrow, and in edit mode a panel with every item below it (above
+# it for DROPDOWN_ROLL_UP). The text splits at ';' and '\n'. The frame, the
+# active item and raygui's result: a press over the closed box; in edit mode
+# a press or a release outside the open bounds, a press over the box, or a
+# release over an item, which becomes the active one. An active index
+# outside the items (raygui reads a stale pointer), a text of 1024 bytes or
+# more, and 128 items or more mark the frame undefined.
+def Gui.dropdown_box(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +text: String, +active: U32, +edit: Bool) -> J.Frame & (U32 & Bool):
+  Gui.drop.run(Gui.split(TextCore.bytes(text), 59, 0, Nil{}), (TextCore.len(TextCore.bytes(text)) >= 1024 : U32), gui, core, frame, bounds, active, edit)

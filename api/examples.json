@@ -2010,7 +2010,7 @@
   {
    "name": "shapes_splines_drawing",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointCircle",
@@ -2047,9 +2047,7 @@
     "GuiSliderBar",
     "GuiUnlock"
    ],
-   "missing": [
-    "GuiDropdownBox"
-   ]
+   "missing": []
   },
   {
    "name": "shapes_digital_clock",
@@ -5248,7 +5246,6 @@
     "UnloadModelAnimations",
     "UpdateModelAnimation",
     "UpdateModelAnimationEx",
-    "GuiDropdownBox",
     "GuiProgressBar"
    ]
   },
@@ -5295,7 +5292,6 @@
     "LoadModelAnimations",
     "UnloadModelAnimations",
     "UpdateModelAnimation",
-    "GuiDropdownBox",
     "GuiProgressBar"
    ]
   },
