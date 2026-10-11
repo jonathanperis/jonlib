@@ -249,6 +249,7 @@ EXAMPLES = {
     'shaders_spotlight_rendering': ('shaders/shaders_spotlight_rendering.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'models_mesh_generation': ('models/models_mesh_generation.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shaders_depth_writing': ('shaders/shaders_depth_writing.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_hybrid_rendering': ('shaders/shaders_hybrid_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -323,6 +324,7 @@ IO_SETUP.add('shaders_spotlight_rendering'); SEEDED.add('shaders_spotlight_rende
 PERSPECTIVE.add('shaders_spotlight_rendering')
 PERSPECTIVE.add('models_mesh_generation')
 PERSPECTIVE.add('shaders_depth_writing')
+PERSPECTIVE.add('shaders_hybrid_rendering')
 
 
 # -----------------------------------------------------------------------------
@@ -987,6 +989,9 @@ def scripts():
         # Two cubes and a grid in the render texture the example builds with rlgl (a framebuffer, a color
         # texture and a depth attachment), drawn to the screen while the orbital camera turns.
         script('shaders_depth_writing', 'orbit', [quick(), quick(), slow(), quick()]),
+        # The raymarching pass is a white rectangle drawn with the depth test on; the cubes and the grid follow
+        # in the same hand-built render texture while the orbital camera turns.
+        script('shaders_hybrid_rendering', 'orbit', [quick(), quick(), slow(), quick()]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.
