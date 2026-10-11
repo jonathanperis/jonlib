@@ -22,6 +22,10 @@
  * - GetTime: an example's own GetTime() calls read the scripted clock, as
  *   raylib's do in this build (tools/reference/input_clock.h: the platform's
  *   definition is renamed rlPlatformGetTime, which nothing calls).
+ * - time: an example's own calls (the clock examples) read the script's
+ *   wall clock, its seed as the seconds at InitWindow plus the whole seconds
+ *   of the scripted clock; localtime is gmtime (no time zone). raylib itself
+ *   is not compiled with this header.
  */
 #ifndef JONLIB_EXAMPLE_DRIVER_H
 #define JONLIB_EXAMPLE_DRIVER_H
@@ -37,5 +41,10 @@ double JonlibProbeTime(void);
 #define JONLIB_EXAMPLE_CLOCK_void rlPlatformGetTime(void)
 #define JONLIB_EXAMPLE_CLOCK_ JonlibProbeTime()
 #define GetTime(...) JONLIB_EXAMPLE_CLOCK_PICK(__VA_ARGS__)
+
+#include <time.h>
+time_t JonlibExampleTime(time_t *out);
+#define time(x) JonlibExampleTime(x)
+#define localtime(x) gmtime(x)
 
 #endif

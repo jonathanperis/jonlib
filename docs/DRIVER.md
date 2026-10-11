@@ -45,6 +45,14 @@ runs `after` at the start of the turn that follows a presented frame (never
 before the first one) and reads BeginDrawing's clock once the update's IO is
 over.
 
+**The wall clock.** Base has no wall clock (`IO.now` is a monotonic
+reading), and the examples that show the time of day call the C library's
+`time()` and `localtime()`, not raylib. Their ports take the seconds of the
+day at InitWindow as a setup argument, as a seeded example takes its seed,
+and add the whole seconds of `Core.get_time` (`shapes_digital_clock`); the
+examples probe gives the reference the same clock by redirecting `time()`
+in the example's translation unit.
+
 `update` is the code before `BeginDrawing` (input queries, `GetKeyPressed`,
 `HideCursor`, ... return the new `Core`); `draw` runs between `BeginDrawing`
 and `EndDrawing` (it may still query and change the `Core`). The same value
