@@ -189,7 +189,9 @@ while a point is dragged). `core_compute_hash` covers the text box: hovered, ent
 BACKSPACE, LEFT, DELETE, HOME, END and RIGHT, the cursor placed by a press
 over the text, BACKSPACE held past the repeat cooldown, ENTER, a press
 outside, and read-only boxes; a label in `TEXT_SIZE` 20 with
-`TEXT_SPACING` 2 and one drawn as focused. `shaders_color_correction` covers the toggle group: an item hovered, pressed
+`TEXT_SPACING` 2 and one drawn as focused. `core_clipboard_text` covers the icon scale: five buttons with icons at
+scale 2 beside their texts in `TEXT_SIZE` 20, a text box emptied and
+refilled, and disabled labels. `shaders_color_correction` covers the toggle group: an item hovered, pressed
 and switched on, and a click on the active item that changes nothing. `LAWS.bend` states the default text size, the propagation of a DEFAULT
 property, the enable/disable rules, how an icon prefix is read and which
 lines are refused. The `gui-icons` gate compares the icon set with every

@@ -1324,7 +1324,7 @@
   {
    "name": "core_clipboard_text",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
