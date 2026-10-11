@@ -4133,7 +4133,7 @@
   {
    "name": "models_loading_iqm",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4160,9 +4160,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "UpdateModelAnimation"
-   ]
+   "missing": []
   },
   {
    "name": "models_billboard_rendering",
@@ -4462,7 +4460,7 @@
   {
    "name": "models_loading_gltf",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4487,9 +4485,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "UpdateModelAnimation"
-   ]
+   "missing": []
   },
   {
    "name": "models_loading_vox",
@@ -4540,7 +4536,7 @@
   {
    "name": "models_loading_m3d",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4570,9 +4566,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "UpdateModelAnimation"
-   ]
+   "missing": []
   },
   {
    "name": "models_orthographic_projection",
@@ -4880,7 +4874,7 @@
   {
    "name": "models_animation_gpu_skinning",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4907,14 +4901,12 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "UpdateModelAnimation"
-   ]
+   "missing": []
   },
   {
    "name": "models_bone_socket",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4947,9 +4939,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "UpdateModelAnimation"
-   ]
+   "missing": []
   },
   {
    "name": "models_tesseract_view",
@@ -5220,8 +5210,6 @@
     "GuiSlider"
    ],
    "missing": [
-    "UpdateModelAnimation",
-    "UpdateModelAnimationEx",
     "GuiProgressBar"
    ]
   },
@@ -5265,7 +5253,6 @@
     "GuiSlider"
    ],
    "missing": [
-    "UpdateModelAnimation",
     "GuiProgressBar"
    ]
   },
@@ -6292,7 +6279,6 @@
    "libraries": [],
    "gui": [],
    "missing": [
-    "UpdateModelAnimation",
     "rlDisableFramebuffer",
     "rlEnableFramebuffer",
     "rlFramebufferAttach",

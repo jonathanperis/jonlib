@@ -1095,6 +1095,101 @@ law gltf_anim_invalid_span_reads_nothing:
   for limit: U32
   {GltfAnim.read(False{}, span, blocks, comps, limit) == Nil{} : +List<U32>}
 
+# Model poses (UpdateModelAnimation and UpdateModelAnimationEx): a loaded
+# model has zeroed transforms and identity matrices; the pose comes back as
+# it is for a skeleton without bones and an animation without keyframes,
+# blended or not; a call that is undefined natively answers nothing, and a
+# blended animation has no keyframe for a frame outside an int.
+law model_pose_loaded_is_zeroed_with_identities:
+  for name: String
+  for parent: U32
+  for binds: +List<J.Transform>
+  {J.Model.pose(J.ModelSkeleton{Con{J.BoneInfo{name, parent}, Nil{}}, binds}) == J.ModelPose{Con{J.Transform{M.Vector3{0.0, 0.0, 0.0}, M.Vector4{0.0, 0.0, 0.0, 0.0}, M.Vector3{0.0, 0.0, 0.0}}, Nil{}}, Con{M.Matrix.identity(), Nil{}}} : J.ModelPose}
+
+law model_pose_boneless_unchanged:
+  for libm: M.Libm
+  for binds: +List<J.Transform>
+  for name: String
+  for bones: U32
+  for count: U32
+  for poses: +List<+List<J.Transform>>
+  for frame: F32
+  for pose: J.ModelPose
+  {J.Model.update_animation_for(libm, J.ModelSkeleton{Nil{}, binds}, J.ModelAnimation{name, bones, count, poses}, frame, pose) == Some{pose} : Maybe<J.ModelPose>}
+
+law model_pose_no_keyframes_unchanged:
+  for libm: M.Libm
+  for bone: String
+  for parent: U32
+  for binds: +List<J.Transform>
+  for name: String
+  for bones: U32
+  for poses: +List<+List<J.Transform>>
+  for frame: F32
+  for pose: J.ModelPose
+  {J.Model.update_animation_for(libm, J.ModelSkeleton{Con{J.BoneInfo{bone, parent}, Nil{}}, binds}, J.ModelAnimation{name, bones, 0, poses}, frame, pose) == Some{pose} : Maybe<J.ModelPose>}
+
+law model_pose_undefined_call_answers_nothing:
+  for libm: M.Libm
+  for binds: +List<J.Transform>
+  for poses: +List<+List<J.Transform>>
+  for count: U32
+  for frame: F32
+  for pose: J.ModelPose
+  {J.Model.pose.updated(1, libm, binds, poses, count, frame, pose) == None{} : Maybe<J.ModelPose>}
+
+law model_pose_blend_boneless_unchanged:
+  for libm: M.Libm
+  for binds: +List<J.Transform>
+  for name: String
+  for bones: U32
+  for count: U32
+  for poses: +List<+List<J.Transform>>
+  for first: F32
+  for second: F32
+  for blend: F32
+  for pose: J.ModelPose
+  {J.Model.update_animation_ex_for(libm, J.ModelSkeleton{Nil{}, binds}, J.ModelAnimation{name, bones, count, poses}, first, J.ModelAnimation{name, bones, count, poses}, second, blend, pose) == Some{pose} : Maybe<J.ModelPose>}
+
+law model_pose_blend_no_keyframes_unchanged:
+  for libm: M.Libm
+  for bone: String
+  for parent: U32
+  for binds: +List<J.Transform>
+  for name: String
+  for bones: U32
+  for count: U32
+  for poses: +List<+List<J.Transform>>
+  for first: F32
+  for second: F32
+  for blend: F32
+  for pose: J.ModelPose
+  {J.Model.update_animation_ex_for(libm, J.ModelSkeleton{Con{J.BoneInfo{bone, parent}, Nil{}}, binds}, J.ModelAnimation{name, bones, 0, poses}, first, J.ModelAnimation{name, bones, count, poses}, second, blend, pose) == Some{pose} : Maybe<J.ModelPose>}
+
+law model_pose_blend_frame_outside_int_refused:
+  for frame: F32
+  for count: U32
+  {J.Model.pose.start(False{}, frame, count) == 4294967295 : U32}
+
+# IsModelAnimationValid compares bone counts.
+law model_animation_valid_same_bone_count:
+  for bone: String
+  for parent: U32
+  for binds: +List<J.Transform>
+  for name: String
+  for count: U32
+  for poses: +List<+List<J.Transform>>
+  {J.Model.is_animation_valid(J.ModelSkeleton{Con{J.BoneInfo{bone, parent}, Nil{}}, binds}, J.ModelAnimation{name, 1, count, poses}) == True{} : Bool}
+
+law model_animation_invalid_other_bone_count:
+  for bone: String
+  for parent: U32
+  for binds: +List<J.Transform>
+  for name: String
+  for count: U32
+  for poses: +List<+List<J.Transform>>
+  {J.Model.is_animation_valid(J.ModelSkeleton{Con{J.BoneInfo{bone, parent}, Nil{}}, binds}, J.ModelAnimation{name, 2, count, poses}) == False{} : Bool}
+
 # hypot(x, y) <= r for every faithful hypot (src/hypot.bend), from the order
 # of the rounded x*x + y*y and r*r (0 equal, 1 less, 2 greater, 3 unknown):
 # a sum below r*r is inside; a sum rounded onto r*r is inside unless its

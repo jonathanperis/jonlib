@@ -1695,6 +1695,21 @@
    "minutes": 20
   },
   {
+   "id": "model-pose",
+   "title": "Model pose updates (UpdateModelAnimation and UpdateModelAnimationEx: model.currentPose and model.boneMatrices after a sequence of calls) against the uncontracted raylib build, with the examples' greenman model, generated files and a contract for the undefined calls",
+   "run": [
+    "{python}",
+    "tools/model_pose_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 8
+  },
+  {
    "id": "gui-icons",
    "title": "raygui's icon set (src/gui_icons.bend, 256 icons of 16x16 bits) against the guiIcons table of every raygui.h in the pinned raylib checkout",
    "run": [

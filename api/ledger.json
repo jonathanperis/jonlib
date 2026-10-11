@@ -57926,23 +57926,31 @@
       "milestone": "animation",
       "phase": 5,
       "sequence": 24,
-      "status": "not-started",
-      "jonlib": "Animation.update_model_animation",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Model.update_animation_for / Model.update_animation",
+      "mapping_state": "implemented",
+      "scope": "The model's current pose and bone matrices as a value (ModelPose) beside the skeleton: the two keyframes of (int)frame, wrapped by the keyframe count, blended by the frame's fraction (Vector3Lerp, QuaternionSlerp under the libm profile), and inverse(bind pose)*pose for every bone; unchanged without bones or keyframes.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The meshes are not skinned: the reference is built with GPU skinning and leaves them in their bind pose",
+        "Frames of -1 and below, past the int range or not a number answer None (undefined natively)",
+        "An animation with fewer bones than the skeleton answers None (read past its end natively)",
+        "Profiles without acosf (Apple, glibc 2.41) answer None for rotations more than about 36 degrees apart",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_pose_probe.py",
+        "docs/MODELS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -57957,7 +57965,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Skeleton/pose/frame data, interpolation, CPU/GPU skinning, compatibility errors and animation lifetimes.",
-      "next_step": "Derive UpdateModelAnimation semantics from the linked source, add a reference fixture, then implement Animation.update_model_animation.",
+      "next_step": "Close documented gaps and unverified gates for UpdateModelAnimation.",
       "priority": 624
     },
     {
@@ -57983,23 +57991,31 @@
       "milestone": "animation",
       "phase": 5,
       "sequence": 24,
-      "status": "not-started",
-      "jonlib": "Animation.update_model_animation_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Model.update_animation_ex_for / Model.update_animation_ex",
+      "mapping_state": "implemented",
+      "scope": "Two animations' poses, each at keyframe (int)frame%keyframeCount towards the next one by the clamped difference to that keyframe, blended by Vector3Lerp and QuaternionSlerp into the ModelPose, with the bone matrices; unchanged without bones or keyframes and for a blend outside 0 to 1.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The meshes are not skinned: the reference is built with GPU skinning and leaves them in their bind pose",
+        "A frame outside an int or with a negative remainder by the keyframe count answers None (undefined natively)",
+        "An animation with fewer bones than the skeleton answers None (read past its end natively)",
+        "Profiles without acosf (Apple, glibc 2.41) answer None for rotations more than about 36 degrees apart",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_pose_probe.py",
+        "docs/MODELS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -58014,7 +58030,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Skeleton/pose/frame data, interpolation, CPU/GPU skinning, compatibility errors and animation lifetimes.",
-      "next_step": "Derive UpdateModelAnimationEx semantics from the linked source, add a reference fixture, then implement Animation.update_model_animation_ex.",
+      "next_step": "Close documented gaps and unverified gates for UpdateModelAnimationEx.",
       "priority": 624
     },
     {
@@ -58101,23 +58117,28 @@
       "milestone": "animation",
       "phase": 5,
       "sequence": 24,
-      "status": "not-started",
-      "jonlib": "Animation.is_model_animation_valid",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Model.is_animation_valid",
+      "mapping_state": "implemented",
+      "scope": "Whether the animation has the skeleton's bone count.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Takes the model's skeleton (Model.load_skeleton): Jonlib's Model has none",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/model_pose_probe.py",
+        "docs/MODELS.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -58133,7 +58154,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Skeleton/pose/frame data, interpolation, CPU/GPU skinning, compatibility errors and animation lifetimes.",
-      "next_step": "Derive IsModelAnimationValid semantics from the linked source, add a reference fixture, then implement Animation.is_model_animation_valid.",
+      "next_step": "Close documented gaps and unverified gates for IsModelAnimationValid.",
       "priority": 624
     },
     {

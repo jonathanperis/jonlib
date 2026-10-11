@@ -11793,6 +11793,184 @@ def Model.load_animations(+path: String) -> IO(Result<&1, &1, Surface.IOError, +
 def Model.unload_animations(animations: +List<ModelAnimation>) -> Unit:
   Unit{}
 
+# model.currentPose and model.boneMatrices: the runtime animation data
+# UpdateModelAnimation writes (Jonlib's Model holds neither).
+type ModelPose is Data:
+  ModelPose{current: +List<Transform>, matrices: +List<M.Matrix>}
+
+def Model.pose.zeros(bones: +List<BoneInfo>) -> +List<Transform>:
+  match bones:
+    case Nil{}: Nil{}
+    case Con{_, rest}: Con{Transform{M.Vector3{0.0, 0.0, 0.0}, M.Vector4{0.0, 0.0, 0.0, 0.0}, M.Vector3{0.0, 0.0, 0.0}}, Model.pose.zeros(rest)}
+
+def Model.pose.identities(bones: +List<BoneInfo>) -> +List<M.Matrix>:
+  match bones:
+    case Nil{}: Nil{}
+    case Con{_, rest}: Con{M.Matrix.identity(), Model.pose.identities(rest)}
+
+# The pose LoadModel leaves: zeroed transforms (the bind pose is the
+# skeleton's) and an identity matrix for every bone.
+def Model.pose(skeleton: ModelSkeleton) -> ModelPose:
+  ModelSkeleton{+bones, _} = skeleton
+  ModelPose{Model.pose.zeros(bones), Model.pose.identities(bones)}
+
+def Model.pose.matrix.of(translation: M.Vector3, rotation: M.Vector4, scale: M.Vector3) -> M.Matrix:
+  M.Vector3{tx, ty, tz} = translation
+  M.Vector3{sx, sy, sz} = scale
+  M.Matrix.multiply(M.Matrix.multiply(M.Matrix.scale(sx, sy, sz), M.Quaternion.to_matrix(rotation)), M.Matrix.translate(tx, ty, tz))
+
+# MatrixMultiply(MatrixMultiply(MatrixScale(scale), QuaternionToMatrix(rotation)), MatrixTranslate(translation)).
+def Model.pose.matrix(transform: Transform) -> M.Matrix:
+  Transform{translation, rotation, scale} = transform
+  Model.pose.matrix.of(translation, rotation, scale)
+
+# boneMatrices: MatrixMultiply(MatrixInvert(bind pose), current pose) for every bone.
+def Model.pose.matrices(binds: +List<Transform>, current: +List<Transform>) -> +List<M.Matrix>:
+  match binds current:
+    case Con{bind, rest} Con{pose, more}: Con{M.Matrix.multiply(M.Matrix.invert(Model.pose.matrix(bind)), Model.pose.matrix(pose)), Model.pose.matrices(rest, more)}
+    case _ _: Nil{}
+
+def Model.pose.posed(current: Maybe<+List<Transform>>, +binds: +List<Transform>) -> Maybe<ModelPose>:
+  match current:
+    case None{}: None{}
+    case Some{+pose}: Some{ModelPose{pose, Model.pose.matrices(binds, pose)}}
+
+def Model.pose.mixed.with(rotation: Maybe<M.Vector4>, +translation: M.Vector3, +scale: M.Vector3) -> Maybe<Transform>:
+  match rotation:
+    case None{}: None{}
+    case Some{r}: Some{Transform{translation, r, scale}}
+
+# One bone between two transforms: Vector3Lerp of the translations and
+# scales, the libm profile's QuaternionSlerp of the rotations.
+def Model.pose.mixed(first: Transform, second: Transform, +blend: F32, +libm: M.Libm) -> Maybe<Transform>:
+  Transform{t1, +r1, s1} = first
+  Transform{t2, +r2, s2} = second
+  Model.pose.mixed.with(M.Quaternion.slerp_for(libm, r1, r2, blend), M.Vector3.lerp(t1, t2, blend), M.Vector3.lerp(s1, s2, blend))
+
+def Model.pose.cons(first: Maybe<Transform>, rest: Maybe<+List<Transform>>) -> Maybe<+List<Transform>>:
+  match first rest:
+    case Some{a} Some{b}: Some{Con{a, b}}
+    case _ _: None{}
+
+# The skeleton's bones between two poses; None when a pose has fewer bones
+# than the skeleton (natively read past its end).
+def Model.pose.between(binds: +List<Transform>, first: +List<Transform>, second: +List<Transform>, +blend: F32, +libm: M.Libm) -> Maybe<+List<Transform>>:
+  match binds first second:
+    case Nil{} _ _: Some{Nil{}}
+    case Con{_, rest} Con{a, more} Con{b, others}: Model.pose.cons(Model.pose.mixed(a, b, blend, libm), Model.pose.between(rest, more, others, blend, libm))
+    case _ _ _: None{}
+
+def Model.pose.frame(poses: +List<+List<Transform>>) -> +List<Transform>:
+  match poses:
+    case Con{pose, _}: pose
+    case Nil{}: Nil{}
+
+# keyframePoses[index]; no bones for an index the animation has no pose for.
+def Model.pose.at(poses: +List<+List<Transform>>, +index: U32) -> +List<Transform>:
+  Model.pose.frame(List.drop(&2, +List<Transform>, poses, U32.to_nat(index)))
+
+# if (frame >= keyframeCount) frame = frame%keyframeCount, for a count above 0.
+def Model.pose.wrapped(wraps: Bool, +index: U32, +count: U32) -> U32:
+  match wraps:
+    case False{}: index
+    case True{}: (index % count : U32)
+
+# The animation's pose between keyframe `index` and the next one.
+def Model.pose.keyed(+binds: +List<Transform>, +poses: +List<+List<Transform>>, +count: U32, +index: U32, +frame: F32, +libm: M.Libm) -> Maybe<+List<Transform>>:
+  Model.pose.between(binds, Model.pose.at(poses, Model.pose.wrapped((index >= count : U32), index, count)), Model.pose.at(poses, Model.pose.wrapped(((index + 1 : U32) >= count : U32), (index + 1 : U32), count)),
+    M.Math.clamp((frame - U32.to_f32(index) : F32), 0.0, 1.0), libm)
+
+# 0: the function returns before it changes anything; 1: undefined natively; 2: the pose is made.
+def Model.pose.updated(kind: U32, +libm: M.Libm, +binds: +List<Transform>, +poses: +List<+List<Transform>>, +count: U32, +frame: F32, +pose: ModelPose) -> Maybe<ModelPose>:
+  match kind:
+    case 0: Some{pose}
+    case 1: None{}
+    case _: Model.pose.posed(Model.pose.keyed(binds, poses, count, Bool.pick(U32, (frame < 0.0 : F32), 0, F32.to_u32(F32.trunc(frame))), frame, libm), binds)
+
+def Model.pose.boneless(bones: +List<BoneInfo>) -> Bool:
+  match bones:
+    case Nil{}: True{}
+    case Con{_, _}: False{}
+
+# UpdateModelAnimation(model, anim, frame) for the model's skeleton and
+# pose: the animation's pose between keyframes (int)frame and the next one
+# (each wrapped by the keyframe count), blended by Clamp(frame - (int)frame,
+# 0, 1), and each bone's matrix inverse(bind pose)*pose. The reference is
+# built with GPU skinning, so this is all the function changes there: the
+# meshes keep their bind pose. The pose comes back as it is for a skeleton
+# without bones and an animation without keyframes, where the native
+# function returns. None for a frame of -1 and below, 2147483648 and above
+# or not a number (its int conversion or the keyframe it indexes is
+# undefined), an animation with fewer bones than the skeleton or fewer
+# poses than its count, and a rotation the libm profile's QuaternionSlerp
+# does not answer.
+def Model.update_animation_for(+libm: M.Libm, skeleton: ModelSkeleton, animation: ModelAnimation, +frame: F32, +pose: ModelPose) -> Maybe<ModelPose>:
+  ModelSkeleton{+bones, +binds} = skeleton
+  ModelAnimation{_, _, +count, +poses} = animation
+  Model.pose.updated(Bool.pick(U32, Model.pose.boneless(bones) || U32.is_eq(count, 0), 0, Bool.pick(U32, (frame < 2147483648.0 : F32) && (frame > F32.neg(1.0) : F32), 2, 1)), libm, binds, poses, count, frame, pose)
+
+def Model.update_animation(skeleton: ModelSkeleton, animation: ModelAnimation, +frame: F32, +pose: ModelPose) -> Maybe<ModelPose>:
+  Model.update_animation_for(M.AppleLibm{}, skeleton, animation, frame, pose)
+
+# (int)frame%keyframeCount for a count above 0, as an index: 4294967295 when
+# the conversion is undefined or the remainder negative (before the poses).
+def Model.pose.start(valid: Bool, +frame: F32, +count: U32) -> U32:
+  match valid:
+    case False{}: 4294967295
+    case True{}:
+      +remainder = (F32.to_u32(F32.trunc(Bool.pick(F32, (frame < 0.0 : F32), F32.neg(frame), frame))) % count : U32)
+      Bool.pick(U32, (frame < 0.0 : F32), Bool.pick(U32, U32.is_eq(remainder, 0), 0, 4294967295), remainder)
+
+def Model.pose.both(first: Maybe<+List<Transform>>, second: Maybe<+List<Transform>>, +binds: +List<Transform>, +blend: F32, +libm: M.Libm) -> Maybe<+List<Transform>>:
+  match first second:
+    case Some{+a} Some{+b}: Model.pose.between(binds, a, b, blend, libm)
+    case _ _: None{}
+
+def Model.pose.blended.at(valid: Bool, +libm: M.Libm, +binds: +List<Transform>, +poses_a: +List<+List<Transform>>, +count_a: U32, +index_a: U32, +frame_a: F32,
+    +poses_b: +List<+List<Transform>>, +count_b: U32, +index_b: U32, +frame_b: F32, +blend: F32) -> Maybe<ModelPose>:
+  match valid:
+    case False{}: None{}
+    case True{}: Model.pose.posed(Model.pose.both(Model.pose.keyed(binds, poses_a, count_a, index_a, frame_a, libm), Model.pose.keyed(binds, poses_b, count_b, index_b, frame_b, libm), binds, blend, libm), binds)
+
+def Model.pose.blended(active: Bool, +libm: M.Libm, +binds: +List<Transform>, +poses_a: +List<+List<Transform>>, +count_a: U32, +frame_a: F32, +poses_b: +List<+List<Transform>>, +count_b: U32, +frame_b: F32,
+    +blend: F32, +pose: ModelPose) -> Maybe<ModelPose>:
+  match active:
+    case False{}: Some{pose}
+    case True{}:
+      +index_a = Model.pose.start((frame_a >= F32.neg(2147483648.0) : F32) && (frame_a < 2147483648.0 : F32), frame_a, count_a)
+      +index_b = Model.pose.start((frame_b >= F32.neg(2147483648.0) : F32) && (frame_b < 2147483648.0 : F32), frame_b, count_b)
+      Model.pose.blended.at(U32.is_ne(index_a, 4294967295) && U32.is_ne(index_b, 4294967295), libm, binds, poses_a, count_a, index_a, frame_a, poses_b, count_b, index_b, frame_b, blend)
+
+# UpdateModelAnimationEx(model, animA, frameA, animB, frameB, blend): each
+# animation's pose at keyframe (int)frame%keyframeCount towards the next
+# one by Clamp(frame - that keyframe, 0, 1) (so a frame past the count
+# reads the next keyframe whole), then the two blended (Vector3Lerp,
+# QuaternionSlerp) and the bone matrices as in Model.update_animation_for.
+# The pose comes back as it is for a skeleton without bones, an animation
+# without keyframes and a blend outside 0 to 1 (not a number included).
+# None where a frame's int conversion is undefined or its remainder
+# negative (a frame of -1 and below that is not a multiple of the count),
+# and as in Model.update_animation_for.
+def Model.update_animation_ex_for(+libm: M.Libm, skeleton: ModelSkeleton, first: ModelAnimation, +first_frame: F32, second: ModelAnimation, +second_frame: F32, +blend: F32, +pose: ModelPose) -> Maybe<ModelPose>:
+  ModelSkeleton{+bones, +binds} = skeleton
+  ModelAnimation{_, _, +count_a, +poses_a} = first
+  ModelAnimation{_, _, +count_b, +poses_b} = second
+  Model.pose.blended(Bool.not(Model.pose.boneless(bones)) && (count_a > 0 : U32) && (count_b > 0 : U32) && (blend >= 0.0 : F32) && (blend <= 1.0 : F32), libm, binds, poses_a, count_a, first_frame, poses_b, count_b, second_frame, blend, pose)
+
+def Model.update_animation_ex(skeleton: ModelSkeleton, first: ModelAnimation, +first_frame: F32, second: ModelAnimation, +second_frame: F32, +blend: F32, +pose: ModelPose) -> Maybe<ModelPose>:
+  Model.update_animation_ex_for(M.AppleLibm{}, skeleton, first, first_frame, second, second_frame, blend, pose)
+
+def Model.pose.count(bones: +List<BoneInfo>, +n: U32) -> U32:
+  match bones:
+    case Nil{}: n
+    case Con{_, rest}: Model.pose.count(rest, (n + 1 : U32))
+
+# IsModelAnimationValid(model, anim): the animation has the skeleton's bone count.
+def Model.is_animation_valid(skeleton: ModelSkeleton, animation: ModelAnimation) -> Bool:
+  ModelSkeleton{+bones, _} = skeleton
+  ModelAnimation{_, +count, _, _} = animation
+  U32.is_eq(Model.pose.count(bones, 0), count)
+
 def Material.load.fail(frame: Frame, error: Surface.IOError) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedMaterials>):
   IO.pure(Frame & Result<&1, &1, Surface.IOError, LoadedMaterials>, (frame, Fail{error}))
 

@@ -777,6 +777,33 @@ def Laws.gltf_anim_empty_span_needs_nothing(step, comps, limit):
 def Laws.gltf_anim_invalid_span_reads_nothing(span, blocks, comps, limit):
   {==}
 
+def Laws.model_pose_loaded_is_zeroed_with_identities(name, parent, binds):
+  {==}
+
+def Laws.model_pose_boneless_unchanged(libm, binds, name, bones, count, poses, frame, pose):
+  {==}
+
+def Laws.model_pose_no_keyframes_unchanged(libm, bone, parent, binds, name, bones, poses, frame, pose):
+  {==}
+
+def Laws.model_pose_undefined_call_answers_nothing(libm, binds, poses, count, frame, pose):
+  {==}
+
+def Laws.model_pose_blend_boneless_unchanged(libm, binds, name, bones, count, poses, first, second, blend, pose):
+  {==}
+
+def Laws.model_pose_blend_no_keyframes_unchanged(libm, bone, parent, binds, name, bones, count, poses, first, second, blend, pose):
+  {==}
+
+def Laws.model_pose_blend_frame_outside_int_refused(frame, count):
+  {==}
+
+def Laws.model_animation_valid_same_bone_count(bone, parent, binds, name, count, poses):
+  {==}
+
+def Laws.model_animation_invalid_other_bone_count(bone, parent, binds, name, count, poses):
+  {==}
+
 def Laws.hypot_within_below_inside(error, limit):
   {==}
 

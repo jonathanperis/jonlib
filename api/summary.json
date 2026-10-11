@@ -6,16 +6,16 @@
     "blocked": 20,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 398,
-    "partial": 1466
+    "not-started": 395,
+    "partial": 1469
   },
   "core_functions": {
     "total": 600,
     "blocked": 20,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 63,
-    "partial": 517
+    "not-started": 60,
+    "partial": 520
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 20,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 97,
-    "partial": 814
+    "not-started": 94,
+    "partial": 817
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 20,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 107,
-      "partial": 910
+      "not-started": 104,
+      "partial": 913
     },
     "raymath.h": {
       "total": 254,
@@ -486,8 +486,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 3,
-      "partial": 2
+      "not-started": 0,
+      "partial": 5
     },
     {
       "id": "camera",

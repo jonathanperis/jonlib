@@ -508,15 +508,56 @@ not float accessors inside the buffer, a sampler without keys, a pose that
 would read past its output accessor, a first joint without a parent node
 (cgltf reads through a null pointer there), a node with two parents, more
 than 100000 keyframes, and what the loader refuses of the container. Other
-extensions are `UnsupportedFileType`. `UpdateModelAnimation`,
-`UpdateModelAnimationEx` and `IsModelAnimationValid` are not delivered: the
-reference library is built with GPU skinning, so they only fill the model's
-current pose and bone matrices, which Jonlib's `Model` does not have.
+extensions are `UnsupportedFileType`.
 
 Gate `gltf-anim` (`tools/gltf_anim_probe.py`) compares the skeleton words and
 a hash of every keyframe pose of `greenman.glb` (12 bones, 4 animations) and
 `robot.glb` (43 bones, 14 animations) and of generated files for each rule
 above with the native loader.
+
+### Poses
+
+`model.currentPose` and `model.boneMatrices` are a value beside the model
+too: `ModelPose{current, matrices}`.
+
+| raylib | Jonlib | Result |
+|---|---|---|
+| the pose after `LoadModel` | `Model.pose(skeleton)` | `ModelPose`: zeroed transforms and an identity matrix for every bone |
+| `UpdateModelAnimation` | `Model.update_animation_for(libm, skeleton, animation, frame, pose)` / `Model.update_animation(...)` | `Maybe<ModelPose>` |
+| `UpdateModelAnimationEx` | `Model.update_animation_ex_for(libm, skeleton, first, first_frame, second, second_frame, blend, pose)` / `Model.update_animation_ex(...)` | `Maybe<ModelPose>` |
+| `IsModelAnimationValid` | `Model.is_animation_valid(skeleton, animation)` | `Bool`: the bone counts are equal |
+
+- **`UpdateModelAnimation`**: keyframes `(int)frame` and the next one, each
+  wrapped by the keyframe count when it reaches it; the blend is
+  `Clamp(frame - (int)frame, 0, 1)`; each bone is `Vector3Lerp` of the
+  translations and scales and `QuaternionSlerp` of the rotations, and its
+  matrix `MatrixInvert(bind pose)*pose`, each built as scale, rotation,
+  translation.
+- **`UpdateModelAnimationEx`**: each animation at keyframe
+  `(int)frame%keyframeCount` towards the next one by `Clamp(frame - that
+  keyframe, 0, 1)`: the native function subtracts the wrapped keyframe, so
+  a frame past the count takes the next keyframe whole. The two poses are
+  then blended the same way.
+- **Nothing changes** (the pose comes back) for a skeleton without bones
+  (`model.boneMatrices` is NULL) and an animation without keyframes; for the
+  blend also when it is outside 0 to 1 or not a number.
+- **Nothing else changes**: the reference library is built with GPU
+  skinning, so the meshes keep their bind pose there, and `DrawModel` draws
+  them unposed on the software renderer (the bone matrices are a shader
+  uniform). A port draws the model as loaded and uses the pose where the
+  example reads it.
+- **None**: a frame whose `int` conversion or keyframe is undefined
+  (`UpdateModelAnimation`: -1 and below; the blend: a negative remainder,
+  that is -1 and below unless a multiple of the count; both: 2147483648 and
+  above, or not a number), an animation with fewer bones than the skeleton
+  or fewer poses than its count (read past the end natively), and a rotation
+  the libm profile's `QuaternionSlerp` does not answer.
+
+Gate `model-pose` (`tools/model_pose_probe.py`) runs one sequence of fifteen
+calls natively and with Jonlib on `greenman.glb` and on generated models,
+a model without bones and one with fewer bones than the animations
+included, and compares a hash of the pose and of the bone matrices after
+every call; the undefined calls are a contract.
 
 Gate `gltf` (`tools/gltf_probe.py`) loads generated files covering each of
 those rules, and the models the examples use (`plane.glb`,
