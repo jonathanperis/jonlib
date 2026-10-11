@@ -1281,6 +1281,27 @@ law gui_icon_scale_negative_ignored:
   for gui: JG.Gui
   {JG.Gui.icon_scale(JG.Gui.set_icon_scale(gui, 4294967295)) == JG.Gui.icon_scale(gui) : U32}
 
+# GuiScrollBar normalizes its int value to max when above it, then to min
+# when below it (so min wins when the two cross), keeps a slider size of at
+# least 1, and an arrow steps by range/SCROLL_SPEED truncated toward zero.
+law gui_scroll_clamp_above:
+  {JG.Gui.scroll.clamp(5, 0, 3) == 3 : U32}
+
+law gui_scroll_clamp_below_zero:
+  {JG.Gui.scroll.clamp(4294967295, 0, 3) == 0 : U32}
+
+law gui_scroll_clamp_crossed_bounds:
+  {JG.Gui.scroll.clamp(5, 3, 1) == 3 : U32}
+
+law gui_scroll_slider_at_least_one:
+  {JG.Gui.scroll.floor(0, 1) == 1 : U32}
+
+law gui_scroll_step_truncates:
+  {JG.Gui.int.div(30, 12) == 2 : U32}
+
+law gui_scroll_step_negative_speed:
+  {JG.Gui.int.div(30, 4294967284) == 4294967294 : U32}
+
 law shader_load_never_valid:
   for vs: Maybe<String>
   for fs: Maybe<String>
