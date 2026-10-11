@@ -23,7 +23,7 @@ is owed: the port is not done before it passes.
 
 | Branch | Content | State |
 |---|---|---|
-| `main` | everything through 163 example ports, and each piece of `stack/final` as its run goes green: Jongui's controls ([GUI.md](GUI.md)), the change-scoped Linux-only Conformance workflow ([CI.md](CI.md)), the libm/libc kernels (`pow2`, `exp`/`log`, `rand`, `hypot_within`, `tanf`, the decimal parser), `J.Until`, the rlgl uniform setters, `UploadMesh`, `ColorFromHSV` for any finite hue, binary glTF with skins and embedded textures, the rlgl buffer and shader object functions | green on Linux for every commit |
+| `main` | everything through 169 example ports, and each piece of `stack/final` as its run goes green: Jongui's controls ([GUI.md](GUI.md)), the change-scoped Linux-only Conformance workflow ([CI.md](CI.md)), the libm/libc kernels (`pow2`, `exp`/`log`, `rand`, `hypot_within`, `tanf`, the decimal parser), `J.Until`, the rlgl uniform setters, `UploadMesh`, `ColorFromHSV` for any finite hue, binary glTF with skins and embedded textures, the rlgl buffer and shader object functions | green on Linux for every commit |
 | `stack/final` | the commits not yet on `main`, in landing order. The name starts no CI run: it is the backup | each piece goes to `main` through a `feature/**` branch |
 
 On `stack/final` now, in landing order (`git log origin/main..origin/stack/final`
@@ -43,11 +43,13 @@ module, new gates, ports); they were pushed as `feature/piece-41` to
 3. `GuiProgressBar` and the ports `models_animation_timing`,
    `models_animation_blending` and `models_animation_blend_custom`.
 4. This document's previous version.
-5. Not pushed yet (push once the pieces above are on `main`; all scoped):
-   the binary64 `sin`/`cos` kernel (`M.Libm.sin64`/`cos64`,
+5. In CI since 09:20 UTC as `feature/piece-48` to `-51` (pieces 41 to 47
+   are on `main`): the binary64 `sin`/`cos` kernel (`M.Libm.sin64`/`cos64`,
    `src/lgpl/sin.bend`, gate `glibc-sin`: 23 gates in its scoped run because
-   it adds pinned glibc sources), `M.Float64.internal.add`/`subtract`, and
-   the ports `models_waving_cubes` and `shaders_spotlight_rendering`.
+   it adds pinned glibc sources), `M.Float64.internal.add`/`subtract`/
+   `divide`, `GenMeshCylinder`/`GenMeshCone`/`GenMeshKnot` (gate
+   `mesh-tube`) and the ports `models_waving_cubes`,
+   `shaders_spotlight_rendering` and `models_mesh_generation`.
 
 `main` may move under a branch in CI: another session pushed a CI commit on
 2026-10-11 while two branches were running. A green branch that `main` is no
@@ -70,7 +72,7 @@ at the branch's head.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 520/600 partial
 with the stack; raymath.h 146/146; rlgl.h 98/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **171/212 ported** with the stack, 18 ready, 23 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **172/212 ported** with the stack, 18 ready, 22 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -238,15 +240,6 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `core_automation_events`: both write or read a file inside the loop;
      the replay driver `Program.replay` is pure, so this needs an IO variant
      of it and of the probe's wrapper);
-   - `GenMeshCylinder`, `GenMeshCone` and `GenMeshKnot`
-     (`models_mesh_generation`): their binary64 `cos`/`sin` exist now
-     ([MATH.md](MATH.md), glibc 2.39 profile). Left in `src/par_shapes.bend`:
-     `par_shapes_create_disk` (double `cos`/`sin` of a promoted float, then
-     `par_shapes_rotate` by `acos(normal.z)` around a possibly zero axis),
-     the cylinder, cone and trefoil parametric functions (the trefoil is a
-     dozen double operations a point), `par_shapes_scale`/`rotate`/
-     `translate`/`merge`. Add new definitions (changing `point` makes the
-     run complete);
    - `core_custom_frame_control` drives its own loop (`PollInputEvents`,
      `SwapScreenBuffer`, `WaitTime`, two `GetTime` calls a frame): needs a
      program form the driver does not have;
@@ -262,6 +255,27 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      Jonlib's canvas has no framebuffer objects apart from
      `RenderTexture.load`: the functions need an attachment table by
      framebuffer id in `src/frame.bend`;
+     Measured on the reference (2026-10-11, a C program against
+     `.build/raylib-*/raylib/libraylib.a`): after `InitWindow` the first
+     `rlLoadFramebuffer` is 1, its `rlLoadTexture(0, w, h, RGBA8, 1)` is
+     texture 2 and its `rlLoadTextureDepth` 3 (a following
+     `LoadRenderTexture` gets 2, 4 and 5); `rlFramebufferComplete` is false
+     before any attachment (rlsw: missing attachment), true with the color
+     texture alone and with both. rlsw keeps one color and one depth
+     attachment a framebuffer (`sw_framebuffer_t`), and `rlFramebufferAttach`
+     and `rlFramebufferComplete` end by binding framebuffer 0, so the
+     examples' `rlEnableFramebuffer` in their loader lasts until its first
+     attach. `shaders_depth_writing` and `shaders_hybrid_rendering` draw
+     `target.texture`: with the loader functions they are ordinary render
+     texture ports (`hybrid` also draws a full-screen rectangle with the
+     depth test on before its 3D scene). `shaders_depth_rendering` draws
+     `target.depth` instead and the frame is plain white under its texts
+     (360000 `ffffffff` pixels): find in rlsw why a depth-format texture
+     draws white (probably it is not bound and the quad is untextured)
+     before modelling it. `shaders_shadowmap_rendering` has a framebuffer
+     with only a depth attachment (rlsw would draw through a null color
+     buffer), `shaders_deferred_rendering` three color attachments and
+     `models_skybox_rendering` cubemap faces: each needs its own study;
    - `shaders_game_of_life` is ready but steps a 2048x2048 world through a
      shader each frame: too heavy for the JavaScript lane as written;
    - images beyond 4096 pixels on an axis (`textures_sprite_stacking`,
