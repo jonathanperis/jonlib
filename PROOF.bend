@@ -1340,6 +1340,27 @@ def Laws.blind_target_leaves_no_depth_buffer(id, buffer, stash):
 def Laws.render_target_leaves_its_depth_buffer(id, buffer, stash):
   {==}
 
+def Laws.rlgl_float_texture_has_no_storage(canvas):
+  {==}
+
+def Laws.rlgl_framebuffer_float_color_is_incomplete():
+  {==}
+
+def Laws.blind_target_bound_directly_is_marked(id):
+  {==}
+
+def Laws.blind_texture_mode_is_not_bound_directly(id, depth):
+  {==}
+
+def Laws.blind_target_bound_directly_hands_nothing_back(meta, width, height, texels):
+  {==}
+
+def Laws.rlgl_bind_framebuffer_zero_is_disable(frame, target):
+  {==}
+
+def Laws.rlgl_bound_active_draw_buffers_unchanged(bound, count):
+  {==}
+
 def Laws.color_hsv_term_six():
   {==}
 

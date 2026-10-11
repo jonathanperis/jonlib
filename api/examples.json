@@ -6041,7 +6041,7 @@
   {
    "name": "shaders_deferred_rendering",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -6100,9 +6100,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "rlBindFramebuffer"
-   ]
+   "missing": []
   },
   {
    "name": "shaders_hybrid_rendering",

@@ -2319,6 +2319,67 @@ def Canvas.begin_blind_target(+meta: RenderTarget, +tw: U32, +th: U32, canvas: C
   Canvas{width, height, matrix, state, raster, rig, target, gl} = canvas
   Canvas.target.blind.begin(target, meta, tw, th, width, height, matrix, state, raster, rig, gl)
 
+# Whether the target is a framebuffer bound with rlEnableFramebuffer rather
+# than by BeginTextureMode: Canvas.bind_blind marks its meta (no color, alpha).
+def RenderTarget.direct(+meta: RenderTarget) -> Bool:
+  RenderTarget{_, color, _, _, alpha} = meta
+  U32.is_eq(color, 0) && alpha
+
+def Canvas.blind.bound(+id: U32, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox, stash: List<Stash>) -> Canvas:
+  Raster{pixels, atlas, sampler, ok, extra} = raster
+  Extra{screen, shapes, held} = extra
+  Canvas{width, height, matrix, state, Raster{Array.new(U32, 0n, 0), atlas, sampler, ok, Extra{Array.new(U32, 0n, 0), shapes, held}}, rig,
+    Offscreen{width, height, pixels, screen, stash, RenderTarget{id, 0, 0, False{}, True{}}}, gl}
+
+def Canvas.blind.rebound(direct: Bool, +id: U32, +sw: U32, +sh: U32, pixels: Array<U32>, depth: Array<U32>, stash: List<Stash>, +meta: RenderTarget, +width: U32, +height: U32, matrix: Matrix4,
+    state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas:
+  match direct:
+    case True{}: Canvas{width, height, matrix, state, raster, rig, Offscreen{sw, sh, pixels, depth, stash, RenderTarget{id, 0, 0, False{}, True{}}}, gl}
+    case False{}: Canvas{width, height, matrix, state, Raster.refuse(raster), rig, Offscreen{sw, sh, pixels, depth, stash, meta}, gl}
+
+def Canvas.blind.bind(target: Target, +id: U32, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas:
+  match target:
+    case Screen{stash}: Canvas.blind.bound(id, width, height, matrix, state, raster, rig, gl, stash)
+    case Offscreen{sw, sh, pixels, depth, stash, +meta}: Canvas.blind.rebound(RenderTarget.direct(meta), id, sw, sh, pixels, depth, stash, meta, width, height, matrix, state, raster, rig, gl)
+
+# rlEnableFramebuffer(id) of a framebuffer rlsw finds incomplete, to draw:
+# swBindFramebuffer alone, so the viewport, the matrices and the states stay
+# as they are, and no draw or clear reaches a buffer (Canvas.blind) until
+# Canvas.unbind_blind. Refused while a render texture is the target.
+def Canvas.bind_blind(+id: U32, canvas: Canvas) -> Canvas:
+  Canvas{width, height, matrix, state, raster, rig, target, gl} = canvas
+  Canvas.blind.bind(target, id, width, height, matrix, state, raster, rig, gl)
+
+def Canvas.blind.unbound(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox, pixels: Array<U32>, depth: Array<U32>, stash: List<Stash>) -> Canvas:
+  Raster{_, atlas, sampler, ok, extra} = raster
+  Extra{_, shapes, held} = extra
+  Canvas{width, height, matrix, state, Raster{pixels, atlas, sampler, ok, Extra{depth, shapes, held}}, rig, Screen{stash}, gl}
+
+def Canvas.blind.unbind.at(direct: Bool, +sw: U32, +sh: U32, pixels: Array<U32>, depth: Array<U32>, stash: List<Stash>, +meta: RenderTarget, +width: U32, +height: U32, matrix: Matrix4, state: Immediate,
+    raster: Raster, rig: Rig, gl: GlBox) -> Canvas:
+  match direct:
+    case True{}: Canvas.blind.unbound(width, height, matrix, state, raster, rig, gl, pixels, depth, stash)
+    case False{}: Canvas{width, height, matrix, state, Raster.refuse(raster), rig, Offscreen{sw, sh, pixels, depth, stash, meta}, gl}
+
+def Canvas.blind.unbind(target: Target, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas:
+  match target:
+    case Screen{stash}: Canvas{width, height, matrix, state, raster, rig, Screen{stash}, gl}
+    case Offscreen{sw, sh, pixels, depth, stash, +meta}: Canvas.blind.unbind.at(RenderTarget.direct(meta), sw, sh, pixels, depth, stash, meta, width, height, matrix, state, raster, rig, gl)
+
+# rlDisableFramebuffer (swBindFramebuffer(0)): the screen is the target again
+# after Canvas.bind_blind, with the viewport and the matrices as they are;
+# nothing when it already was; refused while a render texture is the target
+# (it would stop being it).
+def Canvas.unbind_blind(canvas: Canvas) -> Canvas:
+  Canvas{width, height, matrix, state, raster, rig, target, gl} = canvas
+  Canvas.blind.unbind(target, width, height, matrix, state, raster, rig, gl)
+
+# EndTextureMode hands a render texture back, not a framebuffer bound with Canvas.bind_blind.
+def Canvas.target.detached(direct: Bool, +meta: RenderTarget, +tw: U32, +th: U32, texels: Array<U32>) -> Maybe<Detached>:
+  match direct:
+    case True{}: None{}
+    case False{}: Some{Detached{meta, tw, th, texels}}
+
 def Canvas.target.left(blind: Bool, +id: U32, buffer: Array<U32>, stash: List<Stash>) -> Target:
   match blind:
     case True{}: Screen{stash}
@@ -2331,7 +2392,7 @@ def Canvas.target.leave(+sw: U32, +sh: U32, screen: Array<U32>, depth: Array<U32
   Extra{buffer, shapes, held} = extra
   (Canvas.build(sw, sh, state, Raster{screen, atlas, sampler, ok, Extra{depth, shapes, held}}, Rig.view(sw, sh, rig),
     Canvas.target.left(U32.is_eq(RenderTarget.color(meta), 0), RenderTarget.id(meta), buffer, stash), GlBox.view(sw, sh, gl)),
-    Some{Detached{meta, tw, th, texels}})
+    Canvas.target.detached(RenderTarget.direct(meta), meta, tw, th, texels))
 
 def Canvas.target.end(target: Target, +width: U32, +height: U32, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas & Maybe<Detached>:
   match target:

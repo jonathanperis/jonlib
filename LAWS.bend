@@ -2077,6 +2077,46 @@ law render_target_leaves_its_depth_buffer:
   for stash: List<FrameCore.Stash>
   {FrameCore.Canvas.target.left(False{}, id, buffer, stash) == FrameCore.Screen{Con{FrameCore.Stash{id, buffer}, stash}} : FrameCore.Target}
 
+# A deferred renderer's G-buffer on rlsw: a float format is not supported
+# under OpenGL 1.1, so its texture has an id and no storage and the
+# framebuffer it colors is incomplete. Such a framebuffer is bound to draw
+# with rlEnableFramebuffer (marked in the target, unlike a texture mode's);
+# EndTextureMode hands no render texture back for it; binding framebuffer 0
+# with rlBindFramebuffer is rlDisableFramebuffer; rlActiveDrawBuffers does
+# nothing.
+law rlgl_float_texture_has_no_storage:
+  for canvas: FrameCore.Canvas
+  {J.Rlgl.texture.with(2, 5, 800, 450, 12, canvas) == (J.Frame{canvas, Nil{}}, Some{J.Texture{5, 800, 450, 12, False{}, False{}, None{}}}) : J.Frame & Maybe<J.Texture>}
+
+law rlgl_framebuffer_float_color_is_incomplete:
+  {J.Rlgl.Framebuffer.complete(J.Rlgl.framebuffer.attached(J.RlglFramebuffer{1, 0, 0, 0, 0, 0, 0, 0, 0}, 2, 800, 450, 12, 0, 100)) == False{} : Bool}
+
+law blind_target_bound_directly_is_marked:
+  for id: U32
+  {FrameCore.RenderTarget.direct(FrameCore.RenderTarget{id, 0, 0, False{}, True{}}) == True{} : Bool}
+
+law blind_texture_mode_is_not_bound_directly:
+  for id: U32
+  for depth: U32
+  {FrameCore.RenderTarget.direct(FrameCore.RenderTarget{id, 0, depth, False{}, False{}}) == False{} : Bool}
+
+law blind_target_bound_directly_hands_nothing_back:
+  for meta: FrameCore.RenderTarget
+  for width: U32
+  for height: U32
+  for texels: Array<U32>
+  {FrameCore.Canvas.target.detached(True{}, meta, width, height, texels) == None{} : Maybe<FrameCore.Detached>}
+
+law rlgl_bind_framebuffer_zero_is_disable:
+  for frame: J.Frame
+  for target: U32
+  {J.Rlgl.bind_framebuffer(frame, target, J.Rlgl.Framebuffer.none()) == J.Rlgl.disable_framebuffer(frame) : J.Frame}
+
+law rlgl_bound_active_draw_buffers_unchanged:
+  for bound: J.Rlgl.Bound
+  for count: F32
+  {J.Rlgl.Bound.active_draw_buffers(bound, count) == bound : J.Rlgl.Bound}
+
 # ColorFromHSV's fmodf(phase, 6) (docs/API.md): the terms subtracted are
 # 6*2^j (6.0 is 0x40c00000, each doubling adds one to the exponent), starting
 # from as many doublings as the magnitude's exponent is above 6.0's: none

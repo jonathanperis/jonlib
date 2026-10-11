@@ -1753,7 +1753,7 @@
   },
   {
    "id": "rlgl-framebuffer",
-   "title": "rlgl framebuffer objects (rlLoadFramebuffer, rlLoadTexture without data, rlLoadTextureDepth, rlFramebufferAttach, rlFramebufferComplete, rlEnableFramebuffer, rlDisableFramebuffer, rlUnloadFramebuffer) against the pinned raylib on rlsw: the ids and the completeness in fourteen scenarios, four of them with the screen's pixels around a texture mode on a framebuffer without a color attachment, with refusal contracts",
+   "title": "rlgl framebuffer objects (rlLoadFramebuffer, rlLoadTexture without data, rlLoadTextureDepth, rlFramebufferAttach, rlFramebufferComplete, rlEnableFramebuffer, rlDisableFramebuffer, rlUnloadFramebuffer) against the pinned raylib on rlsw: the ids and the completeness in sixteen scenarios, five of them with the screen's pixels around a framebuffer rlsw finds incomplete (a texture mode without a color attachment, a G-buffer bound with rlEnableFramebuffer and rlBindFramebuffer), with refusal contracts",
    "run": [
     "{python}",
     "tools/rlgl_framebuffer_probe.py",

@@ -200,11 +200,13 @@ examples keep the ids in a `RenderTexture2D` they fill by hand.
 | rlgl | Jonlib | Result |
 |---|---|---|
 | `rlLoadFramebuffer()` | `Rlgl.load_framebuffer(frame)` | `Frame & Rlgl.Framebuffer` (id 0 when the 7 are in use) |
-| `rlLoadTexture(NULL, w, h, R8G8B8A8, 1)` | `Rlgl.load_texture(frame, w, h, format, mipmaps)` | `Frame & Maybe<Texture>`: zeroed, alpha assumed |
+| `rlLoadTexture(NULL, w, h, format, 1)` | `Rlgl.load_texture(frame, w, h, format, mipmaps)` | `Frame & Maybe<Texture>`: R8G8B8A8 zeroed, alpha assumed; formats 8 to 13 without storage |
 | `rlLoadTextureDepth(w, h, useRenderBuffer)` | `Rlgl.load_texture_depth(frame, w, h, use_render_buffer)` | `Frame & Maybe<Texture>`: format 19, no texels |
 | `rlFramebufferAttach(id, texId, attachType, texType, mip)` | `Rlgl.framebuffer_attach(frame, fb, texture, attach_type, tex_type, mip)` | `Frame & (Rlgl.Framebuffer & Texture)` |
 | `rlFramebufferComplete(id)` | `Rlgl.framebuffer_complete(frame, fb)`, `Rlgl.Framebuffer.complete(fb)` | `Frame & Bool`, `Bool` |
 | `rlEnableFramebuffer(id)` | `Rlgl.enable_framebuffer(frame, fb)` | `Rlgl.Bound` |
+| `rlEnableFramebuffer(id)`, to draw | `Rlgl.enable_framebuffer_incomplete(frame, fb)` | `Frame` (an incomplete framebuffer: draws dropped) |
+| `rlBindFramebuffer(target, id)` | `Rlgl.bind_framebuffer(frame, target, fb)` | `Frame` |
 | `rlDisableFramebuffer()` | `Rlgl.disable_framebuffer(frame)`, `Rlgl.Bound.disable(bound)` | `Frame` |
 | `rlUnloadFramebuffer(id)` | `Rlgl.unload_framebuffer(frame, fb, depth)` | `Frame` |
 | `rlUnloadTexture(id)` | `Rlgl.unload_texture(frame, texture)` | `Frame` |
@@ -245,6 +247,22 @@ examples keep the ids in a `RenderTexture2D` they fill by hand.
   that size, the modelview and every state as usual (the clear color of a
   `ClearBackground` too) and drops the draws and the clears until
   `EndTextureMode`, which hands it back.
+- **Bound to draw.** A deferred renderer binds its G-buffer with
+  `rlEnableFramebuffer` and draws. Its position and normal textures have a
+  float format (`R16G16B16`), which rlgl does not support under OpenGL 1.1:
+  `rlLoadTexture` warns and answers the id of a texture without storage, the
+  framebuffer colored by it is incomplete (channels 1 and 2 never attach),
+  and rlsw drops every draw and clear while it is bound.
+  `Rlgl.enable_framebuffer_incomplete(frame, fb)` is that binding: unlike
+  `BeginTextureMode` the viewport and the projection stay the screen's, the
+  states are set as usual (`rlClearColor` there is the clear color of the
+  screen's next `rlClearScreenBuffers`), and `Rlgl.disable_framebuffer`
+  gives the screen back. `Rlgl.bind_framebuffer(frame, target, fb)` is
+  `swBindFramebuffer` whatever the target: `Rlgl.Framebuffer.none()` is
+  `rlDisableFramebuffer`. A complete framebuffer is refused in both (rlsw
+  would draw into its attachments with the screen's viewport: use
+  `BeginTextureMode`). A texture without storage draws like a depth one: its
+  rectangle in the tint alone.
 - **Unloading.** `rlUnloadFramebuffer` deletes the depth attachment with the
   framebuffer: pass its `Texture`, or None when it was unloaded before.
 - **A depth attachment as a texture.** rlsw binds it but turns texturing
@@ -254,16 +272,18 @@ examples keep the ids in a `RenderTexture2D` they fill by hand.
   (`shaders_depth_rendering`).
 
 Gate `rlgl-framebuffer` (`tools/rlgl_framebuffer_probe.py`) compares the ids
-and the completeness answers of fourteen scenarios with the reference: the
+and the completeness answers of sixteen scenarios with the reference: the
 examples' loader with and without `rlEnableFramebuffer`, a depth attachment
 of another size, the ignored channels, texture types, the color texture as
 the depth attachment, framebuffer 0, the ids after an unload, two
-framebuffers, and `LoadRenderTexture` after a hand-built one. Four of them
-compare the screen's pixels too, around a texture mode on a framebuffer
-without a color attachment: a clear and a rectangle that are dropped, the
-projection and the active framebuffer inside it, the clear color it leaves,
-a framebuffer without any attachment, and `LoadRenderTexture` reusing the id
-afterwards. Twelve contracts cover the refusals.
+framebuffers, `LoadRenderTexture` after a hand-built one, and the float
+texture formats. Five of them compare the screen's pixels too: around a
+texture mode on a framebuffer without a color attachment (a clear and a
+rectangle that are dropped, the projection and the active framebuffer inside
+it, the clear color it leaves, a framebuffer without any attachment,
+`LoadRenderTexture` reusing the id afterwards) and around a G-buffer bound
+with `rlEnableFramebuffer` and `rlBindFramebuffer` (what is dropped, the
+clear color, its float texture drawn). Sixteen contracts cover the refusals.
 The ports `shaders_depth_writing`, `shaders_hybrid_rendering` and
 `shaders_depth_rendering` draw through a framebuffer built this way and
 compare every frame with the native example.
