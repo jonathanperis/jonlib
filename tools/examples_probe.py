@@ -173,6 +173,7 @@ EXAMPLES = {
     'shaders_texture_tiling': ('shaders/shaders_texture_tiling.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_vertex_displacement': ('shaders/shaders_vertex_displacement.c', 'Ex.setup(core, frame)'),
     'shaders_normalmap_rendering': ('shaders/shaders_normalmap_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_cel_shading': ('shaders/shaders_cel_shading.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_model_shader': ('shaders/shaders_model_shader.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_fog_rendering': ('shaders/shaders_fog_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shaders_ascii_rendering': ('shaders/shaders_ascii_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -262,7 +263,7 @@ IO_SETUP = {'textures_srcrec_dstrec', 'textures_sprite_animation', 'textures_bac
             'core_text_file_loading', 'shaders_ascii_rendering', 'shaders_simple_mask',
             'textures_gif_player', 'models_textured_cube', 'shaders_postprocessing',
             'shaders_custom_uniform', 'models_mesh_picking', 'core_input_gamepad',
-            'textures_textured_curve', 'shaders_normalmap_rendering'}
+            'textures_textured_curve', 'shaders_normalmap_rendering', 'shaders_cel_shading'}
 # Examples whose setup takes the script's seed (GetRandomValue after InitWindow's SetRandomSeed).
 # Examples drawing through a perspective camera from their first frame: BeginMode3D's binary64 tan has no
 # AppleLibm profile (docs/PERSPECTIVE.md), so on macOS every frame is a contract and nothing runs natively.
@@ -275,7 +276,8 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
                'core_3d_camera_first_person', 'models_rlgl_solar_system', 'models_textured_cube',
                'core_3d_camera_split_screen', 'shaders_postprocessing', 'textures_framebuffer_rendering',
                'shaders_custom_uniform', 'shaders_mesh_instancing', 'models_mesh_picking', 'core_3d_camera_fps',
-               'shaders_vertex_displacement', 'models_point_rendering', 'shaders_normalmap_rendering'}
+               'shaders_vertex_displacement', 'models_point_rendering', 'shaders_normalmap_rendering',
+               'shaders_cel_shading'}
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'core_3d_camera_first_person', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer', 'shaders_mesh_instancing',
           'core_undo_redo', 'text_inline_styling', 'text_strings_management', 'shapes_top_down_lights',
@@ -284,7 +286,7 @@ CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_r
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
                 'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'shaders_postprocessing': 32, 'shaders_custom_uniform': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196, 'core_viewport_scaling': 4,
                 'shaders_fog_rendering': 32, 'shapes_rlgl_color_wheel': 32, 'core_input_gamepad': 32, 'textures_textured_curve': 96,
-                'shaders_normalmap_rendering': 32}
+                'shaders_normalmap_rendering': 32, 'shaders_cel_shading': 32}
 
 
 # -----------------------------------------------------------------------------
@@ -498,6 +500,9 @@ def scripts():
         script('shaders_model_shader', 'look', [quick(), quick([mouse_at(420, 235)]), slow([key(87)]), quick([key(87, False)])]),
         script('shaders_texture_tiling', 'look', [quick(), quick([mouse_at(420, 235)]), slow([mouse_at(380, 250)]), quick([key(90)]),
                                                   quick([key(90, False)])]),
+        # The old car (9281 vertices) with its outline pass under the orbital camera; Z turns the cel shader off,
+        # C the outline pass, E adds a band (text only: the shaders do nothing).
+        script('shaders_cel_shading', 'toggles', [quick(), quick([key(90)]), quick([key(90, False), key(KEY_C)]), quick([key(KEY_C, False), key(69)])]),
         # The tiled plane from plane.glb turning with the clock; W then A move the light's wire sphere, UP raises
         # the specular exponent and N turns the normal map off (text only: the shader does nothing).
         script('shaders_normalmap_rendering', 'light', [quick(), quick([key(KEY_W)]), slow([key(KEY_W, False), key(KEY_A)]), quick([key(KEY_A, False), key(KEY_UP)]),

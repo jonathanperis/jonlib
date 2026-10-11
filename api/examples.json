@@ -6719,7 +6719,7 @@
   {
    "name": "shaders_cel_shading",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
