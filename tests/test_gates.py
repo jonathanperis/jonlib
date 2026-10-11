@@ -86,6 +86,27 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('os: ${{ fromJSON(needs.scope.outputs.hosts) }}', self.text)
         self.assertIn('hosts: ${{ steps.scope.outputs.hosts }}', self.text)
 
+    def test_macos_shards_leave_runners_for_other_repositories(self):
+        # The account's five hosted macOS runners are shared with the owner's other repositories, so the
+        # macOS shards are their own job with a parallel limit; a matrix-wide limit would hold back Linux too.
+        linux, mac = self.text.split('  gatesMac:')[0].split('  gates:')[1], self.text.split('  gatesMac:')[1].split('  scoped:')[0]
+        self.assertIn('exclude:\n          - os: macos-15', linux)
+        self.assertNotIn('max-parallel', linux)
+        self.assertIn('os: [macos-15]', mac)
+        self.assertIn("if: ${{ needs.scope.outputs.mode == 'full' && contains(needs.scope.outputs.hosts, 'macos-15') }}", mac)
+        self.assertLess(int(re.search(r'max-parallel: (\d+)', mac).group(1)), 5)
+        # Both jobs run the same shards the same way, under the same names.
+        shards = re.findall(r'shard: \[([^\]]*)\]', self.text)
+        self.assertEqual(len(shards), 2)
+        self.assertEqual(shards[0], shards[1])
+        steps = lambda block: block.split('    steps:')[1].rstrip()
+        self.assertEqual(steps(linux).split('\n\n  #')[0].rstrip(), steps(mac))
+        self.assertEqual(linux.count('name: Gates ${{ matrix.os }} ${{ matrix.shard }}/15'), 1)
+        self.assertEqual(mac.count('name: Gates ${{ matrix.os }} ${{ matrix.shard }}/15'), 1)
+        # Each host's aggregate job reads its own shards.
+        self.assertIn('GATES_RESULT: ${{ needs.gatesMac.result }}', self.text.split('  conformanceMac:')[1])
+        self.assertIn('GATES_RESULT: ${{ needs.gates.result }}', self.text.split('  conformanceUbuntu:')[1].split('  conformanceMac:')[0])
+
     def test_macos_is_required_whenever_the_run_includes_it(self):
         block = self.text.split('  conformanceMac:')[1]
         self.assertIn("if: ${{ always() && contains(needs.scope.outputs.hosts, 'macos-15') }}", block)
@@ -100,7 +121,8 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn('fail-fast: false', self.text)
         for job in ('conformanceUbuntu', 'conformanceMac'):
             block = self.text.split(f'  {job}:')[1].split('\n  conformance')[0]
-            self.assertIn('needs: [scope, gates, scoped]', block)
+            # Each aggregate waits for its own host's shards (macOS shards are the gatesMac job).
+            self.assertIn('needs: [scope, gates, scoped]' if job == 'conformanceUbuntu' else 'needs: [scope, gatesMac, scoped]', block)
             self.assertIn('if: ${{ always() }}' if job == 'conformanceUbuntu' else "if: ${{ always() && contains(needs.scope.outputs.hosts, 'macos-15') }}", block)
             # The scope must have been computed, and each scope has exactly one way to pass.
             self.assertIn('test "$SCOPE_RESULT" = success', block)
