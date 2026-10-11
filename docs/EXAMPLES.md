@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 163 ported, 24 ready, 25 waiting.
+Totals: 212 examples; 164 ported, 23 ready, 25 waiting.
 
 ## APIs that unblock the most examples
 
@@ -215,7 +215,7 @@ Totals: 212 examples; 163 ported, 24 ready, 25 waiting.
 | `models_heightmap_rendering` | models | ported |  |
 | `models_skybox_rendering` | models | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlGetCullDistanceFar`, `rlGetCullDistanceNear`, `rlLoadFramebuffer`, `rlLoadTextureCubemap`, `rlLoadTextureDepth`, `rlUnloadFramebuffer` |
 | `models_textured_cube` | models | ported |  |
-| `models_animation_gpu_skinning` | models | ready |  |
+| `models_animation_gpu_skinning` | models | ported |  |
 | `models_bone_socket` | models | ready |  |
 | `models_tesseract_view` | models | ported |  |
 | `models_basic_voxel` | models | ported |  |
