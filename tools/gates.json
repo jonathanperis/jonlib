@@ -2403,6 +2403,21 @@
     "macos"
    ],
    "minutes": 30
+  },
+  {
+   "id": "sound",
+   "title": "The audio device and sounds (InitAudioDevice to UpdateSound: raudio.c compiled into the reference with miniaudio's null backend and its device stopped) against raylib's AUDIO state and buffers, with the examples' .wav files and refused-step contracts",
+   "run": [
+    "{python}",
+    "tools/sound_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 12
   }
  ]
 }

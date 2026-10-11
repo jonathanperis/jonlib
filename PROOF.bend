@@ -1304,6 +1304,102 @@ def Laws.wave_format_rate_double():
 def Laws.wave_format_size_refused():
   {==}
 
+def Laws.wave_format_frames_in_order():
+  {==}
+
+def Laws.wave_format_frames_flattened_in_order():
+  {==}
+
+def Laws.wave_format_samples_in_order():
+  {==}
+
+def Laws.wave_format_nan_anywhere():
+  {==}
+
+def Laws.audio_starts_unready():
+  {==}
+
+def Laws.audio_init_full_volume():
+  {==}
+
+def Laws.audio_init_ready_unchanged(master, next, buffers, blocks):
+  {==}
+
+def Laws.audio_close_keeps_buffers(master, next, buffers, blocks):
+  {==}
+
+def Laws.audio_master_volume_starts_at_zero():
+  {==}
+
+def Laws.audio_master_volume_full_when_open():
+  {==}
+
+def Laws.sound_from_device_format_wave():
+  {==}
+
+def Laws.sound_unready_device_refused():
+  {==}
+
+def Laws.sound_zero_wave_is_zero_sound():
+  {==}
+
+def Laws.sound_without_frames_has_empty_buffer():
+  {==}
+
+def Laws.sound_refused_wave_tracks_nothing():
+  {==}
+
+def Laws.sound_zero_invalid():
+  {==}
+
+def Laws.sound_without_frames_invalid():
+  {==}
+
+def Laws.sound_with_frames_valid():
+  {==}
+
+def Laws.sound_alias_shares_block():
+  {==}
+
+def Laws.sound_alias_of_zero_sound():
+  {==}
+
+def Laws.sound_play_only_its_buffer():
+  {==}
+
+def Laws.sound_played_is_playing():
+  {==}
+
+def Laws.sound_paused_not_playing():
+  {==}
+
+def Laws.sound_stop_leaves_paused():
+  {==}
+
+def Laws.sound_stop_after_play():
+  {==}
+
+def Laws.sound_volume_only_its_buffer():
+  {==}
+
+def Laws.sound_unload_frees_block():
+  {==}
+
+def Laws.sound_unload_alias_keeps_block():
+  {==}
+
+def Laws.sound_update_reaches_aliases():
+  {==}
+
+def Laws.sound_update_past_buffer_ignored():
+  {==}
+
+def Laws.sound_unready_buffers_untouched():
+  {==}
+
+def Laws.sound_unloaded_handle_ignored():
+  {==}
+
 def Laws.frame_init_window_zero_width(height):
   {==}
 

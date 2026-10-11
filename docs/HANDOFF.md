@@ -69,10 +69,10 @@ at the branch's head.
 `integrate/models-lgpl`, `feature/scoped-ci`, `feature/examples-batch-4` and the stack's branches are merged into `main` and deleted
 (`feature/examples-batch-5` was re-landed as pieces and deleted).
 
-Coverage (`python3 tools/api_plan.py check`): raylib.h 520/600 partial
+Coverage (`python3 tools/api_plan.py check`): raylib.h 543/600 partial
 with the stack; raymath.h 146/146; rlgl.h 98/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **172/212 ported** with the stack, 18 ready, 22 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **193/212 ported** with the stack, 9 ready, 10 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -345,13 +345,29 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      (`IsSoundPlaying`); `audio_raw_stream`, `audio_stream_callback` and
      `audio_amp_envelope` no file (`IsAudioStreamProcessed`); the others an
      .mp3 (dr_mp3), an .ogg (stb_vorbis) or an .xm (jar_xm): decoders not
-     ported. A deterministic reference needs raudio built in with a
-     miniaudio backend the driver pumps at the scripted clock (a custom
-     backend whose data callback the frame hook calls for the frames the
-     clock advanced; `ma_context_init` redirected by a forced include in
-     raudio.c's unit), and Jonlib the mixer: each buffer's
-     `ma_data_converter` (the resampler of `Wave.format` is ported), volume,
-     pan and pitch, `MixAudioFrames` in binary32.
+     ported. **The device and sounds are in** (`AudioDevice.*`, `Sound.*`;
+     Base already has an `Audio` type, so the state could not take that name;
+     docs/AUDIO.md, gate `sound`): state only, no mixer and no clock. The
+     reference of `tools/sound_probe.py` is `#include "raudio.c"` in the
+     reference program (the library keeps `SUPPORT_MODULE_RAUDIO=OFF`)
+     with `-DMA_ENABLE_ONLY_SPECIFIC_BACKENDS -DMA_ENABLE_NULL`: the null
+     backend opens on every host at 48000 Hz, and the program reads
+     `AUDIO` and the buffers and calls `ma_device_stop` after
+     `InitAudioDevice`. Found on the way: `Wave.format` overflowed the
+     JavaScript stack on a wave of 13619 frames (its loops over samples
+     were not tail calls; they are now, `src/convert.bend`); a device
+     opened over a playing buffer mixes it before the program can stop it
+     (no probe case does that). Next: the three examples whose frames do
+     not depend on audio (`textures_sprite_button`,
+     `textures_sprite_explosion`, `audio_sound_multi`), with raudio.c
+     compiled beside the native example the same way; then the mixer, so
+     that `IsSoundPlaying` can end (`audio_sound_positioning`): the
+     program can call `AUDIO.System.device.onData` (raudio's
+     `OnSendAudioDataToDevice`) itself on the stopped device for the
+     frames a scripted clock advanced, and Jonlib needs each buffer's
+     `ma_data_converter` (the resampler of `Wave.format` is ported, but
+     streaming, with state across calls), volume, pan and pitch, and
+     `MixAudioFrames` in binary32.
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`

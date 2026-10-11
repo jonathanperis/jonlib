@@ -6,16 +6,16 @@
     "blocked": 17,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 382,
-    "partial": 1485
+    "not-started": 360,
+    "partial": 1507
   },
   "core_functions": {
     "total": 600,
     "blocked": 17,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 60,
-    "partial": 523
+    "not-started": 40,
+    "partial": 543
   },
   "math_functions": {
     "total": 146,
@@ -30,8 +30,8 @@
     "blocked": 17,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 81,
-    "partial": 833
+    "not-started": 61,
+    "partial": 853
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -54,8 +54,8 @@
       "blocked": 17,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 104,
-      "partial": 916
+      "not-started": 82,
+      "partial": 938
     },
     "raymath.h": {
       "total": 254,
@@ -108,8 +108,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 16,
-      "partial": 533
+      "not-started": 14,
+      "partial": 535
     },
     {
       "id": "numerics",
@@ -410,8 +410,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 20,
-      "partial": 0
+      "not-started": 0,
+      "partial": 20
     },
     {
       "id": "audio-stream",

@@ -1925,6 +1925,133 @@ law wave_format_rate_double:
 law wave_format_size_refused:
   {J.Wave.format(J.Wave{2, 8000, 24, 1, [1, 2]}, 8000, 16, 1) == Fail{(J.Wave{2, 8000, 24, 1, [1, 2]}, J.InvalidWaveRequest{})} : Result<&1, &1, J.Wave & J.Wave.Error, J.Wave>}
 
+# WaveFormat's loops over samples and frames carry their results, so that
+# their depth does not grow with the wave; they keep the order.
+law wave_format_frames_in_order:
+  {WaveConvert.split(2n, 2n, [1, 2, 3, 4]) == [[1, 2], [3, 4]] : +List<+List<U32>>}
+
+law wave_format_frames_flattened_in_order:
+  {WaveConvert.flat([[1, 2], [3, 4], [5]]) == [1, 2, 3, 4, 5] : +List<U32>}
+
+law wave_format_samples_in_order:
+  {WaveConvert.map.sample([0, 128, 255], 1) == [4294934528, 0, 32512] : +List<U32>}
+
+law wave_format_nan_anywhere:
+  {WaveConvert.any_nan([0, 2143289344, 0]) == True{} : Bool}
+
+# Audio device (raudio.c's AUDIO state; docs/AUDIO.md#audio-device-and-sounds):
+# no device before InitAudioDevice, which opens it at a master volume of 1 and
+# leaves a ready device as it is; CloseAudioDevice leaves the buffers tracked
+# and the master volume 0.
+law audio_starts_unready:
+  {J.AudioDevice.is_ready(J.AudioDevice.none()) == False{} : Bool}
+
+law audio_init_full_volume:
+  {J.AudioDevice.init(J.AudioDevice.none()) == J.AudioDevice{True{}, 1.0, 1, Nil{}, Nil{}} : J.AudioDevice}
+
+law audio_init_ready_unchanged:
+  for +master: F32
+  for +next: U32
+  for +buffers: +List<J.AudioDevice.Buffer>
+  for +blocks: +List<J.AudioDevice.Block>
+  {J.AudioDevice.init(J.AudioDevice{True{}, master, next, buffers, blocks}) == J.AudioDevice{True{}, master, next, buffers, blocks} : J.AudioDevice}
+
+law audio_close_keeps_buffers:
+  for +master: F32
+  for +next: U32
+  for +buffers: +List<J.AudioDevice.Buffer>
+  for +blocks: +List<J.AudioDevice.Block>
+  {J.AudioDevice.close(J.AudioDevice{True{}, master, next, buffers, blocks}) == J.AudioDevice{False{}, 0.0, next, buffers, blocks} : J.AudioDevice}
+
+# GetMasterVolume: 0 before the device opens.
+law audio_master_volume_starts_at_zero:
+  {J.AudioDevice.master_volume(J.AudioDevice.none()) == 0.0 : F32}
+
+law audio_master_volume_full_when_open:
+  {J.AudioDevice.master_volume(J.AudioDevice.init(J.AudioDevice.none())) == 1.0 : F32}
+
+# LoadSoundFromWave: the wave in the device format (a 32-bit stereo wave at
+# 48000 Hz is kept as it is) in a new tracked buffer over its own block;
+# nothing on an unready device; the zero sound for the zero wave; an invalid
+# sound over an empty buffer for a wave without frames.
+law sound_from_device_format_wave:
+  {J.Sound.load_from_wave(J.AudioDevice.init(J.AudioDevice.none()), J.Wave{1, 48000, 32, 2, [1056964608, 3204448256]}) == (J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 1, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1056964608, 3204448256]}]}, Done{J.Sound{J.AudioStream{1, 48000, 32, 2}, 1}}) : J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>}
+
+law sound_unready_device_refused:
+  {J.Sound.load_from_wave(J.AudioDevice.none(), J.Wave{1, 48000, 16, 1, [16384]}) == (J.AudioDevice.none(), Fail{J.SoundDeviceNotReady{}}) : J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>}
+
+law sound_zero_wave_is_zero_sound:
+  {J.Sound.load_from_wave(J.AudioDevice.init(J.AudioDevice.none()), J.Wave{0, 0, 0, 0, Nil{}}) == (J.AudioDevice.init(J.AudioDevice.none()), Done{J.Sound.none()}) : J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>}
+
+law sound_without_frames_has_empty_buffer:
+  {J.Sound.load_from_wave(J.AudioDevice.init(J.AudioDevice.none()), J.Wave{0, 48000, 16, 1, Nil{}}) == (J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 0, 0, 1.0, 1.0, 0.0, False{}, False{}}], Nil{}}, Done{J.Sound{J.AudioStream{1, 48000, 32, 2}, 0}}) : J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>}
+
+law sound_refused_wave_tracks_nothing:
+  {J.Sound.load_from_wave(J.AudioDevice.init(J.AudioDevice.none()), J.Wave{1, 48000, 24, 1, [1]}) == (J.AudioDevice.init(J.AudioDevice.none()), Fail{J.SoundWaveError{J.WaveDataError{J.InvalidWaveRequest{}}}}) : J.AudioDevice & Result<&1, &1, J.Sound.Error, J.Sound>}
+
+# IsSoundValid: frames, buffer and stream fields all nonzero.
+law sound_zero_invalid:
+  {J.Sound.is_valid(J.Sound.none()) == False{} : Bool}
+
+law sound_without_frames_invalid:
+  {J.Sound.is_valid(J.Sound{J.AudioStream{1, 48000, 32, 2}, 0}) == False{} : Bool}
+
+law sound_with_frames_valid:
+  {J.Sound.is_valid(J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == True{} : Bool}
+
+# LoadSoundAlias: a new buffer with its own state over the source's block;
+# the zero sound has none.
+law sound_alias_shares_block:
+  {J.Sound.load_alias(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == (J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}) : J.AudioDevice & J.Sound}
+
+law sound_alias_of_zero_sound:
+  {J.Sound.load_alias(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound.none()) == (J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound.none()) : J.AudioDevice & J.Sound}
+
+# PlaySound plays its own buffer only; StopSound leaves a paused buffer as it
+# is (raylib stops buffers that are playing and not paused).
+law sound_play_only_its_buffer:
+  {J.Sound.play(J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, True{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]} : J.AudioDevice}
+
+law sound_played_is_playing:
+  {J.Sound.is_playing(J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == True{} : Bool}
+
+law sound_paused_not_playing:
+  {J.Sound.is_playing(J.Sound.pause(J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == False{} : Bool}
+
+law sound_stop_leaves_paused:
+  {J.Sound.stop(J.Sound.pause(J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.Sound.pause(J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) : J.AudioDevice}
+
+law sound_stop_after_play:
+  {J.Sound.stop(J.Sound.play(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]} : J.AudioDevice}
+
+# SetSoundVolume sets its own buffer's volume only.
+law sound_volume_only_its_buffer:
+  {J.Sound.set_volume(J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}, 0.25) == J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}, J.AudioBuffer{2, 1, 2, 0.25, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]} : J.AudioDevice}
+
+# UnloadSound frees the block its buffer plays, UnloadSoundAlias only
+# untracks the buffer.
+law sound_unload_frees_block:
+  {J.Sound.unload(J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], Nil{}} : J.AudioDevice}
+
+law sound_unload_alias_keeps_block:
+  {J.Sound.unload_alias(J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}) == J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]} : J.AudioDevice}
+
+# UpdateSound writes the block every buffer over it plays; a request past
+# the buffer changes nothing.
+law sound_update_reaches_aliases:
+  {J.Sound.data(J.Sound.update(J.AudioDevice{True{}, 1.0, 3, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}, J.AudioBuffer{2, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{2, 48000, 32, 2}, 2}, [9, 8], 1), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == Some{[9, 8, 3, 4]} : Maybe<&2, +List<U32>>}
+
+law sound_update_past_buffer_ignored:
+  {J.Sound.update(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}, [0, 0, 0, 0, 0, 0], 3) == J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]} : J.AudioDevice}
+
+# Handles raylib cannot use change nothing: any buffer on an unready device,
+# and a buffer that was unloaded.
+law sound_unready_buffers_untouched:
+  {J.Sound.play(J.AudioDevice.close(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.AudioDevice.close(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}) : J.AudioDevice}
+
+law sound_unloaded_handle_ignored:
+  {J.Sound.play(J.Sound.unload(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}), J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) == J.Sound.unload(J.AudioDevice{True{}, 1.0, 2, [J.AudioBuffer{1, 1, 2, 1.0, 1.0, 0.0, False{}, False{}}], [J.AudioBlock{1, [1, 2, 3, 4]}]}, J.Sound{J.AudioStream{1, 48000, 32, 2}, 2}) : J.AudioDevice}
+
 # Frame: InitWindow sizes are 1..4096; a zero or oversized width has no frame
 # whatever the height.
 law frame_init_window_zero_width:
