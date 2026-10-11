@@ -238,6 +238,7 @@ EXAMPLES = {
     'core_clipboard_text': ('core/core_clipboard_text.c', 'Ex.setup(seed, core, frame)'),
     'shapes_pie_chart': ('shapes/shapes_pie_chart.c', 'Ex.setup(core, frame)'),
     'shaders_rlgl_compute': ('shaders/shaders_rlgl_compute.c', 'Ex.setup(core, frame)'),
+    'shaders_lightmap_rendering': ('shaders/shaders_lightmap_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -299,6 +300,7 @@ CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_r
                 'shaders_fog_rendering': 32, 'shapes_rlgl_color_wheel': 32, 'core_input_gamepad': 32, 'textures_textured_curve': 96,
                 'shaders_normalmap_rendering': 32, 'shaders_cel_shading': 32, 'shapes_math_sine_cosine': 32,
                 'shapes_splines_drawing': 32}
+IO_SETUP.add('shaders_lightmap_rendering'); PERSPECTIVE.add('shaders_lightmap_rendering'); CONFIG_FLAGS['shaders_lightmap_rendering'] = 32
 
 
 # -----------------------------------------------------------------------------
@@ -909,6 +911,8 @@ def scripts():
         script('shaders_rlgl_compute', 'brush', [quick(), quick([mouse_at(300, 300)]), quick([(MOUSE_WHEEL, 0, 2, 0)]), quick([button(0)]), quick(),
                                                  quick([button(0, False)]), quick([(MOUSE_WHEEL, 0, -3, 0), mouse_at(500, 120)]), quick([button(1)]),
                                                  quick([button(1, False)]), slow()]),
+        # The orbital camera turns a step a frame around the plane, with the baked lightmap beside it.
+        script('shaders_lightmap_rendering', 'orbit', [quick(), quick(), quick(), slow(), quick()]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.

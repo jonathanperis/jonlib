@@ -97483,6 +97483,8 @@
       },
       "evidence": [
         "tools/rlgl_probe.py",
+        "tools/examples_probe.py",
+        "examples/shaders_lightmap_rendering.bend",
         "docs/RLGL.md",
         "jonlib.bend"
       ],
@@ -97841,6 +97843,8 @@
       },
       "evidence": [
         "tools/rlgl_probe.py",
+        "tools/examples_probe.py",
+        "examples/shaders_lightmap_rendering.bend",
         "docs/RLGL.md",
         "jonlib.bend"
       ],
