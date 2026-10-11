@@ -32,6 +32,7 @@ import ./src/json.bend as Json
 import ./src/gltf.bend as Gltf
 import ./src/gltf_anim.bend as GltfAnim
 import ./src/vox.bend as Vox
+import ./src/iqm.bend as Iqm
 import ./src/par_shapes.bend as ParShapes
 import ./jongui.bend as JG
 import ./src/gui_icons.bend as GuiIcons
@@ -1120,8 +1121,9 @@ law gltf_base_color_image_kept:
 # model (Foreign); a magic or a header cut short, and a file without a
 # voxel, are refused (Unread).
 law vox_extension_routed:
+  for iqm: Maybe<Bool>
   for other: Maybe<Bool>
-  {J.Model.load.kind.of(Some{False{}}, Some{False{}}, Some{True{}}, other) == 5 : U32}
+  {J.Model.load.kind.of(Some{False{}}, Some{False{}}, Some{True{}}, iqm, other) == 5 : U32}
 
 law vox_size_padded:
   {Vox.padded(20) == 32 : U32}
@@ -1177,6 +1179,54 @@ law vox_four_bytes_left_halt:
 
 law vox_chunk_past_the_end_ends:
   {Vox.chunk([77, 65, 84, 76, 160, 15, 0, 0, 0, 0, 0, 0, 1, 2], Vox.Read{16, 16, 16, [7], [0]}) == Vox.Next{Nil{}, Vox.Read{16, 16, 16, [7], [0]}} : Vox.Step}
+
+# Inter-Quake Model files (src/iqm.bend, docs/MODELS.md): LoadModel routes
+# ".iqm" to LoadIQM, and the skeleton and the animations of an ".iqm" file
+# are its own. An empty file is the empty model without animations; a file
+# shorter than the magic is refused. An array lies inside the file when its
+# last byte does; a mesh's triangles have their corners reversed and
+# rebased on its first vertex as unsigned shorts; a name is the bytes
+# before the NUL among the 32 the loader copies; a material's name must be
+# a file name; a pose's parent is a pose or negative.
+law iqm_extension_routed:
+  for other: Maybe<Bool>
+  {J.Model.load.kind.of(Some{False{}}, Some{False{}}, Some{False{}}, Some{True{}}, other) == 6 : U32}
+
+law iqm_skeleton_and_animations_routed:
+  {J.Model.anim.kind(Some{False{}}, Some{True{}}) == 2 : U32}
+
+law iqm_empty_file_foreign:
+  {Iqm.model(Nil{}) == Iqm.Foreign{} : Iqm.Loaded}
+
+law iqm_empty_file_no_animations:
+  {Iqm.animations(Nil{}) == Iqm.Animations{Nil{}} : Iqm.Animated}
+
+law iqm_magic_cut_short_unread:
+  {Iqm.model([73, 78, 84, 69, 82]) == Iqm.Unread{} : Iqm.Loaded}
+
+law iqm_array_inside:
+  {(Iqm.inside(100, 3, 4, 112), Iqm.inside(100, 4, 4, 112)) == (True{}, False{}) : Bool & Bool}
+
+law iqm_empty_array_past_the_end_outside:
+  {Iqm.inside(113, 0, 4, 112) == False{} : Bool}
+
+law iqm_triangle_reversed_and_rebased:
+  {Iqm.indices(1n, [10, 11, 12], 10, Nil{}) == [2, 1, 0] : List<&2, U32>}
+
+law iqm_corner_below_first_vertex_wraps:
+  {Iqm.indices(1n, [3, 4, 2], 3, Nil{}) == [65535, 1, 0] : List<&2, U32>}
+
+law iqm_name_before_its_nul:
+  {Iqm.named.go(32n, [97, 98, 0, 99], Nil{}) == Iqm.Named{True{}, [97, 98]} : Iqm.Named}
+
+law iqm_name_without_nul_refused:
+  {Iqm.named.go(2n, [97, 98, 99], Nil{}) == Iqm.Named{False{}, Nil{}} : Iqm.Named}
+
+law iqm_material_must_name_a_file:
+  {(Iqm.texture.named(Nil{}), (Iqm.texture.named([47, 97]), Iqm.texture.named([97, 46, 112]))) == (False{}, (False{}, True{})) : Bool & (Bool & Bool)}
+
+law iqm_pose_parents:
+  {(Iqm.parented([4294967295, 0, 1], 3), Iqm.parented([4294967295, 0, 3], 3)) == (True{}, False{}) : Bool & Bool}
 
 # Skeletons and animations (src/gltf_anim.bend): a joint's place among the
 # joints is its bone index and a node outside them has none (-1); a time

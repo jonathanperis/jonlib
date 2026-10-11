@@ -362,8 +362,9 @@ the textures, a mesh material index beyond the materials, unverified `sinf`/
 `Model.load_for(arithmetic, frame, path)` is `LoadModel`: `.obj`
 (case-insensitive, as `IsFileExtension`) through `LoadOBJ`; `.glb` files
 through `LoadGLTF` (the next section); `.vox` files through `LoadVOX`
-([MagicaVoxel](#loading-models-magicavoxel)); IQM, glTF as text and M3D files
-(which raylib loads) are `UnsupportedFileType`; other
+([MagicaVoxel](#loading-models-magicavoxel)); `.iqm` files through `LoadIQM`
+([Inter-Quake Model](#loading-models-inter-quake-model)); glTF as text and M3D
+files (which raylib loads) are `UnsupportedFileType`; other
 extensions, and OBJ files that do not open or are empty, give raylib's model
 without meshes and with the default material. The result is a
 `LoadedModel{model, textures}`: the textures the MTL file's materials loaded
@@ -661,6 +662,65 @@ those rules and the four models of `models_loading_vox` (`chr_knight`,
 natively and with Jonlib, and compares the counts, an FNV-1a hash of every
 mesh's vertex, normal, color and index words, and every material map.
 
+## Loading models (Inter-Quake Model)
+
+`Model.load_for` of an `.iqm` file is `LoadIQM` (`src/iqm.bend`), which
+copies what the header points at: the file is `INTERQUAKEMODEL`, version 2,
+and counts and offsets of its arrays.
+
+- **Meshes.** One `Mesh` a mesh: its vertices and normals (3 floats a
+  vertex) and texcoords (2) from the vertex arrays of those kinds, from the
+  mesh's first vertex; zeros where the file has no such array (the loader
+  allocates them cleared). Colors (4 bytes a vertex) only when the file has
+  a color array. Blend indexes and weights are read and not kept (Jonlib's
+  `Mesh` has no bone data); tangents and custom arrays are not read. Two
+  arrays of a kind: the last one counts. The array's own format and size
+  are ignored, as upstream.
+- **Indices.** A triangle's corners reversed, each less the mesh's first
+  vertex, as unsigned shorts (a corner below the first vertex wraps).
+- **Materials.** One a mesh, `meshMaterial[i] = i`: `LoadMaterialDefault`
+  with its albedo texture replaced by `LoadTexture(directory/material)`,
+  the material's name in the file. A name that opens no file gives a
+  texture of zeros (id 0), as `LoadTexture` returns; the loaded textures
+  come back with the model. A file without meshes is the empty model.
+- **Skeleton** (`Model.load_skeleton`): the joints' names and parents, and
+  `BuildPoseFromParentJoints` of their transforms: a joint whose parent
+  comes later, or is negative, stays as read; a joint that is its own
+  parent composes with what each statement has just written.
+
+`Model.load_animations_for` of an `.iqm` file is `LoadModelAnimationsIQM`:
+an animation has the file's poses as bones and `num_frames` keyframes. A
+keyframe gives each pose ten channels (translation, rotation, scale): the
+channel's offset, plus the next unsigned short of the frame data times the
+channel's scale where the pose's mask has the channel's bit (the data is
+read on from `first_frame*num_framechannels`, whatever the channel count
+says). The rotation is normalized, then the poses are composed in order, in
+place: the rotation under the parent's, the translation turned by the
+parent's rotation and moved by its translation, the scale multiplied. A
+parent that comes later is taken as read, and a pose that is its own parent
+composes with what it has become. No libm call; uncontracted arithmetic.
+
+A file with another magic or version, an empty file and one that does not
+open are the empty model without bones or animations. `OutOfDomain` for
+what the loaders leave undefined: a file shorter than its header; an array
+(meshes, triangles, a vertex array of a kind that is read, joints, poses,
+animations, frame data) outside the file; a mesh, material, bone or
+animation name whose 32 bytes pass the end of the file; a material, bone or
+animation name without its NUL in those bytes; a mesh whose vertices or
+triangles pass the file's counts, and one without vertices or triangles
+(the loader allocates zero bytes); an empty material name (the texture's
+path is the directory) and one that starts with a slash; frame data that
+ends before the masks do; a pose whose parent is not a pose. The profile
+ends at files of 2 MiB, 524288 vertices, 65535 frames or channels, 4096
+poses and 262144 poses in an animation's keyframes.
+
+Gate `iqm` (`tools/iqm_probe.py`) loads generated files covering each of
+those rules and the two files of `models_loading_iqm` (`guy.iqm`: one mesh
+of 240 vertices and 14 joints; `guyanim.iqm`: two animations of 61
+keyframes), natively and with Jonlib, and compares the model (as gate
+`vox` does), every bone's parent, name and bind pose, and a hash of every
+keyframe's pose.
+
 ## Collision
 
 - **GetRayCollisionMesh** transforms each triangle's vertices with
@@ -745,6 +805,7 @@ rlsw's per-primitive alpha flag ([FRAME.md](FRAME.md#the-rendering-path)).
 | `obj` | `tools/obj_probe.py` | 40 OBJ/MTL loads (written by the probe with PNG textures) word for word against the linked raylib with the host contraction (on macOS arm64 the fused `tryParseDouble`, `M.Fused{}`): mesh and material counts, `IsModelValid`, every mesh's counts, material index and vertex, normal and texcoord word, every material map; 27 compared, 13 refused |
 | `obj-uncontracted` | `tools/obj_probe.py --uncontracted-control` | the same files against the raylib built with `-ffp-contract=off` (`M.Uncontracted{}`); the corpus includes literals whose fused and unfused parses round to different floats |
 | `vox` | `tools/vox_probe.py` | 53 MagicaVoxel loads (the four models of `models_loading_vox` and files written by the probe): mesh and material counts, `IsModelValid`, every mesh's counts, material index and FNV-1a hashes of its vertex, normal, color and index words, every material map; 33 compared, 20 refused |
+| `iqm` | `tools/iqm_probe.py` | 46 Inter-Quake Model files (the two of `models_loading_iqm` and files written by the probe) through `LoadModel`, the skeleton and `LoadModelAnimations` against the uncontracted raylib build: the model rows of gate `vox`, every bone's parent, name and bind pose words, every animation's name, counts and a hash of each keyframe's pose; 62 loads compared, 30 refused |
 
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only models
@@ -770,7 +831,7 @@ attribute builders are tail-recursive.
   buffers, `UpdateMeshBuffer` and
   `UpdateModelAnimation*` (the reference only fills a pose and bone
   matrices Jonlib's `Model` does not have).
-- IQM, glTF as text and M3D files: `LoadModel` answers
+- glTF as text and M3D files: `LoadModel` answers
   `UnsupportedFileType` (raylib loads them; their parsers and binary formats
   are not ported). Binary glTF is loaded for the slice above: a skinned
   file's bone data and skeleton are not kept, model animations are not

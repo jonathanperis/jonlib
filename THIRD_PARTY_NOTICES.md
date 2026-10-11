@@ -111,7 +111,9 @@ identify the original sources and their required attribution.
   material functions (LoadMaterialDefault, IsMaterialValid, UnloadMaterial,
   SetMaterialTexture, SetModelMeshMaterial, IsModelValid) and LoadModel,
   LoadOBJ, ProcessMaterialsOBJ and LoadMaterials; `src/obj.bend` adapts
-  tinyobj_loader_c (below).
+  tinyobj_loader_c (below). `src/iqm.bend` adapts `rmodels.c`'s LoadIQM and
+  LoadModelAnimationsIQM (Inter-Quake Model files), and `src/vox.bend` its
+  LoadVOX over vox_loader (below).
 - Reference testing: `tools/conformance.py` builds a separate raylib executable
   from a locally supplied checkout. Raylib is not linked into the Jonlib runner.
 - API documentation: `api/reference.json`, generated `api/ledger.json` and
