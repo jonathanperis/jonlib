@@ -5598,6 +5598,34 @@
     "api_id": "raylib:function:LoadModelAnimations",
     "milestone": "animation"
   },
+  "UpdateModelAnimation": {
+    "jonlib": "Model.update_animation_for / Model.update_animation",
+    "status": "profile-covered",
+    "scope": "The model's current pose and bone matrices as a value (ModelPose) beside the skeleton: the two keyframes of (int)frame, wrapped by the keyframe count, blended by the frame's fraction (Vector3Lerp, QuaternionSlerp under the libm profile), and inverse(bind pose)*pose for every bone; unchanged without bones or keyframes.",
+    "gaps": [
+      "The meshes are not skinned: the reference is built with GPU skinning and leaves them in their bind pose",
+      "Frames of -1 and below, past the int range or not a number answer None (undefined natively)",
+      "An animation with fewer bones than the skeleton answers None (read past its end natively)",
+      "Profiles without acosf (Apple, glibc 2.41) answer None for rotations more than about 36 degrees apart",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:UpdateModelAnimation",
+    "milestone": "animation"
+  },
+  "UpdateModelAnimationEx": {
+    "jonlib": "Model.update_animation_ex_for / Model.update_animation_ex",
+    "status": "profile-covered",
+    "scope": "Two animations' poses, each at keyframe (int)frame%keyframeCount towards the next one by the clamped difference to that keyframe, blended by Vector3Lerp and QuaternionSlerp into the ModelPose, with the bone matrices; unchanged without bones or keyframes and for a blend outside 0 to 1.",
+    "gaps": [
+      "The meshes are not skinned: the reference is built with GPU skinning and leaves them in their bind pose",
+      "A frame outside an int or with a negative remainder by the keyframe count answers None (undefined natively)",
+      "An animation with fewer bones than the skeleton answers None (read past its end natively)",
+      "Profiles without acosf (Apple, glibc 2.41) answer None for rotations more than about 36 degrees apart",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:UpdateModelAnimationEx",
+    "milestone": "animation"
+  },
   "UnloadModelAnimations": {
     "jonlib": "Model.unload_animations",
     "status": "profile-covered",
@@ -5606,6 +5634,17 @@
       "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
     ],
     "api_id": "raylib:function:UnloadModelAnimations",
+    "milestone": "animation"
+  },
+  "IsModelAnimationValid": {
+    "jonlib": "Model.is_animation_valid",
+    "status": "profile-covered",
+    "scope": "Whether the animation has the skeleton's bone count.",
+    "gaps": [
+      "Takes the model's skeleton (Model.load_skeleton): Jonlib's Model has none",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:IsModelAnimationValid",
     "milestone": "animation"
   },
   "CheckCollisionSpheres": {
