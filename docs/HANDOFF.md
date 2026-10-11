@@ -262,24 +262,12 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      bound with texturing off (drawn in its tint), and a framebuffer
      without a color attachment is incomplete, so `swBegin`, `swClear` and
      `swDrawArrays` are refused while it is bound (`Canvas.blind`: the
-     shadow pass draws nothing). Left: `shaders_deferred_rendering`,
-     measured natively on 2026-10-11 (a C program with the example's calls):
-     `rlLoadTexture(NULL, w, h, R16G16B16, 1)` warns "format not supported
-     (12)" and still answers ids 2 and 3 (textures without storage);
-     channels 1 and 2 are ignored, so the R8G8B8A8 albedo texture is never
-     attached and the framebuffer is incomplete: the G-buffer pass, drawn
-     with `rlEnableFramebuffer` bound directly (not `BeginTextureMode`: the
-     viewport and the matrices stay the screen's), draws nothing. The screen
-     is cleared with the clear color (0, 0, 0, 0); `rlLoadDrawQuad`,
-     `rlBindFramebuffer` and `rlBlitFramebuffer` do nothing; the albedo
-     texture (zero texels, alpha) stays bound and enabled, so
-     `DrawSphereEx`'s triangles come out with alpha 0 (invisible) while
-     `DrawSphereWires`' lines keep their color; the position and normal
-     textures draw as a RAYWHITE rectangle and the albedo one as nothing.
-     It needs: `Rlgl.load_texture` for an unsupported format, a blind
-     framebuffer bound with `rlEnableFramebuffer` that takes draws
-     (`Rlgl.Bound` has none), `rlBindFramebuffer`, and `Libc.rand` for the
-     cubes (glibc profiles only);
+     shadow pass draws nothing). A deferred renderer's G-buffer is
+     incomplete too (float textures have no storage under OpenGL 1.1,
+     channels 1 and 2 never attach) and is bound to draw with
+     `Rlgl.enable_framebuffer_incomplete`: `shaders_deferred_rendering` is
+     ported (the screen shows the lights alone; a zero albedo texture left
+     bound makes the lit spheres invisible, as natively). Left:
      `models_skybox_rendering` (cubemap faces);
    - `shaders_game_of_life` is ready but steps a 2048x2048 world through a
      shader each frame: too heavy for the JavaScript lane as written;
