@@ -70,6 +70,7 @@ SHIM = ROOT / 'tools/reference/example_driver.h'
 WIDTH, HEIGHT = 800, 450
 # Examples whose InitWindow is not 800x450.
 SIZES = {'core_2d_camera_split_screen': (800, 440), 'shapes_math_angle_rotation': (720, 400)}
+SIZES['shaders_rlgl_compute'] = (768, 768)
 
 
 def size_of(name):
@@ -78,6 +79,8 @@ TARGET = 1.0 / 60
 # Examples whose SetTargetFPS is not 60 (the scripted wait ends where raylib's does).
 LANE_TIMEOUT = 1800
 TARGET_FPS = {'shapes_kaleidoscope': 20, 'shapes_penrose_tile': 120, 'textures_mouse_painting': 120}
+# shaders_rlgl_compute never calls SetTargetFPS: with a target of a nanosecond no scripted frame is short enough to wait.
+TARGET_FPS['shaders_rlgl_compute'] = 10**9
 
 (KEY_UP_EVENT, KEY_DOWN_EVENT, MOUSE_UP, MOUSE_DOWN, MOUSE_POSITION, MOUSE_WHEEL, INPUT_GESTURE, WINDOW_CLOSE) = (1, 2, 5, 6, 7, 8, 17, 18)
 # Gamepad events: (gamepad), (gamepad, button), (gamepad, axis, value/32768).
@@ -234,6 +237,7 @@ EXAMPLES = {
     'core_compute_hash': ('core/core_compute_hash.c', 'Ex.setup(core, frame)'),
     'core_clipboard_text': ('core/core_clipboard_text.c', 'Ex.setup(seed, core, frame)'),
     'shapes_pie_chart': ('shapes/shapes_pie_chart.c', 'Ex.setup(core, frame)'),
+    'shaders_rlgl_compute': ('shaders/shaders_rlgl_compute.c', 'Ex.setup(core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -900,6 +904,11 @@ def scripts():
                                               quick([button(0, False), mouse_at(660, 300)]), quick([(MOUSE_WHEEL, 0, -1, 0)]), quick([mouse_at(700, 228), button(0)]),
                                               quick([mouse_at(740, 228)]), quick([button(0, False)]), quick([mouse_at(600, 262), button(0)]), quick([button(0, False)]),
                                               quick([key(259)]), quick([key(259, False), key(257)]), quick([key(257, False)]), slow()]),
+        # The brush follows the pointer and grows by two wheel notches; commands are buffered while the left
+        # button is down and sent on its release; the brush shrinks; the right button buffers and sends again.
+        script('shaders_rlgl_compute', 'brush', [quick(), quick([mouse_at(300, 300)]), quick([(MOUSE_WHEEL, 0, 2, 0)]), quick([button(0)]), quick(),
+                                                 quick([button(0, False)]), quick([(MOUSE_WHEEL, 0, -3, 0), mouse_at(500, 120)]), quick([button(1)]),
+                                                 quick([button(1, False)]), slow()]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.
