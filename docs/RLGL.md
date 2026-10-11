@@ -267,6 +267,9 @@ afterwards. Twelve contracts cover the refusals.
 The ports `shaders_depth_writing`, `shaders_hybrid_rendering` and
 `shaders_depth_rendering` draw through a framebuffer built this way and
 compare every frame with the native example.
+The port `shaders_shadowmap_rendering` builds its shadow map with a depth
+attachment alone (`Rlgl.render_texture_depth`): its first pass reaches no
+buffer and the scene on the screen is the reference's, unshadowed.
 
 ## Gaps
 
