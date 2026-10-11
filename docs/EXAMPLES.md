@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 162 ported, 19 ready, 31 waiting.
+Totals: 212 examples; 163 ported, 18 ready, 31 waiting.
 
 ## APIs that unblock the most examples
 
@@ -254,7 +254,7 @@ Totals: 212 examples; 162 ported, 19 ready, 31 waiting.
 | `shaders_vertex_displacement` | shaders | ported |  |
 | `shaders_depth_writing` | shaders | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
 | `shaders_basic_pbr` | shaders | ready |  |
-| `shaders_lightmap_rendering` | shaders | ready |  |
+| `shaders_lightmap_rendering` | shaders | ported |  |
 | `shaders_rounded_rectangle` | shaders | ported |  |
 | `shaders_depth_rendering` | shaders | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
 | `shaders_game_of_life` | shaders | ready |  |

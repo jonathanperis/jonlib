@@ -6455,7 +6455,7 @@
   {
    "name": "shaders_lightmap_rendering",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginBlendMode",
     "BeginDrawing",
