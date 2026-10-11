@@ -232,6 +232,7 @@ EXAMPLES = {
     'shapes_hilbert_curve': ('shapes/shapes_hilbert_curve.c', 'Ex.setup(core, frame)'),
     'shapes_splines_drawing': ('shapes/shapes_splines_drawing.c', 'Ex.setup(core, frame)'),
     'core_compute_hash': ('core/core_compute_hash.c', 'Ex.setup(core, frame)'),
+    'core_clipboard_text': ('core/core_clipboard_text.c', 'Ex.setup(seed, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -285,7 +286,8 @@ PERSPECTIVE = {'core_3d_camera_mode', 'core_3d_camera_free', 'core_world_screen'
 SEEDED = {'core_2d_camera', 'shapes_starfield_effect', 'core_random_values', 'core_random_sequence', 'textures_fog_of_war', 'core_3d_camera_first_person', 'textures_bunnymark', 'textures_image_generation',
           'core_window_letterbox', 'textures_particles_blending', 'textures_screen_buffer', 'shaders_mesh_instancing',
           'core_undo_redo', 'text_inline_styling', 'text_strings_management', 'shapes_top_down_lights',
-          'shapes_ball_physics'}
+          'shapes_ball_physics',
+          'core_clipboard_text'}
 CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_rlgl_triangle': 32, 'shaders_basic_lighting': 32,
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
                 'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'shaders_postprocessing': 32, 'shaders_custom_uniform': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196, 'core_viewport_scaling': 4,
@@ -875,6 +877,18 @@ def scripts():
                + [quick() for _ in range(24)]
                + [quick([key(259, False)]), quick([key(257)]), quick([key(257, False), mouse_at(400, 120)]), quick([button(0)]), quick([button(0, False)]), quick(),
                   quick([mouse_at(400, 80), button(0)]), quick([button(0, False)]), quick([mouse_at(400, 300), button(0)]), quick([button(0, False)]), slow()]),
+        # The icon buttons at scale 2: a random text (seeded), CUT, another random text, COPY, PASTE (the
+        # reference's clipboard is NULL: nothing changes) and CLEAR; a third text is edited (BACKSPACE, LEFT), cut
+        # with Ctrl+X while the box is in edit mode, and ENTER leaves it; Ctrl+V and Ctrl+C change nothing.
+        script('core_clipboard_text', 'buttons', [quick(), quick([mouse_at(730, 140)]), quick([button(0)]), quick([button(0, False)]), quick(),
+                                                  quick([mouse_at(120, 200)]), quick([button(0)]), quick([button(0, False)]), quick(),
+                                                  quick([mouse_at(730, 140), button(0)]), quick([button(0, False)]), quick([mouse_at(290, 200), button(0)]),
+                                                  quick([button(0, False)]), quick([mouse_at(450, 200), button(0)]), quick([button(0, False)]),
+                                                  quick([mouse_at(620, 200), button(0)]), quick([button(0, False)]), quick(),
+                                                  quick([mouse_at(730, 140), button(0)]), quick([button(0, False)]), quick([mouse_at(300, 140), button(0)]),
+                                                  quick([button(0, False)]), quick([key(259)]), quick([key(259, False), key(263)]), quick([key(263, False)]),
+                                                  quick([key(341)]), quick([key(88)]), quick([key(88, False)]), quick([key(86)]), quick([key(86, False), key(67)]),
+                                                  quick([key(67, False), key(341, False)]), quick([key(257)]), quick([key(257, False)]), slow()], seed=7),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.

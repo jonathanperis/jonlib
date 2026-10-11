@@ -155,6 +155,8 @@
    "jongui": "Gui.set_icon_scale",
    "scope": "The scale of the icons drawn in control texts; a scale below 1 is ignored.",
    "evidence": [
+    "tools/examples_probe.py",
+    "examples/core_clipboard_text.bend",
     "docs/GUI.md",
     "jongui.bend",
     "LAWS.bend"
@@ -275,6 +277,7 @@
    "scope": "Hover and press states, the bordered rectangle and its text; true when the pointer is released over it.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/core_clipboard_text.bend",
     "examples/shapes_hilbert_curve.bend",
     "examples/shapes_kaleidoscope.bend",
     "examples/shapes_circle_sector_drawing.bend",
@@ -419,6 +422,7 @@
    "scope": "The box, its text and cursors; edit mode over raygui's two globals (Gui.Editing): typing, paste, HOME/END, DELETE, BACKSPACE, LEFT/RIGHT with key repeat, the pointer, ENTER.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/core_clipboard_text.bend",
     "examples/core_compute_hash.bend",
     "docs/GUI.md",
     "jongui.bend",
