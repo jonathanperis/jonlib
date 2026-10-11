@@ -23,26 +23,26 @@ is owed: the port is not done before it passes.
 
 | Branch | Content | State |
 |---|---|---|
-| `main` | everything through 157 example ports, and each piece of `stack/final` as its run goes green: Jongui's controls ([GUI.md](GUI.md)), the change-scoped Linux-only Conformance workflow ([CI.md](CI.md)), the libm/libc kernels (`pow2`, `exp`/`log`, `rand`, `hypot_within`, `tanf`, the decimal parser), `J.Until`, the rlgl uniform setters, `UploadMesh`, `ColorFromHSV` for any finite hue, binary glTF | green on Linux for every commit |
+| `main` | everything through 163 example ports, and each piece of `stack/final` as its run goes green: Jongui's controls ([GUI.md](GUI.md)), the change-scoped Linux-only Conformance workflow ([CI.md](CI.md)), the libm/libc kernels (`pow2`, `exp`/`log`, `rand`, `hypot_within`, `tanf`, the decimal parser), `J.Until`, the rlgl uniform setters, `UploadMesh`, `ColorFromHSV` for any finite hue, binary glTF with skins and embedded textures, the rlgl buffer and shader object functions | green on Linux for every commit |
 | `stack/final` | the commits not yet on `main`, in landing order. The name starts no CI run: it is the backup | each piece goes to `main` through a `feature/**` branch |
 
 On `stack/final` now, in landing order (`git log origin/main..origin/stack/final`
 lists what is left; `python3 tools/ci_scope.py --base origin/main --head <commit>`
-prints a commit's scope). One complete run verifies the whole list (branch
-`feature/piece-38`, pushed 2026-10-11 04:13 UTC): the pieces edit
-`jongui.bend`'s header comment, which the scope tool counts as a changed
-definition, and `GuiSetIconScale` adds a field to Jongui's state.
+prints a commit's scope). Every piece is scoped (new definitions, a new
+module, new gates, ports); they were pushed as `feature/piece-41` to
+`-47` on 2026-10-11 08:06 UTC, each at its commit, and land in order:
 
-1. `GuiValueBox`/`GuiSpinner`, the port `shapes_hilbert_curve`,
-   `GuiDropdownBox`/`GuiPanel`/`GuiStatusBar`, the port
-   `shapes_splines_drawing`, `GuiTextBox`, the port `core_compute_hash`.
-2. `GuiSetIconScale` and the port `core_clipboard_text`.
-3. `GuiScrollPanel`/`GuiScrollBar` and the port `shapes_pie_chart`.
-4. Thirty-one rlgl buffer, shader object, compute and storage buffer
-   functions (empty on the software path) and the port
-   `shaders_rlgl_compute`.
-5. After that branch: the port `shaders_lightmap_rendering` (a scoped run
-   once the rest is on `main`) and this document.
+1. `src/gltf_anim.bend` with `Model.load_skeleton` and
+   `Model.load_animations` (gate `gltf-anim`), `Model.update_animation`,
+   `Model.update_animation_ex` and `Model.is_animation_valid` over a
+   `ModelPose` (gate `model-pose`), the port
+   `models_animation_gpu_skinning`, and the loader reading each joint's node
+   once (four commits in one branch: the gate took sixteen minutes before
+   the last one, four after).
+2. The ports `models_bone_socket` and `models_loading_gltf`.
+3. `GuiProgressBar` and the ports `models_animation_timing`,
+   `models_animation_blending` and `models_animation_blend_custom`.
+4. This document.
 
 `main` may move under a branch in CI: another session pushed a CI commit on
 2026-10-11 while two branches were running. A green branch that `main` is no
@@ -62,10 +62,10 @@ at the branch's head.
 `integrate/models-lgpl`, `feature/scoped-ci`, `feature/examples-batch-4` and the stack's branches are merged into `main` and deleted
 (`feature/examples-batch-5` was re-landed as pieces and deleted).
 
-Coverage (`python3 tools/api_plan.py check`): raylib.h 515/600 partial
-(20 blocked, 65 not started); raymath.h 146/146; rlgl.h 98/163; rcamera.h
-12/12; rgestures.h 10/10 (rlgl.h gains 31 functions with the stack). Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **163/212 ported** with the stack, 18 ready, 31 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
+Coverage (`python3 tools/api_plan.py check`): raylib.h 520/600 partial
+with the stack; raymath.h 146/146; rlgl.h 98/163; rcamera.h
+12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
+[EXAMPLES.md](EXAMPLES.md)): **169/212 ported** with the stack, 20 ready, 23 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -95,8 +95,19 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
   `GuiSetIconScale`, `GuiLine`, `GuiGroupBox`, `GuiValueBox` and `GuiSpinner`
   (outside edit mode), `GuiStatusBar`, `GuiPanel`, `GuiDropdownBox` and
   `GuiTextBox` (raygui's two text box globals are a `G.Gui.Editing` value),
-  `GuiScrollPanel` and `GuiScrollBar`. Left: `GuiProgressBar`,
+  `GuiScrollPanel` and `GuiScrollBar`, `GuiProgressBar`. Left:
   `GuiListViewEx`, `GuiGetFont`.
+- **Skeletons, animations and poses** ([MODELS.md](MODELS.md)): a `.glb`
+  file's bones and bind pose (`Model.load_skeleton`), its animations as
+  `LoadModelAnimationsGLTF` samples them (`Model.load_animations`), and
+  `UpdateModelAnimation`/`UpdateModelAnimationEx`/`IsModelAnimationValid`
+  over a `ModelPose` value beside the skeleton (Jonlib's `Model` holds no
+  bones). The loader also takes skins and embedded PNG textures. Gates
+  `gltf-anim` and `model-pose`. Six examples ported with them:
+  `models_animation_gpu_skinning`, `models_bone_socket` (the one whose
+  frames show the keyframe poses), `models_loading_gltf`,
+  `models_animation_timing`, `models_animation_blending`,
+  `models_animation_blend_custom`.
 - **rlgl's empty functions** ([RLGL.md](RLGL.md)): the vertex array, buffer,
   shader object, compute and storage buffer functions as the software path
   leaves them (ids 0, locations -1, nothing else), compared natively by the
@@ -178,52 +189,31 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
    you wait for (the push cancels it). A complete run takes fifteen Linux
    runners for about an hour and a half; the account runs about twenty
    jobs at a time.
-2. Grow the glTF loader, the largest unlock left in the models family
-   (`models_loading_gltf`, `models_animation_gpu_skinning`,
-   `models_bone_socket`, `models_animation_blend_custom`,
-   `models_animation_blending` and `_timing` with `GuiProgressBar`,
-   `shaders_shadowmap_rendering` with the framebuffer functions). What the
-   reference does (found 2026-10-11, read `rmodels.c` before designing):
-   - The reference library is built with `SUPPORT_GPU_SKINNING` on
-     ([VERIFICATION.md](VERIFICATION.md)), so `animVertices` is never
-     allocated and `UpdateModelAnimationVertexBuffers` skips every mesh: on
-     the software renderer **an animated model is drawn in its bind pose**.
+2. What is left of glTF and animations ([MODELS.md](MODELS.md)): glTF as
+   text with external buffers, external image files, PNG files above
+   Jonlib's 1 MiB input limit (`shaders_basic_pbr`), CUBICSPLINE samplers,
+   IQM and M3D animations (`models_loading_iqm`, `models_loading_m3d`), and
+   `shaders_shadowmap_rendering` (the robot with the framebuffer functions).
+   Facts to keep:
+   - The reference library is built with `SUPPORT_GPU_SKINNING` on, so an
+     animated model is drawn in its bind pose on the software renderer;
      `UpdateModelAnimation` only fills `model.currentPose` and
-     `model.boneMatrices`. No CPU skinning is needed.
-   - What reaches the screen is the data the examples read themselves:
-     animation names and `keyframeCount`, `skeleton.bones[i].name`,
-     `skeleton.bindPose[i]` and `anim.keyframePoses[frame][bone]`
-     (`models_bone_socket` places the hat, sword and shield with them).
-   - `greenman.glb` (164 KB; three examples) has one skin of 12 joints, four
-     LINEAR animations, `JOINTS_0` as u8 and `WEIGHTS_0` as float, and its
-     base color texture as an embedded PNG (`images[0].bufferView`); its
-     hat, sword and shield files have a texture each. `robot.glb` (1.6 MB;
-     three examples) has 43 joints, 14 animations, base color factors and no
-     texture. The loader refuses both today (`static` in `src/gltf.bend`:
-     no skins, textures or images).
-   - `LoadModelAnimationsGLTF`: `keyframeCount = (int)(duration*60) + 1`,
-     frame `j` at `j/60` s; each bone starts from its node's TRS and takes
-     `GetPoseAtTimeGLTF` per channel (the keyframe search leaves keyframe 0
-     with `t` clamped to 1 at or after the last key; `Vector3Lerp`,
-     `QuaternionSlerp` under the libm profile); the root pose is composed
-     with the world transform of joint 0's parent (`MatrixDecompose`), then
-     `BuildPoseFromParentJoints`. Jonmath has every raymath function used.
-   - Jonlib's `Model` and `Mesh` have no skeleton, pose or bone data. The
-     additive route: new types (`Transform`, `BoneInfo`, `ModelSkeleton`,
-     `ModelAnimation`) and functions beside the model (the skeleton of a
-     file, its animations, the pose and bone matrices of a frame), in a new
-     module that reuses `src/gltf.bend`'s JSON, accessor and node helpers.
-     Accepting skins and embedded textures changes the loader's existing
-     definitions (a complete run).
-   Also:
-   textures and images (embedded and external; `shaders_basic_pbr` also needs
-   PNG files above Jonlib's 1 MiB input limit), skins and
-   `LoadModelAnimations`/`UpdateModelAnimation` (`models_loading_gltf` and
-   eight animation examples), glTF as text with external buffers.
+     `model.boneMatrices` (the `ModelPose`). What reaches the screen is what
+     an example reads itself (`models_bone_socket`).
+   - `QuaternionSlerp` needs `acosf` and `sinf` for rotations more than
+     about 36 degrees apart: the animation examples compare under
+     `M.Glibc239Libm` only. They draw through a perspective camera, so on
+     macOS every frame is a contract already; an Apple `acosf` would be
+     needed to compare poses there.
+   - `src/strtod.bend` is slow (about 0.1 ms a number natively, ten times
+     that in JavaScript): convert a JSON number once and keep the value.
+     Reading a joint's node for every keyframe made `robot.glb` take
+     sixteen minutes in the gate.
+   - `Bool.pick` is strict: a `%` by a count that may be 0 traps in the C
+     lanes even in the branch not taken; guard with a `match`.
 3. The remaining raygui controls, each a small additive piece of
-   `jongui.bend` verified by the example that uses it: `GuiProgressBar` (two
-   animation examples), `GuiListViewEx` and `GuiGetFont`
-   (`core_directory_files`, with the directory functions). Append whole
+   `jongui.bend` verified by the example that uses it: `GuiListViewEx` and
+   `GuiGetFont` (`core_directory_files`, with the directory functions). Append whole
    definitions only and leave the file's header comment alone, or the piece
    runs in full. The probe's replayed events never reach `GetCharPressed`
    (typing into a text box cannot be compared natively) and no example's
@@ -262,6 +252,13 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
    every host) show what macOS thinks of `main`: note a red one here.
 
 ## Known pitfalls (save time)
+
+- **A background lander lives two hours at most**: a complete run that
+  queues behind another one can outlast it (2026-10-11: the run finished
+  green as the lander was stopped). Check the run and land by hand.
+- **A compile can be killed for memory** when another session compiles at
+  the same time in the 8 GiB container (exit -9 from the probe's `bun`):
+  run it again.
 
 - **Bend rules that bite**: a `match` must scrutinize a parameter or a
   pattern-bound name, and no `let` may precede a destructuring of a parameter;
