@@ -5167,7 +5167,7 @@
   {
    "name": "models_animation_blending",
    "category": "models",
-   "status": "waiting",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
