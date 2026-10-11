@@ -11,6 +11,11 @@ where the FMA and SSE2 variants differ; signed zeros, subnormals, infinities
 and NaN (None). On a host whose own sin and cos reproduce the controls (glibc
 2.39 on an FMA/AVX2 CPU) the native functions are compared too. The other
 profiles answer None. CPU-1, CPU-2 and JavaScript lanes.
+
+The same run checks the binary64 sum, difference and product an example
+forms around these functions (M.Float64.internal.add, subtract and multiply)
+against the C operators on pairs of the promoted binary32 arguments, the
+multiples of pi/2 and the table rows (normal operands and results).
 """
 import json
 import math
@@ -88,7 +93,7 @@ int main(int argc, char **argv) {
 }
 '''
 
-PROGRAM = '''import Base
+PROGRAM_TEMPLATE = '''import Base
 import ../../jonmath.bend as M
 def show(value: Maybe<M.Float64>) -> List<U32>:
   match value:
@@ -104,12 +109,63 @@ def refused(words: +List<U32>) -> List<U32>:
     case Con{+high, Con{+low, rest}}: List.append(&1, U32, show(M.Libm.sin64(M.AppleLibm{}, M.Float64{high, low})),
       List.append(&1, U32, show(M.Libm.cos64(M.Glibc241Libm{}, M.Float64{high, low})), refused(rest)))
     case _: Nil{}
+ARITHMETIC_HERE
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
 
 # Arguments the other profiles must answer None for (the first of each batch).
 OTHERS = 2
+PAIRED = ('promoted-binary32', 'quarter-turn', 'table-row')
+
+
+def pairs(cases):
+    """Neighbouring arguments of moderate size: normal operands whose sum, difference and product are normal."""
+    chosen = [x for x, label in cases if label in PAIRED and 0x3c0 <= ((x >> 52) & 2047) <= 0x440]
+    made = [(chosen[i], chosen[(i * 7 + 3) % len(chosen)]) for i in range(len(chosen))]
+    return [(a, b) for a, b in made if (a ^ b) & 0x7fffffffffffffff]
+
+
+ARITHMETIC = r'''#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+static unsigned long long word(double value) { uint64_t w; memcpy(&w, &value, 8); return (unsigned long long) w; }
+int main(int argc, char **argv) {
+  FILE *in = fopen(argv[1], "r");
+  unsigned long long a, b;
+  while (fscanf(in, "%llx %llx", &a, &b) == 2) {
+    volatile double x, y;
+    memcpy((void *) &x, &a, 8); memcpy((void *) &y, &b, 8);
+    printf("%016llx %016llx %016llx\n", word(x + y), word(x - y), word(x*y));
+  }
+  return 0;
+}
+'''
+
+ARITHMETIC_PROGRAM = '''
+def combined(words: +List<U32>) -> List<U32>:
+  match words:
+    case Con{+ah, Con{+al, Con{+bh, Con{+bl, rest}}}}: List.append(&1, U32, show(M.Float64.internal.add(M.Float64{ah, al}, M.Float64{bh, bl})),
+      List.append(&1, U32, show(M.Float64.internal.subtract(M.Float64{ah, al}, M.Float64{bh, bl})),
+        List.append(&1, U32, show(M.Float64.internal.multiply(M.Float64{ah, al}, M.Float64{bh, bl})), combined(rest))))
+    case _: Nil{}
+'''
+
+
+PROGRAM = PROGRAM_TEMPLATE.replace('ARITHMETIC_HERE', ARITHMETIC_PROGRAM.strip('\n'))
+
+
+def arithmetic(probe, cases):
+    """The pairs and the C operators' words for them; a pair whose result is not a normal number is an error of the corpus."""
+    chosen = pairs(cases)
+    source, binary, inputs = probe.work / 'arithmetic.c', probe.work / 'arithmetic', probe.work / 'pairs.txt'
+    source.write_text(ARITHMETIC)
+    inputs.write_text(''.join(f'{a:016x} {b:016x}\n' for a, b in chosen))
+    probekit.run(['clang', '-std=c11', '-O2', '-ffp-contract=off', source, '-o', binary])
+    rows = [[int(part, 16) for part in line.split()] for line in probekit.run([binary, inputs]).splitlines()]
+    if len(rows) != len(chosen) or any(not 0 < ((word >> 52) & 2047) < 2047 for row in rows for word in row):
+        raise ProbeFailure('glibc-sin: an arithmetic pair has a result that is not a normal number')
+    return chosen, [[value for word in row for value in (1, word >> 32, word & 0xffffffff)] for row in rows]
 
 
 def main():
@@ -152,10 +208,25 @@ def main():
 
     lanes = probe.candidates(render, cases, batch=BATCH, parse=parse)
     probe.compare(expected, lanes, describe=lambda i: f'argument {cases[i][0]:016x} ({cases[i][1]})')
+    chosen, results = arithmetic(probe, cases)
+
+    def render_pairs(selected, gpu):
+        call = 'combined!' if gpu else 'combined'
+        return PROGRAM + ''.join('    IO.print(List.show(~&1, ~U32, ~U32.show, ' + call + '(['
+                                 + ', '.join(f'{a >> 32}, {a & 0xffffffff}, {b >> 32}, {b & 0xffffffff}' for a, b in selected[start:start + LINE]) + '])))\n'
+                                 for start in range(0, len(selected), LINE))
+
+    def parse_pairs(text, selected):
+        values = [value for line in text.splitlines() for value in json.loads(line)]
+        if len(values) != 9 * len(selected):
+            raise ProbeFailure('glibc-sin: wrong arithmetic output size')
+        return [values[9 * i:9 * i + 9] for i in range(len(selected))]
+
+    probe.compare(results, probe.candidates(render_pairs, chosen, batch=BATCH, parse=parse_pairs), describe=lambda i: f'pair {chosen[i][0]:016x} {chosen[i][1]:016x}')
     labels = {}
     for _, label in cases:
         labels[label] = labels.get(label, 0) + 1
-    probe.finish(arguments=len(cases), labels=labels, native_compared=native)
+    probe.finish(arguments=len(cases), labels=labels, native_compared=native, arithmetic_pairs=len(chosen))
 
 
 if __name__ == '__main__':

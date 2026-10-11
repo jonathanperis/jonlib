@@ -690,6 +690,15 @@ def Laws.glibc_sin_quadrant_of_minus_three():
 def Laws.glibc_sin_quadrant_past_int_refused(low):
   {==}
 
+def Laws.float64_one_plus_one():
+  {==}
+
+def Laws.float64_three_minus_one():
+  {==}
+
+def Laws.float64_add_infinity_refused():
+  {==}
+
 def Laws.glibc_sin64_apple_refused(value):
   {==}
 

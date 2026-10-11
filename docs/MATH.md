@@ -644,3 +644,11 @@ where the FMA and SSE2 variants differ, compares it with the host's `sin` and
 every region boundary and table row with its neighbours, multiples of `pi/2`
 and theirs, signed zeros, subnormals and the largest values, on CPU-1, CPU-2
 and JavaScript.
+
+An example forms a `double` expression around these functions
+(`(int)(400.0f + cos(t)*363.0f - 32)`): `M.Float64.from_f32` promotes,
+`M.Float64.internal.add`, `subtract` and `multiply` are the operators (one
+rounding each through the exact helper; `None` for a nonfinite or subnormal
+operand or result) and `M.Float64.to_int` or `to_f32` converts back. The
+same gate compares the three operators with C's on 1206 pairs of its
+arguments.
