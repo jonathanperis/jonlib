@@ -21,6 +21,7 @@ import ./src/qoa.bend as Qoa
 import ./src/fma.bend as Fma
 import ./src/asin.bend as Asin
 import ./src/lgpl/asin.bend as GlibcAsin
+import ./src/lgpl/tanf.bend as GlibcTanf
 import ./src/sincosf.bend as Sincosf
 import ./src/power.bend as Power
 import ./src/libc_rand.bend as CRand
@@ -948,6 +949,23 @@ law glibc_rand_large_seed_none:
 law libc_rand_apple_none:
   for seed: U32
   {M.Libc.srand(M.AppleLibm{}, seed) == None{} : Maybe<M.Libc.Rand>}
+
+# glibc 2.39's tanf (src/lgpl/tanf.bend, docs/MATH.md): infinities and NaN are
+# refused; glibc 2.41's tanf is another algorithm and Apple's is not modeled,
+# so those profiles answer nothing.
+law glibc_tanf_infinity_none:
+  {GlibcTanf.tanf.word(2139095040) == None{} : Maybe<U32>}
+
+law glibc_tanf_nan_none:
+  {GlibcTanf.tanf.word(2143289344) == None{} : Maybe<U32>}
+
+law glibc241_tanf_none:
+  for x: F32
+  {M.Libm.tanf(M.Glibc241Libm{}, x) == None{} : Maybe<F32>}
+
+law apple_tanf_none:
+  for x: F32
+  {M.Libm.tanf(M.AppleLibm{}, x) == None{} : Maybe<F32>}
 
 # strtod (src/strtod.bend, docs/MATH.md): 1 is 0x3ff0000000000000; 0.1 rounds
 # to 0x3fb999999999999a; 2^53 + 1 and 2^53 + 3, halfway between two doubles,

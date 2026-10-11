@@ -1,0 +1,2 @@
+{"variant": "default", "arguments": 4294967296, "tanf_differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
+{"variant": "sse2", "arguments": 4294967296, "tanf_differences": 0, "glibc": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39"}
