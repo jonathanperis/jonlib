@@ -369,7 +369,8 @@ a playing buffer (raylib would mix it before the reference can stop it). CPU-1,
 CPU-2 and JavaScript.
 
 The examples that play sounds without showing audio state
-(`textures_sprite_button`, `textures_sprite_explosion`, `audio_sound_multi`) replay against the native example with
+(`textures_sprite_button`, `textures_sprite_explosion`, `audio_sound_multi`,
+`audio_sound_positioning`) replay against the native example with
 `raudio.c` compiled beside it the same way (`tools/examples_probe.py`): its
 device mixes on its own thread there, and no frame depends on it.
 
