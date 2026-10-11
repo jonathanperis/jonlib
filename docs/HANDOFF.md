@@ -23,48 +23,34 @@ is owed: the port is not done before it passes.
 
 | Branch | Content | State |
 |---|---|---|
-| `main` | everything through Jongui's first controls, the change-scoped Linux-only Conformance workflow ([CI.md](CI.md)), `feature/examples-batch-4` (142 example ports, render-texture depth buffers, `Font.texture_size`, `Surface.colors_image`, `M.Float64.to_f32`/`to_int`) and the pieces of the stack as they land | green on Linux for every commit merged; batch 4 also passed nine of its ten macOS shards (the tenth was still running at the merge) |
-| `stack/final` | single-purpose commits on top of that, in landing order (below). The name starts no CI run: it is the backup of work not yet on `main` | each piece goes to `main` through a `feature/**` branch |
+| `main` | everything through 153 example ports: Jongui's first controls, the change-scoped Linux-only Conformance workflow ([CI.md](CI.md)), the libm/libc kernels (`pow2`, `exp`/`log`, `rand`, `hypot_within`), `J.Until`, the rlgl uniform setters, `UploadMesh`, `ColorFromHSV` for any finite hue | green on Linux for every commit merged (macOS: see the goal above) |
+| `stack/final` | the commits not yet on `main`, in landing order. The name starts no CI run: it is the backup | each piece goes to `main` through a `feature/**` branch |
 
-Landing order of `stack/final` (`python3 tools/ci_scope.py --base <parent> --head <commit>` prints each commit's scope):
+On `stack/final` now (`python3 tools/ci_scope.py --base <parent> --head <commit>` prints each commit's scope):
 
-1. Thirteen commits that need nothing new, each a scoped run of minutes:
-   eleven example ports (`models_mesh_picking`, `text_rectangle_bounds`,
-   `shapes_rlgl_color_wheel`, `text_inline_styling`, `core_keyboard_testbed`,
-   `shapes_rectangle_advanced`, `core_input_gestures_testbed`,
-   `textures_clipboard_image`, `core_3d_camera_fps`,
-   `text_strings_management`, `core_input_gamepad`), the laws for the last
-   library changes and the example-table generators. They go first, in a
-   few `feature/**` branches of two or three commits, each merged
-   (fast-forward) when green.
-2. Everything above them needs one complete run, because it starts with
-   changes to existing definitions and to shared tools: the compiler's
-   memory hint in containers (`tools/probekit.py`), `M.Libm.pow2` for every
-   exponent, `M.Libm.exp`/`log`, `M.Libc.srand`/`rand`, `J.Until`,
-   `M.Libm.hypot_within`, nine ports on those (`shapes_easings_ball`,
-   `_box`, `_testbed`, `core_2d_camera_mouse_zoom`,
-   `shapes_simple_particles`, `textures_textured_curve`,
-   `shapes_top_down_lights`, `core_window_should_close`,
-   `shapes_ball_physics`), the rlgl uniform setters with
-   `shaders_vertex_displacement`, `UploadMesh`, and `ColorFromHSV` for any
-   finite hue with `models_point_rendering`. The stack's tip is pushed as
-   one `feature/**` branch: its complete run verifies all of them, and
-   `main` is fast-forwarded to the tip (a push to an intermediate commit
-   would be classified again).
+1. `M.Float64.from_decimal` (strtod of a JSON number): a scoped run.
+2. `LoadModel` of binary glTF, a first slice of `LoadGLTF`
+   ([MODELS.md](MODELS.md)): it changes `LoadModel`'s routing, so a complete
+   run.
+3. The ports through it: `shaders_normalmap_rendering`,
+   `shaders_cel_shading`. Scoped runs once 2 is on `main`.
 
-A branch is classified against its merge base with `main`, so a piece is
-pushed only once the pieces under it are on `main` (or with them, verified at
-the branch's head). `feature/examples-batch-5` held part of this as one
-branch; its run was cancelled in favour of the pieces and the branch can be
-deleted when they are on `main`.
+How the last stack went (2026-10-10/11): thirteen independent pieces were
+pushed as thirteen `feature/piece-NN` branches and landed one by one within
+33 minutes; everything stacked on changed definitions shared one complete
+run at the stack's tip (about 100 minutes) and `main` was fast-forwarded to
+it. A branch is classified against its merge base with `main`, so a piece is
+pushed only once the pieces under it are on `main`, or with them, verified
+at the branch's head.
 
 `feature/examples-gui`, `feature/audio-waves`, `wip/models-drawing-obj`, `wip/lgpl-tan-asinf`,
-`integrate/models-lgpl` and `feature/scoped-ci` are merged into `main` and deleted.
+`integrate/models-lgpl`, `feature/scoped-ci`, `feature/examples-batch-4` and the stack's branches are merged into `main` and deleted
+(`feature/examples-batch-5` was re-landed as pieces and deleted).
 
 Coverage (`python3 tools/api_plan.py check`): raylib.h 514/600 partial
 (20 blocked, 66 not started); raymath.h 146/146; rlgl.h 98/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **153/212 ported** with the whole stack, 20 ready, 39 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **155/212 ported** with the stack, 18 ready, 39 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -108,6 +94,11 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
   the software renderer), `UploadMesh` (`Mesh.upload`, the mesh given), and
   `ColorFromHSV` for any finite hue (an exact `fmodf` by 6; it was limited
   to one turn).
+- **Binary glTF** ([MODELS.md](MODELS.md)): `LoadModel` of `.glb` files for
+  float attributes, indices, node transforms and base color factors
+  (`src/gltf.bend`), on an original JSON reader (`src/json.bend`) and a
+  correctly rounded decimal parser (`M.Float64.from_decimal`,
+  `src/strtod.bend`, [MATH.md](MATH.md)). Gates `strtod`, `gltf`.
 - **`J.Until`** ([DRIVER.md](DRIVER.md)): a program whose loop ends on its
   own condition (`while (!exitWindow)`), for the replay and the desktop
   driver.
@@ -153,29 +144,34 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
    you wait for (the push cancels it). A complete run takes fifteen Linux
    runners for about an hour and a half; the account runs about twenty
    jobs at a time.
-2. Keep porting the ready examples ([EXAMPLES.md](EXAMPLES.md)), one port a
-   commit. `textures_sprite_stacking` is written and parked
-   (`.build/pending/`, not in the repository): its `booth.png` is 112x11468
-   and Jonlib's images stop at 4096 pixels per axis (PNG also at 1 MiB of
-   input), so the texture does not load. `text_codepoints_loading` reads out
-   of bounds natively (an `UNDEFINED_NATIVE` port).
-3. Small library pieces that each unblock examples (a new definition is a
-   scoped run; changing one is a complete run):
+2. Grow the glTF loader, the largest unlock left in the models family:
+   textures and images (embedded and external; `shaders_basic_pbr` also needs
+   PNG files above Jonlib's 1 MiB input limit), skins and
+   `LoadModelAnimations`/`UpdateModelAnimation` (`models_loading_gltf` and
+   eight animation examples), glTF as text with external buffers.
+3. The remaining raygui controls, each a small additive piece of
+   `jongui.bend` verified by the example that uses it: `GuiGroupBox`/`GuiLine`
+   (with `tanf` for `shapes_math_sine_cosine`; glibc 2.39's `tanf` is
+   `s_sincosf.h`'s reduction, already in `src/sincosf.bend`, and the Sun
+   `k_tanf.c` kernel in binary32), then the icons table, `GuiSpinner`,
+   `GuiDropdownBox`, `GuiTextBox`, `GuiProgressBar`, `GuiScrollPanel`,
+   `GuiListView` (about 11 examples).
+4. Other pieces that each unblock examples:
    - an IO step in `J.Program`'s update (`core_storage_values`);
-   - `tanf` and `GuiGroupBox` (`shapes_math_sine_cosine`);
-   - `GetFileModTime` (`shaders_hot_reloading`), `GetApplicationDirectory`
-     (`core_screen_recording`); `models_decals` is ready since `UploadMesh`;
    - binary64 `sin`/`cos` (`models_waving_cubes`,
      `shaders_spotlight_rendering`, `GenMeshCylinder`);
    - the wall clock (`shapes_digital_clock`, `shapes_clock_of_clocks`,
      `core_custom_logging`);
    - the rlgl framebuffer functions (6 examples);
-   - images beyond 4096 pixels on an axis (`textures_sprite_stacking`);
-   - glTF/IQM/M3D/VOX model loading and model animations (about 15 examples).
-4. Large milestones: the remaining raygui controls (spinner, text box,
-   dropdown box, progress bar, group box, line, scroll panel, list view;
-   about 11 more examples), the audio device and streams (12+ examples; the
-   reference build has `SUPPORT_MODULE_RAUDIO=OFF`), VR.
+   - images beyond 4096 pixels on an axis (`textures_sprite_stacking`,
+     parked in `.build/pending/`, not in the repository);
+   - `GetFileModTime` (`shaders_hot_reloading`), `GetApplicationDirectory`
+     (`core_screen_recording`); `models_decals` is ready since `UploadMesh`;
+     `text_codepoints_loading` reads out of bounds natively (an
+     `UNDEFINED_NATIVE` port);
+   - IQM, M3D and VOX model loading;
+   - the audio device and streams (12+ examples; the reference build has
+     `SUPPORT_MODULE_RAUDIO=OFF`), VR.
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`
