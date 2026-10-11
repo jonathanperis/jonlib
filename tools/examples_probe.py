@@ -286,6 +286,7 @@ EXAMPLES = {
     'models_loading_vox': ('models/models_loading_vox.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_loading_iqm': ('models/models_loading_iqm.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shaders_basic_pbr': ('shaders/shaders_basic_pbr.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'models_loading_m3d': ('models/models_loading_m3d.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
     'core_custom_frame_control': ('core/core_custom_frame_control.c', 'Ex.setup(core, frame)'),
     'shapes_digital_clock': ('shapes/shapes_digital_clock.c', 'Ex.setup(seed, core, frame)'),
@@ -404,6 +405,7 @@ SEEDED.add('text_3d_drawing'); PERSPECTIVE.add('text_3d_drawing'); CONFIG_FLAGS[
 IO_SETUP.add('models_loading_vox'); PERSPECTIVE.add('models_loading_vox')
 IO_SETUP.add('models_loading_iqm'); PERSPECTIVE.add('models_loading_iqm')
 IO_SETUP.add('shaders_basic_pbr'); PERSPECTIVE.add('shaders_basic_pbr'); CONFIG_FLAGS['shaders_basic_pbr'] = 32
+IO_SETUP.add('models_loading_m3d'); PERSPECTIVE.add('models_loading_m3d')
 
 
 def scratch(probe, index, native=False):
@@ -1152,6 +1154,10 @@ def scripts():
         # green one, 3 and 4 together the blue and the yellow, then 1 turns the red one on again.
         script('shaders_basic_pbr', 'lights', [quick(), quick([key(49)]), quick([key(49, False), key(50)]), quick([key(50, False), key(51), key(52)]), quick([key(51, False), key(52, False)]),
                                                quick([key(49)])]),
+        # The model under the orbital camera, then SPACE held: the skeleton at the keyframes' poses (cubes and
+        # lines); RIGHT and LEFT keep the one animation; SPACE released shows the model again.
+        script('models_loading_m3d', 'skeleton', [quick(), quick(), quick([key(KEY_SPACE)]), quick(), slow(), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]),
+                                                  quick(), quick([key(KEY_SPACE, False)]), quick()]),
         script('text_codepoints_loading', 'frames', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), key(KEY_RIGHT)])]),
         # The mouse on the character shows the placement cube; two clicks splat two decals (the table lists them);
         # RMB with a move turns the camera; a click on "Clear Decals" removes them.

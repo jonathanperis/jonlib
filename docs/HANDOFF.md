@@ -206,11 +206,11 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
    you wait for (the push cancels it). A complete run takes fifteen Linux
    runners for about an hour and a half; the account runs about twenty
    jobs at a time.
-2. What is left of glTF and animations ([MODELS.md](MODELS.md)): glTF as
-   text with external buffers, external image files, PNG files above
-   Jonlib's 1 MiB input limit (`shaders_basic_pbr`), CUBICSPLINE samplers,
-   IQM and M3D animations (`models_loading_iqm`, `models_loading_m3d`), and
-   `shaders_shadowmap_rendering` (the robot with the framebuffer functions).
+2. What is left of the model formats ([MODELS.md](MODELS.md)): glTF as
+   text with external buffers, external image files and CUBICSPLINE
+   samplers; M3D textures (inlined or looked up), generated normals, voxels
+   and shapes. OBJ, binary glTF, VOX, IQM and M3D load, and every models
+   example is ported.
    Facts to keep:
    - The reference library is built with `SUPPORT_GPU_SKINNING` on, so an
      animated model is drawn in its bind pose on the software renderer;
@@ -305,7 +305,7 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `core_screen_recording`
      needs a GIF encoder (msf_gif) besides `GetApplicationDirectory`, and
      `shaders_game_of_life` draws 2048x2048 worlds each frame;
-   - how the five "ready" examples left are blocked (surveyed 2026-10-11):
+   - how the four "ready" examples left are blocked (surveyed 2026-10-11):
      `shaders_basic_pbr` is ported: its PNGs of up to 1.68 MiB needed the
      PNG cap raised to 2 MiB (a `PngFile` kind in `Image.file.limit`, the
      decoder's two caps in `src/png.bend`, and `Inflate.decompress.within`
@@ -315,36 +315,19 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      in about sixty places of `jonlib.bend` and every codec, a contract of
      its own. `text_unicode_ranges` needs a 7 MiB TTF. `text_font_sdf`
      needs binary64 acos and pow for `stbtt__solve_cubic` (cos exists:
-     `src/lgpl/sin.bend`). `models_loading_m3d` needs `m3d.h`'s decoder:
-     the binary variant of `m3d_load` is lines 3222 to about 3950 of
-     `src/external/m3d.h` (the container is `3DMO`, a length and a zlib
-     stream unless `HEAD` follows; the header's `types` word gives the size
-     of every index; then chunks), its post-processing to 4227, `m3d_pose`
-     at 4271 (Carmack's inverse square root on the float's bits), and
-     `LoadM3D` / `LoadModelAnimationsM3D` at 6792 and 7154 of `rmodels.c`.
-     `cesium_man.m3d` (73 KB, 149 KB inflated) has the chunks HEAD, CMAP,
-     TMAP, VRTS, BONE, MTRL, MESH and ACTN, no inlined asset; shapes,
-     voxels, labels, procedural chunks and the ASCII variant can stay
-     refusals (the ASCII variant is not built into raylib: `3dmo` gives no
-     model). Findings while reading it (2026-10-11): no error code the
-     binary importer sets is fatal except allocation, so `errcode` can be
-     left out; skin weights only reach `boneWeights`, which Jonlib's Mesh
-     does not have, but the importer's cross-reference indexes
-     `bone[boneid]` for every vertex with a skin (a bone id past the bones
-     is a refusal); a material's map property makes the importer look for
-     an inlined asset, then call `LoadFileData(name + ".png")` and
-     `LoadFileData(name)` relative to the working directory, and drops the
-     property when neither opens (cesium_man has one such property: the
-     glue has to try the two files and refuse when one opens until the
-     importer's stb_image path is ported); LoadM3D's meshes are not
-     indexed (three vertices a face, a mesh a material in face order);
-     `LoadModelAnimationsM3D` reads only `pose[j].pos` and `.ori` of
-     `m3d_pose` (its matrices can be left out) at 17 ms steps, with the
-     approximated NLERP and Carmack's inverse square root; the example
-     draws the pose's bones when SPACE is held, so the animation is
-     visible there. A first part of `src/m3d.bend` (container, header,
-     index reader, indexed store, CMAP/TMAP/VRTS) type-checks but is not
-     in the repository: it is kept in `.build/pending/m3d.bend`. `shaders_game_of_life`: below;
+     `src/lgpl/sin.bend`). `models_loading_m3d` is ported over the M3D loader
+     (`src/m3d.bend`, gate `m3d`: the binary variant's container, chunks,
+     meshes, materials, skeleton and `m3d_pose` animations; textures,
+     generated normals, voxels, shapes and procedural chunks are refusals,
+     so `seagull.m3d`, which inlines its texture, is refused). Things the
+     port found: no error code the binary importer sets is fatal; the
+     ASCII variant is not built into raylib; a map property without a name
+     is dropped without a file lookup (cesium_man's case); `m3d_pose`'s
+     interpolation factor is changed by each orientation it interpolates
+     and carries to the next bone; the importer's bone matrices read
+     values it never wrote for a parent that comes later (unobserved by
+     raylib).
+     `shaders_game_of_life`: below;
    - `shaders_game_of_life` is ready but steps a 2048x2048 world through a
      shader each frame: too heavy for the JavaScript lane as written;
    - images beyond 4096 pixels on an axis (`textures_sprite_stacking`,
@@ -353,7 +336,6 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      (`core_screen_recording`); `models_decals` is ready since `UploadMesh`;
      `text_codepoints_loading` reads out of bounds natively and is ported
      as a refusal (`UNDEFINED_NATIVE`, docs/TEXT.md);
-   - M3D model loading;
    - the audio device and streams (12+ examples; the reference build has
      `SUPPORT_MODULE_RAUDIO=OFF`), VR. What the audio examples load
      (surveyed 2026-10-11): `textures_sprite_button`,
