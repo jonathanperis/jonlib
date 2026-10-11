@@ -4757,7 +4757,7 @@
   {
    "name": "models_skybox_rendering",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
