@@ -230,6 +230,7 @@ EXAMPLES = {
     'shapes_ball_physics': ('shapes/shapes_ball_physics.c', 'Ex.setup(seed, core, frame)'),
     'shapes_math_sine_cosine': ('shapes/shapes_math_sine_cosine.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shapes_hilbert_curve': ('shapes/shapes_hilbert_curve.c', 'Ex.setup(core, frame)'),
+    'shapes_splines_drawing': ('shapes/shapes_splines_drawing.c', 'Ex.setup(core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -288,7 +289,8 @@ CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_r
                 'shaders_raymarching_rendering': 4, 'core_window_letterbox': 68, 'shapes_double_pendulum': 8192,
                 'textures_tiled_drawing': 4, 'shapes_penrose_tile': 32, 'shaders_model_shader': 32, 'shaders_postprocessing': 32, 'shaders_custom_uniform': 32, 'core_highdpi_testbed': 8196, 'core_highdpi_demo': 8196, 'core_viewport_scaling': 4,
                 'shaders_fog_rendering': 32, 'shapes_rlgl_color_wheel': 32, 'core_input_gamepad': 32, 'textures_textured_curve': 96,
-                'shaders_normalmap_rendering': 32, 'shaders_cel_shading': 32, 'shapes_math_sine_cosine': 32}
+                'shaders_normalmap_rendering': 32, 'shaders_cel_shading': 32, 'shapes_math_sine_cosine': 32,
+                'shapes_splines_drawing': 32}
 
 
 # -----------------------------------------------------------------------------
@@ -849,6 +851,18 @@ def scripts():
                                                   quick([mouse_at(600, 162), button(0)]), quick([mouse_at(700, 164)]), quick([button(0, False)]),
                                                   quick([mouse_at(600, 202), button(0)]), quick([mouse_at(560, 200)]), quick([button(0, False)]),
                                                   quick([mouse_at(597, 115), button(0)]), quick([button(0, False)]), slow()]),
+        # A point is hovered, dragged and released; keys 2 and 3 choose the basis and Catmull-Rom splines; a right
+        # press adds a point; the dropdown box opens on a press, an item is hovered and released on (Bezier), a
+        # control point is hovered and dragged, the thickness slides, the helpers go, and the box opens again and
+        # closes on a press outside it.
+        script('shapes_splines_drawing', 'splines', [quick(), quick([mouse_at(340, 380)]), quick([button(0)]), quick([mouse_at(360, 300)]), quick([button(0, False)]),
+                                                     quick([key(50)]), quick([key(50, False), key(51)]), quick([key(51, False), mouse_at(760, 120), button(1)]),
+                                                     quick([button(1, False)]), quick([mouse_at(80, 46)]), quick([button(0)]), quick([button(0, False)]),
+                                                     quick([mouse_at(80, 136)]), quick([mouse_at(80, 166)]), quick([button(0)]), quick([button(0, False)]), quick(),
+                                                     quick([mouse_at(100, 400)]), quick([button(0)]), quick([mouse_at(120, 330)]), quick([button(0, False)]),
+                                                     quick([mouse_at(60, 92), button(0)]), quick([mouse_at(100, 92)]), quick([button(0, False)]),
+                                                     quick([mouse_at(22, 120), button(0)]), quick([button(0, False)]), quick([mouse_at(80, 46), button(0)]),
+                                                     quick([button(0, False)]), quick([mouse_at(400, 300), button(0)]), quick([button(0, False)]), slow()]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.
