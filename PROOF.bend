@@ -795,7 +795,7 @@ def Laws.gltf_other_texture_kind_refused():
 def Laws.gltf_base_color_image_kept():
   {==}
 
-def Laws.vox_extension_routed(other):
+def Laws.vox_extension_routed(iqm, other):
   {==}
 
 def Laws.vox_size_padded():
@@ -847,6 +847,45 @@ def Laws.vox_four_bytes_left_halt(read):
   {==}
 
 def Laws.vox_chunk_past_the_end_ends():
+  {==}
+
+def Laws.iqm_extension_routed(other):
+  {==}
+
+def Laws.iqm_skeleton_and_animations_routed():
+  {==}
+
+def Laws.iqm_empty_file_foreign():
+  {==}
+
+def Laws.iqm_empty_file_no_animations():
+  {==}
+
+def Laws.iqm_magic_cut_short_unread():
+  {==}
+
+def Laws.iqm_array_inside():
+  {==}
+
+def Laws.iqm_empty_array_past_the_end_outside():
+  {==}
+
+def Laws.iqm_triangle_reversed_and_rebased():
+  {==}
+
+def Laws.iqm_corner_below_first_vertex_wraps():
+  {==}
+
+def Laws.iqm_name_before_its_nul():
+  {==}
+
+def Laws.iqm_name_without_nul_refused():
+  {==}
+
+def Laws.iqm_material_must_name_a_file():
+  {==}
+
+def Laws.iqm_pose_parents():
   {==}
 
 def Laws.gltf_anim_joint_place():

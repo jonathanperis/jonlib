@@ -2373,6 +2373,21 @@
     "macos"
    ],
    "minutes": 30
+  },
+  {
+   "id": "iqm",
+   "title": "LoadModel, the skeleton and LoadModelAnimations of Inter-Quake Model files (LoadIQM and LoadModelAnimationsIQM: meshes, materials' textures, joints, keyframe poses) against the uncontracted raylib build, with the two files of models_loading_iqm and refusal contracts",
+   "run": [
+    "{python}",
+    "tools/iqm_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 30
   }
  ]
 }
