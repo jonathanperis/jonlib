@@ -2241,7 +2241,6 @@
    ],
    "missing": [
     "GuiScrollPanel",
-    "GuiSpinner",
     "GuiTextBox"
    ]
   },
@@ -2624,7 +2623,7 @@
   {
    "name": "shapes_hilbert_curve",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -2645,9 +2644,7 @@
     "GuiSlider",
     "GuiSpinner"
    ],
-   "missing": [
-    "GuiSpinner"
-   ]
+   "missing": []
   },
   {
    "name": "shapes_easings_testbed",

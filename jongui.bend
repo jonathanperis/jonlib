@@ -9,7 +9,8 @@
 # the global state (GuiEnable, GuiDisable, GuiLock, GuiUnlock, GuiIsLocked,
 # GuiSetState, GuiGetState, GuiSetAlpha), GuiGetTextWidth, GuiLabel,
 # GuiButton, GuiCheckBox, GuiToggle, GuiToggleGroup, GuiSlider and
-# GuiSliderBar, GuiLine and GuiGroupBox, with the default font,
+# GuiSliderBar, GuiLine and GuiGroupBox, GuiValueBox and GuiSpinner (not in
+# edit mode), with the default font,
 # TEXT_WRAP_NONE and raygui's icon set at scale 1 (src/gui_icons.bend). An
 # icon id above 255 (raygui reads past its table) and the other wrap modes
 # mark the frame undefined. See docs/GUI.md.
@@ -936,3 +937,96 @@ def Gui.boxes.done(state: Gui.Checks) -> J.Frame & +List<Bool>:
 # One GuiCheckBox per box, in order: the frame and the new checked flags.
 def Gui.check_boxes(+gui: Gui, +core: J.Core, frame: J.Frame, boxes: +List<Gui.Box>, checked: +List<Bool>) -> J.Frame & +List<Bool>:
   Gui.boxes.done(Gui.boxes.go(boxes, checked, gui, core, GuiChecks{frame, Nil{}}))
+
+# -----------------------------------------------------------------------------
+# GuiValueBox and GuiSpinner (not in edit mode)
+
+# GUI_BUTTON_PRESSED.
+def Gui.pressed(+core: J.Core) -> Bool:
+  J.Input.is_mouse_button_pressed(core, 0) || Gui.pad(J.Input.is_gamepad_button_pressed(core, 0, 7))
+
+# a < b for C ints held as two's-complement words.
+def Gui.int.less(+a: U32, +b: U32) -> Bool:
+  ((a + 2147483648 : U32) < (b + 2147483648 : U32) : U32)
+
+# GuiValueBox's clamp: max when above it, else min when below it.
+def Gui.int.clamp(+value: U32, +min: U32, +max: U32) -> U32:
+  Bool.pick(U32, Gui.int.less(max, value), max, Bool.pick(U32, Gui.int.less(value, min), min, value))
+
+# The label beside the control: after it, or before it for TEXT_ALIGN_LEFT.
+def Gui.value.text(width: Maybe<F32>, +gui: Gui, frame: J.Frame, text: String, +bounds: J.Rectangle, +state: U32) -> J.Frame:
+  match width:
+    case None{}: J.Frame.refuse(frame)
+    case Some{+measured}:
+      J.Rectangle{+x, +y, +w, +h} = bounds
+      +padding = Gui.style.f32(gui, 10, 13)
+      +tw = (measured + 2.0 : F32)
+      +ty = (y + h / 2.0 - F32.trunc((Gui.style.f32(gui, 0, 16) / 2.0 : F32)) : F32)
+      Gui.draw_text(gui, frame, text, J.Rectangle{Bool.pick(F32, U32.is_eq(Gui.get_style(gui, 10, 14), 0), (x - tw - padding : F32), (x + w + padding : F32)), ty, tw, Gui.style.f32(gui, 0, 16)},
+        Bool.pick(U32, U32.is_eq(Gui.get_style(gui, 10, 14), 2), 0, 2), Gui.color(gui, 1, (2 + state * 3 : U32)))
+
+def Gui.value.label(+gui: Gui, frame: J.Frame, text: Maybe<String>, +bounds: J.Rectangle, +state: U32) -> J.Frame:
+  match text:
+    case None{}: frame
+    case Some{+t}: Gui.value.text(Gui.get_text_width(gui, t), gui, frame, t, bounds, state)
+
+# The box's fill: BASE_COLOR_PRESSED, BASE_COLOR_DISABLED or BLANK.
+def Gui.value.fill(state: U32, +gui: Gui) -> U32:
+  match state:
+    case 2: Gui.color(gui, 10, 7)
+    case 3: Gui.color(gui, 10, 10)
+    case _: 0
+
+# GuiValueBox(bounds, text, &value, minValue, maxValue, editMode) with ints as
+# two's-complement words: the frame, the value and whether the box was
+# pressed. The text drawn is the value as it came; an enabled, unlocked box
+# returns it clamped. Edit mode marks the frame undefined.
+def Gui.value_box(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, +value: U32, +min: U32, +max: U32, edit: Bool) -> J.Frame & (U32 & Bool):
+  match edit:
+    case True{}: (J.Frame.refuse(frame), (value, False{}))
+    case False{}:
+      +live = Gui.active(gui) && Bool.not(Gui.exclusive(gui))
+      +over = live && J.Collision.point_rec(J.Input.get_mouse_position(core), bounds)
+      +state = Bool.pick(U32, over, 1, Gui.get_state(gui))
+      f1 = Gui.draw_rectangle(frame, bounds, Gui.get_style(gui, 10, 12), Gui.color(gui, 10, (state * 3 : U32)), Gui.value.fill(state, gui))
+      f2 = Gui.draw_text.bytes(TextCore.integer.field(True{}, 10, False{}, value, 0, 0, False{}, 0), gui, f1, Gui.text_bounds(gui, 10, bounds), 1, Gui.color(gui, 10, (2 + state * 3 : U32)))
+      (Gui.value.label(gui, f2, text, bounds, state), (Bool.pick(U32, live, Gui.int.clamp(value, min, max), value), over && Gui.pressed(core)))
+
+def Gui.spin.refused(refused: Bool, frame: J.Frame) -> J.Frame:
+  match refused:
+    case True{}: J.Frame.refuse(frame)
+    case False{}: frame
+
+def Gui.spin.label(r: J.Frame & (U32 & Bool), +gui: Gui, text: Maybe<String>, +bounds: J.Rectangle, +state: U32, +refused: Bool) -> J.Frame & (U32 & Bool):
+  (frame, result) = r
+  (Gui.spin.refused(refused, Gui.value.label(gui, frame, text, bounds, state)), result)
+
+# The value after the buttons, clamped min first: tempValue--, tempValue++.
+# INT_MIN - 1 and INT_MAX + 1 overflow in C and mark the frame undefined.
+def Gui.spin.box(r: J.Frame & Bool, +down: Bool, +gui: Gui, +core: J.Core, +bounds: J.Rectangle, text: Maybe<String>, +value: U32, +min: U32, +max: U32, +edit: Bool, +state: U32) -> J.Frame & (U32 & Bool):
+  (frame, +up) = r
+  J.Rectangle{+x, +y, +w, +h} = bounds
+  +width = Gui.style.f32(gui, 10, 16)
+  +gap = Gui.style.f32(gui, 10, 17)
+  +lowered = Bool.pick(U32, down, (value - 1 : U32), value)
+  +raised = Bool.pick(U32, up, (lowered + 1 : U32), lowered)
+  +floored = Bool.pick(U32, Gui.int.less(raised, min), min, raised)
+  +temp = Bool.pick(U32, edit, raised, Bool.pick(U32, Gui.int.less(max, floored), max, floored))
+  Gui.spin.label(Gui.value_box(gui, core, frame, J.Rectangle{(x + width + gap : F32), y, (w - 2.0 * (width + gap) : F32), h}, None{}, temp, min, max, edit),
+    gui, text, bounds, state, (down && U32.is_eq(value, 2147483648)) || (up && U32.is_eq(lowered, 2147483647)))
+
+def Gui.spin.right(r: J.Frame & Bool, +gui: Gui, +core: J.Core, +bounds: J.Rectangle, text: Maybe<String>, +value: U32, +min: U32, +max: U32, +edit: Bool, +state: U32) -> J.Frame & (U32 & Bool):
+  (frame, down) = r
+  J.Rectangle{+x, +y, +w, +h} = bounds
+  +width = Gui.style.f32(gui, 10, 16)
+  Gui.spin.box(Gui.button(gui, core, frame, J.Rectangle{(x + w - width : F32), y, width, h}, "#119#"), down, gui, core, bounds, text, value, min, max, edit, state)
+
+# GuiSpinner(bounds, text, &value, minValue, maxValue, editMode): the left
+# and right buttons (ICON_ARROW_LEFT_FILL, ICON_ARROW_RIGHT_FILL), the value
+# box between them and the label. The frame, the value and GuiValueBox's
+# result.
+def Gui.spinner(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, +value: U32, +min: U32, +max: U32, +edit: Bool) -> J.Frame & (U32 & Bool):
+  J.Rectangle{+x, +y, _, +h} = bounds
+  +over = Gui.active(gui) && Bool.not(Gui.exclusive(gui)) && J.Collision.point_rec(J.Input.get_mouse_position(core), bounds)
+  Gui.spin.right(Gui.button(gui, core, frame, J.Rectangle{x, y, Gui.style.f32(gui, 10, 16), h}, "#118#"), gui, core, bounds, text, value, min, max, edit,
+    Bool.pick(U32, over, Gui.hover(core), Gui.get_state(gui)))
