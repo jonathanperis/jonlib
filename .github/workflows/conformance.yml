@@ -14,6 +14,13 @@ name: Conformance
 # Pushes and pull requests run on Linux only while the port is being completed
 # (tools/ci_scope.py MERGE_HOSTS, docs/CI.md): hosted macOS runs five jobs at a
 # time and held every merge for hours. Scheduled and manual runs use every host.
+#
+# The account's five hosted macOS runners are shared by every repository of the
+# owner. Fifteen macOS shards started together took all five for hours, and the
+# other repositories' single macOS job waited behind them. So the macOS shards
+# are their own job (gatesMac) with max-parallel: three run at a time and two
+# runners stay free. A matrix-wide max-parallel would also hold back the Linux
+# shards, which have runners to spare.
 on:
   push:
     branches: [main, 'feature/**']
@@ -54,6 +61,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python3 tools/ci_scope.py
 
+  # Every host of the run except macOS, whose shards run in gatesMac below.
   gates:
     name: Gates ${{ matrix.os }} ${{ matrix.shard }}/15
     needs: [scope]
@@ -62,6 +70,49 @@ jobs:
       fail-fast: false
       matrix:
         os: ${{ fromJSON(needs.scope.outputs.hosts) }}
+        shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+        exclude:
+          - os: macos-15
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 210
+    env:
+      BEND_NO_TELEMETRY: '1'
+      CC: clang
+      CXX: clang++
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-pinned
+      - name: Run gate shard
+        run: >-
+          python3 tools/run_gates.py --shard ${{ matrix.shard }}/15
+          --bend-source "${{ github.workspace }}/.build/dependencies/bend"
+          --raylib-source "${{ github.workspace }}/.build/dependencies/raylib"
+      - name: Upload gate results
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: gates-${{ matrix.os }}-${{ matrix.shard }}
+          retention-days: 30
+          include-hidden-files: true
+          if-no-files-found: error
+          path: |
+            .build/gates/*.json
+            .build/*-probe/results.json
+            .build/conformance.json
+
+  # The same shards on macOS, three at a time (see the note at the top). Same
+  # job names and artifact names as the Linux shards; keep the steps equal.
+  gatesMac:
+    name: Gates ${{ matrix.os }} ${{ matrix.shard }}/15
+    needs: [scope]
+    if: ${{ needs.scope.outputs.mode == 'full' && contains(needs.scope.outputs.hosts, 'macos-15') }}
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: [macos-15]
         shard: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 210
@@ -146,7 +197,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Require what the scope asked for on both OSes
+      - name: Require what the scope asked for on Linux
         env:
           SCOPE_RESULT: ${{ needs.scope.result }}
           MODE: ${{ needs.scope.outputs.mode }}
@@ -165,15 +216,15 @@ jobs:
   conformanceMac:
     name: CPU and JavaScript (macos-15)
     if: ${{ always() && contains(needs.scope.outputs.hosts, 'macos-15') }}
-    needs: [scope, gates, scoped]
+    needs: [scope, gatesMac, scoped]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Require what the scope asked for on both OSes
+      - name: Require what the scope asked for on macOS
         env:
           SCOPE_RESULT: ${{ needs.scope.result }}
           MODE: ${{ needs.scope.outputs.mode }}
-          GATES_RESULT: ${{ needs.gates.result }}
+          GATES_RESULT: ${{ needs.gatesMac.result }}
           SCOPED_RESULT: ${{ needs.scoped.result }}
         run: |
           test "$SCOPE_RESULT" = success

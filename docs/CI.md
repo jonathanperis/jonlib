@@ -79,13 +79,19 @@ each host of the run (`ubuntu-24.04`; also `macos-15` in nightly and manual
 runs). `tools/run_gates.py` splits the manifest into fifteen
 duration-balanced shards per host: on Linux they all start at once and a
 complete run takes about an hour and a half, leaving runners for the scoped
-runs of other branches. On macOS, five at a time, the fifteen take several
-hours, which is why macOS is nightly for now. The `minutes` estimates in
+runs of other branches. On macOS the fifteen run three at a time and take
+several hours, which is why macOS is nightly for now. The limit is
+`max-parallel` on the `gatesMac` job: the account has five hosted macOS
+runners, shared by every repository of the owner, and fifteen shards started
+together took all five for hours while the other repositories' macOS jobs
+waited. Three leaves two free. The macOS shards are a job of their own because
+a limit on the whole matrix would hold back the Linux shards too. The `minutes` estimates in
 `gates.json` are the observed macOS durations (the slower host; gates not yet
 measured there use 2.7 times their Linux time). The aggregate job `CPU and
 JavaScript (ubuntu-24.04)` passes only when everything the scope asked for
-passed (every shard on every host of the run, or every scoped job);
-`CPU and JavaScript (macos-15)` exists in the runs that include macOS.
+passed (every Linux shard, or every scoped job);
+`CPU and JavaScript (macos-15)` exists in the runs that include macOS and
+requires every macOS shard in the same way.
 The workflow has no path filter (GitHub evaluates one on the commits a push
 adds to the repository, so a branch created at a commit another ref already
 holds would start no run): a documentation-only change is a `none` scope,
