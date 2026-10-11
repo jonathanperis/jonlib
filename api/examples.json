@@ -1023,7 +1023,7 @@
   {
    "name": "core_automation_events",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode2D",
