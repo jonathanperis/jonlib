@@ -32,6 +32,25 @@ class RlglFramebufferProbeTests(unittest.TestCase):
         places = [loader.index(step) for step in order]
         self.assertEqual(places, sorted(places))
 
+    def test_the_blind_scenarios_compare_the_screen_of_a_small_window(self):
+        blind = [name for name in probe.SCENARIOS if name.startswith('blind')]
+        self.assertEqual(blind, ['blind', 'blind-clear', 'blind-bare', 'blind-after'])
+        self.assertEqual({probe.size(name) for name in blind}, {8})
+        self.assertEqual(probe.size('loader'), 64)
+        self.assertNotIn('@', probe.PROGRAM)
+        self.assertEqual(probe.word('RED'), 0xe62937ff)
+        self.assertEqual(probe.pixels('blind 1 0 ' + '00e430ff' * 2), ['00e430ff', '00e430ff'])
+        source = probe.native_source()
+        for call in ('BeginTextureMode(target);', 'ClearBackground(WHITE);', 'rlClearScreenBuffers();', 'rlUnloadFramebuffer(blind.id);', 'dump();'):
+            self.assertIn(call, source)
+        for call in ('J.Rlgl.render_texture_depth(fb, 4, 2, id)', 'J.Frame.framebuffer(', 'J.Rlgl.get_matrix_projection(', 'J.Rlgl.clear_screen_buffers(frame)'):
+            self.assertIn(call, probe.PROGRAM)
+
+    def test_the_depth_target_contracts_refuse_all_but_the_depth_only_framebuffer(self):
+        rows = {name: row for name, row in probe.CONTRACTS.items() if name.startswith('depth-target') or name == 'blind-nested'}
+        self.assertEqual([name for name, row in rows.items() if row.endswith(' 1')], ['depth-target'])
+        self.assertEqual(len(rows), 6)
+
     def test_the_bound_scenario_uses_the_bound_frame(self):
         for call in ('J.Rlgl.enable_framebuffer(frame, fb)', 'J.Rlgl.Bound.load_texture(', 'J.Rlgl.Bound.load_texture_depth(', 'J.Rlgl.Bound.attach(', 'J.Rlgl.Bound.disable('):
             self.assertIn(call, probe.PROGRAM)

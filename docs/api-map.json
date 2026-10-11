@@ -684,7 +684,7 @@
   "BeginTextureMode": {
     "jonlib": "Frame.begin_texture_mode",
     "status": "profile-covered",
-    "scope": "The render texture's R8G8B8A8 color buffer becomes the target (the frame holds it), with its viewport, rlOrtho projection and an identity modelview; the scissor keeps the previous viewport's clip bounds.",
+    "scope": "The render texture's R8G8B8A8 color buffer becomes the target (the frame holds it), with its viewport, rlOrtho projection and an identity modelview; the scissor keeps the previous viewport's clip bounds. A framebuffer without a color attachment (Rlgl.render_texture_depth) is incomplete on rlsw: the states are set and every draw and clear is dropped.",
     "gaps": [
       "A second BeginTextureMode before EndTextureMode is refused (frame undefined)",
       "Readbacks are None while a render texture is the target",

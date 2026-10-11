@@ -1995,6 +1995,42 @@ law rlgl_framebuffer_channel_one_is_ignored:
 law rlgl_framebuffer_depth_attaches_as_texture_or_renderbuffer:
   {J.Rlgl.framebuffer.attached(J.RlglFramebuffer{1, 0, 0, 0, 0, 0, 0, 0, 0}, 3, 64, 48, 19, 100, 200) == J.RlglFramebuffer{1, 0, 0, 0, 0, 3, 64, 48, 19} : J.Rlgl.Framebuffer}
 
+# A framebuffer with a depth attachment alone (a shadow map's) is incomplete
+# on rlsw, which then refuses swBegin and swClear: its RenderTexture2D has no
+# color texture, a framebuffer with one or framebuffer 0 gives none, the
+# screen is never such a target, and leaving one sets no depth buffer aside
+# where leaving a render texture does.
+law rlgl_framebuffer_depth_alone_is_incomplete:
+  {J.Rlgl.Framebuffer.complete(J.RlglFramebuffer{1, 0, 0, 0, 0, 3, 1024, 1024, 19}) == False{} : Bool}
+
+law rlgl_render_texture_depth_has_no_color_texture:
+  {J.Rlgl.render_texture_depth(J.RlglFramebuffer{1, 0, 0, 0, 0, 3, 1024, 1024, 19}, 1024, 1024, 3) == Some{J.RenderTexture{1, J.Texture{0, 1024, 1024, 0, False{}, False{}, None{}}, 3}} : Maybe<J.RenderTexture>}
+
+law rlgl_render_texture_depth_refuses_a_color_attachment:
+  {J.Rlgl.render_texture_depth(J.RlglFramebuffer{1, 2, 64, 48, 7, 3, 64, 48, 19}, 64, 48, 3) == None{} : Maybe<J.RenderTexture>}
+
+law rlgl_render_texture_depth_refuses_another_depth:
+  {J.Rlgl.render_texture_depth(J.RlglFramebuffer{1, 0, 0, 0, 0, 3, 64, 48, 19}, 64, 48, 4) == None{} : Maybe<J.RenderTexture>}
+
+law rlgl_render_texture_depth_refuses_framebuffer_zero:
+  {J.Rlgl.render_texture_depth(J.Rlgl.Framebuffer.none(), 64, 48, 0) == None{} : Maybe<J.RenderTexture>}
+
+law blind_target_never_the_screen:
+  for stash: List<FrameCore.Stash>
+  {FrameCore.Canvas.target.blind(FrameCore.Screen{stash}) == (FrameCore.Screen{stash}, False{}) : FrameCore.Target & Bool}
+
+law blind_target_leaves_no_depth_buffer:
+  for id: U32
+  for buffer: Array<U32>
+  for stash: List<FrameCore.Stash>
+  {FrameCore.Canvas.target.left(True{}, id, buffer, stash) == FrameCore.Screen{stash} : FrameCore.Target}
+
+law render_target_leaves_its_depth_buffer:
+  for id: U32
+  for buffer: Array<U32>
+  for stash: List<FrameCore.Stash>
+  {FrameCore.Canvas.target.left(False{}, id, buffer, stash) == FrameCore.Screen{Con{FrameCore.Stash{id, buffer}, stash}} : FrameCore.Target}
+
 # ColorFromHSV's fmodf(phase, 6) (docs/API.md): the terms subtracted are
 # 6*2^j (6.0 is 0x40c00000, each doubling adds one to the exponent), starting
 # from as many doublings as the magnitude's exponent is above 6.0's: none

@@ -209,6 +209,7 @@ examples keep the ids in a `RenderTexture2D` they fill by hand.
 | `rlUnloadFramebuffer(id)` | `Rlgl.unload_framebuffer(frame, fb, depth)` | `Frame` |
 | `rlUnloadTexture(id)` | `Rlgl.unload_texture(frame, texture)` | `Frame` |
 | the struct filled by hand | `Rlgl.render_texture(fb, texture, depth_id)` | `Maybe<RenderTexture>` for `BeginTextureMode` |
+| the same without a color texture | `Rlgl.render_texture_depth(fb, width, height, depth_id)` | `Maybe<RenderTexture>` whose texture mode draws nothing |
 
 - **Attachments.** `attachType` 0 with any `texType` of 0 and above (a 2D
   texture, a renderbuffer or a cubemap face: rlsw ignores the difference)
@@ -233,6 +234,17 @@ examples keep the ids in a `RenderTexture2D` they fill by hand.
   texture and that depth id; None otherwise, because rlsw draws into what is
   attached whatever the struct says. The depth values are kept by
   framebuffer id, as for `LoadRenderTexture`.
+- **Without a color attachment.** A shadow map's framebuffer has a depth
+  attachment alone, so rlsw finds it incomplete and, while it is bound,
+  refuses `swBegin` (the vertices after it are dropped), `swClear` and
+  `swDrawArrays`: nothing is drawn or cleared, not even its depth.
+  `Rlgl.render_texture_depth(fb, width, height, depth_id)` is that
+  `RenderTexture` (texture id 0 with the size the struct says, 1 to 4096;
+  None for framebuffer 0, for one with a color attachment and for another
+  depth id). `BeginTextureMode` with it sets the viewport, the projection of
+  that size, the modelview and every state as usual (the clear color of a
+  `ClearBackground` too) and drops the draws and the clears until
+  `EndTextureMode`, which hands it back.
 - **Unloading.** `rlUnloadFramebuffer` deletes the depth attachment with the
   framebuffer: pass its `Texture`, or None when it was unloaded before.
 - **A depth attachment as a texture.** rlsw binds it but turns texturing
@@ -242,12 +254,16 @@ examples keep the ids in a `RenderTexture2D` they fill by hand.
   (`shaders_depth_rendering`).
 
 Gate `rlgl-framebuffer` (`tools/rlgl_framebuffer_probe.py`) compares the ids
-and the completeness answers of ten scenarios with the reference: the
+and the completeness answers of fourteen scenarios with the reference: the
 examples' loader with and without `rlEnableFramebuffer`, a depth attachment
 of another size, the ignored channels, texture types, the color texture as
 the depth attachment, framebuffer 0, the ids after an unload, two
-framebuffers, and `LoadRenderTexture` after a hand-built one. Six contracts
-cover the refusals.
+framebuffers, and `LoadRenderTexture` after a hand-built one. Four of them
+compare the screen's pixels too, around a texture mode on a framebuffer
+without a color attachment: a clear and a rectangle that are dropped, the
+projection and the active framebuffer inside it, the clear color it leaves,
+a framebuffer without any attachment, and `LoadRenderTexture` reusing the id
+afterwards. Twelve contracts cover the refusals.
 The ports `shaders_depth_writing`, `shaders_hybrid_rendering` and
 `shaders_depth_rendering` draw through a framebuffer built this way and
 compare every frame with the native example.
