@@ -4487,7 +4487,7 @@
   {
    "name": "models_loading_vox",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
