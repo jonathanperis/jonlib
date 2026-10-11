@@ -2047,7 +2047,7 @@
   {
    "name": "shapes_digital_clock",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",

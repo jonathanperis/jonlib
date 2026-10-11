@@ -46,6 +46,12 @@ only runs what C defines: the wheel and rotation scripts are defined in C
 (raylib computes expf/logf and sinf/cosf), and shapes_basic_shapes, refused
 from its first frame, is not run natively. CPU-1, CPU-2 and JavaScript lanes.
 
+The clock examples read the C library's time() and localtime(), which the
+driver's header redirects in the example's translation unit: time() is the
+script's seed (the seconds of the day at InitWindow) plus the scripted
+clock's whole seconds, and localtime is gmtime. Their ports take the seed
+as that time and add GetTime's whole seconds.
+
 An example that writes files (SCRATCH: core_storage_values) runs each script
 in an empty directory of its own, the reference as its working directory and
 Jonlib as the directory its setup takes; the files left must have the same
@@ -265,6 +271,7 @@ EXAMPLES = {
     'shaders_deferred_rendering': ('shaders/shaders_deferred_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_skybox_rendering': ('models/models_skybox_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'text_codepoints_loading': ('text/text_codepoints_loading.c', 'Ex.setup(core, frame)'),
+    'shapes_digital_clock': ('shapes/shapes_digital_clock.c', 'Ex.setup(seed, core, frame)'),
     'core_storage_values': ('core/core_storage_values.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_automation_events': ('core/core_automation_events.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
@@ -344,6 +351,10 @@ PERSPECTIVE.add('shaders_depth_writing')
 PERSPECTIVE.add('shaders_hybrid_rendering')
 PERSPECTIVE.add('shaders_depth_rendering')
 PERSPECTIVE.add('shaders_deferred_rendering')
+# The clock examples read the C library's time(): a script's seed is the seconds of the day at InitWindow (the
+# shim's time() adds the scripted clock's whole seconds, as the ports add GetTime's). The analog hands turn by
+# tenths of a degree, which the Apple profile's sinf/cosf do not cover.
+SEEDED.add('shapes_digital_clock'); CONFIG_FLAGS['shapes_digital_clock'] = 32
 # Examples whose loop does IO (a J.Effects program): replayed with J.Program.replay_io.
 EFFECTS = {'shaders_shadowmap_rendering'}
 # A program of another probe (tools/effects_probe.py) names its Bend module instead of examples/<name>.bend.
@@ -1057,6 +1068,10 @@ def scripts():
         # The depth attachment drawn as a texture is a white rectangle on rlsw, whatever the free camera does (W
         # moves it, the pointer turns it): the help box over white.
         script('shaders_depth_rendering', 'white', [quick(), quick([key(KEY_W)]), quick([mouse_at(430, 240)]), slow([key(KEY_W, False)])]),
+        # 13:59:58 at InitWindow, a tenth of a second a frame: the seconds tick, the dots blink, the hour turns;
+        # SPACE shows the analog face (the hands at 14:00:00 and 14:00:01), SPACE again the display.
+        script('shapes_digital_clock', 'ticks', [long() for _ in range(19)] + [long([key(KEY_SPACE)])] + [long([key(KEY_SPACE, False)])] + [long() for _ in range(9)]
+               + [quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)])], seed=13 * 3600 + 59 * 60 + 58),
         script('text_codepoints_loading', 'frames', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), key(KEY_RIGHT)])]),
         # The camera starts with the cube behind it: the mouse turns it half a turn and down (the white cube, drawn
         # without culling or depth writes, under the grid), then W walks toward it.
@@ -1332,7 +1347,8 @@ REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particle
             'shapes_easings_ball', 'shapes_easings_box', 'shapes_easings_testbed', 'textures_textured_curve',
             'core_2d_camera_mouse_zoom', 'shapes_simple_particles',
             'shapes_math_sine_cosine',
-            'shapes_pie_chart'}
+            'shapes_pie_chart',
+            'shapes_digital_clock'}
 
 
 def refusal(item, libm):
@@ -1449,13 +1465,15 @@ static double probe_clock = 0.0, probe_after = 0.0;
 double JonlibProbeTime(void) { return probe_clock; }
 int JonlibProbeUsleep(unsigned int us) { (void)us; probe_clock = probe_after; return 0; }
 int JonlibProbeNanosleep(const struct timespec *req, struct timespec *rem) { (void)req; (void)rem; probe_clock = probe_after; return 0; }
+static unsigned seed = 0;
+// An example's time(): the script's seed (the seconds at InitWindow) plus the scripted clock's whole seconds.
+time_t JonlibExampleTime(time_t *out) { time_t now = (time_t)seed + (time_t)probe_clock; if (out) *out = now; return now; }
 
 #define MAX_FRAMES 1024
 #define MAX_EVENTS 64
 typedef struct { double begin, end, after; int count; int events[MAX_EVENTS][4]; } Frame;
 static Frame frames[MAX_FRAMES];
 static int frame_count = 0, frame_index = 0, width = 0, height = 0;
-static unsigned seed = 0;
 static double start = 0.0;
 
 static double dbl(unsigned long long b) { double d; memcpy(&d, &b, 8); return d; }

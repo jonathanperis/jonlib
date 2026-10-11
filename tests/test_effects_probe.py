@@ -123,6 +123,27 @@ class ScratchScriptTests(unittest.TestCase):
             self.assertNotEqual(ep.scratch(probe, 0), ep.scratch(probe, 0, native=True))
 
 
+class ClockExampleTests(unittest.TestCase):
+    """The examples that read the C library's time()."""
+
+    def test_the_shim_redirects_time_in_the_examples_translation_unit(self):
+        shim = ep.SHIM.read_text()
+        for line in ('#include <time.h>', 'time_t JonlibExampleTime(time_t *out);', '#define time(x) JonlibExampleTime(x)', '#define localtime(x) gmtime(x)'):
+            self.assertIn(line, shim)
+        self.assertLess(shim.index('#include <time.h>'), shim.index('#define time(x)'))
+        self.assertIn('time_t JonlibExampleTime(time_t *out) { time_t now = (time_t)seed + (time_t)probe_clock;', ep.C_DRIVER)
+
+    def test_the_clock_script_crosses_a_second_and_the_hour(self):
+        item = next(item for item in ep.scripts() if item['example'] == 'shapes_digital_clock')
+        self.assertIn('shapes_digital_clock', ep.SEEDED)
+        times = [item['seed'] + int(item['start'])] + [item['seed'] + int(frame['after']) for frame in item['frames'][:-1]]
+        self.assertEqual(times[0], 13 * 3600 + 59 * 60 + 58)
+        self.assertIn(14 * 3600, times)
+        self.assertEqual(sorted(set(times)), [50398, 50399, 50400, 50401])
+        self.assertEqual(ep.refusal(item, 'Glibc239Libm'), None)
+        self.assertEqual(ep.refusal(item, 'AppleLibm'), 'reported')
+
+
 class UndefinedNativeExampleTests(unittest.TestCase):
     def test_the_codepoints_example_repeats_a_codepoint_and_is_not_run(self):
         import re
