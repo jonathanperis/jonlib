@@ -6890,7 +6890,7 @@
   {
    "name": "audio_sound_positioning",
    "category": "audio",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",

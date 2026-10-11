@@ -290,6 +290,7 @@ EXAMPLES = {
     'textures_sprite_button': ('textures/textures_sprite_button.c', 'Ex.setup(RESOURCES, core, frame)'),
     'textures_sprite_explosion': ('textures/textures_sprite_explosion.c', 'Ex.setup(RESOURCES, core, frame)'),
     'audio_sound_multi': ('audio/audio_sound_multi.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'audio_sound_positioning': ('audio/audio_sound_positioning.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
     'core_custom_frame_control': ('core/core_custom_frame_control.c', 'Ex.setup(core, frame)'),
     'shapes_digital_clock': ('shapes/shapes_digital_clock.c', 'Ex.setup(seed, core, frame)'),
@@ -411,8 +412,9 @@ IO_SETUP.add('shaders_basic_pbr'); PERSPECTIVE.add('shaders_basic_pbr'); CONFIG_
 IO_SETUP.add('models_loading_m3d'); PERSPECTIVE.add('models_loading_m3d')
 # Examples that call raudio.c: it is compiled beside them with miniaudio's null backend only (the reference library
 # has no audio module). The device opens on every host and mixes on its own thread; no frame depends on it.
-AUDIO = {'textures_sprite_button', 'textures_sprite_explosion', 'audio_sound_multi'}
+AUDIO = {'textures_sprite_button', 'textures_sprite_explosion', 'audio_sound_multi', 'audio_sound_positioning'}
 IO_SETUP.update(AUDIO)
+PERSPECTIVE.add('audio_sound_positioning')
 
 
 def scratch(probe, index, native=False):
@@ -1179,6 +1181,11 @@ def scripts():
         # SPACE twelve times: the ten sounds and around to the first two again (held, it plays once).
         script('audio_sound_multi', 'spaces', [quick(), *[frame for _ in range(12) for frame in (quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]))],
                                                quick([key(KEY_SPACE)]), slow(), quick(), quick([key(KEY_SPACE, False)])]),
+        # The sphere circles at the clock's angle while the free camera turns, zooms, pans and moves (W, then D).
+        script('audio_sound_positioning', 'around', [quick(), quick([mouse_at(410, 230)]), quick([mouse_at(450, 210)]), slow([mouse_at(380, 260)]),
+                                                     quick([(MOUSE_WHEEL, 0, 2, 0)]), quick([(MOUSE_WHEEL, 0, -1, 0)]), quick([button(2)]),
+                                                     quick([mouse_at(420, 250)]), quick([mouse_at(470, 280), button(2, False)]), quick([key(87)]),
+                                                     slow(), quick([key(87, False), key(68)]), quick([key(68, False)]), quick()]),
         # The mouse on the character shows the placement cube; two clicks splat two decals (the table lists them);
         # RMB with a move turns the camera; a click on "Clear Decals" removes them.
         script('models_decals', 'splat', [quick(), quick([mouse_at(400, 230)]), quick([button(0)]), quick([button(0, False), mouse_at(400, 150)]), quick([button(0)]),
