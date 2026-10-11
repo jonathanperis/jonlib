@@ -247,6 +247,7 @@ EXAMPLES = {
     'models_animation_blend_custom': ('models/models_animation_blend_custom.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_waving_cubes': ('models/models_waving_cubes.c', 'Ex.setup(core, frame)'),
     'shaders_spotlight_rendering': ('shaders/shaders_spotlight_rendering.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
+    'models_mesh_generation': ('models/models_mesh_generation.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -319,6 +320,7 @@ PERSPECTIVE.add('models_waving_cubes')
 IO_SETUP.add('shaders_spotlight_rendering'); SEEDED.add('shaders_spotlight_rendering')
 # The binary64 cos and sin of its first frame have no AppleLibm profile either (docs/MATH.md): the same contract.
 PERSPECTIVE.add('shaders_spotlight_rendering')
+PERSPECTIVE.add('models_mesh_generation')
 
 
 # -----------------------------------------------------------------------------
@@ -972,6 +974,14 @@ def scripts():
         # the textures: the frame rate and the texts over white, whatever the seed and the pointer do.
         script('shaders_spotlight_rendering', 'white', [quick(), quick([mouse_at(300, 200)]), slow(), quick([mouse_at(640, 90)])], seed=7),
         script('shaders_spotlight_rendering', 'seeded', [quick(), quick()], seed=20261011),
+        # Each generated model with the checked texture, in order: clicks and RIGHT go from the plane to the
+        # triangle (cube, sphere, hemisphere, cylinder, torus, knot, polygon), RIGHT wraps to the plane and LEFT
+        # back to the triangle.
+        script('models_mesh_generation', 'cycle', [quick(), quick([button(0)]), quick([button(0, False)]), quick([button(0)]), quick([button(0, False), key(KEY_RIGHT)]),
+                                                   quick([key(KEY_RIGHT, False)]), quick([key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), button(0)]),
+                                                   slow([button(0, False), key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), button(0)]),
+                                                   quick([button(0, False), key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), quick([key(KEY_RIGHT)]),
+                                                   quick([key(KEY_RIGHT, False), key(KEY_LEFT)])]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.
