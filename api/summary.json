@@ -6,8 +6,8 @@
     "blocked": 17,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 395,
-    "partial": 1472
+    "not-started": 386,
+    "partial": 1481
   },
   "core_functions": {
     "total": 600,
@@ -30,8 +30,8 @@
     "blocked": 17,
     "complete": 0,
     "in-progress": 0,
-    "not-started": 94,
-    "partial": 820
+    "not-started": 85,
+    "partial": 829
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -70,8 +70,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 143,
-      "partial": 260
+      "not-started": 134,
+      "partial": 269
     },
     "rcamera.h": {
       "total": 35,
@@ -315,8 +315,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 93,
-      "partial": 94
+      "not-started": 91,
+      "partial": 96
     },
     {
       "id": "shapes",
@@ -533,8 +533,8 @@
       "blocked": 0,
       "complete": 0,
       "in-progress": 0,
-      "not-started": 17,
-      "partial": 35
+      "not-started": 10,
+      "partial": 42
     },
     {
       "id": "configuration",

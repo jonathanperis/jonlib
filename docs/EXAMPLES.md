@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 172 ported, 18 ready, 22 waiting.
+Totals: 212 examples; 172 ported, 22 ready, 18 waiting.
 
 ## APIs that unblock the most examples
 
@@ -17,20 +17,11 @@ Totals: 212 examples; 172 ported, 18 ready, 22 waiting.
 | `InitAudioDevice` | 12 |
 | `LoadSound` | 6 |
 | `PlaySound` | 6 |
-| `rlDisableFramebuffer` | 6 |
-| `rlEnableFramebuffer` | 6 |
-| `rlFramebufferAttach` | 6 |
-| `rlFramebufferComplete` | 6 |
-| `rlLoadFramebuffer` | 6 |
-| `rlLoadTextureDepth` | 6 |
-| `rlUnloadFramebuffer` | 6 |
 | `UnloadSound` | 5 |
 | `LoadMusicStream` | 4 |
 | `PlayMusicStream` | 4 |
 | `UnloadMusicStream` | 4 |
 | `UpdateMusicStream` | 4 |
-| `rlLoadTexture` | 4 |
-| `rlUnloadTexture` | 4 |
 | `GetMusicTimeLength` | 3 |
 | `GetMusicTimePlayed` | 3 |
 | `LoadAudioStream` | 3 |
@@ -53,6 +44,15 @@ Totals: 212 examples; 172 ported, 18 ready, 22 waiting.
 | `GetFileModTime` | 1 |
 | `GetWorkingDirectory` | 1 |
 | `GuiGetFont` | 1 |
+| `GuiListViewEx` | 1 |
+| `IsSoundPlaying` | 1 |
+| `LoadDirectoryFiles` | 1 |
+| `LoadDirectoryFilesEx` | 1 |
+| `LoadSoundAlias` | 1 |
+| `LoadVrStereoConfig` | 1 |
+| `SetAudioStreamCallback` | 1 |
+| `SetAudioStreamPan` | 1 |
+| `SetMusicPan` | 1 |
 
 ## Examples
 
@@ -213,7 +213,7 @@ Totals: 212 examples; 172 ported, 18 ready, 22 waiting.
 | `models_yaw_pitch_roll` | models | ported |  |
 | `models_waving_cubes` | models | ported |  |
 | `models_heightmap_rendering` | models | ported |  |
-| `models_skybox_rendering` | models | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlGetCullDistanceFar`, `rlGetCullDistanceNear`, `rlLoadFramebuffer`, `rlLoadTextureCubemap`, `rlLoadTextureDepth`, `rlUnloadFramebuffer` |
+| `models_skybox_rendering` | models | waiting | `rlGetCullDistanceFar`, `rlGetCullDistanceNear`, `rlLoadTextureCubemap` |
 | `models_textured_cube` | models | ported |  |
 | `models_animation_gpu_skinning` | models | ported |  |
 | `models_bone_socket` | models | ported |  |
@@ -247,16 +247,16 @@ Totals: 212 examples; 172 ported, 18 ready, 22 waiting.
 | `shaders_multi_sample2d` | shaders | ported |  |
 | `shaders_normalmap_rendering` | shaders | ported |  |
 | `shaders_spotlight_rendering` | shaders | ported |  |
-| `shaders_deferred_rendering` | shaders | waiting | `rlBindFramebuffer`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
-| `shaders_hybrid_rendering` | shaders | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
+| `shaders_deferred_rendering` | shaders | waiting | `rlBindFramebuffer` |
+| `shaders_hybrid_rendering` | shaders | ready |  |
 | `shaders_texture_tiling` | shaders | ported |  |
-| `shaders_shadowmap_rendering` | shaders | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTextureDepth`, `rlUnloadFramebuffer` |
+| `shaders_shadowmap_rendering` | shaders | ready |  |
 | `shaders_vertex_displacement` | shaders | ported |  |
-| `shaders_depth_writing` | shaders | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
+| `shaders_depth_writing` | shaders | ready |  |
 | `shaders_basic_pbr` | shaders | ready |  |
 | `shaders_lightmap_rendering` | shaders | ported |  |
 | `shaders_rounded_rectangle` | shaders | ported |  |
-| `shaders_depth_rendering` | shaders | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
+| `shaders_depth_rendering` | shaders | ready |  |
 | `shaders_game_of_life` | shaders | ready |  |
 | `shaders_rlgl_compute` | shaders | ported |  |
 | `shaders_cel_shading` | shaders | ported |  |

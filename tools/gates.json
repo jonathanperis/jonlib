@@ -1752,6 +1752,21 @@
    "minutes": 6
   },
   {
+   "id": "rlgl-framebuffer",
+   "title": "rlgl framebuffer objects (rlLoadFramebuffer, rlLoadTexture without data, rlLoadTextureDepth, rlFramebufferAttach, rlFramebufferComplete, rlEnableFramebuffer, rlDisableFramebuffer, rlUnloadFramebuffer) against the pinned raylib on rlsw: the ids and the completeness in ten scenarios, with refusal contracts",
+   "run": [
+    "{python}",
+    "tools/rlgl_framebuffer_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 3
+  },
+  {
    "id": "mesh-tube",
    "title": "GenMeshCylinder, GenMeshCone and GenMeshKnot (par_shapes' cylinder, cone and disk, scaled, rotated and merged; its trefoil knot) word hashes against the uncontracted raylib build on a host whose sin and cos reproduce the glibc 2.39 controls, with zero and negative sizes and refusal contracts",
    "run": [

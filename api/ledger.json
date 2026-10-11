@@ -94073,23 +94073,29 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.enable_framebuffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Outside texture mode: the frame held as an Rlgl.Bound until a call binds framebuffer 0 again.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Nothing can be drawn into a framebuffer bound this way (BeginTextureMode draws into one)",
+        "Refused during texture mode",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_framebuffer_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -94102,7 +94108,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlEnableFramebuffer semantics from the linked source, add a reference fixture, then implement Rlgl.enable_framebuffer.",
+      "next_step": "Close documented gaps and unverified gates for rlEnableFramebuffer.",
       "priority": 713
     },
     {
@@ -94128,23 +94134,28 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
-      "jonlib": "Rlgl.disable_framebuffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Rlgl.disable_framebuffer / Rlgl.Bound.disable",
+      "mapping_state": "implemented",
+      "scope": "Binds framebuffer 0: the frame back from an Rlgl.Bound, or nothing when none was bound.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Refused during texture mode (EndTextureMode ends it)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_framebuffer_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -94157,7 +94168,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlDisableFramebuffer semantics from the linked source, add a reference fixture, then implement Rlgl.disable_framebuffer.",
+      "next_step": "Close documented gaps and unverified gates for rlDisableFramebuffer.",
       "priority": 713
     },
     {
@@ -98284,23 +98295,28 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.load_texture",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Without pixel data: a zeroed R8G8B8A8 texture of 1..4096 a side with a texture id from rlsw's pool.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Pixel data, other formats and mipmap counts are refused: Texture.load_from_image loads images",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_framebuffer_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -98313,7 +98329,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlLoadTexture semantics from the linked source, add a reference fixture, then implement Rlgl.load_texture.",
+      "next_step": "Close documented gaps and unverified gates for rlLoadTexture.",
       "priority": 728
     },
     {
@@ -98339,23 +98355,29 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.load_texture_depth",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "A texture id with 32-bit depth storage (rlsw's renderbuffer whatever useRenderBuffer says), as a Texture of format 19 without texels.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Drawing it as a texture is refused (rlsw draws it untextured)",
+        "Sizes outside 1..4096 are refused",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_framebuffer_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -98370,7 +98392,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlLoadTextureDepth semantics from the linked source, add a reference fixture, then implement Rlgl.load_texture_depth.",
+      "next_step": "Close documented gaps and unverified gates for rlLoadTextureDepth.",
       "priority": 728
     },
     {
@@ -98620,23 +98642,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.unload_texture",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The texture id returns to rlsw's texture pool (UnloadTexture of the value).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_framebuffer_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -98649,7 +98675,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlUnloadTexture semantics from the linked source, add a reference fixture, then implement Rlgl.unload_texture.",
+      "next_step": "Close documented gaps and unverified gates for rlUnloadTexture.",
       "priority": 728
     },
     {
@@ -98840,23 +98866,29 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.load_framebuffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "A framebuffer id from rlsw's pool of 7 (0 when none is free), without attachments.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The framebuffer object is a value the caller threads (Rlgl.Framebuffer): Jonlib's canvas keeps no table of attachments",
+        "Refused during texture mode (rlgl binds framebuffer 0)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_framebuffer_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -98869,7 +98901,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlLoadFramebuffer semantics from the linked source, add a reference fixture, then implement Rlgl.load_framebuffer.",
+      "next_step": "Close documented gaps and unverified gates for rlLoadFramebuffer.",
       "priority": 728
     },
     {
@@ -98895,23 +98927,29 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
-      "jonlib": "Rlgl.framebuffer_attach",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Rlgl.framebuffer_attach / Rlgl.Bound.attach",
+      "mapping_state": "implemented",
+      "scope": "The color attachment (attachType 0, any texType of 0 and above) or the depth attachment (attachType 100, texType 100 or 200) of the framebuffer value; other types change nothing, as on rlsw.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The framebuffer object is a value the caller threads (Rlgl.Framebuffer): Jonlib's canvas keeps no table of attachments",
+        "Refused during texture mode (rlgl binds framebuffer 0 after it)",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_framebuffer_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -98924,7 +98962,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlFramebufferAttach semantics from the linked source, add a reference fixture, then implement Rlgl.framebuffer_attach.",
+      "next_step": "Close documented gaps and unverified gates for rlFramebufferAttach.",
       "priority": 728
     },
     {
@@ -98950,23 +98988,29 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
-      "jonlib": "Rlgl.framebuffer_complete",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Rlgl.framebuffer_complete / Rlgl.Framebuffer.complete",
+      "mapping_state": "implemented",
+      "scope": "rlsw's rule: framebuffer 0, or an R8G8B8A8 color attachment with, if any, a depth attachment of its size.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The framebuffer object is a value the caller threads (Rlgl.Framebuffer): Jonlib's canvas keeps no table of attachments",
+        "The trace-log warning of an incomplete framebuffer is not reproduced",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_framebuffer_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -98981,7 +99025,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlFramebufferComplete semantics from the linked source, add a reference fixture, then implement Rlgl.framebuffer_complete.",
+      "next_step": "Close documented gaps and unverified gates for rlFramebufferComplete.",
       "priority": 728
     },
     {
@@ -99007,23 +99051,29 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.unload_framebuffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The framebuffer id returns to its pool with the depth values kept for it, and the depth attachment's texture id with it.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The framebuffer object is a value the caller threads (Rlgl.Framebuffer): Jonlib's canvas keeps no table of attachments",
+        "The depth attachment's Texture is passed in (None when unloaded before); another texture is refused",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_framebuffer_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99036,7 +99086,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlUnloadFramebuffer semantics from the linked source, add a reference fixture, then implement Rlgl.unload_framebuffer.",
+      "next_step": "Close documented gaps and unverified gates for rlUnloadFramebuffer.",
       "priority": 728
     },
     {

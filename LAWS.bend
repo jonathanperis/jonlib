@@ -1964,6 +1964,37 @@ law rlgl_begin_lines:
 law rlgl_begin_points_ignored:
   {J.Rlgl.begin.count(0) == 0 : U32}
 
+# rlgl framebuffer objects as values: framebuffer 0 is complete and takes no
+# attachment; a color texture alone completes one; a depth attachment of
+# another size does not; channel 1 is not rlsw's color attachment; and a
+# render texture needs the attached depth id.
+law rlgl_framebuffer_zero_is_complete:
+  {J.Rlgl.Framebuffer.complete(J.Rlgl.Framebuffer.none()) == True{} : Bool}
+
+law rlgl_framebuffer_zero_takes_no_attachment:
+  for id: U32
+  for width: U32
+  for height: U32
+  for format: U32
+  for attach: U32
+  for kind: U32
+  {J.Rlgl.framebuffer.attached(J.Rlgl.Framebuffer.none(), id, width, height, format, attach, kind) == J.Rlgl.Framebuffer.none() : J.Rlgl.Framebuffer}
+
+law rlgl_framebuffer_color_alone_is_complete:
+  {J.Rlgl.Framebuffer.complete(J.Rlgl.framebuffer.attached(J.RlglFramebuffer{1, 0, 0, 0, 0, 0, 0, 0, 0}, 2, 64, 48, 7, 0, 100)) == True{} : Bool}
+
+law rlgl_framebuffer_empty_is_incomplete:
+  {J.Rlgl.Framebuffer.complete(J.RlglFramebuffer{1, 0, 0, 0, 0, 0, 0, 0, 0}) == False{} : Bool}
+
+law rlgl_framebuffer_depth_of_other_size_is_incomplete:
+  {J.Rlgl.Framebuffer.complete(J.Rlgl.framebuffer.attached(J.Rlgl.framebuffer.attached(J.RlglFramebuffer{1, 0, 0, 0, 0, 0, 0, 0, 0}, 2, 64, 48, 7, 0, 100), 3, 32, 32, 19, 100, 200)) == False{} : Bool}
+
+law rlgl_framebuffer_channel_one_is_ignored:
+  {J.Rlgl.framebuffer.attached(J.RlglFramebuffer{1, 0, 0, 0, 0, 0, 0, 0, 0}, 2, 64, 48, 7, 1, 100) == J.RlglFramebuffer{1, 0, 0, 0, 0, 0, 0, 0, 0} : J.Rlgl.Framebuffer}
+
+law rlgl_framebuffer_depth_attaches_as_texture_or_renderbuffer:
+  {J.Rlgl.framebuffer.attached(J.RlglFramebuffer{1, 0, 0, 0, 0, 0, 0, 0, 0}, 3, 64, 48, 19, 100, 200) == J.RlglFramebuffer{1, 0, 0, 0, 0, 3, 64, 48, 19} : J.Rlgl.Framebuffer}
+
 # ColorFromHSV's fmodf(phase, 6) (docs/API.md): the terms subtracted are
 # 6*2^j (6.0 is 0x40c00000, each doubling adds one to the exponent), starting
 # from as many doublings as the magnitude's exponent is above 6.0's: none

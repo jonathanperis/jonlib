@@ -8150,6 +8150,235 @@ def Frame.end_texture_mode(frame: Frame) -> Frame & Maybe<RenderTexture>:
   Frame{canvas, _} = frame
   Frame.texture_mode.ended(FrameCore.Canvas.end_target(canvas))
 
+# rlgl framebuffer objects ----------------------------------------------------
+#
+# rlsw keeps one color and one depth attachment a framebuffer and decides
+# completeness from them. Jonlib's canvas holds no such table (a texture's
+# pixels live in its Texture value), so the framebuffer object is a value the
+# caller threads: its id and what was attached. See docs/RLGL.md.
+
+# A framebuffer object: its id (0: none) and its attachments' ids (0: none)
+# with their sizes and formats (7: R8G8B8A8; 19: a depth attachment).
+type Rlgl.Framebuffer is Data:
+  RlglFramebuffer{id: U32, color: U32, color_width: U32, color_height: U32, color_format: U32, depth: U32, depth_width: U32, depth_height: U32, depth_format: U32}
+
+# The frame while a framebuffer is bound by rlEnableFramebuffer outside
+# texture mode: nothing can be drawn (rlsw would draw into its attachments,
+# which Jonlib reaches only through BeginTextureMode), only the calls that
+# configure it.
+type Rlgl.Bound is Type:
+  RlglBound{frame: Frame}
+
+def Rlgl.Framebuffer.none() -> Rlgl.Framebuffer:
+  RlglFramebuffer{0, 0, 0, 0, 0, 0, 0, 0, 0}
+
+def Rlgl.Framebuffer.id(fb: Rlgl.Framebuffer) -> U32:
+  RlglFramebuffer{id, _, _, _, _, _, _, _, _} = fb
+  id
+
+def Rlgl.framebuffer.new(taken: FrameCore.Canvas & U32) -> Frame & Rlgl.Framebuffer:
+  (canvas, id) = taken
+  (Frame{canvas, Nil{}}, RlglFramebuffer{id, 0, 0, 0, 0, 0, 0, 0, 0})
+
+def Rlgl.framebuffer.loaded(offscreen: Bool, canvas: FrameCore.Canvas) -> Frame & Rlgl.Framebuffer:
+  match offscreen:
+    case True{}: (Frame{FrameCore.Canvas.refuse(canvas), Nil{}}, Rlgl.Framebuffer.none())
+    case False{}: Rlgl.framebuffer.new(FrameCore.Canvas.take(True{}, canvas))
+
+def Rlgl.framebuffer.flagged(flagged: FrameCore.Canvas & Bool) -> Frame & Rlgl.Framebuffer:
+  (canvas, offscreen) = flagged
+  Rlgl.framebuffer.loaded(offscreen, canvas)
+
+# rlLoadFramebuffer: a framebuffer without attachments (id 0 when the 7 are
+# in use). rlgl ends by binding framebuffer 0, so a call during texture mode
+# is refused (the frame becomes undefined).
+def Rlgl.load_framebuffer(frame: Frame) -> Frame & Rlgl.Framebuffer:
+  Frame{canvas, _} = frame
+  Rlgl.framebuffer.flagged(FrameCore.Canvas.offscreen(canvas))
+
+def Rlgl.texture.with(none: Bool, +id: U32, +width: U32, +height: U32, +depth: Bool, canvas: FrameCore.Canvas) -> Frame & Maybe<Texture>:
+  match none depth:
+    case True{} _: (Frame{canvas, Nil{}}, None{})
+    case False{} False{}: (Frame{canvas, Nil{}}, Some{Texture{id, width, height, 7, False{}, True{}, Some{Array.new(U32, FrameCore.depth((width * height : U32)), 0)}}})
+    case False{} True{}: (Frame{canvas, Nil{}}, Some{Texture{id, width, height, 19, False{}, False{}, None{}}})
+
+def Rlgl.texture.taken(+width: U32, +height: U32, +depth: Bool, taken: FrameCore.Canvas & U32) -> Frame & Maybe<Texture>:
+  (canvas, +id) = taken
+  Rlgl.texture.with(U32.is_eq(id, 0), id, width, height, depth, canvas)
+
+def Rlgl.texture.allowed(allowed: Bool, +width: U32, +height: U32, +depth: Bool, canvas: FrameCore.Canvas) -> Frame & Maybe<Texture>:
+  match allowed:
+    case False{}: (Frame{FrameCore.Canvas.refuse(canvas), Nil{}}, None{})
+    case True{}: Rlgl.texture.taken(width, height, depth, FrameCore.Canvas.take(False{}, canvas))
+
+def Rlgl.texture.framed(frame: Frame, +allowed: Bool, +width: U32, +height: U32, +depth: Bool) -> Frame & Maybe<Texture>:
+  Frame{canvas, _} = frame
+  Rlgl.texture.allowed(allowed, width, height, depth, canvas)
+
+# rlLoadTexture(NULL, width, height, format, mipmapCount) for
+# PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 (7) with one mipmap and sizes 1..4096: a
+# zeroed texture (rlsw assumes alpha for one loaded without data); None,
+# frame unchanged, when no texture id is free. Other formats, mipmap counts
+# and sizes are refused: the frame becomes undefined.
+def Rlgl.load_texture(frame: Frame, +width: U32, +height: U32, +format: U32, +mipmaps: U32) -> Frame & Maybe<Texture>:
+  Rlgl.texture.framed(frame, U32.is_eq(format, 7) && U32.is_eq(mipmaps, 1) && ((width >= 1) && (width <= 4096) && (height >= 1) && (height <= 4096) : U32), width, height, False{})
+
+# rlLoadTextureDepth(width, height, useRenderBuffer): on rlsw a renderbuffer
+# is a texture with 32-bit depth storage whatever useRenderBuffer says. The
+# Texture has format 19 (as the examples fill it) and no texels of its own:
+# the depth values belong to the framebuffer it is attached to. None and
+# refusals as Rlgl.load_texture.
+def Rlgl.load_texture_depth(frame: Frame, +width: U32, +height: U32, +use_render_buffer: Bool) -> Frame & Maybe<Texture>:
+  Rlgl.texture.framed(frame, ((width >= 1) && (width <= 4096) && (height >= 1) && (height <= 4096) : U32), width, height, True{})
+
+# What rlFramebufferAttach leaves in the framebuffer object: attachType 0
+# with any texType of 0 and above sets the color attachment (rlsw has one;
+# RL_ATTACHMENT_COLOR_CHANNEL1..7 and the stencil are an invalid enum there
+# and change nothing), attachType 100 with texType 100 or 200 the depth
+# attachment. Nothing is attached to framebuffer 0.
+def Rlgl.framebuffer.attached(fb: Rlgl.Framebuffer, +id: U32, +width: U32, +height: U32, +format: U32, +attach_type: U32, +tex_type: U32) -> Rlgl.Framebuffer:
+  RlglFramebuffer{+fbo, +c, +cw, +ch, +cf, +d, +dw, +dh, +df} = fb
+  +live = U32.is_ne(fbo, 0)
+  +color = live && U32.is_eq(attach_type, 0) && (tex_type < 2147483648 : U32)
+  +depth = live && U32.is_eq(attach_type, 100) && (U32.is_eq(tex_type, 100) || U32.is_eq(tex_type, 200))
+  RlglFramebuffer{fbo, Bool.pick(U32, color, id, c), Bool.pick(U32, color, width, cw), Bool.pick(U32, color, height, ch), Bool.pick(U32, color, format, cf),
+    Bool.pick(U32, depth, id, d), Bool.pick(U32, depth, width, dw), Bool.pick(U32, depth, height, dh), Bool.pick(U32, depth, format, df)}
+
+def Rlgl.framebuffer.attach(frame: Frame, fb: Rlgl.Framebuffer, texture: Texture, +attach_type: U32, +tex_type: U32) -> Frame & (Rlgl.Framebuffer & Texture):
+  Texture{+id, +width, +height, +format, linear, alpha, texels} = texture
+  (frame, (Rlgl.framebuffer.attached(fb, id, width, height, format, attach_type, tex_type), Texture{id, width, height, format, linear, alpha, texels}))
+
+def Rlgl.frame.unbound.at(offscreen: Bool, canvas: FrameCore.Canvas) -> Frame:
+  match offscreen:
+    case True{}: Frame{FrameCore.Canvas.refuse(canvas), Nil{}}
+    case False{}: Frame{canvas, Nil{}}
+
+def Rlgl.frame.unbound.flagged(flagged: FrameCore.Canvas & Bool) -> Frame:
+  (canvas, offscreen) = flagged
+  Rlgl.frame.unbound.at(offscreen, canvas)
+
+# The frame after rlgl binds framebuffer 0: refused during texture mode,
+# whose render texture would stop being the target.
+def Rlgl.frame.unbound(frame: Frame) -> Frame:
+  Frame{canvas, _} = frame
+  Rlgl.frame.unbound.flagged(FrameCore.Canvas.offscreen(canvas))
+
+# rlFramebufferAttach(fb, texture.id, attachType, texType, mipLevel): the
+# framebuffer with the attachment (Rlgl.framebuffer.attached) and the texture
+# back. rlgl binds the framebuffer for the call and framebuffer 0 after it
+# (refused during texture mode). mipLevel is not used by rlsw.
+def Rlgl.framebuffer_attach(frame: Frame, fb: Rlgl.Framebuffer, texture: Texture, +attach_type: U32, +tex_type: U32, +mip: U32) -> Frame & (Rlgl.Framebuffer & Texture):
+  Rlgl.framebuffer.attach(Rlgl.frame.unbound(frame), fb, texture, attach_type, tex_type)
+
+# rlFramebufferComplete as rlsw decides it: framebuffer 0 is complete;
+# another one needs a color attachment in R8G8B8A8, and its depth attachment,
+# if it has one, in the depth format and of the color attachment's size.
+def Rlgl.Framebuffer.complete(fb: Rlgl.Framebuffer) -> Bool:
+  RlglFramebuffer{+fbo, +c, +cw, +ch, +cf, +d, +dw, +dh, +df} = fb
+  U32.is_eq(fbo, 0) || (U32.is_ne(c, 0) && U32.is_eq(cf, 7) && (U32.is_eq(d, 0) || (U32.is_eq(df, 19) && U32.is_eq(dw, cw) && U32.is_eq(dh, ch))))
+
+# rlFramebufferComplete(fb): rlgl binds the framebuffer for the check and
+# framebuffer 0 after it (refused during texture mode).
+def Rlgl.framebuffer_complete(frame: Frame, fb: Rlgl.Framebuffer) -> Frame & Bool:
+  (Rlgl.frame.unbound(frame), Rlgl.Framebuffer.complete(fb))
+
+# rlDisableFramebuffer() with no framebuffer bound: nothing (refused during
+# texture mode).
+def Rlgl.disable_framebuffer(frame: Frame) -> Frame:
+  Rlgl.frame.unbound(frame)
+
+# rlEnableFramebuffer(fb) outside texture mode (refused during it): the
+# frame is held until a call binds framebuffer 0 again.
+def Rlgl.enable_framebuffer(frame: Frame, fb: Rlgl.Framebuffer) -> Rlgl.Bound:
+  RlglBound{Rlgl.frame.unbound(frame)}
+
+def Rlgl.Bound.loaded(r: Frame & Maybe<Texture>) -> Rlgl.Bound & Maybe<Texture>:
+  (frame, texture) = r
+  (RlglBound{frame}, texture)
+
+# rlLoadTexture while a framebuffer is bound (texture ids are another pool).
+def Rlgl.Bound.load_texture(bound: Rlgl.Bound, +width: U32, +height: U32, +format: U32, +mipmaps: U32) -> Rlgl.Bound & Maybe<Texture>:
+  RlglBound{frame} = bound
+  Rlgl.Bound.loaded(Rlgl.load_texture(frame, width, height, format, mipmaps))
+
+# rlLoadTextureDepth while a framebuffer is bound.
+def Rlgl.Bound.load_texture_depth(bound: Rlgl.Bound, +width: U32, +height: U32, +use_render_buffer: Bool) -> Rlgl.Bound & Maybe<Texture>:
+  RlglBound{frame} = bound
+  Rlgl.Bound.loaded(Rlgl.load_texture_depth(frame, width, height, use_render_buffer))
+
+# rlFramebufferAttach while a framebuffer is bound: framebuffer 0 is bound
+# after it, so the frame comes back.
+def Rlgl.Bound.attach(bound: Rlgl.Bound, fb: Rlgl.Framebuffer, texture: Texture, +attach_type: U32, +tex_type: U32, +mip: U32) -> Frame & (Rlgl.Framebuffer & Texture):
+  RlglBound{frame} = bound
+  Rlgl.framebuffer.attach(frame, fb, texture, attach_type, tex_type)
+
+# rlFramebufferComplete while a framebuffer is bound: the frame comes back.
+def Rlgl.Bound.complete(bound: Rlgl.Bound, fb: Rlgl.Framebuffer) -> Frame & Bool:
+  RlglBound{frame} = bound
+  (frame, Rlgl.Framebuffer.complete(fb))
+
+# rlDisableFramebuffer(): the frame comes back.
+def Rlgl.Bound.disable(bound: Rlgl.Bound) -> Frame:
+  RlglBound{frame} = bound
+  frame
+
+def Rlgl.render_texture.with(valid: Bool, +fbo: U32, +depth: U32, texture: Texture) -> Maybe<RenderTexture>:
+  match valid:
+    case False{}: None{}
+    case True{}: Some{RenderTexture{fbo, texture, depth}}
+
+def Rlgl.render_texture.checked(+fbo: U32, +color: U32, +valid: Bool, +depth: U32, texture: Texture) -> Maybe<RenderTexture>:
+  Texture{+id, width, height, format, linear, alpha, texels} = texture
+  Rlgl.render_texture.with(valid && U32.is_eq(id, color), fbo, depth, Texture{id, width, height, format, linear, alpha, texels})
+
+# The RenderTexture2D an example fills by hand from a framebuffer, its color
+# texture and its depth attachment's id, for BeginTextureMode: None unless
+# the framebuffer is complete and those are what is attached to it (rlsw
+# draws into the attachments, whatever the struct says).
+def Rlgl.render_texture(fb: Rlgl.Framebuffer, texture: Texture, +depth: U32) -> Maybe<RenderTexture>:
+  RlglFramebuffer{+fbo, +c, +cw, +ch, +cf, +d, +dw, +dh, +df} = fb
+  Rlgl.render_texture.checked(fbo, c, U32.is_ne(fbo, 0) && U32.is_eq(d, depth) && Rlgl.Framebuffer.complete(RlglFramebuffer{fbo, c, cw, ch, cf, d, dw, dh, df}), depth, texture)
+
+def Rlgl.framebuffer.freed(with_depth: Bool, +fbo: U32, +depth: U32, canvas: FrameCore.Canvas) -> FrameCore.Canvas:
+  match with_depth:
+    case True{}: FrameCore.Canvas.give(True{}, fbo, FrameCore.Canvas.give(False{}, depth, FrameCore.Canvas.forget(fbo, canvas)))
+    case False{}: FrameCore.Canvas.give(True{}, fbo, FrameCore.Canvas.forget(fbo, canvas))
+
+# 0: refused; 1: nothing (framebuffer 0); 2: the framebuffer alone; 3: with its depth attachment.
+def Rlgl.framebuffer.released(kind: U32, +fbo: U32, +depth: U32, canvas: FrameCore.Canvas) -> Frame:
+  match kind:
+    case 0: Frame{FrameCore.Canvas.refuse(canvas), Nil{}}
+    case 1: Frame{canvas, Nil{}}
+    case 2: Frame{Rlgl.framebuffer.freed(False{}, fbo, depth, canvas), Nil{}}
+    case _: Frame{Rlgl.framebuffer.freed(True{}, fbo, depth, canvas), Nil{}}
+
+def Rlgl.framebuffer.unloaded(+fbo: U32, +depth: U32, +with_depth: Bool, +matches: Bool, flagged: FrameCore.Canvas & Bool) -> Frame:
+  (canvas, +offscreen) = flagged
+  Rlgl.framebuffer.released(Bool.pick(U32, offscreen || Bool.not(matches), 0, Bool.pick(U32, U32.is_eq(fbo, 0), 1, Bool.pick(U32, with_depth, 3, 2))), fbo, depth, canvas)
+
+def Rlgl.framebuffer.unload(frame: Frame, +fbo: U32, +depth: U32, +with_depth: Bool, +matches: Bool) -> Frame:
+  Frame{canvas, _} = frame
+  Rlgl.framebuffer.unloaded(fbo, depth, with_depth, matches, FrameCore.Canvas.offscreen(canvas))
+
+def Rlgl.texture.id(texture: Texture) -> U32:
+  Texture{id, _, _, _, _, _, _} = texture
+  id
+
+# rlUnloadFramebuffer(fb.id): the id returns to its pool with the depth
+# values the framebuffer kept. rlgl deletes the depth attachment with it:
+# pass its Texture, or None when it was unloaded before or never attached.
+# Refused (the frame becomes undefined) during texture mode and for a depth
+# texture that is not the attached one.
+def Rlgl.unload_framebuffer(frame: Frame, fb: Rlgl.Framebuffer, depth: Maybe<Texture>) -> Frame:
+  RlglFramebuffer{+fbo, _, _, _, _, +d, _, _, _} = fb
+  match depth:
+    case None{}: Rlgl.framebuffer.unload(frame, fbo, d, False{}, True{})
+    case Some{texture}: Rlgl.framebuffer.unload(frame, fbo, d, True{}, U32.is_eq(Rlgl.texture.id(texture), d) && U32.is_ne(d, 0))
+
+# rlUnloadTexture(texture.id): the id returns to the texture pool.
+def Rlgl.unload_texture(frame: Frame, texture: Texture) -> Frame:
+  Texture.unload(frame, texture)
+
 # Remaining shapes, shapes texture and splines --------------------------------
 #
 # Altered Bend adaptation of rshapes.c (DrawLineBezier, DrawLineDashed,
