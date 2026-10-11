@@ -94076,11 +94076,11 @@
       "phase": 6,
       "sequence": 13,
       "status": "partial",
-      "jonlib": "Rlgl.enable_framebuffer",
+      "jonlib": "Rlgl.enable_framebuffer / Rlgl.enable_framebuffer_incomplete",
       "mapping_state": "implemented",
-      "scope": "Outside texture mode: the frame held as an Rlgl.Bound until a call binds framebuffer 0 again.",
+      "scope": "Outside texture mode. To configure: the frame held as an Rlgl.Bound until a call binds framebuffer 0 again. To draw, for a framebuffer rlsw finds incomplete: the frame with every draw and clear dropped until rlDisableFramebuffer, states and matrices set as usual, the viewport unchanged.",
       "gaps": [
-        "Nothing can be drawn into a framebuffer bound this way (BeginTextureMode draws into one)",
+        "Drawing into a complete framebuffer bound this way is refused (BeginTextureMode draws into one)",
         "Refused during texture mode",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
@@ -94139,7 +94139,7 @@
       "status": "partial",
       "jonlib": "Rlgl.disable_framebuffer / Rlgl.Bound.disable",
       "mapping_state": "implemented",
-      "scope": "Binds framebuffer 0: the frame back from an Rlgl.Bound, or nothing when none was bound.",
+      "scope": "Binds framebuffer 0: the frame back from an Rlgl.Bound, the screen again after Rlgl.enable_framebuffer_incomplete, or nothing when none was bound.",
       "gaps": [
         "Refused during texture mode (EndTextureMode ends it)",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
@@ -94376,23 +94376,29 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.bind_framebuffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "swBindFramebuffer(id) whatever the target (RL_READ_FRAMEBUFFER, RL_DRAW_FRAMEBUFFER) is: framebuffer 0 is rlDisableFramebuffer, an incomplete one Rlgl.enable_framebuffer_incomplete.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Binding a complete framebuffer to draw is refused (BeginTextureMode draws into one)",
+        "Refused during texture mode",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_framebuffer_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -94405,7 +94411,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlBindFramebuffer semantics from the linked source, add a reference fixture, then implement Rlgl.bind_framebuffer.",
+      "next_step": "Close documented gaps and unverified gates for rlBindFramebuffer.",
       "priority": 713
     },
     {
@@ -98300,9 +98306,10 @@
       "status": "partial",
       "jonlib": "Rlgl.load_texture",
       "mapping_state": "implemented",
-      "scope": "Without pixel data: a zeroed R8G8B8A8 texture of 1..4096 a side with a texture id from rlsw's pool.",
+      "scope": "Without pixel data, 1..4096 a side, one mipmap: a zeroed R8G8B8A8 texture, or for the float formats 8 to 13 (unsupported under OpenGL 1.1) the id of a texture without storage, which draws untextured and makes its framebuffer incomplete.",
       "gaps": [
-        "Pixel data, other formats and mipmap counts are refused: Texture.load_from_image loads images",
+        "Pixel data, the other formats and mipmap counts are refused: Texture.load_from_image loads images",
+        "The trace-log warning of an unsupported format is not reproduced",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,

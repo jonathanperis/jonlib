@@ -34,7 +34,7 @@ class RlglFramebufferProbeTests(unittest.TestCase):
 
     def test_the_blind_scenarios_compare_the_screen_of_a_small_window(self):
         blind = [name for name in probe.SCENARIOS if name.startswith('blind')]
-        self.assertEqual(blind, ['blind', 'blind-clear', 'blind-bare', 'blind-after'])
+        self.assertEqual(blind, ['blind', 'blind-clear', 'blind-bare', 'blind-after', 'blind-gbuffer'])
         self.assertEqual({probe.size(name) for name in blind}, {8})
         self.assertEqual(probe.size('loader'), 64)
         self.assertNotIn('@', probe.PROGRAM)
@@ -50,6 +50,27 @@ class RlglFramebufferProbeTests(unittest.TestCase):
         rows = {name: row for name, row in probe.CONTRACTS.items() if name.startswith('depth-target') or name == 'blind-nested'}
         self.assertEqual([name for name, row in rows.items() if row.endswith(' 1')], ['depth-target'])
         self.assertEqual(len(rows), 6)
+
+    def test_the_gbuffer_scenario_binds_to_draw_and_binds_for_reading(self):
+        source = probe.native_source()
+        gbuffer = source[source.index('"blind-gbuffer"'):]
+        order = ['rlLoadTexture(0, 8, 8, 12, 1)', 'RL_ATTACHMENT_COLOR_CHANNEL2', 'RL_ATTACHMENT_COLOR_CHANNEL0', 'rlEnableFramebuffer(fbo);', 'rlClearColor(0, 0, 0, 0);', 'rlDisableFramebuffer();',
+                 'rlBindFramebuffer(RL_READ_FRAMEBUFFER, fbo);', 'rlBindFramebuffer(RL_DRAW_FRAMEBUFFER, 0);', 'DrawTexture((Texture2D){ position, 8, 8, 1, 12 }']
+        places = [gbuffer.index(step) for step in order]
+        self.assertEqual(places, sorted(places))
+        self.assertEqual(probe.size('blind-gbuffer'), 8)
+        for call in ('J.Rlgl.enable_framebuffer_incomplete(', 'J.Rlgl.bind_framebuffer(J.Rlgl.clear_screen_buffers(frame), 36008, fb)', '36009, J.Rlgl.Framebuffer.none())',
+                     'J.Rlgl.clear_color(', 'J.Rlgl.disable_framebuffer(frame)'):
+            self.assertIn(call, probe.PROGRAM)
+
+    def test_the_float_formats_are_loaded_and_the_binding_contracts_refuse(self):
+        self.assertIn('for (int format = 8; format <= 11; format++)', probe.C_SOURCE)
+        for format in (8, 9, 10, 11, 12, 13):
+            self.assertIn(f'16, 16, {format})', probe.PROGRAM)
+        rows = {name: row for name, row in probe.CONTRACTS.items() if name.startswith('incomplete')}
+        self.assertEqual(set(rows.values()), {'incomplete-complete 0', 'incomplete-zero 0', 'incomplete-in-mode 0'})
+        self.assertEqual(probe.CONTRACTS['format-compressed'], 'format-compressed 0 0')
+        self.assertIn('    case _: refused.texture(J.Rlgl.load_texture(frame, 8, 8, 14, 1), name)', probe.PROGRAM)
 
     def test_the_bound_scenario_uses_the_bound_frame(self):
         for call in ('J.Rlgl.enable_framebuffer(frame, fb)', 'J.Rlgl.Bound.load_texture(', 'J.Rlgl.Bound.load_texture_depth(', 'J.Rlgl.Bound.attach(', 'J.Rlgl.Bound.disable('):
