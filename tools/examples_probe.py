@@ -242,6 +242,7 @@ EXAMPLES = {
     'models_animation_gpu_skinning': ('models/models_animation_gpu_skinning.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_bone_socket': ('models/models_bone_socket.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_loading_gltf': ('models/models_loading_gltf.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'models_animation_timing': ('models/models_animation_timing.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -307,6 +308,7 @@ IO_SETUP.add('shaders_lightmap_rendering'); PERSPECTIVE.add('shaders_lightmap_re
 IO_SETUP.add('models_animation_gpu_skinning'); PERSPECTIVE.add('models_animation_gpu_skinning')
 IO_SETUP.add('models_bone_socket'); PERSPECTIVE.add('models_bone_socket')
 IO_SETUP.add('models_loading_gltf'); PERSPECTIVE.add('models_loading_gltf')
+IO_SETUP.add('models_animation_timing'); PERSPECTIVE.add('models_animation_timing')
 
 
 # -----------------------------------------------------------------------------
@@ -934,6 +936,13 @@ def scripts():
         # plays the second one (the name is drawn; the pose is not: GPU skinning).
         script('models_loading_gltf', 'switch', [quick(), quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]), slow([key(KEY_RIGHT)]),
                                                  quick([key(KEY_RIGHT, False)]), quick([key(KEY_RIGHT)])]),
+        # The robot's eleventh animation at half a keyframe a frame, with the progress bar and its ticks. A click
+        # opens the dropdown box and a release over the second name plays that animation; the slider is dragged
+        # to a faster speed; P pauses (the frame and the bar hold) and plays again.
+        script('models_animation_timing', 'controls', [quick(), quick([mouse_at(80, 22)]), quick([button(0)]), quick([button(0, False)]), quick([mouse_at(80, 70)]),
+                                                       quick([button(0)]), slow([button(0, False)]), quick([mouse_at(500, 22)]), quick([button(0)]),
+                                                       quick([mouse_at(700, 22)]), quick([button(0, False)]), quick([key(KEY_P)]), quick([key(KEY_P, False)]),
+                                                       quick([key(KEY_P)])]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.
