@@ -96936,23 +96936,27 @@
       "milestone": "rlgl-core",
       "phase": 6,
       "sequence": 13,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.get_shader_locs_default",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "NULL (None) outside OpenGL 3.3/ES2.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -96965,7 +96969,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "State-transition traces and equivalent rendered output for required graphics backends; matrix stack and batching lifecycle.",
-      "next_step": "Derive rlGetShaderLocsDefault semantics from the linked source, add a reference fixture, then implement Rlgl.get_shader_locs_default.",
+      "next_step": "Close documented gaps and unverified gates for rlGetShaderLocsDefault.",
       "priority": 713
     },
     {
@@ -97402,23 +97406,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.load_vertex_array",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Id 0 outside OpenGL 3.3/ES2.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -97431,7 +97439,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlLoadVertexArray semantics from the linked source, add a reference fixture, then implement Rlgl.load_vertex_array.",
+      "next_step": "Close documented gaps and unverified gates for rlLoadVertexArray.",
       "priority": 728
     },
     {
@@ -97457,23 +97465,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.load_vertex_buffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Id 0 outside OpenGL 3.3/ES2; the buffer is not read (the size is the argument).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -97488,7 +97500,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlLoadVertexBuffer semantics from the linked source, add a reference fixture, then implement Rlgl.load_vertex_buffer.",
+      "next_step": "Close documented gaps and unverified gates for rlLoadVertexBuffer.",
       "priority": 728
     },
     {
@@ -97514,23 +97526,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.load_vertex_buffer_element",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Id 0 outside OpenGL 3.3/ES2; the buffer is not read (the size is the argument).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -97545,7 +97561,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlLoadVertexBufferElement semantics from the linked source, add a reference fixture, then implement Rlgl.load_vertex_buffer_element.",
+      "next_step": "Close documented gaps and unverified gates for rlLoadVertexBufferElement.",
       "priority": 728
     },
     {
@@ -97571,23 +97587,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.update_vertex_buffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 3.3/ES2 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -97600,7 +97620,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlUpdateVertexBuffer semantics from the linked source, add a reference fixture, then implement Rlgl.update_vertex_buffer.",
+      "next_step": "Close documented gaps and unverified gates for rlUpdateVertexBuffer.",
       "priority": 728
     },
     {
@@ -97626,23 +97646,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.update_vertex_buffer_elements",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 3.3/ES2 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -97655,7 +97679,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlUpdateVertexBufferElements semantics from the linked source, add a reference fixture, then implement Rlgl.update_vertex_buffer_elements.",
+      "next_step": "Close documented gaps and unverified gates for rlUpdateVertexBufferElements.",
       "priority": 728
     },
     {
@@ -97681,23 +97705,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.unload_vertex_array",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 3.3/ES2 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -97710,7 +97738,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlUnloadVertexArray semantics from the linked source, add a reference fixture, then implement Rlgl.unload_vertex_array.",
+      "next_step": "Close documented gaps and unverified gates for rlUnloadVertexArray.",
       "priority": 728
     },
     {
@@ -97736,23 +97764,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.unload_vertex_buffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 3.3/ES2 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -97765,7 +97797,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlUnloadVertexBuffer semantics from the linked source, add a reference fixture, then implement Rlgl.unload_vertex_buffer.",
+      "next_step": "Close documented gaps and unverified gates for rlUnloadVertexBuffer.",
       "priority": 728
     },
     {
@@ -97791,23 +97823,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.set_vertex_attribute",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 3.3/ES2 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -97822,7 +97858,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlSetVertexAttribute semantics from the linked source, add a reference fixture, then implement Rlgl.set_vertex_attribute.",
+      "next_step": "Close documented gaps and unverified gates for rlSetVertexAttribute.",
       "priority": 728
     },
     {
@@ -97848,23 +97884,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.set_vertex_attribute_divisor",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 3.3/ES2 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -97877,7 +97917,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlSetVertexAttributeDivisor semantics from the linked source, add a reference fixture, then implement Rlgl.set_vertex_attribute_divisor.",
+      "next_step": "Close documented gaps and unverified gates for rlSetVertexAttributeDivisor.",
       "priority": 728
     },
     {
@@ -97903,23 +97943,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.set_vertex_attribute_default",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 3.3/ES2 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE. The value is not read.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -97932,7 +97976,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlSetVertexAttributeDefault semantics from the linked source, add a reference fixture, then implement Rlgl.set_vertex_attribute_default.",
+      "next_step": "Close documented gaps and unverified gates for rlSetVertexAttributeDefault.",
       "priority": 728
     },
     {
@@ -98068,23 +98112,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.draw_vertex_array_instanced",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 3.3/ES2 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -98097,7 +98145,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlDrawVertexArrayInstanced semantics from the linked source, add a reference fixture, then implement Rlgl.draw_vertex_array_instanced.",
+      "next_step": "Close documented gaps and unverified gates for rlDrawVertexArrayInstanced.",
       "priority": 728
     },
     {
@@ -98123,23 +98171,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.draw_vertex_array_elements_instanced",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 3.3/ES2 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE. The element buffer is not read.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -98152,7 +98204,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlDrawVertexArrayElementsInstanced semantics from the linked source, add a reference fixture, then implement Rlgl.draw_vertex_array_elements_instanced.",
+      "next_step": "Close documented gaps and unverified gates for rlDrawVertexArrayElementsInstanced.",
       "priority": 728
     },
     {
@@ -98455,23 +98507,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.get_pixel_format_name",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "The 24 pixel format names, UNKNOWN for any other value.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -98484,7 +98540,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlGetPixelFormatName semantics from the linked source, add a reference fixture, then implement Rlgl.get_pixel_format_name.",
+      "next_step": "Close documented gaps and unverified gates for rlGetPixelFormatName.",
       "priority": 728
     },
     {
@@ -99062,23 +99118,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.load_shader",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Id 0 outside OpenGL 3.3/ES2: the code is not compiled.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99091,7 +99151,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlLoadShader semantics from the linked source, add a reference fixture, then implement Rlgl.load_shader.",
+      "next_step": "Close documented gaps and unverified gates for rlLoadShader.",
       "priority": 728
     },
     {
@@ -99117,23 +99177,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.load_shader_program",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Id 0 outside OpenGL 3.3/ES2 (None for a NULL source).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99146,7 +99210,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlLoadShaderProgram semantics from the linked source, add a reference fixture, then implement Rlgl.load_shader_program.",
+      "next_step": "Close documented gaps and unverified gates for rlLoadShaderProgram.",
       "priority": 728
     },
     {
@@ -99172,23 +99236,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.load_shader_program_ex",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Id 0 outside OpenGL 3.3/ES2.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99201,7 +99269,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlLoadShaderProgramEx semantics from the linked source, add a reference fixture, then implement Rlgl.load_shader_program_ex.",
+      "next_step": "Close documented gaps and unverified gates for rlLoadShaderProgramEx.",
       "priority": 728
     },
     {
@@ -99227,23 +99295,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.load_shader_program_compute",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Id 0 outside OpenGL 4.3.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99256,7 +99328,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlLoadShaderProgramCompute semantics from the linked source, add a reference fixture, then implement Rlgl.load_shader_program_compute.",
+      "next_step": "Close documented gaps and unverified gates for rlLoadShaderProgramCompute.",
       "priority": 728
     },
     {
@@ -99282,23 +99354,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.unload_shader",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 3.3/ES2 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99311,7 +99387,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlUnloadShader semantics from the linked source, add a reference fixture, then implement Rlgl.unload_shader.",
+      "next_step": "Close documented gaps and unverified gates for rlUnloadShader.",
       "priority": 728
     },
     {
@@ -99337,23 +99413,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.unload_shader_program",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 3.3/ES2 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99366,7 +99446,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlUnloadShaderProgram semantics from the linked source, add a reference fixture, then implement Rlgl.unload_shader_program.",
+      "next_step": "Close documented gaps and unverified gates for rlUnloadShaderProgram.",
       "priority": 728
     },
     {
@@ -99392,23 +99472,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.get_location_uniform",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "-1 (as a two's-complement word) outside OpenGL 3.3/ES2.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99421,7 +99505,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlGetLocationUniform semantics from the linked source, add a reference fixture, then implement Rlgl.get_location_uniform.",
+      "next_step": "Close documented gaps and unverified gates for rlGetLocationUniform.",
       "priority": 728
     },
     {
@@ -99447,23 +99531,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.get_location_attrib",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "-1 (as a two's-complement word) outside OpenGL 3.3/ES2.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99476,7 +99564,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlGetLocationAttrib semantics from the linked source, add a reference fixture, then implement Rlgl.get_location_attrib.",
+      "next_step": "Close documented gaps and unverified gates for rlGetLocationAttrib.",
       "priority": 728
     },
     {
@@ -99806,23 +99894,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.compute_shader_dispatch",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 4.3 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99835,7 +99927,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlComputeShaderDispatch semantics from the linked source, add a reference fixture, then implement Rlgl.compute_shader_dispatch.",
+      "next_step": "Close documented gaps and unverified gates for rlComputeShaderDispatch.",
       "priority": 728
     },
     {
@@ -99861,23 +99953,28 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.load_shader_buffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "Id 0 outside OpenGL 4.3; the data is not read.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The trace-log warning (SSBO not enabled) is not reproduced",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99890,7 +99987,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlLoadShaderBuffer semantics from the linked source, add a reference fixture, then implement Rlgl.load_shader_buffer.",
+      "next_step": "Close documented gaps and unverified gates for rlLoadShaderBuffer.",
       "priority": 728
     },
     {
@@ -99916,23 +100013,28 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.unload_shader_buffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 4.3 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The trace-log warning (SSBO not enabled) is not reproduced",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -99945,7 +100047,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlUnloadShaderBuffer semantics from the linked source, add a reference fixture, then implement Rlgl.unload_shader_buffer.",
+      "next_step": "Close documented gaps and unverified gates for rlUnloadShaderBuffer.",
       "priority": 728
     },
     {
@@ -99971,23 +100073,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.update_shader_buffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 4.3 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -100000,7 +100106,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlUpdateShaderBuffer semantics from the linked source, add a reference fixture, then implement Rlgl.update_shader_buffer.",
+      "next_step": "Close documented gaps and unverified gates for rlUpdateShaderBuffer.",
       "priority": 728
     },
     {
@@ -100026,23 +100132,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.bind_shader_buffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 4.3 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -100055,7 +100165,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlBindShaderBuffer semantics from the linked source, add a reference fixture, then implement Rlgl.bind_shader_buffer.",
+      "next_step": "Close documented gaps and unverified gates for rlBindShaderBuffer.",
       "priority": 728
     },
     {
@@ -100081,23 +100191,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.read_shader_buffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 4.3 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE. The destination is left as it was.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -100110,7 +100224,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlReadShaderBuffer semantics from the linked source, add a reference fixture, then implement Rlgl.read_shader_buffer.",
+      "next_step": "Close documented gaps and unverified gates for rlReadShaderBuffer.",
       "priority": 728
     },
     {
@@ -100136,23 +100250,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.copy_shader_buffer",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 4.3 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -100165,7 +100283,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlCopyShaderBuffer semantics from the linked source, add a reference fixture, then implement Rlgl.copy_shader_buffer.",
+      "next_step": "Close documented gaps and unverified gates for rlCopyShaderBuffer.",
       "priority": 728
     },
     {
@@ -100191,23 +100309,27 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.get_shader_buffer_size",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "0 outside OpenGL 4.3.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -100220,7 +100342,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlGetShaderBufferSize semantics from the linked source, add a reference fixture, then implement Rlgl.get_shader_buffer_size.",
+      "next_step": "Close documented gaps and unverified gates for rlGetShaderBufferSize.",
       "priority": 728
     },
     {
@@ -100246,23 +100368,28 @@
       "milestone": "rlgl-advanced",
       "phase": 6,
       "sequence": 28,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Rlgl.bind_image_texture",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "OpenGL 4.3 only: no effect under GRAPHICS_API_OPENGL_SOFTWARE.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The trace-log warning (image texture binding not enabled) is not reproduced",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/rlgl_probe.py",
+        "docs/RLGL.md",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -100277,7 +100404,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Buffer/VAO/SSBO/framebuffer state and data, compute synchronization, native interop and supported-backend conditions.",
-      "next_step": "Derive rlBindImageTexture semantics from the linked source, add a reference fixture, then implement Rlgl.bind_image_texture.",
+      "next_step": "Close documented gaps and unverified gates for rlBindImageTexture.",
       "priority": 728
     },
     {

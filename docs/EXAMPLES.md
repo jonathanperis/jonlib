@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 161 ported, 18 ready, 33 waiting.
+Totals: 212 examples; 161 ported, 20 ready, 31 waiting.
 
 ## APIs that unblock the most examples
 
@@ -222,7 +222,7 @@ Totals: 212 examples; 161 ported, 18 ready, 33 waiting.
 | `models_rotating_cube` | models | ported |  |
 | `models_decals` | models | ready |  |
 | `models_directional_billboard` | models | ported |  |
-| `models_animation_blend_custom` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `rlUpdateVertexBuffer` |
+| `models_animation_blend_custom` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations` |
 | `models_animation_blending` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `UpdateModelAnimationEx`, `GuiProgressBar` |
 | `models_animation_timing` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `GuiProgressBar` |
 | `shaders_ascii_rendering` | shaders | ported |  |
@@ -247,18 +247,18 @@ Totals: 212 examples; 161 ported, 18 ready, 33 waiting.
 | `shaders_multi_sample2d` | shaders | ported |  |
 | `shaders_normalmap_rendering` | shaders | ported |  |
 | `shaders_spotlight_rendering` | shaders | ready |  |
-| `shaders_deferred_rendering` | shaders | waiting | `rlBindFramebuffer`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlGetLocationUniform`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
+| `shaders_deferred_rendering` | shaders | waiting | `rlBindFramebuffer`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
 | `shaders_hybrid_rendering` | shaders | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
 | `shaders_texture_tiling` | shaders | ported |  |
 | `shaders_shadowmap_rendering` | shaders | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTextureDepth`, `rlUnloadFramebuffer` |
 | `shaders_vertex_displacement` | shaders | ported |  |
 | `shaders_depth_writing` | shaders | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
 | `shaders_basic_pbr` | shaders | ready |  |
-| `shaders_lightmap_rendering` | shaders | waiting | `rlLoadVertexBuffer`, `rlSetVertexAttribute` |
+| `shaders_lightmap_rendering` | shaders | ready |  |
 | `shaders_rounded_rectangle` | shaders | ported |  |
 | `shaders_depth_rendering` | shaders | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
 | `shaders_game_of_life` | shaders | ready |  |
-| `shaders_rlgl_compute` | shaders | waiting | `rlBindShaderBuffer`, `rlComputeShaderDispatch`, `rlLoadShader`, `rlLoadShaderBuffer`, `rlLoadShaderProgramCompute`, `rlUnloadShader`, `rlUnloadShaderBuffer`, `rlUnloadShaderProgram`, `rlUpdateShaderBuffer` |
+| `shaders_rlgl_compute` | shaders | ready |  |
 | `shaders_cel_shading` | shaders | ported |  |
 | `audio_module_playing` | audio | waiting | `CloseAudioDevice`, `GetMusicTimeLength`, `GetMusicTimePlayed`, `InitAudioDevice`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `SetMusicPitch`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
 | `audio_music_stream` | audio | waiting | `CloseAudioDevice`, `GetMusicTimeLength`, `GetMusicTimePlayed`, `InitAudioDevice`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `SetMusicPan`, `SetMusicVolume`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |

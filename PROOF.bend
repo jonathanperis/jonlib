@@ -1103,6 +1103,30 @@ def Laws.rlgl_set_uniform_sampler_unchanged(frame, location, texture):
 def Laws.rlgl_set_shader_unchanged(frame, id, locations):
   {==}
 
+def Laws.rlgl_location_uniform_absent(id, name):
+  {==}
+
+def Laws.rlgl_location_attrib_absent(id, name):
+  {==}
+
+def Laws.rlgl_shader_buffer_size_zero(id):
+  {==}
+
+def Laws.rlgl_set_vertex_attribute_unchanged(frame, index, size, kind, normalized, stride, offset):
+  {==}
+
+def Laws.rlgl_update_vertex_buffer_unchanged(frame, id, size, offset):
+  {==}
+
+def Laws.rlgl_compute_dispatch_unchanged(frame, x, y, z):
+  {==}
+
+def Laws.rlgl_pixel_format_name_rgba():
+  {==}
+
+def Laws.rlgl_pixel_format_name_unknown():
+  {==}
+
 def Laws.rlgl_version_software():
   {==}
 

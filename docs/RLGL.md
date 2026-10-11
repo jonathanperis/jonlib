@@ -143,6 +143,10 @@ Remaining shapes (`rshapes.c`):
 | `rlSetLineWidth` / `rlGetLineWidth`, `rlSetPointSize` / `rlGetPointSize` | `Rlgl.set_line_width`, `get_line_width`, `set_point_size`, `get_point_size` |
 | `rlClearColor` / `rlClearScreenBuffers` | `Rlgl.clear_color(frame, r, g, b, a)`, `clear_screen_buffers` |
 | `rlGetVersion`, `rlGetFramebufferWidth/Height`, `rlGetTextureIdDefault`, `rlGetShaderIdDefault`, `rlIsStereoRenderEnabled`, `rlCheckRenderBatchLimit`, `rlGetActiveFramebuffer` | `Rlgl.get_version`, ... (values above) |
+| `rlLoadVertexArray`, `rlLoadVertexBuffer(Element)`, `rlLoadShader`, `rlLoadShaderProgram(Ex)`, `rlLoadShaderProgramCompute`, `rlLoadShaderBuffer`, `rlGetShaderBufferSize` | `Rlgl.load_vertex_array(frame)`, `load_vertex_buffer(frame, size, dynamic)`, `load_vertex_buffer_element`, `load_shader(frame, code, kind)`, `load_shader_program(frame, vs, fs)`, `load_shader_program_ex`, `load_shader_program_compute`, `load_shader_buffer(frame, size, usage)` (`-> Frame & U32`), `get_shader_buffer_size(id)`: 0 |
+| `rlGetLocationUniform` / `rlGetLocationAttrib`, `rlGetShaderLocsDefault` | `Rlgl.get_location_uniform(id, name)` / `get_location_attrib`: -1 (`4294967295`); `Rlgl.get_shader_locs_default()`: `None` |
+| `rlGetPixelFormatName` | `Rlgl.get_pixel_format_name(format)`: the 24 names, `"UNKNOWN"` otherwise |
+| no-ops (buffers, shader objects, compute) | `Rlgl.update_vertex_buffer(_elements)`, `unload_vertex_array`, `unload_vertex_buffer`, `set_vertex_attribute`, `set_vertex_attribute_divisor`, `set_vertex_attribute_default`, `draw_vertex_array_instanced`, `draw_vertex_array_elements_instanced`, `unload_shader`, `unload_shader_program`, `compute_shader_dispatch`, `unload_shader_buffer`, `update_shader_buffer`, `bind_shader_buffer`, `read_shader_buffer`, `copy_shader_buffer`, `bind_image_texture` (buffer contents are never read: the functions take sizes only) |
 | no-ops | `Rlgl.check_errors`, `set_blend_mode`, `set_blend_factors(_separate)`, `set_framebuffer_width/height`, `draw_render_batch_active`, `active_texture_slot`, `enable/disable_texture_cubemap`, `cubemap_parameters`, `enable/disable_shader`, `set_shader`, `set_uniform`, `set_uniform_matrix`, `set_uniform_matrices`, `set_uniform_sampler`, `enable/disable_vertex_array`, `_vertex_buffer`, `_vertex_buffer_element`, `_vertex_attribute`, `blit_framebuffer`, `active_draw_buffers`, `load_draw_cube`, `load_draw_quad` |
 
 `Rlgl.set_texture(frame, Some{texture})` moves the texture into the frame
@@ -188,9 +192,13 @@ clears and getters, and random immediate scenes.
 ## Gaps
 
 - `rlTextureParameters`, `rlEnableStatePointer`/`rlDisableStatePointer`,
-  `rlEnableFramebuffer`/`rlDisableFramebuffer` and the rest of the low-level
-  resource API (`rlLoad*`/`rlUnload*` buffers, shaders, framebuffers) are not
-  exposed.
+  `rlDrawVertexArray`/`rlDrawVertexArrayElements` (rlsw's client arrays),
+  `rlEnableFramebuffer`/`rlDisableFramebuffer`/`rlBindFramebuffer` and the
+  texture and framebuffer part of the low-level resource API (`rlLoadTexture`,
+  `rlLoadTextureDepth`, `rlLoadFramebuffer`, `rlFramebufferAttach`, ...) are
+  not exposed. The vertex array, buffer, shader object, compute and storage
+  buffer functions are, as what the software path leaves of them: ids 0,
+  locations -1, nothing else. Their trace-log warnings are not reproduced.
 - `BeginMode3D` and the
   `rmodels.c` 3D shapes, and meshes and models drawn with
   `DrawMesh`/`DrawModel` (rlgl's vertex arrays into rlsw's
