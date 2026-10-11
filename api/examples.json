@@ -6448,7 +6448,7 @@
   {
    "name": "shaders_depth_rendering",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",

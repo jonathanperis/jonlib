@@ -235,6 +235,11 @@ examples keep the ids in a `RenderTexture2D` they fill by hand.
   framebuffer id, as for `LoadRenderTexture`.
 - **Unloading.** `rlUnloadFramebuffer` deletes the depth attachment with the
   framebuffer: pass its `Texture`, or None when it was unloaded before.
+- **A depth attachment as a texture.** rlsw binds it but turns texturing
+  off for a texture of a depth format, so `DrawTexture(target.depth, ...)`
+  draws its rectangle in the tint alone; the `Texture` without texels that
+  `Rlgl.load_texture_depth` gives draws the same way
+  (`shaders_depth_rendering`).
 
 Gate `rlgl-framebuffer` (`tools/rlgl_framebuffer_probe.py`) compares the ids
 and the completeness answers of ten scenarios with the reference: the
@@ -243,6 +248,9 @@ of another size, the ignored channels, texture types, the color texture as
 the depth attachment, framebuffer 0, the ids after an unload, two
 framebuffers, and `LoadRenderTexture` after a hand-built one. Six contracts
 cover the refusals.
+The ports `shaders_depth_writing`, `shaders_hybrid_rendering` and
+`shaders_depth_rendering` draw through a framebuffer built this way and
+compare every frame with the native example.
 
 ## Gaps
 
@@ -256,8 +264,7 @@ cover the refusals.
   format than R8G8B8A8, more than one color attachment, cubemap faces as
   separate attachments, and drawing into a framebuffer bound with
   `rlEnableFramebuffer` (the type `Rlgl.Bound` has no draw function; use
-  `BeginTextureMode`). Drawing a depth attachment as a texture is refused
-  (rlsw draws it untextured).
+  `BeginTextureMode`).
 - `BeginMode3D` and the
   `rmodels.c` 3D shapes, and meshes and models drawn with
   `DrawMesh`/`DrawModel` (rlgl's vertex arrays into rlsw's

@@ -98360,7 +98360,7 @@
       "mapping_state": "implemented",
       "scope": "A texture id with 32-bit depth storage (rlsw's renderbuffer whatever useRenderBuffer says), as a Texture of format 19 without texels.",
       "gaps": [
-        "Drawing it as a texture is refused (rlsw draws it untextured)",
+        "Its depth values cannot be read: drawn as a texture it is its rectangle in the tint, as on rlsw",
         "Sizes outside 1..4096 are refused",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
