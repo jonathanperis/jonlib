@@ -288,8 +288,10 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      SDF glyphs with curves (docs/FONTS.md, Gaps); `text_unicode_ranges` a
      7 MiB TTF and `shaders_basic_pbr` a 1.7 MiB PNG (the 1 MiB input
      limit); `textures_sprite_stacking` a 112x11468 image (the 4096 limit);
-     `text_3d_drawing` is a long pure port and `models_decals` is ported
-     (its `GenMeshDecal` as lists of triangles; the indexed-mesh branch is
+     `text_3d_drawing` is ported (the font texture held once around the
+     3D texts through `Rlgl.set_texture`, the glyph metrics as a table by
+     byte; no script types characters, so that branch is unverified) and
+     `models_decals` is ported (its `GenMeshDecal` as lists of triangles; the indexed-mesh branch is
      not taken by `LoadOBJ` meshes and is left out; its first button is
      drawn above the screen, as upstream); the IQM, VOX and M3D loaders are
      not written. `shaders_hot_reloading` is ported with its file's

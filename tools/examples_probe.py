@@ -282,6 +282,7 @@ EXAMPLES = {
     'shaders_hot_reloading': ('shaders/shaders_hot_reloading.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'text_codepoints_loading': ('text/text_codepoints_loading.c', 'Ex.setup(core, frame)'),
     'text_unicode_emojis': ('text/text_unicode_emojis.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
+    'text_3d_drawing': ('text/text_3d_drawing.c', 'Ex.setup(seed, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
     'core_custom_frame_control': ('core/core_custom_frame_control.c', 'Ex.setup(core, frame)'),
     'shapes_digital_clock': ('shapes/shapes_digital_clock.c', 'Ex.setup(seed, core, frame)'),
@@ -396,6 +397,7 @@ IO_SETUP.add('models_skybox_rendering'); EFFECTS.add('models_skybox_rendering');
 IO_SETUP.add('core_custom_frame_control'); EFFECTS.add('core_custom_frame_control')
 IO_SETUP.add('models_decals'); SEEDED.add('models_decals'); PERSPECTIVE.add('models_decals'); CONFIG_FLAGS['models_decals'] = 32
 IO_SETUP.add('text_unicode_emojis'); SEEDED.add('text_unicode_emojis'); CONFIG_FLAGS['text_unicode_emojis'] = 96
+SEEDED.add('text_3d_drawing'); PERSPECTIVE.add('text_3d_drawing'); CONFIG_FLAGS['text_3d_drawing'] = 96
 
 
 def scratch(probe, index, native=False):
@@ -1116,6 +1118,20 @@ def scripts():
                                                quick([button(0, False), mouse_at(400, 250)]), quick([button(0)]), quick([button(0, False), mouse_at(700, 350)]), quick([button(0)]),
                                                quick([button(0, False), mouse_at(500, 150)]), quick([button(0)]), slow([button(0, False)]), quick([key(KEY_SPACE)]),
                                                quick([key(KEY_SPACE, False)])], seed=0xE301),
+        # The orbital camera: F1 and F2 show the boundaries; END adds layers and TAB colors them; RIGHT, DOWN and
+        # PAGE_DOWN change the size and the spacings; ENTER breaks the line and BACKSPACE joins it again; INSERT
+        # (held two frames) and DELETE move the layers; HOME removes one; a click on the cube recolors it, a
+        # click beside it does not.
+        script('text_3d_drawing', 'layers', [quick(), quick([key(290)]), quick([key(290, False), key(291)]), quick([key(291, False), key(269)]), quick([key(269, False), key(258)]),
+                                             quick([key(258, False), key(269)]), slow([key(269, False), key(262)]), quick([key(262, False), key(264)]), quick([key(264, False), key(267)]),
+                                             quick([key(267, False), key(257)]), quick([key(257, False), key(260)]), quick(), quick([key(260, False), key(261)]),
+                                             quick([key(261, False), key(259)]), quick([key(259, False), key(268), key(290)]), quick([key(268, False), key(290, False), mouse_at(400, 225)]),
+                                             quick([button(0)]), quick([button(0, False), mouse_at(60, 60)]), quick([button(0)]), quick([button(0, False)])], seed=0x3D7E),
+        # F3 frees the camera (the mouse turns it, W moves it); LEFT twice makes the font size negative (the quads
+        # turn over); UP and PAGE_UP; F3 again spins it from the start.
+        script('text_3d_drawing', 'free', [quick(), quick([key(292)]), quick([key(292, False), mouse_at(420, 240)]), quick([mouse_at(440, 250)]), slow([key(87)]),
+                                           quick([key(87, False), key(263)]), quick([key(263, False)]), quick([key(263)]), quick([key(263, False), key(265)]),
+                                           quick([key(265, False), key(266)]), quick([key(266, False), key(292)]), quick([key(292, False)])], seed=0x3D7F),
         script('text_codepoints_loading', 'frames', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), key(KEY_RIGHT)])]),
         # The mouse on the character shows the placement cube; two clicks splat two decals (the table lists them);
         # RMB with a move turns the camera; a click on "Clear Decals" removes them.

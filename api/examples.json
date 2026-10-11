@@ -3936,7 +3936,7 @@
   {
    "name": "text_3d_drawing",
    "category": "text",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
