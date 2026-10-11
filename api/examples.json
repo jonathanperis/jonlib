@@ -6014,7 +6014,7 @@
   {
    "name": "shaders_spotlight_rendering",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",

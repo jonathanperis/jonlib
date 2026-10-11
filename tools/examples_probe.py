@@ -246,6 +246,7 @@ EXAMPLES = {
     'models_animation_blending': ('models/models_animation_blending.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_animation_blend_custom': ('models/models_animation_blend_custom.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_waving_cubes': ('models/models_waving_cubes.c', 'Ex.setup(core, frame)'),
+    'shaders_spotlight_rendering': ('shaders/shaders_spotlight_rendering.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -315,6 +316,9 @@ IO_SETUP.add('models_animation_timing'); PERSPECTIVE.add('models_animation_timin
 IO_SETUP.add('models_animation_blending'); PERSPECTIVE.add('models_animation_blending')
 IO_SETUP.add('models_animation_blend_custom'); PERSPECTIVE.add('models_animation_blend_custom')
 PERSPECTIVE.add('models_waving_cubes')
+IO_SETUP.add('shaders_spotlight_rendering'); SEEDED.add('shaders_spotlight_rendering')
+# The binary64 cos and sin of its first frame have no AppleLibm profile either (docs/MATH.md): the same contract.
+PERSPECTIVE.add('shaders_spotlight_rendering')
 
 
 # -----------------------------------------------------------------------------
@@ -964,6 +968,10 @@ def scripts():
         # 3375 cubes spread and sized by sin of the clock under a camera circling with cos and sin of it: the
         # first frame, and one a second and a half later.
         script('models_waving_cubes', 'wave', [quick(), ([], 0.003, 1.5)]),
+        # The spotlight shader does nothing on the software renderer, so its white rectangle covers the stars and
+        # the textures: the frame rate and the texts over white, whatever the seed and the pointer do.
+        script('shaders_spotlight_rendering', 'white', [quick(), quick([mouse_at(300, 200)]), slow(), quick([mouse_at(640, 90)])], seed=7),
+        script('shaders_spotlight_rendering', 'seeded', [quick(), quick()], seed=20261011),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.
