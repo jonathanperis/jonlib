@@ -1753,7 +1753,7 @@
   },
   {
    "id": "rlgl-framebuffer",
-   "title": "rlgl framebuffer objects (rlLoadFramebuffer, rlLoadTexture without data, rlLoadTextureDepth, rlFramebufferAttach, rlFramebufferComplete, rlEnableFramebuffer, rlDisableFramebuffer, rlUnloadFramebuffer) against the pinned raylib on rlsw: the ids and the completeness in ten scenarios, with refusal contracts",
+   "title": "rlgl framebuffer objects (rlLoadFramebuffer, rlLoadTexture without data, rlLoadTextureDepth, rlFramebufferAttach, rlFramebufferComplete, rlEnableFramebuffer, rlDisableFramebuffer, rlUnloadFramebuffer) against the pinned raylib on rlsw: the ids and the completeness in fourteen scenarios, four of them with the screen's pixels around a texture mode on a framebuffer without a color attachment, with refusal contracts",
    "run": [
     "{python}",
     "tools/rlgl_framebuffer_probe.py",
@@ -1765,6 +1765,21 @@
     "macos"
    ],
    "minutes": 3
+  },
+  {
+   "id": "driver-effects",
+   "title": "Programs whose loop does IO (J.Effects, Program.replay_io) against a raylib loop that writes and reads a file before BeginDrawing and writes it after EndDrawing: every frame's bytes and presented quadtree, and the file left",
+   "run": [
+    "{python}",
+    "tools/effects_probe.py",
+    "--bend-source={bend}",
+    "--raylib-source={raylib}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 4
   },
   {
    "id": "mesh-tube",

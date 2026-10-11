@@ -903,6 +903,21 @@ def Laws.replay_closing_stops(update, draw, show, spec, core, frame, out):
 def Laws.replay_until_uses_its_condition(update, draw, show, spec, core, frame, out):
   {==}
 
+def Laws.replay_effects_needs_io(update, draw, after, show, spec, core, frame, out):
+  {==}
+
+def Laws.replay_io_closing_stops(update, draw, after, show, spec, core, frame, out):
+  {==}
+
+def Laws.replay_io_no_after_once_stopped(after, out):
+  {==}
+
+def Laws.desktop_effects_no_after_before_the_first_frame(render, present, wait, mark):
+  {==}
+
+def Laws.desktop_effects_after_once_a_frame_was_presented(render, present, wait, mark):
+  {==}
+
 def Laws.gui_default_text_size():
   {==}
 
