@@ -321,10 +321,39 @@
    "status": "not-started"
   },
   "GuiSpinner": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.spinner",
+   "scope": "Not in edit mode: the two arrow buttons, the value box between them and the label; the value steps by one on a button's release and is clamped.",
+   "evidence": [
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "Edit mode (keyboard entry and its cursor) marks the frame undefined",
+    "A step below INT_MIN or above INT_MAX (signed overflow in C) marks the frame undefined",
+    "Icon ids above 255, a short '#' line read across lines and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined; icons draw at scale 1",
+    "The default font only (GuiSetFont is not delivered)",
+    "Tooltips are not delivered (off by default)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiValueBox": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.value_box",
+   "scope": "Not in edit mode: the value drawn centered as it came, returned clamped when the control reacts; true when pressed over it.",
+   "evidence": [
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "Edit mode (keyboard entry and its cursor) marks the frame undefined",
+    "Icon ids above 255, a short '#' line read across lines and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined; icons draw at scale 1",
+    "The default font only (GuiSetFont is not delivered)",
+    "Tooltips are not delivered (off by default)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiValueBoxFloat": {
    "status": "not-started"

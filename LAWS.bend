@@ -1189,6 +1189,32 @@ law gui_icon_past_table_is_empty:
 law gui_icon_arrow_left_word:
   {GuiIcons.word(118, 3) == 65012672 : U32}
 
+# GuiValueBox and GuiSpinner hold C ints as two's-complement words: -1 is
+# below 0, and the box clamps to max when above it, else to min when below.
+law gui_int_minus_one_below_zero:
+  {JG.Gui.int.less(4294967295, 0) == True{} : Bool}
+
+law gui_int_zero_not_below_minus_one:
+  {JG.Gui.int.less(0, 4294967295) == False{} : Bool}
+
+law gui_int_clamp_above:
+  {JG.Gui.int.clamp(9, 2, 8) == 8 : U32}
+
+law gui_int_clamp_below_negative_min:
+  {JG.Gui.int.clamp(4294967291, 4294967294, 8) == 4294967294 : U32}
+
+law gui_int_clamp_inside:
+  {JG.Gui.int.clamp(5, 2, 8) == 5 : U32}
+
+# A value box is filled only when pressed or disabled: BLANK otherwise.
+law gui_value_box_blank_when_normal:
+  for gui: JG.Gui
+  {JG.Gui.value.fill(0, gui) == 0 : U32}
+
+law gui_value_box_blank_when_focused:
+  for gui: JG.Gui
+  {JG.Gui.value.fill(1, gui) == 0 : U32}
+
 law shader_load_never_valid:
   for vs: Maybe<String>
   for fs: Maybe<String>

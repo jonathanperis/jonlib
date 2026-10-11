@@ -37,6 +37,8 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiSliderBar` | `Gui.slider_bar(...)` | the same |
 | `GuiLine` | `Gui.line(gui, frame, bounds, text)` | `Frame` (`text` is `Maybe<String>`: `None` for NULL) |
 | `GuiGroupBox` | `Gui.group_box(gui, frame, bounds, text)` | `Frame` |
+| `GuiValueBox` | `Gui.value_box(gui, core, frame, bounds, text, value, min, max, edit)` | `Frame & (U32 & Bool)` (the int as a word, pressed) |
+| `GuiSpinner` | `Gui.spinner(gui, core, frame, bounds, text, value, min, max, edit)` | `Frame & (U32 & Bool)` (the int as a word, the value box pressed) |
 
 Two additions have no raygui counterpart. They run a row of controls in order
 for programs that keep their values in lists (Bend has no pointers to write
@@ -85,6 +87,17 @@ example waiting on each raygui function it calls that is not delivered.
 - **Toggle groups.** The text splits at `';'` and `'\n'` (`GuiTextSplit`); a
   `'\n'` starts a new row. Each item is a `GuiToggle`; switching one on makes
   it the active index, and the active item cannot be switched off.
+- **Value boxes and spinners.** C ints are two's-complement `U32` words,
+  compared as signed. `GuiValueBox` draws the value as it came (`"%i"`,
+  centered) and returns it clamped (`max` when above it, else `min` when
+  below it) when the control is enabled, unlocked and no slider is being
+  dragged; a press over it returns true. Its fill is `BLANK` unless the
+  state is pressed or disabled. `GuiSpinner` is two `GuiButton`s with the
+  texts `"#118#"` and `"#119#"` (`ICON_ARROW_LEFT_FILL`,
+  `ICON_ARROW_RIGHT_FILL`), `SPINNER_BUTTON_WIDTH` wide, drawn first; a
+  release over one steps the value by one, which is then clamped (`min`
+  first) and handed to the value box between them. The label is drawn last,
+  in the spinner's own state (pressed while the button is down over it).
 - **Shapes texture.** raygui's first style load calls `SetShapesTexture` with
   the default font's white rectangle, the value `InitWindow` already set, so
   nothing changes.
@@ -92,7 +105,7 @@ example waiting on each raygui function it calls that is not delivered.
 ## Gaps
 
 - Not delivered yet: `GuiToggleSlider`,
-  `GuiComboBox`, `GuiDropdownBox`, `GuiTextBox`, `GuiValueBox`, `GuiSpinner`,
+  `GuiComboBox`, `GuiDropdownBox`, `GuiTextBox`, `GuiValueBoxFloat`,
   `GuiProgressBar`, `GuiStatusBar`, `GuiDummyRec`, `GuiGrid`, `GuiPanel`,
   `GuiTabBar`, `GuiScrollPanel`, `GuiListView(Ex)`,
   `GuiColor*`, `GuiMessageBox`, `GuiTextInputBox`, `GuiWindowBox`,
@@ -105,6 +118,9 @@ example waiting on each raygui function it calls that is not delivered.
   `#` with no second `#`: raygui's `GuiGetTextWidth` would look for it in the
   lines that follow.
 - The `TEXT_WRAP_CHAR` and `TEXT_WRAP_WORD` modes mark the frame undefined.
+- `GuiValueBox` and `GuiSpinner` in edit mode (keyboard entry) mark the frame
+  undefined. A spinner step below `INT_MIN` or above `INT_MAX` overflows in C
+  and marks the frame undefined.
 - An ellipsis narrower than 3 pixels makes raygui's dot loop endless; Jongui
   marks the frame undefined.
 - The default font only.

@@ -839,6 +839,27 @@ def Laws.gui_icon_past_table_is_empty():
 def Laws.gui_icon_arrow_left_word():
   {==}
 
+def Laws.gui_int_minus_one_below_zero():
+  {==}
+
+def Laws.gui_int_zero_not_below_minus_one():
+  {==}
+
+def Laws.gui_int_clamp_above():
+  {==}
+
+def Laws.gui_int_clamp_below_negative_min():
+  {==}
+
+def Laws.gui_int_clamp_inside():
+  {==}
+
+def Laws.gui_value_box_blank_when_normal(gui):
+  {==}
+
+def Laws.gui_value_box_blank_when_focused(gui):
+  {==}
+
 def Laws.shader_load_never_valid(vs, fs):
   {==}
 

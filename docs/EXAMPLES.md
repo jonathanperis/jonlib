@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 156 ported, 18 ready, 38 waiting.
+Totals: 212 examples; 156 ported, 19 ready, 37 waiting.
 
 ## APIs that unblock the most examples
 
@@ -46,13 +46,13 @@ Totals: 212 examples; 156 ported, 18 ready, 38 waiting.
 | `StopMusicStream` | 3 |
 | `UnloadAudioStream` | 3 |
 | `GuiProgressBar` | 2 |
-| `GuiSpinner` | 2 |
 | `IsAudioStreamProcessed` | 2 |
 | `UpdateAudioStream` | 2 |
 | `AttachAudioMixedProcessor` | 1 |
 | `AttachAudioStreamProcessor` | 1 |
 | `BeginVrStereoMode` | 1 |
 | `DetachAudioMixedProcessor` | 1 |
+| `DetachAudioStreamProcessor` | 1 |
 
 ## Examples
 
@@ -132,7 +132,7 @@ Totals: 212 examples; 156 ported, 18 ready, 38 waiting.
 | `shapes_dashed_line` | shapes | ported |  |
 | `shapes_triangle_strip` | shapes | ported |  |
 | `shapes_vector_angle` | shapes | ported |  |
-| `shapes_pie_chart` | shapes | waiting | `GuiScrollPanel`, `GuiSpinner`, `GuiTextBox` |
+| `shapes_pie_chart` | shapes | waiting | `GuiScrollPanel`, `GuiTextBox` |
 | `shapes_kaleidoscope` | shapes | ported |  |
 | `shapes_clock_of_clocks` | shapes | ready |  |
 | `shapes_math_sine_cosine` | shapes | ported |  |
@@ -145,7 +145,7 @@ Totals: 212 examples; 156 ported, 18 ready, 38 waiting.
 | `shapes_rlgl_triangle` | shapes | ported |  |
 | `shapes_ball_physics` | shapes | ported |  |
 | `shapes_penrose_tile` | shapes | ported |  |
-| `shapes_hilbert_curve` | shapes | waiting | `GuiSpinner` |
+| `shapes_hilbert_curve` | shapes | ready |  |
 | `shapes_easings_testbed` | shapes | ported |  |
 | `textures_clipboard_image` | textures | ported |  |
 | `textures_magnifying_glass` | textures | ported |  |
