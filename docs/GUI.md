@@ -35,6 +35,8 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiToggleGroup` | `Gui.toggle_group(gui, core, frame, bounds, text, active)` | `Frame & U32` (the active index) |
 | `GuiSlider` | `Gui.slider(gui, core, frame, bounds, left, right, value, min, max)` | `Frame & (Gui & (F32 & Bool))` (value, changed) |
 | `GuiSliderBar` | `Gui.slider_bar(...)` | the same |
+| `GuiLine` | `Gui.line(gui, frame, bounds, text)` | `Frame` (`text` is `Maybe<String>`: `None` for NULL) |
+| `GuiGroupBox` | `Gui.group_box(gui, frame, bounds, text)` | `Frame` |
 
 Two additions have no raygui counterpart. They run a row of controls in order
 for programs that keep their values in lists (Bend has no pointers to write

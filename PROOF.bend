@@ -794,6 +794,15 @@ def Laws.gui_disable_keeps_focus(gui):
   JG.Gui{state, locked, alpha, exclusive, rec, style} = gui
   {==}
 
+def Laws.gui_line_color_property():
+  {==}
+
+def Laws.gui_line_color_focused_property():
+  {==}
+
+def Laws.gui_line_color_disabled_property():
+  {==}
+
 def Laws.shader_load_never_valid(vs, fs):
   {==}
 

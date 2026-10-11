@@ -179,10 +179,34 @@
    "status": "not-started"
   },
   "GuiGroupBox": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.group_box",
+   "scope": "The left, bottom and right edges, one pixel thick, and GuiLine across the top, TEXT_SIZE high and half of it above the bounds.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiLine": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.line",
+   "scope": "A one-pixel rule at the middle of the bounds in LINE_COLOR (BORDER_COLOR_DISABLED when disabled), with the text set into it 12 pixels from the left when one is given.",
+   "evidence": [
+    "tools/examples_probe.py",
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "Texts with an icon prefix (\"#id#\") and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiPanel": {
    "status": "not-started"
