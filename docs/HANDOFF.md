@@ -23,24 +23,32 @@ is owed: the port is not done before it passes.
 
 | Branch | Content | State |
 |---|---|---|
-| `main` | everything through 155 example ports, and each piece of `stack/final` as its run goes green: Jongui's controls ([GUI.md](GUI.md)), the change-scoped Linux-only Conformance workflow ([CI.md](CI.md)), the libm/libc kernels (`pow2`, `exp`/`log`, `rand`, `hypot_within`, the decimal parser), `J.Until`, the rlgl uniform setters, `UploadMesh`, `ColorFromHSV` for any finite hue, binary glTF | green on Linux for every commit |
+| `main` | everything through 157 example ports, and each piece of `stack/final` as its run goes green: Jongui's controls ([GUI.md](GUI.md)), the change-scoped Linux-only Conformance workflow ([CI.md](CI.md)), the libm/libc kernels (`pow2`, `exp`/`log`, `rand`, `hypot_within`, `tanf`, the decimal parser), `J.Until`, the rlgl uniform setters, `UploadMesh`, `ColorFromHSV` for any finite hue, binary glTF | green on Linux for every commit |
 | `stack/final` | the commits not yet on `main`, in landing order. The name starts no CI run: it is the backup | each piece goes to `main` through a `feature/**` branch |
 
 On `stack/final` now, in landing order (`git log origin/main..origin/stack/final`
 lists what is left; `python3 tools/ci_scope.py --base origin/main --head <commit>`
-prints a commit's scope):
+prints a commit's scope). One complete run verifies the whole list (branch
+`feature/piece-38`, pushed 2026-10-11 04:13 UTC): the pieces edit
+`jongui.bend`'s header comment, which the scope tool counts as a changed
+definition, and `GuiSetIconScale` adds a field to Jongui's state.
 
-1. `M.Libm.tanf`, `GuiLine`/`GuiGroupBox`, the port `shapes_math_sine_cosine`:
-   scoped runs.
-2. raygui's icons in control texts: it changes Jongui's text drawing, so a
-   complete run.
-3. `GuiValueBox`/`GuiSpinner`, the port `shapes_hilbert_curve`,
+1. `GuiValueBox`/`GuiSpinner`, the port `shapes_hilbert_curve`,
    `GuiDropdownBox`/`GuiPanel`/`GuiStatusBar`, the port
-   `shapes_splines_drawing`, `GuiTextBox`, the port `core_compute_hash`:
-   additions and ports, scoped once 2 is on `main`.
-4. `GuiSetIconScale` (a field of Jongui's state: a complete run) and the
-   port `core_clipboard_text`.
-5. This document.
+   `shapes_splines_drawing`, `GuiTextBox`, the port `core_compute_hash`.
+2. `GuiSetIconScale` and the port `core_clipboard_text`.
+3. `GuiScrollPanel`/`GuiScrollBar` and the port `shapes_pie_chart`.
+4. Thirty-one rlgl buffer, shader object, compute and storage buffer
+   functions (empty on the software path) and the port
+   `shaders_rlgl_compute`.
+5. After that branch: the port `shaders_lightmap_rendering` (a scoped run
+   once the rest is on `main`) and this document.
+
+`main` may move under a branch in CI: another session pushed a CI commit on
+2026-10-11 while two branches were running. A green branch that `main` is no
+longer an ancestor of is merged with a merge commit after the unit tests and
+`tools/check_project.py` pass on the merged tree; the rest of the stack is
+then rebased onto `main`.
 
 How the last stack went (2026-10-10/11): thirteen independent pieces were
 pushed as thirteen `feature/piece-NN` branches and landed one by one within
@@ -56,8 +64,8 @@ at the branch's head.
 
 Coverage (`python3 tools/api_plan.py check`): raylib.h 515/600 partial
 (20 blocked, 65 not started); raymath.h 146/146; rlgl.h 98/163; rcamera.h
-12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **160/212 ported** with the stack, 18 ready, 34 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
+12/12; rgestures.h 10/10 (rlgl.h gains 31 functions with the stack). Examples (`python3 tools/examples_plan.py check`,
+[EXAMPLES.md](EXAMPLES.md)): **163/212 ported** with the stack, 18 ready, 31 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -86,8 +94,13 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
   pinned raygui.h and checked by the `gui-icons` gate) with
   `GuiSetIconScale`, `GuiLine`, `GuiGroupBox`, `GuiValueBox` and `GuiSpinner`
   (outside edit mode), `GuiStatusBar`, `GuiPanel`, `GuiDropdownBox` and
-  `GuiTextBox` (raygui's two text box globals are a `G.Gui.Editing` value).
-  Left: `GuiProgressBar`, `GuiScrollPanel`, `GuiListViewEx`, `GuiGetFont`.
+  `GuiTextBox` (raygui's two text box globals are a `G.Gui.Editing` value),
+  `GuiScrollPanel` and `GuiScrollBar`. Left: `GuiProgressBar`,
+  `GuiListViewEx`, `GuiGetFont`.
+- **rlgl's empty functions** ([RLGL.md](RLGL.md)): the vertex array, buffer,
+  shader object, compute and storage buffer functions as the software path
+  leaves them (ids 0, locations -1, nothing else), compared natively by the
+  `rlgl` gate.
 - **`M.Libm.tanf`** ([MATH.md](MATH.md)): glibc 2.39's `tanf` on every
   finite argument (an LGPL module; glibc 2.41's is a different, correctly
   rounded function and stays refused, as does Apple's).
@@ -165,18 +178,33 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
    you wait for (the push cancels it). A complete run takes fifteen Linux
    runners for about an hour and a half; the account runs about twenty
    jobs at a time.
-2. Grow the glTF loader, the largest unlock left in the models family:
+2. Grow the glTF loader, the largest unlock left in the models family
+   (`models_loading_gltf`, `models_animation_gpu_skinning`,
+   `models_bone_socket`, `models_animation_blend_custom`,
+   `models_animation_blending` and `_timing` with `GuiProgressBar`,
+   `shaders_shadowmap_rendering` with the framebuffer functions). raylib
+   6.0's model has a `ModelSkeleton`, a current pose and bone matrices;
+   Jonlib's `Model` and `Mesh` have none of them, so the additive route is
+   separate types beside the model (a skeleton with its bind pose, the
+   meshes' bone ids and weights, `ModelAnimation` as keyframe poses) and an
+   update that returns the model with skinned vertices
+   (`UpdateModelAnimation` is a pose lerp/slerp per bone, `inverse(bind) *
+   pose` matrices and CPU skinning; `QuaternionSlerp` follows the libm
+   profile's `acosf`/`sinf`). The loader needs skins, `JOINTS_0`/`WEIGHTS_0`
+   and `LoadModelAnimationsGLTF`'s sampling of each channel every 17 ms.
+   Also:
    textures and images (embedded and external; `shaders_basic_pbr` also needs
    PNG files above Jonlib's 1 MiB input limit), skins and
    `LoadModelAnimations`/`UpdateModelAnimation` (`models_loading_gltf` and
    eight animation examples), glTF as text with external buffers.
 3. The remaining raygui controls, each a small additive piece of
-   `jongui.bend` verified by the example that uses it: `GuiScrollPanel`
-   (with `GuiScrollBar`; `shapes_pie_chart` then has everything),
-   `GuiProgressBar` (two animation examples), `GuiListViewEx` and
-   `GuiGetFont` (`core_directory_files`, with the directory functions).
-   The probe's replayed events never reach `GetCharPressed`: typing into a
-   text box cannot be compared natively there.
+   `jongui.bend` verified by the example that uses it: `GuiProgressBar` (two
+   animation examples), `GuiListViewEx` and `GuiGetFont`
+   (`core_directory_files`, with the directory functions). Append whole
+   definitions only and leave the file's header comment alone, or the piece
+   runs in full. The probe's replayed events never reach `GetCharPressed`
+   (typing into a text box cannot be compared natively) and no example's
+   content overflows its scroll panel (the scroll bars are unverified).
 4. Other pieces that each unblock examples:
    - an IO step in `J.Program`'s update (`core_storage_values`);
    - binary64 `sin`/`cos` (`models_waving_cubes`,
