@@ -144,6 +144,31 @@ class ClockExampleTests(unittest.TestCase):
         self.assertEqual(ep.refusal(item, 'AppleLibm'), 'reported')
 
 
+    def test_the_clock_of_clocks_table_is_the_examples(self):
+        import re
+        port = (ROOT / 'examples/shapes_clock_of_clocks.bend').read_text()
+        rows = re.findall(r'    case (\d|_): \[([0-9, ]+)\]', port)
+        self.assertEqual([name for name, _ in rows], [str(d) for d in range(9)] + ['_'])
+        table = [[int(v) for v in body.split(', ')] for _, body in rows]
+        self.assertTrue(all(len(row) == 24 and max(row) <= 6 for row in table))
+        # Every digit ends its last row at the bottom corners, and only 1, 4 and 7 leave cells unused (ZZ, 6).
+        self.assertEqual({tuple(row[-2:]) for row in table}, {(4, 2), (3, 2)})
+        self.assertEqual([d for d, row in enumerate(table) if 6 in row], [1, 4, 7])
+        for symbol, angles in enumerate(('0.0, 90.0', '90.0, 180.0', '180.0, 270.0', '0.0, 270.0', '0.0, 180.0', '90.0, 270.0')):
+            self.assertIn(f'    case {symbol}: M.Vector2{{{angles}}}', port)
+        self.assertIn('    case _: M.Vector2{135.0, 135.0}', port)
+
+    def test_the_clock_of_clocks_script_ticks_in_both_hour_modes(self):
+        item = next(item for item in ep.scripts() if item['example'] == 'shapes_clock_of_clocks')
+        self.assertIn('shapes_clock_of_clocks', ep.SEEDED)
+        times = [item['seed'] + int(item['start'])] + [item['seed'] + int(frame['after']) for frame in item['frames'][:-1]]
+        self.assertEqual(sorted(set(times)), [50398, 50399])
+        space = next(k for k, frame in enumerate(item['frames']) if any(code == 32 and kind == ep.KEY_DOWN_EVENT for kind, code, _, _ in frame['events']))
+        self.assertLess(space, times.index(50399))
+        self.assertGreaterEqual(len(item['frames']) - times.index(50399), 6)
+        self.assertEqual(ep.refusal(item, 'AppleLibm'), 'reported')
+
+
 class UndefinedNativeExampleTests(unittest.TestCase):
     def test_the_codepoints_example_repeats_a_codepoint_and_is_not_run(self):
         import re
