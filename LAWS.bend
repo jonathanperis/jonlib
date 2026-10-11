@@ -1265,6 +1265,22 @@ law gui_text_box_blank_when_normal:
   for gui: JG.Gui
   {JG.Gui.box.fill(0, gui) == 0 : U32}
 
+# GuiSetIconScale: 1 at start; a scale below 1 (0, or a negative C int) is ignored.
+law gui_icon_scale_starts_at_one:
+  {JG.Gui.icon_scale(JG.Gui.new()) == 1 : U32}
+
+law gui_icon_scale_set:
+  for gui: JG.Gui
+  {JG.Gui.icon_scale(JG.Gui.set_icon_scale(gui, 2)) == 2 : U32}
+
+law gui_icon_scale_zero_ignored:
+  for gui: JG.Gui
+  {JG.Gui.icon_scale(JG.Gui.set_icon_scale(gui, 0)) == JG.Gui.icon_scale(gui) : U32}
+
+law gui_icon_scale_negative_ignored:
+  for gui: JG.Gui
+  {JG.Gui.icon_scale(JG.Gui.set_icon_scale(gui, 4294967295)) == JG.Gui.icon_scale(gui) : U32}
+
 law shader_load_never_valid:
   for vs: Maybe<String>
   for fs: Maybe<String>

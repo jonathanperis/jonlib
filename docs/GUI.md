@@ -27,6 +27,7 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiLock` / `GuiUnlock` / `GuiIsLocked` | `Gui.lock`, `Gui.unlock`, `Gui.is_locked` | `Gui` / `Bool` |
 | `GuiSetState` / `GuiGetState` | `Gui.set_state(gui, state)` / `Gui.get_state(gui)` | `Gui` / `U32` |
 | `GuiSetAlpha` | `Gui.set_alpha(gui, alpha)` | `Gui` (alpha clamped to [0, 1]) |
+| `GuiSetIconScale` | `Gui.set_icon_scale(gui, scale)` | `Gui` (a scale below 1 is ignored) |
 | `GuiGetTextWidth` | `Gui.get_text_width(gui, text)` | `Maybe<F32>` (the C int, always `Some`; an icon prefix counts as raygui counts it) |
 | `GuiLabel` | `Gui.label(gui, frame, bounds, text)` | `Frame` |
 | `GuiButton` | `Gui.button(gui, core, frame, bounds, text)` | `Frame & Bool` (clicked) |
@@ -71,13 +72,14 @@ example waiting on each raygui function it calls that is not delivered.
   bounds stops at an ellipsis. Every color is faded by `guiAlpha`.
 - **Icons.** A line that starts with `#`, up to three digits and `#`
   (`GetTextIcon`; `"##"` is icon 0) draws that icon of raygui's set before
-  its text: 16x16 pixels at scale 1, one `GuiDrawRectangle` a set bit, at
-  the line's x and centered on the bounds' height, with the text 20 pixels
-  further and 20 pixels less room before the ellipsis. The line's width for
-  the alignment is the text's plus 16, plus 4 more unless the whole text
-  ends there. `GuiGetTextWidth` has its own rule, kept as it is: a text
-  starting with `#` that has another `#` within its next four bytes is
-  measured from that second `#` (the `#` included) plus 20. The set is
+  its text: 16x16 squares of the icon scale (`GuiSetIconScale`, 1 at start),
+  one `GuiDrawRectangle` a set bit, at the line's x and centered on the
+  bounds' height, with the text 4 pixels after the icon and that much less
+  room before the ellipsis. The line's width for the alignment is the
+  text's plus the icon's, plus 4 more unless the whole text ends there.
+  `GuiGetTextWidth` has its own rule, kept as it is: a text starting with
+  `#` that has another `#` within its next four bytes is measured from that
+  second `#` (the `#` included) plus 20, whatever the scale. The set is
   `src/gui_icons.bend`, generated from the pinned raygui.h
   (`tools/gui_icons.py`).
 - **Pointer.** `GetMousePosition`, and for the button the left mouse button or
@@ -140,10 +142,9 @@ example waiting on each raygui function it calls that is not delivered.
   `GuiTabBar`, `GuiScrollPanel`, `GuiListView(Ex)`,
   `GuiColor*`, `GuiMessageBox`, `GuiTextInputBox`, `GuiWindowBox`,
   `GuiLabelButton`, the style file loaders, `GuiSetFont`/`GuiGetFont`,
-  `GuiDrawIcon`/`GuiIconText` as functions, `GuiSetIconScale` (icons draw at
-  scale 1), `GuiLoadIcons` and tooltips.
+  `GuiDrawIcon`/`GuiIconText` as functions, `GuiLoadIcons` and tooltips.
 - An icon id above 255 reads past raygui's table and marks the frame
-  undefined. So does a line that is not the text's last, starts with `#`
+  undefined, and so does an icon drawn at a scale above 65536. So does a line that is not the text's last, starts with `#`
   (after its icon, if it has one), and has fewer than four bytes after that
   `#` with no second `#`: raygui's `GuiGetTextWidth` would look for it in the
   lines that follow.

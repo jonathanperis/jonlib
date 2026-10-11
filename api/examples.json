@@ -1324,7 +1324,7 @@
   {
    "name": "core_clipboard_text",
    "category": "core",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -1352,9 +1352,7 @@
     "GuiSetStyle",
     "GuiTextBox"
    ],
-   "missing": [
-    "GuiSetIconScale"
-   ]
+   "missing": []
   },
   {
    "name": "core_text_file_loading",
