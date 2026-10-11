@@ -262,6 +262,7 @@ EXAMPLES = {
     'shaders_hybrid_rendering': ('shaders/shaders_hybrid_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shaders_depth_rendering': ('shaders/shaders_depth_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_shadowmap_rendering': ('shaders/shaders_shadowmap_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'shaders_deferred_rendering': ('shaders/shaders_deferred_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'core_storage_values': ('core/core_storage_values.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_automation_events': ('core/core_automation_events.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
@@ -340,6 +341,7 @@ PERSPECTIVE.add('models_mesh_generation')
 PERSPECTIVE.add('shaders_depth_writing')
 PERSPECTIVE.add('shaders_hybrid_rendering')
 PERSPECTIVE.add('shaders_depth_rendering')
+PERSPECTIVE.add('shaders_deferred_rendering')
 # Examples whose loop does IO (a J.Effects program): replayed with J.Program.replay_io.
 EFFECTS = {'shaders_shadowmap_rendering'}
 # A program of another probe (tools/effects_probe.py) names its Bend module instead of examples/<name>.bend.
@@ -1052,6 +1054,10 @@ def scripts():
         # The depth attachment drawn as a texture is a white rectangle on rlsw, whatever the free camera does (W
         # moves it, the pointer turns it): the help box over white.
         script('shaders_depth_rendering', 'white', [quick(), quick([key(KEY_W)]), quick([mouse_at(430, 240)]), slow([key(KEY_W, False)])]),
+        # The result (nothing but the lights: the yellow sphere invisible, then its wires once Y turns it off),
+        # then the position, normal and albedo textures and the result again, with the blue light off.
+        script('shaders_deferred_rendering', 'modes', [quick(), quick([key(89)]), quick([key(89, False), key(49)]), quick([key(49, False), key(50)]), quick([key(50, False), key(51)]),
+                                                       slow([key(51, False), key(52), key(66)]), quick([key(52, False), key(66, False)])]),
         # Short scripts: the JavaScript lane takes seconds a frame for this scene. The player falls to the floor
         # (53 frames: deltaTime is the constant 0.015f), runs right, jumps and runs left in the air; the wheel
         # zooms out and in; A with an empty list does nothing; R resets.
