@@ -12568,10 +12568,14 @@ def Frame.is_defined(frame: Frame) -> Frame & Bool:
 # runs before BeginDrawing, draw between BeginDrawing and EndDrawing. Until is
 # a loop with its own condition, `while (!done)`, tested on the state before
 # each frame: the window's close request does not end it (the update reads it
-# with Core.window_should_close).
+# with Core.window_should_close). Effects is a body that does IO (a file read
+# or written, a texture loaded, a screenshot): its update takes the frame
+# too, and `after` is the code after EndDrawing, run before the loop's
+# condition is tested again.
 type Program<-S: Type> is Type:
   Program{update: Core -> S -> Core & S, draw: Core -> S -> Frame -> Core & (S & Frame)}
   Until{update: Core -> S -> Core & S, draw: Core -> S -> Frame -> Core & (S & Frame), done: S -> S & Bool}
+  Effects{update: Core -> S -> Frame -> IO(Core & (S & Frame)), draw: Core -> S -> Frame -> Core & (S & Frame), after: Core -> S -> Frame -> IO(Core & (S & Frame))}
 
 # One scripted frame: the automation events played before it (after the
 # previous EndDrawing), BeginDrawing's clock, EndDrawing's clock and the clock
@@ -12633,6 +12637,7 @@ def Replay.entered(-S: Type, program: Program<S>, show: Frame -> Frame & String,
   match program:
     case Program{update, draw}: Replay.open(S, Core.window_should_close(core), update, draw, show, spec, core, frame, user, out)
     case Until{update, draw, done}: Replay.until(S, update, draw, show, spec, core, frame, out, done(user))
+    case Effects{update, draw, after}: Stopped{Con{"null", out}}
 
 def Replay.played(-S: Type, program: Program<S>, show: Frame -> Frame & String, +spec: ReplayFrame, frame: Frame, user: S, out: List<String>, core: Maybe<Core>) -> Replay<S>:
   match core:
@@ -12663,9 +12668,65 @@ def Program.replay.go(~S: Type, ~program: Program<S>, ~show: Frame -> Frame & St
 # stops when it is true; an Until program's own condition instead), update,
 # BeginDrawing at `begin`, draw, EndDrawing at
 # `end` (waiting until `after`), and `show` of the frame after the swap. One
-# string per frame drawn; "null" ends the list where a Core step is None.
+# string per frame drawn; "null" ends the list where a Core step is None, and
+# at once for an Effects program, whose IO needs Program.replay_io.
 def Program.replay(~S: Type, ~program: Program<S>, ~show: Frame -> Frame & String, script: +List<ReplayFrame>, core: Core, frame: Frame, user: S) -> List<String>:
   Program.replay.go(~S, ~program, ~show, script, Running{core, frame, user, Nil{}})
+
+def Replay.io.parts(-S: Type, +core: Core, out: List<String>, parts: S & Frame) -> Replay<S>:
+  (user, frame) = parts
+  Running{core, frame, user, out}
+
+def Replay.io.resumed(-S: Type, out: List<String>, result: Core & (S & Frame)) -> Replay<S>:
+  (+core, parts) = result
+  Replay.io.parts(S, core, out, parts)
+
+# An Effects program's `after`, once the frame was drawn and shown.
+def Replay.io.after(-S: Type, after: Core -> S -> Frame -> IO(Core & (S & Frame)), run: Replay<S>) -> IO(Replay<S>):
+  match run:
+    case Stopped{out}: IO.pure(Replay<S>, Stopped{out})
+    case Running{+core, frame, user, out}: IO.bind(Core & (S & Frame), Replay<S>, after(core, user, frame), result => IO.pure(Replay<S>, Replay.io.resumed(S, out, result)))
+
+def Replay.io.updated.parts(-S: Type, draw: Core -> S -> Frame -> Core & (S & Frame), show: Frame -> Frame & String, +spec: ReplayFrame, out: List<String>, +core: Core, parts: S & Frame) -> Replay<S>:
+  (user, frame) = parts
+  Replay.updated.timed(S, draw, show, core, user, frame, out, spec)
+
+def Replay.io.updated(-S: Type, draw: Core -> S -> Frame -> Core & (S & Frame), show: Frame -> Frame & String, +spec: ReplayFrame, out: List<String>, result: Core & (S & Frame)) -> Replay<S>:
+  (+core, parts) = result
+  Replay.io.updated.parts(S, draw, show, spec, out, core, parts)
+
+def Replay.io.open(-S: Type, closing: Bool, update: Core -> S -> Frame -> IO(Core & (S & Frame)), draw: Core -> S -> Frame -> Core & (S & Frame), after: Core -> S -> Frame -> IO(Core & (S & Frame)),
+    show: Frame -> Frame & String, +spec: ReplayFrame, +core: Core, frame: Frame, user: S, out: List<String>) -> IO(Replay<S>):
+  match closing:
+    case True{}: IO.pure(Replay<S>, Stopped{out})
+    case False{}: IO.bind(Core & (S & Frame), Replay<S>, update(core, user, frame), result => Replay.io.after(S, after, Replay.io.updated(S, draw, show, spec, out, result)))
+
+def Replay.io.entered(-S: Type, program: Program<S>, show: Frame -> Frame & String, +spec: ReplayFrame, +core: Core, frame: Frame, user: S, out: List<String>) -> IO(Replay<S>):
+  match program:
+    case Program{update, draw}: IO.pure(Replay<S>, Replay.open(S, Core.window_should_close(core), update, draw, show, spec, core, frame, user, out))
+    case Until{update, draw, done}: IO.pure(Replay<S>, Replay.until(S, update, draw, show, spec, core, frame, out, done(user)))
+    case Effects{update, draw, after}: Replay.io.open(S, Core.window_should_close(core), update, draw, after, show, spec, core, frame, user, out)
+
+def Replay.io.played(-S: Type, program: Program<S>, show: Frame -> Frame & String, +spec: ReplayFrame, frame: Frame, user: S, out: List<String>, core: Maybe<Core>) -> IO(Replay<S>):
+  match core:
+    case None{}: IO.pure(Replay<S>, Stopped{Con{"null", out}})
+    case Some{+c}: Replay.io.entered(S, program, show, spec, c, frame, user, out)
+
+def Replay.io.frame(-S: Type, program: Program<S>, show: Frame -> Frame & String, +spec: ReplayFrame, run: Replay<S>) -> IO(Replay<S>):
+  match run:
+    case Stopped{out}: IO.pure(Replay<S>, Stopped{out})
+    case Running{+core, frame, user, out}: Replay.io.played(S, program, show, spec, frame, user, out, Core.play_all(ReplayFrame.events(spec), Some{core}))
+
+def Program.replay_io.go(~S: Type, ~program: Program<S>, ~show: Frame -> Frame & String, script: +List<ReplayFrame>, run: Replay<S>) -> IO(List<String>):
+  match script:
+    case Nil{}: IO.pure(List<String>, Replay.out(S, run))
+    case Con{+spec, rest}: IO.bind(Replay<S>, List<String>, Replay.io.frame(S, program, show, spec, run), next => Program.replay_io.go(~S, ~program, ~show, rest, next))
+
+# Program.replay for any program, an Effects one included: its update runs
+# where a Program's does and its `after` once EndDrawing (with its
+# PollInputEvents) is over, before the next frame's events and condition.
+def Program.replay_io(~S: Type, ~program: Program<S>, ~show: Frame -> Frame & String, script: +List<ReplayFrame>, core: Core, frame: Frame, user: S) -> IO(List<String>):
+  Program.replay_io.go(~S, ~program, ~show, script, Running{core, frame, user, Nil{}})
 
 # -----------------------------------------------------------------------------
 # The interactive loop: Base's App.run over a Desktop.State
@@ -12831,11 +12892,49 @@ def Desktop.until(-S: Type, update: Core -> S -> Core & S, draw: Core -> S -> Fr
   (user, closing) = ending
   Desktop.next(S, closing || Desktop.limited(limit, stats), update, draw, start, limit, stats, t1, t2, core, frame, user)
 
+def Desktop.effects.updated.parts(-S: Type, draw: Core -> S -> Frame -> Core & (S & Frame), +start: Nat, +limit: U32, +stats: Desktop.Stats, +t1: Nat, +t2: Nat, +core: Core, parts: S & Frame) -> IO(Maybe<Desktop.State<S>>):
+  (user, frame) = parts
+  IO.bind(Nat, Maybe<Desktop.State<S>>, IO.now(), t3 => Desktop.updated(S, draw, start, limit, stats, t1, t2, t3, frame, (core, user)))
+
+def Desktop.effects.updated(-S: Type, draw: Core -> S -> Frame -> Core & (S & Frame), +start: Nat, +limit: U32, +stats: Desktop.Stats, +t1: Nat, +t2: Nat, result: Core & (S & Frame)) -> IO(Maybe<Desktop.State<S>>):
+  (+core, parts) = result
+  Desktop.effects.updated.parts(S, draw, start, limit, stats, t1, t2, core, parts)
+
+# An Effects program's update, then the clock BeginDrawing reads.
+def Desktop.effects.next(-S: Type, closing: Bool, update: Core -> S -> Frame -> IO(Core & (S & Frame)), draw: Core -> S -> Frame -> Core & (S & Frame), +start: Nat, +limit: U32, +stats: Desktop.Stats,
+    +t1: Nat, +t2: Nat, +core: Core, frame: Frame, user: S) -> IO(Maybe<Desktop.State<S>>):
+  match closing:
+    case True{}: Desktop.stop(S, start, stats, "")
+    case False{}: IO.bind(Core & (S & Frame), Maybe<Desktop.State<S>>, update(core, user, frame), result => Desktop.effects.updated(S, draw, start, limit, stats, t1, t2, result))
+
+def Desktop.effects.after.parts(-S: Type, update: Core -> S -> Frame -> IO(Core & (S & Frame)), draw: Core -> S -> Frame -> Core & (S & Frame), +start: Nat, +limit: U32, +stats: Desktop.Stats, +t1: Nat,
+    +t2: Nat, +core: Core, parts: S & Frame) -> IO(Maybe<Desktop.State<S>>):
+  (user, frame) = parts
+  Desktop.effects.next(S, Core.window_should_close(core) || Desktop.limited(limit, stats), update, draw, start, limit, stats, t1, t2, core, frame, user)
+
+def Desktop.effects.after(-S: Type, update: Core -> S -> Frame -> IO(Core & (S & Frame)), draw: Core -> S -> Frame -> Core & (S & Frame), +start: Nat, +limit: U32, +stats: Desktop.Stats, +t1: Nat, +t2: Nat,
+    result: Core & (S & Frame)) -> IO(Maybe<Desktop.State<S>>):
+  (+core, parts) = result
+  Desktop.effects.after.parts(S, update, draw, start, limit, stats, t1, t2, core, parts)
+
+# An Effects program's turn: its `after` for the frame presented (none before
+# the first one), the loop's condition, the update.
+def Desktop.effects(-S: Type, first: Bool, update: Core -> S -> Frame -> IO(Core & (S & Frame)), draw: Core -> S -> Frame -> Core & (S & Frame), after: Core -> S -> Frame -> IO(Core & (S & Frame)),
+    +start: Nat, +limit: U32, +stats: Desktop.Stats, +t1: Nat, +t2: Nat, +core: Core, frame: Frame, user: S) -> IO(Maybe<Desktop.State<S>>):
+  match first:
+    case True{}: Desktop.effects.next(S, Core.window_should_close(core) || Desktop.limited(limit, stats), update, draw, start, limit, stats, t1, t2, core, frame, user)
+    case False{}: IO.bind(Core & (S & Frame), Maybe<Desktop.State<S>>, after(core, user, frame), result => Desktop.effects.after(S, update, draw, start, limit, stats, t1, t2, result))
+
+def Desktop.unstarted(+stats: Desktop.Stats) -> Bool:
+  DesktopStats{+frames, _, _, _, _} = stats
+  U32.is_eq(frames, 0)
+
 # The loop's condition before the frame: WindowShouldClose, or the program's own.
 def Desktop.entered(-S: Type, program: Program<S>, +start: Nat, +limit: U32, +stats: Desktop.Stats, +t1: Nat, +t2: Nat, +core: Core, frame: Frame, user: S) -> IO(Maybe<Desktop.State<S>>):
   match program:
     case Program{update, draw}: Desktop.next(S, Core.window_should_close(core) || Desktop.limited(limit, stats), update, draw, start, limit, stats, t1, t2, core, frame, user)
     case Until{update, draw, done}: Desktop.until(S, update, draw, start, limit, stats, t1, t2, core, frame, done(user))
+    case Effects{update, draw, after}: Desktop.effects(S, Desktop.unstarted(stats), update, draw, after, start, limit, stats, t1, t2, core, frame, user)
 
 def Desktop.polled(-S: Type, program: Program<S>, +start: Nat, +limit: U32, +stats: Desktop.Stats, +t1: Nat, +t2: Nat, frame: Frame, user: S, core: Maybe<Core>) -> IO(Maybe<Desktop.State<S>>):
   match core:

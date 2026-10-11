@@ -1366,6 +1366,52 @@ law replay_until_uses_its_condition:
   for out: List<String>
   {J.Replay.entered(Unit, J.Until{update, draw, state => (state, True{})}, show, spec, core, frame, Unit{}, out) == J.Stopped{out} : J.Replay<Unit>}
 
+# Programs whose loop does IO (J.Effects, docs/DRIVER.md): the pure replay
+# cannot run one and says so at once; the IO replay stops a closing loop
+# before its update like the pure one, and runs no `after` for a run that
+# stopped; the desktop driver runs `after` once a frame was presented, not
+# before the first one.
+law replay_effects_needs_io:
+  for update: J.Core -> Unit -> J.Frame -> IO(J.Core & (Unit & J.Frame))
+  for draw: J.Core -> Unit -> J.Frame -> J.Core & (Unit & J.Frame)
+  for after: J.Core -> Unit -> J.Frame -> IO(J.Core & (Unit & J.Frame))
+  for show: J.Frame -> J.Frame & String
+  for spec: J.ReplayFrame
+  for core: J.Core
+  for frame: J.Frame
+  for out: List<String>
+  {J.Replay.entered(Unit, J.Effects{update, draw, after}, show, spec, core, frame, Unit{}, out) == J.Stopped{Con{"null", out}} : J.Replay<Unit>}
+
+law replay_io_closing_stops:
+  for update: J.Core -> Unit -> J.Frame -> IO(J.Core & (Unit & J.Frame))
+  for draw: J.Core -> Unit -> J.Frame -> J.Core & (Unit & J.Frame)
+  for after: J.Core -> Unit -> J.Frame -> IO(J.Core & (Unit & J.Frame))
+  for show: J.Frame -> J.Frame & String
+  for spec: J.ReplayFrame
+  for core: J.Core
+  for frame: J.Frame
+  for out: List<String>
+  {J.Replay.io.open(Unit, True{}, update, draw, after, show, spec, core, frame, Unit{}, out) == IO.pure(J.Replay<Unit>, J.Stopped{out}) : IO(J.Replay<Unit>)}
+
+law replay_io_no_after_once_stopped:
+  for after: J.Core -> Unit -> J.Frame -> IO(J.Core & (Unit & J.Frame))
+  for out: List<String>
+  {J.Replay.io.after(Unit, after, J.Stopped{out}) == IO.pure(J.Replay<Unit>, J.Stopped{out}) : IO(J.Replay<Unit>)}
+
+law desktop_effects_no_after_before_the_first_frame:
+  for render: U32
+  for present: U32
+  for wait: U32
+  for mark: Nat
+  {J.Desktop.unstarted(J.DesktopStats{0, render, present, wait, mark}) == True{} : Bool}
+
+law desktop_effects_after_once_a_frame_was_presented:
+  for render: U32
+  for present: U32
+  for wait: U32
+  for mark: Nat
+  {J.Desktop.unstarted(J.DesktopStats{1, render, present, wait, mark}) == False{} : Bool}
+
 # Jongui (raygui): the default style, GuiSetStyle's propagation of a DEFAULT
 # base property (and only those), and GuiEnable/GuiDisable.
 law gui_default_text_size:

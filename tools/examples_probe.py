@@ -327,6 +327,11 @@ PERSPECTIVE.add('models_mesh_generation')
 PERSPECTIVE.add('shaders_depth_writing')
 PERSPECTIVE.add('shaders_hybrid_rendering')
 PERSPECTIVE.add('shaders_depth_rendering')
+# Examples whose loop does IO (a J.Effects program): replayed with J.Program.replay_io.
+EFFECTS = set()
+# Programs of another probe (tools/effects_probe.py): the Bend module instead of examples/<name>.bend, the
+# directory given as RESOURCES instead of the example's, and the native run in a directory of its own.
+MODULES, DIRECTORIES, SCRATCH = {}, {}, set()
 
 
 # -----------------------------------------------------------------------------
@@ -1470,6 +1475,10 @@ def native_frames(probe, binary, index, item):
     source, _ = EXAMPLES[item['example']]
     in_module = item['example'] == 'textures_logo_raylib' or item['example'] in IO_SETUP
     cwd = probe.args.raylib_source / 'examples' / source.split('/')[0] if in_module else probe.work
+    if item['example'] in SCRATCH:
+        cwd = probe.work / f'native-{index}'
+        shutil.rmtree(cwd, ignore_errors=True)
+        cwd.mkdir(parents=True)
     result = subprocess.run([str(binary)], cwd=cwd, env=dict(probekit.ENV, JONLIB_EXAMPLE_SCRIPT=str(path)), stdin=subprocess.DEVNULL,
                             capture_output=True, text=True, timeout=600)
     if result.returncode:
@@ -1537,7 +1546,7 @@ def expected_row(runs, width=WIDTH, height=HEIGHT):
 PROGRAM = '''import Base
 import ../../jonlib.bend as J
 import ../../jonmath.bend as M
-import ../../examples/EXAMPLE.bend as Ex
+import MODULE as Ex
 
 def hex.digit(+d: U32) -> Char:
   Chr{Bool.pick(U32, (d < 10 : U32), (d + 48 : U32), (d + 87 : U32))}
@@ -1616,15 +1625,27 @@ def join(lines: List<String>) -> String:
     case Nil{}: ""
     case Con{line, rest}: line ++ "|" ++ join(rest)
 
-def replay.parts(+core: J.Core, script: +List<J.ReplayFrame>, parts: J.Frame & Ex.State) -> String:
+READY
+REPLAY
+'''
+
+PURE_READY = '''def replay.parts(+core: J.Core, script: +List<J.ReplayFrame>, parts: J.Frame & Ex.State) -> String:
   (frame, state) = parts
   join(J.Program.replay(~Ex.State, ~Ex.program(M.LIBM{}), ~show.fn(), script, core, frame, state))
 
 def replay.ready(script: +List<J.ReplayFrame>, ready: J.Core & (J.Frame & Ex.State)) -> String:
   (+core, parts) = ready
   replay.parts(core, script, parts)
+'''
 
-REPLAY
+# An Effects program (IO in its loop) replays with J.Program.replay_io.
+EFFECTS_READY = '''def replay.parts(+core: J.Core, script: +List<J.ReplayFrame>, parts: J.Frame & Ex.State) -> IO(String):
+  (frame, state) = parts
+  IO.bind(List<String>, String, J.Program.replay_io(~Ex.State, ~Ex.program(M.LIBM{}), ~show.fn(), script, core, frame, state), lines => IO.pure(String, join(lines)))
+
+def replay.ready(script: +List<J.ReplayFrame>, ready: J.Core & (J.Frame & Ex.State)) -> IO(String):
+  (+core, parts) = ready
+  replay.parts(core, script, parts)
 '''
 
 PURE_REPLAY = '''def replay(SETUP_PARAMS script: +List<J.ReplayFrame>, core: Maybe<J.Core>, frame: Maybe<J.Frame>) -> String:
@@ -1636,6 +1657,12 @@ PURE_REPLAY = '''def replay(SETUP_PARAMS script: +List<J.ReplayFrame>, core: May
 IO_REPLAY = '''def replay(SETUP_PARAMS script: +List<J.ReplayFrame>, core: Maybe<J.Core>, frame: Maybe<J.Frame>) -> IO(String):
   match core frame:
     case Some{+core} Some{frame}: IO.bind(J.Core & (J.Frame & Ex.State), String, SETUP, ready => IO.pure(String, replay.ready(script, ready)))
+    case _ _: IO.pure(String, "no window")
+'''
+
+EFFECTS_REPLAY = '''def replay(SETUP_PARAMS script: +List<J.ReplayFrame>, core: Maybe<J.Core>, frame: Maybe<J.Frame>) -> IO(String):
+  match core frame:
+    case Some{+core} Some{frame}: IO.bind(J.Core & (J.Frame & Ex.State), String, SETUP, ready => replay.ready(script, ready))
     case _ _: IO.pure(String, "no window")
 '''
 
@@ -1666,8 +1693,12 @@ def render(items, libm, logo, raylib_source):
         _, setup = EXAMPLES[name]
         setup_params = '+seed: U32, ' if name in SEEDED else {'textures_logo_raylib': 'logo: Result<&1, &1, J.Surface.IOError, J.Surface>, '}.get(name, '')
         io = name in IO_SETUP
-        resources = json.dumps(str(raylib_source / 'examples' / EXAMPLES[name][0].split('/')[0]) + '/')
-        body = (PROGRAM.replace('REPLAY', IO_REPLAY if io else PURE_REPLAY).replace('EXAMPLE', name)
+        effects = name in EFFECTS
+        if effects and not io:
+            raise ProbeFailure(f'examples: {name}: an Effects program is replayed in IO (add it to IO_SETUP, its setup in IO)')
+        resources = json.dumps(DIRECTORIES.get(name, str(raylib_source / 'examples' / EXAMPLES[name][0].split('/')[0]) + '/'))
+        body = (PROGRAM.replace('MODULE', MODULES.get(name, f'../../examples/{name}.bend')).replace('READY', EFFECTS_READY if effects else PURE_READY)
+                .replace('REPLAY', EFFECTS_REPLAY if effects else IO_REPLAY if io else PURE_REPLAY).replace('EXAMPLE', name)
                 .replace('SETUP_PARAMS ', setup_params).replace('SETUP', setup).replace('LIBM', libm).replace('RESOURCES', resources))
         indexes = [i for i, item in enumerate(items) if item['example'] == name]
         logo_param = 'logo: Result<&1, &1, J.Surface.IOError, J.Surface>' if name == 'textures_logo_raylib' else ''

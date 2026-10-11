@@ -22,12 +22,27 @@ A program is raylib's `while (!WindowShouldClose())` body over a user state
 type Program<-S: Type> is Type:
   Program{update: Core -> S -> Core & S, draw: Core -> S -> Frame -> Core & (S & Frame)}
   Until{update: Core -> S -> Core & S, draw: Core -> S -> Frame -> Core & (S & Frame), done: S -> S & Bool}
+  Effects{update: Core -> S -> Frame -> IO(Core & (S & Frame)), draw: Core -> S -> Frame -> Core & (S & Frame), after: Core -> S -> Frame -> IO(Core & (S & Frame))}
 ```
 
 `Until` is a loop with its own condition, `while (!done)`, tested on the
 state before each frame (`core_window_should_close`'s `while (!exitWindow)`):
 the window's close request does not end it, and the update reads the request
 as a value with `Core.window_should_close`.
+
+`Effects` is a body that does IO inside the loop (`SaveStorageValue`,
+`LoadFileText`, a texture loaded from a dropped file, `TakeScreenshot`): its
+`update` runs in `IO` and takes the `Frame` too, and `after` is the code
+between `EndDrawing` and the loop's condition
+(`shaders_shadowmap_rendering`'s `if (IsKeyPressed(KEY_F)) TakeScreenshot(...)`).
+`EndDrawing` has polled the input by then, so `after` sees the keys still
+down and none of the presses the frame saw. The headless entry of such a
+program is `Program.replay_io(~S, ~program, ~show, script, core, frame,
+state) -> IO(List<String>)`, which runs the other two forms as well;
+`Program.replay`, being pure, answers `["null"]` for it. The desktop driver
+runs `after` at the start of the turn that follows a presented frame (never
+before the first one) and reads BeginDrawing's clock once the update's IO is
+over.
 
 `update` is the code before `BeginDrawing` (input queries, `GetKeyPressed`,
 `HideCursor`, ... return the new `Core`); `draw` runs between `BeginDrawing`
@@ -254,6 +269,7 @@ bun "$BEND_SOURCE/bend2/main.ts" examples/core_input_keys.bend -o core_input_key
 | Gate | Tool | Compares |
 |---|---|---|
 | `window` | `tools/window_probe.py` | 12 scripts against the clock-injected memory-platform raylib, each in a fresh process and directory: `SetConfigFlags` before and after InitWindow and every `IsWindow*` query, the logging-only setters followed by queries, monitor, DPI, clipboard, key-name, handle and gamepad-mapping answers, dropped files, `GetTime`/`WaitTime` (with NaN, +infinity and over-4096 contracts), MSAA and plain framebuffers, `LoadTexture`, `LoadTextureCubemap`, `TakeScreenshot` files and `GetWorldToScreen`/`GetScreenToWorldRay`, on CPU-1, CPU-2 and JavaScript |
+| `driver-effects` | `tools/effects_probe.py` | 2 scripts (11 frames) of `tools/reference/driver_effects.c`, a raylib loop that writes and reads a file before `BeginDrawing` and writes it after `EndDrawing`, against the same loop as a `J.Effects` program replayed with `Program.replay_io`: every framebuffer byte and presented quadtree (the text drawn shows what each step saw) and the bytes left in the file, on CPU-1, CPU-2 and JavaScript |
 | `examples` | `tools/examples_probe.py` | 18 scripts of the 13 examples (126 frames: 115 compared and 11 refusal contracts under the Apple profile, 121 and 5 under glibc) against the **unmodified** raylib example sources on the clock-injected memory-platform raylib, every framebuffer byte and the presented quadtree, on CPU-1, CPU-2 and JavaScript |
 
 ```sh
