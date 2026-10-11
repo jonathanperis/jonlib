@@ -2623,7 +2623,7 @@
   {
    "name": "shapes_hilbert_curve",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
