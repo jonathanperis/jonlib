@@ -250,19 +250,15 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
    - `core_custom_frame_control` drives its own loop (`PollInputEvents`,
      `SwapScreenBuffer`, `WaitTime`, two `GetTime` calls a frame): needs a
      program form the driver does not have;
-   - the wall clock (`shapes_digital_clock`, `shapes_clock_of_clocks`,
-     `core_custom_logging`). Base has none (`IO.now` is `performance.now()`
-     in JavaScript and a monotonic tick in C) and the examples call the C
-     library's `time()` and `localtime()`, not raylib. Plan (no library
-     change): a port's setup takes the seconds of the day at InitWindow, as
-     the seeded ports take their seed, and its time is that plus the whole
-     seconds of `Core.get_time`; the probe gives the script's seed for it,
-     and `tools/reference/example_driver.h` defines `time(x)` as a driver
-     function answering seed + (time_t)scripted clock and `localtime` as
-     `gmtime` (only these examples call them). On the desktop the launcher
-     passes the time as an argument. `core_custom_logging`'s callback also
-     prints the date, and is only ever called by raylib's own log lines,
-     which Jonlib does not emit: its frames are a static text;
+   - the wall clock is done for the examples that read it
+     (`shapes_digital_clock`, `shapes_clock_of_clocks`): Base has none, and
+     they call the C library's `time()` and `localtime()`, so a port's setup
+     takes the seconds of the day at InitWindow (the script's seed in the
+     probe, whose header redirects `time()` in the example) and adds
+     `Core.get_time`'s whole seconds. On the desktop their `run` passes 0:
+     a `--time` argument read like `--frames` is still to be added.
+     `core_custom_logging` is ported as its text: its callback only ever
+     receives raylib's own log lines, which Jonlib does not emit;
    - the rlgl framebuffer functions are done for one color and one depth
      attachment (`Rlgl.Framebuffer`, docs/RLGL.md): `shaders_depth_writing`,
      `shaders_hybrid_rendering`, `shaders_depth_rendering` and

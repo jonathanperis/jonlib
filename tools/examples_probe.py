@@ -271,6 +271,7 @@ EXAMPLES = {
     'shaders_deferred_rendering': ('shaders/shaders_deferred_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_skybox_rendering': ('models/models_skybox_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'text_codepoints_loading': ('text/text_codepoints_loading.c', 'Ex.setup(core, frame)'),
+    'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
     'shapes_digital_clock': ('shapes/shapes_digital_clock.c', 'Ex.setup(seed, core, frame)'),
     'shapes_clock_of_clocks': ('shapes/shapes_clock_of_clocks.c', 'Ex.setup(seed, core, frame)'),
     'core_storage_values': ('core/core_storage_values.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
@@ -1079,6 +1080,8 @@ def scripts():
         # SPACE shows the analog face (the hands at 14:00:00 and 14:00:01), SPACE again the display.
         script('shapes_digital_clock', 'ticks', [long() for _ in range(19)] + [long([key(KEY_SPACE)])] + [long([key(KEY_SPACE, False)])] + [long() for _ in range(9)]
                + [quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)])], seed=13 * 3600 + 59 * 60 + 58),
+        # The driver silences raylib's log (SetTraceLogLevel(LOG_NONE)), so the example's callback prints nothing.
+        script('core_custom_logging', 'frames', [quick(), slow()]),
         script('text_codepoints_loading', 'frames', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), key(KEY_RIGHT)])]),
         # The camera starts with the cube behind it: the mouse turns it half a turn and down (the white cube, drawn
         # without culling or depth writes, under the grid), then W walks toward it.

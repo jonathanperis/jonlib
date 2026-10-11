@@ -13,6 +13,13 @@ Bend does not have. Jonlib passes them explicitly (a language adaptation):
 | `Memory.realloc(bytes, size)` | `MemRealloc` | Keeps the first `size` bytes; growth is zero (C leaves it uninitialized). |
 | `Memory.free(bytes)` | `MemFree` | Consumes the bytes. |
 
+Jonlib emits no log line of its own: raylib's `TRACELOG` calls (InitWindow's
+and CloseWindow's reports, a loader's warnings) are not reproduced, so a
+handler only receives what a program gives `Log.trace_with`.
+`core_custom_logging` installs a callback that only ever receives raylib's
+own lines: its port's handler is never called, and its frames are the text
+it draws.
+
 Texts are preformatted: Bend has no variadic arguments, so a `%` prints
 literally, where raylib would interpret a conversion specifier. Formatting
 belongs to the text utilities (`TextFormat`).
