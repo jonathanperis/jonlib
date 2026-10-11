@@ -557,3 +557,32 @@ host's `strtod` and `atof` to give the same words: 322 answered cases
 decimals exactly halfway between two doubles and their neighbours, 17-digit
 round-trip forms, 19-digit numbers, values whose narrowing overflows or is
 subnormal) and 33 refused ones, on CPU-1, CPU-2 and JavaScript.
+
+
+## tanf
+
+`M.Libm.tanf(libm, x)` is glibc 2.39's `tanf` under `M.Glibc239Libm` for
+every finite `x` (`src/lgpl/tanf.bend`, an LGPL module): the Sun kernel
+`k_tanf.c` in binary32 arithmetic, one rounding per operation, on the
+argument `s_tanf.c` reduces with `s_sincosf.h`'s `reduce_fast` and
+`reduce_large` (the reduction of `sinf`/`cosf`, here without the fused step)
+and splits into two binary32 parts. glibc 2.39 has one scalar `tanf` on
+x86_64, compiled without FMA.
+
+`tools/reference/glibc_tanf/model.c` is that arithmetic in C, and
+`exhaustive.c` compares it with the host's `tanf` on every binary32 argument:
+
+| Host | Variant | Arguments | Differences |
+|---|---|---:|---:|
+| Ubuntu 24.04, glibc 2.39-0ubuntu8.9 | default | 4,294,967,296 | 0 |
+| Ubuntu 24.04, glibc 2.39-0ubuntu8.9 | FMA and AVX2 disabled | 4,294,967,296 | 0 |
+| Debian trixie container, glibc 2.41 | default | 4,294,967,296 | 83,411,250 |
+
+glibc 2.41 replaced `tanf` with a correctly rounded implementation, so
+`M.Glibc241Libm` answers `None`, as `M.AppleLibm` does (macOS's function is
+not modeled); infinities and NaN are `None` on every profile. The JSON
+results are in `tools/reference/glibc_tanf/results`. Gate `tanf`
+(`tools/tanf_probe.py`) compiles the model on the host for 741 arguments
+(every exponent and both signs, the edges of the kernel's regions, the angles
+`shapes_math_sine_cosine` passes), requires the host's `tanf` to equal it on
+glibc 2.39 and Jonmath's results to equal it on CPU-1, CPU-2 and JavaScript.

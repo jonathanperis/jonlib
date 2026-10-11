@@ -473,15 +473,26 @@ retained), with single-precision modifications Copyright (C) 2001 Stephen L.
 Moshier distributed under LGPL-2.1-or-later. Its change notice records the
 Bend rewrite, the uncontracted F32 order and the refused NaN results.
 
-These three Bend files are licensed under
+`src/lgpl/tanf.bend` is an altered Bend adaptation of glibc 2.39's binary32
+`tanf` (`sysdeps/ieee754/flt-32/s_tanf.c` and `k_tanf.c`, same commit; pinned
+copies in `tools/reference/glibc239`): Sun Microsystems' `s_tan.c` and
+`k_tan.c` converted to float by Ian Lance Taylor (Cygnus Support), Copyright
+(C) 1993 Sun Microsystems, Inc. (permission notice retained), with glibc's
+`rem_pio2f` (the `s_sincosf.h` reduction and its split into two binary32
+parts), which is LGPL-2.1-or-later. Its change notice records the Bend
+rewrite, the binary32 order of every operation, the unfused reduction and
+the refused non-finite arguments. `tools/reference/glibc_tanf/model.c` is the
+same arithmetic in C under the same notices.
+
+These four Bend files are licensed under
 the **GNU Lesser General Public License, version 2.1 or (at your option) any
 later version**, whose text is in [LICENSES/lgpl-2.1.txt](LICENSES/lgpl-2.1.txt);
 each carries the original notices and a dated change notice (for the tangent:
 written in Bend, every double operation through Jonlib's exact binary64
 helpers in the source's order, the `__tan_fma` build's FMA contraction made
 explicit, errno/flags/rounding modes out of contract). They are the only LGPL
-files of Jonlib: Jonmath imports them as separate modules for `M.Libm.tan`
-and the `Glibc239Libm` profile of `M.Libm.asin`, and the
+files of Jonlib: Jonmath imports them as separate modules for `M.Libm.tan`,
+`M.Libm.tanf` and the `Glibc239Libm` profile of `M.Libm.asin`, and the
 rest of Jonlib and Jonmath stays under the zlib license. A combined work must
 let its users replace or modify these modules as LGPL-2.1 section 6 requires;
 the Bend sources are the preferred form for modification.

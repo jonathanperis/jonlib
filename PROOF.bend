@@ -669,6 +669,18 @@ def Laws.glibc_rand_large_seed_none():
 def Laws.libc_rand_apple_none(seed):
   {==}
 
+def Laws.glibc_tanf_infinity_none():
+  {==}
+
+def Laws.glibc_tanf_nan_none():
+  {==}
+
+def Laws.glibc241_tanf_none(x):
+  {==}
+
+def Laws.apple_tanf_none(x):
+  {==}
+
 def Laws.strtod_one():
   {==}
 
