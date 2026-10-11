@@ -36,7 +36,7 @@ base with `main` for a branch or a pull request) and picks one of three scopes.
 
 | Scope | Changed files | What runs |
 | --- | --- | --- |
-| `full` | a library definition that changed or was removed, `toolchain.json`, `tools/run_gates.py`, the pinned setup action, fixtures, a tool no gate reaches, any path the tool cannot place, or more gates than three jobs per host hold | every gate, in fifteen shards per host |
+| `full` | a library definition that changed or was removed, `toolchain.json`, `tools/run_gates.py`, the pinned setup action, fixtures, a tool no gate reaches, any path the tool cannot place, or more gates than six jobs per host hold | every gate, in fifteen shards per host |
 | `scoped` | see below | `Scoped <host> gates N` / `examples`: only the affected gates and examples |
 | `none` | only workflows, unit tests, `tools/ci_scope.py`, `tools/check_project.py`, `tools/examples_plan.py`, `tools/example_tables.py` and documentation | nothing here (Checks covers them) |
 
@@ -56,7 +56,7 @@ What a `scoped` run selects, per changed file:
 The affected gates are packed into jobs of about 50 estimated minutes, so the
 corpus and the core examples of an additive library change run side by side
 (a gate of at most 5 minutes that fits in no job joins the lightest one); past
-three jobs per host the run is `full`. `python3 tools/ci_scope.py --base
+six jobs per host the run is `full`. `python3 tools/ci_scope.py --base
 origin/main` prints the scope of the current branch and, for a `full` one, the
 reason.
 

@@ -186,6 +186,13 @@ class ScopeTests(unittest.TestCase):
         self.assertEqual([(row['os'], row['part'], row['gates']) for row in result['matrix']['include']],
                          [(runner, part, gates) for runner in ('ubuntu-24.04', 'macos-15') for part, gates in (('gates 1', '--only=png-file'), ('gates 2', '--only=bmp-file --only=rand'))])
 
+    def test_six_jobs_of_fifty_minutes_hold_what_three_of_a_hundred_did(self):
+        # The tanf piece (a pinned glibc source): seventeen gates, 209 estimated minutes.
+        minutes = [45, 45, 30, 12, 10, 8, 8, 7, 6, 6, 6, 6, 5, 5, 5, 4, 1]
+        packed = ci_scope.parts([dict(id=f'gate-{index:02d}', minutes=value) for index, value in enumerate(minutes)])
+        self.assertEqual([sum(gate['minutes'] for gate in part) for part in packed], [54, 51, 50, 54])
+        self.assertIsNone(ci_scope.parts([dict(id=f'long-{index}', minutes=45) for index in range(7)]))
+
     def test_a_gate_on_one_host_is_not_asked_of_the_other(self):
         gates = [dict(entry, os=['linux']) if entry['id'] == 'rand' else entry for entry in GATES]
         result = scope({'tools/gates.json': json.dumps(dict(description='gates', gates=gates))})

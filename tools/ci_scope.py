@@ -27,7 +27,7 @@ a push or pull request changed and picks one of three scopes:
     native driver `C_DRIVER` and everything below it, or a line above it that
     names no example and is not a new constant or a comment) runs every
     examples gate.
-  More than three jobs of gates per host is `full`.
+  More than six jobs of gates per host is `full`.
 - `none`: only files no gate reads (workflows, unit tests, this tool,
   documentation). The Checks workflow covers them.
 
@@ -72,7 +72,7 @@ ALL_HOSTS = (('linux', 'ubuntu-24.04'), ('macos', 'macos-15'))
 # The hosts of pushes and pull requests. macOS is deferred until the port is complete (see the module text).
 MERGE_HOSTS = (('linux', 'ubuntu-24.04'),)
 # Estimated minutes (the manifest's, measured on macOS) per scoped job, and the jobs per host before a run is full.
-PART_MINUTES, SMALL_MINUTES, MAX_PARTS = 50, 5, 3
+PART_MINUTES, SMALL_MINUTES, MAX_PARTS = 50, 5, 6
 REGISTERED = re.compile(r"^    '([a-z0-9_]+)': \('", re.M)
 QUOTED = re.compile(r"'([a-z0-9_]+)'")
 HUNK = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@')
