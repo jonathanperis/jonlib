@@ -1095,6 +1095,20 @@ law gltf_anim_invalid_span_reads_nothing:
   for limit: U32
   {GltfAnim.read(False{}, span, blocks, comps, limit) == Nil{} : +List<U32>}
 
+# A joint's node transform is read once for the keyframes: no joints have
+# none, and a bone whose node or channels cannot be read ends the pose.
+law gltf_anim_no_joints_no_rest:
+  for nodes: +List<Json.Json>
+  {GltfAnim.rests(Nil{}, nodes) == Nil{} : +List<GltfAnim.Rest>}
+
+law gltf_anim_unreadable_bone_ends_pose:
+  for base: GltfAnim.Rest
+  for tracks: GltfAnim.Tracks
+  for time: F32
+  for libm: M.Libm
+  for rest: GltfAnim.Posed
+  {GltfAnim.bone.posed(False{}, base, tracks, time, libm, rest) == GltfAnim.Posed{False{}, Nil{}} : GltfAnim.Posed}
+
 # Model poses (UpdateModelAnimation and UpdateModelAnimationEx): a loaded
 # model has zeroed transforms and identity matrices; the pose comes back as
 # it is for a skeleton without bones and an animation without keyframes,

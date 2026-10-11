@@ -1692,7 +1692,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 20
+   "minutes": 6
   },
   {
    "id": "model-pose",
@@ -1707,7 +1707,7 @@
     "linux",
     "macos"
    ],
-   "minutes": 8
+   "minutes": 5
   },
   {
    "id": "gui-icons",
