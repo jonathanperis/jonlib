@@ -1361,6 +1361,21 @@ def Laws.rlgl_bind_framebuffer_zero_is_disable(frame, target):
 def Laws.rlgl_bound_active_draw_buffers_unchanged(bound, count):
   {==}
 
+def Laws.rlgl_load_texture_cubemap_is_zero(frame, data, size, format, mipmaps):
+  {==}
+
+def Laws.rlgl_cull_distance_near_is_the_default():
+  {==}
+
+def Laws.rlgl_cull_distance_near_as_float():
+  {==}
+
+def Laws.rlgl_cull_distance_far_is_the_default():
+  {==}
+
+def Laws.rlgl_cull_distance_far_as_float():
+  {==}
+
 def Laws.color_hsv_term_six():
   {==}
 

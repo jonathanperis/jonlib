@@ -2117,6 +2117,29 @@ law rlgl_bound_active_draw_buffers_unchanged:
   for count: F32
   {J.Rlgl.Bound.active_draw_buffers(bound, count) == bound : J.Rlgl.Bound}
 
+# rlLoadTextureCubemap has no body under OpenGL 1.1 (id 0, the frame as it
+# was), and the cull distances are rlgl's defaults: as floats, the 0.05f and
+# 4000.0f the projections are built with.
+law rlgl_load_texture_cubemap_is_zero:
+  for frame: J.Frame
+  for data: List<&2, U32>
+  for size: U32
+  for format: U32
+  for mipmaps: U32
+  {J.Rlgl.load_texture_cubemap(frame, data, size, format, mipmaps) == (frame, 0) : J.Frame & U32}
+
+law rlgl_cull_distance_near_is_the_default:
+  {J.Rlgl.get_cull_distance_near() == M.Float64{1068079513, 2576980378} : M.Float64}
+
+law rlgl_cull_distance_near_as_float:
+  {N.checked(1068079513, 2576980378) == Some{1028443341} : Maybe<U32>}
+
+law rlgl_cull_distance_far_is_the_default:
+  {J.Rlgl.get_cull_distance_far() == M.Float64{1085227008, 0} : M.Float64}
+
+law rlgl_cull_distance_far_as_float:
+  {N.checked(1085227008, 0) == Some{1165623296} : Maybe<U32>}
+
 # ColorFromHSV's fmodf(phase, 6) (docs/API.md): the terms subtracted are
 # 6*2^j (6.0 is 0x40c00000, each doubling adds one to the exponent), starting
 # from as many doublings as the magnitude's exponent is above 6.0's: none
