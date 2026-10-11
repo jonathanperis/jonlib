@@ -29,6 +29,7 @@ import ./src/hypot.bend as Hypot
 import ./src/strtod.bend as Strtod
 import ./src/json.bend as Json
 import ./src/gltf.bend as Gltf
+import ./src/gltf_anim.bend as GltfAnim
 import ./jongui.bend as JG
 import ./src/gui_icons.bend as GuiIcons
 import ./src/binary64_sqrt.bend as Sqrt
@@ -1054,6 +1055,45 @@ law gltf_other_texture_kind_refused:
 
 law gltf_base_color_image_kept:
   {Gltf.look.with(255, False{}, Gltf.Words{True{}, [137, 80]}) == Gltf.Look{True{}, 255, [137, 80]} : Gltf.Look}
+
+# Skeletons and animations (src/gltf_anim.bend): a joint's place among the
+# joints is its bone index and a node outside them has none (-1); a time
+# with no key pair reads key 0; bytes that are not a .glb file give neither
+# a skeleton nor animations.
+law gltf_anim_joint_place:
+  {GltfAnim.find([5, 7, 9], 7, 0) == 1 : U32}
+
+law gltf_anim_node_outside_skeleton:
+  {GltfAnim.find([5, 7, 9], 6, 0) == 4294967295 : U32}
+
+law gltf_anim_no_key_pair_reads_first:
+  for time: F32
+  {GltfAnim.key.index(GltfAnim.key(Nil{}, time, 0, 0.0, 0.0)) == 0 : U32}
+
+law gltf_anim_empty_file_no_skeleton:
+  {GltfAnim.skeleton(Nil{}) == None{} : Maybe<GltfAnim.Skeleton>}
+
+law gltf_anim_empty_file_no_animations:
+  for libm: M.Libm
+  {GltfAnim.animations(Nil{}, libm) == None{} : Maybe<+List<GltfAnim.Animation>>}
+
+# The BIN chunk in blocks: a window starts at its byte, a span without
+# elements needs no bytes and one that is not valid reads none.
+law gltf_anim_window_starts_at_byte:
+  {GltfAnim.window(GltfAnim.blocks(1n, [1, 2, 3, 4]), 1, 2) == [2, 3, 4] : +List<U32>}
+
+law gltf_anim_empty_span_needs_nothing:
+  for step: U32
+  for comps: U32
+  for limit: U32
+  {GltfAnim.needed(step, 0, comps, limit) == 0 : U32}
+
+law gltf_anim_invalid_span_reads_nothing:
+  for span: Gltf.Span
+  for blocks: +List<+List<U32>>
+  for comps: U32
+  for limit: U32
+  {GltfAnim.read(False{}, span, blocks, comps, limit) == Nil{} : +List<U32>}
 
 # hypot(x, y) <= r for every faithful hypot (src/hypot.bend), from the order
 # of the rounded x*x + y*y and r*r (0 equal, 1 less, 2 greater, 3 unknown):

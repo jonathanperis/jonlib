@@ -370,6 +370,9 @@ license are retained in [LICENSES/rlsw.txt](LICENSES/rlsw.txt).
   `src/external/cgltf.h`.
 - License: MIT; the notice is retained in
   [LICENSES/cgltf.txt](LICENSES/cgltf.txt).
+- `src/gltf_anim.bend` adapts raylib's `LoadBoneInfoGLTF`, `GetPoseAtTimeGLTF`,
+  `LoadModelAnimationsGLTF` and `BuildPoseFromParentJoints` over the same
+  cgltf layout (accessors, node transforms), with the notices kept in the file.
 - `src/gltf.bend` is an altered Bend adaptation of what raylib's `LoadGLTF`
   uses from it for a binary glTF file: the container layout checked by
   `cgltf_parse`, `cgltf_parse_attribute_type`, the accessor stride and

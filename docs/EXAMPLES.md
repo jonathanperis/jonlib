@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 163 ported, 18 ready, 31 waiting.
+Totals: 212 examples; 163 ported, 19 ready, 30 waiting.
 
 ## APIs that unblock the most examples
 
@@ -15,8 +15,6 @@ Totals: 212 examples; 163 ported, 18 ready, 31 waiting.
 |---|---|
 | `CloseAudioDevice` | 12 |
 | `InitAudioDevice` | 12 |
-| `LoadModelAnimations` | 9 |
-| `UnloadModelAnimations` | 9 |
 | `UpdateModelAnimation` | 8 |
 | `LoadSound` | 6 |
 | `PlaySound` | 6 |
@@ -53,6 +51,8 @@ Totals: 212 examples; 163 ported, 18 ready, 31 waiting.
 | `DetachAudioStreamProcessor` | 1 |
 | `EndVrStereoMode` | 1 |
 | `GenMeshCylinder` | 1 |
+| `GenMeshKnot` | 1 |
+| `GetApplicationDirectory` | 1 |
 
 ## Examples
 
@@ -195,7 +195,7 @@ Totals: 212 examples; 163 ported, 18 ready, 31 waiting.
 | `text_inline_styling` | text | ported |  |
 | `text_words_alignment` | text | ported |  |
 | `text_strings_management` | text | ported |  |
-| `models_loading_iqm` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
+| `models_loading_iqm` | models | waiting | `UpdateModelAnimation` |
 | `models_billboard_rendering` | models | ported |  |
 | `models_box_collisions` | models | ported |  |
 | `models_cubicmap_rendering` | models | ported |  |
@@ -204,9 +204,9 @@ Totals: 212 examples; 163 ported, 18 ready, 31 waiting.
 | `models_mesh_generation` | models | waiting | `GenMeshCylinder`, `GenMeshKnot` |
 | `models_mesh_picking` | models | ported |  |
 | `models_loading` | models | ported |  |
-| `models_loading_gltf` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
+| `models_loading_gltf` | models | waiting | `UpdateModelAnimation` |
 | `models_loading_vox` | models | ready |  |
-| `models_loading_m3d` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
+| `models_loading_m3d` | models | waiting | `UpdateModelAnimation` |
 | `models_orthographic_projection` | models | ported |  |
 | `models_point_rendering` | models | ported |  |
 | `models_rlgl_solar_system` | models | ported |  |
@@ -215,16 +215,16 @@ Totals: 212 examples; 163 ported, 18 ready, 31 waiting.
 | `models_heightmap_rendering` | models | ported |  |
 | `models_skybox_rendering` | models | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlGetCullDistanceFar`, `rlGetCullDistanceNear`, `rlLoadFramebuffer`, `rlLoadTextureCubemap`, `rlLoadTextureDepth`, `rlUnloadFramebuffer` |
 | `models_textured_cube` | models | ported |  |
-| `models_animation_gpu_skinning` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
-| `models_bone_socket` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation` |
+| `models_animation_gpu_skinning` | models | waiting | `UpdateModelAnimation` |
+| `models_bone_socket` | models | waiting | `UpdateModelAnimation` |
 | `models_tesseract_view` | models | ported |  |
 | `models_basic_voxel` | models | ported |  |
 | `models_rotating_cube` | models | ported |  |
 | `models_decals` | models | ready |  |
 | `models_directional_billboard` | models | ported |  |
-| `models_animation_blend_custom` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations` |
-| `models_animation_blending` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `UpdateModelAnimationEx`, `GuiProgressBar` |
-| `models_animation_timing` | models | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `GuiProgressBar` |
+| `models_animation_blend_custom` | models | ready |  |
+| `models_animation_blending` | models | waiting | `UpdateModelAnimation`, `UpdateModelAnimationEx`, `GuiProgressBar` |
+| `models_animation_timing` | models | waiting | `UpdateModelAnimation`, `GuiProgressBar` |
 | `shaders_ascii_rendering` | shaders | ported |  |
 | `shaders_basic_lighting` | shaders | ported |  |
 | `shaders_model_shader` | shaders | ported |  |
@@ -250,7 +250,7 @@ Totals: 212 examples; 163 ported, 18 ready, 31 waiting.
 | `shaders_deferred_rendering` | shaders | waiting | `rlBindFramebuffer`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
 | `shaders_hybrid_rendering` | shaders | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
 | `shaders_texture_tiling` | shaders | ported |  |
-| `shaders_shadowmap_rendering` | shaders | waiting | `LoadModelAnimations`, `UnloadModelAnimations`, `UpdateModelAnimation`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTextureDepth`, `rlUnloadFramebuffer` |
+| `shaders_shadowmap_rendering` | shaders | waiting | `UpdateModelAnimation`, `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTextureDepth`, `rlUnloadFramebuffer` |
 | `shaders_vertex_displacement` | shaders | ported |  |
 | `shaders_depth_writing` | shaders | waiting | `rlDisableFramebuffer`, `rlEnableFramebuffer`, `rlFramebufferAttach`, `rlFramebufferComplete`, `rlLoadFramebuffer`, `rlLoadTexture`, `rlLoadTextureDepth`, `rlUnloadFramebuffer`, `rlUnloadTexture` |
 | `shaders_basic_pbr` | shaders | ready |  |

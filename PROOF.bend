@@ -753,6 +753,30 @@ def Laws.gltf_other_texture_kind_refused():
 def Laws.gltf_base_color_image_kept():
   {==}
 
+def Laws.gltf_anim_joint_place():
+  {==}
+
+def Laws.gltf_anim_node_outside_skeleton():
+  {==}
+
+def Laws.gltf_anim_no_key_pair_reads_first(time):
+  {==}
+
+def Laws.gltf_anim_empty_file_no_skeleton():
+  {==}
+
+def Laws.gltf_anim_empty_file_no_animations(libm):
+  {==}
+
+def Laws.gltf_anim_window_starts_at_byte():
+  {==}
+
+def Laws.gltf_anim_empty_span_needs_nothing(step, comps, limit):
+  {==}
+
+def Laws.gltf_anim_invalid_span_reads_nothing(span, blocks, comps, limit):
+  {==}
+
 def Laws.hypot_within_below_inside(error, limit):
   {==}
 

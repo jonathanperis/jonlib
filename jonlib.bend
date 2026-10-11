@@ -104,6 +104,7 @@ import ./src/par_shapes.bend as ParShapes
 import ./src/mesh_draw.bend as MeshDraw
 import ./src/obj.bend as Obj
 import ./src/gltf.bend as Gltf
+import ./src/gltf_anim.bend as GltfAnim
 import ./src/clock.bend as Clock
 
 # -----------------------------------------------------------------------------
@@ -11688,6 +11689,109 @@ def Model.load_for(+arithmetic: M.Contraction, frame: Frame, +path: String) -> I
 
 def Model.load(frame: Frame, +path: String) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
   Model.load_for(M.Uncontracted{}, frame, path)
+
+# -----------------------------------------------------------------------------
+# Model skeletons and animations (binary glTF, src/gltf_anim.bend)
+
+# raylib's BoneInfo: the name (31 bytes at most) and the parent's index among
+# the bones (4294967295 for -1).
+type BoneInfo is Data:
+  BoneInfo{name: String, parent: U32}
+
+# raylib's ModelSkeleton: the bones and their bind pose.
+type ModelSkeleton is Data:
+  ModelSkeleton{bones: +List<BoneInfo>, bind_pose: +List<Transform>}
+
+# raylib's ModelAnimation: keyframe_poses holds one pose (a Transform a bone) a keyframe.
+type ModelAnimation is Data:
+  ModelAnimation{name: String, bone_count: U32, keyframe_count: U32, keyframe_poses: +List<+List<Transform>>}
+
+def Model.anim.transform(transform: GltfAnim.Transform) -> Transform:
+  GltfAnim.Transform{translation, rotation, scale} = transform
+  Transform{translation, rotation, scale}
+
+def Model.anim.pose(items: +List<GltfAnim.Transform>) -> +List<Transform>:
+  match items:
+    case Nil{}: Nil{}
+    case Con{item, rest}: Con{Model.anim.transform(item), Model.anim.pose(rest)}
+
+def Model.anim.poses(items: +List<+List<GltfAnim.Transform>>) -> +List<+List<Transform>>:
+  match items:
+    case Nil{}: Nil{}
+    case Con{item, rest}: Con{Model.anim.pose(item), Model.anim.poses(rest)}
+
+def Model.anim.bones(items: +List<GltfAnim.Bone>) -> +List<BoneInfo>:
+  match items:
+    case Nil{}: Nil{}
+    case Con{GltfAnim.Bone{name, parent}, rest}: Con{BoneInfo{TextCore.string(name), parent}, Model.anim.bones(rest)}
+
+def Model.anim.list(items: +List<GltfAnim.Animation>) -> +List<ModelAnimation>:
+  match items:
+    case Nil{}: Nil{}
+    case Con{GltfAnim.Animation{name, bones, frames, poses}, rest}: Con{ModelAnimation{TextCore.string(name), bones, frames, Model.anim.poses(poses)}, Model.anim.list(rest)}
+
+def Model.skeleton.made(skeleton: Maybe<GltfAnim.Skeleton>) -> Result<&1, &1, Surface.IOError, ModelSkeleton>:
+  match skeleton:
+    case None{}: Fail{DataError{OutOfDomain{}}}
+    case Some{GltfAnim.Skeleton{bones, bind}}: Done{ModelSkeleton{Model.anim.bones(bones), Model.anim.pose(bind)}}
+
+# A file that does not open gives the empty model, whose skeleton has no bones.
+def Model.skeleton.bytes(loaded: Result<&1, &1, Surface.IOError, +List<U32>>) -> Result<&1, &1, Surface.IOError, ModelSkeleton>:
+  match loaded:
+    case Fail{FileError{_, _}}: Done{ModelSkeleton{Nil{}, Nil{}}}
+    case Fail{error}: Fail{error}
+    case Done{+bytes}: Model.skeleton.made(GltfAnim.skeleton(bytes))
+
+def Model.skeleton.route(glb: Maybe<Bool>, +path: String) -> IO(Result<&1, &1, Surface.IOError, ModelSkeleton>):
+  match glb:
+    case Some{True{}}: IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, ModelSkeleton>, Files.load_data(path), loaded => IO.pure(Result<&1, &1, Surface.IOError, ModelSkeleton>, Model.skeleton.bytes(loaded)))
+    case Some{False{}}: IO.pure(Result<&1, &1, Surface.IOError, ModelSkeleton>, Fail{DataError{UnsupportedFileType{}}})
+    case None{}: IO.pure(Result<&1, &1, Surface.IOError, ModelSkeleton>, Fail{DataError{OutOfDomain{}}})
+
+# model.skeleton of LoadModel(fileName), which Jonlib's Model does not hold,
+# for a .glb file: the first skin's joints as bones (LoadBoneInfoGLTF) and
+# MatrixDecompose of each joint's world matrix as the bind pose; no bones
+# without a skin. Other extensions are UnsupportedFileType here; Fail
+# (OutOfDomain) for what src/gltf_anim.bend refuses.
+def Model.load_skeleton(+path: String) -> IO(Result<&1, &1, Surface.IOError, ModelSkeleton>):
+  Model.skeleton.route(Files.has_extension(path, ".glb"), path)
+
+def Model.animations.made(animations: Maybe<+List<GltfAnim.Animation>>) -> Result<&1, &1, Surface.IOError, +List<ModelAnimation>>:
+  match animations:
+    case None{}: Fail{DataError{OutOfDomain{}}}
+    case Some{items}: Done{Model.anim.list(items)}
+
+# A file that does not open gives no animations (NULL and a count of 0).
+def Model.animations.bytes(loaded: Result<&1, &1, Surface.IOError, +List<U32>>, +libm: M.Libm) -> Result<&1, &1, Surface.IOError, +List<ModelAnimation>>:
+  match loaded:
+    case Fail{FileError{_, _}}: Done{Nil{}}
+    case Fail{error}: Fail{error}
+    case Done{+bytes}: Model.animations.made(GltfAnim.animations(bytes, libm))
+
+def Model.animations.route(glb: Maybe<Bool>, +libm: M.Libm, +path: String) -> IO(Result<&1, &1, Surface.IOError, +List<ModelAnimation>>):
+  match glb:
+    case Some{True{}}: IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, +List<ModelAnimation>>, Files.load_data(path), loaded => IO.pure(Result<&1, &1, Surface.IOError, +List<ModelAnimation>>, Model.animations.bytes(loaded, libm)))
+    case Some{False{}}: IO.pure(Result<&1, &1, Surface.IOError, +List<ModelAnimation>>, Fail{DataError{UnsupportedFileType{}}})
+    case None{}: IO.pure(Result<&1, &1, Surface.IOError, +List<ModelAnimation>>, Fail{DataError{OutOfDomain{}}})
+
+# LoadModelAnimations(fileName, &animCount) for a .glb file
+# (LoadModelAnimationsGLTF): each animation's name, bone count, keyframeCount
+# = (int)(duration*60) + 1 and its poses, frame j at j/60 seconds: every
+# bone's translation, rotation and scale from its channels (STEP, or LINEAR:
+# Vector3Lerp and QuaternionSlerp under the libm profile), then composed down
+# the bone hierarchy from the world transform of the first joint's parent
+# node. No animations without a skin. Other extensions are
+# UnsupportedFileType here; Fail (OutOfDomain) for what src/gltf_anim.bend
+# refuses, a rotation the profile does not answer included.
+def Model.load_animations_for(+libm: M.Libm, +path: String) -> IO(Result<&1, &1, Surface.IOError, +List<ModelAnimation>>):
+  Model.animations.route(Files.has_extension(path, ".glb"), libm, path)
+
+def Model.load_animations(+path: String) -> IO(Result<&1, &1, Surface.IOError, +List<ModelAnimation>>):
+  Model.load_animations_for(M.AppleLibm{}, path)
+
+# UnloadModelAnimations: consuming the list releases it.
+def Model.unload_animations(animations: +List<ModelAnimation>) -> Unit:
+  Unit{}
 
 def Material.load.fail(frame: Frame, error: Surface.IOError) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedMaterials>):
   IO.pure(Frame & Result<&1, &1, Surface.IOError, LoadedMaterials>, (frame, Fail{error}))

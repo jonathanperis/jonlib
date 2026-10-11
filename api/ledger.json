@@ -57861,23 +57861,32 @@
       "milestone": "animation",
       "phase": 5,
       "sequence": 24,
-      "status": "not-started",
-      "jonlib": "Animation.load_model_animations",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Model.load_animations_for / Model.load_animations",
+      "mapping_state": "implemented",
+      "scope": "Binary glTF (.glb) through LoadModelAnimationsGLTF: names, bone and keyframe counts and every keyframe pose (STEP and LINEAR channels, QuaternionSlerp under the libm profile, the bone hierarchy applied); no animations without a skin.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "IQM and M3D animations are UnsupportedFileType; glTF as text too",
+        "CUBICSPLINE samplers, non-float key accessors and reads outside an accessor are refused",
+        "Profiles without acosf (Apple, glibc 2.41) refuse rotations more than about 36 degrees apart",
+        "The model's skeleton is loaded separately (Model.load_skeleton): Jonlib's Model has none",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/gltf_anim_probe.py",
+        "docs/MODELS.md",
+        "src/gltf_anim.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -57891,7 +57900,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Skeleton/pose/frame data, interpolation, CPU/GPU skinning, compatibility errors and animation lifetimes.",
-      "next_step": "Derive LoadModelAnimations semantics from the linked source, add a reference fixture, then implement Animation.load_model_animations.",
+      "next_step": "Close documented gaps and unverified gates for LoadModelAnimations.",
       "priority": 624
     },
     {
@@ -58031,23 +58040,28 @@
       "milestone": "animation",
       "phase": 5,
       "sequence": 24,
-      "status": "not-started",
-      "jonlib": "Animation.unload_model_animations",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Model.unload_animations",
+      "mapping_state": "implemented",
+      "scope": "Consumes the list.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/gltf_anim_probe.py",
+        "docs/MODELS.md",
+        "src/gltf_anim.bend",
+        "jonlib.bend"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -58061,7 +58075,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Skeleton/pose/frame data, interpolation, CPU/GPU skinning, compatibility errors and animation lifetimes.",
-      "next_step": "Derive UnloadModelAnimations semantics from the linked source, add a reference fixture, then implement Animation.unload_model_animations.",
+      "next_step": "Close documented gaps and unverified gates for UnloadModelAnimations.",
       "priority": 624
     },
     {
