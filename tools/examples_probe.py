@@ -283,6 +283,7 @@ EXAMPLES = {
     'text_codepoints_loading': ('text/text_codepoints_loading.c', 'Ex.setup(core, frame)'),
     'text_unicode_emojis': ('text/text_unicode_emojis.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'text_3d_drawing': ('text/text_3d_drawing.c', 'Ex.setup(seed, core, frame)'),
+    'models_loading_vox': ('models/models_loading_vox.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
     'core_custom_frame_control': ('core/core_custom_frame_control.c', 'Ex.setup(core, frame)'),
     'shapes_digital_clock': ('shapes/shapes_digital_clock.c', 'Ex.setup(seed, core, frame)'),
@@ -398,6 +399,7 @@ IO_SETUP.add('core_custom_frame_control'); EFFECTS.add('core_custom_frame_contro
 IO_SETUP.add('models_decals'); SEEDED.add('models_decals'); PERSPECTIVE.add('models_decals'); CONFIG_FLAGS['models_decals'] = 32
 IO_SETUP.add('text_unicode_emojis'); SEEDED.add('text_unicode_emojis'); CONFIG_FLAGS['text_unicode_emojis'] = 96
 SEEDED.add('text_3d_drawing'); PERSPECTIVE.add('text_3d_drawing'); CONFIG_FLAGS['text_3d_drawing'] = 96
+IO_SETUP.add('models_loading_vox'); PERSPECTIVE.add('models_loading_vox')
 
 
 def scratch(probe, index, native=False):
@@ -1132,6 +1134,13 @@ def scripts():
         script('text_3d_drawing', 'free', [quick(), quick([key(292)]), quick([key(292, False), mouse_at(420, 240)]), quick([mouse_at(440, 250)]), slow([key(87)]),
                                            quick([key(87, False), key(263)]), quick([key(263, False)]), quick([key(263)]), quick([key(263, False), key(265)]),
                                            quick([key(265, False), key(266)]), quick([key(266, False), key(292)]), quick([key(292, False)])], seed=0x3D7F),
+        # Left clicks show the sword, the monument and the village (three meshes each for the last two).
+        script('models_loading_vox', 'cycle', [quick(), quick([button(0)]), quick([button(0, False)]), quick([button(0)]), quick([button(0, False)]), quick([button(0)])]),
+        # The knight under UpdateCameraPro: W and D move the camera, the middle button turns it with the mouse, the
+        # wheel zooms in and out, DOWN with LEFT move back and left, S with UP cancel each other.
+        script('models_loading_vox', 'camera', [quick(), quick([key(87)]), quick([key(87, False), key(68)]), quick([key(68, False), button(2), mouse_at(420, 240)]), quick([mouse_at(450, 250)]),
+                                                slow([button(2, False), (MOUSE_WHEEL, 0, 2, 0)]), quick([key(264), key(263)]), quick([key(264, False), key(263, False), key(83), key(265)]),
+                                                quick([key(83, False), key(265, False), (MOUSE_WHEEL, 0, -1, 0)]), quick()]),
         script('text_codepoints_loading', 'frames', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), key(KEY_RIGHT)])]),
         # The mouse on the character shows the placement cube; two clicks splat two decals (the table lists them);
         # RMB with a move turns the camera; a click on "Clear Decals" removes them.

@@ -293,8 +293,13 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      byte; no script types characters, so that branch is unverified) and
      `models_decals` is ported (its `GenMeshDecal` as lists of triangles; the indexed-mesh branch is
      not taken by `LoadOBJ` meshes and is left out; its first button is
-     drawn above the screen, as upstream); the IQM, VOX and M3D loaders are
-     not written. `shaders_hot_reloading` is ported with its file's
+     drawn above the screen, as upstream); `models_loading_vox` is ported
+     over the VOX loader (`src/vox.bend`, gate `vox`: vox_loader reads a
+     chunk header in the last four bytes of a file that ends with its
+     palette, so such files are refused); the IQM and M3D loaders are not
+     written (IQM is the plain one: `LoadIQM` copies arrays by the header's
+     offsets and reuses `BuildPoseFromParentJoints`; M3D is `m3d.h`'s own
+     decoder). `shaders_hot_reloading` is ported with its file's
      modification time as a setup argument (`GetFileModTime` stays blocked
      on Base, like the directory functions `core_directory_files` needs).
      `core_screen_recording`
@@ -308,7 +313,7 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      (`core_screen_recording`); `models_decals` is ready since `UploadMesh`;
      `text_codepoints_loading` reads out of bounds natively and is ported
      as a refusal (`UNDEFINED_NATIVE`, docs/TEXT.md);
-   - IQM, M3D and VOX model loading;
+   - IQM and M3D model loading;
    - the audio device and streams (12+ examples; the reference build has
      `SUPPORT_MODULE_RAUDIO=OFF`), VR.
 5. **Owed before the port is called done:** turn macOS back on
