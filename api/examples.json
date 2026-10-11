@@ -6864,7 +6864,7 @@
   {
    "name": "audio_sound_multi",
    "category": "audio",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
