@@ -26,6 +26,8 @@ import ./src/power.bend as Power
 import ./src/libc_rand.bend as CRand
 import ./src/hypot.bend as Hypot
 import ./src/strtod.bend as Strtod
+import ./src/json.bend as Json
+import ./src/gltf.bend as Gltf
 import ./jongui.bend as JG
 import ./src/binary64_sqrt.bend as Sqrt
 import ./src/wav.bend as Wav
@@ -978,6 +980,45 @@ law strtod_plus_none:
 
 law strtod_empty_exponent_none:
   {Strtod.double([49, 101]) == None{} : Maybe<F.Words>}
+
+# JSON (src/json.bend) and binary glTF (src/gltf.bend, docs/MODELS.md): an
+# empty array, a number kept as written and an object's member parse; a
+# trailing comma, a second top-level value, an unterminated string and a
+# colon inside an array do not. glTF integers are plain digits (a sign makes
+# one unreadable), TEXCOORD_1's set index is 1, and a file without the
+# container's header is refused.
+law json_empty_array:
+  {Json.parse([91, 93]) == Some{Json.JArray{Nil{}}} : Maybe<&2, Json.Json>}
+
+law json_number_kept_as_written:
+  {Json.parse([91, 49, 46, 53, 101, 51, 93]) == Some{Json.JArray{[Json.JNumber{[49, 46, 53, 101, 51]}]}} : Maybe<&2, Json.Json>}
+
+law json_object_member:
+  {Json.parse([123, 34, 97, 34, 58, 32, 116, 114, 117, 101, 125]) == Some{Json.JObject{[Json.JMember{[97], Json.JBool{True{}}}]}} : Maybe<&2, Json.Json>}
+
+law json_trailing_comma_none:
+  {Json.parse([91, 49, 44, 93]) == None{} : Maybe<&2, Json.Json>}
+
+law json_two_values_none:
+  {Json.parse([49, 32, 50]) == None{} : Maybe<&2, Json.Json>}
+
+law json_unterminated_string_none:
+  {Json.parse([34, 97]) == None{} : Maybe<&2, Json.Json>}
+
+law json_colon_in_array_none:
+  {Json.parse([91, 34, 97, 34, 58, 49, 93]) == None{} : Maybe<&2, Json.Json>}
+
+law gltf_integer_digits:
+  {Gltf.digits([53, 49, 50, 54], 0, 0) == 5126 : U32}
+
+law gltf_negative_integer_bad:
+  {Gltf.digits([45, 49], 0, 0) == 4294967295 : U32}
+
+law gltf_attribute_index:
+  {Gltf.attribute.index([49], 0) == 1 : U32}
+
+law gltf_empty_file_none:
+  {Gltf.glb(Nil{}) == None{} : Maybe<Gltf.Parts>}
 
 # hypot(x, y) <= r for every faithful hypot (src/hypot.bend), from the order
 # of the rounded x*x + y*y and r*r (0 equal, 1 less, 2 greater, 3 unknown):

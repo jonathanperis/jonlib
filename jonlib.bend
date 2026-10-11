@@ -103,6 +103,7 @@ import ./src/mesh.bend as MeshCore
 import ./src/par_shapes.bend as ParShapes
 import ./src/mesh_draw.bend as MeshDraw
 import ./src/obj.bend as Obj
+import ./src/gltf.bend as Gltf
 import ./src/clock.bend as Clock
 
 # -----------------------------------------------------------------------------
@@ -11419,31 +11420,89 @@ def Model.obj.load(+arithmetic: M.Contraction, frame: Frame, +path: String, +dir
   +valid = Obj.printable(codes) && Bool.not(Obj.member(codes, 92)) && Maybe.is_some(&2, String, dir)
   Model.obj.load.checked(valid, arithmetic, frame, path, dir)
 
-def Model.load.kind.of(obj: Maybe<Bool>, other: Maybe<Bool>) -> U32:
-  match obj other:
-    case Some{True{}} _: 1
-    case Some{False{}} Some{True{}}: 2
-    case Some{False{}} Some{False{}}: 0
-    case _ _: 3
+# A glTF primitive as a Mesh (no colors), and its material's index.
+def Model.gltf.mesh(+prim: Gltf.Prim) -> Mesh:
+  Gltf.Prim{_, +vertex_count, +triangle_count, +vertices, +texcoords, +texcoords2, +normals, +tangents, +indices, _} = prim
+  Mesh{vertex_count, triangle_count, vertices, texcoords, texcoords2, normals, tangents, None{}, indices}
+
+def Model.gltf.meshes(prims: +List<Gltf.Prim>) -> +List<Mesh>:
+  match prims:
+    case Nil{}: Nil{}
+    case Con{+prim, rest}: Con{Model.gltf.mesh(prim), Model.gltf.meshes(rest)}
+
+def Model.gltf.mesh_material(prims: +List<Gltf.Prim>) -> +List<U32>:
+  match prims:
+    case Nil{}: Nil{}
+    case Con{Gltf.Prim{_, _, _, _, _, _, _, _, _, +material}, rest}: Con{material, Model.gltf.mesh_material(rest)}
+
+def Model.gltf.colored(maps: +List<MaterialMap>, +color: U32) -> +List<MaterialMap>:
+  match maps:
+    case Nil{}: Nil{}
+    case Con{+map, +rest}: Con{MaterialMap.with_color(map, color), rest}
+
+def Model.gltf.tinted(+material: Material, +color: U32) -> Material:
+  Material{+maps, +params} = material
+  Material{Model.gltf.colored(maps, color), params}
+
+# LoadMaterialDefault with the albedo color.
+def Model.gltf.material(+color: U32) -> Material:
+  Model.gltf.tinted(Material.load_default(), color)
+
+def Model.gltf.materials(colors: +List<U32>) -> +List<Material>:
+  match colors:
+    case Nil{}: Nil{}
+    case Con{+color, rest}: Con{Model.gltf.material(color), Model.gltf.materials(rest)}
+
+# The default material first, then one per glTF material.
+def Model.gltf.parts(parts: Maybe<Gltf.Parts>, frame: Frame) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
+  match parts:
+    case None{}: Model.obj.fail(frame, DataError{OutOfDomain{}})
+    case Some{Gltf.Parts{+prims, +colors}}:
+      Model.obj.done(frame, Model{M.Matrix.identity(), Model.gltf.meshes(prims), Con{Material.load_default(), Model.gltf.materials(colors)}, Model.gltf.mesh_material(prims)}, Nil{})
+
+def Model.gltf.bytes(loaded: Result<&1, &1, Surface.IOError, +List<U32>>, frame: Frame) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
+  match loaded:
+    case Fail{FileError{_, _}}: Model.obj.done(frame, Model.empty(), Nil{})
+    case Fail{error}: Model.obj.fail(frame, error)
+    case Done{+bytes}: Model.gltf.parts(Gltf.glb(bytes), frame)
+
+# LoadGLTF of a .glb file (src/gltf.bend): uncontracted arithmetic only.
+def Model.gltf.load(arithmetic: M.Contraction, frame: Frame, +path: String) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
+  match arithmetic:
+    case M.Uncontracted{}:
+      IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Frame & Result<&1, &1, Surface.IOError, LoadedModel>, Files.load_data(path), loaded => Model.gltf.bytes(loaded, frame))
+    case _: Model.obj.fail(frame, DataError{OutOfDomain{}})
+
+# 0 an unknown extension, 1 .obj, 2 a format raylib loads and Jonlib does not, 4 .glb, 3 no decision.
+def Model.load.kind.of(obj: Maybe<Bool>, glb: Maybe<Bool>, other: Maybe<Bool>) -> U32:
+  match obj glb other:
+    case Some{True{}} _ _: 1
+    case Some{False{}} Some{True{}} _: 4
+    case Some{False{}} Some{False{}} Some{True{}}: 2
+    case Some{False{}} Some{False{}} Some{False{}}: 0
+    case _ _ _: 3
 
 def Model.load.route(route: U32, +arithmetic: M.Contraction, frame: Frame, +path: String) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
   match route:
     case 0: Model.obj.done(frame, Model.empty(), Nil{})
     case 1: Model.obj.load(arithmetic, frame, path, Model.obj.dir.of(Files.directory(path)))
     case 2: Model.obj.fail(frame, DataError{UnsupportedFileType{}})
+    case 4: Model.gltf.load(arithmetic, frame, path)
     case _: Model.obj.fail(frame, DataError{OutOfDomain{}})
 
 # LoadModel(fileName) on the software renderer: ".obj" (case-insensitive)
 # through LoadOBJ (tinyobj_loader_c with TINYOBJ_FLAG_TRIANGULATE, its MTL
 # file and textures), an identity transform and UploadMesh (no GPU buffers
-# under OpenGL 1.1). Other extensions give the empty model with the default
-# material, as raylib does; IQM, glTF/GLB, VOX and M3D (which raylib loads)
-# are UnsupportedFileType. The textures the materials reference come back
+# under OpenGL 1.1); ".glb" through LoadGLTF (the slice of src/gltf.bend:
+# float attributes, base color factors, node transforms; uncontracted
+# arithmetic). Other extensions give the empty model with the default
+# material, as raylib does; IQM, glTF as text, VOX and M3D (which raylib
+# loads) are UnsupportedFileType. The textures the materials reference come back
 # with the model. Fail (OutOfDomain) for what the reference leaves undefined
 # or Jonlib does not reproduce (docs/MODELS.md); the frame is handed back
 # in every case.
 def Model.load_for(+arithmetic: M.Contraction, frame: Frame, +path: String) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
-  Model.load.route(Model.load.kind.of(Files.has_extension(path, ".obj"), Files.has_extension(path, ".iqm;.gltf;.glb;.vox;.m3d")), arithmetic, frame, path)
+  Model.load.route(Model.load.kind.of(Files.has_extension(path, ".obj"), Files.has_extension(path, ".glb"), Files.has_extension(path, ".iqm;.gltf;.vox;.m3d")), arithmetic, frame, path)
 
 def Model.load(frame: Frame, +path: String) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
   Model.load_for(M.Uncontracted{}, frame, path)

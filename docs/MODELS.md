@@ -318,8 +318,9 @@ the textures, a mesh material index beyond the materials, unverified `sinf`/
 ## Loading models (OBJ and MTL)
 
 `Model.load_for(arithmetic, frame, path)` is `LoadModel`: `.obj`
-(case-insensitive, as `IsFileExtension`) through `LoadOBJ`; IQM, glTF/GLB,
-VOX and M3D files (which raylib loads) are `UnsupportedFileType`; other
+(case-insensitive, as `IsFileExtension`) through `LoadOBJ`; `.glb` files
+through `LoadGLTF` (the next section); IQM, glTF as text, VOX and M3D files
+(which raylib loads) are `UnsupportedFileType`; other
 extensions, and OBJ files that do not open or are empty, give raylib's model
 without meshes and with the default material. The result is a
 `LoadedModel{model, textures}`: the textures the MTL file's materials loaded
@@ -403,6 +404,51 @@ the software renderer. The contraction profile is the reference's for
   contain backslashes (`GetDirectoryPath` splits at them, `chdir` would not)
   and must fit `GetDirectoryPath`'s buffer. Paths that name directories are
   outside the contract.
+
+## Loading models (binary glTF)
+
+`Model.load_for(M.Uncontracted{}, frame, path)` of a `.glb` file is raylib's
+`LoadGLTF` for a first slice of the format (`src/gltf.bend`, with the JSON
+reader `src/json.bend` and the decimal conversion `src/strtod.bend`):
+
+- **Container**: the `glTF` magic, version 2, the total length, a `JSON`
+  chunk and a `BIN` chunk holding the one buffer (no `uri`).
+- **Meshes**: every node with a mesh, in node order, and each of its triangle
+  primitives (mode 4, the default) becomes one `Mesh`; other modes are
+  skipped, as in raylib, and one mesh under two nodes is loaded twice.
+- **Attributes**, in the order the file lists them: `POSITION` and `NORMAL`
+  (`VEC3` float), `TANGENT` (`VEC4` float), `TEXCOORD_0` and `TEXCOORD_1`
+  (`VEC2` float); a further texcoord set and unknown or custom attributes are
+  ignored. Elements are read as `LOAD_ATTRIBUTE` reads them: the view's and
+  the accessor's offsets each divided by the component size, the stride (the
+  view's `byteStride`, or the element size) divided by it as well.
+- **Indices** of 8, 16 or 32 bits, kept as 16 (raylib truncates);
+  `triangleCount` is their count over 3, or `vertexCount/3` without them.
+- **Transforms**: the node's world matrix as cgltf computes it in binary32
+  (`matrix`, or rotation, scale and translation; then each ancestor's 3x3
+  part and translation), applied to positions and tangents with
+  `Vector3Transform`, and its inverse transpose to normals. JSON numbers are
+  `(float)atof(...)`, through `M.Float64.from_decimal`.
+- **Materials**: the default material, then one per glTF material with its
+  `baseColorFactor` as the albedo color (`(unsigned char)(factor*255)`; white
+  without `pbrMetallicRoughness`); `meshMaterial` is the primitive's material
+  index plus one, or 0.
+
+The loader refuses (`OutOfDomain`) everything else the reference would read:
+textures and images, skins (and so animations), `COLOR_n`, `JOINTS_n` and
+`WEIGHTS_n` attributes, other component types, sparse accessors, an accessor
+without a buffer view, primitive extensions and morph targets, required
+extensions, a buffer outside the file, an accessor that reaches past the
+buffer (an out-of-bounds read natively), a node with two parents, a color
+factor outside 0..1, a number `M.Float64.from_decimal` does not answer, JSON
+that is not well formed, and contracted arithmetic. glTF as text (`.gltf`)
+is `UnsupportedFileType`. A missing file gives the empty model, as raylib
+does.
+
+Gate `gltf` (`tools/gltf_probe.py`) loads generated files covering each of
+those rules, and the two models the examples use (`plane.glb`,
+`old_car_new.glb`: 9281 and 24 vertices under a scaled and translated node),
+natively and with Jonlib, and compares every mesh and material word.
 
 ## Collision
 
@@ -510,9 +556,10 @@ attribute builders are tail-recursive.
 - Shaders (no shader is compiled under OpenGL 1.1), `UploadMesh`/GPU
   buffers, `UpdateMeshBuffer`, `GenMeshCylinder`/`Cone`/`Knot` (above) and
   model animation (`LoadModelAnimations`, `UpdateModelAnimation*`).
-- IQM, glTF/GLB, VOX and M3D files: `LoadModel` answers
-  `UnsupportedFileType` (raylib loads them; their parsers, binary formats and
-  for glTF its JSON and accessor handling are not ported).
+- IQM, glTF as text, VOX and M3D files: `LoadModel` answers
+  `UnsupportedFileType` (raylib loads them; their parsers and binary formats
+  are not ported). Binary glTF is loaded for the slice above; textures,
+  skins, animations and the other attribute formats are refused.
 - OBJ: faces of 6 or 7 vertices (accepted by builds without asserts, refused
   here), numbers beyond the checked binary64 domains, non-ASCII names, and
   texture files Jonlib's `LoadImage` does not decode.
