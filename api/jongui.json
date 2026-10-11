@@ -184,6 +184,7 @@
    "scope": "The left, bottom and right edges, one pixel thick, and GuiLine across the top, TEXT_SIZE high and half of it above the bounds.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/shapes_math_sine_cosine.bend",
     "docs/GUI.md",
     "jongui.bend"
    ],
@@ -199,6 +200,7 @@
    "scope": "A one-pixel rule at the middle of the bounds in LINE_COLOR (BORDER_COLOR_DISABLED when disabled), with the text set into it 12 pixels from the left when one is given.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/shapes_math_sine_cosine.bend",
     "docs/GUI.md",
     "jongui.bend"
    ],
