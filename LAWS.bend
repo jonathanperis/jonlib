@@ -22,6 +22,7 @@ import ./src/fma.bend as Fma
 import ./src/asin.bend as Asin
 import ./src/lgpl/asin.bend as GlibcAsin
 import ./src/lgpl/tanf.bend as GlibcTanf
+import ./src/lgpl/sin.bend as GlibcSin
 import ./src/sincosf.bend as Sincosf
 import ./src/power.bend as Power
 import ./src/libc_rand.bend as CRand
@@ -951,6 +952,40 @@ law glibc_rand_large_seed_none:
 law libc_rand_apple_none:
   for seed: U32
   {M.Libc.srand(M.AppleLibm{}, seed) == None{} : Maybe<M.Libc.Rand>}
+
+# glibc 2.39's binary64 sin and cos (src/lgpl/sin.bend, docs/MATH.md): a zero
+# is its own sine and has cosine 1, infinities and NaN are refused, a
+# quadrant is an int below 2^31, and only the glibc 2.39 profile answers.
+law glibc_sin_of_zero:
+  {GlibcSin.sin(0, 0) == Some{F.Words{0, 0}} : Maybe<F.Words>}
+
+law glibc_sin_of_negative_zero:
+  {GlibcSin.sin(2147483648, 0) == Some{F.Words{2147483648, 0}} : Maybe<F.Words>}
+
+law glibc_cos_of_zero:
+  {GlibcSin.cos(0, 0) == Some{F.Words{1072693248, 0}} : Maybe<F.Words>}
+
+law glibc_sin_of_infinity_refused:
+  {GlibcSin.sin(2146435072, 0) == None{} : Maybe<F.Words>}
+
+law glibc_cos_of_nan_refused:
+  for low: U32
+  {GlibcSin.cos(2146959360, low) == None{} : Maybe<F.Words>}
+
+law glibc_sin_quadrant_of_minus_three:
+  {GlibcSin.quadrant.words(3221749760, 0) == 1 : U32}
+
+law glibc_sin_quadrant_past_int_refused:
+  for low: U32
+  {GlibcSin.quadrant.words(1105199104, low) == 4 : U32}
+
+law glibc_sin64_apple_refused:
+  for value: M.Float64
+  {M.Libm.sin64(M.AppleLibm{}, value) == None{} : Maybe<M.Float64>}
+
+law glibc_cos64_glibc241_refused:
+  for value: M.Float64
+  {M.Libm.cos64(M.Glibc241Libm{}, value) == None{} : Maybe<M.Float64>}
 
 # glibc 2.39's tanf (src/lgpl/tanf.bend, docs/MATH.md): infinities and NaN are
 # refused; glibc 2.41's tanf is another algorithm and Apple's is not modeled,

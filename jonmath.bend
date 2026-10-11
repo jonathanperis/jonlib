@@ -30,6 +30,7 @@ import ./src/binary64_narrow.bend as Binary64Narrow
 import ./src/lgpl/tan.bend as GlibcTan
 import ./src/lgpl/asin.bend as GlibcAsin
 import ./src/lgpl/tanf.bend as GlibcTanf
+import ./src/lgpl/sin.bend as GlibcSin
 
 # -----------------------------------------------------------------------------
 # Shared types: vectors, matrix, binary64 words
@@ -560,6 +561,31 @@ def Libm.tan(libm: Libm, value: Float64) -> Maybe<Float64>:
   match libm:
     case AppleLibm{}: None{}
     case _: Libm.tan.words(value)
+
+def Libm.sin64.words(value: Float64) -> Maybe<Float64>:
+  Float64{high, low} = value
+  Float64.internal.lift(GlibcSin.sin(high, low))
+
+# The binary64 sin under a reference profile (Libm.sin is sinf). Glibc239Libm:
+# glibc 2.39's x86_64 sin as its FMA ifunc variant runs it on CPUs with FMA
+# and AVX2, through the LGPL-2.1+ module src/lgpl/sin.bend; equal to the
+# native function on every argument compared (docs/MATH.md). None for
+# AppleLibm (Apple's sin is unpublished), Glibc241Libm (the same source; its
+# binary is not verified), infinities and NaN.
+def Libm.sin64(libm: Libm, value: Float64) -> Maybe<Float64>:
+  match libm:
+    case Glibc239Libm{}: Libm.sin64.words(value)
+    case _: None{}
+
+def Libm.cos64.words(value: Float64) -> Maybe<Float64>:
+  Float64{high, low} = value
+  Float64.internal.lift(GlibcSin.cos(high, low))
+
+# The binary64 cos under a reference profile, as Libm.sin64.
+def Libm.cos64(libm: Libm, value: Float64) -> Maybe<Float64>:
+  match libm:
+    case Glibc239Libm{}: Libm.cos64.words(value)
+    case _: None{}
 
 def Matrix.perspective.frustum(right: Maybe<Float64>, +top: Float64, +near: Float64, +far: Float64) -> Maybe<Matrix>:
   match right:

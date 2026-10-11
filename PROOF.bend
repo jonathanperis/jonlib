@@ -669,6 +669,33 @@ def Laws.glibc_rand_large_seed_none():
 def Laws.libc_rand_apple_none(seed):
   {==}
 
+def Laws.glibc_sin_of_zero():
+  {==}
+
+def Laws.glibc_sin_of_negative_zero():
+  {==}
+
+def Laws.glibc_cos_of_zero():
+  {==}
+
+def Laws.glibc_sin_of_infinity_refused():
+  {==}
+
+def Laws.glibc_cos_of_nan_refused(low):
+  {==}
+
+def Laws.glibc_sin_quadrant_of_minus_three():
+  {==}
+
+def Laws.glibc_sin_quadrant_past_int_refused(low):
+  {==}
+
+def Laws.glibc_sin64_apple_refused(value):
+  {==}
+
+def Laws.glibc_cos64_glibc241_refused(value):
+  {==}
+
 def Laws.glibc_tanf_infinity_none():
   {==}
 
