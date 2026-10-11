@@ -4757,7 +4757,7 @@
   {
    "name": "models_skybox_rendering",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4825,11 +4825,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "rlGetCullDistanceFar",
-    "rlGetCullDistanceNear",
-    "rlLoadTextureCubemap"
-   ]
+   "missing": []
   },
   {
    "name": "models_textured_cube",

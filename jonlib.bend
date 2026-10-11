@@ -8964,6 +8964,21 @@ def Rlgl.disable_texture_cubemap(frame: Frame) -> Frame:
 def Rlgl.cubemap_parameters(frame: Frame, +id: U32, +param: U32, +value: U32) -> Frame:
   frame
 
+# rlLoadTextureCubemap(data, size, format, mipmapCount): its body exists under
+# OpenGL 3.3/ES2 only; the software renderer reads no data and answers id 0.
+def Rlgl.load_texture_cubemap(frame: Frame, +data: +List<U32>, +size: U32, +format: U32, +mipmaps: U32) -> Frame & U32:
+  (frame, 0)
+
+# rlGetCullDistanceNear / rlGetCullDistanceFar: the clip planes BeginMode3D
+# and the camera projections take, as binary64 values. rlSetClipPlanes is not
+# exposed, so they are rlgl's defaults, RL_CULL_DISTANCE_NEAR (0.05) and
+# RL_CULL_DISTANCE_FAR (4000.0).
+def Rlgl.get_cull_distance_near() -> M.Float64:
+  M.Float64{1068079513, 2576980378}
+
+def Rlgl.get_cull_distance_far() -> M.Float64:
+  M.Float64{1085227008, 0}
+
 def Rlgl.enable_shader(frame: Frame, +id: U32) -> Frame:
   frame
 

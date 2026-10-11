@@ -43,7 +43,7 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 | 12 | 2 | `window` — Window, monitor, clipboard and cursor runtime | 57 | 56 | 0 | types, memory |
 | 13 | 2 | `input` — Keyboard, mouse, gamepad, touch and gestures | 57 | 57 | 0 | window, numerics |
 | 14 | 2 | `frame` — Timing, frame control and automation | 17 | 17 | 0 | window, input |
-| 15 | 6 | `rlgl-core` — rlgl state, matrices and immediate drawing | 187 | 97 | 0 | window, jonmath, memory |
+| 15 | 6 | `rlgl-core` — rlgl state, matrices and immediate drawing | 187 | 99 | 0 | window, jonmath, memory |
 | 16 | 2 | `shapes` — 2D drawing and splines | 62 | 62 | 0 | frame, rlgl-core, jonmath, pixels |
 | 17 | 2 | `textures` — Textures, render targets and sampling | 27 | 27 | 0 | rlgl-core, pixels, image-codecs |
 | 18 | 3 | `text-utils` — Byte strings and Unicode/codepoint utilities | 35 | 35 | 0 | memory, files |
@@ -57,7 +57,7 @@ Dependencies describe implementation prerequisites, not a requirement to finish 
 | 26 | 5 | `animation` — Model animation and skinning | 5 | 5 | 0 | models, materials |
 | 27 | 5 | `camera` — Camera controls and projection | 22 | 22 | 0 | jonmath, input, frame |
 | 28 | 5 | `vr` — VR stereo configuration and rendering | 4 | 0 | 0 | camera, shaders |
-| 29 | 6 | `rlgl-advanced` — rlgl buffers, compute and low-level interop | 52 | 42 | 0 | rlgl-core, shaders, textures |
+| 29 | 6 | `rlgl-advanced` — rlgl buffers, compute and low-level interop | 52 | 43 | 0 | rlgl-core, shaders, textures |
 | 30 | 7 | `configuration` — Build switches, limits and source-package compatibility | 207 | 0 | 0 | types |
 | 31 | 7 | `platforms` — Complete platform/backend validation | 0 | 0 | 0 | window, input, frame, audio-stream, rlgl-advanced |
 

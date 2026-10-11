@@ -263,6 +263,13 @@ examples keep the ids in a `RenderTexture2D` they fill by hand.
   would draw into its attachments with the screen's viewport: use
   `BeginTextureMode`). A texture without storage draws like a depth one: its
   rectangle in the tint alone.
+- **Cubemaps and clip planes.** `rlLoadTextureCubemap` has no body under
+  OpenGL 1.1: `Rlgl.load_texture_cubemap(frame, data, size, format, mipmaps)`
+  answers id 0 (as `LoadTextureCubemap` keeps), so a skybox's cube is drawn
+  with its material's diffuse map alone (`models_skybox_rendering`).
+  `Rlgl.get_cull_distance_near()` and `Rlgl.get_cull_distance_far()` are
+  rlgl's defaults (0.05 and 4000.0) as binary64 values; `rlSetClipPlanes` is
+  not exposed.
 - **Unloading.** `rlUnloadFramebuffer` deletes the depth attachment with the
   framebuffer: pass its `Texture`, or None when it was unloaded before.
 - **A depth attachment as a texture.** rlsw binds it but turns texturing
