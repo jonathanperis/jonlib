@@ -30,6 +30,7 @@ import ./src/strtod.bend as Strtod
 import ./src/json.bend as Json
 import ./src/gltf.bend as Gltf
 import ./jongui.bend as JG
+import ./src/gui_icons.bend as GuiIcons
 import ./src/binary64_sqrt.bend as Sqrt
 import ./src/wav.bend as Wav
 import ./src/wav_adpcm.bend as Adpcm
@@ -1141,6 +1142,52 @@ law gui_line_color_focused_property:
 
 law gui_line_color_disabled_property:
   {JG.Gui.line.property(3) == 9 : U32}
+
+# Jongui icons. GetTextIcon: a line starting with '#', up to three digits and
+# '#' names an icon and its text follows ("##" is icon 0); anything else is
+# text (id 4294967295).
+law gui_icon_prefix:
+  {JG.Gui.icon.of([35, 49, 49, 56, 35, 97]) == JG.GuiIcon{118, [97]} : JG.Gui.Icon}
+
+law gui_icon_empty_id:
+  {JG.Gui.icon.of([35, 35]) == JG.GuiIcon{0, []} : JG.Gui.Icon}
+
+law gui_icon_unclosed_is_text:
+  {JG.Gui.icon.of([35, 49, 50]) == JG.GuiIcon{4294967295, [35, 49, 50]} : JG.Gui.Icon}
+
+law gui_icon_four_digits_is_text:
+  {JG.Gui.icon.of([35, 49, 50, 51, 52, 35]) == JG.GuiIcon{4294967295, [35, 49, 50, 51, 52, 35]} : JG.Gui.Icon}
+
+# raygui's table has 256 icons: "#255#" is drawn, "#256#" (a read past the
+# table) is refused. A line that is not the last and holds only '#' is
+# refused too: GuiGetTextWidth would look for a second '#' in the next lines.
+law gui_icon_last_of_table_drawn:
+  {JG.Gui.has_icon([[35, 50, 53, 53, 35]]) == False{} : Bool}
+
+law gui_icon_beyond_table_refused:
+  {JG.Gui.has_icon([[35, 50, 53, 54, 35]]) == True{} : Bool}
+
+law gui_hash_before_another_line_refused:
+  {JG.Gui.has_icon([[35], [97]]) == True{} : Bool}
+
+law gui_hash_on_last_line_drawn:
+  {JG.Gui.has_icon([[97], [35]]) == False{} : Bool}
+
+# GuiGetTextWidth measures from a second '#' at index 1 to 4, not further.
+law gui_width_second_hash_at_four:
+  {JG.Gui.width.offset(4n, [49, 49, 56, 35], 1) == 4 : U32}
+
+law gui_width_second_hash_beyond:
+  {JG.Gui.width.offset(4n, [97, 98, 99, 100, 35], 1) == 0 : U32}
+
+# The icon set: ICON_ARROW_LEFT_FILL's rows 6 and 7 are bits 6..9 and 5..9
+# (word 3 is 0x03E003C0); a word past the 256 icons is 0, not a read outside
+# the table.
+law gui_icon_past_table_is_empty:
+  {GuiIcons.word(256, 0) == 0 : U32}
+
+law gui_icon_arrow_left_word:
+  {GuiIcons.word(118, 3) == 65012672 : U32}
 
 law shader_load_never_valid:
   for vs: Maybe<String>

@@ -181,8 +181,12 @@ redistributed by Jonlib.
 it beside its examples (`examples/*/raygui.h`; the three variants there differ
 only in an MSVC warning define). zlib/libpng; the notice is retained in
 [LICENSES/raygui.txt](LICENSES/raygui.txt). The delivered controls and their
-gaps are in [docs/GUI.md](docs/GUI.md) and `api/jongui.json`. No raygui file is
-redistributed: the probes compile the pinned checkout's copy with each example.
+gaps are in [docs/GUI.md](docs/GUI.md) and `api/jongui.json`.
+`src/gui_icons.bend` is raygui's icon set (the `guiIcons` table: 256 icons of
+16x16 bits), generated from the pinned checkout by `tools/gui_icons.py` and
+marked as such; the `gui-icons` gate compares it with every copy of raygui.h
+there. No raygui file is redistributed: the probes compile the pinned
+checkout's copy with each example.
 
 ## Example assets
 
