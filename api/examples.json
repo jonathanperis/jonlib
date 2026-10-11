@@ -3114,7 +3114,7 @@
   {
    "name": "textures_sprite_explosion",
    "category": "textures",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
