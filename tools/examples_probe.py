@@ -263,6 +263,7 @@ EXAMPLES = {
     'shaders_depth_rendering': ('shaders/shaders_depth_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_shadowmap_rendering': ('shaders/shaders_shadowmap_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shaders_deferred_rendering': ('shaders/shaders_deferred_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'models_skybox_rendering': ('models/models_skybox_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'core_storage_values': ('core/core_storage_values.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_automation_events': ('core/core_automation_events.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
@@ -362,6 +363,7 @@ UNDEFINED_FROM['core_storage_values-short'] = 1
 UNDEFINED_FROM['core_storage_values-odd'] = 2
 # core_automation_events: S again would export automation.rae, which the script cannot reach (see its scripts).
 IO_SETUP.add('core_automation_events'); EFFECTS.add('core_automation_events'); SCRATCH.add('core_automation_events')
+IO_SETUP.add('models_skybox_rendering'); EFFECTS.add('models_skybox_rendering'); PERSPECTIVE.add('models_skybox_rendering')
 
 
 def scratch(probe, index, native=False):
@@ -1054,6 +1056,10 @@ def scripts():
         # The depth attachment drawn as a texture is a white rectangle on rlsw, whatever the free camera does (W
         # moves it, the pointer turns it): the help box over white.
         script('shaders_depth_rendering', 'white', [quick(), quick([key(KEY_W)]), quick([mouse_at(430, 240)]), slow([key(KEY_W, False)])]),
+        # The camera starts with the cube behind it: the mouse turns it half a turn and down (the white cube, drawn
+        # without culling or depth writes, under the grid), then W walks toward it.
+        script('models_skybox_rendering', 'turn', [quick(), quick([mouse_at(300, 60)]), quick([mouse_at(600, 120)]), quick([mouse_at(900, 180)]), slow([mouse_at(1050, 200)]),
+                                                   quick([key(KEY_W)]), quick([key(KEY_W, False)])]),
         # The result (nothing but the lights: the yellow sphere invisible, then its wires once Y turns it off),
         # then the position, normal and albedo textures and the result again, with the blue light off.
         script('shaders_deferred_rendering', 'modes', [quick(), quick([key(89)]), quick([key(89, False), key(49)]), quick([key(49, False), key(50)]), quick([key(50, False), key(51)]),
