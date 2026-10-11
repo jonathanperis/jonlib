@@ -42,6 +42,7 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiStatusBar` | `Gui.status_bar(gui, frame, bounds, text)` | `Frame` (`text` is `Maybe<String>`) |
 | `GuiPanel` | `Gui.panel(gui, frame, bounds, text)` | `Frame` (a status bar heads it when a text is given) |
 | `GuiDropdownBox` | `Gui.dropdown_box(gui, core, frame, bounds, text, active, edit)` | `Frame & (U32 & Bool)` (the active item, raygui's result) |
+| `GuiTextBox` | `Gui.text_box(gui, core, frame, bounds, text, size, edit, editing)` | `Frame & (Core & (String & (Gui.Editing & Bool)))` (the text, raygui's two text box globals, its result) |
 
 Two additions have no raygui counterpart. They run a row of controls in order
 for programs that keep their values in lists (Bend has no pointers to write
@@ -111,6 +112,22 @@ example waiting on each raygui function it calls that is not delivered.
   an item makes it the active one and answers true, as do a press over the
   box and a press or a release outside the open bounds. An open box reacts
   even when the gui is locked; a text with a single item never reacts.
+- **Text boxes.** raygui keeps the cursor index and the held-key counter in
+  two globals shared by every text box; they are a `G.Gui.Editing` value
+  (`Gui.editing()` at start) that the caller passes to each box and takes
+  back, with the edit mode kept by the caller as in raygui. Out of edit
+  mode a box is focused under the pointer and a press there answers true
+  and puts the cursor at the text's end. In edit mode, in raygui's order:
+  a typed codepoint (`GetCharPressed`, taken from the Core's queue) or the
+  clipboard text on Ctrl+V goes in at the cursor while the text stays
+  shorter than `textSize`; HOME and END; DELETE and BACKSPACE remove a
+  codepoint; LEFT and RIGHT move by one; a key held for more than 20 frames
+  repeats every frame; a press over the text puts the cursor at the glyph
+  under the pointer (drawn as a 1-pixel mouse cursor); ENTER or a press
+  outside the box answers true and resets both globals. A text wider than
+  the box is drawn from the codepoint that brings the cursor back inside.
+  The box does not react when `TEXT_READONLY` is set, the gui is disabled or
+  locked, a slider is dragged or a wrap mode is on.
 - **Shapes texture.** raygui's first style load calls `SetShapesTexture` with
   the default font's white rectangle, the value `InitWindow` already set, so
   nothing changes.
@@ -118,7 +135,7 @@ example waiting on each raygui function it calls that is not delivered.
 ## Gaps
 
 - Not delivered yet: `GuiToggleSlider`,
-  `GuiComboBox`, `GuiTextBox`, `GuiValueBoxFloat`,
+  `GuiComboBox`, `GuiTextBoxMulti`, `GuiValueBoxFloat`,
   `GuiProgressBar`, `GuiDummyRec`, `GuiGrid`,
   `GuiTabBar`, `GuiScrollPanel`, `GuiListView(Ex)`,
   `GuiColor*`, `GuiMessageBox`, `GuiTextInputBox`, `GuiWindowBox`,
@@ -134,6 +151,13 @@ example waiting on each raygui function it calls that is not delivered.
 - `GuiDropdownBox` marks the frame undefined for an active index outside the
   items (raygui reads a stale pointer), a text of 1024 bytes or more and 128
   items or more (`GuiTextSplit`'s static buffers).
+- `GuiTextBox` marks the frame undefined for the Ctrl word operations
+  (Ctrl+DELETE, BACKSPACE, LEFT and RIGHT), a box too narrow for the glyph
+  before the cursor (raygui's offset loop leaves the text) and a cursor
+  inside a UTF-8 sequence. Typed characters, a paste and the drawing offset
+  of a text wider than its box are compared with raygui by reading only: the
+  reference's replayed events never reach `GetCharPressed`, and its
+  clipboard is empty.
 - `GuiValueBox` and `GuiSpinner` in edit mode (keyboard entry) mark the frame
   undefined. A spinner step below `INT_MIN` or above `INT_MAX` overflows in C
   and marks the frame undefined.

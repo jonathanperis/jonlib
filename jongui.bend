@@ -10,7 +10,8 @@
 # GuiSetState, GuiGetState, GuiSetAlpha), GuiGetTextWidth, GuiLabel,
 # GuiButton, GuiCheckBox, GuiToggle, GuiToggleGroup, GuiSlider and
 # GuiSliderBar, GuiLine and GuiGroupBox, GuiValueBox and GuiSpinner (not in
-# edit mode), GuiStatusBar, GuiPanel and GuiDropdownBox, with the default font,
+# edit mode), GuiStatusBar, GuiPanel, GuiDropdownBox and GuiTextBox, with the
+# default font,
 # TEXT_WRAP_NONE and raygui's icon set at scale 1 (src/gui_icons.bend). An
 # icon id above 255 (raygui reads past its table) and the other wrap modes
 # mark the frame undefined. See docs/GUI.md.
@@ -1158,3 +1159,231 @@ def Gui.drop.run(+items: +List<Gui.Item>, +long: Bool, +gui: Gui, +core: J.Core,
 # more, and 128 items or more mark the frame undefined.
 def Gui.dropdown_box(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +text: String, +active: U32, +edit: Bool) -> J.Frame & (U32 & Bool):
   Gui.drop.run(Gui.split(TextCore.bytes(text), 59, 0, Nil{}), (TextCore.len(TextCore.bytes(text)) >= 1024 : U32), gui, core, frame, bounds, active, edit)
+
+# -----------------------------------------------------------------------------
+# GuiTextBox
+
+# raygui's text box globals, shared by every text box: textBoxCursorIndex (a
+# byte index into the edited text) and autoCursorCounter (the frames a cursor
+# key has been held).
+type Gui.Editing is Data:
+  GuiEditing{cursor: U32, counter: U32}
+
+def Gui.editing() -> Gui.Editing:
+  GuiEditing{0, 0}
+
+# What one text box update leaves: the text, the two globals, the index the
+# drawn text starts at, raygui's result, the state, the cursor's x and the
+# mouse cursor's (below 0 for none), and whether raygui's own code is left.
+type Gui.Edit is Data:
+  GuiEdit{bytes: +List<U32>, cursor: U32, counter: U32, offset: U32, result: Bool, state: U32, cx: F32, mouse: F32, refused: Bool}
+
+type Gui.Hit is Data:
+  GuiHit{x: F32, index: U32, glyph: F32}
+
+def Gui.hit.x(hit: Gui.Hit) -> F32:
+  GuiHit{x, _, _} = hit
+  x
+
+def Gui.hit.index(hit: Gui.Hit) -> U32:
+  GuiHit{_, index, _} = hit
+  index
+
+def Gui.rec.x(rec: J.Rectangle) -> F32:
+  J.Rectangle{x, _, _, _} = rec
+  x
+
+def Gui.rec.width(rec: J.Rectangle) -> F32:
+  J.Rectangle{_, _, w, _} = rec
+  w
+
+def Gui.box.insert(+bytes: +List<U32>, +at: U32, +piece: +List<U32>) -> +List<U32>:
+  TextCore.glue(TextCore.take(bytes, at), TextCore.glue(piece, TextCore.drop(bytes, at)))
+
+def Gui.box.remove(+bytes: +List<U32>, +from: U32, +count: U32) -> +List<U32>:
+  TextCore.glue(TextCore.take(bytes, from), TextCore.drop(bytes, (from + count : U32)))
+
+# GuiGetTextWidth(text + from) - GuiGetTextWidth(text + to), two C ints.
+def Gui.box.span(+gui: Gui, +bytes: +List<U32>, +from: U32, +to: U32) -> F32:
+  (Gui.width.text(gui, TextCore.drop(bytes, from)) - Gui.width.text(gui, TextCore.drop(bytes, to)) : F32)
+
+# The index the drawn text starts at: one codepoint further while the text
+# from there to the cursor is as wide as the box or wider.
+def Gui.box.offset(n: Nat, +gui: Gui, +bytes: +List<U32>, +offset: U32, +cursor: U32, +width: F32) -> U32:
+  match n:
+    case 0n: offset
+    case 1n+p:
+      Bool.pick(U32, (Gui.box.span(gui, bytes, offset, cursor) >= width : F32),
+        Gui.box.offset(p, gui, bytes, (offset + TextCore.pair.size(TextCore.next(TextCore.drop(bytes, offset))) : U32), cursor, width), offset)
+
+# The bytes of the clipboard text that fit: whole codepoints of 32 or more
+# while the text stays shorter than textSize.
+def Gui.box.paste(n: Nat, +paste: +List<U32>, +count: U32, +length: U32, +size: U32) -> U32:
+  match n:
+    case 0n: count
+    case 1n+p:
+      +code = TextCore.next(TextCore.drop(paste, count))
+      +stop = Bool.not(Gui.int.less((length + count + TextCore.pair.size(code) : U32), size)) || (TextCore.pair.value(code) < 32 : U32)
+      Bool.pick(U32, stop, count, Gui.box.paste(p, paste, (count + TextCore.pair.size(code) : U32), length, size))
+
+def Gui.box.clip(clip: Maybe<String>) -> +List<U32>:
+  match clip:
+    case None{}: Nil{}
+    case Some{t}: TextCore.bytes(t)
+
+def Gui.box.back.of(code: Maybe<TextCore.Code>) -> U32:
+  match code:
+    case None{}: 0
+    case Some{c}: TextCore.pair.size(c)
+
+# The byte size GetCodepointPrevious(text + position) answers, or 0 where it
+# would read before the text.
+def Gui.box.back(+bytes: +List<U32>, +position: U32) -> U32:
+  Gui.box.back.of(TextCore.previous(bytes, position))
+
+# The glyph whose first half holds the pointer: its x and byte index, and the
+# width of the last glyph measured.
+def Gui.box.walk(n: Nat, +bytes: +List<U32>, +i: U32, +length: U32, +mx: F32, +tbx: F32, +acc: F32, +scale: F32, +spacing: F32, +glyph: F32) -> Gui.Hit:
+  match n:
+    case 0n: GuiHit{F32.neg(1.0), 0, glyph}
+    case 1n+p:
+      +code = TextCore.next(TextCore.drop(bytes, i))
+      +width = Gui.glyph.width(TextCore.pair.value(code), scale)
+      Bool.pick(Gui.Hit, (i >= length : U32), GuiHit{F32.neg(1.0), 0, glyph},
+        Bool.pick(Gui.Hit, (mx <= tbx + (acc + width / 2.0) : F32), GuiHit{(tbx + acc : F32), i, width},
+          Gui.box.walk(p, bytes, (i + TextCore.pair.size(code) : U32), length, mx, tbx, (acc + (width + spacing) : F32), scale, spacing, width)))
+
+# A pointer at or past the text's end less half the last glyph is at the end.
+def Gui.box.hit(hit: Gui.Hit, +mx: F32, +tbx: F32, +end: F32, +length: U32) -> Gui.Hit:
+  GuiHit{+x, +index, +glyph} = hit
+  Bool.pick(Gui.Hit, (mx >= (tbx + end) - glyph / 2.0 : F32), GuiHit{(tbx + end : F32), length, glyph}, GuiHit{x, index, glyph})
+
+# The update in edit mode, in raygui's order: the held-key counter, the draw
+# offset, a paste (Ctrl+V) or the typed codepoint, HOME and END, DELETE,
+# BACKSPACE, LEFT or RIGHT, the pointer, and ENTER or a press outside.
+def Gui.box.edit(typed: J.Core & U32, +gui: Gui, +bounds: J.Rectangle, +tb: J.Rectangle, +bytes: +List<U32>, +size: U32, +editing: Gui.Editing) -> J.Core & Gui.Edit:
+  (+core, +cp) = typed
+  GuiEditing{+index, +count} = editing
+  +bx = Gui.rec.x(bounds)
+  +tbx = Gui.rec.x(tb)
+  +tbw = Gui.rec.width(tb)
+  +length = TextCore.len(bytes)
+  +ctrl = J.Input.is_key_down(core, 341) || J.Input.is_key_down(core, 345)
+  +held = J.Input.is_key_down(core, 263) || J.Input.is_key_down(core, 262) || J.Input.is_key_down(core, 265) || J.Input.is_key_down(core, 264) || J.Input.is_key_down(core, 259) || J.Input.is_key_down(core, 261)
+  +counter = Bool.pick(U32, held, (count + 1 : U32), 0)
+  +trigger = (counter > 20 : U32)
+  +cursor0 = Bool.pick(U32, (index > length : U32), length, index)
+  +offset = Gui.box.offset(U32.to_nat((length + 1 : U32)), gui, bytes, 0, cursor0, tbw)
+  +stuck = (Gui.box.span(gui, bytes, offset, cursor0) >= tbw : F32)
+  +clip = Gui.box.clip(J.Core.get_clipboard_text(core))
+  +piece = Bool.pick(+List<U32>, J.Input.is_key_pressed(core, 86) && ctrl, TextCore.take(clip, Gui.box.paste(U32.to_nat((TextCore.len(clip) + 1 : U32)), clip, 0, length, size)),
+    Bool.pick(+List<U32>, Bool.not(Gui.int.less(cp, 32)) && Gui.int.less((length + TextCore.len(TextCore.utf8(cp)) : U32), size), TextCore.utf8(cp), Nil{}))
+  +bytes1 = Gui.box.insert(bytes, cursor0, piece)
+  +length1 = (length + TextCore.len(piece) : U32)
+  +cursor1 = (cursor0 + TextCore.len(piece) : U32)
+  +cursor2 = Bool.pick(U32, (length1 > 0 : U32) && J.Input.is_key_pressed(core, 268), 0, cursor1)
+  +cursor3 = Bool.pick(U32, (length1 > cursor2 : U32) && J.Input.is_key_pressed(core, 269), length1, cursor2)
+  +word_delete = (length1 > cursor3 : U32) && J.Input.is_key_pressed(core, 261) && ctrl
+  +delete = Bool.not(word_delete) && (length1 > cursor3 : U32) && (J.Input.is_key_pressed(core, 261) || (J.Input.is_key_down(core, 261) && trigger))
+  +deleted = Bool.pick(U32, delete, TextCore.pair.size(TextCore.next(TextCore.drop(bytes1, cursor3))), 0)
+  +bytes2 = Gui.box.remove(bytes1, cursor3, deleted)
+  +length2 = (length1 - deleted : U32)
+  +word_back = (cursor3 > 0 : U32) && J.Input.is_key_pressed(core, 259) && ctrl
+  +back = Bool.not(word_back) && (cursor3 > 0 : U32) && (J.Input.is_key_pressed(core, 259) || (J.Input.is_key_down(core, 259) && trigger))
+  +back_size = Gui.box.back(bytes2, cursor3)
+  +bad_back = back && (U32.is_eq(back_size, 0) || (back_size > cursor3 : U32))
+  +backed = Bool.pick(U32, back && Bool.not(bad_back), back_size, 0)
+  +bytes3 = Gui.box.remove(bytes2, (cursor3 - backed : U32), backed)
+  +length3 = (length2 - backed : U32)
+  +cursor4 = (cursor3 - backed : U32)
+  +word_left = (cursor4 > 0 : U32) && J.Input.is_key_pressed(core, 263) && ctrl
+  +left = Bool.not(word_left) && (cursor4 > 0 : U32) && (J.Input.is_key_pressed(core, 263) || (J.Input.is_key_down(core, 263) && trigger))
+  +left_size = Gui.box.back(bytes3, cursor4)
+  +bad_left = left && (U32.is_eq(left_size, 0) || (left_size > cursor4 : U32))
+  +word_right = Bool.not(word_left) && Bool.not(left) && (length3 > cursor4 : U32) && J.Input.is_key_pressed(core, 262) && ctrl
+  +right = Bool.not(word_left) && Bool.not(left) && Bool.not(word_right) && (length3 > cursor4 : U32) && (J.Input.is_key_pressed(core, 262) || (J.Input.is_key_down(core, 262) && trigger))
+  +cursor5 = Bool.pick(U32, left && Bool.not(bad_left), (cursor4 - left_size : U32), Bool.pick(U32, right, (cursor4 + TextCore.pair.size(TextCore.next(TextCore.drop(bytes3, cursor4))) : U32), cursor4))
+  +mouse = J.Input.get_mouse_position(core)
+  +pressed = Gui.pressed(core)
+  +lost = (offset > length3 : U32)
+  +end = Gui.width.text(gui, TextCore.drop(bytes3, offset))
+  +hit = Gui.box.hit(Gui.box.walk(U32.to_nat((length3 + 1 : U32)), bytes3, offset, length3, Gui.mouse.x(mouse), tbx, 0.0, Gui.scale(gui), Gui.style.f32(gui, 0, 17), 0.0), Gui.mouse.x(mouse), tbx, end, length3)
+  +hx = Bool.pick(F32, J.Collision.point_rec(mouse, tb), Gui.hit.x(hit), F32.neg(1.0))
+  +cursor6 = Bool.pick(U32, (hx >= 0.0 : F32) && pressed, Gui.hit.index(hit), cursor5)
+  +cx = ((((bx + Gui.style.f32(gui, 9, 13) : F32) + end : F32) - Gui.width.text(gui, TextCore.drop(bytes3, cursor6)) : F32) + Gui.style.f32(gui, 0, 17) : F32)
+  +done = J.Input.is_key_pressed(core, 257) || (Bool.not(J.Collision.point_rec(mouse, bounds)) && pressed)
+  (core, GuiEdit{bytes3, Bool.pick(U32, done, 0, cursor6), Bool.pick(U32, done, 0, counter), offset, done, 2, cx, hx,
+    stuck || word_delete || word_back || bad_back || word_left || bad_left || word_right || lost})
+
+# The cursor's x before any update: after the text up to the cursor index.
+def Gui.box.start(+gui: Gui, +tb: J.Rectangle, +bytes: +List<U32>, +index: U32) -> F32:
+  J.Rectangle{+tbx, _, _, _} = tb
+  +length = TextCore.len(bytes)
+  ((tbx + Gui.box.span(gui, bytes, 0, Bool.pick(U32, (index > length : U32), length, index)) : F32) + Gui.style.f32(gui, 0, 17) : F32)
+
+# mode 0: the box does not react; 1: not in edit mode (focused under the
+# pointer, and a press there puts the cursor at the text's end); 2: edit mode.
+def Gui.box.updated(mode: U32, +gui: Gui, +core: J.Core, +bounds: J.Rectangle, +tb: J.Rectangle, +bytes: +List<U32>, +size: U32, +editing: Gui.Editing) -> J.Core & Gui.Edit:
+  match mode:
+    case 0:
+      GuiEditing{+index, +count} = editing
+      (core, GuiEdit{bytes, index, count, 0, False{}, Gui.get_state(gui), Gui.box.start(gui, tb, bytes, index), F32.neg(1.0), False{}})
+    case 1:
+      GuiEditing{+index, +count} = editing
+      +over = J.Collision.point_rec(J.Input.get_mouse_position(core), bounds)
+      +clicked = over && Gui.pressed(core)
+      (core, GuiEdit{bytes, Bool.pick(U32, clicked, TextCore.len(bytes), index), Bool.pick(U32, clicked, 0, count), 0, clicked, Bool.pick(U32, over, 1, Gui.get_state(gui)),
+        Gui.box.start(gui, tb, bytes, index), F32.neg(1.0), False{}})
+    case _: Gui.box.edit(J.Input.get_char_pressed(core), gui, bounds, tb, bytes, size, editing)
+
+# The box's fill: BASE_COLOR_PRESSED, BASE_COLOR_DISABLED or BLANK.
+def Gui.box.fill(state: U32, +gui: Gui) -> U32:
+  match state:
+    case 2: Gui.color(gui, 9, 7)
+    case 3: Gui.color(gui, 9, 10)
+    case _: 0
+
+def Gui.box.pointer(shown: Bool, +gui: Gui, +x: F32, +y: F32, +h: F32, frame: J.Frame) -> J.Frame:
+  match shown:
+    case False{}: frame
+    case True{}: Gui.draw_rectangle(frame, J.Rectangle{x, y, 1.0, h}, 0, 0, Gui.color(gui, 9, 6))
+
+# The cursor, 2 pixels wide and twice TEXT_SIZE high (kept inside the box),
+# and a 1-pixel mouse cursor where a press would put it.
+def Gui.box.cursors(shown: Bool, +gui: Gui, +bounds: J.Rectangle, +tb: J.Rectangle, +cx: F32, +mouse: F32, frame: J.Frame) -> J.Frame:
+  match shown:
+    case False{}: frame
+    case True{}:
+      J.Rectangle{_, +by, _, +bh} = bounds
+      J.Rectangle{_, +tby, _, +tbh} = tb
+      +size = Gui.style.f32(gui, 0, 16)
+      +border = Gui.get_style(gui, 9, 12)
+      +high = Bool.pick(F32, ((size * 2.0 : F32) >= bh : F32), (bh - U32.to_f32((border * 2 : U32)) : F32), (size * 2.0 : F32))
+      +edge = (by + U32.to_f32(border) : F32)
+      +y = Bool.pick(F32, (((tby + tbh / 2.0 : F32) - size : F32) < edge : F32), edge, ((tby + tbh / 2.0 : F32) - size : F32))
+      Gui.box.pointer((mouse >= 0.0 : F32), gui, mouse, y, high, Gui.draw_rectangle(frame, J.Rectangle{cx, y, 2.0, high}, 0, 0, Gui.color(gui, 9, 6)))
+
+def Gui.box.out(edit: Gui.Edit, +core: J.Core, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +tb: J.Rectangle, +editing: Bool) -> J.Frame & (J.Core & (String & (Gui.Editing & Bool))):
+  GuiEdit{+bytes, +cursor, +counter, +offset, +result, +state, +cx, +mouse, +refused} = edit
+  f1 = Gui.draw_rectangle(frame, bounds, Gui.get_style(gui, 9, 12), Gui.color(gui, 9, (state * 3 : U32)), Gui.box.fill(state, gui))
+  f2 = Gui.draw_text.bytes(TextCore.drop(bytes, offset), gui, f1, tb, Gui.get_style(gui, 9, 14), Gui.color(gui, 9, (2 + state * 3 : U32)))
+  f3 = Gui.box.cursors(editing && U32.is_eq(Gui.get_style(gui, 9, 16), 0), gui, bounds, tb, cx, mouse, f2)
+  (Gui.refused(refused, f3), (core, (TextCore.string(bytes), (GuiEditing{cursor, counter}, result))))
+
+def Gui.box.done(r: J.Core & Gui.Edit, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +tb: J.Rectangle, +editing: Bool) -> J.Frame & (J.Core & (String & (Gui.Editing & Bool))):
+  (+core, edit) = r
+  Gui.box.out(edit, core, gui, frame, bounds, tb, editing)
+
+# GuiTextBox(bounds, text, textSize, editMode) over raygui's two text box
+# globals (Gui.Editing): the frame, the Core (a typed codepoint is taken
+# from its queue), the text, the globals and raygui's result (a press over
+# the box out of edit mode; ENTER or a press outside it in edit mode). The
+# box reacts when the gui is enabled and unlocked, no slider is dragged,
+# TEXT_READONLY is 0 and the wrap mode is TEXT_WRAP_NONE. The Ctrl word
+# operations (Ctrl+DELETE, BACKSPACE, LEFT, RIGHT), a box too narrow for the
+# glyph before the cursor, and a cursor inside a UTF-8 sequence mark the
+# frame undefined.
+def Gui.text_box(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +text: String, +size: U32, +edit: Bool, +editing: Gui.Editing) -> J.Frame & (J.Core & (String & (Gui.Editing & Bool))):
+  +live = Gui.active(gui) && U32.is_eq(Gui.get_style(gui, 9, 16), 0) && Bool.not(Gui.exclusive(gui)) && U32.is_eq(Gui.get_style(gui, 0, 22), 0)
+  Gui.box.done(Gui.box.updated(Bool.pick(U32, live, Bool.pick(U32, edit, 2, 1), 0), gui, core, bounds, Gui.text_bounds(gui, 9, bounds), TextCore.bytes(text), size, editing),
+    gui, frame, bounds, Gui.text_bounds(gui, 9, bounds), edit)

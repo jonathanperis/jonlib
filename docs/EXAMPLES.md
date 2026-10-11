@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 158 ported, 18 ready, 36 waiting.
+Totals: 212 examples; 158 ported, 19 ready, 35 waiting.
 
 ## APIs that unblock the most examples
 
@@ -36,7 +36,6 @@ Totals: 212 examples; 158 ported, 18 ready, 36 waiting.
 | `rlUnloadTexture` | 4 |
 | `GetMusicTimeLength` | 3 |
 | `GetMusicTimePlayed` | 3 |
-| `GuiTextBox` | 3 |
 | `LoadAudioStream` | 3 |
 | `PauseMusicStream` | 3 |
 | `PlayAudioStream` | 3 |
@@ -53,6 +52,7 @@ Totals: 212 examples; 158 ported, 18 ready, 36 waiting.
 | `DetachAudioMixedProcessor` | 1 |
 | `DetachAudioStreamProcessor` | 1 |
 | `EndVrStereoMode` | 1 |
+| `GenMeshCylinder` | 1 |
 
 ## Examples
 
@@ -102,9 +102,9 @@ Totals: 212 examples; 158 ported, 18 ready, 36 waiting.
 | `core_directory_files` | core | waiting | `GetWorkingDirectory`, `LoadDirectoryFiles`, `LoadDirectoryFilesEx`, `UnloadDirectoryFiles`, `GuiGetFont`, `GuiListViewEx` |
 | `core_highdpi_testbed` | core | ported |  |
 | `core_screen_recording` | core | waiting | `GetApplicationDirectory` |
-| `core_clipboard_text` | core | waiting | `GuiSetIconScale`, `GuiTextBox` |
+| `core_clipboard_text` | core | waiting | `GuiSetIconScale` |
 | `core_text_file_loading` | core | ported |  |
-| `core_compute_hash` | core | waiting | `GuiTextBox` |
+| `core_compute_hash` | core | ready |  |
 | `core_keyboard_testbed` | core | ported |  |
 | `core_window_web` | core | ported |  |
 | `shapes_basic_shapes` | shapes | ported |  |
@@ -132,7 +132,7 @@ Totals: 212 examples; 158 ported, 18 ready, 36 waiting.
 | `shapes_dashed_line` | shapes | ported |  |
 | `shapes_triangle_strip` | shapes | ported |  |
 | `shapes_vector_angle` | shapes | ported |  |
-| `shapes_pie_chart` | shapes | waiting | `GuiScrollPanel`, `GuiTextBox` |
+| `shapes_pie_chart` | shapes | waiting | `GuiScrollPanel` |
 | `shapes_kaleidoscope` | shapes | ported |  |
 | `shapes_clock_of_clocks` | shapes | ready |  |
 | `shapes_math_sine_cosine` | shapes | ported |  |

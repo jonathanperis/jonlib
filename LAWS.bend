@@ -1236,6 +1236,35 @@ law gui_dropdown_focus_without_items:
   for up: Bool
   {JG.Gui.drop.focus(0n, 0, mouse, x, y, w, h, pitch, up) == 4294967295 : U32}
 
+# GuiTextBox edits bytes at the cursor: a piece goes in before it, a
+# codepoint comes out whole (two bytes for U+00E9), and nothing is before
+# the start of the text.
+law gui_text_box_insert_at_cursor:
+  {JG.Gui.box.insert([65, 66], 1, [67]) == [65, 67, 66] : +List<U32>}
+
+law gui_text_box_remove_at_cursor:
+  {JG.Gui.box.remove([65, 66, 67], 1, 1) == [65, 67] : +List<U32>}
+
+law gui_text_box_backspace_whole_codepoint:
+  {JG.Gui.box.back([65, 195, 169], 3) == 2 : U32}
+
+law gui_text_box_nothing_before_start:
+  {JG.Gui.box.back([65], 0) == 0 : U32}
+
+# A paste stops where the text would reach textSize, and at a control character.
+law gui_text_box_paste_fits_size:
+  {JG.Gui.box.paste(3n, [97, 98], 0, 3, 5) == 1 : U32}
+
+law gui_text_box_paste_stops_at_control:
+  {JG.Gui.box.paste(4n, [97, 10, 98], 0, 0, 95) == 1 : U32}
+
+law gui_text_box_globals_start_at_zero:
+  {JG.Gui.editing() == JG.GuiEditing{0, 0} : JG.Gui.Editing}
+
+law gui_text_box_blank_when_normal:
+  for gui: JG.Gui
+  {JG.Gui.box.fill(0, gui) == 0 : U32}
+
 law shader_load_never_valid:
   for vs: Maybe<String>
   for fs: Maybe<String>
