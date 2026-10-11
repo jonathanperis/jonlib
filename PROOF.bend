@@ -860,6 +860,18 @@ def Laws.gui_value_box_blank_when_normal(gui):
 def Laws.gui_value_box_blank_when_focused(gui):
   {==}
 
+def Laws.gui_dropdown_two_items():
+  {==}
+
+def Laws.gui_dropdown_empty_text_is_one_item():
+  {==}
+
+def Laws.gui_dropdown_second_item():
+  {==}
+
+def Laws.gui_dropdown_focus_without_items(mouse, x, y, w, h, pitch, up):
+  {==}
+
 def Laws.shader_load_never_valid(vs, fs):
   {==}
 

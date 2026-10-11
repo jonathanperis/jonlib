@@ -212,7 +212,20 @@
    ]
   },
   "GuiPanel": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.panel",
+   "scope": "The panel rectangle, headed by a status bar when a text is given.",
+   "evidence": [
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "With a text (the status bar header) it is compared with raygui by reading only",
+    "Icon ids above 255, a short '#' line read across lines and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined; icons draw at scale 1",
+    "The default font only (GuiSetFont is not delivered)",
+    "Tooltips are not delivered (off by default)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiTabBar": {
    "status": "not-started"
@@ -320,7 +333,22 @@
    "status": "not-started"
   },
   "GuiDropdownBox": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.dropdown_box",
+   "scope": "The closed box with its arrow icon and, in edit mode, the panel and the items; raygui's result for presses and releases, and the active item.",
+   "evidence": [
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "An active index outside the items, a text of 1024 bytes or more and 128 items or more mark the frame undefined",
+    "DROPDOWN_ROLL_UP and DROPDOWN_ARROW_HIDDEN are compared with raygui by reading only",
+    "Icon ids above 255, a short '#' line read across lines and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined; icons draw at scale 1",
+    "The default font only (GuiSetFont is not delivered)",
+    "Tooltips are not delivered (off by default)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiSpinner": {
    "status": "partial",
@@ -408,7 +436,20 @@
    "status": "not-started"
   },
   "GuiStatusBar": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.status_bar",
+   "scope": "The bordered rectangle and its text in the STATUSBAR style of the current state.",
+   "evidence": [
+    "docs/GUI.md",
+    "jongui.bend"
+   ],
+   "gaps": [
+    "No example draws one yet: compared with raygui by reading only",
+    "Icon ids above 255, a short '#' line read across lines and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined; icons draw at scale 1",
+    "The default font only (GuiSetFont is not delivered)",
+    "Tooltips are not delivered (off by default)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiDummyRec": {
    "status": "not-started"

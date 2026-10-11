@@ -39,6 +39,9 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiGroupBox` | `Gui.group_box(gui, frame, bounds, text)` | `Frame` |
 | `GuiValueBox` | `Gui.value_box(gui, core, frame, bounds, text, value, min, max, edit)` | `Frame & (U32 & Bool)` (the int as a word, pressed) |
 | `GuiSpinner` | `Gui.spinner(gui, core, frame, bounds, text, value, min, max, edit)` | `Frame & (U32 & Bool)` (the int as a word, the value box pressed) |
+| `GuiStatusBar` | `Gui.status_bar(gui, frame, bounds, text)` | `Frame` (`text` is `Maybe<String>`) |
+| `GuiPanel` | `Gui.panel(gui, frame, bounds, text)` | `Frame` (a status bar heads it when a text is given) |
+| `GuiDropdownBox` | `Gui.dropdown_box(gui, core, frame, bounds, text, active, edit)` | `Frame & (U32 & Bool)` (the active item, raygui's result) |
 
 Two additions have no raygui counterpart. They run a row of controls in order
 for programs that keep their values in lists (Bend has no pointers to write
@@ -98,6 +101,16 @@ example waiting on each raygui function it calls that is not delivered.
   release over one steps the value by one, which is then clamped (`min`
   first) and handed to the value box between them. The label is drawn last,
   in the spinner's own state (pressed while the button is down over it).
+- **Dropdown boxes.** The caller keeps the edit mode, as with raygui, and
+  flips it when the result is true. Closed, the box shows the active item
+  and an arrow icon (`"#120#"`, or `"#121#"` with `DROPDOWN_ROLL_UP`) and
+  answers true to a press over it. Open (edit mode), a `GuiPanel` covers the
+  box and one row an item (each `height + DROPDOWN_ITEMS_SPACING` further,
+  added row by row as raygui does), the active item boxed in the pressed
+  colors and the one under the pointer in the focused colors; a release over
+  an item makes it the active one and answers true, as do a press over the
+  box and a press or a release outside the open bounds. An open box reacts
+  even when the gui is locked; a text with a single item never reacts.
 - **Shapes texture.** raygui's first style load calls `SetShapesTexture` with
   the default font's white rectangle, the value `InitWindow` already set, so
   nothing changes.
@@ -105,8 +118,8 @@ example waiting on each raygui function it calls that is not delivered.
 ## Gaps
 
 - Not delivered yet: `GuiToggleSlider`,
-  `GuiComboBox`, `GuiDropdownBox`, `GuiTextBox`, `GuiValueBoxFloat`,
-  `GuiProgressBar`, `GuiStatusBar`, `GuiDummyRec`, `GuiGrid`, `GuiPanel`,
+  `GuiComboBox`, `GuiTextBox`, `GuiValueBoxFloat`,
+  `GuiProgressBar`, `GuiDummyRec`, `GuiGrid`,
   `GuiTabBar`, `GuiScrollPanel`, `GuiListView(Ex)`,
   `GuiColor*`, `GuiMessageBox`, `GuiTextInputBox`, `GuiWindowBox`,
   `GuiLabelButton`, the style file loaders, `GuiSetFont`/`GuiGetFont`,
@@ -118,6 +131,9 @@ example waiting on each raygui function it calls that is not delivered.
   `#` with no second `#`: raygui's `GuiGetTextWidth` would look for it in the
   lines that follow.
 - The `TEXT_WRAP_CHAR` and `TEXT_WRAP_WORD` modes mark the frame undefined.
+- `GuiDropdownBox` marks the frame undefined for an active index outside the
+  items (raygui reads a stale pointer), a text of 1024 bytes or more and 128
+  items or more (`GuiTextSplit`'s static buffers).
 - `GuiValueBox` and `GuiSpinner` in edit mode (keyboard entry) mark the frame
   undefined. A spinner step below `INT_MIN` or above `INT_MAX` overflows in C
   and marks the frame undefined.
