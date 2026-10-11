@@ -1391,7 +1391,7 @@
   {
    "name": "core_compute_hash",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
