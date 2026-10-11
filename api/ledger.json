@@ -57106,25 +57106,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "blocked",
-      "jonlib": "Model.gen_mesh_cylinder",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Mesh.gen_cylinder_for / Mesh.gen_cylinder",
+      "mapping_state": "implemented",
+      "scope": "par_shapes cylinder of 8 stacks with welded normals, scaled by (radius, radius, height), rotated, with a top and a bottom disk merged in, unrolled; fewer than 3 slices give the empty mesh.",
       "gaps": [
-        "A verified binary64 cos/sin per profile",
-        "Port par_shapes with the profiled qsort"
+        "M.Glibc239Libm only: the disks take the binary64 cos and sin, and the weld sorts with glibc's qsort; other profiles are None",
+        "M.Fused{} is None: the contracted arithmetic of the scale, rotation and disk is not reproduced",
+        "Meshes above 65535 points, undefined welds and nonfinite sizes are None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
-      "blocker": "Calls the binary64 cos/sin (par_shapes disk caps or trefoil), for which no verified reproduction exists; also uses the par_shapes weld above. par_shapes welded normals sort points with the C library qsort, whose order of equal keys is unspecified; host, stable and reverse-stable sorts give different normals for 26 of 27 meshes tried. par_shapes is not ported (Apple FreeBSD introsort and glibc merge sort are modeled for fonts).",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/MODELS.md"
+        "tools/mesh_tube_probe.py",
+        "docs/MODELS.md",
+        "src/par_shapes.bend",
+        "src/lgpl/sin.bend"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -57141,7 +57146,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Resolve: Calls the binary64 cos/sin (par_shapes disk caps or trefoil), for which no verified reproduction exists; also uses the par_shapes weld above. par_shapes welded normals sort points with the C library qsort, whose order of equal keys is unspecified; host, stable and reverse-stable sorts give different normals for 26 of 27 meshes tried. par_shapes is not ported (Apple FreeBSD introsort and glibc merge sort are modeled for fonts).",
+      "next_step": "Close documented gaps and unverified gates for GenMeshCylinder.",
       "priority": 622
     },
     {
@@ -57167,25 +57172,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "blocked",
-      "jonlib": "Model.gen_mesh_cone",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Mesh.gen_cone_for / Mesh.gen_cone",
+      "mapping_state": "implemented",
+      "scope": "par_shapes cone of 8 stacks with welded normals, scaled, rotated twice, with its bottom disk merged in, unrolled; fewer than 3 slices give the empty mesh.",
       "gaps": [
-        "A verified binary64 cos/sin per profile",
-        "Port par_shapes with the profiled qsort"
+        "M.Glibc239Libm only: the disks take the binary64 cos and sin, and the weld sorts with glibc's qsort; other profiles are None",
+        "M.Fused{} is None: the contracted arithmetic of the scale, rotation and disk is not reproduced",
+        "Meshes above 65535 points, undefined welds and nonfinite sizes are None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
-      "blocker": "Calls the binary64 cos/sin (par_shapes disk caps or trefoil), for which no verified reproduction exists; also uses the par_shapes weld above. par_shapes welded normals sort points with the C library qsort, whose order of equal keys is unspecified; host, stable and reverse-stable sorts give different normals for 26 of 27 meshes tried. par_shapes is not ported (Apple FreeBSD introsort and glibc merge sort are modeled for fonts).",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/MODELS.md"
+        "tools/mesh_tube_probe.py",
+        "docs/MODELS.md",
+        "src/par_shapes.bend",
+        "src/lgpl/sin.bend"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -57202,7 +57212,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Resolve: Calls the binary64 cos/sin (par_shapes disk caps or trefoil), for which no verified reproduction exists; also uses the par_shapes weld above. par_shapes welded normals sort points with the C library qsort, whose order of equal keys is unspecified; host, stable and reverse-stable sorts give different normals for 26 of 27 meshes tried. par_shapes is not ported (Apple FreeBSD introsort and glibc merge sort are modeled for fonts).",
+      "next_step": "Close documented gaps and unverified gates for GenMeshCone.",
       "priority": 622
     },
     {
@@ -57303,7 +57313,7 @@
         "A verified binary64 cos/sin per profile",
         "Port par_shapes with the profiled qsort"
       ],
-      "blocker": "Calls the binary64 cos/sin (par_shapes disk caps or trefoil), for which no verified reproduction exists; also uses the par_shapes weld above. par_shapes welded normals sort points with the C library qsort, whose order of equal keys is unspecified; host, stable and reverse-stable sorts give different normals for 26 of 27 meshes tried. par_shapes is not ported (Apple FreeBSD introsort and glibc merge sort are modeled for fonts).",
+      "blocker": "The trefoil's parametric function (a dozen binary64 operations a point with the profile's cos and sin) is not ported; the binary64 functions and the disk machinery exist (GenMeshCylinder).",
       "gates": {
         "availability": "unverified",
         "behavior": "unverified",
@@ -57330,7 +57340,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Resolve: Calls the binary64 cos/sin (par_shapes disk caps or trefoil), for which no verified reproduction exists; also uses the par_shapes weld above. par_shapes welded normals sort points with the C library qsort, whose order of equal keys is unspecified; host, stable and reverse-stable sorts give different normals for 26 of 27 meshes tried. par_shapes is not ported (Apple FreeBSD introsort and glibc merge sort are modeled for fonts).",
+      "next_step": "Resolve: The trefoil's parametric function (a dozen binary64 operations a point with the profile's cos and sin) is not ported; the binary64 functions and the disk machinery exist (GenMeshCylinder).",
       "priority": 622
     },
     {

@@ -31,6 +31,7 @@ import ./src/strtod.bend as Strtod
 import ./src/json.bend as Json
 import ./src/gltf.bend as Gltf
 import ./src/gltf_anim.bend as GltfAnim
+import ./src/par_shapes.bend as ParShapes
 import ./jongui.bend as JG
 import ./src/gui_icons.bend as GuiIcons
 import ./src/binary64_sqrt.bend as Sqrt
@@ -1147,6 +1148,28 @@ law gltf_anim_invalid_span_reads_nothing:
   for comps: U32
   for limit: U32
   {GltfAnim.read(False{}, span, blocks, comps, limit) == Nil{} : +List<U32>}
+
+# GenMeshCylinder and GenMeshCone (src/par_shapes.bend): a disk is a fan
+# around its first point, a merged mesh's triangles are offset by the
+# points before them, fewer than 3 slices give the empty mesh, and the
+# contracted arithmetic is refused.
+law par_shapes_disk_is_a_fan:
+  {ParShapes.disk.tris(3n, 0, 3, Nil{}) == [0, 1, 2, 0, 2, 3, 0, 3, 1] : +List<U32>}
+
+law par_shapes_merge_offsets_triangles:
+  {ParShapes.offset.tris([0, 1, 2], 5, Nil{}) == [5, 6, 7] : +List<U32>}
+
+law mesh_cylinder_of_two_slices_is_empty:
+  for arithmetic: M.Contraction
+  for libm: M.Libm
+  for radius: F32
+  for height: F32
+  {J.Mesh.gen_cylinder_for(arithmetic, libm, radius, height, 2) == Some{J.Mesh.empty()} : Maybe<J.Mesh>}
+
+law mesh_cone_fused_refused:
+  for radius: F32
+  for height: F32
+  {J.Mesh.gen_cone_for(M.Fused{}, M.Glibc239Libm{}, radius, height, 8) == None{} : Maybe<J.Mesh>}
 
 # A joint's node transform is read once for the keyframes: no joints have
 # none, and a bone whose node or channels cannot be read ends the pose.

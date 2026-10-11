@@ -5480,6 +5480,32 @@
     "api_id": "raylib:function:GenMeshHemiSphere",
     "milestone": "models"
   },
+  "GenMeshCylinder": {
+    "jonlib": "Mesh.gen_cylinder_for / Mesh.gen_cylinder",
+    "status": "profile-covered",
+    "scope": "par_shapes cylinder of 8 stacks with welded normals, scaled by (radius, radius, height), rotated, with a top and a bottom disk merged in, unrolled; fewer than 3 slices give the empty mesh.",
+    "gaps": [
+      "M.Glibc239Libm only: the disks take the binary64 cos and sin, and the weld sorts with glibc's qsort; other profiles are None",
+      "M.Fused{} is None: the contracted arithmetic of the scale, rotation and disk is not reproduced",
+      "Meshes above 65535 points, undefined welds and nonfinite sizes are None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GenMeshCylinder",
+    "milestone": "models"
+  },
+  "GenMeshCone": {
+    "jonlib": "Mesh.gen_cone_for / Mesh.gen_cone",
+    "status": "profile-covered",
+    "scope": "par_shapes cone of 8 stacks with welded normals, scaled, rotated twice, with its bottom disk merged in, unrolled; fewer than 3 slices give the empty mesh.",
+    "gaps": [
+      "M.Glibc239Libm only: the disks take the binary64 cos and sin, and the weld sorts with glibc's qsort; other profiles are None",
+      "M.Fused{} is None: the contracted arithmetic of the scale, rotation and disk is not reproduced",
+      "Meshes above 65535 points, undefined welds and nonfinite sizes are None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GenMeshCone",
+    "milestone": "models"
+  },
   "GenMeshTorus": {
     "jonlib": "Mesh.gen_torus_for / Mesh.gen_torus",
     "status": "profile-covered",
