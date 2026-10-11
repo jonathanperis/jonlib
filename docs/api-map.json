@@ -5520,6 +5520,19 @@
     "api_id": "raylib:function:GenMeshTorus",
     "milestone": "models"
   },
+  "GenMeshKnot": {
+    "jonlib": "Mesh.gen_knot_for / Mesh.gen_knot",
+    "status": "profile-covered",
+    "scope": "par_shapes trefoil knot (radSeg x sides, radius clamped to 0.5f..3) with welded normals, scaled by size and unrolled; fewer than 3 of either give the empty mesh.",
+    "gaps": [
+      "M.Glibc239Libm only: the trefoil takes the binary64 cos and sin, and the weld sorts with glibc's qsort; other profiles are None",
+      "M.Fused{} is None: the contracted arithmetic of the trefoil is not reproduced",
+      "Meshes above 65535 points, undefined welds and a nonfinite radius or size are None",
+      "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+    ],
+    "api_id": "raylib:function:GenMeshKnot",
+    "milestone": "models"
+  },
   "GenMeshHeightmap": {
     "jonlib": "Mesh.gen_heightmap_for / Mesh.gen_heightmap",
     "status": "profile-covered",

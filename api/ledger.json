@@ -57305,25 +57305,30 @@
       "milestone": "models",
       "phase": 5,
       "sequence": 22,
-      "status": "blocked",
-      "jonlib": "Model.gen_mesh_knot",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract.",
+      "status": "partial",
+      "jonlib": "Mesh.gen_knot_for / Mesh.gen_knot",
+      "mapping_state": "implemented",
+      "scope": "par_shapes trefoil knot (radSeg x sides, radius clamped to 0.5f..3) with welded normals, scaled by size and unrolled; fewer than 3 of either give the empty mesh.",
       "gaps": [
-        "A verified binary64 cos/sin per profile",
-        "Port par_shapes with the profiled qsort"
+        "M.Glibc239Libm only: the trefoil takes the binary64 cos and sin, and the weld sorts with glibc's qsort; other profiles are None",
+        "M.Fused{} is None: the contracted arithmetic of the trefoil is not reproduced",
+        "Meshes above 65535 points, undefined welds and a nonfinite radius or size are None",
+        "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
-      "blocker": "The trefoil's parametric function (a dozen binary64 operations a point with the profile's cos and sin) is not ported; the binary64 functions and the disk machinery exist (GenMeshCylinder).",
+      "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
-        "targets": "unverified",
+        "targets": "partial",
         "performance": "unverified"
       },
       "evidence": [
-        "docs/MODELS.md"
+        "tools/mesh_tube_probe.py",
+        "docs/MODELS.md",
+        "src/par_shapes.bend",
+        "src/lgpl/sin.bend"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -57340,7 +57345,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Mesh/model data, transforms, topology, import/export, rendered scenes and allocation/upload/unload lifecycles.",
-      "next_step": "Resolve: The trefoil's parametric function (a dozen binary64 operations a point with the profile's cos and sin) is not ported; the binary64 functions and the disk machinery exist (GenMeshCylinder).",
+      "next_step": "Close documented gaps and unverified gates for GenMeshKnot.",
       "priority": 622
     },
     {

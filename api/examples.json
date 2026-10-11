@@ -4324,7 +4324,7 @@
   {
    "name": "models_mesh_generation",
    "category": "models",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -4363,9 +4363,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "GenMeshKnot"
-   ]
+   "missing": []
   },
   {
    "name": "models_mesh_picking",

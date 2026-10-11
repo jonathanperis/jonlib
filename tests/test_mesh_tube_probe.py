@@ -11,13 +11,13 @@ class MeshTubeProbeTests(unittest.TestCase):
         items = probe.cases()
         ids = [item['id'] for item in items]
         self.assertEqual(len(ids), len(set(ids)))
-        cylinders = [item['id'][len('cylinder'):] for item in items if not item['cone']]
-        cones = [item['id'][len('cone'):] for item in items if item['cone']]
+        cylinders = [item['id'][len('cylinder'):] for item in items if item['kind'] == 'cylinder']
+        cones = [item['id'][len('cone'):] for item in items if item['kind'] == 'cone']
         self.assertEqual(cylinders, cones)
-        self.assertEqual({item['slices'] for item in items if item['contract'] is None}, set(probe.SLICES) | {6})
+        self.assertEqual({item['slices'] for item in items if item['contract'] is None and item['kind'] != 'knot'}, set(probe.SLICES) | {6})
 
     def test_equal_and_unequal_sizes_and_zero_scales_are_compared(self):
-        compared = [item for item in probe.cases() if item['contract'] is None]
+        compared = [item for item in probe.cases() if item['contract'] is None and item['kind'] != 'knot']
         self.assertTrue(any(item['radius'] == item['height'] for item in compared))
         self.assertTrue(any(item['radius'] != item['height'] for item in compared))
         zero = probe.bits(0.0)
@@ -28,15 +28,26 @@ class MeshTubeProbeTests(unittest.TestCase):
     def test_the_contracts_name_the_profiles_and_the_empty_mesh(self):
         contracts = [item for item in probe.cases() if item['contract'] is not None]
         self.assertEqual({item['profile'] for item in contracts}, {'host', 'fused', 'AppleLibm', 'Glibc241Libm'})
-        empty = [item for item in contracts if item['slices'] < 3]
+        small = lambda item: item['slices'] < 3 or item.get('sides', 3) < 3
+        empty = [item for item in contracts if small(item)]
         self.assertEqual({item['contract'] for item in empty}, {'M0 0 811c9dc5 811c9dc5 811c9dc5'})
-        self.assertEqual({item['contract'] for item in contracts if item['slices'] >= 3}, {'null'})
+        self.assertEqual({item['contract'] for item in contracts if not small(item)}, {'null'})
 
     def test_a_call_names_the_arithmetic_and_the_profile(self):
         items = {item['id']: item for item in probe.cases()}
         self.assertIn('J.Mesh.gen_cone_for(M.Fused{}, M.Glibc239Libm{}', probe.call(items['cone-fused'], 'Glibc239Libm'))
         self.assertIn('J.Mesh.gen_cylinder_for(M.Uncontracted{}, M.AppleLibm{}', probe.call(items['cylinder-apple'], 'Glibc239Libm'))
         self.assertIn(', 40)', probe.call(items['cylinder-40-1.0-2.0'], 'Glibc239Libm'))
+
+    def test_the_knots_include_the_examples_one_and_the_clamped_radii(self):
+        knots = [item for item in probe.cases() if item['kind'] == 'knot']
+        compared = [item for item in knots if item['contract'] is None]
+        self.assertIn((probe.bits(1.0), probe.bits(2.0), 16, 128), [(k['radius'], k['height'], k['slices'], k['sides']) for k in compared])
+        self.assertTrue(any(k['radius'] == probe.bits(0.2) for k in compared))
+        self.assertTrue(any(k['radius'] == probe.bits(5.0) for k in compared))
+        self.assertEqual({k['contract'] for k in knots if k['contract'] is not None}, {'null', probe.EMPTY})
+        self.assertEqual(probe.call(compared[0], 'Glibc239Libm'), f'J.Mesh.gen_knot_for(M.Uncontracted{{}}, M.Glibc239Libm{{}}, float({probe.bits(1.0)}), float({probe.bits(2.0)}), 16, 128)')
+        self.assertEqual(probe.native_call(compared[0]), f'GenMeshKnot(bf({probe.bits(1.0)}u), bf({probe.bits(2.0)}u), 16, 128)')
 
 
 if __name__ == '__main__':
