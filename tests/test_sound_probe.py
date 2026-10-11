@@ -1,0 +1,139 @@
+import struct
+import sys
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
+import sound_probe as sp
+
+HALF = sp.bits(0.5)
+ONE = sp.bits(1.0)
+
+
+def catalog():
+    """Converted waves a reference pass could have given: two samples per frame."""
+    table, out = sp.waves(), {}
+    for name, (frames, rate, size, channels, data, refusal) in table.items():
+        if refusal is not None:
+            out['wave', name] = refusal
+        elif name == 'zero':
+            out['wave', name] = None
+        elif frames == 0 or channels == 0 or rate == 0:
+            out['wave', name] = (0, [])
+        else:
+            out['wave', name] = (frames, list(range(2 * frames)))
+    for name in ('boom', 'buttonfx', 'sound', 'coin', 'tiny'):
+        out['file', name] = (3, [1, 2, 3, 4, 5, 6])
+    for name in sp.FILE_ERRORS:
+        out['file', name] = (0, [])
+    return out
+
+
+def run(*steps):
+    model = sp.Model(catalog())
+    tags = [model.step(step) for step in steps]
+    return model, tags
+
+
+class SoundModelTests(unittest.TestCase):
+    def test_the_device_opens_at_full_volume_and_closes_to_zero(self):
+        model, _ = run(('master', HALF), ('init',))
+        self.assertEqual((model.ready, model.master, model.undefined), (True, ONE, False))
+        model, _ = run(('init',), ('master', sp.bits(-1.0)), ('master', sp.NAN), ('close',), ('master', HALF), ('close',))
+        self.assertEqual((model.ready, model.master, model.undefined), (False, HALF, False))
+        model, _ = run(('init',), ('master', HALF), ('init',))
+        self.assertEqual((model.master, model.undefined), (HALF, True))
+
+    def test_a_sound_is_a_tracked_buffer_over_a_block(self):
+        model, tags = run(('init',), ('load', 0, 'mono16'), ('load', 1, 'zero'), ('load', 2, 'noframes'), ('alias', 3, 0))
+        self.assertEqual(tags, ['-'] * 5)
+        self.assertEqual(model.sounds, [(1, 8, 48000, 32, 2), sp.ZERO, (2, 0, 48000, 32, 2), (3, 8, 48000, 32, 2)])
+        self.assertEqual([(b['id'], b['block'], b['frames']) for b in model.buffers], [(1, 1, 8), (2, 0, 0), (3, 1, 8)])
+        self.assertEqual((list(model.blocks), model.undefined), ([1], False))
+        self.assertEqual(model.state(), 'R1 M%d S1,8,48000,32,2,1,0 S0,0,0,0,0,0,0 S2,0,48000,32,2,0,0 S3,8,48000,32,2,1,0 B1,1,8,%d,%d,0,0,0,%d B2,0,0,%d,%d,0,0,0,- B3,1,8,%d,%d,0,0,0,%d'
+                         % (ONE, ONE, ONE, sp.fnv(range(16)), ONE, ONE, ONE, ONE, sp.fnv(range(16))))
+
+    def test_stop_leaves_a_paused_buffer(self):
+        model, _ = run(('init',), ('load', 0, 'mono16'), ('play', 0), ('pause', 0), ('stop', 0))
+        self.assertEqual((model.buffers[0]['playing'], model.buffers[0]['paused']), (True, True))
+        model.step(('resume', 0))
+        model.step(('stop', 0))
+        self.assertEqual((model.buffers[0]['playing'], model.buffers[0]['paused'], model.undefined), (False, False, False))
+
+    def test_volume_pitch_and_pan(self):
+        model, _ = run(('init',), ('load', 0, 'mono16'), ('volume', 0, sp.bits(-2.5)), ('pitch', 0, sp.bits(2.0)), ('pitch', 0, sp.bits(0.0)), ('pitch', 0, sp.NAN),
+                       ('pan', 0, sp.bits(7.0)))
+        self.assertEqual((model.buffers[0]['volume'], model.buffers[0]['pitch'], model.buffers[0]['pan'], model.undefined), (sp.bits(-2.5), sp.bits(2.0), ONE, False))
+        model.step(('pan', 0, sp.bits(-7.0)))
+        model.step(('pitch', 0, sp.bits(1e-5)))
+        self.assertEqual((model.buffers[0]['pitch'], model.buffers[0]['pan'], model.undefined), (sp.bits(2.0), sp.bits(-1.0), True))
+
+    def test_unload_frees_the_block_and_unload_alias_keeps_it(self):
+        model, _ = run(('init',), ('load', 0, 'mono16'), ('alias', 1, 0), ('unalias', 1))
+        self.assertEqual(([b['id'] for b in model.buffers], list(model.blocks), model.undefined), ([1], [1], False))
+        model, _ = run(('init',), ('load', 0, 'mono16'), ('alias', 1, 0), ('unload', 1))
+        self.assertEqual(([b['id'] for b in model.buffers], list(model.blocks), model.undefined), ([1], [], False))
+        self.assertTrue(model.state().endswith(',x'))
+        model.step(('alias', 2, 0))
+        self.assertEqual((model.sounds[2], model.undefined), (sp.ZERO, True))
+
+    def test_update_writes_the_shared_block_and_stops(self):
+        model, _ = run(('init',), ('load', 0, 'mono16'), ('alias', 1, 0), ('play', 0), ('play', 1), ('update', 0, 1, [7, 9]))
+        self.assertEqual((model.blocks[1][:4], model.buffers[0]['playing'], model.buffers[1]['playing'], model.undefined), ([7, 9, 2, 3], False, True, False))
+        for step in (('update', 0, 9, [0] * 18), ('update', 0, 1, [1]), ('update', 0, 0xFFFFFFFF, [])):
+            model, _ = run(('init',), ('load', 0, 'mono16'), ('play', 0), step)
+            self.assertEqual((model.blocks[1], model.buffers[0]['playing'], model.undefined), (list(range(16)), True, True))
+
+    def test_what_raylib_has_no_answer_for(self):
+        for steps, tags in (((('load', 0, 'mono16'),), ['device']), ((('init',), ('load', 0, 'size24')), ['-', 'request']),
+                            ((('init',), ('load', 0, 'nan')), ['-', 'data']), ((('init',), ('load', 0, 'hugerate')), ['-', 'unsupported']),
+                            ((('init',), ('load', 0, 'mono16'), ('unload', 0), ('play', 0)), ['-'] * 4), ((('init',), ('alias', 1, 0)), ['-'] * 2),
+                            ((('stop', 0),), ['-']), ((('init',), ('load', 0, 'mono16'), ('close',), ('pause', 0)), ['-'] * 4)):
+            model, got = run(*steps)
+            self.assertEqual((got, model.undefined), (tags, True), steps)
+        model, got = run(('init',), ('file', 0, 'missing'), ('file', 1, 'text'), ('file', 2, 'other'), ('file', 3, 'tiny'), ('play', 0), ('unload', 1))
+        self.assertEqual((got, model.undefined, model.sounds[:3]), (['-', 'file', 'header', 'unsupported', '-', '-', '-'], False, [sp.ZERO] * 3))
+        with self.assertRaises(ValueError):
+            run(('init',), ('load', 0, 'mono16'), ('play', 0), ('close',), ('init',))
+
+
+class SoundCasesTests(unittest.TestCase):
+    def test_every_case_is_named_for_whether_raylib_runs_it(self):
+        items = sp.cases()
+        ids = [item['id'] for item in items]
+        self.assertEqual(len(ids), len(set(ids)))
+        rows = [sp.expected(item, catalog()) for item in items]
+        self.assertEqual([item['id'] for item, row in zip(items, rows) if item['id'].startswith('refused-') == row[2]], [])
+        self.assertEqual((len(items), sum(row[2] for row in rows), sum(len(item['steps']) for item in items)), (41, 28, 370))
+        for tagged, plain, _ in rows:
+            self.assertEqual(';'.join(part.split(' ', 1)[1] for part in tagged.split(';')), plain)
+        used = {step[2] for item in items for step in item['steps'] if step[0] == 'load'}
+        self.assertEqual(used, set(sp.waves()))
+        self.assertEqual({step[2] for item in items for step in item['steps'] if step[0] == 'file'}, set(sp.FILES) | set(sp.FILE_ERRORS) | {'tiny'})
+
+    def test_the_reference_script_and_the_bend_steps(self):
+        table = sp.waves()
+        order = ['boom', 'tiny']
+        blob = sp.script([(False, [('init',), ('load', 2, 'mono16'), ('file', 1, 'tiny'), ('pan', 3, 5), ('update', 0, 1, [8, 9])])], table, order)
+        words = list(struct.unpack('<%dI' % (len(blob) // 4), blob))
+        self.assertEqual(words[:8], [1, 5, 0, 0, 0, 0, 0, 0])
+        self.assertEqual(words[8:23], [3, 2, 8, 48000, 10, 16, 1, 100, 65336, 300, 65136, 500, 64936, 700, 64736])
+        self.assertEqual(words[23:], [4, 1, 1, 0, 0, 9, 3, 6, 5, 0, 10, 0, 1, 0, 2, 8, 9])
+        paths = {'tiny': Path('/work/tiny.wav')}
+        self.assertEqual([sp.bend_step(step, table, paths) for step in (('close',), ('master', 7), ('load', 1, 'one'), ('file', 2, 'tiny'), ('alias', 1, 0), ('unalias', 3),
+                                                                        ('resume', 2), ('pitch', 0, 9), ('update', 1, 1, [4, 5]))],
+                         ['OpClose{}', 'OpMaster{7}', 'OpLoad{1, 1, 44100, 16, 1, [12345]}', 'OpFile{2, "/work/tiny.wav"}', 'OpAlias{1, 0}', 'OpUnalias{3}', 'OpAct{2, 3}',
+                          'OpTune{0, 5, 9}', 'OpUpdate{1, 1, [4, 5]}'])
+        keys, steps = sp.catalog_steps(table, order)
+        self.assertEqual((len(keys), len(steps), keys[-2:], steps[:4]),
+                         (16, 49, [('file', 'boom'), ('file', 'tiny')], [('init',), ('load', 0, 'mono16'), ('dump', 0), ('unload', 0)]))
+
+    def test_the_small_wav_file(self):
+        data = sp.tiny_wav()
+        self.assertEqual((data[:4], struct.unpack_from('<I', data, 4)[0] + 8, data[8:16]), (b'RIFF', len(data), b'WAVEfmt '))
+        self.assertEqual(struct.unpack_from('<IHHIIHH', data, 16), (16, 1, 1, 11025, 11025, 1, 8))
+        self.assertEqual((data[36:40], struct.unpack_from('<I', data, 40)[0], len(data)), (b'data', 10, 54))
+
+
+if __name__ == '__main__':
+    unittest.main()

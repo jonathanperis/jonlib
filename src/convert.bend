@@ -56,30 +56,47 @@ def ambiguous16(+v: U32) -> Bool:
   +p = ((R.float(v) + 0.0 : F32) * 32767.0 : F32)
   Bool.not((p > F32.neg(32768.0) : F32)) || (p >= 2147483648.0 : F32)
 
-def any_nan(values: +List<U32>) -> Bool:
+# The loops over a wave's samples and frames carry their result (lists in
+# reverse) so that their depth does not grow with the wave.
+def any_nan.go(values: +List<U32>, +found: Bool) -> Bool:
   match values:
-    case Nil{}: False{}
-    case Con{+v, rest}: is_nan(v) || any_nan(rest)
+    case Nil{}: found
+    case Con{+v, rest}: any_nan.go(rest, found || is_nan(v))
+
+def any_nan(values: +List<U32>) -> Bool:
+  any_nan.go(values, False{})
+
+def any_ambiguous16.go(values: +List<U32>, +found: Bool) -> Bool:
+  match values:
+    case Nil{}: found
+    case Con{+v, rest}: any_ambiguous16.go(rest, found || ambiguous16(v))
 
 def any_ambiguous16(values: +List<U32>) -> Bool:
+  any_ambiguous16.go(values, False{})
+
+def map.sample.go(values: +List<U32>, +kind: U32, acc: +List<U32>) -> +List<U32>:
   match values:
-    case Nil{}: False{}
-    case Con{+v, rest}: ambiguous16(v) || any_ambiguous16(rest)
+    case Nil{}: List.reverse(&2, U32, acc)
+    case Con{+v, rest}: map.sample.go(rest, kind, Con{sample(kind, v), acc})
 
 def map.sample(values: +List<U32>, +kind: U32) -> +List<U32>:
+  map.sample.go(values, kind, Nil{})
+
+def map.decode.go(values: +List<U32>, +s16: Bool, acc: +List<U32>) -> +List<U32>:
   match values:
-    case Nil{}: Nil{}
-    case Con{+v, rest}: Con{sample(kind, v), map.sample(rest, kind)}
+    case Nil{}: List.reverse(&2, U32, acc)
+    case Con{+v, rest}: map.decode.go(rest, s16, Con{Bool.pick(U32, s16, R.short(v), v), acc})
 
 def map.decode(values: +List<U32>, +s16: Bool) -> +List<U32>:
+  map.decode.go(values, s16, Nil{})
+
+def map.encode.go(values: +List<U32>, +s16: Bool, acc: +List<U32>) -> +List<U32>:
   match values:
-    case Nil{}: Nil{}
-    case Con{+v, rest}: Con{Bool.pick(U32, s16, R.short(v), v), map.decode(rest, s16)}
+    case Nil{}: List.reverse(&2, U32, acc)
+    case Con{+v, rest}: map.encode.go(rest, s16, Con{Bool.pick(U32, s16, (v .&. 65535 : U32), v), acc})
 
 def map.encode(values: +List<U32>, +s16: Bool) -> +List<U32>:
-  match values:
-    case Nil{}: Nil{}
-    case Con{+v, rest}: Con{Bool.pick(U32, s16, (v .&. 65535 : U32), v), map.encode(rest, s16)}
+  map.encode.go(values, s16, Nil{})
 
 # -----------------------------------------------------------------------------
 # Channel conversion with the default channel maps (ma_channel_converter).
@@ -199,27 +216,38 @@ def channel.frame(path: U32, +frame: +List<U32>, +table: +List<+List<U32>>, +f32
     case 1: repeat(U32.to_nat(cout), R.at(frame, 0))
     case _: mix.frame(table, frame, f32, fused)
 
-def channel.frames(frames: +List<+List<U32>>, +path: U32, +table: +List<+List<U32>>, +f32: Bool, +fused: Bool, +cin: U32, +cout: U32) -> +List<+List<U32>>:
+def channel.frames(frames: +List<+List<U32>>, +path: U32, +table: +List<+List<U32>>, +f32: Bool, +fused: Bool, +cin: U32, +cout: U32, acc: +List<+List<U32>>) -> +List<+List<U32>>:
   match frames:
-    case Nil{}: Nil{}
-    case Con{+frame, rest}: Con{channel.frame(path, frame, table, f32, fused, cin, cout), channel.frames(rest, path, table, f32, fused, cin, cout)}
+    case Nil{}: List.reverse(&2, +List<U32>, acc)
+    case Con{+frame, rest}: channel.frames(rest, path, table, f32, fused, cin, cout, Con{channel.frame(path, frame, table, f32, fused, cin, cout), acc})
 
 def channels.convert(+frames: +List<+List<U32>>, +f32: Bool, +fused: Bool, +cin: U32, +cout: U32) -> +List<+List<U32>>:
   +path = Bool.pick(U32, U32.is_eq(cout, 1), 0, Bool.pick(U32, U32.is_eq(cin, 1), 1, 2))
-  channel.frames(frames, path, Bool.pick(+List<+List<U32>>, U32.is_eq(path, 2), weights(U32.to_nat(cout), cin, cout, 0), Nil{}), f32, fused, cin, cout)
+  channel.frames(frames, path, Bool.pick(+List<+List<U32>>, U32.is_eq(path, 2), weights(U32.to_nat(cout), cin, cout, 0), Nil{}), f32, fused, cin, cout, Nil{})
 
 # -----------------------------------------------------------------------------
 # Frames
 
-def split(n: Nat, +c: Nat, +values: +List<U32>) -> +List<+List<U32>>:
+def split.go(n: Nat, +c: Nat, +values: +List<U32>, acc: +List<+List<U32>>) -> +List<+List<U32>>:
   match n:
-    case 0n: Nil{}
-    case 1n+k: Con{List.take(&2, U32, values, c), split(k, c, List.drop(&2, U32, values, c))}
+    case 0n: List.reverse(&2, +List<U32>, acc)
+    case 1n+k: split.go(k, c, List.drop(&2, U32, values, c), Con{List.take(&2, U32, values, c), acc})
+
+def split(n: Nat, +c: Nat, +values: +List<U32>) -> +List<+List<U32>>:
+  split.go(n, c, values, Nil{})
+
+def flat.frame(frame: +List<U32>, acc: +List<U32>) -> +List<U32>:
+  match frame:
+    case Nil{}: acc
+    case Con{+v, rest}: flat.frame(rest, Con{v, acc})
+
+def flat.go(frames: +List<+List<U32>>, acc: +List<U32>) -> +List<U32>:
+  match frames:
+    case Nil{}: List.reverse(&2, U32, acc)
+    case Con{frame, rest}: flat.go(rest, flat.frame(frame, acc))
 
 def flat(frames: +List<+List<U32>>) -> +List<U32>:
-  match frames:
-    case Nil{}: Nil{}
-    case Con{frame, rest}: List.append(&2, U32, frame, flat(rest))
+  flat.go(frames, Nil{})
 
 def gcd(n: Nat, +a: U32, +b: U32) -> U32:
   match n:

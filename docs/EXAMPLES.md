@@ -7,17 +7,12 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 193 ported, 4 ready, 15 waiting.
+Totals: 212 examples; 193 ported, 9 ready, 10 waiting.
 
 ## APIs that unblock the most examples
 
 | API | Examples waiting on it |
 |---|---|
-| `CloseAudioDevice` | 12 |
-| `InitAudioDevice` | 12 |
-| `LoadSound` | 6 |
-| `PlaySound` | 6 |
-| `UnloadSound` | 5 |
 | `LoadMusicStream` | 4 |
 | `PlayMusicStream` | 4 |
 | `UnloadMusicStream` | 4 |
@@ -45,14 +40,16 @@ Totals: 212 examples; 193 ported, 4 ready, 15 waiting.
 | `GetWorkingDirectory` | 1 |
 | `GuiGetFont` | 1 |
 | `GuiListViewEx` | 1 |
-| `IsSoundPlaying` | 1 |
 | `LoadDirectoryFiles` | 1 |
 | `LoadDirectoryFilesEx` | 1 |
-| `LoadSoundAlias` | 1 |
 | `LoadVrStereoConfig` | 1 |
 | `SetAudioStreamCallback` | 1 |
 | `SetAudioStreamPan` | 1 |
 | `SetMusicPan` | 1 |
+| `SetMusicPitch` | 1 |
+| `SetMusicVolume` | 1 |
+| `UnloadDirectoryFiles` | 1 |
+| `UnloadVrStereoConfig` | 1 |
 
 ## Examples
 
@@ -162,8 +159,8 @@ Totals: 212 examples; 193 ported, 4 ready, 15 waiting.
 | `textures_npatch_drawing` | textures | ported |  |
 | `textures_background_scrolling` | textures | ported |  |
 | `textures_sprite_animation` | textures | ported |  |
-| `textures_sprite_button` | textures | waiting | `CloseAudioDevice`, `InitAudioDevice`, `LoadSound`, `PlaySound`, `UnloadSound` |
-| `textures_sprite_explosion` | textures | waiting | `CloseAudioDevice`, `InitAudioDevice`, `LoadSound`, `PlaySound`, `UnloadSound` |
+| `textures_sprite_button` | textures | ready |  |
+| `textures_sprite_explosion` | textures | ready |  |
 | `textures_bunnymark` | textures | ported |  |
 | `textures_mouse_painting` | textures | ported |  |
 | `textures_blend_modes` | textures | ported |  |
@@ -260,13 +257,13 @@ Totals: 212 examples; 193 ported, 4 ready, 15 waiting.
 | `shaders_game_of_life` | shaders | ready |  |
 | `shaders_rlgl_compute` | shaders | ported |  |
 | `shaders_cel_shading` | shaders | ported |  |
-| `audio_module_playing` | audio | waiting | `CloseAudioDevice`, `GetMusicTimeLength`, `GetMusicTimePlayed`, `InitAudioDevice`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `SetMusicPitch`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
-| `audio_music_stream` | audio | waiting | `CloseAudioDevice`, `GetMusicTimeLength`, `GetMusicTimePlayed`, `InitAudioDevice`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `SetMusicPan`, `SetMusicVolume`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
-| `audio_raw_stream` | audio | waiting | `CloseAudioDevice`, `InitAudioDevice`, `IsAudioStreamProcessed`, `LoadAudioStream`, `PlayAudioStream`, `SetAudioStreamBufferSizeDefault`, `SetAudioStreamPan`, `UnloadAudioStream`, `UpdateAudioStream` |
-| `audio_sound_loading` | audio | waiting | `CloseAudioDevice`, `InitAudioDevice`, `LoadSound`, `PlaySound`, `UnloadSound` |
-| `audio_mixed_processor` | audio | waiting | `AttachAudioMixedProcessor`, `CloseAudioDevice`, `DetachAudioMixedProcessor`, `InitAudioDevice`, `LoadMusicStream`, `LoadSound`, `PlayMusicStream`, `PlaySound`, `UnloadMusicStream`, `UpdateMusicStream` |
-| `audio_stream_effects` | audio | waiting | `AttachAudioStreamProcessor`, `CloseAudioDevice`, `DetachAudioStreamProcessor`, `GetMusicTimeLength`, `GetMusicTimePlayed`, `InitAudioDevice`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
-| `audio_sound_multi` | audio | waiting | `CloseAudioDevice`, `InitAudioDevice`, `LoadSound`, `LoadSoundAlias`, `PlaySound`, `UnloadSound`, `UnloadSoundAlias` |
-| `audio_sound_positioning` | audio | waiting | `CloseAudioDevice`, `InitAudioDevice`, `IsSoundPlaying`, `LoadSound`, `PlaySound`, `SetSoundPan`, `SetSoundVolume`, `UnloadSound` |
-| `audio_spectrum_visualizer` | audio | waiting | `CloseAudioDevice`, `InitAudioDevice`, `IsAudioStreamProcessed`, `LoadAudioStream`, `PlayAudioStream`, `SetAudioStreamBufferSizeDefault`, `UnloadAudioStream`, `UpdateAudioStream` |
-| `audio_stream_callback` | audio | waiting | `CloseAudioDevice`, `InitAudioDevice`, `LoadAudioStream`, `PlayAudioStream`, `SetAudioStreamBufferSizeDefault`, `SetAudioStreamCallback`, `UnloadAudioStream` |
+| `audio_module_playing` | audio | waiting | `GetMusicTimeLength`, `GetMusicTimePlayed`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `SetMusicPitch`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
+| `audio_music_stream` | audio | waiting | `GetMusicTimeLength`, `GetMusicTimePlayed`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `SetMusicPan`, `SetMusicVolume`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
+| `audio_raw_stream` | audio | waiting | `IsAudioStreamProcessed`, `LoadAudioStream`, `PlayAudioStream`, `SetAudioStreamBufferSizeDefault`, `SetAudioStreamPan`, `UnloadAudioStream`, `UpdateAudioStream` |
+| `audio_sound_loading` | audio | ready |  |
+| `audio_mixed_processor` | audio | waiting | `AttachAudioMixedProcessor`, `DetachAudioMixedProcessor`, `LoadMusicStream`, `PlayMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
+| `audio_stream_effects` | audio | waiting | `AttachAudioStreamProcessor`, `DetachAudioStreamProcessor`, `GetMusicTimeLength`, `GetMusicTimePlayed`, `LoadMusicStream`, `PauseMusicStream`, `PlayMusicStream`, `ResumeMusicStream`, `StopMusicStream`, `UnloadMusicStream`, `UpdateMusicStream` |
+| `audio_sound_multi` | audio | ready |  |
+| `audio_sound_positioning` | audio | ready |  |
+| `audio_spectrum_visualizer` | audio | waiting | `IsAudioStreamProcessed`, `LoadAudioStream`, `PlayAudioStream`, `SetAudioStreamBufferSizeDefault`, `UnloadAudioStream`, `UpdateAudioStream` |
+| `audio_stream_callback` | audio | waiting | `LoadAudioStream`, `PlayAudioStream`, `SetAudioStreamBufferSizeDefault`, `SetAudioStreamCallback`, `UnloadAudioStream` |

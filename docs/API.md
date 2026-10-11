@@ -79,7 +79,9 @@ Path utilities and file data/text/code IO (`Files.*`) are documented in
 Trace logging and the memory helpers (`Log.*`, `Memory.*`) are documented in
 [LOGGING.md](LOGGING.md).
 Audio waves (`Wave.*`: WAV loading, crop, format conversion, samples and
-export) are documented in [AUDIO.md](AUDIO.md).
+export) and the audio device and sounds (`AudioDevice.*`, `Sound.*`: the device
+state, sounds and aliases over shared samples, their playing state, volume,
+pitch and pan; nothing is mixed yet) are documented in [AUDIO.md](AUDIO.md).
 Input, automation events, frame timing and gestures (`Core.*`: the CORE state
 with an explicit clock, EndDrawing's timing and polling, GetFPS, automation
 recording/playback; `Input.*`: keyboard, mouse, touch and gamepads;

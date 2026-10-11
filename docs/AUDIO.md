@@ -1,7 +1,8 @@
-# Audio waves
+# Audio waves and sounds
 
 Jonlib adapts raylib 6.0's `raudio.c` Wave functions as `Wave.*` in
-`jonlib.bend`. A `Wave{frames, rate, size, channels, data}` holds raylib's
+`jonlib.bend`, and its device and Sound functions as `AudioDevice.*` and `Sound.*`
+([below](#audio-device-and-sounds)). A `Wave{frames, rate, size, channels, data}` holds raylib's
 fields and its interleaved samples, one per element: unsigned 8-bit, signed
 16-bit (stored as the 16-bit pattern) or F32 bits for sample sizes 8, 16 and 32.
 It is plain `Data`: copying a Wave copies its samples.
@@ -275,5 +276,98 @@ raylib on every case it converts and classifies the refusals above; at least
 undefined or huge (wrong widths and lengths, 2^31 rates, 2^25 output samples)
 are Jonlib contracts only.
 
-Not yet available: OGG, MP3, FLAC, XM and MOD data, and sounds, music and
-audio devices. Gaps of `WaveFormat`: the refusals above, and no GPU evidence.
+The conversion's loops over samples and frames carry their results, so a
+wave's length does not grow their depth: the examples' sounds (up to 48000
+stereo frames out) convert on every lane, JavaScript included, through
+`Sound.load` (gate `sound`, below).
+
+Not yet available: OGG, MP3, FLAC, XM and MOD data, music and audio streams,
+and the mixer (below). Gaps of `WaveFormat`: the refusals above, and no GPU
+evidence.
+
+## Audio device and sounds
+
+An `AudioDevice` value is the state `raudio.c` keeps in its `AUDIO` global: whether
+the device is ready, miniaudio's master volume factor, and the tracked audio
+buffers in the order raudio tracks them. It is plain `Data` that a program
+threads through the functions below; `AudioDevice.none()` is the state before
+`InitAudioDevice`. (It is not Base's `Audio`, a host output that Jonlib does
+not open yet.) The device is raylib's: 32-bit float samples, two channels,
+48000 Hz. **Nothing is sent to a host device and no time passes**: a sound
+that plays stays at its start until the mixer is ported, so `Sound.is_playing`
+is what raylib answers before its device thread has mixed a frame.
+
+A `Sound{stream, frames}` is raylib's handle. Its `AudioStream{buffer, rate,
+size, channels}` names a tracked buffer by number (0 is raylib's NULL;
+buffers are numbered from 1 in the order they are made). A buffer has a
+volume, a pitch, a pan, its playing and paused flags and a block of samples
+(F32 bits, two per frame) that a sound and its aliases share.
+
+| Function | raylib | Contract |
+|---|---|---|
+| `AudioDevice.init(device)` | `InitAudioDevice` | The device becomes ready with a master volume of 1. A ready device stays as it is (raylib initializes its mutex and device again in place). |
+| `AudioDevice.close(device)` | `CloseAudioDevice` | A ready device becomes unready and its master volume 0; the buffers stay tracked, as raylib leaves them. |
+| `AudioDevice.is_ready(device)` | `IsAudioDeviceReady` | |
+| `AudioDevice.set_master_volume(device, volume)` / `master_volume` | `SetMasterVolume` / `GetMasterVolume` | Any volume that is not below 0 is kept (NaN included), ready device or not. |
+| `Sound.load_from_wave_for(profile, device, wave)` / `load_from_wave` | `LoadSoundFromWave` | The wave converted as `WaveFormat(wave, 48000, 32, 2)` converts it (the same `ma_convert_frames` calls) in a new tracked buffer. `load_from_wave` uses `M.Uncontracted{}`. |
+| `Sound.load_for(profile, device, path)` / `load` | `LoadSound` | `Wave.load` then the above. |
+| `Sound.load_alias(device, source)` | `LoadSoundAlias` | A new tracked buffer with its own volume, pitch, pan and state over the source's block, and the source handle's frame count. |
+| `Sound.is_valid(sound)` | `IsSoundValid` | Frames, buffer, sample rate, sample size and channels all nonzero. |
+| `Sound.unload(device, sound)` | `UnloadSound` | The buffer is untracked and its block freed, even a block other buffers still play. |
+| `Sound.unload_alias(device, alias)` | `UnloadSoundAlias` | The buffer is untracked; its block stays. |
+| `Sound.play` / `stop` / `pause` / `resume` | `PlaySound` ... | Play: playing, not paused. Stop: a playing buffer stops; a paused one stays as it is (raylib only stops buffers that are playing and not paused). |
+| `Sound.is_playing(device, sound)` | `IsSoundPlaying` | Playing and not paused. |
+| `Sound.set_volume` / `set_pitch` / `set_pan` | `SetSoundVolume` ... | Any volume; pitches above 0; pans clamped to -1..1 (NaN stays). |
+| `Sound.update(device, sound, data, frames)` | `UpdateSound` | The buffer stops and the first `frames` frames of its block become `data` (F32 bits, two per frame), for every buffer over that block. |
+| `Sound.data(device, sound)` | (the buffer's memory) | The samples a sound's buffer plays, if it has any. |
+
+`Sound.load_from_wave` and `Sound.load` return the `AudioDevice` and a
+`Result`:
+
+- **The zero sound** (`Sound.none()`, nothing tracked) for the zero wave
+  (frames, rate, size and channels 0 and no samples), which stands for
+  raylib's failed `LoadWave` and its NULL data.
+- **An invalid sound over an empty tracked buffer** for a wave that converts
+  to no frames: no frames, no channels, or a zero rate.
+- `SoundDeviceNotReady` on an unready device, where raylib converts to the
+  zeroed device's rate and tracks through a mutex that does not exist.
+- `SoundWaveError` for a file `Wave.load` fails on (raylib returns the zero
+  sound: missing files, bad data; and OGG, MP3, FLAC, XM and MOD files,
+  which raylib loads and Jonlib does not yet) and for a wave `WaveFormat`
+  refuses (above).
+
+Steps raylib has no defined answer for leave the `AudioDevice` as it is, and
+`Sound.load_alias` then gives the zero sound: every buffer operation on an
+unready device (raylib locks a mutex that does not exist); a handle whose
+buffer is 0 where raylib dereferences it (`LoadSoundAlias`) or whose buffer
+was unloaded (freed memory); an alias of a buffer whose block was freed;
+`UpdateSound` past the buffer, with a negative count, from a list that is not
+`2*frames` long, on a freed block or on a buffer without samples; and a pitch
+whose output rate `48000/pitch` does not fit an unsigned int (raylib's cast is
+undefined).
+
+### How it is verified
+
+`tools/sound_probe.py` (gate `sound`) compiles `raudio.c` itself into the
+reference program, with `-ffp-contract=off` and only miniaudio's null
+backend, so that the program can read `AUDIO` and the audio buffers, and
+stops the device right after `InitAudioDevice` so that nothing is mixed. 41
+scripts of 370 steps over four sound slots run on both sides and on a Python
+model of raudio's state; after every step the ready flag, the master volume
+bits, every slot's handle fields with `IsSoundValid` and `IsSoundPlaying`,
+and every tracked buffer (its number, block, size, volume, pitch and pan
+bits, flags and an FNV-1a hash of its samples) must be equal. The waves are
+8-, 16- and 32-bit, of 1, 2, 4 and 6 channels, at 48000, 8000, 22050, 44100
+and 96000 Hz, with the empty cases above, and the files are the four `.wav`
+files of the examples that only play sounds (`boom`, `buttonfx`, `sound`,
+`coin`; 26522 to 48000 frames each), a small generated one, a missing one,
+one that is not a WAV and another extension. 28 scripts are compared with
+raylib; the 13 with a step raylib has no defined answer for are checked
+against the model on Jonlib alone. `IsSoundPlaying` is asked of raylib only on
+a ready device and for a tracked buffer, and no script opens the device over
+a playing buffer (raylib would mix it before the reference can stop it). CPU-1,
+CPU-2 and JavaScript.
+
+Not yet available: the mixer and its clock (`Sound.is_playing` never becomes
+false by itself; pitch and pan have no audible effect yet), audio streams and
+music, and a host device. No GPU evidence.

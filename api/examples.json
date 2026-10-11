@@ -3085,7 +3085,7 @@
   {
    "name": "textures_sprite_button",
    "category": "textures",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "CheckCollisionPointRec",
@@ -3109,18 +3109,12 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "CloseAudioDevice",
-    "InitAudioDevice",
-    "LoadSound",
-    "PlaySound",
-    "UnloadSound"
-   ]
+   "missing": []
   },
   {
    "name": "textures_sprite_explosion",
    "category": "textures",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -3142,13 +3136,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "CloseAudioDevice",
-    "InitAudioDevice",
-    "LoadSound",
-    "PlaySound",
-    "UnloadSound"
-   ]
+   "missing": []
   },
   {
    "name": "textures_bunnymark",
@@ -6664,10 +6652,8 @@
    "libraries": [],
    "gui": [],
    "missing": [
-    "CloseAudioDevice",
     "GetMusicTimeLength",
     "GetMusicTimePlayed",
-    "InitAudioDevice",
     "LoadMusicStream",
     "PauseMusicStream",
     "PlayMusicStream",
@@ -6712,10 +6698,8 @@
    "libraries": [],
    "gui": [],
    "missing": [
-    "CloseAudioDevice",
     "GetMusicTimeLength",
     "GetMusicTimePlayed",
-    "InitAudioDevice",
     "LoadMusicStream",
     "PauseMusicStream",
     "PlayMusicStream",
@@ -6757,8 +6741,6 @@
    "libraries": [],
    "gui": [],
    "missing": [
-    "CloseAudioDevice",
-    "InitAudioDevice",
     "IsAudioStreamProcessed",
     "LoadAudioStream",
     "PlayAudioStream",
@@ -6771,7 +6753,7 @@
   {
    "name": "audio_sound_loading",
    "category": "audio",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -6790,13 +6772,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "CloseAudioDevice",
-    "InitAudioDevice",
-    "LoadSound",
-    "PlaySound",
-    "UnloadSound"
-   ]
+   "missing": []
   },
   {
    "name": "audio_mixed_processor",
@@ -6831,13 +6807,9 @@
    "gui": [],
    "missing": [
     "AttachAudioMixedProcessor",
-    "CloseAudioDevice",
     "DetachAudioMixedProcessor",
-    "InitAudioDevice",
     "LoadMusicStream",
-    "LoadSound",
     "PlayMusicStream",
-    "PlaySound",
     "UnloadMusicStream",
     "UpdateMusicStream"
    ]
@@ -6877,11 +6849,9 @@
    "gui": [],
    "missing": [
     "AttachAudioStreamProcessor",
-    "CloseAudioDevice",
     "DetachAudioStreamProcessor",
     "GetMusicTimeLength",
     "GetMusicTimePlayed",
-    "InitAudioDevice",
     "LoadMusicStream",
     "PauseMusicStream",
     "PlayMusicStream",
@@ -6894,7 +6864,7 @@
   {
    "name": "audio_sound_multi",
    "category": "audio",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
@@ -6915,20 +6885,12 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "CloseAudioDevice",
-    "InitAudioDevice",
-    "LoadSound",
-    "LoadSoundAlias",
-    "PlaySound",
-    "UnloadSound",
-    "UnloadSoundAlias"
-   ]
+   "missing": []
   },
   {
    "name": "audio_sound_positioning",
    "category": "audio",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
@@ -6961,16 +6923,7 @@
    ],
    "libraries": [],
    "gui": [],
-   "missing": [
-    "CloseAudioDevice",
-    "InitAudioDevice",
-    "IsSoundPlaying",
-    "LoadSound",
-    "PlaySound",
-    "SetSoundPan",
-    "SetSoundVolume",
-    "UnloadSound"
-   ]
+   "missing": []
   },
   {
    "name": "audio_spectrum_visualizer",
@@ -7019,8 +6972,6 @@
    "libraries": [],
    "gui": [],
    "missing": [
-    "CloseAudioDevice",
-    "InitAudioDevice",
     "IsAudioStreamProcessed",
     "LoadAudioStream",
     "PlayAudioStream",
@@ -7057,8 +7008,6 @@
    "libraries": [],
    "gui": [],
    "missing": [
-    "CloseAudioDevice",
-    "InitAudioDevice",
     "LoadAudioStream",
     "PlayAudioStream",
     "SetAudioStreamBufferSizeDefault",

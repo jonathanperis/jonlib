@@ -5778,6 +5778,58 @@
     "api_id": "raylib:function:GetRayCollisionQuad",
     "milestone": "collision"
   },
+  "InitAudioDevice": {
+    "jonlib": "AudioDevice.init",
+    "status": "profile-covered",
+    "scope": "raudio's AUDIO state as an AudioDevice value: the device becomes ready (32-bit float, stereo, 48000 Hz) with a master volume of 1; compared with raylib on miniaudio's null backend.",
+    "gaps": [
+      "No host audio device: an AudioDevice value is state only",
+      "A ready device stays as it is (raylib initializes its mutex and device again in place)",
+      "Device, context and mutex failures do not occur"
+    ],
+    "api_id": "raylib:function:InitAudioDevice",
+    "milestone": "audio-device"
+  },
+  "CloseAudioDevice": {
+    "jonlib": "AudioDevice.close",
+    "status": "profile-covered",
+    "scope": "A ready device becomes unready with a master volume of 0 and its buffers still tracked, as raylib leaves them; an unready one stays as it is.",
+    "gaps": [
+      "No host audio device: an AudioDevice value is state only"
+    ],
+    "api_id": "raylib:function:CloseAudioDevice",
+    "milestone": "audio-device"
+  },
+  "IsAudioDeviceReady": {
+    "jonlib": "AudioDevice.is_ready",
+    "status": "profile-covered",
+    "scope": "The ready flag InitAudioDevice sets and CloseAudioDevice clears.",
+    "gaps": [
+      "No host audio device: an AudioDevice value is state only"
+    ],
+    "api_id": "raylib:function:IsAudioDeviceReady",
+    "milestone": "audio-device"
+  },
+  "SetMasterVolume": {
+    "jonlib": "AudioDevice.set_master_volume",
+    "status": "profile-covered",
+    "scope": "miniaudio's master volume factor: any volume that is not below 0 is kept (NaN included), on a ready device or not.",
+    "gaps": [
+      "No mixer or clock: nothing is mixed and a playing sound stays at its start"
+    ],
+    "api_id": "raylib:function:SetMasterVolume",
+    "milestone": "audio-device"
+  },
+  "GetMasterVolume": {
+    "jonlib": "AudioDevice.master_volume",
+    "status": "profile-covered",
+    "scope": "The master volume factor: 0 before the device opens and after it closes, 1 when it opens.",
+    "gaps": [
+      "No host audio device: an AudioDevice value is state only"
+    ],
+    "api_id": "raylib:function:GetMasterVolume",
+    "milestone": "audio-device"
+  },
   "LoadWave": {
     "jonlib": "Wave.load",
     "status": "profile-covered",
@@ -5811,6 +5863,67 @@
     "api_id": "raylib:function:IsWaveValid",
     "milestone": "audio-codecs"
   },
+  "LoadSound": {
+    "jonlib": "Sound.load_for / Sound.load",
+    "status": "profile-covered",
+    "scope": "Wave.load then LoadSoundFromWave; the examples' .wav sounds (26522 to 48000 frames) compared sample by sample with raylib.",
+    "gaps": [
+      "SoundWaveError where raylib returns the zero sound (missing or bad files)",
+      "OGG, MP3, FLAC, XM and MOD files",
+      "SoundDeviceNotReady on an unready device",
+      "No mixer or clock: nothing is mixed and a playing sound stays at its start"
+    ],
+    "api_id": "raylib:function:LoadSound",
+    "milestone": "audio-device"
+  },
+  "LoadSoundFromWave": {
+    "jonlib": "Sound.load_from_wave_for / Sound.load_from_wave",
+    "status": "profile-covered",
+    "scope": "The wave converted to the device format as WaveFormat(wave, 48000, 32, 2) converts it (the same ma_convert_frames calls) in a new tracked buffer; the zero sound for the zero wave (raylib's NULL data); an invalid sound over an empty tracked buffer for a wave that converts to no frames; fields, tracking order and every sample compared with raylib.",
+    "gaps": [
+      "SoundDeviceNotReady on an unready device (raylib converts to the zeroed device rate)",
+      "SoundWaveError for the waves WaveFormat refuses",
+      "A wave without frames has no NULL/non-NULL data distinction beyond the zero wave",
+      "No mixer or clock: nothing is mixed and a playing sound stays at its start"
+    ],
+    "api_id": "raylib:function:LoadSoundFromWave",
+    "milestone": "audio-device"
+  },
+  "LoadSoundAlias": {
+    "jonlib": "Sound.load_alias",
+    "status": "profile-covered",
+    "scope": "A new tracked buffer with its own volume, pitch, pan and playing state over the source's block of samples, with the source handle's frame count; the zero sound for a source without samples.",
+    "gaps": [
+      "The zero sound where raylib reads NULL or freed memory: buffer 0, an unloaded buffer, a freed block",
+      "The zero sound on an unready device",
+      "No mixer or clock: nothing is mixed and a playing sound stays at its start"
+    ],
+    "api_id": "raylib:function:LoadSoundAlias",
+    "milestone": "audio-device"
+  },
+  "IsSoundValid": {
+    "jonlib": "Sound.is_valid",
+    "status": "profile-covered",
+    "scope": "Frames, buffer, sample rate, sample size and channels all nonzero.",
+    "gaps": [
+      "A buffer is a number (0 is NULL), not a pointer"
+    ],
+    "api_id": "raylib:function:IsSoundValid",
+    "milestone": "audio-device"
+  },
+  "UpdateSound": {
+    "jonlib": "Sound.update",
+    "status": "profile-covered",
+    "scope": "The buffer stops as StopSound stops it and the first frames of its block become the given F32 samples, for every buffer that shares the block.",
+    "gaps": [
+      "Requests raylib copies out of bounds for change nothing: more frames than the buffer, a negative count, a list that is not 2*frames long",
+      "A freed block and a buffer without samples change nothing",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+    ],
+    "api_id": "raylib:function:UpdateSound",
+    "milestone": "audio-device"
+  },
   "UnloadWave": {
     "jonlib": "Wave.unload",
     "status": "profile-covered",
@@ -5820,6 +5933,28 @@
     ],
     "api_id": "raylib:function:UnloadWave",
     "milestone": "audio-codecs"
+  },
+  "UnloadSound": {
+    "jonlib": "Sound.unload",
+    "status": "profile-covered",
+    "scope": "The buffer is untracked and its block freed, even a block other buffers still play; buffer 0 changes nothing.",
+    "gaps": [
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+    ],
+    "api_id": "raylib:function:UnloadSound",
+    "milestone": "audio-device"
+  },
+  "UnloadSoundAlias": {
+    "jonlib": "Sound.unload_alias",
+    "status": "profile-covered",
+    "scope": "The buffer is untracked and its block stays; buffer 0 changes nothing.",
+    "gaps": [
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+    ],
+    "api_id": "raylib:function:UnloadSoundAlias",
+    "milestone": "audio-device"
   },
   "ExportWave": {
     "jonlib": "Wave.to_wav / Wave.write",
@@ -5842,6 +5977,102 @@
     ],
     "api_id": "raylib:function:ExportWaveAsCode",
     "milestone": "audio-codecs"
+  },
+  "PlaySound": {
+    "jonlib": "Sound.play",
+    "status": "profile-covered",
+    "scope": "The buffer is playing and not paused.",
+    "gaps": [
+      "No mixer or clock: nothing is mixed and a playing sound stays at its start",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+    ],
+    "api_id": "raylib:function:PlaySound",
+    "milestone": "audio-device"
+  },
+  "StopSound": {
+    "jonlib": "Sound.stop",
+    "status": "profile-covered",
+    "scope": "A playing buffer stops; a paused buffer stays as it is, as raylib only stops buffers that are playing and not paused.",
+    "gaps": [
+      "No mixer or clock: nothing is mixed and a playing sound stays at its start",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+    ],
+    "api_id": "raylib:function:StopSound",
+    "milestone": "audio-device"
+  },
+  "PauseSound": {
+    "jonlib": "Sound.pause",
+    "status": "profile-covered",
+    "scope": "The buffer is paused, playing or not.",
+    "gaps": [
+      "No mixer or clock: nothing is mixed and a playing sound stays at its start",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+    ],
+    "api_id": "raylib:function:PauseSound",
+    "milestone": "audio-device"
+  },
+  "ResumeSound": {
+    "jonlib": "Sound.resume",
+    "status": "profile-covered",
+    "scope": "The buffer is not paused.",
+    "gaps": [
+      "No mixer or clock: nothing is mixed and a playing sound stays at its start",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+    ],
+    "api_id": "raylib:function:ResumeSound",
+    "milestone": "audio-device"
+  },
+  "IsSoundPlaying": {
+    "jonlib": "Sound.is_playing",
+    "status": "profile-covered",
+    "scope": "Playing and not paused: raylib's answer before its device thread has mixed a frame.",
+    "gaps": [
+      "No clock: a playing sound never ends by itself",
+      "False on an unready device and for an unloaded buffer"
+    ],
+    "api_id": "raylib:function:IsSoundPlaying",
+    "milestone": "audio-device"
+  },
+  "SetSoundVolume": {
+    "jonlib": "Sound.set_volume",
+    "status": "profile-covered",
+    "scope": "The buffer's volume: any float.",
+    "gaps": [
+      "No mixer or clock: nothing is mixed and a playing sound stays at its start",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+    ],
+    "api_id": "raylib:function:SetSoundVolume",
+    "milestone": "audio-device"
+  },
+  "SetSoundPitch": {
+    "jonlib": "Sound.set_pitch",
+    "status": "profile-covered",
+    "scope": "The buffer's pitch: any pitch above 0; others change nothing.",
+    "gaps": [
+      "A pitch whose rate 48000/pitch does not fit an unsigned int changes nothing (the cast is undefined)",
+      "The converter's output rate is not kept: no mixer yet",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+    ],
+    "api_id": "raylib:function:SetSoundPitch",
+    "milestone": "audio-device"
+  },
+  "SetSoundPan": {
+    "jonlib": "Sound.set_pan",
+    "status": "profile-covered",
+    "scope": "The buffer's pan, clamped to -1..1 (NaN stays).",
+    "gaps": [
+      "No mixer or clock: nothing is mixed and a playing sound stays at its start",
+      "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+      "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
+    ],
+    "api_id": "raylib:function:SetSoundPan",
+    "milestone": "audio-device"
   },
   "WaveCopy": {
     "jonlib": "Wave.copy",

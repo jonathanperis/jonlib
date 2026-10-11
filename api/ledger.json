@@ -5291,23 +5291,27 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "AudioStream",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "A tracked buffer's number (0 is NULL), sample rate, sample size and channels, as a Sound holds it.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No processor field",
+        "Audio streams themselves (LoadAudioStream and the rest) are not ported"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -5319,7 +5323,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive AudioStream semantics from the linked source, add a reference fixture, then implement AudioStream.",
+      "next_step": "Close documented gaps and unverified gates for AudioStream.",
       "priority": 100
     },
     {
@@ -5348,23 +5352,26 @@
       "milestone": "types",
       "phase": 0,
       "sequence": 0,
-      "status": "not-started",
+      "status": "partial",
       "jonlib": "Sound",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "mapping_state": "implemented",
+      "scope": "raylib's handle: an AudioStream and a frame count, plain Data.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The buffer is a number in an AudioDevice value, not a pointer"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -5375,7 +5382,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Check field/value/layout contracts and Bend ownership adaptations; connect each type/constant to its consuming API fixtures.",
-      "next_step": "Derive Sound semantics from the linked source, add a reference fixture, then implement Sound.",
+      "next_step": "Close documented gaps and unverified gates for Sound.",
       "priority": 100
     },
     {
@@ -58750,23 +58757,28 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.init_audio_device",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "AudioDevice.init",
+      "mapping_state": "implemented",
+      "scope": "raudio's AUDIO state as an AudioDevice value: the device becomes ready (32-bit float, stereo, 48000 Hz) with a master volume of 1; compared with raylib on miniaudio's null backend.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No host audio device: an AudioDevice value is state only",
+        "A ready device stays as it is (raylib initializes its mutex and device again in place)",
+        "Device, context and mutex failures do not occur"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -58778,7 +58790,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive InitAudioDevice semantics from the linked source, add a reference fixture, then implement Audio.init_audio_device.",
+      "next_step": "Close documented gaps and unverified gates for InitAudioDevice.",
       "priority": 520
     },
     {
@@ -58804,23 +58816,26 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.close_audio_device",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "AudioDevice.close",
+      "mapping_state": "implemented",
+      "scope": "A ready device becomes unready with a master volume of 0 and its buffers still tracked, as raylib leaves them; an unready one stays as it is.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No host audio device: an AudioDevice value is state only"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -58832,7 +58847,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive CloseAudioDevice semantics from the linked source, add a reference fixture, then implement Audio.close_audio_device.",
+      "next_step": "Close documented gaps and unverified gates for CloseAudioDevice.",
       "priority": 520
     },
     {
@@ -58858,23 +58873,26 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.is_audio_device_ready",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "AudioDevice.is_ready",
+      "mapping_state": "implemented",
+      "scope": "The ready flag InitAudioDevice sets and CloseAudioDevice clears.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No host audio device: an AudioDevice value is state only"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -58888,7 +58906,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive IsAudioDeviceReady semantics from the linked source, add a reference fixture, then implement Audio.is_audio_device_ready.",
+      "next_step": "Close documented gaps and unverified gates for IsAudioDeviceReady.",
       "priority": 520
     },
     {
@@ -58914,23 +58932,26 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.set_master_volume",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "AudioDevice.set_master_volume",
+      "mapping_state": "implemented",
+      "scope": "miniaudio's master volume factor: any volume that is not below 0 is kept (NaN included), on a ready device or not.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No mixer or clock: nothing is mixed and a playing sound stays at its start"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -58942,7 +58963,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive SetMasterVolume semantics from the linked source, add a reference fixture, then implement Audio.set_master_volume.",
+      "next_step": "Close documented gaps and unverified gates for SetMasterVolume.",
       "priority": 520
     },
     {
@@ -58968,23 +58989,26 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.get_master_volume",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "AudioDevice.master_volume",
+      "mapping_state": "implemented",
+      "scope": "The master volume factor: 0 before the device opens and after it closes, 1 when it opens.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No host audio device: an AudioDevice value is state only"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -58996,7 +59020,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive GetMasterVolume semantics from the linked source, add a reference fixture, then implement Audio.get_master_volume.",
+      "next_step": "Close documented gaps and unverified gates for GetMasterVolume.",
       "priority": 520
     },
     {
@@ -59208,23 +59232,29 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.load_sound",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Sound.load_for / Sound.load",
+      "mapping_state": "implemented",
+      "scope": "Wave.load then LoadSoundFromWave; the examples' .wav sounds (26522 to 48000 frames) compared sample by sample with raylib.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "SoundWaveError where raylib returns the zero sound (missing or bad files)",
+        "OGG, MP3, FLAC, XM and MOD files",
+        "SoundDeviceNotReady on an unready device",
+        "No mixer or clock: nothing is mixed and a playing sound stays at its start"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59241,7 +59271,7 @@
       ],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive LoadSound semantics from the linked source, add a reference fixture, then implement Audio.load_sound.",
+      "next_step": "Close documented gaps and unverified gates for LoadSound.",
       "priority": 520
     },
     {
@@ -59267,23 +59297,29 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.load_sound_from_wave",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Sound.load_from_wave_for / Sound.load_from_wave",
+      "mapping_state": "implemented",
+      "scope": "The wave converted to the device format as WaveFormat(wave, 48000, 32, 2) converts it (the same ma_convert_frames calls) in a new tracked buffer; the zero sound for the zero wave (raylib's NULL data); an invalid sound over an empty tracked buffer for a wave that converts to no frames; fields, tracking order and every sample compared with raylib.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "SoundDeviceNotReady on an unready device (raylib converts to the zeroed device rate)",
+        "SoundWaveError for the waves WaveFormat refuses",
+        "A wave without frames has no NULL/non-NULL data distinction beyond the zero wave",
+        "No mixer or clock: nothing is mixed and a playing sound stays at its start"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59298,7 +59334,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive LoadSoundFromWave semantics from the linked source, add a reference fixture, then implement Audio.load_sound_from_wave.",
+      "next_step": "Close documented gaps and unverified gates for LoadSoundFromWave.",
       "priority": 520
     },
     {
@@ -59324,23 +59360,28 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.load_sound_alias",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Sound.load_alias",
+      "mapping_state": "implemented",
+      "scope": "A new tracked buffer with its own volume, pitch, pan and playing state over the source's block of samples, with the source handle's frame count; the zero sound for a source without samples.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "The zero sound where raylib reads NULL or freed memory: buffer 0, an unloaded buffer, a freed block",
+        "The zero sound on an unready device",
+        "No mixer or clock: nothing is mixed and a playing sound stays at its start"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59354,7 +59395,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive LoadSoundAlias semantics from the linked source, add a reference fixture, then implement Audio.load_sound_alias.",
+      "next_step": "Close documented gaps and unverified gates for LoadSoundAlias.",
       "priority": 520
     },
     {
@@ -59380,23 +59421,26 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.is_sound_valid",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Sound.is_valid",
+      "mapping_state": "implemented",
+      "scope": "Frames, buffer, sample rate, sample size and channels all nonzero.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A buffer is a number (0 is NULL), not a pointer"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59411,7 +59455,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive IsSoundValid semantics from the linked source, add a reference fixture, then implement Audio.is_sound_valid.",
+      "next_step": "Close documented gaps and unverified gates for IsSoundValid.",
       "priority": 520
     },
     {
@@ -59437,23 +59481,29 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.update_sound",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Sound.update",
+      "mapping_state": "implemented",
+      "scope": "The buffer stops as StopSound stops it and the first frames of its block become the given F32 samples, for every buffer that shares the block.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "Requests raylib copies out of bounds for change nothing: more frames than the buffer, a negative count, a list that is not 2*frames long",
+        "A freed block and a buffer without samples change nothing",
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+        "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59467,7 +59517,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive UpdateSound semantics from the linked source, add a reference fixture, then implement Audio.update_sound.",
+      "next_step": "Close documented gaps and unverified gates for UpdateSound.",
       "priority": 520
     },
     {
@@ -59553,23 +59603,27 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.unload_sound",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Sound.unload",
+      "mapping_state": "implemented",
+      "scope": "The buffer is untracked and its block freed, even a block other buffers still play; buffer 0 changes nothing.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+        "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59583,7 +59637,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive UnloadSound semantics from the linked source, add a reference fixture, then implement Audio.unload_sound.",
+      "next_step": "Close documented gaps and unverified gates for UnloadSound.",
       "priority": 520
     },
     {
@@ -59609,23 +59663,27 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.unload_sound_alias",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Sound.unload_alias",
+      "mapping_state": "implemented",
+      "scope": "The buffer is untracked and its block stays; buffer 0 changes nothing.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+        "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59639,7 +59697,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive UnloadSoundAlias semantics from the linked source, add a reference fixture, then implement Audio.unload_sound_alias.",
+      "next_step": "Close documented gaps and unverified gates for UnloadSoundAlias.",
       "priority": 520
     },
     {
@@ -59791,23 +59849,28 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.play_sound",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Sound.play",
+      "mapping_state": "implemented",
+      "scope": "The buffer is playing and not paused.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No mixer or clock: nothing is mixed and a playing sound stays at its start",
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+        "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59821,7 +59884,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive PlaySound semantics from the linked source, add a reference fixture, then implement Audio.play_sound.",
+      "next_step": "Close documented gaps and unverified gates for PlaySound.",
       "priority": 520
     },
     {
@@ -59847,23 +59910,28 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.stop_sound",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Sound.stop",
+      "mapping_state": "implemented",
+      "scope": "A playing buffer stops; a paused buffer stays as it is, as raylib only stops buffers that are playing and not paused.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No mixer or clock: nothing is mixed and a playing sound stays at its start",
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+        "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59877,7 +59945,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive StopSound semantics from the linked source, add a reference fixture, then implement Audio.stop_sound.",
+      "next_step": "Close documented gaps and unverified gates for StopSound.",
       "priority": 520
     },
     {
@@ -59903,23 +59971,28 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.pause_sound",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Sound.pause",
+      "mapping_state": "implemented",
+      "scope": "The buffer is paused, playing or not.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No mixer or clock: nothing is mixed and a playing sound stays at its start",
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+        "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59933,7 +60006,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive PauseSound semantics from the linked source, add a reference fixture, then implement Audio.pause_sound.",
+      "next_step": "Close documented gaps and unverified gates for PauseSound.",
       "priority": 520
     },
     {
@@ -59959,23 +60032,28 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.resume_sound",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Sound.resume",
+      "mapping_state": "implemented",
+      "scope": "The buffer is not paused.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No mixer or clock: nothing is mixed and a playing sound stays at its start",
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+        "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -59989,7 +60067,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive ResumeSound semantics from the linked source, add a reference fixture, then implement Audio.resume_sound.",
+      "next_step": "Close documented gaps and unverified gates for ResumeSound.",
       "priority": 520
     },
     {
@@ -60015,23 +60093,27 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.is_sound_playing",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Sound.is_playing",
+      "mapping_state": "implemented",
+      "scope": "Playing and not paused: raylib's answer before its device thread has mixed a frame.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No clock: a playing sound never ends by itself",
+        "False on an unready device and for an unloaded buffer"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
         "ownership": "unverified",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -60046,7 +60128,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive IsSoundPlaying semantics from the linked source, add a reference fixture, then implement Audio.is_sound_playing.",
+      "next_step": "Close documented gaps and unverified gates for IsSoundPlaying.",
       "priority": 520
     },
     {
@@ -60072,23 +60154,28 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.set_sound_volume",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Sound.set_volume",
+      "mapping_state": "implemented",
+      "scope": "The buffer's volume: any float.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No mixer or clock: nothing is mixed and a playing sound stays at its start",
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+        "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -60102,7 +60189,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive SetSoundVolume semantics from the linked source, add a reference fixture, then implement Audio.set_sound_volume.",
+      "next_step": "Close documented gaps and unverified gates for SetSoundVolume.",
       "priority": 520
     },
     {
@@ -60128,23 +60215,29 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.set_sound_pitch",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Sound.set_pitch",
+      "mapping_state": "implemented",
+      "scope": "The buffer's pitch: any pitch above 0; others change nothing.",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "A pitch whose rate 48000/pitch does not fit an unsigned int changes nothing (the cast is undefined)",
+        "The converter's output rate is not kept: no mixer yet",
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+        "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -60158,7 +60251,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive SetSoundPitch semantics from the linked source, add a reference fixture, then implement Audio.set_sound_pitch.",
+      "next_step": "Close documented gaps and unverified gates for SetSoundPitch.",
       "priority": 520
     },
     {
@@ -60184,23 +60277,28 @@
       "milestone": "audio-device",
       "phase": 4,
       "sequence": 20,
-      "status": "not-started",
-      "jonlib": "Audio.set_sound_pan",
-      "mapping_state": "proposed",
-      "scope": "Entire declared contract, including conditional alternatives; detailed acceptance remains to be derived.",
+      "status": "partial",
+      "jonlib": "Sound.set_pan",
+      "mapping_state": "implemented",
+      "scope": "The buffer's pan, clamped to -1..1 (NaN stays).",
       "gaps": [
-        "Implementation and full contract/platform verification pending."
+        "No mixer or clock: nothing is mixed and a playing sound stays at its start",
+        "An unready device leaves the state as it is (raylib locks a mutex that does not exist)",
+        "A buffer that was unloaded leaves the state as it is (raylib uses freed memory)"
       ],
       "blocker": null,
       "gates": {
-        "availability": "unverified",
-        "behavior": "unverified",
-        "ownership": "unverified",
+        "availability": "partial",
+        "behavior": "partial",
+        "ownership": "partial",
         "integration": "unverified",
         "targets": "unverified",
         "performance": "unverified"
       },
-      "evidence": [],
+      "evidence": [
+        "tools/sound_probe.py",
+        "docs/AUDIO.md"
+      ],
       "gate_evidence": {},
       "target_results": {},
       "symbols": [],
@@ -60214,7 +60312,7 @@
       "api_dependencies": [],
       "related_declarations": [],
       "verification": "Offline mixing values plus device lifecycle, volume/pitch/pan, errors and playback-state integration.",
-      "next_step": "Derive SetSoundPan semantics from the linked source, add a reference fixture, then implement Audio.set_sound_pan.",
+      "next_step": "Close documented gaps and unverified gates for SetSoundPan.",
       "priority": 520
     },
     {
