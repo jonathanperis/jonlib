@@ -40,14 +40,15 @@ class EffectsProbeTests(unittest.TestCase):
             self.assertIn(probe.NAME, ep.IO_SETUP)
             self.assertIn(probe.NAME, ep.SCRATCH)
             self.assertEqual(ep.size_of(probe.NAME), (160, 90))
-            ep.DIRECTORIES[probe.NAME] = '/tmp/x/'
-            text = ep.render(probe.scripts(), 'Glibc239Libm', None, Path('/raylib'))([probe.NAME], False)
+            text = ep.render(probe.scripts(), 'Glibc239Libm', None, Path('/raylib'), {0: Path('/tmp/x0'), 1: Path('/tmp/x1')})([probe.NAME], False)
             self.assertIn('import ../../tools/reference/driver_effects.bend as Ex', text)
             self.assertIn('J.Program.replay_io(~Ex.State, ~Ex.program(M.Glibc239Libm{})', text)
-            self.assertIn('Ex.setup("/tmp/x/", core, frame)', text)
-            self.assertIn('J.Core.init_window_flags(0, 160, 90', text)
+            self.assertIn('def replay(+dir: String, script: +List<J.ReplayFrame>', text)
+            self.assertIn('Ex.setup(dir, core, frame)', text)
+            self.assertIn('replay("/tmp/x0/", script.0(), J.Core.init_window_flags(0, 160, 90', text)
+            self.assertIn('replay("/tmp/x1/", script.1(), ', text)
         finally:
-            for table in (ep.EXAMPLES, ep.MODULES, ep.SIZES, ep.DIRECTORIES):
+            for table in (ep.EXAMPLES, ep.MODULES, ep.SIZES):
                 table.pop(probe.NAME, None)
             for names in (ep.IO_SETUP, ep.EFFECTS, ep.SCRATCH):
                 names.discard(probe.NAME)
@@ -60,6 +61,56 @@ class EffectsProbeTests(unittest.TestCase):
         shadow = ep.render([item for item in ep.scripts() if item['example'] == 'shaders_shadowmap_rendering'], 'Glibc239Libm', None, Path('/raylib'))(
             ['shaders_shadowmap_rendering'], False)
         self.assertIn('J.Program.replay_io(~Ex.State', shadow)
+
+
+class ScratchScriptTests(unittest.TestCase):
+    """The examples that write files (tools/examples_probe.py's SCRATCH)."""
+
+    def items(self):
+        return [item for item in ep.scripts() if item['example'] == 'core_storage_values']
+
+    def test_a_script_gets_its_directory_after_its_seed(self):
+        items = self.items()
+        text = ep.render(items, 'Glibc239Libm', None, Path('/raylib'), {index: Path(f'/tmp/s{index}') for index in range(len(items))})(['core_storage_values'], False)
+        self.assertIn('def replay(+seed: U32, +dir: String, script: +List<J.ReplayFrame>', text)
+        self.assertIn('Ex.setup(seed, dir, core, frame)', text)
+        self.assertIn(f'replay({items[0]["seed"]}, "/tmp/s0/", script.0(), ', text)
+        self.assertIn('J.Program.replay_io(~Ex.State', text)
+
+    def test_the_undefined_scripts_start_from_files_and_name_their_frame(self):
+        names = {item['name']: item for item in self.items()}
+        self.assertEqual(set(ep.UNDEFINED_FROM) & set(names), {'core_storage_values-short', 'core_storage_values-odd'})
+        for name, cut in ep.UNDEFINED_FROM.items():
+            if name in names:
+                self.assertIn(name, ep.FILES)
+                self.assertLess(cut, len(names[name]['frames']))
+                self.assertEqual(ep.refusal(names[name], 'Glibc239Libm'), cut)
+                self.assertEqual(ep.refusal(names[name], 'AppleLibm'), cut)
+        self.assertEqual(len(ep.FILES['core_storage_values-short']['storage.data']), 4)
+        self.assertEqual(len(ep.FILES['core_storage_values-odd']['storage.data']) % 4, 2)
+        self.assertEqual(len(ep.FILES['core_storage_values-longer']['storage.data']), 12)
+        self.assertIsNone(ep.refusal(names['core_storage_values-values'], 'Glibc239Libm'))
+
+    def test_the_directories_are_emptied_and_given_their_files(self):
+        import tempfile
+
+        class Probe:
+            pass
+
+        with tempfile.TemporaryDirectory() as work:
+            probe = Probe()
+            probe.work = Path(work)
+            items = self.items()
+            short = next(index for index, item in enumerate(items) if item['name'] == 'core_storage_values-short')
+            for native in (False, True):
+                ep.scratch_reset(probe, items, native=native)
+                self.assertEqual(ep.scratch_left(probe, 0, native), {})
+                self.assertEqual(ep.scratch_left(probe, short, native), ep.FILES['core_storage_values-short'])
+                (ep.scratch(probe, 0, native) / 'storage.data').write_bytes(b'abcd')
+                self.assertEqual(ep.scratch_left(probe, 0, native), {'storage.data': b'abcd'})
+                ep.scratch_reset(probe, items, 'core_storage_values', native)
+                self.assertEqual(ep.scratch_left(probe, 0, native), {})
+            self.assertNotEqual(ep.scratch(probe, 0), ep.scratch(probe, 0, native=True))
 
 
 if __name__ == '__main__':

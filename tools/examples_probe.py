@@ -46,6 +46,16 @@ only runs what C defines: the wheel and rotation scripts are defined in C
 (raylib computes expf/logf and sinf/cosf), and shapes_basic_shapes, refused
 from its first frame, is not run natively. CPU-1, CPU-2 and JavaScript lanes.
 
+An example that writes files (SCRATCH: core_storage_values) runs each script
+in an empty directory of its own, the reference as its working directory and
+Jonlib as the directory its setup takes; the files left must have the same
+names and bytes on both sides. A script may start from files (FILES), and
+one that would take the native loop out of what C defines from some frame on
+(UNDEFINED_FROM: an int read or written past the data LoadFileData
+returned) is run natively up to that frame only; Jonlib must refuse from it.
+An example whose loop does IO is a J.Effects program, replayed with
+J.Program.replay_io.
+
 --interactive (diagnostic, needs a desktop session) instead builds each
 example and runs it in a Base window for --frames frames on CPU-1 and CPU-2,
 recording the frame rates the driver reports.
@@ -252,6 +262,7 @@ EXAMPLES = {
     'shaders_hybrid_rendering': ('shaders/shaders_hybrid_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shaders_depth_rendering': ('shaders/shaders_depth_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_shadowmap_rendering': ('shaders/shaders_shadowmap_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'core_storage_values': ('core/core_storage_values.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -330,9 +341,43 @@ PERSPECTIVE.add('shaders_hybrid_rendering')
 PERSPECTIVE.add('shaders_depth_rendering')
 # Examples whose loop does IO (a J.Effects program): replayed with J.Program.replay_io.
 EFFECTS = {'shaders_shadowmap_rendering'}
-# Programs of another probe (tools/effects_probe.py): the Bend module instead of examples/<name>.bend, the
-# directory given as RESOURCES instead of the example's, and the native run in a directory of its own.
-MODULES, DIRECTORIES, SCRATCH = {}, {}, set()
+# A program of another probe (tools/effects_probe.py) names its Bend module instead of examples/<name>.bend.
+MODULES = {}
+# Examples that write files: each script runs in an empty directory of its own, natively (its working
+# directory) and with Jonlib (the directory is the setup's RESOURCES), and both must leave the same files.
+# FILES are the files a script starts from; UNDEFINED_FROM is the frame from which Jonlib must refuse
+# because the native loop would leave what C defines there (the reference runs the frames before it).
+SCRATCH, FILES, UNDEFINED_FROM = set(), {}, {}
+# core_storage_values: storage.data is read and written in the loop. A file of three ints (-5, INT_MAX, 7) is
+# loaded and saved in place; a file of one int makes LoadStorageValue(1) read past it, and one of six bytes makes
+# SaveStorageValue(1) write past it (both refused from that frame).
+IO_SETUP.add('core_storage_values'); SEEDED.add('core_storage_values'); EFFECTS.add('core_storage_values'); SCRATCH.add('core_storage_values')
+FILES['core_storage_values-longer'] = {'storage.data': struct.pack('<iii', -5, 2147483647, 7)}
+FILES['core_storage_values-short'] = {'storage.data': struct.pack('<i', 1234)}
+FILES['core_storage_values-odd'] = {'storage.data': bytes(range(1, 7))}
+UNDEFINED_FROM['core_storage_values-short'] = 1
+UNDEFINED_FROM['core_storage_values-odd'] = 2
+
+
+def scratch(probe, index, native=False):
+    """The directory of script `index`: the native run's or the candidate's."""
+    return probe.work / f'files-{"native" if native else "candidate"}-{index}'
+
+
+def scratch_reset(probe, items, name=None, native=False):
+    """Empty the directories of the scripts of `name` (every SCRATCH example without one) and put their files."""
+    for index, item in enumerate(items):
+        if item['example'] in SCRATCH and name in (None, item['example']):
+            directory = scratch(probe, index, native)
+            shutil.rmtree(directory, ignore_errors=True)
+            directory.mkdir(parents=True)
+            for file, data in FILES.get(item['name'], {}).items():
+                (directory / file).write_bytes(data)
+
+
+def scratch_left(probe, index, native=False):
+    """The files of a script's directory: {name: bytes}."""
+    return {path.name: path.read_bytes() for path in sorted(scratch(probe, index, native).iterdir())}
 IO_SETUP.add('shaders_shadowmap_rendering'); PERSPECTIVE.add('shaders_shadowmap_rendering'); CONFIG_FLAGS['shaders_shadowmap_rendering'] = 32
 
 
@@ -1004,6 +1049,16 @@ def scripts():
         # The depth attachment drawn as a texture is a white rectangle on rlsw, whatever the free camera does (W
         # moves it, the pointer turns it): the help box over white.
         script('shaders_depth_rendering', 'white', [quick(), quick([key(KEY_W)]), quick([mouse_at(430, 240)]), slow([key(KEY_W, False)])]),
+        # SPACE with no file (0 and 0); R; ENTER creates the file with the score, then adds the high score; R;
+        # SPACE loads what was saved; R; ENTER with SPACE saves only, both ints in place; SPACE loads them.
+        script('core_storage_values', 'values', [quick(), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False), key(KEY_R)]), quick([key(KEY_R, False), key(KEY_ENTER)]),
+                                                 quick([key(KEY_ENTER, False), key(KEY_R)]), slow([key(KEY_R, False), key(KEY_SPACE)]),
+                                                 quick([key(KEY_SPACE, False), key(KEY_R)]), quick([key(KEY_R, False), key(KEY_ENTER), key(KEY_SPACE)]),
+                                                 quick([key(KEY_ENTER, False), key(KEY_SPACE, False)]), quick([key(KEY_SPACE)])], seed=0x5C0E),
+        script('core_storage_values', 'longer', [quick(), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False), key(KEY_R)]), quick([key(KEY_R, False), key(KEY_ENTER)]),
+                                                 quick([key(KEY_ENTER, False), key(KEY_SPACE)])], seed=77),
+        script('core_storage_values', 'short', [quick(), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)])], seed=1),
+        script('core_storage_values', 'odd', [quick(), quick([key(KEY_R)]), quick([key(KEY_R, False), key(KEY_ENTER)]), quick([key(KEY_ENTER, False)])], seed=2),
         # The arrow keys turn the light, which only the dropped shadow pass sees; F is read after EndDrawing, whose
         # poll has already made the press an old one (no screenshot in the script).
         script('shaders_shadowmap_rendering', 'light', [quick(), quick([key(KEY_LEFT)]), slow([key(KEY_LEFT, False), key(265)]), quick([key(265, False), key(70)]),
@@ -1252,6 +1307,8 @@ def refusal(item, libm):
     """The index of the first frame Jonlib refuses (None when none is; 'reported' to take Jonlib's own)."""
     if item['example'] in UNDEFINED_NATIVE:
         return 0
+    if item['name'] in UNDEFINED_FROM:
+        return UNDEFINED_FROM[item['name']]
     if item['example'] in REPORTED:
         return 'reported' if libm == 'AppleLibm' else None
     if item['example'] in PERSPECTIVE and libm == 'AppleLibm':
@@ -1477,14 +1534,14 @@ def build_reference(probe, name):
 
 def native_frames(probe, binary, index, item):
     path = probe.work / f'script-{index}.txt'
-    path.write_text(script_text(item))
+    # Only the frames C defines are run.
+    cut = UNDEFINED_FROM.get(item['name'])
+    path.write_text(script_text(item if cut is None else dict(item, frames=item['frames'][:cut])))
     source, _ = EXAMPLES[item['example']]
     in_module = item['example'] == 'textures_logo_raylib' or item['example'] in IO_SETUP
     cwd = probe.args.raylib_source / 'examples' / source.split('/')[0] if in_module else probe.work
     if item['example'] in SCRATCH:
-        cwd = probe.work / f'native-{index}'
-        shutil.rmtree(cwd, ignore_errors=True)
-        cwd.mkdir(parents=True)
+        cwd = scratch(probe, index, native=True)
     result = subprocess.run([str(binary)], cwd=cwd, env=dict(probekit.ENV, JONLIB_EXAMPLE_SCRIPT=str(path)), stdin=subprocess.DEVNULL,
                             capture_output=True, text=True, timeout=600)
     if result.returncode:
@@ -1689,20 +1746,23 @@ def bend_script(item):
     return '[' + ', '.join(frames) + ']'
 
 
-def render(items, libm, logo, raylib_source):
+def render(items, libm, logo, raylib_source, directories=None):
     """One program per example (actions are example names): every script of
-    the example, one output line each."""
+    the example, one output line each. `directories` gives a SCRATCH
+    example's scripts their directories, by script index."""
     def build(selected, gpu):
         if len(selected) != 1:
             raise ProbeFailure('examples: one example per batch')
         name = selected[0]
         _, setup = EXAMPLES[name]
         setup_params = '+seed: U32, ' if name in SEEDED else {'textures_logo_raylib': 'logo: Result<&1, &1, J.Surface.IOError, J.Surface>, '}.get(name, '')
+        if name in SCRATCH:
+            setup_params += '+dir: String, '
         io = name in IO_SETUP
         effects = name in EFFECTS
         if effects and not io:
             raise ProbeFailure(f'examples: {name}: an Effects program is replayed in IO (add it to IO_SETUP, its setup in IO)')
-        resources = json.dumps(DIRECTORIES.get(name, str(raylib_source / 'examples' / EXAMPLES[name][0].split('/')[0]) + '/'))
+        resources = 'dir' if name in SCRATCH else json.dumps(str(raylib_source / 'examples' / EXAMPLES[name][0].split('/')[0]) + '/')
         body = (PROGRAM.replace('MODULE', MODULES.get(name, f'../../examples/{name}.bend')).replace('READY', EFFECTS_READY if effects else PURE_READY)
                 .replace('REPLAY', EFFECTS_REPLAY if effects else IO_REPLAY if io else PURE_REPLAY).replace('EXAMPLE', name)
                 .replace('SETUP_PARAMS ', setup_params).replace('SETUP', setup).replace('LIBM', libm).replace('RESOURCES', resources))
@@ -1719,6 +1779,8 @@ def render(items, libm, logo, raylib_source):
             window = (f'J.Core.init_window_flags({flags}, {width}, {height}, f64({start >> 32}, {start & 0xFFFFFFFF})), '
                       f'J.Frame.init_window_flags({flags}, {width}, {height})')
             args = f'{item["seed"]}, ' if name in SEEDED else {'textures_logo_raylib': 'logo, '}.get(name, '')
+            if name in SCRATCH:
+                args += json.dumps(str(directories[index]) + '/') + ', '
             result = 'IO(String)' if io else 'String'
             calls.append(f'def script.{index}() -> +List<J.ReplayFrame>:\n  {bend_script(item)}\n\n'
                          f'def run.{index}({logo_param}) -> {result}:\n  replay({args}script.{index}(), {window})\n')
@@ -1798,8 +1860,19 @@ def main():
              and (not args.category or item['example'].split('_')[0] == args.category)]
     names = [name for name in EXAMPLES if any(item['example'] == name for item in items)]
     # A lane may take long: the JavaScript lane rasterizes a TTF font at size 96 in about 8 minutes.
-    lanes = probe.candidates(render(items, libm, logo, probe.args.raylib_source), names, batch=1, timeout=LANE_TIMEOUT,
-                             parse=lambda text, chosen: ['\n'.join(line for line in text.splitlines() if line.strip())])
+    scratch_reset(probe, items)
+    directories = {index: scratch(probe, index) for index, item in enumerate(items) if item['example'] in SCRATCH}
+    left = {}
+
+    def parse_lane(text, chosen, lane):
+        """The files a lane's scripts left; their directories are emptied for the next lane."""
+        for index, item in enumerate(items):
+            if item['example'] == chosen[0] and index in directories:
+                left[lane, item['name']] = scratch_left(probe, index)
+        scratch_reset(probe, items, chosen[0])
+        return ['\n'.join(line for line in text.splitlines() if line.strip())]
+
+    lanes = probe.candidates(render(items, libm, logo, probe.args.raylib_source, directories), names, batch=1, timeout=LANE_TIMEOUT, parse_lane=parse_lane)
 
     def reported(item):
         """The first frame the CPU-1 lane refused in this script (None when it refused none)."""
@@ -1810,7 +1883,8 @@ def main():
         frames_of = printed[scripts_of.index(item['name'])].split('|')[:-1]
         return next((k for k, frame in enumerate(frames_of) if frame == 'null null'), None)
 
-    rows_by_script, refused, binaries, unpredicted = [], {}, {}, []
+    rows_by_script, refused, binaries, unpredicted, native_left = [], {}, {}, [], {}
+    scratch_reset(probe, items, native=True)
     for index, item in enumerate(items):
         cut = refusal(item, libm)
         if cut == 'reported':
@@ -1823,6 +1897,8 @@ def main():
             if name not in binaries:
                 binaries[name] = build_reference(probe, name)
             rows = [expected_row(runs, *size_of(name)) for runs in native_frames(probe, binaries[name], index, item)]
+            if index in directories and cut is None:
+                native_left[item['name']] = scratch_left(probe, index, native=True)
         if cut is not None:
             rows = rows[:cut] + ['null null'] * (len(item['frames']) - cut)
         rows_by_script.append('|'.join(rows) + '|')
@@ -1839,10 +1915,13 @@ def main():
         return f'example {names[i]} ({len(wanted)} scripts expected, {len(got)} printed)'
 
     probe.compare(expected, lanes, describe=describe)
+    for (lane, script_name), files in left.items():
+        if script_name in native_left and files != native_left[script_name]:
+            raise ProbeFailure(f'examples: {script_name} on {lane} left {sorted(files)} with other names or bytes than the reference\'s {sorted(native_left[script_name])}')
     frames = sum(row.count('|') for row in rows_by_script)
     contract_frames = sum(row.count('null null') for row in rows_by_script)
     probe.finish(examples=len(names), scripts=len(items), frames=frames, compared_frames=frames - contract_frames,
-                 refused_frames=contract_frames, libm=libm, refusals=refused, reported_refusals=unpredicted,
+                 refused_frames=contract_frames, libm=libm, refusals=refused, reported_refusals=unpredicted, scripts_with_files=len(native_left),
                  scripts_sha256=hashlib.sha256(json.dumps(items, default=repr).encode()).hexdigest())
 
 

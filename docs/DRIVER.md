@@ -30,8 +30,9 @@ state before each frame (`core_window_should_close`'s `while (!exitWindow)`):
 the window's close request does not end it, and the update reads the request
 as a value with `Core.window_should_close`.
 
-`Effects` is a body that does IO inside the loop (`SaveStorageValue`,
-`LoadFileText`, a texture loaded from a dropped file, `TakeScreenshot`): its
+`Effects` is a body that does IO inside the loop (`core_storage_values`'s
+`SaveStorageValue` and `LoadStorageValue` on a key, `LoadFileText`, a
+texture loaded from a dropped file, `TakeScreenshot`): its
 `update` runs in `IO` and takes the `Frame` too, and `after` is the code
 between `EndDrawing` and the loop's condition
 (`shaders_shadowmap_rendering`'s `if (IsKeyPressed(KEY_F)) TakeScreenshot(...)`).
