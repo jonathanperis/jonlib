@@ -586,3 +586,61 @@ results are in `tools/reference/glibc_tanf/results`. Gate `tanf`
 (every exponent and both signs, the edges of the kernel's regions, the angles
 `shapes_math_sine_cosine` passes), requires the host's `tanf` to equal it on
 glibc 2.39 and Jonmath's results to equal it on CPU-1, CPU-2 and JavaScript.
+
+
+## Binary64 sin and cos
+
+`M.Libm.sin64(libm, x: M.Float64)` and `M.Libm.cos64` are the C `sin` and
+`cos` of a `double` (`M.Libm.sin` and `M.Libm.cos` are `sinf` and `cosf`):
+what an example gets from `sin(GetTime())` or from `cos` of a `float`
+expression. Under `M.Glibc239Libm` they are glibc 2.39's x86_64 functions as
+their FMA ifunc variants run them on CPUs with FMA and AVX2 (the CI runners
+and current desktop CPUs), through the LGPL module `src/lgpl/sin.bend` with
+its table `src/lgpl/sin_table.bend`. The functions are not correctly rounded
+(about 0.55 ulp), and glibc builds `s_sin.c` four times (`-mfma -mavx2`,
+`-mfma4`, AVX and SSE2), so the kernel reproduces the selected variant
+operation by operation instead of computing an accurate sine:
+
+- below 2^-26 (2^-27 for `cos`) the argument itself (1 for `cos`);
+- below 0.126 a Taylor polynomial; below 0.855469 the table of `sin` and
+  `cos` at multiples of 1/128 with two short polynomials of the remainder;
+- below 2.426265 the other function of `pi/2 - |x|`;
+- below 105414350 a reduction by `pi/2` in three parts (136 bits), and
+  above it `__branred` (the reduction of the tangent, which glibc builds
+  once, without FMA); the quadrant selects the function and the sign.
+
+Every `a*b + c` the FMA build contracts is one fused operation, in the
+positions read from the Ubuntu 24.04 library (`libm.so.6`, build ID
+`d53fcbff9f855463606b25cfbe2a2e10856ea3a7`). `tools/reference/glibc_sin/model.c`
+is that arithmetic in C (`FUSED=1`; `FUSED=0` is the source without
+contraction), compiled with contraction off around the pinned `sincostab.c`
+and `branred.c`:
+
+| Host | Arguments (each function) | Differences from the host's `sin`/`cos` |
+|---|---:|---:|
+| Ubuntu 24.04, glibc 2.39-0ubuntu8.9, FMA and AVX2 | 16,000,000 random words, two million in each of eight exponent ranges from subnormal to the largest | 0 (`FUSED=1`); about 0.07% differ with `FUSED=0` |
+
+Unmodified glibc 2.39 files in `tools/reference/glibc239`, identical to
+release commit `ef321e23c20eebc6d6fb4044425c00e6df27b05f`
+(`sysdeps/ieee754/dbl-64/`):
+
+| File | SHA-256 |
+|---|---|
+| `s_sin.c` | `d607bcb0823bb793ecf917546266559aa6f3da6504719ecb90db8b6cb4bb8b1b` |
+| `sincostab.c` | `3233d23c6085ac87d47ce1fd7471d88533213f6271ba333e664df30f3172ab85` |
+| `usncs.h` | `c1c081b3f99d023f5f4093e72e81c5eabe6fa3cc7389e37f9709d6c138eaef4a` |
+
+`M.Glibc241Libm` answers `None`: glibc 2.41 ships the same `s_sin.c` (the
+copyright year differs), but where its build contracts has not been read from
+a 2.41 library. `M.AppleLibm` answers `None` (macOS's functions are not
+modeled), and infinities and NaN are `None` on every profile. Out of
+contract: errno, exception flags and rounding modes other than to nearest.
+
+Gate `glibc-sin` (`tools/glibc_sin_probe.py`, with `tools/glibc_sin.py`)
+compiles the model on the host, requires it to reproduce 33 recorded results
+where the FMA and SSE2 variants differ, compares it with the host's `sin` and
+`cos` where those reproduce them too, and requires Jonmath to equal it on
+6356 arguments: random words of every exponent, promoted binary32 values,
+every region boundary and table row with its neighbours, multiples of `pi/2`
+and theirs, signed zeros, subnormals and the largest values, on CPU-1, CPU-2
+and JavaScript.

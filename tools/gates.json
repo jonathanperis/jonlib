@@ -1752,6 +1752,20 @@
    "minutes": 6
   },
   {
+   "id": "glibc-sin",
+   "title": "M.Libm.sin64 and M.Libm.cos64 (LGPL module src/lgpl/sin.bend) against the glibc 2.39 x86_64 FMA-variant sin/cos model on random binary64 words of every exponent, promoted binary32 values, region boundaries, table rows, multiples of pi/2 and the variant controls, and against the host sin and cos where they qualify",
+   "run": [
+    "{python}",
+    "tools/glibc_sin_probe.py",
+    "--bend-source={bend}"
+   ],
+   "os": [
+    "linux",
+    "macos"
+   ],
+   "minutes": 8
+  },
+  {
    "id": "perspective",
    "title": "MatrixPerspective rounding record (diagnostic)",
    "run": [
