@@ -12,8 +12,9 @@ and NaN (None). On a host whose own sin and cos reproduce the controls (glibc
 2.39 on an FMA/AVX2 CPU) the native functions are compared too. The other
 profiles answer None. CPU-1, CPU-2 and JavaScript lanes.
 
-The same run checks the binary64 sum, difference and product an example
-forms around these functions (M.Float64.internal.add, subtract and multiply)
+The same run checks the binary64 sum, difference, product and quotient an
+example forms around these functions (M.Float64.internal.add, subtract,
+multiply and divide)
 against the C operators on pairs of the promoted binary32 arguments, the
 multiples of pi/2 and the table rows (normal operands and results).
 """
@@ -120,7 +121,7 @@ PAIRED = ('promoted-binary32', 'quarter-turn', 'table-row')
 
 
 def pairs(cases):
-    """Neighbouring arguments of moderate size: normal operands whose sum, difference and product are normal."""
+    """Pairs of arguments of moderate size: normal operands whose sum, difference, product and quotient are normal."""
     chosen = [x for x, label in cases if label in PAIRED and 0x3c0 <= ((x >> 52) & 2047) <= 0x440]
     made = [(chosen[i], chosen[(i * 7 + 3) % len(chosen)]) for i in range(len(chosen))]
     return [(a, b) for a, b in made if (a ^ b) & 0x7fffffffffffffff]
@@ -136,7 +137,7 @@ int main(int argc, char **argv) {
   while (fscanf(in, "%llx %llx", &a, &b) == 2) {
     volatile double x, y;
     memcpy((void *) &x, &a, 8); memcpy((void *) &y, &b, 8);
-    printf("%016llx %016llx %016llx\n", word(x + y), word(x - y), word(x*y));
+    printf("%016llx %016llx %016llx %016llx\n", word(x + y), word(x - y), word(x*y), word(x/y));
   }
   return 0;
 }
@@ -147,7 +148,8 @@ def combined(words: +List<U32>) -> List<U32>:
   match words:
     case Con{+ah, Con{+al, Con{+bh, Con{+bl, rest}}}}: List.append(&1, U32, show(M.Float64.internal.add(M.Float64{ah, al}, M.Float64{bh, bl})),
       List.append(&1, U32, show(M.Float64.internal.subtract(M.Float64{ah, al}, M.Float64{bh, bl})),
-        List.append(&1, U32, show(M.Float64.internal.multiply(M.Float64{ah, al}, M.Float64{bh, bl})), combined(rest))))
+        List.append(&1, U32, show(M.Float64.internal.multiply(M.Float64{ah, al}, M.Float64{bh, bl})),
+          List.append(&1, U32, show(M.Float64.internal.divide(M.Float64{ah, al}, M.Float64{bh, bl})), combined(rest)))))
     case _: Nil{}
 '''
 
@@ -218,9 +220,9 @@ def main():
 
     def parse_pairs(text, selected):
         values = [value for line in text.splitlines() for value in json.loads(line)]
-        if len(values) != 9 * len(selected):
+        if len(values) != 12 * len(selected):
             raise ProbeFailure('glibc-sin: wrong arithmetic output size')
-        return [values[9 * i:9 * i + 9] for i in range(len(selected))]
+        return [values[12 * i:12 * i + 12] for i in range(len(selected))]
 
     probe.compare(results, probe.candidates(render_pairs, chosen, batch=BATCH, parse=parse_pairs), describe=lambda i: f'pair {chosen[i][0]:016x} {chosen[i][1]:016x}')
     labels = {}

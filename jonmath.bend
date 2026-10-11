@@ -560,6 +560,13 @@ def Float64.internal.subtract(left: Float64, right: Float64) -> Maybe<Float64>:
   Float64{bh, bl} = right
   Float64.internal.lift(Binary64Scaled.subtract(ah, al, bh, bl))
 
+# a/b rounded once to binary64; None as Float64.internal.multiply, and for a
+# zero divisor.
+def Float64.internal.divide(left: Float64, right: Float64) -> Maybe<Float64>:
+  Float64{ah, al} = left
+  Float64{bh, bl} = right
+  Float64.internal.lift(Binary64Scaled.divide(ah, al, bh, bl))
+
 def Libm.tan.words(value: Float64) -> Maybe<Float64>:
   Float64{high, low} = value
   Float64.internal.lift(GlibcTan.tan(high, low))

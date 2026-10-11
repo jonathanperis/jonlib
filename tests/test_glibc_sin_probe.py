@@ -38,6 +38,7 @@ class GlibcSinProbeTests(unittest.TestCase):
                 self.assertTrue(0x3c0 <= ((word >> 52) & 2047) <= 0x440)
         self.assertIn('M.Float64.internal.add', probe.PROGRAM)
         self.assertIn('M.Float64.internal.subtract', probe.PROGRAM)
+        self.assertIn('M.Float64.internal.divide', probe.PROGRAM)
         self.assertNotIn('ARITHMETIC_HERE', probe.PROGRAM)
 
     def test_the_check_program_names_both_models_and_every_control(self):
