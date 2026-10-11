@@ -72,7 +72,7 @@ ALL_HOSTS = (('linux', 'ubuntu-24.04'), ('macos', 'macos-15'))
 # The hosts of pushes and pull requests. macOS is deferred until the port is complete (see the module text).
 MERGE_HOSTS = (('linux', 'ubuntu-24.04'),)
 # Estimated minutes (the manifest's, measured on macOS) per scoped job, and the jobs per host before a run is full.
-PART_MINUTES, MAX_PARTS = 100, 3
+PART_MINUTES, SMALL_MINUTES, MAX_PARTS = 50, 5, 3
 REGISTERED = re.compile(r"^    '([a-z0-9_]+)': \('", re.M)
 QUOTED = re.compile(r"'([a-z0-9_]+)'")
 HUNK = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@')
@@ -225,10 +225,19 @@ def command(gate):
 
 
 def parts(gates):
-    """The gates packed into jobs of about PART_MINUTES, longest first; None past MAX_PARTS."""
+    """The gates packed into jobs of about PART_MINUTES, longest first; None past MAX_PARTS.
+
+    A gate of at most SMALL_MINUTES that fits nowhere joins the lightest job instead of opening one.
+    """
+    def load(part):
+        return sum(gate.get('minutes', 1) for gate in part)
+
     bins = []
     for gate in sorted(gates, key=lambda gate: (-gate.get('minutes', 1), gate['id'])):
-        fit = next((part for part in bins if sum(g.get('minutes', 1) for g in part) + gate.get('minutes', 1) <= PART_MINUTES), None)
+        minutes = gate.get('minutes', 1)
+        fit = next((part for part in bins if load(part) + minutes <= PART_MINUTES), None)
+        if fit is None and bins and minutes <= SMALL_MINUTES:
+            fit = min(bins, key=load)
         if fit is None:
             bins.append([gate])
         else:
