@@ -325,7 +325,26 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `cesium_man.m3d` (73 KB, 149 KB inflated) has the chunks HEAD, CMAP,
      TMAP, VRTS, BONE, MTRL, MESH and ACTN, no inlined asset; shapes,
      voxels, labels, procedural chunks and the ASCII variant can stay
-     refusals. `shaders_game_of_life`: below;
+     refusals (the ASCII variant is not built into raylib: `3dmo` gives no
+     model). Findings while reading it (2026-10-11): no error code the
+     binary importer sets is fatal except allocation, so `errcode` can be
+     left out; skin weights only reach `boneWeights`, which Jonlib's Mesh
+     does not have, but the importer's cross-reference indexes
+     `bone[boneid]` for every vertex with a skin (a bone id past the bones
+     is a refusal); a material's map property makes the importer look for
+     an inlined asset, then call `LoadFileData(name + ".png")` and
+     `LoadFileData(name)` relative to the working directory, and drops the
+     property when neither opens (cesium_man has one such property: the
+     glue has to try the two files and refuse when one opens until the
+     importer's stb_image path is ported); LoadM3D's meshes are not
+     indexed (three vertices a face, a mesh a material in face order);
+     `LoadModelAnimationsM3D` reads only `pose[j].pos` and `.ori` of
+     `m3d_pose` (its matrices can be left out) at 17 ms steps, with the
+     approximated NLERP and Carmack's inverse square root; the example
+     draws the pose's bones when SPACE is held, so the animation is
+     visible there. A first part of `src/m3d.bend` (container, header,
+     index reader, indexed store, CMAP/TMAP/VRTS) type-checks but is not
+     in the repository: it is kept in `.build/pending/m3d.bend`. `shaders_game_of_life`: below;
    - `shaders_game_of_life` is ready but steps a 2048x2048 world through a
      shader each frame: too heavy for the JavaScript lane as written;
    - images beyond 4096 pixels on an axis (`textures_sprite_stacking`,
