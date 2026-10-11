@@ -9,14 +9,16 @@
 # the global state (GuiEnable, GuiDisable, GuiLock, GuiUnlock, GuiIsLocked,
 # GuiSetState, GuiGetState, GuiSetAlpha), GuiGetTextWidth, GuiLabel,
 # GuiButton, GuiCheckBox, GuiToggle, GuiToggleGroup, GuiSlider and
-# GuiSliderBar, with the default font,
-# TEXT_WRAP_NONE and no icons. Texts with an icon prefix ("#id#") and the
-# other wrap modes mark the frame undefined. See docs/GUI.md.
+# GuiSliderBar, GuiLine and GuiGroupBox, with the default font,
+# TEXT_WRAP_NONE and raygui's icon set at scale 1 (src/gui_icons.bend). An
+# icon id above 255 (raygui reads past its table) and the other wrap modes
+# mark the frame undefined. See docs/GUI.md.
 import Base
 import ./jonlib.bend as J
 import ./jonmath.bend as M
 import ./src/fonts.bend as FontCore
 import ./src/text.bend as TextCore
+import ./src/gui_icons.bend as Icons
 
 # raygui's globals: guiState, guiLocked, guiAlpha, the slider drag
 # (guiControlExclusiveMode and guiControlExclusiveRec) and guiStyle, 16
@@ -226,19 +228,64 @@ def Gui.scale(+gui: Gui) -> F32:
 
 # GuiGetTextWidth of bytes without an icon prefix: the first line's glyph
 # widths plus TEXT_SPACING each (at most 256 bytes), truncated to an int.
+def Gui.width.sum(+gui: Gui, bytes: +List<U32>) -> F32:
+  Gui.text.sum(TextCore.codepoints(List.take(&2, U32, Gui.line.bytes(bytes, False{}), 256n)), Gui.scale(gui), Gui.style.f32(gui, 0, 17), 0.0)
+
 def Gui.width.bytes(+gui: Gui, bytes: +List<U32>) -> F32:
-  F32.trunc(Gui.text.sum(TextCore.codepoints(List.take(&2, U32, Gui.line.bytes(bytes, False{}), 256n)), Gui.scale(gui), Gui.style.f32(gui, 0, 17), 0.0))
+  F32.trunc(Gui.width.sum(gui, bytes))
 
 def Gui.first(bytes: +List<U32>) -> U32:
   match bytes:
     case Con{b, _}: b
     case Nil{}: 0
 
-# GuiGetTextWidth(text) as a C int in F32. None for an icon prefix (a text
-# starting with '#').
+# The index (1 to 4) of the next '#' after a leading one, or 0.
+def Gui.width.offset(n: Nat, text: +List<U32>, +index: U32) -> U32:
+  match n text:
+    case 1n+p Con{+c, rest}: Bool.pick(U32, U32.is_eq(c, 35), index, Gui.width.offset(p, rest, (index + 1 : U32)))
+    case _ _: 0
+
+def Gui.width.tail(bytes: +List<U32>) -> +List<U32>:
+  match bytes:
+    case Con{_, +rest}: rest
+    case Nil{}: Nil{}
+
+# GuiGetTextWidth of bytes: a text starting with '#' that has another '#'
+# within its next four bytes is measured from that second '#' (it included),
+# plus 20 for the icon and its padding.
+def Gui.width.text(+gui: Gui, +bytes: +List<U32>) -> F32:
+  +offset = Bool.pick(U32, U32.is_eq(Gui.first(bytes), 35), Gui.width.offset(4n, Gui.width.tail(bytes), 1), 0)
+  Bool.pick(F32, U32.is_eq(offset, 0), Gui.width.bytes(gui, bytes), F32.trunc((Gui.width.sum(gui, List.drop(&2, U32, bytes, U32.to_nat(offset))) + 20.0 : F32)))
+
+# GuiGetTextWidth(text) as a C int in F32.
 def Gui.get_text_width(+gui: Gui, text: String) -> Maybe<F32>:
-  +bytes = TextCore.bytes(text)
-  Bool.pick(Maybe<F32>, U32.is_eq(Gui.first(bytes), 35), None{}, Some{Gui.width.bytes(gui, bytes)})
+  Some{Gui.width.text(gui, TextCore.bytes(text))}
+
+# GetTextIcon: a line starting with '#', up to three digits and '#' names an
+# icon, and its text follows; id is 4294967295 for a line without one.
+type Gui.Icon is Data:
+  GuiIcon{id: U32, text: +List<U32>}
+
+def Gui.icon.digits(n: Nat, text: +List<U32>, +value: U32) -> Gui.Icon:
+  match n text:
+    case 0n Nil{}: GuiIcon{value, Nil{}}
+    case 0n Con{+c, +rest}: GuiIcon{value, Con{c, rest}}
+    case 1n+p Nil{}: GuiIcon{value, Nil{}}
+    case 1n+p Con{+c, +rest}: Bool.pick(Gui.Icon, (c >= 48 : U32) && (c <= 57 : U32), Gui.icon.digits(p, rest, (value * 10 + (c - 48) : U32)), GuiIcon{value, Con{c, rest}})
+
+def Gui.icon.after(text: +List<U32>, +id: U32, +whole: +List<U32>) -> Gui.Icon:
+  match text:
+    case Con{+c, +rest}: Bool.pick(Gui.Icon, U32.is_eq(c, 35), GuiIcon{id, rest}, GuiIcon{4294967295, whole})
+    case Nil{}: GuiIcon{4294967295, whole}
+
+def Gui.icon.closed(+scan: Gui.Icon, +whole: +List<U32>) -> Gui.Icon:
+  GuiIcon{+id, +text} = scan
+  Gui.icon.after(text, id, whole)
+
+def Gui.icon.of(line: +List<U32>) -> Gui.Icon:
+  match line:
+    case Con{+c, +rest}: Bool.pick(Gui.Icon, U32.is_eq(c, 35), Gui.icon.closed(Gui.icon.digits(3n, rest, 0), Con{c, rest}), GuiIcon{4294967295, Con{c, rest}})
+    case Nil{}: GuiIcon{4294967295, Nil{}}
 
 def Gui.empty(bytes: +List<U32>) -> Bool:
   match bytes:
@@ -277,8 +324,9 @@ def Gui.ellipsis(endless: Bool, +ellipsis: F32, +x: F32, +y: F32, +size: F32, +t
     case True{}: J.Frame.refuse(frame)
     case False{}: Gui.dots(6n, 0.0, F32.trunc((ellipsis / 3.0 : F32)), ellipsis, x, y, size, tint, frame)
 
+# inset is what an icon takes from the line's width (20, or 0).
 type Gui.Line is Data:
-  GuiLine{x: F32, y: F32, width: F32, text_width: F32, ellipsis: F32, scale: F32, spacing: F32, size: F32, tint: U32}
+  GuiLine{x: F32, y: F32, width: F32, text_width: F32, ellipsis: F32, scale: F32, spacing: F32, size: F32, tint: U32, inset: F32}
 
 def Gui.glyphs.overflow(overflow: Bool, kind: U32) -> Bool:
   match kind:
@@ -298,11 +346,11 @@ def Gui.glyphs(cps: +List<U32>, +line: Gui.Line, +offset: F32, +overflow: Bool, 
   match cps:
     case Nil{}: frame
     case Con{+cp, rest}:
-      GuiLine{+x, +y, +width, +text_width, +ellipsis, +scale, +spacing, +size, +tint} = line
+      GuiLine{+x, +y, +width, +text_width, +ellipsis, +scale, +spacing, +size, +tint, +inset} = line
       +glyph = Gui.glyph.width(cp, scale)
       +blank = U32.is_eq(cp, 32) || U32.is_eq(cp, 9)
       +wide = (text_width > width : F32)
-      +fits = (offset <= ((width - glyph) - 0.0) - ellipsis : F32)
+      +fits = (offset <= ((width - glyph) - inset) - ellipsis : F32)
       +kind = Bool.pick(U32, blank, 0, Bool.pick(U32, Bool.not(wide), 1, Bool.pick(U32, fits, 1, Bool.pick(U32, overflow, 0, 2))))
       Gui.glyphs(rest, line, (offset + (glyph + spacing) : F32), Gui.glyphs.overflow(overflow, kind), Gui.glyphs.one(kind, cp, x, y, offset, ellipsis, size, tint, frame))
 
@@ -324,58 +372,8 @@ def Gui.line.y(vertical: U32, +by: F32, +bh: F32, +offset: F32, +total: F32) -> 
     case 1: (by + offset + bh / 2.0 - total / 2.0 + Gui.pixel(bh) : F32)
     case _: (by + offset + bh - total + Gui.pixel(bh) : F32)
 
-def Gui.text.lines(lines: +List<+List<U32>>, +gui: Gui, +bounds: J.Rectangle, +alignment: U32, +tint: U32, +offset: F32, +total: F32, frame: J.Frame) -> J.Frame:
-  match lines:
-    case Nil{}: frame
-    case Con{+line, rest}:
-      J.Rectangle{+bx, +by, +bw, +bh} = bounds
-      +size = Gui.style.f32(gui, 0, 16)
-      +text_width = Gui.width.bytes(gui, line)
-      +empty = U32.is_eq(Gui.first(line), 0)
-      +x = Bool.pick(F32, (text_width > bw : F32) && Bool.not(empty), bx, Gui.line.x(alignment, bx, bw, text_width))
-      +y = Gui.line.y(Gui.get_style(gui, 0, 21), by, bh, offset, total)
-      +spec = {GuiLine{F32.trunc(x), F32.trunc(y), bw, text_width, Gui.width.bytes(gui, [46, 46, 46]), Gui.scale(gui), Gui.style.f32(gui, 0, 17), size, tint} : Gui.Line}
-      Gui.text.lines(rest, gui, bounds, alignment, tint, (offset + (size + Gui.style.f32(gui, 0, 20)) : F32), total,
-        Gui.glyphs(TextCore.codepoints(Gui.line.bytes(line, True{})), spec, 0.0, False{}, frame))
-
-def Gui.has_icon(lines: +List<+List<U32>>) -> Bool:
-  match lines:
-    case Nil{}: False{}
-    case Con{+line, rest}: U32.is_eq(Gui.first(line), 35) || Gui.has_icon(rest)
-
-def Gui.count(lines: +List<+List<U32>>, +n: F32) -> F32:
-  match lines:
-    case Nil{}: n
-    case Con{_, rest}: Gui.count(rest, (n + 1.0 : F32))
-
-def Gui.text.checked(refused: Bool, +lines: +List<+List<U32>>, +gui: Gui, +bounds: J.Rectangle, +alignment: U32, +tint: U32, frame: J.Frame) -> J.Frame:
-  match refused:
-    case True{}: J.Frame.refuse(frame)
-    case False{}:
-      +count = Gui.count(lines, 0.0)
-      +total = (count * Gui.style.f32(gui, 0, 16) + (count - 1.0) * Gui.style.f32(gui, 0, 20) : F32)
-      Gui.text.lines(lines, gui, bounds, alignment, tint, 0.0, total, frame)
-
-def Gui.draw_text.lines(+lines: +List<+List<U32>>, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +alignment: U32, +tint: U32) -> J.Frame:
-  Gui.text.checked(Gui.has_icon(lines) || U32.is_ne(Gui.get_style(gui, 0, 22), 0), lines, gui, bounds, alignment, tint, frame)
-
-# GuiDrawText(text, bounds, alignment, tint): nothing for an empty text. The
-# frame is undefined for an icon prefix or a wrap mode.
-def Gui.draw_text.bytes(+bytes: +List<U32>, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +alignment: U32, +tint: U32) -> J.Frame:
-  match bytes:
-    case Nil{}: frame
-    case Con{b, rest}: Gui.draw_text.lines(Gui.lines.go(Con{b, rest}, Nil{}), gui, frame, bounds, alignment, tint)
-
-def Gui.draw_text(+gui: Gui, frame: J.Frame, text: String, +bounds: J.Rectangle, +alignment: U32, +tint: U32) -> J.Frame:
-  Gui.draw_text.bytes(TextCore.bytes(text), gui, frame, bounds, alignment, tint)
-
-def Gui.draw_text.maybe(+gui: Gui, frame: J.Frame, text: Maybe<String>, +bounds: J.Rectangle, +alignment: U32, +tint: U32) -> J.Frame:
-  match text:
-    case None{}: frame
-    case Some{t}: Gui.draw_text(gui, frame, t, bounds, alignment, tint)
-
 # -----------------------------------------------------------------------------
-# GuiDrawRectangle and GetTextBounds
+# GuiDrawRectangle
 
 def Gui.border(visible: Bool, frame: J.Frame, +x: F32, +y: F32, +w: F32, +h: F32, +b: F32, +color: U32) -> J.Frame:
   match visible:
@@ -401,6 +399,117 @@ def Gui.draw_rectangle(frame: J.Frame, +rec: J.Rectangle, +border: U32, +border_
   +w = F32.trunc(rw)
   +h = F32.trunc(rh)
   Gui.border((border > 0 : U32), Gui.fill(((color .&. 255) > 0 : U32), frame, x, y, w, h, color), x, y, w, h, U32.to_f32(border), border_color)
+
+# -----------------------------------------------------------------------------
+# GuiDrawIcon and GuiDrawText
+
+def Gui.icon.bit(visible: Bool, frame: J.Frame, +x: F32, +y: F32, +color: U32) -> J.Frame:
+  match visible:
+    case False{}: frame
+    case True{}: Gui.draw_rectangle(frame, J.Rectangle{x, y, 1.0, 1.0}, 0, 0, color)
+
+# The 32 bits of one word: two rows of 16 pixels, the low bit first.
+def Gui.icon.word(n: Nat, +bits: U32, +k: U32, +x: F32, +y: F32, +color: U32, frame: J.Frame) -> J.Frame:
+  match n:
+    case 0n: frame
+    case 1n+p: Gui.icon.word(p, (bits >> 1n : U32), (k + 1 : U32), x, y, color,
+      Gui.icon.bit(U32.is_eq((bits .&. 1 : U32), 1), frame, (x + U32.to_f32((k % 16 : U32)) : F32), (y + U32.to_f32((k / 16 : U32)) : F32), color))
+
+def Gui.icon.rows(n: Nat, +id: U32, +index: U32, +x: F32, +y: F32, +color: U32, frame: J.Frame) -> J.Frame:
+  match n:
+    case 0n: frame
+    case 1n+p: Gui.icon.rows(p, id, (index + 1 : U32), x, y, color, Gui.icon.word(32n, Icons.word(id, index), 0, x, (y + U32.to_f32((2 * index : U32)) : F32), color, frame))
+
+# GuiDrawIcon(iconId, x, y, 1, color), the color already faded: one
+# GuiDrawRectangle of a pixel for each set bit.
+def Gui.icon.drawn(has: Bool, +id: U32, +x: F32, +y: F32, +color: U32, frame: J.Frame) -> J.Frame:
+  match has:
+    case False{}: frame
+    case True{}: Gui.icon.rows(8n, id, 0, x, y, color, frame)
+
+# One line: its icon, if any, at the line's x and centered on the bounds'
+# height, then the text 20 pixels further. Only the text's last line can be
+# empty for raygui (the others still have their '\n' to read).
+def Gui.text.line(+icon: Gui.Icon, +last: Bool, +gui: Gui, +bounds: J.Rectangle, +alignment: U32, +tint: U32, +offset: F32, +total: F32, frame: J.Frame) -> J.Frame:
+  GuiIcon{+id, +text} = icon
+  J.Rectangle{+bx, +by, +bw, +bh} = bounds
+  +has = (id < 256 : U32)
+  +size = Gui.style.f32(gui, 0, 16)
+  +empty = last && Gui.empty(text)
+  +text_width = (Gui.width.text(gui, text) + Bool.pick(F32, has, Bool.pick(F32, empty, 16.0, 20.0), 0.0) : F32)
+  +x = F32.trunc(Bool.pick(F32, (text_width > bw : F32) && Bool.not(empty), bx, Gui.line.x(alignment, bx, bw, text_width)))
+  +y = F32.trunc(Gui.line.y(Gui.get_style(gui, 0, 21), by, bh, offset, total))
+  +inset = Bool.pick(F32, has, 20.0, 0.0)
+  +spec = {GuiLine{(x + inset : F32), y, bw, text_width, Gui.width.bytes(gui, [46, 46, 46]), Gui.scale(gui), Gui.style.f32(gui, 0, 17), size, tint, inset} : Gui.Line}
+  Gui.glyphs(TextCore.codepoints(Gui.line.bytes(text, True{})), spec, 0.0, False{},
+    Gui.icon.drawn(has, id, x, F32.trunc((((by + bh / 2.0 : F32) - 8.0 : F32) + Gui.pixel(bh) : F32)), tint, frame))
+
+def Gui.lines.last(rest: +List<+List<U32>>) -> Bool:
+  match rest:
+    case Nil{}: True{}
+    case Con{_, _}: False{}
+
+def Gui.text.lines(lines: +List<+List<U32>>, +gui: Gui, +bounds: J.Rectangle, +alignment: U32, +tint: U32, +offset: F32, +total: F32, frame: J.Frame) -> J.Frame:
+  match lines:
+    case Nil{}: frame
+    case Con{+line, +rest}:
+      Gui.text.lines(rest, gui, bounds, alignment, tint, (offset + (Gui.style.f32(gui, 0, 16) + Gui.style.f32(gui, 0, 20)) : F32), total,
+        Gui.text.line(Gui.icon.of(line), Gui.lines.last(rest), gui, bounds, alignment, tint, offset, total, frame))
+
+# Fewer than n bytes, none of them a '#'.
+def Gui.icon.short(n: Nat, text: +List<U32>) -> Bool:
+  match n text:
+    case 0n Nil{}: False{}
+    case 0n Con{_, _}: False{}
+    case 1n+p Nil{}: True{}
+    case 1n+p Con{+c, rest}: U32.is_ne(c, 35) && Gui.icon.short(p, rest)
+
+# A line raygui does not draw from its own bytes: an icon id above 255 is
+# outside its table, and a '#' right after the icon (or first in a line
+# without one) with fewer than four bytes after it and no second '#' makes
+# GuiGetTextWidth look for that '#' in the lines that follow.
+def Gui.icon.out(+icon: Gui.Icon, +last: Bool) -> Bool:
+  GuiIcon{+id, +text} = icon
+  ((id >= 256 : U32) && U32.is_ne(id, 4294967295)) || (Bool.not(last) && U32.is_eq(Gui.first(text), 35) && Gui.icon.short(4n, Gui.width.tail(text)))
+
+def Gui.has_icon(lines: +List<+List<U32>>) -> Bool:
+  match lines:
+    case Nil{}: False{}
+    case Con{+line, +rest}: Gui.icon.out(Gui.icon.of(line), Gui.lines.last(rest)) || Gui.has_icon(rest)
+
+def Gui.count(lines: +List<+List<U32>>, +n: F32) -> F32:
+  match lines:
+    case Nil{}: n
+    case Con{_, rest}: Gui.count(rest, (n + 1.0 : F32))
+
+def Gui.text.checked(refused: Bool, +lines: +List<+List<U32>>, +gui: Gui, +bounds: J.Rectangle, +alignment: U32, +tint: U32, frame: J.Frame) -> J.Frame:
+  match refused:
+    case True{}: J.Frame.refuse(frame)
+    case False{}:
+      +count = Gui.count(lines, 0.0)
+      +total = (count * Gui.style.f32(gui, 0, 16) + (count - 1.0) * Gui.style.f32(gui, 0, 20) : F32)
+      Gui.text.lines(lines, gui, bounds, alignment, tint, 0.0, total, frame)
+
+def Gui.draw_text.lines(+lines: +List<+List<U32>>, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +alignment: U32, +tint: U32) -> J.Frame:
+  Gui.text.checked(Gui.has_icon(lines) || U32.is_ne(Gui.get_style(gui, 0, 22), 0), lines, gui, bounds, alignment, tint, frame)
+
+# GuiDrawText(text, bounds, alignment, tint): nothing for an empty text. The
+# frame is undefined for a line Gui.icon.out names or a wrap mode.
+def Gui.draw_text.bytes(+bytes: +List<U32>, +gui: Gui, frame: J.Frame, +bounds: J.Rectangle, +alignment: U32, +tint: U32) -> J.Frame:
+  match bytes:
+    case Nil{}: frame
+    case Con{b, rest}: Gui.draw_text.lines(Gui.lines.go(Con{b, rest}, Nil{}), gui, frame, bounds, alignment, tint)
+
+def Gui.draw_text(+gui: Gui, frame: J.Frame, text: String, +bounds: J.Rectangle, +alignment: U32, +tint: U32) -> J.Frame:
+  Gui.draw_text.bytes(TextCore.bytes(text), gui, frame, bounds, alignment, tint)
+
+def Gui.draw_text.maybe(+gui: Gui, frame: J.Frame, text: Maybe<String>, +bounds: J.Rectangle, +alignment: U32, +tint: U32) -> J.Frame:
+  match text:
+    case None{}: frame
+    case Some{t}: Gui.draw_text(gui, frame, t, bounds, alignment, tint)
+
+# -----------------------------------------------------------------------------
+# GetTextBounds
 
 # GetTextBounds(control, bounds).
 def Gui.text_bounds(+gui: Gui, +control: U32, +bounds: J.Rectangle) -> J.Rectangle:
