@@ -72,7 +72,7 @@ at the branch's head.
 Coverage (`python3 tools/api_plan.py check`): raylib.h 543/600 partial
 with the stack; raymath.h 146/146; rlgl.h 98/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **193/212 ported** with the stack, 9 ready, 10 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **194/212 ported** with the stack, 8 ready, 10 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -357,10 +357,12 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      JavaScript stack on a wave of 13619 frames (its loops over samples
      were not tail calls; they are now, `src/convert.bend`); a device
      opened over a playing buffer mixes it before the program can stop it
-     (no probe case does that). Next: the three examples whose frames do
-     not depend on audio (`textures_sprite_button`,
-     `textures_sprite_explosion`, `audio_sound_multi`), with raudio.c
-     compiled beside the native example the same way; then the mixer, so
+     (no probe case does that). The examples whose frames do not depend
+     on audio are ported with raudio.c compiled beside the native example
+     the same way (`AUDIO` in `tools/examples_probe.py`):
+     `textures_sprite_button` is in; `textures_sprite_explosion` and
+     `audio_sound_multi` are drafted in `.build/pending/`. `audio_sound_loading`
+     is listed ready but also loads an .ogg. Then the mixer, so
      that `IsSoundPlaying` can end (`audio_sound_positioning`): the
      program can call `AUDIO.System.device.onData` (raudio's
      `OnSendAudioDataToDevice`) itself on the stopped device for the
