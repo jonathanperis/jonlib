@@ -777,6 +777,12 @@ def Laws.gltf_anim_empty_span_needs_nothing(step, comps, limit):
 def Laws.gltf_anim_invalid_span_reads_nothing(span, blocks, comps, limit):
   {==}
 
+def Laws.gltf_anim_no_joints_no_rest(nodes):
+  {==}
+
+def Laws.gltf_anim_unreadable_bone_ends_pose(base, tracks, time, libm, rest):
+  {==}
+
 def Laws.model_pose_loaded_is_zeroed_with_identities(name, parent, binds):
   {==}
 

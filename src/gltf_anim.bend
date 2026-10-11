@@ -362,27 +362,46 @@ def rotated(rotation: Maybe<M.Vector4>, +translation: M.Vector3, +scale: M.Vecto
     case None{}: Posed{False{}, Nil{}}
     case Some{r}: rotated.with(r, translation, scale, rest)
 
-def bone.posed(valid: Bool, +node: JS.Json, +tracks: Tracks, +time: F32, +libm: M.Libm, +rest: Posed) -> Posed:
+# A joint's node translation, rotation and scale as the file writes them
+# (the pose of a bone without channels), read once for every keyframe. ok:
+# the three read.
+type Rest is Data:
+  Rest{ok: Bool, translation: M.Vector3, rotation: M.Vector4, scale: M.Vector3}
+
+def rest.of(+node: JS.Json) -> Rest:
+  Rest{node.ok(node), node.vector(node, "translation", 0), node.rotation.of(G.floats.of(JS.get(node, T.bytes("rotation")), 4, [0, 0, 0, G.one()])), node.vector(node, "scale", G.one())}
+
+def rests(items: +List<U32>, +nodes: +List<JS.Json>) -> +List<Rest>:
+  match items:
+    case Nil{}: Nil{}
+    case Con{+joint, more}: Con{rest.of(G.nth(nodes, joint)), rests(more, nodes)}
+
+def bone.posed(valid: Bool, base: Rest, +tracks: Tracks, +time: F32, +libm: M.Libm, +rest: Posed) -> Posed:
   match valid:
     case False{}: Posed{False{}, Nil{}}
     case True{}:
+      Rest{_, +translation, +rotation, +size} = base
       Tracks{+interpolation, +translate, +rotate, +scale} = tracks
-      rotated(Bool.pick(Maybe<M.Vector4>, track.present(rotate), quaternion(rotate, interpolation, time, libm), Some{node.rotation.of(G.floats.of(JS.get(node, T.bytes("rotation")), 4, [0, 0, 0, G.one()]))}),
-        Bool.pick(M.Vector3, track.present(translate), vector(translate, interpolation, time), node.vector(node, "translation", 0)),
-        Bool.pick(M.Vector3, track.present(scale), vector(scale, interpolation, time), node.vector(node, "scale", G.one())), rest)
+      rotated(Bool.pick(Maybe<M.Vector4>, track.present(rotate), quaternion(rotate, interpolation, time, libm), Some{rotation}),
+        Bool.pick(M.Vector3, track.present(translate), vector(translate, interpolation, time), translation),
+        Bool.pick(M.Vector3, track.present(scale), vector(scale, interpolation, time), size), rest)
+
+def rest.ok(base: Rest) -> Bool:
+  Rest{ok, _, _, _} = base
+  ok
 
 # One bone at a time: the node's translation, rotation and scale, each
 # replaced by its channel's pose when the bone has one.
-def bone.pose(+node: JS.Json, +tracks: Tracks, +time: F32, +libm: M.Libm, +rest: Posed) -> Posed:
+def bone.pose(+base: Rest, +tracks: Tracks, +time: F32, +libm: M.Libm, +rest: Posed) -> Posed:
   Tracks{+interpolation, +translate, +rotate, +scale} = tracks
-  +valid = node.ok(node) && (Bool.not(track.present(translate)) || reads.ok(translate, interpolation, time)) && (Bool.not(track.present(rotate)) || reads.ok(rotate, interpolation, time)) &&
+  +valid = rest.ok(base) && (Bool.not(track.present(translate)) || reads.ok(translate, interpolation, time)) && (Bool.not(track.present(rotate)) || reads.ok(rotate, interpolation, time)) &&
     (Bool.not(track.present(scale)) || reads.ok(scale, interpolation, time))
-  bone.posed(valid, node, tracks, time, libm, rest)
+  bone.posed(valid, base, tracks, time, libm, rest)
 
 # Every bone's pose at a time, before the hierarchy is applied.
-def local.pose(items: +List<U32>, all: +List<Tracks>, +nodes: +List<JS.Json>, +time: F32, +libm: M.Libm) -> Posed:
-  match items all:
-    case Con{+joint, rest} Con{+tracks, more}: bone.pose(G.nth(nodes, joint), tracks, time, libm, local.pose(rest, more, nodes, time, libm))
+def local.pose(bases: +List<Rest>, all: +List<Tracks>, +time: F32, +libm: M.Libm) -> Posed:
+  match bases all:
+    case Con{+base, rest} Con{+tracks, more}: bone.pose(base, tracks, time, libm, local.pose(rest, more, time, libm))
     case _ _: Posed{True{}, Nil{}}
 
 # A transform under a parent's: the rotation composed, the scale
@@ -425,10 +444,10 @@ def frame.built(local: Posed, +bones: +List<Bone>, +world: Transform, rest: Mayb
   frame.joined(ok, rest, pose, bones, world)
 
 # keyframePoses: frame j at time j/60.
-def frames(n: Nat, +index: U32, +joints: +List<U32>, +all: +List<Tracks>, +nodes: +List<JS.Json>, +bones: +List<Bone>, +world: Transform, +libm: M.Libm) -> Maybe<+List<+List<Transform>>>:
+def frames(n: Nat, +index: U32, +bases: +List<Rest>, +all: +List<Tracks>, +bones: +List<Bone>, +world: Transform, +libm: M.Libm) -> Maybe<+List<+List<Transform>>>:
   match n:
     case 0n: Some{Nil{}}
-    case 1n+p: frame.built(local.pose(joints, all, nodes, (U32.to_f32(index) / 60.0 : F32), libm), bones, world, frames(p, (index + 1 : U32), joints, all, nodes, bones, world, libm))
+    case 1n+p: frame.built(local.pose(bases, all, (U32.to_f32(index) / 60.0 : F32), libm), bones, world, frames(p, (index + 1 : U32), bases, all, bones, world, libm))
 
 def blank(items: +List<U32>) -> +List<Tracks>:
   match items:
@@ -440,28 +459,28 @@ def animation.made(poses: Maybe<+List<+List<Transform>>>, +name: +List<U32>, +bo
     case None{}: None{}
     case Some{+frames}: Some{Animation{name, bones, count, frames}}
 
-def animation.timed(span: Length, +item: JS.Json, +samplers: +List<JS.Json>, +joints: +List<U32>, +nodes: +List<JS.Json>, +bones: +List<Bone>, +world: Transform, +root: JS.Json, +bin: +List<+List<U32>>, +limit: U32, +libm: M.Libm) -> Maybe<Animation>:
+def animation.timed(span: Length, +item: JS.Json, +samplers: +List<JS.Json>, +joints: +List<U32>, +bases: +List<Rest>, +bones: +List<Bone>, +world: Transform, +root: JS.Json, +bin: +List<+List<U32>>, +limit: U32, +libm: M.Libm) -> Maybe<Animation>:
   Length{+ok, +longest} = span
   +scaled = (longest * 60.0 : F32)
   +count = (F32.to_u32(F32.trunc(Bool.pick(F32, (scaled >= 0.0 : F32) && (scaled < 100000.0 : F32), scaled, 0.0))) + 1 : U32)
   Bool.pick(Maybe<Animation>, ok && (scaled >= 0.0 : F32) && (scaled < 100000.0 : F32),
-    animation.made(frames(U32.to_nat(count), 0, joints, channels(G.list(item, "channels"), samplers, joints, root, bin, limit, blank(joints)), nodes, bones, world, libm), name(item), G.length(joints, 0), count), None{})
+    animation.made(frames(U32.to_nat(count), 0, bases, channels(G.list(item, "channels"), samplers, joints, root, bin, limit, blank(joints)), bones, world, libm), name(item), G.length(joints, 0), count), None{})
 
 # One animation: its channels, its duration, keyframeCount = (int)(duration*60) + 1 poses (at most 100000 here).
-def animation(+item: JS.Json, +joints: +List<U32>, +nodes: +List<JS.Json>, +bones: +List<Bone>, +world: Transform, +root: JS.Json, +bin: +List<+List<U32>>, +limit: U32, +libm: M.Libm) -> Maybe<Animation>:
+def animation(+item: JS.Json, +joints: +List<U32>, +bases: +List<Rest>, +bones: +List<Bone>, +world: Transform, +root: JS.Json, +bin: +List<+List<U32>>, +limit: U32, +libm: M.Libm) -> Maybe<Animation>:
   +samplers = G.list(item, "samplers")
   +span = duration(G.list(item, "channels"), samplers, joints, root, bin, limit, True{}, 0.0)
-  animation.timed(span, item, samplers, joints, nodes, bones, world, root, bin, limit, libm)
+  animation.timed(span, item, samplers, joints, bases, bones, world, root, bin, limit, libm)
 
 def animations.joined(first: Maybe<Animation>, rest: Maybe<+List<Animation>>) -> Maybe<+List<Animation>>:
   match first rest:
     case Some{a} Some{b}: Some{Con{a, b}}
     case _ _: None{}
 
-def animations.go(items: +List<JS.Json>, +joints: +List<U32>, +nodes: +List<JS.Json>, +bones: +List<Bone>, +world: Transform, +root: JS.Json, +bin: +List<+List<U32>>, +limit: U32, +libm: M.Libm) -> Maybe<+List<Animation>>:
+def animations.go(items: +List<JS.Json>, +joints: +List<U32>, +bases: +List<Rest>, +bones: +List<Bone>, +world: Transform, +root: JS.Json, +bin: +List<+List<U32>>, +limit: U32, +libm: M.Libm) -> Maybe<+List<Animation>>:
   match items:
     case Nil{}: Some{Nil{}}
-    case Con{+item, rest}: animations.joined(animation(item, joints, nodes, bones, world, root, bin, limit, libm), animations.go(rest, joints, nodes, bones, world, root, bin, limit, libm))
+    case Con{+item, rest}: animations.joined(animation(item, joints, bases, bones, world, root, bin, limit, libm), animations.go(rest, joints, bases, bones, world, root, bin, limit, libm))
 
 def first(items: +List<U32>) -> U32:
   match items:
@@ -476,7 +495,7 @@ def animations.skinned(+root: JS.Json, +bin: +List<+List<U32>>, +limit: U32, +li
   +all = joints(root)
   +up = G.parent(nodes, first(all), 0, total, total)
   +valid = G.good(total) && U32.is_ne(first(all), none()) && (up < total : U32) && parents.ok(all, nodes, total) && lm.ok(world(nodes, total, up))
-  Bool.pick(Maybe<+List<Animation>>, valid, animations.go(G.list(root, "animations"), all, nodes, bones(all, nodes, total, all), lm.transform(world(nodes, total, up)), root, bin, limit, libm), None{})
+  Bool.pick(Maybe<+List<Animation>>, valid, animations.go(G.list(root, "animations"), all, rests(all, nodes), bones(all, nodes, total, all), lm.transform(world(nodes, total, up)), root, bin, limit, libm), None{})
 
 def animations.file(file: Maybe<File>, +libm: M.Libm) -> Maybe<+List<Animation>>:
   match file:
