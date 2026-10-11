@@ -6638,7 +6638,7 @@
   {
    "name": "shaders_rlgl_compute",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
