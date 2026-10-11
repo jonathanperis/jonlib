@@ -130,6 +130,19 @@ overflows an `int`, Jonlib returns `None` instead of running it:
 - `GetCodepointPrevious`: stepping before the text, or a position more than one
   byte past its NUL.
 
+### `text_codepoints_loading`
+
+The example's own `CodepointRemoveDuplicates` copies the codepoints into
+`codepointCount` ints and, at the first repeated one, shifts the tail down
+with `codepointsNoDups[k] = codepointsNoDups[k + 1]` up to `k = count - 1`:
+one int read past the allocation (AddressSanitizer: a heap-buffer-overflow
+read of 4 bytes, 0 bytes after the region). Its text repeats the
+ideographic space and the line break, so this happens before the first
+frame. `examples/text_codepoints_loading.bend` finds the repetition with
+`Codepoint.load` and refuses every frame; nothing after that point is
+ported and the reference is not run (`UNDEFINED_NATIVE` in
+`tools/examples_probe.py`).
+
 ## TextToFloat and contraction
 
 `TextToFloat`'s integer loop `value = value*10.0f + digit` is contracted into a
