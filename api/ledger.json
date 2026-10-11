@@ -55341,12 +55341,12 @@
       "status": "partial",
       "jonlib": "Model.load_for / Model.load",
       "mapping_state": "implemented",
-      "scope": "OBJ (any extension case) through tinyobj_loader_c: tryParseDouble in binary64 (contraction profiled), fan triangulation, the djb2 material table, LoadOBJ's mesh split, MTL materials and textures; binary glTF (.glb) through LoadGLTF: float attributes, 8/16/32-bit indices, node transforms, base color factors and embedded PNG textures (uncontracted); MagicaVoxel (.vox) through LoadVOX: chunks and quirks, visible faces in 65532-vertex meshes; Inter-Quake (.iqm) through LoadIQM: meshes, colors, reversed indices, each material's texture; other extensions and unopened files give the empty model.",
+      "scope": "OBJ through tinyobj_loader_c (tryParseDouble in binary64, contraction profiled; the material table, LoadOBJ's mesh split, MTL materials and textures); binary glTF (.glb) through LoadGLTF (float attributes, 8/16/32-bit indices, node transforms, base colors, embedded PNG textures; uncontracted); MagicaVoxel (.vox) through LoadVOX (visible faces in 65532-vertex meshes); Inter-Quake (.iqm) through LoadIQM (meshes, colors, material textures); Model 3D (.m3d) through LoadM3D (binary variant: a mesh a material run, properties); other extensions and unopened files give the empty model.",
       "gaps": [
-        "glTF as text and M3D are UnsupportedFileType; binary glTF and IQM keep no bone data in the Mesh; other glTF texture kinds, non-PNG or uri images, sparse accessors and COLOR are refused",
+        "glTF as text is UnsupportedFileType; binary glTF, IQM and M3D keep no bone data in the Mesh; other glTF texture kinds, non-PNG or uri images, sparse accessors and COLOR are refused",
         "Undefined reference behavior (asserts, int overflow, reads outside tinyobj's arrays, byte casts, table insertions that loop) and binary64 steps outside the checked helpers' domains are refused",
         "Texture files Jonlib's LoadImage does not decode are refused; paths and names must be printable ASCII (OBJ paths without backslashes)",
-        "VOX and IQM: reads past the file or the loaders' arrays, meshes without vertices or faces and names without their NUL are refused; the profiles end at 2 MiB files (docs/MODELS.md)",
+        "VOX, IQM, M3D: reads past the file or the loaders' arrays are refused; M3D textures, generated normals, voxels, shapes and its ASCII variant are not ported; profiles end at 2 MiB files (MODELS.md)",
         "Performance: not measured",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
@@ -55366,12 +55366,12 @@
         "jonlib.bend",
         "tools/gltf_probe.py",
         "src/gltf.bend",
-        "src/json.bend",
-        "src/strtod.bend",
         "tools/vox_probe.py",
         "src/vox.bend",
         "tools/iqm_probe.py",
-        "src/iqm.bend"
+        "src/iqm.bend",
+        "tools/m3d_probe.py",
+        "src/m3d.bend"
       ],
       "gate_evidence": {},
       "target_results": {},
@@ -57885,12 +57885,12 @@
       "status": "partial",
       "jonlib": "Model.load_animations_for / Model.load_animations",
       "mapping_state": "implemented",
-      "scope": "Binary glTF (.glb) through LoadModelAnimationsGLTF: names, bone and keyframe counts and every keyframe pose (STEP and LINEAR channels, QuaternionSlerp under the libm profile, the bone hierarchy applied); no animations without a skin. Inter-Quake (.iqm) through LoadModelAnimationsIQM: each pose's ten channels from the frame data, the rotation normalized, composed along the parents in the loader's order.",
+      "scope": "Binary glTF (.glb) through LoadModelAnimationsGLTF: every keyframe pose (STEP and LINEAR channels, QuaternionSlerp under the libm profile, the bone hierarchy applied). Inter-Quake (.iqm) through LoadModelAnimationsIQM: each pose's channels from the frame data, composed along the parents. Model 3D (.m3d) through LoadModelAnimationsM3D: m3d_pose every 17 ms (its approximated NLERP and inverse square root), composed in model space, with the no-bone bone.",
       "gaps": [
-        "M3D animations are UnsupportedFileType; glTF as text too",
+        "glTF as text is UnsupportedFileType",
         "CUBICSPLINE samplers, non-float key accessors and reads outside an accessor are refused",
         "Profiles without acosf (Apple, glibc 2.41) refuse glTF rotations more than about 36 degrees apart",
-        "IQM: arrays or names outside the file, frame data that ends early and a pose whose parent is not a pose are refused; uncontracted arithmetic only",
+        "IQM and M3D: arrays, names or indices outside what the file holds, frame data that ends early and bones that are not bones are refused; uncontracted arithmetic only",
         "The model's skeleton is loaded separately (Model.load_skeleton): Jonlib's Model has none",
         "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
       ],
@@ -57909,7 +57909,9 @@
         "src/gltf_anim.bend",
         "jonlib.bend",
         "tools/iqm_probe.py",
-        "src/iqm.bend"
+        "src/iqm.bend",
+        "tools/m3d_probe.py",
+        "src/m3d.bend"
       ],
       "gate_evidence": {},
       "target_results": {},

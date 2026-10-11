@@ -112,8 +112,9 @@ identify the original sources and their required attribution.
   SetMaterialTexture, SetModelMeshMaterial, IsModelValid) and LoadModel,
   LoadOBJ, ProcessMaterialsOBJ and LoadMaterials; `src/obj.bend` adapts
   tinyobj_loader_c (below). `src/iqm.bend` adapts `rmodels.c`'s LoadIQM and
-  LoadModelAnimationsIQM (Inter-Quake Model files), and `src/vox.bend` its
-  LoadVOX over vox_loader (below).
+  LoadModelAnimationsIQM (Inter-Quake Model files), `src/vox.bend` its
+  LoadVOX over vox_loader (below) and `src/m3d.bend` its LoadM3D and
+  LoadModelAnimationsM3D over m3d.h (below).
 - Reference testing: `tools/conformance.py` builds a separate raylib executable
   from a locally supplied checkout. Raylib is not linked into the Jonlib runner.
 - API documentation: `api/reference.json`, generated `api/ledger.json` and
@@ -392,6 +393,19 @@ license are retained in [LICENSES/rlsw.txt](LICENSES/rlsw.txt).
   MagicaVoxel chunks it reads, the voxel array as one array instead of
   16x16x16 chunks, and `Vox_Build_Voxel`'s faces in its order), used with
   `rmodels.c`'s `LoadVOX` by `LoadModel` for `.vox` files.
+
+## Model 3D (m3d.h)
+
+- Author: bzt. Source: <https://gitlab.com/bztsrc/model3d>, as vendored by
+  the pinned raylib commit in `src/external/m3d.h`.
+- License: MIT; the notice is retained in [LICENSES/m3d.txt](LICENSES/m3d.txt).
+- `src/m3d.bend` is an altered Bend adaptation of the binary importer
+  (`m3d_load`: the container, the header and the color map, texture map,
+  vertex, bone, material, mesh and action chunks) and of `m3d_pose` (the
+  approximated NLERP it credits to Arseny Kapoulkine and the inverse square
+  root it credits to John Carmack), used with `rmodels.c`'s `LoadM3D` and
+  `LoadModelAnimationsM3D`. Its stb_image copy, exporter, ASCII variant,
+  voxels, shapes and procedural surfaces are not adapted.
 
 ## Arm numerical routines
 

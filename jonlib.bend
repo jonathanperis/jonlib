@@ -106,6 +106,7 @@ import ./src/obj.bend as Obj
 import ./src/gltf.bend as Gltf
 import ./src/vox.bend as Vox
 import ./src/iqm.bend as Iqm
+import ./src/m3d.bend as M3d
 import ./src/gltf_anim.bend as GltfAnim
 import ./src/clock.bend as Clock
 
@@ -12141,16 +12142,103 @@ def Model.iqm.bytes(loaded: Result<&1, &1, Surface.IOError, +List<U32>>, frame: 
 def Model.iqm.load(+arithmetic: M.Contraction, frame: Frame, +path: String, +dir: Maybe<&2, String>) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
   IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Frame & Result<&1, &1, Surface.IOError, LoadedModel>, Files.load_data(path), loaded => Model.iqm.bytes(loaded, frame, arithmetic, dir))
 
-# 0 an unknown extension, 1 .obj, 2 a format raylib loads and Jonlib does not, 4 .glb, 5 .vox, 6 .iqm, 3 no decision.
-def Model.load.kind.of(obj: Maybe<Bool>, glb: Maybe<Bool>, vox: Maybe<Bool>, iqm: Maybe<Bool>, other: Maybe<Bool>) -> U32:
-  match obj glb vox iqm other:
-    case Some{True{}} _ _ _ _: 1
-    case Some{False{}} Some{True{}} _ _ _: 4
-    case Some{False{}} Some{False{}} Some{True{}} _ _: 5
-    case Some{False{}} Some{False{}} Some{False{}} Some{True{}} _: 6
-    case Some{False{}} Some{False{}} Some{False{}} Some{False{}} Some{True{}}: 2
-    case Some{False{}} Some{False{}} Some{False{}} Some{False{}} Some{False{}}: 0
-    case _ _ _ _ _: 3
+def Model.m3d.float(+word: U32) -> F32:
+  U32{bits} = word
+  F32{bits}
+
+# A Model 3D color (its bytes are r, g, b, a in memory) as a Color.
+def Model.m3d.color(+c: U32) -> U32:
+  (((c .&. 255) << 24n) .|. (((c >> 8n) .&. 255) << 16n) .|. (((c >> 16n) .&. 255) << 8n) .|. (c >> 24n) : U32)
+
+# maps[target] with its color, its value or both replaced.
+def Model.m3d.maps.set(maps: +List<MaterialMap>, +at: U32, +target: U32, +recolor: Bool, +color: U32, +revalue: Bool, +value: F32) -> +List<MaterialMap>:
+  match maps:
+    case Nil{}: Nil{}
+    case Con{MaterialMap{+texture, +old, +kept}, rest}:
+      Con{Bool.pick(MaterialMap, U32.is_eq(at, target), MaterialMap{texture, Bool.pick(U32, recolor, color, old), Bool.pick(F32, revalue, value, kept)}, MaterialMap{texture, old, kept}),
+        Model.m3d.maps.set(rest, (at + 1 : U32), target, recolor, color, revalue, value)}
+
+# One property as LoadM3D applies it: Kd the diffuse color (and a value of
+# 0), Ks the specular color, Ns its value, Ke the emission color (value 0),
+# Pm the metalness value, Pr the roughness value, Ps the normal map's value
+# with a white color; the others change nothing.
+def Model.m3d.prop(kind: U32, +value: U32, +maps: +List<MaterialMap>) -> +List<MaterialMap>:
+  match kind:
+    case 0: Model.m3d.maps.set(maps, 0, 0, True{}, Model.m3d.color(value), True{}, 0.0)
+    case 2: Model.m3d.maps.set(maps, 0, 1, True{}, Model.m3d.color(value), False{}, 0.0)
+    case 3: Model.m3d.maps.set(maps, 0, 1, False{}, 0, True{}, Model.m3d.float(value))
+    case 4: Model.m3d.maps.set(maps, 0, 5, True{}, Model.m3d.color(value), True{}, 0.0)
+    case 65: Model.m3d.maps.set(maps, 0, 1, False{}, 0, True{}, Model.m3d.float(value))
+    case 64: Model.m3d.maps.set(maps, 0, 3, False{}, 0, True{}, Model.m3d.float(value))
+    case 66: Model.m3d.maps.set(maps, 0, 2, True{}, 4294967295, True{}, Model.m3d.float(value))
+    case _: maps
+
+def Model.m3d.props(props: +List<M3d.Prop>, +maps: +List<MaterialMap>) -> +List<MaterialMap>:
+  match props:
+    case Nil{}: maps
+    case Con{M3d.Prop{+kind, +value}, rest}: Model.m3d.props(rest, Model.m3d.prop(kind, value, maps))
+
+def Model.m3d.material(+props: +List<M3d.Prop>, +base: Material) -> Material:
+  Material{+maps, +params} = base
+  Material{Model.m3d.props(props, maps), params}
+
+# materials[i + 1] = LoadMaterialDefault() with material i's properties.
+def Model.m3d.materials(list: +List<M3d.Material>) -> +List<Material>:
+  match list:
+    case Nil{}: Nil{}
+    case Con{M3d.Material{_, +props}, rest}: Con{Model.m3d.material(props, Material.load_default()), Model.m3d.materials(rest)}
+
+def Model.m3d.colors(colored: Bool, +colors: +List<U32>) -> Maybe<&2, +List<U32>>:
+  match colored:
+    case False{}: None{}
+    case True{}: Some{colors}
+
+def Model.m3d.mesh(+mesh: M3d.Mesh) -> Mesh:
+  M3d.Mesh{_, +faces, +vertices, +texcoords, +normals, +colored, +colors} = mesh
+  Mesh{(faces * 3 : U32), faces, Some{vertices}, Some{texcoords}, None{}, Some{normals}, None{}, Model.m3d.colors(colored, colors), None{}}
+
+# The meshes of the runs, then the empty ones the loader allocated for
+# materials no run uses (its arrays are cleared).
+def Model.m3d.meshes(n: Nat, list: +List<M3d.Mesh>) -> +List<Mesh>:
+  match n list:
+    case 0n _: Nil{}
+    case 1n+k Nil{}: Con{Mesh.empty(), Model.m3d.meshes(k, Nil{})}
+    case 1n+k Con{+mesh, rest}: Con{Model.m3d.mesh(mesh), Model.m3d.meshes(k, rest)}
+
+def Model.m3d.mesh_material(n: Nat, list: +List<M3d.Mesh>) -> +List<U32>:
+  match n list:
+    case 0n _: Nil{}
+    case 1n+k Nil{}: Con{0, Model.m3d.mesh_material(k, Nil{})}
+    case 1n+k Con{M3d.Mesh{+material, _, _, _, _, _, _}, rest}: Con{material, Model.m3d.mesh_material(k, rest)}
+
+def Model.m3d.made(loaded: M3d.Loaded, frame: Frame) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
+  match loaded:
+    case M3d.Refused{}: Model.obj.fail(frame, DataError{OutOfDomain{}})
+    case M3d.Empty{}: Model.obj.done(frame, Model.empty(), Nil{})
+    case M3d.Model{+meshes, +count, +materials, _}:
+      Model.obj.done(frame, Model{M.Matrix.identity(), Model.m3d.meshes(U32.to_nat(count), meshes), Con{Material.load_default(), Model.m3d.materials(materials)}, Model.m3d.mesh_material(U32.to_nat(count), meshes)}, Nil{})
+
+def Model.m3d.bytes(loaded: Result<&1, &1, Surface.IOError, +List<U32>>, frame: Frame) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
+  match loaded:
+    case Fail{FileError{_, _}}: Model.obj.done(frame, Model.empty(), Nil{})
+    case Fail{error}: Model.obj.fail(frame, error)
+    case Done{+bytes}: Model.m3d.made(M3d.model(bytes), frame)
+
+# LoadM3D of a Model 3D file (src/m3d.bend).
+def Model.m3d.load(frame: Frame, +path: String) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
+  IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Frame & Result<&1, &1, Surface.IOError, LoadedModel>, Files.load_data(path), loaded => Model.m3d.bytes(loaded, frame))
+
+# 0 an unknown extension, 1 .obj, 2 a format raylib loads and Jonlib does not, 4 .glb, 5 .vox, 6 .iqm, 7 .m3d, 3 no decision.
+def Model.load.kind.of(obj: Maybe<Bool>, glb: Maybe<Bool>, vox: Maybe<Bool>, iqm: Maybe<Bool>, m3d: Maybe<Bool>, other: Maybe<Bool>) -> U32:
+  match obj glb vox iqm m3d other:
+    case Some{True{}} _ _ _ _ _: 1
+    case Some{False{}} Some{True{}} _ _ _ _: 4
+    case Some{False{}} Some{False{}} Some{True{}} _ _ _: 5
+    case Some{False{}} Some{False{}} Some{False{}} Some{True{}} _ _: 6
+    case Some{False{}} Some{False{}} Some{False{}} Some{False{}} Some{True{}} _: 7
+    case Some{False{}} Some{False{}} Some{False{}} Some{False{}} Some{False{}} Some{True{}}: 2
+    case Some{False{}} Some{False{}} Some{False{}} Some{False{}} Some{False{}} Some{False{}}: 0
+    case _ _ _ _ _ _: 3
 
 def Model.load.route(route: U32, +arithmetic: M.Contraction, frame: Frame, +path: String) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
   match route:
@@ -12160,6 +12248,7 @@ def Model.load.route(route: U32, +arithmetic: M.Contraction, frame: Frame, +path
     case 4: Model.gltf.load(arithmetic, frame, path)
     case 5: Model.vox.load(frame, path)
     case 6: Model.iqm.load(arithmetic, frame, path, Model.obj.dir.of(Files.directory(path)))
+    case 7: Model.m3d.load(frame, path)
     case _: Model.obj.fail(frame, DataError{OutOfDomain{}})
 
 # LoadModel(fileName) on the software renderer: ".obj" (case-insensitive)
@@ -12171,14 +12260,16 @@ def Model.load.route(route: U32, +arithmetic: M.Contraction, frame: Frame, +path
 # ".vox" through LoadVOX (src/vox.bend: the voxels' visible faces in meshes
 # of 65532 vertices with normals, colors and indices); ".iqm" through LoadIQM
 # (src/iqm.bend: the meshes with the texture each material names, the
-# skeleton through Model.load_skeleton). Other extensions give the empty
-# model with the default material, as raylib does; glTF as text and M3D
-# (which raylib loads) are UnsupportedFileType. The textures the materials reference come back
+# skeleton through Model.load_skeleton); ".m3d" through LoadM3D
+# (src/m3d.bend: the binary variant's meshes, materials' properties and
+# skeleton). Other extensions give the empty model with the default
+# material, as raylib does; glTF as text (which raylib loads) is
+# UnsupportedFileType. The textures the materials reference come back
 # with the model. Fail (OutOfDomain) for what the reference leaves undefined
 # or Jonlib does not reproduce (docs/MODELS.md); the frame is handed back
 # in every case.
 def Model.load_for(+arithmetic: M.Contraction, frame: Frame, +path: String) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
-  Model.load.route(Model.load.kind.of(Files.has_extension(path, ".obj"), Files.has_extension(path, ".glb"), Files.has_extension(path, ".vox"), Files.has_extension(path, ".iqm"), Files.has_extension(path, ".gltf;.m3d")), arithmetic, frame, path)
+  Model.load.route(Model.load.kind.of(Files.has_extension(path, ".obj"), Files.has_extension(path, ".glb"), Files.has_extension(path, ".vox"), Files.has_extension(path, ".iqm"), Files.has_extension(path, ".m3d"), Files.has_extension(path, ".gltf")), arithmetic, frame, path)
 
 def Model.load(frame: Frame, +path: String) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
   Model.load_for(M.Uncontracted{}, frame, path)
@@ -12235,13 +12326,26 @@ def Model.skeleton.bytes(loaded: Result<&1, &1, Surface.IOError, +List<U32>>) ->
     case Fail{error}: Fail{error}
     case Done{+bytes}: Model.skeleton.made(GltfAnim.skeleton(bytes))
 
-# 1 .glb, 2 .iqm, 0 another extension, 3 no decision.
-def Model.anim.kind(glb: Maybe<Bool>, iqm: Maybe<Bool>) -> U32:
-  match glb iqm:
-    case Some{True{}} _: 1
-    case Some{False{}} Some{True{}}: 2
-    case Some{False{}} Some{False{}}: 0
-    case _ _: 3
+# 1 .glb, 2 .iqm, 4 .m3d, 0 another extension, 3 no decision.
+def Model.anim.kind(glb: Maybe<Bool>, iqm: Maybe<Bool>, m3d: Maybe<Bool>) -> U32:
+  match glb iqm m3d:
+    case Some{True{}} _ _: 1
+    case Some{False{}} Some{True{}} _: 2
+    case Some{False{}} Some{False{}} Some{True{}}: 4
+    case Some{False{}} Some{False{}} Some{False{}}: 0
+    case _ _ _: 3
+
+def Model.skeleton.m3d(loaded: M3d.Loaded) -> Result<&1, &1, Surface.IOError, ModelSkeleton>:
+  match loaded:
+    case M3d.Refused{}: Fail{DataError{OutOfDomain{}}}
+    case M3d.Empty{}: Done{ModelSkeleton{Nil{}, Nil{}}}
+    case M3d.Model{_, _, _, +skeleton}: Model.skeleton.made(Some{skeleton})
+
+def Model.skeleton.m3d.bytes(loaded: Result<&1, &1, Surface.IOError, +List<U32>>) -> Result<&1, &1, Surface.IOError, ModelSkeleton>:
+  match loaded:
+    case Fail{FileError{_, _}}: Done{ModelSkeleton{Nil{}, Nil{}}}
+    case Fail{error}: Fail{error}
+    case Done{+bytes}: Model.skeleton.m3d(M3d.model(bytes))
 
 def Model.skeleton.iqm(loaded: Iqm.Loaded) -> Result<&1, &1, Surface.IOError, ModelSkeleton>:
   match loaded:
@@ -12259,6 +12363,7 @@ def Model.skeleton.route(kind: U32, +path: String) -> IO(Result<&1, &1, Surface.
   match kind:
     case 1: IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, ModelSkeleton>, Files.load_data(path), loaded => IO.pure(Result<&1, &1, Surface.IOError, ModelSkeleton>, Model.skeleton.bytes(loaded)))
     case 2: IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, ModelSkeleton>, Files.load_data(path), loaded => IO.pure(Result<&1, &1, Surface.IOError, ModelSkeleton>, Model.skeleton.iqm.bytes(loaded)))
+    case 4: IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, ModelSkeleton>, Files.load_data(path), loaded => IO.pure(Result<&1, &1, Surface.IOError, ModelSkeleton>, Model.skeleton.m3d.bytes(loaded)))
     case 0: IO.pure(Result<&1, &1, Surface.IOError, ModelSkeleton>, Fail{DataError{UnsupportedFileType{}}})
     case _: IO.pure(Result<&1, &1, Surface.IOError, ModelSkeleton>, Fail{DataError{OutOfDomain{}}})
 
@@ -12270,7 +12375,7 @@ def Model.skeleton.route(kind: U32, +path: String) -> IO(Result<&1, &1, Surface.
 # are UnsupportedFileType here; Fail (OutOfDomain) for what
 # src/gltf_anim.bend or src/iqm.bend refuses.
 def Model.load_skeleton(+path: String) -> IO(Result<&1, &1, Surface.IOError, ModelSkeleton>):
-  Model.skeleton.route(Model.anim.kind(Files.has_extension(path, ".glb"), Files.has_extension(path, ".iqm")), path)
+  Model.skeleton.route(Model.anim.kind(Files.has_extension(path, ".glb"), Files.has_extension(path, ".iqm"), Files.has_extension(path, ".m3d")), path)
 
 def Model.animations.made(animations: Maybe<+List<GltfAnim.Animation>>) -> Result<&1, &1, Surface.IOError, +List<ModelAnimation>>:
   match animations:
@@ -12295,10 +12400,22 @@ def Model.animations.iqm.bytes(loaded: Result<&1, &1, Surface.IOError, +List<U32
     case Fail{error}: Fail{error}
     case Done{+bytes}: Model.animations.iqm(Iqm.animations(bytes))
 
+def Model.animations.m3d(found: M3d.Animated) -> Result<&1, &1, Surface.IOError, +List<ModelAnimation>>:
+  match found:
+    case M3d.Unanimated{}: Fail{DataError{OutOfDomain{}}}
+    case M3d.Animations{+items}: Done{Model.anim.list(items)}
+
+def Model.animations.m3d.bytes(loaded: Result<&1, &1, Surface.IOError, +List<U32>>) -> Result<&1, &1, Surface.IOError, +List<ModelAnimation>>:
+  match loaded:
+    case Fail{FileError{_, _}}: Done{Nil{}}
+    case Fail{error}: Fail{error}
+    case Done{+bytes}: Model.animations.m3d(M3d.animations(bytes))
+
 def Model.animations.route(kind: U32, +libm: M.Libm, +path: String) -> IO(Result<&1, &1, Surface.IOError, +List<ModelAnimation>>):
   match kind:
     case 1: IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, +List<ModelAnimation>>, Files.load_data(path), loaded => IO.pure(Result<&1, &1, Surface.IOError, +List<ModelAnimation>>, Model.animations.bytes(loaded, libm)))
     case 2: IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, +List<ModelAnimation>>, Files.load_data(path), loaded => IO.pure(Result<&1, &1, Surface.IOError, +List<ModelAnimation>>, Model.animations.iqm.bytes(loaded)))
+    case 4: IO.bind(Result<&1, &1, Surface.IOError, +List<U32>>, Result<&1, &1, Surface.IOError, +List<ModelAnimation>>, Files.load_data(path), loaded => IO.pure(Result<&1, &1, Surface.IOError, +List<ModelAnimation>>, Model.animations.m3d.bytes(loaded)))
     case 0: IO.pure(Result<&1, &1, Surface.IOError, +List<ModelAnimation>>, Fail{DataError{UnsupportedFileType{}}})
     case _: IO.pure(Result<&1, &1, Surface.IOError, +List<ModelAnimation>>, Fail{DataError{OutOfDomain{}}})
 
@@ -12315,7 +12432,7 @@ def Model.animations.route(kind: U32, +libm: M.Libm, +path: String) -> IO(Result
 # src/gltf_anim.bend or src/iqm.bend refuses, a rotation the profile does
 # not answer included.
 def Model.load_animations_for(+libm: M.Libm, +path: String) -> IO(Result<&1, &1, Surface.IOError, +List<ModelAnimation>>):
-  Model.animations.route(Model.anim.kind(Files.has_extension(path, ".glb"), Files.has_extension(path, ".iqm")), libm, path)
+  Model.animations.route(Model.anim.kind(Files.has_extension(path, ".glb"), Files.has_extension(path, ".iqm"), Files.has_extension(path, ".m3d")), libm, path)
 
 def Model.load_animations(+path: String) -> IO(Result<&1, &1, Surface.IOError, +List<ModelAnimation>>):
   Model.load_animations_for(M.AppleLibm{}, path)
