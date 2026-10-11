@@ -78,6 +78,7 @@
    "scope": "guiState.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/core_compute_hash.bend",
     "examples/shapes_circle_sector_drawing.bend",
     "docs/GUI.md",
     "jongui.bend"
@@ -106,6 +107,7 @@
    "scope": "The 16x24 style table; a DEFAULT base property reaches every control.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/core_compute_hash.bend",
     "examples/shapes_circle_sector_drawing.bend",
     "docs/GUI.md",
     "jongui.bend"
@@ -243,6 +245,7 @@
    "scope": "GetTextBounds(LABEL) and GuiDrawText in the state's text color.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/core_compute_hash.bend",
     "examples/shapes_splines_drawing.bend",
     "examples/shapes_circle_sector_drawing.bend",
     "docs/GUI.md",
@@ -404,6 +407,8 @@
    "jongui": "Gui.text_box",
    "scope": "The box, its text and cursors; edit mode over raygui's two globals (Gui.Editing): typing, paste, HOME/END, DELETE, BACKSPACE, LEFT/RIGHT with key repeat, the pointer, ENTER.",
    "evidence": [
+    "tools/examples_probe.py",
+    "examples/core_compute_hash.bend",
     "docs/GUI.md",
     "jongui.bend",
     "LAWS.bend"

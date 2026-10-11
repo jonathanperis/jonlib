@@ -184,7 +184,11 @@ hovered and pressed, a plain `GuiSlider` with a left text only, and the
 label in each state. `shapes_splines_drawing` covers the dropdown box: hovered, opened by a
 press, an item hovered and chosen by a release, opened again and closed by
 a press outside, with the rest of the gui locked while it is open (and
-while a point is dragged). `shaders_color_correction` covers the toggle group: an item hovered, pressed
+while a point is dragged). `core_compute_hash` covers the text box: hovered, entered by a press,
+BACKSPACE, LEFT, DELETE, HOME, END and RIGHT, the cursor placed by a press
+over the text, BACKSPACE held past the repeat cooldown, ENTER, a press
+outside, and read-only boxes; a label in `TEXT_SIZE` 20 with
+`TEXT_SPACING` 2 and one drawn as focused. `shaders_color_correction` covers the toggle group: an item hovered, pressed
 and switched on, and a click on the active item that changes nothing. `LAWS.bend` states the default text size, the propagation of a DEFAULT
 property, the enable/disable rules, how an icon prefix is read and which
 lines are refused. The `gui-icons` gate compares the icon set with every

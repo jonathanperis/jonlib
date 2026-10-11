@@ -231,6 +231,7 @@ EXAMPLES = {
     'shapes_math_sine_cosine': ('shapes/shapes_math_sine_cosine.c', 'Ex.setup(M.LIBM{}, core, frame)'),
     'shapes_hilbert_curve': ('shapes/shapes_hilbert_curve.c', 'Ex.setup(core, frame)'),
     'shapes_splines_drawing': ('shapes/shapes_splines_drawing.c', 'Ex.setup(core, frame)'),
+    'core_compute_hash': ('core/core_compute_hash.c', 'Ex.setup(core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -863,6 +864,17 @@ def scripts():
                                                      quick([mouse_at(60, 92), button(0)]), quick([mouse_at(100, 92)]), quick([button(0, False)]),
                                                      quick([mouse_at(22, 120), button(0)]), quick([button(0, False)]), quick([mouse_at(80, 46), button(0)]),
                                                      quick([button(0, False)]), quick([mouse_at(400, 300), button(0)]), quick([button(0, False)]), slow()]),
+        # The text box is hovered and pressed (edit mode, the cursor at the end); BACKSPACE, LEFT twice, DELETE, HOME,
+        # END, a press that places the cursor under the pointer, RIGHT, BACKSPACE held past the 20-frame cooldown
+        # (one deletion a frame), ENTER; the button computes the hashes; the box is entered again and left by a
+        # press outside. Replayed events never reach GetCharPressed, so nothing is typed.
+        script('core_compute_hash', 'edit', [quick(), quick([mouse_at(400, 80)]), quick([button(0)]), quick([button(0, False)]), quick([key(259)]), quick([key(259, False)]),
+                                             quick([key(263)]), quick([key(263, False)]), quick([key(263)]), quick([key(263, False), key(261)]), quick([key(261, False)]),
+                                             quick([key(268)]), quick([key(268, False), key(269)]), quick([key(269, False)]), quick([mouse_at(100, 80)]),
+                                             quick([button(0)]), quick([button(0, False)]), quick([key(262)]), quick([key(262, False)]), quick([key(259)])]
+               + [quick() for _ in range(24)]
+               + [quick([key(259, False)]), quick([key(257)]), quick([key(257, False), mouse_at(400, 120)]), quick([button(0)]), quick([button(0, False)]), quick(),
+                  quick([mouse_at(400, 80), button(0)]), quick([button(0, False)]), quick([mouse_at(400, 300), button(0)]), quick([button(0, False)]), slow()]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.
