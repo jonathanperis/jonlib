@@ -813,7 +813,7 @@ def Laws.gltf_other_texture_kind_refused():
 def Laws.gltf_base_color_image_kept():
   {==}
 
-def Laws.vox_extension_routed(iqm, other):
+def Laws.vox_extension_routed(iqm, m3d, other):
   {==}
 
 def Laws.vox_size_padded():
@@ -867,10 +867,10 @@ def Laws.vox_four_bytes_left_halt(read):
 def Laws.vox_chunk_past_the_end_ends():
   {==}
 
-def Laws.iqm_extension_routed(other):
+def Laws.iqm_extension_routed(m3d, other):
   {==}
 
-def Laws.iqm_skeleton_and_animations_routed():
+def Laws.iqm_skeleton_and_animations_routed(m3d):
   {==}
 
 def Laws.iqm_empty_file_foreign():
@@ -904,6 +904,51 @@ def Laws.iqm_material_must_name_a_file():
   {==}
 
 def Laws.iqm_pose_parents():
+  {==}
+
+def Laws.m3d_extension_routed(other):
+  {==}
+
+def Laws.m3d_skeleton_and_animations_routed():
+  {==}
+
+def Laws.m3d_index_sizes():
+  {==}
+
+def Laws.m3d_index_one_byte_signed_at_the_top():
+  {==}
+
+def Laws.m3d_index_one_byte_plain():
+  {==}
+
+def Laws.m3d_index_two_bytes_signed_at_the_top():
+  {==}
+
+def Laws.m3d_index_cut_short():
+  {==}
+
+def Laws.m3d_index_absent_keeps_its_value():
+  {==}
+
+def Laws.m3d_record_kinds():
+  {==}
+
+def Laws.m3d_property_formats():
+  {==}
+
+def Laws.m3d_color_bytes():
+  {==}
+
+def Laws.m3d_empty_file_no_model():
+  {==}
+
+def Laws.m3d_empty_file_no_animations():
+  {==}
+
+def Laws.m3d_magic_cut_short_refused():
+  {==}
+
+def Laws.m3d_other_magic_no_model():
   {==}
 
 def Laws.gltf_anim_joint_place():

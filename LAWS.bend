@@ -33,6 +33,7 @@ import ./src/gltf.bend as Gltf
 import ./src/gltf_anim.bend as GltfAnim
 import ./src/vox.bend as Vox
 import ./src/iqm.bend as Iqm
+import ./src/m3d.bend as M3d
 import ./src/par_shapes.bend as ParShapes
 import ./jongui.bend as JG
 import ./src/gui_icons.bend as GuiIcons
@@ -1146,8 +1147,9 @@ law gltf_base_color_image_kept:
 # voxel, are refused (Unread).
 law vox_extension_routed:
   for iqm: Maybe<Bool>
+  for m3d: Maybe<Bool>
   for other: Maybe<Bool>
-  {J.Model.load.kind.of(Some{False{}}, Some{False{}}, Some{True{}}, iqm, other) == 5 : U32}
+  {J.Model.load.kind.of(Some{False{}}, Some{False{}}, Some{True{}}, iqm, m3d, other) == 5 : U32}
 
 law vox_size_padded:
   {Vox.padded(20) == 32 : U32}
@@ -1213,11 +1215,13 @@ law vox_chunk_past_the_end_ends:
 # before the NUL among the 32 the loader copies; a material's name must be
 # a file name; a pose's parent is a pose or negative.
 law iqm_extension_routed:
+  for m3d: Maybe<Bool>
   for other: Maybe<Bool>
-  {J.Model.load.kind.of(Some{False{}}, Some{False{}}, Some{False{}}, Some{True{}}, other) == 6 : U32}
+  {J.Model.load.kind.of(Some{False{}}, Some{False{}}, Some{False{}}, Some{True{}}, m3d, other) == 6 : U32}
 
 law iqm_skeleton_and_animations_routed:
-  {J.Model.anim.kind(Some{False{}}, Some{True{}}) == 2 : U32}
+  for m3d: Maybe<Bool>
+  {J.Model.anim.kind(Some{False{}}, Some{True{}}, m3d) == 2 : U32}
 
 law iqm_empty_file_foreign:
   {Iqm.model(Nil{}) == Iqm.Foreign{} : Iqm.Loaded}
@@ -1251,6 +1255,61 @@ law iqm_material_must_name_a_file:
 
 law iqm_pose_parents:
   {(Iqm.parented([4294967295, 0, 1], 3), Iqm.parented([4294967295, 0, 3], 3)) == (True{}, False{}) : Bool & Bool}
+
+# Model 3D files (src/m3d.bend, docs/MODELS.md): LoadModel routes ".m3d" to
+# LoadM3D and its skeleton and animations are the file's. The header's types
+# word gives each index two bits (a size of 1, 2, 4 or 8 bytes; 8 means none
+# for the optional ones); an index of one byte reads 254 and 255 as -2 and
+# -1, one of two bytes 65534 and 65535 likewise; a mesh record's high nibble
+# is its corner count (0 a selection, 3 a face, another the end); material
+# properties 0 to 8 and 64 to 68 have a format and the rest below 128 are
+# unknown; a color's bytes are r, g, b, a in memory. An empty file gives no
+# model and no animations; a magic cut short is refused.
+law m3d_extension_routed:
+  for other: Maybe<Bool>
+  {J.Model.load.kind.of(Some{False{}}, Some{False{}}, Some{False{}}, Some{False{}}, Some{True{}}, other) == 7 : U32}
+
+law m3d_skeleton_and_animations_routed:
+  {J.Model.anim.kind(Some{False{}}, Some{False{}}, Some{True{}}) == 4 : U32}
+
+law m3d_index_sizes:
+  {(M3d.sized(1859860, 0, False{}), (M3d.sized(1859860, 2, False{}), (M3d.sized(1859860, 12, False{}), M3d.sized(1859860, 18, True{})))) == (1, (2, (4, 0))) : U32 & (U32 & (U32 & U32))}
+
+law m3d_index_one_byte_signed_at_the_top:
+  {M3d.index(1, [255, 7], 0) == M3d.Index{True{}, 4294967295, [7]} : M3d.Index}
+
+law m3d_index_one_byte_plain:
+  {M3d.index(1, [253, 7], 0) == M3d.Index{True{}, 253, [7]} : M3d.Index}
+
+law m3d_index_two_bytes_signed_at_the_top:
+  {M3d.index(2, [254, 255], 0) == M3d.Index{True{}, 4294967294, Nil{}} : M3d.Index}
+
+law m3d_index_cut_short:
+  {M3d.index(4, [1, 2, 3], 9) == M3d.Index{False{}, 9, Nil{}} : M3d.Index}
+
+law m3d_index_absent_keeps_its_value:
+  {M3d.index(0, [5], 9) == M3d.Index{True{}, 9, [5]} : M3d.Index}
+
+law m3d_record_kinds:
+  {(M3d.record.kind(0), (M3d.record.kind(50), M3d.record.kind(67))) == (0, (1, 2)) : U32 & (U32 & U32)}
+
+law m3d_property_formats:
+  {(M3d.format(0), (M3d.format(3), (M3d.format(8), (M3d.format(66), M3d.format(9))))) == (0, (4, (1, (4, 9)))) : U32 & (U32 & (U32 & (U32 & U32)))}
+
+law m3d_color_bytes:
+  {J.Model.m3d.color(4279312947) == 857870847 : U32}
+
+law m3d_empty_file_no_model:
+  {M3d.model(Nil{}) == M3d.Empty{} : M3d.Loaded}
+
+law m3d_empty_file_no_animations:
+  {M3d.animations(Nil{}) == M3d.Animations{Nil{}} : M3d.Animated}
+
+law m3d_magic_cut_short_refused:
+  {M3d.model([51, 68, 77]) == M3d.Refused{} : M3d.Loaded}
+
+law m3d_other_magic_no_model:
+  {M3d.model([51, 100, 109, 111, 10]) == M3d.Empty{} : M3d.Loaded}
 
 # Skeletons and animations (src/gltf_anim.bend): a joint's place among the
 # joints is its bone index and a node outside them has none (-1); a time

@@ -363,8 +363,9 @@ the textures, a mesh material index beyond the materials, unverified `sinf`/
 (case-insensitive, as `IsFileExtension`) through `LoadOBJ`; `.glb` files
 through `LoadGLTF` (the next section); `.vox` files through `LoadVOX`
 ([MagicaVoxel](#loading-models-magicavoxel)); `.iqm` files through `LoadIQM`
-([Inter-Quake Model](#loading-models-inter-quake-model)); glTF as text and M3D
-files (which raylib loads) are `UnsupportedFileType`; other
+([Inter-Quake Model](#loading-models-inter-quake-model)); `.m3d` files through
+`LoadM3D` ([Model 3D](#loading-models-model-3d)); glTF as text (which raylib
+loads) is `UnsupportedFileType`; other
 extensions, and OBJ files that do not open or are empty, give raylib's model
 without meshes and with the default material. The result is a
 `LoadedModel{model, textures}`: the textures the MTL file's materials loaded
@@ -721,6 +722,72 @@ keyframes), natively and with Jonlib, and compares the model (as gate
 `vox` does), every bone's parent, name and bind pose, and a hash of every
 keyframe's pose.
 
+## Loading models (Model 3D)
+
+`Model.load_for` of an `.m3d` file is `LoadM3D` over `m3d.h`'s importer
+(`src/m3d.bend`), in its binary variant: `3DMO`, the file's length, an
+optional preview chunk, then `HEAD` or a zlib stream that inflates to it. The
+header gives the scale (1 when it is not positive) and a types word with the
+size of every index (1, 2 or 4 bytes; an index of one byte reads 254 and 255
+as -2 and -1, of two bytes 65534 and 65535 likewise), then chunks follow up
+to `OMD3`. raylib does not build the ASCII variant: `3dmo` gives no model.
+
+- **CMAP, TMAP, VRTS.** A color map, texture coordinates (bytes over 255,
+  shorts over 65535, or floats) and vertices (signed bytes over 127, signed
+  shorts over 32767, or floats; `x y z w`, a color by index or as a word, a
+  skin index). A second chunk of a kind is skipped.
+- **BONE.** The bones (parent, name, a position vertex and an orientation
+  vertex) and the skins (the bones of up to eight weights).
+- **MTRL.** A material's name and properties. A map property without a
+  name is dropped, as the importer drops a texture it does not find.
+- **MESH.** Records: a material selection, or a triangle whose corners are
+  a vertex and, by the record's flags, a texture coordinate and a normal.
+- **ACTN.** An action: its name, its duration and frames, each a time and
+  the bones whose position or orientation vertex changes.
+
+`LoadM3D` makes one mesh a run of faces of one material, three vertices a
+face (no indices): the positions times the scale, the texture coordinates
+with `v` turned over, the normals, and colors when the run has no material
+(white where a vertex has none) or a vertex of it has no color. There are
+at least as many meshes as materials (those no run uses are empty), and one
+material more than the file's: the default one first. A material takes its
+`Kd`, `Ks`, `Ns`, `Ke`, `Pm`, `Pr` and `Ps` properties. The skeleton
+(`Model.load_skeleton`) has a bone a bone, its position times the scale and
+its orientation normalized, composed with its parent's in the bones' order
+(a parent that comes later is still zeros, as the loader's cleared array
+is), then a bone named `NO BONE`.
+
+`Model.load_animations_for` is `LoadModelAnimationsM3D`: an animation an
+action, `duration/17` keyframes, keyframe `i` being `m3d_pose` at `17*i`
+ms: the frames whose time is not past it applied in order, then, unless the
+last one is at that time, an interpolation towards the next frame (the
+first one after the last): positions linearly, orientations with the
+importer's approximated NLERP and its inverse square root. The factor of
+that interpolation is changed by every orientation it interpolates and the
+next bone starts from the changed one, as upstream does. Poses are composed
+in model space as the skeleton is. No libm call; uncontracted arithmetic.
+
+No model for another magic, an empty file, a file that does not open, an
+index size the importer does not take or a missing end mark: the empty
+model, no bones, no animations. A file without faces is the empty model
+too, with its animations. `OutOfDomain` for what the importer or the
+loaders leave undefined: a header, a chunk or a record cut short; an index
+past the vertices, the texture map, the color map, the bones or the skins;
+a material without a name after another, a bone or an action without one
+where it is copied; an action whose frames its chunk does not hold; and
+for what is outside the profile: faces without normals (the importer
+generates them), a map property that names a texture (an inlined asset or
+a file the importer would look for in the working directory), procedural,
+shape, voxel and label chunks, coordinates as doubles, a zlib stream the
+decoder does not finish, files over 2 MiB, strings over 255 bytes, more
+than 65535 bones or 65536 keyframes.
+
+Gate `m3d` (`tools/m3d_probe.py`) loads generated files covering each of
+those rules and the examples' files (`cesium_man.m3d`: 4672 faces, 19
+bones and an action of 112 keyframes; `suzanne.m3d`; `seagull.m3d` is
+refused for its inlined texture), natively and with Jonlib, and compares
+the rows of gate `iqm`.
+
 ## Collision
 
 - **GetRayCollisionMesh** transforms each triangle's vertices with
@@ -806,6 +873,7 @@ rlsw's per-primitive alpha flag ([FRAME.md](FRAME.md#the-rendering-path)).
 | `obj-uncontracted` | `tools/obj_probe.py --uncontracted-control` | the same files against the raylib built with `-ffp-contract=off` (`M.Uncontracted{}`); the corpus includes literals whose fused and unfused parses round to different floats |
 | `vox` | `tools/vox_probe.py` | 53 MagicaVoxel loads (the four models of `models_loading_vox` and files written by the probe): mesh and material counts, `IsModelValid`, every mesh's counts, material index and FNV-1a hashes of its vertex, normal, color and index words, every material map; 33 compared, 20 refused |
 | `iqm` | `tools/iqm_probe.py` | 46 Inter-Quake Model files (the two of `models_loading_iqm` and files written by the probe) through `LoadModel`, the skeleton and `LoadModelAnimations` against the uncontracted raylib build: the model rows of gate `vox`, every bone's parent, name and bind pose words, every animation's name, counts and a hash of each keyframe's pose; 62 loads compared, 30 refused |
+| `m3d` | `tools/m3d_probe.py` | 65 Model 3D files (the three of the models examples and files written by the probe) through `LoadModel`, the skeleton and `LoadModelAnimations` against the uncontracted raylib build, with the rows of gate `iqm`; 80 loads compared, 50 refused |
 
 ```sh
 python3 tools/run_gates.py --bend-source "$BEND_SOURCE" --raylib-source "$RAYLIB_SOURCE" --only models
@@ -831,9 +899,10 @@ attribute builders are tail-recursive.
   buffers, `UpdateMeshBuffer` and
   `UpdateModelAnimation*` (the reference only fills a pose and bone
   matrices Jonlib's `Model` does not have).
-- glTF as text and M3D files: `LoadModel` answers
-  `UnsupportedFileType` (raylib loads them; their parsers and binary formats
-  are not ported). Binary glTF is loaded for the slice above: a skinned
+- glTF as text: `LoadModel` answers `UnsupportedFileType` (raylib loads it;
+  the text container is not ported). Model 3D: textures (inlined or
+  looked up), generated normals, voxels, shapes, procedural surfaces and
+  the ASCII variant. Binary glTF is loaded for the slice above: a skinned
   file's bone data and skeleton are not kept, model animations are not
   loaded, and the other texture kinds and attribute formats are refused.
 - OBJ: faces of 6 or 7 vertices (accepted by builds without asserts, refused
