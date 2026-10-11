@@ -979,13 +979,20 @@ law glibc_sin_quadrant_past_int_refused:
   for low: U32
   {GlibcSin.quadrant.words(1105199104, low) == 4 : U32}
 
-# The binary64 sum and difference around them (M.Float64.internal.add and
-# subtract): 1 + 1 is 2, 3 - 1 is 2, and an infinite operand is refused.
+# The binary64 operators around them (M.Float64.internal.add,
+# subtract and divide): 1 + 1 is 2, 3 - 1 is 2, 0/3 is 0, and a zero divisor
+# and an infinite operand are refused.
 law float64_one_plus_one:
   {M.Float64.internal.add(M.Float64{1072693248, 0}, M.Float64{1072693248, 0}) == Some{M.Float64{1073741824, 0}} : Maybe<M.Float64>}
 
 law float64_three_minus_one:
   {M.Float64.internal.subtract(M.Float64{1074266112, 0}, M.Float64{1072693248, 0}) == Some{M.Float64{1073741824, 0}} : Maybe<M.Float64>}
+
+law float64_zero_by_three:
+  {M.Float64.internal.divide(M.Float64{0, 0}, M.Float64{1074266112, 0}) == Some{M.Float64{0, 0}} : Maybe<M.Float64>}
+
+law float64_divide_by_zero_refused:
+  {M.Float64.internal.divide(M.Float64{1072693248, 0}, M.Float64{0, 0}) == None{} : Maybe<M.Float64>}
 
 law float64_add_infinity_refused:
   {M.Float64.internal.add(M.Float64{2146435072, 0}, M.Float64{1072693248, 0}) == None{} : Maybe<M.Float64>}

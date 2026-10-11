@@ -696,6 +696,12 @@ def Laws.float64_one_plus_one():
 def Laws.float64_three_minus_one():
   {==}
 
+def Laws.float64_zero_by_three():
+  {==}
+
+def Laws.float64_divide_by_zero_refused():
+  {==}
+
 def Laws.float64_add_infinity_refused():
   {==}
 

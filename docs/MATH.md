@@ -647,8 +647,8 @@ and JavaScript.
 
 An example forms a `double` expression around these functions
 (`(int)(400.0f + cos(t)*363.0f - 32)`): `M.Float64.from_f32` promotes,
-`M.Float64.internal.add`, `subtract` and `multiply` are the operators (one
-rounding each through the exact helper; `None` for a nonfinite or subnormal
-operand or result) and `M.Float64.to_int` or `to_f32` converts back. The
-same gate compares the three operators with C's on 1206 pairs of its
-arguments.
+`M.Float64.internal.add`, `subtract`, `multiply` and `divide` are the
+operators (one rounding each through the exact helper; `None` for a
+nonfinite or subnormal operand or result and a zero divisor) and
+`M.Float64.to_int` or `to_f32` converts back. The same gate compares the
+four operators with C's on 1206 pairs of its arguments.
