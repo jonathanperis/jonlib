@@ -233,6 +233,7 @@ EXAMPLES = {
     'shapes_splines_drawing': ('shapes/shapes_splines_drawing.c', 'Ex.setup(core, frame)'),
     'core_compute_hash': ('core/core_compute_hash.c', 'Ex.setup(core, frame)'),
     'core_clipboard_text': ('core/core_clipboard_text.c', 'Ex.setup(seed, core, frame)'),
+    'shapes_pie_chart': ('shapes/shapes_pie_chart.c', 'Ex.setup(core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -889,6 +890,16 @@ def scripts():
                                                   quick([button(0, False)]), quick([key(259)]), quick([key(259, False), key(263)]), quick([key(263, False)]),
                                                   quick([key(341)]), quick([key(88)]), quick([key(88, False)]), quick([key(86)]), quick([key(86, False), key(67)]),
                                                   quick([key(67, False), key(341, False)]), quick([key(257)]), quick([key(257, False)]), slow()], seed=7),
+        # Two slices are hovered (atan2f of the pointer); the spinner adds an eighth slice; percentages are shown,
+        # the donut switched on (its slider disabled) and off, the inner radius dragged; the wheel turns over the
+        # scroll panel (its content fits: no bars); the first slice's value is dragged, the second's label entered,
+        # shortened by BACKSPACE and left with ENTER.
+        script('shapes_pie_chart', 'slices', [quick(), quick([mouse_at(300, 150)]), quick([mouse_at(150, 300)]), quick([mouse_at(733, 29), button(0)]), quick([button(0, False)]),
+                                              quick([mouse_at(555, 97), button(0)]), quick([button(0, False)]), quick([mouse_at(555, 127), button(0)]), quick([button(0, False)]),
+                                              quick(), quick([button(0)]), quick([button(0, False), mouse_at(650, 162)]), quick([button(0)]), quick([mouse_at(700, 162)]),
+                                              quick([button(0, False), mouse_at(660, 300)]), quick([(MOUSE_WHEEL, 0, -1, 0)]), quick([mouse_at(700, 228), button(0)]),
+                                              quick([mouse_at(740, 228)]), quick([button(0, False)]), quick([mouse_at(600, 262), button(0)]), quick([button(0, False)]),
+                                              quick([key(259)]), quick([key(259, False), key(257)]), quick([key(257, False)]), slow()]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.
@@ -1125,7 +1136,8 @@ REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particle
             'shapes_rlgl_color_wheel', 'shapes_rectangle_advanced', 'core_input_gestures_testbed', 'core_input_gamepad',
             'shapes_easings_ball', 'shapes_easings_box', 'shapes_easings_testbed', 'textures_textured_curve',
             'core_2d_camera_mouse_zoom', 'shapes_simple_particles',
-            'shapes_math_sine_cosine'}
+            'shapes_math_sine_cosine',
+            'shapes_pie_chart'}
 
 
 def refusal(item, libm):

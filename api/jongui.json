@@ -8,6 +8,7 @@
    "scope": "STATE_DISABLED becomes STATE_NORMAL.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/shapes_pie_chart.bend",
     "examples/shapes_kaleidoscope.bend",
     "examples/shapes_circle_sector_drawing.bend",
     "docs/GUI.md",
@@ -20,6 +21,7 @@
    "scope": "STATE_NORMAL becomes STATE_DISABLED.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/shapes_pie_chart.bend",
     "examples/shapes_kaleidoscope.bend",
     "examples/shapes_circle_sector_drawing.bend",
     "docs/GUI.md",
@@ -218,6 +220,7 @@
    "scope": "A one-pixel rule at the middle of the bounds in LINE_COLOR (BORDER_COLOR_DISABLED when disabled), with the text set into it 12 pixels from the left when one is given.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/shapes_pie_chart.bend",
     "examples/shapes_math_sine_cosine.bend",
     "docs/GUI.md",
     "jongui.bend"
@@ -254,6 +257,8 @@
    "jongui": "Gui.scroll_panel",
    "scope": "The panel, its view and scroll offset, the wheel, and a scroll bar (Gui.scroll_bar, static GuiScrollBar in raygui) for each axis that does not fit.",
    "evidence": [
+    "tools/examples_probe.py",
+    "examples/shapes_pie_chart.bend",
     "docs/GUI.md",
     "jongui.bend",
     "LAWS.bend"
@@ -395,6 +400,7 @@
    "scope": "Not in edit mode: the two arrow buttons, the value box between them and the label; the value steps by one on a button's release and is clamped.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/shapes_pie_chart.bend",
     "examples/shapes_hilbert_curve.bend",
     "docs/GUI.md",
     "jongui.bend",
@@ -437,6 +443,7 @@
    "scope": "The box, its text and cursors; edit mode over raygui's two globals (Gui.Editing): typing, paste, HOME/END, DELETE, BACKSPACE, LEFT/RIGHT with key repeat, the pointer, ENTER.",
    "evidence": [
     "tools/examples_probe.py",
+    "examples/shapes_pie_chart.bend",
     "examples/core_clipboard_text.bend",
     "examples/core_compute_hash.bend",
     "docs/GUI.md",

@@ -2195,7 +2195,7 @@
   {
    "name": "shapes_pie_chart",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginScissorMode",
