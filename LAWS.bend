@@ -1131,6 +1131,17 @@ law gui_disable_keeps_focus:
   for gui: JG.Gui
   {JG.Gui.get_state(JG.Gui.disable(JG.Gui.set_state(gui, 1))) == 1 : U32}
 
+# GuiLine and GuiGroupBox draw in DEFAULT's LINE_COLOR (property 18), and in
+# its BORDER_COLOR_DISABLED (9) when the gui is disabled.
+law gui_line_color_property:
+  {JG.Gui.line.property(0) == 18 : U32}
+
+law gui_line_color_focused_property:
+  {JG.Gui.line.property(1) == 18 : U32}
+
+law gui_line_color_disabled_property:
+  {JG.Gui.line.property(3) == 9 : U32}
+
 law shader_load_never_valid:
   for vs: Maybe<String>
   for fs: Maybe<String>
