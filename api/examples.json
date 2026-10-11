@@ -4533,7 +4533,7 @@
   {
    "name": "models_loading_m3d",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
