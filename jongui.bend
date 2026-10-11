@@ -10,8 +10,8 @@
 # GuiSetState, GuiGetState, GuiSetAlpha), GuiGetTextWidth, GuiLabel,
 # GuiButton, GuiCheckBox, GuiToggle, GuiToggleGroup, GuiSlider and
 # GuiSliderBar, GuiLine and GuiGroupBox, GuiValueBox and GuiSpinner (not in
-# edit mode), GuiStatusBar, GuiPanel, GuiDropdownBox and GuiTextBox, with the
-# default font,
+# edit mode), GuiStatusBar, GuiPanel, GuiDropdownBox, GuiTextBox,
+# GuiScrollBar and GuiScrollPanel, with the default font,
 # TEXT_WRAP_NONE and raygui's icon set (src/gui_icons.bend, GuiSetIconScale). An
 # icon id above 255 (raygui reads past its table) and the other wrap modes
 # mark the frame undefined. See docs/GUI.md.
@@ -1409,3 +1409,248 @@ def Gui.text_box(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle,
   +live = Gui.active(gui) && U32.is_eq(Gui.get_style(gui, 9, 16), 0) && Bool.not(Gui.exclusive(gui)) && U32.is_eq(Gui.get_style(gui, 0, 22), 0)
   Gui.box.done(Gui.box.updated(Bool.pick(U32, live, Bool.pick(U32, edit, 2, 1), 0), gui, core, bounds, Gui.text_bounds(gui, 9, bounds), TextCore.bytes(text), size, editing),
     gui, frame, bounds, Gui.text_bounds(gui, 9, bounds), edit)
+
+# -----------------------------------------------------------------------------
+# GuiScrollBar and GuiScrollPanel
+
+def Gui.rec.y(rec: J.Rectangle) -> F32:
+  J.Rectangle{_, y, _, _} = rec
+  y
+
+def Gui.rec.height(rec: J.Rectangle) -> F32:
+  J.Rectangle{_, _, _, h} = rec
+  h
+
+def Gui.exclusive_rec(gui: Gui) -> J.Rectangle:
+  Gui{_, _, _, _, rec, _, _} = gui
+  rec
+
+# (int)x as a word, 0 where C's conversion is undefined (the callers refuse there).
+def Gui.int.of(+x: F32) -> U32:
+  Bool.pick(U32, FontCore.int.valid(x), FontCore.int.of(x), 0)
+
+# a/b for C ints with a >= 1 and b not 0, truncated toward zero.
+def Gui.int.div(+a: U32, +b: U32) -> U32:
+  Bool.pick(U32, FontCore.negative(b), (0 - (a / (0 - b)) : U32), (a / b : U32))
+
+def Gui.scroll.floor(+value: U32, +min: U32) -> U32:
+  Bool.pick(U32, Gui.int.less(value, min), min, value)
+
+# GuiScrollBar's normalization: max when above it, then min when below it.
+def Gui.scroll.clamp(+value: U32, +min: U32, +max: U32) -> U32:
+  Gui.scroll.floor(Bool.pick(U32, Gui.int.less(max, value), max, value), min)
+
+def Gui.scroll.axis(axis: Maybe<F32>) -> F32:
+  match axis:
+    case None{}: F32.neg(1.0)
+    case Some{value}: value
+
+# GUI_SCROLL_DELTA: the wheel, plus the right trigger less the left one.
+def Gui.scroll.delta(+core: J.Core) -> F32:
+  ((J.Input.get_mouse_wheel_move(core) + (Gui.scroll.axis(J.Input.get_gamepad_axis_movement(core, 0, 5)) + 1.0) : F32) - (Gui.scroll.axis(J.Input.get_gamepad_axis_movement(core, 0, 4)) + 1.0) : F32)
+
+# The scroll bar's parts: the two arrow buttons, the track between them and
+# the slider on it. bad: the slider's place is not a C int.
+type Gui.Scroll is Data:
+  GuiScroll{first: J.Rectangle, second: J.Rectangle, track: J.Rectangle, slider: J.Rectangle, bad: Bool}
+
+# ratio is (value - min)/range; the arrows are squares of the bar's inner
+# thickness when ARROWS_VISIBLE, else empty.
+def Gui.scroll.layout(vertical: Bool, +gui: Gui, +bounds: J.Rectangle, +ratio: F32) -> Gui.Scroll:
+  match vertical:
+    case True{}:
+      J.Rectangle{+x, +y, +w, +h} = bounds
+      +border = Gui.style.f32(gui, 14, 12)
+      +spinner = Bool.pick(F32, U32.is_ne(Gui.get_style(gui, 14, 17), 0), (F32.trunc(w) - 2.0 * border : F32), 0.0)
+      +size0 = FontCore.int.f32(Gui.scroll.floor(Gui.get_style(gui, 14, 19), 1))
+      +ty = ((y + border : F32) + spinner : F32)
+      +th = (((h - spinner : F32) - spinner : F32) - 2.0 * border : F32)
+      +size = Bool.pick(F32, (size0 >= th : F32), (F32.trunc(th) - 2.0 : F32), size0)
+      +raw = (ratio * (th - size) : F32)
+      GuiScroll{J.Rectangle{(x + border : F32), (y + border : F32), spinner, spinner}, J.Rectangle{(x + border : F32), (((y + h : F32) - spinner : F32) - border : F32), spinner, spinner},
+        J.Rectangle{((x + border : F32) + Gui.style.f32(gui, 14, 20) : F32), ty, (w - 2.0 * (border + Gui.style.f32(gui, 14, 20)) : F32), th},
+        J.Rectangle{((x + border : F32) + Gui.style.f32(gui, 14, 18) : F32), (ty + F32.trunc(raw) : F32), (w - 2.0 * (border + Gui.style.f32(gui, 14, 18)) : F32), size},
+        Bool.not(FontCore.int.valid(raw)) || Bool.not(FontCore.int.valid(th))}
+    case False{}:
+      J.Rectangle{+x, +y, +w, +h} = bounds
+      +border = Gui.style.f32(gui, 14, 12)
+      +spinner = Bool.pick(F32, U32.is_ne(Gui.get_style(gui, 14, 17), 0), (F32.trunc(h) - 2.0 * border : F32), 0.0)
+      +size0 = FontCore.int.f32(Gui.scroll.floor(Gui.get_style(gui, 14, 19), 1))
+      +tx = ((x + border : F32) + spinner : F32)
+      +tw = (((w - spinner : F32) - spinner : F32) - 2.0 * border : F32)
+      +size = Bool.pick(F32, (size0 >= tw : F32), (F32.trunc(tw) - 2.0 : F32), size0)
+      +raw = (ratio * (tw - size) : F32)
+      GuiScroll{J.Rectangle{(x + border : F32), (y + border : F32), spinner, spinner}, J.Rectangle{(((x + w : F32) - spinner : F32) - border : F32), (y + border : F32), spinner, spinner},
+        J.Rectangle{tx, ((y + border : F32) + Gui.style.f32(gui, 14, 20) : F32), tw, (h - 2.0 * (border + Gui.style.f32(gui, 14, 20)) : F32)},
+        J.Rectangle{(tx + F32.trunc(raw) : F32), ((y + border : F32) + Gui.style.f32(gui, 14, 18) : F32), size, (h - 2.0 * (border + Gui.style.f32(gui, 14, 18)) : F32)},
+        Bool.not(FontCore.int.valid(raw)) || Bool.not(FontCore.int.valid(tw))}
+
+# The value under the pointer: ((pointer - track - slider/2)*range)/(track length - slider length) + min.
+def Gui.scroll.pointed(+vertical: Bool, +mouse: M.Vector2, +track: J.Rectangle, +slider: J.Rectangle, +range: U32, +min: U32) -> F32:
+  M.Vector2{+mx, +my} = mouse
+  +at = Bool.pick(F32, vertical, (my - Gui.rec.y(track) : F32), (mx - Gui.rec.x(track) : F32))
+  +thumb = Bool.pick(F32, vertical, Gui.rec.height(slider), Gui.rec.width(slider))
+  +length = Bool.pick(F32, vertical, Gui.rec.height(track), Gui.rec.width(track))
+  ((((at - thumb / 2.0 : F32) * FontCore.int.f32(range) : F32) / (length - thumb) : F32) + FontCore.int.f32(min) : F32)
+
+def Gui.scroll.arrows(visible: Bool, +gui: Gui, +vertical: Bool, +first: J.Rectangle, +second: J.Rectangle, +side: F32, +tint: U32, frame: J.Frame) -> J.Frame:
+  match visible:
+    case False{}: frame
+    case True{}:
+      Gui.draw_text(gui, Gui.draw_text(gui, frame, Bool.pick(String, vertical, "#121#", "#118#"), J.Rectangle{Gui.rec.x(first), Gui.rec.y(first), side, side}, 1, tint),
+        Bool.pick(String, vertical, "#120#", "#119#"), J.Rectangle{Gui.rec.x(second), Gui.rec.y(second), side, side}, 1, tint)
+
+def Gui.scroll.run(parts: Gui.Scroll, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +vertical: Bool, +value: U32, +min: U32, +max: U32, +range: U32, +wrong: Bool) -> J.Frame & (Gui & U32):
+  GuiScroll{+first, +second, +track, +slider, +bad} = parts
+  +mouse = J.Input.get_mouse_position(core)
+  +live = Gui.active(gui)
+  +held = Gui.exclusive(gui)
+  +on_first = J.Collision.point_rec(mouse, first)
+  +on_second = J.Collision.point_rec(mouse, second)
+  +dragging = live && held && Gui.down(core) && Bool.not(on_first) && Bool.not(on_second)
+  +mine = dragging && Gui.same(bounds, Gui.exclusive_rec(gui))
+  +dropped = live && held && Bool.not(dragging)
+  +over = live && Bool.not(held) && J.Collision.point_rec(mouse, bounds)
+  +delta = Gui.scroll.delta(core)
+  +wheeled = over && F32.is_ne(delta, 0.0)
+  +pressed = over && Gui.pressed(core)
+  +pointed = Gui.scroll.pointed(vertical, mouse, track, slider, range, min)
+  +speed = Gui.get_style(gui, 14, 21)
+  +jump = pressed && Bool.not(on_first) && Bool.not(on_second) && Bool.not(J.Collision.point_rec(mouse, slider))
+  +stepped = pressed && (on_first || on_second)
+  +step = Bool.pick(U32, stepped && U32.is_ne(speed, 0), Gui.int.div(range, speed), 0)
+  +value1 = Bool.pick(U32, mine, Gui.int.of(pointed), Bool.pick(U32, wheeled, (value + Gui.int.of(delta) : U32), value))
+  +value2 = Bool.pick(U32, jump, Gui.int.of(pointed), Bool.pick(U32, pressed && on_first, (value1 - step : U32), Bool.pick(U32, pressed && on_second, (value1 + step : U32), value1)))
+  +state = Bool.pick(U32, mine, 2, Bool.pick(U32, pressed, 2, Bool.pick(U32, over, 1, Gui.get_state(gui))))
+  +side = Bool.pick(F32, vertical, Gui.rec.width(bounds), Gui.rec.height(bounds))
+  f1 = Gui.draw_rectangle(frame, bounds, Gui.get_style(gui, 14, 12), Gui.color(gui, 12, (state * 3 : U32)), Gui.color(gui, 0, 9))
+  f2 = Gui.draw_rectangle(f1, track, 0, 0, Gui.color(gui, 2, 1))
+  f3 = Gui.draw_rectangle(f2, slider, 0, 0, Gui.color(gui, 4, (state * 3 : U32)))
+  f4 = Gui.scroll.arrows(U32.is_ne(Gui.get_style(gui, 14, 17), 0), gui, vertical, first, second, side, Gui.color(gui, 14, (2 + state * 3 : U32)), f3)
+  (Gui.refused(wrong || bad || ((mine || jump) && Bool.not(FontCore.int.valid(pointed))) || (wheeled && Bool.not(FontCore.int.valid(delta))) || (stepped && U32.is_eq(speed, 0)), f4),
+    (Bool.pick(Gui, dropped, Gui.with_drag(gui, False{}, J.Rectangle{0.0, 0.0, 0.0, 0.0}), Bool.pick(Gui, pressed, Gui.with_drag(gui, True{}, bounds), gui)),
+      Bool.pick(U32, live, Gui.scroll.clamp(value2, min, max), value2)))
+
+# GuiScrollBar(bounds, value, minValue, maxValue) with ints as
+# two's-complement words: the frame, the Gui (a press starts a drag that
+# follows the pointer outside the bounds until the button is released) and
+# the value. A bar wider than high is horizontal. The wheel adds its notches;
+# a press on an arrow steps by range/SCROLL_SPEED, one on the track jumps
+# there. The slider is drawn where the value was on entry, as raygui does.
+# A range that overflows an int, a division by a SCROLL_SPEED of 0 and a
+# position that is not a C int mark the frame undefined.
+def Gui.scroll_bar(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +value: U32, +min: U32, +max: U32) -> J.Frame & (Gui & U32):
+  +vertical = Bool.not((Gui.rec.width(bounds) > Gui.rec.height(bounds) : F32))
+  +start = Gui.scroll.clamp(value, min, max)
+  +span = (max - min : U32)
+  +range = Bool.pick(U32, Gui.int.less(0, span), span, 1)
+  Gui.scroll.run(Gui.scroll.layout(vertical, gui, bounds, (FontCore.int.f32((start - min : U32)) / FontCore.int.f32(range) : F32)), gui, core, frame, bounds, vertical, start, min, max, range,
+    Bool.pick(Bool, Gui.int.less(max, min), Bool.not(FontCore.negative(span)), FontCore.negative(span)))
+
+# What GuiScrollPanel works out before its bars: the panel's bounds (below a
+# header), the view, the two bars, the corner between them, the state, the
+# vertical bar's slider size and arguments, and whether C's conversions hold.
+type Gui.Pane is Data:
+  GuiPane{bounds: J.Rectangle, view: J.Rectangle, across: J.Rectangle, down: J.Rectangle, corner: J.Rectangle, has_h: Bool, has_v: Bool, state: U32, slider: U32, size_v: U32, at_v: U32, min_v: U32, max_v: U32, refused: Bool}
+
+def Gui.pane.bar(has: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +bar: J.Rectangle, +size: U32, +value: U32, +min: U32, +max: U32) -> J.Frame & (Gui & U32):
+  match has:
+    case False{}: (frame, (gui, 0))
+    case True{}: Gui.scroll_bar(Gui.set_style(gui, 14, 19, size), core, frame, bar, value, min, max)
+
+def Gui.pane.cornered(both: Bool, +gui: Gui, +corner: J.Rectangle, +state: U32, frame: J.Frame) -> J.Frame:
+  match both:
+    case False{}: frame
+    case True{}: Gui.draw_rectangle(frame, corner, 0, 0, Gui.color(gui, 12, (2 + state * 3 : U32)))
+
+# The corner between the bars, the panel's border and SCROLL_SLIDER_SIZE put back.
+def Gui.pane.end(rest: Gui & U32, frame: J.Frame, +pane: Gui.Pane, +sx: F32) -> J.Frame & (Gui & (M.Vector2 & J.Rectangle)):
+  (+gui, +value) = rest
+  GuiPane{+bounds, +view, _, _, +corner, +has_h, +has_v, +state, +slider, _, _, _, _, +refused} = pane
+  f1 = Gui.pane.cornered(has_h && has_v, gui, corner, state, frame)
+  (Gui.refused(refused, Gui.draw_rectangle(f1, bounds, Gui.get_style(gui, 12, 12), Gui.color(gui, 12, (state * 3 : U32)), 0)),
+    (Gui.set_style(gui, 14, 19, slider), (M.Vector2{sx, Bool.pick(F32, has_v, FontCore.int.f32((0 - value : U32)), 0.0)}, view)))
+
+def Gui.pane.last(r: J.Frame & (Gui & U32), +pane: Gui.Pane, +sx: F32) -> J.Frame & (Gui & (M.Vector2 & J.Rectangle)):
+  (frame, rest) = r
+  Gui.pane.end(rest, frame, pane, sx)
+
+def Gui.pane.down(rest: Gui & U32, frame: J.Frame, +core: J.Core, +pane: Gui.Pane) -> J.Frame & (Gui & (M.Vector2 & J.Rectangle)):
+  (+gui, +value) = rest
+  GuiPane{_, _, _, +down, _, +has_h, +has_v, _, _, +size_v, +at_v, +min_v, +max_v, _} = pane
+  Gui.pane.last(Gui.pane.bar(has_v, gui, core, frame, down, size_v, at_v, min_v, max_v), pane, Bool.pick(F32, has_h, FontCore.int.f32((0 - value : U32)), 0.0))
+
+def Gui.pane.next(r: J.Frame & (Gui & U32), +core: J.Core, +pane: Gui.Pane) -> J.Frame & (Gui & (M.Vector2 & J.Rectangle)):
+  (frame, rest) = r
+  Gui.pane.down(rest, frame, core, pane)
+
+def Gui.pane.y(scroll: M.Vector2) -> F32:
+  M.Vector2{_, y} = scroll
+  y
+
+def Gui.pane.least(+value: F32, +least: F32) -> F32:
+  Bool.pick(F32, (value < least : F32), least, value)
+
+# The body below an optional header (headed: the status bar is drawn).
+def Gui.pane.body(+headed: Bool, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +content: J.Rectangle, +scroll: M.Vector2) -> J.Frame & (Gui & (M.Vector2 & J.Rectangle)):
+  J.Rectangle{+x, +y0, +w, +h0} = bounds
+  +cw = Gui.rec.width(content)
+  +ch = Gui.rec.height(content)
+  +sx = Gui.mouse.x(scroll)
+  +sy = Gui.pane.y(scroll)
+  +y = Bool.pick(F32, headed, (y0 + 23.0 : F32), y0)
+  +h = Bool.pick(F32, headed, (Gui.pane.least(h0, 48.0) - 25.0 : F32), Gui.pane.least(h0, 48.0))
+  +b = Gui.style.f32(gui, 0, 12)
+  +bar = Gui.style.f32(gui, 12, 18)
+  +left = U32.is_eq(Gui.get_style(gui, 12, 19), 0)
+  +wide = (cw > w - 2.0 * b : F32)
+  +tall = (ch > h - 2.0 * b : F32)
+  +has_h = wide || (tall && (cw > (w - 2.0 * b) - bar : F32))
+  +has_v = tall || (has_h && (ch > (h - 2.0 * b) - bar : F32))
+  +hw = Bool.pick(F32, has_h, bar, 0.0)
+  +vw = Bool.pick(F32, has_v, bar, 0.0)
+  +ax = (Bool.pick(F32, left, (x + vw : F32), x) + b : F32)
+  +aw = Gui.pane.least(((w - vw : F32) - 2.0 * b : F32), 40.0)
+  +dy = (y + b : F32)
+  +dh = Gui.pane.least(((h - hw : F32) - 2.0 * b : F32), 40.0)
+  +view_w = ((w - 2.0 * b : F32) - vw : F32)
+  +view_h = ((h - 2.0 * b : F32) - hw : F32)
+  +hmin = (Bool.pick(F32, left, (0.0 - vw : F32), 0.0) - b : F32)
+  +hmax = Bool.pick(F32, has_h, ((((cw - w : F32) + vw : F32) + b : F32) - Bool.pick(F32, left, vw, 0.0) : F32), (0.0 - b : F32))
+  +vmin = Bool.pick(F32, has_v, 0.0, F32.neg(1.0))
+  +vmax = Bool.pick(F32, has_v, (((ch - h : F32) + hw : F32) + b : F32), (0.0 - b : F32))
+  +place = {J.Rectangle{x, y, w, h} : J.Rectangle}
+  +inside = Gui.active(gui) && J.Collision.point_rec(J.Input.get_mouse_position(core), place)
+  +state = Bool.pick(U32, inside, Gui.hover(core), Gui.get_state(gui))
+  +delta = Gui.scroll.delta(core)
+  +sideways = has_h && (J.Input.is_key_down(core, 341) || J.Input.is_key_down(core, 340))
+  +sx1 = Bool.pick(F32, inside && sideways, (sx + delta * Gui.pane.least((cw / w : F32), 20.0) : F32), sx)
+  +sy1 = Bool.pick(F32, inside && Bool.not(sideways), (sy + delta * Gui.pane.least((ch / h : F32), 20.0) : F32), sy)
+  +sx2 = Gui.pane.least(Bool.pick(F32, (sx1 > F32.neg(hmin) : F32), F32.neg(hmin), sx1), F32.neg(hmax))
+  +sy2 = Gui.pane.least(Bool.pick(F32, (sy1 > F32.neg(vmin) : F32), F32.neg(vmin), sy1), F32.neg(vmax))
+  +size_h = ((((w - 2.0 * b : F32) - vw : F32) / F32.trunc(cw) : F32) * ((F32.trunc(w) - 2.0 * b : F32) - vw) : F32)
+  +size_v = ((((h - 2.0 * b : F32) - hw : F32) / F32.trunc(ch) : F32) * ((F32.trunc(h) - 2.0 * b : F32) - hw) : F32)
+  +bad_h = has_h && Bool.not(FontCore.int.valid(size_h) && FontCore.int.valid(F32.neg(sx2)) && FontCore.int.valid(hmin) && FontCore.int.valid(hmax))
+  +bad_v = has_v && Bool.not(FontCore.int.valid(size_v) && FontCore.int.valid(F32.neg(sy2)) && FontCore.int.valid(vmin) && FontCore.int.valid(vmax))
+  +pane = {GuiPane{place, J.Rectangle{Bool.pick(F32, left, ((x + vw : F32) + b : F32), (x + b : F32)), dy, Bool.pick(F32, (view_w > cw : F32), cw, view_w), Bool.pick(F32, (view_h > ch : F32), ch, view_h)},
+    J.Rectangle{ax, (((y + h : F32) - hw : F32) - b : F32), aw, hw}, J.Rectangle{Bool.pick(F32, left, (x + b : F32), (((x + w : F32) - vw : F32) - b : F32)), dy, vw, dh},
+    J.Rectangle{Bool.pick(F32, left, ((x + b : F32) + 2.0 : F32), ((ax + aw : F32) + 2.0 : F32)), ((dy + dh : F32) + 2.0 : F32), (hw - 4.0 : F32), (vw - 4.0 : F32)},
+    has_h, has_v, state, Gui.get_style(gui, 14, 19), Gui.int.of(size_v), Gui.int.of(F32.neg(sy2)), Gui.int.of(vmin), Gui.int.of(vmax), bad_h || bad_v} : Gui.Pane}
+  Gui.pane.next(Gui.pane.bar(has_h, gui, core, Gui.draw_rectangle(frame, place, 0, 0, Gui.color(gui, 0, 19)), J.Rectangle{ax, (((y + h : F32) - hw : F32) - b : F32), aw, hw},
+    Gui.int.of(size_h), Gui.int.of(F32.neg(sx2)), Gui.int.of(hmin), Gui.int.of(hmax)), core, pane)
+
+def Gui.pane.headed(text: Maybe<String>, +gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, +content: J.Rectangle, +scroll: M.Vector2) -> J.Frame & (Gui & (M.Vector2 & J.Rectangle)):
+  match text:
+    case None{}: Gui.pane.body(False{}, gui, core, frame, bounds, content, scroll)
+    case Some{t}: Gui.pane.body(True{}, gui, core, Gui.status_bar(gui, frame, J.Rectangle{Gui.rec.x(bounds), Gui.rec.y(bounds), Gui.rec.width(bounds), 24.0}, Some{t}), bounds, content, scroll)
+
+# GuiScrollPanel(bounds, text, content, &scroll, &view): a panel at least 48
+# high (below a status bar when a text is given) over a content larger than
+# it, with a scroll bar for each axis that does not fit (SCROLLBAR_WIDTH
+# wide, on LISTVIEW's SCROLLBAR_SIDE). The frame, the Gui (a bar's drag),
+# the scroll offset and the view: the panel's inside less the bars, no
+# larger than the content. Under the pointer the wheel scrolls vertically,
+# or horizontally with LEFT_CONTROL or LEFT_SHIFT down, by at least 20
+# pixels a notch. Each offset is the negative of its bar's int value.
+def Gui.scroll_panel(+gui: Gui, +core: J.Core, frame: J.Frame, +bounds: J.Rectangle, text: Maybe<String>, +content: J.Rectangle, +scroll: M.Vector2) -> J.Frame & (Gui & (M.Vector2 & J.Rectangle)):
+  Gui.pane.headed(text, gui, core, frame, bounds, content, scroll)

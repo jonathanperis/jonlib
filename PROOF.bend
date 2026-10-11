@@ -911,6 +911,24 @@ def Laws.gui_icon_scale_negative_ignored(gui):
   JG.Gui{state, locked, alpha, exclusive, rec, style, scale} = gui
   {==}
 
+def Laws.gui_scroll_clamp_above():
+  {==}
+
+def Laws.gui_scroll_clamp_below_zero():
+  {==}
+
+def Laws.gui_scroll_clamp_crossed_bounds():
+  {==}
+
+def Laws.gui_scroll_slider_at_least_one():
+  {==}
+
+def Laws.gui_scroll_step_truncates():
+  {==}
+
+def Laws.gui_scroll_step_negative_speed():
+  {==}
+
 def Laws.shader_load_never_valid(vs, fs):
   {==}
 

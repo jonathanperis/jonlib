@@ -43,6 +43,8 @@ the `Gui` too. Controls run inside the frame, between `BeginDrawing` and
 | `GuiStatusBar` | `Gui.status_bar(gui, frame, bounds, text)` | `Frame` (`text` is `Maybe<String>`) |
 | `GuiPanel` | `Gui.panel(gui, frame, bounds, text)` | `Frame` (a status bar heads it when a text is given) |
 | `GuiDropdownBox` | `Gui.dropdown_box(gui, core, frame, bounds, text, active, edit)` | `Frame & (U32 & Bool)` (the active item, raygui's result) |
+| `GuiScrollPanel` | `Gui.scroll_panel(gui, core, frame, bounds, text, content, scroll)` | `Frame & (Gui & (Vector2 & Rectangle))` (the scroll offset and the view) |
+| `GuiScrollBar` (static in raygui) | `Gui.scroll_bar(gui, core, frame, bounds, value, min, max)` | `Frame & (Gui & U32)` (the int value as a word) |
 | `GuiTextBox` | `Gui.text_box(gui, core, frame, bounds, text, size, edit, editing)` | `Frame & (Core & (String & (Gui.Editing & Bool)))` (the text, raygui's two text box globals, its result) |
 
 Two additions have no raygui counterpart. They run a row of controls in order
@@ -130,6 +132,21 @@ example waiting on each raygui function it calls that is not delivered.
   the box is drawn from the codepoint that brings the cursor back inside.
   The box does not react when `TEXT_READONLY` is set, the gui is disabled or
   locked, a slider is dragged or a wrap mode is on.
+- **Scroll panels.** The panel is at least 48 high (below a status bar when
+  a text is given). An axis whose content does not fit inside the border
+  gets a scroll bar (`SCROLLBAR_WIDTH` wide, on LISTVIEW's
+  `SCROLLBAR_SIDE`), and a bar's room can make the other axis need one. The
+  view is the inside less the bars, no larger than the content. Under the
+  pointer the wheel (`GUI_SCROLL_DELTA`: the wheel plus the gamepad
+  triggers) scrolls vertically, or horizontally with LEFT_CONTROL or
+  LEFT_SHIFT down, by the content/bounds ratio or 20 pixels a notch at
+  least. Each bar's slider is sized by the bounds/content ratio through
+  `SCROLL_SLIDER_SIZE`, which is put back afterwards; an axis without a bar
+  has offset 0, and the other offsets are the negatives of the bars' int
+  values. A scroll bar is horizontal when wider than high; a press starts a
+  drag (the slider drag's exclusive mode), an arrow steps by
+  `range/SCROLL_SPEED` and a press on the track jumps there. The slider is
+  drawn where the value was on entry, as raygui does.
 - **Shapes texture.** raygui's first style load calls `SetShapesTexture` with
   the default font's white rectangle, the value `InitWindow` already set, so
   nothing changes.
@@ -139,7 +156,7 @@ example waiting on each raygui function it calls that is not delivered.
 - Not delivered yet: `GuiToggleSlider`,
   `GuiComboBox`, `GuiTextBoxMulti`, `GuiValueBoxFloat`,
   `GuiProgressBar`, `GuiDummyRec`, `GuiGrid`,
-  `GuiTabBar`, `GuiScrollPanel`, `GuiListView(Ex)`,
+  `GuiTabBar`, `GuiListView(Ex)`,
   `GuiColor*`, `GuiMessageBox`, `GuiTextInputBox`, `GuiWindowBox`,
   `GuiLabelButton`, the style file loaders, `GuiSetFont`/`GuiGetFont`,
   `GuiDrawIcon`/`GuiIconText` as functions, `GuiLoadIcons` and tooltips.
@@ -159,6 +176,11 @@ example waiting on each raygui function it calls that is not delivered.
   of a text wider than its box are compared with raygui by reading only: the
   reference's replayed events never reach `GetCharPressed`, and its
   clipboard is empty.
+- `GuiScrollBar` marks the frame undefined where C's int conversions or
+  arithmetic are (a range that overflows, a `SCROLL_SPEED` of 0 on an arrow
+  press, a position that is not an int). No ported example's content
+  overflows its scroll panel: the bars and scrolling are compared with
+  raygui by reading only.
 - `GuiValueBox` and `GuiSpinner` in edit mode (keyboard entry) mark the frame
   undefined. A spinner step below `INT_MIN` or above `INT_MAX` overflows in C
   and marks the frame undefined.

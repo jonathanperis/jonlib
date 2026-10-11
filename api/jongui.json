@@ -250,7 +250,22 @@
    "status": "not-started"
   },
   "GuiScrollPanel": {
-   "status": "not-started"
+   "status": "partial",
+   "jongui": "Gui.scroll_panel",
+   "scope": "The panel, its view and scroll offset, the wheel, and a scroll bar (Gui.scroll_bar, static GuiScrollBar in raygui) for each axis that does not fit.",
+   "evidence": [
+    "docs/GUI.md",
+    "jongui.bend",
+    "LAWS.bend"
+   ],
+   "gaps": [
+    "The scroll bars, the wheel on an overflowing content and the header are compared with raygui by reading only",
+    "GuiScrollBar marks the frame undefined where C's int conversions or arithmetic are undefined",
+    "SUPPORT_SCROLLBAR_KEY_INPUT (off by default) is not delivered",
+    "Icon ids above 255, a short '#' line read across lines, icon scales above 65536 and TEXT_WRAP_CHAR/TEXT_WRAP_WORD mark the frame undefined",
+    "The default font only (GuiSetFont is not delivered); tooltips are not delivered (off by default)",
+    "Targets: CPU-1, CPU-2 and JavaScript lanes; the Metal lane is not verified"
+   ]
   },
   "GuiLabel": {
    "status": "partial",

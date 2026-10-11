@@ -2195,7 +2195,7 @@
   {
    "name": "shapes_pie_chart",
    "category": "shapes",
-   "status": "waiting",
+   "status": "ready",
    "apis": [
     "BeginDrawing",
     "BeginScissorMode",
@@ -2232,9 +2232,7 @@
     "GuiSpinner",
     "GuiTextBox"
    ],
-   "missing": [
-    "GuiScrollPanel"
-   ]
+   "missing": []
   },
   {
    "name": "shapes_kaleidoscope",
