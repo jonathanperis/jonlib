@@ -221,8 +221,11 @@ enabled again. `shaders_color_correction` covers the toggle group: an item hover
 and switched on, and a click on the active item that changes nothing. `models_animation_timing` covers the progress bar: a bar partly filled over
 a range of keyframes, its border in two colors split at the bar's end, with
 a dropdown box of fourteen items opened over the scene, an item chosen and
-a slider dragged beside it. Its disabled state, its side texts and
-`PROGRESS_SIDE` 1 are not compared with raygui yet. `LAWS.bend` states the default text size, the propagation of a DEFAULT
+a slider dragged beside it. `models_animation_blending` adds an empty bar,
+one whose value passed its maximum (capped and full), one filling from the
+right (`PROGRESS_SIDE` 1), bars with both side texts, and a slider disabled
+while its dropdown box is open. The bar's own disabled state is not
+compared with raygui yet. `LAWS.bend` states the default text size, the propagation of a DEFAULT
 property, the enable/disable rules, how an icon prefix is read and which
 lines are refused. The `gui-icons` gate compares the icon set with every
 raygui.h of the pinned checkout.

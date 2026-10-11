@@ -243,6 +243,7 @@ EXAMPLES = {
     'models_bone_socket': ('models/models_bone_socket.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_loading_gltf': ('models/models_loading_gltf.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_animation_timing': ('models/models_animation_timing.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'models_animation_blending': ('models/models_animation_blending.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -309,6 +310,7 @@ IO_SETUP.add('models_animation_gpu_skinning'); PERSPECTIVE.add('models_animation
 IO_SETUP.add('models_bone_socket'); PERSPECTIVE.add('models_bone_socket')
 IO_SETUP.add('models_loading_gltf'); PERSPECTIVE.add('models_loading_gltf')
 IO_SETUP.add('models_animation_timing'); PERSPECTIVE.add('models_animation_timing')
+IO_SETUP.add('models_animation_blending'); PERSPECTIVE.add('models_animation_blending')
 
 
 # -----------------------------------------------------------------------------
@@ -943,6 +945,15 @@ def scripts():
                                                        quick([button(0)]), slow([button(0, False)]), quick([mouse_at(500, 22)]), quick([button(0)]),
                                                        quick([mouse_at(700, 22)]), quick([button(0, False)]), quick([key(KEY_P)]), quick([key(KEY_P, False)]),
                                                        quick([key(KEY_P)])]),
+        # The robot walking. SPACE starts the blend into running; two frames of more than a second carry the blend
+        # factor past 1, where the blend bar is full and running plays alone. SPACE again blends back, the bar
+        # filling from the right. The second dropdown box opens (its slider is disabled meanwhile) and a release
+        # over the third name picks that animation; the first slider is dragged; P pauses.
+        script('models_animation_blending', 'blend', [quick(), quick([key(KEY_SPACE)]), ([key(KEY_SPACE, False)], 0.003, 1.1), ([], 0.003, 1.1), quick(), quick(), quick(),
+                                                      quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False)]), quick([mouse_at(700, 22)]), quick([button(0)]),
+                                                      quick([button(0, False)]), quick([mouse_at(700, 95)]), quick([button(0)]), quick([button(0, False)]),
+                                                      quick([mouse_at(90, 44)]), quick([button(0)]), quick([mouse_at(150, 44)]), quick([button(0, False)]),
+                                                      quick([key(KEY_P)]), quick([key(KEY_P, False)])]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.
