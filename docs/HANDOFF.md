@@ -305,6 +305,22 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `core_screen_recording`
      needs a GIF encoder (msf_gif) besides `GetApplicationDirectory`, and
      `shaders_game_of_life` draws 2048x2048 worlds each frame;
+   - how the six "ready" examples left are blocked (surveyed 2026-10-11):
+     `shaders_basic_pbr` loads three PNGs over the 1 MiB raster cap (1.14,
+     1.29 and 1.68 MiB; its two .glb models already load). The cap is per
+     file kind (`Image.file.limit`: QOI and DDS have their own), so the way
+     in is a `PngFile` kind with a larger cap, plus the PNG decoder's own
+     two caps (`src/png.bend`: input count and chunk size) and the inflate
+     input count it shares with the public `Compression.decompress` (which
+     must keep 1 MiB: give `src/inflate.bend`'s count its limit as a
+     parameter); `tools/codec_files.py` already takes a `cap` per codec.
+     `textures_sprite_stacking` needs a 112x11468 image: the 4096 limit is
+     in about sixty places of `jonlib.bend` and every codec, a contract of
+     its own. `text_unicode_ranges` needs a 7 MiB TTF. `text_font_sdf`
+     needs binary64 acos and pow for `stbtt__solve_cubic` (cos exists:
+     `src/lgpl/sin.bend`). `models_loading_m3d` needs `m3d.h`'s decoder
+     (a compressed container: inflate exists; chunks, bones, skin, actions,
+     `m3d_pose`, inlined PNG textures). `shaders_game_of_life`: below;
    - `shaders_game_of_life` is ready but steps a 2048x2048 world through a
      shader each frame: too heavy for the JavaScript lane as written;
    - images beyond 4096 pixels on an axis (`textures_sprite_stacking`,
