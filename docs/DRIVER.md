@@ -49,9 +49,13 @@ over.
 reading), and the examples that show the time of day call the C library's
 `time()` and `localtime()`, not raylib. Their ports take the seconds of the
 day at InitWindow as a setup argument, as a seeded example takes its seed,
-and add the whole seconds of `Core.get_time` (`shapes_digital_clock`); the
-examples probe gives the reference the same clock by redirecting `time()`
-in the example's translation unit.
+and add the whole seconds of `Core.get_time` (`shapes_digital_clock`,
+`shapes_clock_of_clocks`); the examples probe gives the reference the same
+clock by redirecting `time()` in the example's translation unit. On the
+desktop that argument comes from the command line:
+`Desktop.clock_args(args) -> U32 & U32` reads `--frames N` and `--time T`
+(the time of day in seconds, 0 without one), so a launcher passes for
+instance `--time $(( $(date +%s) % 86400 ))`.
 
 `update` is the code before `BeginDrawing` (input queries, `GetKeyPressed`,
 `HideCursor`, ... return the new `Core`); `draw` runs between `BeginDrawing`

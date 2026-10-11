@@ -1412,6 +1412,32 @@ law desktop_effects_after_once_a_frame_was_presented:
   for mark: Nat
   {J.Desktop.unstarted(J.DesktopStats{1, render, present, wait, mark}) == False{} : Bool}
 
+# The desktop's wall clock is an argument (Base has none): without
+# arguments the frame limit and the time are 0, the two flags are told apart
+# and each takes the number after it.
+law desktop_clock_args_default:
+  {J.Desktop.clock_args(Nil{}) == (0, 0) : U32 & U32}
+
+law desktop_clock_args_frames_flag:
+  {J.Desktop.clock_args.flag("--frames") == 1 : U32}
+
+law desktop_clock_args_time_flag:
+  {J.Desktop.clock_args.flag("--time") == 2 : U32}
+
+law desktop_clock_args_other_argument:
+  {J.Desktop.clock_args.flag("--times") == 0 : U32}
+
+law desktop_clock_args_end_of_arguments:
+  for frames: U32
+  for time: U32
+  {J.Desktop.clock_args.go(Nil{}, 2, frames, time) == (frames, time) : U32 & U32}
+
+law desktop_clock_args_reads_both:
+  {J.Desktop.clock_args(Con{"--frames", Con{"3", Con{"--time", Con{"50398", Nil{}}}}}) == (3, 50398) : U32 & U32}
+
+law desktop_clock_args_last_time_counts:
+  {J.Desktop.clock_args(Con{"--time", Con{"7", Con{"--time", Con{"86399", Nil{}}}}}) == (0, 86399) : U32 & U32}
+
 # Jongui (raygui): the default style, GuiSetStyle's propagation of a DEFAULT
 # base property (and only those), and GuiEnable/GuiDisable.
 law gui_default_text_size:

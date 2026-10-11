@@ -190,9 +190,14 @@ def zeros(n: Nat) -> +List<M.Vector2>:
 def setup(+seconds: U32, +core: J.Core, frame: J.Frame) -> J.Core & (J.Frame & State):
   (J.Core.set_target_fps(core, 60), (frame, State{True{}, seconds, 4294967295, zeros(144n), zeros(144n), zeros(144n), 0.0, 24}))
 
+# The time of day is the "--time" argument (seconds; 0 without one): docs/DRIVER.md.
+def run.clocked(r: U32 & U32) -> IO(Unit):
+  (+frames, +seconds) = r
+  J.Desktop.run_flags(~State, ~program(M.Glibc239Libm{}), ~M.Glibc239Libm{}, 32, "raylib [shapes] example - clock of clocks", 800, 450, frames,
+    core => frame => IO.pure(J.Core & (J.Frame & State), setup(seconds, core, frame)))
+
 def run(args: List<String>) -> IO(Unit):
-  J.Desktop.run_flags(~State, ~program(M.Glibc239Libm{}), ~M.Glibc239Libm{}, 32, "raylib [shapes] example - clock of clocks", 800, 450, J.Desktop.frames_arg(args),
-    core => frame => IO.pure(J.Core & (J.Frame & State), setup(0, core, frame)))
+  run.clocked(J.Desktop.clock_args(args))
 
 def main() -> IO(Unit):
   IO.bind(List<String>, Unit, IO.args(), run)

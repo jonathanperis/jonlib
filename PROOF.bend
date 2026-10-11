@@ -918,6 +918,27 @@ def Laws.desktop_effects_no_after_before_the_first_frame(render, present, wait, 
 def Laws.desktop_effects_after_once_a_frame_was_presented(render, present, wait, mark):
   {==}
 
+def Laws.desktop_clock_args_default():
+  {==}
+
+def Laws.desktop_clock_args_frames_flag():
+  {==}
+
+def Laws.desktop_clock_args_time_flag():
+  {==}
+
+def Laws.desktop_clock_args_other_argument():
+  {==}
+
+def Laws.desktop_clock_args_end_of_arguments(frames, time):
+  {==}
+
+def Laws.desktop_clock_args_reads_both():
+  {==}
+
+def Laws.desktop_clock_args_last_time_counts():
+  {==}
+
 def Laws.gui_default_text_size():
   {==}
 
