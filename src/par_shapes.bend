@@ -601,3 +601,240 @@ def generate(+kind: U32, +gnu: Bool, +fused: Bool, +minor: F32, +slices: U32, +s
   +n = ((slices + 1 : U32) * (stacks + 1 : U32) : U32)
   generate.valid(table.ok(us, True{}) && table.ok(vs, True{}) && (slices <= 65534 : U32) && (stacks <= 65534 : U32) && (n <= 65535 : U32),
     kind, fused, n, slices, stacks, minimum, remove, k, grid.rows(ents.reverse(us, Nil{}), ents.reverse(vs, Nil{}), kind, fused, minor, Grid{Nil{}, Nil{}}))
+
+# -----------------------------------------------------------------------------
+# GenMeshCylinder and GenMeshCone: par_shapes' cylinder and cone, its disk,
+# par_shapes_scale, par_shapes_rotate, par_shapes_translate and
+# par_shapes_merge, in par_shapes' F32 order without contraction. The disk's
+# points are (float)(radius*cos(theta)) and (float)(radius*sin(theta)) in
+# binary64 (the libm profile's M.Libm.cos64/sin64), theta the narrowed
+# i*PAR_PI*2/slices.
+
+# A par_shapes mesh: a point, a normal and a texture coordinate per point,
+# and the triangles' indices. ok is False where a value was not reproduced.
+type Shape is Data:
+  Shape{ok: Bool, points: +List<M.Vector3>, normals: +List<M.Vector3>, uvs: +List<M.Vector3>, tris: +List<U32>}
+
+# par_shapes__cylinder and par_shapes__cone (a: uv[0] along the axis, b: theta from uv[1]).
+def tube.point(+cone: Bool, +a: Ent, +b: Ent) -> M.Vector3:
+  Bool.pick(M.Vector3, cone, M.Vector3{((1.0 - Ent.u(a) : F32) * Ent.s(b) : F32), ((1.0 - Ent.u(a) : F32) * Ent.c(b) : F32), Ent.u(a)}, M.Vector3{Ent.s(b), Ent.c(b), Ent.u(a)})
+
+def tube.row(bs: +List<Ent>, +cone: Bool, +a: Ent, acc: Grid) -> Grid:
+  match bs:
+    case Nil{}: acc
+    case Con{+b, rest}: tube.row(rest, cone, a, grid.put(tube.point(cone, a, b), M.Vector3{Ent.u(a), Ent.u(b), 0.0}, acc))
+
+def tube.rows(as: +List<Ent>, +bs: +List<Ent>, +cone: Bool, acc: Grid) -> Grid:
+  match as:
+    case Nil{}: acc
+    case Con{+a, rest}: tube.rows(rest, bs, cone, tube.row(bs, cone, a, acc))
+
+def tube.welded(w: Welded, +points: +List<M.Vector3>, +uvs: +List<M.Vector3>, +tris: +List<U32>) -> Shape:
+  Welded{ok, normals} = w
+  Shape{ok, points, normals, uvs, tris}
+
+def tube.made(+n: U32, grid: Grid, +tris: +List<U32>) -> Shape:
+  Grid{+points, +uvs} = grid
+  tube.welded(welded(False{}, n, points, tris), points, uvs, tris)
+
+def tube.grid(valid: Bool, +n: U32, +slices: U32, +stacks: U32, +grid: Grid) -> Shape:
+  match valid:
+    case False{}: Shape{False{}, Nil{}, Nil{}, Nil{}, Nil{}}
+    case True{}: tube.made(n, grid, faces(U32.to_nat(stacks), (stacks - 1 : U32), slices, Nil{}))
+
+# par_shapes_create_cylinder(slices, stacks), or par_shapes_create_cone: the
+# parametric grid with welded normals.
+def tube(+cone: Bool, +slices: U32, +stacks: U32) -> Shape:
+  +us = table(True{}, False{}, stacks)
+  +vs = table(True{}, True{}, slices)
+  +n = ((slices + 1 : U32) * (stacks + 1 : U32) : U32)
+  tube.grid(table.ok(us, True{}) && table.ok(vs, True{}) && (slices <= 65534 : U32) && (n <= 65535 : U32), n, slices, stacks,
+    tube.rows(ents.reverse(us, Nil{}), ents.reverse(vs, Nil{}), cone, Grid{Nil{}, Nil{}}))
+
+def scaled.point(p: M.Vector3, +x: F32, +y: F32, +z: F32) -> M.Vector3:
+  M.Vector3{px, py, pz} = p
+  M.Vector3{(px * x : F32), (py * y : F32), (pz * z : F32)}
+
+def scaled.points(ps: +List<M.Vector3>, +x: F32, +y: F32, +z: F32, acc: +List<M.Vector3>) -> +List<M.Vector3>:
+  match ps:
+    case Nil{}: Mesh.vectors.reverse(acc, Nil{})
+    case Con{+p, rest}: scaled.points(rest, x, y, z, Con{scaled.point(p, x, y, z), acc})
+
+def scaled.normals(ns: +List<M.Vector3>, +x: F32, +y: F32, +z: F32, acc: +List<M.Vector3>) -> +List<M.Vector3>:
+  match ns:
+    case Nil{}: Mesh.vectors.reverse(acc, Nil{})
+    case Con{+n, rest}: scaled.normals(rest, x, y, z, Con{normalize3(False{}, scaled.point(n, x, y, z)), acc})
+
+# The normals' factor of an axis: the inverse scale when no scale is 0, else
+# 1 for the only zero axis and 0 otherwise.
+def scaled.factor(+whole: Bool, +lone: Bool, +v: F32) -> F32:
+  Bool.pick(F32, whole, (1.0 / v : F32), Bool.pick(F32, lone, 1.0, 0.0))
+
+# par_shapes_scale: the points times (x, y, z); unless the three are equal,
+# the normals by the inverse factors, normalized.
+def scaled(shape: Shape, +x: F32, +y: F32, +z: F32) -> Shape:
+  Shape{ok, +points, +normals, uvs, tris} = shape
+  +xz = F32.is_eq(x, 0.0)
+  +yz = F32.is_eq(y, 0.0)
+  +zz = F32.is_eq(z, 0.0)
+  +whole = Bool.not(xz) && Bool.not(yz) && Bool.not(zz)
+  Shape{ok, scaled.points(points, x, y, z, Nil{}), Bool.pick(+List<M.Vector3>, F32.is_eq(x, y) && F32.is_eq(y, z), normals,
+    scaled.normals(normals, scaled.factor(whole, xz && Bool.not(yz) && Bool.not(zz), x), scaled.factor(whole, yz && Bool.not(xz) && Bool.not(zz), y),
+      scaled.factor(whole, zz && Bool.not(xz) && Bool.not(yz), z), Nil{})), uvs, tris}
+
+# par_shapes_rotate's matrix columns.
+type Turn is Data:
+  Turn{a: M.Vector3, b: M.Vector3, c: M.Vector3}
+
+def turn.matrix(+s: F32, +c: F32, +x: F32, +y: F32, +z: F32) -> Turn:
+  +o = (1.0 - c : F32)
+  Turn{M.Vector3{(((x * x : F32) * o : F32) + c : F32), (((x * y : F32) * o : F32) + (z * s : F32) : F32), (((z * x : F32) * o : F32) - (y * s : F32) : F32)},
+    M.Vector3{(((x * y : F32) * o : F32) - (z * s : F32) : F32), (((y * y : F32) * o : F32) + c : F32), (((y * z : F32) * o : F32) + (x * s : F32) : F32)},
+    M.Vector3{(((z * x : F32) * o : F32) + (y * s : F32) : F32), (((y * z : F32) * o : F32) - (x * s : F32) : F32), (((z * z : F32) * o : F32) + c : F32)}}
+
+# col0[k]*p[0] + col1[k]*p[1] + col2[k]*p[2] for each k.
+def turn.apply(+m: Turn, p: M.Vector3) -> M.Vector3:
+  Turn{M.Vector3{+ax, +ay, +az}, M.Vector3{+bx, +by, +bz}, M.Vector3{+cx, +cy, +cz}} = m
+  M.Vector3{+x, +y, +z} = p
+  M.Vector3{(((ax * x : F32) + (bx * y : F32) : F32) + (cx * z : F32) : F32), (((ay * x : F32) + (by * y : F32) : F32) + (cy * z : F32) : F32),
+    (((az * x : F32) + (bz * y : F32) : F32) + (cz * z : F32) : F32)}
+
+def turn.all(ps: +List<M.Vector3>, +m: Turn, acc: +List<M.Vector3>) -> +List<M.Vector3>:
+  match ps:
+    case Nil{}: Mesh.vectors.reverse(acc, Nil{})
+    case Con{+p, rest}: turn.all(rest, m, Con{turn.apply(m, p), acc})
+
+def turned.with(shape: Shape, +m: Turn, +reproduced: Bool) -> Shape:
+  Shape{ok, +points, +normals, uvs, tris} = shape
+  Shape{ok && reproduced, turn.all(points, m, Nil{}), turn.all(normals, m, Nil{}), uvs, tris}
+
+# par_shapes_rotate(mesh, radians, axis): the points and the normals.
+def turned(shape: Shape, +radians: F32, +x: F32, +y: F32, +z: F32) -> Shape:
+  turned.with(shape, turn.matrix(S3.SC.sin(S3.sc(True{}, radians)), S3.SC.cos(S3.sc(True{}, radians)), x, y, z), S3.SC.ok(S3.sc(True{}, radians)))
+
+def moved.points(ps: +List<M.Vector3>, +x: F32, +y: F32, +z: F32, acc: +List<M.Vector3>) -> +List<M.Vector3>:
+  match ps:
+    case Nil{}: Mesh.vectors.reverse(acc, Nil{})
+    case Con{M.Vector3{px, py, pz}, rest}: moved.points(rest, x, y, z, Con{M.Vector3{(px + x : F32), (py + y : F32), (pz + z : F32)}, acc})
+
+# par_shapes_translate.
+def moved(shape: Shape, +x: F32, +y: F32, +z: F32) -> Shape:
+  Shape{ok, +points, normals, uvs, tris} = shape
+  Shape{ok, moved.points(points, x, y, z, Nil{}), normals, uvs, tris}
+
+def f64.times(value: Maybe<M.Float64>, +by: M.Float64) -> Maybe<M.Float64>:
+  match value:
+    case None{}: None{}
+    case Some{v}: M.Float64.internal.multiply(v, by)
+
+def f64.over(value: Maybe<M.Float64>, +by: M.Float64) -> Maybe<M.Float64>:
+  match value:
+    case None{}: None{}
+    case Some{v}: M.Float64.internal.divide(v, by)
+
+def f64.narrow(value: Maybe<M.Float64>) -> Maybe<F32>:
+  match value:
+    case None{}: None{}
+    case Some{v}: M.Float64.to_f32(v)
+
+# float theta = i*PAR_PI*2/slices (binary64, PAR_PI = 3.14159265359).
+def disk.angle(+i: U32, +slices: U32) -> Maybe<F32>:
+  f64.narrow(f64.over(f64.times(M.Float64.internal.multiply(M.Float64.from_f32(U32.to_f32(i)), M.Float64{1074340347, 1413754602}), M.Float64{1073741824, 0}), M.Float64.from_f32(U32.to_f32(slices))))
+
+def disk.xy(x: Maybe<F32>, y: Maybe<F32>) -> Maybe<M.Vector3>:
+  match x y:
+    case Some{px} Some{py}: Some{M.Vector3{px, py, 0.0}}
+    case _ _: None{}
+
+# (radius*cos(theta), radius*sin(theta), 0), each product binary64 and narrowed.
+def disk.at(theta: Maybe<F32>, +radius: F32, +libm: M.Libm) -> Maybe<M.Vector3>:
+  match theta:
+    case None{}: None{}
+    case Some{+t}: disk.xy(f64.narrow(f64.times(M.Libm.cos64(libm, M.Float64.from_f32(t)), M.Float64.from_f32(radius))),
+      f64.narrow(f64.times(M.Libm.sin64(libm, M.Float64.from_f32(t)), M.Float64.from_f32(radius))))
+
+# The rim so far (reversed), and whether every point was reproduced.
+type Rim is Data:
+  Rim{ok: Bool, points: +List<M.Vector3>}
+
+def rim.kept(acc: Rim, +p: M.Vector3, +reproduced: Bool) -> Rim:
+  Rim{ok, points} = acc
+  Rim{ok && reproduced, Con{p, points}}
+
+def rim.put(point: Maybe<M.Vector3>, acc: Rim) -> Rim:
+  match point:
+    case None{}: rim.kept(acc, M.Vector3{0.0, 0.0, 0.0}, False{})
+    case Some{+p}: rim.kept(acc, p, True{})
+
+def rim(n: Nat, +i: U32, +slices: U32, +radius: F32, +libm: M.Libm, acc: Rim) -> Rim:
+  match n:
+    case 0n: acc
+    case 1n+k: rim(k, (i + 1 : U32), slices, radius, libm, rim.put(disk.at(disk.angle(i, slices), radius, libm), acc))
+
+# Triangles 0, 1 + i, 1 + (i + 1)%slices.
+def disk.tris(n: Nat, +i: U32, +slices: U32, acc: +List<U32>) -> +List<U32>:
+  match n:
+    case 0n: List.reverse(&2, U32, acc)
+    case 1n+k: disk.tris(k, (i + 1 : U32), slices, Con{(1 + ((i + 1 : U32) % slices) : U32), Con{(1 + i : U32), Con{0, acc}}})
+
+def same.vectors(n: Nat, +v: M.Vector3, acc: +List<M.Vector3>) -> +List<M.Vector3>:
+  match n:
+    case 0n: acc
+    case 1n+k: same.vectors(k, v, Con{v, acc})
+
+def disk.shape(r: Rim, +slices: U32, +nz: F32, +uv: F32) -> Shape:
+  Rim{ok, points} = r
+  Shape{ok, Mesh.vectors.reverse(points, Nil{}), same.vectors(U32.to_nat((slices + 1 : U32)), M.Vector3{0.0, 0.0, nz}, Nil{}),
+    same.vectors(U32.to_nat((slices + 1 : U32)), M.Vector3{uv, uv, 0.0}, Nil{}), disk.tris(U32.to_nat(slices), 0, slices, Nil{})}
+
+# par_shapes_create_disk(radius, slices, (0, 0, 0), (0, 0, nz)) for nz of 1 or
+# -1, with every texture coordinate uv: the fan, rotated by (float)acos(nz)
+# (0, or pi for -1) around the zero axis the cross product with (0, 0, -1)
+# leaves, and translated by the zero center.
+def disk(+libm: M.Libm, +radius: F32, +slices: U32, +down: Bool, +uv: F32) -> Shape:
+  moved(turned(disk.shape(rim(U32.to_nat(slices), 0, slices, radius, libm, Rim{True{}, Con{M.Vector3{0.0, 0.0, 0.0}, Nil{}}}), slices, Bool.pick(F32, down, F32.neg(1.0), 1.0), uv),
+    Bool.pick(F32, down, F.float(1078530011), 0.0), 0.0, 0.0, 0.0), 0.0, 0.0, 0.0)
+
+def count.vectors(ps: +List<M.Vector3>, +n: U32) -> U32:
+  match ps:
+    case Nil{}: n
+    case Con{_, rest}: count.vectors(rest, (n + 1 : U32))
+
+def offset.tris(tris: +List<U32>, +offset: U32, acc: +List<U32>) -> +List<U32>:
+  match tris:
+    case Nil{}: List.reverse(&2, U32, acc)
+    case Con{+t, rest}: offset.tris(rest, offset, Con{(t + offset : U32), acc})
+
+# par_shapes_merge(dst, src).
+def merged(dst: Shape, src: Shape) -> Shape:
+  Shape{ok1, +p1, n1, u1, t1} = dst
+  Shape{ok2, p2, n2, u2, t2} = src
+  Shape{ok1 && ok2, List.append(&2, M.Vector3, p1, p2), List.append(&2, M.Vector3, n1, n2), List.append(&2, M.Vector3, u1, u2),
+    List.append(&2, U32, t1, offset.tris(t2, count.vectors(p1, 0), Nil{}))}
+
+# The mesh unrolled per triangle corner, as raylib copies it.
+def unrolled(shape: Shape) -> Out:
+  Shape{ok, +points, normals, uvs, tris} = shape
+  unroll(tris, Mesh.depth(count.vectors(points, 0)), Mesh.tree.of(Mesh.depth(count.vectors(points, 0)), points), Mesh.tree.of(Mesh.depth(count.vectors(points, 0)), uvs),
+    Mesh.tree.of(Mesh.depth(count.vectors(points, 0)), normals), 1.0, 0, Out{ok && (count.vectors(points, 0) <= 65535 : U32), Nil{}, Nil{}, Nil{}, 0})
+
+# -PI/2.0f, and 90*DEG2RAD with DEG2RAD = PI/180.0f.
+def quarter() -> F32:
+  F.float(1070141403)
+
+def ninety() -> F32:
+  (90.0 * (F.float(1078530011) / 180.0 : F32) : F32)
+
+# GenMeshCylinder(radius, height, slices) for slices of 3 and more: the
+# cylinder of 8 stacks scaled and laid on its side, a top disk (texture
+# coordinates 0) and a bottom disk (0.95) merged in.
+def cylinder(+libm: M.Libm, +radius: F32, +height: F32, +slices: U32) -> Out:
+  unrolled(merged(merged(turned(scaled(tube(False{}, slices, 8), radius, radius, height), F32.neg(quarter()), 1.0, 0.0, 0.0),
+    moved(turned(turned(disk(libm, radius, slices, False{}, 0.0), F32.neg(quarter()), 1.0, 0.0, 0.0), ninety(), 0.0, 1.0, 0.0), 0.0, height, 0.0)),
+    turned(turned(disk(libm, radius, slices, True{}, F.float(1064514355)), quarter(), 1.0, 0.0, 0.0), F32.neg(ninety()), 0.0, 1.0, 0.0)))
+
+# GenMeshCone(radius, height, slices) for slices of 3 and more: the cone of 8
+# stacks scaled and turned twice, and its bottom disk.
+def cone(+libm: M.Libm, +radius: F32, +height: F32, +slices: U32) -> Out:
+  unrolled(merged(turned(turned(scaled(tube(True{}, slices, 8), radius, radius, height), F32.neg(quarter()), 1.0, 0.0, 0.0), quarter(), 0.0, 1.0, 0.0),
+    turned(disk(libm, radius, slices, True{}, F.float(1064514355)), quarter(), 1.0, 0.0, 0.0)))

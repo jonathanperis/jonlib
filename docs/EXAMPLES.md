@@ -49,10 +49,10 @@ Totals: 212 examples; 171 ported, 18 ready, 23 waiting.
 | `DetachAudioMixedProcessor` | 1 |
 | `DetachAudioStreamProcessor` | 1 |
 | `EndVrStereoMode` | 1 |
-| `GenMeshCylinder` | 1 |
 | `GenMeshKnot` | 1 |
 | `GetApplicationDirectory` | 1 |
 | `GetFileModTime` | 1 |
+| `GetWorkingDirectory` | 1 |
 
 ## Examples
 
@@ -201,7 +201,7 @@ Totals: 212 examples; 171 ported, 18 ready, 23 waiting.
 | `models_cubicmap_rendering` | models | ported |  |
 | `models_first_person_maze` | models | ported |  |
 | `models_geometric_shapes` | models | ported |  |
-| `models_mesh_generation` | models | waiting | `GenMeshCylinder`, `GenMeshKnot` |
+| `models_mesh_generation` | models | waiting | `GenMeshKnot` |
 | `models_mesh_picking` | models | ported |  |
 | `models_loading` | models | ported |  |
 | `models_loading_gltf` | models | ported |  |

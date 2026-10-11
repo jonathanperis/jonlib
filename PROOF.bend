@@ -819,6 +819,18 @@ def Laws.gltf_anim_empty_span_needs_nothing(step, comps, limit):
 def Laws.gltf_anim_invalid_span_reads_nothing(span, blocks, comps, limit):
   {==}
 
+def Laws.par_shapes_disk_is_a_fan():
+  {==}
+
+def Laws.par_shapes_merge_offsets_triangles():
+  {==}
+
+def Laws.mesh_cylinder_of_two_slices_is_empty(arithmetic, libm, radius, height):
+  {==}
+
+def Laws.mesh_cone_fused_refused(radius, height):
+  {==}
+
 def Laws.gltf_anim_no_joints_no_rest(nodes):
   {==}
 

@@ -10274,6 +10274,40 @@ def Mesh.gen_torus_for(+arithmetic: M.Contraction, +libm: M.Libm, +radius: F32, 
 def Mesh.gen_torus(+radius: F32, +size: F32, +rad_seg: U32, +sides: U32) -> Maybe<Mesh>:
   Mesh.gen_torus_for(M.Uncontracted{}, M.Glibc239Libm{}, radius, size, rad_seg, sides)
 
+def Mesh.tube.out(cone: Bool, +libm: M.Libm, +radius: F32, +height: F32, +slices: U32) -> ParShapes.Out:
+  match cone:
+    case False{}: ParShapes.cylinder(libm, radius, height, slices)
+    case True{}: ParShapes.cone(libm, radius, height, slices)
+
+def Mesh.tube(small: Bool, valid: Bool, +cone: Bool, +libm: M.Libm, +radius: F32, +height: F32, +slices: U32) -> Maybe<Mesh>:
+  match small valid:
+    case True{} _: Some{Mesh.empty()}
+    case False{} False{}: None{}
+    case False{} True{}: Mesh.par.out(Mesh.tube.out(cone, libm, radius, height, slices))
+
+# GenMeshCylinder(radius, height, slices): par_shapes' cylinder of 8 stacks
+# (welded normals) scaled by (radius, radius, height) and laid along Y, with
+# a disk on top (texture coordinates 0) and one below (0.95), unrolled per
+# triangle corner. Fewer than 3 slices give the empty mesh. The disks take
+# the binary64 cos and sin (M.Libm.cos64/sin64): None for a profile without
+# them (every one but M.Glibc239Libm{}), under M.Fused{} (the contracted
+# arithmetic is not reproduced), for a nonfinite radius or height and as
+# GenMeshSphere. See docs/MODELS.md.
+def Mesh.gen_cylinder_for(+arithmetic: M.Contraction, +libm: M.Libm, +radius: F32, +height: F32, +slices: U32) -> Maybe<Mesh>:
+  Mesh.tube((slices < 3 : U32), M.Libm.gnu(libm) && Bool.not(M.Contraction.fused(arithmetic)) && Mesh.finite(radius) && Mesh.finite(height), False{}, libm, radius, height, slices)
+
+def Mesh.gen_cylinder(+radius: F32, +height: F32, +slices: U32) -> Maybe<Mesh>:
+  Mesh.gen_cylinder_for(M.Uncontracted{}, M.Glibc239Libm{}, radius, height, slices)
+
+# GenMeshCone(radius, height, slices): par_shapes' cone of 8 stacks scaled
+# and turned to point along Y, with its bottom disk. Profiles and None as
+# GenMeshCylinder.
+def Mesh.gen_cone_for(+arithmetic: M.Contraction, +libm: M.Libm, +radius: F32, +height: F32, +slices: U32) -> Maybe<Mesh>:
+  Mesh.tube((slices < 3 : U32), M.Libm.gnu(libm) && Bool.not(M.Contraction.fused(arithmetic)) && Mesh.finite(radius) && Mesh.finite(height), True{}, libm, radius, height, slices)
+
+def Mesh.gen_cone(+radius: F32, +height: F32, +slices: U32) -> Maybe<Mesh>:
+  Mesh.gen_cone_for(M.Uncontracted{}, M.Glibc239Libm{}, radius, height, slices)
+
 # UnloadMesh: consuming the mesh releases its arrays.
 def Mesh.unload(mesh: Mesh) -> Unit:
   Unit{}

@@ -74,6 +74,8 @@ answers `None`.
 | `GenMeshSphere` | `Mesh.gen_sphere_for(arithmetic, libm, radius, rings, slices)`, `Mesh.gen_sphere` | `Maybe<Mesh>` |
 | `GenMeshHemiSphere` | `Mesh.gen_hemi_sphere_for(arithmetic, libm, after_sphere, radius, rings, slices)`, `Mesh.gen_hemi_sphere` | `Maybe<Mesh>` |
 | `GenMeshTorus` | `Mesh.gen_torus_for(arithmetic, libm, radius, size, rad_seg, sides)`, `Mesh.gen_torus` | `Maybe<Mesh>` |
+| `GenMeshCylinder` | `Mesh.gen_cylinder_for(arithmetic, libm, radius, height, slices)`, `Mesh.gen_cylinder` | `Maybe<Mesh>` |
+| `GenMeshCone` | `Mesh.gen_cone_for(arithmetic, libm, radius, height, slices)`, `Mesh.gen_cone` | `Maybe<Mesh>` |
 | `GenMeshHeightmap` | `Mesh.gen_heightmap_for(arithmetic, image, size)`, `Mesh.gen_heightmap` | `Result<&1, &1, Surface & Surface.Error, Mesh>` |
 | `GenMeshCubicmap` | `Mesh.gen_cubicmap(image, cube_size)` | `Result<&1, &1, Surface & Surface.Error, Mesh>` |
 | `GenMeshTangents` | `Mesh.gen_tangents_for(arithmetic, mesh)`, `Mesh.gen_tangents` | `Maybe<Mesh>` |
@@ -210,11 +212,36 @@ converted as C converts them; the generators take `U32` counts. Points of
   stacks give raylib's empty mesh.
 
 The generated mesh is scaled (`radius`, or `size/2` for the torus) and unrolled
-per triangle corner as raylib does (no indices). `GenMeshCylinder`,
-`GenMeshCone` and `GenMeshKnot` remain refused: their disk caps and trefoil
-call the binary64 `cos`/`sin`, for which no verified reproduction exists
-([PERSPECTIVE.md](PERSPECTIVE.md) solved the same problem for `tan` by
-reproducing glibc's function).
+per triangle corner as raylib does (no indices).
+
+`GenMeshCylinder` and `GenMeshCone` build par_shapes' cylinder or cone of 8
+stacks (the same parametric grid and welded normals), then:
+
+- `par_shapes_scale(radius, radius, height)`: the points, and unless the
+  three factors are equal the normals by the inverse factors, normalized (a
+  zero factor follows par_shapes' rules: the normals keep only the axis that
+  is alone at zero);
+- `par_shapes_rotate` by `-PI/2.0f` around X (and for the cone `PI/2.0f`
+  around Y): a matrix from `sinf`/`cosf` applied to points and normals;
+- `par_shapes_create_disk` caps: a fan around the origin whose rim is
+  `(float)(radius*cos(theta))`, `(float)(radius*sin(theta))` with
+  `theta = (float)(i*PAR_PI*2/slices)`, every operation in binary64
+  (`M.Libm.cos64`/`sin64`, [MATH.md](MATH.md)). par_shapes then rotates the
+  disk by `(float)acos(normal.z)` around the cross product of its normal and
+  `(0, 0, -1)`, which is the zero vector for these normals: nothing for the
+  top disk, and a matrix of `cosf(pi)` on the diagonal for the bottom one
+  (the points and the normal change sign);
+- the caps' own rotations and the top one's translation, their texture
+  coordinates (0 on top, 0.95 below), and `par_shapes_merge`.
+
+They need `M.Glibc239Libm{}` (the only profile with the binary64 `cos` and
+`sin`) and `M.Uncontracted{}`; another profile or `M.Fused{}` is `None`.
+Gate `mesh-tube` (`tools/mesh_tube_probe.py`) compares hashes of the
+vertices, texture coordinates and normals of 80 meshes with the native
+generators (3 to 40 slices, equal and unequal sizes, zero and negative
+ones) on a host whose `sin` and `cos` reproduce the glibc 2.39 controls.
+`GenMeshKnot` remains refused: its trefoil is not ported yet (a dozen
+binary64 operations a point).
 
 ## Export
 
@@ -663,7 +690,8 @@ attribute builders are tail-recursive.
 
 ## Gaps
 
-- `GenMeshCylinder`, `GenMeshCone`, `GenMeshKnot` (binary64 `cos`/`sin`); the
+- `GenMeshKnot` (the trefoil); `GenMeshCylinder` and `GenMeshCone` outside
+  `M.Glibc239Libm{}` and under `M.Fused{}`; the
   `par_shapes` sphere, hemisphere and torus under Apple's `qsort` and
   `sinf`/`cosf`; their fused contraction is implemented but only the
   uncontracted glibc reference is compared.
@@ -671,7 +699,7 @@ attribute builders are tail-recursive.
   the Apple profile's `sinf`/`cosf` beyond the integral degrees (most curved
   shapes are verified only under the glibc profile).
 - Shaders (no shader is compiled under OpenGL 1.1), `UploadMesh`/GPU
-  buffers, `UpdateMeshBuffer`, `GenMeshCylinder`/`Cone`/`Knot` (above) and
+  buffers, `UpdateMeshBuffer`, `GenMeshKnot` (above) and
   `UpdateModelAnimation*` (the reference only fills a pose and bone
   matrices Jonlib's `Model` does not have).
 - IQM, glTF as text, VOX and M3D files: `LoadModel` answers
