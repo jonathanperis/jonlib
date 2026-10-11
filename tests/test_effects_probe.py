@@ -230,6 +230,22 @@ class EmojiExampleTests(unittest.TestCase):
         self.assertEqual([emoji(*click) for click in clicks], [0, 6, 20, 31, 13])
 
 
+class FileTimeExampleTests(unittest.TestCase):
+    def test_the_header_answers_the_examples_file_time_with_the_seed(self):
+        self.assertIn('#define GetFileModTime JonlibExampleFileModTime', ep.SHIM.read_text())
+        self.assertIn('long JonlibExampleFileModTime(const char *fileName) { (void)fileName; return (long)seed; }', ep.C_DRIVER)
+        self.assertIn('shaders_hot_reloading', ep.SEEDED)
+
+    def test_the_scripts_stamps_are_a_thursday_and_a_leap_day(self):
+        import time
+        seeds = {item['name']: item['seed'] for item in ep.scripts() if item['example'] == 'shaders_hot_reloading'}
+        self.assertEqual(time.asctime(time.gmtime(seeds['shaders_hot_reloading-stamp'])), 'Thu Oct  9 08:53:20 2025')
+        self.assertEqual(time.asctime(time.gmtime(seeds['shaders_hot_reloading-leap'])), 'Thu Feb 29 23:59:59 2024')
+        port = (ROOT / 'examples/shaders_hot_reloading.bend').read_text()
+        self.assertIn('"%s %s%3d %02d:%02d:%02d %d\\n"', port)
+        self.assertIn('(days + 719468 : U32)', port)
+
+
 class UndefinedNativeExampleTests(unittest.TestCase):
     def test_the_codepoints_example_repeats_a_codepoint_and_is_not_run(self):
         import re

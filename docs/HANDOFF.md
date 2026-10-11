@@ -292,7 +292,10 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      (its `GenMeshDecal` as lists of triangles; the indexed-mesh branch is
      not taken by `LoadOBJ` meshes and is left out; its first button is
      drawn above the screen, as upstream); the IQM, VOX and M3D loaders are
-     not written. `core_screen_recording`
+     not written. `shaders_hot_reloading` is ported with its file's
+     modification time as a setup argument (`GetFileModTime` stays blocked
+     on Base, like the directory functions `core_directory_files` needs).
+     `core_screen_recording`
      needs a GIF encoder (msf_gif) besides `GetApplicationDirectory`, and
      `shaders_game_of_life` draws 2048x2048 worlds each frame;
    - `shaders_game_of_life` is ready but steps a 2048x2048 world through a

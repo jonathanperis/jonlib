@@ -279,6 +279,7 @@ EXAMPLES = {
     'shaders_deferred_rendering': ('shaders/shaders_deferred_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_skybox_rendering': ('models/models_skybox_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_decals': ('models/models_decals.c', 'Ex.setup(M.LIBM{}, seed, RESOURCES, core, frame)'),
+    'shaders_hot_reloading': ('shaders/shaders_hot_reloading.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'text_codepoints_loading': ('text/text_codepoints_loading.c', 'Ex.setup(core, frame)'),
     'text_unicode_emojis': ('text/text_unicode_emojis.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
@@ -369,6 +370,8 @@ PERSPECTIVE.add('shaders_deferred_rendering')
 # tenths of a degree, which the Apple profile's sinf/cosf do not cover.
 SEEDED.add('shapes_digital_clock'); CONFIG_FLAGS['shapes_digital_clock'] = 32
 SEEDED.add('shapes_clock_of_clocks'); CONFIG_FLAGS['shapes_clock_of_clocks'] = 32
+# shaders_hot_reloading shows its shader file's modification time: the seed (the header answers GetFileModTime).
+SEEDED.add('shaders_hot_reloading')
 # Examples whose loop does IO (a J.Effects program): replayed with J.Program.replay_io.
 EFFECTS = {'shaders_shadowmap_rendering'}
 # A program of another probe (tools/effects_probe.py) names its Bend module instead of examples/<name>.bend.
@@ -1099,6 +1102,10 @@ def scripts():
         # UP change nothing.
         script('core_custom_frame_control', 'paced', [quick(), quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), key(KEY_UP)]), quick([key(KEY_UP, False)]), long(),
                                                       quick(), quick()]),
+        # The file was modified on Thursday 2025-10-09 08:53:20 and on Thursday 2024-02-29 23:59:59 (a leap day):
+        # a click and the auto reloading (A) find it unmodified.
+        script('shaders_hot_reloading', 'stamp', [quick(), quick([button(0)]), quick([button(0, False), key(65)]), slow([key(65, False)])], seed=1760000000),
+        script('shaders_hot_reloading', 'leap', [quick(), quick()], seed=1709251199),
         # The driver silences raylib's log (SetTraceLogLevel(LOG_NONE)), so the example's callback prints nothing.
         script('core_custom_logging', 'frames', [quick(), slow()]),
         # The mouse over an emoji colors it; a click selects it and its message appears in a bubble (below the
@@ -1523,6 +1530,8 @@ int JonlibProbeNanosleep(const struct timespec *req, struct timespec *rem) { (vo
 static unsigned seed = 0;
 // An example's time(): the script's seed (the seconds at InitWindow) plus the scripted clock's whole seconds.
 time_t JonlibExampleTime(time_t *out) { time_t now = (time_t)seed + (time_t)probe_clock; if (out) *out = now; return now; }
+// An example's GetFileModTime: the script's seed, whatever the file.
+long JonlibExampleFileModTime(const char *fileName) { (void)fileName; return (long)seed; }
 // An example's own WaitTime: its sleep ends at raylib's destination, GetTime() + seconds.
 void JonlibExampleWaitTime(double seconds) { if (!(seconds < 0)) probe_after = probe_clock + seconds; WaitTime(seconds); }
 
