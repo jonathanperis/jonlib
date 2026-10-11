@@ -831,6 +831,12 @@ def Laws.mesh_cylinder_of_two_slices_is_empty(arithmetic, libm, radius, height):
 def Laws.mesh_cone_fused_refused(radius, height):
   {==}
 
+def Laws.mesh_knot_of_two_sides_is_empty(arithmetic, libm, radius, size, rad_seg):
+  {==}
+
+def Laws.mesh_knot_fused_refused(radius, size):
+  {==}
+
 def Laws.gltf_anim_no_joints_no_rest(nodes):
   {==}
 

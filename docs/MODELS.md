@@ -76,6 +76,7 @@ answers `None`.
 | `GenMeshTorus` | `Mesh.gen_torus_for(arithmetic, libm, radius, size, rad_seg, sides)`, `Mesh.gen_torus` | `Maybe<Mesh>` |
 | `GenMeshCylinder` | `Mesh.gen_cylinder_for(arithmetic, libm, radius, height, slices)`, `Mesh.gen_cylinder` | `Maybe<Mesh>` |
 | `GenMeshCone` | `Mesh.gen_cone_for(arithmetic, libm, radius, height, slices)`, `Mesh.gen_cone` | `Maybe<Mesh>` |
+| `GenMeshKnot` | `Mesh.gen_knot_for(arithmetic, libm, radius, size, rad_seg, sides)`, `Mesh.gen_knot` | `Maybe<Mesh>` |
 | `GenMeshHeightmap` | `Mesh.gen_heightmap_for(arithmetic, image, size)`, `Mesh.gen_heightmap` | `Result<&1, &1, Surface & Surface.Error, Mesh>` |
 | `GenMeshCubicmap` | `Mesh.gen_cubicmap(image, cube_size)` | `Result<&1, &1, Surface & Surface.Error, Mesh>` |
 | `GenMeshTangents` | `Mesh.gen_tangents_for(arithmetic, mesh)`, `Mesh.gen_tangents` | `Maybe<Mesh>` |
@@ -236,12 +237,26 @@ stacks (the same parametric grid and welded normals), then:
 
 They need `M.Glibc239Libm{}` (the only profile with the binary64 `cos` and
 `sin`) and `M.Uncontracted{}`; another profile or `M.Fused{}` is `None`.
+
+`GenMeshKnot` builds par_shapes' trefoil knot (`radSeg` slices by `sides`
+stacks, the radius clamped to 0.5f..3) with welded normals and scales it by
+`size`. `par_shapes__trefoil` computes in `double` around `cos` and `sin` of
+float angles and stores every intermediate in a `float`: the curve
+`r = a + b*cos(1.5f*u)`, `(r*cos(u), r*sin(u), c*sin(1.5f*u))`, its tangent
+`q` (normalized in float), `qvn = normalize(q.y, -q.x, 0)`,
+`ww = cross(q, qvn)` and the point
+`x + d*(qvn.x*cos(v) + ww.x*sin(v))`, ..., `z + (d*ww.z)*sin(v)` with
+`d = radius*0.1f`. Each sum and product is one binary64 operation in the
+source's order (the last one a float product first), narrowed where the
+source assigns a float.
+
 Gate `mesh-tube` (`tools/mesh_tube_probe.py`) compares hashes of the
-vertices, texture coordinates and normals of 80 meshes with the native
-generators (3 to 40 slices, equal and unequal sizes, zero and negative
-ones) on a host whose `sin` and `cos` reproduce the glibc 2.39 controls.
-`GenMeshKnot` remains refused: its trefoil is not ported yet (a dozen
-binary64 operations a point).
+vertices, texture coordinates and normals of 88 meshes with the native
+generators: cylinders and cones of 3 to 40 slices with equal, unequal, zero
+and negative sizes, and eight knots (the 16 x 128 one of
+`models_mesh_generation`, the smallest, radii outside the clamp, a zero and
+a negative size), on a host whose `sin` and `cos` reproduce the glibc 2.39
+controls.
 
 ## Export
 
@@ -690,7 +705,7 @@ attribute builders are tail-recursive.
 
 ## Gaps
 
-- `GenMeshKnot` (the trefoil); `GenMeshCylinder` and `GenMeshCone` outside
+- `GenMeshCylinder`, `GenMeshCone` and `GenMeshKnot` outside
   `M.Glibc239Libm{}` and under `M.Fused{}`; the
   `par_shapes` sphere, hemisphere and torus under Apple's `qsort` and
   `sinf`/`cosf`; their fused contraction is implemented but only the
@@ -699,7 +714,7 @@ attribute builders are tail-recursive.
   the Apple profile's `sinf`/`cosf` beyond the integral degrees (most curved
   shapes are verified only under the glibc profile).
 - Shaders (no shader is compiled under OpenGL 1.1), `UploadMesh`/GPU
-  buffers, `UpdateMeshBuffer`, `GenMeshKnot` (above) and
+  buffers, `UpdateMeshBuffer` and
   `UpdateModelAnimation*` (the reference only fills a pose and bone
   matrices Jonlib's `Model` does not have).
 - IQM, glTF as text, VOX and M3D files: `LoadModel` answers

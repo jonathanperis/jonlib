@@ -10308,6 +10308,25 @@ def Mesh.gen_cone_for(+arithmetic: M.Contraction, +libm: M.Libm, +radius: F32, +
 def Mesh.gen_cone(+radius: F32, +height: F32, +slices: U32) -> Maybe<Mesh>:
   Mesh.gen_cone_for(M.Uncontracted{}, M.Glibc239Libm{}, radius, height, slices)
 
+def Mesh.knot(small: Bool, valid: Bool, +libm: M.Libm, +radius: F32, +size: F32, +rad_seg: U32, +sides: U32) -> Maybe<Mesh>:
+  match small valid:
+    case True{} _: Some{Mesh.empty()}
+    case False{} False{}: None{}
+    case False{} True{}: Mesh.par.out(ParShapes.knot(libm, radius, size, rad_seg, sides))
+
+# GenMeshKnot(radius, size, radSeg, sides): par_shapes' trefoil knot (radSeg
+# slices x sides stacks, the tube's radius clamped to 0.5f..3 times 0.1f)
+# with welded normals, scaled by size and unrolled per triangle corner. Fewer
+# than 3 of either give the empty mesh. Its function works in binary64
+# around cos and sin: profiles and None as GenMeshCylinder (also for a
+# nonfinite radius or size).
+def Mesh.gen_knot_for(+arithmetic: M.Contraction, +libm: M.Libm, +radius: F32, +size: F32, +rad_seg: U32, +sides: U32) -> Maybe<Mesh>:
+  Mesh.knot((sides < 3 : U32) || (rad_seg < 3 : U32), M.Libm.gnu(libm) && Bool.not(M.Contraction.fused(arithmetic)) && Mesh.finite(radius) && Mesh.finite(size), libm,
+    Bool.pick(F32, (radius > 3.0 : F32), 3.0, Bool.pick(F32, (radius < 0.5 : F32), 0.5, radius)), size, rad_seg, sides)
+
+def Mesh.gen_knot(+radius: F32, +size: F32, +rad_seg: U32, +sides: U32) -> Maybe<Mesh>:
+  Mesh.gen_knot_for(M.Uncontracted{}, M.Glibc239Libm{}, radius, size, rad_seg, sides)
+
 # UnloadMesh: consuming the mesh releases its arrays.
 def Mesh.unload(mesh: Mesh) -> Unit:
   Unit{}

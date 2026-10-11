@@ -838,3 +838,189 @@ def cylinder(+libm: M.Libm, +radius: F32, +height: F32, +slices: U32) -> Out:
 def cone(+libm: M.Libm, +radius: F32, +height: F32, +slices: U32) -> Out:
   unrolled(merged(turned(turned(scaled(tube(True{}, slices, 8), radius, radius, height), F32.neg(quarter()), 1.0, 0.0, 0.0), quarter(), 0.0, 1.0, 0.0),
     turned(disk(libm, radius, slices, True{}, F.float(1064514355)), quarter(), 1.0, 0.0, 0.0)))
+
+# -----------------------------------------------------------------------------
+# GenMeshKnot: par_shapes' trefoil knot. Its function works in binary64
+# around the profile's cos and sin and stores each result in a float; the
+# operations below are the source's, in its order, without contraction.
+
+def f64.of(+x: F32) -> Maybe<M.Float64>:
+  Some{M.Float64.from_f32(x)}
+
+def f64.mul(a: Maybe<M.Float64>, b: Maybe<M.Float64>) -> Maybe<M.Float64>:
+  match a b:
+    case Some{x} Some{y}: M.Float64.internal.multiply(x, y)
+    case _ _: None{}
+
+def f64.add(a: Maybe<M.Float64>, b: Maybe<M.Float64>) -> Maybe<M.Float64>:
+  match a b:
+    case Some{x} Some{y}: M.Float64.internal.add(x, y)
+    case _ _: None{}
+
+def f64.sub(a: Maybe<M.Float64>, b: Maybe<M.Float64>) -> Maybe<M.Float64>:
+  match a b:
+    case Some{x} Some{y}: M.Float64.internal.subtract(x, y)
+    case _ _: None{}
+
+def f64.cos(x: Maybe<&2, F32>, +libm: M.Libm) -> Maybe<M.Float64>:
+  match x:
+    case None{}: None{}
+    case Some{v}: M.Libm.cos64(libm, M.Float64.from_f32(v))
+
+def f64.sin(x: Maybe<&2, F32>, +libm: M.Libm) -> Maybe<M.Float64>:
+  match x:
+    case None{}: None{}
+    case Some{v}: M.Libm.sin64(libm, M.Float64.from_f32(v))
+
+def f32.scaled(x: Maybe<&2, F32>, +by: F32) -> Maybe<&2, F32>:
+  match x:
+    case None{}: None{}
+    case Some{v}: Some{(by * v : F32)}
+
+# What the trefoil derives from uv[0]: the curve's point (x, y, z), the first
+# two components of qvn and ww. ok: every value was reproduced.
+type Knot is Data:
+  Knot{ok: Bool, u: F32, x: F32, y: F32, z: F32, qx: F32, qy: F32, wx: F32, wy: F32, wz: F32}
+
+def knot.built(qvn: M.Vector3, ww: M.Vector3, +u: F32, +x: F32, +y: F32, +z: F32) -> Knot:
+  M.Vector3{qx, qy, _} = qvn
+  M.Vector3{wx, wy, wz} = ww
+  Knot{True{}, u, x, y, z, qx, qy, wx, wy, wz}
+
+# qvn = normalize3(q[1], -q[0], 0) and ww = cross3(q, qvn).
+def knot.crossed(+q: M.Vector3, +qvn: M.Vector3, +u: F32, +x: F32, +y: F32, +z: F32) -> Knot:
+  knot.built(qvn, Mesh.cross(False{}, q, qvn), u, x, y, z)
+
+def knot.frame(+u: F32, +x: F32, +y: F32, +z: F32, +q: M.Vector3) -> Knot:
+  M.Vector3{+qx, +qy, _} = q
+  knot.crossed(q, normalize3(False{}, M.Vector3{qy, F32.neg(qx), 0.0}), u, x, y, z)
+
+def knot.values(x: Maybe<F32>, y: Maybe<F32>, z: Maybe<F32>, q0: Maybe<F32>, q1: Maybe<F32>, q2: Maybe<F32>, +u: F32) -> Knot:
+  match x y z q0 q1 q2:
+    case Some{+px} Some{+py} Some{+pz} Some{+a} Some{+b} Some{+c}: knot.frame(u, px, py, pz, normalize3(False{}, M.Vector3{a, b, c}))
+    case _ _ _ _ _ _: Knot{False{}, u, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+
+# r = a + b*cos(1.5f*u), the curve r*cos(u), r*sin(u), c*sin(1.5f*u), and its
+# tangent q, with a = 0.5f, b = 0.3f, c = 0.5f.
+def knot.curve(+u: F32, +c15: M.Float64, +s15: M.Float64, +cu: M.Float64, +su: M.Float64, r: Maybe<F32>) -> Knot:
+  match r:
+    case None{}: Knot{False{}, u, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+    case Some{+radius}:
+      knot.values(f64.narrow(M.Float64.internal.multiply(M.Float64.from_f32(radius), cu)), f64.narrow(M.Float64.internal.multiply(M.Float64.from_f32(radius), su)),
+        f64.narrow(M.Float64.internal.multiply(M.Float64.from_f32(0.5), s15)),
+        f64.narrow(f64.sub(f64.times(M.Float64.internal.multiply(M.Float64.from_f32((F32.neg(1.5) * F.float(1050253722) : F32)), s15), cu),
+          f64.times(f64.add(f64.of(0.5), M.Float64.internal.multiply(M.Float64.from_f32(F.float(1050253722)), c15)), su))),
+        f64.narrow(f64.add(f64.times(M.Float64.internal.multiply(M.Float64.from_f32((F32.neg(1.5) * F.float(1050253722) : F32)), s15), su),
+          f64.times(f64.add(f64.of(0.5), M.Float64.internal.multiply(M.Float64.from_f32(F.float(1050253722)), c15)), cu))),
+        f64.narrow(M.Float64.internal.multiply(M.Float64.from_f32((1.5 * 0.5 : F32)), c15)), u)
+
+def knot.trig(c15: Maybe<M.Float64>, s15: Maybe<M.Float64>, cu: Maybe<M.Float64>, su: Maybe<M.Float64>, +u: F32) -> Knot:
+  match c15 s15 cu su:
+    case Some{+a} Some{+b} Some{+c} Some{+d}: knot.curve(u, a, b, c, d, f64.narrow(f64.add(f64.of(0.5), M.Float64.internal.multiply(M.Float64.from_f32(F.float(1050253722)), a))))
+    case _ _ _ _: Knot{False{}, u, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+
+# u = (float)(((1 - uv[0])*4)*PAR_PI).
+def knot.at(+uv: F32, +libm: M.Libm, +angle: Maybe<&2, F32>) -> Knot:
+  knot.trig(f64.cos(f32.scaled(angle, 1.5), libm), f64.sin(f32.scaled(angle, 1.5), libm), f64.cos(angle, libm), f64.sin(angle, libm), uv)
+
+def knots(n: Nat, +i: F32, +count: F32, +libm: M.Libm, acc: +List<Knot>) -> +List<Knot>:
+  match n:
+    case 0n: acc
+    case 1n+k: knots(k, (i - 1.0 : F32), count, libm, Con{knot.at((i / count : F32), libm, pi.times((((1.0 - (i / count : F32) : F32) * 4.0) : F32))), acc})
+
+# uv[1] with cos(v) and sin(v), v = (float)((uv[1]*2)*PAR_PI).
+type Around is Data:
+  Around{ok: Bool, u: F32, c: M.Float64, s: M.Float64}
+
+def around.of(c: Maybe<M.Float64>, s: Maybe<M.Float64>, +u: F32) -> Around:
+  match c s:
+    case Some{+a} Some{+b}: Around{True{}, u, a, b}
+    case _ _: Around{False{}, u, M.Float64{0, 0}, M.Float64{0, 0}}
+
+def arounds(n: Nat, +i: F32, +count: F32, +libm: M.Libm, acc: +List<Around>) -> +List<Around>:
+  match n:
+    case 0n: acc
+    case 1n+k: arounds(k, (i - 1.0 : F32), count, libm, Con{around.of(f64.cos(pi.times(((i / count : F32) * 2.0 : F32)), libm), f64.sin(pi.times(((i / count : F32) * 2.0 : F32)), libm), (i / count : F32)), acc})
+
+# The grid so far (reversed) and whether every point was reproduced.
+type Net is Data:
+  Net{ok: Bool, points: +List<M.Vector3>, uvs: +List<M.Vector3>}
+
+def net.kept(acc: Net, +p: M.Vector3, +uv: M.Vector3, +reproduced: Bool) -> Net:
+  Net{ok, points, uvs} = acc
+  Net{ok && reproduced, Con{p, points}, Con{uv, uvs}}
+
+def net.put(point: Maybe<M.Vector3>, +uv: M.Vector3, +reproduced: Bool, acc: Net) -> Net:
+  match point:
+    case None{}: net.kept(acc, M.Vector3{0.0, 0.0, 0.0}, uv, False{})
+    case Some{+p}: net.kept(acc, p, uv, reproduced)
+
+def knot.xyz(x: Maybe<F32>, y: Maybe<F32>, z: Maybe<F32>) -> Maybe<M.Vector3>:
+  match x y z:
+    case Some{a} Some{b} Some{c}: Some{M.Vector3{a, b, c}}
+    case _ _ _: None{}
+
+# xyz = (x + d*(qvn[0]*cos(v) + ww[0]*sin(v)), y + d*(qvn[1]*cos(v) + ww[1]*sin(v)), z + (d*ww[2])*sin(v)).
+def knot.point(k: Knot, a: Around, +d: F32) -> Maybe<M.Vector3>:
+  Knot{_, _, +x, +y, +z, +qx, +qy, +wx, +wy, +wz} = k
+  Around{_, _, +c, +s} = a
+  knot.xyz(f64.narrow(f64.add(f64.of(x), f64.mul(f64.of(d), f64.add(M.Float64.internal.multiply(M.Float64.from_f32(qx), c), M.Float64.internal.multiply(M.Float64.from_f32(wx), s))))),
+    f64.narrow(f64.add(f64.of(y), f64.mul(f64.of(d), f64.add(M.Float64.internal.multiply(M.Float64.from_f32(qy), c), M.Float64.internal.multiply(M.Float64.from_f32(wy), s))))),
+    f64.narrow(f64.add(f64.of(z), M.Float64.internal.multiply(M.Float64.from_f32((d * wz : F32)), s))))
+
+def knot.ok(k: Knot) -> Bool:
+  Knot{ok, _, _, _, _, _, _, _, _, _} = k
+  ok
+
+def knot.u(k: Knot) -> F32:
+  Knot{_, u, _, _, _, _, _, _, _, _} = k
+  u
+
+def around.ok(a: Around) -> Bool:
+  Around{ok, _, _, _} = a
+  ok
+
+def around.u(a: Around) -> F32:
+  Around{_, u, _, _} = a
+  u
+
+def net.row(bs: +List<Around>, +k: Knot, +d: F32, acc: Net) -> Net:
+  match bs:
+    case Nil{}: acc
+    case Con{+b, rest}: net.row(rest, k, d, net.put(knot.point(k, b, d), M.Vector3{knot.u(k), around.u(b), 0.0}, knot.ok(k) && around.ok(b), acc))
+
+def net.rows(ks: +List<Knot>, +bs: +List<Around>, +d: F32, acc: Net) -> Net:
+  match ks:
+    case Nil{}: acc
+    case Con{+k, rest}: net.rows(rest, bs, d, net.row(bs, k, d, acc))
+
+def knots.reverse(xs: +List<Knot>, acc: +List<Knot>) -> +List<Knot>:
+  match xs:
+    case Nil{}: acc
+    case Con{+k, rest}: knots.reverse(rest, Con{k, acc})
+
+def arounds.reverse(xs: +List<Around>, acc: +List<Around>) -> +List<Around>:
+  match xs:
+    case Nil{}: acc
+    case Con{+a, rest}: arounds.reverse(rest, Con{a, acc})
+
+def knot.welded(w: Welded, +reproduced: Bool, +points: +List<M.Vector3>, +uvs: +List<M.Vector3>, +tris: +List<U32>) -> Shape:
+  Welded{ok, normals} = w
+  Shape{ok && reproduced, points, normals, uvs, tris}
+
+def knot.made(net: Net, +n: U32, +tris: +List<U32>) -> Shape:
+  Net{+ok, +points, +uvs} = net
+  knot.welded(welded(False{}, n, points, tris), ok, points, uvs, tris)
+
+def knot.sized(valid: Bool, +libm: M.Libm, +minor: F32, +slices: U32, +stacks: U32) -> Shape:
+  match valid:
+    case False{}: Shape{False{}, Nil{}, Nil{}, Nil{}, Nil{}}
+    case True{}: knot.made(net.rows(knots.reverse(knots(U32.to_nat((stacks + 1 : U32)), U32.to_f32(stacks), U32.to_f32(stacks), libm, Nil{}), Nil{}),
+      arounds.reverse(arounds(U32.to_nat((slices + 1 : U32)), U32.to_f32(slices), U32.to_f32(slices), libm, Nil{}), Nil{}), (minor * F.float(1036831949) : F32), Net{True{}, Nil{}, Nil{}}),
+      ((slices + 1 : U32) * (stacks + 1 : U32) : U32), faces(U32.to_nat(stacks), (stacks - 1 : U32), slices, Nil{}))
+
+# GenMeshKnot(radius, size, radSeg, sides) for 3 and more of each:
+# par_shapes_create_trefoil_knot(radSeg, sides, radius) (d = radius*0.1f) with
+# welded normals, scaled by size and unrolled.
+def knot(+libm: M.Libm, +minor: F32, +size: F32, +slices: U32, +stacks: U32) -> Out:
+  unrolled(scaled(knot.sized((slices <= 65534 : U32) && (stacks <= 65534 : U32) && (((slices + 1 : U32) * (stacks + 1 : U32) : U32) <= 65535 : U32), libm, minor, slices, stacks), size, size, size))

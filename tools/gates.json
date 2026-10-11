@@ -1753,7 +1753,7 @@
   },
   {
    "id": "mesh-tube",
-   "title": "GenMeshCylinder and GenMeshCone (par_shapes' cylinder, cone and disk, scaled, rotated and merged) word hashes against the uncontracted raylib build on a host whose sin and cos reproduce the glibc 2.39 controls, with zero and negative sizes and refusal contracts",
+   "title": "GenMeshCylinder, GenMeshCone and GenMeshKnot (par_shapes' cylinder, cone and disk, scaled, rotated and merged; its trefoil knot) word hashes against the uncontracted raylib build on a host whose sin and cos reproduce the glibc 2.39 controls, with zero and negative sizes and refusal contracts",
    "run": [
     "{python}",
     "tools/mesh_tube_probe.py",

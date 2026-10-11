@@ -3,19 +3,19 @@
   "reference_revision": "dbc56a87da87d973a9c5baa4e7438a9d20121d28",
   "declaration_inventory": {
     "total": 1884,
-    "blocked": 18,
+    "blocked": 17,
     "complete": 0,
     "in-progress": 0,
     "not-started": 395,
-    "partial": 1471
+    "partial": 1472
   },
   "core_functions": {
     "total": 600,
-    "blocked": 18,
+    "blocked": 17,
     "complete": 0,
     "in-progress": 0,
     "not-started": 60,
-    "partial": 522
+    "partial": 523
   },
   "math_functions": {
     "total": 146,
@@ -27,11 +27,11 @@
   },
   "function_declarations": {
     "total": 931,
-    "blocked": 18,
+    "blocked": 17,
     "complete": 0,
     "in-progress": 0,
     "not-started": 94,
-    "partial": 819
+    "partial": 820
   },
   "unique_c_function_names": 923,
   "kinds": {
@@ -51,11 +51,11 @@
   "headers": {
     "raylib.h": {
       "total": 1037,
-      "blocked": 18,
+      "blocked": 17,
       "complete": 0,
       "in-progress": 0,
       "not-started": 104,
-      "partial": 915
+      "partial": 916
     },
     "raymath.h": {
       "total": 254,
@@ -453,11 +453,11 @@
         "shaders"
       ],
       "total": 54,
-      "blocked": 1,
+      "blocked": 0,
       "complete": 0,
       "in-progress": 0,
       "not-started": 1,
-      "partial": 52
+      "partial": 53
     },
     {
       "id": "materials",
