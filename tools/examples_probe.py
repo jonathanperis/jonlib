@@ -248,6 +248,7 @@ EXAMPLES = {
     'models_waving_cubes': ('models/models_waving_cubes.c', 'Ex.setup(core, frame)'),
     'shaders_spotlight_rendering': ('shaders/shaders_spotlight_rendering.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'models_mesh_generation': ('models/models_mesh_generation.c', 'Ex.setup(M.LIBM{}, core, frame)'),
+    'shaders_depth_writing': ('shaders/shaders_depth_writing.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -321,6 +322,7 @@ IO_SETUP.add('shaders_spotlight_rendering'); SEEDED.add('shaders_spotlight_rende
 # The binary64 cos and sin of its first frame have no AppleLibm profile either (docs/MATH.md): the same contract.
 PERSPECTIVE.add('shaders_spotlight_rendering')
 PERSPECTIVE.add('models_mesh_generation')
+PERSPECTIVE.add('shaders_depth_writing')
 
 
 # -----------------------------------------------------------------------------
@@ -982,6 +984,9 @@ def scripts():
                                                    slow([button(0, False), key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False), button(0)]),
                                                    quick([button(0, False), key(KEY_RIGHT)]), quick([key(KEY_RIGHT, False)]), quick([key(KEY_RIGHT)]),
                                                    quick([key(KEY_RIGHT, False), key(KEY_LEFT)])]),
+        # Two cubes and a grid in the render texture the example builds with rlgl (a framebuffer, a color
+        # texture and a depth attachment), drawn to the screen while the orbital camera turns.
+        script('shaders_depth_writing', 'orbit', [quick(), quick(), slow(), quick()]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.
