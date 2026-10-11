@@ -258,8 +258,8 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      they call the C library's `time()` and `localtime()`, so a port's setup
      takes the seconds of the day at InitWindow (the script's seed in the
      probe, whose header redirects `time()` in the example) and adds
-     `Core.get_time`'s whole seconds. On the desktop their `run` passes 0:
-     a `--time` argument read like `--frames` is still to be added.
+     `Core.get_time`'s whole seconds. On the desktop their `run` reads a
+     `--time` argument (`Desktop.clock_args`).
      `core_custom_logging` is ported as its text: its callback only ever
      receives raylib's own log lines, which Jonlib does not emit;
    - the rlgl framebuffer functions are done for one color and one depth
