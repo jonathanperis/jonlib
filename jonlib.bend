@@ -11577,17 +11577,70 @@ def Model.gltf.tinted(+material: Material, +color: U32) -> Material:
 def Model.gltf.material(+color: U32) -> Material:
   Model.gltf.tinted(Material.load_default(), color)
 
-def Model.gltf.materials(colors: +List<U32>) -> +List<Material>:
-  match colors:
-    case Nil{}: Nil{}
-    case Con{+color, rest}: Con{Model.gltf.material(color), Model.gltf.materials(rest)}
+# The materials made so far (last first), the textures uploaded for them,
+# and whether every image decoded and found a texture id.
+type Model.gltf.Looks is Type:
+  ModelGltfLooks{frame: Frame, materials: +List<Material>, textures: List<Texture>, ok: Bool}
+
+def Model.gltf.look.set(material: Maybe<Material>, +fallback: Material) -> Material:
+  match material:
+    case None{}: fallback
+    case Some{m}: m
+
+# materials[j].maps[MATERIAL_MAP_ALBEDO].texture = LoadTextureFromImage(imAlbedo).
+def Model.gltf.look.info(pair: Texture & TextureInfo, frame: Frame, +color: U32, +materials: +List<Material>, textures: List<Texture>) -> Model.gltf.Looks:
+  (texture, +info) = pair
+  ModelGltfLooks{frame, Con{Model.gltf.look.set(Material.set_texture(Model.gltf.material(color), 0, info), Model.gltf.material(color)), materials}, Con{texture, textures}, True{}}
+
+def Model.gltf.look.uploaded(r: Frame & Maybe<Texture>, +color: U32, +materials: +List<Material>, textures: List<Texture>) -> Model.gltf.Looks:
+  (frame, texture) = r
+  match texture:
+    case None{}: ModelGltfLooks{frame, materials, textures, False{}}
+    case Some{t}: Model.gltf.look.info(Texture.info(t), frame, color, materials, textures)
+
+def Model.gltf.look.decoded(image: Result<&1, &1, Surface.Error, Surface>, frame: Frame, +color: U32, +materials: +List<Material>, textures: List<Texture>) -> Model.gltf.Looks:
+  match image:
+    case Fail{_}: ModelGltfLooks{frame, materials, textures, False{}}
+    case Done{surface}: Model.gltf.look.uploaded(Texture.load_from_image(frame, surface), color, materials, textures)
+
+# LoadMaterialDefault with the albedo color and, when the material has a
+# base color texture, LoadImageFromMemory(".png") of its bytes uploaded.
+def Model.gltf.look(png: +List<U32>, frame: Frame, +color: U32, +materials: +List<Material>, textures: List<Texture>) -> Model.gltf.Looks:
+  match png:
+    case Nil{}: ModelGltfLooks{frame, Con{Model.gltf.material(color), materials}, textures, True{}}
+    case Con{+b, +rest}: Model.gltf.look.decoded(Surface.decode_png(Con{b, rest}), frame, color, materials, textures)
+
+def Model.gltf.looks.step(ok: Bool, +image: +List<U32>, frame: Frame, +color: U32, +materials: +List<Material>, textures: List<Texture>) -> Model.gltf.Looks:
+  match ok:
+    case False{}: ModelGltfLooks{frame, materials, textures, False{}}
+    case True{}: Model.gltf.look(image, frame, color, materials, textures)
+
+def Model.gltf.looks.one(looks: Model.gltf.Looks, +color: U32, +image: +List<U32>) -> Model.gltf.Looks:
+  ModelGltfLooks{frame, +materials, textures, ok} = looks
+  Model.gltf.looks.step(ok, image, frame, color, materials, textures)
+
+# One material per glTF material, in order (their textures take ids in that order, as LoadGLTF's do).
+def Model.gltf.looks(colors: +List<U32>, images: +List<+List<U32>>, looks: Model.gltf.Looks) -> Model.gltf.Looks:
+  match colors images:
+    case Con{+color, rest} Con{+image, more}: Model.gltf.looks(rest, more, Model.gltf.looks.one(looks, color, image))
+    case _ _: looks
+
+# An image that does not decode or finds no texture id: the textures loaded so far are released and the load refused.
+def Model.gltf.finished(ok: Bool, frame: Frame, +materials: +List<Material>, textures: List<Texture>, +prims: +List<Gltf.Prim>) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
+  match ok:
+    case False{}: Model.obj.fail(Textures.unload.all(textures, frame), DataError{OutOfDomain{}})
+    case True{}:
+      Model.obj.done(frame, Model{M.Matrix.identity(), Model.gltf.meshes(prims), Con{Material.load_default(), List.reverse(&2, Material, materials)}, Model.gltf.mesh_material(prims)}, textures)
+
+def Model.gltf.assembled(looks: Model.gltf.Looks, +prims: +List<Gltf.Prim>) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
+  ModelGltfLooks{frame, +materials, textures, ok} = looks
+  Model.gltf.finished(ok, frame, materials, textures, prims)
 
 # The default material first, then one per glTF material.
 def Model.gltf.parts(parts: Maybe<Gltf.Parts>, frame: Frame) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
   match parts:
     case None{}: Model.obj.fail(frame, DataError{OutOfDomain{}})
-    case Some{Gltf.Parts{+prims, +colors}}:
-      Model.obj.done(frame, Model{M.Matrix.identity(), Model.gltf.meshes(prims), Con{Material.load_default(), Model.gltf.materials(colors)}, Model.gltf.mesh_material(prims)}, Nil{})
+    case Some{Gltf.Parts{+prims, +colors, +images}}: Model.gltf.assembled(Model.gltf.looks(colors, images, ModelGltfLooks{frame, Nil{}, Nil{}, True{}}), prims)
 
 def Model.gltf.bytes(loaded: Result<&1, &1, Surface.IOError, +List<U32>>, frame: Frame) -> IO(Frame & Result<&1, &1, Surface.IOError, LoadedModel>):
   match loaded:
@@ -11623,8 +11676,8 @@ def Model.load.route(route: U32, +arithmetic: M.Contraction, frame: Frame, +path
 # through LoadOBJ (tinyobj_loader_c with TINYOBJ_FLAG_TRIANGULATE, its MTL
 # file and textures), an identity transform and UploadMesh (no GPU buffers
 # under OpenGL 1.1); ".glb" through LoadGLTF (the slice of src/gltf.bend:
-# float attributes, base color factors, node transforms; uncontracted
-# arithmetic). Other extensions give the empty model with the default
+# float attributes, base color factors and PNG base color textures, node
+# transforms, files with skins as their meshes; uncontracted arithmetic). Other extensions give the empty model with the default
 # material, as raylib does; IQM, glTF as text, VOX and M3D (which raylib
 # loads) are UnsupportedFileType. The textures the materials reference come back
 # with the model. Fail (OutOfDomain) for what the reference leaves undefined

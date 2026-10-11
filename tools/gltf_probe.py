@@ -2,9 +2,10 @@
 """Compare Jonlib's LoadModel of .glb files (LoadGLTF) with the pinned raylib.
 
 The probe writes .glb files under its work directory and loads each one, and
-the two models the examples use (plane.glb and old_car_new.glb, read in place
-from the pinned raylib checkout), natively (InitWindow on PLATFORM=Memory,
-then LoadModel) and with Jonlib (Model.load_for). Each row has the mesh and
+the models the examples use (plane.glb, old_car_new.glb, the greenman and its
+hat, sword and shield, and robot.glb, read in place from the pinned raylib
+checkout), natively (InitWindow on PLATFORM=Memory, then LoadModel) and with
+Jonlib (Model.load_for). Each row has the mesh and
 material counts, IsModelValid, every mesh's vertex and triangle counts, mesh
 material and every vertex, normal, tangent, texcoord and second texcoord
 word, every index, and every material map.
@@ -19,12 +20,19 @@ ignored); interleaved views (byteStride), accessor and view offsets, offsets
 that are not multiples of the component size (LOAD_ATTRIBUTE divides them);
 several primitives, a line primitive (skipped), materials with and without a
 base color factor or pbrMetallicRoughness, primitives without a material; a
-file without nodes; a missing file.
+file without nodes; a missing file; skins (a bare one, joints of 8 and 16
+bits with float and 8-bit weights: the meshes load, the bone data is not
+part of the row); a base color texture as an embedded PNG (the texture's
+id, size, mipmaps and format are in the material's map), a texture without
+a source, an image nothing uses.
 
 The reference is the raylib built with -ffp-contract=off (the loader's
 arithmetic is uncontracted). Contracts (Jonlib must answer null, and the
-reference is not run): a skin, a texture, a base color texture, a COLOR_0
-attribute, a sparse accessor, an accessor without a buffer view, short
+reference is not run): indices past their arrays (a texture's source, a
+material's texture, a skin's joint, an animation's sampler), float joints,
+a joints accessor longer than the vertices, an image given by a uri, as a
+JPEG, through a strided view or that is not a PNG, a metallic-roughness
+texture, a COLOR_0 attribute, a sparse accessor, an accessor without a buffer view, short
 positions, a buffer with a uri, a required extension, JSON that is not well
 formed, another magic or version, a truncated file, an accessor reaching past
 the buffer, a node with two parents, a factor outside 0..1, a number of 20
@@ -32,6 +40,7 @@ digits, and glTF as text (.gltf). CPU-1, CPU-2 and JavaScript lanes.
 """
 import json
 import struct
+import zlib
 
 import frame_probe as fp
 import obj_probe as op
@@ -111,6 +120,44 @@ def raw(text):
     return json.loads(text)
 
 
+def png(width, height, pixels):
+    """An 8-bit RGBA PNG of the given bytes (one filter-0 scanline a row)."""
+    rows = b''.join(b'\x00' + pixels[4 * width * y:4 * width * (y + 1)] for y in range(height))
+
+    def chunk(tag, data):
+        return struct.pack('>I', len(data)) + tag + data + struct.pack('>I', zlib.crc32(tag + data))
+    return b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0)) + chunk(b'IDAT', zlib.compress(rows, 9)) + chunk(b'IEND', b'')
+
+
+CHECKER = png(2, 2, bytes([255, 0, 0, 255, 0, 255, 0, 255, 0, 0, 255, 255, 255, 255, 255, 128]))
+
+
+def textured(image=None, texture=None, material=None, stride=None, payload=CHECKER, mime='image/png', escaped=False, **extra):
+    """A quad with texcoords whose material has a base color texture: an image in a buffer view."""
+    b = Builder()
+    prim = dict(quad(b, TEXCOORD_0=b.floats(UVS, 'VEC2')), material=0)
+    view = b.view(payload, stride=stride)
+    entry = dict(bufferView=view, mimeType=mime) if image is None else image
+    surface = dict(baseColorTexture=dict(index=0), baseColorFactor=[raw('0.5'), 1, raw('0.25'), 1]) if material is None else material
+    document = b.document(nodes=[dict(mesh=0)], meshes=[dict(primitives=[prim])], materials=[dict(pbrMetallicRoughness=surface)], images=[entry],
+                          textures=[dict(source=0) if texture is None else texture], **extra)
+    text = json.dumps(document, separators=(',', ':'))
+    # Some exporters write the mime type's slash escaped; cgltf keeps a string's bytes as written.
+    return glb(None, b.data, text=text.replace('"image/png"', '"image\\/png"') if escaped else text)
+
+
+def skinned(joints_code='B', weights_code='f', joints_count=4, **extra):
+    """A quad under a two-joint skin, with JOINTS_0 and WEIGHTS_0."""
+    b = Builder()
+    joints = b.accessor(b.view(struct.pack(f'<{4 * joints_count}{joints_code}', *([0, 1, 0, 0] * joints_count))), {'B': 5121, 'H': 5123}[joints_code], 'VEC4', joints_count)
+    scale = {'f': 1.0, 'B': 255, 'H': 65535}[weights_code]
+    values = [type(scale)(v * scale) for v in [0.75, 0.25, 0.0, 0.0] * 4]
+    weights = b.accessor(b.view(struct.pack(f'<16{weights_code}', *values)), {'f': 5126, 'B': 5121, 'H': 5123}[weights_code], 'VEC4', 4)
+    nodes = [dict(name='root', children=[1, 3], translation=[0, 1, 0]), dict(name='bone_a', children=[2], rotation=[0, raw('0.3826834261417389'), 0, raw('0.9238795042037964')]),
+             dict(name='bone_b', translation=[0, raw('0.5'), 0]), dict(mesh=0, skin=0)]
+    return glb(b.document(nodes=nodes, meshes=[dict(primitives=[quad(b, JOINTS_0=joints, WEIGHTS_0=weights)])], skins=[dict(joints=[1, 2])], **extra), b.data)
+
+
 def cases(work, raylib):
     out, files = [], {}
 
@@ -122,6 +169,8 @@ def cases(work, raylib):
     models = raylib / 'examples/shaders/resources/models'
     for name in ('plane', 'old_car_new'):
         out.append(dict(id=name, kind='model', path=str(models / f'{name}.glb'), contract=False))
+    for name in ('greenman', 'greenman_hat', 'greenman_sword', 'greenman_shield', 'robot'):
+        out.append(dict(id=name, kind='model', path=str(raylib / f'examples/models/resources/models/gltf/{name}.glb'), contract=False))
     out.append(dict(id='missing', kind='model', path=str(work / 'missing.glb'), contract=False))
 
     b = Builder()
@@ -172,13 +221,33 @@ def cases(work, raylib):
     add('no-nodes', glb(b.document(meshes=[dict(primitives=[quad(b)])]), b.data))
     add('spaced-json', glb(None, text='{ "asset" : { "version" : "2.0" } ,\n\t"nodes" : [ ] , "buffers" : [ { "byteLength" : 0 } ] }'))
 
+    # Skins and textures: the meshes as LoadGLTF makes them, each base color texture uploaded.
+    add('skin', simple([dict(mesh=0)], skins=[dict(joints=[0])]))
+    add('skinned', skinned())
+    add('skinned-16', skinned(joints_code='H', weights_code='B'))
+    add('skinned-animated', skinned(weights_code='H', animations=[dict(name='idle', samplers=[dict(input=0, output=1)], channels=[dict(sampler=0, target=dict(node=1, path='rotation'))])]))
+    add('image-unused', simple([dict(mesh=0)], images=[dict(uri='a.png')]))
+    add('textured', textured())
+    add('textured-escaped-mime', textured(escaped=True))
+    add('texture-no-source', textured(texture=dict(name='empty')))
+    add('image-nowhere', textured(image=dict(name='nothing')))
+
     # Contracts.
-    add('skin', simple([dict(mesh=0)], skins=[dict(joints=[0])]), contract=True)
     add('texture', simple([dict(mesh=0)], textures=[dict(source=0)]), contract=True)
-    add('image', simple([dict(mesh=0)], images=[dict(uri='a.png')]), contract=True)
     add('base-color-texture', simple([dict(mesh=0)], materials=[dict(pbrMetallicRoughness=dict(baseColorTexture=dict(index=0)))]), contract=True)
     add('color-attribute', simple([dict(mesh=0)], primitives=lambda b: [quad(b, COLOR_0=b.floats(TANGENTS, 'VEC4'))]), contract=True)
     add('joints-attribute', simple([dict(mesh=0)], primitives=lambda b: [quad(b, JOINTS_0=b.floats(TANGENTS, 'VEC4'))]), contract=True)
+    add('joints-overflow', skinned(joints_count=5), contract=True)
+    add('skin-joint-past', simple([dict(mesh=0)], skins=[dict(joints=[4])]), contract=True)
+    add('animation-sampler-past', skinned(animations=[dict(samplers=[dict(input=0, output=1)], channels=[dict(sampler=1, target=dict(node=1, path='rotation'))])]), contract=True)
+    add('image-uri', textured(image=dict(uri='a.png')), contract=True)
+    add('image-jpeg', textured(mime='image/jpeg'), contract=True)
+    add('image-other-mime', textured(mime='image/x-png'), contract=True)
+    add('image-no-mime', textured(image=dict(bufferView=3)), contract=True)
+    add('image-stride', textured(stride=4), contract=True)
+    add('image-not-png', textured(payload=b'not a png image at all'), contract=True)
+    add('texture-source-past', textured(texture=dict(source=3)), contract=True)
+    add('metallic-roughness-texture', textured(material=dict(baseColorTexture=dict(index=0), metallicRoughnessTexture=dict(index=0))), contract=True)
 
     def sparse(b):
         prim = quad(b)
@@ -283,7 +352,8 @@ def main():
     if len(output) != len(native):
         raise ProbeFailure(f'gltf: reference printed {len(output)} lines for {len(native)} cases')
     expected_by_id = {c['id']: line.rstrip() for c, line in zip(native, output)}
-    if expected_by_id['plane'].count(' m') != 1 or expected_by_id['old_car_new'].count(' m') != 2 or expected_by_id['missing'][:2] != 'n0':
+    if (expected_by_id['plane'].count(' m') != 1 or expected_by_id['old_car_new'].count(' m') != 2 or expected_by_id['missing'][:2] != 'n0'
+            or expected_by_id['greenman'].count(' m') != 1 or expected_by_id['robot'].count(' m') != 19 or ',2,2,1,7,' not in expected_by_id['textured']):
         raise ProbeFailure('gltf: the reference did not load the examples\' models as expected')
     for c in contracts:
         expected_by_id[c['id']] = 'null'

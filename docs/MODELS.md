@@ -431,12 +431,34 @@ reader `src/json.bend` and the decimal conversion `src/strtod.bend`):
   `(float)atof(...)`, through `M.Float64.from_decimal`.
 - **Materials**: the default material, then one per glTF material with its
   `baseColorFactor` as the albedo color (`(unsigned char)(factor*255)`; white
-  without `pbrMetallicRoughness`); `meshMaterial` is the primitive's material
-  index plus one, or 0.
+  without `pbrMetallicRoughness`) and its `baseColorTexture` as the albedo
+  texture: the image's bytes from its buffer view (mime type `image/png`),
+  decoded as `LoadImageFromMemory(".png")` does and uploaded, in material
+  order, so the texture ids are the reference's. The textures come back with
+  the model. A texture without a source and an image with neither a uri nor
+  a buffer view give no texture, as in raylib. `meshMaterial` is the
+  primitive's material index plus one, or 0.
+- **Skins**: a file with skins loads as its meshes (LoadGLTF does not move
+  the vertices of a skinned mesh differently). `JOINTS_n` (a `VEC4` of 8 or
+  16 bits) and `WEIGHTS_n` (also float) are checked as the accessors
+  LoadGLTF reads, and not kept: Jonlib's `Mesh` has no bone data and its
+  `Model` no skeleton, pose or bone matrices. The reference library is
+  built with GPU skinning ([VERIFICATION.md](VERIFICATION.md)), so it draws
+  such a model in its bind pose, as Jonlib does.
+- **Indices of other sections**: cgltf fails the parse when an index points
+  past its array (a texture's source or sampler, an image's buffer view, a
+  material's texture, a skin's joints, skeleton or inverse bind matrices, a
+  node's children, mesh, skin or camera, a scene's nodes, an animation's
+  samplers and channels); such a file is refused.
 
 The loader refuses (`OutOfDomain`) everything else the reference would read:
-textures and images, skins (and so animations), `COLOR_n`, `JOINTS_n` and
-`WEIGHTS_n` attributes, other component types, sparse accessors, an accessor
+the other texture kinds (metallic-roughness, normal, occlusion, emissive),
+an image given by a uri, in another format than PNG (JPEG included), through
+a strided buffer view, without a mime type, or that does not decode; a
+texture with extensions; `COLOR_n` attributes; `JOINTS_n` or `WEIGHTS_n` of
+another layout (raylib only warns) or with more elements than the mesh has
+vertices (a write past the mesh's buffers natively); other component types,
+sparse accessors, an accessor
 without a buffer view, primitive extensions and morph targets, required
 extensions, a buffer outside the file, an accessor that reaches past the
 buffer (an out-of-bounds read natively), a node with two parents, a color
@@ -446,9 +468,12 @@ is `UnsupportedFileType`. A missing file gives the empty model, as raylib
 does.
 
 Gate `gltf` (`tools/gltf_probe.py`) loads generated files covering each of
-those rules, and the two models the examples use (`plane.glb`,
-`old_car_new.glb`: 9281 and 24 vertices under a scaled and translated node),
-natively and with Jonlib, and compares every mesh and material word.
+those rules, and the models the examples use (`plane.glb`,
+`old_car_new.glb`: 9281 and 24 vertices under a scaled and translated node;
+`greenman.glb` with its skin and 512x512 texture, its hat, sword and shield;
+`robot.glb`: 19 primitives under a skin of 43 joints), natively and with
+Jonlib, and compares every mesh and material word, the albedo texture's id,
+size and format included.
 
 ## Collision
 
@@ -558,8 +583,9 @@ attribute builders are tail-recursive.
   model animation (`LoadModelAnimations`, `UpdateModelAnimation*`).
 - IQM, glTF as text, VOX and M3D files: `LoadModel` answers
   `UnsupportedFileType` (raylib loads them; their parsers and binary formats
-  are not ported). Binary glTF is loaded for the slice above; textures,
-  skins, animations and the other attribute formats are refused.
+  are not ported). Binary glTF is loaded for the slice above: a skinned
+  file's bone data and skeleton are not kept, model animations are not
+  loaded, and the other texture kinds and attribute formats are refused.
 - OBJ: faces of 6 or 7 vertices (accepted by builds without asserts, refused
   here), numbers beyond the checked binary64 domains, non-ASCII names, and
   texture files Jonlib's `LoadImage` does not decode.

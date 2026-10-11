@@ -55339,9 +55339,9 @@
       "status": "partial",
       "jonlib": "Model.load_for / Model.load",
       "mapping_state": "implemented",
-      "scope": "OBJ (case-insensitive extension) through raylib's tinyobj_loader_c: lines, commands, tryParseDouble in binary64 (contraction profiled), relative indices, fan triangulation, the djb2 material table, shapes, LoadOBJ's mesh split, MTL materials and their textures (returned with the model); binary glTF (.glb) through LoadGLTF for float POSITION/NORMAL/TANGENT/TEXCOORD attributes, 8/16/32-bit indices, node transforms and base color factors (uncontracted arithmetic); other extensions and files that do not open give the empty model with the default material.",
+      "scope": "OBJ (case-insensitive extension) through raylib's tinyobj_loader_c: lines, commands, tryParseDouble in binary64 (contraction profiled), relative indices, fan triangulation, the djb2 material table, shapes, LoadOBJ's mesh split, MTL materials and their textures (returned with the model); binary glTF (.glb) through LoadGLTF: float POSITION/NORMAL/TANGENT/TEXCOORD, 8/16/32-bit indices, node transforms, base color factors and embedded PNG textures, skinned files as their meshes (uncontracted); other extensions and files that do not open give the empty model with the default material.",
       "gaps": [
-        "IQM, glTF as text, VOX and M3D are UnsupportedFileType; binary glTF with textures, skins, sparse accessors, COLOR/JOINTS/WEIGHTS, other component types or required extensions is refused",
+        "IQM, glTF as text, VOX and M3D are UnsupportedFileType; binary glTF keeps no bone data; other texture kinds, non-PNG or uri images, sparse accessors, COLOR and required extensions are refused",
         "Undefined reference behavior (asserts, int overflow, reads outside tinyobj's arrays, byte casts, table insertions that loop) and binary64 steps outside the checked helpers' domains are refused",
         "Texture files Jonlib's LoadImage does not decode are refused",
         "Paths and names must be printable ASCII (OBJ paths without backslashes); animations are not modeled",
