@@ -2272,7 +2272,7 @@
   {
    "name": "shapes_clock_of_clocks",
    "category": "shapes",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "Clamp",

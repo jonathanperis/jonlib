@@ -272,6 +272,7 @@ EXAMPLES = {
     'models_skybox_rendering': ('models/models_skybox_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'text_codepoints_loading': ('text/text_codepoints_loading.c', 'Ex.setup(core, frame)'),
     'shapes_digital_clock': ('shapes/shapes_digital_clock.c', 'Ex.setup(seed, core, frame)'),
+    'shapes_clock_of_clocks': ('shapes/shapes_clock_of_clocks.c', 'Ex.setup(seed, core, frame)'),
     'core_storage_values': ('core/core_storage_values.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_automation_events': ('core/core_automation_events.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
@@ -355,6 +356,7 @@ PERSPECTIVE.add('shaders_deferred_rendering')
 # shim's time() adds the scripted clock's whole seconds, as the ports add GetTime's). The analog hands turn by
 # tenths of a degree, which the Apple profile's sinf/cosf do not cover.
 SEEDED.add('shapes_digital_clock'); CONFIG_FLAGS['shapes_digital_clock'] = 32
+SEEDED.add('shapes_clock_of_clocks'); CONFIG_FLAGS['shapes_clock_of_clocks'] = 32
 # Examples whose loop does IO (a J.Effects program): replayed with J.Program.replay_io.
 EFFECTS = {'shaders_shadowmap_rendering'}
 # A program of another probe (tools/effects_probe.py) names its Bend module instead of examples/<name>.bend.
@@ -1068,6 +1070,11 @@ def scripts():
         # The depth attachment drawn as a texture is a white rectangle on rlsw, whatever the free camera does (W
         # moves it, the pointer turns it): the help box over white.
         script('shaders_depth_rendering', 'white', [quick(), quick([key(KEY_W)]), quick([mouse_at(430, 240)]), slow([key(KEY_W, False)])]),
+        # 13:59:58 at InitWindow, a tenth of a second a frame: the hands take five frames to reach a second's
+        # digits (at frames 0 and 8). SPACE at frame 2 is the 12-hour mode, whose 13:59:59 is " 1:59:59" (the first
+        # digit's hands all at ZZ). A short script: 432 shapes a frame are slow in the JavaScript lane.
+        script('shapes_clock_of_clocks', 'ticks', [long(), long(), long([key(KEY_SPACE)]), long([key(KEY_SPACE, False)])] + [long() for _ in range(10)],
+               seed=13 * 3600 + 59 * 60 + 58),
         # 13:59:58 at InitWindow, a tenth of a second a frame: the seconds tick, the dots blink, the hour turns;
         # SPACE shows the analog face (the hands at 14:00:00 and 14:00:01), SPACE again the display.
         script('shapes_digital_clock', 'ticks', [long() for _ in range(19)] + [long([key(KEY_SPACE)])] + [long([key(KEY_SPACE, False)])] + [long() for _ in range(9)]
@@ -1348,7 +1355,7 @@ REPORTED = {'shapes_triangle_strip', 'shapes_recursive_tree', 'textures_particle
             'core_2d_camera_mouse_zoom', 'shapes_simple_particles',
             'shapes_math_sine_cosine',
             'shapes_pie_chart',
-            'shapes_digital_clock'}
+            'shapes_digital_clock', 'shapes_clock_of_clocks'}
 
 
 def refusal(item, libm):
