@@ -315,9 +315,17 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      in about sixty places of `jonlib.bend` and every codec, a contract of
      its own. `text_unicode_ranges` needs a 7 MiB TTF. `text_font_sdf`
      needs binary64 acos and pow for `stbtt__solve_cubic` (cos exists:
-     `src/lgpl/sin.bend`). `models_loading_m3d` needs `m3d.h`'s decoder
-     (a compressed container: inflate exists; chunks, bones, skin, actions,
-     `m3d_pose`, inlined PNG textures). `shaders_game_of_life`: below;
+     `src/lgpl/sin.bend`). `models_loading_m3d` needs `m3d.h`'s decoder:
+     the binary variant of `m3d_load` is lines 3222 to about 3950 of
+     `src/external/m3d.h` (the container is `3DMO`, a length and a zlib
+     stream unless `HEAD` follows; the header's `types` word gives the size
+     of every index; then chunks), its post-processing to 4227, `m3d_pose`
+     at 4271 (Carmack's inverse square root on the float's bits), and
+     `LoadM3D` / `LoadModelAnimationsM3D` at 6792 and 7154 of `rmodels.c`.
+     `cesium_man.m3d` (73 KB, 149 KB inflated) has the chunks HEAD, CMAP,
+     TMAP, VRTS, BONE, MTRL, MESH and ACTN, no inlined asset; shapes,
+     voxels, labels, procedural chunks and the ASCII variant can stay
+     refusals. `shaders_game_of_life`: below;
    - `shaders_game_of_life` is ready but steps a 2048x2048 world through a
      shader each frame: too heavy for the JavaScript lane as written;
    - images beyond 4096 pixels on an axis (`textures_sprite_stacking`,
