@@ -280,6 +280,17 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `GenTextureCubemap` (six framebuffers) never runs, and
      `LoadTextureCubemap` keeps id 0 on the software renderer: the cube is
      drawn white. No framebuffer example is left;
+   - what the eleven "ready" examples left need (triaged 2026-10-11):
+     `text_unicode_emojis` only a long port (three BMFont fonts whose PNG
+     atlases are at most 1024x1024 and under the file limit, 180 emoji and
+     the messages as byte tables to generate from the C source, and
+     `DrawTextBoxed` as in `examples/text_rectangle_bounds.bend`);
+     `text_font_sdf` the C library's functions of `stbtt__solve_cubic` for
+     SDF glyphs with curves (docs/FONTS.md, Gaps); `text_unicode_ranges` a
+     7 MiB TTF and `shaders_basic_pbr` a 1.7 MiB PNG (the 1 MiB input
+     limit); `textures_sprite_stacking` a 112x11468 image (the 4096 limit);
+     `text_3d_drawing` and `models_decals` are long pure ports; the IQM,
+     VOX and M3D loaders are not written;
    - `shaders_game_of_life` is ready but steps a 2048x2048 world through a
      shader each frame: too heavy for the JavaScript lane as written;
    - images beyond 4096 pixels on an axis (`textures_sprite_stacking`,
