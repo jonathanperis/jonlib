@@ -237,16 +237,16 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
    content overflows its scroll panel (the scroll bars are unverified).
 4. Other pieces that each unblock examples:
    - IO in the loop is done (`J.Effects`, `Program.replay_io`, gate
-     `driver-effects`; `core_storage_values` and
-     `shaders_shadowmap_rendering` use it). `core_automation_events` is the
-     next user: it loads a dropped `.rae` file and exports one on a key
-     (`LoadAutomationEventList`, `ExportAutomationEventList`) and records
-     and plays events (`SetAutomationEventList`, `StartAutomationEventRecording`):
-     check what the Core records before porting. An example that writes
-     files goes in the probe's `SCRATCH` (a directory a script, compared
-     with the reference's afterwards); a script that would run undefined C
-     from some frame goes in `UNDEFINED_FROM` and the reference stops
-     before it;
+     `driver-effects`; `core_storage_values`, `core_automation_events` and
+     `shaders_shadowmap_rendering` use it). An example that writes files
+     goes in the probe's `SCRATCH` (a directory a script, compared with the
+     reference's afterwards); a script that would run undefined C from some
+     frame goes in `UNDEFINED_FROM` and the reference stops before it.
+     raylib ignores `PlayAutomationEvent` while it records, and that is the
+     probe's input: `core_automation_events` can start a recording under
+     the probe (the count it draws is compared) but not stop, export or
+     play one. Those branches are ported and unverified; a driver that sets
+     the input another way would be needed to compare them;
    - `core_custom_frame_control` drives its own loop (`PollInputEvents`,
      `SwapScreenBuffer`, `WaitTime`, two `GetTime` calls a frame): needs a
      program form the driver does not have;
@@ -262,11 +262,24 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      bound with texturing off (drawn in its tint), and a framebuffer
      without a color attachment is incomplete, so `swBegin`, `swClear` and
      `swDrawArrays` are refused while it is bound (`Canvas.blind`: the
-     shadow pass draws nothing). Left: `shaders_deferred_rendering` (three
-     color attachments in R16G16B16 formats: rlsw has one color attachment
-     and `RL_ATTACHMENT_COLOR_CHANNEL1`/`2` are an invalid enum there, so
-     the G-buffer is probably incomplete or holds the first texture only:
-     measure it natively first, as for the shadow map) and
+     shadow pass draws nothing). Left: `shaders_deferred_rendering`,
+     measured natively on 2026-10-11 (a C program with the example's calls):
+     `rlLoadTexture(NULL, w, h, R16G16B16, 1)` warns "format not supported
+     (12)" and still answers ids 2 and 3 (textures without storage);
+     channels 1 and 2 are ignored, so the R8G8B8A8 albedo texture is never
+     attached and the framebuffer is incomplete: the G-buffer pass, drawn
+     with `rlEnableFramebuffer` bound directly (not `BeginTextureMode`: the
+     viewport and the matrices stay the screen's), draws nothing. The screen
+     is cleared with the clear color (0, 0, 0, 0); `rlLoadDrawQuad`,
+     `rlBindFramebuffer` and `rlBlitFramebuffer` do nothing; the albedo
+     texture (zero texels, alpha) stays bound and enabled, so
+     `DrawSphereEx`'s triangles come out with alpha 0 (invisible) while
+     `DrawSphereWires`' lines keep their color; the position and normal
+     textures draw as a RAYWHITE rectangle and the albedo one as nothing.
+     It needs: `Rlgl.load_texture` for an unsupported format, a blind
+     framebuffer bound with `rlEnableFramebuffer` that takes draws
+     (`Rlgl.Bound` has none), `rlBindFramebuffer`, and `Libc.rand` for the
+     cubes (glibc profiles only);
      `models_skybox_rendering` (cubemap faces);
    - `shaders_game_of_life` is ready but steps a 2048x2048 world through a
      shader each frame: too heavy for the JavaScript lane as written;
