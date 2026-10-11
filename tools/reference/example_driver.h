@@ -28,12 +28,16 @@
  *   is not compiled with this header.
  * - WaitTime: an example's own call (core_custom_frame_control) sleeps until
  *   raylib's destination, GetTime() + seconds, where its busy loop ends.
+ * - GetFileModTime: an example's own call (shaders_hot_reloading) answers
+ *   the script's seed for every file, a modification time that does not
+ *   depend on the checkout.
  */
 #ifndef JONLIB_EXAMPLE_DRIVER_H
 #define JONLIB_EXAMPLE_DRIVER_H
 
 #define InitWindow JonlibExampleInitWindow
 #define WaitTime JonlibExampleWaitTime
+#define GetFileModTime JonlibExampleFileModTime
 #define WindowShouldClose JonlibExampleWindowShouldClose
 #define BeginDrawing JonlibExampleBeginDrawing
 #define EndDrawing JonlibExampleEndDrawing

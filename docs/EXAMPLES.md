@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 187 ported, 9 ready, 16 waiting.
+Totals: 212 examples; 188 ported, 9 ready, 15 waiting.
 
 ## APIs that unblock the most examples
 
@@ -242,7 +242,7 @@ Totals: 212 examples; 187 ported, 9 ready, 16 waiting.
 | `shaders_eratosthenes_sieve` | shaders | ported |  |
 | `shaders_fog_rendering` | shaders | ported |  |
 | `shaders_simple_mask` | shaders | ported |  |
-| `shaders_hot_reloading` | shaders | waiting | `GetFileModTime` |
+| `shaders_hot_reloading` | shaders | ported | `GetFileModTime` |
 | `shaders_mesh_instancing` | shaders | ported |  |
 | `shaders_multi_sample2d` | shaders | ported |  |
 | `shaders_normalmap_rendering` | shaders | ported |  |

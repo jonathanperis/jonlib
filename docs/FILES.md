@@ -65,6 +65,13 @@ check), `DirectoryExists`, `IsPathFile`, `GetFileModTime`, `GetWorkingDirectory`
 `GetApplicationDirectory`, `MakeDirectory`, `ChangeDirectory`,
 `LoadDirectoryFiles(Ex)`, `UnloadDirectoryFiles` and `GetDirectoryFileCount(Ex)`.
 
+`shaders_hot_reloading` only shows its shader file's modification time and
+compares it with a later reading: its port takes that time as a setup
+argument and never sees the file modified, and the examples probe answers
+the example's `GetFileModTime` with the script's seed
+(`tools/reference/example_driver.h`), so the reference does not depend on
+the checkout's file times.
+
 ## How it is verified
 
 `tools/files_probe.py` (gate `files`) runs the pure functions over a corpus of

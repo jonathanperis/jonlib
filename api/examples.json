@@ -5852,7 +5852,7 @@
   {
    "name": "shaders_hot_reloading",
    "category": "shaders",
-   "status": "waiting",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginShaderMode",
