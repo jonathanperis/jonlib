@@ -20,28 +20,70 @@ rlFramebufferComplete answers along the way:
   zero        rlFramebufferComplete(0);
   reuse       the ids after rlUnloadFramebuffer;
   two         two framebuffers and their textures;
-  after       LoadRenderTexture after a hand-built framebuffer.
+  after       LoadRenderTexture after a hand-built framebuffer;
+  blind       a framebuffer with a depth attachment alone (a shadow map's)
+              as BeginTextureMode's target on an 8x8 window: the projection
+              its size gives, the active framebuffer, and the screen after a
+              clear and a rectangle that rlsw drops (the framebuffer is
+              incomplete) and a rectangle drawn after EndTextureMode;
+  blind-clear the same, then rlClearScreenBuffers: the clear color set
+              during the texture mode;
+  blind-bare  a framebuffer without attachments;
+  blind-after rlUnloadFramebuffer after such a texture mode, then
+              LoadRenderTexture (the same framebuffer id), drawn into and
+              drawn on the screen.
 
 Contracts, the reference not run: a texture format or size Jonlib refuses,
-a framebuffer call during texture mode (rlgl would bind framebuffer 0), and
-Rlgl.render_texture for attachments that are not the framebuffer's. CPU-1,
-CPU-2 and JavaScript lanes.
+a framebuffer call during texture mode (rlgl would bind framebuffer 0),
+Rlgl.render_texture for attachments that are not the framebuffer's,
+Rlgl.render_texture_depth for a framebuffer with a color attachment, for
+another depth id, for framebuffer 0 and for a size of 0, and a texture mode
+on a framebuffer without a color attachment started during another one.
+CPU-1, CPU-2 and JavaScript lanes.
 """
 import probekit
 from probekit import ProbeFailure
 
-SCENARIOS = ('loader', 'bound', 'sizes', 'channels', 'kinds', 'as-depth', 'zero', 'reuse', 'two', 'after')
+SCENARIOS = ('loader', 'bound', 'sizes', 'channels', 'kinds', 'as-depth', 'zero', 'reuse', 'two', 'after', 'blind', 'blind-clear', 'blind-bare', 'blind-after')
 CONTRACTS = {'format': 'format 0 0', 'size': 'size 0 0', 'texture-mode': 'texture-mode 0', 'target': 'target 1', 'target-other-depth': 'target-other-depth 0',
-             'target-unattached': 'target-unattached 0'}
+             'target-unattached': 'target-unattached 0', 'depth-target': 'depth-target 1', 'depth-target-color': 'depth-target-color 0',
+             'depth-target-other': 'depth-target-other 0', 'depth-target-zero': 'depth-target-zero 0', 'depth-target-size': 'depth-target-size 0',
+             'blind-nested': 'blind-nested 0'}
+COLORS = {'BLUE': (0, 121, 241, 255), 'GREEN': (0, 228, 48, 255), 'RED': (230, 41, 55, 255), 'YELLOW': (253, 249, 0, 255), 'WHITE': (255, 255, 255, 255)}
+
+
+def word(name):
+    r, g, b, a = COLORS[name]
+    return (r << 24) | (g << 16) | (b << 8) | a
+
+
+def pixels(row):
+    """The words of a row's screen (its last field)."""
+    text = row.split(' ')[-1]
+    return [text[i:i + 8] for i in range(0, len(text), 8)]
+
+
+def size(name):
+    """The window's side: the scenarios that compare the screen use a small one."""
+    return 8 if name.startswith('blind') else 64
+
 
 C_SOURCE = r'''#include "raylib.h"
 #include "rlgl.h"
 #include <stdio.h>
 #include <string.h>
 static int done(unsigned id) { return rlFramebufferComplete(id)? 1 : 0; }
+static void dump(void)
+{
+    unsigned char p[8*8*4];
+    rlCopyFramebuffer(0, 0, 8, 8, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8, p);
+    printf(" ");
+    for (int i = 0; i < 64; i++) printf("%02x%02x%02x%02x", p[4*i + 2], p[4*i + 1], p[4*i], p[4*i + 3]);
+}
 static void run(const char *name)
 {
-    InitWindow(64, 64, "");
+    int side = strncmp(name, "blind", 5)? 64 : 8;
+    InitWindow(side, side, "");
     printf("%s", name);
     if (!strcmp(name, "loader") || !strcmp(name, "bound"))
     {
@@ -124,6 +166,64 @@ static void run(const char *name)
         unsigned depth = rlLoadTextureDepth(16, 16, false);
         RenderTexture2D target = LoadRenderTexture(16, 16);
         printf(" %u %u %u %u %u %u", fbo, color, depth, target.id, target.texture.id, target.depth.id);
+    }
+    else if (!strcmp(name, "blind") || !strcmp(name, "blind-clear") || !strcmp(name, "blind-bare"))
+    {
+        RenderTexture2D target = { 0 };
+        target.id = rlLoadFramebuffer();
+        target.texture.width = 4;
+        target.texture.height = 2;
+        printf(" %u", target.id);
+        if (strcmp(name, "blind-bare"))
+        {
+            target.depth.id = rlLoadTextureDepth(4, 2, false);
+            printf(" %u", target.depth.id);
+            rlFramebufferAttach(target.id, target.depth.id, RL_ATTACHMENT_DEPTH, RL_ATTACHMENT_TEXTURE2D, 0);
+        }
+        printf(" %d", done(target.id));
+        BeginDrawing();
+        ClearBackground(BLUE);
+        DrawRectangle(0, 0, 2, 2, GREEN);
+        BeginTextureMode(target);
+        ClearBackground(WHITE);
+        DrawRectangle(0, 0, 8, 8, RED);
+        Matrix projection = rlGetMatrixProjection();
+        unsigned a, b;
+        memcpy(&a, &projection.m0, 4);
+        memcpy(&b, &projection.m5, 4);
+        printf(" %u %u %u", a, b, rlGetActiveFramebuffer());
+        EndTextureMode();
+        printf(" %u %u %u", target.id, target.texture.id, target.depth.id);
+        if (!strcmp(name, "blind-clear")) rlClearScreenBuffers();
+        DrawRectangle(2, 2, 2, 2, YELLOW);
+        dump();
+        EndDrawing();
+    }
+    else if (!strcmp(name, "blind-after"))
+    {
+        RenderTexture2D blind = { 0 };
+        blind.id = rlLoadFramebuffer();
+        blind.texture.width = 4;
+        blind.texture.height = 2;
+        blind.depth.id = rlLoadTextureDepth(4, 2, false);
+        printf(" %u %u", blind.id, blind.depth.id);
+        rlFramebufferAttach(blind.id, blind.depth.id, RL_ATTACHMENT_DEPTH, RL_ATTACHMENT_TEXTURE2D, 0);
+        BeginTextureMode(blind);
+        ClearBackground(WHITE);
+        DrawRectangle(0, 0, 8, 8, RED);
+        EndTextureMode();
+        rlUnloadFramebuffer(blind.id);
+        RenderTexture2D target = LoadRenderTexture(4, 4);
+        printf(" %u %u %u", target.id, target.texture.id, target.depth.id);
+        BeginTextureMode(target);
+        ClearBackground(RED);
+        DrawRectangle(0, 0, 2, 2, GREEN);
+        EndTextureMode();
+        BeginDrawing();
+        ClearBackground(BLUE);
+        DrawTexture(target.texture, 1, 1, WHITE);
+        dump();
+        EndDrawing();
     }
     printf("\n");
     CloseWindow();
@@ -342,6 +442,154 @@ def target.made(st: St, +shift: U32) -> String:
   St{_, +fb, color, depth, _} = st
   target.checked(seen(depth), color, fb, shift)
 
+def hex.digit(+d: U32) -> Char:
+  Chr{Bool.pick(U32, (d < 10 : U32), (d + 48 : U32), (d + 87 : U32))}
+
+def hex.word(+w: U32, rest: String) -> String:
+  SCon{hex.digit((w >> 28n : U32)), SCon{hex.digit(((w >> 24n) .&. 15 : U32)), SCon{hex.digit(((w >> 20n) .&. 15 : U32)),
+    SCon{hex.digit(((w >> 16n) .&. 15 : U32)), SCon{hex.digit(((w >> 12n) .&. 15 : U32)), SCon{hex.digit(((w >> 8n) .&. 15 : U32)),
+    SCon{hex.digit(((w >> 4n) .&. 15 : U32)), SCon{hex.digit((w .&. 15 : U32)), rest}}}}}}}}
+
+def hex.words(n: Nat, +i: U32, read: Array<U32> & U32, acc: String) -> String:
+  match n read:
+    case 0n _: acc
+    case 1n+k Tuple{pixels, +w}: hex.words(k, (i - 1 : U32), Array.get(U32, pixels, (i - 1 : U32)), hex.word(w, acc))
+
+def hex.pixels(+count: U32, pixels: J.Surface.Pixels) -> String:
+  match pixels:
+    case J.Words{values}: hex.words(U32.to_nat(count), (count - 1 : U32), Array.get(U32, values, (count - 1 : U32)), "")
+    case J.Quads{_}: "quads"
+
+def hex.surface(surface: J.Surface) -> String:
+  J.Surface{+w, +h, _, pixels} = surface
+  hex.pixels((w * h : U32), pixels)
+
+def hex.maybe(surface: Maybe<J.Surface>) -> String:
+  match surface:
+    case None{}: "null"
+    case Some{s}: hex.surface(s)
+
+# The screen's color buffer, appended.
+def blind.shown(r: J.Frame & Maybe<J.Surface>, text: String) -> String:
+  (_, surface) = r
+  text ++ " " ++ hex.maybe(surface)
+
+def blind.cleared(clear: Bool, frame: J.Frame) -> J.Frame:
+  match clear:
+    case True{}: J.Rlgl.clear_screen_buffers(frame)
+    case False{}: frame
+
+# After EndTextureMode: the RenderTexture handed back, rlClearScreenBuffers if asked, a yellow square and the screen.
+def blind.ended(r: J.Frame & Maybe<J.RenderTexture>, +clear: Bool, text: String) -> String:
+  (frame, target) = r
+  match target:
+    case None{}: text ++ " lost"
+    case Some{t}: blind.shown(J.Frame.framebuffer(J.Draw.rectangle(blind.cleared(clear, frame), 2.0, 2.0, 2.0, 2.0, @YELLOW@)), text ++ target.ids(Some{t}))
+
+def blind.inside(r: J.Frame & String, +clear: Bool) -> String:
+  (frame, text) = r
+  blind.ended(J.Frame.end_texture_mode(frame), clear, text)
+
+def blind.active(r: J.Frame & U32, text: String) -> J.Frame & String:
+  (frame, +id) = r
+  (frame, text ++ " " ++ U32.show(id))
+
+def matrix.scale(m: M.Matrix) -> String:
+  M.Matrix{+m0, _, _, _, _, +m5, _, _, _, _, _, _, _, _, _, _} = m
+  " " ++ U32.show(F32.bits(m0)) ++ " " ++ U32.show(F32.bits(m5))
+
+def blind.projected(r: J.Frame & M.Matrix, text: String) -> J.Frame & String:
+  (frame, m) = r
+  blind.active(J.Rlgl.get_active_framebuffer(frame), text ++ matrix.scale(m))
+
+# A blue screen with a green square, then the texture mode: a white clear and a red rectangle.
+def blind.mode(frame: J.Frame, target: Maybe<J.RenderTexture>, +clear: Bool, text: String) -> String:
+  match target:
+    case None{}: text ++ " none"
+    case Some{t}: blind.inside(blind.projected(J.Rlgl.get_matrix_projection(J.Draw.rectangle(J.Frame.clear_background(J.Frame.begin_texture_mode(
+      J.Draw.rectangle(J.Frame.clear_background(J.Frame.begin_drawing(frame), @BLUE@), 0.0, 0.0, 2.0, 2.0, @GREEN@), t), @WHITE@), 0.0, 0.0, 8.0, 8.0, @RED@)), text), clear)
+
+def blind.sized(s: Seen, frame: J.Frame, +fb: J.Rlgl.Framebuffer, +clear: Bool, text: String) -> String:
+  Seen{_, +id} = s
+  blind.mode(frame, J.Rlgl.render_texture_depth(fb, 4, 2, id), clear, text)
+
+# The texture mode of the framebuffer's 4x2 RenderTexture2D without a color texture.
+def blind.built(st: St, +clear: Bool) -> String:
+  St{frame, +fb, _, depth, text} = st
+  blind.sized(seen(depth), frame, fb, clear, text)
+
+def after.shown(r: J.Frame & J.Texture, text: String) -> String:
+  (frame, _) = r
+  blind.shown(J.Frame.framebuffer(frame), text)
+
+def after.screen(r: J.Frame & Maybe<J.RenderTexture>, text: String) -> String:
+  (frame, target) = r
+  match target:
+    case None{}: text ++ " lost"
+    case Some{J.RenderTexture{_, texture, _}}: after.shown(J.Draw.texture(J.Frame.clear_background(J.Frame.begin_drawing(frame), @BLUE@), texture, 1.0, 1.0, @WHITE@), text)
+
+def after.named(r: J.Texture & J.TextureInfo, frame: J.Frame, +id: U32, +depth: U32, text: String) -> String:
+  (texture, +info) = r
+  after.screen(J.Frame.end_texture_mode(J.Draw.rectangle(J.Frame.clear_background(J.Frame.begin_texture_mode(frame, J.RenderTexture{id, texture, depth}), @RED@), 0.0, 0.0, 2.0, 2.0, @GREEN@)),
+    text ++ " " ++ U32.show(id) ++ " " ++ U32.show(info.id(info)) ++ " " ++ U32.show(depth))
+
+def after.painted(frame: J.Frame, target: J.RenderTexture, text: String) -> String:
+  J.RenderTexture{+id, texture, +depth} = target
+  after.named(J.Texture.info(texture), frame, id, depth, text)
+
+def after.target(r: J.Frame & Maybe<J.RenderTexture>, text: String) -> String:
+  (frame, target) = r
+  match target:
+    case None{}: text ++ " none"
+    case Some{t}: after.painted(frame, t, text)
+
+# rlUnloadFramebuffer, then LoadRenderTexture, drawn into and drawn on the screen.
+def after.reloaded(st: St) -> String:
+  St{frame, _, _, _, text} = st
+  after.target(J.RenderTexture.load(frame, 4, 4), text)
+
+def after.left(r: J.Frame & Maybe<J.RenderTexture>, +fb: J.Rlgl.Framebuffer, depth: Maybe<J.Texture>, text: String) -> String:
+  (frame, _) = r
+  after.reloaded(unloaded(St{frame, fb, None{}, depth, text}))
+
+def after.moded(target: Maybe<J.RenderTexture>, frame: J.Frame, +fb: J.Rlgl.Framebuffer, depth: Maybe<J.Texture>, text: String) -> String:
+  match target:
+    case None{}: text ++ " none"
+    case Some{t}: after.left(J.Frame.end_texture_mode(J.Draw.rectangle(J.Frame.clear_background(J.Frame.begin_texture_mode(frame, t), @WHITE@), 0.0, 0.0, 8.0, 8.0, @RED@)), fb, depth, text)
+
+def after.entered(s: Seen, frame: J.Frame, +fb: J.Rlgl.Framebuffer, text: String) -> String:
+  Seen{depth, +id} = s
+  after.moded(J.Rlgl.render_texture_depth(fb, 4, 2, id), frame, fb, depth, text)
+
+def after.blind(st: St) -> String:
+  St{frame, +fb, _, depth, text} = st
+  after.entered(seen(depth), frame, fb, text)
+
+def depth.target.checked(s: Seen, +fb: J.Rlgl.Framebuffer, +width: U32, +shift: U32) -> String:
+  Seen{_, +id} = s
+  some(J.Rlgl.render_texture_depth(fb, width, 16, (id + shift : U32)))
+
+# Rlgl.render_texture_depth with the given width and the depth attachment's id plus shift.
+def depth.target(st: St, +width: U32, +shift: U32) -> String:
+  St{_, +fb, _, depth, _} = st
+  depth.target.checked(seen(depth), fb, width, shift)
+
+def nested.inside(target: Maybe<J.RenderTexture>, frame: J.Frame) -> String:
+  match target:
+    case None{}: " none"
+    case Some{t}: defined(J.Frame.is_defined(J.Frame.begin_texture_mode(frame, t)))
+
+def nested.loaded(r: J.Frame & Maybe<J.RenderTexture>, +fb: J.Rlgl.Framebuffer) -> String:
+  (frame, target) = r
+  match target:
+    case None{}: " none"
+    case Some{t}: nested.inside(J.Rlgl.render_texture_depth(fb, 4, 2, 0), J.Frame.begin_texture_mode(frame, t))
+
+# A texture mode on a framebuffer without attachments started during LoadRenderTexture's.
+def nested(st: St) -> String:
+  St{frame, +fb, _, _, _} = st
+  nested.loaded(J.RenderTexture.load(frame, 8, 8), fb)
+
 def scenario(kind: U32, frame: J.Frame, +name: String) -> String:
   match kind:
     case 0: text.of(complete(attach.depth(complete(attach.color(complete(load.depth(load.color(load.fb(start(frame, name)), 64, 48), 64, 48, False{})), 0, 100)), 100, 100)))
@@ -354,12 +602,22 @@ def scenario(kind: U32, frame: J.Frame, +name: String) -> String:
     case 7: text.of(load.depth(load.fb(unloaded(attach.depth(attach.color(load.depth(load.color(load.fb(start(frame, name)), 16, 16), 16, 16, False{}), 0, 100), 100, 100))), 16, 16, False{}))
     case 8: text.of(two(load.fb(start(frame, name))))
     case 9: after(load.depth(load.color(load.fb(start(frame, name)), 16, 16), 16, 16, False{}))
-    case 10: refused.texture(J.Rlgl.load_texture(frame, 8, 8, 4, 1), name)
-    case 11: refused.texture(J.Rlgl.load_texture_depth(frame, 0, 8, False{}), name)
-    case 12: in.mode(J.RenderTexture.load(frame, 8, 8), name)
-    case 13: name ++ target.made(attach.depth(attach.color(load.depth(load.color(load.fb(start(frame, name)), 16, 16), 16, 16, False{}), 0, 100), 100, 100), 0)
-    case 14: name ++ target.made(attach.depth(attach.color(load.depth(load.color(load.fb(start(frame, name)), 16, 16), 16, 16, False{}), 0, 100), 100, 100), 1)
-    case _: name ++ target.made(attach.color(load.depth(load.color(load.fb(start(frame, name)), 16, 16), 16, 16, False{}), 0, 100), 0)
+    case 10: blind.built(complete(attach.depth(load.depth(load.fb(start(frame, name)), 4, 2, False{}), 100, 100)), False{})
+    case 11: blind.built(complete(attach.depth(load.depth(load.fb(start(frame, name)), 4, 2, False{}), 100, 100)), True{})
+    case 12: blind.built(complete(load.fb(start(frame, name))), False{})
+    case 13: after.blind(attach.depth(load.depth(load.fb(start(frame, name)), 4, 2, False{}), 100, 100))
+    case 14: refused.texture(J.Rlgl.load_texture(frame, 8, 8, 4, 1), name)
+    case 15: refused.texture(J.Rlgl.load_texture_depth(frame, 0, 8, False{}), name)
+    case 16: in.mode(J.RenderTexture.load(frame, 8, 8), name)
+    case 17: name ++ target.made(attach.depth(attach.color(load.depth(load.color(load.fb(start(frame, name)), 16, 16), 16, 16, False{}), 0, 100), 100, 100), 0)
+    case 18: name ++ target.made(attach.depth(attach.color(load.depth(load.color(load.fb(start(frame, name)), 16, 16), 16, 16, False{}), 0, 100), 100, 100), 1)
+    case 19: name ++ target.made(attach.color(load.depth(load.color(load.fb(start(frame, name)), 16, 16), 16, 16, False{}), 0, 100), 0)
+    case 20: name ++ depth.target(attach.depth(load.depth(load.fb(start(frame, name)), 16, 16, False{}), 100, 100), 16, 0)
+    case 21: name ++ depth.target(attach.depth(attach.color(load.depth(load.color(load.fb(start(frame, name)), 16, 16), 16, 16, False{}), 0, 100), 100, 100), 16, 0)
+    case 22: name ++ depth.target(attach.depth(load.depth(load.fb(start(frame, name)), 16, 16, False{}), 100, 100), 16, 1)
+    case 23: name ++ depth.target(attach.depth(load.depth(start(frame, name), 16, 16, False{}), 100, 100), 16, 0)
+    case 24: name ++ depth.target(attach.depth(load.depth(load.fb(start(frame, name)), 16, 16, False{}), 100, 100), 0, 0)
+    case _: name ++ nested(load.fb(start(frame, name)))
 
 def run(frame: Maybe<J.Frame>, +kind: U32, +name: String) -> String:
   match frame:
@@ -369,6 +627,10 @@ def run(frame: Maybe<J.Frame>, +kind: U32, +name: String) -> String:
 def main() -> IO(Unit):
   do IO<Unit>:
 '''
+
+
+for _name in COLORS:
+    PROGRAM = PROGRAM.replace(f'@{_name}@', str(word(_name)))
 
 
 def native_source():
@@ -384,11 +646,17 @@ def main():
     rows = dict(zip(SCENARIOS, output))
     if rows['loader'] != 'loader 1 2 3 0 1 1' or rows['zero'] != 'zero 1' or rows['sizes'][-1] != '0':
         raise ProbeFailure(f'rlgl-framebuffer: the reference does not behave as the scenarios assume: {rows}')
+    green, yellow, red, white, blue = (f'{word(name):08x}' for name in ('GREEN', 'YELLOW', 'RED', 'WHITE', 'BLUE'))
+    screen, cleared, after = (pixels(rows[name]) for name in ('blind', 'blind-clear', 'blind-after'))
+    if len(screen) != 64 or screen[0] != green or screen.count(yellow) != 4 or screen.count(blue) != 56 or rows['blind'].split(' ')[3] != '0':
+        raise ProbeFailure(f'rlgl-framebuffer: the reference drew into a framebuffer without a color attachment: {rows["blind"]}')
+    if cleared.count(white) != 60 or cleared.count(yellow) != 4 or after.count(red) != 12 or after.count(green) != 4 or after.count(blue) != 48:
+        raise ProbeFailure(f'rlgl-framebuffer: the reference does not behave as the blind scenarios assume: {rows}')
     names = list(SCENARIOS) + list(CONTRACTS)
     expected = [rows[name] if name in rows else CONTRACTS[name] for name in names]
 
     def render(selected, gpu):
-        return PROGRAM_TEXT + ''.join(f'    IO.print(run(J.Frame.init_window(64, 64), {index}, "{name}"))\n' for index, name in selected)
+        return PROGRAM_TEXT + ''.join(f'    IO.print(run(J.Frame.init_window({size(name)}, {size(name)}), {index}, "{name}"))\n' for index, name in selected)
 
     lanes = probe.candidates(render, list(enumerate(names)), batch=32, parse=lambda text, selected: [line.rstrip() for line in text.splitlines() if line.strip()])
     probe.compare(expected, lanes, describe=lambda index: names[index])

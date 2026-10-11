@@ -1301,6 +1301,30 @@ def Laws.rlgl_framebuffer_channel_one_is_ignored():
 def Laws.rlgl_framebuffer_depth_attaches_as_texture_or_renderbuffer():
   {==}
 
+def Laws.rlgl_framebuffer_depth_alone_is_incomplete():
+  {==}
+
+def Laws.rlgl_render_texture_depth_has_no_color_texture():
+  {==}
+
+def Laws.rlgl_render_texture_depth_refuses_a_color_attachment():
+  {==}
+
+def Laws.rlgl_render_texture_depth_refuses_another_depth():
+  {==}
+
+def Laws.rlgl_render_texture_depth_refuses_framebuffer_zero():
+  {==}
+
+def Laws.blind_target_never_the_screen(stash):
+  {==}
+
+def Laws.blind_target_leaves_no_depth_buffer(id, buffer, stash):
+  {==}
+
+def Laws.render_target_leaves_its_depth_buffer(id, buffer, stash):
+  {==}
+
 def Laws.color_hsv_term_six():
   {==}
 

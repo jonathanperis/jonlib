@@ -2041,6 +2041,27 @@ def clear.target(target: Target, +width: U32, +height: U32, +scissor: Scissor, r
     case Screen{stash}: (Screen{stash}, clear.depth(width, height, scissor, raster))
     case Offscreen{sw, sh, pixels, depth, stash, meta}: (Offscreen{sw, sh, pixels, depth, stash, meta}, clear.depth(width, height, scissor, raster))
 
+def RenderTarget.color(+meta: RenderTarget) -> U32:
+  RenderTarget{_, color, _, _, _} = meta
+  color
+
+def Canvas.target.blind(target: Target) -> Target & Bool:
+  match target:
+    case Screen{stash}: (Screen{stash}, False{})
+    case Offscreen{sw, sh, pixels, depth, stash, +meta}: (Offscreen{sw, sh, pixels, depth, stash, meta}, U32.is_eq(RenderTarget.color(meta), 0))
+
+def Canvas.blind.with(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox, result: Target & Bool) -> Canvas & Bool:
+  (target, flag) = result
+  (Canvas{width, height, matrix, state, raster, rig, target, gl}, flag)
+
+# Whether the target is a framebuffer without a color attachment: rlsw finds
+# it incomplete (sw_is_ready_to_render) and then refuses swBegin, swClear and
+# swDrawArrays, so nothing is drawn or cleared while it is bound; the states
+# and the matrices are set as usual.
+def Canvas.blind(canvas: Canvas) -> Canvas & Bool:
+  Canvas{width, height, matrix, state, raster, rig, target, gl} = canvas
+  Canvas.blind.with(width, height, matrix, state, raster, rig, gl, Canvas.target.blind(target))
+
 def Canvas.cleared(+width: U32, +height: U32, matrix: Matrix4, state: Immediate, rig: Rig, gl: GlBox, result: Target & Raster) -> Canvas:
   (target, raster) = result
   Canvas{width, height, matrix, state, raster, rig, target, gl}
@@ -2052,11 +2073,18 @@ def Canvas.clear.buffers.with(result: Canvas & U32) -> Canvas:
   Canvas.cleared(width, height, matrix, state, rig, box, clear.target(target, width, height, scissor,
     clear.color(width, height, scissor, clear.word(color), raster)))
 
+def Canvas.clear.buffers.seen(seen: Canvas & Bool) -> Canvas:
+  (canvas, blind) = seen
+  match blind:
+    case True{}: canvas
+    case False{}: Canvas.clear.buffers.with(Canvas.read.clear(canvas))
+
 # rlClearScreenBuffers: glClear(COLOR | DEPTH) with the clear color on the
 # current color buffer; a render texture's depth buffer is not modeled (draws
-# testing depth into one are refused).
+# testing depth into one are refused). Nothing on a target without a color
+# attachment (Canvas.blind).
 def Canvas.clear.buffers(canvas: Canvas) -> Canvas:
-  Canvas.clear.buffers.with(Canvas.read.clear(canvas))
+  Canvas.clear.buffers.seen(Canvas.blind(canvas))
 
 def Canvas.clear_color(+color: U32, canvas: Canvas) -> Canvas:
   Canvas{width, height, matrix, state, raster, rig, target, gl} = canvas
@@ -2272,11 +2300,37 @@ def Canvas.begin_target(+meta: RenderTarget, +tw: U32, +th: U32, texels: Array<U
   Canvas{width, height, matrix, state, raster, rig, target, gl} = canvas
   Canvas.target.begin(target, meta, tw, th, texels, width, height, matrix, state, raster, rig, gl)
 
-# The render texture's depth buffer goes back to the stash.
+def Canvas.target.blinded(+meta: RenderTarget, +tw: U32, +th: U32, +width: U32, +height: U32, state: Immediate, raster: Raster, rig: Rig, gl: GlBox, stash: List<Stash>) -> Canvas:
+  Raster{pixels, atlas, sampler, ok, extra} = raster
+  Extra{screen, shapes, held} = extra
+  Canvas.build(tw, th, state, Raster{Array.new(U32, 0n, 0), atlas, sampler, ok, Extra{Array.new(U32, 0n, 0), shapes, held}}, Rig.view(tw, th, rig),
+    Offscreen{width, height, pixels, screen, stash, meta}, GlBox.view(tw, th, gl))
+
+def Canvas.target.blind.begin(target: Target, +meta: RenderTarget, +tw: U32, +th: U32, +width: U32, +height: U32, matrix: Matrix4, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas:
+  match target:
+    case Screen{stash}: Canvas.target.blinded(meta, tw, th, width, height, state, raster, rig, gl, stash)
+    case Offscreen{sw, sh, pixels, depth, stash, active}: Canvas{width, height, matrix, state, Raster.refuse(raster), rig, Offscreen{sw, sh, pixels, depth, stash, active}, gl}
+
+# BeginTextureMode on a framebuffer without a color attachment (meta's color
+# id is 0), whose RenderTexture2D says tw x th: the viewport, the projection
+# and the modelview of Canvas.begin_target, and no buffers (Canvas.blind: no
+# draw or clear reaches one). The stashed depth buffers are left alone.
+def Canvas.begin_blind_target(+meta: RenderTarget, +tw: U32, +th: U32, canvas: Canvas) -> Canvas:
+  Canvas{width, height, matrix, state, raster, rig, target, gl} = canvas
+  Canvas.target.blind.begin(target, meta, tw, th, width, height, matrix, state, raster, rig, gl)
+
+def Canvas.target.left(blind: Bool, +id: U32, buffer: Array<U32>, stash: List<Stash>) -> Target:
+  match blind:
+    case True{}: Screen{stash}
+    case False{}: Screen{Con{Stash{id, buffer}, stash}}
+
+# The render texture's depth buffer goes back to the stash (a target without
+# a color attachment had none).
 def Canvas.target.leave(+sw: U32, +sh: U32, screen: Array<U32>, depth: Array<U32>, stash: List<Stash>, +meta: RenderTarget, +tw: U32, +th: U32, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas & Maybe<Detached>:
   Raster{texels, atlas, sampler, ok, extra} = raster
   Extra{buffer, shapes, held} = extra
-  (Canvas.build(sw, sh, state, Raster{screen, atlas, sampler, ok, Extra{depth, shapes, held}}, Rig.view(sw, sh, rig), Screen{Con{Stash{RenderTarget.id(meta), buffer}, stash}}, GlBox.view(sw, sh, gl)),
+  (Canvas.build(sw, sh, state, Raster{screen, atlas, sampler, ok, Extra{depth, shapes, held}}, Rig.view(sw, sh, rig),
+    Canvas.target.left(U32.is_eq(RenderTarget.color(meta), 0), RenderTarget.id(meta), buffer, stash), GlBox.view(sw, sh, gl)),
     Some{Detached{meta, tw, th, texels}})
 
 def Canvas.target.end(target: Target, +width: U32, +height: U32, state: Immediate, raster: Raster, rig: Rig, gl: GlBox) -> Canvas & Maybe<Detached>:
@@ -2466,8 +2520,16 @@ def Canvas.begin.read(+count: U32, read: Canvas & U32) -> Canvas:
   (canvas, +mode) = read
   Canvas.begin.start(U32.is_eq(mode, 0), count, canvas)
 
+def Canvas.begin.seen(+count: U32, seen: Canvas & Bool) -> Canvas:
+  (canvas, blind) = seen
+  match blind:
+    case True{}: canvas
+    case False{}: Canvas.begin.read(count, Canvas.mode(canvas))
+
+# swBegin: refused, the vertices after it dropped, on a target without a
+# color attachment (Canvas.blind).
 def Canvas.begin(+count: U32, canvas: Canvas) -> Canvas:
-  Canvas.begin.read(count, Canvas.mode(canvas))
+  Canvas.begin.seen(count, Canvas.blind(canvas))
 
 def Canvas.state(command: Command, state: Immediate) -> Immediate:
   match command:

@@ -8109,29 +8109,43 @@ def Frame.texture_mode.rgba(rgba: Bool, +meta: FrameCore.RenderTarget, +width: U
     case True{}: FrameCore.Canvas.begin_target(meta, width, height, values, canvas)
     case False{}: FrameCore.Canvas.refuse(canvas)
 
-def Frame.texture_mode.enter(texels: Maybe<Array<U32>>, +meta: FrameCore.RenderTarget, +width: U32, +height: U32, +format: U32, canvas: FrameCore.Canvas) -> FrameCore.Canvas:
+def Frame.texture_mode.blind(blind: Bool, +meta: FrameCore.RenderTarget, +width: U32, +height: U32, canvas: FrameCore.Canvas) -> FrameCore.Canvas:
+  match blind:
+    case True{}: FrameCore.Canvas.begin_blind_target(meta, width, height, canvas)
+    case False{}: FrameCore.Canvas.refuse(canvas)
+
+def Frame.texture_mode.enter(texels: Maybe<Array<U32>>, +meta: FrameCore.RenderTarget, +width: U32, +height: U32, +format: U32, +blind: Bool, canvas: FrameCore.Canvas) -> FrameCore.Canvas:
   match texels:
     case Some{values}: Frame.texture_mode.rgba(U32.is_eq(format, 7), meta, width, height, values, canvas)
-    case None{}: FrameCore.Canvas.refuse(canvas)
+    case None{}: Frame.texture_mode.blind(blind, meta, width, height, canvas)
 
 def Frame.texture_mode.texture(frame: Frame, +fbo: U32, +depth: U32, texture: Texture) -> Frame:
   Frame{canvas, _} = frame
   Texture{+color, +width, +height, +format, +linear, +alpha, texels} = texture
-  Frame{Frame.texture_mode.enter(texels, FrameCore.RenderTarget{fbo, color, depth, linear, alpha}, width, height, format, canvas), Nil{}}
+  +blind = U32.is_ne(fbo, 0) && U32.is_eq(color, 0) && ((width >= 1) && (width <= 4096) && (height >= 1) && (height <= 4096) : U32)
+  Frame{Frame.texture_mode.enter(texels, FrameCore.RenderTarget{fbo, color, depth, linear, alpha}, width, height, format, blind, canvas), Nil{}}
 
 # BeginTextureMode: the render texture is drawn into until EndTextureMode
 # (the frame holds it meanwhile). Starting a second texture mode before
-# ending the first is refused (the frame becomes undefined).
+# ending the first is refused (the frame becomes undefined). One without a
+# color texture (Rlgl.render_texture_depth) is an incomplete framebuffer on
+# rlsw: until EndTextureMode the viewport, the matrices and the states are
+# set as usual and every draw and clear is dropped.
 def Frame.begin_texture_mode(frame: Frame, target: RenderTexture) -> Frame:
   RenderTexture{+fbo, texture, +depth} = target
   Frame.texture_mode.texture(frame, fbo, depth, texture)
 
-def RenderTexture.of.meta(meta: FrameCore.RenderTarget, +width: U32, +height: U32, texels: Array<U32>) -> RenderTexture:
+def RenderTexture.of.color(none: Bool, +id: U32, +color: U32, +depth: U32, +linear: Bool, +alpha: Bool, +width: U32, +height: U32, texels: Array<U32>) -> RenderTexture:
+  match none:
+    case True{}: RenderTexture{id, Texture{0, width, height, 0, False{}, False{}, None{}}, depth}
+    case False{}: RenderTexture{id, Texture{color, width, height, 7, linear, alpha, Some{texels}}, depth}
+
+def RenderTexture.of.meta(+meta: FrameCore.RenderTarget, +width: U32, +height: U32, texels: Array<U32>) -> RenderTexture:
   FrameCore.RenderTarget{id, color, depth, linear, alpha} = meta
-  RenderTexture{id, Texture{color, width, height, 7, linear, alpha, Some{texels}}, depth}
+  RenderTexture.of.color(U32.is_eq(color, 0), id, color, depth, linear, alpha, width, height, texels)
 
 def RenderTexture.of(detached: FrameCore.Detached) -> RenderTexture:
-  FrameCore.Detached{meta, width, height, texels} = detached
+  FrameCore.Detached{+meta, +width, +height, texels} = detached
   RenderTexture.of.meta(meta, width, height, texels)
 
 def RenderTexture.attach(detached: Maybe<FrameCore.Detached>) -> Maybe<RenderTexture>:
@@ -8338,6 +8352,21 @@ def Rlgl.render_texture.checked(+fbo: U32, +color: U32, +valid: Bool, +depth: U3
 def Rlgl.render_texture(fb: Rlgl.Framebuffer, texture: Texture, +depth: U32) -> Maybe<RenderTexture>:
   RlglFramebuffer{+fbo, +c, +cw, +ch, +cf, +d, +dw, +dh, +df} = fb
   Rlgl.render_texture.checked(fbo, c, U32.is_ne(fbo, 0) && U32.is_eq(d, depth) && Rlgl.Framebuffer.complete(RlglFramebuffer{fbo, c, cw, ch, cf, d, dw, dh, df}), depth, texture)
+
+def Rlgl.render_texture_depth.with(valid: Bool, +fbo: U32, +width: U32, +height: U32, +depth: U32) -> Maybe<RenderTexture>:
+  match valid:
+    case False{}: None{}
+    case True{}: Some{RenderTexture{fbo, Texture{0, width, height, 0, False{}, False{}, None{}}, depth}}
+
+# The RenderTexture2D an example fills by hand from a framebuffer without a
+# color attachment (a shadow map's): texture.id 0 with the width and height
+# given (1..4096), and the depth attachment's id (0 for none). None for
+# framebuffer 0, for one with a color attachment (Rlgl.render_texture) and
+# for another depth id than the attached one. BeginTextureMode with it draws
+# nothing: rlsw finds the framebuffer incomplete.
+def Rlgl.render_texture_depth(fb: Rlgl.Framebuffer, +width: U32, +height: U32, +depth: U32) -> Maybe<RenderTexture>:
+  RlglFramebuffer{+fbo, +c, _, _, _, +d, _, _, _} = fb
+  Rlgl.render_texture_depth.with(U32.is_ne(fbo, 0) && U32.is_eq(c, 0) && U32.is_eq(d, depth) && ((width >= 1) && (width <= 4096) && (height >= 1) && (height <= 4096) : U32), fbo, width, height, depth)
 
 def Rlgl.framebuffer.freed(with_depth: Bool, +fbo: U32, +depth: U32, canvas: FrameCore.Canvas) -> FrameCore.Canvas:
   match with_depth:
