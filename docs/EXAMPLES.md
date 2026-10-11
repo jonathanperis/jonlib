@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 186 ported, 10 ready, 16 waiting.
+Totals: 212 examples; 187 ported, 9 ready, 16 waiting.
 
 ## APIs that unblock the most examples
 
@@ -220,7 +220,7 @@ Totals: 212 examples; 186 ported, 10 ready, 16 waiting.
 | `models_tesseract_view` | models | ported |  |
 | `models_basic_voxel` | models | ported |  |
 | `models_rotating_cube` | models | ported |  |
-| `models_decals` | models | ready |  |
+| `models_decals` | models | ported |  |
 | `models_directional_billboard` | models | ported |  |
 | `models_animation_blend_custom` | models | ported |  |
 | `models_animation_blending` | models | ported | `GuiProgressBar` |

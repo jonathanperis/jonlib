@@ -5016,7 +5016,7 @@
   {
    "name": "models_decals",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",

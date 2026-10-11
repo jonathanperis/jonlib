@@ -288,16 +288,11 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      SDF glyphs with curves (docs/FONTS.md, Gaps); `text_unicode_ranges` a
      7 MiB TTF and `shaders_basic_pbr` a 1.7 MiB PNG (the 1 MiB input
      limit); `textures_sprite_stacking` a 112x11468 image (the 4096 limit);
-     `text_3d_drawing` and `models_decals` are long pure ports; the IQM,
-     VOX and M3D loaders are not written. Notes for `models_decals`:
-     `LoadOBJ` meshes are not indexed (its indexed branch, which mixes the
-     three vertices' components, is not taken); each frame runs
-     `GetRayCollisionBox` then `GetRayCollisionMesh` under the mouse (as
-     `models_mesh_picking`), a left click builds a decal mesh with the
-     example's `GenMeshDecal` (the triangles within the decal box in the
-     space of `MatrixLookAt(point, point + normal, up)` turned by
-     `MatrixRotateZ(DEG2RAD*GetRandomValue(-180, 180))`, clipped against six
-     planes) and the first `GuiButton` is drawn at y = screenHeight - 1000
+     `text_3d_drawing` is a long pure port and `models_decals` is ported
+     (its `GenMeshDecal` as lists of triangles; the indexed-mesh branch is
+     not taken by `LoadOBJ` meshes and is left out; its first button is
+     drawn above the screen, as upstream); the IQM, VOX and M3D loaders are
+     not written.
      (off the screen: a typo upstream, to keep). `core_screen_recording`
      needs a GIF encoder (msf_gif) besides `GetApplicationDirectory`, and
      `shaders_game_of_life` draws 2048x2048 worlds each frame;
