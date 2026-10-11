@@ -4460,7 +4460,7 @@
   {
    "name": "models_loading_gltf",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",

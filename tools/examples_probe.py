@@ -241,6 +241,7 @@ EXAMPLES = {
     'shaders_lightmap_rendering': ('shaders/shaders_lightmap_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'models_animation_gpu_skinning': ('models/models_animation_gpu_skinning.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_bone_socket': ('models/models_bone_socket.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'models_loading_gltf': ('models/models_loading_gltf.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -305,6 +306,7 @@ CONFIG_FLAGS = {'shapes_bouncing_ball': 32, 'shapes_lines_bezier': 32, 'shapes_r
 IO_SETUP.add('shaders_lightmap_rendering'); PERSPECTIVE.add('shaders_lightmap_rendering'); CONFIG_FLAGS['shaders_lightmap_rendering'] = 32
 IO_SETUP.add('models_animation_gpu_skinning'); PERSPECTIVE.add('models_animation_gpu_skinning')
 IO_SETUP.add('models_bone_socket'); PERSPECTIVE.add('models_bone_socket')
+IO_SETUP.add('models_loading_gltf'); PERSPECTIVE.add('models_loading_gltf')
 
 
 # -----------------------------------------------------------------------------
@@ -928,6 +930,10 @@ def scripts():
                                                slow([key(KEY_H, False), key(KEY_ONE)]), quick([key(KEY_ONE, False), key(KEY_TWO)]),
                                                quick([key(KEY_TWO, False), key(KEY_THREE), mouse_at(420, 240)]), quick([key(KEY_THREE, False), key(KEY_ONE)]),
                                                quick([key(KEY_ONE, False), key(KEY_G)]), quick([key(KEY_G, False)])]),
+        # The robot in its bind pose under the orbital camera; LEFT wraps to its last animation and RIGHT twice
+        # plays the second one (the name is drawn; the pose is not: GPU skinning).
+        script('models_loading_gltf', 'switch', [quick(), quick([key(KEY_LEFT)]), quick([key(KEY_LEFT, False)]), slow([key(KEY_RIGHT)]),
+                                                 quick([key(KEY_RIGHT, False)]), quick([key(KEY_RIGHT)])]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.
