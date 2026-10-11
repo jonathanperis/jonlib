@@ -56,6 +56,7 @@ class FileCodec:
     bad_size: list                  # encoded stream with an unsupported size (staged continuation)
     roles: tuple = ('raw', 'owner', 'bridge', 'surface')
     cap: int = 1048576
+    kind: str = 'RasterFile'      # the Image.FileKind whose limit the codec's file loader reads to
     synthetic: bool = True          # also run non-byte controls through the file continuation
     loop_loads: tuple = ()          # ids loaded each closure iteration (default: singles + 3 controls)
     upper_suffix_names: tuple = ()  # suffix names given an '-upper' filename (case-insensitive filesystems)
@@ -175,7 +176,7 @@ LOADED = 'Result<&1, &1, J.Surface.IOError, J.Surface>'
 
 def bend_prelude(codec):
     from byte_probe import BEND_EMITTER
-    n = codec.name
+    n, kind = codec.name, codec.kind
     return codec_formats.BEND_PRELUDE.replace('def reverse_into(', BEND_EMITTER + 'def reverse_into(', 1) + rf'''
 def loaded(result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> Maybe<J.Surface>:
   match result:
@@ -233,7 +234,7 @@ def surface.codec.loaded(result: Result<&1, &1, J.Surface.IOError, +List<U32>>) 
     case Fail{{error}}: IO.pure(Result<&1, &1, J.Surface.IOError, J.Surface>, Fail{{error}})
     case Done{{bytes}}: IO.pure(Result<&1, &1, J.Surface.IOError, J.Surface>, J.Image.file.decoded(J.Surface, J.Surface.decode_{n}(bytes)))
 def surface.codec(path: String) -> IO(Result<&1, &1, J.Surface.IOError, J.Surface>):
-  IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Result<&1, &1, J.Surface.IOError, J.Surface>, J.Image.file.bytes(path, J.Image.file.limit(J.RasterFile{{}})), surface.codec.loaded)
+  IO.bind(Result<&1, &1, J.Surface.IOError, +List<U32>>, Result<&1, &1, J.Surface.IOError, J.Surface>, J.Image.file.bytes(path, J.Image.file.limit(J.{kind}{{}})), surface.codec.loaded)
 def owner.emitted(id: String, +width: U32, +height: U32, first: U32, last: U32, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
   observed(id, "owner", owner(loaded(result), width, height, first, last))
 def stage.emitted(id: String, +expected: U32, result: Result<&1, &1, J.Surface.IOError, J.Surface>) -> IO(Unit):
@@ -358,7 +359,7 @@ def boundary(codec, cases, invalid, reference):
     lines += ['        ' + line for line in candidate_lines(codec, cycle_actions)]
     lines += [f'        IO.bind(Result<&1, &1, U32 & String, File>, Unit, File.open({valid}, "r"), stage.opened({mode}))' for mode in range(4)]
     lines += ['        closure_loop(rest)', 'def main() -> IO(Unit):', '  do IO<Unit>:',
-              '    require(U32.is_eq(J.Image.file.limit(J.RasterFile{}), 1048576) && (1048576 <= J.Image.file.limit(J.RasterFile{}) : U32) && Bool.not((1048577 <= J.Image.file.limit(J.RasterFile{}) : U32)))',
+              f'    require(U32.is_eq(J.Image.file.limit(J.{codec.kind}{{}}), {codec.cap}) && ({codec.cap} <= J.Image.file.limit(J.{codec.kind}{{}}) : U32) && Bool.not(({codec.cap + 1} <= J.Image.file.limit(J.{codec.kind}{{}}) : U32)))',
               f'    require(String.eq(J.Image.file.token("{token}"), "") && String.eq(J.Image.file.token("dir/{token}"), "{token}") && String.eq(J.Image.file.token("dir{token}/leaf"), "{token}/leaf"))',
               '    require(J.Image.file.complete(0n, Nil{}) && J.Image.file.complete(2n, [1, 2]) && Bool.not(J.Image.file.complete(2n, [1])) && Bool.not(J.Image.file.complete(1n, [1, 2])))']
     lines += [f'    IO.bind({LOADED}, Unit, codec.loaded({value}), {then})'

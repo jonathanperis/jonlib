@@ -481,6 +481,30 @@ law raster_file_limit:
 law qoi_file_limit:
   {J.Image.file.limit(J.QoiFile{}) == 83886102 : U32}
 
+# A file named .png (or .PNG) is read up to the PNG decoder's 2 MiB; other
+# raster names keep 1 MiB. Under that name a PNG signature goes to the PNG
+# decoder, and other contents keep the raster cap: more than 1 MiB of them
+# is the size error it was before.
+law png_file_limit:
+  {J.Image.file.limit(J.PngFile{}) == 2097152 : U32}
+
+law png_file_kind_by_name:
+  {(J.Image.file.kind.of(".png"), (J.Image.file.kind.of(".PNG"), J.Image.file.kind.of(".bmp"))) == (J.PngFile{}, (J.PngFile{}, J.RasterFile{})) : J.Image.FileKind & (J.Image.FileKind & J.Image.FileKind)}
+
+law png_file_kind_other_case_unsupported:
+  {J.Image.file.kind.of(".Png") == J.UnsupportedImageFile{} : J.Image.FileKind}
+
+law png_signature_selects_the_decoder:
+  {(J.Image.file.png_signed([137, 80, 78, 71]), J.Image.file.png_signed([66, 77, 0, 0])) == (True{}, False{}) : Bool & Bool}
+
+law file_bytes_beyond_a_count:
+  {(J.Image.file.beyond(2n, [1, 2, 3]), J.Image.file.beyond(3n, [1, 2, 3])) == (True{}, False{}) : Bool & Bool}
+
+law png_named_other_contents_over_the_raster_cap_refused:
+  for reference: M.Contraction
+  for bytes: List<&2, U32>
+  {J.Image.file.named_png.other(True{}, reference, bytes) == Fail{J.UnsupportedImageSize{}} : Result<&1, &1, J.Surface.Error, J.Surface>}
+
 law image_file_complete_empty:
   {J.Image.file.complete(0n, Nil{}) == True{} : Bool}
 

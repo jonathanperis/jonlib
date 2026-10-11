@@ -89,7 +89,8 @@ no guarantee of reported OS-close success. Ordinary byte files contain only
 
 | Selection | Inclusive encoded-file cap |
 |---|---|
-| Raster tokens, unsupported suffixes, `load_png/pnm/tga/bmp/pic`, `load_hdr` | 1,048,576 bytes (`RasterFile`) |
+| Raster tokens other than PNG's, unsupported suffixes, `load_pnm/tga/bmp/pic`, `load_hdr` | 1,048,576 bytes (`RasterFile`) |
+| `.png`/`.PNG`, `Surface.load_png` | 2,097,152 bytes (`PngFile`): the PNG decoder's cap. Under that name, contents without the PNG signature keep the raster cap: more than 1,048,576 bytes of them are `UnsupportedImageSize`, as before the file was read this far |
 | QOI tokens, `Surface.load_qoi` | 83,886,102 bytes = `14 + 5*(4096*4096) + 8` (`QoiFile`) |
 | DDS tokens, `Surface.load_dds` | 67,109,000 bytes, above `128 + 4*(4096*4096)` (`DdsFile`) |
 | DDS tokens in `Image.Stored.load_image` | 89,478,612 bytes = `128 + 4*(4^13-1)/3`, a 4096x4096 R8G8B8A8 mipmap chain |
@@ -108,7 +109,7 @@ the one codec it uses. Common contract:
 - **Explicit selection.** The suffix is never consulted: lower/upper/mixed
   case, misleading (e.g. `.qoi` for PNG), arbitrary or absent suffixes, spaces,
   multiple dots and directory-qualified dotfiles all select the named codec.
-  There is no content sniffing, codec fallback or caller-supplied cap. A misleading `.qoi` name still gets the 1 MiB raster cap.
+  There is no content sniffing, codec fallback or caller-supplied cap. A misleading `.qoi` name still gets the codec's own cap (1 MiB for the raster codecs, 2 MiB for `load_png`).
 - **Success** returns one affine `Surface` owner with width/height
   1..4096, one implicit mip level and the codec's native format. Export
   consumes it and returns exactly `width*height*channels` row-major bytes
@@ -146,7 +147,7 @@ and unused-entry palette tRNS still promote to RGBA, promotion stays sticky
 through a later accepted PLTE (which replaces colors and resets palette alpha),
 and existing-alpha images keep alpha even when opaque. 16-bit tRNS comparisons
 precede high-byte reduction. The memory decoder separately enforces the same
-1 MiB encoded cap (including ignored tails after IEND) and an inclusive
+2 MiB encoded cap (including ignored tails after IEND) and an inclusive
 67,108,864-byte filtered-stream cap. Its whole-input byte/count walk precedes
 header parsing: an invalid U32 value yields `InvalidImageByte`; a valid first
 value beyond the cap `UnsupportedImageSize` (an invalid value at that same

@@ -110,7 +110,7 @@ def chunk.valid(valid: Bool, +size: U32, word: Maybe<&2, C.Word>) -> Maybe<&2, C
 def chunk(word: Maybe<&2, C.Word>) -> Maybe<&2, Chunk>:
   match word:
     case None{}: None{}
-    case Some{C.Word{+size, rest}}: chunk.valid((size <= 1048576 : U32), size, C.word(rest))
+    case Some{C.Word{+size, rest}}: chunk.valid((size <= 2097152 : U32), size, C.word(rest))
 
 def more.valid(valid: Bool, bytes: +List<U32>, parts: Parts) -> Result<&2, &2, C.Error, Parsing>:
   match valid:
@@ -468,7 +468,7 @@ def rendered(interlaced: Bool, +width: U32, +height: U32, color: U32, channels: 
 def zlib.valid(valid: Bool, bytes: +List<U32>, limit: U32) -> Maybe<List<U32>>:
   match valid:
     case False{}: None{}
-    case True{}: Z.decompress(False{}, bytes, limit)
+    case True{}: Z.decompress.within(False{}, bytes, limit, 2097152)
 
 def zlib(bytes: +List<U32>, limit: U32) -> Maybe<List<U32>>:
   match bytes:
@@ -479,7 +479,7 @@ def zlib(bytes: +List<U32>, limit: U32) -> Maybe<List<U32>>:
 def inflate(raw: Bool, bytes: +List<U32>, limit: U32) -> Maybe<List<U32>>:
   match raw:
     case False{}: zlib(bytes, limit)
-    case True{}: Z.decompress(False{}, bytes, limit)
+    case True{}: Z.decompress.within(False{}, bytes, limit, 2097152)
 
 # Native req_comp=0 output channels depend on structural tRNS, not opacity.
 def native.key(channels: U32, key: Maybe<&2, Key>) -> U32:
@@ -520,7 +520,7 @@ def input.count(bytes: +List<U32>, +count: U32, error: Maybe<&2, C.Error>) -> Re
   match bytes error:
     case _ Some{error}: Fail{error}
     case Nil{} None{}: Done{count}
-    case Con{byte, rest} None{}: input.count(rest, (count + 1 : U32), input.error((byte <= 255 : U32), (count < 1048576 : U32)))
+    case Con{byte, rest} None{}: input.count(rest, (count + 1 : U32), input.error((byte <= 255 : U32), (count < 2097152 : U32)))
 
 def decode.checked(bytes: +List<U32>, result: Result<&2, &2, C.Error, U32>) -> Result<&1, &1, C.Error, C.Image>:
   match result:

@@ -17,7 +17,7 @@ OTHER_CODECS = (('not-png-qoi', qoi_stream(1, 1, 4, 0, [255, 12, 34, 56, 78])), 
 BAD_SIZE = next(c['bytes'] for c in MEMORY.controls() if c['id'] == 'size-before-stream')
 
 CODEC = codec_files.FileCodec(memory=MEMORY, suffixes=SUFFIXES, path_bases=('c1-single', 'c2-single', 'c3-single', 'c4-single'), other_codecs=OTHER_CODECS,
-                                 sparse_prefix=list(png(1, 1, 6, bytes([12, 34, 56, 78]))), exact_cap_base='c3-single',
+                                 sparse_prefix=list(png(1, 1, 6, bytes([12, 34, 56, 78]))), exact_cap_base='c3-single', cap=2097152, kind='PngFile',
                                  bad_size=BAD_SIZE, roles=('raw', 'owner', 'bridge', 'surface', 'factory', 'raw-roundtrip'))
 
 

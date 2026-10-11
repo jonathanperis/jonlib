@@ -342,11 +342,12 @@ def loop(n: Nat, +stop_empty: Bool, +maximum: U32, state: Maybe<Output>) -> Mayb
     case 0n _: None{}
     case 1n+rest Some{Output{bits, position, pixels, mode}}: loop(rest, stop_empty, maximum, step(stop_empty, maximum, bits, position, pixels, mode))
 
-def bytes.count(bytes: +List<U32>, +count: U32, valid: Bool) -> Maybe<&2, U32>:
+# The input's size: at most `limit` bytes, each 0..255.
+def bytes.count(bytes: +List<U32>, +count: U32, valid: Bool, +limit: U32) -> Maybe<&2, U32>:
   match bytes valid:
     case _ False{}: None{}
     case Nil{} True{}: Some{count}
-    case Con{byte, rest} True{}: bytes.count(rest, (count + 1 : U32), ((count < 1048576) && (byte <= 255) : U32))
+    case Con{byte, rest} True{}: bytes.count(rest, (count + 1 : U32), ((count < limit) && (byte <= 255) : U32), limit)
 
 def start(stop_empty: Bool, +maximum: U32, bytes: +List<U32>, count: Maybe<&2, U32>) -> Maybe<List<U32>>:
   match count:
@@ -355,10 +356,15 @@ def start(stop_empty: Bool, +maximum: U32, bytes: +List<U32>, count: Maybe<&2, U
       depth = Bool.pick(Nat, (maximum <= 1 : U32), 0n, 1n+U32.log2((maximum - 1 : U32)))
       loop(U32.to_nat((size * 8 + 1 : U32)), stop_empty, maximum, Some{Output{Bits{bytes, 0, 0}, 0, Array.new(U32, depth, 0), Header{}}})
 
-def checked(valid: Bool, stop_empty: Bool, maximum: U32, +bytes: +List<U32>) -> Maybe<List<U32>>:
+def checked(valid: Bool, stop_empty: Bool, maximum: U32, +bytes: +List<U32>, +limit: U32) -> Maybe<List<U32>>:
   match valid:
     case False{}: None{}
-    case True{}: start(stop_empty, maximum, bytes, bytes.count(bytes, 0, True{}))
+    case True{}: start(stop_empty, maximum, bytes, bytes.count(bytes, 0, True{}, limit))
 
+# Raw DEFLATE of at most `limit` input bytes (the PNG decoder asks 2 MiB) into at most `maximum` output bytes.
+def decompress.within(stop_empty: Bool, bytes: +List<U32>, +maximum: U32, +limit: U32) -> Maybe<List<U32>>:
+  checked((maximum <= 67108864 : U32) && (limit <= 2097152 : U32), stop_empty, maximum, bytes, limit)
+
+# The 1 MiB input cap of the public decoder.
 def decompress(stop_empty: Bool, bytes: +List<U32>, +maximum: U32) -> Maybe<List<U32>>:
-  checked((maximum <= 67108864 : U32), stop_empty, maximum, bytes)
+  decompress.within(stop_empty, bytes, maximum, 1048576)
