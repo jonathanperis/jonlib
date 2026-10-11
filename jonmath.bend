@@ -548,6 +548,18 @@ def Float64.internal.negate(value: Float64) -> Float64:
   Float64{high, low} = value
   Float64{(high .^. 2147483648 : U32), low}
 
+# a + b rounded once to binary64; None as Float64.internal.multiply.
+def Float64.internal.add(left: Float64, right: Float64) -> Maybe<Float64>:
+  Float64{ah, al} = left
+  Float64{bh, bl} = right
+  Float64.internal.lift(Binary64Scaled.add(ah, al, bh, bl))
+
+# a - b rounded once to binary64; None as Float64.internal.multiply.
+def Float64.internal.subtract(left: Float64, right: Float64) -> Maybe<Float64>:
+  Float64{ah, al} = left
+  Float64{bh, bl} = right
+  Float64.internal.lift(Binary64Scaled.subtract(ah, al, bh, bl))
+
 def Libm.tan.words(value: Float64) -> Maybe<Float64>:
   Float64{high, low} = value
   Float64.internal.lift(GlibcTan.tan(high, low))

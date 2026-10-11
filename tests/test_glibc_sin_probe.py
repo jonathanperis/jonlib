@@ -29,6 +29,17 @@ class GlibcSinProbeTests(unittest.TestCase):
             self.assertTrue(any(k >= 0x419921fb for k in magnitudes))
             self.assertEqual(len({word for word, _ in controls}), len(controls))
 
+    def test_the_arithmetic_pairs_have_distinct_magnitudes_of_moderate_size(self):
+        chosen = probe.pairs(probe.arguments())
+        self.assertGreater(len(chosen), 1000)
+        for a, b in chosen:
+            self.assertNotEqual(a & 0x7fffffffffffffff, b & 0x7fffffffffffffff)
+            for word in (a, b):
+                self.assertTrue(0x3c0 <= ((word >> 52) & 2047) <= 0x440)
+        self.assertIn('M.Float64.internal.add', probe.PROGRAM)
+        self.assertIn('M.Float64.internal.subtract', probe.PROGRAM)
+        self.assertNotIn('ARITHMETIC_HERE', probe.PROGRAM)
+
     def test_the_check_program_names_both_models_and_every_control(self):
         source = glibc_sin.check_source()
         self.assertIn('double glibc_sin_fma(double);', source)
