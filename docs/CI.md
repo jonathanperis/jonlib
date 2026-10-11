@@ -53,7 +53,9 @@ What a `scoped` run selects, per changed file:
 | `examples/<name>.bend`, and the tables and scripts of `tools/examples_probe.py` above its native driver | the changed ports, the examples whose registration, table entry, prediction or script changed (a script line belongs to the script it continues) and three canaries (`core_basic_window`, `core_2d_camera`, `textures_logo_raylib`), replayed against the native examples |
 | code the examples share in their probe (its native driver `C_DRIVER` and everything below, or a line above it that names no example and is not a new constant or a comment) | every `examples-*` gate |
 
-The affected gates are packed into jobs of about 100 estimated minutes; past
+The affected gates are packed into jobs of about 50 estimated minutes, so the
+corpus and the core examples of an additive library change run side by side
+(a gate of at most 5 minutes that fits in no job joins the lightest one); past
 three jobs per host the run is `full`. `python3 tools/ci_scope.py --base
 origin/main` prints the scope of the current branch and, for a `full` one, the
 reason.

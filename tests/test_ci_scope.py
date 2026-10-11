@@ -157,7 +157,8 @@ class ScopeTests(unittest.TestCase):
         result = scope(self.KERNEL)
         self.assertEqual((result['mode'], result['gates']), ('scoped', ['api-audit', 'conformance', 'examples-core', 'rand']))
         self.assertEqual(result['matrix'], dict(include=[
-            dict(os=runner, part='gates 1', gates='--only=conformance --only=examples-core --only=api-audit --only=rand', examples='') for runner in ('ubuntu-24.04', 'macos-15')]))
+            dict(os=runner, part=part, gates=gates, examples='') for runner in ('ubuntu-24.04', 'macos-15')
+            for part, gates in (('gates 1', '--only=conformance --only=api-audit --only=rand'), ('gates 2', '--only=examples-core'))]))
 
     def test_a_changed_or_removed_definition_runs_everything(self):
         for name, change in dict(changed={'jonmath.bend': JONMATH.replace('  x\n', '  x + 1.0\n')}, removed={'jonmath.bend': None}, core={'jonlib.bend': 'def one() -> U32:\n  2\n'}).items():
