@@ -91,6 +91,16 @@ class ScratchScriptTests(unittest.TestCase):
         self.assertEqual(len(ep.FILES['core_storage_values-longer']['storage.data']), 12)
         self.assertIsNone(ep.refusal(names['core_storage_values-values'], 'Glibc239Libm'))
 
+    def test_a_recording_cannot_be_stopped_by_the_probes_input(self):
+        """raylib ignores PlayAutomationEvent while it records, so the record script only starts one."""
+        record = next(item for item in ep.scripts() if item['name'] == 'core_automation_events-record')
+        keys = [(code, kind) for frame in record['frames'] for kind, code, _, _ in frame['events']]
+        self.assertEqual(keys[0], (83, ep.KEY_DOWN_EVENT))
+        self.assertGreaterEqual(len(record['frames']), 2 + 15)
+        self.assertIn('core_automation_events', ep.SCRATCH)
+        self.assertIn('core_automation_events', ep.EFFECTS)
+        self.assertNotIn('core_automation_events-record', ep.UNDEFINED_FROM)
+
     def test_the_directories_are_emptied_and_given_their_files(self):
         import tempfile
 

@@ -263,6 +263,7 @@ EXAMPLES = {
     'shaders_depth_rendering': ('shaders/shaders_depth_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_shadowmap_rendering': ('shaders/shaders_shadowmap_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'core_storage_values': ('core/core_storage_values.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
+    'core_automation_events': ('core/core_automation_events.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -357,6 +358,8 @@ FILES['core_storage_values-short'] = {'storage.data': struct.pack('<i', 1234)}
 FILES['core_storage_values-odd'] = {'storage.data': bytes(range(1, 7))}
 UNDEFINED_FROM['core_storage_values-short'] = 1
 UNDEFINED_FROM['core_storage_values-odd'] = 2
+# core_automation_events: S again would export automation.rae, which the script cannot reach (see its scripts).
+IO_SETUP.add('core_automation_events'); EFFECTS.add('core_automation_events'); SCRATCH.add('core_automation_events')
 
 
 def scratch(probe, index, native=False):
@@ -1049,6 +1052,17 @@ def scripts():
         # The depth attachment drawn as a texture is a white rectangle on rlsw, whatever the free camera does (W
         # moves it, the pointer turns it): the help box over white.
         script('shaders_depth_rendering', 'white', [quick(), quick([key(KEY_W)]), quick([mouse_at(430, 240)]), slow([key(KEY_W, False)])]),
+        # Short scripts: the JavaScript lane takes seconds a frame for this scene. The player falls to the floor
+        # (53 frames: deltaTime is the constant 0.015f), runs right, jumps and runs left in the air; the wheel
+        # zooms out and in; A with an empty list does nothing; R resets.
+        script('core_automation_events', 'run', [quick() for _ in range(54)] + [quick([key(KEY_RIGHT)]), quick(), quick(), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False)]),
+                                                 quick(), slow([key(KEY_RIGHT, False), key(KEY_LEFT)]), quick(), quick([(MOUSE_WHEEL, 0, -4, 0)]), quick([key(65)]),
+                                                 quick([key(65, False), (MOUSE_WHEEL, 0, 9, 0)]), quick([key(KEY_LEFT, False), key(KEY_R)]), quick([key(KEY_R, False)])]),
+        # S starts a recording. raylib then ignores PlayAutomationEvent, the probe's input: RIGHT does not move the
+        # player, S cannot be released (so it cannot be pressed again to stop and export) and each EndDrawing
+        # records S down once more: the blinking text shows the count from the sixteenth frame on.
+        script('core_automation_events', 'record', [quick(), quick([key(KEY_S)]), quick([key(KEY_S, False), key(KEY_RIGHT)])] + [quick() for _ in range(14)]
+               + [slow([key(KEY_S)]), quick([key(65)]), quick()]),
         # SPACE with no file (0 and 0); R; ENTER creates the file with the score, then adds the high score; R;
         # SPACE loads what was saved; R; ENTER with SPACE saves only, both ints in place; SPACE loads them.
         script('core_storage_values', 'values', [quick(), quick([key(KEY_SPACE)]), quick([key(KEY_SPACE, False), key(KEY_R)]), quick([key(KEY_R, False), key(KEY_ENTER)]),
