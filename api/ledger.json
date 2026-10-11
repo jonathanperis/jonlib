@@ -55339,9 +55339,9 @@
       "status": "partial",
       "jonlib": "Model.load_for / Model.load",
       "mapping_state": "implemented",
-      "scope": "OBJ (case-insensitive extension) through raylib's tinyobj_loader_c: lines, commands, tryParseDouble in binary64 (contraction profiled), relative indices, fan triangulation, the djb2 material table, shapes, LoadOBJ's mesh split, MTL materials and their textures (returned with the model); other extensions and OBJ files that do not open give the empty model with the default material.",
+      "scope": "OBJ (case-insensitive extension) through raylib's tinyobj_loader_c: lines, commands, tryParseDouble in binary64 (contraction profiled), relative indices, fan triangulation, the djb2 material table, shapes, LoadOBJ's mesh split, MTL materials and their textures (returned with the model); binary glTF (.glb) through LoadGLTF for float POSITION/NORMAL/TANGENT/TEXCOORD attributes, 8/16/32-bit indices, node transforms and base color factors (uncontracted arithmetic); other extensions and files that do not open give the empty model with the default material.",
       "gaps": [
-        "IQM, glTF/GLB, VOX and M3D files are UnsupportedFileType",
+        "IQM, glTF as text, VOX and M3D are UnsupportedFileType; binary glTF with textures, skins, sparse accessors, COLOR/JOINTS/WEIGHTS, other component types or required extensions is refused",
         "Undefined reference behavior (asserts, int overflow, reads outside tinyobj's arrays, byte casts, table insertions that loop) and binary64 steps outside the checked helpers' domains are refused",
         "Texture files Jonlib's LoadImage does not decode are refused",
         "Paths and names must be printable ASCII (OBJ paths without backslashes); animations are not modeled",
@@ -55361,7 +55361,11 @@
         "tools/obj_probe.py",
         "docs/MODELS.md",
         "src/obj.bend",
-        "jonlib.bend"
+        "jonlib.bend",
+        "tools/gltf_probe.py",
+        "src/gltf.bend",
+        "src/json.bend",
+        "src/strtod.bend"
       ],
       "gate_evidence": {},
       "target_results": {},

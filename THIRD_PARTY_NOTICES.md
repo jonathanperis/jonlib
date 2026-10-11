@@ -359,6 +359,21 @@ license are retained in [LICENSES/rlsw.txt](LICENSES/rlsw.txt).
   semantics) and the shape construction, used by `Model.load_for` and
   `Material.load_materials_for`.
 
+## cgltf
+
+- Author: Johannes Kuhlmann. Source: <https://github.com/jkuhlmann/cgltf>,
+  version 1.15 as vendored by the pinned raylib commit in
+  `src/external/cgltf.h`.
+- License: MIT; the notice is retained in
+  [LICENSES/cgltf.txt](LICENSES/cgltf.txt).
+- `src/gltf.bend` is an altered Bend adaptation of what raylib's `LoadGLTF`
+  uses from it for a binary glTF file: the container layout checked by
+  `cgltf_parse`, `cgltf_parse_attribute_type`, the accessor stride and
+  offsets, and `cgltf_node_transform_local` / `cgltf_node_transform_world`
+  in their binary32 order, used by `Model.load_for`. The JSON reader
+  (`src/json.bend`) and the decimal conversion (`src/strtod.bend`) are
+  original and replace cgltf's jsmn tokenizer and its call to `atof`.
+
 ## Arm numerical routines
 
 The glibc `sinf`/`cosf` kernel in `src/sincosf.bend` and its C model

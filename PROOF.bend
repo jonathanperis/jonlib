@@ -696,6 +696,39 @@ def Laws.strtod_plus_none():
 def Laws.strtod_empty_exponent_none():
   {==}
 
+def Laws.json_empty_array():
+  {==}
+
+def Laws.json_number_kept_as_written():
+  {==}
+
+def Laws.json_object_member():
+  {==}
+
+def Laws.json_trailing_comma_none():
+  {==}
+
+def Laws.json_two_values_none():
+  {==}
+
+def Laws.json_unterminated_string_none():
+  {==}
+
+def Laws.json_colon_in_array_none():
+  {==}
+
+def Laws.gltf_integer_digits():
+  {==}
+
+def Laws.gltf_negative_integer_bad():
+  {==}
+
+def Laws.gltf_attribute_index():
+  {==}
+
+def Laws.gltf_empty_file_none():
+  {==}
+
 def Laws.hypot_within_below_inside(error, limit):
   {==}
 
