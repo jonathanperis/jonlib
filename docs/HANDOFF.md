@@ -267,8 +267,11 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      channels 1 and 2 never attach) and is bound to draw with
      `Rlgl.enable_framebuffer_incomplete`: `shaders_deferred_rendering` is
      ported (the screen shows the lights alone; a zero albedo texture left
-     bound makes the lit spheres invisible, as natively). Left:
-     `models_skybox_rendering` (cubemap faces);
+     bound makes the lit spheres invisible, as natively).
+     `models_skybox_rendering` is ported too: `useHDR` is false, so its
+     `GenTextureCubemap` (six framebuffers) never runs, and
+     `LoadTextureCubemap` keeps id 0 on the software renderer: the cube is
+     drawn white. No framebuffer example is left;
    - `shaders_game_of_life` is ready but steps a 2048x2048 world through a
      shader each frame: too heavy for the JavaScript lane as written;
    - images beyond 4096 pixels on an axis (`textures_sprite_stacking`,
