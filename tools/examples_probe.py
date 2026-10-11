@@ -284,6 +284,7 @@ EXAMPLES = {
     'text_unicode_emojis': ('text/text_unicode_emojis.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'text_3d_drawing': ('text/text_3d_drawing.c', 'Ex.setup(seed, core, frame)'),
     'models_loading_vox': ('models/models_loading_vox.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
+    'models_loading_iqm': ('models/models_loading_iqm.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
     'core_custom_frame_control': ('core/core_custom_frame_control.c', 'Ex.setup(core, frame)'),
     'shapes_digital_clock': ('shapes/shapes_digital_clock.c', 'Ex.setup(seed, core, frame)'),
@@ -400,6 +401,7 @@ IO_SETUP.add('models_decals'); SEEDED.add('models_decals'); PERSPECTIVE.add('mod
 IO_SETUP.add('text_unicode_emojis'); SEEDED.add('text_unicode_emojis'); CONFIG_FLAGS['text_unicode_emojis'] = 96
 SEEDED.add('text_3d_drawing'); PERSPECTIVE.add('text_3d_drawing'); CONFIG_FLAGS['text_3d_drawing'] = 96
 IO_SETUP.add('models_loading_vox'); PERSPECTIVE.add('models_loading_vox')
+IO_SETUP.add('models_loading_iqm'); PERSPECTIVE.add('models_loading_iqm')
 
 
 def scratch(probe, index, native=False):
@@ -1141,6 +1143,9 @@ def scripts():
         script('models_loading_vox', 'camera', [quick(), quick([key(87)]), quick([key(87, False), key(68)]), quick([key(68, False), button(2), mouse_at(420, 240)]), quick([mouse_at(450, 250)]),
                                                 slow([button(2, False), (MOUSE_WHEEL, 0, 2, 0)]), quick([key(264), key(263)]), quick([key(264, False), key(263, False), key(83), key(265)]),
                                                 quick([key(83, False), key(265, False), (MOUSE_WHEEL, 0, -1, 0)]), quick()]),
+        # The camera orbits while the animation plays: 61 keyframes, so the counter reaches the count (frame 61 is
+        # asked of UpdateModelAnimation) and starts again within these frames.
+        script('models_loading_iqm', 'orbit', [quick() for _ in range(31)] + [slow()] + [quick() for _ in range(32)]),
         script('text_codepoints_loading', 'frames', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), key(KEY_RIGHT)])]),
         # The mouse on the character shows the placement cube; two clicks splat two decals (the table lists them);
         # RMB with a move turns the camera; a click on "Clear Decals" removes them.

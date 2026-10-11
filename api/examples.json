@@ -4133,7 +4133,7 @@
   {
    "name": "models_loading_iqm",
    "category": "models",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",
