@@ -280,11 +280,10 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `GenTextureCubemap` (six framebuffers) never runs, and
      `LoadTextureCubemap` keeps id 0 on the software renderer: the cube is
      drawn white. No framebuffer example is left;
-   - what the eleven "ready" examples left need (triaged 2026-10-11):
-     `text_unicode_emojis` only a long port (three BMFont fonts whose PNG
-     atlases are at most 1024x1024 and under the file limit, 180 emoji and
-     the messages as byte tables to generate from the C source, and
-     `DrawTextBoxed` as in `examples/text_rectangle_bounds.bend`);
+   - what the ten "ready" examples left need (triaged 2026-10-11;
+     `text_unicode_emojis` is ported: a BMFont's baseSize is its
+     lineHeight, and `DrawTextBoxed` there is byte-indexed, unlike the
+     ASCII one of `examples/text_rectangle_bounds.bend`):
      `text_font_sdf` the C library's functions of `stbtt__solve_cubic` for
      SDF glyphs with curves (docs/FONTS.md, Gaps); `text_unicode_ranges` a
      7 MiB TTF and `shaders_basic_pbr` a 1.7 MiB PNG (the 1 MiB input

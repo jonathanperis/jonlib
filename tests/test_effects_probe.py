@@ -196,6 +196,40 @@ class OwnWaitExampleTests(unittest.TestCase):
         self.assertIn('void JonlibExampleWaitTime(double seconds) { if (!(seconds < 0)) probe_after = probe_clock + seconds; WaitTime(seconds); }', ep.C_DRIVER)
 
 
+class EmojiExampleTests(unittest.TestCase):
+    def test_the_tables_have_the_examples_sizes(self):
+        import re
+        port = (ROOT / 'examples/text_unicode_emojis.bend').read_text()
+        table = port[port.index('def emojis() -> +List<U32>:'):port.index('def message(index: U32)')]
+        codes = [int(v) for v in re.findall(r'\b(\d{5,6})\b', table)]
+        self.assertEqual(len(codes), 180)
+        self.assertEqual(codes[0], 0x1F300)
+        self.assertTrue(all(0x1F300 <= code <= 0x1F9FF for code in codes))
+        cases = re.findall(r'    case (\d+|_): Message\{"((?:[^"\\]|\\.)*)", "([A-Za-z]+)"\}', port)
+        self.assertEqual([name for name, _, _ in cases], [str(i) for i in range(46)] + ['_'])
+        self.assertEqual(len({language for _, _, language in cases}), 11)
+        self.assertIn('J.Random.value(rng, 0.0, (47.0 - 1.0 : F32))', port)
+
+    def test_the_script_clicks_five_emoji_of_81_pixels(self):
+        item = next(item for item in ep.scripts() if item['example'] == 'text_unicode_emojis')
+        clicks = []
+        position = None
+        for frame in item['frames']:
+            for kind, a, b, _ in frame['events']:
+                if kind == ep.MOUSE_POSITION:
+                    position = (a, b)
+                elif kind == ep.MOUSE_DOWN:
+                    clicks.append(position)
+        def emoji(x, y):
+            for i in range(32):
+                row = 0 if i <= 8 else 1 + (i - 9) // 8
+                column = i if i <= 8 else (i - 9) % 8
+                left, top = 28.8 + 109.8 * column, 10 + 105.25 * row
+                if left <= x < left + 81 and top <= y < top + 81:
+                    return i
+        self.assertEqual([emoji(*click) for click in clicks], [0, 6, 20, 31, 13])
+
+
 class UndefinedNativeExampleTests(unittest.TestCase):
     def test_the_codepoints_example_repeats_a_codepoint_and_is_not_run(self):
         import re

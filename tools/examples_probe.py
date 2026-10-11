@@ -279,6 +279,7 @@ EXAMPLES = {
     'shaders_deferred_rendering': ('shaders/shaders_deferred_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'models_skybox_rendering': ('models/models_skybox_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
     'text_codepoints_loading': ('text/text_codepoints_loading.c', 'Ex.setup(core, frame)'),
+    'text_unicode_emojis': ('text/text_unicode_emojis.c', 'Ex.setup(seed, RESOURCES, core, frame)'),
     'core_custom_logging': ('core/core_custom_logging.c', 'Ex.setup(core, frame)'),
     'core_custom_frame_control': ('core/core_custom_frame_control.c', 'Ex.setup(core, frame)'),
     'shapes_digital_clock': ('shapes/shapes_digital_clock.c', 'Ex.setup(seed, core, frame)'),
@@ -389,6 +390,7 @@ UNDEFINED_FROM['core_storage_values-odd'] = 2
 IO_SETUP.add('core_automation_events'); EFFECTS.add('core_automation_events'); SCRATCH.add('core_automation_events')
 IO_SETUP.add('models_skybox_rendering'); EFFECTS.add('models_skybox_rendering'); PERSPECTIVE.add('models_skybox_rendering')
 IO_SETUP.add('core_custom_frame_control'); EFFECTS.add('core_custom_frame_control')
+IO_SETUP.add('text_unicode_emojis'); SEEDED.add('text_unicode_emojis'); CONFIG_FLAGS['text_unicode_emojis'] = 96
 
 
 def scratch(probe, index, native=False):
@@ -1097,6 +1099,14 @@ def scripts():
                                                       quick(), quick()]),
         # The driver silences raylib's log (SetTraceLogLevel(LOG_NONE)), so the example's callback prints nothing.
         script('core_custom_logging', 'frames', [quick(), slow()]),
+        # The mouse over an emoji colors it; a click selects it and its message appears in a bubble (below the
+        # first row, above the others, pulled back from the right edge), wrapped by words in the language's font.
+        # The emoji are 81 wide (the BMFont's lineHeight), 109.8 apart from (28.8, 10), in rows of 9, 8, 8 and 7
+        # that are 105.25 apart: emoji 0, 6, 20, 31 and 13 are asked; SPACE draws new ones.
+        script('text_unicode_emojis', 'talk', [quick(), quick([mouse_at(40, 30)]), quick([button(0)]), quick([button(0, False)]), quick([mouse_at(700, 30)]), quick([button(0)]),
+                                               quick([button(0, False), mouse_at(400, 250)]), quick([button(0)]), quick([button(0, False), mouse_at(700, 350)]), quick([button(0)]),
+                                               quick([button(0, False), mouse_at(500, 150)]), quick([button(0)]), slow([button(0, False)]), quick([key(KEY_SPACE)]),
+                                               quick([key(KEY_SPACE, False)])], seed=0xE301),
         script('text_codepoints_loading', 'frames', [quick(), quick([key(KEY_SPACE)]), slow([key(KEY_SPACE, False), key(KEY_RIGHT)])]),
         # The camera starts with the cube behind it: the mouse turns it half a turn and down (the white cube, drawn
         # without culling or depth writes, under the grid), then W walks toward it.

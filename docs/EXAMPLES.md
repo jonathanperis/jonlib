@@ -7,7 +7,7 @@ the native example ([DRIVER.md](DRIVER.md)); **ready** when every raylib API it
 calls is at least partial in the ledger and every raygui function it calls is
 delivered by Jongui ([GUI.md](GUI.md), `api/jongui.json`); **waiting** otherwise.
 
-Totals: 212 examples; 185 ported, 11 ready, 16 waiting.
+Totals: 212 examples; 186 ported, 10 ready, 16 waiting.
 
 ## APIs that unblock the most examples
 
@@ -188,7 +188,7 @@ Totals: 212 examples; 185 ported, 11 ready, 16 waiting.
 | `text_input_box` | text | ported |  |
 | `text_writing_anim` | text | ported |  |
 | `text_rectangle_bounds` | text | ported |  |
-| `text_unicode_emojis` | text | ready |  |
+| `text_unicode_emojis` | text | ported |  |
 | `text_unicode_ranges` | text | ready |  |
 | `text_3d_drawing` | text | ready |  |
 | `text_codepoints_loading` | text | ported |  |
