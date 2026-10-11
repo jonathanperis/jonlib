@@ -290,6 +290,9 @@ compare every frame with the native example.
 The port `shaders_shadowmap_rendering` builds its shadow map with a depth
 attachment alone (`Rlgl.render_texture_depth`): its first pass reaches no
 buffer and the scene on the screen is the reference's, unshadowed.
+The port `shaders_deferred_rendering` binds its G-buffer to draw
+(`Rlgl.enable_framebuffer_incomplete`): nothing reaches it, and the screen
+shows the lights alone, or a G-buffer texture as rlsw draws it.
 
 ## Gaps
 
