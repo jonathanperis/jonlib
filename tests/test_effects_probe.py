@@ -57,6 +57,9 @@ class EffectsProbeTests(unittest.TestCase):
         self.assertIn('import ../../examples/core_basic_window.bend as Ex', text)
         self.assertIn('join(J.Program.replay(~Ex.State', text)
         self.assertNotIn('replay_io', text)
+        shadow = ep.render([item for item in ep.scripts() if item['example'] == 'shaders_shadowmap_rendering'], 'Glibc239Libm', None, Path('/raylib'))(
+            ['shaders_shadowmap_rendering'], False)
+        self.assertIn('J.Program.replay_io(~Ex.State', shadow)
 
 
 if __name__ == '__main__':

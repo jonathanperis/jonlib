@@ -6193,7 +6193,7 @@
   {
    "name": "shaders_shadowmap_rendering",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",

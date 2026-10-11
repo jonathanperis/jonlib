@@ -251,6 +251,7 @@ EXAMPLES = {
     'shaders_depth_writing': ('shaders/shaders_depth_writing.c', 'Ex.setup(RESOURCES, core, frame)'),
     'shaders_hybrid_rendering': ('shaders/shaders_hybrid_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shaders_depth_rendering': ('shaders/shaders_depth_rendering.c', 'Ex.setup(RESOURCES, core, frame)'),
+    'shaders_shadowmap_rendering': ('shaders/shaders_shadowmap_rendering.c', 'Ex.setup(M.LIBM{}, RESOURCES, core, frame)'),
     'shapes_recursive_tree': ('shapes/shapes_recursive_tree.c', 'Ex.setup(core, frame)'),
     'shapes_kaleidoscope': ('shapes/shapes_kaleidoscope.c', 'Ex.setup(core, frame)'),
     'shaders_color_correction': ('shaders/shaders_color_correction.c', 'Ex.setup(RESOURCES, core, frame)'),
@@ -328,10 +329,11 @@ PERSPECTIVE.add('shaders_depth_writing')
 PERSPECTIVE.add('shaders_hybrid_rendering')
 PERSPECTIVE.add('shaders_depth_rendering')
 # Examples whose loop does IO (a J.Effects program): replayed with J.Program.replay_io.
-EFFECTS = set()
+EFFECTS = {'shaders_shadowmap_rendering'}
 # Programs of another probe (tools/effects_probe.py): the Bend module instead of examples/<name>.bend, the
 # directory given as RESOURCES instead of the example's, and the native run in a directory of its own.
 MODULES, DIRECTORIES, SCRATCH = {}, {}, set()
+IO_SETUP.add('shaders_shadowmap_rendering'); PERSPECTIVE.add('shaders_shadowmap_rendering'); CONFIG_FLAGS['shaders_shadowmap_rendering'] = 32
 
 
 # -----------------------------------------------------------------------------
@@ -1002,6 +1004,10 @@ def scripts():
         # The depth attachment drawn as a texture is a white rectangle on rlsw, whatever the free camera does (W
         # moves it, the pointer turns it): the help box over white.
         script('shaders_depth_rendering', 'white', [quick(), quick([key(KEY_W)]), quick([mouse_at(430, 240)]), slow([key(KEY_W, False)])]),
+        # The arrow keys turn the light, which only the dropped shadow pass sees; F is read after EndDrawing, whose
+        # poll has already made the press an old one (no screenshot in the script).
+        script('shaders_shadowmap_rendering', 'light', [quick(), quick([key(KEY_LEFT)]), slow([key(KEY_LEFT, False), key(265)]), quick([key(265, False), key(70)]),
+                                                        quick([key(70, False), key(KEY_RIGHT), key(264)])]),
         # The ball falls; a left press on it grabs it (hypot(dx, dy) <= radius), two moves drag it and the release
         # throws it; right presses add balls (one a frame with left control held); the wheel lowers gravity; a
         # middle press shakes them; a left press on the empty corner grabs nothing.
