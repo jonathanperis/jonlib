@@ -1,4 +1,4 @@
-# Session handoff (2026-10-10)
+# Session handoff (2026-10-11)
 
 Snapshot for continuing on another machine or in a new session. Everything
 described here is committed and pushed (`main`, and the pieces still on their
@@ -23,17 +23,24 @@ is owed: the port is not done before it passes.
 
 | Branch | Content | State |
 |---|---|---|
-| `main` | everything through 153 example ports: Jongui's first controls, the change-scoped Linux-only Conformance workflow ([CI.md](CI.md)), the libm/libc kernels (`pow2`, `exp`/`log`, `rand`, `hypot_within`), `J.Until`, the rlgl uniform setters, `UploadMesh`, `ColorFromHSV` for any finite hue | green on Linux for every commit merged (macOS: see the goal above) |
+| `main` | everything through 155 example ports, and each piece of `stack/final` as its run goes green: Jongui's controls ([GUI.md](GUI.md)), the change-scoped Linux-only Conformance workflow ([CI.md](CI.md)), the libm/libc kernels (`pow2`, `exp`/`log`, `rand`, `hypot_within`, the decimal parser), `J.Until`, the rlgl uniform setters, `UploadMesh`, `ColorFromHSV` for any finite hue, binary glTF | green on Linux for every commit |
 | `stack/final` | the commits not yet on `main`, in landing order. The name starts no CI run: it is the backup | each piece goes to `main` through a `feature/**` branch |
 
-On `stack/final` now (`python3 tools/ci_scope.py --base <parent> --head <commit>` prints each commit's scope):
+On `stack/final` now, in landing order (`git log origin/main..origin/stack/final`
+lists what is left; `python3 tools/ci_scope.py --base origin/main --head <commit>`
+prints a commit's scope):
 
-1. `M.Float64.from_decimal` (strtod of a JSON number): a scoped run.
-2. `LoadModel` of binary glTF, a first slice of `LoadGLTF`
-   ([MODELS.md](MODELS.md)): it changes `LoadModel`'s routing, so a complete
-   run.
-3. The ports through it: `shaders_normalmap_rendering`,
-   `shaders_cel_shading`. Scoped runs once 2 is on `main`.
+1. `M.Libm.tanf`, `GuiLine`/`GuiGroupBox`, the port `shapes_math_sine_cosine`:
+   scoped runs.
+2. raygui's icons in control texts: it changes Jongui's text drawing, so a
+   complete run.
+3. `GuiValueBox`/`GuiSpinner`, the port `shapes_hilbert_curve`,
+   `GuiDropdownBox`/`GuiPanel`/`GuiStatusBar`, the port
+   `shapes_splines_drawing`, `GuiTextBox`, the port `core_compute_hash`:
+   additions and ports, scoped once 2 is on `main`.
+4. `GuiSetIconScale` (a field of Jongui's state: a complete run) and the
+   port `core_clipboard_text`.
+5. This document.
 
 How the last stack went (2026-10-10/11): thirteen independent pieces were
 pushed as thirteen `feature/piece-NN` branches and landed one by one within
@@ -47,10 +54,10 @@ at the branch's head.
 `integrate/models-lgpl`, `feature/scoped-ci`, `feature/examples-batch-4` and the stack's branches are merged into `main` and deleted
 (`feature/examples-batch-5` was re-landed as pieces and deleted).
 
-Coverage (`python3 tools/api_plan.py check`): raylib.h 514/600 partial
-(20 blocked, 66 not started); raymath.h 146/146; rlgl.h 98/163; rcamera.h
+Coverage (`python3 tools/api_plan.py check`): raylib.h 515/600 partial
+(20 blocked, 65 not started); raymath.h 146/146; rlgl.h 98/163; rcamera.h
 12/12; rgestures.h 10/10. Examples (`python3 tools/examples_plan.py check`,
-[EXAMPLES.md](EXAMPLES.md)): **155/212 ported** with the stack, 18 ready, 39 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
+[EXAMPLES.md](EXAMPLES.md)): **160/212 ported** with the stack, 18 ready, 34 waiting (one port, `textures_image_kernel`, is a documented refusal: the native example is undefined behavior, [CONVOLUTION.md](CONVOLUTION.md)). No API
 is `complete` by design until Phase 7 targets (see MASTER-PLAN).
 
 ## Decisions and rules to keep (from Jonathan; also in project memory)
@@ -72,7 +79,21 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
   `LAWS.bend` with their proofs in `PROOF.bend` in the same commit.
 - Commits end with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 
-## What changed last (2026-10-09/10)
+## What changed last (2026-10-09/11)
+
+- **Jongui grew to the controls the examples use** ([GUI.md](GUI.md)):
+  raygui's icons in control texts (`src/gui_icons.bend`, generated from the
+  pinned raygui.h and checked by the `gui-icons` gate) with
+  `GuiSetIconScale`, `GuiLine`, `GuiGroupBox`, `GuiValueBox` and `GuiSpinner`
+  (outside edit mode), `GuiStatusBar`, `GuiPanel`, `GuiDropdownBox` and
+  `GuiTextBox` (raygui's two text box globals are a `G.Gui.Editing` value).
+  Left: `GuiProgressBar`, `GuiScrollPanel`, `GuiListViewEx`, `GuiGetFont`.
+- **`M.Libm.tanf`** ([MATH.md](MATH.md)): glibc 2.39's `tanf` on every
+  finite argument (an LGPL module; glibc 2.41's is a different, correctly
+  rounded function and stays refused, as does Apple's).
+- **Scoped CI jobs of 50 minutes** ([CI.md](CI.md)): the corpus and the core
+  examples of an additive library change run side by side (about 50
+  minutes instead of 90), up to six jobs a host.
 
 - **Change-scoped CI** ([CI.md](CI.md)): `tools/ci_scope.py` classifies a
   push. Example ports replay only themselves and three canaries (minutes,
@@ -150,19 +171,30 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
    `LoadModelAnimations`/`UpdateModelAnimation` (`models_loading_gltf` and
    eight animation examples), glTF as text with external buffers.
 3. The remaining raygui controls, each a small additive piece of
-   `jongui.bend` verified by the example that uses it: `GuiGroupBox`/`GuiLine`
-   (with `tanf` for `shapes_math_sine_cosine`; glibc 2.39's `tanf` is
-   `s_sincosf.h`'s reduction, already in `src/sincosf.bend`, and the Sun
-   `k_tanf.c` kernel in binary32), then the icons table, `GuiSpinner`,
-   `GuiDropdownBox`, `GuiTextBox`, `GuiProgressBar`, `GuiScrollPanel`,
-   `GuiListView` (about 11 examples).
+   `jongui.bend` verified by the example that uses it: `GuiScrollPanel`
+   (with `GuiScrollBar`; `shapes_pie_chart` then has everything),
+   `GuiProgressBar` (two animation examples), `GuiListViewEx` and
+   `GuiGetFont` (`core_directory_files`, with the directory functions).
+   The probe's replayed events never reach `GetCharPressed`: typing into a
+   text box cannot be compared natively there.
 4. Other pieces that each unblock examples:
    - an IO step in `J.Program`'s update (`core_storage_values`);
    - binary64 `sin`/`cos` (`models_waving_cubes`,
      `shaders_spotlight_rendering`, `GenMeshCylinder`);
    - the wall clock (`shapes_digital_clock`, `shapes_clock_of_clocks`,
-     `core_custom_logging`);
-   - the rlgl framebuffer functions (6 examples);
+     `core_custom_logging`): Base's `IO.now` is a monotonic clock, so the
+     desktop driver has no source for `time()` without a new effect in the
+     Bend overlay (the replay can inject one);
+   - the rlgl framebuffer functions (6 examples). On the reference they
+     run on rlsw: `rlLoadTextureDepth` makes a D32 renderbuffer whatever
+     `useRenderBuffer` says, so the examples' `LoadRenderTextureDepthTex` is
+     `LoadRenderTexture` with other calls, and their shaders are no-ops
+     (`shaders_depth_rendering` draws its depth texture as a white quad).
+     Jonlib's canvas has no framebuffer objects apart from
+     `RenderTexture.load`: the functions need an attachment table by
+     framebuffer id in `src/frame.bend`;
+   - `shaders_game_of_life` is ready but steps a 2048x2048 world through a
+     shader each frame: too heavy for the JavaScript lane as written;
    - images beyond 4096 pixels on an axis (`textures_sprite_stacking`,
      parked in `.build/pending/`, not in the repository);
    - `GetFileModTime` (`shaders_hot_reloading`), `GetApplicationDirectory`
