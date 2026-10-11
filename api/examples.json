@@ -6331,7 +6331,7 @@
   {
    "name": "shaders_basic_pbr",
    "category": "shaders",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "BeginMode3D",

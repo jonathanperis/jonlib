@@ -305,15 +305,12 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      `core_screen_recording`
      needs a GIF encoder (msf_gif) besides `GetApplicationDirectory`, and
      `shaders_game_of_life` draws 2048x2048 worlds each frame;
-   - how the six "ready" examples left are blocked (surveyed 2026-10-11):
-     `shaders_basic_pbr` loads three PNGs over the 1 MiB raster cap (1.14,
-     1.29 and 1.68 MiB; its two .glb models already load). The cap is per
-     file kind (`Image.file.limit`: QOI and DDS have their own), so the way
-     in is a `PngFile` kind with a larger cap, plus the PNG decoder's own
-     two caps (`src/png.bend`: input count and chunk size) and the inflate
-     input count it shares with the public `Compression.decompress` (which
-     must keep 1 MiB: give `src/inflate.bend`'s count its limit as a
-     parameter); `tools/codec_files.py` already takes a `cap` per codec.
+   - how the five "ready" examples left are blocked (surveyed 2026-10-11):
+     `shaders_basic_pbr` is ported: its PNGs of up to 1.68 MiB needed the
+     PNG cap raised to 2 MiB (a `PngFile` kind in `Image.file.limit`, the
+     decoder's two caps in `src/png.bend`, and `Inflate.decompress.within`
+     so that the public `Compression.decompress` keeps 1 MiB; gates
+     `png-format` at 55 minutes and `png-file` carry the cap cases).
      `textures_sprite_stacking` needs a 112x11468 image: the 4096 limit is
      in about sixty places of `jonlib.bend` and every codec, a contract of
      its own. `text_unicode_ranges` needs a 7 MiB TTF. `text_font_sdf`
@@ -331,7 +328,21 @@ is `complete` by design until Phase 7 targets (see MASTER-PLAN).
      as a refusal (`UNDEFINED_NATIVE`, docs/TEXT.md);
    - M3D model loading;
    - the audio device and streams (12+ examples; the reference build has
-     `SUPPORT_MODULE_RAUDIO=OFF`), VR.
+     `SUPPORT_MODULE_RAUDIO=OFF`), VR. What the audio examples load
+     (surveyed 2026-10-11): `textures_sprite_button`,
+     `textures_sprite_explosion`, `audio_sound_multi` and
+     `audio_sound_positioning` only .wav files (decoded already,
+     docs/AUDIO.md), and only the last shows audio state on screen
+     (`IsSoundPlaying`); `audio_raw_stream`, `audio_stream_callback` and
+     `audio_amp_envelope` no file (`IsAudioStreamProcessed`); the others an
+     .mp3 (dr_mp3), an .ogg (stb_vorbis) or an .xm (jar_xm): decoders not
+     ported. A deterministic reference needs raudio built in with a
+     miniaudio backend the driver pumps at the scripted clock (a custom
+     backend whose data callback the frame hook calls for the frames the
+     clock advanced; `ma_context_init` redirected by a forced include in
+     raudio.c's unit), and Jonlib the mixer: each buffer's
+     `ma_data_converter` (the resampler of `Wave.format` is ported), volume,
+     pan and pitch, `MixAudioFrames` in binary32.
 5. **Owed before the port is called done:** turn macOS back on
    (`MERGE_HOSTS` in `tools/ci_scope.py`, the `os:` line of
    `.github/workflows/checks.yml`), run both workflows manually on `main`
