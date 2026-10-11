@@ -11,7 +11,7 @@ fresh process and an empty directory.
 
 Candidate. tools/reference/driver_effects.bend, the same loop as a J.Effects
 program (its update and its `after` in IO), replayed by J.Program.replay_io
-with the same events and clocks in a directory emptied before each lane. Per
+with the same events and clocks, each script in an empty directory. Per
 frame it prints the framebuffer and the presented Image, which must be
 raylib's: the text drawn shows the counter, what S saved, what L read and
 the frame of the last write after EndDrawing, so a step run in another order
@@ -19,13 +19,12 @@ or a file written with other bytes changes a frame.
 
 Scripts: `missing` reads before anything was written (LoadFileText's NULL);
 `files` saves, reads the save back, holds F over two frames (each write
-after EndDrawing is what the next frame's L reads) and saves again. The file
-left by `files` must hold the same bytes on both sides. CPU-1, CPU-2 and
-JavaScript lanes.
+after EndDrawing is what the next frame's L reads) and saves again. Each
+script must leave the same files on both sides (none, and effects.txt with
+"8"). CPU-1, CPU-2 and JavaScript lanes.
 """
 import hashlib
 import json
-import shutil
 
 import examples_probe as ep
 import input_probe as ip
@@ -70,24 +69,22 @@ def main():
     register()
     libm = gradient_reference()
     items = scripts()
-    directory = probe.work / 'candidate'
-    shutil.rmtree(directory, ignore_errors=True)
-    directory.mkdir(parents=True)
-    ep.DIRECTORIES[NAME] = str(directory) + '/'
+    ep.scratch_reset(probe, items)
+    directories = {index: ep.scratch(probe, index) for index in range(len(items))}
     left = {}
 
     def parse_lane(text, selected, lane):
-        path = directory / FILE
-        left[lane] = path.read_bytes() if path.is_file() else None
-        shutil.rmtree(directory)
-        directory.mkdir()
+        for index, item in enumerate(items):
+            left[lane, item['name']] = ep.scratch_left(probe, index)
+        ep.scratch_reset(probe, items)
         return ['\n'.join(line for line in text.splitlines() if line.strip())]
 
-    lanes = probe.candidates(ep.render(items, libm, None, probe.args.raylib_source), [NAME], batch=1, timeout=ep.LANE_TIMEOUT, parse_lane=parse_lane)
+    lanes = probe.candidates(ep.render(items, libm, None, probe.args.raylib_source, directories), [NAME], batch=1, timeout=ep.LANE_TIMEOUT, parse_lane=parse_lane)
 
     binary = ep.build_reference(probe, NAME)
     width, height = ep.size_of(NAME)
     rows, files = [], {}
+    ep.scratch_reset(probe, items, native=True)
     for index, item in enumerate(items):
         frames = ep.native_frames(probe, binary, index, item)
         if len(frames) != len(item['frames']):
@@ -95,9 +92,8 @@ def main():
         if len(set(frames)) != len(frames):
             raise ProbeFailure(f'driver-effects: two frames of {item["name"]} are the same (the counter is drawn in each)')
         rows.append('|'.join(ep.expected_row(runs, width, height) for runs in frames) + '|')
-        path = probe.work / f'native-{index}' / FILE
-        files[item['name']] = path.read_bytes() if path.is_file() else None
-    if files != {f'{NAME}-missing': None, f'{NAME}-files': b'8'}:
+        files[item['name']] = ep.scratch_left(probe, index, native=True)
+    if files != {f'{NAME}-missing': {}, f'{NAME}-files': {FILE: b'8'}}:
         raise ProbeFailure(f'driver-effects: the reference left {files}, expected no file after `missing` and "8" after `files`')
 
     def describe(i):
@@ -109,10 +105,10 @@ def main():
         return f'{len(rows)} scripts expected'
 
     probe.compare(['\n'.join(rows)], lanes, describe=describe)
-    for lane, data in left.items():
-        if data != files[f'{NAME}-files']:
-            raise ProbeFailure(f'driver-effects: {lane} left {data!r} in {FILE}, the reference {files[f"{NAME}-files"]!r}')
-    probe.finish(scripts=len(items), frames=sum(len(item['frames']) for item in items), libm=libm, file=files[f'{NAME}-files'].decode(),
+    for (lane, name), data in left.items():
+        if data != files[name]:
+            raise ProbeFailure(f'driver-effects: {name} on {lane} left {data}, the reference {files[name]}')
+    probe.finish(scripts=len(items), frames=sum(len(item['frames']) for item in items), libm=libm, file=files[f'{NAME}-files'][FILE].decode(),
                  scripts_sha256=hashlib.sha256(json.dumps(items, default=repr).encode()).hexdigest())
 
 

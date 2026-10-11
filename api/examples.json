@@ -818,7 +818,7 @@
   {
    "name": "core_storage_values",
    "category": "core",
-   "status": "ready",
+   "status": "ported",
    "apis": [
     "BeginDrawing",
     "ClearBackground",
